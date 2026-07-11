@@ -41,8 +41,8 @@ and graph recall; the items below complete the validated design.
       possible.
 - [ ] Publish; CI running the smoke + eval suites.
 
-## v0.6 — regression suite from the research harness
-- [ ] Port the synthetic-corpus generator + judge as `tests/eval/`; assert
+## v0.6 — acceptance eval — done
+- [x] Port the synthetic-corpus generator + judge as `tests/eval/`; assert
       engram meets the research numbers (supersession ~100%, injection 0 asserts
       on the ladder, confabulation bounded once the gate lands).
 
