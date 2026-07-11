@@ -41,7 +41,9 @@ def test_write_read_supersession_and_quarantine():
          "episode": "Received an unverified billing notice claiming the user owes $2,400."},
     ]
     with tempfile.TemporaryDirectory() as d:
-        mem = Memory(llm=FakeComplete(scripts), config=MemoryConfig(db_path=f"{d}/t.db"))
+        # wiki disabled → pure write-path + graph-recall test (no read-time LLM)
+        mem = Memory(llm=FakeComplete(scripts),
+                     config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
         mem.remember("u", "USER: I'm vegetarian; keep answers concise.", date="2026-06-01")
         mem.remember("u", "USER: actually give me detailed answers now.", date="2026-06-03")
         mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",

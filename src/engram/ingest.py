@@ -9,6 +9,7 @@ third-party-authored content is the attack surface.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Optional
 
 from . import prompts
@@ -22,6 +23,15 @@ from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAutho
 
 def _uid(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:12]}"
+
+
+def _event_dt(date_str: str) -> datetime:
+    """The event's own date drives valid_from / observed_at — memory timestamps
+    must reflect when facts held, not wall-clock ingest time."""
+    try:
+        return datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+    except ValueError:
+        return utcnow()
 
 
 def _disclosure_for(author: EvidenceAuthor, relation: str) -> Disclosure:
@@ -57,6 +67,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     raw = llm(prompt, system=prompts.EXTRACT_SYSTEM, role="distill",
               json_schema=prompts.EXTRACT_SCHEMA)
     data = extract_json(raw)
+    when = _event_dt(date)
 
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.
@@ -66,7 +77,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  observed_at=utcnow())))
+                                  observed_at=when)))
 
     n_facts = n_quarantined = 0
     for t in data.get("triples", []):
@@ -84,7 +95,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             note=str(t.get("note", "")).strip(), volatility=vol,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  disclosure=disclosure))
+                                  disclosure=disclosure, observed_at=when),
+            valid_from=when)
         apply_supersession(store, edge, relations)
         if edge.quarantined:
             n_quarantined += 1

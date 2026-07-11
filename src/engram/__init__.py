@@ -19,8 +19,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
+from . import compile as _compile
+from . import gate as _gate
 from .config import MemoryConfig
-from .graph import render_edges, subgraph_for_query
+from .graph import subgraph_for_query
 from .ingest import ingest_event
 from .llm.base import Complete, Embed
 from .schema import Edge, Episode, EvidenceAuthor
@@ -33,10 +35,14 @@ __all__ = ["Memory", "MemoryConfig", "Recall", "Store", "SqliteStore",
 
 @dataclass
 class Recall:
-    """The result of a recall: a ready-to-inject `context` string plus the
-    structured `edges`/`episodes` it was built from (for the host to inspect
-    provenance or build its own prompt)."""
+    """The result of a recall.
+
+    `context` is a ready-to-inject block (grounded memory + a fenced never-assert
+    section). For hosts that want the abstention gate, `grounded` and `unverified`
+    are the two partitions the gate operates on (see `Memory.answer`)."""
     context: str
+    grounded: str
+    unverified: str
     edges: list[Edge]
     episodes: list[Episode]
 
@@ -68,26 +74,43 @@ class Memory:
     def recall(self, user_id: str, query: str) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
-        v0.1: entity-matched subgraph + recent episodes, third-party claims
-        rendered under an explicit never-assert flag. The LLM-curated wiki layer
-        and the evidence-grounded abstention gate land next; the seams
-        (config.wiki_recompile_after_writes, provenance on every unit) are in
-        place for them.
+        Combines the LLM-curated wiki (the grounded, verified working view,
+        recompiled after N writes) with a per-query entity-matched subgraph for
+        detail — the layered design that won both horizons. Memory is partitioned
+        into grounded (assertable) and unverified (third-party claims/reports),
+        so the host can apply the abstention gate via `answer()` or its own prompt.
         """
+        wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
+                                    self.config.wiki_recompile_after_writes)
         edges = subgraph_for_query(self.store, user_id, query,
                                    max_edges=self.config.max_subgraph_edges)
         episodes = self.store.episodes(user_id)[-self.config.max_recent_episodes:]
-        parts = []
-        if edges:
-            parts.append("## KNOWN FACTS\n" + render_edges(edges))
-        if episodes:
-            parts.append("## RECENT HISTORY\n" + "\n".join(
-                f"[{e.date}] {e.summary}"
-                + ("  (third-party report — unverified)"
-                   if e.provenance.author_of_evidence == EvidenceAuthor.THIRD_PARTY else "")
-                for e in episodes))
-        context = "\n\n".join(parts) if parts else "(no memory yet for this user)"
-        return Recall(context=context, edges=edges, episodes=episodes)
+
+        detail_grounded, unverified = _gate.partition(edges, episodes)
+        grounded_parts = []
+        if wiki:
+            grounded_parts.append(wiki)
+        if detail_grounded:
+            grounded_parts.append("## RELEVANT DETAIL\n" + detail_grounded)
+        grounded = "\n\n".join(grounded_parts).strip() or "(no memory yet for this user)"
+
+        context = grounded
+        if unverified:
+            context += ("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n"
+                        + unverified)
+        return Recall(context=context, grounded=grounded, unverified=unverified,
+                      edges=edges, episodes=episodes)
+
+    def answer(self, user_id: str, query: str) -> str:
+        """Recall + the evidence-grounded abstention gate → a direct answer.
+
+        The convenience path for hosts that want engram to answer: it answers only
+        from grounded memory, refuses to assert unverified third-party claims, and
+        abstains ("I don't know") rather than confabulate when memory lacks the
+        answer — the finding-23 fix for both confabulation and the episodic
+        injection leak."""
+        r = self.recall(user_id, query)
+        return _gate.answer(self.llm, query, r.grounded, r.unverified)
 
     def close(self) -> None:
         self.store.close()

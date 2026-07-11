@@ -12,20 +12,20 @@ and graph recall; the items below complete the validated design.
 - [x] Graph recall: entity-matched subgraph + recent episodes, provenance-flagged.
 - [x] Offline smoke test (scripted LLM).
 
-## v0.2 — the curated view (finding 20)
-- [ ] `compile.py`: LLM cartographer compiles a budgeted wiki from edges+episodes,
+## v0.2 — the curated view (finding 20) — done
+- [x] `compile.py`: LLM cartographer compiles a budgeted wiki from edges+episodes,
       cached in the store, recompiled after N writes (`wiki_recompile_after_writes`).
       Claims are excluded from the compiled body and appended as a fixed,
       un-rephrasable quarantine block (finding 23-C: the leak is the episode, so
       the compiler must not weave claims into assertable prose).
-- [ ] `recall()` uses the wiki + per-query subgraph (the hybrid-v2 winner).
+- [x] `recall()` uses the wiki + per-query subgraph (the hybrid-v2 winner).
 
-## v0.3 — the abstention gate (finding 23, the specified-but-unbuilt piece)
-- [ ] `gate.py`: before returning context, mark any answer path whose only
+## v0.3 — the abstention gate (finding 23) — done
+- [x] `gate.py`: before returning context, mark any answer path whose only
       support is a third-party-authored episode/claim as "no basis / unverified".
       Fixes both the confabulation-on-failure problem (D) and the residual
       episodic injection leak (C) — the two failures that shared one root cause.
-- [ ] Expose `mem.answer(user, query)` convenience that applies the gate, for
+- [x] Expose `mem.answer(user, query)` convenience that applies the gate, for
       hosts that want engram to answer rather than just supply context.
 
 ## v0.4 — lifecycle (findings 9/11/19)
