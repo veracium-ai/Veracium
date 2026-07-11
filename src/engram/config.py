@@ -1,3 +1,5 @@
+"""Configuration for a `Memory` instance. See `docs/api.md` for the field table."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

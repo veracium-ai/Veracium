@@ -60,13 +60,25 @@ print(ctx.context)   # states the vegetarian constraint; the $900 "claim" is
 
 ## Use (MCP)
 
-`engram-mcp` exposes `remember` / `recall` tools to any MCP-compatible agent
-(status: in progress — see Roadmap).
+`engram-mcp` exposes `remember` / `recall` / `answer` / `maintain` tools to any
+MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
+[docs/mcp.md](docs/mcp.md) for the config JSON and tool reference.
+
+## Documentation
+
+- **[docs/concepts.md](docs/concepts.md)** — the mental model: edges vs episodes
+  vs the compiled wiki, provenance & authorship, quarantine, the abstention gate,
+  lifecycle.
+- **[docs/api.md](docs/api.md)** — the public API: `Memory`, `MemoryConfig`,
+  `EvidenceAuthor`, providing your own LLM callable or store.
+- **[docs/mcp.md](docs/mcp.md)** — running and registering the MCP server.
+- **[ROADMAP.md](ROADMAP.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 
 ## Status
 
-v0.1 — write path (extraction → typed edges + episodes, supersession, structural
-quarantine) and graph-based recall are implemented and tested. See `ROADMAP.md`.
+The validated layered design is implemented, tested (9 offline tests + a live
+acceptance eval), and passes its own research-claim bar (5/5, 0 injection
+asserts). Roadmap v0.1–v0.6 complete. See [ROADMAP.md](ROADMAP.md).
 
 ## License
 
