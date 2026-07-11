@@ -96,28 +96,45 @@ DEFAULT_EXPIRY = {
 class Relation(BaseModel):
     name: str
     functional: bool = False  # one current value per subject → supersede on change
+    desc: str = ""  # one-clause gloss rendered into the distill prompt
 
 
 # A small, extensible default registry. Hosts can add their own via config.
 # Starred/functional relations supersede; the rest accumulate.
+# Glosses matter: the extractor sees only these names + glosses, and confusable
+# pairs (works_as vs works_on) otherwise drift between runs — which silently
+# defeats supersession for facts filed under the wrong relation.
 DEFAULT_RELATIONS: dict[str, Relation] = {
     r.name: r for r in [
         # user model
-        Relation(name="partner_of"), Relation(name="relative_of"),
-        Relation(name="has_pet"), Relation(name="has_diet"),
-        Relation(name="works_as", functional=True),
-        Relation(name="prefers", functional=True),
-        Relation(name="located_at", functional=True),
-        Relation(name="health_state", functional=True),
+        Relation(name="partner_of", desc="romantic partner"),
+        Relation(name="relative_of", desc="family member"),
+        Relation(name="has_pet", desc="a pet: kind and name"),
+        Relation(name="has_diet", desc="dietary practice or restriction"),
+        Relation(name="works_as", functional=True,
+                 desc="the user's employment — employer and/or role; use for jobs"),
+        Relation(name="prefers", functional=True,
+                 desc="a standing preference, one current value"),
+        Relation(name="located_at", functional=True,
+                 desc="where the user lives or is based"),
+        Relation(name="health_state", functional=True,
+                 desc="a current health condition or state"),
         # work knowledge
-        Relation(name="works_on"), Relation(name="client_of"),
-        Relation(name="contact_person"), Relation(name="uses_tool"),
-        Relation(name="avoids_tool"), Relation(name="source_reliable"),
-        Relation(name="source_dead_end"),
-        Relation(name="deadline", functional=True),
-        Relation(name="scope", functional=True),
+        Relation(name="works_on",
+                 desc="a project, codebase, or workstream — NOT employment"),
+        Relation(name="client_of", desc="a client relationship"),
+        Relation(name="contact_person", desc="who to contact for what"),
+        Relation(name="uses_tool", desc="a tool/service the user uses"),
+        Relation(name="avoids_tool", desc="a tool/service the user avoids"),
+        Relation(name="source_reliable", desc="a source that proved reliable"),
+        Relation(name="source_dead_end", desc="a source that proved a dead end"),
+        Relation(name="deadline", functional=True,
+                 desc="a dated obligation for a named thing"),
+        Relation(name="scope", functional=True,
+                 desc="agreed scope of a named piece of work"),
         # the quarantine channel — third-party claims never become direct facts
-        Relation(name="third_party_claim"),
+        Relation(name="third_party_claim",
+                 desc="an unverified claim by a third party; subject is the claimant"),
     ]
 }
 

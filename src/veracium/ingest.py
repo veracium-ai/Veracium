@@ -60,7 +60,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     """Extract and persist memory from one event. Returns a small summary dict
     (counts + the episode) for logging/telemetry."""
     evidence_ref = evidence_ref or _uid("ev")
-    rel_names = ", ".join(relations)
+    rel_names = "\n".join(
+        f"- {name}: {rel.desc}" if rel.desc else f"- {name}"
+        for name, rel in relations.items())
     prompt = prompts.EXTRACT_PROMPT.format(
         date_context=prompts.date_context(date), author=author.value,
         event_text=event_text, relations=rel_names)

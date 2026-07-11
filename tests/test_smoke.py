@@ -73,3 +73,24 @@ def test_write_read_supersession_and_quarantine():
 if __name__ == "__main__":
     test_write_read_supersession_and_quarantine()
     print("smoke OK")
+
+
+def test_distill_prompt_carries_relation_glosses():
+    # The extractor sees only names + glosses; confusable pairs must be
+    # disambiguated in the prompt or extraction drifts (works_on vs works_as),
+    # silently defeating supersession for facts filed under the wrong relation.
+    captured = {}
+
+    def spy(prompt, *, system=None, role="", json_schema=None):
+        if role == "distill":
+            captured["prompt"] = prompt
+        return '{"triples": [], "episode": "noted"}'
+
+    from veracium import Memory, MemoryConfig
+    mem = Memory(llm=spy, config=MemoryConfig(db_path=":memory:"))
+    mem.remember("u", "USER: hello")
+    mem.close()
+    p = captured["prompt"]
+    assert "works_as: the user's employment" in p
+    assert "works_on: a project" in p and "NOT employment" in p
+    assert "third_party_claim: an unverified claim" in p
