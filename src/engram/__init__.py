@@ -16,6 +16,8 @@ quarantined. Memory is per-user; one user's memory never reaches another's.
 
 from __future__ import annotations
 
+import re
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -23,6 +25,11 @@ from . import compile as _compile
 from . import gate as _gate
 from . import lifecycle as _lifecycle
 from .config import MemoryConfig
+
+# Local-only abstention heuristic: computed on the answer text to emit a content-
+# free boolean for telemetry. The text itself never leaves.
+_ABSTAINED = re.compile(r"don'?t know|no (confirmed|record|information|such)|"
+                        r"unverified|can'?t (verify|confirm)|not (sure|aware)", re.I)
 from .graph import subgraph_for_query
 from .ingest import ingest_event
 from .llm.base import Complete, Embed
@@ -50,11 +57,23 @@ class Recall:
 
 class Memory:
     def __init__(self, *, llm: Complete, store: Optional[Store] = None,
-                 embed: Optional[Embed] = None, config: Optional[MemoryConfig] = None):
+                 embed: Optional[Embed] = None, config: Optional[MemoryConfig] = None,
+                 telemetry=None):
         self.config = config or MemoryConfig()
         self.store = store or SqliteStore(self.config.db_path)
         self.llm = llm
         self.embed = embed
+        # Optional content-free telemetry sink (a telemetry.Collector). None = off.
+        # The library never creates one implicitly; entry points wire a consented
+        # collector. See engram.telemetry.
+        self.telemetry = telemetry
+
+    def _record(self, event: str, fields: dict) -> None:
+        if self.telemetry is not None:
+            try:
+                self.telemetry.record(event, fields)
+            except Exception:
+                pass  # telemetry must never break memory
 
     # -- write -------------------------------------------------------------
     def remember(self, user_id: str, event_text: str, *,
@@ -67,9 +86,14 @@ class Memory:
         received email / external documents so their claims are quarantined."""
         from datetime import date as _date
         date = date or _date.today().isoformat()
-        return ingest_event(self.store, self.llm, user_id, event_text=event_text,
-                            author=author, date=date, event_type=event_type,
-                            evidence_ref=evidence_ref, relations=self.config.relations)
+        t0 = time.perf_counter()
+        r = ingest_event(self.store, self.llm, user_id, event_text=event_text,
+                         author=author, date=date, event_type=event_type,
+                         evidence_ref=evidence_ref, relations=self.config.relations)
+        self._record("ingest", {"facts": r["facts"], "quarantined": r["quarantined"],
+                                "episodes": 1 if r["episode"] else 0,
+                                "ms": int((time.perf_counter() - t0) * 1000)})
+        return r
 
     # -- read --------------------------------------------------------------
     def recall(self, user_id: str, query: str) -> Recall:
@@ -99,6 +123,9 @@ class Memory:
         if unverified:
             context += ("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n"
                         + unverified)
+        self._record("recall", {"wiki_used": bool(wiki), "subgraph_edges": len(edges),
+                                "grounded_items": sum(1 for e in edges if not e.quarantined),
+                                "unverified_items": sum(1 for e in edges if e.quarantined)})
         return Recall(context=context, grounded=grounded, unverified=unverified,
                       edges=edges, episodes=episodes)
 
@@ -111,7 +138,11 @@ class Memory:
         answer — the finding-23 fix for both confabulation and the episodic
         injection leak."""
         r = self.recall(user_id, query)
-        return _gate.answer(self.llm, query, r.grounded, r.unverified)
+        t0 = time.perf_counter()
+        ans = _gate.answer(self.llm, query, r.grounded, r.unverified)
+        self._record("answer", {"abstained": bool(_ABSTAINED.search(ans)),
+                                "ms": int((time.perf_counter() - t0) * 1000)})
+        return ans
 
     # -- maintenance -------------------------------------------------------
     def maintain(self, user_id: str, *, consolidate: bool = True) -> dict:
@@ -125,7 +156,29 @@ class Memory:
         if consolidate:
             report["consolidation"] = _lifecycle.consolidate(
                 self.store, self.llm, user_id, self.config)
+        ex, co = report["expiry"], report.get("consolidation", {})
+        self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
+                                  "flagged": ex["flagged_for_confirmation"],
+                                  "consolidated_in": co.get("consolidated", 0),
+                                  "consolidated_out": co.get("into", 0)})
         return report
+
+    # -- telemetry (opt-in, content-free; see engram.telemetry) ------------
+    def flush_telemetry(self) -> bool:
+        """If telemetry is enabled and due, POST the anonymous aggregate. Safe to
+        call often (e.g. after each request or on a timer) — it no-ops until the
+        interval elapses and never raises. Returns True if a send happened."""
+        if self.telemetry is None:
+            return False
+        from . import telemetry as _t
+        return _t.flush_if_due(_t.TelemetryConfig.load(), self.telemetry)
+
+    def telemetry_preview(self) -> Optional[dict]:
+        """Exactly what a flush would send right now, or None if telemetry is off."""
+        if self.telemetry is None:
+            return None
+        from . import telemetry as _t
+        return _t.preview(_t.TelemetryConfig.load(), self.telemetry)
 
     def close(self) -> None:
         self.store.close()

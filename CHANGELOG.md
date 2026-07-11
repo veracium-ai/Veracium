@@ -20,6 +20,10 @@ First working release — the validated layered memory design as a plug-in.
   provider (`engram[anthropic]`).
 - **MCP server** (`engram[mcp]`): `remember` / `recall` / `answer` / `maintain`
   tools for any MCP-compatible agent.
+- **Telemetry** (opt-in, off by default): anonymous, content-free usage
+  statistics with explicit consent (`engram telemetry`), a weekly in-process
+  flush (`mem.flush_telemetry()`), and a whitelist-enforced content-free
+  payload. See `docs/telemetry.md`.
 - **Docs**: `docs/concepts.md`, `docs/api.md`, `docs/mcp.md`; acceptance eval
   (`tests/eval/`) holding the library to the research claims (5/5, 0 injection
   asserts on the live run).

@@ -35,7 +35,9 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
 
 
 def recall_impl(mem: Memory, user_id: str, query: str) -> str:
-    return mem.recall(user_id, query).context
+    out = mem.recall(user_id, query).context
+    mem.flush_telemetry()  # in-process weekly push; no-ops until due, never raises
+    return out
 
 
 def answer_impl(mem: Memory, user_id: str, query: str) -> str:
@@ -50,8 +52,14 @@ def maintain_impl(mem: Memory, user_id: str) -> dict:
 
 def build_memory() -> Memory:
     from .llm.anthropic import AnthropicComplete
+    from . import telemetry
+    # Respect the user's recorded telemetry choice (default off). Consent is set
+    # out-of-band via `engram telemetry` (the MCP stdio transport isn't a TTY, so
+    # we never prompt here); prompt_consent just ensures a disabled config exists.
+    telemetry.prompt_consent()
     return Memory(llm=AnthropicComplete(),
-                  config=MemoryConfig(db_path=os.environ.get("ENGRAM_DB_PATH", "engram.db")))
+                  config=MemoryConfig(db_path=os.environ.get("ENGRAM_DB_PATH", "engram.db")),
+                  telemetry=telemetry.load_collector_if_enabled())
 
 
 def build_server(mem: Memory, *, default_user: str = "default"):

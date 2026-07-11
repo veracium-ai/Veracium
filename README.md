@@ -81,6 +81,7 @@ MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
 - **[docs/api.md](docs/api.md)** — the public API: `Memory`, `MemoryConfig`,
   `EvidenceAuthor`, providing your own LLM callable or store.
 - **[docs/mcp.md](docs/mcp.md)** — running and registering the MCP server.
+- **[docs/telemetry.md](docs/telemetry.md)** — the opt-in, anonymous, content-free usage statistics (off by default).
 - **[ROADMAP.md](ROADMAP.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 
 ## Status
