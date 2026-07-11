@@ -1,7 +1,7 @@
-"""engram — a provenance-aware memory plug-in for agentic systems.
+"""veracium — a provenance-aware memory plug-in for agentic systems.
 
-    from engram import Memory
-    from engram.llm.anthropic import AnthropicComplete
+    from veracium import Memory
+    from veracium.llm.anthropic import AnthropicComplete
 
     mem = Memory(llm=AnthropicComplete())          # or any Complete callable
     mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.")
@@ -66,11 +66,11 @@ class Memory:
         self.embed = embed
         # Optional content-free telemetry sink (a telemetry.Collector). None = off.
         # The library never creates one implicitly; entry points wire a consented
-        # collector. See engram.telemetry.
+        # collector. See veracium.telemetry.
         self.telemetry = telemetry
         # Optional error-reporting sink (a diagnostics.Reporter). None = off. Logs
         # genuine errors locally and, only with consent, offers to send that log.
-        # See engram.diagnostics; sending is a separate, more careful channel than
+        # See veracium.diagnostics; sending is a separate, more careful channel than
         # telemetry because a log can contain memory content.
         self.diagnostics = diagnostics
 
@@ -161,7 +161,7 @@ class Memory:
     def answer(self, user_id: str, query: str) -> str:
         """Recall + the evidence-grounded abstention gate → a direct answer.
 
-        The convenience path for hosts that want engram to answer: it answers only
+        The convenience path for hosts that want veracium to answer: it answers only
         from grounded memory, refuses to assert unverified third-party claims, and
         abstains ("I don't know") rather than confabulate when memory lacks the
         answer — the finding-23 fix for both confabulation and the episodic
@@ -202,18 +202,18 @@ class Memory:
 
     # -- self-check --------------------------------------------------------
     def self_check(self, *, record: bool = True) -> dict:
-        """Run engram's load-bearing guarantees (supersession, injection defense,
+        """Run veracium's load-bearing guarantees (supersession, injection defense,
         abstention) against a fresh throwaway store and return content-free
         pass/fail counters. Uses this Memory's own `llm`; never touches this
         Memory's store. When telemetry is wired and `record` is True, the counters
-        are emitted as a content-free `selfcheck` event (see engram.selfcheck)."""
+        are emitted as a content-free `selfcheck` event (see veracium.selfcheck)."""
         from . import selfcheck as _sc
         result = _sc.run(self.llm, relations=self.config.relations)
         if record:
             self._record("selfcheck", result)  # non-scalar keys are dropped by the collector
         return result
 
-    # -- telemetry (opt-in, content-free; see engram.telemetry) ------------
+    # -- telemetry (opt-in, content-free; see veracium.telemetry) ------------
     def flush_telemetry(self) -> bool:
         """If telemetry is enabled and due, POST the anonymous aggregate. Safe to
         call often (e.g. after each request or on a timer) — it no-ops until the
@@ -230,12 +230,12 @@ class Memory:
         from . import telemetry as _t
         return _t.preview(_t.TelemetryConfig.load(), self.telemetry)
 
-    # -- diagnostics / error reporting (opt-in; see engram.diagnostics) -----
+    # -- diagnostics / error reporting (opt-in; see veracium.diagnostics) -----
     def report_error(self, *, interactive: Optional[bool] = None) -> bool:
         """Send the captured local error log for diagnosis, subject to consent
         (advance permission, or an interactive yes). No-ops if diagnostics is off,
         nothing was captured, or no endpoint is configured; never raises. A host
-        that caught an engram error can call this to offer to report it."""
+        that caught an veracium error can call this to offer to report it."""
         if self.diagnostics is None or not self.diagnostics.has_pending():
             return False
         return self.diagnostics.send(interactive=interactive)

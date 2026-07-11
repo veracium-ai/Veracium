@@ -10,7 +10,7 @@ GROUNDED (verified, assertable) and UNVERIFIED (third-party claims/reports), the
 require the answer to come from grounded memory, abstain when it doesn't, and
 never assert unverified material as fact.
 
-This is a read-time discipline over engram's structural provenance separation —
+This is a read-time discipline over veracium's structural provenance separation —
 no extra classifier call, just the answer call the host would make anyway.
 """
 

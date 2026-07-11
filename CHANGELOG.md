@@ -17,18 +17,18 @@ First working release — the validated layered memory design as a plug-in.
 - **Lifecycle**: volatility-driven expiry (transient lapse, durable stale-flag),
   consolidation with a compaction-loss guard; `maintain()` runs both.
 - **Bring-your-own LLM**: `Complete`/`Embed` callables; Anthropic reference
-  provider (`engram[anthropic]`).
-- **MCP server** (`engram[mcp]`): `remember` / `recall` / `answer` / `maintain`
+  provider (`veracium[anthropic]`).
+- **MCP server** (`veracium[mcp]`): `remember` / `recall` / `answer` / `maintain`
   tools for any MCP-compatible agent.
 - **Telemetry** (opt-in, off by default): anonymous, content-free usage
-  statistics with explicit consent (`engram telemetry`), a weekly in-process
+  statistics with explicit consent (`veracium telemetry`), a weekly in-process
   flush (`mem.flush_telemetry()`), and a whitelist-enforced content-free
   payload. See `docs/telemetry.md`.
-- **Self-check** (`engram selfcheck` / `mem.self_check()`): runs the load-bearing
+- **Self-check** (`veracium selfcheck` / `mem.self_check()`): runs the load-bearing
   guarantees (supersession, injection defense, abstention) against a throwaway
   synthetic memory and self-scores them structurally (no LLM judge); the counters
   feed telemetry's content-free `selfcheck` event.
-- **Diagnostics** (opt-in error reporting; `engram diagnostics`): genuine errors are
+- **Diagnostics** (opt-in error reporting; `veracium diagnostics`): genuine errors are
   logged to a local, user-owned rotating file and re-raised unchanged; the log is
   sent for diagnosis only with consent (advance permission or a per-incident yes),
   redacted, previewable, anonymous, and bounded. No endpoint shipped. See

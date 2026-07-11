@@ -1,6 +1,6 @@
 """Reference `Complete`/`Embed` implementations backed by the Anthropic SDK.
 
-Optional — install with `pip install engram[anthropic]`. This is a convenience so
+Optional — install with `pip install veracium[anthropic]`. This is a convenience so
 hosts without an existing LLM client can get started; the model-per-role defaults
 are cost-tuned (cheap tier for high-volume extraction, stronger tier for the
 correctness-critical gate) and fully overridable. Any host that already has an
@@ -34,7 +34,7 @@ class AnthropicComplete:
             import anthropic
         except ImportError as e:  # pragma: no cover
             raise ImportError(
-                "The Anthropic reference provider needs the SDK: pip install engram[anthropic]. "
+                "The Anthropic reference provider needs the SDK: pip install veracium[anthropic]. "
                 "Or pass your own Complete callable instead."
             ) from e
         self._client = client or anthropic.Anthropic()
@@ -56,7 +56,7 @@ class AnthropicComplete:
 
 class AnthropicEmbed:
     """Optional `Embed` via a Bedrock/Voyage/etc. embedding endpoint of the host's
-    choice. Left minimal on purpose — engram's primary retrieval is graph-based;
+    choice. Left minimal on purpose — veracium's primary retrieval is graph-based;
     embeddings are only a fallback over episodes. Supply your own if you want it."""
 
     def __init__(self, embed_fn):

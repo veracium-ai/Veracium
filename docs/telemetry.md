@@ -1,6 +1,6 @@
 # Telemetry — opt-in, anonymous, content-free
 
-engram can send anonymous usage statistics to help improve the library. It is
+veracium can send anonymous usage statistics to help improve the library. It is
 **off by default** and sends **nothing** without an explicit opt-in.
 
 ## What it collects — and what it never collects
@@ -21,8 +21,8 @@ period — nothing else.
 **Never collected:** facts, preferences, names, entity ids, message text, queries,
 answers, or any memory content. This is enforced in code, not by policy — the
 collector accepts only a fixed whitelist of numeric/boolean fields and **drops
-every other key and every string value** (`engram/telemetry.py`, `EVENT_FIELDS`).
-`engram telemetry preview` shows exactly what would be sent.
+every other key and every string value** (`veracium/telemetry.py`, `EVENT_FIELDS`).
+`veracium telemetry preview` shows exactly what would be sent.
 
 Why these are useful without content: they surface the health signals that matter
 — is the injection defense firing (quarantine rate)? is recall degrading
@@ -32,7 +32,7 @@ scores (below) cover correctness on synthetic data instead.
 
 ## Self-check (the `selfcheck` scores)
 
-`engram selfcheck` runs engram's load-bearing guarantees against a throwaway,
+`veracium selfcheck` runs veracium's load-bearing guarantees against a throwaway,
 synthetic memory and scores them — it never touches real memory:
 
 - **supersession** — a superseded functional fact yields the new value as current
@@ -46,9 +46,9 @@ It self-scores structurally (no LLM "judge"), so the numbers don't depend on a
 grader's mood.
 
 ```bash
-engram selfcheck            # scorecard; exit 0 = pass
-engram selfcheck --json     # machine-readable
-engram selfcheck --push     # also record + flush the (content-free) scores, if opted in
+veracium selfcheck            # scorecard; exit 0 = pass
+veracium selfcheck --json     # machine-readable
+veracium selfcheck --push     # also record + flush the (content-free) scores, if opted in
 ```
 
 Embedded hosts run it directly and fold the result into their weekly push:
@@ -65,19 +65,19 @@ the collector.
 
 - **Default off.** No install id is even created until you choose.
 - **Anonymous.** A random install id, no user or host identity.
-- **Revocable.** `engram telemetry disable` any time.
-- **No endpoint shipped.** engram bundles no collection URL, so even "enabled"
+- **Revocable.** `veracium telemetry disable` any time.
+- **No endpoint shipped.** veracium bundles no collection URL, so even "enabled"
   sends nothing until an endpoint is configured — you decide where (if anywhere)
   data goes.
 
 ### Standalone / MCP users
 
 ```bash
-engram telemetry prompt          # the consent question
-engram telemetry enable --endpoint https://your-collector.example/ingest
-engram telemetry status
-engram telemetry preview         # exactly what would be sent
-engram telemetry disable
+veracium telemetry prompt          # the consent question
+veracium telemetry enable --endpoint https://your-collector.example/ingest
+veracium telemetry status
+veracium telemetry preview         # exactly what would be sent
+veracium telemetry disable
 ```
 
 The MCP server respects this recorded choice. (Its stdio transport isn't a
@@ -85,12 +85,12 @@ terminal, so it never prompts — set your choice with the CLI.)
 
 ### Embedded in a host application (e.g. a workflow engine)
 
-**The host is responsible for obtaining its users' consent.** engram ships off and
+**The host is responsible for obtaining its users' consent.** veracium ships off and
 gives you the primitives:
 
 ```python
-from engram import Memory
-from engram import telemetry
+from veracium import Memory
+from veracium import telemetry
 
 # After you have asked your user and they agreed:
 telemetry.set_enabled(True, endpoint="https://your-collector.example/ingest")
@@ -115,6 +115,6 @@ actually sends once `interval_days` (default 7) have passed since the last send.
 
 ## Config file
 
-Stored at `$XDG_CONFIG_HOME/engram/telemetry.json` (default `~/.config/engram/`):
+Stored at `$XDG_CONFIG_HOME/veracium/telemetry.json` (default `~/.config/veracium/`):
 `{enabled, install_id, endpoint, interval_days, last_sent, schema_version}`.
 Delete it to reset to the unasked state.

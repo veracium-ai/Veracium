@@ -1,10 +1,10 @@
 """Bring-your-own LLM interface.
 
-Engram never owns credentials or model choice. The host supplies a `Complete`
+Veracium never owns credentials or model choice. The host supplies a `Complete`
 callable; the plug-in calls it for the three internal roles below. An embedding
 function is optional (only used for episode semantic fallback retrieval).
 
-A reference Anthropic implementation ships in `engram.llm.anthropic`, but any
+A reference Anthropic implementation ships in `veracium.llm.anthropic`, but any
 callable with the right signature works — including the host agent's existing
 client.
 """
@@ -23,7 +23,7 @@ Role = str  # "distill" | "compile" | "gate"
 @runtime_checkable
 class Complete(Protocol):
     """A single completion call. Implementations SHOULD honor `json_schema` when
-    given (returning parseable JSON), but engram's callers also tolerate fenced/
+    given (returning parseable JSON), but veracium's callers also tolerate fenced/
     noisy JSON, so a plain string-in/string-out callable is a valid implementation."""
 
     def __call__(self, prompt: str, *, system: Optional[str] = None,

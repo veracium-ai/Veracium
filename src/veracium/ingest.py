@@ -1,7 +1,7 @@
 """The write path: one interaction event → typed edges + a dated episode.
 
 An `Event` is whatever the host observed: a chat turn/session, a sent or received
-email, a tool/document result. The host tells engram who authored the content
+email, a tool/document result. The host tells veracium who authored the content
 (`author`) — the single most important input for injection resistance, since
 third-party-authored content is the attack surface.
 """

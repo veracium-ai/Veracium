@@ -1,8 +1,8 @@
-"""Example BYO provider: wrap the `claude` CLI as an engram `Complete` callable.
+"""Example BYO provider: wrap the `claude` CLI as an veracium `Complete` callable.
 
 Shows the bring-your-own-model contract with zero SDK dependency — any callable
 with this shape works, including your agent's existing client. This one ignores
-`json_schema` (the CLI has no structured-output flag); engram's tolerant JSON
+`json_schema` (the CLI has no structured-output flag); veracium's tolerant JSON
 parser handles that, which is exactly why the interface allows it.
 """
 

@@ -16,7 +16,7 @@ def _default_lifetimes() -> dict[Volatility, Optional[int]]:
 
 @dataclass
 class MemoryConfig:
-    db_path: str = "engram.db"
+    db_path: str = "veracium.db"
     relations: dict[str, Relation] = field(default_factory=lambda: dict(DEFAULT_RELATIONS))
     # recall assembly (these caps bound read cost as history grows — finding 22)
     max_subgraph_edges: int = 40

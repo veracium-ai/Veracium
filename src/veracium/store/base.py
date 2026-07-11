@@ -1,7 +1,7 @@
 """Storage interface.
 
-Engram's store of record is edges + episodes, plus a cached compiled view. The
-default is embedded SQLite (`engram.store.sqlite`); this ABC lets a host swap in
+Veracium's store of record is edges + episodes, plus a cached compiled view. The
+default is embedded SQLite (`veracium.store.sqlite`); this ABC lets a host swap in
 Neo4j / Postgres later without touching the rest of the library.
 
 All methods are per-`user_id`: memory is tenant-scoped by construction, which is

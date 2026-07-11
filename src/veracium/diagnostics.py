@@ -1,7 +1,7 @@
-"""Opt-in error reporting — capture genuine engram errors to a local log file and,
+"""Opt-in error reporting — capture genuine veracium errors to a local log file and,
 only with consent, send that log to the maintainers for diagnosis.
 
-Unlike telemetry (`engram.telemetry`), a log file is NOT content-free: a traceback
+Unlike telemetry (`veracium.telemetry`), a log file is NOT content-free: a traceback
 or an exception message can incidentally include memory content. So error reporting
 is a SEPARATE, more careful channel:
 
@@ -12,11 +12,11 @@ is a SEPARATE, more careful channel:
   3. TRANSPARENT + REDACTED. `preview()` shows exactly what would be sent; a
      redaction pass (on by default) scrubs common content patterns from the tail.
   4. ANONYMOUS + BOUNDED. A random install id (shared with telemetry if present),
-     minimal environment (engram / python / os), and only the log TAIL up to a cap.
+     minimal environment (veracium / python / os), and only the log TAIL up to a cap.
   5. NEVER MAKES THINGS WORSE. The reporter never raises; a genuine error is logged
      and RE-RAISED to the host unchanged — reporting is strictly additive.
 
-engram ships NO endpoint, so even "enabled" sends nothing until one is configured.
+veracium ships NO endpoint, so even "enabled" sends nothing until one is configured.
 """
 
 from __future__ import annotations
@@ -37,23 +37,23 @@ from pathlib import Path
 from typing import Optional
 
 SCHEMA_VERSION = 1
-_LOGGER_NAME = "engram.diagnostics"
+_LOGGER_NAME = "veracium.diagnostics"
 
 
 def _config_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(base) / "engram"
+    return Path(base) / "veracium"
 
 
 def _state_dir() -> Path:
     base = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
-    return Path(base) / "engram"
+    return Path(base) / "veracium"
 
 
-def _engram_version() -> str:
+def _veracium_version() -> str:
     try:
         from importlib.metadata import version
-        return version("engram")
+        return version("veracium")
     except Exception:
         return "0+unknown"
 
@@ -77,7 +77,7 @@ class DiagnosticsConfig:
     report_enabled: bool = False        # advance permission to SEND a log on error
     prompt_on_error: bool = True        # if not pre-authorized: ask (interactive only)
     redact: bool = True                 # scrub common content patterns before sending
-    endpoint: Optional[str] = None      # engram ships none; no endpoint → never sends
+    endpoint: Optional[str] = None      # veracium ships none; no endpoint → never sends
     log_path: Optional[str] = None
     install_id: str = ""
     max_report_bytes: int = 64 * 1024   # only ever send the log tail, capped
@@ -100,7 +100,7 @@ class DiagnosticsConfig:
         return cls()
 
     def resolved_log_path(self) -> Path:
-        return Path(self.log_path) if self.log_path else _state_dir() / "engram.log"
+        return Path(self.log_path) if self.log_path else _state_dir() / "veracium.log"
 
     def save(self) -> None:
         p = self.path()
@@ -167,7 +167,7 @@ class Reporter:
 
     def record_error(self, where: str, exc: BaseException,
                      context: Optional[dict] = None) -> None:
-        """Log a genuine engram error locally (with traceback) and, if the user gave
+        """Log a genuine veracium error locally (with traceback) and, if the user gave
         advance permission and set an endpoint, attempt to send it. Never raises."""
         try:
             logger = self._get_logger()
@@ -209,7 +209,7 @@ class Reporter:
             "schema_version": SCHEMA_VERSION,
             "install_id": self.config.install_id,
             "reason": reason,
-            "engram_version": _engram_version(),
+            "veracium_version": _veracium_version(),
             "python": platform.python_version(),
             "os": platform.system(),
             "redacted": self.config.redact,
@@ -268,7 +268,7 @@ class Reporter:
 def _post(endpoint: str, payload: dict) -> None:
     req = urllib.request.Request(
         endpoint, data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json", "User-Agent": "engram-diagnostics"},
+        headers={"Content-Type": "application/json", "User-Agent": "veracium-diagnostics"},
         method="POST")
     urllib.request.urlopen(req, timeout=15).close()
 
@@ -276,12 +276,12 @@ def _post(endpoint: str, payload: dict) -> None:
 # --- consent -----------------------------------------------------------------
 
 CONSENT_TEXT = """\
-engram can send its LOCAL error log to the maintainers to help diagnose a genuine
+veracium can send its LOCAL error log to the maintainers to help diagnose a genuine
 bug. Unlike anonymous usage statistics, a log CAN contain fragments of your memory
-data (e.g. inside an error message). engram redacts obvious patterns (emails,
+data (e.g. inside an error message). veracium redacts obvious patterns (emails,
 number runs) and shows you exactly what would be sent first. It is anonymous (a
 random install id) and off by default; enable per-incident here, or grant advance
-permission with `engram diagnostics enable`."""
+permission with `veracium diagnostics enable`."""
 
 
 def prompt_consent(*, endpoint: Optional[str] = None,
@@ -296,7 +296,7 @@ def prompt_consent(*, endpoint: Optional[str] = None,
     if is_tty:
         try:
             print(CONSENT_TEXT)
-            ans = input("\nAutomatically send error logs when engram hits a genuine "
+            ans = input("\nAutomatically send error logs when veracium hits a genuine "
                         "bug? [y/N] ").strip().lower()
             enabled = ans in ("y", "yes")
         except (EOFError, KeyboardInterrupt):
@@ -323,7 +323,7 @@ def set_report_enabled(enabled: bool, *, endpoint: Optional[str] = None) -> Diag
 
 def load_reporter() -> Optional[Reporter]:
     """A Reporter iff local logging is enabled (the default) — used by the CLI/MCP
-    entry points to give engram a log to capture errors into. The library core never
+    entry points to give veracium a log to capture errors into. The library core never
     creates one implicitly; embedding hosts pass their own (or None)."""
     cfg = DiagnosticsConfig.load()
     return Reporter(cfg) if cfg.log_enabled else None

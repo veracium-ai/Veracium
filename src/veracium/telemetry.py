@@ -10,11 +10,11 @@ Guarantees, in order of importance:
   3. ANONYMOUS. A random install id (no user ids, no hostnames) identifies a
      deployment across weeks; that's all.
   4. REVOCABLE + TRANSPARENT. `preview()` returns exactly what would be sent;
-     opt-out is one call. The endpoint is explicit — engram ships none, so even
+     opt-out is one call. The endpoint is explicit — veracium ships none, so even
      "enabled" sends nothing until an endpoint is configured.
 
-Where engram is embedded in a host application, the HOST obtains end-user consent
-and configures this; engram defaults to off and never phones home on its own.
+Where veracium is embedded in a host application, the HOST obtains end-user consent
+and configures this; veracium defaults to off and never phones home on its own.
 """
 
 from __future__ import annotations
@@ -47,14 +47,14 @@ SCHEMA_VERSION = 1
 
 def _config_dir() -> Path:
     base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-    return Path(base) / "engram"
+    return Path(base) / "veracium"
 
 
 @dataclass
 class TelemetryConfig:
     enabled: bool = False
     install_id: str = ""
-    endpoint: Optional[str] = None   # engram ships none; no endpoint → never sends
+    endpoint: Optional[str] = None   # veracium ships none; no endpoint → never sends
     interval_days: int = 7
     last_sent: Optional[float] = None  # epoch seconds
     schema_version: int = SCHEMA_VERSION
@@ -117,7 +117,7 @@ class Collector:
 
 
 def preview(config: TelemetryConfig, collector: Collector) -> dict:
-    """Exactly what a flush would POST — for `engram telemetry preview`."""
+    """Exactly what a flush would POST — for `veracium telemetry preview`."""
     return {"schema_version": SCHEMA_VERSION, "install_id": config.install_id,
             "period_start": config.last_sent, "period_end": time.time(),
             **collector.snapshot()}
@@ -147,7 +147,7 @@ def flush_if_due(config: TelemetryConfig, collector: Collector, *,
 def _post(endpoint: str, payload: dict) -> None:
     req = urllib.request.Request(
         endpoint, data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json", "User-Agent": "engram-telemetry"},
+        headers={"Content-Type": "application/json", "User-Agent": "veracium-telemetry"},
         method="POST")
     urllib.request.urlopen(req, timeout=10).close()
 
@@ -155,13 +155,13 @@ def _post(endpoint: str, payload: dict) -> None:
 # --- consent ---------------------------------------------------------------
 
 CONSENT_TEXT = """\
-engram can send anonymous, content-free usage statistics once a week to help
+veracium can send anonymous, content-free usage statistics once a week to help
 improve the library. It would share ONLY aggregate counters — how often facts are
 extracted, claims quarantined, and answers abstained; token/latency totals; and
 self-check scores. It NEVER sends your memory: no facts, names, messages, queries,
 or answers. It is anonymous (a random install id) and you can turn it off any time
-with `engram telemetry disable`. Preview exactly what would be sent with
-`engram telemetry preview`.
+with `veracium telemetry disable`. Preview exactly what would be sent with
+`veracium telemetry preview`.
 
 Enable anonymous usage statistics?"""
 

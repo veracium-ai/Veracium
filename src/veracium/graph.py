@@ -2,7 +2,7 @@
 
 Pure logic over the store — no LLM, no I/O beyond the store handle — so this is
 the offline-testable heart of memory correctness (supersession-with-history is
-the category the research found the industry worst at, and where engram's design
+the category the research found the industry worst at, and where veracium's design
 scored best).
 """
 
@@ -58,7 +58,7 @@ def _tokens(text: str) -> set[str]:
 
 def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40) -> list[Edge]:
     """Entity-matched neighborhood: every edge off the user node, plus edges whose
-    subject/object tokens appear in the query. This is engram's primary retrieval
+    subject/object tokens appear in the query. This is veracium's primary retrieval
     (the research found it beat similarity search on every question type). Includes
     superseded edges (rendered as history) and quarantined edges (rendered flagged)
     so the caller can show provenance."""

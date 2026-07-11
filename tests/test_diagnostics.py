@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from engram import Memory, MemoryConfig
-from engram import diagnostics as D
+from veracium import Memory, MemoryConfig
+from veracium import diagnostics as D
 
 
 @pytest.fixture(autouse=True)
@@ -65,7 +65,7 @@ def test_advance_permission_sends_redacted_payload():
     assert ok
     p = captured["p"]
     assert p["install_id"] == cfg.install_id and p["schema_version"] == D.SCHEMA_VERSION
-    assert p["engram_version"] and p["python"] and p["os"]
+    assert p["veracium_version"] and p["python"] and p["os"]
     assert "bob@corp.com" not in json.dumps(p) and "<redacted-email>" in p["log_tail"]
 
 

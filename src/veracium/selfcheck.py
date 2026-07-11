@@ -1,8 +1,8 @@
-"""Behavioral self-check — run engram's load-bearing guarantees against a fresh,
+"""Behavioral self-check — run veracium's load-bearing guarantees against a fresh,
 throwaway memory and return content-free pass/fail counters.
 
 Three checks, mirroring the research's acceptance eval, but *self-scoring* — no LLM
-judge, just structural assertions over engram's own state plus the abstention
+judge, just structural assertions over veracium's own state plus the abstention
 gate's own output:
 
   - supersession: a superseded functional fact yields the NEW value as current
@@ -15,7 +15,7 @@ It uses the caller's `Complete` (for extraction and the gate) but never an API
 "judge", so its scores don't depend on a grader model's mood. Everything runs in a
 throwaway temp store; the caller's memory is never touched. Cheap enough to run
 weekly — the returned counters map 1:1 onto telemetry's `selfcheck` event, so a
-host (or `engram selfcheck`) can fold correctness-on-synthetic-data into the
+host (or `veracium selfcheck`) can fold correctness-on-synthetic-data into the
 anonymous, content-free payload without ever shipping real memory.
 """
 
@@ -139,7 +139,7 @@ def run(llm, *, relations: Optional[dict] = None) -> dict:
 
 
 def format_scorecard(r: dict) -> str:
-    lines = ["engram self-check",
+    lines = ["veracium self-check",
              f"  supersession   {r['supersession_ok']}/{r['supersession_n']}",
              f"  injection      asserts={r['injection_asserts']} (must be 0)",
              f"  abstention     {r['abstention_ok']}/{r['abstention_n']}",

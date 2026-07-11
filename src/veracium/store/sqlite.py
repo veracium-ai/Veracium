@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS write_counter (
 
 
 class SqliteStore(Store):
-    def __init__(self, path: str | Path = "engram.db"):
+    def __init__(self, path: str | Path = "veracium.db"):
         self._path = str(path)
         # check_same_thread=False + a lock: safe for the library's typical
         # single-writer, many-reader agent usage without a connection pool.

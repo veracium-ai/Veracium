@@ -1,12 +1,12 @@
-"""MCP server — exposes engram to any MCP-compatible agent (Claude Desktop/Code,
+"""MCP server — exposes veracium to any MCP-compatible agent (Claude Desktop/Code,
 others) with no Python on the host side.
 
-    pip install engram[mcp,anthropic]
-    ANTHROPIC_API_KEY=... ENGRAM_DB_PATH=~/.engram.db engram-mcp
+    pip install veracium[mcp,anthropic]
+    ANTHROPIC_API_KEY=... VERACIUM_DB_PATH=~/.veracium.db veracium-mcp
 
-Config via env: ENGRAM_DB_PATH (default engram.db), ENGRAM_USER (default user id
+Config via env: VERACIUM_DB_PATH (default veracium.db), VERACIUM_USER (default user id
 when a tool call omits one). The server owns its own model access (Anthropic
-reference provider by default); a host that would rather engram use its own model
+reference provider by default); a host that would rather veracium use its own model
 can wrap this module's tool implementations around a custom `Complete` callable.
 
 The tool *implementations* below are plain functions taking a `Memory`, so they're
@@ -54,25 +54,25 @@ def build_memory() -> Memory:
     from .llm.anthropic import AnthropicComplete
     from . import telemetry, diagnostics
     # Respect the user's recorded telemetry choice (default off). Consent is set
-    # out-of-band via `engram telemetry` (the MCP stdio transport isn't a TTY, so
+    # out-of-band via `veracium telemetry` (the MCP stdio transport isn't a TTY, so
     # we never prompt here); prompt_consent just ensures a disabled config exists.
     telemetry.prompt_consent()
     diagnostics.prompt_consent()  # advance-permission choice for auto-sending logs
     # A Reporter logs genuine errors to a local, user-owned file. It only SENDS a
-    # log if the operator granted advance permission via `engram diagnostics enable`
+    # log if the operator granted advance permission via `veracium diagnostics enable`
     # (stdio isn't a TTY, so it never prompts); otherwise the log stays local and can
-    # be sent later with `engram diagnostics report`.
+    # be sent later with `veracium diagnostics report`.
     return Memory(llm=AnthropicComplete(),
-                  config=MemoryConfig(db_path=os.environ.get("ENGRAM_DB_PATH", "engram.db")),
+                  config=MemoryConfig(db_path=os.environ.get("VERACIUM_DB_PATH", "veracium.db")),
                   telemetry=telemetry.load_collector_if_enabled(),
                   diagnostics=diagnostics.load_reporter())
 
 
 def build_server(mem: Memory, *, default_user: str = "default"):
-    """Construct the FastMCP server with engram's tools registered. Separated from
+    """Construct the FastMCP server with veracium's tools registered. Separated from
     main() so the wiring is testable without starting the stdio loop."""
     from mcp.server.fastmcp import FastMCP
-    server = FastMCP("engram")
+    server = FastMCP("veracium")
 
     @server.tool()
     def remember(text: str, user_id: str = default_user, author: str = "user",
@@ -114,8 +114,8 @@ def main() -> None:
     try:
         import mcp.server.fastmcp  # noqa: F401
     except ImportError as e:  # pragma: no cover
-        raise SystemExit("The MCP server needs the SDK: pip install engram[mcp]") from e
-    build_server(build_memory(), default_user=os.environ.get("ENGRAM_USER", "default")).run()
+        raise SystemExit("The MCP server needs the SDK: pip install veracium[mcp]") from e
+    build_server(build_memory(), default_user=os.environ.get("VERACIUM_USER", "default")).run()
 
 
 if __name__ == "__main__":

@@ -6,13 +6,13 @@ import tempfile
 
 import pytest
 
-from engram import Memory, MemoryConfig, EvidenceAuthor
-from engram import telemetry as T
+from veracium import Memory, MemoryConfig, EvidenceAuthor
+from veracium import telemetry as T
 
 
 @pytest.fixture(autouse=True)
 def _isolated_config(tmp_path, monkeypatch):
-    # never touch the real ~/.config/engram
+    # never touch the real ~/.config/veracium
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
 
 

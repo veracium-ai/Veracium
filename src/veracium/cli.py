@@ -1,23 +1,23 @@
-"""`engram` command line — manage opt-in anonymous telemetry and run the
+"""`veracium` command line — manage opt-in anonymous telemetry and run the
 behavioral self-check.
 
-    engram telemetry status        # show current setting
-    engram telemetry prompt        # run the consent question (first-run)
-    engram telemetry enable [--endpoint URL]
-    engram telemetry disable
-    engram telemetry preview       # show the (content-free) payload schema
+    veracium telemetry status        # show current setting
+    veracium telemetry prompt        # run the consent question (first-run)
+    veracium telemetry enable [--endpoint URL]
+    veracium telemetry disable
+    veracium telemetry preview       # show the (content-free) payload schema
 
-    engram selfcheck               # run the load-bearing guarantees, print a scorecard
-    engram selfcheck --json        # machine-readable result
-    engram selfcheck --push        # also record + flush the content-free scores (if opted in)
+    veracium selfcheck               # run the load-bearing guarantees, print a scorecard
+    veracium selfcheck --json        # machine-readable result
+    veracium selfcheck --push        # also record + flush the content-free scores (if opted in)
 
-    engram diagnostics status      # show error-reporting setting + log path
-    engram diagnostics prompt      # advance-permission consent for auto-send
-    engram diagnostics enable [--endpoint URL]   # grant advance permission to send logs
-    engram diagnostics disable
-    engram diagnostics preview     # show exactly what a report would send (redacted)
-    engram diagnostics report      # send the current log now (asks first)
-    engram diagnostics path        # print the local log file location
+    veracium diagnostics status      # show error-reporting setting + log path
+    veracium diagnostics prompt      # advance-permission consent for auto-send
+    veracium diagnostics enable [--endpoint URL]   # grant advance permission to send logs
+    veracium diagnostics disable
+    veracium diagnostics preview     # show exactly what a report would send (redacted)
+    veracium diagnostics report      # send the current log now (asks first)
+    veracium diagnostics path        # print the local log file location
 """
 
 from __future__ import annotations
@@ -35,13 +35,13 @@ def _status(cfg) -> None:
 
 
 def _build_llm():
-    """The reference provider for CLI-driven checks. A host embedding engram with
+    """The reference provider for CLI-driven checks. A host embedding veracium with
     its own model runs `Memory.self_check()` directly instead."""
     try:
         from .llm.anthropic import AnthropicComplete
     except Exception as e:
         raise SystemExit(
-            "engram selfcheck needs a model provider: pip install engram[anthropic] "
+            "veracium selfcheck needs a model provider: pip install veracium[anthropic] "
             f"and set ANTHROPIC_API_KEY. ({e})")
     return AnthropicComplete()
 
@@ -51,7 +51,7 @@ def _selfcheck(args) -> int:
     result = selfcheck.run(_build_llm())
     if args.push:
         # record the content-free scores and push them (own ephemeral collector, so
-        # a weekly `engram selfcheck --push` cron folds self-check into telemetry).
+        # a weekly `veracium selfcheck --push` cron folds self-check into telemetry).
         cfg = telemetry.TelemetryConfig.load()
         if cfg.enabled:
             coll = telemetry.Collector()
@@ -90,7 +90,7 @@ def _diagnostics(args, parser) -> int:
               f"{'on' if cfg.redact else 'OFF'}. Nothing is sent by `preview`.)")
     elif args.dcmd == "report":
         if not cfg.endpoint:
-            print("No endpoint configured — set one with `engram diagnostics enable --endpoint URL`.")
+            print("No endpoint configured — set one with `veracium diagnostics enable --endpoint URL`.")
             return 1
         sent = diagnostics.Reporter(cfg).send(interactive=True, reason="manual")
         print("Sent." if sent else "Not sent.")
@@ -103,7 +103,7 @@ def _diagnostics(args, parser) -> int:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="engram")
+    p = argparse.ArgumentParser(prog="veracium")
     sub = p.add_subparsers(dest="cmd")
     t = sub.add_parser("telemetry", help="manage anonymous, content-free usage statistics (opt-in, default off)")
     ts = t.add_subparsers(dest="tcmd")
@@ -114,7 +114,7 @@ def main(argv=None) -> int:
     ts.add_parser("disable", help="opt out")
     ts.add_parser("preview", help="show exactly what would be sent")
 
-    sc = sub.add_parser("selfcheck", help="run engram's load-bearing guarantees and score them")
+    sc = sub.add_parser("selfcheck", help="run veracium's load-bearing guarantees and score them")
     sc.add_argument("--json", action="store_true", help="print the machine-readable result")
     sc.add_argument("--push", action="store_true",
                     help="record the content-free scores and flush if telemetry is enabled and due")

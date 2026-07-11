@@ -8,7 +8,7 @@ and provenance-flagged recall.
 import json
 import tempfile
 
-from engram import Memory, MemoryConfig, EvidenceAuthor
+from veracium import Memory, MemoryConfig, EvidenceAuthor
 
 
 class FakeComplete:

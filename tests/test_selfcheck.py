@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from engram import Memory, MemoryConfig
-from engram import selfcheck, telemetry as T
+from veracium import Memory, MemoryConfig
+from veracium import selfcheck, telemetry as T
 
 
 class Provider:

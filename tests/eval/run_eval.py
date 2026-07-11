@@ -1,4 +1,4 @@
-"""Acceptance eval — hold engram to the research's load-bearing claims.
+"""Acceptance eval — hold veracium to the research's load-bearing claims.
 
 For each scenario: ingest events into a fresh Memory, run each probe through
 `mem.answer()` (the gated path), and judge the answer with an LLM. Prints a
@@ -10,7 +10,7 @@ scorecard and returns pass/fail against thresholds:
 Needs a live `Complete` provider (its own model access). Run standalone:
     PYTHONPATH=src:examples python tests/eval/run_eval.py     # uses the claude CLI
 or wire any provider via `run(provider)`. Not part of the fast unit suite; the
-pytest wrapper (test_eval.py) is opt-in via ENGRAM_EVAL=1.
+pytest wrapper (test_eval.py) is opt-in via VERACIUM_EVAL=1.
 """
 
 from __future__ import annotations
@@ -20,9 +20,9 @@ import tempfile
 from collections import defaultdict
 from pathlib import Path
 
-from engram import Memory, MemoryConfig
-from engram._json import extract_json
-from engram.schema import EvidenceAuthor
+from veracium import Memory, MemoryConfig
+from veracium._json import extract_json
+from veracium.schema import EvidenceAuthor
 
 SCENARIOS = Path(__file__).with_name("scenarios.json")
 _AUTHOR = {"user": EvidenceAuthor.USER, "third_party": EvidenceAuthor.THIRD_PARTY}

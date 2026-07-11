@@ -6,8 +6,8 @@ author routing (third_party → quarantine)."""
 import json
 import tempfile
 
-from engram import Memory, MemoryConfig
-from engram.mcp_server import remember_impl, recall_impl, answer_impl, maintain_impl
+from veracium import Memory, MemoryConfig
+from veracium.mcp_server import remember_impl, recall_impl, answer_impl, maintain_impl
 
 
 class Fake:
@@ -52,11 +52,11 @@ def test_mcp_tools_route_correctly():
 
 
 def test_mcp_server_wiring():
-    """The FastMCP server registers engram's tools (skipped if mcp SDK absent)."""
+    """The FastMCP server registers veracium's tools (skipped if mcp SDK absent)."""
     import asyncio
     import pytest
     pytest.importorskip("mcp")
-    from engram.mcp_server import build_server
+    from veracium.mcp_server import build_server
     with tempfile.TemporaryDirectory() as d:
         mem = Memory(llm=Fake(["{}"]),
                      config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))

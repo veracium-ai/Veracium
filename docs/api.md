@@ -1,7 +1,7 @@
 # API reference
 
 ```python
-from engram import Memory, MemoryConfig, EvidenceAuthor
+from veracium import Memory, MemoryConfig, EvidenceAuthor
 ```
 
 ## `Memory`
@@ -58,7 +58,7 @@ prompt = f"{r.context}\n\nUser: suggest a lunch spot"   # drop into your own cal
 
 Recall + the abstention gate → a direct answer that only uses grounded memory,
 never asserts unverified claims, and abstains rather than guessing. Use this when
-you want engram to answer; use `recall()` when you want to answer yourself.
+you want veracium to answer; use `recall()` when you want to answer yourself.
 
 ### `maintain(user_id, *, consolidate=True) -> dict`
 
@@ -77,7 +77,7 @@ Close the underlying store.
 
 | field | default | meaning |
 |---|---|---|
-| `db_path` | `"engram.db"` | SQLite file path (default store). |
+| `db_path` | `"veracium.db"` | SQLite file path (default store). |
 | `relations` | built-in registry | edge vocabulary; add your own `Relation(name=..., functional=...)`. |
 | `max_subgraph_edges` | `40` | cap on per-query subgraph size (bounds read cost). |
 | `max_recent_episodes` | `12` | recent episodes included in recall. |
@@ -101,12 +101,12 @@ def complete(prompt: str, *, system: str | None = None,
   (curation), or `"gate"` (the correctness-critical answer). Route each to an
   appropriate model if you like.
 - Honor `json_schema` if you can (return valid JSON); if you can't, ignore it —
-  engram parses tolerantly.
+  veracium parses tolerantly.
 
-Reference provider (needs `pip install engram[anthropic]`):
+Reference provider (needs `pip install veracium[anthropic]`):
 
 ```python
-from engram.llm.anthropic import AnthropicComplete
+from veracium.llm.anthropic import AnthropicComplete
 mem = Memory(llm=AnthropicComplete())                       # models per role, overridable
 mem = Memory(llm=AnthropicComplete(models={"gate": "claude-opus-4-8"}))
 ```
@@ -117,5 +117,5 @@ Wrapping your agent's existing client is often simplest — see
 ## Providing a store
 
 The default `SqliteStore` is embedded and zero-dependency. To back memory with
-Neo4j/Postgres, implement `engram.store.base.Store` (all methods are per-`user_id`)
+Neo4j/Postgres, implement `veracium.store.base.Store` (all methods are per-`user_id`)
 and pass it as `store=`.

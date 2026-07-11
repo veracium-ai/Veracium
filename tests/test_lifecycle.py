@@ -4,8 +4,8 @@ import json
 import tempfile
 from datetime import datetime, timezone
 
-from engram import Memory, MemoryConfig, EvidenceAuthor
-from engram import lifecycle
+from veracium import Memory, MemoryConfig, EvidenceAuthor
+from veracium import lifecycle
 
 
 class Fake:

@@ -11,8 +11,8 @@ model behavior. The two finding-23 invariants under test:
 import json
 import tempfile
 
-from engram import Memory, MemoryConfig, EvidenceAuthor
-from engram.gate import partition
+from veracium import Memory, MemoryConfig, EvidenceAuthor
+from veracium.gate import partition
 
 
 class RoleFake:

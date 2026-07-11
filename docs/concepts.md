@@ -1,13 +1,13 @@
-# Concepts — how to think about engram
+# Concepts — how to think about veracium
 
-Engram gives an agent durable, per-user memory. This page is the mental model;
+Veracium gives an agent durable, per-user memory. This page is the mental model;
 `api.md` is the reference and `mcp.md` is the MCP setup.
 
 ## The three things memory is for
 
-Engram distinguishes three recall targets, because each fails differently:
+Veracium distinguishes three recall targets, because each fails differently:
 
-| target | example | how engram stores it |
+| target | example | how veracium stores it |
 |---|---|---|
 | **User model** | "vegetarian", "employer is Acme" | typed graph **edges** |
 | **Interaction history** | "on Tuesday the export failed" | dated **episodes** |
@@ -27,7 +27,7 @@ A curated **wiki** (a compact Markdown view) is *compiled* from edges + episodes
 and cached — but it is never the source of truth. If you delete the wiki cache,
 nothing is lost; it recompiles.
 
-Why this shape: in the research behind engram, a typed graph won on provenance and
+Why this shape: in the research behind veracium, a typed graph won on provenance and
 entity recall, dated episodes supplied the narrative it lacked, and an LLM curator
 compiling the working view beat every flat store on both short and long histories.
 
@@ -38,11 +38,11 @@ Every edge and episode records **who authored the evidence** it came from:
 - `user` — the user's own messages and *sent* mail. Trusted.
 - `third_party` — *received* mail, external documents, tool output about the user.
   Untrusted: anyone in the world can put text here.
-- `system` — engram's own derivations (e.g. consolidation).
+- `system` — veracium's own derivations (e.g. consolidation).
 
-This one field is the most important input you give engram. A received email that
+This one field is the most important input you give veracium. A received email that
 says "per our agreement you owe $2,400" is a **claim**, not a fact — and because
-you marked it `third_party`, engram stores it as a `third_party_claim` edge with
+you marked it `third_party`, veracium stores it as a `third_party_claim` edge with
 the *claimant* as subject, never as a fact about the user. Recall renders it under
 an explicit never-assert flag, and the answer gate refuses to state it as true.
 
@@ -78,7 +78,7 @@ Each fact has a **volatility** class — how long it's expected to hold:
 ## A note on dates
 
 Relative dates in ingested text ("due Friday", "next week") are resolved to
-absolute dates *during extraction*. engram injects a weekday→date calendar
+absolute dates *during extraction*. veracium injects a weekday→date calendar
 anchored to the event's `date` so the model **copies** dates rather than computing
 them — far more reliable than freehand, and the prompt tells it to keep the
 original wording when a date is neither stated nor on the calendar. But it is
@@ -98,11 +98,11 @@ partitions memory into **grounded** (verified, assertable) and **unverified**
 - never assert unverified claims as fact;
 - say "I don't know" rather than guess.
 
-The gate is why engram doesn't confabulate on a miss and doesn't get injected: a
+The gate is why veracium doesn't confabulate on a miss and doesn't get injected: a
 fact from the user's own sent email is answered; the same-shaped claim from a
 received email is refused. Provenance-by-authorship, doing its job.
 
-## What engram does *not* do
+## What veracium does *not* do
 
 - It doesn't own your API keys or pick your model — you pass a `Complete` callable.
 - It doesn't answer the user for you unless you call `answer()`; `recall()` just

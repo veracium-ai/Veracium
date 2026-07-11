@@ -26,7 +26,7 @@ and graph recall; the items below complete the validated design.
       Fixes both the confabulation-on-failure problem (D) and the residual
       episodic injection leak (C) — the two failures that shared one root cause.
 - [x] Expose `mem.answer(user, query)` convenience that applies the gate, for
-      hosts that want engram to answer rather than just supply context.
+      hosts that want veracium to answer rather than just supply context.
 
 ## v0.4 — lifecycle (findings 9/11/19) — done
 - [x] Volatility-driven expiry: transient facts confirm/decay/lapse on schedule.
@@ -36,14 +36,14 @@ and graph recall; the items below complete the validated design.
       (finding 22: the graph/wiki read cost grows with the store otherwise).
 
 ## v0.5 — MCP server & packaging — done
-- [x] `engram.mcp_server`: `remember` / `recall` (and `answer`) tools; per-session
+- [x] `veracium.mcp_server`: `remember` / `recall` (and `answer`) tools; per-session
       user scoping; the host's own LLM wired as the `Complete` callable where
       possible.
 - [ ] Publish; CI running the smoke + eval suites.
 
 ## v0.6 — acceptance eval — done
 - [x] Port the synthetic-corpus generator + judge as `tests/eval/`; assert
-      engram meets the research numbers (supersession ~100%, injection 0 asserts
+      veracium meets the research numbers (supersession ~100%, injection 0 asserts
       on the ladder, confabulation bounded once the gate lands).
 
 ## Deferred / research-tracked
