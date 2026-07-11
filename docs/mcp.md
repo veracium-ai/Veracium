@@ -6,7 +6,8 @@ Code, and others) with no host-side Python.
 ## Install & run
 
 ```bash
-pip install "engram[mcp,anthropic]"
+# from source (not yet on PyPI):
+git clone <this-repo> && cd engram && pip install -e ".[mcp,anthropic]"
 ANTHROPIC_API_KEY=sk-... ENGRAM_DB_PATH=~/.engram.db engram-mcp
 ```
 

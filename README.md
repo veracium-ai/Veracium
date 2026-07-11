@@ -33,11 +33,15 @@ research's synthetic-corpus harness is reused as the regression suite.
 
 ## Install
 
+Not yet on PyPI — install from source:
+
 ```bash
-pip install engram            # core (pydantic + stdlib only)
-pip install engram[anthropic] # + reference LLM provider
-pip install engram[mcp]       # + MCP server
+git clone <this-repo> && cd engram
+pip install -e ".[anthropic]"   # core + the reference LLM provider
 ```
+
+Extras: `[mcp]` adds the MCP server, `[dev]` adds pytest. The core alone depends
+only on `pydantic`. (Once published: `pip install engram`.)
 
 ## Use (library)
 
@@ -57,6 +61,11 @@ ctx = mem.recall("alice", "suggest a lunch spot")
 print(ctx.context)   # states the vegetarian constraint; the $900 "claim" is
                      # rendered under a never-assert flag, not as a fact.
 ```
+
+No Anthropic API key? `AnthropicComplete` is just a convenience — engram calls any
+`Complete` callable you supply. To run without SDK/key setup, wrap a client you
+already have; `examples/claude_cli_provider.py` wraps the `claude` CLI as a
+drop-in provider (`from claude_cli_provider import ClaudeCLIComplete`).
 
 ## Use (MCP)
 
