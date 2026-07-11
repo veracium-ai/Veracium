@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.1
+
+Reliability fixes surfaced by building the runnable demo notebook
+(`examples/demo.ipynb`, new in this release):
+
+- **selfcheck**: the abstention detector now recognizes natural abstention
+  phrasings ("I don't have any confirmed record of ..."); previously a correct
+  abstention could flakily score the check FAIL.
+- **distill**: the extraction prompt now carries a one-clause gloss per relation
+  (`Relation.desc`), disambiguating confusable pairs — employment occasionally
+  landed under `works_on` instead of `works_as`, silently defeating supersession.
+- **examples**: end-to-end scam-email demo notebook with real captured outputs
+  and a Colab badge, linked from the README.
+
 ## 0.1.0
 
 First working release — the validated layered memory design as a plug-in.
