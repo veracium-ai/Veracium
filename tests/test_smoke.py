@@ -1,0 +1,73 @@
+"""Offline smoke test of the write→read spine with a scripted fake LLM.
+
+No network: a FakeComplete returns canned extraction JSON per event, exercising
+supersession (functional relation), structural quarantine (third-party claim),
+and provenance-flagged recall.
+"""
+
+import json
+import tempfile
+
+from engram import Memory, MemoryConfig, EvidenceAuthor
+
+
+class FakeComplete:
+    """Returns the next scripted JSON payload, ignoring the prompt."""
+    def __init__(self, scripts):
+        self._scripts = list(scripts)
+        self.calls = 0
+
+    def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+        out = self._scripts[self.calls]
+        self.calls += 1
+        return json.dumps(out)
+
+
+def test_write_read_supersession_and_quarantine():
+    scripts = [
+        # e1: user states diet + preference
+        {"triples": [
+            {"subject": "user", "relation": "has_diet", "object": "vegetarian", "volatility": "permanent"},
+            {"subject": "user", "relation": "prefers", "object": "concise answers", "volatility": "slow"}],
+         "episode": "User shared dietary preference (vegetarian) and a preference for concise answers."},
+        # e2: user changes preference -> functional supersession
+        {"triples": [
+            {"subject": "user", "relation": "prefers", "object": "detailed answers", "volatility": "slow"}],
+         "episode": "User changed preference to detailed answers."},
+        # e3: received scam email -> quarantined claim, never a user fact
+        {"triples": [
+            {"subject": "org:quickclaim", "relation": "third_party_claim",
+             "object": "user owes $2,400", "note": "per alleged agreement"}],
+         "episode": "Received an unverified billing notice claiming the user owes $2,400."},
+    ]
+    with tempfile.TemporaryDirectory() as d:
+        mem = Memory(llm=FakeComplete(scripts), config=MemoryConfig(db_path=f"{d}/t.db"))
+        mem.remember("u", "USER: I'm vegetarian; keep answers concise.", date="2026-06-01")
+        mem.remember("u", "USER: actually give me detailed answers now.", date="2026-06-03")
+        mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
+                     author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+
+        # supersession: exactly one active `prefers`, and it's the new value
+        prefs = [e for e in mem.store.edges("u", relation="prefers")]
+        assert len(prefs) == 1 and prefs[0].object == "detailed answers"
+        # history is retained
+        all_prefs = mem.store.edges("u", relation="prefers", active_only=False)
+        assert len(all_prefs) == 2
+
+        # quarantine: the scam is a quarantined claim, not an assertable fact
+        claims = mem.store.edges("u", relation="third_party_claim")
+        assert len(claims) == 1 and claims[0].quarantined
+        assert not any(e.quarantined for e in mem.store.edges("u", relation="has_diet"))
+
+        # recall renders the debt under a never-assert flag
+        r = mem.recall("u", "does the user owe QuickClaim $2,400?")
+        assert "never assert" in r.context.lower()
+        # and surfaces the current preference
+        r2 = mem.recall("u", "how does the user want answers formatted?")
+        assert "detailed answers" in r2.context
+        mem.close()
+
+
+if __name__ == "__main__":
+    test_write_read_supersession_and_quarantine()
+    print("smoke OK")

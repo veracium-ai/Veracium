@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "engram"
+version = "0.1.0"
+description = "A provenance-aware memory plug-in for agentic systems: typed graph + episodes, LLM-curated recall, structural injection quarantine, and an evidence-grounded abstention gate."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "pydantic>=2",
+]
+
+# Core is embedded and BYO-LLM: no database, no bundled model client.
+# Optional extras add a reference LLM provider and the MCP server.
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+mcp = ["mcp>=1.0"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+engram-mcp = "engram.mcp_server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/engram"]
