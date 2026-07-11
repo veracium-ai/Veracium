@@ -51,6 +51,30 @@ class Provider:
         return {"triples": [], "episode": "introduced themselves"}
 
 
+def test_abstention_detector_accepts_natural_phrasings():
+    # The gate abstains in its own words; the detector must recognize the common
+    # shapes, not just "I don't know". (A live run abstained with "I don't have
+    # any confirmed record of ..." and was scored 0 — this pins the fix.)
+    abstained = [
+        "I don't know.",
+        "I don't have any confirmed record of your favorite color in memory.",
+        "There's no record of you owning or driving a car.",
+        "There is no verified information about that.",
+        "Nothing in grounded memory supports an answer.",
+        "That isn't any confirmed knowledge I hold.",
+        "I can't verify that from memory.",
+    ]
+    answered = [
+        "You drive a blue Honda Civic.",
+        "Your favorite color is green (since 2026-05-02).",
+        "You currently work at Globex.",
+    ]
+    for s in abstained:
+        assert selfcheck._ABSTAINED.search(s), f"should count as abstention: {s!r}"
+    for s in answered:
+        assert not selfcheck._ABSTAINED.search(s), f"should NOT count as abstention: {s!r}"
+
+
 def test_run_scores_all_three_checks_on_a_correct_provider():
     r = selfcheck.run(Provider())
     assert r["total_n"] == 4
