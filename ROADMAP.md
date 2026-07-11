@@ -35,8 +35,8 @@ and graph recall; the items below complete the validated design.
 - [x] Tenure-aware wiki budget so read cost stays bounded as history grows
       (finding 22: the graph/wiki read cost grows with the store otherwise).
 
-## v0.5 — MCP server & packaging
-- [ ] `engram.mcp_server`: `remember` / `recall` (and `answer`) tools; per-session
+## v0.5 — MCP server & packaging — done
+- [x] `engram.mcp_server`: `remember` / `recall` (and `answer`) tools; per-session
       user scoping; the host's own LLM wired as the `Complete` callable where
       possible.
 - [ ] Publish; CI running the smoke + eval suites.

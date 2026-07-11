@@ -1,0 +1,108 @@
+"""MCP server — exposes engram to any MCP-compatible agent (Claude Desktop/Code,
+others) with no Python on the host side.
+
+    pip install engram[mcp,anthropic]
+    ANTHROPIC_API_KEY=... ENGRAM_DB_PATH=~/.engram.db engram-mcp
+
+Config via env: ENGRAM_DB_PATH (default engram.db), ENGRAM_USER (default user id
+when a tool call omits one). The server owns its own model access (Anthropic
+reference provider by default); a host that would rather engram use its own model
+can wrap this module's tool implementations around a custom `Complete` callable.
+
+The tool *implementations* below are plain functions taking a `Memory`, so they're
+unit-testable without a running server or an installed MCP SDK.
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Optional
+
+from . import Memory, MemoryConfig
+from .schema import EvidenceAuthor
+
+_AUTHOR = {"user": EvidenceAuthor.USER,
+           "third_party": EvidenceAuthor.THIRD_PARTY,
+           "system": EvidenceAuthor.SYSTEM}
+
+
+# -- tool implementations (testable; no MCP/LLM dependency of their own) ------
+
+def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
+                  event_type: str = "chat", date: Optional[str] = None) -> dict:
+    return mem.remember(user_id, text, author=_AUTHOR.get(author, EvidenceAuthor.USER),
+                        event_type=event_type, date=date)
+
+
+def recall_impl(mem: Memory, user_id: str, query: str) -> str:
+    return mem.recall(user_id, query).context
+
+
+def answer_impl(mem: Memory, user_id: str, query: str) -> str:
+    return mem.answer(user_id, query)
+
+
+def maintain_impl(mem: Memory, user_id: str) -> dict:
+    return mem.maintain(user_id)
+
+
+# -- server wiring ------------------------------------------------------------
+
+def build_memory() -> Memory:
+    from .llm.anthropic import AnthropicComplete
+    return Memory(llm=AnthropicComplete(),
+                  config=MemoryConfig(db_path=os.environ.get("ENGRAM_DB_PATH", "engram.db")))
+
+
+def build_server(mem: Memory, *, default_user: str = "default"):
+    """Construct the FastMCP server with engram's tools registered. Separated from
+    main() so the wiring is testable without starting the stdio loop."""
+    from mcp.server.fastmcp import FastMCP
+    server = FastMCP("engram")
+
+    @server.tool()
+    def remember(text: str, user_id: str = default_user, author: str = "user",
+                 event_type: str = "chat", date: Optional[str] = None) -> dict:
+        """Store an interaction event in the user's long-term memory.
+
+        Set author="third_party" for content the user did NOT author (received
+        email, external documents, tool output about the user) — this quarantines
+        any claims it makes so they are never asserted as fact. Use author="user"
+        for the user's own messages and sent mail. `date` is the ISO date the event
+        occurred (defaults to today)."""
+        return remember_impl(mem, user_id, text, author=author, event_type=event_type, date=date)
+
+    @server.tool()
+    def recall(query: str, user_id: str = default_user) -> str:
+        """Retrieve grounded memory relevant to a query, as a context block to
+        drop into your prompt. Verified facts and history are stated plainly;
+        unverified third-party claims appear under an explicit never-assert marker."""
+        return recall_impl(mem, user_id, query)
+
+    @server.tool()
+    def answer(query: str, user_id: str = default_user) -> str:
+        """Answer a question directly from the user's memory, with grounding
+        discipline: answers only from verified memory, never asserts unverified
+        third-party claims as fact, and says it doesn't know rather than guessing."""
+        return answer_impl(mem, user_id, query)
+
+    @server.tool()
+    def maintain(user_id: str = default_user) -> dict:
+        """Run memory maintenance: expire stale transient facts, flag possibly-
+        stale durable ones, and consolidate old history. Call periodically (e.g.
+        once a day)."""
+        return maintain_impl(mem, user_id)
+
+    return server
+
+
+def main() -> None:
+    try:
+        import mcp.server.fastmcp  # noqa: F401
+    except ImportError as e:  # pragma: no cover
+        raise SystemExit("The MCP server needs the SDK: pip install engram[mcp]") from e
+    build_server(build_memory(), default_user=os.environ.get("ENGRAM_USER", "default")).run()
+
+
+if __name__ == "__main__":
+    main()
