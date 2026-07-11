@@ -11,10 +11,11 @@ from __future__ import annotations
 import subprocess
 from typing import Optional
 
+# Aligned with the AnthropicComplete reference defaults; override as you like.
 ROLE_MODEL = {
     "distill": "claude-haiku-4-5",
-    "compile": "claude-sonnet-4-5",
-    "gate": "claude-sonnet-4-5",
+    "compile": "claude-sonnet-5",
+    "gate": "claude-sonnet-5",
 }
 
 

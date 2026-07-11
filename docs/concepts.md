@@ -75,6 +75,19 @@ Each fact has a **volatility** class — how long it's expected to hold:
 - cold episodes are **consolidated** into denser records, preserving first
   occurrences of failures, fixes, illnesses, and dated commitments.
 
+## A note on dates
+
+Relative dates in ingested text ("due Friday", "next week") are resolved to
+absolute dates *during extraction*. engram injects a weekday→date calendar
+anchored to the event's `date` so the model **copies** dates rather than computing
+them — far more reliable than freehand, and the prompt tells it to keep the
+original wording when a date is neither stated nor on the calendar. But it is
+still an LLM step: treat an absolute date stored in memory as an inference from
+the source — high-confidence when the source stated an explicit date, lower when
+it was relative. Always pass an accurate `date=` per event (the date it actually
+occurred) so the calendar anchors correctly; the default is "today", which is
+wrong for backfilled or dated content.
+
 ## Recall and the abstention gate
 
 `mem.recall(user_id, query)` assembles the curated wiki + a per-query subgraph and

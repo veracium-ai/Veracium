@@ -25,7 +25,9 @@ claims.
   messages and sent mail; `EvidenceAuthor.THIRD_PARTY` for received mail / external
   documents (their claims are quarantined); `EvidenceAuthor.SYSTEM` for derived content.
 - `date` — ISO date the event occurred (`"2026-06-01"`); defaults to today. Drives
-  fact timestamps, so pass it when ingesting historical or dated content.
+  fact timestamps **and** anchors the calendar used to resolve relative dates in the
+  text ("Friday" → a real date), so pass an accurate value for historical or dated
+  content. See [concepts → A note on dates](concepts.md#a-note-on-dates).
 - `event_type` — `"chat"`, `"email"`, etc. Informational; affects source-type tagging.
 - Returns `{"episode": str, "facts": int, "quarantined": int}`.
 
