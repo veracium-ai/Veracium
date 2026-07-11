@@ -1,5 +1,7 @@
 # veracium
 
+[![tests](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml/badge.svg)](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml)
+
 A provenance-aware memory plug-in for agentic systems. Give any agent durable,
 per-user memory that recalls facts about the user, past interactions, and what
 worked — while structurally resisting the injection and confabulation failures
