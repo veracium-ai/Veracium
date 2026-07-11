@@ -152,14 +152,16 @@ class Reporter:
         try:
             path = self.config.resolved_log_path()
             path.parent.mkdir(parents=True, exist_ok=True)
-            logger = logging.getLogger(f"{_LOGGER_NAME}.{id(self)}")
+            # A private, instance-owned Logger constructed directly (NOT via
+            # logging.getLogger): the global registry caches by name, and keying on
+            # id(self) is unsafe because Python reuses object ids after GC — two
+            # Reporters could then share a logger and write to the wrong file.
+            logger = logging.Logger(_LOGGER_NAME)
             logger.setLevel(logging.INFO)
             logger.propagate = False
-            if not logger.handlers:
-                h = RotatingFileHandler(str(path), maxBytes=1_000_000, backupCount=2)
-                h.setFormatter(logging.Formatter(
-                    "%(asctime)s %(levelname)s %(message)s"))
-                logger.addHandler(h)
+            h = RotatingFileHandler(str(path), maxBytes=1_000_000, backupCount=2)
+            h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+            logger.addHandler(h)
             self._logger = logger
         except Exception:
             self._logger = None
