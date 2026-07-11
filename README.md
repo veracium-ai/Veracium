@@ -33,15 +33,19 @@ research's synthetic-corpus harness is reused as the regression suite.
 
 ## Install
 
-Not yet on PyPI — install from source:
-
 ```bash
-git clone https://github.com/veracium-ai/Veracium.git && cd Veracium
-pip install -e ".[anthropic]"   # core + the reference LLM provider
+pip install "veracium[anthropic]"   # core + the reference LLM provider
 ```
 
 Extras: `[mcp]` adds the MCP server, `[dev]` adds pytest. The core alone depends
-only on `pydantic`. (Once published: `pip install veracium`.)
+only on `pydantic`. To work from source instead:
+
+```bash
+git clone https://github.com/veracium-ai/Veracium.git && cd Veracium
+pip install -e ".[anthropic,dev]"
+```
+
+Links: [veracium.ai](https://veracium.ai) · [PyPI](https://pypi.org/project/veracium/)
 
 ## Use (library)
 
