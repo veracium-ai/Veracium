@@ -52,14 +52,20 @@ def maintain_impl(mem: Memory, user_id: str) -> dict:
 
 def build_memory() -> Memory:
     from .llm.anthropic import AnthropicComplete
-    from . import telemetry
+    from . import telemetry, diagnostics
     # Respect the user's recorded telemetry choice (default off). Consent is set
     # out-of-band via `engram telemetry` (the MCP stdio transport isn't a TTY, so
     # we never prompt here); prompt_consent just ensures a disabled config exists.
     telemetry.prompt_consent()
+    diagnostics.prompt_consent()  # advance-permission choice for auto-sending logs
+    # A Reporter logs genuine errors to a local, user-owned file. It only SENDS a
+    # log if the operator granted advance permission via `engram diagnostics enable`
+    # (stdio isn't a TTY, so it never prompts); otherwise the log stays local and can
+    # be sent later with `engram diagnostics report`.
     return Memory(llm=AnthropicComplete(),
                   config=MemoryConfig(db_path=os.environ.get("ENGRAM_DB_PATH", "engram.db")),
-                  telemetry=telemetry.load_collector_if_enabled())
+                  telemetry=telemetry.load_collector_if_enabled(),
+                  diagnostics=diagnostics.load_reporter())
 
 
 def build_server(mem: Memory, *, default_user: str = "default"):

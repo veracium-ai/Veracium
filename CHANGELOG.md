@@ -28,6 +28,11 @@ First working release — the validated layered memory design as a plug-in.
   guarantees (supersession, injection defense, abstention) against a throwaway
   synthetic memory and self-scores them structurally (no LLM judge); the counters
   feed telemetry's content-free `selfcheck` event.
+- **Diagnostics** (opt-in error reporting; `engram diagnostics`): genuine errors are
+  logged to a local, user-owned rotating file and re-raised unchanged; the log is
+  sent for diagnosis only with consent (advance permission or a per-incident yes),
+  redacted, previewable, anonymous, and bounded. No endpoint shipped. See
+  `docs/diagnostics.md`.
 - **Docs**: `docs/concepts.md`, `docs/api.md`, `docs/mcp.md`; acceptance eval
   (`tests/eval/`) holding the library to the research claims (5/5, 0 injection
   asserts on the live run).

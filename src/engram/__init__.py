@@ -16,6 +16,7 @@ quarantined. Memory is per-user; one user's memory never reaches another's.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import time
 from dataclasses import dataclass
@@ -58,7 +59,7 @@ class Recall:
 class Memory:
     def __init__(self, *, llm: Complete, store: Optional[Store] = None,
                  embed: Optional[Embed] = None, config: Optional[MemoryConfig] = None,
-                 telemetry=None):
+                 telemetry=None, diagnostics=None):
         self.config = config or MemoryConfig()
         self.store = store or SqliteStore(self.config.db_path)
         self.llm = llm
@@ -67,6 +68,11 @@ class Memory:
         # The library never creates one implicitly; entry points wire a consented
         # collector. See engram.telemetry.
         self.telemetry = telemetry
+        # Optional error-reporting sink (a diagnostics.Reporter). None = off. Logs
+        # genuine errors locally and, only with consent, offers to send that log.
+        # See engram.diagnostics; sending is a separate, more careful channel than
+        # telemetry because a log can contain memory content.
+        self.diagnostics = diagnostics
 
     def _record(self, event: str, fields: dict) -> None:
         if self.telemetry is not None:
@@ -74,6 +80,18 @@ class Memory:
                 self.telemetry.record(event, fields)
             except Exception:
                 pass  # telemetry must never break memory
+
+    def _on_error(self, where: str, exc: BaseException, user_id: Optional[str] = None) -> None:
+        """Hand a genuine error to the diagnostics reporter (log locally; send only
+        with consent). Best-effort — never masks or delays the real exception, which
+        the caller re-raises."""
+        if self.diagnostics is None:
+            return
+        try:
+            uh = hashlib.sha256(user_id.encode()).hexdigest()[:12] if user_id else None
+            self.diagnostics.record_error(where, exc, {"user_hash": uh})
+        except Exception:
+            pass
 
     # -- write -------------------------------------------------------------
     def remember(self, user_id: str, event_text: str, *,
@@ -87,9 +105,13 @@ class Memory:
         from datetime import date as _date
         date = date or _date.today().isoformat()
         t0 = time.perf_counter()
-        r = ingest_event(self.store, self.llm, user_id, event_text=event_text,
-                         author=author, date=date, event_type=event_type,
-                         evidence_ref=evidence_ref, relations=self.config.relations)
+        try:
+            r = ingest_event(self.store, self.llm, user_id, event_text=event_text,
+                             author=author, date=date, event_type=event_type,
+                             evidence_ref=evidence_ref, relations=self.config.relations)
+        except Exception as e:
+            self._on_error("remember", e, user_id)
+            raise
         self._record("ingest", {"facts": r["facts"], "quarantined": r["quarantined"],
                                 "episodes": 1 if r["episode"] else 0,
                                 "ms": int((time.perf_counter() - t0) * 1000)})
@@ -105,6 +127,13 @@ class Memory:
         into grounded (assertable) and unverified (third-party claims/reports),
         so the host can apply the abstention gate via `answer()` or its own prompt.
         """
+        try:
+            return self._recall(user_id, query)
+        except Exception as e:
+            self._on_error("recall", e, user_id)
+            raise
+
+    def _recall(self, user_id: str, query: str) -> Recall:
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
                                     self.config.wiki_recompile_after_writes)
         edges = subgraph_for_query(self.store, user_id, query,
@@ -137,9 +166,13 @@ class Memory:
         abstains ("I don't know") rather than confabulate when memory lacks the
         answer — the finding-23 fix for both confabulation and the episodic
         injection leak."""
-        r = self.recall(user_id, query)
+        r = self.recall(user_id, query)   # already error-guarded
         t0 = time.perf_counter()
-        ans = _gate.answer(self.llm, query, r.grounded, r.unverified)
+        try:
+            ans = _gate.answer(self.llm, query, r.grounded, r.unverified)
+        except Exception as e:
+            self._on_error("answer", e, user_id)
+            raise
         self._record("answer", {"abstained": bool(_ABSTAINED.search(ans)),
                                 "ms": int((time.perf_counter() - t0) * 1000)})
         return ans
@@ -152,10 +185,14 @@ class Memory:
         get flagged possibly-stale, never silently dropped) and, if enabled,
         consolidates cold episodes into denser records (preserving first failures,
         fixes, illnesses, and dated commitments). Idempotent; call on a schedule."""
-        report = {"expiry": _lifecycle.expire(self.store, user_id, self.config)}
-        if consolidate:
-            report["consolidation"] = _lifecycle.consolidate(
-                self.store, self.llm, user_id, self.config)
+        try:
+            report = {"expiry": _lifecycle.expire(self.store, user_id, self.config)}
+            if consolidate:
+                report["consolidation"] = _lifecycle.consolidate(
+                    self.store, self.llm, user_id, self.config)
+        except Exception as e:
+            self._on_error("maintain", e, user_id)
+            raise
         ex, co = report["expiry"], report.get("consolidation", {})
         self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
                                   "flagged": ex["flagged_for_confirmation"],
@@ -192,6 +229,23 @@ class Memory:
             return None
         from . import telemetry as _t
         return _t.preview(_t.TelemetryConfig.load(), self.telemetry)
+
+    # -- diagnostics / error reporting (opt-in; see engram.diagnostics) -----
+    def report_error(self, *, interactive: Optional[bool] = None) -> bool:
+        """Send the captured local error log for diagnosis, subject to consent
+        (advance permission, or an interactive yes). No-ops if diagnostics is off,
+        nothing was captured, or no endpoint is configured; never raises. A host
+        that caught an engram error can call this to offer to report it."""
+        if self.diagnostics is None or not self.diagnostics.has_pending():
+            return False
+        return self.diagnostics.send(interactive=interactive)
+
+    def diagnostics_preview(self) -> Optional[dict]:
+        """Exactly what a report would send (redacted if enabled) — the log content
+        that would leave the machine — or None if diagnostics is off."""
+        if self.diagnostics is None:
+            return None
+        return self.diagnostics.preview()
 
     def close(self) -> None:
         self.store.close()

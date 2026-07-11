@@ -82,6 +82,7 @@ MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
   `EvidenceAuthor`, providing your own LLM callable or store.
 - **[docs/mcp.md](docs/mcp.md)** — running and registering the MCP server.
 - **[docs/telemetry.md](docs/telemetry.md)** — the opt-in, anonymous, content-free usage statistics (off by default).
+- **[docs/diagnostics.md](docs/diagnostics.md)** — opt-in error reporting: local-first error log, consented + redacted send.
 - **[ROADMAP.md](ROADMAP.md)** · **[CHANGELOG.md](CHANGELOG.md)**
 
 ## Status

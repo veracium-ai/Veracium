@@ -10,6 +10,14 @@ behavioral self-check.
     engram selfcheck               # run the load-bearing guarantees, print a scorecard
     engram selfcheck --json        # machine-readable result
     engram selfcheck --push        # also record + flush the content-free scores (if opted in)
+
+    engram diagnostics status      # show error-reporting setting + log path
+    engram diagnostics prompt      # advance-permission consent for auto-send
+    engram diagnostics enable [--endpoint URL]   # grant advance permission to send logs
+    engram diagnostics disable
+    engram diagnostics preview     # show exactly what a report would send (redacted)
+    engram diagnostics report      # send the current log now (asks first)
+    engram diagnostics path        # print the local log file location
 """
 
 from __future__ import annotations
@@ -17,7 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from . import telemetry
+from . import diagnostics, telemetry
 
 
 def _status(cfg) -> None:
@@ -56,6 +64,44 @@ def _selfcheck(args) -> int:
     return 0 if result["passed"] else 1
 
 
+def _diagnostics(args, parser) -> int:
+    cfg = diagnostics.DiagnosticsConfig.load()
+    if args.dcmd == "status":
+        print(json.dumps({"log_enabled": cfg.log_enabled,
+                          "report_enabled (auto-send)": cfg.report_enabled,
+                          "prompt_on_error": cfg.prompt_on_error,
+                          "redact": cfg.redact, "endpoint": cfg.endpoint,
+                          "install_id": cfg.install_id or None,
+                          "log_path": str(cfg.resolved_log_path()),
+                          "last_report": cfg.last_report}, indent=2))
+    elif args.dcmd == "prompt":
+        cfg = diagnostics.prompt_consent(interactive=True)
+        print("\nAuto-send enabled." if cfg.report_enabled else "\nAuto-send left disabled.")
+    elif args.dcmd == "enable":
+        cfg = diagnostics.set_report_enabled(True, endpoint=args.endpoint)
+        note = "" if cfg.endpoint else "  (no --endpoint set → nothing sends until one is configured)"
+        print("Error-log auto-send enabled." + note)
+    elif args.dcmd == "disable":
+        diagnostics.set_report_enabled(False)
+        print("Error-log auto-send disabled. (Local logging is unaffected.)")
+    elif args.dcmd == "preview":
+        print(json.dumps(diagnostics.Reporter(cfg).preview(), indent=2))
+        print("\n(This is the actual log content that would be sent. Redaction is "
+              f"{'on' if cfg.redact else 'OFF'}. Nothing is sent by `preview`.)")
+    elif args.dcmd == "report":
+        if not cfg.endpoint:
+            print("No endpoint configured — set one with `engram diagnostics enable --endpoint URL`.")
+            return 1
+        sent = diagnostics.Reporter(cfg).send(interactive=True, reason="manual")
+        print("Sent." if sent else "Not sent.")
+        return 0 if sent else 1
+    elif args.dcmd == "path":
+        print(cfg.resolved_log_path())
+    else:
+        parser.print_help()
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="engram")
     sub = p.add_subparsers(dest="cmd")
@@ -73,9 +119,22 @@ def main(argv=None) -> int:
     sc.add_argument("--push", action="store_true",
                     help="record the content-free scores and flush if telemetry is enabled and due")
 
+    d = sub.add_parser("diagnostics", help="opt-in error reporting: local error log + consented send")
+    dsub = d.add_subparsers(dest="dcmd")
+    dsub.add_parser("status", help="show the current error-reporting setting")
+    dsub.add_parser("prompt", help="advance-permission consent for auto-send")
+    de = dsub.add_parser("enable", help="grant advance permission to auto-send logs on error")
+    de.add_argument("--endpoint", help="where logs are sent (required for sending)")
+    dsub.add_parser("disable", help="revoke advance permission to send")
+    dsub.add_parser("preview", help="show exactly what a report would send (redacted)")
+    dsub.add_parser("report", help="send the current local log now (asks first)")
+    dsub.add_parser("path", help="print the local log file location")
+
     args = p.parse_args(argv)
     if args.cmd == "selfcheck":
         return _selfcheck(args)
+    if args.cmd == "diagnostics":
+        return _diagnostics(args, d)
     if args.cmd != "telemetry":
         p.print_help()
         return 0
