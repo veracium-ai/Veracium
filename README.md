@@ -36,7 +36,7 @@ research's synthetic-corpus harness is reused as the regression suite.
 Not yet on PyPI — install from source:
 
 ```bash
-git clone <this-repo> && cd engram
+git clone https://github.com/qspencer/engram.git && cd engram
 pip install -e ".[anthropic]"   # core + the reference LLM provider
 ```
 
@@ -87,10 +87,10 @@ MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
 
 ## Status
 
-The validated layered design is implemented, tested (15 offline tests + a live
+The validated layered design is implemented, tested (25 offline tests + a live
 acceptance eval), and passes its own research-claim bar (5/5, 0 injection
-asserts). Roadmap v0.1–v0.6 complete, plus opt-in telemetry. See
-[ROADMAP.md](ROADMAP.md).
+asserts). Roadmap v0.1–v0.6 complete, plus opt-in telemetry, a self-check, and
+consented error reporting. See [ROADMAP.md](ROADMAP.md).
 
 ## License
 
