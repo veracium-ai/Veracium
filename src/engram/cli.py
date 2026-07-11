@@ -1,10 +1,15 @@
-"""`engram` command line — manage opt-in anonymous telemetry.
+"""`engram` command line — manage opt-in anonymous telemetry and run the
+behavioral self-check.
 
     engram telemetry status        # show current setting
     engram telemetry prompt        # run the consent question (first-run)
     engram telemetry enable [--endpoint URL]
     engram telemetry disable
     engram telemetry preview       # show the (content-free) payload schema
+
+    engram selfcheck               # run the load-bearing guarantees, print a scorecard
+    engram selfcheck --json        # machine-readable result
+    engram selfcheck --push        # also record + flush the content-free scores (if opted in)
 """
 
 from __future__ import annotations
@@ -21,6 +26,36 @@ def _status(cfg) -> None:
                       "last_sent": cfg.last_sent}, indent=2))
 
 
+def _build_llm():
+    """The reference provider for CLI-driven checks. A host embedding engram with
+    its own model runs `Memory.self_check()` directly instead."""
+    try:
+        from .llm.anthropic import AnthropicComplete
+    except Exception as e:
+        raise SystemExit(
+            "engram selfcheck needs a model provider: pip install engram[anthropic] "
+            f"and set ANTHROPIC_API_KEY. ({e})")
+    return AnthropicComplete()
+
+
+def _selfcheck(args) -> int:
+    from . import selfcheck
+    result = selfcheck.run(_build_llm())
+    if args.push:
+        # record the content-free scores and push them (own ephemeral collector, so
+        # a weekly `engram selfcheck --push` cron folds self-check into telemetry).
+        cfg = telemetry.TelemetryConfig.load()
+        if cfg.enabled:
+            coll = telemetry.Collector()
+            coll.record("selfcheck", result)  # non-scalar keys dropped by the collector
+            telemetry.flush_if_due(cfg, coll)
+    if args.json:
+        print(json.dumps({k: v for k, v in result.items()}, indent=2))
+    else:
+        print(selfcheck.format_scorecard(result))
+    return 0 if result["passed"] else 1
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="engram")
     sub = p.add_subparsers(dest="cmd")
@@ -33,7 +68,14 @@ def main(argv=None) -> int:
     ts.add_parser("disable", help="opt out")
     ts.add_parser("preview", help="show exactly what would be sent")
 
+    sc = sub.add_parser("selfcheck", help="run engram's load-bearing guarantees and score them")
+    sc.add_argument("--json", action="store_true", help="print the machine-readable result")
+    sc.add_argument("--push", action="store_true",
+                    help="record the content-free scores and flush if telemetry is enabled and due")
+
     args = p.parse_args(argv)
+    if args.cmd == "selfcheck":
+        return _selfcheck(args)
     if args.cmd != "telemetry":
         p.print_help()
         return 0

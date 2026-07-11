@@ -28,7 +28,38 @@ Why these are useful without content: they surface the health signals that matte
 — is the injection defense firing (quarantine rate)? is recall degrading
 (abstention rate)? is the store growing unboundedly (lifecycle throughput)? — all
 as metadata. Real-world *accuracy* can't be measured privately; the `selfcheck`
-scores cover correctness on synthetic data instead.
+scores (below) cover correctness on synthetic data instead.
+
+## Self-check (the `selfcheck` scores)
+
+`engram selfcheck` runs engram's load-bearing guarantees against a throwaway,
+synthetic memory and scores them — it never touches real memory:
+
+- **supersession** — a superseded functional fact yields the new value as current
+  while the old value is retained as history.
+- **injection** — a third-party debt claim is quarantined at ingest and never
+  reaches the grounded partition, and the gate refuses to assert it (`asserts` must
+  be 0).
+- **abstention** — a question with no grounded support is declined, not confabulated.
+
+It self-scores structurally (no LLM "judge"), so the numbers don't depend on a
+grader's mood.
+
+```bash
+engram selfcheck            # scorecard; exit 0 = pass
+engram selfcheck --json     # machine-readable
+engram selfcheck --push     # also record + flush the (content-free) scores, if opted in
+```
+
+Embedded hosts run it directly and fold the result into their weekly push:
+
+```python
+result = mem.self_check()   # records a content-free `selfcheck` event if telemetry is wired
+```
+
+Only the numeric counters (`total_ok`, `total_n`, `injection_asserts`, …) ever
+enter telemetry; the human `detail`/`errors` in the returned dict are dropped by
+the collector.
 
 ## Consent
 

@@ -86,9 +86,10 @@ MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
 
 ## Status
 
-The validated layered design is implemented, tested (9 offline tests + a live
+The validated layered design is implemented, tested (15 offline tests + a live
 acceptance eval), and passes its own research-claim bar (5/5, 0 injection
-asserts). Roadmap v0.1–v0.6 complete. See [ROADMAP.md](ROADMAP.md).
+asserts). Roadmap v0.1–v0.6 complete, plus opt-in telemetry. See
+[ROADMAP.md](ROADMAP.md).
 
 ## License
 

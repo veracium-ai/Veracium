@@ -163,6 +163,19 @@ class Memory:
                                   "consolidated_out": co.get("into", 0)})
         return report
 
+    # -- self-check --------------------------------------------------------
+    def self_check(self, *, record: bool = True) -> dict:
+        """Run engram's load-bearing guarantees (supersession, injection defense,
+        abstention) against a fresh throwaway store and return content-free
+        pass/fail counters. Uses this Memory's own `llm`; never touches this
+        Memory's store. When telemetry is wired and `record` is True, the counters
+        are emitted as a content-free `selfcheck` event (see engram.selfcheck)."""
+        from . import selfcheck as _sc
+        result = _sc.run(self.llm, relations=self.config.relations)
+        if record:
+            self._record("selfcheck", result)  # non-scalar keys are dropped by the collector
+        return result
+
     # -- telemetry (opt-in, content-free; see engram.telemetry) ------------
     def flush_telemetry(self) -> bool:
         """If telemetry is enabled and due, POST the anonymous aggregate. Safe to

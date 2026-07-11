@@ -24,6 +24,10 @@ First working release — the validated layered memory design as a plug-in.
   statistics with explicit consent (`engram telemetry`), a weekly in-process
   flush (`mem.flush_telemetry()`), and a whitelist-enforced content-free
   payload. See `docs/telemetry.md`.
+- **Self-check** (`engram selfcheck` / `mem.self_check()`): runs the load-bearing
+  guarantees (supersession, injection defense, abstention) against a throwaway
+  synthetic memory and self-scores them structurally (no LLM judge); the counters
+  feed telemetry's content-free `selfcheck` event.
 - **Docs**: `docs/concepts.md`, `docs/api.md`, `docs/mcp.md`; acceptance eval
   (`tests/eval/`) holding the library to the research claims (5/5, 0 injection
   asserts on the live run).
