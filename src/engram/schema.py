@@ -75,11 +75,15 @@ class ExpiryBehavior(str, Enum):
     LAPSE = "lapse"      # silently expire; absence of reuse means irrelevant
 
 
+# Confirm where staleness is plausible and asking is natural (durable/slow —
+# "still at Acme?"); silently lapse where a stale value is just irrelevant
+# (transient/ephemeral — nobody asks about a flu from three months ago). Permanent
+# never expires (its lifetime is None), so its behavior is never reached.
 DEFAULT_EXPIRY = {
     Volatility.PERMANENT: ExpiryBehavior.LAPSE,
     Volatility.DURABLE: ExpiryBehavior.CONFIRM,
     Volatility.SLOW: ExpiryBehavior.CONFIRM,
-    Volatility.TRANSIENT: ExpiryBehavior.CONFIRM,
+    Volatility.TRANSIENT: ExpiryBehavior.LAPSE,
     Volatility.EPHEMERAL: ExpiryBehavior.LAPSE,
 }
 
@@ -138,8 +142,9 @@ class Edge(BaseModel):
     provenance: Provenance
     valid_from: datetime = Field(default_factory=utcnow)
     invalidated_at: Optional[datetime] = None
-    invalidation_reason: Optional[str] = None  # "superseded" | "corrected"
+    invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed"
     supersedes: Optional[str] = None
+    needs_confirmation: bool = False  # past its expected lifetime; may be stale
 
     @property
     def active(self) -> bool:

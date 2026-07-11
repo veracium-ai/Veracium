@@ -28,11 +28,11 @@ and graph recall; the items below complete the validated design.
 - [x] Expose `mem.answer(user, query)` convenience that applies the gate, for
       hosts that want engram to answer rather than just supply context.
 
-## v0.4 — lifecycle (findings 9/11/19)
-- [ ] Volatility-driven expiry: transient facts confirm/decay/lapse on schedule.
-- [ ] Offline consolidation job: compact cold episodes into summaries (retain
+## v0.4 — lifecycle (findings 9/11/19) — done
+- [x] Volatility-driven expiry: transient facts confirm/decay/lapse on schedule.
+- [x] Offline consolidation job: compact cold episodes into summaries (retain
       first-occurrences of failures/illnesses/dates — the compaction-loss guard).
-- [ ] Tenure-aware wiki budget so read cost stays bounded as history grows
+- [x] Tenure-aware wiki budget so read cost stays bounded as history grows
       (finding 22: the graph/wiki read cost grows with the store otherwise).
 
 ## v0.5 — MCP server & packaging

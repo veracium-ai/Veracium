@@ -36,6 +36,9 @@ class Store(ABC):
     @abstractmethod
     def episodes(self, user_id: str, *, limit: Optional[int] = None) -> list[Episode]: ...
 
+    @abstractmethod
+    def delete_episode(self, episode_id: str) -> None: ...
+
     # -- compiled-view cache ----------------------------------------------
     @abstractmethod
     def get_wiki(self, user_id: str) -> Optional[tuple[str, int]]:

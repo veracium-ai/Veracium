@@ -16,14 +16,32 @@ from .schema import DEFAULT_RELATIONS, Edge, Relation
 
 
 def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> None:
-    """For a functional relation, a new value invalidates the prior active value
-    for the same (subject, relation) — but the old edge is retained (soft-
-    invalidated with reason 'superseded'), so 'what did X used to be?' stays
-    answerable. Non-functional relations accumulate."""
+    """Persist a new edge with supersession and reinforcement:
+
+    - Reinforcement: if an active edge already asserts the same
+      (subject, relation, object), refresh its validity to the new date instead
+      of adding a duplicate — so re-stating a fact keeps it alive (a re-mentioned
+      transient state won't lapse) and clears any stale-confirmation flag.
+    - Supersession: for a *functional* relation, a new value invalidates the
+      prior active value (retained, reason 'superseded'), so history stays queryable.
+    - Non-functional relations otherwise accumulate.
+    """
+    same = edge.object.strip().lower()
+    for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
+        if prior.id == edge.id:
+            continue
+        if prior.object.strip().lower() == same:  # reinforcement
+            prior.valid_from = edge.valid_from
+            prior.provenance.observed_at = edge.provenance.observed_at
+            prior.provenance.confidence = max(prior.provenance.confidence,
+                                              edge.provenance.confidence)
+            prior.needs_confirmation = False
+            store.add_edge(prior)
+            return
     rel = relations.get(edge.relation)
     if rel and rel.functional:
         for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
-            if prior.id != edge.id and prior.object.strip().lower() != edge.object.strip().lower():
+            if prior.id != edge.id and prior.object.strip().lower() != same:
                 store.invalidate_edge(prior.id, edge.valid_from, "superseded")
                 edge.supersedes = prior.id
     store.add_edge(edge)
@@ -74,5 +92,6 @@ def render_edges(edges: list[Edge]) -> str:
             lines.append(f"{who}{e.relation}: {e.object}{note} "
                          f"(SUPERSEDED {e.valid_from.date()}→{e.invalidated_at.date() if e.invalidated_at else '?'})")
         else:
-            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()})")
+            stale = " [possibly stale — confirm before relying on it]" if e.needs_confirmation else ""
+            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()}){stale}")
     return "\n".join(lines)

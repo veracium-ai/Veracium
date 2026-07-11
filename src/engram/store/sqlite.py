@@ -107,6 +107,14 @@ class SqliteStore(Store):
         return [Episode.model_validate_json(r[0])
                 for r in self._conn.execute(q, (user_id,)).fetchall()]
 
+    def delete_episode(self, episode_id) -> None:
+        with self._lock:
+            row = self._conn.execute("SELECT user_id FROM episodes WHERE id=?", (episode_id,)).fetchone()
+            self._conn.execute("DELETE FROM episodes WHERE id=?", (episode_id,))
+            if row:
+                self._bump(row[0])
+            self._conn.commit()
+
     # -- compiled-view cache ----------------------------------------------
     def get_wiki(self, user_id) -> Optional[tuple[str, int]]:
         row = self._conn.execute("SELECT text, store_version FROM wiki WHERE user_id=?",

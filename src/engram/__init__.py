@@ -21,6 +21,7 @@ from typing import Optional
 
 from . import compile as _compile
 from . import gate as _gate
+from . import lifecycle as _lifecycle
 from .config import MemoryConfig
 from .graph import subgraph_for_query
 from .ingest import ingest_event
@@ -111,6 +112,20 @@ class Memory:
         injection leak."""
         r = self.recall(user_id, query)
         return _gate.answer(self.llm, query, r.grounded, r.unverified)
+
+    # -- maintenance -------------------------------------------------------
+    def maintain(self, user_id: str, *, consolidate: bool = True) -> dict:
+        """Run lifecycle maintenance for `user_id` — the "overnight" job.
+
+        Applies volatility-driven expiry (transient facts lapse, durable facts
+        get flagged possibly-stale, never silently dropped) and, if enabled,
+        consolidates cold episodes into denser records (preserving first failures,
+        fixes, illnesses, and dated commitments). Idempotent; call on a schedule."""
+        report = {"expiry": _lifecycle.expire(self.store, user_id, self.config)}
+        if consolidate:
+            report["consolidation"] = _lifecycle.consolidate(
+                self.store, self.llm, user_id, self.config)
+        return report
 
     def close(self) -> None:
         self.store.close()
