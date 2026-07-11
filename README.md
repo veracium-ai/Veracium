@@ -79,6 +79,8 @@ MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
 
 ## Documentation
 
+- **[examples/demo.ipynb](examples/demo.ipynb)** — the scam-email injection demo,
+  runnable end to end ([open in Colab](https://colab.research.google.com/github/veracium-ai/Veracium/blob/main/examples/demo.ipynb)).
 - **[docs/concepts.md](docs/concepts.md)** — the mental model: edges vs episodes
   vs the compiled wiki, provenance & authorship, quarantine, the abstention gate,
   lifecycle.
