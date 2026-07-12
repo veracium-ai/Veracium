@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **graph**: reinforcement now matches paraphrased values ("dog named Ollie" /
+  "dog Ollie" / "dog: Ollie") via order-preserving normalized-token comparison,
+  instead of exact string equality — a re-stated fact whose extraction phrasing
+  drifted between runs used to accumulate as a near-duplicate edge. Order still
+  matters ("tea over coffee" ≠ "coffee over tea"), so functional supersession of
+  genuinely new values is unaffected.
+
 ## 0.1.1
 
 Reliability fixes surfaced by building the runnable demo notebook

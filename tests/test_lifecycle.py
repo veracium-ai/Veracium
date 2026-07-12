@@ -61,6 +61,40 @@ def test_reinforcement_refreshes_not_duplicates():
         mem.close()
 
 
+def test_reinforcement_matches_paraphrased_values():
+    with tempfile.TemporaryDirectory() as d:
+        mem = _mem(d, [
+            {"triples": [{"subject": "user", "relation": "has_pet", "object": "dog named Ollie", "volatility": "durable"}],
+             "episode": "has a dog named Ollie"},
+            {"triples": [{"subject": "user", "relation": "has_pet", "object": "dog Ollie", "volatility": "durable"}],
+             "episode": "mentioned the dog again"},
+        ])
+        mem.remember("u", "I have a dog named Ollie.", date="2026-01-01")
+        mem.remember("u", "My dog Ollie is great.", date="2026-01-05")  # paraphrase → refresh
+        active = mem.store.edges("u", relation="has_pet")
+        assert len(active) == 1                              # reinforced, not duplicated
+        assert active[0].valid_from.date().isoformat() == "2026-01-05"
+        mem.close()
+
+
+def test_paraphrase_match_stays_order_sensitive():
+    with tempfile.TemporaryDirectory() as d:
+        mem = _mem(d, [
+            {"triples": [{"subject": "user", "relation": "prefers", "object": "tea over coffee", "volatility": "durable"}],
+             "episode": "prefers tea"},
+            {"triples": [{"subject": "user", "relation": "prefers", "object": "coffee over tea", "volatility": "durable"}],
+             "episode": "prefers coffee now"},
+        ])
+        mem.remember("u", "I prefer tea over coffee.", date="2026-01-01")
+        mem.remember("u", "Actually I prefer coffee over tea.", date="2026-01-05")
+        active = mem.store.edges("u", relation="prefers")
+        assert len(active) == 1                              # functional → superseded
+        assert active[0].object == "coffee over tea"         # NOT merged with the old value
+        hist = mem.store.edges("u", relation="prefers", active_only=False)
+        assert any(not e.active and e.object == "tea over coffee" for e in hist)
+        mem.close()
+
+
 def test_consolidation_preserves_and_compresses():
     with tempfile.TemporaryDirectory() as d:
         # 10 cold episodes; consolidation returns 3 (a failure, its fix, a routine merge)
@@ -86,5 +120,7 @@ def test_consolidation_preserves_and_compresses():
 if __name__ == "__main__":
     test_expiry_lapse_confirm_and_reinforcement()
     test_reinforcement_refreshes_not_duplicates()
+    test_reinforcement_matches_paraphrased_values()
+    test_paraphrase_match_stays_order_sensitive()
     test_consolidation_preserves_and_compresses()
     print("lifecycle OK")

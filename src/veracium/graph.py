@@ -15,6 +15,22 @@ from typing import Optional
 from .schema import DEFAULT_RELATIONS, Edge, Relation
 
 
+# Filler words that never change a value's meaning. Deliberately tiny: a false
+# "same" here silently merges two distinct facts, so anything that can carry
+# meaning (prepositions, verbs, qualifiers) stays.
+_VALUE_FILLER = {"a", "an", "the", "my", "our", "his", "her", "their",
+                 "named", "called"}
+
+
+def _value_key(text: str) -> tuple[str, ...]:
+    """Order-preserving normalization for value equivalence: paraphrases like
+    'dog named Ollie' / 'dog Ollie' / 'a dog called Ollie.' compare equal, while
+    order-sensitive values ('tea over coffee' vs 'coffee over tea') stay distinct."""
+    toks = tuple(w for w in re.findall(r"[a-z0-9]+", text.lower())
+                 if w not in _VALUE_FILLER)
+    return toks or (text.strip().lower(),)
+
+
 def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> None:
     """Persist a new edge with supersession and reinforcement:
 
@@ -22,15 +38,17 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
       (subject, relation, object), refresh its validity to the new date instead
       of adding a duplicate — so re-stating a fact keeps it alive (a re-mentioned
       transient state won't lapse) and clears any stale-confirmation flag.
+      "Same" is normalized-token equality (see _value_key), so an extractor
+      paraphrase of an unchanged value reinforces rather than duplicates.
     - Supersession: for a *functional* relation, a new value invalidates the
       prior active value (retained, reason 'superseded'), so history stays queryable.
     - Non-functional relations otherwise accumulate.
     """
-    same = edge.object.strip().lower()
+    same = _value_key(edge.object)
     for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
         if prior.id == edge.id:
             continue
-        if prior.object.strip().lower() == same:  # reinforcement
+        if _value_key(prior.object) == same:  # reinforcement
             prior.valid_from = edge.valid_from
             prior.provenance.observed_at = edge.provenance.observed_at
             prior.provenance.confidence = max(prior.provenance.confidence,
@@ -41,7 +59,7 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
     rel = relations.get(edge.relation)
     if rel and rel.functional:
         for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
-            if prior.id != edge.id and prior.object.strip().lower() != same:
+            if prior.id != edge.id and _value_key(prior.object) != same:
                 store.invalidate_edge(prior.id, edge.valid_from, "superseded")
                 edge.supersedes = prior.id
     store.add_edge(edge)
