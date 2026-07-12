@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.2
 
 - **graph**: reinforcement now matches paraphrased values ("dog named Ollie" /
   "dog Ollie" / "dog: Ollie") via order-preserving normalized-token comparison,
