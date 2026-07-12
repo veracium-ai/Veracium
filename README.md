@@ -1,6 +1,9 @@
 # veracium
 
 [![tests](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml/badge.svg)](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/veracium)](https://pypi.org/project/veracium/)
+[![Python](https://img.shields.io/pypi/pyversions/veracium)](https://pypi.org/project/veracium/)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A provenance-aware memory plug-in for agentic systems. Give any agent durable,
 per-user memory that recalls facts about the user, past interactions, and what
