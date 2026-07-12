@@ -111,5 +111,6 @@ def render_edges(edges: list[Edge]) -> str:
                          f"(SUPERSEDED {e.valid_from.date()}→{e.invalidated_at.date() if e.invalidated_at else '?'})")
         else:
             stale = " [possibly stale — confirm before relying on it]" if e.needs_confirmation else ""
-            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()}){stale}")
+            tp = " [third-party-reported; unconfirmed]" if e.use_only else ""
+            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()}){tp}{stale}")
     return "\n".join(lines)

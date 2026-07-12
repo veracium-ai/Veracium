@@ -26,11 +26,14 @@ from .schema import Edge, Episode, EvidenceAuthor
 def partition(edges: list[Edge], episodes: list[Episode]) -> tuple[str, str]:
     """Split assembled memory into (grounded, unverified) rendered blocks.
 
-    Grounded = active, non-quarantined edges + user/system-authored episodes.
-    Unverified = quarantined claims + third-party-authored episodes (records that
-    a claim was *received*, not that it is true)."""
-    grounded_edges = [e for e in edges if e.active and not e.quarantined]
-    claim_edges = [e for e in edges if e.quarantined]
+    Grounded = assertable edges (active, non-quarantined, not third-party-derived)
+    + user/system-authored episodes.
+    Unverified = quarantined claims, active third-party inferences (use_only —
+    real-looking facts whose only support is a third-party source), and
+    third-party-authored episodes (records that a claim was *received*, not that
+    it is true)."""
+    grounded_edges = [e for e in edges if e.assertable]
+    claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]
     grounded_eps = [e for e in episodes
                     if e.provenance.author_of_evidence != EvidenceAuthor.THIRD_PARTY]
     tp_eps = [e for e in episodes

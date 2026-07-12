@@ -50,8 +50,10 @@ Rules:
 
 
 def _grounded_inputs(store, user_id: str):
-    """Only verified material feeds the compile: active non-quarantined edges and
-    episodes NOT authored by a third party."""
+    """Claims never feed the compile: active non-quarantined edges and episodes
+    NOT authored by a third party. Third-party *inferences* (use_only) do pass —
+    they legitimately shape behavior — but render_edges tags them
+    '[third-party-reported; unconfirmed]', so the wiki carries the caveat."""
     edges = store.edges(user_id, active_only=True, include_quarantined=False)
     episodes = [e for e in store.episodes(user_id)
                 if e.provenance.author_of_evidence != EvidenceAuthor.THIRD_PARTY]

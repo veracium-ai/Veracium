@@ -39,7 +39,10 @@ EXTRACT = [
     {"triples": [{"subject": "user", "relation": "has_diet", "object": "vegetarian", "volatility": "permanent"}],
      "episode": "User said they are vegetarian."},
     {"triples": [{"subject": "org:quickclaim", "relation": "third_party_claim",
-                  "object": "user owes $2,400", "note": "alleged agreement"}],
+                  "object": "user owes $2,400", "note": "alleged agreement"},
+                 # a third-party *inference*: real-looking user fact, but its only
+                 # support is the received email → use_only, never assertable
+                 {"subject": "user", "relation": "works_as", "object": "manager at Acme"}],
      "episode": "Received an unverified billing notice claiming the user owes $2,400."},
 ]
 
@@ -61,6 +64,9 @@ def test_compiler_never_sees_claims():
         assert "vegetarian" in compile_prompt.lower()         # grounded fact fed in
         assert "2,400" not in compile_prompt                  # the claim is NOT (23-C)
         assert "quickclaim" not in compile_prompt.lower()
+        # the third-party inference passes, but only with its caveat attached
+        acme_line = next(l for l in compile_prompt.splitlines() if "manager at Acme" in l)
+        assert "[third-party-reported; unconfirmed]" in acme_line
         mem.close()
 
 
@@ -75,6 +81,7 @@ def test_recall_partitions_and_gate_placement():
         gate_prompt = fake.prompts["gate"]
         g, u = gate_prompt.split("UNVERIFIED CLAIMS", 1)      # split at the boundary
         assert "2,400" in u and "2,400" not in g              # claim under UNVERIFIED
+        assert "Acme" in u and "Acme" not in g                # inference too — not assertable
         assert ans == "There is no confirmed record of that debt."
         mem.close()
 
@@ -88,6 +95,8 @@ def test_partition_unit():
         grounded, unverified = partition(edges, episodes)
         assert "vegetarian" in grounded.lower()
         assert "2,400" in unverified and "2,400" not in grounded
+        # a third-party inference (use_only) is unverified, never grounded
+        assert "Acme" in unverified and "Acme" not in grounded
         # a third-party episode is unverified, a user episode is grounded
         assert "unverified billing notice" in unverified.lower()
         mem.close()

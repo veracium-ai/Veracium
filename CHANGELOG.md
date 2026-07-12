@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **gate/graph** (security): third-party *inferences* — real-looking user facts
+  whose only support is third-party evidence (marked `use_only` at ingest) — were
+  treated as grounded by the abstention gate and rendered as bare facts, so
+  `answer()` would assert e.g. an employer learned solely from a received email.
+  The `use_only` disclosure is now enforced everywhere it's read: the gate
+  partitions these under UNVERIFIED (never asserted), and `render_edges` tags
+  them `[third-party-reported; unconfirmed]` in recall context and the compiled
+  wiki. New `Edge.assertable` / `Edge.use_only` properties expose the discipline.
+
 ## 0.1.2
 
 - **graph**: reinforcement now matches paraphrased values ("dog named Ollie" /

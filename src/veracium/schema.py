@@ -176,6 +176,19 @@ class Edge(BaseModel):
         return (self.relation == QUARANTINE_RELATION
                 or self.provenance.disclosure == Disclosure.QUARANTINED)
 
+    @property
+    def use_only(self) -> bool:
+        # A benign third-party *inference* (finding B): may shape behavior, but
+        # the user never confirmed it — never volunteered or asserted as fact.
+        return self.provenance.disclosure == Disclosure.USE_ONLY
+
+    @property
+    def assertable(self) -> bool:
+        """Safe to state as fact: active, not a quarantined claim, and not an
+        unconfirmed third-party inference. The gate's GROUNDED bucket keys on
+        this — everything else is context, not assertion material."""
+        return self.active and not self.quarantined and not self.use_only
+
 
 class Episode(BaseModel):
     """A dated narrative record of what happened in one interaction/event.
