@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.3
 
 - **gate/graph** (security): third-party *inferences* — real-looking user facts
   whose only support is third-party evidence (marked `use_only` at ingest) — were

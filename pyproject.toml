@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "veracium"
-version = "0.1.2"
+version = "0.1.3"
 description = "A provenance-aware memory plug-in for agentic systems: typed graph + episodes, LLM-curated recall, structural injection quarantine, and an evidence-grounded abstention gate."
 readme = "README.md"
 requires-python = ">=3.10"
