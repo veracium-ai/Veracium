@@ -50,7 +50,8 @@ def _provider_files(llm) -> tuple:
 
 def run(mem_factory, path=FIXTURES, *, n: int = 200, seed: int = 0,
         inject_frac: float = 0.15, truncate_chars: int = 16000,
-        answer_frac: float = 0.15, verbose: bool = False) -> dict:
+        answer_frac: float = 0.15, s4_samples: int = 5,
+        verbose: bool = False) -> dict:
     """mem_factory() -> a fresh Memory on an isolated temp store, with a cheap
     llm. Returns the scorecard dict (invariants.Accumulators.scorecard)."""
     mem = mem_factory()
@@ -59,8 +60,10 @@ def run(mem_factory, path=FIXTURES, *, n: int = 200, seed: int = 0,
                                           inject_frac=inject_frac,
                                           truncate_chars=truncate_chars)
     manifest["answer_frac"] = answer_frac
+    manifest["s4_samples"] = s4_samples
     manifest["provider"] = type(mem.llm).__name__
     rng = random.Random(seed + 1)  # decoupled from the adapter's sampling stream
+    s4_candidates = []  # user turns that yielded facts — S4 re-ingests a sample
 
     for ci, (uid, turns) in enumerate(convos):
         for turn in turns:
@@ -78,18 +81,39 @@ def run(mem_factory, path=FIXTURES, *, n: int = 200, seed: int = 0,
                                               include_quarantined=True)
                    if e.id not in before]
             acc.check_edges(new, turn)                                  # H3/H4/S2
+            if turn["author"].value == "user" and r.get("facts"):
+                s4_candidates.append((uid, turn))
 
         if rng.random() < answer_frac:
-            for op, fn in (("answer", lambda: mem.answer(uid, "what do you know about me?")),
-                           ("maintain", lambda: mem.maintain(uid))):
-                t0 = time.monotonic()
-                try:
-                    fn()                                                # H1
-                    acc.latency[op].append((time.monotonic() - t0) * 1000)
-                except Exception as e:
-                    acc.crash(op, e, uid)
+            t0 = time.monotonic()
+            try:
+                mem.answer(uid, "what do you know about me?")           # H1
+                acc.latency["answer"].append((time.monotonic() - t0) * 1000)
+            except Exception as e:
+                acc.crash("answer", e, uid)
+            n_edges = len(mem.store.edges(uid))
+            n_episodes = len(mem.store.episodes(uid))
+            t0 = time.monotonic()
+            try:
+                rep = mem.maintain(uid)                                 # H1
+                acc.latency["maintain"].append((time.monotonic() - t0) * 1000)
+                acc.check_maintain(rep, n_edges=n_edges, n_episodes=n_episodes)  # S5
+            except Exception as e:
+                acc.crash("maintain", e, uid)
         if verbose and (ci + 1) % 10 == 0:
             print(f"  …{ci + 1}/{len(convos)} conversations", file=sys.stderr)
+
+    for uid, turn in rng.sample(s4_candidates, min(s4_samples, len(s4_candidates))):
+        before = _edge_ids(mem.store, uid)                              # S4
+        try:
+            mem.remember(uid, turn["text"], author=turn["author"],
+                         event_type=turn["event_type"])
+        except Exception as e:
+            acc.crash("remember", e, turn["text"])
+            continue
+        acc.reingest_stat(turn, [e for e in mem.store.edges(uid, active_only=False,
+                                                            include_quarantined=True)
+                                 if e.id not in before])
 
     acc.check_isolation(mem.store, [uid for uid, _ in convos[:20]])     # H2
     mem.close()
@@ -105,6 +129,7 @@ if __name__ == "__main__":
     ap.add_argument("--inject-frac", type=float, default=0.15)
     ap.add_argument("--truncate-chars", type=int, default=16000)
     ap.add_argument("--answer-frac", type=float, default=0.15)
+    ap.add_argument("--s4-samples", type=int, default=5)
     args = ap.parse_args()
 
     sys.path.insert(0, str(Path(__file__).parents[2] / "examples"))
@@ -118,7 +143,7 @@ if __name__ == "__main__":
 
     card = run(factory, args.path, n=args.n, seed=args.seed,
                inject_frac=args.inject_frac, truncate_chars=args.truncate_chars,
-               answer_frac=args.answer_frac, verbose=True)
+               answer_frac=args.answer_frac, s4_samples=args.s4_samples, verbose=True)
     print(json.dumps(card, indent=2, default=str))
     print("\nPASSED" if card["passed"] else "\nFAILED", "—", card["hard"])
     raise SystemExit(0 if card["passed"] else 1)

@@ -14,6 +14,18 @@ content-independent guarantees):
   H4 malformed_edges — every new edge has non-empty subject/relation/object and
      provenance matching the author actually passed.
 
+Soft signals (proposal §6) include the Phase-2 checkers:
+
+  S4 reinforcement, not duplication — re-ingesting a turn that already yielded
+     facts should reinforce existing edges, not add rows. New rows are split:
+     `duplicated` (accumulated alongside a still-active equivalent — the bad
+     case) vs `superseded_churn` (replaced a prior value; either a genuine
+     restatement of an older value, or paraphrase drift on a functional
+     relation). A distribution, not a gate — extraction is nondeterministic.
+  S5 maintain safety — every maintain() report carries non-negative counts
+     bounded by the store it ran over (can't lapse more edges than exist,
+     can't consolidate more episodes than exist, never expands them).
+
 Reports carry only redacted snippets (adapter.snippet) — never raw corpus text.
 """
 
@@ -52,6 +64,9 @@ class Accumulators:
         self.latency: dict[str, list[float]] = {"remember": [], "answer": [], "maintain": []}
         self.turns = self.substantive = self.empty_substantive = 0
         self.total_facts = self.total_quarantined = 0
+        self.s4 = {"reingested": 0, "turns_with_growth": 0, "duplicated": 0,
+                   "superseded_churn": 0, "examples": []}
+        self.s5 = {"runs": 0, "violations": []}
 
     # -- H1 -------------------------------------------------------------------
     def crash(self, op: str, exc: BaseException, text: str) -> None:
@@ -94,6 +109,38 @@ class Accumulators:
                     or result.get("episode")):
                 self.empty_substantive += 1
 
+    # -- S4 ---------------------------------------------------------------------
+    def reingest_stat(self, turn, new_edges) -> None:
+        self.s4["reingested"] += 1
+        if new_edges:
+            self.s4["turns_with_growth"] += 1
+            for e in new_edges:
+                self.s4["superseded_churn" if e.supersedes else "duplicated"] += 1
+            if len(self.s4["examples"]) < _MAX_OFFENDERS:
+                self.s4["examples"].append(
+                    {"input": snippet(turn["text"]),
+                     "new": [f"{e.relation}: {snippet(e.object, 60)}"
+                             f"{' (superseded prior)' if e.supersedes else ' (DUPLICATE)'}"
+                             for e in new_edges]})
+
+    # -- S5 ---------------------------------------------------------------------
+    def check_maintain(self, report: dict, *, n_edges: int, n_episodes: int) -> None:
+        self.s5["runs"] += 1
+        ex = report.get("expiry", {})
+        co = report.get("consolidation", {})
+        counts = {**{f"expiry.{k}": v for k, v in ex.items()},
+                  **{f"consolidation.{k}": v for k, v in co.items()}}
+        bad = [f"{k}={v!r}" for k, v in counts.items()
+               if not isinstance(v, int) or v < 0]
+        if sum(ex.get(k, 0) for k in ("lapsed", "decayed", "flagged_for_confirmation")) > n_edges:
+            bad.append(f"expired more than the {n_edges} active edges")
+        if co.get("consolidated", 0) > n_episodes:
+            bad.append(f"consolidated more than the {n_episodes} episodes")
+        if co.get("into", 0) > co.get("consolidated", 0):
+            bad.append("consolidation expanded episodes")
+        if bad:
+            self.s5["violations"].append({"problems": bad, "report": counts})
+
     # -- H2 ----------------------------------------------------------------------
     def check_isolation(self, store, user_ids) -> None:
         for uid in user_ids:
@@ -126,6 +173,8 @@ class Accumulators:
                           "facts": self.total_facts,
                           "quarantined": self.total_quarantined},
                 "relation_drift": self.relation_drift,
+                "reinforcement": self.s4,
+                "maintain": self.s5,
                 "latency_ms": {op: _percentiles(v) for op, v in self.latency.items() if v},
             },
             "manifest": manifest,

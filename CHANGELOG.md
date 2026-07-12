@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **tests**: robustness tier Phase 2 — S4 (reinforcement ≠ duplication: a seeded
+  sample of fact-yielding turns is re-ingested; new-edge growth is reported as a
+  distribution) and S5 (every `maintain()` report must carry non-negative counts
+  bounded by the store it ran over). Both soft signals; hard gates unchanged.
+
 ## 0.1.4
 
 - **ingest**: an unparseable distill response (the extractor answering in prose —
