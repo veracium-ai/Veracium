@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- **ingest**: an unparseable distill response (the extractor answering in prose —
+  typically a refusal on jailbreak-shaped or degenerate input) no longer raises
+  out of `remember()`; it records nothing and returns
+  `{"episode": "", "facts": 0, "quarantined": 0, "unparseable": True}`, with a
+  content-free `unparseable` counter in the telemetry `ingest` event. Found by
+  the new robustness tier on its first run (7/19 fixture turns crashed).
+- **tests**: new opt-in robustness tier (`tests/robustness/`,
+  `VERACIUM_ROBUSTNESS=1`) — streams real, messy conversations through the write
+  path and holds veracium's guarantees as hard invariants (no internal crashes,
+  no cross-user leakage, no assertable third-party user-facts, well-formed
+  persistence), plus soft distributions (yield, relation drift, latency,
+  provider crash-rate). Ships a committed adversarial fixture corpus
+  (`fixtures/messy.jsonl`); points at a locally exported lmsys-chat-1m for the
+  full run. Reports are redacted — raw corpus text never appears.
+
 ## 0.1.3
 
 - **gate/graph** (security): third-party *inferences* — real-looking user facts

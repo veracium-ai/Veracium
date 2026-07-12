@@ -34,7 +34,7 @@ from typing import Optional
 # except the event name itself, which is one of these fixed keys.
 EVENT_FIELDS: dict[str, set[str]] = {
     "ingest": {"facts", "quarantined", "episodes", "supersessions", "reinforcements",
-               "distill_in_tok", "distill_out_tok", "ms"},
+               "unparseable", "distill_in_tok", "distill_out_tok", "ms"},
     "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items", "ms"},
     "answer": {"abstained", "gate_in_tok", "gate_out_tok", "ms"},
     "maintain": {"lapsed", "decayed", "flagged", "consolidated_in", "consolidated_out"},

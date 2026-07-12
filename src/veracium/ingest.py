@@ -68,7 +68,15 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         event_text=event_text, relations=rel_names)
     raw = llm(prompt, system=prompts.EXTRACT_SYSTEM, role="distill",
               json_schema=prompts.EXTRACT_SCHEMA)
-    data = extract_json(raw)
+    try:
+        data = extract_json(raw)
+    except ValueError:
+        # The distiller sometimes answers in prose instead of JSON — typically a
+        # refusal on jailbreak-shaped or degenerate input. That's an input
+        # condition (the BYO contract tolerates schema-ignoring providers), not
+        # a veracium defect: record nothing rather than crash the host's
+        # ingestion. Callers see `unparseable`; the raw text is never logged.
+        return {"episode": "", "facts": 0, "quarantined": 0, "unparseable": True}
     when = _event_dt(date)
 
     # episode — always recorded; carries author so the gate knows a third-party

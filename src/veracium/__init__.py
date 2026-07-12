@@ -114,6 +114,7 @@ class Memory:
             raise
         self._record("ingest", {"facts": r["facts"], "quarantined": r["quarantined"],
                                 "episodes": 1 if r["episode"] else 0,
+                                "unparseable": 1 if r.get("unparseable") else 0,
                                 "ms": int((time.perf_counter() - t0) * 1000)})
         return r
 
