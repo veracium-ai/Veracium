@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.4
 
 - **ingest**: an unparseable distill response (the extractor answering in prose —
   typically a refusal on jailbreak-shaped or degenerate input) no longer raises
