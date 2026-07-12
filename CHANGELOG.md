@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.5
 
 - **ingest/_json**: a distill response whose first parseable JSON value is a
   *list* no longer crashes `remember()` (`'list' object has no attribute
