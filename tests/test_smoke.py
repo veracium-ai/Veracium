@@ -109,3 +109,27 @@ def test_unparseable_extraction_degrades_gracefully():
     assert mem.store.edges("u", active_only=False) == []
     assert mem.store.episodes("u") == []
     mem.close()
+
+
+def test_extract_json_prefers_dict_and_recovers_bare_arrays():
+    # Found by the robustness tier on lmsys-chat-1m: code-shaped turns coax the
+    # distiller into a bare triples array (or prose with a stray list before the
+    # object), which crashed ingest with "'list' object has no attribute 'get'".
+    from veracium._json import extract_json
+    from veracium import Memory, MemoryConfig
+
+    # stray list in prose before the real object -> the object wins
+    assert extract_json('choices: [] and then {"triples": [], "episode": "e"}') \
+        == {"triples": [], "episode": "e"}
+    # a dict inside a bare array is not mistaken for the payload
+    assert extract_json('[{"a": 1}, {"b": 2}]') == [{"a": 1}, {"b": 2}]
+
+    # end-to-end: a bare triples array is recovered as facts, not a crash
+    def bare_array(prompt, *, system=None, role="", json_schema=None):
+        return '[{"subject": "user", "relation": "uses_tool", "object": "web3"}]'
+
+    mem = Memory(llm=bare_array, config=MemoryConfig(db_path=":memory:"))
+    r = mem.remember("u", "Please write code using Python's web3 library")
+    assert r["facts"] == 1 and not r.get("unparseable")
+    assert mem.store.edges("u")[0].object == "web3"
+    mem.close()

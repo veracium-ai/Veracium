@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **ingest/_json**: a distill response whose first parseable JSON value is a
+  *list* no longer crashes `remember()` (`'list' object has no attribute
+  'get'`). `extract_json` now prefers the first JSON *object* — skipping prose
+  debris like a stray `[]` before the real payload — and returns a bare array
+  only as a fallback, which ingest normalizes as the triples payload with its
+  wrapper omitted. Found by the robustness tier's first lmsys-chat-1m run
+  (3/368 real turns crashed, all code-shaped inputs).
 - **tests**: robustness tier Phase 2 — S4 (reinforcement ≠ duplication: a seeded
   sample of fact-yielding turns is re-ingested; new-edge growth is reported as a
   distribution) and S5 (every `maintain()` report must carry non-negative counts

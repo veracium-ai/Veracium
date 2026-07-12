@@ -70,6 +70,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
               json_schema=prompts.EXTRACT_SCHEMA)
     try:
         data = extract_json(raw)
+        if isinstance(data, list):
+            # a bare array is the triples payload with its wrapper omitted
+            data = {"triples": data}
     except ValueError:
         # The distiller sometimes answers in prose instead of JSON — typically a
         # refusal on jailbreak-shaped or degenerate input. That's an input
