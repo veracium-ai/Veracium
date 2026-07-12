@@ -1,0 +1,49 @@
+name: Bug report
+description: Something behaves incorrectly
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: veracium version
+      placeholder: "0.1.5 (pip show veracium)"
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: LLM provider
+      description: Which `Complete` callable — Anthropic reference, CLI wrapper, custom?
+      placeholder: "AnthropicComplete (claude-haiku-4-5 distill)"
+    validations:
+      required: true
+  - type: input
+    id: store
+    attributes:
+      label: Store backend
+      placeholder: "SqliteStore (default)"
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: >-
+        Smallest sequence of remember/recall/answer/maintain calls that shows the
+        problem. If the misbehavior depends on what the model extracted, include
+        the edges (`mem.store.edges(user_id, active_only=False)`) — redact
+        anything personal.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: >-
+        **Quarantine bypass, gate bypass, or cross-user leakage is a security
+        vulnerability** — please report it privately via
+        [Security → Report a vulnerability](../../security/advisories/new)
+        instead of a public issue.

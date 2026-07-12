@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability (quarantine/gate bypass, cross-user leak)
+    url: https://github.com/veracium-ai/Veracium/security/advisories/new
+    about: Report privately — these are vulnerabilities, not quality bugs.
+  - name: Questions & discussion
+    url: https://github.com/veracium-ai/Veracium/discussions
+    about: Usage questions, design discussion, show-and-tell.

@@ -1,0 +1,31 @@
+name: Integration request
+description: "I want veracium in framework/agent X"
+labels: ["integration"]
+body:
+  - type: input
+    id: target
+    attributes:
+      label: Framework / agent / platform
+      placeholder: "LangGraph, CrewAI, a specific MCP client, ..."
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: What the integration should look like
+      description: >-
+        Where would remember/recall/answer hook in? Note veracium already ships
+        an MCP server (`veracium[mcp]`) — if your target speaks MCP, say what's
+        missing beyond it.
+    validations:
+      required: true
+  - type: dropdown
+    id: help
+    attributes:
+      label: Can you help build or test it?
+      options:
+        - I can build it with guidance
+        - I can test against my setup
+        - Neither, just registering demand
+    validations:
+      required: true

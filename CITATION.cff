@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use veracium in your research, please cite it as below."
+type: software
+title: "veracium: a provenance-aware memory plug-in for agentic systems"
+authors:
+  - family-names: Spencer
+    given-names: Quentin
+repository-code: "https://github.com/veracium-ai/Veracium"
+url: "https://github.com/veracium-ai/Veracium"
+license: MIT
+version: 0.1.5
+date-released: 2026-07-12
+keywords:
+  - agent memory
+  - LLM
+  - provenance
+  - prompt injection
+  - abstention
+abstract: >-
+  veracium gives agentic systems durable, per-user memory with structural
+  defenses against memory poisoning and confabulation: typed graph edges with
+  provenance and functional supersession, quarantine of third-party claims,
+  an LLM-curated recall view, and an evidence-grounded abstention gate that
+  answers only from grounded memory.
