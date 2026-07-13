@@ -34,13 +34,18 @@ def _event_dt(date_str: str) -> datetime:
         return utcnow()
 
 
-def _disclosure_for(author: EvidenceAuthor, relation: str) -> Disclosure:
+def _disclosure_for(author: EvidenceAuthor, relation: str,
+                    derived_from: Optional[EvidenceAuthor] = None) -> Disclosure:
     """Structural quarantine (defense in depth over the extractor's routing):
     a third-party CLAIM is quarantined; a third-party inference is use-only;
-    user/system content is mentionable."""
+    user/system content is mentionable. Trust is capped at the MINIMUM of the
+    event's author and its declared content source (`derived_from`) — a
+    system-authored event whose text embeds third-party material never yields
+    mentionable edges, whatever the extractor thinks."""
     if relation == QUARANTINE_RELATION:
         return Disclosure.QUARANTINED
-    if author == EvidenceAuthor.THIRD_PARTY:
+    if (author == EvidenceAuthor.THIRD_PARTY
+            or derived_from == EvidenceAuthor.THIRD_PARTY):
         return Disclosure.USE_ONLY
     return Disclosure.MENTIONABLE
 
@@ -56,9 +61,12 @@ def _source_type(author: EvidenceAuthor, event_type: str) -> SourceType:
 def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                  author: EvidenceAuthor, date: str, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
+                 derived_from: Optional[EvidenceAuthor] = None,
                  relations: dict[str, Relation] = DEFAULT_RELATIONS) -> dict:
     """Extract and persist memory from one event. Returns a small summary dict
-    (counts + the episode) for logging/telemetry."""
+    (counts + the episode) for logging/telemetry. `derived_from` declares that
+    the event's content embeds material from a lower-trust source; disclosure
+    and episode routing are capped accordingly (see _disclosure_for)."""
     evidence_ref = evidence_ref or _uid("ev")
     rel_names = "\n".join(
         f"- {name}: {rel.desc}" if rel.desc else f"- {name}"
@@ -87,7 +95,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             id=_uid("ep"), user_id=user_id, date=date, summary=summary,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  observed_at=_event_dt(date))))
+                                  derived_from=derived_from, observed_at=_event_dt(date))))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True}
     when = _event_dt(date)
 
@@ -99,14 +107,14 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  observed_at=when)))
+                                  derived_from=derived_from, observed_at=when)))
 
     n_facts = n_quarantined = 0
     for t in data.get("triples", []):
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
             continue
         relation = str(t["relation"]).strip()
-        disclosure = _disclosure_for(author, relation)
+        disclosure = _disclosure_for(author, relation, derived_from)
         try:
             vol = Volatility(str(t.get("volatility", "durable")).strip().lower())
         except ValueError:
@@ -117,7 +125,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             note=str(t.get("note", "")).strip(), volatility=vol,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  disclosure=disclosure, observed_at=when),
+                                  disclosure=disclosure, derived_from=derived_from,
+                                  observed_at=when),
             valid_from=when)
         apply_supersession(store, edge, relations)
         if edge.quarantined:

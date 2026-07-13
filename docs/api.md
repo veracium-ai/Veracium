@@ -15,7 +15,7 @@ Memory(*, llm, store=None, embed=None, config=None)
 - `embed` — an optional `Embed` callable (reserved for episode semantic fallback).
 - `config` — a `MemoryConfig`; defaults to `MemoryConfig()`.
 
-### `remember(user_id, text, *, author=EvidenceAuthor.USER, date=None, event_type="chat", evidence_ref=None) -> dict`
+### `remember(user_id, text, *, author=EvidenceAuthor.USER, date=None, event_type="chat", evidence_ref=None, derived_from=None) -> dict`
 
 Ingest one interaction event into `user_id`'s memory: extracts typed edges + a
 dated episode, applies supersession/reinforcement, and quarantines third-party
@@ -24,6 +24,11 @@ claims.
 - `author` — **the trust-critical input.** `EvidenceAuthor.USER` for the user's own
   messages and sent mail; `EvidenceAuthor.THIRD_PARTY` for received mail / external
   documents (their claims are quarantined); `EvidenceAuthor.SYSTEM` for derived content.
+- `derived_from` — declare that the event's *text* embeds content from a lower-trust
+  source (e.g. `author=SYSTEM, derived_from=THIRD_PARTY` for a system summary quoting
+  a received email). Trust is capped at the minimum of the two — quoted material can
+  never become an assertable fact. See
+  [concepts → Mixed provenance](concepts.md#mixed-provenance-derived_from).
 - `date` — ISO date the event occurred (`"2026-06-01"`); defaults to today. Drives
   fact timestamps **and** anchors the calendar used to resolve relative dates in the
   text ("Friday" → a real date), so pass an accurate value for historical or dated

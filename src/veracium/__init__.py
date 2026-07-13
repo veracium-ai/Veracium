@@ -97,18 +97,27 @@ class Memory:
     def remember(self, user_id: str, event_text: str, *,
                  author: EvidenceAuthor = EvidenceAuthor.USER,
                  date: Optional[str] = None, event_type: str = "chat",
-                 evidence_ref: Optional[str] = None) -> dict:
+                 evidence_ref: Optional[str] = None,
+                 derived_from: Optional[EvidenceAuthor] = None) -> dict:
         """Ingest one interaction event into `user_id`'s memory.
 
         `author` is the trust-critical input: use EvidenceAuthor.THIRD_PARTY for
-        received email / external documents so their claims are quarantined."""
+        received email / external documents so their claims are quarantined.
+
+        Authorship is per-event; if the event's *content* embeds material a
+        lower-trust party influenced — a system-authored summary quoting a
+        received email's subject or body — declare it with `derived_from`
+        (e.g. `author=SYSTEM, derived_from=THIRD_PARTY`). Trust is capped at
+        the minimum of the two: nothing extracted from such an event is ever
+        assertable, closing the system-event laundering bypass."""
         from datetime import date as _date
         date = date or _date.today().isoformat()
         t0 = time.perf_counter()
         try:
             r = ingest_event(self.store, self.llm, user_id, event_text=event_text,
                              author=author, date=date, event_type=event_type,
-                             evidence_ref=evidence_ref, relations=self.config.relations)
+                             evidence_ref=evidence_ref, derived_from=derived_from,
+                             relations=self.config.relations)
         except Exception as e:
             self._on_error("remember", e, user_id)
             raise

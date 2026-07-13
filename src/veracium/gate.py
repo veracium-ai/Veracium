@@ -20,7 +20,7 @@ from typing import Optional
 
 from .graph import render_edges
 from .llm.base import Complete
-from .schema import Edge, Episode, EvidenceAuthor
+from .schema import Edge, Episode
 
 
 def partition(edges: list[Edge], episodes: list[Episode]) -> tuple[str, str]:
@@ -30,14 +30,14 @@ def partition(edges: list[Edge], episodes: list[Episode]) -> tuple[str, str]:
     + user/system-authored episodes.
     Unverified = quarantined claims, active third-party inferences (use_only —
     real-looking facts whose only support is a third-party source), and
-    third-party-authored episodes (records that a claim was *received*, not that
-    it is true)."""
+    third-party-*influenced* episodes: authored by a third party OR declared
+    `derived_from` third-party content (a system-authored summary quoting a
+    received email launders attacker text into its episode — route by influence,
+    never by authorship alone)."""
     grounded_edges = [e for e in edges if e.assertable]
     claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]
-    grounded_eps = [e for e in episodes
-                    if e.provenance.author_of_evidence != EvidenceAuthor.THIRD_PARTY]
-    tp_eps = [e for e in episodes
-              if e.provenance.author_of_evidence == EvidenceAuthor.THIRD_PARTY]
+    grounded_eps = [e for e in episodes if not e.provenance.third_party_influenced]
+    tp_eps = [e for e in episodes if e.provenance.third_party_influenced]
 
     grounded = []
     if grounded_edges:

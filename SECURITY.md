@@ -18,6 +18,12 @@ Report these privately (below), not as public issues:
   compiled, or answered into another user's context.
 - **Provenance forgery** — causing content to be stored with a higher trust
   authorship (`USER`/`SYSTEM`) than its true source.
+- **Trust-cap bypass ("laundering")** — third-party-influenced content reaching an
+  assertable surface despite a correct `derived_from` declaration (the cap is
+  structural; it must not depend on the extractor's judgment). Note the converse is
+  a *host* responsibility: an event that embeds third-party text but is ingested
+  without `derived_from` is a misdeclaration by the caller — see
+  `docs/concepts.md` → "Mixed provenance".
 - **Unintended data egress** — telemetry or diagnostics transmitting memory content,
   or sending anything without the documented consent gate.
 

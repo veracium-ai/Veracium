@@ -118,9 +118,69 @@ def test_partition_unit():
         mem.close()
 
 
+LAUNDER_EXTRACT = [
+    # what a distiller plausibly does with a hostile subject quoted inside a
+    # system-authored triage verdict (the "system-event laundering" attack)
+    {"triples": [{"subject": "user", "relation": "uses_tool",
+                  "object": "Acme Collections client portal"}],
+     "episode": "Triage classified mail from collections@acme.example (subject: "
+                "'Final notice: user owes Acme Collections $4,980') as spam."},
+    # a clean system observation with no embedded third-party content
+    {"triples": [{"subject": "user", "relation": "uses_tool", "object": "triage pipeline"}],
+     "episode": "Triage ran at 09:02."},
+]
+
+
+def test_system_event_laundering_is_structurally_capped():
+    """The §3 attack from the system-event-laundering finding: a SYSTEM-authored
+    event whose text embeds attacker-controlled content, declared via
+    derived_from=THIRD_PARTY. Nothing extracted from it — edge or episode — may
+    reach any assertable surface. Structural: holds whatever the extractor does."""
+    with tempfile.TemporaryDirectory() as d:
+        fake = RoleFake(LAUNDER_EXTRACT)
+        mem = Memory(llm=fake, config=MemoryConfig(db_path=f"{d}/t.db",
+                                                   wiki_recompile_after_writes=1))
+        mem.remember("u", "The triage agent classified the email from "
+                          "collections@acme.example (subject: 'Final notice: user owes "
+                          "Acme Collections $4,980') as spam.",
+                     author=EvidenceAuthor.SYSTEM, event_type="triage",
+                     derived_from=EvidenceAuthor.THIRD_PARTY)
+
+        # lock 1 — no assertable edge, ever; provenance round-trips both fields
+        edges = mem.store.edges("u", active_only=False)
+        assert edges and all(not e.assertable for e in edges)
+        assert all(e.provenance.author_of_evidence == EvidenceAuthor.SYSTEM
+                   and e.provenance.derived_from == EvidenceAuthor.THIRD_PARTY
+                   for e in edges)
+
+        # lock 2 — the gate never places the laundered content in GROUNDED,
+        # neither via the edge nor via the episode quoting the subject
+        episodes = mem.store.episodes("u")
+        grounded, unverified = partition(edges, episodes)
+        assert "4,980" not in grounded and "Acme" not in grounded
+        assert "4,980" in unverified
+        assert all(e.provenance.third_party_influenced for e in episodes)
+
+        # lock 3 — the wiki compile sees none of it (cf. the 0.1.6 fix)
+        from veracium import compile as _compile
+        c_edges, c_eps = _compile._grounded_inputs(mem.store, "u")
+        assert c_edges == [] and c_eps == []
+
+        # backward compat: a clean SYSTEM event (no derived_from) is unchanged —
+        # its facts and episode remain assertable/grounded
+        mem.remember("u", "Triage ran at 09:02.", author=EvidenceAuthor.SYSTEM,
+                     event_type="triage")
+        clean = [e for e in mem.store.edges("u") if "pipeline" in e.object]
+        assert clean and clean[0].assertable
+        g2, _ = partition(mem.store.edges("u", active_only=False), mem.store.episodes("u"))
+        assert "triage pipeline" in g2 and "09:02" in g2
+        mem.close()
+
+
 if __name__ == "__main__":
     for fn in (test_compiler_never_sees_claims, test_grounded_inputs_excludes_use_only,
-               test_recall_partitions_and_gate_placement, test_partition_unit):
+               test_recall_partitions_and_gate_placement, test_partition_unit,
+               test_system_event_laundering_is_structurally_capped):
         with tempfile.TemporaryDirectory():
             fn()
     print("compile+gate OK")

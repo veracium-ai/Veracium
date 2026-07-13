@@ -16,7 +16,6 @@ from typing import Optional
 
 from .graph import render_edges
 from .llm.base import Complete
-from .schema import EvidenceAuthor
 
 COMPILE_SYSTEM = (
     "You are the memory curator for an AI assistant. You compile a compact, "
@@ -59,8 +58,11 @@ def _grounded_inputs(store, user_id: str):
     unverified channel; it is not lost, only kept out of the assertable body."""
     edges = [e for e in store.edges(user_id, active_only=True, include_quarantined=False)
              if not e.use_only]
+    # Episodes are excluded by third-party *influence*, not authorship alone: a
+    # system-authored episode derived from third-party content (derived_from)
+    # carries that content verbatim and must not reach the assertable wiki.
     episodes = [e for e in store.episodes(user_id)
-                if e.provenance.author_of_evidence != EvidenceAuthor.THIRD_PARTY]
+                if not e.provenance.third_party_influenced]
     return edges, episodes
 
 

@@ -55,6 +55,19 @@ class Provenance(BaseModel):
     observed_at: datetime = Field(default_factory=utcnow)
     disclosure: Disclosure = Disclosure.MENTIONABLE
     confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+    # Authorship is per-event, but an event's CONTENT can embed lower-trust
+    # material (a system-authored triage verdict quoting a received email's
+    # subject). derived_from declares that: trust is capped at the minimum of
+    # author and derived_from, closing the "system-event laundering" bypass.
+    derived_from: Optional[EvidenceAuthor] = None
+
+    @property
+    def third_party_influenced(self) -> bool:
+        """True if a third party authored the evidence OR influenced its content
+        (derived_from). The gate and the wiki compiler key episode routing on
+        this — never on authorship alone."""
+        return (self.author_of_evidence == EvidenceAuthor.THIRD_PARTY
+                or self.derived_from == EvidenceAuthor.THIRD_PARTY)
 
 
 # --------------------------------------------------------------------------- #

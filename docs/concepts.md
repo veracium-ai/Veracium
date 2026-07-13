@@ -50,6 +50,31 @@ Content-type quarantine backs this up: obligation/debt/renewal claims from third
 parties are quarantined regardless of how plausible they look — the attack that
 gets past naive memory is the *routine-looking* invoice, not the absurd one.
 
+### Mixed provenance: `derived_from`
+
+**Authorship is per-event — but your event's *text* may embed content someone
+else influenced.** A system-authored triage verdict that quotes a received
+email's subject, a summary derived from a third-party document: the event is
+honestly yours, yet an attacker wrote parts of what it says. Declare that with
+`derived_from`:
+
+```python
+mem.remember(user, f"Triage classified the mail (subject: {subject!r}) as spam.",
+             author=EvidenceAuthor.SYSTEM, derived_from=EvidenceAuthor.THIRD_PARTY,
+             event_type="triage")
+```
+
+Trust is capped at the **minimum** of `author` and `derived_from`: nothing
+extracted from such an event — no edge, and not the episode either — can reach
+an assertable surface (the gate's GROUNDED block or the compiled wiki). The
+classification history still shapes behavior through recall's unverified
+channel; it just can't be asserted as fact. Provenance records both fields, so
+the graph stays honest: *authored by system, derived from third-party*.
+
+The rule of thumb: **if any span of the event text was influenced by a party
+you wouldn't mark as the author, declare the lower-trust source.** Without the
+declaration, veracium trusts your voice — quoted attacker text and all.
+
 ## Supersession — one current value, history retained
 
 For **functional** facts (preference, employer, location, deadline) a new value

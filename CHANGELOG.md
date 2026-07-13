@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- **security (ingest/gate/compile)**: closed the **system-event laundering**
+  bypass — third-party text embedded inside a `SYSTEM`/`USER`-authored event (a
+  triage verdict quoting a received email's subject, a summary of a message
+  body) previously acquired the event's full trust and could surface as
+  assertable user facts. `remember()` gains `derived_from`: declare
+  `author=SYSTEM, derived_from=THIRD_PARTY` and trust is capped at the minimum
+  of the two — edges cap at `use_only` (claims still quarantine), and the
+  episode routes to the unverified channel at the gate *and* is excluded from
+  the compiled wiki (episodes now route by third-party *influence*, not
+  authorship alone). `Provenance` records both fields; MCP `remember` exposes
+  the parameter; documented in `docs/concepts.md` ("Mixed provenance") and
+  `SECURITY.md`. Found by the first production consumer on a real-mailbox
+  backfill (130 laundered assertable edges); reported in
+  `proposals/system-event-laundering.md` with the attack fixture now locked as
+  a regression test.
+
 - **ingest**: an `unparseable` extraction no longer leaves a history gap — the
   turn records a content-free placeholder episode ("(unprocessed <type> event —
   extraction returned no parseable JSON; content not retained)") with full
