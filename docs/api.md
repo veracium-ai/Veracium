@@ -112,7 +112,10 @@ mem = Memory(llm=AnthropicComplete(models={"gate": "claude-opus-4-8"}))
 ```
 
 Wrapping your agent's existing client is often simplest — see
-`examples/claude_cli_provider.py` for a subprocess-based example.
+`examples/claude_cli_provider.py` for a subprocess-based example, or
+`examples/openai_provider.py` for an OpenAI-compatible one (OpenAI, vLLM,
+Ollama's `/v1` endpoint). It attempts `json_schema` as structured output and
+falls back to a plain call — no error — if the endpoint doesn't support it.
 
 ## Providing a store
 
