@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.7
 
 - **security (ingest/gate/compile)**: closed the **system-event laundering**
   bypass — third-party text embedded inside a `SYSTEM`/`USER`-authored event (a
@@ -29,6 +29,10 @@
 - **graph**: `his`/`her` removed from the value-equivalence filler list — they
   can point at a third party ("his assistant" vs "her assistant") and so carry
   meaning; user-referential possessives (`my`/`our`/`their`) remain filler.
+- **examples**: `openai_provider.py` — `OpenAIComplete` wraps any
+  OpenAI-compatible chat-completions API (OpenAI, vLLM, Ollama's `/v1`), with
+  per-role model mapping, honest structured-output fallback, and a memoized
+  capability check. First outside contribution — thanks @vreddy-commits (#8).
 
 ## 0.1.6
 
