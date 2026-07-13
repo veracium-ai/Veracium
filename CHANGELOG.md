@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.6
 
 - **security (compile)**: a third-party *inference* (`use_only`) is no longer fed
   into the compiled wiki. `recall()` places the wiki in the gate's assertable
