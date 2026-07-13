@@ -74,7 +74,11 @@ print(ctx.context)   # states the vegetarian constraint; the $900 "claim" is
 No Anthropic API key? `AnthropicComplete` is just a convenience — veracium calls any
 `Complete` callable you supply. To run without SDK/key setup, wrap a client you
 already have; `examples/claude_cli_provider.py` wraps the `claude` CLI as a
-drop-in provider (`from claude_cli_provider import ClaudeCLIComplete`).
+drop-in provider (`from claude_cli_provider import ClaudeCLIComplete`), and
+`examples/openai_provider.py` wraps any OpenAI-compatible chat-completions API
+(OpenAI itself, vLLM, Ollama's `/v1` endpoint) via `OpenAIComplete` — point it
+at a local server with `OpenAIComplete(base_url=...)` and override `models` with
+whatever model name your server serves.
 
 ## Use (MCP)
 
