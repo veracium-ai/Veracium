@@ -77,9 +77,18 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # The distiller sometimes answers in prose instead of JSON — typically a
         # refusal on jailbreak-shaped or degenerate input. That's an input
         # condition (the BYO contract tolerates schema-ignoring providers), not
-        # a veracium defect: record nothing rather than crash the host's
-        # ingestion. Callers see `unparseable`; the raw text is never logged.
-        return {"episode": "", "facts": 0, "quarantined": 0, "unparseable": True}
+        # a veracium defect: no facts, but the turn still leaves history — a
+        # content-free placeholder episode (never the raw event text: that would
+        # feed unmediated, possibly adversarial input straight into recall
+        # prompts). evidence_ref lets the host audit what the event was.
+        summary = (f"(unprocessed {event_type} event — extraction returned no "
+                   f"parseable JSON; content not retained)")
+        store.add_episode(Episode(
+            id=_uid("ep"), user_id=user_id, date=date, summary=summary,
+            provenance=Provenance(source_type=_source_type(author, event_type),
+                                  author_of_evidence=author, evidence_ref=evidence_ref,
+                                  observed_at=_event_dt(date))))
+        return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True}
     when = _event_dt(date)
 
     # episode — always recorded; carries author so the gate knows a third-party

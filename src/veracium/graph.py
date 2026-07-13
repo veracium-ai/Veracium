@@ -17,9 +17,12 @@ from .schema import DEFAULT_RELATIONS, Edge, Relation
 
 # Filler words that never change a value's meaning. Deliberately tiny: a false
 # "same" here silently merges two distinct facts, so anything that can carry
-# meaning (prepositions, verbs, qualifiers) stays.
-_VALUE_FILLER = {"a", "an", "the", "my", "our", "his", "her", "their",
-                 "named", "called"}
+# meaning (prepositions, verbs, qualifiers) stays. my/our/their are kept as
+# filler only because edge values are read relative to the edge's subject, so
+# first-person and singular-they possessives are redundant; his/her can point
+# at a third party ("his assistant" vs "her assistant") and therefore stay
+# meaningful — they are NOT filler.
+_VALUE_FILLER = {"a", "an", "the", "my", "our", "their", "named", "called"}
 
 
 def _value_key(text: str) -> tuple[str, ...]:

@@ -30,7 +30,12 @@ def extract_json(text: str):
             continue
         if isinstance(obj, dict):
             return obj
-        if fallback is None:
+        # Among list fallbacks, a non-empty list of dicts (the shape of a bare
+        # triples array) beats junk like `[]` or `[1, 2]` that happened to parse
+        # earlier in the prose.
+        if fallback is None or (
+                obj and all(isinstance(x, dict) for x in obj)
+                and not (fallback and all(isinstance(x, dict) for x in fallback))):
             fallback = obj
         skip_until = i + end
     if fallback is not None:

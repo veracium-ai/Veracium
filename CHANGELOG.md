@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **ingest**: an `unparseable` extraction no longer leaves a history gap — the
+  turn records a content-free placeholder episode ("(unprocessed <type> event —
+  extraction returned no parseable JSON; content not retained)") with full
+  provenance/`evidence_ref`. Deliberately not the raw event text: that would
+  feed unmediated, possibly adversarial input straight into recall prompts.
+- **_json**: among list fallbacks, `extract_json` now prefers a non-empty
+  list of dicts (the shape of a bare triples array) over junk like `[]` or
+  `[1, 2]` that happened to parse earlier in the prose.
+- **graph**: `his`/`her` removed from the value-equivalence filler list — they
+  can point at a third party ("his assistant" vs "her assistant") and so carry
+  meaning; user-referential possessives (`my`/`our`/`their`) remain filler.
+
 ## 0.1.6
 
 - **security (compile)**: a third-party *inference* (`use_only`) is no longer fed
