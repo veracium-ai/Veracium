@@ -48,7 +48,7 @@ class OpenAIComplete:
                  models: Optional[dict[str, str]] = None,
                  max_tokens: int = 4096):
         try:
-            from openai import OpenAI
+            from openai import BadRequestError, OpenAI
         except ImportError as e:  # pragma: no cover
             raise ImportError(
                 "OpenAIComplete needs the SDK: pip install openai"
@@ -62,8 +62,10 @@ class OpenAIComplete:
             if key is None and base_url is not None:
                 key = "not-needed"
             self._client = OpenAI(base_url=base_url, api_key=key)
+        self._bad_request = BadRequestError
         self._models = {**ROLE_MODEL, **(models or {})}
         self._max_tokens = max_tokens
+        self._structured: Optional[bool] = None  # None = untried; False = endpoint rejected it
 
     def __call__(self, prompt: str, *, system: Optional[str] = None,
                  role: str = "compile", json_schema: Optional[dict] = None) -> str:
@@ -74,7 +76,7 @@ class OpenAIComplete:
         messages.append({"role": "user", "content": prompt})
         kwargs: dict = {"model": model, "messages": messages, "max_tokens": self._max_tokens}
 
-        if json_schema is not None:
+        if json_schema is not None and self._structured is not False:
             try:
                 resp = self._client.chat.completions.create(
                     **kwargs,
@@ -83,10 +85,12 @@ class OpenAIComplete:
                         "json_schema": {"name": "veracium_output", "schema": json_schema, "strict": True},
                     },
                 )
+                self._structured = True
                 return resp.choices[0].message.content or ""
-            except Exception:
-                pass  # Endpoint doesn't support structured output — fall through
-                       # to a plain call; veracium parses the result tolerantly.
+            except self._bad_request:
+                # Endpoint doesn't support structured output — remember that and
+                # fall through; veracium parses plain completions tolerantly.
+                self._structured = False
 
         resp = self._client.chat.completions.create(**kwargs)
         return resp.choices[0].message.content or ""
