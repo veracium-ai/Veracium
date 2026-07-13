@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **security (compile)**: a third-party *inference* (`use_only`) is no longer fed
+  into the compiled wiki. `recall()` places the wiki in the gate's assertable
+  GROUNDED block, so a `use_only` fact reaching the wiki could be asserted through
+  the wiki path — even though `gate.partition` (0.1.3) already routed such inferences
+  to UNVERIFIED. `compile._grounded_inputs` now excludes `use_only` edges, mirroring
+  the gate; the inference still shapes behavior via recall's unverified channel, only
+  kept out of the assertable body. Completes the 0.1.3 fix (which covered only the
+  subgraph path). Adds a unit lock (`test_grounded_inputs_excludes_use_only`).
+
 ## 0.1.5
 
 - **ingest/_json**: a distill response whose first parseable JSON value is a

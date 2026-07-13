@@ -64,9 +64,25 @@ def test_compiler_never_sees_claims():
         assert "vegetarian" in compile_prompt.lower()         # grounded fact fed in
         assert "2,400" not in compile_prompt                  # the claim is NOT (23-C)
         assert "quickclaim" not in compile_prompt.lower()
-        # the third-party inference passes, but only with its caveat attached
-        acme_line = next(l for l in compile_prompt.splitlines() if "manager at Acme" in l)
-        assert "[third-party-reported; unconfirmed]" in acme_line
+        # a third-party *inference* (use_only) must NOT feed the wiki either: the wiki
+        # lands in the gate's assertable GROUNDED block, so it would become assertable
+        # through the wiki. It reaches the gate only via the unverified channel.
+        assert "acme" not in compile_prompt.lower()
+        mem.close()
+
+
+def test_grounded_inputs_excludes_use_only():
+    """The wiki compiler is fed neither claims nor third-party inferences. Unit-level
+    lock on the security fix: recall() puts the compiled wiki in GROUNDED, so a
+    use_only edge here would be assertable through the wiki."""
+    from veracium import compile as _compile
+    with tempfile.TemporaryDirectory() as d:
+        mem, _ = _prime(d)
+        edges, _eps = _compile._grounded_inputs(mem.store, "u")
+        objs = " ".join(e.object.lower() for e in edges)
+        assert "vegetarian" in objs                    # a grounded user fact feeds the wiki
+        assert "acme" not in objs                       # the use_only inference does NOT
+        assert all(not e.use_only for e in edges)       # no third-party inference passes
         mem.close()
 
 
@@ -103,8 +119,8 @@ def test_partition_unit():
 
 
 if __name__ == "__main__":
-    for fn in (test_compiler_never_sees_claims, test_recall_partitions_and_gate_placement,
-               test_partition_unit):
+    for fn in (test_compiler_never_sees_claims, test_grounded_inputs_excludes_use_only,
+               test_recall_partitions_and_gate_placement, test_partition_unit):
         with tempfile.TemporaryDirectory():
             fn()
     print("compile+gate OK")
