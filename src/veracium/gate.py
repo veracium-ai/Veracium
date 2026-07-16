@@ -34,24 +34,38 @@ def partition(edges: list[Edge], episodes: list[Episode]) -> tuple[str, str]:
     `derived_from` third-party content (a system-authored summary quoting a
     received email launders attacker text into its episode — route by influence,
     never by authorship alone)."""
-    grounded_edges = [e for e in edges if e.assertable]
-    claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]
-    grounded_eps = [e for e in episodes if not e.provenance.third_party_influenced]
-    tp_eps = [e for e in episodes if e.provenance.third_party_influenced]
+    edge_lines, ep_lines, claim_lines, tp_ep_lines = partition_parts(edges, episodes)
 
     grounded = []
-    if grounded_edges:
-        grounded.append(render_edges(grounded_edges))
-    if grounded_eps:
-        grounded.append("\n".join(f"[{e.date}] {e.summary}" for e in grounded_eps))
+    if edge_lines:
+        grounded.append("\n".join(edge_lines))
+    if ep_lines:
+        grounded.append("\n".join(ep_lines))
 
     unverified = []
-    if claim_edges:
-        unverified.append(render_edges(claim_edges))
-    if tp_eps:
-        unverified.append("\n".join(f"[{e.date}] {e.summary}" for e in tp_eps))
+    if claim_lines:
+        unverified.append("\n".join(claim_lines))
+    if tp_ep_lines:
+        unverified.append("\n".join(tp_ep_lines))
 
     return ("\n".join(grounded).strip(), "\n\n".join(unverified).strip())
+
+
+def partition_parts(edges: list[Edge], episodes: list[Episode]
+                    ) -> tuple[list[str], list[str], list[str], list[str]]:
+    """The partition as per-item rendered lines, for callers that assemble
+    context under a budget (Memory.recall's `token_budget`): (assertable edge
+    lines — in the edges' given order, i.e. relevance-sorted from
+    subgraph_for_query; grounded episode lines; claim/inference lines;
+    third-party-influenced episode lines). partition() is the joined view."""
+    edge_lines = [render_edges([e]) for e in edges if e.assertable]
+    claim_lines = [render_edges([e]) for e in edges
+                   if e.quarantined or (e.active and e.use_only)]
+    ep_lines = [f"[{e.date}] {e.summary}" for e in episodes
+                if not e.provenance.third_party_influenced]
+    tp_ep_lines = [f"[{e.date}] {e.summary}" for e in episodes
+                   if e.provenance.third_party_influenced]
+    return edge_lines, ep_lines, claim_lines, tp_ep_lines
 
 
 GATE_SYSTEM = (

@@ -52,8 +52,9 @@ Confirmed gaps between veracium and what a well-researched adopter expects from
 this category; rationale for what we *refused* is in
 [docs/design-rationale.md](docs/design-rationale.md).
 
-- [ ] Token-budget-aware recall: `recall(query, token_budget=...)` with adaptive
-      wiki/subgraph rendering (internal caps exist; the caller-facing knob doesn't).
+- [x] Token-budget-aware recall: `recall(query, token_budget=...)` with adaptive
+      wiki/subgraph rendering and priority-ordered trimming (facts → claim flags
+      → wiki → episodes); `Recall.tokens_estimated` / `.truncated` accounting.
 - [ ] Portable export/import: documented JSONL interchange format carrying full
       provenance + disclosure (no lock-in — nobody in the category has this).
 - [ ] Explicit feedback verbs: `dispute()` (user challenges a fact → excluded from

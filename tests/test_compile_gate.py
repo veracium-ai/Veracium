@@ -180,7 +180,50 @@ def test_system_event_laundering_is_structurally_capped():
 if __name__ == "__main__":
     for fn in (test_compiler_never_sees_claims, test_grounded_inputs_excludes_use_only,
                test_recall_partitions_and_gate_placement, test_partition_unit,
-               test_system_event_laundering_is_structurally_capped):
+               test_system_event_laundering_is_structurally_capped,
+               test_recall_token_budget):
         with tempfile.TemporaryDirectory():
             fn()
     print("compile+gate OK")
+
+
+def test_recall_token_budget():
+    """Budgeted recall: ample budget keeps everything; a tight budget keeps
+    query-matched facts and claim flags in preference to the wiki; the
+    truncation is reported, never silent."""
+    with tempfile.TemporaryDirectory() as d:
+        mem, _ = _prime(d)
+        full = mem.recall("u", "diet and debts?")
+
+        ample = mem.recall("u", "diet and debts?", token_budget=100_000)
+        assert not ample.truncated
+        assert ample.tokens_estimated <= 100_000
+        # same content as unbudgeted (whitespace joins may differ)
+        full_lines = {l for l in full.context.splitlines() if l.strip()}
+        ample_lines = {l for l in ample.context.splitlines() if l.strip()}
+        assert full_lines == ample_lines
+
+        # a budget that exactly fits the facts + claim flags — and nothing else —
+        # computed from the same pieces the implementation costs, so the
+        # priority assertion (claims outrank the wiki) is deterministic
+        from veracium.gate import partition_parts
+        est = mem._est_tokens
+        e_lines, ep_lines, c_lines, tp_lines = partition_parts(full.edges, full.episodes)
+        headers = est("## RELEVANT DETAIL\n") + \
+            est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
+        budget = headers + sum(map(est, e_lines)) + sum(map(est, c_lines + tp_lines))
+        tight = mem.recall("u", "diet and debts?", token_budget=budget)
+        assert tight.truncated                        # wiki + episodes didn't fit
+        assert "vegetarian" in tight.context          # query-matched facts kept
+        assert "2,400" in tight.unverified            # claim flag outranks the wiki
+        assert "USER MODEL" not in tight.context      # wiki dropped under pressure
+        assert len(tight.edges) == len(full.edges)    # raw units not budget-shaped
+
+        minimal = mem.recall("u", "diet and debts?", token_budget=1)
+        assert minimal.truncated
+        assert "vegetarian" in minimal.context        # best-effort minimum: one item
+
+        import pytest
+        with pytest.raises(ValueError):
+            mem.recall("u", "q", token_budget=0)
+        mem.close()

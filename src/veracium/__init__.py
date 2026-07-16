@@ -48,12 +48,20 @@ class Recall:
 
     `context` is a ready-to-inject block (grounded memory + a fenced never-assert
     section). For hosts that want the abstention gate, `grounded` and `unverified`
-    are the two partitions the gate operates on (see `Memory.answer`)."""
+    are the two partitions the gate operates on (see `Memory.answer`).
+
+    When recall ran with a `token_budget`, `tokens_estimated` is the heuristic
+    size of `context` (chars/4 — veracium is tokenizer-agnostic by design) and
+    `truncated` says whether anything was left out to fit. `edges`/`episodes`
+    always carry the full retrieved units regardless of budget — the budget
+    shapes the rendered context, not the raw material."""
     context: str
     grounded: str
     unverified: str
     edges: list[Edge]
     episodes: list[Episode]
+    tokens_estimated: int = 0
+    truncated: bool = False
 
 
 class Memory:
@@ -128,7 +136,8 @@ class Memory:
         return r
 
     # -- read --------------------------------------------------------------
-    def recall(self, user_id: str, query: str) -> Recall:
+    def recall(self, user_id: str, query: str, *,
+               token_budget: Optional[int] = None) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
         Combines the LLM-curated wiki (the grounded, verified working view,
@@ -136,21 +145,41 @@ class Memory:
         detail — the layered design that won both horizons. Memory is partitioned
         into grounded (assertable) and unverified (third-party claims/reports),
         so the host can apply the abstention gate via `answer()` or its own prompt.
+
+        `token_budget` caps the rendered context (heuristic: chars/4 — veracium
+        is tokenizer-agnostic, so treat it as approximate, not exact). Selection
+        priority when trimming: query-matched facts first, then unverified-claim
+        flags (a host reasoning near a claim should see it flagged), then the
+        wiki, then recent episodes. Best-effort minimum of one item; check
+        `Recall.truncated` / `Recall.tokens_estimated`.
         """
+        if token_budget is not None and token_budget <= 0:
+            raise ValueError("token_budget must be a positive number of tokens")
         try:
-            return self._recall(user_id, query)
+            return self._recall(user_id, query, token_budget)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
 
-    def _recall(self, user_id: str, query: str) -> Recall:
+    @staticmethod
+    def _est_tokens(text: str) -> int:
+        return max(1, len(text) // 4)
+
+    def _recall(self, user_id: str, query: str,
+                token_budget: Optional[int] = None) -> Recall:
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
                                     self.config.wiki_recompile_after_writes)
         edges = subgraph_for_query(self.store, user_id, query,
                                    max_edges=self.config.max_subgraph_edges)
         episodes = self.store.episodes(user_id)[-self.config.max_recent_episodes:]
 
-        detail_grounded, unverified = _gate.partition(edges, episodes)
+        truncated = False
+        if token_budget is None:
+            detail_grounded, unverified = _gate.partition(edges, episodes)
+        else:
+            wiki, detail_grounded, unverified, truncated = self._fit_to_budget(
+                wiki, edges, episodes, token_budget)
+
         grounded_parts = []
         if wiki:
             grounded_parts.append(wiki)
@@ -164,9 +193,76 @@ class Memory:
                         + unverified)
         self._record("recall", {"wiki_used": bool(wiki), "subgraph_edges": len(edges),
                                 "grounded_items": sum(1 for e in edges if not e.quarantined),
-                                "unverified_items": sum(1 for e in edges if e.quarantined)})
+                                "unverified_items": sum(1 for e in edges if e.quarantined),
+                                "trimmed": 1 if truncated else 0})
         return Recall(context=context, grounded=grounded, unverified=unverified,
-                      edges=edges, episodes=episodes)
+                      edges=edges, episodes=episodes,
+                      tokens_estimated=self._est_tokens(context), truncated=truncated)
+
+    def _fit_to_budget(self, wiki: Optional[str], edges, episodes,
+                       budget: int) -> tuple[Optional[str], str, str, bool]:
+        """Greedy selection under the token budget, in priority order:
+
+        1. query-matched assertable detail (edge lines, already relevance-sorted);
+        2. unverified-claim/report lines — safety context: if the host is about
+           to reason near a claim, the never-assert flag must survive trimming;
+        3. the wiki (curated breadth), all-or-nothing — it is pre-budgeted at
+           compile time and loses its meaning cut mid-sentence;
+        4. recent episodes, newest first (rendered chronologically).
+
+        Sections stop at the first line that doesn't fit (lines are
+        relevance/recency-sorted — skipping a long important line to admit a
+        short unimportant one would invert the ranking). Best-effort minimum:
+        the single top item is always included even if it alone overflows."""
+        est = self._est_tokens
+        edge_lines, ep_lines, claim_lines, tp_ep_lines = _gate.partition_parts(
+            edges, episodes)
+        unv_lines = claim_lines + tp_ep_lines
+        headers = est("## RELEVANT DETAIL\n") \
+            + est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
+        remaining = budget - headers
+        truncated = False
+
+        sel_edges: list[str] = []
+        for line in edge_lines:
+            cost = est(line)
+            if cost > remaining and sel_edges:
+                truncated = True
+                break
+            sel_edges.append(line)      # first item is best-effort unconditional
+            remaining -= cost
+
+        sel_unv: list[str] = []
+        for line in unv_lines:
+            cost = est(line)
+            if cost > remaining:
+                truncated = True
+                break
+            sel_unv.append(line)
+            remaining -= cost
+
+        if wiki and est(wiki) <= remaining:
+            remaining -= est(wiki)
+        else:
+            truncated = truncated or bool(wiki)
+            wiki = None
+
+        sel_eps: list[str] = []
+        n_grounded_eps = len(ep_lines)
+        for line in reversed(ep_lines):          # newest first under budget
+            cost = est(line)
+            if cost > remaining:
+                truncated = True
+                break
+            sel_eps.append(line)
+            remaining -= cost
+        sel_eps.reverse()                        # render chronologically
+        truncated = truncated or len(sel_eps) < n_grounded_eps \
+            or len(sel_edges) < len(edge_lines) or len(sel_unv) < len(unv_lines)
+
+        detail = "\n".join(sel_edges + sel_eps).strip()
+        unverified = "\n".join(sel_unv).strip()
+        return wiki, detail, unverified, truncated
 
     def answer(self, user_id: str, query: str) -> str:
         """Recall + the evidence-grounded abstention gate → a direct answer.

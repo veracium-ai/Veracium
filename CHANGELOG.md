@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **recall**: token-budget-aware context assembly — `recall(user_id, query,
+  token_budget=N)` caps the rendered context (chars/4 heuristic; Veracium is
+  tokenizer-agnostic). Trimming follows a documented priority: query-matched
+  facts, then unverified-claim flags (never silently dropped below the facts
+  they annotate), then the curated wiki (all-or-nothing), then recent episodes
+  newest-first; best-effort minimum of one item. `Recall` gains
+  `tokens_estimated`/`truncated`; the MCP `recall` tool exposes the parameter;
+  the content-free telemetry `recall` event gains a `trimmed` counter.
+
 ## 0.1.7
 
 - **security (ingest/gate/compile)**: closed the **system-event laundering**

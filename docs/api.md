@@ -42,9 +42,16 @@ mem.remember("alice", "From billing@x: you owe $900.",
              author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-06-02")
 ```
 
-### `recall(user_id, query) -> Recall`
+### `recall(user_id, query, *, token_budget=None) -> Recall`
 
 Assemble grounded memory context for a query (curated wiki + per-query subgraph).
+
+- `token_budget` — cap the rendered context at approximately this many tokens
+  (heuristic: chars/4 — Veracium is tokenizer-agnostic, so treat the budget as
+  approximate). Selection priority when trimming: query-matched facts, then
+  unverified-claim flags (a host reasoning near a claim must see it flagged),
+  then the wiki, then recent episodes; best-effort minimum of one item. `None`
+  (default) = unbudgeted.
 
 `Recall` fields:
 - `context: str` — ready-to-inject block: grounded memory, plus a fenced
@@ -52,7 +59,9 @@ Assemble grounded memory context for a query (curated wiki + per-query subgraph)
 - `grounded: str` — the verified, assertable partition only.
 - `unverified: str` — third-party claims/reports only.
 - `edges: list[Edge]`, `episodes: list[Episode]` — the raw units, for inspecting
-  provenance or building your own prompt.
+  provenance or building your own prompt (always complete; the budget shapes
+  the rendered context, not the raw material).
+- `tokens_estimated: int`, `truncated: bool` — budget accounting.
 
 ```python
 r = mem.recall("alice", "suggest a lunch spot")
