@@ -1,6 +1,6 @@
 # Diagnostics — opt-in error reporting
 
-When veracium hits a **genuine error**, it can send its local log to the maintainers
+When Veracium hits a **genuine error**, it can send its local log to the maintainers
 so the bug can be diagnosed. This is a **separate, more careful channel** than
 [telemetry](telemetry.md): telemetry is content-free by construction, but a *log*
 can incidentally contain fragments of memory content (e.g. inside an exception
@@ -19,9 +19,9 @@ message). So error reporting is local-first and never sends without consent.
    runs, and grouped amounts from the tail first. Redaction is best-effort — the
    real safeguard is that *you see the payload and choose*.
 4. **Anonymous + bounded.** A random install id (shared with telemetry if you have
-   one), minimal environment (veracium / python / os), and only the log **tail** up
+   one), minimal environment (Veracium / python / os), and only the log **tail** up
    to a byte cap (default 64 KB).
-5. **No endpoint shipped.** veracium bundles no URL, so even "enabled" sends nothing
+5. **No endpoint shipped.** Veracium bundles no URL, so even "enabled" sends nothing
    until an endpoint is configured.
 
 ## What a report contains
@@ -39,9 +39,9 @@ message). So error reporting is local-first and never sends without consent.
 }
 ```
 
-`log_tail` is the sensitive part. It is veracium's own log lines — timestamps, the
+`log_tail` is the sensitive part. It is Veracium's own log lines — timestamps, the
 operation that failed, a hashed user id, and the Python traceback. Tracebacks show
-veracium's source lines (not memory content); the residual risk is an **exception
+Veracium's source lines (not memory content); the residual risk is an **exception
 message** that quoted a value, which is why redaction + preview + consent apply.
 Raw user ids are never logged — only a truncated SHA-256 hash of the id.
 
@@ -66,7 +66,7 @@ stays local until you run `veracium diagnostics report`.
 
 ## Embedded in a host application
 
-The host decides whether veracium manages a log at all, and owns the consent UX.
+The host decides whether Veracium manages a log at all, and owns the consent UX.
 
 ```python
 from veracium import Memory
@@ -91,7 +91,7 @@ except Exception:
 - `mem.diagnostics_preview()` — the exact (redacted) payload, or `None` if off.
 
 If you granted advance permission (`diagnostics.set_report_enabled(True,
-endpoint=…)`), veracium auto-sends on error — throttled so an error loop can't flood
+endpoint=…)`), Veracium auto-sends on error — throttled so an error loop can't flood
 the endpoint.
 
 ## Config file

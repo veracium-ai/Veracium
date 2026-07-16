@@ -35,7 +35,7 @@ Veracium requires a `Complete` callable, because its guarantees are made **at
 extraction time**: deciding that a sentence is a *third-party claim about the
 user* rather than a user fact, routing it to quarantine, picking the
 supersession target, assigning volatility. Pattern-matching extraction cannot
-make those calls — a template-extracted store would look like veracium while
+make those calls — a template-extracted store would look like Veracium while
 silently lacking the properties this project exists to provide. We won't ship
 a mode whose failure is invisible.
 

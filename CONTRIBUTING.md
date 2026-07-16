@@ -1,6 +1,6 @@
-# Contributing to veracium
+# Contributing to Veracium
 
-Thanks for your interest. veracium is small and opinionated; contributions that
+Thanks for your interest. Veracium is small and opinionated; contributions that
 fit its discipline land quickly.
 
 ## Dev setup
@@ -21,7 +21,7 @@ VERACIUM_ROBUSTNESS=1 pytest tests/test_robustness.py  # robustness tier
 
 ## The bar
 
-- **Every behavioral claim maps to a test.** If your change alters what veracium
+- **Every behavioral claim maps to a test.** If your change alters what Veracium
   does, the diff includes the test that proves it.
 - **PRs touching quarantine, the gate, or supersession must *extend* the eval,
   not just pass it.** These are the load-bearing guarantees; a change that
@@ -35,7 +35,7 @@ VERACIUM_ROBUSTNESS=1 pytest tests/test_robustness.py  # robustness tier
   the sqlite backend is the reference).
 - **`Complete` providers** — worked examples for other model APIs (see
   `examples/claude_cli_provider.py` for the contract: any callable works).
-- **MCP client recipes** — configs for agents/IDEs speaking to the veracium MCP
+- **MCP client recipes** — configs for agents/IDEs speaking to the Veracium MCP
   server.
 - Docs fixes, always.
 

@@ -1,6 +1,6 @@
-# Using veracium over MCP
+# Using Veracium over MCP
 
-The MCP server exposes veracium to any MCP-compatible agent (Claude Desktop, Claude
+The MCP server exposes Veracium to any MCP-compatible agent (Claude Desktop, Claude
 Code, and others) with no host-side Python.
 
 ## Install & run
@@ -64,7 +64,7 @@ per id).
 
 ## Using your host's own model instead of the server's
 
-The default server process calls Anthropic directly. If you'd rather veracium use
+The default server process calls Anthropic directly. If you'd rather Veracium use
 your host's model (e.g. via MCP sampling, or an in-process embedding), import the
 tool implementations (`veracium.mcp_server.remember_impl`, `recall_impl`,
 `answer_impl`, `maintain_impl`) and wire them around a `Memory` built with your own

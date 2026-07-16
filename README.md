@@ -1,4 +1,4 @@
-# veracium
+# Veracium
 
 [![tests](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml/badge.svg)](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml)
 [![PyPI](https://img.shields.io/pypi/v/veracium)](https://pypi.org/project/veracium/)
@@ -24,7 +24,7 @@ research's synthetic-corpus harness is reused as the regression suite.
 - **Supersession, never erasure.** Functional facts (preference, employer,
   deadline) keep one current value with the prior value retained as history —
   "what did X used to be?" stays answerable. *(The category commercial memory
-  systems handle worst; veracium's strongest.)*
+  systems handle worst; Veracium's strongest.)*
 - **Representation is a security control.** Third-party claims (received email,
   external docs) are quarantined *structurally* — stored as `third_party_claim`
   edges with the claimant as subject, never as user facts. Content-type quarantine
@@ -71,7 +71,7 @@ print(ctx.context)   # states the vegetarian constraint; the $900 "claim" is
                      # rendered under a never-assert flag, not as a fact.
 ```
 
-No Anthropic API key? `AnthropicComplete` is just a convenience — veracium calls any
+No Anthropic API key? `AnthropicComplete` is just a convenience — Veracium calls any
 `Complete` callable you supply. To run without SDK/key setup, wrap a client you
 already have; `examples/claude_cli_provider.py` wraps the `claude` CLI as a
 drop-in provider (`from claude_cli_provider import ClaudeCLIComplete`), and

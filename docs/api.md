@@ -63,7 +63,7 @@ prompt = f"{r.context}\n\nUser: suggest a lunch spot"   # drop into your own cal
 
 Recall + the abstention gate → a direct answer that only uses grounded memory,
 never asserts unverified claims, and abstains rather than guessing. Use this when
-you want veracium to answer; use `recall()` when you want to answer yourself.
+you want Veracium to answer; use `recall()` when you want to answer yourself.
 
 ### `maintain(user_id, *, consolidate=True) -> dict`
 
@@ -106,7 +106,7 @@ def complete(prompt: str, *, system: str | None = None,
   (curation), or `"gate"` (the correctness-critical answer). Route each to an
   appropriate model if you like.
 - Honor `json_schema` if you can (return valid JSON); if you can't, ignore it —
-  veracium parses tolerantly.
+  Veracium parses tolerantly.
 
 Reference provider (needs `pip install veracium[anthropic]`):
 

@@ -1,6 +1,6 @@
 # Telemetry — opt-in, anonymous, content-free
 
-veracium can send anonymous usage statistics to help improve the library. It is
+Veracium can send anonymous usage statistics to help improve the library. It is
 **off by default** and sends **nothing** without an explicit opt-in.
 
 ## What it collects — and what it never collects
@@ -32,7 +32,7 @@ scores (below) cover correctness on synthetic data instead.
 
 ## Self-check (the `selfcheck` scores)
 
-`veracium selfcheck` runs veracium's load-bearing guarantees against a throwaway,
+`veracium selfcheck` runs Veracium's load-bearing guarantees against a throwaway,
 synthetic memory and scores them — it never touches real memory:
 
 - **supersession** — a superseded functional fact yields the new value as current
@@ -66,7 +66,7 @@ the collector.
 - **Default off.** No install id is even created until you choose.
 - **Anonymous.** A random install id, no user or host identity.
 - **Revocable.** `veracium telemetry disable` any time.
-- **No endpoint shipped.** veracium bundles no collection URL, so even "enabled"
+- **No endpoint shipped.** Veracium bundles no collection URL, so even "enabled"
   sends nothing until an endpoint is configured — you decide where (if anywhere)
   data goes.
 
@@ -85,7 +85,7 @@ terminal, so it never prompts — set your choice with the CLI.)
 
 ### Embedded in a host application (e.g. a workflow engine)
 
-**The host is responsible for obtaining its users' consent.** veracium ships off and
+**The host is responsible for obtaining its users' consent.** Veracium ships off and
 gives you the primitives:
 
 ```python
