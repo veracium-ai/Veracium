@@ -7,13 +7,20 @@ from veracium import Memory, MemoryConfig, EvidenceAuthor
 ## `Memory`
 
 ```python
-Memory(*, llm, store=None, embed=None, config=None)
+Memory(*, llm, store=None, embed=None, config=None,
+       telemetry=None, diagnostics=None, audit=None)
 ```
 
 - `llm` — a `Complete` callable (required). See [Providing an LLM](#providing-an-llm).
 - `store` — a `Store`; defaults to `SqliteStore(config.db_path)`.
 - `embed` — an optional `Embed` callable (reserved for episode semantic fallback).
 - `config` — a `MemoryConfig`; defaults to `MemoryConfig()`.
+- `telemetry` / `diagnostics` / `audit` — optional sinks, all off by default:
+  a consented content-free stats collector (`veracium.telemetry`), a local
+  error-log reporter (`veracium.diagnostics`), and an **operation audit log**
+  (`veracium.audit.AuditLog(path)`): one append-only JSONL line per operation —
+  UTC timestamp, op, `user_id`, content-free counters; no memory text ever.
+  Sink failures never break memory operations.
 
 ### `remember(user_id, text, *, author=EvidenceAuthor.USER, date=None, event_type="chat", evidence_ref=None, derived_from=None) -> dict`
 

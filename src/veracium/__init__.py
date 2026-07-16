@@ -68,7 +68,7 @@ class Recall:
 class Memory:
     def __init__(self, *, llm: Complete, store: Optional[Store] = None,
                  embed: Optional[Embed] = None, config: Optional[MemoryConfig] = None,
-                 telemetry=None, diagnostics=None):
+                 telemetry=None, diagnostics=None, audit=None):
         self.config = config or MemoryConfig()
         self.store = store or SqliteStore(self.config.db_path)
         self.llm = llm
@@ -82,13 +82,23 @@ class Memory:
         # See veracium.diagnostics; sending is a separate, more careful channel than
         # telemetry because a log can contain memory content.
         self.diagnostics = diagnostics
+        # Optional operation audit sink (an audit.AuditLog). None = off. One
+        # content-free line per operation: who called what, when, which user.
+        # See veracium.audit.
+        self.audit = audit
 
-    def _record(self, event: str, fields: dict) -> None:
+    def _record(self, event: str, fields: dict,
+                user_id: Optional[str] = None) -> None:
         if self.telemetry is not None:
             try:
                 self.telemetry.record(event, fields)
             except Exception:
                 pass  # telemetry must never break memory
+        if self.audit is not None and user_id is not None:
+            try:
+                self.audit.record(event, user_id, fields)
+            except Exception:
+                pass  # auditing must never break memory, even a broken sink
 
     def _on_error(self, where: str, exc: BaseException, user_id: Optional[str] = None) -> None:
         """Hand a genuine error to the diagnostics reporter (log locally; send only
@@ -133,7 +143,7 @@ class Memory:
         self._record("ingest", {"facts": r["facts"], "quarantined": r["quarantined"],
                                 "episodes": 1 if r["episode"] else 0,
                                 "unparseable": 1 if r.get("unparseable") else 0,
-                                "ms": int((time.perf_counter() - t0) * 1000)})
+                                "ms": int((time.perf_counter() - t0) * 1000)}, user_id)
         return r
 
     # -- read --------------------------------------------------------------
@@ -195,7 +205,7 @@ class Memory:
         self._record("recall", {"wiki_used": bool(wiki), "subgraph_edges": len(edges),
                                 "grounded_items": sum(1 for e in edges if not e.quarantined),
                                 "unverified_items": sum(1 for e in edges if e.quarantined),
-                                "trimmed": 1 if truncated else 0})
+                                "trimmed": 1 if truncated else 0}, user_id)
         return Recall(context=context, grounded=grounded, unverified=unverified,
                       edges=edges, episodes=episodes,
                       tokens_estimated=self._est_tokens(context), truncated=truncated)
@@ -281,7 +291,7 @@ class Memory:
             self._on_error("answer", e, user_id)
             raise
         self._record("answer", {"abstained": bool(_ABSTAINED.search(ans)),
-                                "ms": int((time.perf_counter() - t0) * 1000)})
+                                "ms": int((time.perf_counter() - t0) * 1000)}, user_id)
         return ans
 
     # -- maintenance -------------------------------------------------------
@@ -304,7 +314,7 @@ class Memory:
         self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
                                   "flagged": ex["flagged_for_confirmation"],
                                   "consolidated_in": co.get("consolidated", 0),
-                                  "consolidated_out": co.get("into", 0)})
+                                  "consolidated_out": co.get("into", 0)}, user_id)
         return report
 
     # -- self-check --------------------------------------------------------
@@ -385,7 +395,7 @@ class Memory:
             provenance=Provenance(source_type=SourceType.STATED,
                                   author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"dispute:{edge_id}")))
-        self._record("feedback", {"disputed": 1, "confirmed": 0})
+        self._record("feedback", {"disputed": 1, "confirmed": 0}, user_id)
         return {"disputed": edge_id, "relation": edge.relation}
 
     def confirm(self, user_id: str, edge_id: str, *, actor: str = "user",
@@ -417,7 +427,7 @@ class Memory:
             provenance=Provenance(source_type=SourceType.STATED,
                                   author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"confirm:{edge_id}")))
-        self._record("feedback", {"disputed": 0, "confirmed": 1})
+        self._record("feedback", {"disputed": 0, "confirmed": 1}, user_id)
         return {"confirmed": edge_id, "valid_from": date}
 
     # -- compliance erasure --------------------------------------------------
@@ -431,7 +441,7 @@ class Memory:
         preserves. There is no undo — export first (`export_memory`) if a
         recoverable copy is wanted. Confirmation is the host's responsibility."""
         r = self.store.forget_user(user_id)
-        self._record("forget", {"edges": r["edges"], "episodes": r["episodes"]})
+        self._record("forget", {"edges": r["edges"], "episodes": r["episodes"]}, user_id)
         return r
 
     # -- portability (see veracium.portability for the format) --------------
@@ -441,7 +451,9 @@ class Memory:
         The inverse of `import_memory`; see `docs/api.md` and the trust note
         in `veracium.portability`."""
         from . import portability
-        return portability.export_memory(self.store, user_id, path)
+        r = portability.export_memory(self.store, user_id, path)
+        self._record("export", {"edges": r["edges"], "episodes": r["episodes"]}, user_id)
+        return r
 
     def import_memory(self, path, *, user_id: Optional[str] = None) -> dict:
         """Load a Veracium JSONL export into this store. Idempotent (existing
@@ -449,7 +461,10 @@ class Memory:
         Trust note: import only from sources you trust as much as the database
         file itself — provenance in the file is data."""
         from . import portability
-        return portability.import_memory(self.store, path, user_id=user_id)
+        r = portability.import_memory(self.store, path, user_id=user_id)
+        self._record("import", {"edges": r["edges"], "episodes": r["episodes"],
+                                "skipped": r["skipped"]}, r["user_id"])
+        return r
 
     def close(self) -> None:
         self.store.close()

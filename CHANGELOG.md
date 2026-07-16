@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **audit**: opt-in operation audit log — `Memory(audit=AuditLog(path))`
+  appends one content-free JSONL line per operation (UTC timestamp, op,
+  `user_id`, the op's counters; never memory text) covering
+  remember/recall/answer/maintain/dispute/confirm/forget/export/import.
+  Append-only, host-owned; sink failures never break memory.
 - **feedback verbs**: `dispute(user_id, edge_id, reason=, actor=)` — the edge
   leaves every assertable surface immediately (non-destructive invalidation,
   reason `"disputed"`), and the dispute itself is remembered as an episode with

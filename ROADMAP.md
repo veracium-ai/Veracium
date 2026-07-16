@@ -66,7 +66,8 @@ this category; rationale for what we *refused* is in
 - [x] Compliance erasure: `forget(user_id)` — bulk, irreversible, content-free
       telemetry event; CLI with confirmation; deliberately NOT an MCP tool
       (an agent-callable wipe verb is a standing prompt-injection target).
-- [ ] Opt-in operation audit log (who called what, when, over which user).
+- [x] Opt-in operation audit log: `Memory(audit=AuditLog(path))` — one
+      content-free JSONL line per operation (ts, op, user_id, counters).
 
 ## Deferred / research-tracked
 - Neo4j / Postgres `Store` adapters (interface already in place).
