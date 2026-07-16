@@ -1,29 +1,59 @@
 """Portable export/import: lossless round-trip, idempotency, remap, versioning."""
 
+import json
 import tempfile
 
 import pytest
 
-from veracium import Memory, MemoryConfig
+from veracium import EvidenceAuthor, Memory, MemoryConfig
 from veracium.portability import export_memory, import_memory
 
-from tests.test_compile_gate import RoleFake, EXTRACT, _prime
+
+class Fake:
+    """Scripted extraction; enough to produce a grounded fact, a quarantined
+    claim, and a use_only inference — the three disclosure levels."""
+    SCRIPTS = [
+        {"triples": [{"subject": "user", "relation": "has_diet", "object": "vegetarian",
+                      "volatility": "permanent"}],
+         "episode": "User said they are vegetarian."},
+        {"triples": [{"subject": "org:quickclaim", "relation": "third_party_claim",
+                      "object": "user owes $2,400"},
+                     {"subject": "user", "relation": "works_as", "object": "manager at Acme"}],
+         "episode": "Received an unverified billing notice claiming the user owes $2,400."},
+    ]
+
+    def __init__(self):
+        self._i = 0
+
+    def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+        if role == "distill":
+            out = self.SCRIPTS[self._i]; self._i += 1
+            return json.dumps(out)
+        return ""
+
+
+def _prime(d, db="t.db"):
+    mem = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/{db}",
+                                                 wiki_recompile_after_writes=0))
+    mem.remember("u", "USER: I'm vegetarian.", date="2026-06-01")
+    mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
+                 author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+    return mem
 
 
 def test_export_import_round_trip_is_lossless():
     with tempfile.TemporaryDirectory() as d:
-        mem, _ = _prime(d)   # grounded fact + quarantined claim + use_only inference
+        mem = _prime(d)   # grounded fact + quarantined claim + use_only inference
         src = mem.store
         r = export_memory(src, "u", f"{d}/u.jsonl")
         assert r["edges"] >= 3 and r["episodes"] == 2
 
-        dst = Memory(llm=RoleFake(EXTRACT),
-                     config=MemoryConfig(db_path=f"{d}/dst.db")).store
+        dst = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/dst.db")).store
         imp = import_memory(dst, f"{d}/u.jsonl")
         assert imp["edges"] == r["edges"] and imp["episodes"] == r["episodes"]
         assert imp["skipped"] == 0
 
-        # everything survives byte-for-byte: ids, provenance, disclosure
+        # everything survives: ids, provenance, disclosure, assertability
         src_edges = {e.id: e for e in src.edges("u", active_only=False)}
         dst_edges = {e.id: e for e in dst.edges("u", active_only=False)}
         assert src_edges.keys() == dst_edges.keys()
@@ -46,7 +76,7 @@ def test_export_import_round_trip_is_lossless():
 
 def test_import_remaps_user_and_rejects_bad_files():
     with tempfile.TemporaryDirectory() as d:
-        mem, _ = _prime(d)
+        mem = _prime(d)
         export_memory(mem.store, "u", f"{d}/u.jsonl")
         imp = import_memory(mem.store, f"{d}/u.jsonl", user_id="u2")
         assert imp["user_id"] == "u2" and imp["edges"] > 0
@@ -67,7 +97,7 @@ def test_import_remaps_user_and_rejects_bad_files():
 def test_cli_export_import():
     from veracium.cli import main
     with tempfile.TemporaryDirectory() as d:
-        mem, _ = _prime(d)
+        mem = _prime(d)
         n_edges = len(mem.store.edges("u", active_only=False))
         mem.close()
         assert main(["export", f"{d}/out.jsonl", "--user", "u", "--db", f"{d}/t.db"]) == 0
