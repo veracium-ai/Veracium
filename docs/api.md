@@ -135,7 +135,7 @@ Close the underlying store.
 
 ## `EvidenceAuthor`
 
-`USER` · `THIRD_PARTY` · `SYSTEM`. See [concepts](concepts.md#provenance-and-authorship--the-security-backbone).
+`USER` · `THIRD_PARTY` · `SYSTEM`. See [concepts](concepts.md).
 
 ## `MemoryConfig`
 

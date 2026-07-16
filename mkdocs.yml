@@ -1,0 +1,46 @@
+site_name: Veracium
+site_description: Provenance-aware memory for AI agents.
+site_url: https://veracium-ai.github.io/Veracium/
+repo_url: https://github.com/veracium-ai/Veracium
+repo_name: veracium-ai/Veracium
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    - navigation.sections
+    - navigation.footer
+    - content.code.copy
+    - toc.integrate
+
+nav:
+  - Home: index.md
+  - Concepts: concepts.md
+  - API reference: api.md
+  - MCP server: mcp.md
+  - Design rationale: design-rationale.md
+  - Telemetry: telemetry.md
+  - Diagnostics: diagnostics.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences

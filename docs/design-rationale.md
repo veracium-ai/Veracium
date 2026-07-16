@@ -82,7 +82,7 @@ as retrievable-on-request as yesterday's.
 
 ## On the roadmap (real gaps, agreed)
 
-See [ROADMAP.md](../ROADMAP.md) for status:
+See [ROADMAP.md](https://github.com/veracium-ai/Veracium/blob/main/ROADMAP.md) for status:
 
 - **Token-budget-aware recall** — `recall(query, token_budget=...)` with
   adaptive rendering; today's recall is internally bounded but the caller
