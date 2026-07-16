@@ -119,6 +119,23 @@ def _portability(args) -> int:
         store.close()
 
 
+def _forget(args) -> int:
+    from .store.sqlite import SqliteStore
+    if not args.yes:
+        reply = input(f"Irreversibly erase ALL memory for '{args.user}' in {args.db}? "
+                      f"There is no undo (export first if unsure). [y/N] ")
+        if reply.strip().lower() not in ("y", "yes"):
+            print("aborted")
+            return 1
+    store = SqliteStore(args.db)
+    try:
+        r = store.forget_user(args.user)
+        print(f"erased {r['edges']} edges + {r['episodes']} episodes for '{args.user}'")
+        return 0
+    finally:
+        store.close()
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="veracium")
     sub = p.add_subparsers(dest="cmd")
@@ -157,6 +174,11 @@ def main(argv=None) -> int:
     im.add_argument("--user", help="remap the records into this user id")
     im.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
+    fg = sub.add_parser("forget", help="irreversibly erase EVERYTHING stored for a user (compliance erasure)")
+    fg.add_argument("--user", required=True, help="user id to erase")
+    fg.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+    fg.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
+
     args = p.parse_args(argv)
     if args.cmd == "selfcheck":
         return _selfcheck(args)
@@ -164,6 +186,8 @@ def main(argv=None) -> int:
         return _diagnostics(args, d)
     if args.cmd in ("export", "import"):
         return _portability(args)
+    if args.cmd == "forget":
+        return _forget(args)
     if args.cmd != "telemetry":
         p.print_help()
         return 0

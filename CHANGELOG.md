@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **forget** (compliance erasure): `Memory.forget(user_id)` irreversibly erases
+  everything stored for a user — edges incl. superseded history and quarantined
+  claims, episodes, wiki cache, counters. Distinct from lifecycle by design
+  (`maintain()` never deletes; `forget()` never preserves). CLI:
+  `veracium forget --user X` (confirmation prompt; `--yes` to skip).
+  Deliberately not exposed over MCP — an agent-callable wipe verb is a standing
+  prompt-injection target. `Store` gains `forget_user()` (non-abstract;
+  custom stores keep working until they implement it).
 - **portability**: JSONL export/import — `Memory.export_memory(user_id, path)`
   writes the complete store of record (all edges incl. superseded history and
   quarantined claims, all episodes, full provenance/disclosure);

@@ -353,6 +353,20 @@ class Memory:
             return None
         return self.diagnostics.preview()
 
+    # -- compliance erasure --------------------------------------------------
+    def forget(self, user_id: str) -> dict:
+        """Irreversibly erase everything stored for `user_id`: all edges
+        (superseded history and quarantined claims included), all episodes,
+        the wiki cache, and counters. Returns {"edges": n, "episodes": n}.
+
+        This is the data-subject right ("right to be forgotten"), deliberately
+        distinct from lifecycle: `maintain()` never deletes, `forget()` never
+        preserves. There is no undo — export first (`export_memory`) if a
+        recoverable copy is wanted. Confirmation is the host's responsibility."""
+        r = self.store.forget_user(user_id)
+        self._record("forget", {"edges": r["edges"], "episodes": r["episodes"]})
+        return r
+
     # -- portability (see veracium.portability for the format) --------------
     def export_memory(self, user_id: str, path) -> dict:
         """Write `user_id`'s complete memory to `path` as portable JSONL —

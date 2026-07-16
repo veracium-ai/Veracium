@@ -106,3 +106,33 @@ def test_cli_export_import():
         s2 = SqliteStore(f"{d}/t2.db")
         assert len(s2.edges("carol", active_only=False)) == n_edges
         s2.close()
+
+
+def test_forget_erases_everything_and_only_that_user():
+    with tempfile.TemporaryDirectory() as d:
+        mem = _prime(d)                                  # user "u"
+        mem2 = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/t.db"))
+        mem2.remember("other", "USER: I'm vegetarian.", date="2026-06-01")
+
+        r = mem.forget("u")
+        assert r["edges"] >= 3 and r["episodes"] == 2
+        assert mem.store.edges("u", active_only=False) == []
+        assert mem.store.episodes("u") == []
+        assert mem.store.get_wiki("u") is None           # cache gone too
+        # the other user is untouched
+        assert len(mem2.store.edges("other", active_only=False)) == 1
+        # idempotent on an already-forgotten user
+        assert mem.forget("u") == {"edges": 0, "episodes": 0}
+        mem.close(); mem2.close()
+
+
+def test_forget_cli_requires_confirmation():
+    from veracium.cli import main
+    with tempfile.TemporaryDirectory() as d:
+        mem = _prime(d); mem.close()
+        # --yes bypasses the prompt; erasure is complete
+        assert main(["forget", "--user", "u", "--db", f"{d}/t.db", "--yes"]) == 0
+        from veracium.store.sqlite import SqliteStore
+        s = SqliteStore(f"{d}/t.db")
+        assert s.edges("u", active_only=False) == []
+        s.close()

@@ -62,8 +62,9 @@ this category; rationale for what we *refused* is in
       assertable recall pending resolution) and `confirm()` (explicit reinforcement
       with actor provenance). `correct`/`elaborate` remain the natural `remember()`
       path — document, don't duplicate.
-- [ ] Compliance erasure: `forget(user_id)` — bulk, irreversible, logged; a
-      data-subject right, deliberately distinct from lifecycle (which never deletes).
+- [x] Compliance erasure: `forget(user_id)` — bulk, irreversible, content-free
+      telemetry event; CLI with confirmation; deliberately NOT an MCP tool
+      (an agent-callable wipe verb is a standing prompt-injection target).
 - [ ] Opt-in operation audit log (who called what, when, over which user).
 
 ## Deferred / research-tracked

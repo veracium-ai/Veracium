@@ -39,6 +39,17 @@ class Store(ABC):
     @abstractmethod
     def delete_episode(self, episode_id: str) -> None: ...
 
+    # -- compliance erasure -------------------------------------------------
+    def forget_user(self, user_id: str) -> dict:
+        """Irreversibly erase EVERYTHING stored for `user_id` — edges (including
+        superseded history and quarantined claims), episodes, the wiki cache,
+        and counters. Returns {"edges": n, "episodes": n}. This is the
+        data-subject right, deliberately distinct from lifecycle (which never
+        deletes). Not abstract so pre-existing Store implementations keep
+        working; they get this behavior only once they implement it."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement forget_user")
+
     # -- compiled-view cache ----------------------------------------------
     @abstractmethod
     def get_wiki(self, user_id: str) -> Optional[tuple[str, int]]:

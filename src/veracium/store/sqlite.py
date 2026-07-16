@@ -115,6 +115,18 @@ class SqliteStore(Store):
                 self._bump(row[0])
             self._conn.commit()
 
+    # -- compliance erasure -------------------------------------------------
+    def forget_user(self, user_id) -> dict:
+        with self._lock:
+            n_edges = self._conn.execute(
+                "SELECT COUNT(*) FROM edges WHERE user_id=?", (user_id,)).fetchone()[0]
+            n_eps = self._conn.execute(
+                "SELECT COUNT(*) FROM episodes WHERE user_id=?", (user_id,)).fetchone()[0]
+            for table in ("edges", "episodes", "wiki", "write_counter"):
+                self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
+            self._conn.commit()
+        return {"edges": n_edges, "episodes": n_eps}
+
     # -- compiled-view cache ----------------------------------------------
     def get_wiki(self, user_id) -> Optional[tuple[str, int]]:
         row = self._conn.execute("SELECT text, store_version FROM wiki WHERE user_id=?",

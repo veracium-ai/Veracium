@@ -79,6 +79,17 @@ you want Veracium to answer; use `recall()` when you want to answer yourself.
 The "overnight" job: expire stale facts (transient lapse, durable flag) and
 consolidate cold episodes. Idempotent; call on a schedule.
 
+### `forget(user_id) -> dict`
+
+**Compliance erasure** — irreversibly removes everything stored for the user:
+all edges (superseded history and quarantined claims included), all episodes,
+the wiki cache, and counters. The data-subject right, deliberately distinct
+from lifecycle: `maintain()` never deletes, `forget()` never preserves. No
+undo — `export_memory` first if a recoverable copy is wanted. Also on the CLI
+with a confirmation prompt: `veracium forget --user alice`. **Deliberately not
+an MCP tool** — an irreversible-wipe verb callable by an agent is a standing
+prompt-injection target; erasure is a host/operator action.
+
 ### `export_memory(user_id, path) -> dict` / `import_memory(path, *, user_id=None) -> dict`
 
 Portable memory: one JSONL file per user carrying the **complete** store of
