@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
 
 - **host queries** (requested by the first production consumer for its
   intelligence layer): `Memory.list_entities()` — distinct ids with
