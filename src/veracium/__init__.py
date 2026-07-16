@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import re
 import time
+from uuid import uuid4
 from dataclasses import dataclass
 from typing import Optional
 
@@ -32,9 +33,9 @@ from .config import MemoryConfig
 _ABSTAINED = re.compile(r"don'?t know|no (confirmed|record|information|such)|"
                         r"unverified|can'?t (verify|confirm)|not (sure|aware)", re.I)
 from .graph import subgraph_for_query
-from .ingest import ingest_event
+from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
-from .schema import Edge, Episode, EvidenceAuthor
+from .schema import Edge, Episode, EvidenceAuthor, Provenance, SourceType, utcnow
 from .store.base import Store
 from .store.sqlite import SqliteStore
 
@@ -352,6 +353,72 @@ class Memory:
         if self.diagnostics is None:
             return None
         return self.diagnostics.preview()
+
+    # -- user feedback verbs -------------------------------------------------
+    def _find_edge(self, user_id: str, edge_id: str) -> Edge:
+        for e in self.store.edges(user_id, active_only=False, include_quarantined=True):
+            if e.id == edge_id:
+                return e
+        raise ValueError(f"no edge {edge_id!r} for user {user_id!r}")
+
+    def dispute(self, user_id: str, edge_id: str, *, reason: str = "",
+                actor: str = "user") -> dict:
+        """The user challenges a remembered fact. Non-destructive: the edge is
+        invalidated (reason 'disputed') — out of every assertable surface
+        immediately, retained as queryable history — and the dispute itself is
+        recorded as a system episode carrying the actor and reason. If the fact
+        was actually right, it re-enters the normal way: new evidence via
+        `remember()`. Not exposed over MCP (an agent-callable suppress verb is
+        a prompt-injection target); hosts wire it to a real user action."""
+        edge = self._find_edge(user_id, edge_id)
+        if not edge.active:
+            raise ValueError(f"edge {edge_id!r} is not active (already "
+                             f"{edge.invalidation_reason or 'invalidated'})")
+        from datetime import date as _date
+        today = _date.today().isoformat()
+        self.store.invalidate_edge(edge_id, utcnow(), "disputed")
+        note = f" — {reason}" if reason else ""
+        self.store.add_episode(Episode(
+            id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=today,
+            summary=f"({actor}) disputed the remembered fact "
+                    f"'{edge.relation}: {edge.object}'{note}",
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=f"dispute:{edge_id}")))
+        self._record("feedback", {"disputed": 1, "confirmed": 0})
+        return {"disputed": edge_id, "relation": edge.relation}
+
+    def confirm(self, user_id: str, edge_id: str, *, actor: str = "user",
+                date: Optional[str] = None) -> dict:
+        """The user explicitly validates a remembered fact: refreshes its
+        validity (so it won't lapse or sit flagged possibly-stale) and records
+        the confirmation as an episode with the actor. Equivalent to the
+        reinforcement a re-statement triggers, minus the extraction round-trip.
+
+        Only assertable facts can be confirmed: elevating a quarantined claim
+        or third-party inference by 'confirmation' would be a laundering
+        vector — if the user affirms a claim, that affirmation is new
+        user-authored evidence and belongs in `remember()`."""
+        edge = self._find_edge(user_id, edge_id)
+        if not edge.assertable:
+            raise ValueError(
+                f"edge {edge_id!r} is not assertable (quarantined/use_only/"
+                f"inactive) — a user affirming a claim is new evidence: "
+                f"ingest it via remember(author=USER) instead")
+        from datetime import date as _date
+        date = date or _date.today().isoformat()
+        edge.valid_from = _event_dt(date)
+        edge.needs_confirmation = False
+        edge.provenance.confidence = max(edge.provenance.confidence, 0.9)
+        self.store.add_edge(edge)
+        self.store.add_episode(Episode(
+            id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
+            summary=f"({actor}) confirmed '{edge.relation}: {edge.object}' still holds",
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=f"confirm:{edge_id}")))
+        self._record("feedback", {"disputed": 0, "confirmed": 1})
+        return {"confirmed": edge_id, "valid_from": date}
 
     # -- compliance erasure --------------------------------------------------
     def forget(self, user_id: str) -> dict:

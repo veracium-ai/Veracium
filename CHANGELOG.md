@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **feedback verbs**: `dispute(user_id, edge_id, reason=, actor=)` — the edge
+  leaves every assertable surface immediately (non-destructive invalidation,
+  reason `"disputed"`), and the dispute itself is remembered as an episode with
+  actor and reason; `confirm(user_id, edge_id)` — refreshes validity, clears
+  the possibly-stale flag, records the confirmation. `confirm` refuses
+  non-assertable edges (elevating a claim by confirmation would be a laundering
+  vector — affirmation is new evidence, use `remember()`). Neither is an MCP
+  tool by design. Content-free `feedback` telemetry event.
 - **forget** (compliance erasure): `Memory.forget(user_id)` irreversibly erases
   everything stored for a user — edges incl. superseded history and quarantined
   claims, episodes, wiki cache, counters. Distinct from lifecycle by design

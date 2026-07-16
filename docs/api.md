@@ -79,6 +79,26 @@ you want Veracium to answer; use `recall()` when you want to answer yourself.
 The "overnight" job: expire stale facts (transient lapse, durable flag) and
 consolidate cold episodes. Idempotent; call on a schedule.
 
+### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
+
+Explicit user-feedback verbs (get `edge_id`s from `Recall.edges`):
+
+- **`dispute`** — the user challenges a fact. Non-destructive: the edge is
+  invalidated (reason `"disputed"`) — immediately out of every assertable
+  surface, retained as queryable history — and the dispute itself is recorded
+  as an episode with the actor and reason. If the fact was right after all, it
+  re-enters as new evidence via `remember()`.
+- **`confirm`** — the user validates a fact: refreshes its validity (clears the
+  possibly-stale flag, so it won't lapse), boosts confidence, records the
+  confirmation episode. Only **assertable** facts can be confirmed — elevating
+  a quarantined claim by "confirmation" would be a laundering vector; a user
+  affirming a claim is new user-authored evidence and belongs in `remember()`.
+
+Neither verb is exposed over MCP (an agent-callable suppress/validate verb is a
+prompt-injection target) — wire them to real user actions in your host. Note
+`correct` and `elaborate` need no verb: they *are* `remember()` (supersession /
+accumulation).
+
 ### `forget(user_id) -> dict`
 
 **Compliance erasure** — irreversibly removes everything stored for the user:

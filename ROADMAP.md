@@ -58,10 +58,11 @@ this category; rationale for what we *refused* is in
 - [x] Portable export/import: documented JSONL interchange format carrying full
       provenance + disclosure (no lock-in — nobody in the category has this);
       `Memory.export_memory`/`import_memory` + `veracium export`/`import` CLI.
-- [ ] Explicit feedback verbs: `dispute()` (user challenges a fact → excluded from
-      assertable recall pending resolution) and `confirm()` (explicit reinforcement
-      with actor provenance). `correct`/`elaborate` remain the natural `remember()`
-      path — document, don't duplicate.
+- [x] Explicit feedback verbs: `dispute()` (non-destructive invalidation + the
+      dispute recorded as an episode with actor/reason) and `confirm()` (validity
+      refresh + confirmation episode; refuses to elevate claims — that's
+      `remember()`'s job). `correct`/`elaborate` remain the natural `remember()`
+      path — documented, not duplicated. Not exposed over MCP by design.
 - [x] Compliance erasure: `forget(user_id)` — bulk, irreversible, content-free
       telemetry event; CLI with confirmation; deliberately NOT an MCP tool
       (an agent-callable wipe verb is a standing prompt-injection target).
