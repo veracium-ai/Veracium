@@ -46,8 +46,31 @@ and graph recall; the items below complete the validated design.
       veracium meets the research numbers (supersession ~100%, injection 0 asserts
       on the ladder, confabulation bounded once the gate lands).
 
+## v0.7 — category-expectation gaps (from an independent landscape analysis, 2026-07)
+
+Confirmed gaps between veracium and what a well-researched adopter expects from
+this category; rationale for what we *refused* is in
+[docs/design-rationale.md](docs/design-rationale.md).
+
+- [ ] Token-budget-aware recall: `recall(query, token_budget=...)` with adaptive
+      wiki/subgraph rendering (internal caps exist; the caller-facing knob doesn't).
+- [ ] Portable export/import: documented JSONL interchange format carrying full
+      provenance + disclosure (no lock-in — nobody in the category has this).
+- [ ] Explicit feedback verbs: `dispute()` (user challenges a fact → excluded from
+      assertable recall pending resolution) and `confirm()` (explicit reinforcement
+      with actor provenance). `correct`/`elaborate` remain the natural `remember()`
+      path — document, don't duplicate.
+- [ ] Compliance erasure: `forget(user_id)` — bulk, irreversible, logged; a
+      data-subject right, deliberately distinct from lifecycle (which never deletes).
+- [ ] Opt-in operation audit log (who called what, when, over which user).
+
 ## Deferred / research-tracked
 - Neo4j / Postgres `Store` adapters (interface already in place).
 - Graded relationship-aware source trust (finding B: the tension is milder than
   thought; content-quarantine already covers the main attack — low priority).
 - Cross-family model eval (avoid monoculture in the internal LLM roles).
+- Procedural outcome-tracking (times-used / last-outcome ranking on
+  work-knowledge edges; promote-on-repeat) — needs a study before a design.
+- Access scopes + sensitivity tags for multi-principal hosts (enterprise tier;
+  today the embedding host mediates all access — that boundary is documented).
+- Embedding fallback for non-entity recall (the reserved `Embed` hook).
