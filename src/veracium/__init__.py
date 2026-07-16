@@ -353,5 +353,22 @@ class Memory:
             return None
         return self.diagnostics.preview()
 
+    # -- portability (see veracium.portability for the format) --------------
+    def export_memory(self, user_id: str, path) -> dict:
+        """Write `user_id`'s complete memory to `path` as portable JSONL —
+        full provenance/disclosure/history included, nothing summarized.
+        The inverse of `import_memory`; see `docs/api.md` and the trust note
+        in `veracium.portability`."""
+        from . import portability
+        return portability.export_memory(self.store, user_id, path)
+
+    def import_memory(self, path, *, user_id: Optional[str] = None) -> dict:
+        """Load a Veracium JSONL export into this store. Idempotent (existing
+        ids are skipped, never overwritten); `user_id` remaps the records.
+        Trust note: import only from sources you trust as much as the database
+        file itself — provenance in the file is data."""
+        from . import portability
+        return portability.import_memory(self.store, path, user_id=user_id)
+
     def close(self) -> None:
         self.store.close()

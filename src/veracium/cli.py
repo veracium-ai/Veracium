@@ -102,6 +102,23 @@ def _diagnostics(args, parser) -> int:
     return 0
 
 
+def _portability(args) -> int:
+    from .portability import export_memory, import_memory
+    from .store.sqlite import SqliteStore
+    store = SqliteStore(args.db)
+    try:
+        if args.cmd == "export":
+            r = export_memory(store, args.user, args.path)
+            print(f"exported {r['edges']} edges + {r['episodes']} episodes -> {r['path']}")
+        else:
+            r = import_memory(store, args.path, user_id=args.user)
+            print(f"imported {r['edges']} edges + {r['episodes']} episodes into "
+                  f"'{r['user_id']}' ({r['skipped']} already present, skipped)")
+        return 0
+    finally:
+        store.close()
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="veracium")
     sub = p.add_subparsers(dest="cmd")
@@ -130,11 +147,23 @@ def main(argv=None) -> int:
     dsub.add_parser("report", help="send the current local log now (asks first)")
     dsub.add_parser("path", help="print the local log file location")
 
+    ex = sub.add_parser("export", help="export a user's memory to portable JSONL (full provenance)")
+    ex.add_argument("path", help="output .jsonl file")
+    ex.add_argument("--user", required=True, help="user id to export")
+    ex.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+
+    im = sub.add_parser("import", help="import a Veracium JSONL export (idempotent; never overwrites)")
+    im.add_argument("path", help="input .jsonl file")
+    im.add_argument("--user", help="remap the records into this user id")
+    im.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+
     args = p.parse_args(argv)
     if args.cmd == "selfcheck":
         return _selfcheck(args)
     if args.cmd == "diagnostics":
         return _diagnostics(args, d)
+    if args.cmd in ("export", "import"):
+        return _portability(args)
     if args.cmd != "telemetry":
         p.print_help()
         return 0

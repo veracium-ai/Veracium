@@ -55,8 +55,9 @@ this category; rationale for what we *refused* is in
 - [x] Token-budget-aware recall: `recall(query, token_budget=...)` with adaptive
       wiki/subgraph rendering and priority-ordered trimming (facts → claim flags
       → wiki → episodes); `Recall.tokens_estimated` / `.truncated` accounting.
-- [ ] Portable export/import: documented JSONL interchange format carrying full
-      provenance + disclosure (no lock-in — nobody in the category has this).
+- [x] Portable export/import: documented JSONL interchange format carrying full
+      provenance + disclosure (no lock-in — nobody in the category has this);
+      `Memory.export_memory`/`import_memory` + `veracium export`/`import` CLI.
 - [ ] Explicit feedback verbs: `dispute()` (user challenges a fact → excluded from
       assertable recall pending resolution) and `confirm()` (explicit reinforcement
       with actor provenance). `correct`/`elaborate` remain the natural `remember()`

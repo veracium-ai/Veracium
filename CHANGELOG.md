@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **portability**: JSONL export/import — `Memory.export_memory(user_id, path)`
+  writes the complete store of record (all edges incl. superseded history and
+  quarantined claims, all episodes, full provenance/disclosure);
+  `import_memory(path, user_id=...)` is idempotent (existing ids skipped, never
+  overwritten) and can remap users. CLI: `veracium export` / `veracium import`
+  (store-only, no LLM needed). The wiki cache is not exported — it recompiles.
 - **recall**: token-budget-aware context assembly — `recall(user_id, query,
   token_budget=N)` caps the rendered context (chars/4 heuristic; Veracium is
   tokenizer-agnostic). Trimming follows a documented priority: query-matched

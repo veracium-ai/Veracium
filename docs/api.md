@@ -79,6 +79,18 @@ you want Veracium to answer; use `recall()` when you want to answer yourself.
 The "overnight" job: expire stale facts (transient lapse, durable flag) and
 consolidate cold episodes. Idempotent; call on a schedule.
 
+### `export_memory(user_id, path) -> dict` / `import_memory(path, *, user_id=None) -> dict`
+
+Portable memory: one JSONL file per user carrying the **complete** store of
+record — every edge (superseded history and quarantined claims included) and
+episode with full provenance, disclosure, and validity windows. Import is
+idempotent (existing ids are skipped, never overwritten); `user_id=` remaps the
+records. Also available without code: `veracium export out.jsonl --user alice`
+/ `veracium import out.jsonl [--user bob]`.
+
+Trust note: provenance in an export file is *data* — import only from sources
+you trust as much as the database file itself.
+
 ### `close()`
 
 Close the underlying store.
