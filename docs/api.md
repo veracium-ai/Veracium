@@ -86,6 +86,18 @@ you want Veracium to answer; use `recall()` when you want to answer yourself.
 The "overnight" job: expire stale facts (transient lapse, durable flag) and
 consolidate cold episodes. Idempotent; call on a schedule.
 
+### `list_entities() -> list[dict]` / `edges_since(user_id, since) -> list[Edge]`
+
+Host/admin queries (neither is an MCP tool by design):
+
+- **`list_entities`** — distinct ids with memory, with edge/episode counts:
+  `[{"user_id": "vendor:acme", "edges": 12, "episodes": 4}, ...]`. For deciding
+  what to recall proactively or auditing coverage.
+- **`edges_since`** — edges *learned* after a date (`"2026-07-01"` or a
+  datetime): filters on `provenance.observed_at` (when Veracium recorded it),
+  not `valid_from` (when it became true). Includes superseded and quarantined
+  edges so change-detection sees everything — filter on `.active`/`.assertable`.
+
 ### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
 
 Explicit user-feedback verbs (get `edge_id`s from `Recall.edges`):

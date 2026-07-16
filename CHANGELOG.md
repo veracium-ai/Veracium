@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **host queries** (requested by the first production consumer for its
+  intelligence layer): `Memory.list_entities()` — distinct ids with
+  edge/episode counts, for proactive-recall planning and coverage audits — and
+  `Memory.edges_since(user_id, since)` — edges learned after a date, filtered
+  on `provenance.observed_at`, including superseded/quarantined material so
+  change-detection sees everything. Host/admin surface; neither is an MCP tool
+  (cross-user enumeration is not an agent capability). `Store` gains
+  `list_users()` (non-abstract, like `forget_user`).
+
 ## 0.2.0
 
 The launch release: the five capability gaps identified by an independent

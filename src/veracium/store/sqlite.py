@@ -115,6 +115,17 @@ class SqliteStore(Store):
                 self._bump(row[0])
             self._conn.commit()
 
+    # -- host/admin queries ---------------------------------------------------
+    def list_users(self) -> list[dict]:
+        rows = self._conn.execute(
+            "SELECT user_id, SUM(e), SUM(p) FROM ("
+            "  SELECT user_id, COUNT(*) AS e, 0 AS p FROM edges GROUP BY user_id"
+            "  UNION ALL"
+            "  SELECT user_id, 0, COUNT(*) FROM episodes GROUP BY user_id"
+            ") GROUP BY user_id ORDER BY user_id").fetchall()
+        return [{"user_id": u, "edges": int(e or 0), "episodes": int(p or 0)}
+                for u, e, p in rows]
+
     # -- compliance erasure -------------------------------------------------
     def forget_user(self, user_id) -> dict:
         with self._lock:

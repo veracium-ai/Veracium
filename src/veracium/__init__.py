@@ -364,6 +364,29 @@ class Memory:
             return None
         return self.diagnostics.preview()
 
+    # -- host queries ----------------------------------------------------------
+    def list_entities(self) -> list[dict]:
+        """Distinct ids that have accumulated memory, with edge/episode counts.
+        For hosts deciding what to recall proactively or auditing coverage.
+        Host/admin surface — not exposed over MCP by design (cross-user
+        enumeration is not an agent tool)."""
+        return self.store.list_users()
+
+    def edges_since(self, user_id: str, since) -> list[Edge]:
+        """Edges *learned* after `since` (ISO date/datetime string, or a
+        datetime) — filtered on `provenance.observed_at`, i.e. when veracium
+        recorded the fact, not `valid_from` (when it became true). Includes
+        superseded and quarantined edges so change-detection sees everything;
+        filter on `.active` / `.assertable` / provenance as needed."""
+        from datetime import datetime, timezone
+        if isinstance(since, str):
+            since = datetime.fromisoformat(since)
+        if since.tzinfo is None:
+            since = since.replace(tzinfo=timezone.utc)
+        return [e for e in self.store.edges(user_id, active_only=False,
+                                            include_quarantined=True)
+                if e.provenance.observed_at > since]
+
     # -- user feedback verbs -------------------------------------------------
     def _find_edge(self, user_id: str, edge_id: str) -> Edge:
         for e in self.store.edges(user_id, active_only=False, include_quarantined=True):

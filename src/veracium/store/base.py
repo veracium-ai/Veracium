@@ -39,6 +39,17 @@ class Store(ABC):
     @abstractmethod
     def delete_episode(self, episode_id: str) -> None: ...
 
+    # -- host/admin queries ---------------------------------------------------
+    def list_users(self) -> list[dict]:
+        """Distinct user ids in the store with edge/episode counts, e.g.
+        [{"user_id": "alice", "edges": 12, "episodes": 4}, ...]. Host/admin
+        surface (proactive recall, ops dashboards) — deliberately NOT exposed
+        over MCP: cross-user enumeration handed to an agent is the same class
+        of footgun as an agent-callable forget(). Non-abstract so pre-existing
+        Store implementations keep working."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement list_users")
+
     # -- compliance erasure -------------------------------------------------
     def forget_user(self, user_id: str) -> dict:
         """Irreversibly erase EVERYTHING stored for `user_id` — edges (including
