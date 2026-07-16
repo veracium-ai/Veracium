@@ -107,10 +107,11 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 
 ## Status
 
-The validated layered design is implemented, tested (25 offline tests + a live
-acceptance eval), and passes its own research-claim bar (5/5, 0 injection
-asserts). Roadmap v0.1–v0.6 complete, plus opt-in telemetry, a self-check, and
-consented error reporting. See [ROADMAP.md](ROADMAP.md).
+The validated layered design is implemented, tested (44 offline tests, plus
+opt-in live tiers: the acceptance eval and a real-corpus robustness harness),
+and passes its own research-claim bar (5/5, 0 injection asserts). Roadmap
+v0.1–v0.7 complete, plus opt-in telemetry, a self-check, consented error
+reporting, and an operation audit log. See [ROADMAP.md](ROADMAP.md).
 
 ## License
 

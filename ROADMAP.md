@@ -79,3 +79,10 @@ this category; rationale for what we *refused* is in
 - Access scopes + sensitivity tags for multi-principal hosts (enterprise tier;
   today the embedding host mediates all access — that boundary is documented).
 - Embedding fallback for non-entity recall (the reserved `Embed` hook).
+- Proactive recall — a session-start mode (`query=None`) surfacing follow-ups,
+  unresolved topics, and dated commitments from episodes + volatility data
+  (candidate from external review, 2026-07: genuine gap; recall is query-only today).
+- Background memory-quality audit, **flag-only** (contradiction/staleness/redundancy
+  sweep over a user's store). Deliberately no auto-resolve: an LLM empowered to
+  invalidate or merge memories is a new attack-and-error surface — findings get
+  flagged for the dispute/confirm verbs, never applied silently.

@@ -65,7 +65,8 @@ as retrievable-on-request as yesterday's.
   (see [concepts → Mixed provenance](concepts.md#mixed-provenance-derived_from));
   a per-item trust enum can't express "my event, quoting their text."
 - **Multi-tenant isolation** — per-`user_id`, enforced at the store layer and
-  fuzz-tested against a real 1M-conversation corpus (0 leaks). Ids are opaque
+  fuzz-tested against real conversations sampled from the 1M-conversation
+  LMSYS corpus (200-conversation seeded runs; 0 leaks). Ids are opaque
   strings, so scopes compose by convention (`"team:backend"`).
 - **Hybrid retrieval** — recall is entity-graph + curated wiki + recent
   episodes; in the research this project distills, that combination beat
