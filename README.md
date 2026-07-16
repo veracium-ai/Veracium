@@ -5,10 +5,10 @@
 [![Python](https://img.shields.io/pypi/pyversions/veracium)](https://pypi.org/project/veracium/)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A provenance-aware memory plug-in for agentic systems. Give any agent durable,
-per-user memory that recalls facts about the user, past interactions, and what
-worked — while structurally resisting the injection and confabulation failures
-that plague naive memory.
+**Veracium is a provenance-aware memory plug-in for agentic systems** —
+durable, per-user memory that resists the injection and confabulation failures
+that plague naive agent memory. It remembers facts about the user, past
+interactions, and what worked, with provenance on every fact.
 
 Veracium is the production distillation of an evaluation-driven research project
 (`agent-memory`): every design choice below traces to a measured finding, and the

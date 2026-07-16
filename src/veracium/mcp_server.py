@@ -75,7 +75,8 @@ def build_server(mem: Memory, *, default_user: str = "default"):
     """Construct the FastMCP server with veracium's tools registered. Separated from
     main() so the wiring is testable without starting the stdio loop."""
     from mcp.server.fastmcp import FastMCP
-    server = FastMCP("veracium")
+    server = FastMCP("veracium",
+                     instructions="Provenance-aware memory for AI agents.")
 
     @server.tool()
     def remember(text: str, user_id: str = default_user, author: str = "user",

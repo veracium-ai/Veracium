@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
+The launch release: the five capability gaps identified by an independent
+landscape analysis, plus the display-brand and one-liner refresh.
+
+- **branding**: display brand is capitalized **Veracium** in all prose (code
+  identifiers stay lowercase); canonical one-liner applied to the PyPI summary,
+  README lead, and MCP server description.
 - **audit**: opt-in operation audit log — `Memory(audit=AuditLog(path))`
   appends one content-free JSONL line per operation (UTC timestamp, op,
   `user_id`, the op's counters; never memory text) covering
