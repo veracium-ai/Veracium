@@ -50,7 +50,7 @@ git clone https://github.com/veracium-ai/Veracium.git && cd Veracium
 pip install -e ".[anthropic,dev]"
 ```
 
-Links: [veracium.ai](https://veracium.ai) · [PyPI](https://pypi.org/project/veracium/)
+Links: [docs](https://veracium-ai.github.io/Veracium/) · [veracium.ai](https://veracium.ai) · [PyPI](https://pypi.org/project/veracium/)
 
 ## Use (library)
 
@@ -87,6 +87,8 @@ MCP-compatible agent (Claude Desktop/Code, others) with no host-side Python. See
 [docs/mcp.md](docs/mcp.md) for the config JSON and tool reference.
 
 ## Documentation
+
+Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Veracium/)**
 
 - **[examples/demo.ipynb](examples/demo.ipynb)** — the scam-email injection demo,
   runnable end to end ([open in Colab](https://colab.research.google.com/github/veracium-ai/Veracium/blob/main/examples/demo.ipynb)).
