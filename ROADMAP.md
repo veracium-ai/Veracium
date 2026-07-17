@@ -81,7 +81,26 @@ this category; rationale for what we *refused* is in
 - Embedding fallback for non-entity recall (the reserved `Embed` hook).
 - Proactive recall — a session-start mode (`query=None`) surfacing follow-ups,
   unresolved topics, and dated commitments from episodes + volatility data
-  (candidate from external review, 2026-07: genuine gap; recall is query-only today).
+  (two independent demand signals, 2026-07: external review + first production
+  consumer; recall is query-only today). Extraction-time proactive hints
+  (`follow_up`/`unresolved`/`action_item`) fold in here.
+- From the 23-item external backlog diff (2026-07-17; new items only — the
+  rest were already tracked, in flight, or refused with rationale in
+  docs/design-rationale.md):
+  - TypeScript/JS SDK (largest-TAM ask; big surface — needs its own design round).
+  - `introspect()` convenience API ("what do you know about me?" — the data is
+    already queryable via recall/export; this is formatting + categories).
+  - SQLite FTS5 keyword signal for non-entity recall (cheap complement to the
+    reserved embedding fallback; evaluate both against the same harness).
+  - `as_tools()` — tool-schema helpers for function-calling frameworks
+    (MCP covers protocol clients; this covers the rest).
+  - Adaptive representation under token budgets (verbatim/summary/reference
+    tiers; today's budget trimming selects, it doesn't re-render).
+  - Verbatim event storage alongside extraction (enables exact-quote citation;
+    interacts with the content-free telemetry/audit posture — design carefully).
+  - Considered and not adopted for now: user-configurable retrieval scoring
+    weights — the fixed strategy is the validated one; revisit only with
+    benchmark evidence that tuning helps.
 - Background memory-quality audit, **flag-only** (contradiction/staleness/redundancy
   sweep over a user's store). Deliberately no auto-resolve: an LLM empowered to
   invalidate or merge memories is a new attack-and-error surface — findings get

@@ -94,6 +94,10 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 
 - **[examples/demo.ipynb](examples/demo.ipynb)** — the scam-email injection demo,
   runnable end to end ([open in Colab](https://colab.research.google.com/github/veracium-ai/Veracium/blob/main/examples/demo.ipynb)).
+- **[examples/langchain_memory.py](examples/langchain_memory.py)** — Veracium as
+  the long-term memory layer of a LangChain chat app (session-keyed hybrid:
+  LangChain buffers recent turns, Veracium holds durable facts with provenance
+  and quarantine; your existing LangChain model powers both sides).
 - **[docs/concepts.md](docs/concepts.md)** — the mental model: edges vs episodes
   vs the compiled wiki, provenance & authorship, quarantine, the abstention gate,
   lifecycle.
