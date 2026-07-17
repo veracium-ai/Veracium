@@ -126,8 +126,10 @@ def test_late_judgment_on_superseded_edge_is_recorded_not_rendered():
                    if e.id == edge.id)
         assert old.outcome_counts.get("challenged") == 1     # recorded
         rec = mem.recall("triage", "covetrus mail")
-        # the superseded fact never renders in context (queryable via .edges);
-        # its late-judgment counters are therefore invisible at recall
-        assert "sends promotional mail" not in rec.context
+        # the superseded EDGE never renders as a fact line (the correction
+        # episode may legitimately narrate the old value); its late-judgment
+        # counters are therefore invisible at recall
+        assert "source_reliable: sends promotional mail (since" not in rec.context
+        assert "sends promotional mail (in use" not in rec.context
         assert any(e.id == edge.id for e in rec.edges)       # but still queryable
         mem.close()
