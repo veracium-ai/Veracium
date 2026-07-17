@@ -182,7 +182,11 @@ class Memory:
                                     self.config.wiki_recompile_after_writes)
         edges = subgraph_for_query(self.store, user_id, query,
                                    max_edges=self.config.max_subgraph_edges)
-        episodes = self.store.episodes(user_id)[-self.config.max_recent_episodes:]
+        # outcome events are structured records, not narrative — they'd crowd
+        # out interaction history for high-volume consumers; their signal
+        # reaches recall as counters rendered on the edges themselves
+        episodes = [e for e in self.store.episodes(user_id)
+                    if e.kind != "outcome"][-self.config.max_recent_episodes:]
 
         truncated = False
         if token_budget is None:
@@ -452,6 +456,114 @@ class Memory:
                                   evidence_ref=f"confirm:{edge_id}")))
         self._record("feedback", {"disputed": 0, "confirmed": 1}, user_id)
         return {"confirmed": edge_id, "valid_from": date}
+
+    # -- outcome tracking (engine-written; never MCP) ------------------------
+    _OUTCOME_ACTORS = {"user": EvidenceAuthor.USER, "system": EvidenceAuthor.SYSTEM}
+
+    def record_outcome(self, user_id: str, edge_id: str, *, outcome,
+                       evidence_ref: str, actor: str = "system",
+                       corrected_value: Optional[str] = None,
+                       date: Optional[str] = None,
+                       context_ref: Optional[str] = None) -> dict:
+        """Record that a conclusion built on `edge_id` was used / judged.
+
+        Writes (or upgrades) a `kind="outcome"` episode — the source of truth —
+        and maintains the edge's derived counters. The upgrade path is keyed by
+        (`edge_id`, `evidence_ref`): a use recorded UNREVIEWED is upgraded in
+        place when a judgment arrives for the same use.
+
+        DELIBERATELY NEVER supersedes the fact (the platform's edge-blind
+        clarification): one run's evidence_ref touches every fact it consulted,
+        so upgrading a *use* to `corrected` must not invalidate supporting
+        facts — `corrected_value` here is recorded as the decision's true value
+        only. Fact-level correction is the explicit `correct()` verb.
+        `challenged` sets the existing needs-confirmation flag; nothing else
+        touches gate placement — counters are information, not gating."""
+        from .schema import Outcome
+        outcome = Outcome(outcome)
+        author = self._OUTCOME_ACTORS.get(actor)
+        if author is None:
+            raise ValueError(f"actor must be 'user' or 'system', not {actor!r}")
+        if outcome in (Outcome.CONFIRMED, Outcome.CORRECTED) and actor != "user":
+            raise ValueError(f"{outcome.value} is a human judgment (actor='user')")
+        if outcome in (Outcome.CHALLENGED, Outcome.CONCURRED) and actor != "system":
+            raise ValueError(f"{outcome.value} is a system judgment (actor='system')")
+        edge = self._find_edge(user_id, edge_id)
+        from datetime import date as _date
+        date = date or _date.today().isoformat()
+
+        prior = next((ep for ep in self.store.episodes(user_id)
+                      if ep.kind == "outcome" and ep.edge_id == edge_id
+                      and ep.provenance.evidence_ref == evidence_ref), None)
+        val = f" (true value: {corrected_value})" if corrected_value else ""
+        summary = (f"({actor}) {outcome.value}: use of "
+                   f"'{edge.relation}: {edge.object}'{val}")
+        upgraded = False
+        if prior is not None:
+            # upgrade in place: same use, new judgment — times_used unchanged
+            old = prior.outcome.value if prior.outcome else Outcome.UNREVIEWED.value
+            edge.outcome_counts[old] = max(0, edge.outcome_counts.get(old, 1) - 1)
+            prior.outcome = outcome
+            prior.summary = summary
+            prior.provenance.author_of_evidence = author
+            self.store.add_episode(prior)
+            upgraded = True
+        else:
+            edge.times_used += 1
+            self.store.add_episode(Episode(
+                id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
+                summary=summary, kind="outcome", edge_id=edge_id,
+                outcome=outcome, context_ref=context_ref,
+                provenance=Provenance(
+                    source_type=SourceType.STATED if actor == "user" else SourceType.INFERRED,
+                    author_of_evidence=author, evidence_ref=evidence_ref)))
+        edge.outcome_counts[outcome.value] = edge.outcome_counts.get(outcome.value, 0) + 1
+        edge.last_outcome = outcome
+        edge.last_outcome_at = _event_dt(date)
+        if outcome is Outcome.CHALLENGED:
+            edge.needs_confirmation = True   # "confirm before relying" — existing surface
+        self.store.add_edge(edge)
+        self._record("outcome", {"new": 0 if upgraded else 1,
+                                 "upgraded": 1 if upgraded else 0}, user_id)
+        return {"edge_id": edge_id, "outcome": outcome.value, "upgraded": upgraded,
+                "times_used": edge.times_used}
+
+    def correct(self, user_id: str, edge_id: str, corrected_value: str, *,
+                actor: str = "user", evidence_ref: Optional[str] = None,
+                date: Optional[str] = None) -> dict:
+        """Explicit FACT-level correction: the remembered value itself was wrong.
+        Supersedes the edge with `invalidation_reason="corrected"` (distinguishable
+        at recall from natural change) and records the corrected value as a new
+        user-authored assertable edge. This — and only this — invalidates a fact;
+        `record_outcome(outcome="corrected")` judges a *decision* and never
+        touches the facts it consulted. Not an MCP tool."""
+        edge = self._find_edge(user_id, edge_id)
+        if not edge.active:
+            raise ValueError(f"edge {edge_id!r} is not active (already "
+                             f"{edge.invalidation_reason or 'invalidated'})")
+        from datetime import date as _date
+        date = date or _date.today().isoformat()
+        when = _event_dt(date)
+        self.store.invalidate_edge(edge_id, when, "corrected")
+        new = Edge(
+            id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,
+            relation=edge.relation, object=corrected_value, note=edge.note,
+            volatility=edge.volatility, supersedes=edge_id, valid_from=when,
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=evidence_ref or f"correct:{edge_id}",
+                                  observed_at=when))
+        self.store.add_edge(new)
+        self.store.add_episode(Episode(
+            id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
+            summary=(f"({actor}) corrected '{edge.relation}: {edge.object}' "
+                     f"to '{corrected_value}'"),
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=evidence_ref or f"correct:{edge_id}",
+                                  observed_at=when)))
+        self._record("feedback", {"disputed": 0, "confirmed": 0, "corrected": 1}, user_id)
+        return {"corrected": edge_id, "replacement": new.id}
 
     # -- compliance erasure --------------------------------------------------
     def forget(self, user_id: str) -> dict:

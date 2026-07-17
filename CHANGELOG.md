@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- **outcome tracking (V4)**: co-designed with the first production consumer —
+  `record_outcome()` records uses and judgments of facts as `kind="outcome"`
+  episodes (the source of truth) with derived edge counters
+  (`times_used`/`outcome_counts`/`last_outcome`); judgments upgrade the
+  matching use in place via (`edge_id`, `evidence_ref`). Vocabulary:
+  `unreviewed`/`confirmed`/`corrected` (human) /`challenged`/`concurred`
+  (LLM judge), actor rules enforced. Edge-blind by design: `record_outcome`
+  never supersedes facts; the explicit fact-level `correct()` verb supersedes
+  with reason `"corrected"`. `challenged` reuses the possibly-stale flag;
+  counters render into recall as information, never gating; outcome episodes
+  are excluded from the narrative recall window and from LLM consolidation.
+  Portability format v2 (`"record"` marker; v1 imports unchanged). Neither
+  verb is an MCP tool.
+
 ## 0.2.3
 
 - **MCP Registry**: README carries the `mcp-name` validation marker and

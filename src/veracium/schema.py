@@ -172,9 +172,17 @@ class Edge(BaseModel):
     provenance: Provenance
     valid_from: datetime = Field(default_factory=utcnow)
     invalidated_at: Optional[datetime] = None
-    invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed"
+    invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed" | "disputed" | "corrected"
     supersedes: Optional[str] = None
     needs_confirmation: bool = False  # past its expected lifetime; may be stale
+    # Outcome aggregates — DERIVED, mutable-by-design life-history (recomputable
+    # from the kind="outcome" episode record; engine-written via record_outcome,
+    # never provenance and never an MCP surface). times_used counts uses the
+    # host explicitly acted on, not recalls.
+    times_used: int = 0
+    outcome_counts: dict[str, int] = Field(default_factory=dict)
+    last_outcome: Optional[Outcome] = None
+    last_outcome_at: Optional[datetime] = None
 
     @property
     def active(self) -> bool:
@@ -203,13 +211,36 @@ class Edge(BaseModel):
         return self.active and not self.quarantined and not self.use_only
 
 
+class Outcome(str, Enum):
+    """Did a conclusion built on memory survive contact with reality?
+    Actor provenance rides on the outcome episode's authorship: human
+    judgments are USER-authored (strong), LLM-judge opinions SYSTEM-authored
+    (weak — a flag, never truth). Completion is not confirmation: most uses
+    stay UNREVIEWED forever, and unreviewed repetition must never accumulate
+    authority (the laundering failure class, via repetition)."""
+    UNREVIEWED = "unreviewed"    # used, no judgment yet (the default; most stay here)
+    CONFIRMED = "confirmed"      # human marked the conclusion correct
+    CORRECTED = "corrected"      # human supplied the true value (strongest signal)
+    CHALLENGED = "challenged"    # LLM judge disagreed — evidence-to-review
+    CONCURRED = "concurred"      # LLM judge agreed — weak positive
+
+
 class Episode(BaseModel):
     """A dated narrative record of what happened in one interaction/event.
     Episodes are the store's memory of events; they supply the narrative the
     graph lacks. A third-party-authored episode records that a claim was
-    *received*, not that it is true — the abstention gate depends on this."""
+    *received*, not that it is true — the abstention gate depends on this.
+
+    `kind="outcome"` episodes are the outcome-tracking record (source of
+    truth for the edge-level aggregate counters, which are derived state):
+    each records one use-and-judgment of `edge_id`, upgradeable in place from
+    UNREVIEWED when a later judgment arrives with the same evidence_ref."""
     id: str
     user_id: str
     date: str  # ISO date the event occurred (may differ from wall clock)
     summary: str
     provenance: Provenance
+    kind: str = "interaction"           # "interaction" | "outcome"
+    edge_id: Optional[str] = None       # outcome episodes: the edge judged
+    outcome: Optional[Outcome] = None   # outcome episodes: current status
+    context_ref: Optional[str] = None   # optional comparability key (e.g. rubric hash)

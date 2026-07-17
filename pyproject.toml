@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "veracium"
-version = "0.2.3"
+version = "0.3.0b1"
 description = "Provenance-aware memory for AI agents."
 readme = "README.md"
 requires-python = ">=3.10"
