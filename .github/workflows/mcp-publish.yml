@@ -1,0 +1,27 @@
+name: mcp-publish
+
+# Publish server.json to the official MCP Registry
+# (registry.modelcontextprotocol.io). Uses GitHub Actions OIDC: the runner
+# proves it belongs to veracium-ai/Veracium, which grants the
+# io.github.veracium-ai/* namespace — no personal tokens involved.
+# Run manually after a release whose version matches server.json.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.0/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+      - name: Publish to the MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
