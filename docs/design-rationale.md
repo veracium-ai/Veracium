@@ -69,9 +69,11 @@ as retrievable-on-request as yesterday's.
   LMSYS corpus (200-conversation seeded runs; 0 leaks). Ids are opaque
   strings, so scopes compose by convention (`"team:backend"`).
 - **Hybrid retrieval** — recall is entity-graph + curated wiki + recent
-  episodes; in the research this project distills, that combination beat
-  vector-similarity retrieval on every question type tested. (An embedding
-  fallback for non-entity queries is a reserved hook in the interface.)
+  episodes; in the research this project distills, that combination
+  outperformed vector-similarity retrieval in aggregate (vector's single
+  category win — conflict resolution, 42/42 vs 41/42 — is within seed noise;
+  three saturated categories tied). (An embedding fallback for non-entity
+  queries is a reserved hook in the interface.)
 - **"What worked" memory** — episodes record failures, fixes, and dated
   commitments, and consolidation is required to preserve first occurrences of
   each; the relation registry (`uses_tool`, `source_reliable`,
