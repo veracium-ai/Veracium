@@ -118,6 +118,28 @@ prompt-injection target) — wire them to real user actions in your host. Note
 `correct` and `elaborate` need no verb: they *are* `remember()` (supersession /
 accumulation).
 
+### `record_outcome(user_id, edge_id, *, outcome, evidence_ref, actor="system", corrected_value=None, date=None, context_ref=None) -> dict` / `correct(user_id, edge_id, corrected_value, *, actor="user", evidence_ref=None, date=None) -> dict`
+
+Outcome tracking — *did conclusions built on memory survive contact with
+reality?* Engine-written surfaces (never MCP tools):
+
+- **`record_outcome`** judges a **use** of a fact. Outcomes:
+  `unreviewed` (used, no judgment — the default; most stay here) ·
+  `confirmed`/`corrected` (human, `actor="user"`) ·
+  `challenged`/`concurred` (LLM judge, `actor="system"` — flags, never truth).
+  Each use is a `kind="outcome"` episode (the source of truth), and the edge
+  carries derived counters (`times_used`, `outcome_counts`, `last_outcome`).
+  A later judgment with the same (`edge_id`, `evidence_ref`) **upgrades the
+  use in place** — no double counting. **Edge-blind by design**: one run's
+  `evidence_ref` may touch every fact it consulted, so `record_outcome` never
+  supersedes a fact — `corrected` here records the *decision's* true value
+  only. `challenged` sets the possibly-stale flag; counters render into recall
+  as information ("(in use: 5×, 2 confirmed)") — never as gating.
+- **`correct`** is the explicit **fact-level** correction: the remembered value
+  itself was wrong. Supersedes with `invalidation_reason="corrected"`
+  (distinguishable at recall from natural change) and records the corrected
+  value as a new user-authored edge.
+
 ### `forget(user_id) -> dict`
 
 **Compliance erasure** — irreversibly removes everything stored for the user:

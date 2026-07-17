@@ -98,6 +98,18 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40) 
     return [e for _, e in scored[:max_edges]]
 
 
+def _outcome_note(e: Edge) -> str:
+    """Outcome aggregates rendered as information for the reader — never
+    gating: '(in use: 5×, 2 confirmed, 1 corrected)'. Unreviewed uses show
+    only in the total (completion is not confirmation)."""
+    if not e.times_used:
+        return ""
+    reviewed = [f"{n} {k}" for k, n in sorted(e.outcome_counts.items())
+                if k != "unreviewed" and n > 0]
+    detail = (", " + ", ".join(reviewed)) if reviewed else ""
+    return f" (in use: {e.times_used}×{detail})"
+
+
 def render_edges(edges: list[Edge]) -> str:
     """Render edges as provenance-carrying lines for a prompt. Quarantined claims
     are fenced with an explicit never-assert marker; superseded edges show their
@@ -115,5 +127,6 @@ def render_edges(edges: list[Edge]) -> str:
         else:
             stale = " [possibly stale — confirm before relying on it]" if e.needs_confirmation else ""
             tp = " [third-party-reported; unconfirmed]" if e.use_only else ""
-            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()}){tp}{stale}")
+            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()})"
+                         f"{_outcome_note(e)}{tp}{stale}")
     return "\n".join(lines)

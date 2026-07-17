@@ -41,7 +41,8 @@ EVENT_FIELDS: dict[str, set[str]] = {
     "answer": {"abstained", "gate_in_tok", "gate_out_tok", "ms"},
     "maintain": {"lapsed", "decayed", "flagged", "consolidated_in", "consolidated_out"},
     "forget": {"edges", "episodes"},
-    "feedback": {"disputed", "confirmed"},
+    "feedback": {"disputed", "confirmed", "corrected"},
+    "outcome": {"new", "upgraded"},
     "selfcheck": {"total_ok", "total_n", "injection_asserts", "supersession_ok",
                   "supersession_n", "abstention_ok", "abstention_n"},
 }
