@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **veracium-mcp CLI**: `--help` and `--version` now work (previously any
+  argument was ignored and the stdio server booted silently — confusing on a
+  first install); unknown arguments fail with a pointer to `--help`; a boot
+  failure (e.g. missing `ANTHROPIC_API_KEY`) exits with a clear one-line
+  message instead of a traceback.
+
 ## 0.2.1
 
 - **host queries** (requested by the first production consumer for its

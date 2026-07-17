@@ -122,12 +122,49 @@ def build_server(mem: Memory, *, default_user: str = "default"):
     return server
 
 
-def main() -> None:
+_USAGE = """\
+veracium-mcp — Provenance-aware memory for AI agents, as an MCP stdio server.
+
+This command is not interactive: it speaks MCP over stdin/stdout and is meant
+to be launched BY an MCP client (Claude Desktop, Claude Code, ...). Point your
+client's config at this executable — config JSON and tool reference:
+https://docs.veracium.ai/mcp/
+
+Environment:
+  ANTHROPIC_API_KEY   key for the reference LLM provider (required)
+  VERACIUM_DB_PATH    SQLite store path        (default: veracium.db)
+  VERACIUM_USER       default user id for tools (default: "default")
+
+Options:
+  -h, --help     show this help and exit
+  --version      print the installed veracium version and exit
+"""
+
+
+def main(argv=None) -> None:
+    import sys
+    args = sys.argv[1:] if argv is None else argv
+    if "-h" in args or "--help" in args:
+        print(_USAGE)
+        return
+    if "--version" in args:
+        from importlib.metadata import version
+        print(version("veracium"))
+        return
+    if args:
+        raise SystemExit(f"veracium-mcp: unknown argument {args[0]!r} (see --help). "
+                         "This server takes no positional arguments; it is "
+                         "configured via environment variables.")
     try:
         import mcp.server.fastmcp  # noqa: F401
     except ImportError as e:  # pragma: no cover
         raise SystemExit("The MCP server needs the SDK: pip install veracium[mcp]") from e
-    build_server(build_memory(), default_user=os.environ.get("VERACIUM_USER", "default")).run()
+    try:
+        mem = build_memory()
+    except Exception as e:
+        raise SystemExit(f"veracium-mcp: failed to start: {e}\n"
+                         "(Is ANTHROPIC_API_KEY set? Run veracium-mcp --help.)") from e
+    build_server(mem, default_user=os.environ.get("VERACIUM_USER", "default")).run()
 
 
 if __name__ == "__main__":

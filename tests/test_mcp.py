@@ -69,3 +69,18 @@ def test_mcp_server_wiring():
 if __name__ == "__main__":
     test_mcp_tools_route_correctly()
     print("mcp OK")
+
+
+def test_mcp_entrypoint_help_and_version(capsys):
+    # `veracium-mcp --help` must explain itself and exit cleanly — it used to
+    # ignore argv and silently boot the stdio server (launch-prep finding).
+    from veracium.mcp_server import main
+    main(["--help"])
+    out = capsys.readouterr().out
+    assert "MCP stdio server" in out and "ANTHROPIC_API_KEY" in out
+    main(["--version"])
+    assert capsys.readouterr().out.strip()  # prints the installed version
+
+    import pytest
+    with pytest.raises(SystemExit, match="unknown argument"):
+        main(["serve"])
