@@ -105,3 +105,29 @@ def test_correct_supersedes_with_reason_and_recall_renders_counters():
         # outcome episodes never enter the narrative window
         assert "unreviewed: use of" not in rec.context
         mem.close()
+
+
+def test_late_judgment_on_superseded_edge_is_recorded_not_rendered():
+    """Decision, not accident (validation-report follow-up): a judgment arriving
+    after fact-level correction is accepted and recorded on the old edge — the
+    episode stream keeps late judgments — but superseded recall lines render
+    without counters (history stays compact; the record remains queryable)."""
+    with tempfile.TemporaryDirectory() as d:
+        mem, edge = _mem(d)
+        mem.record_outcome("triage", edge.id, outcome="unreviewed",
+                           evidence_ref="run-1", date="2026-07-02")
+        mem.correct("triage", edge.id, "sends invoices", date="2026-07-03")
+        # late judge verdict on the now-superseded edge: accepted, no error
+        r = mem.record_outcome("triage", edge.id, outcome="challenged",
+                               actor="system", evidence_ref="run-1",
+                               date="2026-07-04")
+        assert r["upgraded"]
+        old = next(e for e in mem.store.edges("triage", active_only=False)
+                   if e.id == edge.id)
+        assert old.outcome_counts.get("challenged") == 1     # recorded
+        rec = mem.recall("triage", "covetrus mail")
+        # the superseded fact never renders in context (queryable via .edges);
+        # its late-judgment counters are therefore invisible at recall
+        assert "sends promotional mail" not in rec.context
+        assert any(e.id == edge.id for e in rec.edges)       # but still queryable
+        mem.close()
