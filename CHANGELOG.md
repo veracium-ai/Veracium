@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2
 
 - **veracium-mcp CLI**: `--help` and `--version` now work (previously any
   argument was ignored and the stdio server booted silently — confusing on a
