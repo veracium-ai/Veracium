@@ -1,5 +1,7 @@
 # Veracium
 
+<!-- mcp-name: io.github.veracium-ai/veracium -->
+
 [![tests](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml/badge.svg)](https://github.com/veracium-ai/Veracium/actions/workflows/test.yml)
 [![PyPI](https://img.shields.io/pypi/v/veracium)](https://pypi.org/project/veracium/)
 [![Python](https://img.shields.io/pypi/pyversions/veracium)](https://pypi.org/project/veracium/)

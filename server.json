@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.veracium-ai/veracium",
+  "description": "Provenance-aware memory for AI agents: quarantined third-party claims, abstention-gated answers, supersession with history. One SQLite file.",
+  "repository": {
+    "url": "https://github.com/veracium-ai/Veracium",
+    "source": "github"
+  },
+  "websiteUrl": "https://docs.veracium.ai",
+  "version": "0.2.3",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "veracium",
+      "version": "0.2.3",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "description": "API key for the reference Anthropic provider",
+          "format": "string",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "VERACIUM_DB_PATH",
+          "description": "Path to the SQLite memory file (default: veracium.db)",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "VERACIUM_USER",
+          "description": "Default user id when a tool call omits user_id",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

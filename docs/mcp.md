@@ -6,10 +6,12 @@ Code, and others) with no host-side Python.
 ## Install & run
 
 ```bash
-# from source (not yet on PyPI):
-git clone https://github.com/veracium-ai/Veracium.git && cd Veracium && pip install -e ".[mcp,anthropic]"
+pip install "veracium[mcp,anthropic]"
 ANTHROPIC_API_KEY=sk-... VERACIUM_DB_PATH=~/.veracium.db veracium-mcp
 ```
+
+(`veracium-mcp` is a stdio server meant to be launched by your MCP client —
+run `veracium-mcp --help` for a summary.)
 
 The server owns its own model access (the Anthropic reference provider, configured
 from the environment).
@@ -47,10 +49,15 @@ Restart the client; the four tools below become available to the agent.
 
 | tool | purpose |
 |---|---|
-| `remember(text, user_id?, author?, event_type?, date?)` | store an interaction event. **Set `author="third_party"`** for received email / external docs so their claims are quarantined. |
-| `recall(query, user_id?)` | return a grounded memory context block (unverified claims fenced under a never-assert marker). |
+| `remember(text, user_id?, author?, event_type?, date?, derived_from?)` | store an interaction event. **Set `author="third_party"`** for received email / external docs so their claims are quarantined. If your own event's *text* quotes lower-trust content (a summary of a received email), **set `derived_from="third_party"`** — trust is capped at the minimum, so quoted material can never become an asserted fact. |
+| `recall(query, user_id?, token_budget?)` | return a grounded memory context block (unverified claims fenced under a never-assert marker). `token_budget` (approximate) caps the block, keeping query-matched facts and claim flags in preference to the wiki and old episodes. |
 | `answer(query, user_id?)` | answer from memory with the abstention gate (never asserts unverified claims; abstains rather than guesses). |
 | `maintain(user_id?)` | expire stale facts and consolidate old history; call periodically. |
+
+(Deliberately *not* MCP tools: `forget`, `dispute`/`confirm`, and entity
+listing — suppress/wipe/enumerate verbs callable by an agent are
+prompt-injection targets. They're library/CLI surface for the host; see
+[design rationale](design-rationale.md).)
 
 `user_id` defaults to `VERACIUM_USER`. For a single-user assistant, leave it unset;
 for a multi-user host, pass the id of the user being served (memory is isolated

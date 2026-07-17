@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.3
+
+- **MCP Registry**: README carries the `mcp-name` validation marker and
+  `server.json` (current registry schema) sits at the repo root — Veracium is
+  publishable to registry.modelcontextprotocol.io, which the MCP directories
+  crawl. `docs/mcp.md` refreshed: PyPI install flow (the page still described
+  a pre-PyPI clone install), the `remember` tool row now documents
+  `derived_from`, `recall` documents `token_budget`, and the deliberately
+  non-MCP verbs are listed with their rationale.
+
 ## 0.2.2
 
 - **veracium-mcp CLI**: `--help` and `--version` now work (previously any
