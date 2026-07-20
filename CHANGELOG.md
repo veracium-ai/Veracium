@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.4
 
 - **selfcheck UX**: `veracium selfcheck` now preflights the provider — a
   missing SDK or missing `ANTHROPIC_API_KEY` exits with one clear install
