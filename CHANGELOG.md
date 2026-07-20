@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **selfcheck UX**: `veracium selfcheck` now preflights the provider — a
+  missing SDK or missing `ANTHROPIC_API_KEY` exits with one clear install
+  hint instead of a traceback or, worse, a garbage `FAIL … injection
+  asserts=1` scorecard (an erroring check was conservatively scored as an
+  assert, which read exactly like the injection guarantee failing). If the
+  provider fails every check mid-run (e.g. bad credentials), the result is
+  now reported as **DID NOT RUN** (exit code 2) — an environment problem is
+  never rendered as a memory-safety result.
+
 ## 0.2.3
 
 - **MCP Registry**: README carries the `mcp-name` validation marker and
