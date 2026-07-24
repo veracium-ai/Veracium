@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **proactive recall**: `recall(user_id)` with no query returns a session-start
+  briefing — dated commitments due/overdue, possibly-stale facts to confirm,
+  current transient state, recent history. Volunteering is disclosure-gated:
+  only `MENTIONABLE` facts surface; `use_only` and quarantined material never
+  appear unprompted (the Disclosure tier doing the job it names). LLM-free,
+  deterministic, budget-aware (commitments outrank history when trimming);
+  MCP `recall` exposes it by omitting `query`. New config:
+  `proactive_deadline_window_days` / `proactive_recent_days`.
+
 ## 0.3.0
 
 - **bench**: internal benchmark suite (`bench/run_bench.py`) — engine-overhead

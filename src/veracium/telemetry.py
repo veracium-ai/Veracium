@@ -35,7 +35,7 @@ from typing import Optional
 EVENT_FIELDS: dict[str, set[str]] = {
     "ingest": {"facts", "quarantined", "episodes", "supersessions", "reinforcements",
                "unparseable", "distill_in_tok", "distill_out_tok", "ms"},
-    "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items",
+    "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items", "proactive",
                "trimmed", "ms"},  # "trimmed" not "truncated": the content-free
                                   # guard rejects payloads containing "cat"
     "answer": {"abstained", "gate_in_tok", "gate_out_tok", "ms"},

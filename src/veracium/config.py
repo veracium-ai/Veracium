@@ -21,6 +21,10 @@ class MemoryConfig:
     # recall assembly (these caps bound read cost as history grows — finding 22)
     max_subgraph_edges: int = 40
     max_recent_episodes: int = 12
+    # proactive recall (recall with no query): how far ahead a dated commitment
+    # counts as "coming due", and how far back "recent history" reaches.
+    proactive_deadline_window_days: int = 7
+    proactive_recent_days: int = 7
     # compiled-wiki cache: recompile when this many writes have landed since the
     # last compile (0 disables the wiki layer → recall renders the subgraph only).
     wiki_recompile_after_writes: int = 8
