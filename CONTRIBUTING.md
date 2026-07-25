@@ -17,6 +17,7 @@ To exercise the live guarantees against a real model (optional, costs tokens):
 veracium selfcheck                     # needs a provider, e.g. ANTHROPIC_API_KEY
 VERACIUM_EVAL=1 pytest tests/test_eval.py            # acceptance eval
 VERACIUM_ROBUSTNESS=1 pytest tests/test_robustness.py  # robustness tier
+PYTHONPATH=src python bench/run_bench.py               # internal benchmark (see bench/README.md)
 ```
 
 ## The bar

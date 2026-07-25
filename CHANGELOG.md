@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **bench**: internal benchmark suite (`bench/run_bench.py`) — engine-overhead
+  medians against a zero-latency scripted model, the acceptance eval, and the
+  robustness tier at `--s4-samples 50` with duplicate-shape classification
+  (the value-equivalence T0 measurement), recorded per-release to
+  `bench/results.jsonl` with a `--compare` regression gate. Now part of the
+  maintainer release checklist. See `bench/README.md`.
+
 - **outcome tracking (V4)**: co-designed with the first production consumer —
   `record_outcome()` records uses and judgments of facts as `kind="outcome"`
   episodes (the source of truth) with derived edge counters
