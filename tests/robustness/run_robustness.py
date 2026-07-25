@@ -105,6 +105,7 @@ def run(mem_factory, path=FIXTURES, *, n: int = 200, seed: int = 0,
 
     for uid, turn in rng.sample(s4_candidates, min(s4_samples, len(s4_candidates))):
         before = _edge_ids(mem.store, uid)                              # S4
+        prior = mem.store.edges(uid)                                    # active, pre-reingest
         try:
             mem.remember(uid, turn["text"], author=turn["author"],
                          event_type=turn["event_type"])
@@ -113,7 +114,7 @@ def run(mem_factory, path=FIXTURES, *, n: int = 200, seed: int = 0,
             continue
         acc.reingest_stat(turn, [e for e in mem.store.edges(uid, active_only=False,
                                                             include_quarantined=True)
-                                 if e.id not in before])
+                                 if e.id not in before], prior)
 
     acc.check_isolation(mem.store, [uid for uid, _ in convos[:20]])     # H2
     mem.close()

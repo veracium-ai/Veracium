@@ -50,6 +50,8 @@ a quality bug — see [SECURITY.md](SECURITY.md) and report privately.
 ## Maintainer release checklist
 
 1. `CHANGELOG.md`: retitle *Unreleased* → version; bump `pyproject.toml`.
+   Run the bench (`bench/run_bench.py --live` then `--compare`): no hard
+   regressions; soft flags need a written justification in the notes.
 2. `pytest` green locally; commit `release X.Y.Z`; `git fetch` then push.
 3. `python -m build` + `twine check dist/*` + `twine upload dist/*`.
 4. Tag `vX.Y.Z` at the release commit; GitHub Release with the changelog section.

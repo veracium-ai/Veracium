@@ -65,7 +65,9 @@ class Accumulators:
         self.turns = self.substantive = self.empty_substantive = 0
         self.total_facts = self.total_quarantined = 0
         self.s4 = {"reingested": 0, "turns_with_growth": 0, "duplicated": 0,
-                   "superseded_churn": 0, "examples": []}
+                   "superseded_churn": 0,
+                   "shapes": {"subset": 0, "reorder": 0, "paraphrase": 0},
+                   "examples": []}
         self.s5 = {"runs": 0, "violations": []}
 
     # -- H1 -------------------------------------------------------------------
@@ -110,12 +112,42 @@ class Accumulators:
                 self.empty_substantive += 1
 
     # -- S4 ---------------------------------------------------------------------
-    def reingest_stat(self, turn, new_edges) -> None:
+    @staticmethod
+    def _dup_shape(new_edge, prior_edges) -> str:
+        """T0 classification (value-equivalence plan): how does a duplicate's
+        value relate to the closest prior value of the same (subject, relation)?
+        subset   — one token tuple is an ordered subsequence of the other
+        reorder  — same token multiset, different order
+        paraphrase — anything else (reworded clauses)"""
+        from veracium.graph import _value_key
+
+        def is_subseq(a, b):  # a subsequence of b
+            it = iter(b)
+            return all(t in it for t in a)
+
+        nk = _value_key(new_edge.object)
+        best = "paraphrase"
+        for p in prior_edges:
+            if p.subject != new_edge.subject or p.relation != new_edge.relation \
+                    or p.id == new_edge.id:
+                continue
+            pk = _value_key(p.object)
+            if is_subseq(nk, pk) or is_subseq(pk, nk):
+                return "subset"
+            if sorted(nk) == sorted(pk):
+                best = "reorder"
+        return best
+
+    def reingest_stat(self, turn, new_edges, prior_edges=()) -> None:
         self.s4["reingested"] += 1
         if new_edges:
             self.s4["turns_with_growth"] += 1
             for e in new_edges:
-                self.s4["superseded_churn" if e.supersedes else "duplicated"] += 1
+                if e.supersedes:
+                    self.s4["superseded_churn"] += 1
+                else:
+                    self.s4["duplicated"] += 1
+                    self.s4["shapes"][self._dup_shape(e, prior_edges)] += 1
             if len(self.s4["examples"]) < _MAX_OFFENDERS:
                 self.s4["examples"].append(
                     {"input": snippet(turn["text"]),
