@@ -103,6 +103,9 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 - **[docs/concepts.md](docs/concepts.md)** — the mental model: edges vs episodes
   vs the compiled wiki, provenance & authorship, quarantine, the abstention gate,
   lifecycle.
+- **[docs/recipes.md](docs/recipes.md)** — short copy-paste examples, one per
+  capability (quarantine, mixed provenance, budgeted recall, portability,
+  feedback verbs, audit, local models).
 - **[docs/api.md](docs/api.md)** — the public API: `Memory`, `MemoryConfig`,
   `EvidenceAuthor`, providing your own LLM callable or store.
 - **[docs/mcp.md](docs/mcp.md)** — running and registering the MCP server.

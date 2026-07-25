@@ -27,6 +27,9 @@ VERACIUM_ROBUSTNESS=1 pytest tests/test_robustness.py  # robustness tier
   not just pass it.** These are the load-bearing guarantees; a change that
   weakens them with green tests is the failure mode we care most about. Flag
   such changes explicitly in the PR.
+- **Every shipped capability gets a short example** — a recipe in
+  `docs/recipes.md` (copy-pasteable, <15 lines) lands in the same PR/release
+  as the feature. A feature without an example isn't done.
 - CI (py3.10–3.13 + packaging check) must be green; `main` requires it.
 
 ## Wanted
