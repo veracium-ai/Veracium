@@ -9,8 +9,10 @@
 
 **Veracium is a provenance-aware memory plug-in for agentic systems** —
 durable, per-user memory that resists the injection and confabulation failures
-that plague naive agent memory. It remembers facts about the user, past
-interactions, and what worked, with provenance on every fact.
+that plague naive agent memory. Provenance means every fact tracks *who said
+it*: a claim from an email your agent merely read can never become a "fact" it
+asserts. It remembers what the user said, past interactions, and what worked —
+and it remembers where each of those came from.
 
 Veracium is the production distillation of an evaluation-driven research project
 (`agent-memory`): every design choice below traces to a measured finding, and the
@@ -101,6 +103,9 @@ Hosted docs: **[veracium-ai.github.io/Veracium](https://veracium-ai.github.io/Ve
 - **[docs/concepts.md](docs/concepts.md)** — the mental model: edges vs episodes
   vs the compiled wiki, provenance & authorship, quarantine, the abstention gate,
   lifecycle.
+- **[docs/recipes.md](docs/recipes.md)** — short copy-paste examples, one per
+  capability (quarantine, mixed provenance, budgeted recall, portability,
+  feedback verbs, audit, local models).
 - **[docs/api.md](docs/api.md)** — the public API: `Memory`, `MemoryConfig`,
   `EvidenceAuthor`, providing your own LLM callable or store.
 - **[docs/mcp.md](docs/mcp.md)** — running and registering the MCP server.

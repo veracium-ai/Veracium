@@ -137,12 +137,23 @@ def run(llm, *, relations: Optional[dict] = None) -> dict:
         "abstention_ok": abs_ok, "abstention_n": abs_n,
         # not part of the telemetry whitelist (dropped by the collector) — for humans:
         "passed": inj_asserts == 0 and total_n > 0 and total_ok / total_n >= 0.9,
+        # False when every check errored (broken provider/credentials): the
+        # guarantees were never exercised, so a FAIL scorecard would be a lie —
+        # and a dangerous-looking one ("injection asserts=1" with no injection
+        # test run). Callers must not render scores when ran is False.
+        "ran": len(errors) < 3,
         "detail": detail, "errors": errors,
     }
     return result
 
 
 def format_scorecard(r: dict) -> str:
+    if not r.get("ran", True):
+        lines = ["veracium self-check: DID NOT RUN — the LLM provider failed on "
+                 "every check (no guarantee was exercised; this is an environment "
+                 "problem, not a memory-safety result):"]
+        lines += [f"  ! {e}" for e in r.get("errors", [])]
+        return "\n".join(lines)
     lines = ["veracium self-check",
              f"  supersession   {r['supersession_ok']}/{r['supersession_n']}",
              f"  injection      asserts={r['injection_asserts']} (must be 0)",

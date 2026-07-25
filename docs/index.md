@@ -16,7 +16,7 @@ pip install "veracium[anthropic]"
 3. **Staleness** — you changed jobs; memory either keeps the old employer or
    silently overwrites the history.
 
-## Three structural guarantees
+## Three structural properties — each with executable checks
 
 1. **Quarantine** — third-party claims are stored as *claims by a claimant*,
    never as user facts; content that entered under lower trust can never reach
@@ -30,7 +30,7 @@ pip install "veracium[anthropic]"
 ## Verify it yourself
 
 ```bash
-veracium selfcheck    # runs the guarantees against a throwaway memory, scores them
+veracium selfcheck    # runs the core regression checks against a throwaway memory
 ```
 
 Or run the [live demo notebook](https://github.com/veracium-ai/Veracium/blob/main/examples/demo.ipynb)

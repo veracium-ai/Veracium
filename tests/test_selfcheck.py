@@ -115,3 +115,31 @@ def test_memory_self_check_emits_selfcheck_event(tmp_path, monkeypatch):
 if __name__ == "__main__":
     import sys
     sys.exit(pytest.main([__file__, "-q"]))
+
+
+def test_selfcheck_cli_preflights_provider(monkeypatch, capsys):
+    # Launch-prep finding (2026-07-20): no key must exit with one clear line,
+    # never a garbage FAIL scorecard that looks like the guarantees failing.
+    import pytest
+    from veracium.cli import _build_llm
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    with pytest.raises(SystemExit) as exc:
+        _build_llm()
+    assert "needs an LLM provider" in str(exc.value)
+    assert "ANTHROPIC_API_KEY" in str(exc.value)
+
+
+def test_selfcheck_all_errors_means_did_not_run():
+    # A provider that fails every call (e.g. bad credentials past preflight)
+    # must yield ran=False and a DID-NOT-RUN card — not injection asserts.
+    from veracium.selfcheck import run, format_scorecard
+
+    def broken(prompt, *, system=None, role="compile", json_schema=None):
+        raise RuntimeError("401 authentication_error")
+
+    r = run(broken)
+    assert r["ran"] is False and r["passed"] is False
+    card = format_scorecard(r)
+    assert "DID NOT RUN" in card
+    assert "asserts=" not in card          # no guarantee-shaped output
+    assert "environment problem" in card

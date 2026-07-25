@@ -32,6 +32,7 @@ nav:
   - Home: index.md
   - Concepts: concepts.md
   - API reference: api.md
+  - Recipes: recipes.md
   - MCP server: mcp.md
   - Design rationale: design-rationale.md
   - Telemetry: telemetry.md

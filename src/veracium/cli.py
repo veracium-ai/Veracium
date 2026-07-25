@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 
 from . import diagnostics, telemetry
 
@@ -34,16 +35,30 @@ def _status(cfg) -> None:
                       "last_sent": cfg.last_sent}, indent=2))
 
 
+_PROVIDER_HELP = (
+    "veracium selfcheck needs an LLM provider:\n"
+    "  pip install 'veracium[anthropic]'   # the reference provider\n"
+    "  export ANTHROPIC_API_KEY=sk-...     # its credentials\n"
+    "or run Memory.self_check() with your own Complete callable — "
+    "see https://docs.veracium.ai/api/")
+
+
 def _build_llm():
-    """The reference provider for CLI-driven checks. A host embedding veracium with
-    its own model runs `Memory.self_check()` directly instead."""
+    """The reference provider for CLI-driven checks, preflighted so a missing
+    SDK or key exits with one clear line instead of a traceback — or worse,
+    a garbage FAIL scorecard that looks like the guarantees failing (the
+    2026-07-20 launch-prep finding). A host embedding veracium with its own
+    model runs `Memory.self_check()` directly instead."""
     try:
         from .llm.anthropic import AnthropicComplete
-    except Exception as e:
-        raise SystemExit(
-            "veracium selfcheck needs a model provider: pip install veracium[anthropic] "
-            f"and set ANTHROPIC_API_KEY. ({e})")
-    return AnthropicComplete()
+        llm = AnthropicComplete()   # constructor may lazily import the SDK
+    except SystemExit:
+        raise
+    except Exception:
+        raise SystemExit(_PROVIDER_HELP)
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        raise SystemExit(_PROVIDER_HELP)
+    return llm
 
 
 def _selfcheck(args) -> int:
@@ -61,6 +76,8 @@ def _selfcheck(args) -> int:
         print(json.dumps({k: v for k, v in result.items()}, indent=2))
     else:
         print(selfcheck.format_scorecard(result))
+    if not result.get("ran", True):
+        return 2   # environment problem — neither PASS nor FAIL
     return 0 if result["passed"] else 1
 
 
