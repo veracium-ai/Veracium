@@ -9,8 +9,10 @@
 
 **Veracium is a provenance-aware memory plug-in for agentic systems** —
 durable, per-user memory that resists the injection and confabulation failures
-that plague naive agent memory. It remembers facts about the user, past
-interactions, and what worked, with provenance on every fact.
+that plague naive agent memory. Provenance means every fact tracks *who said
+it*: a claim from an email your agent merely read can never become a "fact" it
+asserts. It remembers what the user said, past interactions, and what worked —
+and it remembers where each of those came from.
 
 Veracium is the production distillation of an evaluation-driven research project
 (`agent-memory`): every design choice below traces to a measured finding, and the
