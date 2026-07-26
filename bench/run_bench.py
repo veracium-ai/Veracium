@@ -164,7 +164,8 @@ def robustness_tier(mem_factory, s4_samples: int = 50) -> dict:
     from adapter import FIXTURES
     lmsys = Path.home() / "Datasets/lmsys-chat-1m/sample-20k.jsonl"
     corpus = lmsys if lmsys.exists() else FIXTURES
-    card = run(mem_factory, corpus, n=200, seed=0, s4_samples=s4_samples)
+    card = run(mem_factory, corpus, n=200, seed=0, s4_samples=s4_samples,
+               verbose=True)
     s4 = card["soft"]["reinforcement"]
     return {"corpus": Path(corpus).name, **card["hard"],
             "empty_rate": card["soft"]["yield"]["empty_rate_substantive"],
@@ -234,7 +235,9 @@ def main() -> int:
     if args.live:
         from claude_cli_provider import ClaudeCLIComplete
         from veracium import Memory, MemoryConfig
+        print("[bench] eval tier starting (live model calls)...", flush=True)
         rec["tiers"]["eval"] = eval_tier(ClaudeCLIComplete())
+        print("[bench] eval done; robustness tier starting (~1h)...", flush=True)
 
         def factory():
             d = tempfile.mkdtemp(prefix="veracium-bench-")
