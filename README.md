@@ -18,6 +18,11 @@ Veracium is the production distillation of an evaluation-driven research project
 (`agent-memory`): every design choice below traces to a measured finding, and the
 research's synthetic-corpus harness is reused as the regression suite.
 
+**Research:** the evaluation instrument behind those findings — a longitudinal
+benchmark for agent memory — is described in Q. Spencer, *"Ground Truth First:
+A Longitudinal Evaluation Instrument for Agent Memory, and the Tenure Crossover
+in Memory-Architecture Rankings"* ([arXiv:2607.21962](https://arxiv.org/abs/2607.21962), 2026).
+
 ## Why it's shaped this way
 
 - **Typed graph + dated episodes are the store of record.** Entity facts live as

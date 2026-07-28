@@ -8,8 +8,8 @@ authors:
 repository-code: "https://github.com/veracium-ai/Veracium"
 url: "https://github.com/veracium-ai/Veracium"
 license: MIT
-version: 0.1.7
-date-released: 2026-07-13
+version: 0.2.4
+date-released: 2026-07-20
 keywords:
   - agent memory
   - LLM
@@ -22,3 +22,16 @@ abstract: >-
   provenance and functional supersession, quarantine of third-party claims,
   an LLM-curated recall view, and an evidence-grounded abstention gate that
   answers only from grounded memory.
+preferred-citation:
+  type: article
+  title: "Ground Truth First: A Longitudinal Evaluation Instrument for Agent
+    Memory, and the Tenure Crossover in Memory-Architecture Rankings"
+  authors:
+    - family-names: Spencer
+      given-names: Quentin
+  year: 2026
+  url: "https://arxiv.org/abs/2607.21962"
+  identifiers:
+    - type: other
+      value: "arXiv:2607.21962"
+      description: "arXiv preprint (cs.CL)"
