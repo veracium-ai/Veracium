@@ -71,12 +71,21 @@ def build_memory() -> Memory:
                   diagnostics=diagnostics.load_reporter())
 
 
+def _server_cls():
+    """SDK 2.0 renamed FastMCP to MCPServer (same decorator API); support both."""
+    try:
+        from mcp.server.mcpserver import MCPServer  # mcp >= 2.0
+        return MCPServer
+    except ImportError:
+        from mcp.server.fastmcp import FastMCP  # mcp 1.x
+        return FastMCP
+
+
 def build_server(mem: Memory, *, default_user: str = "default"):
-    """Construct the FastMCP server with veracium's tools registered. Separated from
+    """Construct the MCP server with veracium's tools registered. Separated from
     main() so the wiring is testable without starting the stdio loop."""
-    from mcp.server.fastmcp import FastMCP
-    server = FastMCP("veracium",
-                     instructions="Provenance-aware memory for AI agents.")
+    server = _server_cls()("veracium",
+                           instructions="Provenance-aware memory for AI agents.")
 
     @server.tool()
     def remember(text: str, user_id: str = default_user, author: str = "user",
@@ -156,7 +165,7 @@ def main(argv=None) -> None:
                          "This server takes no positional arguments; it is "
                          "configured via environment variables.")
     try:
-        import mcp.server.fastmcp  # noqa: F401
+        _server_cls()
     except ImportError as e:  # pragma: no cover
         raise SystemExit("The MCP server needs the SDK: pip install veracium[mcp]") from e
     try:
