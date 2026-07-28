@@ -9,6 +9,10 @@
   `bench/results.jsonl` with a `--compare` regression gate. Now part of the
   maintainer release checklist. See `bench/README.md`.
 
+- **mcp 2.0 compat**: the MCP SDK 2.0.0 renamed `FastMCP` to `MCPServer`
+  (same decorator API) — `veracium-mcp` now imports whichever the installed
+  SDK provides, so `mcp>=1.0` stays the supported range on both majors.
+
 - **outcome tracking (V4)**: co-designed with the first production consumer —
   `record_outcome()` records uses and judgments of facts as `kind="outcome"`
   episodes (the source of truth) with derived edge counters
