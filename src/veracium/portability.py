@@ -7,9 +7,13 @@ store reproduces the memory exactly, superseded history and quarantined claims
 included. The wiki cache is deliberately not exported — it is a derived view
 and recompiles from the store of record.
 
-    {"kind": "veracium-export", "version": 1, "user_id": "...", "exported_at": "..."}
-    {"kind": "edge", ...Edge fields...}
-    {"kind": "episode", ...Episode fields...}
+    {"kind": "veracium-export", "version": 2, "user_id": "...", "exported_at": "..."}
+    {"record": "edge", ...Edge fields...}
+    {"record": "episode", ...Episode fields...}
+
+Format v2 renamed the per-line type marker from "kind" to "record" because
+Episode gained its own `kind` field (outcome tracking); v1 files import
+unchanged.
 
 Import is idempotent: records whose id already exists in the target store are
 skipped, never overwritten. `user_id=` remaps the import into a different user.
@@ -28,7 +32,7 @@ from typing import Optional
 
 from .schema import Edge, Episode
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 
 
 def export_memory(store, user_id: str, path) -> dict:
@@ -43,10 +47,10 @@ def export_memory(store, user_id: str, path) -> dict:
                             "exported_at": datetime.now(timezone.utc).isoformat()})
                 + "\n")
         for e in edges:
-            f.write(json.dumps({"kind": "edge", **json.loads(e.model_dump_json())})
+            f.write(json.dumps({"record": "edge", **json.loads(e.model_dump_json())})
                     + "\n")
         for ep in episodes:
-            f.write(json.dumps({"kind": "episode", **json.loads(ep.model_dump_json())})
+            f.write(json.dumps({"record": "episode", **json.loads(ep.model_dump_json())})
                     + "\n")
     return {"edges": len(edges), "episodes": len(episodes), "path": str(path)}
 
@@ -75,7 +79,9 @@ def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
     skipped = 0
     for ln in lines[1:]:
         rec = json.loads(ln)
-        kind = rec.pop("kind", None)
+        kind = rec.pop("record", None)
+        if kind is None and rec.get("kind") in ("edge", "episode"):
+            kind = rec.pop("kind")   # format v1: the marker was named "kind"
         rec["user_id"] = target_uid
         if kind == "edge":
             edge = Edge.model_validate(rec)

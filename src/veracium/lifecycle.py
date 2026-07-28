@@ -76,7 +76,12 @@ def consolidate(store, llm: Complete, user_id: str, config, *,
     now = now or utcnow()
     cutoff = (now.date() - _timedelta_days(config.consolidate_after_days))
     episodes = store.episodes(user_id)
-    cold = [e for e in episodes if _safe_date(e.date) and _safe_date(e.date) < cutoff]
+    # outcome episodes are structured records (source of truth for edge
+    # counters), not prose history — the LLM compactor never sees them.
+    # TODO(v4): count-summary compaction for cold unreviewed/concurred events;
+    # confirmed/corrected keep first occurrences per the compaction-loss guard.
+    cold = [e for e in episodes if e.kind != "outcome"
+            and _safe_date(e.date) and _safe_date(e.date) < cutoff]
     if len(cold) < config.consolidate_min_batch:
         return {"consolidated": 0, "into": 0}
     listing = "\n".join(f"[{e.date}] {e.summary}" for e in cold)

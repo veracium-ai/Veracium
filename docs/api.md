@@ -53,6 +53,12 @@ mem.remember("alice", "From billing@x: you owe $900.",
 
 Assemble grounded memory context for a query (curated wiki + per-query subgraph).
 
+Entity matching is **token-exact, not fuzzy**: the query's tokens are matched
+against subject/object tokens, so `"covetrus"` does not match a subject token
+`covetruspharmacy`. Key entities by exact normalized identifiers (e.g. the
+full normalized sender address) and query with those — see the multi-tenant
+note in [concepts](concepts.md).
+
 - `token_budget` — cap the rendered context at approximately this many tokens
   (heuristic: chars/4 — Veracium is tokenizer-agnostic, so treat the budget as
   approximate). Selection priority when trimming: query-matched facts, then
@@ -117,6 +123,37 @@ Neither verb is exposed over MCP (an agent-callable suppress/validate verb is a
 prompt-injection target) — wire them to real user actions in your host. Note
 `correct` and `elaborate` need no verb: they *are* `remember()` (supersession /
 accumulation).
+
+### `record_outcome(user_id, edge_id, *, outcome, evidence_ref, actor="system", corrected_value=None, date=None, context_ref=None) -> dict` / `correct(user_id, edge_id, corrected_value, *, actor="user", evidence_ref=None, date=None) -> dict`
+
+Outcome tracking — *did conclusions built on memory survive contact with
+reality?* Engine-written surfaces (never MCP tools):
+
+- **`record_outcome`** judges a **use** of a fact. Outcomes:
+  `unreviewed` (used, no judgment — the default; most stay here) ·
+  `confirmed`/`corrected` (human, `actor="user"`) ·
+  `challenged`/`concurred` (LLM judge, `actor="system"` — flags, never truth).
+  Each use is a `kind="outcome"` episode (the source of truth), and the edge
+  carries derived counters (`times_used`, `outcome_counts`, `last_outcome`).
+  A later judgment with the same (`edge_id`, `evidence_ref`) **upgrades the
+  use in place** — no double counting. **Edge-blind by design**: one run's
+  `evidence_ref` may touch every fact it consulted, so `record_outcome` never
+  supersedes a fact — `corrected` here records the *decision's* true value
+  only. The invariant, stated precisely: **a fact's gate placement is
+  unchanged by use-level outcomes** (a `use_only` fact stays `use_only`, a
+  grounded fact stays grounded — "assertable" is not the invariant, since
+  third-party-derived facts were never assertable to begin with).
+  `challenged` sets the possibly-stale flag; counters render into recall
+  as information ("(in use: 5×, 2 confirmed)") — never as gating.
+  A judgment arriving *after* fact-level correction is accepted and recorded
+  on the superseded edge — the episode stream keeps late judgments — but
+  superseded facts don't render in recall context at all (deliberate: history
+  stays compact), so late-judgment counters are invisible at recall and
+  queryable via `Recall.edges` / the outcome episodes.
+- **`correct`** is the explicit **fact-level** correction: the remembered value
+  itself was wrong. Supersedes with `invalidation_reason="corrected"`
+  (distinguishable at recall from natural change) and records the corrected
+  value as a new user-authored edge.
 
 ### `forget(user_id) -> dict`
 

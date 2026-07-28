@@ -86,6 +86,29 @@ mem.list_entities()                     # [{"user_id": ..., "edges": n, "episode
 mem.edges_since("vendor:acme", "2026-07-01")   # learned since July — incl. claims
 ```
 
+## Track whether conclusions survived reality (0.3.0)
+
+```python
+fact = mem.recall("triage", "covetrus").edges[0]
+
+# the engine acted on this fact (a use, unreviewed for now)
+mem.record_outcome("triage", fact.id, outcome="unreviewed",
+                   evidence_ref=run_id)
+
+# later, a human judgment upgrades that same use — no double counting
+mem.record_outcome("triage", fact.id, outcome="confirmed",
+                   actor="user", evidence_ref=run_id)
+# recall now renders: "... (in use: 1x, 1 confirmed)"
+```
+
+## Correct a fact that was simply wrong (0.3.0)
+
+```python
+mem.correct("triage", fact.id, "sends invoices, not promos")
+# supersedes with reason "corrected" (distinguishable from natural change);
+# the old value stays queryable as history
+```
+
 ## Run fully local (no API bill)
 
 ```python
