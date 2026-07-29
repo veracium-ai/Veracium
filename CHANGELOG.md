@@ -34,6 +34,24 @@
   words back through a detached `veracium remember` so extraction never
   blocks a turn. Provenance discipline documented: captured content the user
   did not author must be routed `third_party`/`derived_from`.
+- **value-equivalence T1 — subset absorption** (`graph.apply_supersession`,
+  per `proposals/value-equivalence.md`): a *more specific* restatement of a
+  held value ("cat Miso" after "Miso") now absorbs the shorter form instead
+  of accumulating a duplicate — the prior retires non-destructively (reason
+  `absorbed_duplicate`, note carries `absorbed_by:<winner-id>`), the winner
+  takes `max(valid_from)`/`max(confidence)` and keeps its own provenance,
+  and no `supersedes` pointer is set (absorption is identity, not change —
+  `render_edges` never shows an absorbed value as history, and on functional
+  relations a subset-shaped restatement no longer churns a false
+  supersession). A *less specific* restatement ("Miso" after "cat Miso")
+  reinforces the fuller edge: validity refreshed, `needs_confirmation`
+  cleared — allowed because write-time evidence just arrived. Guardrails:
+  ordered-subsequence match only (the 'tea over coffee' ≠ 'coffee over tea'
+  contract survives), at most 2 extra tokens, same (subject, relation) only;
+  `his X`/`her X` still never merge. Exact-match reinforcement now takes
+  `max(valid_from)` too, so a back-dated restatement can no longer rewind a
+  fact's freshness. The S4 robustness checker and bench record classify
+  absorptions in their own bucket (`absorbed`), never as `duplicated`.
 
 ## 0.3.0
 

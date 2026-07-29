@@ -34,31 +34,71 @@ def _value_key(text: str) -> tuple[str, ...]:
     return toks or (text.strip().lower(),)
 
 
+# T1 absorption bound: the fuller form may carry at most this many tokens beyond
+# the shorter one ("cat Miso" over "Miso"). Two genuinely distinct values rarely
+# differ by so few tokens while containing each other in order; anything wider
+# is left to accumulate (visible, recoverable) rather than risk a false merge.
+_ABSORB_MAX_EXTRA = 2
+
+
+def _subsumes(longer: tuple[str, ...], shorter: tuple[str, ...]) -> bool:
+    """True if `shorter` is an ordered subsequence of `longer` with 1..2 extra
+    tokens. Ordered, not bag-subset, so the order-sensitivity contract of
+    _value_key ('tea over coffee' ≠ 'coffee over tea') survives absorption."""
+    if not 0 < len(longer) - len(shorter) <= _ABSORB_MAX_EXTRA:
+        return False
+    it = iter(longer)
+    return all(t in it for t in shorter)
+
+
 def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> None:
-    """Persist a new edge with supersession and reinforcement:
+    """Persist a new edge with supersession, reinforcement, and absorption:
 
     - Reinforcement: if an active edge already asserts the same
-      (subject, relation, object), refresh its validity to the new date instead
-      of adding a duplicate — so re-stating a fact keeps it alive (a re-mentioned
-      transient state won't lapse) and clears any stale-confirmation flag.
-      "Same" is normalized-token equality (see _value_key), so an extractor
-      paraphrase of an unchanged value reinforces rather than duplicates.
+      (subject, relation, object), refresh its validity instead of adding a
+      duplicate — so re-stating a fact keeps it alive (a re-mentioned transient
+      state won't lapse) and clears any stale-confirmation flag. "Same" is
+      normalized-token equality (see _value_key), so an extractor paraphrase of
+      an unchanged value reinforces rather than duplicates. A *less* specific
+      restatement of a value we already hold ("Miso" after "cat Miso") also
+      reinforces: it is the same evidentiary event, not a new fact.
+    - Absorption (T1): a *more* specific form of a prior value ("cat Miso"
+      after "Miso", see _subsumes) wins — the shorter prior retires reversibly
+      (reason 'absorbed_duplicate', note carries the winner's id). Identity,
+      not change: no `supersedes` pointer, and render_edges never shows an
+      absorbed value as history. Validity/confidence take the max of the pair;
+      the winner keeps its own provenance.
     - Supersession: for a *functional* relation, a new value invalidates the
       prior active value (retained, reason 'superseded'), so history stays queryable.
     - Non-functional relations otherwise accumulate.
+
+    Reinforcement/absorption fire at write time — fresh evidence just arrived —
+    which is why they may refresh validity and clear needs_confirmation;
+    maintain-time bookkeeping never may.
     """
     same = _value_key(edge.object)
-    for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
-        if prior.id == edge.id:
-            continue
-        if _value_key(prior.object) == same:  # reinforcement
-            prior.valid_from = edge.valid_from
-            prior.provenance.observed_at = edge.provenance.observed_at
+    priors = [p for p in store.edges(edge.user_id, subject=edge.subject,
+                                     relation=edge.relation) if p.id != edge.id]
+    for prior in priors:
+        pk = _value_key(prior.object)
+        if pk == same or _subsumes(pk, same):  # reinforcement
+            prior.valid_from = max(prior.valid_from, edge.valid_from)
+            prior.provenance.observed_at = max(prior.provenance.observed_at,
+                                               edge.provenance.observed_at)
             prior.provenance.confidence = max(prior.provenance.confidence,
                                               edge.provenance.confidence)
             prior.needs_confirmation = False
             store.add_edge(prior)
             return
+    for prior in priors:
+        if _subsumes(same, _value_key(prior.object)):  # absorption
+            edge.valid_from = max(edge.valid_from, prior.valid_from)
+            edge.provenance.confidence = max(edge.provenance.confidence,
+                                             prior.provenance.confidence)
+            prior.note = ((f"{prior.note}; " if prior.note else "")
+                          + f"absorbed_by:{edge.id} (restated as {edge.object!r})")
+            store.add_edge(prior)
+            store.invalidate_edge(prior.id, edge.valid_from, "absorbed_duplicate")
     rel = relations.get(edge.relation)
     if rel and rel.functional:
         for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
@@ -116,6 +156,11 @@ def render_edges(edges: list[Edge]) -> str:
     validity range so history is visible without polluting the current value."""
     lines = []
     for e in edges:
+        if e.invalidation_reason == "absorbed_duplicate":
+            # an absorbed value is the SAME fact as its active winner, not a
+            # prior value of it — rendering it as history would show identity
+            # as change. Still queryable via the store/Recall.edges.
+            continue
         who = "" if e.subject == "user" else f"{e.subject} "
         note = f" — {e.note}" if e.note else ""
         if e.quarantined:

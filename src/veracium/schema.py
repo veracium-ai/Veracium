@@ -172,7 +172,7 @@ class Edge(BaseModel):
     provenance: Provenance
     valid_from: datetime = Field(default_factory=utcnow)
     invalidated_at: Optional[datetime] = None
-    invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed" | "disputed" | "corrected"
+    invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed" | "disputed" | "corrected" | "absorbed_duplicate"
     supersedes: Optional[str] = None
     needs_confirmation: bool = False  # past its expected lifetime; may be stale
     # Outcome aggregates — DERIVED, mutable-by-design life-history (recomputable
