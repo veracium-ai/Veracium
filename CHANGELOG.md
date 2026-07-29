@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - **proactive recall**: `recall(user_id)` with no query returns a session-start
   briefing — dated commitments due/overdue, possibly-stale facts to confirm,
