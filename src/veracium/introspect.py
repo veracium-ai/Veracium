@@ -1,0 +1,75 @@
+"""introspect(): the formatted transparency view — "what do you know about me,
+and where did it come from?"
+
+The raw material has always been exposed (`recall().edges/.episodes` with full
+provenance, `export_memory()` as the complete right-to-know dump); this is the
+convenience layer over it, for hosts that want to show a user their memory
+without writing the aggregation themselves. LLM-free, deterministic, store-only.
+
+Modes:
+  summary     counts only — by relation, by evidence author, by disclosure
+              tier, lifecycle state, retired history by reason, episodes.
+  categories  summary plus the facts themselves, grouped by relation and
+              rendered with their provenance markers (render_edges), so
+              unverified claims appear exactly as recall would flag them.
+"""
+
+from __future__ import annotations
+
+from .graph import render_edges
+
+
+def _count(counter: dict, key: str) -> None:
+    counter[key] = counter.get(key, 0) + 1
+
+
+def report(store, user_id: str, *, mode: str = "summary") -> dict:
+    """Aggregate one user's memory into a JSON-able transparency report."""
+    if mode not in ("summary", "categories"):
+        raise ValueError(f"unknown introspect mode {mode!r} (summary | categories)")
+
+    edges = store.edges(user_id, active_only=False, include_quarantined=True)
+    episodes = store.episodes(user_id)
+
+    active = [e for e in edges if e.active]
+    facts = [e for e in active if not e.quarantined]
+    claims = [e for e in active if e.quarantined]
+
+    by_relation: dict[str, int] = {}
+    by_author: dict[str, int] = {}
+    by_disclosure: dict[str, int] = {}
+    retired: dict[str, int] = {}
+    for e in facts:
+        _count(by_relation, e.relation)
+    for e in active:
+        _count(by_author, e.provenance.author_of_evidence.value)
+        _count(by_disclosure, "quarantined" if e.quarantined
+               else "use_only" if e.use_only else "mentionable")
+    for e in edges:
+        if not e.active:
+            _count(retired, e.invalidation_reason or "unknown")
+
+    dates = [e.provenance.observed_at for e in edges]
+    out = {
+        "user_id": user_id,
+        "facts": len(facts),
+        "unverified_claims": len(claims),
+        "by_relation": dict(sorted(by_relation.items())),
+        "by_author": dict(sorted(by_author.items())),
+        "by_disclosure": dict(sorted(by_disclosure.items())),
+        "needs_confirmation": sum(1 for e in facts if e.needs_confirmation),
+        "in_use": sum(1 for e in facts if e.times_used),
+        "retired": dict(sorted(retired.items())),  # superseded history, disputes, absorbed dups
+        "episodes": {"interaction": sum(1 for ep in episodes if ep.kind != "outcome"),
+                     "outcome": sum(1 for ep in episodes if ep.kind == "outcome")},
+        "first_observed": min(dates).isoformat() if dates else None,
+        "last_observed": max(dates).isoformat() if dates else None,
+    }
+    if mode == "categories":
+        cats: dict[str, list[str]] = {}
+        for e in sorted(active, key=lambda e: (e.relation, e.valid_from)):
+            line = render_edges([e])
+            if line:
+                cats.setdefault(e.relation, []).append(line)
+        out["categories"] = cats
+    return out

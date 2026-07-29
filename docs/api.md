@@ -113,6 +113,20 @@ Host/admin queries (neither is an MCP tool by design):
   not `valid_from` (when it became true). Includes superseded and quarantined
   edges so change-detection sees everything — filter on `.active`/`.assertable`.
 
+### `introspect(user_id, *, mode="summary") -> dict`
+
+The formatted transparency view — "what do you know about me, and where did
+it come from?" — for hosts showing users their own memory. LLM-free and
+store-only. `"summary"` returns counts: facts and unverified claims, by
+relation / evidence author / disclosure tier, lifecycle state
+(`needs_confirmation`, `in_use`), retired history by reason (superseded /
+disputed / absorbed), episode counts, first/last observed. `"categories"`
+adds the facts themselves grouped by relation, rendered with the same
+provenance markers recall uses (so an unverified claim is flagged here
+exactly as the model would see it). The complete raw dump remains
+`export_memory()`; erasure remains `forget()`. CLI:
+`veracium introspect --user X [--categories] [--json]`.
+
 ### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
 
 Explicit user-feedback verbs (get `edge_id`s from `Recall.edges`):

@@ -400,6 +400,26 @@ class Memory:
         enumeration is not an agent tool)."""
         return self.store.list_users()
 
+    def introspect(self, user_id: str, *, mode: str = "summary") -> dict:
+        """The formatted transparency view: "what do you know about me, and
+        where did it come from?" — counts by relation / evidence author /
+        disclosure tier, lifecycle state, retired history by reason, episode
+        counts; mode="categories" adds the facts themselves grouped by
+        relation, rendered with their provenance markers. LLM-free and
+        store-only; the complete raw dump remains `export_memory()`, erasure
+        remains `forget()`. CLI: `veracium introspect --user X`."""
+        from . import introspect as _introspect
+        try:
+            out = _introspect.report(self.store, user_id, mode=mode)
+        except Exception as e:
+            self._on_error("introspect", e, user_id)
+            raise
+        self._record("introspect", {"facts": out["facts"],
+                                    "claims": out["unverified_claims"],
+                                    "episodes": sum(out["episodes"].values())},
+                     user_id)
+        return out
+
     def edges_since(self, user_id: str, since) -> list[Edge]:
         """Edges *learned* after `since` (ISO date/datetime string, or a
         datetime) — filtered on `provenance.observed_at`, i.e. when veracium

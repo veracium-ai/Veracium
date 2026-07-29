@@ -109,6 +109,50 @@ mem.correct("triage", fact.id, "sends invoices, not promos")
 # the old value stays queryable as history
 ```
 
+## Start every session with a briefing (0.4.0)
+
+```python
+briefing = mem.recall("ida")   # no query = proactive mode: LLM-free, deterministic
+print(briefing.context)
+# ## DATED COMMITMENTS      — due or overdue, soonest first
+# ## CONFIRM WHEN NATURAL   — facts past their expected lifetime
+# ## CURRENT CONTEXT        — transient state worth a follow-up
+# ## RECENT HISTORY
+# Volunteering is disclosure-gated: only MENTIONABLE facts appear here —
+# use_only material and quarantined claims never surface unprompted.
+```
+
+## Show the user what you know about them (0.4.0)
+
+```python
+mem.introspect("ida")                      # counts: by relation, author,
+                                           # disclosure, retired history, episodes
+mem.introspect("ida", mode="categories")   # + the facts themselves, grouped,
+                                           # with the same provenance flags recall renders
+# or from a terminal, no provider needed:
+#   veracium introspect --user ida --categories
+```
+
+## Memory from the shell (0.4.0)
+
+```bash
+veracium recall --user ida                  # session-start briefing (store-only)
+veracium recall --user ida "the deadline"   # query recall (store-only, cached wiki)
+echo "Dentist on 2026-08-14" | veracium remember --user ida -   # needs the provider
+```
+
+## Give Claude Code ambient memory via hooks (0.4.0)
+
+```json
+{"hooks": {"SessionStart": [{"hooks": [{"type": "command",
+           "command": "$HOME/.claude/veracium/briefing.sh"}]}]}}
+```
+
+The briefing is *injected* at session start (and again after compaction) at
+zero schema-token cost — no MCP tool definitions, no model discretion needed.
+Write-back runs detached so extraction never blocks a turn. Full recipe:
+[`examples/claude_code_hooks/`](https://github.com/veracium-ai/Veracium/tree/main/examples/claude_code_hooks).
+
 ## Run fully local (no API bill)
 
 ```python
