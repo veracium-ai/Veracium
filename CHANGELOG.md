@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- **security (graph)**: identity merges (reinforcement + T1 absorption) are
+  now confined to edges of the **same disclosure class** — previously both
+  were trust-blind, so a third-party `use_only` restatement of a user fact
+  could (a) retire the user's assertable edge (reason `absorbed_duplicate`),
+  leaving no assertable version of a true, user-evidenced fact — a
+  third-party event could silently demote user facts out of assertable
+  recall (subset form new in 0.4.0's T1); and (b) refresh a USER edge's
+  liveness, clear its `needs_confirmation` flag, and raise its confidence
+  (exact-match form present since 0.3.0 and earlier; widened by T1).
+  Cross-class restatements now accumulate as separate edges, each carrying
+  its own trust — the explicit upgrade path for corroborated third-party
+  material remains `confirm()`/a user restatement. Dedup never makes trust
+  decisions. Found by the research session's post-merge T1 review
+  (`proposals/t1-review.md`); locked by cross-trust regression tests and a
+  new hard **trust-canary gate in the bench engine tier**
+  (`engine.trust_canary_failures == 0`).
+
 ## 0.4.0
 
 - **proactive recall**: `recall(user_id)` with no query returns a session-start

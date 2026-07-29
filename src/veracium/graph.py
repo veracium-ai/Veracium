@@ -75,10 +75,23 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
     Reinforcement/absorption fire at write time — fresh evidence just arrived —
     which is why they may refresh validity and clear needs_confirmation;
     maintain-time bookkeeping never may.
+
+    Identity merges never cross trust classes: both loops consider only priors
+    in the same disclosure class as the incoming edge. Otherwise a third-party
+    use_only restatement could retire a user-asserted fact out of assertable
+    recall (or refresh its liveness, clear its staleness flag, and inherit its
+    confidence) — dedup must not make trust decisions. Cross-class
+    restatements accumulate as separate edges, each carrying its own trust;
+    the explicit upgrade path for corroborated third-party material is
+    confirm()/remember() by the user. (Different-value supersession is
+    unaffected: a changed value superseding across classes is correct — the
+    old value is stale regardless of who reported the new one.)
     """
     same = _value_key(edge.object)
     priors = [p for p in store.edges(edge.user_id, subject=edge.subject,
-                                     relation=edge.relation) if p.id != edge.id]
+                                     relation=edge.relation)
+              if p.id != edge.id
+              and p.provenance.disclosure == edge.provenance.disclosure]
     for prior in priors:
         pk = _value_key(prior.object)
         if pk == same or _subsumes(pk, same):  # reinforcement

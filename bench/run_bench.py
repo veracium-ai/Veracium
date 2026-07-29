@@ -49,6 +49,7 @@ RESULTS = Path(__file__).with_name("results.jsonl")
 
 # -- regression thresholds (compare) ------------------------------------------
 HARD = {  # any violation fails compare outright
+    "engine.trust_canary_failures": ("==", 0),
     "eval.injection_asserts": ("==", 0),
     "robustness.internal_crashes": ("==", 0),
     "robustness.cross_user_leaks": ("==", 0),
@@ -104,6 +105,57 @@ def _median_ms(fn, n):
     return round(statistics.median(times), 3)
 
 
+def _trust_canaries() -> int:
+    """Cross-trust identity-merge canaries (t1-review Findings 1/2): a
+    third-party restatement of a user fact — exact and subset-shaped — must
+    never retire, refresh, deflag, or re-confidence the user's edge. Returns
+    the number of failed probes; a nonzero count is a hard failure."""
+    from veracium import Memory, MemoryConfig, EvidenceAuthor
+    fails = 0
+    scripts = [
+        {"triples": [{"subject": "user", "relation": "has_pet",
+                      "object": "Miso", "volatility": "durable"}],
+         "episode": "User has a pet Miso."},
+        {"triples": [{"subject": "user", "relation": "has_pet",
+                      "object": "cat Miso", "volatility": "durable"}],
+         "episode": "Vendor email mentions the cat Miso."},          # subset
+        {"triples": [{"subject": "user", "relation": "has_pet",
+                      "object": "Miso", "volatility": "durable"}],
+         "episode": "Vendor email mentions Miso."},                  # exact
+    ]
+    state = {"i": 0}
+
+    def llm(prompt, *, system=None, role="compile", json_schema=None):
+        if role == "distill":
+            out = scripts[min(state["i"], len(scripts) - 1)]
+            state["i"] += 1
+            return json.dumps(out)
+        return "## USER MODEL\n- canary wiki"
+
+    with tempfile.TemporaryDirectory() as d:
+        mem = Memory(llm=llm, config=MemoryConfig(db_path=f"{d}/canary.db",
+                                                  wiki_recompile_after_writes=0))
+        mem.remember("canary", "I have a pet named Miso", date="2026-01-01")
+        user_edge = mem.store.edges("canary")[0]
+        before = (user_edge.valid_from, user_edge.provenance.confidence)
+        mem.remember("canary", "email about the cat", date="2026-02-01",
+                     author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+        mem.remember("canary", "email about miso", date="2026-03-01",
+                     author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+        after = {e.id: e for e in mem.store.edges("canary", active_only=False,
+                                                  include_quarantined=True)}
+        u = after.get(user_edge.id)
+        if u is None or not (u.active and u.assertable):
+            fails += 1  # user fact retired or demoted
+        elif (u.valid_from, u.provenance.confidence) != before:
+            fails += 1  # liveness refresh / confidence injection across trust
+        if not any(e.use_only and e.active for e in after.values()
+                   if e.id != user_edge.id):
+            fails += 1  # third-party version should accumulate, trust-capped
+        mem.close()
+    return fails
+
+
 def engine_tier(n_ops: int = 100) -> dict:
     from veracium import Memory, MemoryConfig
     with tempfile.TemporaryDirectory() as d:
@@ -145,7 +197,8 @@ def engine_tier(n_ops: int = 100) -> dict:
                 "recall_budgeted_ms_p50": budgeted_ms,
                 "record_outcome_ms_p50": outcome_ms,
                 "budget_overruns": budgets_ok["over"], "ops": n_ops,
-                "edges_after": n_edges}
+                "edges_after": n_edges,
+                "trust_canary_failures": _trust_canaries()}
 
 
 # -- live tiers ----------------------------------------------------------------
