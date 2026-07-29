@@ -8,9 +8,9 @@
     ],
     "probes": [
       {"q": "How does the user currently want answers formatted?", "expect": "value",
-       "note": "must say detailed / detailed answers. saying concise is WRONG (superseded)."},
+       "note": "must identify detailed as the CURRENT preference. Mentioning that concise was the earlier, superseded preference is fine and expected; wrong only if it claims concise is the current preference (or omits detailed)."},
       {"q": "What answer format did the user prefer before they changed their mind?", "expect": "value",
-       "note": "must identify the EARLIER preference: concise. saying detailed is WRONG."}
+       "note": "must identify concise as the EARLIER preference. Mentioning that they later switched to detailed is fine and expected; wrong only if it claims detailed was the earlier preference (or omits concise)."}
     ]
   },
   {
