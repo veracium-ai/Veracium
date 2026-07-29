@@ -58,9 +58,10 @@ def partition_parts(edges: list[Edge], episodes: list[Episode]
     lines — in the edges' given order, i.e. relevance-sorted from
     subgraph_for_query; grounded episode lines; claim/inference lines;
     third-party-influenced episode lines). partition() is the joined view."""
-    edge_lines = [render_edges([e]) for e in edges if e.assertable]
-    claim_lines = [render_edges([e]) for e in edges
-                   if e.quarantined or (e.active and e.use_only)]
+    # render_edges returns "" for absorbed duplicates — drop those, not blank lines
+    edge_lines = [s for s in (render_edges([e]) for e in edges if e.assertable) if s]
+    claim_lines = [s for s in (render_edges([e]) for e in edges
+                               if e.quarantined or (e.active and e.use_only)) if s]
     ep_lines = [f"[{e.date}] {e.summary}" for e in episodes
                 if not e.provenance.third_party_influenced]
     tp_ep_lines = [f"[{e.date}] {e.summary}" for e in episodes

@@ -112,9 +112,11 @@ def run(mem_factory, path=FIXTURES, *, n: int = 200, seed: int = 0,
         except Exception as e:
             acc.crash("remember", e, turn["text"])
             continue
-        acc.reingest_stat(turn, [e for e in mem.store.edges(uid, active_only=False,
-                                                            include_quarantined=True)
-                                 if e.id not in before], prior)
+        after = mem.store.edges(uid, active_only=False, include_quarantined=True)
+        was_active = {p.id for p in prior}
+        acc.reingest_stat(turn, [e for e in after if e.id not in before], prior,
+                          absorbed=[e for e in after if e.id in was_active
+                                    and e.invalidation_reason == "absorbed_duplicate"])
 
     acc.check_isolation(mem.store, [uid for uid, _ in convos[:20]])     # H2
     mem.close()

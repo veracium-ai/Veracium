@@ -171,6 +171,7 @@ def robustness_tier(mem_factory, s4_samples: int = 50) -> dict:
             "empty_rate": card["soft"]["yield"]["empty_rate_substantive"],
             "dup_rate": round(s4["duplicated"] / max(1, s4["reingested"]), 4),
             "dup_shapes": s4.get("shapes", {}),
+            "absorbed": s4.get("absorbed", 0),
             "superseded_churn": s4["superseded_churn"],
             "s4_samples": s4["reingested"]}
 

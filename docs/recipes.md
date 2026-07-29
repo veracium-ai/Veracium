@@ -109,6 +109,18 @@ mem.correct("triage", fact.id, "sends invoices, not promos")
 # the old value stays queryable as history
 ```
 
+## Restatements sharpen facts instead of duplicating them (0.4.0)
+
+```python
+mem.remember("ida", "I have a pet named Miso")
+mem.remember("ida", "Miso is my cat — she knocked over a plant today")
+# extraction may yield has_pet: "Miso" then has_pet: "cat Miso" — one fact,
+# two surface forms. The fuller form absorbs the shorter one (T1):
+print(mem.recall("ida").context)   # has_pet: cat Miso — one line, no duplicate
+# non-destructive: the absorbed row is still in the store, reason
+# "absorbed_duplicate", note "absorbed_by:<winner-id>" — never shown as history
+```
+
 ## Run fully local (no API bill)
 
 ```python
