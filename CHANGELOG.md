@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1
 
 - **security (graph)**: identity merges (reinforcement + T1 absorption) are
   now confined to edges of the **same disclosure class** — previously both
