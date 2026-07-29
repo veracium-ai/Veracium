@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - **bench**: internal benchmark suite (`bench/run_bench.py`) — engine-overhead
   medians against a zero-latency scripted model, the acceptance eval, and the
