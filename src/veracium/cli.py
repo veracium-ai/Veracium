@@ -1,6 +1,13 @@
 """`veracium` command line — manage opt-in anonymous telemetry and run the
 behavioral self-check.
 
+    veracium recall --user X                 # proactive session-start briefing (store-only)
+    veracium recall --user X "the query"     # query-matched recall (store-only, cached wiki)
+    veracium remember --user X "event text"  # ingest one event ('-' reads stdin; needs provider)
+    veracium introspect --user X             # transparency view: what is stored + where it came from
+
+    veracium export / import / forget        # portability + compliance erasure
+
     veracium telemetry status        # show current setting
     veracium telemetry prompt        # run the consent question (first-run)
     veracium telemetry enable [--endpoint URL]
@@ -35,15 +42,18 @@ def _status(cfg) -> None:
                       "last_sent": cfg.last_sent}, indent=2))
 
 
-_PROVIDER_HELP = (
-    "veracium selfcheck needs an LLM provider:\n"
-    "  pip install 'veracium[anthropic]'   # the reference provider\n"
-    "  export ANTHROPIC_API_KEY=sk-...     # its credentials\n"
-    "or run Memory.self_check() with your own Complete callable — "
-    "see https://docs.veracium.ai/api/")
+def _provider_help(verb: str, alternative: str) -> str:
+    return (f"veracium {verb} needs an LLM provider:\n"
+            "  pip install 'veracium[anthropic]'   # the reference provider\n"
+            "  export ANTHROPIC_API_KEY=sk-...     # its credentials\n"
+            f"or {alternative} — see https://docs.veracium.ai/api/")
 
 
-def _build_llm():
+_PROVIDER_HELP = _provider_help(
+    "selfcheck", "run Memory.self_check() with your own Complete callable")
+
+
+def _build_llm(help_text: str = _PROVIDER_HELP):
     """The reference provider for CLI-driven checks, preflighted so a missing
     SDK or key exits with one clear line instead of a traceback — or worse,
     a garbage FAIL scorecard that looks like the guarantees failing (the
@@ -55,10 +65,18 @@ def _build_llm():
     except SystemExit:
         raise
     except Exception:
-        raise SystemExit(_PROVIDER_HELP)
+        raise SystemExit(help_text)
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        raise SystemExit(_PROVIDER_HELP)
+        raise SystemExit(help_text)
     return llm
+
+
+def _no_llm(prompt, *, system=None, role="compile", json_schema=None):
+    """Stub provider for store-only verbs; recall is wired so it can never
+    fire (proactive mode is LLM-free; query mode serves the cached wiki
+    without recompiling). Raising loudly beats silently degrading."""
+    raise SystemExit("internal: this veracium verb should never invoke the LLM "
+                     "— please report this at github.com/veracium-ai/Veracium/issues")
 
 
 def _selfcheck(args) -> int:
@@ -136,6 +154,77 @@ def _portability(args) -> int:
         store.close()
 
 
+def _memory_verbs(args) -> int:
+    """recall / remember / introspect — the working verbs that make hook and
+    script integrations one-liners (see examples/claude_code_hooks/).
+
+    `recall` and `introspect` are store-only: no provider, no network. Recall
+    with no QUERY is the proactive session-start briefing (LLM-free by
+    design); with a QUERY it serves the *cached* wiki plus the entity-matched
+    subgraph — it never recompiles the wiki (that happens on the write path).
+    `remember` runs extraction, so it needs the provider."""
+    from . import Memory, MemoryConfig
+    if args.cmd == "remember":
+        text = args.text
+        if text == "-":
+            import sys
+            text = sys.stdin.read()
+        if not text.strip():
+            print("nothing to remember (empty input)")
+            return 1
+        from .schema import EvidenceAuthor
+        llm = _build_llm(_provider_help(
+            "remember", "use Memory.remember() with your own Complete callable"))
+        mem = Memory(llm=llm, config=MemoryConfig(db_path=args.db))
+        try:
+            r = mem.remember(args.user, text, author=EvidenceAuthor(args.author),
+                             event_type=args.event_type, date=args.date,
+                             derived_from=(EvidenceAuthor(args.derived_from)
+                                           if args.derived_from else None))
+            print(f"remembered: {r['facts']} facts, {r['quarantined']} quarantined "
+                  f"claims for '{args.user}'")
+            return 0
+        finally:
+            mem.close()
+
+    # store-only verbs: serve the cached wiki if one was ever compiled (the
+    # huge threshold makes it never-stale), disable the layer otherwise —
+    # either way the stub provider can never fire
+    from .store.sqlite import SqliteStore
+    store = SqliteStore(args.db)
+    has_wiki = store.get_wiki(args.user) is not None
+    mem = Memory(llm=_no_llm, store=store,
+                 config=MemoryConfig(db_path=args.db,
+                                     wiki_recompile_after_writes=10**9 if has_wiki else 0))
+    try:
+        if args.cmd == "recall":
+            r = mem.recall(args.user, args.query, token_budget=args.budget)
+            print(r.context)
+            return 0
+        out = mem.introspect(args.user,
+                             mode="categories" if args.categories else "summary")
+        if args.json:
+            print(json.dumps(out, indent=2))
+        else:
+            print(f"memory for '{out['user_id']}': {out['facts']} facts, "
+                  f"{out['unverified_claims']} unverified claims, "
+                  f"{out['episodes']['interaction']} episodes "
+                  f"({out['first_observed'] or 'n/a'} → {out['last_observed'] or 'n/a'})")
+            for section in ("by_relation", "by_author", "by_disclosure", "retired"):
+                if out[section]:
+                    print(f"  {section.replace('_', ' ')}: "
+                          + ", ".join(f"{k}={v}" for k, v in out[section].items()))
+            if out["needs_confirmation"]:
+                print(f"  needs confirmation: {out['needs_confirmation']}")
+            for rel, lines in out.get("categories", {}).items():
+                print(f"\n[{rel}]")
+                for line in lines:
+                    print(f"  {line}")
+        return 0
+    finally:
+        mem.close()
+
+
 def _forget(args) -> int:
     from .store.sqlite import SqliteStore
     if not args.yes:
@@ -196,6 +285,33 @@ def main(argv=None) -> int:
     fg.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
     fg.add_argument("--yes", action="store_true", help="skip the confirmation prompt")
 
+    rc = sub.add_parser("recall", help="print memory context: session-start briefing (no QUERY) "
+                                       "or query-matched recall — store-only, no provider needed")
+    rc.add_argument("query", nargs="?", default=None,
+                    help="what to recall; omit for the proactive briefing")
+    rc.add_argument("--user", required=True, help="user id to recall for")
+    rc.add_argument("--budget", type=int, default=None, help="approximate token budget for the context")
+    rc.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+
+    rm = sub.add_parser("remember", help="ingest one event into a user's memory (needs the provider)")
+    rm.add_argument("text", help="the event text, or '-' to read stdin")
+    rm.add_argument("--user", required=True, help="user id to remember for")
+    rm.add_argument("--author", default="user", choices=["user", "third_party", "system"],
+                    help="who authored the evidence (third_party quarantines its claims)")
+    rm.add_argument("--event-type", default="chat", help="event type (chat, email, document, ...)")
+    rm.add_argument("--date", default=None, help="ISO date the event occurred (default: today)")
+    rm.add_argument("--derived-from", default=None, choices=["user", "third_party", "system"],
+                    help="lowest-trust party whose content the event embeds (caps trust)")
+    rm.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+
+    it = sub.add_parser("introspect", help="the transparency view: what is stored for a user "
+                                           "and where it came from — store-only")
+    it.add_argument("--user", required=True, help="user id to report on")
+    it.add_argument("--categories", action="store_true",
+                    help="include the facts themselves, grouped by relation")
+    it.add_argument("--json", action="store_true", help="machine-readable report")
+    it.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+
     args = p.parse_args(argv)
     if args.cmd == "selfcheck":
         return _selfcheck(args)
@@ -205,6 +321,8 @@ def main(argv=None) -> int:
         return _portability(args)
     if args.cmd == "forget":
         return _forget(args)
+    if args.cmd in ("recall", "remember", "introspect"):
+        return _memory_verbs(args)
     if args.cmd != "telemetry":
         p.print_help()
         return 0

@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+- **proactive recall**: `recall(user_id)` with no query returns a session-start
+  briefing — dated commitments due/overdue, possibly-stale facts to confirm,
+  current transient state, recent history. Volunteering is disclosure-gated:
+  only `MENTIONABLE` facts surface; `use_only` and quarantined material never
+  appear unprompted (the Disclosure tier doing the job it names). LLM-free,
+  deterministic, budget-aware (commitments outrank history when trimming);
+  MCP `recall` exposes it by omitting `query`. New config:
+  `proactive_deadline_window_days` / `proactive_recent_days`.
+
+- **introspect** (the "inspectable memory" half of a recurring demand signal;
+  `dispute`/`confirm`/`correct` are the editable half): `introspect(user_id,
+  mode="summary"|"categories")` — the formatted transparency view over what
+  was always exposed raw. Counts by relation / evidence author / disclosure
+  tier, lifecycle state, retired history by reason, episode counts;
+  `categories` adds the facts grouped by relation with the same provenance
+  markers recall renders. LLM-free, store-only; content-free `introspect`
+  telemetry event.
+
+- **CLI memory verbs**: `veracium recall` (no query → the proactive briefing;
+  with a query → subgraph + *cached* wiki — store-only either way, never
+  compiles, needs no provider), `veracium remember` (ingest one event;
+  `-` reads stdin; `--author`/`--derived-from` route trust exactly like the
+  API), `veracium introspect` (`--categories`, `--json`). Memory becomes
+  scriptable without touching Python.
+
+- **Claude Code hooks recipe** (`examples/claude_code_hooks/`): ambient
+  memory via lifecycle hooks instead of (or alongside) MCP — a `SessionStart`
+  hook injects the proactive briefing at zero schema-token cost (and again
+  after context compaction), a `UserPromptSubmit` hook writes the user's
+  words back through a detached `veracium remember` so extraction never
+  blocks a turn. Provenance discipline documented: captured content the user
+  did not author must be routed `third_party`/`derived_from`.
 - **value-equivalence T1 — subset absorption** (`graph.apply_supersession`,
   per `proposals/value-equivalence.md`): a *more specific* restatement of a
   held value ("cat Miso" after "Miso") now absorbs the shorter form instead

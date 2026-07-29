@@ -147,7 +147,7 @@ class Memory:
         return r
 
     # -- read --------------------------------------------------------------
-    def recall(self, user_id: str, query: str, *,
+    def recall(self, user_id: str, query: Optional[str] = None, *,
                token_budget: Optional[int] = None) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
@@ -163,14 +163,38 @@ class Memory:
         flags (a host reasoning near a claim should see it flagged), then the
         wiki, then recent episodes. Best-effort minimum of one item; check
         `Recall.truncated` / `Recall.tokens_estimated`.
+
+        **No query → proactive mode**: a session-start briefing ("what should
+        I know before starting?") — dated commitments coming due or overdue,
+        possibly-stale facts to confirm when natural, current transient state
+        worth a follow-up, recent history. Proactive surfacing is
+        *volunteering*, so disclosure gates it: only MENTIONABLE facts appear;
+        `use_only` material and quarantined claims never surface unprompted
+        (`Recall.unverified` is always empty in this mode). LLM-free and
+        deterministic; see `veracium.proactive`.
         """
         if token_budget is not None and token_budget <= 0:
             raise ValueError("token_budget must be a positive number of tokens")
         try:
+            if query is None:
+                return self._proactive(user_id, token_budget)
             return self._recall(user_id, query, token_budget)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
+
+    def _proactive(self, user_id: str, token_budget: Optional[int]) -> Recall:
+        from . import proactive
+        context, edges, episodes, truncated = proactive.assemble(
+            self.store, user_id, self.config,
+            token_budget=token_budget, est=self._est_tokens)
+        self._record("recall", {"wiki_used": False, "subgraph_edges": len(edges),
+                                "grounded_items": len(edges), "unverified_items": 0,
+                                "proactive": 1, "trimmed": 1 if truncated else 0},
+                     user_id)
+        return Recall(context=context, grounded=context, unverified="",
+                      edges=edges, episodes=episodes,
+                      tokens_estimated=self._est_tokens(context), truncated=truncated)
 
     @staticmethod
     def _est_tokens(text: str) -> int:
@@ -375,6 +399,26 @@ class Memory:
         Host/admin surface — not exposed over MCP by design (cross-user
         enumeration is not an agent tool)."""
         return self.store.list_users()
+
+    def introspect(self, user_id: str, *, mode: str = "summary") -> dict:
+        """The formatted transparency view: "what do you know about me, and
+        where did it come from?" — counts by relation / evidence author /
+        disclosure tier, lifecycle state, retired history by reason, episode
+        counts; mode="categories" adds the facts themselves grouped by
+        relation, rendered with their provenance markers. LLM-free and
+        store-only; the complete raw dump remains `export_memory()`, erasure
+        remains `forget()`. CLI: `veracium introspect --user X`."""
+        from . import introspect as _introspect
+        try:
+            out = _introspect.report(self.store, user_id, mode=mode)
+        except Exception as e:
+            self._on_error("introspect", e, user_id)
+            raise
+        self._record("introspect", {"facts": out["facts"],
+                                    "claims": out["unverified_claims"],
+                                    "episodes": sum(out["episodes"].values())},
+                     user_id)
+        return out
 
     def edges_since(self, user_id: str, since) -> list[Edge]:
         """Edges *learned* after `since` (ISO date/datetime string, or a

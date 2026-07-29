@@ -49,9 +49,18 @@ mem.remember("alice", "From billing@x: you owe $900.",
              author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-06-02")
 ```
 
-### `recall(user_id, query, *, token_budget=None) -> Recall`
+### `recall(user_id, query=None, *, token_budget=None) -> Recall`
 
 Assemble grounded memory context for a query (curated wiki + per-query subgraph).
+
+**Call it with no query for proactive mode** — a session-start briefing:
+dated commitments coming due or overdue (ISO dates found in fact values),
+possibly-stale facts to confirm when natural, current transient state worth a
+follow-up, and recent history. Proactive surfacing is *volunteering*, so
+disclosure gates it: only `MENTIONABLE` facts appear — `use_only` material and
+quarantined claims are never volunteered unprompted (`Recall.unverified` is
+always empty in this mode). Deterministic and LLM-free. Windows are
+configurable (`proactive_deadline_window_days`, `proactive_recent_days`).
 
 Entity matching is **token-exact, not fuzzy**: the query's tokens are matched
 against subject/object tokens, so `"covetrus"` does not match a subject token
@@ -103,6 +112,20 @@ Host/admin queries (neither is an MCP tool by design):
   datetime): filters on `provenance.observed_at` (when Veracium recorded it),
   not `valid_from` (when it became true). Includes superseded and quarantined
   edges so change-detection sees everything — filter on `.active`/`.assertable`.
+
+### `introspect(user_id, *, mode="summary") -> dict`
+
+The formatted transparency view — "what do you know about me, and where did
+it come from?" — for hosts showing users their own memory. LLM-free and
+store-only. `"summary"` returns counts: facts and unverified claims, by
+relation / evidence author / disclosure tier, lifecycle state
+(`needs_confirmation`, `in_use`), retired history by reason (superseded /
+disputed / absorbed), episode counts, first/last observed. `"categories"`
+adds the facts themselves grouped by relation, rendered with the same
+provenance markers recall uses (so an unverified claim is flagged here
+exactly as the model would see it). The complete raw dump remains
+`export_memory()`; erasure remains `forget()`. CLI:
+`veracium introspect --user X [--categories] [--json]`.
 
 ### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
 

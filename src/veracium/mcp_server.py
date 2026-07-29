@@ -36,7 +36,7 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
                         derived_from=_AUTHOR.get(derived_from) if derived_from else None)
 
 
-def recall_impl(mem: Memory, user_id: str, query: str,
+def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,
                 token_budget: Optional[int] = None) -> str:
     out = mem.recall(user_id, query, token_budget=token_budget).context
     mem.flush_telemetry()  # in-process weekly push; no-ops until due, never raises
@@ -105,13 +105,16 @@ def build_server(mem: Memory, *, default_user: str = "default"):
                              date=date, derived_from=derived_from)
 
     @server.tool()
-    def recall(query: str, user_id: str = default_user,
+    def recall(query: Optional[str] = None, user_id: str = default_user,
                token_budget: Optional[int] = None) -> str:
         """Retrieve grounded memory relevant to a query, as a context block to
         drop into your prompt. Verified facts and history are stated plainly;
         unverified third-party claims appear under an explicit never-assert marker.
         `token_budget` (approximate) caps the block's size — query-matched facts
-        and claim flags are kept in preference to the wiki and old episodes."""
+        and claim flags are kept in preference to the wiki and old episodes.
+        Omit `query` for a session-start briefing: commitments coming due,
+        facts to confirm, current context, recent history (verified facts
+        only — nothing unverified is ever volunteered unprompted)."""
         return recall_impl(mem, user_id, query, token_budget=token_budget)
 
     @server.tool()

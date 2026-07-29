@@ -35,12 +35,13 @@ from typing import Optional
 EVENT_FIELDS: dict[str, set[str]] = {
     "ingest": {"facts", "quarantined", "episodes", "supersessions", "reinforcements",
                "unparseable", "distill_in_tok", "distill_out_tok", "ms"},
-    "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items",
+    "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items", "proactive",
                "trimmed", "ms"},  # "trimmed" not "truncated": the content-free
                                   # guard rejects payloads containing "cat"
     "answer": {"abstained", "gate_in_tok", "gate_out_tok", "ms"},
     "maintain": {"lapsed", "decayed", "flagged", "consolidated_in", "consolidated_out"},
     "forget": {"edges", "episodes"},
+    "introspect": {"facts", "claims", "episodes"},
     "feedback": {"disputed", "confirmed", "corrected"},
     "outcome": {"new", "upgraded"},
     "selfcheck": {"total_ok", "total_n", "injection_asserts", "supersession_ok",
