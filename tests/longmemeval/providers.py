@@ -58,6 +58,12 @@ TPM_SAFETY = 0.85          # headroom for estimate error and in-flight requests
 OUTPUT_TOKEN_ALLOWANCE = 300   # extraction replies are small; counted anyway
 
 
+class QuotaExhausted(RuntimeError):
+    """Billing quota is gone: no retry can fix it, and no further call in this
+    run can succeed. Raised so the runner aborts instead of writing a full set
+    of empty hypotheses that would look like a completed run."""
+
+
 class MeteredOpenAI:
     """`Complete` callable over OpenAI chat-completions with per-role metering.
 
@@ -224,11 +230,22 @@ class MeteredOpenAI:
                 return resp.choices[0].message.content or ""
             except Exception as e:
                 name = type(e).__name__
+                text = str(e)
+                # Quota exhaustion arrives dressed as a 429 but is terminal —
+                # the SDK reuses RateLimitError for insufficient_quota. Never
+                # retry it; abort the run so the failure is unmistakable.
+                if "insufficient_quota" in text or "exceeded your current quota" in text:
+                    with self._lock:
+                        self.failures += 1
+                    raise QuotaExhausted(
+                        "OpenAI billing quota exhausted — add credit or raise the "
+                        "plan limit, then re-run: cached extractions are reused, "
+                        "so only the unfinished remainder is re-paid.") from e
                 # structured output unsupported / schema rejected: drop it once
                 if "BadRequest" in name and "response_format" in kwargs:
                     kwargs.pop("response_format")
                     continue
-                is_429 = "RateLimit" in name or "429" in str(e)[:120]
+                is_429 = "RateLimit" in name or "429" in text[:120]
                 if attempt == self.max_retries - 1:
                     with self._lock:
                         self.failures += 1

@@ -384,3 +384,36 @@ def test_cache_records_key_parts_for_migration():
         assert set(rec["parts"]) == {"text_sha", "author", "event_type", "date",
                                      "identity"}
         assert rec["parts"]["date"] == "2023-05-20"
+
+
+def test_quota_exhaustion_is_terminal_not_retried():
+    """The SDK reports insufficient_quota as a RateLimitError. Retrying it burns
+    every worker's retry budget and turns one billing problem into a full set of
+    empty hypotheses that looks like a completed run."""
+    from providers import MeteredOpenAI, QuotaExhausted
+    import collections, threading
+
+    calls = []
+
+    class _Raw:
+        def create(self, **kw):
+            calls.append(kw)
+            raise RuntimeError("Error code: 429 - {'error': {'message': 'You "
+                               "exceeded your current quota', 'type': "
+                               "'insufficient_quota'}}")
+
+    class _Completions:
+        with_raw_response = _Raw()
+
+    p = MeteredOpenAI.__new__(MeteredOpenAI)
+    p.models = {"distill": "m", "compile": "m", "gate": "m"}
+    p.max_retries, p.max_tokens, p.temperature = 8, 16, 0.0
+    p._limits, p._windows, p._in_window = {"m": 200_000}, {}, {}
+    p._pace_lock, p._pace_waits = threading.Lock(), 0
+    p._lock, p.usage, p.retries, p.failures, p.rate_limited = (
+        threading.Lock(), {}, 0, 0, 0)
+    p._client = type("C", (), {"chat": type("H", (), {"completions": _Completions()})()})()
+
+    with pytest.raises(QuotaExhausted, match="quota exhausted"):
+        p("prompt", role="distill")
+    assert len(calls) == 1, "must not retry a terminal quota failure"

@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import ORACLE_FILE, S_FILE, load, stratified_pilot
 from cache import CACHE_DIR, CacheLock, CachedComplete
+from providers import QuotaExhausted
 
 from veracium import Memory, MemoryConfig
 from veracium.prompts import EXTRACT_PROMPT, EXTRACT_SCHEMA, EXTRACT_SYSTEM
@@ -190,6 +191,8 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         def _run(item, control=control):
             try:
                 row = one_item(control, item)
+            except QuotaExhausted:
+                raise                                   # terminal: abort the run
             except Exception as e:                      # keep the run alive
                 row = {"question_id": item.question_id, "hypothesis": "",
                        "control_arm": control, "context_tokens_estimated": 0,
@@ -212,8 +215,17 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         if workers > 1:
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(_run, it) for it in items]
-                for f in as_completed(futures):
-                    rows.append(f.result())
+                try:
+                    for f in as_completed(futures):
+                        rows.append(f.result())
+                except QuotaExhausted as e:
+                    for f in futures:
+                        f.cancel()
+                    print(f"\n[longmemeval] ABORTING: {e}\n"
+                          f"  extractions already cached are preserved; re-run "
+                          f"after billing is restored and they replay for free.",
+                          file=sys.stderr)
+                    raise
             rows.sort(key=lambda r: [i.question_id for i in items].index(r["question_id"]))
         else:
             rows = [_run(it) for it in items]
