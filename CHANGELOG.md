@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.2
 
 - **retrieval (graph): recall was query-blind on large stores.** Every
   user-subject edge carried a *constant* score, so once a store outgrew
