@@ -123,31 +123,79 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
 
 _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",
          "for", "and", "or", "s", "does", "did", "what", "who", "when", "where",
-         "how", "which", "with", "her", "his", "their", "they", "do", "have"}
+         "how", "which", "with", "her", "his", "their", "they", "do", "have",
+         # "user" is the implicit owner of a per-user store: it appears in most
+         # questions AND is the subject of most edges, so counting it as a match
+         # makes every edge look equally relevant — which is precisely how
+         # ranking collapsed at scale.
+         "user"}
+
+# Crude suffix folding so a question's wording reaches a stored relation:
+# "work" must match `works_for`, "pets" must match `has_pet`, "deadlines" must
+# match the `deadline` relation. Not a stemmer — just enough morphology to stop
+# exact-token matching from failing on ordinary plurals, applied to both sides.
+# Deliberately excludes "es": stripping it maps "deadlines"->"deadlin" and so
+# stops matching "deadline", i.e. the rule breaks more matches than it makes.
+# Known and accepted misses: doubled consonants ("running"/"run") and words
+# whose stem ends in s ("address"/"addresses").
+_SUFFIXES = ("ing", "ed", "s")
+
+
+def _stem(w: str) -> str:
+    """Fold to a fixed point, never below a 3-character stem.
+
+    Iterating matters: a single pass would map 'addresses'->'address' but
+    'address'->'addres', so the two forms would stop matching — a stemmer that
+    breaks matches is worse than none. Converging both to 'addre' keeps the
+    relation symmetric, which is the only property this needs to have.
+    """
+    while True:
+        for suf in _SUFFIXES:
+            if w.endswith(suf) and len(w) - len(suf) >= 3:
+                w = w[: -len(suf)]
+                break
+        else:
+            return w
 
 
 def _tokens(text: str) -> set[str]:
-    return {w for w in re.findall(r"[a-z0-9]+", text.lower()) if w not in _STOP and len(w) > 2}
+    return {_stem(w) for w in re.findall(r"[a-z0-9]+", text.lower())
+            if w not in _STOP and len(w) > 2}
 
 
 def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40) -> list[Edge]:
     """Entity-matched neighborhood: every edge off the user node, plus edges whose
-    subject/object tokens appear in the query. This is veracium's primary retrieval
-    (the research found it beat similarity search on every question type). Includes
-    superseded edges (rendered as history) and quarantined edges (rendered flagged)
-    so the caller can show provenance."""
+    tokens appear in the query, ranked by how well they match it. This is
+    veracium's primary retrieval (the research found it beat similarity search on
+    every question type). Includes superseded edges (rendered as history) and
+    quarantined edges (rendered flagged) so the caller can show provenance.
+
+    User-subject edges are always *eligible* — that is the "everything off the
+    user node" contract, and for a small store they all fit under `max_edges`
+    anyway — but eligibility is not ranking. Until 0.4.2 they carried a constant
+    score, so once a store grew past `max_edges` the truncation returned
+    whichever ones the store listed first (i.e. the oldest), and the query was
+    ignored entirely for the subject that owns most facts. On a 1.7k-fact store
+    that made recall effectively query-blind; widening the cap only returned
+    more old facts. Relevance now decides which ones survive truncation, with
+    recency as the tiebreak, and `relation` counts as matchable text so "pet"
+    can reach `has_pet`.
+    """
     q = _tokens(query)
     scored: list[tuple[int, Edge]] = []
     for e in store.edges(user_id, active_only=False):
+        overlap = len(_tokens(f"{e.subject} {e.relation} {e.object} {e.note}") & q)
         if e.subject == "user":
-            base = 2
+            base = 1 + 2 * overlap      # eligible always; ranked by relevance
         else:
-            overlap = _tokens(e.subject + " " + e.object + " " + e.note) & q
-            base = len(overlap)
+            base = 3 * overlap          # entity edges must match to enter at all
         if base:
             # prefer active over superseded, and closer matches
             scored.append((base + (1 if e.active else 0), e))
-    scored.sort(key=lambda t: -t[0])
+    # recency breaks ties: among equally-relevant facts the newer one is the
+    # better guess, and it makes truncation deterministic rather than dependent
+    # on store insertion order
+    scored.sort(key=lambda t: (-t[0], -t[1].valid_from.timestamp()))
     return [e for _, e in scored[:max_edges]]
 
 

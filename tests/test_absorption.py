@@ -209,3 +209,93 @@ def test_same_class_merges_still_work_within_use_only():
     assert [e.id for e in active] == ["e2"]
     loser = [e for e in store.edges("u1", active_only=False) if e.id == "e1"][0]
     assert loser.invalidation_reason == "absorbed_duplicate"
+
+
+# -- retrieval ranking at scale (LongMemEval pilot finding) -------------------
+
+def test_ranking_is_not_query_blind_in_a_large_store():
+    """The pilot's real bug, and the one my first two fixes did NOT catch:
+    every user-subject edge scored the same, so past max_subgraph_edges the
+    truncation ignored the query entirely — recall returned the same 40 facts
+    whatever you asked. Widening the cap only returned more of the same, which
+    is exactly what the 40->200 ablation measured.
+
+    The discriminating assertion is that DIFFERENT queries return DIFFERENT
+    sets. Asserting only "the target is retrieved" passes on the broken code
+    whenever the target happens to sit early in store order — which is how the
+    first version of this test fooled me."""
+    from veracium.graph import subgraph_for_query
+    store = _store()
+    for i in range(150):
+        apply_supersession(store, _edge(f"noise{i}", f"unrelated detail {i}",
+                                        relation="mentioned"), DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("pet", "cat named Miso", relation="has_pet"),
+                       DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("job", "Brellin Optics", relation="works_for"),
+                       DEFAULT_RELATIONS)
+    for i in range(150):
+        apply_supersession(store, _edge(f"more{i}", f"other detail {i}",
+                                        relation="mentioned"), DEFAULT_RELATIONS)
+
+    pet = [e.id for e in subgraph_for_query(store, "u1",
+                                            "what pet does the user have?", max_edges=40)]
+    job = [e.id for e in subgraph_for_query(store, "u1",
+                                            "where does the user work?", max_edges=40)]
+    assert pet != job, "retrieval must depend on the query, not store order"
+    assert pet[0] == "pet" and job[0] == "job"
+
+
+def test_owner_token_does_not_make_every_fact_look_relevant():
+    """'user' appears in most questions AND is the subject of most edges, so
+    counting it as a match re-collapses ranking — the failure mode that defeated
+    my first fix."""
+    from veracium.graph import _tokens
+    assert "user" not in _tokens("what does the user prefer?")
+
+
+def test_query_wording_reaches_relation_names():
+    """'work' must reach works_for and 'pets' must reach has_pet: exact-token
+    matching failed silently on ordinary morphology."""
+    from veracium.graph import _tokens
+    assert _tokens("work") & _tokens("works_for")
+    assert _tokens("pets") & _tokens("has_pet")
+
+
+def test_small_store_still_returns_everything_off_the_user_node():
+    """Eligibility is unchanged: when the store fits under the cap, every
+    user-subject edge is still returned regardless of query overlap."""
+    from veracium.graph import subgraph_for_query
+    store = _store()
+    for i in range(5):
+        apply_supersession(store, _edge(f"e{i}", f"fact {i}", day=1 + i,
+                                        relation="mentioned"), DEFAULT_RELATIONS)
+    got = subgraph_for_query(store, "u1", "something entirely unrelated",
+                             max_edges=40)
+    assert len(got) == 5
+
+
+def test_relation_tokens_are_matchable():
+    """'pet' should reach has_pet: the relation was never part of the matched
+    text before, so a query naming the relation scored zero on it."""
+    from veracium.graph import subgraph_for_query
+    store = _store()
+    apply_supersession(store, _edge("pet", "Miso", relation="has_pet"),
+                       DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("job", "Brellin Optics", day=2,
+                                    relation="works_for"), DEFAULT_RELATIONS)
+    got = subgraph_for_query(store, "u1", "pet", max_edges=40)
+    assert got[0].id == "pet"
+
+
+def test_stemming_is_symmetric_and_conservative():
+    """A stemmer that breaks matches is worse than none: a single pass mapped
+    'addresses'->'address' but 'address'->'addres', so the forms stopped
+    matching. Folding converges instead. 'es' is excluded because stripping it
+    maps 'deadlines'->'deadlin' and loses the `deadline` relation."""
+    from veracium.graph import _stem, _tokens
+    assert _tokens("deadlines") & _tokens("deadline")
+    assert _tokens("pets") & _tokens("has_pet")
+    assert _tokens("prefers") & _tokens("prefer")
+    # never strips below a 3-char stem, so short words are left alone
+    for w in ("has", "bed", "used", "miso"):
+        assert _stem(w) == w

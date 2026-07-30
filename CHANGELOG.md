@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- **retrieval (graph): recall was query-blind on large stores.** Every
+  user-subject edge carried a *constant* score, so once a store outgrew
+  `max_subgraph_edges` the truncation kept whichever edges the store listed
+  first and the query stopped mattering for the subject that owns most facts.
+  Small stores were unaffected (everything fits), which is why fixtures never
+  showed it; on a ~1,700-fact store recall returned effectively the same facts
+  whatever you asked, and raising the cap only returned more of the same
+  (measured: 40 → 200 edges gave **no accuracy gain at 3.8× the read cost**).
+  Now: user-subject edges stay always-eligible — the "everything off the user
+  node" contract is unchanged — but relevance decides which survive
+  truncation, with recency as a deterministic tiebreak. Also: `relation` is
+  matchable text (so "pet" reaches `has_pet`), the non-discriminating owner
+  token `user` is excluded from matching, and query wording is folded to a
+  fixed point over ordinary plurals ("deadlines" reaches `deadline`).
+  Found by the LongMemEval pilot, whose failure taxonomy put **0 misses in
+  extraction** and the rest in ranking and synthesis.
+
 ## 0.4.1
 
 - **security (graph)**: identity merges (reinforcement + T1 absorption) are
