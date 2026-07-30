@@ -417,3 +417,46 @@ def test_quota_exhaustion_is_terminal_not_retried():
     with pytest.raises(QuotaExhausted, match="quota exhausted"):
         p("prompt", role="distill")
     assert len(calls) == 1, "must not retry a terminal quota failure"
+
+
+# -- variance protocol --------------------------------------------------------
+
+def test_variance_aggregation_detects_extractor_noise():
+    """Three realizations that differ in extraction and answers must show
+    imperfect agreement and a nonzero official-score range; identical ones must
+    show perfect agreement. This is the number that says how much of a score is
+    extractor noise rather than memory quality."""
+    from variance import aggregate
+    with tempfile.TemporaryDirectory() as tmp:
+        def write(name, rows):
+            p = Path(tmp) / name
+            p.write_text("\n".join(json.dumps(r) for r in rows))
+            return p
+
+        # q1 identical everywhere; q2 differs in both extraction and label
+        r1 = write("r1.jsonl", [
+            {"question_id": "q1", "hypothesis": "blue", "edge_sig": ["aa", "bb"],
+             "autoeval_label": {"label": True}},
+            {"question_id": "q2", "hypothesis": "cats", "edge_sig": ["cc", "dd"],
+             "autoeval_label": {"label": True}}])
+        r2 = write("r2.jsonl", [
+            {"question_id": "q1", "hypothesis": "blue", "edge_sig": ["aa", "bb"],
+             "autoeval_label": {"label": True}},
+            {"question_id": "q2", "hypothesis": "dogs", "edge_sig": ["cc", "ee"],
+             "autoeval_label": {"label": False}}])
+        r3 = write("r3.jsonl", [
+            {"question_id": "q1", "hypothesis": "blue", "edge_sig": ["aa", "bb"],
+             "autoeval_label": {"label": True}},
+            {"question_id": "q2", "hypothesis": "dogs", "edge_sig": ["cc", "ee"],
+             "autoeval_label": {"label": False}}])
+
+        out = aggregate([r1, r2, r3])
+        assert out["realizations"] == 3 and out["questions"] == 2
+        assert out["per_question"]["q1"]["edge_jaccard"] == 1.0
+        assert out["per_question"]["q1"]["answers_identical"] is True
+        assert out["per_question"]["q2"]["edge_jaccard"] < 1.0
+        assert out["per_question"]["q2"]["judged_agree"] is False
+        assert out["questions_flipping_label"] == ["q2"]
+        assert out["official_scores"] == [1.0, 0.5, 0.5]
+        assert out["official_score_range"] == 0.5
+        assert out["identical_answer_rate"] == 0.5

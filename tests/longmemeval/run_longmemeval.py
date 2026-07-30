@@ -118,7 +118,7 @@ def ingest_item(mem, item, *, arm: str, serializer, cache=None) -> dict:
 
 def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=True,
         context: bool = True, budget=None, note: str = "", workers: int = 1,
-        out_dir: Path = OUT_DIR) -> dict:
+        out_dir: Path = OUT_DIR, cache_path: Path | None = None) -> dict:
     """Runs the requested control arms over `items`. Returns the run record;
     writes one hypothesis file per arm."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -142,7 +142,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         # (derived_from), which never reaches the extractor. Keying on it would
         # re-pay for byte-identical extractions. Recorded below instead.
     }
-    cache = CachedComplete(provider, path=CACHE_DIR / "extractions.jsonl",
+    cache = CachedComplete(provider, path=cache_path or (CACHE_DIR / "extractions.jsonl"),
                            identity=identity, enabled=cache_enabled)
 
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
@@ -162,7 +162,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                                          wiki_recompile_after_writes=0))
         try:
             ing = {"turns": 0, "facts": 0}
-            context, n_edges, n_episodes = "", 0, 0
+            context, n_edges, n_episodes, edge_sig = "", 0, 0, []
             if control == "veracium":
                 ing = ingest_item(mem, item, arm=arm, serializer=serializer,
                                   cache=cache if cache_enabled else None)
@@ -181,6 +181,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                     "control_arm": control, "context_tokens_estimated": ctx_tokens,
                     "ingested": ing, "recalled": {"edges": n_edges,
                                                   "episodes": n_episodes},
+                    "edge_sig": edge_sig,
                     "context": context,
                     "cache_frozen": bool(cache_enabled and control == "veracium")}
         finally:
