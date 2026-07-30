@@ -299,3 +299,64 @@ def test_stemming_is_symmetric_and_conservative():
     # never strips below a 3-char stem, so short words are left alone
     for w in ("has", "bed", "used", "miso"):
         assert _stem(w) == w
+
+
+# -- E1: time-coverage in subgraph selection ---------------------------------
+
+def _dated(eid, obj, day, relation="mentioned"):
+    return _edge(eid, obj, day=day, relation=relation)
+
+
+def test_selection_spans_time_instead_of_collapsing_on_one_day():
+    """Reproduces the LongMemEval failure: an interval question got 37 date
+    mentions of which ONE was distinct.
+
+    The fixture must make the same-period records score HIGHER, because that is
+    what actually happens — a cluster of facts from one conversation shares the
+    question's vocabulary, so relevance alone keeps them and the recency
+    tiebreak never gets a say. (An earlier version of this test gave every
+    record the same score, which the recency tiebreak alone already spreads
+    across days — it passed without exercising coverage at all.)"""
+    from veracium.graph import subgraph_for_query
+    store = _store()
+    for i in range(60):        # 2 query terms -> outrank everything below
+        apply_supersession(store, _dated(f"d1-{i}", f"project alpha note {i}", 1),
+                           DEFAULT_RELATIONS)
+    for k, day in enumerate((5, 9, 14, 20)):   # 1 query term, later days
+        apply_supersession(store, _dated(f"other-{k}", f"alpha update {k}", day),
+                           DEFAULT_RELATIONS)
+
+    off = subgraph_for_query(store, "u1", "project alpha", max_edges=40,
+                             coverage_share=0.0)
+    assert len({e.valid_from.date() for e in off}) == 1, \
+        "pure top-k should collapse onto the dominant period"
+
+    on = subgraph_for_query(store, "u1", "project alpha", max_edges=40)
+    assert len(on) == 40
+    assert len({e.valid_from.date() for e in on}) >= 3, "coverage did not reach other periods"
+    # head stays pure relevance: the strongest matches are never displaced
+    assert sum(1 for e in on if e.id.startswith("d1-")) >= 30
+
+
+def test_coverage_never_shrinks_the_budget():
+    """Coverage spends the reserved tail; it must not cost volume. With no other
+    period to reach, the tail backfills by relevance."""
+    from veracium.graph import subgraph_for_query
+    store = _store()
+    for i in range(100):
+        apply_supersession(store, _dated(f"same-{i}", f"alpha note {i}", 3),
+                           DEFAULT_RELATIONS)
+    assert len(subgraph_for_query(store, "u1", "alpha", max_edges=40)) == 40
+
+
+def test_small_store_selection_is_unchanged_by_coverage():
+    """Below the budget nothing is chosen between, so behaviour is identical to
+    pure ranking — this can only affect stores large enough to truncate."""
+    from veracium.graph import subgraph_for_query
+    store = _store()
+    for i in range(5):
+        apply_supersession(store, _dated(f"e{i}", f"note {i}", 1 + i), DEFAULT_RELATIONS)
+    a = [e.id for e in subgraph_for_query(store, "u1", "note", max_edges=40)]
+    b = [e.id for e in subgraph_for_query(store, "u1", "note", max_edges=40,
+                                          coverage_share=0.0)]
+    assert a == b

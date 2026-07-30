@@ -163,7 +163,8 @@ def _tokens(text: str) -> set[str]:
             if w not in _STOP and len(w) > 2}
 
 
-def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40) -> list[Edge]:
+def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
+                       coverage_share: float = 0.25) -> list[Edge]:
     """Entity-matched neighborhood: every edge off the user node, plus edges whose
     tokens appear in the query, ranked by how well they match it. This is
     veracium's primary retrieval (the research found it beat similarity search on
@@ -196,7 +197,62 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40) 
     # better guess, and it makes truncation deterministic rather than dependent
     # on store insertion order
     scored.sort(key=lambda t: (-t[0], -t[1].valid_from.timestamp()))
-    return [e for _, e in scored[:max_edges]]
+    if len(scored) <= max_edges:
+        return [e for _, e in scored]        # nothing to choose between
+    return _cover(scored, max_edges, coverage_share)
+
+
+def _cover(scored: list[tuple[int, Edge]], max_edges: int,
+           coverage_share: float) -> list[Edge]:
+    """Fill most of the budget by pure relevance, reserve the tail for time
+    coverage.
+
+    Pure top-k has no coverage term, so when many facts share vocabulary the
+    selection collapses onto whichever period dominates — a question spanning
+    months can be answered from a single day's records, and a question about an
+    interval gets one endpoint. Reserving a slice of the budget for periods not
+    already represented costs a few of the least-relevant head slots and buys
+    the ability to see across time.
+
+    Clustering is on `valid_from` (the day a fact became true), because that is
+    the only temporal key always available: session identity is a host concept
+    that most callers never supply, so a session-based rule would be
+    unimplementable outside a benchmark harness.
+
+    Deliberately conservative:
+      * the head is filled by relevance alone, so the most relevant facts are
+        never displaced by coverage;
+      * coverage only spends the reserved tail, and only on candidates that
+        already passed the relevance filter;
+      * with fewer candidates than the budget this never runs at all, so small
+        stores behave exactly as before.
+
+    It optimizes *coverage*, not distinct-day count — the day spread is a
+    diagnostic of the problem, and selecting to maximise it would be selecting
+    to look good on the diagnostic.
+    """
+    reserve = int(max_edges * coverage_share)
+    head, tail = max_edges - reserve, []
+    chosen = [e for _, e in scored[:head]]
+    seen_days = {e.valid_from.date() for e in chosen}
+    rest = scored[head:]
+    # first pass: highest-scoring candidate from each period not yet present
+    for _, e in rest:
+        if len(chosen) + len(tail) >= max_edges:
+            break
+        day = e.valid_from.date()
+        if day not in seen_days:
+            tail.append(e)
+            seen_days.add(day)
+    # backfill any unused reserve by relevance, so coverage never costs volume
+    if len(chosen) + len(tail) < max_edges:
+        picked = {id(e) for e in tail}
+        for _, e in rest:
+            if len(chosen) + len(tail) >= max_edges:
+                break
+            if id(e) not in picked:
+                tail.append(e)
+    return chosen + tail
 
 
 def _outcome_note(e: Edge) -> str:

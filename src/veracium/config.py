@@ -20,6 +20,11 @@ class MemoryConfig:
     relations: dict[str, Relation] = field(default_factory=lambda: dict(DEFAULT_RELATIONS))
     # recall assembly (these caps bound read cost as history grows — finding 22)
     max_subgraph_edges: int = 40
+    # Fraction of the subgraph budget reserved for time coverage when the store
+    # is larger than the budget. Pure top-k has no coverage term, so facts that
+    # share vocabulary collapse the selection onto one period — an interval
+    # question then gets one endpoint. 0.0 restores pure relevance ranking.
+    subgraph_coverage_share: float = 0.25
     max_recent_episodes: int = 12
     # proactive recall (recall with no query): how far ahead a dated commitment
     # counts as "coming due", and how far back "recent history" reaches.

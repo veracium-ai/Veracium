@@ -205,7 +205,8 @@ class Memory:
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
                                     self.config.wiki_recompile_after_writes)
         edges = subgraph_for_query(self.store, user_id, query,
-                                   max_edges=self.config.max_subgraph_edges)
+                                   max_edges=self.config.max_subgraph_edges,
+                                   coverage_share=self.config.subgraph_coverage_share)
         # outcome events are structured records, not narrative — they'd crowd
         # out interaction history for high-volume consumers; their signal
         # reaches recall as counters rendered on the edges themselves

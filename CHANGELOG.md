@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- **retrieval: time coverage in subgraph selection (E1).** When a store is
+  larger than `max_subgraph_edges`, most of the budget is still filled by
+  relevance alone but a reserved tail (`subgraph_coverage_share`, default
+  0.25) goes to periods not already represented. Pure top-k has no coverage
+  term, so a cluster of facts sharing the question's vocabulary takes the
+  whole budget and a question spanning months gets answered from a single
+  day — measured on LongMemEval, where an interval question recalled 37 date
+  mentions of which **one** was distinct, making the interval uncomputable
+  and the abstention correct. Clusters on `valid_from`, the only temporal key
+  always available (session identity is a host concept most callers never
+  supply). Conservative by construction: the head is pure relevance so the
+  strongest matches are never displaced, coverage only spends the reserved
+  tail on candidates that already passed relevance, the tail backfills by
+  relevance when there is no other period to reach, and stores below the
+  budget are bit-identical to before. Set `subgraph_coverage_share=0.0` to
+  restore pure relevance ranking.
+
 ## 0.4.2
 
 - **retrieval (graph): recall was query-blind on large stores.** Every
