@@ -22,11 +22,14 @@ writes a key file, and no key is ever placed in a run record.
 
 from __future__ import annotations
 
+import atexit
 import collections
+import json
 import os
 import random
 import threading
 import time
+from pathlib import Path
 from typing import Optional
 
 DISTILL_MODEL = "gpt-4.1-mini-2025-04-14"
@@ -41,6 +44,14 @@ PRICES = {
 }
 
 DECODING = {"temperature": 0.0, "max_tokens": 4096}
+
+# Spend ledger. Cost used to be reported only in a run record, which is written
+# when a run COMPLETES — so every killed run (rate-limit restarts, the quota
+# abort, my own cache-identity restarts) spent real money that appeared in no
+# report at all. Under-reporting spend by 2x is not a rounding error, so usage
+# is now flushed to an append-only ledger during the run and at exit.
+LEDGER = Path.home() / "Datasets" / "longmemeval" / "spend.jsonl"
+LEDGER_EVERY = 200         # calls between flushes
 
 # Rate limits are PER MODEL and set by the account tier, not by us. Measured on
 # this org (2026-07-30): gpt-4.1-mini 200k TPM, gpt-4.1 30k TPM, gpt-4o 30k TPM
@@ -74,7 +85,8 @@ class MeteredOpenAI:
     def __init__(self, *, distill_model: str = DISTILL_MODEL,
                  answer_model: str = ANSWER_MODEL, max_retries: int = 8,
                  max_tokens: int = 4096, temperature: float = 0.0,
-                 tpm: int = DEFAULT_TPM):
+                 tpm: int = DEFAULT_TPM, label: str = "",
+                 ledger: Optional[Path] = LEDGER):
         from openai import OpenAI  # local import: not a veracium dependency
         if not os.environ.get("OPENAI_API_KEY"):
             raise SystemExit("MeteredOpenAI needs OPENAI_API_KEY in the environment")
@@ -97,6 +109,11 @@ class MeteredOpenAI:
         self._in_window: dict[str, float] = {}
         self._pace_lock = threading.Lock()
         self._pace_waits = 0
+        self._ledger = Path(ledger) if ledger else None
+        self._label = label
+        self._calls_since_flush = 0
+        if self._ledger is not None:
+            atexit.register(self.flush_spend, "atexit")
         for name in set(self.models.values()):
             self._limits[name] = float(
                 tpm if name == self.models["distill"] and tpm != DEFAULT_TPM
@@ -184,19 +201,53 @@ class MeteredOpenAI:
             b["calls"] += 1
             b["in_tokens"] += getattr(u, "prompt_tokens", 0) or 0
             b["out_tokens"] += getattr(u, "completion_tokens", 0) or 0
+            self._calls_since_flush += 1
+            due = self._calls_since_flush >= LEDGER_EVERY
+            if due:
+                self._calls_since_flush = 0
+        if due:
+            self.flush_spend("periodic")
 
-    def cost_usd(self) -> dict:
-        """Actual incurred cost from provider-reported usage, per role."""
+    def flush_spend(self, reason: str = "periodic") -> None:
+        """Append current usage to the ledger. Best-effort and never raises —
+        accounting must not be able to break a run."""
+        if self._ledger is None:
+            return
+        try:
+            with self._lock:
+                if not self.usage:
+                    return
+                snapshot = {r: dict(b) for r, b in self.usage.items()}
+            row = {"at": int(time.time()), "reason": reason, "label": self._label,
+                   "pid": os.getpid(), "usage": snapshot,
+                   "usd": self._cost_of(snapshot)["total_usd"]}
+            self._ledger.parent.mkdir(parents=True, exist_ok=True)
+            with self._ledger.open("a") as f:
+                f.write(json.dumps(row) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+        except Exception:
+            pass
+
+    @staticmethod
+    def _cost_of(usage: dict) -> dict:
         out, total = {}, 0.0
-        for role, b in self.usage.items():
-            p = PRICES.get(b["model"])
-            if not p:
+        for role, b in usage.items():
+            pr = PRICES.get(b["model"])
+            if not pr:
                 out[role] = {**b, "usd": None}
                 continue
-            usd = b["in_tokens"] / 1e6 * p["in"] + b["out_tokens"] / 1e6 * p["out"]
+            usd = b["in_tokens"] / 1e6 * pr["in"] + b["out_tokens"] / 1e6 * pr["out"]
             out[role] = {**b, "usd": round(usd, 4)}
             total += usd
         out["total_usd"] = round(total, 4)
+        return out
+
+    def cost_usd(self) -> dict:
+        """Actual incurred cost from provider-reported usage, per role."""
+        with self._lock:
+            snapshot = {r: dict(b) for r, b in self.usage.items()}
+        out = self._cost_of(snapshot)
         out["rate_limit_hits"] = self.rate_limited
         out["pace_waits"] = self._pace_waits
         return out

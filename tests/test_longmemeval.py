@@ -460,3 +460,29 @@ def test_variance_aggregation_detects_extractor_noise():
         assert out["official_scores"] == [1.0, 0.5, 0.5]
         assert out["official_score_range"] == 0.5
         assert out["identical_answer_rate"] == 0.5
+
+
+def test_spend_is_ledgered_during_the_run_not_only_at_the_end():
+    """Cost used to be written only into a completed run's record, so every
+    killed run spent real money that appeared in no report — under-reporting
+    actual spend by ~2x. Usage must reach the ledger while the run is alive."""
+    from providers import MeteredOpenAI
+    import collections, threading
+
+    with tempfile.TemporaryDirectory() as tmp:
+        ledger = Path(tmp) / "spend.jsonl"
+        p = MeteredOpenAI.__new__(MeteredOpenAI)
+        p._lock, p.usage = threading.Lock(), {}
+        p._ledger, p._label, p._calls_since_flush = ledger, "unit-test", 0
+        p.rate_limited, p._pace_waits = 0, 0
+
+        class _U:
+            prompt_tokens, completion_tokens = 1_000_000, 500_000
+        p._meter("distill", "gpt-4.1-mini-2025-04-14", type("R", (), {"usage": _U})())
+
+        p.flush_spend("mid-run")          # what a killed run would still leave
+        rows = [json.loads(l) for l in ledger.read_text().splitlines() if l.strip()]
+        assert rows and rows[-1]["reason"] == "mid-run"
+        assert rows[-1]["label"] == "unit-test"
+        # 1M in @ $0.40 + 0.5M out @ $1.60 = $1.20
+        assert abs(rows[-1]["usd"] - 1.20) < 0.01
