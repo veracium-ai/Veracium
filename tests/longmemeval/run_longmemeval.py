@@ -136,7 +136,10 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         "truncation": "none",
         "parser_version": 1,          # veracium._json.extract_json contract
         "schema": "triples-v1",
-        "trust_arm": arm,
+        # NOTE: the trust arm is deliberately NOT part of the extraction
+        # identity — arms T and C differ only in write-time disclosure routing
+        # (derived_from), which never reaches the extractor. Keying on it would
+        # re-pay for byte-identical extractions. Recorded below instead.
     }
     cache = CachedComplete(provider, path=CACHE_DIR / "extractions.jsonl",
                            identity=identity, enabled=cache_enabled)
@@ -184,7 +187,15 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         progress = threading.Lock()
 
         def _run(item, control=control):
-            row = one_item(control, item)
+            try:
+                row = one_item(control, item)
+            except Exception as e:                      # keep the run alive
+                row = {"question_id": item.question_id, "hypothesis": "",
+                       "control_arm": control, "context_tokens_estimated": 0,
+                       "ingested": {"turns": 0, "facts": 0}, "cache_frozen": False,
+                       "error": f"{type(e).__name__}: {e}"[:400]}
+                print(f"  [{control}] ERROR on {item.question_id}: {row['error']}",
+                      file=sys.stderr)
             with progress:
                 done[0] += 1
                 n = done[0]
@@ -210,17 +221,27 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         with hyp_path.open("w") as f:
             for row in rows:
                 f.write(json.dumps(row) + "\n")
+        errors = [r for r in rows if r.get("error")]
         record["results"][control] = {"hypotheses": str(hyp_path), "n": len(rows),
+                                      "errors": len(errors),
+                                      "error_examples": [e["error"] for e in errors[:5]],
                                       "seconds": round(time.monotonic() - t0, 1)}
         print(f"  [{control}] -> {hyp_path}", file=sys.stderr)
 
     record["cache"] = {**cache.stats, "unique_keys": cache.unique_keys,
                        "enabled": cache_enabled}
+    if hasattr(provider, "cost_usd"):
+        record["cost"] = {"actual": provider.cost_usd(),
+                          "retries": getattr(provider, "retries", 0),
+                          "failures": getattr(provider, "failures", 0)}
     (out_dir / f"record_{stamp}.json").write_text(json.dumps(record, indent=2))
     return record
 
 
-def _provider():
+def _provider(kind: str):
+    if kind == "openai":
+        from providers import MeteredOpenAI
+        return MeteredOpenAI()
     sys.path.insert(0, str(Path(__file__).parents[2] / "examples"))
     from claude_cli_provider import ClaudeCLIComplete
     return ClaudeCLIComplete()
@@ -240,6 +261,8 @@ if __name__ == "__main__":
                     help="ablation: isolated per-turn ingestion")
     ap.add_argument("--budget", type=int, default=None)
     ap.add_argument("--note", default="")
+    ap.add_argument("--provider", choices=["openai", "claude-cli"], default="openai",
+                    help="openai = pinned API models with token metering")
     ap.add_argument("--workers", type=int, default=1,
                     help="items processed in parallel (order is preserved within an item)")
     ap.add_argument("--strict", action="store_true",
@@ -257,7 +280,8 @@ if __name__ == "__main__":
           f"cache={'off' if args.no_cache else 'on'}", file=sys.stderr)
 
     with CacheLock(CACHE_DIR / "lock"):
-        rec = run(items, provider=_provider(), arm=args.arm, workers=args.workers,
+        rec = run(items, provider=_provider(args.provider), arm=args.arm,
+                  workers=args.workers,
                   arms=tuple(a.strip() for a in args.controls.split(",") if a.strip()),
                   cache_enabled=not args.no_cache, context=not args.no_context,
                   budget=args.budget, note=args.note)
