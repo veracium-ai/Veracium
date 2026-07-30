@@ -118,7 +118,8 @@ def ingest_item(mem, item, *, arm: str, serializer, cache=None) -> dict:
 
 def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=True,
         context: bool = True, budget=None, note: str = "", workers: int = 1,
-        out_dir: Path = OUT_DIR, cache_path: Path | None = None) -> dict:
+        out_dir: Path = OUT_DIR, cache_path: Path | None = None,
+        max_edges: int | None = None) -> dict:
     """Runs the requested control arms over `items`. Returns the run record;
     writes one hypothesis file per arm."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -146,7 +147,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                            identity=identity, enabled=cache_enabled)
 
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
-              "workers": workers,
+              "workers": workers, "max_subgraph_edges": max_edges or "default(40)",
               "throughput": getattr(provider, "throughput", {}),
               "identity": identity, "answer_template_version": ANSWER_TEMPLATE_VERSION,
               "items": len(items), "results": {}, "cache": None}
@@ -277,6 +278,8 @@ if __name__ == "__main__":
     ap.add_argument("--no-context", action="store_true",
                     help="ablation: isolated per-turn ingestion")
     ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--max-edges", type=int, default=None,
+                    help="override max_subgraph_edges (retrieval-breadth ablation)")
     ap.add_argument("--note", default="")
     ap.add_argument("--provider", choices=["openai", "claude-cli"], default="openai",
                     help="openai = pinned API models with token metering")
@@ -301,7 +304,7 @@ if __name__ == "__main__":
                   workers=args.workers,
                   arms=tuple(a.strip() for a in args.controls.split(",") if a.strip()),
                   cache_enabled=not args.no_cache, context=not args.no_context,
-                  budget=args.budget, note=args.note)
+                  budget=args.budget, note=args.note, max_edges=args.max_edges)
     print(json.dumps({k: rec[k] for k in ("stamp", "arm", "items", "cache", "results")},
                      indent=2))
     print("\nNext: run the OFFICIAL judge, e.g.\n"
