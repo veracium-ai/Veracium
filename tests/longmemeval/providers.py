@@ -22,6 +22,7 @@ writes a key file, and no key is ever placed in a run record.
 
 from __future__ import annotations
 
+import collections
 import os
 import random
 import threading
@@ -41,11 +42,15 @@ PRICES = {
 
 DECODING = {"temperature": 0.0, "max_tokens": 4096}
 
-# Org rate limit observed for gpt-4.1-mini: 200k tokens/min. Extraction calls
-# run ~1.0k tokens each, so ~180 calls/min is the real ceiling; pace request
-# STARTS to stay under it instead of discovering the limit as 429s.
+# Org rate limit observed for gpt-4.1-mini: 200k tokens/min (provider-side, per
+# model; raising it is an account-tier change, not a config change). Requests are
+# admitted against a sliding-window TOKEN budget rather than a fixed call
+# cadence: turn lengths vary ~10x, so average-based pacing lets a burst of long
+# turns punch through the limit (observed: a 3.2k-token call 429ing while the
+# cadence thought it was under budget).
 DEFAULT_TPM = 200_000
-AVG_CALL_TOKENS = 1_100
+TPM_SAFETY = 0.85          # headroom for estimate error and in-flight requests
+OUTPUT_TOKEN_ALLOWANCE = 300   # extraction replies are small; counted anyway
 
 
 class MeteredOpenAI:
@@ -73,11 +78,13 @@ class MeteredOpenAI:
         self.retries = 0
         self.failures = 0
         self.rate_limited = 0
-        # request pacing: minimum seconds between call starts, pool-wide
+        # sliding-window token budget, pool-wide
         self.tpm = tpm
-        self._min_interval = 60.0 / max(1.0, tpm / AVG_CALL_TOKENS)
+        self._budget = tpm * TPM_SAFETY
+        self._window: collections.deque = collections.deque()   # (t, tokens)
+        self._in_window = 0.0
         self._pace_lock = threading.Lock()
-        self._next_slot = 0.0
+        self._pace_waits = 0
 
     # what the run record needs to identify this provider
     @property
@@ -87,19 +94,34 @@ class MeteredOpenAI:
     @property
     def decoding(self) -> dict:
         return {"temperature": self.temperature, "max_tokens": self.max_tokens,
-                "paced_tpm": self.tpm}
+                "paced_tpm": self.tpm, "tpm_safety": TPM_SAFETY}
 
-    def _pace(self) -> None:
-        """Serialize request STARTS onto a fixed cadence. Workers block here
-        rather than in a 429 retry loop, which keeps throughput smooth and the
-        provider limit respected without a full token accountant."""
+    def _pace(self, est_tokens: int) -> None:
+        """Admit a request only when its estimated tokens fit the trailing-60s
+        budget. Blocks the calling worker instead of letting the provider reject
+        it — a 429 costs a retry and can still fail an item, whereas waiting
+        costs only latency."""
+        while True:
+            with self._pace_lock:
+                now = time.monotonic()
+                while self._window and self._window[0][0] <= now - 60.0:
+                    _, n = self._window.popleft()
+                    self._in_window -= n
+                if self._in_window + est_tokens <= self._budget or not self._window:
+                    self._window.append((now, est_tokens))
+                    self._in_window += est_tokens
+                    return
+                wait = max(0.05, self._window[0][0] + 60.0 - now)
+                self._pace_waits += 1
+            time.sleep(min(wait, 2.0))
+
+    def _penalize(self, est_tokens: int) -> None:
+        """A 429 means the provider's accounting is ahead of ours; charge the
+        window for the rejected request so the whole pool slows, not just this
+        thread (the limit is org-wide)."""
         with self._pace_lock:
-            now = time.monotonic()
-            slot = max(now, self._next_slot)
-            self._next_slot = slot + self._min_interval
-        wait = slot - time.monotonic()
-        if wait > 0:
-            time.sleep(wait)
+            self._window.append((time.monotonic(), est_tokens))
+            self._in_window += est_tokens
 
     def _meter(self, role: str, model: str, resp) -> None:
         u = getattr(resp, "usage", None)
@@ -124,6 +146,8 @@ class MeteredOpenAI:
             out[role] = {**b, "usd": round(usd, 4)}
             total += usd
         out["total_usd"] = round(total, 4)
+        out["rate_limit_hits"] = self.rate_limited
+        out["pace_waits"] = self._pace_waits
         return out
 
     def __call__(self, prompt: str, *, system: Optional[str] = None,
@@ -142,10 +166,12 @@ class MeteredOpenAI:
                 "json_schema": {"name": "veracium_output", "schema": json_schema,
                                 "strict": False},
             }
+        # cheap token estimate: chars/4 for the prompt + a small output allowance
+        est_tokens = (len(prompt) + len(system or "")) // 4 + OUTPUT_TOKEN_ALLOWANCE
         delay = 2.0
         for attempt in range(self.max_retries):
             try:
-                self._pace()
+                self._pace(est_tokens)
                 resp = self._client.chat.completions.create(**kwargs)
                 self._meter(role, model, resp)
                 return resp.choices[0].message.content or ""
@@ -165,11 +191,7 @@ class MeteredOpenAI:
                     if is_429:
                         self.rate_limited += 1
                 if is_429:
-                    # the limit is org-wide, so slow the whole pool one cadence
-                    # step; slowing just this thread accomplishes little
-                    with self._pace_lock:
-                        self._next_slot = max(self._next_slot,
-                                              time.monotonic()) + self._min_interval
+                    self._penalize(est_tokens)
                 time.sleep(delay * (0.5 + random.random()))   # jitter, no lockstep
                 delay = min(delay * 2, 30)
         raise RuntimeError("unreachable")

@@ -287,3 +287,35 @@ def test_stale_lock_from_a_dead_run_is_cleared():
         with pytest.raises(RuntimeError, match="LIVE run"):
             with CacheLock(lock):
                 pass
+
+
+# -- provider rate limiting ---------------------------------------------------
+
+def test_token_bucket_admits_by_estimated_tokens_not_call_count():
+    """Average-cadence pacing let a burst of long turns punch through the TPM
+    limit (a 3.2k-token call 429ing while the cadence thought it was fine).
+    Admission is by estimated tokens against a trailing-60s budget."""
+    from providers import MeteredOpenAI, TPM_SAFETY
+    p = MeteredOpenAI.__new__(MeteredOpenAI)          # no client / no API key
+    import collections, threading
+    p.tpm = 10_000
+    p._budget = p.tpm * TPM_SAFETY                     # 8500
+    p._window = collections.deque()
+    p._in_window = 0.0
+    p._pace_lock = threading.Lock()
+    p._pace_waits = 0
+
+    # a big call is admitted, and charges the window for its real size
+    p._pace(8_000)
+    assert p._in_window == 8_000 and len(p._window) == 1
+    # a second big call does not fit: it must wait, so run it with a deadline
+    t = threading.Thread(target=p._pace, args=(8_000,), daemon=True)
+    t.start()
+    t.join(timeout=1.0)
+    assert t.is_alive(), "second oversized call should be waiting on the budget"
+    assert p._pace_waits > 0
+
+    # a 429 charges the window even though no tokens were served
+    before = p._in_window
+    p._penalize(1_000)
+    assert p._in_window == before + 1_000
