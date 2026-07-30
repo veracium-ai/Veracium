@@ -40,8 +40,11 @@ _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",
          "will", "would", "about", "there", "then", "than", "been", "be"}
 
 
-def _content_tokens(text: str) -> set[str]:
-    return {w for w in _WORD.findall(text.lower()) if w not in _STOP and len(w) > 3}
+def _content_tokens(text) -> set[str]:
+    # gold answers are not always strings — some are numbers (temporal
+    # reasoning: "18") and those carry no long content tokens at all
+    return {w for w in _WORD.findall(str(text).lower())
+            if w not in _STOP and len(w) > 3}
 
 
 def _pct(n: int, d: int) -> str:
