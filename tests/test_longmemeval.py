@@ -291,31 +291,63 @@ def test_stale_lock_from_a_dead_run_is_cleared():
 
 # -- provider rate limiting ---------------------------------------------------
 
+def _bare_provider(limits):
+    """A MeteredOpenAI with only its pacing state — no client, no API key."""
+    import collections
+    import threading
+    from providers import MeteredOpenAI
+    p = MeteredOpenAI.__new__(MeteredOpenAI)
+    p._limits = dict(limits)
+    p._windows = {}
+    p._in_window = {}
+    p._pace_lock = threading.Lock()
+    p._pace_waits = 0
+    return p
+
+
 def test_token_bucket_admits_by_estimated_tokens_not_call_count():
     """Average-cadence pacing let a burst of long turns punch through the TPM
     limit (a 3.2k-token call 429ing while the cadence thought it was fine).
     Admission is by estimated tokens against a trailing-60s budget."""
-    from providers import MeteredOpenAI, TPM_SAFETY
-    p = MeteredOpenAI.__new__(MeteredOpenAI)          # no client / no API key
-    import collections, threading
-    p.tpm = 10_000
-    p._budget = p.tpm * TPM_SAFETY                     # 8500
-    p._window = collections.deque()
-    p._in_window = 0.0
-    p._pace_lock = threading.Lock()
-    p._pace_waits = 0
+    import threading
+    p = _bare_provider({"m": 10_000})                 # budget = 8500 at 0.85
 
-    # a big call is admitted, and charges the window for its real size
-    p._pace(8_000)
-    assert p._in_window == 8_000 and len(p._window) == 1
-    # a second big call does not fit: it must wait, so run it with a deadline
-    t = threading.Thread(target=p._pace, args=(8_000,), daemon=True)
+    p._pace("m", 8_000)
+    assert p._in_window["m"] == 8_000
+
+    t = threading.Thread(target=p._pace, args=("m", 8_000), daemon=True)
     t.start()
     t.join(timeout=1.0)
     assert t.is_alive(), "second oversized call should be waiting on the budget"
     assert p._pace_waits > 0
 
-    # a 429 charges the window even though no tokens were served
-    before = p._in_window
-    p._penalize(1_000)
-    assert p._in_window == before + 1_000
+    before = p._in_window["m"]
+    p._penalize("m", 1_000)      # a 429 charges the window with nothing served
+    assert p._in_window["m"] == before + 1_000
+
+
+def test_budgets_are_per_model():
+    """Measured limits differ ~7x (extractor 200k vs answer model 30k), so one
+    shared pool would 429 the tight model while the wide one looks fine."""
+    import threading
+    p = _bare_provider({"wide": 200_000, "tight": 30_000})
+    p._pace("tight", 25_000)                  # 25k of a 25.5k budget
+    t = threading.Thread(target=p._pace, args=("tight", 5_000), daemon=True)
+    t.start()
+    t.join(timeout=0.5)
+    assert t.is_alive(), "tight model should be throttled"
+    # the wide model is unaffected by the tight model's saturation
+    p._pace("wide", 100_000)
+    assert p._in_window["wide"] == 100_000
+
+
+def test_provider_reported_limit_is_adopted():
+    """A tier change should need no code edit: the next response's
+    x-ratelimit-limit-tokens header widens (or narrows) the budget."""
+    p = _bare_provider({"m": 30_000})
+    p._learn_limit("m", {"x-ratelimit-limit-tokens": "2000000"})
+    assert p._limits["m"] == 2_000_000
+    p._learn_limit("m", {})                       # missing header: keep current
+    assert p._limits["m"] == 2_000_000
+    p._learn_limit("m", {"x-ratelimit-limit-tokens": "nonsense"})
+    assert p._limits["m"] == 2_000_000

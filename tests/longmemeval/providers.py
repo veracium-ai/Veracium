@@ -42,13 +42,18 @@ PRICES = {
 
 DECODING = {"temperature": 0.0, "max_tokens": 4096}
 
-# Org rate limit observed for gpt-4.1-mini: 200k tokens/min (provider-side, per
-# model; raising it is an account-tier change, not a config change). Requests are
-# admitted against a sliding-window TOKEN budget rather than a fixed call
-# cadence: turn lengths vary ~10x, so average-based pacing lets a burst of long
-# turns punch through the limit (observed: a 3.2k-token call 429ing while the
-# cadence thought it was under budget).
-DEFAULT_TPM = 200_000
+# Rate limits are PER MODEL and set by the account tier, not by us. Measured on
+# this org (2026-07-30): gpt-4.1-mini 200k TPM, gpt-4.1 30k TPM, gpt-4o 30k TPM
+# — the answer model is 6.7x tighter than the extractor, so one shared budget
+# would starve nothing and 429 everything. Budgets are keyed by model and
+# self-tune from the provider's own `x-ratelimit-limit-tokens` header, so a tier
+# change is picked up automatically with no code edit.
+DEFAULT_TPM = 200_000          # fallback for an unseen model
+SEED_TPM = {                   # starting guesses, corrected by live headers
+    "gpt-4.1-mini-2025-04-14": 200_000,
+    "gpt-4.1-2025-04-14": 30_000,
+    "gpt-4o": 30_000,
+}
 TPM_SAFETY = 0.85          # headroom for estimate error and in-flight requests
 OUTPUT_TOKEN_ALLOWANCE = 300   # extraction replies are small; counted anyway
 
@@ -78,13 +83,18 @@ class MeteredOpenAI:
         self.retries = 0
         self.failures = 0
         self.rate_limited = 0
-        # sliding-window token budget, pool-wide
-        self.tpm = tpm
-        self._budget = tpm * TPM_SAFETY
-        self._window: collections.deque = collections.deque()   # (t, tokens)
-        self._in_window = 0.0
+        # sliding-window token budget, PER MODEL (limits differ ~7x between the
+        # extraction and answer models on this tier)
+        self.tpm = tpm                      # explicit override for the extractor
+        self._limits: dict[str, float] = {}
+        self._windows: dict[str, collections.deque] = {}
+        self._in_window: dict[str, float] = {}
         self._pace_lock = threading.Lock()
         self._pace_waits = 0
+        for name in set(self.models.values()):
+            self._limits[name] = float(
+                tpm if name == self.models["distill"] and tpm != DEFAULT_TPM
+                else SEED_TPM.get(name, DEFAULT_TPM))
 
     # what the run record needs to identify this provider
     @property
@@ -94,34 +104,58 @@ class MeteredOpenAI:
     @property
     def decoding(self) -> dict:
         return {"temperature": self.temperature, "max_tokens": self.max_tokens,
-                "paced_tpm": self.tpm, "tpm_safety": TPM_SAFETY}
+                "tpm_limits": {m: int(v) for m, v in sorted(self._limits.items())},
+                "tpm_safety": TPM_SAFETY}
 
-    def _pace(self, est_tokens: int) -> None:
-        """Admit a request only when its estimated tokens fit the trailing-60s
-        budget. Blocks the calling worker instead of letting the provider reject
-        it — a 429 costs a retry and can still fail an item, whereas waiting
-        costs only latency."""
+    def _pace(self, model: str, est_tokens: int) -> None:
+        """Admit a request only when its estimated tokens fit that MODEL's
+        trailing-60s budget. Blocks the calling worker instead of letting the
+        provider reject it — a 429 costs a retry and can still fail an item,
+        whereas waiting costs only latency."""
         while True:
             with self._pace_lock:
                 now = time.monotonic()
-                while self._window and self._window[0][0] <= now - 60.0:
-                    _, n = self._window.popleft()
-                    self._in_window -= n
-                if self._in_window + est_tokens <= self._budget or not self._window:
-                    self._window.append((now, est_tokens))
-                    self._in_window += est_tokens
+                w = self._windows.setdefault(model, collections.deque())
+                used = self._in_window.get(model, 0.0)
+                while w and w[0][0] <= now - 60.0:
+                    _, n = w.popleft()
+                    used -= n
+                budget = self._limits.get(model, DEFAULT_TPM) * TPM_SAFETY
+                if used + est_tokens <= budget or not w:
+                    w.append((now, est_tokens))
+                    self._in_window[model] = used + est_tokens
                     return
-                wait = max(0.05, self._window[0][0] + 60.0 - now)
+                self._in_window[model] = used
+                wait = max(0.05, w[0][0] + 60.0 - now)
                 self._pace_waits += 1
             time.sleep(min(wait, 2.0))
 
-    def _penalize(self, est_tokens: int) -> None:
-        """A 429 means the provider's accounting is ahead of ours; charge the
-        window for the rejected request so the whole pool slows, not just this
-        thread (the limit is org-wide)."""
+    def _penalize(self, model: str, est_tokens: int) -> None:
+        """A 429 means the provider's accounting is ahead of ours; charge that
+        model's window for the rejected request so the whole pool slows, not
+        just this thread (the limit is org-wide)."""
         with self._pace_lock:
-            self._window.append((time.monotonic(), est_tokens))
-            self._in_window += est_tokens
+            self._windows.setdefault(model, collections.deque()).append(
+                (time.monotonic(), est_tokens))
+            self._in_window[model] = self._in_window.get(model, 0.0) + est_tokens
+
+    def _learn_limit(self, model: str, headers) -> None:
+        """Adopt the provider's own reported limit. A tier change then needs no
+        code edit — the pacer widens (or narrows) on the next response."""
+        raw = None
+        try:
+            raw = headers.get("x-ratelimit-limit-tokens")
+        except Exception:
+            return
+        if not raw:
+            return
+        try:
+            limit = float(str(raw).strip())
+        except ValueError:
+            return
+        with self._pace_lock:
+            if limit > 0 and self._limits.get(model) != limit:
+                self._limits[model] = limit
 
     def _meter(self, role: str, model: str, resp) -> None:
         u = getattr(resp, "usage", None)
@@ -171,8 +205,10 @@ class MeteredOpenAI:
         delay = 2.0
         for attempt in range(self.max_retries):
             try:
-                self._pace(est_tokens)
-                resp = self._client.chat.completions.create(**kwargs)
+                self._pace(model, est_tokens)
+                raw = self._client.chat.completions.with_raw_response.create(**kwargs)
+                self._learn_limit(model, raw.headers)
+                resp = raw.parse()
                 self._meter(role, model, resp)
                 return resp.choices[0].message.content or ""
             except Exception as e:
@@ -191,7 +227,7 @@ class MeteredOpenAI:
                     if is_429:
                         self.rate_limited += 1
                 if is_429:
-                    self._penalize(est_tokens)
+                    self._penalize(model, est_tokens)
                 time.sleep(delay * (0.5 + random.random()))   # jitter, no lockstep
                 delay = min(delay * 2, 30)
         raise RuntimeError("unreachable")
