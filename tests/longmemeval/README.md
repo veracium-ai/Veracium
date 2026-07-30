@@ -42,3 +42,21 @@ precedence invariant is day-level).
 rate the 44-item pilot is ~24h and the full 500 ~270h — so a canonical run
 needs an API-based extractor with real concurrency, not the CLI. Pin whatever
 is used in the run record.
+
+## Judging
+
+`judge.sh <hypotheses.jsonl> [data.json]` runs the **official** scorer
+unmodified — `evaluate_qa.py gpt-4o` then `print_qa_metrics.py` — so no prompt
+or aggregation drift can enter from our side. The wrapper adds only provenance
+(repo commit + judge pin, echoed for the run record).
+
+Pinned for this work: official repo `xiaowu0162/LongMemEval` @
+`9e0b455f4ef0e2ab8f2e582289761153549043fc` (MIT), judge model `gpt-4o` →
+repo-internal pin `gpt-4o-2024-08-06`. Clone it beside the dataset
+(`~/Datasets/longmemeval/official`, override with `OFFICIAL_DIR`); needs
+`backoff`, `tqdm`, `numpy`, and `OPENAI_API_KEY`.
+
+Verified compatible with our hypothesis format: the scorer reads only
+`question_id` and `hypothesis` per JSONL line, detects abstention items by the
+`_abs` id suffix, and preserves our extra fields (control arm, ingest counts)
+into its results file.
