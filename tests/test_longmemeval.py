@@ -270,3 +270,20 @@ def test_same_day_later_clock_time_is_history_not_a_violation():
     assert len(items[0].sessions) == 2
     assert items[0].same_day_later_sessions == 1
     assert manifest["same_day_later_sessions"] == 1
+
+
+def test_stale_lock_from_a_dead_run_is_cleared():
+    """A killed run never runs __exit__. The next run must distinguish a dead
+    holder (clear it) from a live one (refuse) rather than making the operator
+    guess."""
+    with tempfile.TemporaryDirectory() as tmp:
+        lock = Path(tmp) / "lock"
+        lock.write_text("999999")          # a pid that cannot be running
+        with CacheLock(lock):
+            assert lock.read_text().strip() == str(__import__("os").getpid())
+        assert not lock.exists()
+
+        lock.write_text(str(__import__("os").getpid()))   # a live holder: refuse
+        with pytest.raises(RuntimeError, match="LIVE run"):
+            with CacheLock(lock):
+                pass

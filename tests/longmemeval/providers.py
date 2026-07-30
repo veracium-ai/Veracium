@@ -23,6 +23,7 @@ writes a key file, and no key is ever placed in a run record.
 from __future__ import annotations
 
 import os
+import random
 import threading
 import time
 from typing import Optional
@@ -40,6 +41,12 @@ PRICES = {
 
 DECODING = {"temperature": 0.0, "max_tokens": 4096}
 
+# Org rate limit observed for gpt-4.1-mini: 200k tokens/min. Extraction calls
+# run ~1.0k tokens each, so ~180 calls/min is the real ceiling; pace request
+# STARTS to stay under it instead of discovering the limit as 429s.
+DEFAULT_TPM = 200_000
+AVG_CALL_TOKENS = 1_100
+
 
 class MeteredOpenAI:
     """`Complete` callable over OpenAI chat-completions with per-role metering.
@@ -49,8 +56,9 @@ class MeteredOpenAI:
     """
 
     def __init__(self, *, distill_model: str = DISTILL_MODEL,
-                 answer_model: str = ANSWER_MODEL, max_retries: int = 5,
-                 max_tokens: int = 4096, temperature: float = 0.0):
+                 answer_model: str = ANSWER_MODEL, max_retries: int = 8,
+                 max_tokens: int = 4096, temperature: float = 0.0,
+                 tpm: int = DEFAULT_TPM):
         from openai import OpenAI  # local import: not a veracium dependency
         if not os.environ.get("OPENAI_API_KEY"):
             raise SystemExit("MeteredOpenAI needs OPENAI_API_KEY in the environment")
@@ -64,6 +72,12 @@ class MeteredOpenAI:
         self.usage: dict[str, dict[str, float]] = {}
         self.retries = 0
         self.failures = 0
+        self.rate_limited = 0
+        # request pacing: minimum seconds between call starts, pool-wide
+        self.tpm = tpm
+        self._min_interval = 60.0 / max(1.0, tpm / AVG_CALL_TOKENS)
+        self._pace_lock = threading.Lock()
+        self._next_slot = 0.0
 
     # what the run record needs to identify this provider
     @property
@@ -72,7 +86,20 @@ class MeteredOpenAI:
 
     @property
     def decoding(self) -> dict:
-        return {"temperature": self.temperature, "max_tokens": self.max_tokens}
+        return {"temperature": self.temperature, "max_tokens": self.max_tokens,
+                "paced_tpm": self.tpm}
+
+    def _pace(self) -> None:
+        """Serialize request STARTS onto a fixed cadence. Workers block here
+        rather than in a 429 retry loop, which keeps throughput smooth and the
+        provider limit respected without a full token accountant."""
+        with self._pace_lock:
+            now = time.monotonic()
+            slot = max(now, self._next_slot)
+            self._next_slot = slot + self._min_interval
+        wait = slot - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
 
     def _meter(self, role: str, model: str, resp) -> None:
         u = getattr(resp, "usage", None)
@@ -118,6 +145,7 @@ class MeteredOpenAI:
         delay = 2.0
         for attempt in range(self.max_retries):
             try:
+                self._pace()
                 resp = self._client.chat.completions.create(**kwargs)
                 self._meter(role, model, resp)
                 return resp.choices[0].message.content or ""
@@ -127,12 +155,21 @@ class MeteredOpenAI:
                 if "BadRequest" in name and "response_format" in kwargs:
                     kwargs.pop("response_format")
                     continue
+                is_429 = "RateLimit" in name or "429" in str(e)[:120]
                 if attempt == self.max_retries - 1:
                     with self._lock:
                         self.failures += 1
                     raise
                 with self._lock:
                     self.retries += 1
-                time.sleep(delay)
+                    if is_429:
+                        self.rate_limited += 1
+                if is_429:
+                    # the limit is org-wide, so slow the whole pool one cadence
+                    # step; slowing just this thread accomplishes little
+                    with self._pace_lock:
+                        self._next_slot = max(self._next_slot,
+                                              time.monotonic()) + self._min_interval
+                time.sleep(delay * (0.5 + random.random()))   # jitter, no lockstep
                 delay = min(delay * 2, 30)
         raise RuntimeError("unreachable")

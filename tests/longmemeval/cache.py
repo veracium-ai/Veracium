@@ -51,12 +51,36 @@ class CacheLock:
         try:
             fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
-            raise RuntimeError(
-                f"cache is locked by another run ({self.path}). LongMemEval runs "
-                f"are single-process; remove the file if no run is active.")
+            # A killed run (SIGTERM/SIGKILL) never runs __exit__, so distinguish
+            # a live holder from a corpse instead of making the operator delete
+            # the file by hand and guess which it was.
+            holder = self._holder_pid()
+            if holder is not None and self._alive(holder):
+                raise RuntimeError(
+                    f"cache is locked by a LIVE run (pid {holder}, {self.path}). "
+                    f"LongMemEval runs are single-process.")
+            print(f"[cache] clearing stale lock from dead pid {holder} ({self.path})")
+            self.path.unlink(missing_ok=True)
+            fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         os.write(fd, str(os.getpid()).encode())
         os.close(fd)
         return self
+
+    def _holder_pid(self):
+        try:
+            return int(self.path.read_text().strip())
+        except (OSError, ValueError):
+            return None
+
+    @staticmethod
+    def _alive(pid: int) -> bool:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True     # exists, owned by someone else
+        return True
 
     def __exit__(self, *exc):
         self.path.unlink(missing_ok=True)
