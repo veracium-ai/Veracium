@@ -351,3 +351,36 @@ def test_provider_reported_limit_is_adopted():
     assert p._limits["m"] == 2_000_000
     p._learn_limit("m", {"x-ratelimit-limit-tokens": "nonsense"})
     assert p._limits["m"] == 2_000_000
+
+
+def test_cache_identity_ignores_throughput_state():
+    """Regression: rate-limit state leaked into `decoding`, which feeds the
+    cache identity — so every pacing tweak silently invalidated the whole
+    cache and re-paid for thousands of extractions. Sampling params belong in
+    the identity; throughput never does."""
+    from providers import MeteredOpenAI
+    p = MeteredOpenAI.__new__(MeteredOpenAI)
+    import collections, threading
+    p.temperature, p.max_tokens = 0.0, 4096
+    p._limits, p._windows, p._in_window = {"m": 200_000}, {}, {}
+    p._pace_lock, p._pace_waits, p.rate_limited = threading.Lock(), 0, 0
+
+    before = dict(p.decoding)
+    p._learn_limit("m", {"x-ratelimit-limit-tokens": "2000000"})  # tier change
+    p._pace_waits += 17                                          # throughput churn
+    assert p.decoding == before, "throughput state must not reach the identity"
+    assert "tpm_limits" in p.throughput      # still reported, just not in the key
+
+
+def test_cache_records_key_parts_for_migration():
+    """Entries carry their key components so a future benign identity change can
+    be re-keyed instead of re-extracted."""
+    with tempfile.TemporaryDirectory() as tmp:
+        c = _cache(tmp, _Counting('{"triples": []}'))
+        kw = dict(author="user", event_type="chat", date="2023-05-20")
+        c.bind(c.key_for("some turn", **kw), c.parts_for("some turn", **kw))
+        c("p", role="distill")
+        rec = json.loads(Path(tmp, "c.jsonl").read_text().splitlines()[0])
+        assert set(rec["parts"]) == {"text_sha", "author", "event_type", "date",
+                                     "identity"}
+        assert rec["parts"]["date"] == "2023-05-20"

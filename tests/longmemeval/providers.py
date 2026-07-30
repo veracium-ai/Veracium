@@ -103,9 +103,20 @@ class MeteredOpenAI:
 
     @property
     def decoding(self) -> dict:
-        return {"temperature": self.temperature, "max_tokens": self.max_tokens,
-                "tpm_limits": {m: int(v) for m, v in sorted(self._limits.items())},
-                "tpm_safety": TPM_SAFETY}
+        """SAMPLING parameters only — this feeds the extraction cache identity,
+        so it must contain exactly the things that change a model's output and
+        nothing operational. Putting throughput state here (rate limits, worker
+        counts) silently invalidates every cached extraction whenever tuning
+        changes: it cost a full re-extraction once. Operational state belongs in
+        `throughput` below, which the run record reports and the key ignores."""
+        return {"temperature": self.temperature, "max_tokens": self.max_tokens}
+
+    @property
+    def throughput(self) -> dict:
+        """Operational, NEVER part of the cache identity."""
+        return {"tpm_limits": {m: int(v) for m, v in sorted(self._limits.items())},
+                "tpm_safety": TPM_SAFETY, "pace_waits": self._pace_waits,
+                "rate_limit_hits": self.rate_limited}
 
     def _pace(self, model: str, est_tokens: int) -> None:
         """Admit a request only when its estimated tokens fit that MODEL's

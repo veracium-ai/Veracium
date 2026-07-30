@@ -116,11 +116,22 @@ class CachedComplete:
                 date: str) -> str:
         return _sha(self._id_hash, event_text, author, event_type, date)
 
-    def bind(self, key: str) -> None:
+    def parts_for(self, event_text: str, *, author: str, event_type: str,
+                  date: str) -> dict:
+        """The key's components, stored beside the value. If an identity field
+        changes in a way that cannot affect extraction output, entries can be
+        re-keyed from these instead of re-extracted (which is what the
+        identity-leak incident cost)."""
+        return {"text_sha": _sha(event_text)[:32], "author": author,
+                "event_type": event_type, "date": date,
+                "identity": self._id_hash[:16]}
+
+    def bind(self, key: str, parts: dict | None = None) -> None:
         """The runner binds the key for the turn it is about to ingest; the
         provider call itself carries no turn identity. Thread-local: parallel
         workers are each mid-turn on a different item."""
         self._local.key = key
+        self._local.parts = parts
 
     # -- storage ------------------------------------------------------------
     def _load(self) -> None:
@@ -140,10 +151,12 @@ class CachedComplete:
             if "key" in rec and "value" in rec:
                 self._mem[rec["key"]] = rec["value"]
 
-    def _append(self, key: str, value: str) -> None:
+    def _append(self, key: str, value: str, parts: dict | None = None) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         rec = {"schema": SCHEMA_VERSION, "key": key, "value": value,
                "stored_at": int(time.time())}
+        if parts:
+            rec["parts"] = parts
         # append + flush + fsync: a killed run leaves whole lines, never a
         # half-line that silently truncates a later parse
         with self.path.open("a") as f:
@@ -168,7 +181,7 @@ class CachedComplete:
         out = self.inner(prompt, system=system, role=role, json_schema=json_schema)
         with self._lock:
             self._mem[key] = out
-            self._append(key, out)
+            self._append(key, out, getattr(self._local, "parts", None))
         return out
 
     @property

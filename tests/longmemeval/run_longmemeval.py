@@ -104,8 +104,8 @@ def ingest_item(mem, item, *, arm: str, serializer, cache=None) -> dict:
             author, derived, etype = author_for(turn.role, arm)
             if cache is not None:
                 # key on the date string that actually reaches the provider
-                cache.bind(cache.key_for(text, author=author.value,
-                                         event_type=etype, date=session.iso_day))
+                kw = dict(author=author.value, event_type=etype, date=session.iso_day)
+                cache.bind(cache.key_for(text, **kw), cache.parts_for(text, **kw))
             r = mem.remember(item.question_id, text, author=author,
                              derived_from=derived, event_type=etype,
                              date=session.iso_day,
@@ -146,6 +146,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
 
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
               "workers": workers,
+              "throughput": getattr(provider, "throughput", {}),
               "identity": identity, "answer_template_version": ANSWER_TEMPLATE_VERSION,
               "items": len(items), "results": {}, "cache": None}
 
