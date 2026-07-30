@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from adapter import ORACLE_FILE, S_FILE, load, stratified_pilot
 from cache import CACHE_DIR, CacheLock, CachedComplete
 from providers import QuotaExhausted
+from strictness import StrictExtraction
 
 from veracium import Memory, MemoryConfig
 from veracium.prompts import EXTRACT_PROMPT, EXTRACT_SCHEMA, EXTRACT_SYSTEM
@@ -119,7 +120,7 @@ def ingest_item(mem, item, *, arm: str, serializer, cache=None) -> dict:
 def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=True,
         context: bool = True, budget=None, note: str = "", workers: int = 1,
         out_dir: Path = OUT_DIR, cache_path: Path | None = None,
-        max_edges: int | None = None) -> dict:
+        max_edges: int | None = None, bar: str = "none") -> dict:
     """Runs the requested control arms over `items`. Returns the run record;
     writes one hypothesis file per arm."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -143,11 +144,20 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         # (derived_from), which never reaches the extractor. Keying on it would
         # re-pay for byte-identical extractions. Recorded below instead.
     }
-    cache = CachedComplete(provider, path=cache_path or (CACHE_DIR / "extractions.jsonl"),
-                           identity=identity, enabled=cache_enabled)
+    raw_cache = CachedComplete(provider, path=cache_path or (CACHE_DIR / "extractions.jsonl"),
+                               identity=identity, enabled=cache_enabled)
+    # the extraction bar filters CACHED output, so strictness is testable as a
+    # replay rather than a re-extraction; identity is unchanged on purpose —
+    # the provider call is identical, only what we keep from it differs.
+    # `raw_cache` stays bound separately: the wrapper has its own stats, and
+    # reading hit/miss counters off whichever object happens to be outermost is
+    # how this broke the first time.
+    cache = (StrictExtraction(raw_cache, bar=bar, relations=MemoryConfig().relations)
+             if bar != "none" else raw_cache)
 
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
               "workers": workers, "max_subgraph_edges": max_edges or "default(40)",
+              "extraction_bar": bar,
               "throughput": getattr(provider, "throughput", {}),
               "identity": identity, "answer_template_version": ANSWER_TEMPLATE_VERSION,
               "items": len(items), "results": {}, "cache": None}
@@ -224,7 +234,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                 eta = rate * (len(items) - n) / 60
                 print(f"  [{control}] {n}/{len(items)} items "
                       f"({rate:.0f}s/item, ETA {eta:.0f} min; cache "
-                      f"hits={cache.stats['hits']} misses={cache.stats['misses']})",
+                      f"hits={raw_cache.stats['hits']} misses={raw_cache.stats['misses']})",
                       file=sys.stderr)
             return row
 
@@ -257,7 +267,9 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                                       "seconds": round(time.monotonic() - t0, 1)}
         print(f"  [{control}] -> {hyp_path}", file=sys.stderr)
 
-    record["cache"] = {**cache.stats, "unique_keys": cache.unique_keys,
+    if isinstance(cache, StrictExtraction):
+        record["strictness"] = dict(cache.stats)
+    record["cache"] = {**raw_cache.stats, "unique_keys": raw_cache.unique_keys,
                        "enabled": cache_enabled}
     if hasattr(provider, "cost_usd"):
         record["cost"] = {"actual": provider.cost_usd(),
@@ -289,6 +301,8 @@ if __name__ == "__main__":
     ap.add_argument("--no-context", action="store_true",
                     help="ablation: isolated per-turn ingestion")
     ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--bar", choices=["none", "registry", "registry+len"],
+                    default="none", help="extraction strictness bar (over-extraction test)")
     ap.add_argument("--max-edges", type=int, default=None,
                     help="override max_subgraph_edges (retrieval-breadth ablation)")
     ap.add_argument("--note", default="")
@@ -315,7 +329,8 @@ if __name__ == "__main__":
                   workers=args.workers,
                   arms=tuple(a.strip() for a in args.controls.split(",") if a.strip()),
                   cache_enabled=not args.no_cache, context=not args.no_context,
-                  budget=args.budget, note=args.note, max_edges=args.max_edges)
+                  budget=args.budget, note=args.note, max_edges=args.max_edges,
+                  bar=args.bar)
     print(json.dumps({k: rec[k] for k in ("stamp", "arm", "items", "cache", "results")},
                      indent=2))
     print("\nNext: run the OFFICIAL judge, e.g.\n"

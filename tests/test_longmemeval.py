@@ -486,3 +486,44 @@ def test_spend_is_ledgered_during_the_run_not_only_at_the_end():
         assert rows[-1]["label"] == "unit-test"
         # 1M in @ $0.40 + 0.5M out @ $1.60 = $1.20
         assert abs(rows[-1]["usd"] - 1.20) < 0.01
+
+
+# -- extraction-strictness experiment ----------------------------------------
+
+def test_strictness_bar_filters_only_distill_output():
+    """The over-extraction test filters cached extraction output so strictness
+    is a replay, not a re-extraction. It must drop off-registry relations and
+    essay-length objects — and leave compile/gate calls completely alone."""
+    from strictness import StrictExtraction
+
+    payload = json.dumps({"triples": [
+        {"subject": "user", "relation": "has_pet", "object": "cat Miso"},
+        {"subject": "user", "relation": "includes", "object": "invented relation"},
+        {"subject": "user", "relation": "prefers", "object": "x" * 200},
+    ], "episode": "e"})
+
+    class Inner:
+        stats = {"hits": 0, "misses": 0}
+        def __call__(self, p, *, system=None, role="compile", json_schema=None):
+            return payload
+
+    kept = lambda bar, role="distill": json.loads(
+        StrictExtraction(Inner(), bar=bar)(  "p", role=role))["triples"]
+    assert len(kept("none")) == 3
+    assert [t["relation"] for t in kept("registry")] == ["has_pet", "prefers"]
+    assert [t["relation"] for t in kept("registry+len")] == ["has_pet"]
+    # curation must never touch the answer path
+    assert len(kept("registry+len", role="gate")) == 3
+
+
+def test_strictness_bar_survives_unparseable_output():
+    """Extraction sometimes returns junk; that is veracium's tolerant-parser
+    problem, and the experiment must not convert it into a crash."""
+    from strictness import StrictExtraction
+
+    class Junk:
+        stats = {"hits": 0, "misses": 0}
+        def __call__(self, p, *, system=None, role="compile", json_schema=None):
+            return "not json at all"
+
+    assert StrictExtraction(Junk(), bar="registry")("p", role="distill") == "not json at all"
