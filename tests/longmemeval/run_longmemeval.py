@@ -162,6 +162,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                                          wiki_recompile_after_writes=0))
         try:
             ing = {"turns": 0, "facts": 0}
+            context, n_edges, n_episodes = "", 0, 0
             if control == "veracium":
                 ing = ingest_item(mem, item, arm=arm, serializer=serializer,
                                   cache=cache if cache_enabled else None)
@@ -178,7 +179,9 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                 ctx_tokens = 0
             return {"question_id": item.question_id, "hypothesis": hyp,
                     "control_arm": control, "context_tokens_estimated": ctx_tokens,
-                    "ingested": ing,
+                    "ingested": ing, "recalled": {"edges": n_edges,
+                                                  "episodes": n_episodes},
+                    "context": context,
                     "cache_frozen": bool(cache_enabled and control == "veracium")}
         finally:
             mem.close()
