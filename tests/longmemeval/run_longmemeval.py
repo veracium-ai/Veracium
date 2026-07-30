@@ -158,9 +158,12 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         finish; parallelism is across items, which are independent by
         construction (fresh user_id + fresh store)."""
         d = tempfile.mkdtemp(prefix="veracium-lme-")
-        mem = Memory(llm=cache if control == "veracium" else provider,
-                     config=MemoryConfig(db_path=f"{d}/lme.db",
-                                         wiki_recompile_after_writes=0))
+        cfg = MemoryConfig(db_path=f"{d}/lme.db", wiki_recompile_after_writes=0)
+        if max_edges:
+            # how much of memory one query may see. At LongMemEval scale
+            # (~1.7k facts/item) the default 40 is ~2% of the store.
+            cfg.max_subgraph_edges = max_edges
+        mem = Memory(llm=cache if control == "veracium" else provider, config=cfg)
         try:
             ing = {"turns": 0, "facts": 0}
             context, n_edges, n_episodes, edge_sig = "", 0, 0, []
@@ -171,6 +174,14 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                                token_budget=budget)
                 hyp = mem.answer(item.question_id, question_with_date(item))
                 ctx_tokens = r.tokens_estimated
+                # the failure taxonomy needs the rendered context, and the
+                # variance protocol needs a comparable extraction signature
+                context = r.context
+                n_edges, n_episodes = len(r.edges), len(r.episodes)
+                edge_sig = sorted(
+                    _sha16(f"{e.subject}|{e.relation}|{e.object}".lower())[:8]
+                    for e in mem.store.edges(item.question_id, active_only=False,
+                                             include_quarantined=True))
             elif control == "no-memory":
                 # identical answer path, empty memory: measures the gate floor
                 hyp = mem.answer(item.question_id, question_with_date(item))

@@ -49,9 +49,16 @@ def _pct(n: int, d: int) -> str:
 
 
 def load_arm(path: Path) -> tuple[str, dict]:
+    """Label a column. control_arm alone is not unique — the trust arms and the
+    retrieval-breadth ablation are all control_arm='veracium' — so the trust arm
+    (from the filename) and any max-edges note are folded into the label."""
     rows = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
-    arm = rows[0].get("control_arm", path.stem) if rows else path.stem
-    return arm, {r["question_id"]: r for r in rows}
+    control = rows[0].get("control_arm", "?") if rows else "?"
+    m = re.search(r"_(veracium|no-memory|bare-model)_([TC])\.jsonl", path.name)
+    label = control if control != "veracium" else f"veracium-{m.group(2)}" if m else control
+    # disambiguate an ablation run of the same arm by its stamp
+    stamp = re.search(r"hypotheses_(\d{8}T\d{6})", path.name)
+    return (label, stamp.group(1)[-6:] if stamp else ""), {r["question_id"]: r for r in rows}
 
 
 def taxonomy(row: dict, gold: str) -> str:
@@ -72,7 +79,14 @@ def taxonomy(row: dict, gold: str) -> str:
 
 def main(paths: list[str]) -> int:
     _, evals, manifest = load(S_FILE, strict=False)
-    arms = dict(load_arm(Path(p)) for p in paths)
+    loaded = [load_arm(Path(p)) for p in paths]
+    # keep labels unique: append the run stamp only when a label repeats
+    counts = {}
+    for (lab, _), _rows in loaded:
+        counts[lab] = counts.get(lab, 0) + 1
+    arms = {}
+    for (lab, stamp), rows in loaded:
+        arms[lab if counts[lab] == 1 else f"{lab}@{stamp}"] = rows
     if not arms:
         print("no arms given")
         return 1
