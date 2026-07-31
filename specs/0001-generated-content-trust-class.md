@@ -8,10 +8,10 @@
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 — *re-read before editing; quote the version you approve* |
-| **Status** | draft |
-| **Internal reviewers** | research *(owns the trust semantics and the Q2(4) decision this implements)* · workflow-platform *(MCP surface changes)* |
-| **External review** | required — full spec (touches `schema.py`, `ingest.py`, `graph.py`, `gate.py`, `portability.py`) · not yet sent |
+| **Version** | **v2** — amended after research's internal review (`spec-0001-research-review.md`); §11 lists the changes. *Re-read before editing; quote the version you approve.* |
+| **Status** | **accepted-with-amendments** (research, internal) — **not implementable yet**: external review outstanding, and per `PROCESS.md` accepted-with-amendments does not authorise implementation until every amendment is resolved and the amended version approved |
+| **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
+| **External review** | required — full spec (touches `schema.py`, `ingest.py`, `lifecycle.py`, `introspect.py`, `__init__.py`) · **ready to send; brief in §9** |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -130,12 +130,28 @@ express it, so both directions appear.
 
 ### 3.1 Write-time disclosure (new routing)
 
+**This table failed OPEN in v1 and research caught it.** v1 said *"subject
+`user` → `use_only`; **anything else** → `mentionable`"*, which means a mangled,
+invented, empty or ambiguous subject — from an extractor we do not control —
+becomes **assertable**. The default must run the other way, so that the
+extractor-produced field §9(1) worries about can only ever *cost* assertability,
+never grant it.
+
 | author | subject | derived_from | disclosure | why |
 |---|---|---|---|---|
-| `ASSISTANT` | `"user"` | — | **`use_only`** | hearsay about a party who is present and can be asked |
-| `ASSISTANT` | anything else | — | **`mentionable`** | first-party testimony about its own action or an artifact |
+| `ASSISTANT` | resolves to the user (`"user"` or an alias) | — | **`use_only`** | hearsay about a party who is present and can be asked |
+| `ASSISTANT` | **recognised** distinct entity | — | **`mentionable`** | first-party testimony about its own action or an artifact |
+| `ASSISTANT` | **unresolvable** — empty, pronoun, placeholder, or not recognised | — | **`use_only`** | **fail closed.** We cannot show it is not about the user, so we do not treat it as if we had |
 | `ASSISTANT` | any | `THIRD_PARTY` | **`use_only`** | existing cap; `derived_from` only narrows |
 | `ASSISTANT` | any | relation == quarantine | **`quarantined`** | unchanged structural rule |
+
+**"Recognised" is defined negatively and conservatively:** a subject is
+recognised iff it is non-empty after normalisation, is not in the user-alias set
+(`user`, `you`, `me`, `myself`, `the user`), and is not a bare pronoun or
+placeholder (`it`, `this`, `that`, `they`, `unknown`, `n/a`). Anything else
+falls to `use_only`. The alias and placeholder lists are code, versioned with
+the change, and **adding to them can only ever narrow assertability** — which is
+the same one-way property `derived_from` has, and for the same reason.
 
 ### 3.2 Operations, both directions
 
@@ -143,10 +159,28 @@ express it, so both directions appear.
 |---|---|---|---|---|---|
 | **supersession** (functional relation) | **blocked** — differing disclosure class (0.4.1 guard) | **allowed** — user supersedes assistant; trust rises via new user evidence, not via merge | allowed when same disclosure class | never | only within class |
 | **T1 absorption** (subset) | **blocked** — same guard | **allowed**; winner is the user edge | allowed when same class | never | only within class |
-| **reinforcement** (identical fact) | **blocked** | **blocked** — see below | allowed when same class | never | only within class |
+| **reinforcement** (identical fact) | **blocked** | **blocked** — see below | **merge allowed; `observed_at` refresh BLOCKED** — Q1, resolved | never | only within class |
 | **`confirm()`** | n/a | **this is the promotion path**: user affirmation flips an assistant `use_only` edge to assertable | n/a | never — `confirm()` has never elevated quarantined | this is what it is for |
 
-**Reinforcement is blocked in *both* directions and that is deliberate.** A user
+**Q1 resolved — `ASSISTANT × ASSISTANT`: allow the merge, block the currency
+refresh.** I had proposed blocking the merge outright on a
+compounding-confidence hazard. Research showed the hazard is not confidence —
+`confidence = max(members)` synthesises nothing, so two assistant statements
+merging cannot manufacture a higher number than either held. **The exposure is
+currency.** Reinforcement refreshes `provenance.observed_at`, which under C′ is
+the liveness axis `lifecycle.expire()` ages against. So an assistant restating
+its own hallucination would keep it fresh **indefinitely** — freshness-pinning
+by self-repetition, which is the manufactured-freshness failure the T2 debate
+settled, one trust class down.
+
+**Rule: an assistant restating itself is deduplication, not evidence.**
+Absorption proceeds (§5's crowd-out analysis positively wants it); reinforcement
+must not advance `observed_at`. Checked by **I10a**. The consequence is that
+assistant edges **age out normally**, which is correct on its own terms: a
+statement about an action is point-in-time, not a persistent state.
+
+**Reinforcement across classes is blocked in *both* directions and that is
+deliberate.** A user
 restating an assistant claim looks like reinforcement, but under the C′
 semantics reinforcement mutates `provenance.observed_at` on the **prior** edge —
 so allowing it would let user evidence refresh the currency of an
@@ -265,7 +299,10 @@ fixture ever caught it because small stores never truncate.*
 | **I3** an assistant edge can never supersede, absorb, or reinforce a user edge | `test_assistant_cannot_touch_user_edge` (all three ops, both directions) | CI |
 | **I4** `derived_from=THIRD_PARTY` still caps an assistant edge to `use_only` | `test_assistant_derived_from_third_party_is_capped` | CI |
 | **I5** `confirm()` is the only promotion path; maintenance never promotes | `test_only_confirm_promotes_assistant` | CI |
+| **I3b** the paths §3.2 says are **allowed** actually work: a user edge *can* supersede and absorb an assistant prior | `test_user_can_correct_an_assistant_fact` | CI |
 | **I6** at 1,000 assistant edges, user-authored facts still reach the subgraph | `test_assistant_dominant_store_does_not_crowd_out_user` | CI |
+| **I10** consolidation-style provenance rules hold for the new class: a mixed cold set never yields an assistant-authored summary presented as grounded | `test_mixed_batch_with_assistant_declares_influence` | CI |
+| **I10a** assistant self-reinforcement dedups but **never advances `observed_at`** — no freshness-pinning by self-repetition | `test_assistant_restatement_does_not_refresh_currency` | CI |
 | **I7** an export containing assistant edges is rejected by an older reader **with our message, not a pydantic traceback** | `test_downgrade_export_fails_cleanly` | CI |
 | **I8** injection ladder unchanged; assistant authorship grants no new write authority | existing `bench --compare`, `engine.injection_asserts == 0` | bench gate |
 | **I9** trust canaries unchanged | existing `engine.trust_canary_failures == 0` | bench gate |
@@ -273,6 +310,13 @@ fixture ever caught it because small stores never truncate.*
 Standing checks that must not regress: injection asserts 0 · cross-user leaks 0
 · trust canaries 0 · supersession probes pass · malformed edges 0 · declared
 read-cost and latency ceilings.
+
+**I3b exists because I only tested prohibitions.** Research's point: I3 proves
+an assistant edge cannot touch a user edge, and nothing tested the *allowed*
+direction. A guard written slightly too broadly would block **user corrections**,
+every prohibition test would still pass, and the symptom would be a user
+correction that silently does not take — which is worse than the bug the guard
+prevents and would look like the guard working.
 
 **Reproducer retention:** `184da446` is retained as a fixture asserting the
 case stays **unanswered** — it is the documented cost of this design (§8), and a
@@ -310,9 +354,18 @@ improving recall.
   The containment is that it is admitted **only for non-user subjects**, where
   the assistant is the primary witness, and never for claims about the user.
   Prompt injection that induces an assistant to state *"the deploy succeeded"*
-  will now be storable as mentionable — which is a real widening, bounded by the
-  fact that such a claim was already reaching the user directly in the same turn.
-  Injection inducing *"the user agreed to X"* remains capped.
+  will now be storable as mentionable. Injection inducing *"the user agreed to
+  X"* remains capped.
+
+  **v1 claimed this was "bounded by the fact that such a claim was already
+  reaching the user directly in the same turn". That bound is deleted — it does
+  not hold**, and research named the reason I had only suspected: **the turn is
+  ephemeral; the store is persistent and re-injected.** The user reads the claim
+  once, in a live context where it might look odd and be challenged. Memory
+  asserts it into future contexts indefinitely, each one further from the turn
+  that would have made it suspicious. Persistence is not a weaker version of
+  utterance — it is a different exposure, and it is the one we build. The
+  widening is stated as a limit in §8 rather than argued away here.
 
 ---
 
@@ -335,6 +388,14 @@ improving recall.
     the direction; it does not measure this change and cannot.
   - A passing injection ladder is *"no failures observed on the frozen suite"*,
     never "safe against prompt injection".
+  - **It admits a new class of externally-influenced content into
+    `mentionable`, and we have no bound on that exposure.** An assistant
+    induced to state something false about a non-user subject can have it
+    stored as assertable. We considered arguing this is limited because the
+    claim also reached the user live, and **withdrew that argument**: the turn
+    is ephemeral, the store is persistent and re-injected into contexts
+    increasingly distant from the one that would have made it suspicious. The
+    containment is the subject rule, not the utterance.
 - **Measurements cited:** LongMemEval V1-S pilot, run `20260730T174434`, arm C,
   commit `ce66282`; Arm T comparison from the same pilot. Neither run is
   decision-eligible under the current policy (no freeze artifact) — cited as
@@ -360,6 +421,13 @@ improving recall.
 - **What would change our minds.** Evidence that hosts cannot reliably attribute
   turns (making the whole class noise); or a construction where an assistant
   edge about a non-user subject launders into a claim about the user.
+- **Added after internal review — please look hardest here.**
+  **Self-corroboration.** Two assistant statements of the same fact now
+  *deduplicate* but must not refresh currency (§3.2 Q1), on the reasoning that
+  confidence takes `max` and so synthesises nothing, while `observed_at` would
+  otherwise let a model keep its own hallucination alive forever by repeating
+  it. If you have watched self-corroboration fail in another system, this is
+  the part of the design most likely to be naive.
 - **Reviewer-safe copy:** not required — no competitive-audit detail or
   unpublished findings here.
 
@@ -369,10 +437,37 @@ improving recall.
 
 | # | question | class | who decides | by when |
 |---|---|---|---|---|
-| **Q1** | Should `ASSISTANT × ASSISTANT` merges be blocked? Two unverified statements reinforcing each other is a distinct hazard from the cross-class case 0.4.1 fixed. | **blocking** | research | before acceptance |
+| ~~**Q1**~~ | ~~Should `ASSISTANT × ASSISTANT` merges be blocked?~~ **ANSWERED 2026-07-31 (research):** do not block the merge; block the `observed_at` refresh. The hazard is currency, not confidence. See §3.2 and I10a. | ~~blocking~~ **resolved** | research | done |
 | **Q2** | Does an assistant *restating* user testimony reinforce the user's edge instead of creating an assistant edge? The elegant fix; blocked by the same-disclosure-class rule; would remove most of §8's stated cost. | `deferred` | research | own design round |
 | **Q3** | Store-level version guard (`PRAGMA user_version`) so an old library fails cleanly on a new `.db`, as exports now do. | `pre-release` | dev | before 0.5.0 |
 | **Q4** | Does `_source_type` return `STATED` or `INFERRED` for a non-chat assistant event? Currently non-`USER` non-chat → `INFERRED`, which is probably right but is inherited rather than chosen. | `pre-release` | dev | before implementation lands |
+
+---
+
+## 11. Changes in v2 (after research's internal review)
+
+1. **§3.1 failed open — fixed.** v1 routed *any* non-`user` subject to
+   `mentionable`, so a mangled or invented subject from an extractor we do not
+   control became assertable. Now only a **recognised** distinct entity is
+   mentionable; empty, pronoun, placeholder and unresolvable subjects fail
+   closed to `use_only`.
+2. **Q1 answered and the reasoning replaced.** `ASSISTANT × ASSISTANT` merges
+   are allowed; the **currency refresh** is blocked. My compounding-confidence
+   hazard was wrong — `confidence = max` synthesises nothing. The real exposure
+   is `observed_at`, i.e. freshness-pinning by self-repetition. New **I10a**.
+3. **I3b added.** §6 tested only prohibitions. Nothing checked that the paths
+   §3.2 calls *allowed* actually work, so a too-broad guard would silently block
+   user corrections with every prohibition test still green.
+4. **I10 added** for the new class against the consolidation defect this spec
+   discovered (fixed separately in 0.4.4, GHSA-hcj3-8jqc-wqrp).
+5. **§7's injection bound deleted**, moved to §8 as an unbounded limit. The turn
+   is ephemeral; the store is persistent and re-injected. Persistence is a
+   different exposure, not a weaker utterance.
+6. **§9 brief extended** to ask the external reviewer specifically about
+   self-corroboration.
+7. **Status → accepted-with-amendments (internal).** Per `PROCESS.md` this does
+   **not** authorise implementation: external review is outstanding and the
+   amended version needs approval.
 
 ---
 

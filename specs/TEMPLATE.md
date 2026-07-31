@@ -63,9 +63,25 @@ everyone was reasoning about identity semantics.*
 For every operation this change performs on stored state, state the outcome
 for each combination. **An unanswered cell blocks the change.**
 
-| operation | user × user | user × third-party | third-party × third-party | involving quarantined | involving `use_only` |
+**Enumerate the classes from code, not from this table** — `EvidenceAuthor` and
+`Disclosure` are enums and gain members. A matrix hardcoded here goes stale
+silently; one built from today's members cannot.
+
+**Be directional where the operation is.** Supersession, absorption and
+reinforcement all distinguish the **prior/surviving** edge from the
+**incoming/candidate** one, and **the 0.4.1 defect lived precisely in that
+asymmetry** — `prior=user, incoming=third-party` and its reverse are different
+operations with different correct answers, so a single `user × third-party` cell
+cannot express the bug the section exists to prevent. Use two rows.
+
+| operation | prior=A, incoming=B | prior=B, incoming=A | same-class | involving quarantined | involving `use_only` |
 |---|---|---|---|---|---|
 | | | | | | |
+
+*(For unary operations use a state-transition table instead; for batch
+operations state the rule over the set — and say explicitly whether the result's
+provenance is derived from the **whole set** or from one member. Deriving it
+from one member is what produced GHSA-hcj3-8jqc-wqrp.)*
 
 Then answer explicitly:
 
@@ -217,7 +233,12 @@ first.
 
 ## Reviewer checklist
 
-- [ ] §3 has no unanswered cells
+- [ ] §3 has no unanswered cells, and is **directional** where the operation is
+- [ ] §3's classes were read from the enums, not copied from the template
+- [ ] Prohibitions AND the corresponding **permissions** are both tested — a
+      guard drawn too broadly passes every prohibition test
+- [ ] Every default fails **closed**: an unresolvable input costs assertability
+      rather than granting it
 - [ ] §2 consumers were enumerated by grep, not recall
 - [ ] Every §6 invariant has a check that actually runs
 - [ ] §5 regimes are reachable by tests, or the change is experimental,
