@@ -66,18 +66,30 @@ def test_dispute_removes_from_assertable_but_keeps_history():
         mem.close()
 
 
-def test_confirm_refreshes_validity_and_blocks_claim_elevation():
+def test_confirm_refreshes_liveness_not_first_known_and_blocks_claim_elevation():
+    """M2 (0.4.5). This test previously asserted
+    `refreshed.valid_from.date() == "2026-07-16"` — i.e. it **encoded the
+    defect**: confirmation moved the fact's first-known date, so a preference
+    stated in January and confirmed in March rendered to the model as
+    "(since March)".
+
+    That is the same failure C′ removed from the reinforcement path in 0.4.3,
+    and this test is why the sibling survived: the contract said `valid_from`
+    is immutable, and a green test asserted the opposite. Confirmation is new
+    evidence about **liveness**, so it advances `observed_at`."""
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d)
         fact = next(e for e in mem.store.edges("u") if e.relation == "works_as")
         fact.needs_confirmation = True                    # simulate a stale flag
         mem.store.add_edge(fact)
+        first_known = fact.valid_from
 
         r = mem.confirm("u", fact.id, date="2026-07-16", actor="user:u")
         assert r["confirmed"] == fact.id
         refreshed = next(e for e in mem.store.edges("u") if e.id == fact.id)
         assert not refreshed.needs_confirmation
-        assert refreshed.valid_from.date().isoformat() == "2026-07-16"
+        assert refreshed.valid_from == first_known, "valid_from must be immutable"
+        assert refreshed.provenance.observed_at.date().isoformat() == "2026-07-16"
         assert refreshed.provenance.confidence >= 0.9
         assert any("confirmed" in ep.summary for ep in mem.store.episodes("u"))
 

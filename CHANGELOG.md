@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.4.5
+
+Three provenance defects, found by an audit of **every** maintenance-time
+operation (`specs/0002-maintenance-provenance-invariant.md`). The audit was
+prompted by two advisories in four days — GHSA-r7j7-5jq9-3f5q and
+GHSA-hcj3-8jqc-wqrp — which are the same shape: a maintenance operation crossing
+a trust boundary the write path guards correctly. **None of the three below is a
+trust-boundary bypass**, so no advisory accompanies this release.
+
+- **`confirm()` no longer moves a fact's first-known date.** It used to set
+  `valid_from` to the confirmation date — **the exact defect 0.4.3 shipped C′ to
+  eliminate**, in a sibling path the fix never touched. Because `render_edges`
+  emits `(since <valid_from>)` into answer context, a preference stated in
+  January and confirmed in March was rendered to the model as *"(since
+  2026-03-01)"* — a false statement in front of the model, not merely lost
+  history. **0.4.3's changelog asserted "valid_from is set at creation and never
+  mutated"; that was not true of `confirm()`, and now is.** A confirmation is
+  new evidence about *liveness*, so it advances `provenance.observed_at`.
+  **Not repairable:** dates already moved by a prior `confirm()` are
+  unrecoverable — the original is not recorded anywhere.
+  *A test asserted the old behaviour, which is why C′ did not catch it.*
+
+- **A staleness flag can no longer be cleared by a different author.**
+  `needs_confirmation` renders as *"confirm before relying on it"* — a question
+  addressed to the party who stated the fact. Reinforcement cleared it
+  unconditionally, and the 0.4.1 same-class guard compares **disclosure** class,
+  where `USER` and `SYSTEM` both sit in `MENTIONABLE`. So a system-authored
+  restatement answered a question meant for the user. Now only same-author
+  evidence clears it; `confirm()` remains the explicit path, and third-party
+  content was already correctly blocked.
+
+- **Outcome authorship is no longer overwritten.** `record_outcome()`'s
+  upgrade-in-place path replaced the episode's `author_of_evidence` with the new
+  actor's, discarding who made the earlier judgment — in a system whose stated
+  principle is supersession-never-erasure. The prior author is now retained in
+  the episode summary. Outcome episodes are excluded from recall, so nothing
+  reached the model either way.
+
+**Also added:** `tests/test_maintenance_invariant.py`, which states the class
+rather than the instances. The load-bearing one is **N7** — *a full `maintain()`
+cycle never moves an edge from the UNVERIFIED block to the GROUNDED one* —
+expressed over the observable boundary rather than any field, so it catches the
+next instance even when the mechanism is one nobody anticipated. **Both
+advisories would have failed N7.**
+
 ## 0.4.4 — security
 
 - **SECURITY: episode consolidation laundered third-party content into the

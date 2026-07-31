@@ -108,7 +108,17 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
                                                edge.provenance.observed_at)
             prior.provenance.confidence = max(prior.provenance.confidence,
                                               edge.provenance.confidence)
-            prior.needs_confirmation = False
+            # M3 (0.4.5): needs_confirmation renders as "confirm before relying
+            # on it" — a question addressed to the party who stated the fact.
+            # The 0.4.1 guard above compares DISCLOSURE class, and USER and
+            # SYSTEM share MENTIONABLE, so a system-authored restatement used to
+            # answer a question meant for the user. Same speaker/witness
+            # confusion that deferred spec 0001, one layer down. Only evidence
+            # from the same author class clears it; confirm() remains the
+            # explicit path.
+            if (prior.provenance.author_of_evidence
+                    == edge.provenance.author_of_evidence):
+                prior.needs_confirmation = False
             store.add_edge(prior)
             return
     for prior in priors:

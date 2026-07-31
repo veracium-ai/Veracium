@@ -490,7 +490,16 @@ class Memory:
                 f"ingest it via remember(author=USER) instead")
         from datetime import date as _date
         date = date or _date.today().isoformat()
-        edge.valid_from = _event_dt(date)
+        # M2 (0.4.5): valid_from is FIRST-KNOWN and immutable. This used to be
+        # `edge.valid_from = _event_dt(date)`, which is exactly the defect C′
+        # shipped in 0.4.3 to remove from the reinforcement path — the fix
+        # missed this sibling. render_edges emits "(since <valid_from>)" into
+        # answer context, so moving it put a FALSE STATEMENT in front of the
+        # model: a preference stated in January and confirmed in March read
+        # "(since March)". A confirmation is new evidence about LIVENESS, so it
+        # advances observed_at — the same resolution C′ applied to reinforcement.
+        edge.provenance.observed_at = max(edge.provenance.observed_at,
+                                          _event_dt(date))
         edge.needs_confirmation = False
         edge.provenance.confidence = max(edge.provenance.confidence, 0.9)
         self.store.add_edge(edge)
@@ -550,8 +559,18 @@ class Memory:
             old = prior.outcome.value if prior.outcome else Outcome.UNREVIEWED.value
             edge.outcome_counts[old] = max(0, edge.outcome_counts.get(old, 1) - 1)
             prior.outcome = outcome
-            prior.summary = summary
+            # M4 (0.4.5): this used to be
+            # `prior.provenance.author_of_evidence = author`, silently erasing
+            # who made the earlier judgment — in a system whose stated principle
+            # is supersession-never-erasure. The host controls `actor` in both
+            # directions, so this was provenance destruction rather than
+            # escalation, but destruction is the part that was wrong. Keep the
+            # trail; the summary already names the current actor.
+            was = prior.provenance.author_of_evidence
+            if was != author:
+                summary += f" [prior judgment was {was.value}-authored]"
             prior.provenance.author_of_evidence = author
+            prior.summary = summary
             self.store.add_episode(prior)
             upgraded = True
         else:
