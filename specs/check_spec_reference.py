@@ -38,7 +38,29 @@ GUARDED = (
     "src/veracium/lifecycle.py",    # expiry, staleness, liveness
     "src/veracium/gate.py",         # what may be asserted
     "src/veracium/portability.py",  # what stored state means across a boundary
+    # Added after review found the first list missed three surfaces that change
+    # trust behaviour without touching the obvious files:
+    "src/veracium/__init__.py",     # confirm() sets valid_from and is the
+                                    # sanctioned exit from needs_confirmation;
+                                    # correct() writes a superseding edge
+    "src/veracium/store/sqlite.py", # edges() defaults to active_only=True, and
+                                    # that default is load-bearing for every
+                                    # caller — it is what keeps T1 absorption
+                                    # from re-touching an invalidated prior
+    "src/veracium/proactive.py",    # disclosure-gated, and injects text into
+                                    # model context with NO user turn: a
+                                    # regression here volunteers use_only
+                                    # material nobody asked for
+    "src/veracium/introspect.py",   # the transparency surface — we already
+                                    # shipped a provenance misreport here
+                                    # (first_observed read a max()ed field)
 )
+
+# Deliberately NOT guarded, so the exclusions are a decision rather than an
+# oversight: compile.py builds the wiki, which is a derived view and never the
+# source of truth, and its inputs are already guarded via graph and gate. The
+# list covers what changes "what may be asserted, what is visible, or what
+# reaches model context" — not "important files". A noisy gate gets bypassed.
 
 TRAILER = re.compile(r"^Spec:\s*(\S.*)$", re.M)
 
