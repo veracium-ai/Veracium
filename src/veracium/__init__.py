@@ -28,10 +28,11 @@ from . import gate as _gate
 from . import lifecycle as _lifecycle
 from .config import MemoryConfig
 
-# Local-only abstention heuristic: computed on the answer text to emit a content-
-# free boolean for telemetry. The text itself never leaves.
-_ABSTAINED = re.compile(r"don'?t know|no (confirmed|record|information|such)|"
-                        r"unverified|can'?t (verify|confirm)|not (sure|aware)", re.I)
+# Local-only abstention heuristic: computed on the answer text to emit a
+# content-free boolean for telemetry. The text itself never leaves. Imported
+# from gate rather than restated — the previous local copy was narrower than
+# selfcheck's and under-counted abstentions.
+from .gate import ABSTAINED as _ABSTAINED  # noqa: E402
 from .graph import subgraph_for_query
 from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed

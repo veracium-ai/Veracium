@@ -22,9 +22,14 @@ class MemoryConfig:
     max_subgraph_edges: int = 40
     # Fraction of the subgraph budget reserved for time coverage when the store
     # is larger than the budget. Pure top-k has no coverage term, so facts that
-    # share vocabulary collapse the selection onto one period — an interval
-    # question then gets one endpoint. 0.0 restores pure relevance ranking.
-    subgraph_coverage_share: float = 0.25
+    # share vocabulary can collapse the selection onto one period.
+    # DEFAULT 0.0 (off): the mechanism is implemented and tested, but the
+    # measurement that motivated it was retracted — the benchmark sample it was
+    # diagnosed from turned out to be unrepresentative on exactly the dimension
+    # involved, so coverage has never been tested on data that could exercise
+    # it. Set >0 to enable; it will become the default if and when a balanced
+    # measurement supports it.
+    subgraph_coverage_share: float = 0.0
     max_recent_episodes: int = 12
     # proactive recall (recall with no query): how far ahead a dated commitment
     # counts as "coming due", and how far back "recent history" reaches.

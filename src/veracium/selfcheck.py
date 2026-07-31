@@ -29,12 +29,8 @@ from .config import MemoryConfig
 from .schema import EvidenceAuthor
 
 # Local, content-free heuristics on the gate's OWN output (never leaves the box).
-_ABSTAINED = re.compile(
-    r"don'?t know|"
-    r"(no|not any|isn'?t any|don'?t have (any|a)) "
-    r"(confirmed |verified |grounded |such )?(record|information|memory|data|knowledge|such)|"
-    r"nothing in (grounded |verified )?memory|not in (my |grounded )?memory|"
-    r"unverified|can'?t (verify|confirm)|cannot (verify|confirm)|not (sure|aware)", re.I)
+from .gate import ABSTAINED as _ABSTAINED
+
 _HEDGED = re.compile(r"unverified|no confirmed|not confirmed|claim|never confirmed|"
                      r"didn'?t confirm|don'?t know", re.I)
 _AMOUNT = re.compile(r"4[,.]?200|\$?4,?200|\$4\b")

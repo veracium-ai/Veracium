@@ -1,6 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.4.3
+
+- **telemetry: the abstention heuristic under-counted abstentions.** It existed
+  twice — a narrow copy behind `answer`'s content-free `abstained` counter and a
+  broader one in `selfcheck` — and the narrow copy missed the most common
+  refusal phrasing the gate actually emits (*"I don't have any confirmed
+  information about X"*). Abstention is the metric that most directly tracks the
+  product's core guarantee, so under-reporting it was the worst place for a
+  duplicated regex to drift. Now defined once as `gate.ABSTAINED` and imported
+  by both; regression test uses verbatim openings from real judged answers.
+  Found while hand-classifying benchmark misses, not by any test.
 
 - **BREAKING (semantics): `valid_from` is now first-known and immutable.**
   Reinforcement used to overwrite it with the latest restatement date, so a
@@ -25,10 +35,15 @@
   Found by a LongMemEval experiment; the write-path defect, not the benchmark,
   is the reason it ships.
 
-- **retrieval: time coverage in subgraph selection (E1).** When a store is
-  larger than `max_subgraph_edges`, most of the budget is still filled by
-  relevance alone but a reserved tail (`subgraph_coverage_share`, default
-  0.25) goes to periods not already represented. Pure top-k has no coverage
+- **retrieval: time coverage in subgraph selection — implemented but OFF by
+  default (`subgraph_coverage_share = 0.0`).** When enabled, most of the budget
+  is still filled by relevance alone and a reserved tail goes to periods not
+  already represented. **It ships disabled because it is unvalidated**: the
+  measurement that motivated it was retracted — the benchmark sample it was
+  diagnosed from proved unrepresentative on exactly the dimension involved, so
+  the mechanism has never been tested on data that could exercise it. The code
+  and tests are here so the experiment can run; the default will change only if
+  a balanced measurement supports it. Pure top-k has no coverage
   term, so a cluster of facts sharing the question's vocabulary takes the
   whole budget and a question spanning months gets answered from a single
   day — measured on LongMemEval, where an interval question recalled 37 date

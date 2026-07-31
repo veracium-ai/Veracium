@@ -18,9 +18,30 @@ from __future__ import annotations
 
 from typing import Optional
 
+import re
+
 from .graph import render_edges
 from .llm.base import Complete
 from .schema import Edge, Episode
+
+# Canonical local heuristic for "the gate declined to assert". Content-free and
+# never leaves the box: it turns the gate's OWN output into a boolean for
+# telemetry and self-check. Defined here, once, because it was previously
+# duplicated — a narrow copy in Memory.answer's telemetry and a broader one in
+# selfcheck — and the narrow copy silently under-counted the most common refusal
+# phrasing we actually emit ("I don't have any confirmed information about X"),
+# so the abstention rate we report was lower than the abstention rate we had.
+# Abstention is the metric that most directly tracks our core guarantee; it must
+# not be measured by whichever regex a caller happened to copy.
+ABSTAINED = re.compile(
+    r"don'?t know|"
+    r"(no|not any|isn'?t any|don'?t have (any|a)|do not have (any|a)|"
+    r"have no) "
+    r"(confirmed |verified |grounded |such )?"
+    r"(record|information|memory|data|knowledge|such)|"
+    r"nothing in (grounded |verified )?memory|not in (my |grounded )?memory|"
+    r"unverified|can'?t (verify|confirm)|cannot (verify|confirm)|"
+    r"not (sure|aware)", re.I)
 
 
 def partition(edges: list[Edge], episodes: list[Episode]) -> tuple[str, str]:

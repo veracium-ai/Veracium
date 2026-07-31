@@ -158,3 +158,31 @@ def test_value_key_keeps_third_person_possessives():
     assert _value_key("his assistant Dana") != _value_key("her assistant Dana")
     assert _value_key("my dog Ollie") == _value_key("dog Ollie")
     assert _value_key("their dog Ollie") == _value_key("dog Ollie")
+
+
+def test_abstention_heuristic_catches_the_phrasings_the_gate_actually_emits():
+    """The telemetry copy of this heuristic was narrower than selfcheck's and
+    missed the most common refusal phrasing our gate produces, so the abstention
+    rate we reported was lower than the abstention rate we had. These four
+    strings are verbatim openings from real judged answers."""
+    from veracium.gate import ABSTAINED
+    observed = [
+        "I don't have any confirmed information in your memory about ways you...",
+        "I don't have any information in your grounded memory about tips for...",
+        "I don't have any confirmed record of your painting activities or...",
+        "I have no confirmed record that you have actually gotten your guitar...",
+    ]
+    for text in observed:
+        assert ABSTAINED.search(text), f"missed a real refusal: {text[:50]!r}"
+    # and it must not fire on an answer that merely mentions memory
+    for text in ("Your grounded memory records that you prefer detailed answers.",
+                 "You have five trips recorded: Yellowstone, Yosemite, and three others."):
+        assert not ABSTAINED.search(text), f"false positive: {text[:50]!r}"
+
+
+def test_one_abstention_heuristic_not_two():
+    """It was duplicated and the copies diverged; there is now one definition."""
+    from veracium import _ABSTAINED
+    from veracium.gate import ABSTAINED
+    from veracium.selfcheck import _ABSTAINED as sc
+    assert _ABSTAINED is ABSTAINED is sc
