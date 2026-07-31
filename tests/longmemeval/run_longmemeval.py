@@ -120,7 +120,8 @@ def ingest_item(mem, item, *, arm: str, serializer, cache=None) -> dict:
 def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=True,
         context: bool = True, budget=None, note: str = "", workers: int = 1,
         out_dir: Path = OUT_DIR, cache_path: Path | None = None,
-        max_edges: int | None = None, bar: str = "none") -> dict:
+        max_edges: int | None = None, bar: str = "none",
+        coverage: float | None = None) -> dict:
     """Runs the requested control arms over `items`. Returns the run record;
     writes one hypothesis file per arm."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -158,6 +159,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
               "workers": workers, "max_subgraph_edges": max_edges or "default(40)",
               "extraction_bar": bar,
+              "coverage_share": coverage if coverage is not None else "default",
               "throughput": getattr(provider, "throughput", {}),
               "identity": identity, "answer_template_version": ANSWER_TEMPLATE_VERSION,
               "items": len(items), "results": {}, "cache": None}
@@ -169,6 +171,10 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         construction (fresh user_id + fresh store)."""
         d = tempfile.mkdtemp(prefix="veracium-lme-")
         cfg = MemoryConfig(db_path=f"{d}/lme.db", wiki_recompile_after_writes=0)
+        if coverage is not None:
+            # 0.0 = pure relevance (the pre-coverage selector), so the
+            # write-path change can be isolated from the selection change
+            cfg.subgraph_coverage_share = coverage
         if max_edges:
             # how much of memory one query may see. At LongMemEval scale
             # (~1.7k facts/item) the default 40 is ~2% of the store.
@@ -301,6 +307,8 @@ if __name__ == "__main__":
     ap.add_argument("--no-context", action="store_true",
                     help="ablation: isolated per-turn ingestion")
     ap.add_argument("--budget", type=int, default=None)
+    ap.add_argument("--coverage", type=float, default=None,
+                    help="subgraph_coverage_share override; 0.0 = pure relevance")
     ap.add_argument("--bar", choices=["none", "registry", "registry+len"],
                     default="none", help="extraction strictness bar (over-extraction test)")
     ap.add_argument("--max-edges", type=int, default=None,
@@ -330,7 +338,7 @@ if __name__ == "__main__":
                   arms=tuple(a.strip() for a in args.controls.split(",") if a.strip()),
                   cache_enabled=not args.no_cache, context=not args.no_context,
                   budget=args.budget, note=args.note, max_edges=args.max_edges,
-                  bar=args.bar)
+                  bar=args.bar, coverage=args.coverage)
     print(json.dumps({k: rec[k] for k in ("stamp", "arm", "items", "cache", "results")},
                      indent=2))
     print("\nNext: run the OFFICIAL judge, e.g.\n"
