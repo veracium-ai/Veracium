@@ -9,9 +9,9 @@
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | **v2** — amended after research's internal review (`spec-0001-research-review.md`); §11 lists the changes. *Re-read before editing; quote the version you approve.* |
-| **Status** | **accepted-with-amendments** (research, internal) — **not implementable yet**: external review outstanding, and per `PROCESS.md` accepted-with-amendments does not authorise implementation until every amendment is resolved and the amended version approved |
+| **Status** | 🛑 **DEFERRED** — external review 2026-07-31 recommends defer pending major amendments, and dev accepts. **The class is confirmed needed; the assertability widening is not established.** See §12 and `proposals/spec-0001-external-review-response.md`. **Do not implement any part of §3.1 or §4.** |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
-| **External review** | required — full spec (touches `schema.py`, `ingest.py`, `lifecycle.py`, `introspect.py`, `__init__.py`) · **ready to send; brief in §9** |
+| **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -254,7 +254,11 @@ a change to what the model reads.
 
 **Interfaces:** `EvidenceAuthor` gains a member (additive for callers that pass
 it; **not** additive for callers that exhaustively match on it). MCP `remember`
-gains `"assistant"` in its author map and tool description. No CLI change. Export
+gains `"assistant"` in its author map and tool description. **CLI changes
+additively**: `cli.py:299`'s `--author` `choices` must accept `assistant`, with
+help text, a parsing test and docs. *(v2 said "No CLI change" while §2 said the
+opposite — the external reviewer found the contradiction in my own document; §2
+was written later and I never reconciled them.)* Export
 `FORMAT_VERSION` 2 → 3.
 
 **Migration:** existing stores are untouched — no edge changes author, and no
@@ -468,6 +472,60 @@ improving recall.
 7. **Status → accepted-with-amendments (internal).** Per `PROCESS.md` this does
    **not** authorise implementation: external review is outstanding and the
    amended version needs approval.
+
+---
+
+## 12. External review outcome — DEFERRED (2026-07-31)
+
+**Accepted in full. The reviewer confirms `EvidenceAuthor.ASSISTANT` is needed
+and that this spec does not establish that assistant claims about non-user
+subjects belong in the ordinary grounded channel.** Full response:
+`proposals/spec-0001-external-review-response.md`.
+
+**The two findings I verified, both worse than stated:**
+
+1. **The subject rule cannot work, and not because the alias list is short.**
+   *"Quentin prefers dark mode"* bypasses it — and **veracium has no
+   display-name concept at all** (`user_id` is opaque; no `display_name`
+   anywhere in `src/`), so the library cannot know the store owner's name. **No
+   denylist is writable.** Measured over 131,574 triples from the LongMemEval
+   extraction cache: **19,096 distinct subjects, only 39.4% the literal
+   `"user"`**. v2 would route **60.6% of triples** to `mentionable`, through a
+   long tail of bare personal names (`mother`, `lizzie`, `rachel`). Positive
+   resolution to a canonical entity id is the only sound mechanism and **we have
+   not built entity resolution.**
+2. **Subject identity does not establish evidence authority.** *"The deploy
+   failed"* has a non-user subject and nothing shows the assistant deployed
+   anything. I called it *"first-party testimony about its own action"* — that
+   phrase assumes the action. I generalised from research's example rather than
+   its principle. The corpus agrees: `assistant` is the **second most common
+   subject** (5,436), so "the assistant did X" is frequent and would have gone
+   mentionable on the strength of not being the string `user`.
+
+**Structural correction adopted:** v2 bundled *introducing accurate provenance*
+with *widening assertability*. Only the first is justified today. **v3 ships
+`ASSISTANT` at `use_only` for every subject, with attribution preserved in
+rendering** — which delivers the actual purpose (hosts stop mislabelling
+assistant content as `SYSTEM`) without opening a new persistent assertion
+channel. **Cost recorded before the fact: this is more conservative than current
+Arm C, so it moves our benchmark score down or nowhere, never up.**
+
+**Also accepted:** I2a (direct fail-closed tests); proactive eligibility assessed
+separately from answer-context eligibility; the CLI contradiction (fixed in §4);
+Q4 promoted to **blocking**; the `PRAGMA user_version` guard promoted to a
+**hard release gate**; I10a widened to freeze *every* ranking-relevant field;
+consolidation provenance to be specified in full, including whether one trusted
+input may lift weaker ones; and I6 to carry a frozen acceptance rule.
+
+**Reopened with research:** the fourth `Disclosure` tier. Research rejected it
+("the tier was never the problem, the author was"), but the rendering analysis
+shows a real expressive gap — we cannot say *"this may be discussed, but only as
+something the assistant previously claimed."* Sequencing dissolves it: v3 does
+not need the tier.
+
+**Routed to workflow-platform:** what counts as "the assistant" in a multi-agent
+deployment. Without an `author_id`, two unrelated agents mutually reinforce as
+one source class, which interacts directly with §3.2's self-reinforcement rule.
 
 ---
 
