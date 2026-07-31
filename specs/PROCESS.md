@@ -30,7 +30,13 @@ thinks of them.**
 **Admission rule for this document and the template: every required
 question exists because we shipped, or nearly shipped, a defect it would
 have caught.** New questions may be added preventively, but the rationale
-is recorded. Questions that never catch anything get removed.
+is recorded.
+
+**Removing a question requires all three:** in force for **≥10 full specs** ·
+caught nothing in that time · **and the failure mode it targets is now
+prevented by an executable check.** Remove prose only when a mechanism has
+replaced it — *a question that catches nothing may be why nothing has gone
+wrong.* Record removals with the evidence.
 
 ---
 
@@ -43,8 +49,20 @@ disclosure classes, its lifecycle, or how it is selected for recall.
 bumps, or pure refactors that provably preserve behaviour. *If unsure,
 write the spec — it is an hour, and the advisory cost more.*
 
-**Lightweight path:** changes that touch no stored state and no recall
-selection may use §1, §4 and §7 only, marked `lightweight`.
+**Lightweight path.** A change is **full** if it touches any file on the
+guarded list (`specs/check_spec_reference.py`); otherwise it is
+**lightweight**. The trigger is the list, never a prose judgement, so the
+process and the checker cannot disagree.
+
+**Lightweight specs still require §1, §4, §6, §7 and §8.** Only §§2, 3 and 5 —
+field contracts, trust-class matrix, regime analysis — are conditional on being
+a full spec, because those are the guarded-surface questions.
+
+**§6 and §8 are never skippable.** An invariant with no executable check and a
+claim we cannot support are failure modes that do not care whether a file is on
+a list. Where they are genuinely inapplicable, write `n/a — <reason>`; that
+costs a line and catches the case where the author assumed inapplicability and
+was wrong.
 
 ---
 
@@ -60,7 +78,9 @@ often catch defects — field contracts, trust-class matrix, regime analysis —
 are written *before* the author has an implementation they are attached to.
 
 **3a. Internal review** — at minimum one reviewer who did not write it.
-Reviewers have distinct standing:
+**The author may not silently self-approve.** If no other session is available,
+name the waiver and its holder in the spec; an unnamed waiver is
+indistinguishable from nobody having looked. Reviewers have distinct standing:
 - **dev** owns execution facts, code reality, and implementability;
 - **research** owns semantics, trust-model consequences, and any public
   claim;
@@ -71,9 +91,11 @@ A reviewer's job is not only to find errors. It is to say **where they
 think the author has drawn the wrong conclusion** — which found more real
 defects this week than error-spotting did.
 
-**3b. External review — REQUIRED for every specification.** *(Quentin,
-2026-07-31.)* Every spec goes to the trusted third-party reviewer before
-the decision in stage 4.
+**3b. External review — REQUIRED for every full spec.** *(Quentin,
+2026-07-31.)* Lightweight specs do not require it. "Full" means "touches a
+guarded file", so the trigger is mechanical rather than a judgement call. Every
+full spec goes to the trusted third-party reviewer before the decision in
+stage 4.
 
 **Why, specifically.** The two internal sessions catch different things and
 both miss a third class. Over the past week the external reviewer caught,
@@ -99,7 +121,9 @@ the spec contains competitive-audit detail or unpublished findings, send a
 user-affecting defect is not held for review; it ships, and the spec goes
 for **retrospective** external review, with that fact recorded in the spec.
 The 0.4.1 advisory fix went out ~35 minutes after escalation, and delaying
-it would have been the wrong call.
+it would have been the wrong call. **The carve-out carries a deadline** —
+`Spec-Retrospective-Due` below is mandatory and machine-checked, because a
+deadline is what keeps this a carve-out rather than a door.
 
 **If the reviewer is unavailable:** for a *lightweight* change, record the
 unavailability and proceed. For a full spec touching stored state, trust
@@ -127,6 +151,48 @@ as a regression test.
 **7. Release note discipline** — the spec's §8 claim language is what goes
 in the changelog. If the spec says a claim is unsupported, the changelog
 does not make it.
+
+---
+
+## How a commit references its spec
+
+`specs/check_spec_reference.py` runs in CI and requires every commit touching a
+**guarded** file to carry one of the forms below. It is a **tripwire**: it
+establishes that a reference is present and well-formed, **not** that the
+process was followed. Read a green result accordingly.
+
+```
+Spec: specs/0007-generated-content-trust-class.md
+```
+
+```
+Spec-Exception: docs-only
+Spec-Exception-Reason: corrected a stale comment in graph.py
+```
+
+```
+Spec-Exception: security-hotfix
+Spec-Exception-Reason: GHSA-r7j7-5jq9-3f5q, cross-trust identity merges
+Spec-Retrospective-Due: 2026-08-04
+```
+
+Exception categories: `docs-only` · `test-only` ·
+`behavior-preserving-refactor` · `security-hotfix`. A reason is required, and
+`security-hotfix` additionally requires the retrospective deadline.
+
+**These must be real Git trailers**, which means the trailer block is the last
+paragraph of the message and any wrapped value is **indented** on its
+continuation lines. This is not pedantry: when the checker was hardened, *all
+three* of our existing `Spec:` lines turned out not to be trailers at all — an
+unindented continuation had broken every one, and the old regex accepted text
+Git itself does not recognise.
+
+**Changes to the process controls** — the checker, `PROCESS.md`, `TEMPLATE.md`,
+and the CI workflow — require a `Process-Change: <reason>` trailer. That does
+not *prevent* a change from weakening the gate and having the weakened gate
+approve itself, since CI runs the checker from the branch's own tree; it removes
+"nobody noticed" as an explanation. Closing it properly needs CODEOWNERS or a
+base-branch-sourced workflow, which is repo settings rather than code.
 
 ---
 
@@ -173,6 +239,13 @@ you claim to have created.
 
 **Hard gates — these block regardless of schedule pressure:** an unanswered
 question in the trust-class matrix (§3); a field whose documented contract
-the change violates (§2); an invariant with no executable check (§6); a
-known regime the tests cannot reach (§5); **or a full spec that has not had
-external review (3b), outside the security-hotfix carve-out.**
+the change violates (§2); an invariant with no executable check (§6);
+**or a full spec that has not had external review (3b), outside the
+security-hotfix carve-out.**
+
+**Regimes the tests cannot reach — two release classes, not one rule.**
+*Stable (on by default):* an unreachable regime **blocks**. *Experimental (off
+by default):* may ship with the regime stated as untested in §8, provided the
+default is off and §8 says so. **Flipping an experimental default to on is
+itself a change requiring a spec, and that spec's §5 must reach the regime** —
+otherwise the split becomes a two-step route to shipping untested behaviour.

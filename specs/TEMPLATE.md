@@ -14,16 +14,18 @@
 | **Version** | v1 — *re-read before editing; quote the version you approve* |
 | **Status** | draft · in review · accepted · accepted-with-amendments · deferred · rejected |
 | **Internal reviewers** | dev · research · workflow-platform *(name who actually reviewed; note any unavailable)* |
-| **External review** | required for full specs · date sent / returned · reviewer-safe copy? · **retrospective** if security hotfix |
+| **External review** | required for **full** specs (= touches a guarded file); not required for lightweight · date sent / returned · reviewer-safe copy? · **retrospective** if security hotfix |
 | **Decision + date** | |
-| **Path** | full · `lightweight` (§1, §4, §7 only) |
+| **Path** | full · `lightweight` (§§1, 4, 6, 7, 8; §§2, 3, 5 omitted) |
 
 ---
 
 ## 1. Problem and motivation
 
 What is wrong today, for whom, and **what happens if we do nothing**. One
-paragraph. If the answer to the last question is "nothing much", stop here.
+paragraph. If the honest answer to the last question is "nothing much", the
+correct outcome is **rejection at proposal stage** — that is what the stage is
+for.
 
 **Alternatives rejected**, with the reason. *(A spec that never considered
 an alternative usually has not considered the problem.)*
@@ -84,6 +86,21 @@ against it.
 
 ---
 
+## 3b. Authorization and scope — *full specs only*
+
+*Trust class answers **whose claim this is and what authority it has**. It does
+not answer **which user is permitted to see it**. Those are separate invariants,
+and a claim can be fully user-authoritative and still private to another
+tenant.*
+
+- Does this cross a **user, tenant, or scope** boundary? Which?
+- Who may **see** the affected state, and does this change that set?
+- What happens on **scope change** — sharing, un-sharing, group join or leave,
+  revocation?
+- Does anything become **visible to a principal who could not see it before**?
+
+---
+
 ## 4. Behaviour
 
 What the change does, in observable terms — what a caller sees, not how it
@@ -106,8 +123,13 @@ store to expose, and only a real corpus builds one.*
 - At what **scale, density, or duration** does this behave differently?
   (store size, edge count, history length, relation cardinality, tenancy)
 - Which **thresholds or caps** does it interact with?
-- **Do the tests reach those regimes?** If not, this is a hard gate: either
-  add a test that does, or state the regime as knowingly untested in §8.
+- **Do the tests reach those regimes?** If not, which release class is this?
+  **Stable (on by default):** an unreachable regime **blocks** — add a test
+  that reaches it. **Experimental (off by default):** may ship with the regime
+  stated as untested in §8, provided the default is off and §8 says so.
+  **Flipping that default to on is itself a change requiring a spec whose §5
+  reaches the regime**, or the split becomes a two-step route to shipping
+  untested behaviour.
 - What behaves differently on a **cold vs warm** store, or first vs
   thousandth call?
 
@@ -185,8 +207,11 @@ it**.*
 
 ## 10. Open questions
 
-Things genuinely undecided, each with **who decides** and **by when**.
-Better here than resolved by whoever implements first.
+Things genuinely undecided, each with **who decides**, **by when**, and a
+class: `blocking` (before acceptance) · `pre-release` · `deferred`.
+**Unclassified defaults to `blocking`**, so the cheap path is to think about it
+rather than leave it blank. Better here than resolved by whoever implements
+first.
 
 ---
 
@@ -195,7 +220,11 @@ Better here than resolved by whoever implements first.
 - [ ] §3 has no unanswered cells
 - [ ] §2 consumers were enumerated by grep, not recall
 - [ ] Every §6 invariant has a check that actually runs
-- [ ] §5 regimes are reachable by tests, or declared untested in §8
+- [ ] §5 regimes are reachable by tests, or the change is experimental,
+      off by default, and §8 says so
+- [ ] §3b: no principal can see anything they could not see before (full specs)
+- [ ] §6 and §8 are filled in — `n/a — <reason>` counts, blank does not
+- [ ] §10 questions each carry a class; unclassified means blocking
 - [ ] §8 states what this does *not* establish
 - [ ] I have said where I think the **author's conclusion is wrong**, not
       only where the text is wrong
