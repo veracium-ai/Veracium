@@ -32,7 +32,11 @@ def expire(store, user_id: str, config, *, now: Optional[datetime] = None) -> di
         lifetime = config.volatility_lifetime_days.get(e.volatility)
         if lifetime is None:
             continue
-        age_days = (now - e.valid_from).days
+        # liveness ages against observed_at (when we last recorded this),
+        # NOT valid_from (when the fact became true) — a fact stated years ago
+        # and restated yesterday is live; one recorded once and never again is
+        # the one that should lapse
+        age_days = (now - e.provenance.observed_at).days
         if age_days <= lifetime:
             continue
         behavior = DEFAULT_EXPIRY[e.volatility]

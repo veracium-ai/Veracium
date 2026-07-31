@@ -57,7 +57,10 @@ def test_reinforcement_refreshes_not_duplicates():
         mem.remember("u", "still sick", date="2026-01-05")  # re-stated → refresh
         active = mem.store.edges("u", relation="health_state")
         assert len(active) == 1                              # not duplicated
-        assert active[0].valid_from.date().isoformat() == "2026-01-05"  # refreshed
+        # valid_from is FIRST-KNOWN and immutable; the restatement refreshes
+        # liveness on observed_at, which is the field lifecycle now ages against
+        assert active[0].valid_from.date().isoformat() == "2026-01-01"
+        assert active[0].provenance.observed_at.date().isoformat() == "2026-01-05"
         mem.close()
 
 
@@ -73,7 +76,8 @@ def test_reinforcement_matches_paraphrased_values():
         mem.remember("u", "My dog Ollie is great.", date="2026-01-05")  # paraphrase → refresh
         active = mem.store.edges("u", relation="has_pet")
         assert len(active) == 1                              # reinforced, not duplicated
-        assert active[0].valid_from.date().isoformat() == "2026-01-05"
+        assert active[0].valid_from.date().isoformat() == "2026-01-01"   # first-known
+        assert active[0].provenance.observed_at.date().isoformat() == "2026-01-05"
         mem.close()
 
 

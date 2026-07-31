@@ -80,7 +80,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             continue
         if e.needs_confirmation:
             confirms.append((f"{e.relation}: {e.object} — confirm when natural "
-                             f"(unrefreshed since {e.valid_from.date()})", e))
+                             f"(unrefreshed since {e.provenance.observed_at.date()})", e))
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):

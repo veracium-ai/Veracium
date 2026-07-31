@@ -49,7 +49,7 @@ def test_introspect_summary_counts():
         assert out["by_disclosure"]["quarantined"] == 1
         assert out["retired"] == {"superseded": 1}
         assert out["episodes"]["interaction"] == 3
-        assert out["first_observed"] and out["last_observed"]
+        assert out["first_known"] and out["last_recorded"]
         json.dumps(out)  # JSON-able throughout
         mem.close()
 

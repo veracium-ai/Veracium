@@ -49,7 +49,11 @@ def report(store, user_id: str, *, mode: str = "summary") -> dict:
         if not e.active:
             _count(retired, e.invalidation_reason or "unknown")
 
-    dates = [e.provenance.observed_at for e in edges]
+    # first/last OBSERVED would be wrong from observed_at alone: it is max()ed
+    # on restatement, so "first" would report the latest recording. The
+    # first-known axis is valid_from.
+    firsts = [e.valid_from for e in edges]
+    lasts = [e.provenance.observed_at for e in edges]
     out = {
         "user_id": user_id,
         "facts": len(facts),
@@ -62,8 +66,8 @@ def report(store, user_id: str, *, mode: str = "summary") -> dict:
         "retired": dict(sorted(retired.items())),  # superseded history, disputes, absorbed dups
         "episodes": {"interaction": sum(1 for ep in episodes if ep.kind != "outcome"),
                      "outcome": sum(1 for ep in episodes if ep.kind == "outcome")},
-        "first_observed": min(dates).isoformat() if dates else None,
-        "last_observed": max(dates).isoformat() if dates else None,
+        "first_known": min(firsts).isoformat() if firsts else None,
+        "last_recorded": max(lasts).isoformat() if lasts else None,
     }
     if mode == "categories":
         cats: dict[str, list[str]] = {}

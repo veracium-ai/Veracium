@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- **BREAKING (semantics): `valid_from` is now first-known and immutable.**
+  Reinforcement used to overwrite it with the latest restatement date, so a
+  fact stated in January and restated in March reported `valid_from` = March
+  and the January date was unrecoverable. Because `render_edges` emits
+  `(since <valid_from>)` into recall context, that was **a false statement in
+  the answer context**, not merely lost history — and it violated the field's
+  own documented contract (`edges_since` already distinguishes "when it became
+  true" from "when veracium recorded it"). Now: `valid_from` is set at creation
+  and never mutated; `provenance.observed_at` carries the latest recording (it
+  already did); **`maintain()` ages liveness against `observed_at`** instead, so
+  a restatement still keeps a fact alive — it refreshes the field that means
+  liveness. T1 absorption's winner inherits the **earliest** `valid_from`
+  (`min`, was `max`) and the latest `observed_at`; recall's recency tiebreak
+  and proactive recall's "unrefreshed since" read `observed_at`.
+  **`introspect()` renames `first_observed`/`last_observed` →
+  `first_known`/`last_recorded`** — the old `first_observed` was computed from
+  the `max()`ed field and so reported *last* observed under a "first" name.
+  **Forward-fixing only:** already-collapsed `valid_from` values in existing
+  stores cannot be recovered. Invariant now asserted on every write path:
+  `valid_from <= observed_at`.
+  Found by a LongMemEval experiment; the write-path defect, not the benchmark,
+  is the reason it ships.
+
 - **retrieval: time coverage in subgraph selection (E1).** When a store is
   larger than `max_subgraph_edges`, most of the budget is still filled by
   relevance alone but a reserved tail (`subgraph_coverage_share`, default

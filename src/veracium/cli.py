@@ -209,7 +209,7 @@ def _memory_verbs(args) -> int:
             print(f"memory for '{out['user_id']}': {out['facts']} facts, "
                   f"{out['unverified_claims']} unverified claims, "
                   f"{out['episodes']['interaction']} episodes "
-                  f"({out['first_observed'] or 'n/a'} → {out['last_observed'] or 'n/a'})")
+                  f"({out['first_known'] or 'n/a'} → {out['last_recorded'] or 'n/a'})")
             for section in ("by_relation", "by_author", "by_disclosure", "retired"):
                 if out[section]:
                     print(f"  {section.replace('_', ' ')}: "

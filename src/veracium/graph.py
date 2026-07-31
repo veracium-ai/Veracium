@@ -95,7 +95,15 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
     for prior in priors:
         pk = _value_key(prior.object)
         if pk == same or _subsumes(pk, same):  # reinforcement
-            prior.valid_from = max(prior.valid_from, edge.valid_from)
+            # valid_from is FIRST-KNOWN and immutable: it is the field the
+            # codebase already documents as "when it became true", the field
+            # render_edges states to the model as "(since X)", and the field E1
+            # clusters on. Overwriting it with the latest restatement made that
+            # rendering a false statement in the answer context, not merely lost
+            # history. Liveness lives on observed_at, which already means
+            # "when veracium recorded this" and is what lifecycle now ages
+            # against — so a restatement still refreshes liveness (the lapse
+            # argument), it just refreshes the field that means liveness.
             prior.provenance.observed_at = max(prior.provenance.observed_at,
                                                edge.provenance.observed_at)
             prior.provenance.confidence = max(prior.provenance.confidence,
@@ -105,7 +113,11 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
             return
     for prior in priors:
         if _subsumes(same, _value_key(prior.object)):  # absorption
-            edge.valid_from = max(edge.valid_from, prior.valid_from)
+            # the winner is the same fact restated more fully, so it inherits
+            # the EARLIEST point at which the fact was known — min, not max
+            edge.valid_from = min(edge.valid_from, prior.valid_from)
+            edge.provenance.observed_at = max(edge.provenance.observed_at,
+                                              prior.provenance.observed_at)
             edge.provenance.confidence = max(edge.provenance.confidence,
                                              prior.provenance.confidence)
             prior.note = ((f"{prior.note}; " if prior.note else "")
@@ -196,7 +208,9 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     # recency breaks ties: among equally-relevant facts the newer one is the
     # better guess, and it makes truncation deterministic rather than dependent
     # on store insertion order
-    scored.sort(key=lambda t: (-t[0], -t[1].valid_from.timestamp()))
+    # recency tiebreak reads observed_at: "most recently recorded", not
+    # "became true earliest" — valid_from is the first-known axis
+    scored.sort(key=lambda t: (-t[0], -t[1].provenance.observed_at.timestamp()))
     if len(scored) <= max_edges:
         return [e for _, e in scored]        # nothing to choose between
     return _cover(scored, max_edges, coverage_share)

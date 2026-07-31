@@ -64,7 +64,8 @@ def test_more_specific_arrival_absorbs_prior():
     assert [e.id for e in active] == ["e2"]
     winner = active[0]
     assert winner.object == "cat Miso"
-    assert winner.valid_from == _dt(5)
+    assert winner.valid_from == _dt(1)          # inherits EARLIEST first-known
+    assert winner.provenance.observed_at == _dt(5)   # latest recording
     assert winner.provenance.confidence == 0.95  # max of the pair
     assert winner.supersedes is None  # identity, not change
 
@@ -85,7 +86,8 @@ def test_less_specific_arrival_reinforces_fuller_prior():
     assert [e.id for e in edges] == ["e1"]  # no new row at all
     e = edges[0]
     assert e.object == "cat Miso"  # fuller surface kept
-    assert e.valid_from == _dt(6)  # restatement refreshes liveness
+    assert e.valid_from == _dt(1)  # first-known is immutable
+    assert e.provenance.observed_at == _dt(6)  # liveness refreshed instead
     assert e.provenance.confidence == 0.95
     assert e.needs_confirmation is False  # write-time evidence clears the flag
 
@@ -360,3 +362,70 @@ def test_small_store_selection_is_unchanged_by_coverage():
     b = [e.id for e in subgraph_for_query(store, "u1", "note", max_edges=40,
                                           coverage_share=0.0)]
     assert a == b
+
+
+# -- first-known vs liveness (C′) --------------------------------------------
+
+def test_reinforcement_preserves_when_a_fact_first_became_true():
+    """The defect LongMemEval exposed: a fact restated over time kept only its
+    LATEST restatement date, so `render_edges` stated "(since <latest>)" to the
+    answering model — a false statement in the answer context, not merely lost
+    history. valid_from is first-known and immutable; liveness rides on
+    observed_at."""
+    store = _store()
+    for i, day in enumerate((1, 9, 20), start=1):
+        apply_supersession(store, _edge(f"e{i}", "morning runs", day=day,
+                                        relation="prefers"), DEFAULT_RELATIONS)
+    edges = store.edges("u1", active_only=False)
+    assert len(edges) == 1
+    assert edges[0].valid_from == _dt(1), "first-known must survive restatement"
+    assert edges[0].provenance.observed_at == _dt(20), "liveness must refresh"
+    assert "since 2026-07-01" in render_edges(edges)
+
+
+def test_absorption_winner_inherits_earliest_first_known():
+    """A fuller restatement is the same fact, so the winner carries the earliest
+    point the fact was known — min, not max."""
+    store = _store()
+    apply_supersession(store, _edge("old", "Miso", day=2), DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("new", "cat Miso", day=11), DEFAULT_RELATIONS)
+    winner = store.edges("u1")[0]
+    assert winner.id == "new"
+    assert winner.valid_from == _dt(2)
+    assert winner.provenance.observed_at == _dt(11)
+
+
+def test_valid_from_never_exceeds_observed_at_on_any_write_path():
+    """Research's cheap invariant: a fact cannot become true after we recorded
+    it. Holds at creation and after reinforcement, absorption and supersession —
+    the check that catches a regression here."""
+    store = _store()
+    apply_supersession(store, _edge("a", "runs", day=1, relation="prefers"), DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("b", "runs", day=9, relation="prefers"), DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("c", "morning runs", day=14, relation="prefers"),
+                       DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("d", "tea", day=3, relation="prefers"), DEFAULT_RELATIONS)
+    for e in store.edges("u1", active_only=False, include_quarantined=True):
+        assert e.valid_from <= e.provenance.observed_at, \
+            f"{e.id}: became true {e.valid_from} after being recorded {e.provenance.observed_at}"
+
+
+def test_lifecycle_ages_against_last_recording_not_first_known():
+    """A fact stated long ago and restated yesterday is live; one recorded once
+    and never again is what should lapse. Ageing against valid_from lapsed the
+    former — the bug reinforcement exists to prevent, re-created by making
+    valid_from immutable without moving liveness."""
+    from datetime import timedelta
+    from veracium import lifecycle
+    from veracium.config import MemoryConfig
+    from veracium.schema import Volatility
+    store = _store()
+    e = _edge("old-but-live", "morning runs", day=1, relation="prefers")
+    e.volatility = Volatility.SLOW
+    apply_supersession(store, e, DEFAULT_RELATIONS)
+    apply_supersession(store, _edge("restated", "morning runs", day=27,
+                                    relation="prefers"), DEFAULT_RELATIONS)
+    cfg = MemoryConfig()
+    report = lifecycle.expire(store, "u1", cfg, now=_dt(28))
+    assert store.edges("u1"), "a recently restated fact must not lapse"
+    assert report["lapsed"] == 0
