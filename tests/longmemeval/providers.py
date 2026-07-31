@@ -75,6 +75,64 @@ class QuotaExhausted(RuntimeError):
     of empty hypotheses that would look like a completed run."""
 
 
+class UnclassifiedProviderError(RuntimeError):
+    """We do not know what this error was, so we do not know that retrying is
+    safe (G17).
+
+    The previous behaviour retried anything unrecognised, which is fail-*open*:
+    the run continues, the failures land in per-item `error` fields, and the
+    output is shaped exactly like a clean run. Note the claim being made here
+    is narrow — not "this error is permanent", which we cannot know, only
+    "retrying it is not something this harness is entitled to decide". A human
+    classifies it and resumes explicitly.
+    """
+
+
+# Error classes from the benchmark policy. `transient_retryable` is the only
+# one the harness may retry on its own authority.
+TRANSIENT_RETRYABLE = "transient_retryable"
+PERMANENT_REQUEST_FAILURE = "permanent_request_failure"
+ACCOUNT_OR_QUOTA_FAILURE = "account_or_quota_failure"
+DATA_OR_SCHEMA_FAILURE = "data_or_schema_failure"
+UNKNOWN_FAIL_CLOSED = "unknown_fail_closed"
+
+
+def classify_provider_error(exc: BaseException) -> str:
+    """Map a provider exception onto the policy's error classes.
+
+    Matching on message text is unlovely, but the SDK reuses exception types
+    across meanings — `RateLimitError` covers both "slow down" and "your
+    account is out of money", and treating the second as the first is what
+    would have produced 44 empty hypotheses that looked complete.
+    """
+    name = type(exc).__name__
+    text = str(exc)
+    low = text.lower()
+
+    if "insufficient_quota" in low or "exceeded your current quota" in low:
+        return ACCOUNT_OR_QUOTA_FAILURE
+    if any(s in low for s in ("billing", "payment required", "account is not active",
+                              "suspended")):
+        return ACCOUNT_OR_QUOTA_FAILURE
+    if "AuthenticationError" in name or "PermissionDenied" in name or "invalid_api_key" in low:
+        return ACCOUNT_OR_QUOTA_FAILURE
+
+    if "RateLimit" in name or "429" in text[:120]:
+        return TRANSIENT_RETRYABLE
+    if any(s in name for s in ("APIConnectionError", "APITimeoutError",
+                               "InternalServerError", "ServiceUnavailable")):
+        return TRANSIENT_RETRYABLE
+    if any(s in text[:200] for s in (" 500", " 502", " 503", " 504")):
+        return TRANSIENT_RETRYABLE
+
+    if "response_format" in low or "json_schema" in low or "ValidationError" in name:
+        return DATA_OR_SCHEMA_FAILURE
+    if "BadRequest" in name or "UnprocessableEntity" in name or "NotFoundError" in name:
+        return PERMANENT_REQUEST_FAILURE
+
+    return UNKNOWN_FAIL_CLOSED
+
+
 class MeteredOpenAI:
     """`Complete` callable over OpenAI chat-completions with per-role metering.
 
@@ -101,6 +159,10 @@ class MeteredOpenAI:
         self.retries = 0
         self.failures = 0
         self.rate_limited = 0
+        # counted per policy class so the attestation can say WHAT failed, not
+        # just how often — "8 retries" told us nothing useful during the quota
+        # incident
+        self.error_classes: dict[str, int] = {}
         # sliding-window token budget, PER MODEL (limits differ ~7x between the
         # extraction and answer models on this tier)
         self.tpm = tpm                      # explicit override for the extractor
@@ -282,10 +344,18 @@ class MeteredOpenAI:
             except Exception as e:
                 name = type(e).__name__
                 text = str(e)
+                kind = classify_provider_error(e)
+                with self._lock:
+                    # this runs INSIDE exception handling, so a secondary
+                    # failure here would mask the error we are trying to
+                    # report; tolerate a partially-constructed provider
+                    if not hasattr(self, "error_classes"):
+                        self.error_classes = {}
+                    self.error_classes[kind] = self.error_classes.get(kind, 0) + 1
                 # Quota exhaustion arrives dressed as a 429 but is terminal —
                 # the SDK reuses RateLimitError for insufficient_quota. Never
                 # retry it; abort the run so the failure is unmistakable.
-                if "insufficient_quota" in text or "exceeded your current quota" in text:
+                if kind == ACCOUNT_OR_QUOTA_FAILURE:
                     with self._lock:
                         self.failures += 1
                     raise QuotaExhausted(
@@ -296,6 +366,21 @@ class MeteredOpenAI:
                 if "BadRequest" in name and "response_format" in kwargs:
                     kwargs.pop("response_format")
                     continue
+                # G17: unknown means we do not know retrying is safe. Stop with
+                # the diagnostics intact rather than continuing into an output
+                # shaped like a clean run.
+                if kind == UNKNOWN_FAIL_CLOSED:
+                    with self._lock:
+                        self.failures += 1
+                    raise UnclassifiedProviderError(
+                        f"unclassified provider error, failing closed: "
+                        f"{name}: {text[:300]}\n"
+                        f"  Classify it in providers.classify_provider_error and "
+                        f"resume explicitly; cached extractions are preserved.") from e
+                if kind in (PERMANENT_REQUEST_FAILURE, DATA_OR_SCHEMA_FAILURE):
+                    with self._lock:
+                        self.failures += 1
+                    raise                    # retrying cannot change the answer
                 is_429 = "RateLimit" in name or "429" in text[:120]
                 if attempt == self.max_retries - 1:
                     with self._lock:

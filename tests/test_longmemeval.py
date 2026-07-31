@@ -412,6 +412,7 @@ def test_quota_exhaustion_is_terminal_not_retried():
     p._pace_lock, p._pace_waits = threading.Lock(), 0
     p._lock, p.usage, p.retries, p.failures, p.rate_limited = (
         threading.Lock(), {}, 0, 0, 0)
+    p.error_classes = {}
     p._client = type("C", (), {"chat": type("H", (), {"completions": _Completions()})()})()
 
     with pytest.raises(QuotaExhausted, match="quota exhausted"):

@@ -31,7 +31,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import ORACLE_FILE, S_FILE, load, stratified_pilot
 from cache import CACHE_DIR, CacheLock, CachedComplete
-from providers import QuotaExhausted
+from manifest import (CompletionAttestation, EffectiveConfig, RunManifest,
+                      check_manifest_self_consistency, decision_eligibility,
+                      environment_state, explain_ineligibility, git_state,
+                      sha256_file)
+from providers import LEDGER, QuotaExhausted, UnclassifiedProviderError
 from strictness import StrictExtraction
 
 from veracium import Memory, MemoryConfig
@@ -121,9 +125,12 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         context: bool = True, budget=None, note: str = "", workers: int = 1,
         out_dir: Path = OUT_DIR, cache_path: Path | None = None,
         max_edges: int | None = None, bar: str = "none",
-        coverage: float | None = None) -> dict:
+        coverage: float | None = None, experiment: str = "unnamed",
+        arm_name: str = "baseline", freeze_id: str | None = None,
+        parent_run_id: str | None = None, data_path: Path | None = None) -> dict:
     """Runs the requested control arms over `items`. Returns the run record;
-    writes one hypothesis file per arm."""
+    writes one hypothesis file per arm, plus an immutable run manifest and, at
+    termination, a completion attestation (benchmark policy G14-G17)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%dT%H%M%S", time.gmtime())
     serializer = serialize if context else isolated
@@ -156,10 +163,76 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
     cache = (StrictExtraction(raw_cache, bar=bar, relations=MemoryConfig().relations)
              if bar != "none" else raw_cache)
 
+    # ---- effective configuration (G15) ---------------------------------
+    # One construction path, used by both the read-back and the run. A probe
+    # that rebuilt the config itself would only prove the probe correct, which
+    # is how the retrieval-breadth ablation recorded 200 while running at 40.
+    def _build_config(db_path: str) -> MemoryConfig:
+        cfg = MemoryConfig(db_path=db_path, wiki_recompile_after_writes=0)
+        if coverage is not None:
+            # 0.0 = pure relevance (the pre-coverage selector), so the
+            # write-path change can be isolated from the selection change
+            cfg.subgraph_coverage_share = coverage
+        if max_edges:
+            # how much of memory one query may see. At LongMemEval scale
+            # (~1.7k facts/item) the default 40 is ~2% of the store.
+            cfg.max_subgraph_edges = max_edges
+        return cfg
+
+    # `context` is rebound as a local inside one_item, so the flag has to be
+    # captured here under a name that is not shadowed
+    _ctx_flag = bool(context)
+    _defaults = MemoryConfig()
+    effective = EffectiveConfig(
+        max_subgraph_edges=max_edges or _defaults.max_subgraph_edges,
+        subgraph_coverage_share=(coverage if coverage is not None
+                                 else _defaults.subgraph_coverage_share),
+        trust_arm=arm, extraction_bar=bar, context_serialization=_ctx_flag,
+        cache_enabled=bool(cache_enabled), workers=workers,
+    )
+    _probe = _build_config(f"{tempfile.mkdtemp(prefix='veracium-probe-')}/probe.db")
+    effective.resolve(max_subgraph_edges=_probe.max_subgraph_edges,
+                      subgraph_coverage_share=_probe.subgraph_coverage_share)
+    effective.assert_consistent(stage="config construction")
+    _observed_once = threading.Lock()
+    _observed = [False]
+
+    # ---- immutable run manifest, written before the first provider call ----
+    manifest = RunManifest(
+        experiment_name=experiment, arm_name=arm_name, trust_arm=arm,
+        freeze_artifact_id=freeze_id, parent_run_id=parent_run_id,
+        source=git_state(), environment=environment_state(),
+        dataset={"path": str(data_path) if data_path else str(S_FILE),
+                 "sha256": sha256_file(data_path or S_FILE)
+                 if Path(data_path or S_FILE).exists() else None},
+        adapter={"serializer_version": SERIALIZER_VERSION,
+                 "answer_template_version": ANSWER_TEMPLATE_VERSION,
+                 "context_policy": CONTEXT_POLICY if context else None,
+                 "module_sha256": sha256_file(Path(__file__).parent / "adapter.py")},
+        extraction_identity=identity,
+        effective_config=effective.as_dict(),
+        expected_item_ids=[i.question_id for i in items],
+        expected_output_count=len(items),
+        note=note,
+    )
+    manifest_hash = manifest.write(out_dir)
+    validation = check_manifest_self_consistency(
+        manifest, out_dir,
+        referenced_files=[p for p in (data_path or S_FILE,) if Path(p).exists()])
+    print(f"[longmemeval] manifest {manifest.run_id} ({manifest_hash[:12]}) "
+          f"experiment={experiment} arm={arm_name} "
+          f"freeze={freeze_id or 'NONE (exploratory)'}", file=sys.stderr)
+
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
-              "workers": workers, "max_subgraph_edges": max_edges or "default(40)",
+              "workers": workers,
+              # the three-value form; the old single "max_subgraph_edges" key
+              # is gone on purpose because it asserted the REQUESTED value and
+              # was wrong for hours
+              "effective_config": effective.as_dict(),
               "extraction_bar": bar,
-              "coverage_share": coverage if coverage is not None else "default",
+              "run_id": manifest.run_id, "experiment": experiment,
+              "arm_name": arm_name, "manifest_hash": manifest_hash,
+              "freeze_artifact_id": freeze_id,
               "throughput": getattr(provider, "throughput", {}),
               "identity": identity, "answer_template_version": ANSWER_TEMPLATE_VERSION,
               "items": len(items), "results": {}, "cache": None}
@@ -170,16 +243,22 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         finish; parallelism is across items, which are independent by
         construction (fresh user_id + fresh store)."""
         d = tempfile.mkdtemp(prefix="veracium-lme-")
-        cfg = MemoryConfig(db_path=f"{d}/lme.db", wiki_recompile_after_writes=0)
-        if coverage is not None:
-            # 0.0 = pure relevance (the pre-coverage selector), so the
-            # write-path change can be isolated from the selection change
-            cfg.subgraph_coverage_share = coverage
-        if max_edges:
-            # how much of memory one query may see. At LongMemEval scale
-            # (~1.7k facts/item) the default 40 is ~2% of the store.
-            cfg.max_subgraph_edges = max_edges
+        cfg = _build_config(f"{d}/lme.db")
         mem = Memory(llm=cache if control == "veracium" else provider, config=cfg)
+        # Post-condition, from the FIRST item actually processed (G15). The
+        # config being constructed correctly does not prove it propagated into
+        # the object the run uses; only reading it off that object does.
+        with _observed_once:
+            first = not _observed[0]
+            _observed[0] = True
+        if first:
+            effective.observe(
+                max_subgraph_edges=mem.config.max_subgraph_edges,
+                subgraph_coverage_share=mem.config.subgraph_coverage_share,
+                trust_arm=arm, extraction_bar=bar,
+                context_serialization=_ctx_flag,
+                cache_enabled=bool(cache_enabled), workers=workers)
+            effective.assert_consistent(stage="first processed item")
         try:
             ing = {"turns": 0, "facts": 0}
             context, n_edges, n_episodes, edge_sig = "", 0, 0, []
@@ -215,7 +294,9 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         finally:
             mem.close()
 
-    for control in arms:
+    per_item: dict = {}
+    try:
+      for control in arms:
         rows, t0 = [], time.monotonic()
         done = [0]
         progress = threading.Lock()
@@ -223,8 +304,8 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         def _run(item, control=control):
             try:
                 row = one_item(control, item)
-            except QuotaExhausted:
-                raise                                   # terminal: abort the run
+            except (QuotaExhausted, UnclassifiedProviderError):
+                raise            # terminal: abort rather than fill in blanks
             except Exception as e:                      # keep the run alive
                 row = {"question_id": item.question_id, "hypothesis": "",
                        "control_arm": control, "context_tokens_estimated": 0,
@@ -250,12 +331,12 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                 try:
                     for f in as_completed(futures):
                         rows.append(f.result())
-                except QuotaExhausted as e:
+                except (QuotaExhausted, UnclassifiedProviderError) as e:
                     for f in futures:
                         f.cancel()
                     print(f"\n[longmemeval] ABORTING: {e}\n"
                           f"  extractions already cached are preserved; re-run "
-                          f"after billing is restored and they replay for free.",
+                          f"after the cause is resolved and they replay for free.",
                           file=sys.stderr)
                     raise
             rows.sort(key=lambda r: [i.question_id for i in items].index(r["question_id"]))
@@ -267,11 +348,34 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
             for row in rows:
                 f.write(json.dumps(row) + "\n")
         errors = [r for r in rows if r.get("error")]
+        for r in rows:
+            per_item[f"{control}:{r['question_id']}"] = (
+                "failed" if r.get("error") else "succeeded")
         record["results"][control] = {"hypotheses": str(hyp_path), "n": len(rows),
                                       "errors": len(errors),
                                       "error_examples": [e["error"] for e in errors[:5]],
                                       "seconds": round(time.monotonic() - t0, 1)}
         print(f"  [{control}] -> {hyp_path}", file=sys.stderr)
+    except Exception as e:
+        # G16: a run that dies must be visibly incomplete. Without this, an
+        # aborted run leaves hypothesis files and no record at all, which reads
+        # as "nothing happened" rather than "this is partial".
+        CompletionAttestation(
+            run_id=manifest.run_id, manifest_hash=manifest_hash,
+            execution_status="partial" if per_item else "failed",
+            validity_status="invalidated",
+            invalidation_reason=f"aborted: {type(e).__name__}: {e}"[:400],
+            items_expected=len(items) * len(arms),
+            items_succeeded=sum(v == "succeeded" for v in per_item.values()),
+            items_failed=sum(v == "failed" for v in per_item.values()),
+            per_item_status=per_item,
+            retries=getattr(provider, "retries", 0),
+            failures=getattr(provider, "failures", 0),
+            validation={"error_classes": getattr(provider, "error_classes", {})},
+        ).write(out_dir)
+        print(f"[longmemeval] attestation written: run {manifest.run_id} "
+              f"is NOT decision-eligible ({type(e).__name__})", file=sys.stderr)
+        raise
 
     if isinstance(cache, StrictExtraction):
         record["strictness"] = dict(cache.stats)
@@ -281,6 +385,45 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         record["cost"] = {"actual": provider.cost_usd(),
                           "retries": getattr(provider, "retries", 0),
                           "failures": getattr(provider, "failures", 0)}
+
+    # ---- completion attestation (G16) -----------------------------------
+    # Separate file, referencing the manifest by hash, so the immutable record
+    # stays immutable. Output hashes are taken here rather than at read time:
+    # a hypothesis file edited after the run should stop matching.
+    n_failed = sum(v == "failed" for v in per_item.values())
+    n_ok = sum(v == "succeeded" for v in per_item.values())
+    expected = len(items) * len(arms)
+    execution = ("completed" if n_ok == expected
+                 else "partial" if n_ok else "failed")
+    attestation = CompletionAttestation(
+        run_id=manifest.run_id, manifest_hash=manifest_hash,
+        execution_status=execution,
+        # validity is a LATER analytical determination — the no-op ablation
+        # executed perfectly and was invalidated hours afterwards. The runner
+        # is not entitled to declare its own output valid.
+        validity_status="unreviewed",
+        items_expected=expected, items_succeeded=n_ok, items_failed=n_failed,
+        per_item_status=per_item,
+        effective_config=effective.as_dict(),
+        output_hashes={r["hypotheses"]: sha256_file(r["hypotheses"])
+                       for r in record["results"].values()
+                       if Path(r["hypotheses"]).exists()},
+        cost_ledger_hash=(sha256_file(LEDGER)[:16] if LEDGER.exists() else None),
+        retries=getattr(provider, "retries", 0),
+        failures=getattr(provider, "failures", 0),
+        validation={**validation,
+                    "error_classes": getattr(provider, "error_classes", {}),
+                    "effective_config_disagreements": effective.disagreements()},
+    )
+    attestation.write(out_dir)
+    # refresh: the copy taken at manifest time predates every `observed` value
+    record["effective_config"] = effective.as_dict()
+    record["attestation"] = f"attestation_{manifest.run_id}.json"
+    eligible, detail = decision_eligibility(manifest, attestation, out_dir=out_dir)
+    record["decision_eligible"] = eligible
+    record["decision_detail"] = detail
+    print(f"[longmemeval] {explain_ineligibility(detail)}", file=sys.stderr)
+
     (out_dir / f"record_{stamp}.json").write_text(json.dumps(record, indent=2))
     return record
 
@@ -314,6 +457,17 @@ if __name__ == "__main__":
     ap.add_argument("--max-edges", type=int, default=None,
                     help="override max_subgraph_edges (retrieval-breadth ablation)")
     ap.add_argument("--note", default="")
+    ap.add_argument("--experiment", default="unnamed",
+                    help="frozen experiment name (G11) — free-text notes are "
+                         "what produced the E-number collision")
+    ap.add_argument("--arm-name", default="baseline",
+                    help="arm within the experiment: baseline | treatment | ...")
+    ap.add_argument("--freeze-id", default=None,
+                    help="id of the frozen protocol artifact. Without one the "
+                         "run is recorded as exploratory and is NOT "
+                         "decision-eligible (G3/G19)")
+    ap.add_argument("--parent-run-id", default=None,
+                    help="resume lineage: this run continues that one")
     ap.add_argument("--provider", choices=["openai", "claude-cli"], default="openai",
                     help="openai = pinned API models with token metering")
     ap.add_argument("--workers", type=int, default=1,
@@ -338,8 +492,13 @@ if __name__ == "__main__":
                   arms=tuple(a.strip() for a in args.controls.split(",") if a.strip()),
                   cache_enabled=not args.no_cache, context=not args.no_context,
                   budget=args.budget, note=args.note, max_edges=args.max_edges,
-                  bar=args.bar, coverage=args.coverage)
-    print(json.dumps({k: rec[k] for k in ("stamp", "arm", "items", "cache", "results")},
+                  bar=args.bar, coverage=args.coverage,
+                  experiment=args.experiment, arm_name=args.arm_name,
+                  freeze_id=args.freeze_id, parent_run_id=args.parent_run_id,
+                  data_path=Path(args.data))
+    print(json.dumps({k: rec[k] for k in ("stamp", "run_id", "experiment", "arm",
+                                          "items", "cache", "results",
+                                          "decision_eligible")},
                      indent=2))
     print("\nNext: run the OFFICIAL judge, e.g.\n"
           f"  python3 evaluate_qa.py gpt-4o {rec['results'][list(rec['results'])[0]]['hypotheses']} "

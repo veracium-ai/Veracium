@@ -32,6 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import QUESTION_TYPES, S_FILE, load
+from manifest import eligibility_for_output, explain_ineligibility
 
 _WORD = re.compile(r"[a-z0-9]+")
 _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",
@@ -100,6 +101,25 @@ def main(paths: list[str]) -> int:
     print(f"\nLongMemEval V1-S — pilot report ({len(ids)} items)")
     print(f"dataset: {manifest['instances']} instances, "
           f"{manifest['turn_refs']} turns, {manifest['unique_sessions']} unique sessions")
+
+    # -- 0. decision eligibility, before any number --------------------------
+    # Printed first and unconditionally. The point of the policy is that "we
+    # should have checked whether this run could support the claim" becomes
+    # something the tool says out loud, at the top, every time.
+    print("\ndecision eligibility (G16/G19):")
+    for p in paths:
+        # judged files are "<hypotheses>.eval-results-<judge>"; the attestation
+        # hashes the hypothesis file the RUN wrote, so strip the judge suffix
+        base = re.sub(r"\.eval-results-.*$", "", str(p))
+        verdict = eligibility_for_output(base, Path(base).parent)
+        if verdict is None:
+            print(f"  {Path(base).name}: UNATTESTED — predates the run manifest, "
+                  f"or its attestation is missing. Not the same as ineligible: "
+                  f"eligibility is unknown and cannot be assumed either way.")
+            continue
+        eligible, detail = verdict
+        print(f"  {Path(base).name}: "
+              f"{'DECISION-ELIGIBLE' if eligible else explain_ineligibility(detail)}")
 
     # -- 1. per-type, differentiated claims first ---------------------------
     order = ["knowledge-update", "single-session-preference", "temporal-reasoning",

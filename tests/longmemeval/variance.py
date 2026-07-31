@@ -141,10 +141,17 @@ def main() -> int:
         d.mkdir(exist_ok=True)
         print(f"\n[variance] realization {r}/{REALIZATIONS} (fresh cache)",
               file=sys.stderr)
+        # Matched repeats are the ONE thing this protocol produces, so they
+        # must be identifiable as such afterwards: same experiment name, same
+        # arm, distinct run ids. Naming them only in free text is what let two
+        # unrelated runs be offered as a "matched pair".
         rec = run(picked, provider=_provider(args.provider), arm=args.arm,
                   arms=("veracium",), cache_enabled=True, context=True,
                   workers=args.workers, out_dir=d,
                   cache_path=d / "extractions.jsonl",
+                  experiment=f"variance-protocol-arm-{args.arm}",
+                  arm_name=f"realization-{r}",
+                  data_path=S_FILE,
                   note=f"variance realization {r}/{REALIZATIONS}, arm {args.arm}")
         out.append(rec["results"]["veracium"]["hypotheses"])
 
