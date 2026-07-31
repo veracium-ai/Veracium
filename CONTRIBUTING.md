@@ -48,8 +48,25 @@ PYTHONPATH=src python bench/run_bench.py               # internal benchmark (see
 A quarantine bypass, gate bypass, or cross-user leak is a **vulnerability**, not
 a quality bug — see [SECURITY.md](SECURITY.md) and report privately.
 
+## Specifications
+
+Changes to **stored state, its semantics, its trust or disclosure classes, its
+lifecycle, or how it is selected for recall** need a spec before implementation
+— see `specs/PROCESS.md` and `specs/TEMPLATE.md`. Docs, tests, CI, packaging and
+behaviour-preserving refactors do not.
+
+Commits touching the trust surface carry a `Spec:` trailer, and CI checks for it
+(`specs/check_spec_reference.py`). The exemption is deliberate and visible:
+
+    Spec: specs/0007-generated-content-trust-class.md
+    Spec: none (docs-only change to a guarded file)
+    Spec: none (hotfix — GHSA-xxxx, retrospective review per PROCESS.md)
+
 ## Maintainer release checklist
 
+0. **Re-read open asks addressed to you since your last entry.** A trust-boundary
+   review sat unread for eight hours and the release that followed needed a
+   published advisory. Two minutes.
 1. `CHANGELOG.md`: retitle *Unreleased* → version; bump `pyproject.toml`.
    Run the bench (`bench/run_bench.py --live` then `--compare`): no hard
    regressions; soft flags need a written justification in the notes.

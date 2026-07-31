@@ -46,3 +46,23 @@ jobs:
           python -m pip install --upgrade pip build twine
           python -m build
           twine check dist/*
+
+  spec-reference:
+    name: spec reference on trust-surface changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Check for Spec: trailers"
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            RANGE="origin/${{ github.base_ref }}..HEAD"
+          elif [ -n "${{ github.event.before }}" ] && \
+               git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+            RANGE="${{ github.event.before }}..${{ github.sha }}"
+          else
+            echo "no usable range (first push or force-push); skipping"; exit 0
+          fi
+          echo "checking $RANGE"
+          python3 specs/check_spec_reference.py "$RANGE"
