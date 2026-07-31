@@ -21,7 +21,8 @@ from typing import Optional
 
 from ._json import extract_json
 from .llm.base import Complete
-from .schema import DEFAULT_EXPIRY, Episode, ExpiryBehavior, utcnow
+from .schema import (DEFAULT_EXPIRY, Episode, EvidenceAuthor, ExpiryBehavior,
+                     utcnow)
 
 
 def expire(store, user_id: str, config, *, now: Optional[datetime] = None) -> dict:
@@ -95,10 +96,29 @@ def consolidate(store, llm: Complete, user_id: str, config, *,
            if isinstance(r, dict) and r.get("date") and r.get("summary")]
     if not new or len(new) >= len(cold):
         return {"consolidated": 0, "into": 0}  # no compression achieved
-    # provenance: consolidation is a system-authored derivation of the cold set.
+    # Provenance of a consolidated episode is a property of the WHOLE SET, not
+    # of whichever member happens to sort first.
+    #
+    # This previously read `cold[0].provenance.author_of_evidence` — which both
+    # contradicted the comment above it ("a system-authored derivation") and
+    # dropped every other member's third-party influence. A batch whose first
+    # episode was user-authored collapsed to author=USER, derived_from=None, so
+    # `third_party_influenced` was False and received-email text moved out of
+    # the UNVERIFIED block into the GROUNDED one. That is precisely the attack
+    # gate.partition_parts documents ("a system-authored summary quoting a
+    # received email launders attacker text into its episode — route by
+    # influence, never by authorship alone"), and consolidation was defeating
+    # the defence its own module describes. Security fix, 0.4.4.
     import uuid
+    influenced = any(e.provenance.third_party_influenced for e in cold)
     prov = cold[0].provenance.model_copy(update={
-        "author_of_evidence": cold[0].provenance.author_of_evidence, "confidence": 0.9})
+        # say what it is, rather than inheriting an author we did not choose
+        "author_of_evidence": EvidenceAuthor.SYSTEM,
+        # min-trust across the set: a summary of third-party-influenced material
+        # is third-party-influenced, whoever wrote the first line of it
+        "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced
+                         else cold[0].provenance.derived_from),
+        "confidence": 0.9})
     for e in cold:
         store.delete_episode(e.id)
     for r in new:

@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.4.4 — security
+
+- **SECURITY: episode consolidation laundered third-party content into the
+  grounded block.** `maintain()`'s consolidation step built the consolidated
+  episode's provenance from a **single member** of the cold batch
+  (`cold[0].provenance`), so a mixed batch whose first episode happened to be
+  user- or system-authored collapsed to `author_of_evidence=USER` with
+  `derived_from=None`. `Provenance.third_party_influenced` then reported
+  `False`, and `gate.partition_parts` — which routes episodes on exactly that
+  property — moved the summarised third-party text out of the UNVERIFIED block
+  and into the **GROUNDED** one, where it may be asserted.
+
+  This is the attack `gate.partition_parts` names in its own docstring (*"a
+  system-authored summary quoting a received email launders attacker text into
+  its episode — route by influence, never by authorship alone"*): consolidation
+  was defeating the defence its own module documents. It required no
+  hallucination and no prompt injection — a faithful summariser compacting a
+  mixed batch was sufficient. Same class as GHSA-r7j7-5jq9-3f5q (0.4.1): a
+  **maintenance-time** operation crossing a trust boundary that the write path
+  guards correctly.
+
+  **Fixed:** consolidated provenance is now computed across the **whole set** —
+  `author_of_evidence=SYSTEM` (which is what the code's own comment always
+  claimed it was) and `derived_from=THIRD_PARTY` if **any** member was
+  third-party-influenced. The result stays in the UNVERIFIED block, matching
+  pre-consolidation behaviour.
+
+  **Affected:** every version with consolidation, through 0.4.3. **Exposure
+  requires** `maintain()` to run consolidation over **≥8 cold episodes**
+  (default `consolidate_min_batch`) older than **30 days** (default
+  `consolidate_after_days`) with **mixed authorship** and a trusted episode
+  first in store order. Deployments that never call `maintain()`, or whose
+  episodes are single-author, are unaffected. **Upgrade if you ingest
+  third-party content (received mail, documents, tool output) and run
+  maintenance.** No store migration is required; existing consolidated
+  episodes are **not** retroactively re-labelled — see the advisory for how to
+  identify them.
+
+  Found while writing the first specification under `specs/PROCESS.md`: the
+  template's rule to enumerate a changed field's consumers *mechanically rather
+  than from memory* surfaced `lifecycle.py` as a writer of
+  `author_of_evidence`, which the memory-written list had missed.
+
 ## 0.4.3
 
 - **telemetry: the abstention heuristic under-counted abstentions.** It existed
