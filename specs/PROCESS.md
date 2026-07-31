@@ -54,7 +54,7 @@ selection may use §1, §4 and §7 only, marked `lightweight`.
 nothing. Routed to reviewers. May be rejected here cheaply; that
 is the point of having the stage.
 
-**2. Specification** — the template (`spec-template.md`) is filled in.
+**2. Specification** — the template (`TEMPLATE.md`) is filled in.
 **The spec is written before implementation**, and the sections that most
 often catch defects — field contracts, trust-class matrix, regime analysis —
 are written *before* the author has an implementation they are attached to.

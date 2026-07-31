@@ -1,25 +1,42 @@
 #!/usr/bin/env python3
-"""Require a spec reference on commits that touch the trust surface.
+"""Tripwire: every commit touching the trust surface must reference a spec.
 
-`PROCESS.md` says a change to stored state, its semantics, its trust or
-disclosure classes, its lifecycle, or how it is selected for recall needs a
-spec. That is a rule in prose, and this week taught us repeatedly that a rule
-which is only prose is a rule that gets skipped under time pressure — so this
-turns it into a check.
+**What this establishes, precisely.** It requires that a guarded commit carries
+a machine-readable reference to a specification that exists, or a declared
+exception in a recognised category. **It does not establish compliance with the
+specification process.** It does not check the trust matrix, the executable
+invariants, internal or external review, the decision state, regime coverage,
+or the accepted claim wording. Read a green result as "a reference is present
+and well-formed", never as "this change followed the process".
 
-A commit touching those files must carry a trailer:
+That paragraph is load-bearing. The previous version's docstring claimed it
+"turns the prose rule into a check", and an external reviewer then demonstrated
+that `Spec: banana`, `Spec: none`, a reference to a nonexistent file, a rename
+out of a guarded path, a brand-new trust module, and an unresolvable commit
+range *all passed*. A gate that reports success it has not earned is worse than
+no gate, because it manufactures assurance.
+
+Accepted forms — real Git trailers, in the trailer block at the end of the
+message:
 
     Spec: specs/0007-generated-content-trust-class.md
-    Spec: none (docs-only change to a guarded file)
-    Spec: none (hotfix — GHSA-xxxx, retrospective review per PROCESS.md)
 
-The escape hatch is deliberate and deliberately *visible*: the security-hotfix
-carve-out exists because holding the 0.4.1 advisory fix for review would have
-been the wrong call, and a process that cannot say so is one people route
-around. Making the exemption a greppable line in history is the difference
-between an exception and an erosion.
+    Spec-Exception: docs-only
+    Spec-Exception-Reason: corrected a stale comment in graph.py
 
-Usage:  check_spec_reference.py [<commit-range>]     (default: origin/main..HEAD)
+    Spec-Exception: security-hotfix
+    Spec-Exception-Reason: GHSA-r7j7-5jq9-3f5q, cross-trust identity merges
+    Spec-Retrospective-Due: 2026-08-04
+
+**These must be real trailers, not merely lines starting with "Spec:".** Git
+requires the trailer block to be the last paragraph, and a wrapped value to be
+indented on continuation lines. When this check was written, *all three* of our
+existing `Spec:` lines failed that rule — the old regex accepted text Git itself
+does not consider a trailer. If a value must wrap, indent the continuation.
+
+Exit codes:  0 = ok · 1 = policy failure · 2 = could not run (fails closed)
+
+Usage:  check_spec_reference.py [<commit-range>] [--allow-missing-base]
 """
 
 from __future__ import annotations
@@ -62,47 +79,229 @@ GUARDED = (
 # list covers what changes "what may be asserted, what is visible, or what
 # reaches model context" — not "important files". A noisy gate gets bypassed.
 
-TRAILER = re.compile(r"^Spec:\s*(\S.*)$", re.M)
+# The process controls themselves. A commit could otherwise weaken this script,
+# or the workflow that runs it, and have the weakened version approve its own
+# change. Requiring a declared `Process-Change:` does not *prevent* that — see
+# the caveat printed below — but it removes "nobody noticed" as an explanation.
+PROCESS_CONTROLS = (
+    "specs/check_spec_reference.py",
+    "specs/PROCESS.md",
+    "specs/TEMPLATE.md",
+    ".github/workflows/test.yml",
+)
+
+EXCEPTION_CATEGORIES = {
+    "docs-only": "comments, docstrings, or prose in a guarded file",
+    "test-only": "changes confined to test code",
+    "behavior-preserving-refactor": "no observable change; say how that was established",
+    "security-hotfix": "a live user-affecting defect; also needs Spec-Retrospective-Due",
+}
+
+MIN_REASON_CHARS = 12
+_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
-def _run(*args: str) -> str:
-    return subprocess.run(args, capture_output=True, text=True, check=True).stdout
+class CannotRun(RuntimeError):
+    """We could not determine what to check. Never silently a pass."""
 
 
-def main(rng: str) -> int:
+def _git(*args: str) -> str:
+    r = subprocess.run(("git", *args), capture_output=True, text=True)
+    if r.returncode != 0:
+        raise CannotRun(f"git {' '.join(args)}: {r.stderr.strip()}")
+    return r.stdout
+
+
+def _trailer_values(sha: str, key: str) -> list[str]:
+    """Real trailer parsing, via Git's own parser.
+
+    The old regex matched any line beginning with `Spec:` anywhere in the
+    message, so a sentence in a discussion paragraph satisfied the gate.
+    """
+    out = _git("log", "-1", f"--format=%(trailers:key={key},valueonly,separator=%x00)", sha)
+    return [v.strip() for v in out.split("\0") if v.strip()]
+
+
+def _touched(sha: str) -> set[str]:
+    """Paths this commit touched, counting BOTH sides of a rename.
+
+    `git show --name-only` reports only a rename's destination, so renaming
+    `graph.py` to an unguarded name escaped the gate entirely. `-M` gives the
+    status letter and both paths.
+    """
+    out = _git("diff-tree", "--name-status", "-M", "-r", "--no-commit-id", sha)
+    paths: set[str] = set()
+    for line in out.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0]
+        # R100/C75 carry <src> <dst>; both matter — moving code OUT of a
+        # guarded file changes the guarded file just as much as editing it.
+        paths.update(parts[1:] if status[0] in ("R", "C") else parts[1:2])
+    return paths
+
+
+def _is_merge(sha: str) -> bool:
+    return len(_git("rev-list", "--parents", "-n", "1", sha).split()) > 2
+
+
+def _validate_spec_ref(sha: str, value: str) -> list[str]:
+    """A reference must point at a spec that exists in this commit's tree."""
+    problems = []
+    if not value.startswith("specs/"):
+        problems.append(f"`Spec: {value}` — must be a path under `specs/`")
+        return problems
+    if not value.endswith(".md"):
+        problems.append(f"`Spec: {value}` — must be a markdown file")
+    if value in ("specs/TEMPLATE.md", "specs/PROCESS.md"):
+        problems.append(f"`Spec: {value}` — that is the template/process itself, "
+                        f"not a specification for this change")
+        return problems
     try:
-        commits = _run("git", "rev-list", rng).split()
-    except subprocess.CalledProcessError:
-        print(f"could not resolve range {rng!r}; skipping", file=sys.stderr)
-        return 0
+        _git("cat-file", "-e", f"{sha}:{value}")
+    except CannotRun:
+        problems.append(f"`Spec: {value}` — does not exist in this commit's tree")
+    return problems
 
-    failures = []
+
+def _validate_exception(sha: str, category: str) -> list[str]:
+    problems = []
+    if category not in EXCEPTION_CATEGORIES:
+        problems.append(
+            f"`Spec-Exception: {category}` — unrecognised. Use one of: "
+            + ", ".join(sorted(EXCEPTION_CATEGORIES)))
+        return problems
+    reasons = _trailer_values(sha, "Spec-Exception-Reason")
+    reason = reasons[0] if reasons else ""
+    if len(reason) < MIN_REASON_CHARS:
+        problems.append(
+            f"`Spec-Exception: {category}` needs a `Spec-Exception-Reason:` "
+            f"trailer of at least {MIN_REASON_CHARS} characters "
+            f"({'none given' if not reason else 'too short: ' + reason!r})")
+    if category == "security-hotfix":
+        # The carve-out is correct — holding the 0.4.1 advisory fix for review
+        # would have been the wrong call. A deadline is what keeps it a
+        # carve-out rather than a door.
+        due = _trailer_values(sha, "Spec-Retrospective-Due")
+        if not due:
+            problems.append("`security-hotfix` also needs "
+                            "`Spec-Retrospective-Due: YYYY-MM-DD` — the date the "
+                            "retrospective spec and external review are due")
+        elif not _DATE.match(due[0]):
+            problems.append(f"`Spec-Retrospective-Due: {due[0]}` — not YYYY-MM-DD")
+    return problems
+
+
+def _check_commit(sha: str) -> tuple[list[str], list[str]]:
+    """Returns (problems, notes) for one commit."""
+    problems: list[str] = []
+    notes: list[str] = []
+    touched = _touched(sha)
+    guarded = sorted(t for t in touched if t in GUARDED)
+    controls = sorted(t for t in touched if t in PROCESS_CONTROLS)
+
+    if controls:
+        if not _trailer_values(sha, "Process-Change"):
+            problems.append(
+                f"touches the process controls themselves ({', '.join(controls)}) "
+                f"without a `Process-Change: <reason>` trailer")
+        else:
+            notes.append(f"  {sha[:8]} PROCESS CHANGE: {', '.join(controls)} "
+                         f"-> requires independent approval (not verifiable here)")
+
+    if not guarded:
+        return problems, notes
+
+    refs = _trailer_values(sha, "Spec")
+    exceptions = _trailer_values(sha, "Spec-Exception")
+
+    if refs and exceptions:
+        problems.append("carries both `Spec:` and `Spec-Exception:` — pick one")
+    elif refs:
+        # Multiple specs are legitimate (one change implementing two accepted
+        # specs). ALL must validate; the old code silently used the first.
+        for value in refs:
+            if value.lower() == "none":
+                problems.append(
+                    "`Spec: none` is no longer accepted — it carried no "
+                    "category and any invented explanation passed. Use "
+                    "`Spec-Exception: <category>` + `Spec-Exception-Reason:`")
+            else:
+                problems.extend(_validate_spec_ref(sha, value))
+        if not problems:
+            notes.append(f"  {sha[:8]} {', '.join(guarded)} -> {', '.join(refs)}")
+    elif exceptions:
+        if len(exceptions) > 1:
+            problems.append("more than one `Spec-Exception:` — pick one category")
+        else:
+            problems.extend(_validate_exception(sha, exceptions[0]))
+        if not problems:
+            notes.append(f"  {sha[:8]} {', '.join(guarded)} -> "
+                         f"EXCEPTION {exceptions[0]}")
+    else:
+        problems.append(f"touches the trust surface ({', '.join(guarded)}) with no "
+                        f"`Spec:` or `Spec-Exception:` trailer")
+    return problems, notes
+
+
+def main(rng: str, *, allow_missing_base: bool = False) -> int:
+    try:
+        commits = _git("rev-list", rng).split()
+    except CannotRun as e:
+        if allow_missing_base:
+            print(f"could not resolve range {rng!r}; --allow-missing-base given, "
+                  f"skipping", file=sys.stderr)
+            return 0
+        # FAIL CLOSED. A shallow clone, a fork without `origin`, a renamed
+        # default branch or a misconfigured job used to print "skipping" and
+        # exit 0 — a green build that checked nothing, which is the worst
+        # possible output because it is indistinguishable from a real pass.
+        print(f"ERROR: cannot resolve commit range {rng!r}, so nothing was "
+              f"checked.\n  {e}\n"
+              f"  Refusing to report success for a check that did not run. "
+              f"Fix the range (a full-depth checkout is usually the issue), or "
+              f"pass --allow-missing-base for local use only.", file=sys.stderr)
+        return 2
+
+    failures, notes = [], []
     for sha in commits:
-        files = _run("git", "show", "--name-only", "--format=", sha).split()
-        touched = sorted(f for f in files if f in GUARDED)
-        if not touched:
-            continue
-        message = _run("git", "log", "-1", "--format=%B", sha)
-        m = TRAILER.search(message)
-        if not m:
-            failures.append((sha[:8], touched))
-            continue
-        print(f"  {sha[:8]} touches {', '.join(touched)} -> Spec: {m.group(1).strip()}")
+        try:
+            if _is_merge(sha):
+                # a merge introduces no changes of its own; its branch commits
+                # are in the same range and are checked individually
+                continue
+            problems, commit_notes = _check_commit(sha)
+        except CannotRun as e:
+            print(f"ERROR inspecting {sha[:8]}: {e}", file=sys.stderr)
+            return 2
+        notes.extend(commit_notes)
+        if problems:
+            failures.append((sha[:8], problems))
+
+    for n in notes:
+        print(n)
 
     if failures:
-        print("\nMissing `Spec:` trailer on commits touching the trust surface:\n",
-              file=sys.stderr)
-        for sha, touched in failures:
-            print(f"  {sha}  {', '.join(touched)}", file=sys.stderr)
-        print("\nAdd one of:\n"
+        print("\nSpec-reference check FAILED:\n", file=sys.stderr)
+        for sha, problems in failures:
+            for p in problems:
+                print(f"  {sha}  {p}", file=sys.stderr)
+        print("\nAccepted forms (real Git trailers, last paragraph, "
+              "continuations indented):\n"
               "  Spec: specs/<n>-<name>.md\n"
-              "  Spec: none (<why this needs no spec>)\n"
-              "See specs/PROCESS.md for what needs a spec and the hotfix carve-out.",
-              file=sys.stderr)
+              "  Spec-Exception: <" + " | ".join(sorted(EXCEPTION_CATEGORIES))
+              + ">\n  Spec-Exception-Reason: <why>\n"
+              "  (security-hotfix also needs Spec-Retrospective-Due: YYYY-MM-DD)\n"
+              "See specs/PROCESS.md.", file=sys.stderr)
         return 1
-    print("spec-reference check: ok")
+
+    print(f"spec-reference check: ok ({len(commits)} commit(s)) — reference "
+          f"presence only; this does not establish process compliance")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1] if len(sys.argv) > 1 else "origin/main..HEAD"))
+    args = [a for a in sys.argv[1:] if a != "--allow-missing-base"]
+    raise SystemExit(main(args[0] if args else "origin/main..HEAD",
+                          allow_missing_base="--allow-missing-base" in sys.argv))

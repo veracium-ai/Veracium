@@ -62,7 +62,11 @@ jobs:
                git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
             RANGE="${{ github.event.before }}..${{ github.sha }}"
           else
-            echo "no usable range (first push or force-push); skipping"; exit 0
+            # First push or force-push: there is no meaningful base. Check the
+            # tip commit alone rather than skipping — the previous version
+            # exited 0 here, which is the same fail-open defect the script had.
+            echo "no usable base (first push or force-push); checking the tip commit only"
+            RANGE="${{ github.sha }}^!"
           fi
           echo "checking $RANGE"
           python3 specs/check_spec_reference.py "$RANGE"

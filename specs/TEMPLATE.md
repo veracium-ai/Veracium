@@ -2,7 +2,7 @@
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
-> Copy this file. Process: `spec-process.md`. **Every section below exists
+> Copy this file. Process: `PROCESS.md`. **Every section below exists
 > because we shipped or nearly shipped a defect it would have caught** —
 > the provenance of each is noted in italics. Delete nothing; write
 > **"n/a — <reason>"** rather than leaving a heading blank, because a blank
