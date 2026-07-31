@@ -523,6 +523,25 @@ shows a real expressive gap — we cannot say *"this may be discussed, but only 
 something the assistant previously claimed."* Sequencing dissolves it: v3 does
 not need the tier.
 
+**🔴 v3 RELEASE GATE, found by research in the render path and confirmed here.**
+`graph.py:305` is `tp = " [third-party-reported; unconfirmed]" if e.use_only` —
+the marker keys on **`use_only`**, not on `author_of_evidence`, and its text is
+**hardcoded**. Verified by construction: a `SYSTEM`-authored `use_only` edge
+renders as
+
+```
+deployment uses_tool: failed (since 2026-07-31) [third-party-reported; unconfirmed]
+```
+
+Correct today, because only third-party-*derived* content reaches `use_only`.
+**Under v3 it is affirmatively false** — every assistant edge would tell the
+model a specific wrong origin. v3 exists so hosts stop mislabelling assistant
+content as `SYSTEM`; as scoped it would swap one mislabel for a worse one,
+because a wrong-but-confident provenance label is worse than a missing one.
+**Blocks v3.** The gap is wider than one line: `gate.partition_parts:84` already
+merges quarantined third-party *claims* with third-party `use_only` *inferences*
+undifferentiated, and v3 would make that three kinds of thing in one block.
+
 **Routed to workflow-platform:** what counts as "the assistant" in a multi-agent
 deployment. Without an `author_id`, two unrelated agents mutually reinforce as
 one source class, which interacts directly with §3.2's self-reinforcement rule.

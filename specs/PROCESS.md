@@ -54,9 +54,11 @@ guarded list (`specs/check_spec_reference.py`); otherwise it is
 **lightweight**. The trigger is the list, never a prose judgement, so the
 process and the checker cannot disagree.
 
-**Lightweight specs still require §1, §4, §6, §7 and §8.** Only §§2, 3 and 5 —
-field contracts, trust-class matrix, regime analysis — are conditional on being
-a full spec, because those are the guarded-surface questions.
+**Lightweight specs still require §1, §2c, §4, §6, §7 and §8.** Only §§2, 3,
+3b and 5 — field contracts, trust-class matrix, authorization, regime analysis —
+are conditional on being a full spec, because those are the guarded-surface
+questions. **§2c is not**, because untrusted input does not care whether a file
+is on a list.
 
 **§6 and §8 are never skippable.** An invariant with no executable check and a
 claim we cannot support are failure modes that do not care whether a file is on
@@ -238,8 +240,10 @@ you claim to have created.
 - It does not ask for estimates, story points, or status meetings.
 
 **Hard gates — these block regardless of schedule pressure:** an unanswered
-question in the trust-class matrix (§3); a field whose documented contract
-the change violates (§2); an invariant with no executable check (§6);
+question in the trust-class matrix (§3); **an empty invariant cell in the
+untrusted-input table (§2c)** — "fails closed" on a predicate the code cannot
+evaluate is not a control; a field whose documented contract the change
+violates (§2); an invariant with no executable check (§6);
 **or a full spec that has not had external review (3b), outside the
 security-hotfix carve-out.**
 

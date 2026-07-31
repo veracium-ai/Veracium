@@ -16,7 +16,7 @@
 | **Internal reviewers** | dev · research · workflow-platform *(name who actually reviewed; note any unavailable)* |
 | **External review** | required for **full** specs (= touches a guarded file); not required for lightweight · date sent / returned · reviewer-safe copy? · **retrospective** if security hotfix |
 | **Decision + date** | |
-| **Path** | full · `lightweight` (§§1, 4, 6, 7, 8; §§2, 3, 5 omitted) |
+| **Path** | full · `lightweight` (§§1, 2c, 4, 6, 7, 8; §§2, 3, 3b, 5 omitted) |
 
 ---
 
@@ -49,6 +49,39 @@ statement injected into recall. Nobody had enumerated who reads the field.*
 If the change alters a field's meaning: **which documentation, docstrings,
 renderers, and exports state the old meaning, and are they all updated in
 this change?**
+
+---
+
+## 2c. Untrusted inputs — REQUIRED, blocking
+
+*Provenance: three fail-open defaults shipped or nearly shipped in three days —
+a checker that exited 0 when it could not resolve its commit range, a disclosure
+rule that made any unrecognised subject assertable, and a render that stripped
+origin. **All three were inputs the library does not control.** The first
+proposed remedy was a prose section asking "which way does this fail on garbage
+input"; it was rejected, correctly, because a prose answer is a **judgement**
+made from the same mental model that produced the defect — the author who wrote
+the fail-open rule believed it failed closed, and so did the reviewer who
+amended it. **So this is an enumeration, not an evaluation.** A table makes a
+missing mechanism visible; a paragraph lets it be described away.*
+
+One row per input this change consumes but does not control.
+
+| uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant that pins it** |
+|---|---|---|---|---|---|
+| *(extractor output)* | | | | | |
+| *(host configuration)* | | | | | |
+| *(CLI / environment / git)* | | | | | |
+| *(data written by an older version)* | | | | | |
+| *(network / provider response)* | | | | | |
+
+**An empty cell in the invariant column blocks the change.** That column is the
+whole point: a behaviour with no mechanism to enforce it is a hope. The rule was
+tested against a real case before adoption — an amendment that made a rule
+*fail closed* on a predicate the codebase **cannot evaluate** (there was no
+entity resolution, and no user display name to compare against) passes a prose
+version of this section and **fails this one**, because the row has no invariant
+to name.
 
 ---
 
@@ -239,6 +272,8 @@ first.
       guard drawn too broadly passes every prohibition test
 - [ ] Every default fails **closed**: an unresolvable input costs assertability
       rather than granting it
+- [ ] §2c has a row per uncontrolled input, and **no empty invariant cell** —
+      "fails closed" on a predicate the code cannot evaluate is not a control
 - [ ] §2 consumers were enumerated by grep, not recall
 - [ ] Every §6 invariant has a check that actually runs
 - [ ] §5 regimes are reachable by tests, or the change is experimental,
