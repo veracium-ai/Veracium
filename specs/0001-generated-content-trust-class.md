@@ -8,8 +8,8 @@
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — amended after research's internal review (`spec-0001-research-review.md`); §11 lists the changes. *Re-read before editing; quote the version you approve.* |
-| **Status** | 🛑 **DEFERRED** — external review 2026-07-31 recommends defer pending major amendments, and dev accepts. **The class is confirmed needed; the assertability widening is not established.** See §12 and `proposals/spec-0001-external-review-response.md`. **Do not implement any part of §3.1 or §4.** |
+| **Version** | **v3** — narrowed after external review deferred v2. §13 lists the changes. Previously v2 — (`spec-0001-research-review.md`); §11 lists the changes. *Re-read before editing; quote the version you approve.* |
+| **Status** | **draft (v3)** — v2 was deferred at external review; **the assertability widening is withdrawn, not re-argued.** v3 ships provenance without a new assertion channel. **Not implementable yet:** needs internal + external review, and one open decision in §4b. |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -112,6 +112,24 @@ skipped:**
 
 ---
 
+## 2c-ii. Assertions about reach
+
+*Required since the §2c-ii amendment. Every claim below carries the command that
+establishes it, not a statement that it was checked — **both prior versions of
+this spec failed on unverified assertions about what was reachable.***
+
+| assertion | command | result |
+|---|---|---|
+| `EvidenceAuthor` has exactly 3 members today | `grep -A6 "class EvidenceAuthor" src/veracium/schema.py` | `USER`, `THIRD_PARTY`, `SYSTEM` |
+| a host can set the author via MCP | `grep -n "EvidenceAuthor" src/veracium/mcp_server.py` | `:26` maps host strings → enum |
+| the CLI `--author` list is hardcoded | `grep -n "choices" src/veracium/cli.py` | `:299` `["user","third_party","system"]` |
+| `import` is a shipped CLI verb with `--user` | `grep -n "add_parser" src/veracium/cli.py` | `:278` `import`, `:280` `--user` |
+| which combinations reach `use_only` | `_disclosure_for` over the enum product | user+3P · 3P+any · system+3P |
+| an older library cannot load an `assistant` edge | `Provenance(author_of_evidence='assistant')` | `pydantic.ValidationError` |
+| no `PRAGMA user_version` guard exists | `grep -n "user_version" src/veracium/store/sqlite.py` | no match |
+
+---
+
 ## 3. Trust-class matrix — REQUIRED, blocking
 
 *Provenance: T1 subset-absorption merged edges without checking authorship or
@@ -128,30 +146,33 @@ express it, so both directions appear.
 `THIRD_PARTY`, `SYSTEM`, **`ASSISTANT`** (new); `Disclosure` = `MENTIONABLE`,
 `USE_ONLY`, `QUARANTINED`.
 
-### 3.1 Write-time disclosure (new routing)
+### 3.1 Write-time disclosure — NARROWED IN v3
 
-**This table failed OPEN in v1 and research caught it.** v1 said *"subject
-`user` → `use_only`; **anything else** → `mentionable`"*, which means a mangled,
-invented, empty or ambiguous subject — from an extractor we do not control —
-becomes **assertable**. The default must run the other way, so that the
-extractor-produced field §9(1) worries about can only ever *cost* assertability,
-never grant it.
+**v1 routed on the subject and failed. v2 tried to fail closed on a
+"recognised" subject and failed differently — the predicate was unbuildable
+(no entity resolution, no display name, 19,096 distinct subjects across 131,574
+extracted triples, only 39.4% the literal `"user"`). v3 does not route on the
+subject at all.**
 
-| author | subject | derived_from | disclosure | why |
-|---|---|---|---|---|
-| `ASSISTANT` | resolves to the user (`"user"` or an alias) | — | **`use_only`** | hearsay about a party who is present and can be asked |
-| `ASSISTANT` | **recognised** distinct entity | — | **`mentionable`** | first-party testimony about its own action or an artifact |
-| `ASSISTANT` | **unresolvable** — empty, pronoun, placeholder, or not recognised | — | **`use_only`** | **fail closed.** We cannot show it is not about the user, so we do not treat it as if we had |
-| `ASSISTANT` | any | `THIRD_PARTY` | **`use_only`** | existing cap; `derived_from` only narrows |
-| `ASSISTANT` | any | relation == quarantine | **`quarantined`** | unchanged structural rule |
+| author | derived_from | disclosure |
+|---|---|---|
+| `ASSISTANT` | — | **`use_only`**, for **every** subject |
+| `ASSISTANT` | `THIRD_PARTY` | `use_only` (existing cap; unchanged) |
+| `ASSISTANT` | relation == quarantine | `quarantined` (unchanged) |
 
-**"Recognised" is defined negatively and conservatively:** a subject is
-recognised iff it is non-empty after normalisation, is not in the user-alias set
-(`user`, `you`, `me`, `myself`, `the user`), and is not a bare pronoun or
-placeholder (`it`, `this`, `that`, `they`, `unknown`, `n/a`). Anything else
-falls to `use_only`. The alias and placeholder lists are code, versioned with
-the change, and **adding to them can only ever narrow assertability** — which is
-the same one-way property `derived_from` has, and for the same reason.
+**One rule, no subject inspection, no new predicate.** Promotion remains
+`confirm()` — a user act — exactly as v1 proposed and research accepted.
+
+**What this gives up, stated plainly:** the *"the test suite passed"* case stays
+`use_only`, so an assistant's first-party report of its own action is not
+directly assertable. **That capability now depends on the evidence-basis axis
+(research's, its own design round), which is the right home for it** — a
+deployment result should be groundable because an authenticated tool returned
+it, not because an assistant said so.
+
+**What it buys:** hosts stop mislabelling assistant content as `SYSTEM`, which
+is the dangerous *and* convenient default, and no new persistent assertion
+channel opens. **That was always the majority of the value.**
 
 ### 3.2 Operations, both directions
 
@@ -251,6 +272,52 @@ the normal grounded block with no new marker. An assistant edge about the user
 renders in the existing unverified block; **no new sentence form is
 introduced**, because rendered text becomes model context and a new phrasing is
 a change to what the model reads.
+
+### 4b. Rendering — ⚠️ ONE OPEN DECISION
+
+Attribution must survive into the rendered context, or the class is pointless:
+the whole finding from Workstream C is that a system with nowhere to *put*
+provenance loses it. Research proposed keying the marker on
+`author_of_evidence`:
+
+```python
+ORIGIN_MARKER = {THIRD_PARTY: " [third-party-reported; unconfirmed]",
+                 ASSISTANT:   " [assistant-generated; unverified]",
+                 SYSTEM:      " [system-derived; unconfirmed]"}
+```
+
+**Their four design decisions are adopted unchanged**: the default is a *marker*
+not silence, so a forgotten class yields more caution; no author maps to empty;
+*generated* rather than *reported*, leaving room for the evidence-basis axis;
+and it dissolves the pre-existing quarantined/inference conflation.
+
+**But keying on author alone discards `derived_from`.** Measured — the
+combinations that actually reach `use_only` today:
+
+```
+author=user         derived_from=third_party  -> use_only
+author=third_party  derived_from=(any/none)   -> use_only
+author=system       derived_from=third_party  -> use_only
+```
+
+**`SYSTEM` reaches `use_only` ONLY via `derived_from=THIRD_PARTY`**, so
+*"system-derived"* would name the relayer as the origin when a third party is.
+And **`author=USER, derived_from=THIRD_PARTY` — the Workstream C landlord
+shape — is not in the map at all.** The fix for one conflation would introduce
+another.
+
+**Proposed, pending research:** key on `(author, derived_from)`, checking the
+capping axis first.
+
+```python
+if e.provenance.derived_from is THIRD_PARTY:  " [third-party-derived; unconfirmed]"
+elif author is THIRD_PARTY:                   " [third-party-reported; unconfirmed]"
+elif author is ASSISTANT:                     " [assistant-generated; unverified]"
+else:                                         " [unverified origin]"   # fail closed
+```
+
+**Open question Q5 (§10), blocking.** Nothing here is implementable until it is
+settled.
 
 **Interfaces:** `EvidenceAuthor` gains a member (additive for callers that pass
 it; **not** additive for callers that exhaustively match on it). MCP `remember`
@@ -441,6 +508,7 @@ improving recall.
 
 | # | question | class | who decides | by when |
 |---|---|---|---|---|
+| **Q5** | **Rendering key: `(author, derived_from)`, or author alone?** §4b. Research proposed author-only; measurement shows that mislabels `system+third_party` and omits `user+third_party` — the two commonest `use_only` shapes after plain third-party. | **blocking** | research | before implementation |
 | ~~**Q1**~~ | ~~Should `ASSISTANT × ASSISTANT` merges be blocked?~~ **ANSWERED 2026-07-31 (research):** do not block the merge; block the `observed_at` refresh. The hazard is currency, not confidence. See §3.2 and I10a. | ~~blocking~~ **resolved** | research | done |
 | **Q2** | Does an assistant *restating* user testimony reinforce the user's edge instead of creating an assistant edge? The elegant fix; blocked by the same-disclosure-class rule; would remove most of §8's stated cost. | `deferred` | research | own design round |
 | **Q3** | Store-level version guard (`PRAGMA user_version`) so an old library fails cleanly on a new `.db`, as exports now do. | `pre-release` | dev | before 0.5.0 |
@@ -563,3 +631,26 @@ one source class, which interacts directly with §3.2's self-reinforcement rule.
 - [ ] I re-read the current version before reviewing, and I am quoting the
       version I approve
 - [ ] §9 brief is written, and external review has been sent
+
+---
+
+## 13. Changes in v3 (after external review deferred v2)
+
+1. **The assertability widening is withdrawn, not re-argued.** v3 routes
+   `ASSISTANT` to `use_only` for **every** subject. §3.1's subject rule is gone:
+   v1 failed open, v2's "recognised subject" fix rested on a predicate the
+   codebase cannot evaluate, and measurement settled it — **19,096 distinct
+   subjects across 131,574 extracted triples, only 39.4% the literal `"user"`,
+   and no entity resolution exists.** No subject-based rule is buildable.
+2. **Speaker ≠ witness, conceded.** *"The deploy failed"* has a non-user subject
+   and nothing establishes the assistant deployed anything. That capability
+   moves to the **evidence-basis axis**, which is its right home — a deployment
+   result should be groundable because an authenticated tool returned it.
+3. **§4b added (rendering).** Research's four design decisions adopted
+   unchanged; **one correction** — key on `(author, derived_from)`, because
+   author alone mislabels `system+third_party` as system-derived and omits
+   `user+third_party` entirely. **Q5, blocking.**
+4. **§2c-ii added.** Every reachability claim now carries its command.
+5. **Q3 (store-version guard) remains a hard release gate.**
+6. **Recorded before the fact:** v3 is **more conservative than current Arm C**,
+   so it moves our LongMemEval score **down or nowhere, never up.**
