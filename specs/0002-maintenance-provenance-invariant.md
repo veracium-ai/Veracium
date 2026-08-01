@@ -472,7 +472,18 @@ the changelog.
 | **N1** `valid_from` is never mutated after creation by *any* operation | `test_valid_from_immutable_across_every_mutation_site` — parametrised over confirm / reinforce / absorb / expire / consolidate | CI |
 | **N2** `confirm()` advances `observed_at`, not `valid_from` | `test_confirm_advances_liveness_not_first_known` | CI |
 | **N3** `needs_confirmation` clears only on same-author evidence or `confirm()` | `test_cross_author_cannot_clear_staleness` | CI |
-| **N4** no operation raises `disclosure` toward assertable | `test_no_maintenance_op_widens_disclosure` — property-based over a random op sequence | CI |
+| **N4** no maintenance operation raises `disclosure` toward assertable **or raises `confidence`** | `test_no_maintenance_op_widens_disclosure` · **`test_no_maintenance_op_raises_confidence`** — property-based over a random op sequence | CI |
+
+**N4 was extended to `confidence` on 2026-08-01** (research's 03:45 amendment 3,
+which never landed and became load-bearing when M5 was ruled). **The M5 ruling
+created a rule with no executable check** — *T2 keeps the survivor's own
+confidence* — and by this spec's own template rule an invariant without a check
+does not count. Extending N4 makes it enforcement rather than a sentence.
+
+The two clauses are the same statement about different fields, which is why they
+belong in one invariant: **maintenance-time bookkeeping may not manufacture
+what only evidence can earn** — assertability in the first case, strength in the
+second.
 | **N5** `author_of_evidence` is never overwritten without retaining the prior value | `test_outcome_upgrade_retains_prior_authorship` | CI |
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
 | **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **the general form of both advisories** | CI + bench |
