@@ -1,10 +1,16 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3)** — deferred at the second external review; **all ten items now closed and re-submitted 2026-08-01 23:39 UTC.** The stale v1 rules are **replaced**, not annotated: N3 and N5 point to the specs that own them, N7 loses the general claim, **N9's partial order is defined (§6a)**, §7c freezes one merged-edge behaviour, §7f states the released M2 contract, and the finding ledger separates *disposition exists* from *the code is fixed*. **M3 and M4 moved to `0008`/`0009`** — both are corrections to released behaviour, not documentation debt. **The 28-site manifest ships with this submission**, which it did not last time.
+> **deferred (v3)** — third external review 2026-08-01: **invariant approved for
+> the third time; retrospective deferred for the third time.** **The recurring
+> finding recurred, and this time the header asserted it had not** — v3 said the
+> stale rules were *"replaced, not annotated"* and they were annotated. **§11 is
+> the authoritative statement of what is fixed; where this header and §11 ever
+> disagree, §11 wins.** v4 is a deletion pass. **The manifest's coverage
+> guarantee is NOT established** — see §12 items 3–5.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -412,9 +418,22 @@ recognition*.
 
 ### Which operations are evidence-free — enumerated, not judged
 
-**Derived from the manifest** (`specs/generated/0002-audit-manifest.md`, column
-*evidence-bearing?*), so this list cannot drift from the code without
-`audit_manifest.py --check` failing:
+⚠️ **This previously claimed the list was "derived from the manifest… so it
+cannot drift". Withdrawn — third external review item 5.** The *call sites* are
+mechanically enumerated; the **`evidence-bearing?` column is hand-authored** in
+`audit_dispositions.py`. `--check` proves somebody wrote `yes` or `no`, **not
+that the answer follows from anything.** It is a **reviewed classification**, and
+the reviewer's sharpest example is that every `apply_supersession` write is
+marked evidence-bearing **while M3 — the open defect — is precisely that a
+repetition can be mistaken for authoritative new evidence.**
+
+**A dedicated entry point is not proof of evidence, and neither is a
+host-supplied `author`, `actor` or `date`.** Making this mechanical needs an
+*evidence capability* checkable at the entry point — `0008`'s principle,
+generalised — and that does not exist yet.
+
+**Reviewed classification** (`specs/generated/0002-audit-manifest.md`, column
+*evidence-bearing?*):
 
 | operation | evidence-free? | why |
 |---|---|---|
@@ -668,10 +687,21 @@ predates the fix and was never pinned.
 
 ## 8. Claims and limits
 
-- **What we will say:** *"0.4.5 fixes three provenance defects identified during
-  a mechanically derived audit of the store-mutation sites scoped to spec 0002.
-  Import, supersession and derived-view findings are governed by specs 0005,
-  0003 and 0004."*
+- **What we will say:** *"0.4.5 **attempted** fixes for three provenance defects
+  identified during a reviewed audit of the store-mutation sites scoped to spec
+  0002. **The M2 fix holds; the M3 and M4 fixes were subsequently found
+  inadequate** and are governed by specs 0008 and 0009. Import, supersession and
+  derived-view findings are governed by specs 0005, 0003 and 0004."*
+
+  ⚠️ **Corrected twice.** v1 said *"an audit of every maintenance-time
+  operation"* after §1 had withdrawn that claim. v2/v3 said *"fixes three
+  provenance defects"* after §11 recorded that two of the three do not hold.
+  **The release claim has now been wrong in the same direction in three
+  consecutive drafts**, and each time the correcting fact was already in the
+  document.
+
+  **"Mechanically derived" is also withdrawn** — the call-site *enumeration* is
+  mechanical; the per-site **classification** is hand-authored (§12 item 5).
 
   **⚠️ The previous wording was *"an audit of every maintenance-time
   operation"*, and §1 had already withdrawn exactly that claim.** It survived
@@ -814,156 +844,41 @@ for M2/M3/M4 having shipped citing a `draft` — see the gate finding (`3ef6519`
 
 ---
 
-## 12. External review, 2026-08-01 — disposition
+## 12. Review history
 
-**Verdict: invariant accepted in principle; retrospective deferred for major
-amendment.** The reviewer states the rule better than the spec did:
+**Three external reviews. The invariant was approved by all three; the
+retrospective was deferred by all three.** Full dispositions live in
+`~/Documents/veracium/proposals/` — **not here**, because two full appendices
+inside the spec were themselves finding #1 of the third review.
 
-> **Maintenance without new evidence may narrow trust, but must not manufacture
-> authority, confidence, currency, or provenance.**
-
-**Every falsifiable item was checked against the running code before disposition.
-Nine stand as written, one is refined, and four are worse than claimed.**
-
-| # | item | verified | disposition |
+| round | verdict | findings | what recurred |
 |---|---|---|---|
-| 1 | `valid_from` immutable vs `min` | **refined** | See below — the *shipped* code is consistent; **N1's wording and the T2 design are not.** Still blocking. |
-| 2 | adversarial confirmation dates | **partly already fixed, and worse** | `observed_at = max(...)` **already shipped**, so back-dating is handled. **Future-dating is not — and `max` makes it permanent.** |
-| 3 | same author class ≠ authority | **stands** | `graph.py:119` compares `author_of_evidence` equality and nothing else. Accept the fail-closed rule. |
-| 4 | N7 is not the general invariant | **stands** | Overclaim. N7 tests one UNVERIFIED→GROUNDED transition; M2/M3/M4 need not cross it. |
-| 5 | the 28-site manifest is absent | **stands** | §3 has **11 operation rows**, not 28 call sites. The claim that clean sites are listed is false. |
-| 6 | §8 reintroduces the withdrawn claim | **stands** | §8 still reads *"an audit of every maintenance-time operation"* and *"nine mutation sites"*. Both were withdrawn in §1. |
-| 7 | M4 has no frozen behaviour | **stands, and worse** | The weaker option **already shipped**, and it survives exactly one upgrade. Demonstrated below. |
-| 8 | decay needs bounds | **stands, and worse** | `MemoryConfig` is an unvalidated `@dataclass`. `decay_factor=2.0`, `NaN`, `-1.0` all accepted — **which makes N4 false**. |
-| 9 | crash safety overclaimed | **stands, and worse** | Not a hypothetical: `lifecycle.py:122` deletes **all** cold episodes *before* writing any replacement. |
-| 10 | status vs Q2 | **stands** | 0.4.5 was tagged, released and published to PyPI on 2026-07-31. Q2 asks a pre-release question about it. |
+| **v1** | deferred | 9 | — |
+| **v2** | deferred | 10 | **appended corrections instead of replacing the text they correct** |
+| **v3** | deferred | 7 + package issues | **the same thing again — and this time the header asserted it had been fixed** |
 
-### On item 1 — the reviewer's conclusion is right; the premise needs one correction
+**The recurring failure, stated once, plainly.** Twice I corrected a rule by
+writing the correction *next to* the old rule rather than deleting it — with a
+⚠️ marker, on the reasoning that visible corrections beat silent revision. **That
+reasoning is right for a changelog and wrong for a normative section.** A
+contributor greps `needs_confirmation` and finds two rules; the marker does not
+help, because both hits look authoritative. **History belongs in one place. The
+rule belongs where the rule is.**
 
-*"Those cannot all be true"* — in the **shipped** code they can, narrowly.
-Absorption mutates `edge.valid_from` at `graph.py:128`, but `store.add_edge(edge)`
-is at `graph.py:143`: the edge **is not yet persisted**. Under *creation =
-persistence* N1 holds, which is why its test passes.
+**Third review, verified against the code — every item stands, and three are
+defects in the manifest machinery I built to prevent exactly this:**
 
-**That defence is worth exactly nothing going forward, and the item stays
-blocking**, because (a) N1's wording says *"after creation by any operation"* and
-does not state that reading, and (b) **T2's design applies `valid_from = min` to
-an existing survivor**, which breaks it for real. A contract that survives only
-under an unstated reading of one word is not a contract. **Recommend the
-reviewer's first option — immutable edge identity** — since it is what the code
-already does at the only place it currently matters.
+| # | finding | verified |
+|---|---|---|
+| 1 | stale rules, old ledger and both appendices still present | **yes** — old ledger `:802`, behaviour row `:313`, §§12–13 |
+| 2 | header/§8 contradict the authoritative ledger | **yes** |
+| 3 | `--check` validates the verdict and **never the test**, while its error text claims both | **yes — demonstrated.** Blanked a test, regenerated, `--check` passed |
+| 4 | ordinal identity silently reattaches verdicts on reorder | **yes — demonstrated.** Reordered two `add_edge` calls: identical key set, different operations. **The only thing that flagged it was line numbers, which I documented as *not* part of identity** |
+| 4b | the no-argument display path crashes | **yes** — unpacks a 5-tuple into 4 names; I only ever ran `--write` and `--check` |
+| 5 | "evidence-free is derived from the manifest" is overstated | **yes** — the column is hand-authored. **A claim-versus-artifact gap inside the artifact built to close claim-versus-artifact gaps** |
+| 6 | N9 omits `disclosure`; N9b omits most trust fields | **yes** |
+| 7 | malformed dates still silently become *now* | **yes — and this is live in released 0.4.6.** §7f says it is "not this fix's business"; the reviewer is right that it is the same principle — **a malformed statement about when an event happened is not evidence that it happened now** |
 
-### Two defects verification found that the review did not reach
-
-**(a) `confirm()` returns a `valid_from` it did not set.** M2 removed the false
-date from the model's context and **left it in the API return value**:
-
-```
->>> m.confirm("u", "e-1", date="2026-03-15")
-{'confirmed': 'e-1', 'valid_from': '2026-03-15'}
->>> edge.valid_from
-2026-01-01
-```
-
-**This is M2's own defect, in a different surface.** The spec says the fix is
-shipped. It is shipped in `render_edges` and not in the return contract a host UI
-reads.
-
-**(b) A future-dated confirmation is irreversible.** `_event_dt` performs no
-skew check, and the `max()` that correctly defeats back-dating is what makes
-future-dating permanent:
-
-```
-confirm(date="2099-01-01")  → observed_at = 2099-01-01
-confirm(date="2026-08-01")  → observed_at = 2099-01-01   # max() locks it in
-```
-
-The edge cannot lapse, decay, or be flagged stale for 73 years. **One
-host-supplied date permanently removes an edge from the entire lifecycle.**
-This strengthens the reviewer's item 2 from *"can keep an edge artificially
-fresh"* to **unrecoverable without direct store surgery**.
-
-### Demonstration for item 7 — the M4 note survives one hop
-
-`record_outcome` rebuilds `summary` on every upgrade, so the appended note is
-overwritten rather than accumulated:
-
-```
-initial (system)      author=system  (system) unreviewed: use of 'works_as: CFO'
-after challenged      author=system  (system) challenged: ...
-after corrected(user) author=user    (user) corrected: ... [prior judgment was system-authored]
-after 2nd challenged  author=system  (system) challenged: ... [prior judgment was user-authored]
-```
-
-**The `system → user → system` history is reduced to "prior was user."** M4
-shipped as a fix for authorship erasure and **still erases authorship**, one step
-later, while also still overwriting the structured field. The reviewer's *"a note
-is not structured provenance"* is right; the sharper statement is that this note
-is **destroyed by construction on the next upgrade**.
-
-### Item 9 is the shipped order, not a race
-
-```python
-for e in cold:  store.delete_episode(e.id)     # lifecycle.py:122
-for r in new:   store.add_episode(...)         # lifecycle.py:124
-```
-
-Delete-all-then-write. A crash between the loops loses the cold episodes **with
-no replacement at all** — total loss, not the partial states the review lists.
-*"A partial `maintain` is safe because every operation narrows"* is false in the
-worst available direction.
-
-### What this does not change
-
-The invariant, M1's whole-set minimum-trust rule, the M5 ruling, and the split
-of M6/M7/M8 are all accepted by the reviewer and stand. **The failure is not the
-architecture. It is that a retrospective made coverage and closure claims its
-artifacts do not support** — the same claim-versus-artifact gap as the `_cover`
-docstring, the `valid_from` changelog, and the r2 headline. **Fourth instance,
-and the first where an outside reader found it before we did.**
-
----
-
-## 13. Second external review, 2026-08-01 — disposition
-
-**Verdict: architectural invariant approved; retrospective deferred for a
-focused v3.** Every item was checked against the document. **All ten stand.**
-
-**The central finding, and it is correct:** v2 **appended** §7a–§7e and §12
-rather than **replacing** the v1 text they overturn, so §2c, §3's M-sections, N2,
-N3, N7 and the finding ledger still specify the withdrawn rules. **A contributor
-reading the normative sections gets the old system.**
-
-**I wrote the rule and broke it in the same commit.** `fbf4396` added *"A
-retraction that is not applied by `grep` is not applied"* to §8 **and** the
-appended §7a sections. One `git show` shows both. That is the fourth
-claim-versus-artifact gap recurring one level up: I described the correct method
-and did not execute it.
-
-| # | item | verified | disposition |
-|---|---|---|---|
-| 1 | ledger contradicts implementation status | **stands** | §11 says *"all five findings that remain here are closed"* while the header says three are unimplemented. **"Closed" was true of the *disposition* and false of the *code*, and the table does not distinguish them.** Adopt the reviewer's seven-column ledger. |
-| 2 | no normative M2 contract for 0.4.6 | **stands** | N2 still reads only *"`confirm()` advances `observed_at`"*. **The 0.4.6 behaviour is in the changelog and in §12 and nowhere normative.** A released fix asserted but not pinned. |
-| 3 | M3 may still trust an adversarial label | **stands — and on this document's own terms** | §2c lists **host-supplied `author`** as an uncontrolled input whose adversarial case is *"host may claim `system`"*. §7b then lets *"a new user-authored observation"* clear staleness. **The only evidence of "user-authored" is the field §2c says the host may lie about.** Circular. Research and I both signed this off. **Blocking — posted as R3.** |
-| 4 | N9 names a partial order it never defines | **stands** | I wrote a **field list**, not a relation, and a property test cannot implement one. The reviewer supplies the product rule; adopt it, including `post.observed_at <= pre.observed_at` and the categorical fields as **equality**. Consolidation is set→object and needs its own rule. |
-| 5 | N7's withdrawn claim is still normative | **stands** | The table still calls it *"the general form of both advisories"* and §6 still says *"N7 is the one that matters"*; §9's reviewer brief still asks the question v2 answered. |
-| 6 | M4 chain needs head/concurrency semantics | **stands** | §7a fixes the shape and not the ordering. **A host-supplied timestamp must not decide authority** — use a store-assigned monotonic sequence with an atomic head transition. |
-| 7 | §7c still offers an alternative | **stands** | *"new merged edge (or merge record)"* — not equivalent. Freeze the new-edge construction, and **delete the surviving M5 sentence** (§ line 282) that still calls `min` "the sole exception". |
-| 8 | decay tests under-cover the frozen rule | **stands** | N4b names only `decay_factor`; N4c only `confidence`. §7d froze more than that. Needs `confidence_floor`, boundary-accept regressions, and assignment coverage of **every** bounded mutable trust field. |
-| 9 | the manifest was not in the review package | **stands — my process failure** | I built the artifact, cited its counts, and **did not send it**, so the one item that exists to make coverage independently checkable was the one item the reviewer could not check. Ship `specs/generated/0002-audit-manifest.md` + `audit_manifest.py` + `audit_dispositions.py` with v3. |
-| 10 | crash-safe strategy left open | **stands, and may stay open** | Two strategies is acceptable for a retrospective. **It is not acceptable alongside "all findings closed"** — which is item 1 again, and the reason item 1 is the root. |
-
-### What v3 must not do
-
-**Not grow a third review appendix.** §12 and §13 are themselves the append
-pattern, one level up. **v3 folds both into the normative sections and keeps a
-short changelog of what moved** — otherwise the next reviewer reads a document
-whose corrections outweigh its content.
-
-### One thing to carry to `0006`
-
-**Item 3 is not confined to this spec.** `0006` relaxes M3's rule on
-`source_id`, which is **also host-supplied**. Research's constraint was *never
-model-supplied*; the reviewer's point is that **host-supplied is not sufficient
-when the rule's entire job is to establish authenticity.** If R3 lands on *"the
-call path must establish it"*, `0006`'s §3 matrix inherits that requirement.
+**Status: `deferred`.** v4 is a deletion pass plus the tooling fixes, and the
+manifest's coverage guarantee is **not established** until N8 checks tests and
+identity survives reordering.
