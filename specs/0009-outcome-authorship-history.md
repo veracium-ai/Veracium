@@ -133,7 +133,7 @@ preserved only `user` authorship would pass a naive test.
 > chain is the episode with the **highest store-assigned `seq`**; `outcome_counts`
 > and `last_outcome` derive from heads.
 
-**`seq` is assigned by the store, never by the host.** The second external
+**`seq` is per-chain — scoped to one `(edge_id, evidence_ref)`** — and **assigned by the store, never by the host.** The second external
 review's requirement, and it is the same rule as `0008`'s: *a host-controlled
 timestamp must not decide authority.* Two hosts with skewed clocks would
 otherwise reorder each other's judgments.
@@ -225,6 +225,6 @@ demonstrated rather than hypothetical.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **H-Q1** | Is `seq` **global** or **per-`(edge_id, evidence_ref)`**? Per-chain is smaller and enough for ordering; global also gives a store-wide audit order. **Dev leans per-chain** — global invites reuse as a general clock, which is how a field acquires an unintended contract. | **blocking** | research | before implementation |
+| ~~H-Q1~~ | **RULED 2026-08-01: per-chain.** *Global invites reuse as a general clock, which is how a field acquires an unintended contract* — and per-chain is **structurally un-repurposable**, since values from different chains are not comparable. A store-wide audit order, if ever needed, is a **separately named append log**, not a widened `seq`. **Live precedent:** `confidence` is a lifetime parameter that reads like a belief strength, and putting it in the scorer would retroactively change every merge rule. **A global `seq` is the same trap one field over.** | resolved | research | — |
 | **H-Q2** | Should the **head be materialised** on the edge (a pointer) or derived by query? Materialised is faster and adds a second place for truth to live. **Dev leans derived.** | `pre-release` | dev | before implementation |
 | ~~H-Q3~~ | **RULED 2026-08-01 (Quentin): no release-note correction**, answered once for both specs. The gap is recorded here and in `0002` §11; the fix ships as this spec. **Not blocking.** | resolved | Quentin | — |

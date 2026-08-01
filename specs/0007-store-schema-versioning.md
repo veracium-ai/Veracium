@@ -113,6 +113,29 @@ precondition of all of them rather than a peer.
 | **older** | `0 < user_version < SCHEMA_VERSION` | run each registered migration in order; stamp; refuse on a gap |
 | **newer** | `user_version > SCHEMA_VERSION` | **REFUSE** — this build cannot know what it does not know |
 
+### 4a. Shape matching — ruled, and the framing was wrong
+
+**S-Q1 ruled: compare table names + column names, as an *exact set*.**
+
+**The correction worth carrying, because I had the axis wrong.** I called this
+the "moderate" option between names-only and a `sqlite_master.sql` hash. **The
+hash is not stricter — it is strict about the wrong thing.** It fires on DDL
+reformatting and SQLite version differences: **differences that are not
+differences.** A check that refuses stores which are genuinely fine gets
+bypassed, and a bypassed check is weaker than a narrower one that holds.
+**Strictness should key on semantics, not representation** — which makes
+names+columns the **strictest** option once non-difference checks are excluded,
+not a midpoint.
+
+**Two tightenings, both from the ruling:**
+
+1. **Exact set equality, not containment.** A database holding our tables **plus
+   others** must be **refused**. Containment would adopt a foreign store that
+   happens to embed our schema — precisely the case adoption exists to catch.
+2. **Every adoption is logged** — path, matched shape, timestamp, resulting
+   version. **A one-time trust decision that is not recorded is unauditable
+   forever after**, and adoption happens once per store, silently, on upgrade.
+
 **Adoption is the only subtle case.** Every store in existence today reads
 `user_version = 0` and is shape-identical to v1, so adoption is correct *now*
 and would be wrong later. **It is safe only because it verifies the shape rather
@@ -150,6 +173,8 @@ constructing a build that does not exist yet.
 | **S3** adoption verifies **shape**, not the counter | `test_a_foreign_store_at_version_zero_is_refused` — a db with a `veracium`-ish table of the wrong shape | CI |
 | **S4** migrations are forward-only; a gap refuses | `test_a_missing_migration_refuses` | CI |
 | **S5** first open is atomic under concurrency | `test_concurrent_first_open_stamps_once` — N threads on one path | CI |
+| **S8** shape matching is **exact set equality** | `test_a_store_with_extra_tables_is_refused` — our schema plus one foreign table | CI |
+| **S9** every adoption is logged | `test_adoption_is_logged` | CI |
 | **S6** an existing store keeps working with no data change | `test_legacy_store_is_adopted_losslessly` — build a store on the current code, clear `user_version`, reopen, assert every edge/episode is byte-identical | CI |
 | **S7** `FORMAT_VERSION` is untouched | `test_export_format_version_is_independent` | CI |
 
@@ -194,6 +219,6 @@ here and why `0006` must specify its own down-path or declare it one-way.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **S-Q1** | **How is "the tables match today's shape" defined?** Options: table names only (cheap, weak) · names + column names (moderate) · a hash of `sqlite_master.sql` (exact, but brittle against harmless formatting changes). **Dev leans names + columns** — a hash would refuse stores that are genuinely fine. | **blocking** | research | before implementation |
+| ~~S-Q1~~ | **RULED 2026-08-01: names + columns, with exact set equality.** See §4a — and note the framing correction: it is not a midpoint. | resolved | research | — |
 | **S-Q2** | Should `SqliteStore` accept `allow_adopt=False` for hosts that would rather refuse an unstamped store than adopt it? | `pre-release` | dev | before release |
 | **S-Q3** | Does anything other than `SqliteStore` need this? `base.py` is an interface; a future Postgres store would need its own mechanism. **Not in scope, recorded so it is not assumed covered.** | `deferred` | dev | — |

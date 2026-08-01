@@ -152,6 +152,28 @@ unchanged).
 
 ---
 
+### 4a. Ruled — the cap is unconditional; `--restore` opts out
+
+**I-Q1 ruled**, and research took ownership of the hole: their M6 ruling said
+*cap at the remap*, and **the remap signal compares `--user` against the export
+header — a field inside the attacker's file.** Their words: *"I reasoned about
+where the semantics change and not about who supplies the evidence that they
+changed."*
+
+> **Every import caps** (`derived_from = THIRD_PARTY`, never raised). **`--restore`
+> opts out**, and **`--restore` and `--user` are mutually exclusive.**
+
+**The mutual exclusion is the load-bearing clause**, and it is the tightening I
+did not propose. Without it, **a restore that remaps is a cross-principal import
+wearing the restore flag** — `--restore --user bob` would be exactly the original
+defect with one extra word. That is the only path by which `--restore` becomes
+the new suppression vector.
+
+**The decision moves from the file to the operator**, which is the whole point:
+the operator is a party we have some basis to trust, and the header is not.
+
+---
+
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
 | invariant | executable check | where |
@@ -159,6 +181,8 @@ unchanged).
 | **P1** a remapping import caps every edge | `test_remapping_import_caps_trust` — Alice→Bob: `assertable` False, `derived_from` `THIRD_PARTY` | CI |
 | **P2** restore is byte-identical | `test_restore_preserves_provenance_exactly` — round-trip with no remap | CI |
 | **P3** the cap never raises | `test_import_cap_never_raises` — an edge already at `THIRD_PARTY` is unchanged | CI |
+| **P5** `--restore` and `--user` are **mutually exclusive** | `test_restore_with_remap_is_refused` — **the tightening; without it `--restore` is the new bypass** | CI |
+| **P6** the cap is unconditional without `--restore` | `test_every_import_caps_by_default` — including same-`user_id` imports | CI |
 | **P4** the cap survives a hand-written file | `test_handwritten_export_cannot_evade_the_cap` — trust fields set adversarially in the file, cap still applied | CI |
 
 ---
@@ -186,5 +210,5 @@ evidence and belongs in `remember()`.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **I-Q1** | **The header `user_id` is attacker-controlled and the cap keys on it.** Setting it equal to the target suppresses the cap. Options: cap on *every* import and make restore opt in explicitly (`--restore`); or bind the header with the export signature if one is ever added. **Dev leans cap-by-default + explicit `--restore`** — it moves the decision from the file to the operator. | **blocking** | research | before implementation |
+| ~~I-Q1~~ | **RULED 2026-08-01: cap on every import; `--restore` opts out; `--restore` and `--user` are mutually exclusive.** See §4a. | resolved | research | — |
 | **I-Q2** | Should the docs recipe ship at all once the cap lands, given imported facts are then non-assertable? The recipe's value may have depended on the defect. | `pre-release` | marketing + dev | before the recipe publishes |

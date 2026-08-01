@@ -1,10 +1,10 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred (v2)** — second external review 2026-08-01: **invariant approved; retrospective deferred again.** All ten items verified present and **all stand**. The diagnosis is right and is the thing to fix: **v2 appended corrections instead of replacing the text they correct**, so the document now describes two systems. **v3 is a rewrite, not another amendment** — see §13.
+> **in review (v3)** — deferred at the second external review; **all ten items now closed and re-submitted 2026-08-01 23:39 UTC.** The stale v1 rules are **replaced**, not annotated: N3 and N5 point to the specs that own them, N7 loses the general claim, **N9's partial order is defined (§6a)**, §7c freezes one merged-edge behaviour, §7f states the released M2 contract, and the finding ledger separates *disposition exists* from *the code is fixed*. **M3 and M4 moved to `0008`/`0009`** — both are corrections to released behaviour, not documentation debt. **The 28-site manifest ships with this submission**, which it did not last time.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -21,8 +21,8 @@ this spec reports findings, not coverage.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — *re-read before editing; quote the version you approve.* v1 was deferred at external review 2026-08-01; all nine amendments applied. |
-| **Status** | *see `Spec-Status:` at the top — canonical.* **v2 — deferred at external review, amended, re-submission requested.** The nine required amendments are applied (§7a–§7e, N1/N4b/N8/N9/N10, §8, Q2) and the 28-site manifest now exists as a generated, CI-verified artifact. |
+| **Version** | **v3** — *re-read before editing; quote the version you approve.* v1 deferred (nine amendments); **v2 deferred for appending rather than replacing**; v3 replaces. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* **v3 — re-submitted with all twenty findings from two external reviews closed.** Research: **GO** (2026-08-01). |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
 | **Decision + date** | — · **scope narrowed 2026-08-01** to M1–M5, all closed. M6/M7/M8 moved out; see §11. |
@@ -279,9 +279,11 @@ defect. **It must be settled before T2 lands, not during.**
 >
 > **T2 must change no field encoding evidentiary strength or currency** —
 > `observed_at` not advanced, `needs_confirmation` not cleared, `confidence`
-> unchanged. **`valid_from = min` stays the sole exception**, because it
-> *corrects* first-known rather than manufacturing anything, and the merge-event
-> record keeps the absorbed edge's value recoverable.
+> unchanged. ⚠️ **This previously read *"`valid_from = min` stays the sole
+> exception"* and is withdrawn** — R1 removed the exception rather than
+> relocating it. Under §7c, `min` is a property of **constructing a new edge**,
+> not of mutating an existing one, so N1 is absolute and nothing is excepted from
+> it. The merge record still keeps the absorbed edge's value recoverable.
 >
 > This is the write-time-evidence vs maintain-time-bookkeeping rule that already
 > settled `needs_confirmation` in July, applied to a different field. **Two
@@ -341,10 +343,12 @@ the changelog.
 |---|---|---|
 | **N1** `valid_from` is **never mutated on a persisted edge**, by any operation, without exception | `test_valid_from_immutable_across_every_mutation_site` — parametrised over confirm / reinforce / absorb / expire / consolidate | CI |
 | **N2** `confirm()` advances `observed_at`, not `valid_from` | `test_confirm_advances_liveness_not_first_known` | CI |
-| **N3** `needs_confirmation` clears only on same-author evidence or `confirm()` | `test_cross_author_cannot_clear_staleness` | CI |
+| **N3** ➡️ **MOVED to `specs/0008`.** ⚠️ Previously read *"clears only on same-author evidence or `confirm()`"* — **the rule R3 overturned.** Now: **only `confirm()` clears; no field value ever does** | `0008` C1–C6 | `0008` |
 | **N4** no maintenance operation raises `disclosure` toward assertable **or raises `confidence`** | `test_no_maintenance_op_widens_disclosure` · **`test_no_maintenance_op_raises_confidence`** — property-based over a random op sequence, **run under a hostile `MemoryConfig`** | CI |
-| **N4b** `MemoryConfig` rejects a `decay_factor` outside `[0, 1]`, and `NaN`/`±inf` | `test_decay_factor_bounds_are_validated` — 0 · 1 · interior · >1 · negative · NaN · ±inf | CI |
-| **N4c** a declared field bound is enforced **on assignment**, not only on construction | `test_confidence_bound_holds_under_in_place_mutation` — verified today that `validate_assignment` is `False` and `confidence *= 2.0` yields `1.8` | CI |
+| **N4b** `MemoryConfig` rejects **`decay_factor` and `confidence_floor`** outside `[0, 1]`, and `NaN`/`±inf` | `test_config_bounds_are_validated` — **both fields** × 0 · 1 · interior · >1 · negative · NaN · +inf · −inf | CI |
+| **N4b′** the exact boundaries **remain accepted** | `test_boundary_configs_are_still_valid` — `0.0` and `1.0` on both fields; **a regression test, because the cheapest wrong fix is an exclusive bound** | CI |
+| **N4c** a declared bound on **every** bounded mutable trust field is enforced **on assignment**, not only on construction | `test_declared_bounds_hold_under_in_place_mutation` — **enumerated from the models, not hand-listed**: every `Field` on `Provenance`/`Edge` carrying `ge`/`le`/`gt`/`lt` is mutated past its bound and must raise. Verified today that `validate_assignment` is `False` and `confidence *= 2.0` yields `1.8` | CI |
+| **N4d** the mutation happens through the **real path**, not a synthetic assignment | `test_decay_through_expire_cannot_exceed_the_bound` — drives `expire()` with a hostile config rather than poking the model | CI |
 | **N8** every store-mutator call site carries a verdict and a test | `test_every_store_mutation_site_carries_a_verdict` → `specs/audit_manifest.py --check` | CI |
 
 **N4 was extended to `confidence` on 2026-08-01** (research's 03:45 amendment 3,
@@ -357,15 +361,88 @@ The two clauses are the same statement about different fields, which is why they
 belong in one invariant: **maintenance-time bookkeeping may not manufacture
 what only evidence can earn** — assertability in the first case, strength in the
 second.
-| **N5** `author_of_evidence` is never overwritten without retaining the prior value | `test_outcome_upgrade_retains_prior_authorship` | CI |
+| **N5** ➡️ **MOVED to `specs/0009`.** ⚠️ *"without retaining the prior value"* was **broad enough to be satisfied by a prose note**, which is how the inadequate fix passed. `0009` H7 asserts on **structure** | `0009` H1–H7 | `0009` |
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
-| **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **the general form of both advisories** | CI + bench |
-| **N9** *(replaces N7's general claim)* for an **evidence-free** operation the post-state is no stronger than the pre-state under a defined partial order over `assertable` · `needs_confirmation` · `confidence` · `observed_at` · `author_of_evidence` · `derived_from` · `valid_from` | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
+| **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** ⚠️ **Not the general form** — see N9 | CI + bench |
+| **N9** *(replaces N7's general claim)* for an **evidence-free** operation the post-state is no stronger than the pre-state under the partial order **defined in §6a** | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
 | **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
-**N7 is the one that matters.** It is stated over the *observable boundary*
-rather than over any field, so it catches the next instance of this class even if
-the mechanism is one nobody has thought of. Both advisories would have failed it.
+**N7 is the strongest *end-to-end* check and it is not the general form.**
+It is stated over the *observable boundary* — what the model may assert — which
+is why it survives refactors that instance checks do not. **But it tests one
+transition**, and three of this spec's own findings never cross it: **M2** changes
+a date inside a tier, **M3** removes a caveat without necessarily changing tier,
+and **M4** destroys authorship without touching disclosure at all. **A check that
+misses three of your six findings is not their general form**, and calling it one
+is what the second external review objected to. **N9 carries that role.**
+
+---
+
+## 6a. The partial order N9 quantifies over
+
+**Second external review item 4: v2 named a partial order and never defined
+one.** A field list is not a relation, and a property test cannot implement one.
+Defined here so N9 is executable rather than aspirational.
+
+**For an evidence-free operation on a single persisted edge**, every clause must
+hold:
+
+```
+post.assertable          <=  pre.assertable          # False is weaker than True
+post.needs_confirmation  >=  pre.needs_confirmation  # True  is weaker than False
+post.confidence          <=  pre.confidence
+post.observed_at         <=  pre.observed_at         # currency may not advance
+post.author_of_evidence  ==  pre.author_of_evidence  # categorical: equality
+post.derived_from        ==  pre.derived_from        # categorical: equality
+post.valid_from          ==  pre.valid_from          # immutable identity, §7c
+```
+
+**The boolean clauses express trust strength, not ordinary ordering** —
+`needs_confirmation` is written `>=` because *keeping* the caveat is the weaker,
+permitted direction. **Authorship and `derived_from` are categorical**: there is
+no "less trusted author" to move toward, so the only safe relation is equality,
+and any change is a violation regardless of direction. **That is what makes N9
+catch M4**, which N7 misses entirely.
+
+**`observed_at` is the clause most likely to be argued with**, so: a
+maintenance operation may not advance currency, because currency is a claim
+about evidence and maintenance has none. Advancing it is the same manufacture
+`0002` M5 forbids for `confidence` at T2 — *manufacturing freshness from
+recognition*.
+
+### Which operations are evidence-free — enumerated, not judged
+
+**Derived from the manifest** (`specs/generated/0002-audit-manifest.md`, column
+*evidence-bearing?*), so this list cannot drift from the code without
+`audit_manifest.py --check` failing:
+
+| operation | evidence-free? | why |
+|---|---|---|
+| `expire()` — lapse · decay · flag | **yes** | a clock ticked; nothing was observed |
+| `consolidate()` | **yes** | recognition of existing records — **and see below** |
+| wiki recompilation | **yes** | derived view over existing edges |
+| **T2 dedup** (unwritten) | **yes** | *"no new edge arrives"* — M5 |
+| `ingest` / reinforcement (**T1**) | **no** | **a new edge arrived**; `confidence = max` is earned, per M5 |
+| `confirm()` · `dispute()` · `correct()` · `record_outcome()` | **no** | an authorised act through a dedicated entry point — `0008`'s principle |
+| `import_memory` | **no** *(but see `0005`)* | it carries evidence; the question there is **whose** |
+
+### Consolidation needs a second rule
+
+**N9 as written compares one edge before and after. Consolidation maps a *set* of
+episodes to a *new* object**, so there is no pre-state to compare against:
+
+> **N9b — set→output.** The output's disclosure is **no stronger than the
+> least-trusted input**, `author_of_evidence` is `SYSTEM` (what it is, not an
+> inherited author), and `derived_from` retains **any** third-party influence
+> present in the set.
+
+**That is M1's shipped rule** (0.4.4, GHSA-hcj3-8jqc-wqrp), stated as an
+invariant rather than as a fix, which is what lets it be checked on operations
+M1 never touched.
+
+**History preservation stays out of both** — it is N10. **Erasing history is not
+modelled as a trust rank**, and folding it in would let a "narrower" post-state
+launder a destroyed record.
 
 ---
 
@@ -429,9 +506,21 @@ outright.
 **Frozen — option (1), immutable edge identity:**
 
 > `valid_from` never changes on a persisted edge. A merge whose first-known date
-> is earlier than the survivor's produces a **new merged edge** (or merge record)
-> whose `valid_from` is the `min` of its inputs, with the originals retained and
-> recoverable.
+> is earlier than the survivor's **constructs a new edge**:
+>
+> 1. **new `id`**, `valid_from = min(inputs)`;
+> 2. the inputs are **superseded, never mutated** — `active = False`,
+>    `invalidation_reason = "absorbed_duplicate"`, `supersedes` links the new
+>    edge to them;
+> 3. the **structured merge record** retains both pre-merge states (T2 v2.1
+>    delta (d)) — it is evidence, not a comment;
+> 4. **the new edge is the only active one** for that `(subject, relation)`, so
+>    nothing renders twice.
+
+**The "(or merge record)" alternative is withdrawn.** Second external review item
+7: they are not equivalent, and a merge record alone leaves *which edge is
+current* and *how the earlier first-known date renders* undefined. **Clause 4 is
+the one that alternative could not answer.**
 
 **The cost is already paid, which is the decisive argument and not the one I
 gave.** T2 v2.1 delta (d) already requires a structured merge-event record with
@@ -624,18 +713,45 @@ predates the fix and was never pinned.
 
 ## 9. Brief for the external reviewer
 
-- **What we are least sure of.** (1) Whether **N7 is actually the general
-  form**, or merely the general form of the two instances we happen to have seen
-  — the honest answer is that we cannot tell from two. (2) Whether "same author
-  class" is the right axis for M3, given that the axis error is exactly what
-  deferred spec 0001. (3) Whether `expire()`'s confidence decay is genuinely
-  narrowing in all cases, or only in the ones we constructed.
-- **Where we suspect we have overstated.** §1's claim that three rules with the
-  same shape reveal "the architecture's actual invariant" is a satisfying
-  sentence and may be pattern-matching on three data points.
-- **What would change our minds.** A maintenance operation that legitimately
-  needs to widen trust. We could not construct one, which is either evidence for
-  the invariant or a failure of imagination.
+**All three of v1's "least sure of" items have since been answered — two of them
+by you.** Repeating them would have wasted a round, so they are recorded as
+resolved and replaced with what is actually uncertain now.
+
+| v1 uncertainty | outcome |
+|---|---|
+| *Is N7 the general form?* | **No.** You showed it misses M2, M3 and M4. N7 is an end-to-end gate; **N9 + §6a** is the general form, now defined rather than named. |
+| *Is "same author class" the right axis for M3?* | **No** — and the replacement was wrong too. §7b's *"user-authored observation"* relied on `author`, which **§2c of this document lists as adversarial**. Ruled strict (R3), moved to **`0008`**. |
+| *Is `expire()`'s decay genuinely narrowing?* | **No.** `MemoryConfig` was unvalidated, so `decay_factor=2.0` raised confidence — **and `validate_assignment` is `False`, so the declared `le=1.0` on the field never applied on the mutation path either.** N4b–N4d. |
+
+**What we are least sure of now.**
+
+1. **Whether §6a's `observed_at` clause is too strong.** It forbids maintenance
+   advancing currency at all. That is right for T2 and for decay; we are less
+   certain there is no legitimate maintenance-time liveness signal we have not
+   thought of.
+2. **Whether N9's categorical equality on `author_of_evidence` / `derived_from`
+   is the right shape**, or whether a *lattice* (a merge may only move toward
+   less-trusted) is needed once `0009`'s chains and `0003`'s ladder both land.
+   Equality is the conservative choice and may be too blunt.
+3. **Whether splitting M3/M4/M6/M7/M8 out was right.** It made each closeable and
+   left this document a record — but **five specs now cross-reference each other**,
+   and a reviewer of any one of them sees less of the whole than a reviewer of v1 did.
+
+**Where we suspect we have overstated.** §1's claim that three same-shaped rules
+reveal "the architecture's actual invariant" is a satisfying sentence built on
+three data points. **It has since grown to five instances, which is either
+confirmation or a stronger selection effect** — we keep finding it because we
+keep looking for it.
+
+**What would change our minds.** A maintenance operation that legitimately needs
+to widen trust. We still cannot construct one.
+
+**What is different in this submission.** The **28-site manifest is included** —
+`specs/generated/0002-audit-manifest.md` plus `audit_manifest.py` and
+`audit_dispositions.py`. **Its absence was item 9 last time**, and it was the one
+artifact built specifically to make the coverage claim checkable. It is generated
+from the mutator interface and CI-verified; `--check` fails when the code and the
+verdicts disagree.
 
 ---
 
