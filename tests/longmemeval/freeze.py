@@ -47,7 +47,17 @@ REQUIRED_FIELDS = (
     # null result invites "you should have used a larger reserve", and choosing
     # the value after any outcome is exactly what G3 exists to prevent.
     "arm_config",
+    # Same argument one axis over: a protocol frozen against unspecified code
+    # and models is not frozen. The "matched pair" that straddled ce66282 was
+    # two runs compared across a retrieval change — this is that defect declared
+    # in advance instead of discovered afterwards.
+    "environment",
 )
+
+# "default" is not a value. Defaults change between versions, so a freeze saying
+# "0.4.2 behaviour" silently means something else after 0.5.0 — the frozen
+# prediction then describes a configuration nobody can reconstruct.
+_PLACEHOLDERS = {"default", "defaults", "as shipped", "current", "tbd", "?"}
 
 
 class FreezeError(RuntimeError):
@@ -64,11 +74,13 @@ class FreezeVerdict:
     problems: list[str] = field(default_factory=list)
     fields_present: list[str] = field(default_factory=list)
     approved_at: str | None = None
+    arm_config: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {"confirmatory": self.confirmatory, "freeze_id": self.freeze_id,
                 "path": self.path, "problems": self.problems,
                 "approved_at": self.approved_at,
+                "arm_config": self.arm_config,
                 "fields_present": self.fields_present}
 
     def explain(self) -> str:
@@ -96,12 +108,62 @@ def sha256_items(item_ids) -> str:
 
 
 _FIELD = re.compile(r"^([a-z_]+):", re.M)
+_ARM_BLOCK = re.compile(r"^arm_config:\s*$(.*?)(?=^\S|\Z)", re.M | re.S)
+_ARM_LINE = re.compile(r"^\s{2,}([a-z_]+)\s*:\s*\{?([^}\n]*)\}?\s*$", re.M)
+_KV = re.compile(r"([a-z_]+)\s*:\s*([^,\s]+)")
 _ISO = re.compile(r"^\s*approved_at:\s*(\S+)", re.M)
 _ITEMSET_HASH = re.compile(r"item_set_hash:\s*([0-9a-f]{16,64})", re.I)
 
 
 def _parse_fields(text: str) -> set[str]:
     return set(_FIELD.findall(text))
+
+
+def parse_arm_config(text: str) -> dict[str, dict[str, str]]:
+    """`arm_config:` → {arm: {param: value}}.
+
+    Deliberately tolerant of layout and strict about content: a block we cannot
+    parse is reported as a problem rather than skipped, because a silently
+    ignored declaration is worse than an absent one — it reads as frozen.
+    """
+    m = _ARM_BLOCK.search(text)
+    if not m:
+        return {}
+    out: dict[str, dict[str, str]] = {}
+    for arm, body in _ARM_LINE.findall(m.group(1)):
+        params = {k: v.strip().rstrip(",") for k, v in _KV.findall(body)}
+        if params:
+            out[arm] = params
+    return out
+
+
+def config_conflicts(declared: dict[str, str], observed: dict[str, object],
+                     *, arm: str) -> list[str]:
+    """Frozen intent vs what the run actually did.
+
+    The freeze declares INTENDED values; `manifest.EffectiveConfig` records
+    requested/resolved/OBSERVED. Until now those two records never met — the
+    manifest could prove precisely what we ran, and the freeze could not say
+    what we meant to run.
+    """
+    problems = []
+    for param, want in declared.items():
+        if want.lower() in _PLACEHOLDERS:
+            problems.append(f"arm_config[{arm}].{param} = {want!r} is not a "
+                            f"value — write the number; defaults move between "
+                            f"versions")
+            continue
+        if param not in observed:
+            continue
+        got = observed[param]
+        try:
+            same = abs(float(want) - float(got)) < 1e-9
+        except (TypeError, ValueError):
+            same = str(want).strip() == str(got).strip()
+        if not same:
+            problems.append(f"arm_config[{arm}].{param}: freeze declares "
+                            f"{want!r}, run observed {got!r}")
+    return problems
 
 
 def _approved_at(text: str) -> datetime | None:
@@ -181,7 +243,14 @@ def verify(freeze_path, *, freeze_id: str | None, run_started_at: datetime,
                     f"runner is about to execute {actual_items[:16]} "
                     f"({len(list(item_ids))} items)")
 
+    arms = parse_arm_config(text)
+    if "arm_config" in present and not arms:
+        problems.append("arm_config present but unparseable — a declaration "
+                        "that cannot be read is worse than an absent one, "
+                        "because it reads as frozen")
+
     return FreezeVerdict(
         confirmatory=not problems, freeze_id=actual, path=str(path),
         problems=problems, fields_present=sorted(present),
-        approved_at=approved.isoformat() if approved else None)
+        approved_at=approved.isoformat() if approved else None,
+        arm_config=arms)

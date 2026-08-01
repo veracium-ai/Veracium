@@ -44,12 +44,19 @@ def _freeze(tmp_path, *, approved_at="2026-07-31T09:00:00Z", omit=(),
         "stop_rules": "if coverage rises and the metric does not, falsified",
         "approved_by": "research",
         "approved_at": approved_at,
-        "arm_config": "baseline subgraph_coverage_share=0.0; treatment=0.25",
+        "environment": "extractor gpt-4.1-mini; answerer gpt-4.1; judge gpt-4o",
     }
     for k in omit:
         lines.pop(k, None)
     body = "\n".join(f"{k}: {v}" for k, v in lines.items())
     body += f"\nitem_set_hash: {item_hash}\n"
+    # arm_config is a structured block, not a prose line — the whole point of
+    # the cross-check is that the intervention is machine-comparable against
+    # what the run observed.
+    if "arm_config" not in omit:
+        body += ("arm_config:\n"
+                 "  baseline: {subgraph_coverage_share: 0.0, max_subgraph_edges: 40}\n"
+                 "  treatment: {subgraph_coverage_share: 0.25, max_subgraph_edges: 40}\n")
     p = tmp_path / name
     p.write_text(body)
     return p
@@ -207,3 +214,70 @@ def test_the_verdict_explains_itself(tmp_path):
                item_ids=ITEMS)
     assert "thresholds" in v.explain()
     assert v.as_dict()["problems"]
+
+
+# --- the cross-check: frozen INTENT vs observed ACTUAL ----------------------
+
+def _with_arms(tmp_path, treatment="0.25", name="armed.md"):
+    p = _freeze(tmp_path, name=name)
+    if treatment != "0.25":
+        p.write_text(p.read_text().replace(
+            "subgraph_coverage_share: 0.25", f"subgraph_coverage_share: {treatment}"))
+    return p
+
+
+def test_arm_config_is_parsed_per_arm(tmp_path):
+    from freeze import parse_arm_config
+    arms = parse_arm_config(_with_arms(tmp_path).read_text())
+    assert arms["baseline"]["subgraph_coverage_share"] == "0.0"
+    assert arms["treatment"]["subgraph_coverage_share"] == "0.25"
+    assert arms["treatment"]["max_subgraph_edges"] == "40"
+
+
+def test_a_run_matching_its_freeze_has_no_conflicts(tmp_path):
+    from freeze import config_conflicts, parse_arm_config
+    arms = parse_arm_config(_with_arms(tmp_path).read_text())
+    assert config_conflicts(arms["treatment"],
+                            {"subgraph_coverage_share": 0.25,
+                             "max_subgraph_edges": 40}, arm="treatment") == []
+
+
+def test_a_run_contradicting_its_freeze_is_caught(tmp_path):
+    """The failure this exists for: the freeze says 0.25, the run does 0.0 —
+    i.e. it executes the BASELINE while claiming the treatment protocol."""
+    from freeze import config_conflicts, parse_arm_config
+    arms = parse_arm_config(_with_arms(tmp_path).read_text())
+    c = config_conflicts(arms["treatment"],
+                         {"subgraph_coverage_share": 0.0,
+                          "max_subgraph_edges": 40}, arm="treatment")
+    assert c and "freeze declares '0.25'" in c[0] and "observed 0.0" in c[0]
+
+
+def test_default_is_not_a_value(tmp_path):
+    """'0.4.2 behaviour' silently means something else after 0.5.0."""
+    from freeze import config_conflicts
+    c = config_conflicts({"subgraph_coverage_share": "default"},
+                         {"subgraph_coverage_share": 0.0}, arm="treatment")
+    assert c and "is not a value" in c[0]
+
+
+def test_unparseable_arm_config_is_a_problem_not_a_skip(tmp_path):
+    """A declaration that cannot be read is worse than an absent one: it reads
+    as frozen."""
+    p = _freeze(tmp_path, name="bad.md")
+    body = p.read_text().split("arm_config:")[0] + "arm_config:\n\nnext_field: x\n"
+    p.write_text(body)
+    v = verify(p, freeze_id=sha256_file(p), run_started_at=RUN_START,
+               item_ids=ITEMS)
+    assert not v.confirmatory
+    assert "unparseable" in " ".join(v.problems)
+
+
+def test_environment_is_required(tmp_path):
+    """Model pins and code version: a protocol frozen against unspecified code
+    is not frozen. Zero of the four real freezes pinned a model."""
+    f = _freeze(tmp_path, omit=("environment",))
+    v = verify(f, freeze_id=sha256_file(f), run_started_at=RUN_START,
+               item_ids=ITEMS)
+    assert not v.confirmatory
+    assert "environment" in " ".join(v.problems)

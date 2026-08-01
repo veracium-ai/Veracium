@@ -31,7 +31,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import ORACLE_FILE, S_FILE, load, stratified_pilot
 from cache import CACHE_DIR, CacheLock, CachedComplete
-from freeze import FreezeError, verify as verify_freeze
+from freeze import FreezeError, config_conflicts, verify as verify_freeze
 from manifest import (CompletionAttestation, EffectiveConfig, RunManifest,
                       check_manifest_self_consistency, decision_eligibility,
                       environment_state, explain_ineligibility, git_state,
@@ -228,6 +228,34 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                            run_started_at=_started,
                            item_ids=[i.question_id for i in items])
     print(f"[longmemeval] freeze: {freeze.explain()}", file=sys.stderr)
+
+    # Freeze (INTENDED) vs effective config (ACTUAL) — the cross-check that
+    # makes "we ran what we said we would" checkable rather than assertable.
+    # G15 gave the manifest requested/resolved/observed; the freeze declares
+    # intent; until now the two records never met.
+    #
+    # This ABORTS rather than downgrading, unlike the other freeze failures,
+    # and the distinction is deliberate: a run that both claims a protocol AND
+    # contradicts it means the operator believes something false about what is
+    # executing — the same condition as a wrong --freeze-id. It is detectable
+    # here, before the first paid call, and the alternative is ~180 item-runs
+    # of the wrong configuration.
+    if freeze.confirmatory and freeze.arm_config:
+        declared = (freeze.arm_config.get(arm_name)
+                    or freeze.arm_config.get("treatment")
+                    or {})
+        conflicts = config_conflicts(
+            declared,
+            {k: v["requested"] for k, v in effective.as_dict().items()},
+            arm=arm_name)
+        if conflicts:
+            raise FreezeError(
+                "run contradicts its own freeze:\n  "
+                + "\n  ".join(conflicts)
+                + f"\n  Aborting before the first paid call. Either run the "
+                  f"configuration the freeze declares, or run without "
+                  f"--freeze (exploratory).")
+
     manifest.freeze_artifact_id = freeze.freeze_id if freeze.confirmatory else None
 
     manifest_hash = manifest.write(out_dir)
