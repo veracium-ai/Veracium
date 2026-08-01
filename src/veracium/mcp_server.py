@@ -21,9 +21,22 @@ from typing import Optional
 from . import Memory, MemoryConfig
 from .schema import EvidenceAuthor
 
+# `"system"` is deliberately ABSENT. `remember` is an @server.tool(), so the
+# MODEL calls it and `author` is a free parameter — mapping "system" here let a
+# model declare its own evidence class as SYSTEM. Under the supersession
+# authority ladder (USER 3 > SYSTEM 2 > ASSISTANT 1 > THIRD_PARTY 0) that is
+# self-elevation from rung 1 to rung 2, across the boundary the generated-content
+# class exists to establish.
+#
+# The general rule, which is the same one that keeps `derived_from` capping-only:
+# **a trust-bearing field must not be settable by the party whose trust it
+# describes.** SYSTEM means veracium's own maintenance output; nothing arriving
+# through a model-facing tool is that, by definition.
+#
+# An unrecognised value raises rather than defaulting — failing closed, because a
+# silent fallback to USER would be the worst possible default here.
 _AUTHOR = {"user": EvidenceAuthor.USER,
-           "third_party": EvidenceAuthor.THIRD_PARTY,
-           "system": EvidenceAuthor.SYSTEM}
+           "third_party": EvidenceAuthor.THIRD_PARTY}
 
 
 # -- tool implementations (testable; no MCP/LLM dependency of their own) ------
@@ -31,9 +44,26 @@ _AUTHOR = {"user": EvidenceAuthor.USER,
 def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
                   event_type: str = "chat", date: Optional[str] = None,
                   derived_from: Optional[str] = None) -> dict:
-    return mem.remember(user_id, text, author=_AUTHOR.get(author, EvidenceAuthor.USER),
+    # Fail CLOSED on an unrecognised author. This used to be
+    # `_AUTHOR.get(author, EvidenceAuthor.USER)` — a silent fallback to the
+    # HIGHEST-authority class, so a typo, a stale caller, or a model asking for
+    # a class it is not entitled to would all land on USER. Removing "system"
+    # from the map without this would have made the self-elevation worse, not
+    # better: "system" would have resolved to USER.
+    if author not in _AUTHOR:
+        raise ValueError(
+            f"author={author!r} is not accepted here. Use "
+            f"{sorted(_AUTHOR)}. 'system' is deliberately unavailable through "
+            f"the MCP surface: it denotes veracium's own maintenance output, "
+            f"and a trust-bearing field must not be settable by the party whose "
+            f"trust it describes.")
+    if derived_from is not None and derived_from not in _AUTHOR:
+        raise ValueError(
+            f"derived_from={derived_from!r} is not accepted. Use "
+            f"{sorted(_AUTHOR)} or omit it.")
+    return mem.remember(user_id, text, author=_AUTHOR[author],
                         event_type=event_type, date=date,
-                        derived_from=_AUTHOR.get(derived_from) if derived_from else None)
+                        derived_from=_AUTHOR[derived_from] if derived_from else None)
 
 
 def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,

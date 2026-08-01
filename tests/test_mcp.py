@@ -3,6 +3,7 @@
 Verifies the tools map onto Memory correctly, including the security-critical
 author routing (third_party → quarantine)."""
 
+import pytest
 import json
 import tempfile
 
@@ -84,3 +85,51 @@ def test_mcp_entrypoint_help_and_version(capsys):
     import pytest
     with pytest.raises(SystemExit, match="unknown argument"):
         main(["serve"])
+
+
+# --- the model must not be able to declare its own evidence class -----------
+
+def test_the_mcp_surface_refuses_system_authorship():
+    """`remember` is an @server.tool(), so the MODEL calls it and `author` is a
+    free parameter. Mapping "system" there let a model declare its own evidence
+    class — self-elevation from ASSISTANT (rung 1) to SYSTEM (rung 2) on the
+    supersession authority ladder, across the boundary the generated-content
+    class exists to establish.
+
+    The general rule, and the same one that keeps `derived_from` capping-only:
+    a trust-bearing field must not be settable by the party whose trust it
+    describes.
+    """
+    import tempfile
+    from veracium import Memory, MemoryConfig
+    from veracium.mcp_server import _AUTHOR, remember_impl
+
+    assert "system" not in _AUTHOR
+    assert set(_AUTHOR) == {"user", "third_party"}
+
+    with tempfile.TemporaryDirectory() as d:
+        mem = Memory(llm=None, config=MemoryConfig(db_path=f"{d}/m.db",
+                                                   wiki_recompile_after_writes=0))
+        with pytest.raises(ValueError, match="not accepted here"):
+            remember_impl(mem, "u", "the deploy succeeded", author="system")
+        mem.close()
+
+
+def test_an_unrecognised_author_fails_closed_not_to_user():
+    """The trap in the fix itself: the lookup was
+    `_AUTHOR.get(author, EvidenceAuthor.USER)`, so removing "system" from the map
+    would have resolved it to USER — the HIGHEST authority — making the
+    self-elevation worse rather than blocking it."""
+    import tempfile
+    from veracium import Memory, MemoryConfig
+    from veracium.mcp_server import remember_impl
+
+    with tempfile.TemporaryDirectory() as d:
+        mem = Memory(llm=None, config=MemoryConfig(db_path=f"{d}/m.db",
+                                                   wiki_recompile_after_writes=0))
+        for bad in ("system", "assistant", "admin", "", "USER"):
+            with pytest.raises(ValueError):
+                remember_impl(mem, "u", "x", author=bad)
+        with pytest.raises(ValueError, match="derived_from"):
+            remember_impl(mem, "u", "x", author="user", derived_from="system")
+        mem.close()
