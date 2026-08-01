@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import ORACLE_FILE, S_FILE, load, stratified_pilot
 from cache import CACHE_DIR, CacheLock, CachedComplete
+from freeze import FreezeError, verify as verify_freeze
 from manifest import (CompletionAttestation, EffectiveConfig, RunManifest,
                       check_manifest_self_consistency, decision_eligibility,
                       environment_state, explain_ineligibility, git_state,
@@ -127,7 +128,8 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         max_edges: int | None = None, bar: str = "none",
         coverage: float | None = None, experiment: str = "unnamed",
         arm_name: str = "baseline", freeze_id: str | None = None,
-        parent_run_id: str | None = None, data_path: Path | None = None) -> dict:
+        parent_run_id: str | None = None, data_path: Path | None = None,
+        freeze_path: str | None = None) -> dict:
     """Runs the requested control arms over `items`. Returns the run record;
     writes one hypothesis file per arm, plus an immutable run manifest and, at
     termination, a completion attestation (benchmark policy G14-G17)."""
@@ -215,6 +217,19 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         expected_output_count=len(items),
         note=note,
     )
+    # ---- freeze verification (proposals/freeze-artifact-spec.md) ---------
+    # Runs BEFORE the manifest is written and before the first paid call. A bad
+    # --freeze-id aborts (the operator believes something false); everything
+    # else only downgrades the run to exploratory — the runner never refuses to
+    # RUN, it refuses to call the result confirmatory.
+    from datetime import datetime as _dt, timezone as _tz
+    _started = _dt.now(_tz.utc)
+    freeze = verify_freeze(freeze_path, freeze_id=freeze_id,
+                           run_started_at=_started,
+                           item_ids=[i.question_id for i in items])
+    print(f"[longmemeval] freeze: {freeze.explain()}", file=sys.stderr)
+    manifest.freeze_artifact_id = freeze.freeze_id if freeze.confirmatory else None
+
     manifest_hash = manifest.write(out_dir)
     validation = check_manifest_self_consistency(
         manifest, out_dir,
@@ -224,6 +239,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
           f"freeze={freeze_id or 'NONE (exploratory)'}", file=sys.stderr)
 
     record = {"stamp": stamp, "note": note, "arm": arm, "context": context,
+              "freeze": freeze.as_dict(),
               "workers": workers,
               # the three-value form; the old single "max_subgraph_edges" key
               # is gone on purpose because it asserted the REQUESTED value and
@@ -463,9 +479,13 @@ if __name__ == "__main__":
     ap.add_argument("--arm-name", default="baseline",
                     help="arm within the experiment: baseline | treatment | ...")
     ap.add_argument("--freeze-id", default=None,
-                    help="id of the frozen protocol artifact. Without one the "
-                         "run is recorded as exploratory and is NOT "
+                    help="sha256 of the frozen protocol artifact. Without one "
+                         "the run is recorded as exploratory and is NOT "
                          "decision-eligible (G3/G19)")
+    ap.add_argument("--freeze", dest="freeze_path", default=None,
+                    help="path to the committed freeze artifact that --freeze-id "
+                         "names. Verified locally: hash, required fields, "
+                         "approved_at strictly before run start, item-set hash")
     ap.add_argument("--parent-run-id", default=None,
                     help="resume lineage: this run continues that one")
     ap.add_argument("--provider", choices=["openai", "claude-cli"], default="openai",
@@ -494,7 +514,8 @@ if __name__ == "__main__":
                   budget=args.budget, note=args.note, max_edges=args.max_edges,
                   bar=args.bar, coverage=args.coverage,
                   experiment=args.experiment, arm_name=args.arm_name,
-                  freeze_id=args.freeze_id, parent_run_id=args.parent_run_id,
+                  freeze_id=args.freeze_id, freeze_path=args.freeze_path,
+                  parent_run_id=args.parent_run_id,
                   data_path=Path(args.data))
     print(json.dumps({k: rec[k] for k in ("stamp", "run_id", "experiment", "arm",
                                           "items", "cache", "results",
