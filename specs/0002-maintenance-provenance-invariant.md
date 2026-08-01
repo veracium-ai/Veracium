@@ -1,10 +1,10 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v2)** — deferred at external review 2026-08-01, **all nine amendments applied the same day**. The two defects verification found are **fixed and released** (0.4.6, `533092c`); the 28-site manifest is generated and CI-verified (`specs/generated/0002-audit-manifest.md`); N7's general claim is withdrawn and replaced by N9. **Three items are frozen design that has not yet been implemented** — M4 (§7a), M3 (§7b) and crash-safe consolidation (§7e) — and are marked as such rather than described as done.
+> **deferred (v2)** — second external review 2026-08-01: **invariant approved; retrospective deferred again.** All ten items verified present and **all stand**. The diagnosis is right and is the thing to fix: **v2 appended corrections instead of replacing the text they correct**, so the document now describes two systems. **v3 is a rewrite, not another amendment** — see §13.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -786,3 +786,49 @@ architecture. It is that a retrospective made coverage and closure claims its
 artifacts do not support** — the same claim-versus-artifact gap as the `_cover`
 docstring, the `valid_from` changelog, and the r2 headline. **Fourth instance,
 and the first where an outside reader found it before we did.**
+
+---
+
+## 13. Second external review, 2026-08-01 — disposition
+
+**Verdict: architectural invariant approved; retrospective deferred for a
+focused v3.** Every item was checked against the document. **All ten stand.**
+
+**The central finding, and it is correct:** v2 **appended** §7a–§7e and §12
+rather than **replacing** the v1 text they overturn, so §2c, §3's M-sections, N2,
+N3, N7 and the finding ledger still specify the withdrawn rules. **A contributor
+reading the normative sections gets the old system.**
+
+**I wrote the rule and broke it in the same commit.** `fbf4396` added *"A
+retraction that is not applied by `grep` is not applied"* to §8 **and** the
+appended §7a sections. One `git show` shows both. That is the fourth
+claim-versus-artifact gap recurring one level up: I described the correct method
+and did not execute it.
+
+| # | item | verified | disposition |
+|---|---|---|---|
+| 1 | ledger contradicts implementation status | **stands** | §11 says *"all five findings that remain here are closed"* while the header says three are unimplemented. **"Closed" was true of the *disposition* and false of the *code*, and the table does not distinguish them.** Adopt the reviewer's seven-column ledger. |
+| 2 | no normative M2 contract for 0.4.6 | **stands** | N2 still reads only *"`confirm()` advances `observed_at`"*. **The 0.4.6 behaviour is in the changelog and in §12 and nowhere normative.** A released fix asserted but not pinned. |
+| 3 | M3 may still trust an adversarial label | **stands — and on this document's own terms** | §2c lists **host-supplied `author`** as an uncontrolled input whose adversarial case is *"host may claim `system`"*. §7b then lets *"a new user-authored observation"* clear staleness. **The only evidence of "user-authored" is the field §2c says the host may lie about.** Circular. Research and I both signed this off. **Blocking — posted as R3.** |
+| 4 | N9 names a partial order it never defines | **stands** | I wrote a **field list**, not a relation, and a property test cannot implement one. The reviewer supplies the product rule; adopt it, including `post.observed_at <= pre.observed_at` and the categorical fields as **equality**. Consolidation is set→object and needs its own rule. |
+| 5 | N7's withdrawn claim is still normative | **stands** | The table still calls it *"the general form of both advisories"* and §6 still says *"N7 is the one that matters"*; §9's reviewer brief still asks the question v2 answered. |
+| 6 | M4 chain needs head/concurrency semantics | **stands** | §7a fixes the shape and not the ordering. **A host-supplied timestamp must not decide authority** — use a store-assigned monotonic sequence with an atomic head transition. |
+| 7 | §7c still offers an alternative | **stands** | *"new merged edge (or merge record)"* — not equivalent. Freeze the new-edge construction, and **delete the surviving M5 sentence** (§ line 282) that still calls `min` "the sole exception". |
+| 8 | decay tests under-cover the frozen rule | **stands** | N4b names only `decay_factor`; N4c only `confidence`. §7d froze more than that. Needs `confidence_floor`, boundary-accept regressions, and assignment coverage of **every** bounded mutable trust field. |
+| 9 | the manifest was not in the review package | **stands — my process failure** | I built the artifact, cited its counts, and **did not send it**, so the one item that exists to make coverage independently checkable was the one item the reviewer could not check. Ship `specs/generated/0002-audit-manifest.md` + `audit_manifest.py` + `audit_dispositions.py` with v3. |
+| 10 | crash-safe strategy left open | **stands, and may stay open** | Two strategies is acceptable for a retrospective. **It is not acceptable alongside "all findings closed"** — which is item 1 again, and the reason item 1 is the root. |
+
+### What v3 must not do
+
+**Not grow a third review appendix.** §12 and §13 are themselves the append
+pattern, one level up. **v3 folds both into the normative sections and keeps a
+short changelog of what moved** — otherwise the next reviewer reads a document
+whose corrections outweigh its content.
+
+### One thing to carry to `0006`
+
+**Item 3 is not confined to this spec.** `0006` relaxes M3's rule on
+`source_id`, which is **also host-supplied**. Research's constraint was *never
+model-supplied*; the reviewer's point is that **host-supplied is not sufficient
+when the rule's entire job is to establish authenticity.** If R3 lands on *"the
+call path must establish it"*, `0006`'s §3 matrix inherits that requirement.
