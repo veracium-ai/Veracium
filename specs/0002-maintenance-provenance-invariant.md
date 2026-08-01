@@ -1,10 +1,10 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review** — **all findings closed as of the 2026-08-01 split.** M1–M4 shipped, M5 ruled; M6/M7/M8 moved to `0005`/`0003`/`0004`. **External review is requestable.**
+> **deferred** — external review 2026-08-01: **invariant accepted in principle, retrospective deferred for major amendment.** Nine of ten items verified against code and **all stand**; two escalated beyond what the reviewer claimed, and verification found **two further defects the review did not reach** (§12). **The invariant is not in doubt; the retrospective's coverage and closure claims are.**
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -461,3 +461,113 @@ this spec also retroactively documents 0.4.5's basis, which is the honest fix
 for M2/M3/M4 having shipped citing a `draft` — see the gate finding (`3ef6519`).
 
 ---
+
+---
+
+## 12. External review, 2026-08-01 — disposition
+
+**Verdict: invariant accepted in principle; retrospective deferred for major
+amendment.** The reviewer states the rule better than the spec did:
+
+> **Maintenance without new evidence may narrow trust, but must not manufacture
+> authority, confidence, currency, or provenance.**
+
+**Every falsifiable item was checked against the running code before disposition.
+Nine stand as written, one is refined, and four are worse than claimed.**
+
+| # | item | verified | disposition |
+|---|---|---|---|
+| 1 | `valid_from` immutable vs `min` | **refined** | See below — the *shipped* code is consistent; **N1's wording and the T2 design are not.** Still blocking. |
+| 2 | adversarial confirmation dates | **partly already fixed, and worse** | `observed_at = max(...)` **already shipped**, so back-dating is handled. **Future-dating is not — and `max` makes it permanent.** |
+| 3 | same author class ≠ authority | **stands** | `graph.py:119` compares `author_of_evidence` equality and nothing else. Accept the fail-closed rule. |
+| 4 | N7 is not the general invariant | **stands** | Overclaim. N7 tests one UNVERIFIED→GROUNDED transition; M2/M3/M4 need not cross it. |
+| 5 | the 28-site manifest is absent | **stands** | §3 has **11 operation rows**, not 28 call sites. The claim that clean sites are listed is false. |
+| 6 | §8 reintroduces the withdrawn claim | **stands** | §8 still reads *"an audit of every maintenance-time operation"* and *"nine mutation sites"*. Both were withdrawn in §1. |
+| 7 | M4 has no frozen behaviour | **stands, and worse** | The weaker option **already shipped**, and it survives exactly one upgrade. Demonstrated below. |
+| 8 | decay needs bounds | **stands, and worse** | `MemoryConfig` is an unvalidated `@dataclass`. `decay_factor=2.0`, `NaN`, `-1.0` all accepted — **which makes N4 false**. |
+| 9 | crash safety overclaimed | **stands, and worse** | Not a hypothetical: `lifecycle.py:122` deletes **all** cold episodes *before* writing any replacement. |
+| 10 | status vs Q2 | **stands** | 0.4.5 was tagged, released and published to PyPI on 2026-07-31. Q2 asks a pre-release question about it. |
+
+### On item 1 — the reviewer's conclusion is right; the premise needs one correction
+
+*"Those cannot all be true"* — in the **shipped** code they can, narrowly.
+Absorption mutates `edge.valid_from` at `graph.py:128`, but `store.add_edge(edge)`
+is at `graph.py:143`: the edge **is not yet persisted**. Under *creation =
+persistence* N1 holds, which is why its test passes.
+
+**That defence is worth exactly nothing going forward, and the item stays
+blocking**, because (a) N1's wording says *"after creation by any operation"* and
+does not state that reading, and (b) **T2's design applies `valid_from = min` to
+an existing survivor**, which breaks it for real. A contract that survives only
+under an unstated reading of one word is not a contract. **Recommend the
+reviewer's first option — immutable edge identity** — since it is what the code
+already does at the only place it currently matters.
+
+### Two defects verification found that the review did not reach
+
+**(a) `confirm()` returns a `valid_from` it did not set.** M2 removed the false
+date from the model's context and **left it in the API return value**:
+
+```
+>>> m.confirm("u", "e-1", date="2026-03-15")
+{'confirmed': 'e-1', 'valid_from': '2026-03-15'}
+>>> edge.valid_from
+2026-01-01
+```
+
+**This is M2's own defect, in a different surface.** The spec says the fix is
+shipped. It is shipped in `render_edges` and not in the return contract a host UI
+reads.
+
+**(b) A future-dated confirmation is irreversible.** `_event_dt` performs no
+skew check, and the `max()` that correctly defeats back-dating is what makes
+future-dating permanent:
+
+```
+confirm(date="2099-01-01")  → observed_at = 2099-01-01
+confirm(date="2026-08-01")  → observed_at = 2099-01-01   # max() locks it in
+```
+
+The edge cannot lapse, decay, or be flagged stale for 73 years. **One
+host-supplied date permanently removes an edge from the entire lifecycle.**
+This strengthens the reviewer's item 2 from *"can keep an edge artificially
+fresh"* to **unrecoverable without direct store surgery**.
+
+### Demonstration for item 7 — the M4 note survives one hop
+
+`record_outcome` rebuilds `summary` on every upgrade, so the appended note is
+overwritten rather than accumulated:
+
+```
+initial (system)      author=system  (system) unreviewed: use of 'works_as: CFO'
+after challenged      author=system  (system) challenged: ...
+after corrected(user) author=user    (user) corrected: ... [prior judgment was system-authored]
+after 2nd challenged  author=system  (system) challenged: ... [prior judgment was user-authored]
+```
+
+**The `system → user → system` history is reduced to "prior was user."** M4
+shipped as a fix for authorship erasure and **still erases authorship**, one step
+later, while also still overwriting the structured field. The reviewer's *"a note
+is not structured provenance"* is right; the sharper statement is that this note
+is **destroyed by construction on the next upgrade**.
+
+### Item 9 is the shipped order, not a race
+
+```python
+for e in cold:  store.delete_episode(e.id)     # lifecycle.py:122
+for r in new:   store.add_episode(...)         # lifecycle.py:124
+```
+
+Delete-all-then-write. A crash between the loops loses the cold episodes **with
+no replacement at all** — total loss, not the partial states the review lists.
+*"A partial `maintain` is safe because every operation narrows"* is false in the
+worst available direction.
+
+### What this does not change
+
+The invariant, M1's whole-set minimum-trust rule, the M5 ruling, and the split
+of M6/M7/M8 are all accepted by the reviewer and stand. **The failure is not the
+architecture. It is that a retrospective made coverage and closure claims its
+artifacts do not support** — the same claim-versus-artifact gap as the `_cover`
+docstring, the `valid_from` changelog, and the r2 headline. **Fourth instance,
+and the first where an outside reader found it before we did.**
