@@ -16,10 +16,10 @@ this spec reports findings, not coverage.*
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | v1 |
-| **Status** | draft — internal review not yet requested |
+| **Status** | **in review** — internally reviewed **twice** by research (2026-08-01: `spec-0002-research-review.md`, then the enumeration verification that produced M8). **External review NOT sent.** Header said *"internal review not yet requested"* until 2026-08-01; that was stale. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
-| **Decision + date** | — |
+| **Decision + date** | — · **3 of 8 findings already SHIPPED** in 0.4.5 (M2/M3/M4) and 0.4.4 (M1); M5–M8 open, see §11 |
 | **Path** | full |
 
 ---
@@ -519,3 +519,28 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 | Q2 | Should M2/M3/M4 ship as 0.4.5 without an advisory? None is a trust-boundary bypass; M2 puts a false date in model context. | **blocking** | Quentin | before release |
 | Q3 | Does the paper-2 conflict in §8 need a stated policy, or is per-case judgement enough? | `pre-release` | research | before paper 2 runs |
 | Q4 | Should `needs_confirmation` be per-author rather than a single boolean? Would dissolve M3 structurally. | `deferred` | dev | own design round |
+
+---
+
+## 11. Finding status (verified against code, 2026-08-01)
+
+| # | finding | status |
+|---|---|---|
+| **M1** | consolidation derived provenance from `cold[0]` | ✅ **shipped 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp |
+| **M2** | `confirm()` mutated `valid_from` | ✅ **shipped 0.4.5** |
+| **M3** | cross-author clearing of `needs_confirmation` | ✅ **shipped 0.4.5** |
+| **M4** | `record_outcome` overwrote authorship | ✅ **shipped 0.4.5** |
+| **M5** | merge-time `confidence = max(...)` | 🔵 **open — research's call, BLOCKS T2.** Blast radius measured: `confidence` has exactly one live consumer (`expire()` DECAY) and **does not affect recall ranking**, so `max` vs `min` changes ~one decay cycle. Recommendation: T2 takes `min` (maintain-time). |
+| **M6** | `import_memory` has no trust boundary | 🔴 **open — verified unfixed.** No capping code in `portability.py`. **The cross-project-inheritance docs recipe stays held.** |
+| **M7** | `correct()` elevates non-assertable facts | 🔴 **open — verified unfixed.** `__init__.py` still hardcodes `author_of_evidence=USER` at four sites. |
+| **M8** | wiki serves a revoked trust decision | 🔴 **open — verified unfixed.** No wiki-drop on `invalidate_edge`. Consequence: `compile.py` is now **guarded** (`8ad5167`) because this falsified its exclusion reasoning. |
+
+**So the spec is half-executed:** the three shipped findings are the ones that
+were straightforward corrections; **the four open ones each need a decision or a
+design, not just a patch.** M5 is research's, M6 needs the remap-cap rule, M7
+needs `confirm()`'s guard applied to `correct()`, M8 needs the drop-on-revocation
+rule.
+
+**External review is outstanding and should not be requested until M5–M8 carry
+proposed resolutions** — sending a spec whose findings are half-open invites a
+review of the gaps rather than the argument.
