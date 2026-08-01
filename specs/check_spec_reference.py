@@ -71,6 +71,16 @@ GUARDED = (
     "src/veracium/introspect.py",   # the transparency surface — we already
                                     # shipped a provenance misreport here
                                     # (first_observed read a max()ed field)
+    "src/veracium/mcp_server.py",   # maps CALLER-SUPPLIED STRINGS onto trust
+                                    # classes, and `remember` is an @server.tool
+                                    # so the caller is the MODEL. Mapping
+                                    # "system" here let a model declare its own
+                                    # evidence class; the lookup then defaulted
+                                    # unrecognised values to USER. A file that
+                                    # decides what a string is allowed to mean,
+                                    # for an untrusted caller, is the trust
+                                    # surface — it was missing from this list
+                                    # for the same reason the first three were.
 )
 
 # Deliberately NOT guarded, so the exclusions are a decision rather than an
