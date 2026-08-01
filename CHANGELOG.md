@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+- **Two defects found while verifying an external review of `specs/0002` — both
+  live in released 0.4.5, both fixed.** Neither was reported by the review; both
+  turned up in the process of checking its claims against running code.
+
+  **`confirm()` returned a `valid_from` it never set.** 0.4.5's M2 fix stopped
+  `confirm()` moving a fact's first-known date, because `render_edges` emits
+  `(since <valid_from>)` into answer context and a January preference confirmed
+  in March read *"(since March)"*. The fix corrected the model's context and
+  **left the same false date in the return value a host UI reads** —
+  `confirm()` returned `{"valid_from": <confirmation date>}` while the edge kept
+  its real one. The return now carries both `valid_from` (the real, unchanged
+  first-known date) and `confirmed_at`. **A fix that missed one of its own
+  surfaces; the sibling it missed is the one an integrator sees.**
+
+  **A future-dated event was accepted, and was unrecoverable.** `date=` had no
+  upper bound, so `remember(date="2099-01-01")` set both `valid_from` and
+  `observed_at` to 2099. `observed_at` is only ever advanced with `max(...)` —
+  which is what correctly defeats *back*-dating, and is therefore exactly what
+  made *forward*-dating permanent: no later confirmation could bring it down.
+  **One host-supplied date removed a fact from lapse, decay and staleness
+  flagging for 73 years, with no API to undo it.** Event dates more than a day
+  in the future are now rejected at `_event_dt`, the single point every event
+  date passes through, so `remember()`, `confirm()`, `correct()` and
+  `record_outcome()` are all covered.
+
+  **Behaviour change:** a future `date=` now raises `ValueError` instead of
+  being stored. It has no legitimate meaning — the event date records when a
+  statement was made, not what it is about, so *"the contract expires in 2027"*
+  is a value and never an event date. Malformed dates keep their existing
+  fallback to now.
+
 - **retrieval: coverage-aware subgraph selection was measured and stays OFF.**
   0.4.2 shipped it disabled and said *"the default will change only if a
   balanced measurement supports it."* **That measurement has now run, under a

@@ -128,3 +128,76 @@ if __name__ == "__main__":
     test_paraphrase_match_stays_order_sensitive()
     test_consolidation_preserves_and_compresses()
     print("lifecycle OK")
+
+
+# --- 0.4.6: the two defects found verifying 0002's external review ----------
+
+def _one_edge(m, valid_from):
+    from veracium.schema import Edge, Provenance, SourceType
+    e = Edge(id="e-t", user_id="u", subject="user", relation="likes", object="tea",
+             valid_from=valid_from,
+             provenance=Provenance(source_type=SourceType.STATED,
+                                   author_of_evidence=EvidenceAuthor.USER,
+                                   evidence_ref="x", observed_at=valid_from))
+    m.store.add_edge(e)
+    return e
+
+
+def test_confirm_returns_the_real_valid_from_not_the_confirmation_date():
+    """M2 removed the false date from the model's context and left it in the
+    return contract a host UI reads."""
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [])
+        _one_edge(m, datetime(2026, 1, 1, tzinfo=timezone.utc))
+        r = m.confirm("u", "e-t", date="2026-03-15")
+        assert r["valid_from"] == "2026-01-01", "returned the confirmation date again"
+        assert r["confirmed_at"] == "2026-03-15"
+        stored = [x for x in m.store.edges("u") if x.id == "e-t"][0]
+        assert r["valid_from"] == stored.valid_from.date().isoformat()
+
+
+def test_a_future_event_date_is_rejected():
+    import pytest
+    from veracium.ingest import _event_dt
+    with pytest.raises(ValueError, match="in the future"):
+        _event_dt("2099-01-01")
+
+
+def test_clock_skew_is_tolerated_but_a_typo_is_not():
+    import pytest
+    from veracium.ingest import _event_dt, MAX_FUTURE_SKEW
+    from veracium.schema import utcnow
+    _event_dt((utcnow() + MAX_FUTURE_SKEW / 2).date().isoformat())   # must not raise
+    with pytest.raises(ValueError):
+        _event_dt((utcnow() + MAX_FUTURE_SKEW * 10).date().isoformat())
+
+
+def test_a_future_confirmation_cannot_freeze_an_edge_out_of_the_lifecycle():
+    """observed_at only ever advances, so before the clamp a single future date
+    was unrecoverable: no later confirmation could lower it."""
+    import pytest
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [])
+        _one_edge(m, datetime(2026, 1, 1, tzinfo=timezone.utc))
+        with pytest.raises(ValueError):
+            m.confirm("u", "e-t", date="2099-01-01")
+        stored = [x for x in m.store.edges("u") if x.id == "e-t"][0]
+        assert stored.provenance.observed_at.year < 2099, "the write must not land"
+
+
+def test_a_future_date_cannot_enter_through_ingest_either():
+    """The clamp is at _event_dt, not in confirm(): remember() reaches
+    valid_from AND observed_at, so it was the wider of the two doors."""
+    import pytest
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [{"triples": [{"subject": "user", "relation": "works_as",
+                                   "object": "CFO"}], "episode": "said"}])
+        with pytest.raises(ValueError, match="in the future"):
+            m.remember("u", "I am CFO at Acme", date="2099-01-01")
+
+
+def test_past_and_today_still_work():
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [])
+        _one_edge(m, datetime(2026, 1, 1, tzinfo=timezone.utc))
+        assert m.confirm("u", "e-t", date="2026-02-01")["confirmed"] == "e-t"

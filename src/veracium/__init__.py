@@ -510,7 +510,16 @@ class Memory:
                                   author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"confirm:{edge_id}")))
         self._record("feedback", {"disputed": 0, "confirmed": 1}, user_id)
-        return {"confirmed": edge_id, "valid_from": date}
+        # M2 (0.4.5) removed the false date from the MODEL's context and left it
+        # here, in the contract a host UI reads: this returned
+        # `"valid_from": date` — the CONFIRMATION date — while leaving
+        # `edge.valid_from` untouched. A host rendering "known since" from the
+        # return value printed exactly the sentence M2 was written to delete.
+        # The same defect, one surface over, shipped inside its own fix.
+        # Both fields are returned now, each meaning what it says.
+        return {"confirmed": edge_id,
+                "valid_from": edge.valid_from.date().isoformat(),
+                "confirmed_at": date}
 
     # -- outcome tracking (engine-written; never MCP) ------------------------
     _OUTCOME_ACTORS = {"user": EvidenceAuthor.USER, "system": EvidenceAuthor.SYSTEM}

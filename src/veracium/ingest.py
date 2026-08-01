@@ -9,7 +9,7 @@ third-party-authored content is the attack surface.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from . import prompts
@@ -25,13 +25,44 @@ def _uid(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:12]}"
 
 
+# A host clock may be a little ahead of ours; a host clock is never a year
+# ahead. One day absorbs timezone slop and NTP drift without absorbing a typo.
+MAX_FUTURE_SKEW = timedelta(days=1)
+
+
 def _event_dt(date_str: str) -> datetime:
     """The event's own date drives valid_from / observed_at — memory timestamps
-    must reflect when facts held, not wall-clock ingest time."""
+    must reflect when facts held, not wall-clock ingest time.
+
+    A future date is REJECTED (beyond `MAX_FUTURE_SKEW`). It has no legitimate
+    meaning — the event date is when a statement was made, not what it is about,
+    so "expires in 2027" is an object value and never an event date — and it was
+    unrecoverable in both fields it reaches:
+
+      valid_from  → renders "(since 2099)" into answer context, a false
+                    statement about the future.
+      observed_at → `confirm()` and reinforcement advance it with max(), which
+                    is what correctly defeats BACK-dating and is therefore
+                    exactly what makes forward-dating permanent. One host date
+                    removed an edge from lapse, decay and staleness flagging
+                    for 73 years, with no API to undo it.
+
+    Fails closed and loudly rather than clamping: a future event date is
+    unambiguously a caller bug, and silently rewriting it hides that.
+    Malformed dates keep their existing behaviour (fall back to now) — that is
+    long-standing and not this fix's business."""
     try:
-        return datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+        dt = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
     except ValueError:
         return utcnow()
+    if dt > utcnow() + MAX_FUTURE_SKEW:
+        raise ValueError(
+            f"event date {date_str!r} is in the future. Memory timestamps record "
+            f"when a statement was made; a future date makes a fact permanently "
+            f"fresh (observed_at only ever advances) and renders a false "
+            f"'(since …)' into answer context. If the future date is what the "
+            f"fact is ABOUT, it belongs in the value, not in `date=`.")
+    return dt
 
 
 def _disclosure_for(author: EvidenceAuthor, relation: str,
