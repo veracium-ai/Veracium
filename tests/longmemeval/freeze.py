@@ -35,6 +35,18 @@ REQUIRED_FIELDS = (
     "experiment_name", "arm_name", "hypothesis", "primary_metric",
     "thresholds", "analysis_plan", "mapping_procedure", "item_set",
     "stop_rules", "approved_by", "approved_at",
+    # Added 2026-08-01. Absent from the freeze spec's required-content list and
+    # from all four freezes in the first real experiment, so nobody wrote down
+    # WHAT THE TREATMENT IS. `coverage-selection-balanced` froze the hypothesis,
+    # metric, thresholds, analysis plan, item set and stop rules — and never the
+    # value of `subgraph_coverage_share`, which is the entire intervention.
+    #
+    # G15 made us able to prove what a run DID (the manifest's
+    # requested/resolved/observed triple). Nothing made us declare in advance
+    # what it SHOULD do. An unfrozen treatment strength is a free parameter: a
+    # null result invites "you should have used a larger reserve", and choosing
+    # the value after any outcome is exactly what G3 exists to prevent.
+    "arm_config",
 )
 
 

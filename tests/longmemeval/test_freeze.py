@@ -44,6 +44,7 @@ def _freeze(tmp_path, *, approved_at="2026-07-31T09:00:00Z", omit=(),
         "stop_rules": "if coverage rises and the metric does not, falsified",
         "approved_by": "research",
         "approved_at": approved_at,
+        "arm_config": "baseline subgraph_coverage_share=0.0; treatment=0.25",
     }
     for k in omit:
         lines.pop(k, None)
@@ -86,7 +87,7 @@ def test_correct_id_and_content_is_confirmatory(tmp_path):
 # --- check 2: required fields ----------------------------------------------
 
 @pytest.mark.parametrize("field", ["hypothesis", "primary_metric", "thresholds",
-                                   "stop_rules", "approved_by"])
+                                   "stop_rules", "approved_by", "arm_config"])
 def test_a_missing_required_field_makes_the_run_exploratory(tmp_path, field):
     """An unstated threshold is what post-hoc reasoning fills in."""
     f = _freeze(tmp_path, omit=(field,))
@@ -101,6 +102,20 @@ def test_required_field_list_matches_the_spec():
               "thresholds", "analysis_plan", "mapping_procedure", "item_set",
               "stop_rules", "approved_by", "approved_at"):
         assert f in REQUIRED_FIELDS
+
+
+def test_a_freeze_without_the_treatment_configuration_is_not_confirmatory():
+    """The gap that four freezes and two reviewers missed: everything about the
+    experiment was frozen except WHAT THE TREATMENT IS. An unfrozen treatment
+    strength is a free parameter — a null invites "you should have used a
+    larger reserve", and picking the value later is what G3 forbids."""
+    import tempfile
+    tmp = Path(tempfile.mkdtemp())
+    f = _freeze(tmp, omit=("arm_config",))
+    v = verify(f, freeze_id=sha256_file(f), run_started_at=RUN_START,
+               item_ids=ITEMS)
+    assert not v.confirmatory
+    assert "arm_config" in " ".join(v.problems)
 
 
 # --- check 3: approved BEFORE the run ---------------------------------------
