@@ -179,6 +179,116 @@ ingest. Note this is the *first* trust defect we have found in the write path;
 
 ---
 
+## 1b. The same defect on a second path — `correct()` (was `0002` M7)
+
+**Moved here from `specs/0002` on 2026-08-01, and moving it found a hole in
+this spec.** M7 was filed as a maintenance-provenance finding because that is
+where the audit ran. It is not one. **`correct()` is a supersession path**, and
+therefore this spec's subject.
+
+**The hole, measured — the two sets are disjoint:**
+
+```
+$ grep -rn "apply_supersession" --include=*.py src/veracium/
+ingest.py:131          <- the ONLY caller
+$ grep -rn "supersedes=" --include=*.py src/veracium/
+__init__.py:616        <- the ONLY place a supersession is recorded
+```
+
+**`correct()` is the only code that supersedes a fact, and it never calls the
+function this spec guards.** So the ladder as specified in §3 — a check inside
+`apply_supersession` — **would have shipped with an uncovered bypass**, and
+because `correct()` hardcodes `author_of_evidence=USER` (`__init__.py:618`) it
+is a **maximum-authority** bypass: it passes any ladder check by construction.
+
+**This is the third instance today of one shape**, and that is now the argument
+for treating it as a class rather than three incidents: `_AUTHOR`'s
+`.get(author, USER)` default, rung 1 without I5, and now this. **A visible rule
+stays green while an invisible dependency carries the risk.** In each case the
+rule was correct and the test for it would have passed.
+
+### The finding, as originally recorded
+
+**Found while rebuilding the enumeration.** `correct()` builds its replacement
+edge with **hardcoded `author_of_evidence=EvidenceAuthor.USER`**, regardless of
+the `actor` argument, and applies it to *any active edge*. Reproduced starting
+from a third-party, `use_only`, non-assertable edge:
+
+```
+correct(user_id, edge_id, "CEO", actor="system")
+  → author=user  disclosure=mentionable  assertable=True
+```
+
+**A system actor turned an unverified third-party claim into a user-authored
+assertable fact.**
+
+**The asymmetry is the defect, and it is self-evident once both are read
+together.** `confirm()` guards exactly this and says why:
+
+> *"Only assertable facts can be confirmed: elevating a quarantined claim or
+> third-party inference by 'confirmation' would be a laundering vector — if the
+> user affirms a claim, that affirmation is new user-authored evidence and
+> belongs in `remember()`."*
+
+`correct()` is the same shape of operation with the same laundering potential
+and **no such guard**. `record_outcome` even validates actor↔outcome pairing;
+`correct()` accepts `actor="system"` silently.
+
+**⚠️ Correction: `actor` has ZERO effect on trust.** Verified — it appears
+exactly twice, in the signature and in the episode summary f-string. A caller
+passing `actor="system"` is **silently ignored where it matters**, so my
+original framing (a system actor producing user-authored facts) named the wrong
+vector. `source_type=STATED` is also hardcoded, so a third-party claim becomes
+*stated by the user*. **An argument that looks like it sets authorship and does
+not is its own hazard.**
+
+**⚠️ My severity reasoning was also wrong, and research's replacement is
+better.** I wrote "host-facing only, so a design gap not an active exploit
+path". The realistic path was never an attacker calling `correct()` — it is **a
+host implementing the obvious feature (*let the user fix a wrong memory*) and
+calling it on whatever edge the user points at**, including a third-party claim
+rendered in the UNVERIFIED block. Intent: *fix this text*. Effect: *adopt this
+as my own testimony*. **No attacker, no misuse, ordinary operation.** On
+reachability alone M7 is **broader than 0.4.4**, which did get an advisory and
+required `maintain()` + ≥8 mixed cold episodes + >30 days + trusted-first
+ordering.
+
+**What actually justifies no advisory — and this is the reusable line:**
+**0.4.4 fired automatically during routine maintenance; M7 requires an explicit
+operator-initiated call on a specific edge. Automatic-versus-invoked is the
+distinction**, not host-facing-versus-not. Residual risk goes in the release
+note rather than being left implied.
+
+**Proposed fix, three lines:** refuse `correct()` on a non-assertable edge using
+`confirm()`'s existing error text, and either honour `actor` or delete it.
+
+### What moving it resolves — `0002` Q5
+
+**Q5 asked whether a correction is an assertion (refuse on non-assertable
+edges, mirroring `confirm()`) or an edit (inherit the corrected edge's class).**
+I recorded them as balanced. **They are not balanced in this spec's frame, and
+the balance was an artifact of the wrong filing.**
+
+> **(b) — the replacement edge inherits the corrected edge's
+> `author_of_evidence` and `disclosure`.**
+
+**It is what the ladder already says.** `correct()` retires E and writes E′ with
+`supersedes=E`. Under §3 that is permitted only when E′'s effective authority is
+≥ E's. Inheriting makes them **equal**, so every legitimate correction passes
+and no correction can retire a fact its author was not entitled to retire.
+
+**(a) tests `disclosure`** — *may this be asserted* — which is precisely the
+axis error §3 exists to name: *disclosure answers may this be asserted;
+supersession asks who may declare this stale.* **A rule that scores well and
+answers on the wrong axis is the failure mode this spec was written about**, so
+adopting it here would have contradicted the document's own §3.
+
+**Consequence for the implementation:** the ladder check cannot live only in
+`apply_supersession`. **It belongs where a supersession is recorded**, and both
+paths must reach it — see I9.
+
+---
+
 ## 3b. Authorization and scope
 
 Single-`user_id` throughout; no tenant boundary crossed. **The visibility change
@@ -238,6 +348,13 @@ none; no stored data changes.
 | **I6** superseded accumulation does not displace current facts | `test_superseded_do_not_crowd_out_current` — frozen: 200 superseded + 40 current, fixed queries, **every current fact retrieved at baseline must still be retrieved** | CI |
 | **I7** the MCP surface refuses `system` **and fails closed on unknown** | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
+| **I9** **every** supersession path is subject to the ladder — `apply_supersession` **and** `correct()` | `test_correct_is_subject_to_the_ladder` · **`test_no_unguarded_supersession_path`** — asserts the set of `supersedes=` writers equals the set of guarded call sites, so a *future* third path fails the suite rather than shipping | CI |
+| **I10** `correct()` does not widen trust: the replacement inherits the original's `author_of_evidence` and `disclosure` | `test_correcting_a_third_party_claim_stays_third_party` | CI |
+
+**I9 is written as a set-equality test on purpose, not as two cases.** Two cases
+would pass today and say nothing about tomorrow — and the defect it guards is
+exactly *a supersession path nobody remembered to guard*. The check must fail
+when someone adds a third writer, which a hand-listed test cannot do.
 
 **I5 is a PRECONDITION of the ladder shipping, not a sibling invariant** —
 research's Q1 answer, and the ordering matters. Rung 1 lets `ASSISTANT` retire a
@@ -323,6 +440,7 @@ user-supersedes-own-fact case both become fixtures.
 | ~~**Q2**~~ | **ANSWERED 2026-08-01 20:56 — `SYSTEM` keeps rung 2, but the ladder uses CAPPED authority** (§3). Do not split the enum; `min(author, derived_from)` already distinguishes host state from a summary of someone else's content. **Sufficient post-I7**, since `system` is no longer reachable through the MCP tool. | resolved | research | — |
 | **Q2a** | **Recorded trigger, not an open question:** if the CLI is ever agent-driven, `cli.py:180` becomes the same surface I7 just closed and rung 2 needs re-adjudicating. | `watch` | dev | on any CLI automation |
 | **Q3** | Fallback if the ladder proves wrong: never supersede cross-class, keep both, surface contention (Q1(3)'s diagnostic). | `deferred` | research | — |
+| ~~**Q5** *(was `0002` Q5)*~~ | **RESOLVED by the move, 2026-08-01: (b) inherit the corrected edge's class.** It is what the ladder already requires; (a) answers on the disclosure axis. **Still open and independent: `actor` reaches only an episode f-string** — make it govern or remove it. | resolved / **`actor` open** | research | `actor` before implementation |
 | **Q4** | Should superseded edges be **budget-capped** in the subgraph, given R2's rank-34 result? | `pre-release` | dev | before release |
 
 ---

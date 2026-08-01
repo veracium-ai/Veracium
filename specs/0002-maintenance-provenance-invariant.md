@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review** — internally reviewed twice by research; external review **held on M7 alone** (Q5, decided 2026-08-01). M5 resolved; **M6 and M8 carry specified fixes** (§11a, §11c); M7 needs an internal trust-semantics decision.
+> **in review** — **all findings closed as of the 2026-08-01 split.** M1–M4 shipped, M5 ruled; M6/M7/M8 moved to `0005`/`0003`/`0004`. **External review is requestable.**
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -22,10 +22,10 @@ this spec reports findings, not coverage.*
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | v1 |
-| **Status** | *see `Spec-Status:` at the top — canonical.* Internally reviewed twice by research; external review **held on M7 alone** — M5 resolved, M6/M8 specified (§11a/§11c), **three fixes queued behind one decision (Q5)**. Header previously read *"internal review not yet requested"*, which was stale. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* Internally reviewed twice by research; **external review requestable** — the 2026-08-01 split moved M6/M7/M8 to their own specs, leaving a closeable retrospective. Header previously read *"internal review not yet requested"*, which was stale. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
-| **Decision + date** | — · **3 of 8 findings already SHIPPED** in 0.4.5 (M2/M3/M4) and 0.4.4 (M1); M5–M8 open, see §11 |
+| **Decision + date** | — · **scope narrowed 2026-08-01** to M1–M5, all closed. M6/M7/M8 moved out; see §11. |
 | **Path** | full |
 
 ---
@@ -234,160 +234,30 @@ this is not privilege escalation; it is provenance destruction.
 **Fix:** append a new outcome episode rather than overwriting, or retain prior
 authorship in a note. Erasure is the part that is wrong, not the update.
 
-### M6 — `import_memory` has no trust boundary (design gap, queued trigger)
+### M6 / M7 / M8 — MOVED OUT on 2026-08-01
 
-**Found by research, verified here.** `portability.import_memory` does
-`Edge.model_validate(rec)` then `store.add_edge(edge)`: **every trust-bearing
-field reconstructed from a file** — `author_of_evidence`, `disclosure`,
-`confidence`, `valid_from`, `derived_from` — with no re-derivation, no capping,
-and a raw store write, so the ingest path's trust machinery never runs. Against
-this spec's own lens it re-derives **all four**, from a file. Reproduced:
+**These three were findings of this audit and are no longer specified here.**
+The audit found them; that does not make this their spec. **This document is a
+retrospective for a shipped hotfix and must be closeable. A proposal is not**,
+and keeping unshipped proposals inside a finished record meant `accepted` moved
+further away with every finding, while everything citing `0002` waited behind
+all of them.
 
-```
-import_memory(bob_store, alices_export.jsonl, user_id="bob")
-  → author=user  disclosure=mentionable  derived_from=None  assertable=True
-```
+| finding | now | why there |
+|---|---|---|
+| **M6** `import_memory` has no trust boundary | **`specs/0005-import-trust-boundary.md`** | Carries the docs-recipe trigger. Writing it up separately surfaced a **new gap in the fix**: the cap keys on the export header's `user_id`, which is inside the attacker-written file (`I-Q1`). |
+| **M7** `correct()` elevates non-assertable facts | **`specs/0003-supersession-authority.md` §1b** | **Not a maintenance finding at all.** `correct()` is a *supersession* path, so it is 0003's subject — and moving it revealed that `apply_supersession` and `correct()` are **disjoint**, i.e. the ladder as specified had an uncovered maximum-authority bypass. |
+| **M8** the wiki serves a revoked trust decision | **`specs/0004-derived-views-and-revocation.md`** | Clean fix, no natural home, no dependency on anything here. |
 
-**Alice's testimony is now Bob's own assertable fact.**
+**Two of the three moves changed the content, not just the filing** — which is
+the argument that the split was structural rather than administrative. M7's open
+question **dissolved** once it was read against the ladder instead of against
+the maintenance lens; M6 **grew** a blocking question that this document's frame
+had no reason to ask.
 
-**In the restore case this is correct** — preserving provenance is the point.
-Three things compound to make it otherwise: `user_id=` exists *to remap records
-into a different user*, i.e. its purpose is crossing a principal boundary; a
-docs recipe is already queued recommending exactly that ("seed a new project
-from a team memory export"); and the demand it answers is for **shared/inherited
-memory**, so the population most likely to follow it is the population importing
-content they did not author.
-
-**⚠️ Correction (research, verified here): this is NOT host-facing only. It is
-a shipped CLI verb.** `cli.py:278` registers `import`, `cli.py:280` adds
-`--user` (*"remap the records into this user id"*), `cli.py:149` passes it
-through. **`veracium import alices_export.jsonl --user bob` is available to
-anyone with the package installed.** Record it as **CLI-reachable,
-operator-initiated** — the earlier phrasing is what gets re-checked if this is
-ever revisited.
-
-**And the mechanism is sharper than "fails to cap".** `author_of_evidence=USER`
-is a claim **relative to the store owner**, and `--user` changes what it is
-relative to. Nothing is falsified or mis-parsed: Alice's edge honestly says
-*"authored by the user of this store"*, and re-homing it makes that sentence
-mean Bob. **The re-attribution is a side effect of the remap, not a missing
-check** — which is exactly why grepping provenance assignments could never have
-found it, and why it reads as correct on inspection. It also relocates the fix:
-**the cap belongs at the remap**, the only place the referent changes.
-
-**The finding is not "import is broken."** It is that import has no trust
-boundary, the API has a parameter whose purpose is to cross one, and a queued
-doc would tell users to. **Ship the recipe before the boundary and third-party
-content has a supported path to enter as first-party assertable fact — working
-as designed, no bug, no advisory to write.**
-
-**Rule (research's, adopted):** no `user_id=` (restore) → preserve provenance
-unchanged. With `user_id=` (cross-principal) → third-party by construction: cap
-to `use_only`, set `derived_from=THIRD_PARTY`, unless the caller explicitly
-asserts otherwise. Costs nothing in restore, needs no new concept, makes the
-convenient call the safe one. **⏳ Hold the cross-project-inheritance docs recipe
-until this lands.**
-
-### M7 — `correct()` elevates non-assertable facts, and `confirm()` refuses to
-
-**Found while rebuilding the enumeration.** `correct()` builds its replacement
-edge with **hardcoded `author_of_evidence=EvidenceAuthor.USER`**, regardless of
-the `actor` argument, and applies it to *any active edge*. Reproduced starting
-from a third-party, `use_only`, non-assertable edge:
-
-```
-correct(user_id, edge_id, "CEO", actor="system")
-  → author=user  disclosure=mentionable  assertable=True
-```
-
-**A system actor turned an unverified third-party claim into a user-authored
-assertable fact.**
-
-**The asymmetry is the defect, and it is self-evident once both are read
-together.** `confirm()` guards exactly this and says why:
-
-> *"Only assertable facts can be confirmed: elevating a quarantined claim or
-> third-party inference by 'confirmation' would be a laundering vector — if the
-> user affirms a claim, that affirmation is new user-authored evidence and
-> belongs in `remember()`."*
-
-`correct()` is the same shape of operation with the same laundering potential
-and **no such guard**. `record_outcome` even validates actor↔outcome pairing;
-`correct()` accepts `actor="system"` silently.
-
-**⚠️ Correction: `actor` has ZERO effect on trust.** Verified — it appears
-exactly twice, in the signature and in the episode summary f-string. A caller
-passing `actor="system"` is **silently ignored where it matters**, so my
-original framing (a system actor producing user-authored facts) named the wrong
-vector. `source_type=STATED` is also hardcoded, so a third-party claim becomes
-*stated by the user*. **An argument that looks like it sets authorship and does
-not is its own hazard.**
-
-**⚠️ My severity reasoning was also wrong, and research's replacement is
-better.** I wrote "host-facing only, so a design gap not an active exploit
-path". The realistic path was never an attacker calling `correct()` — it is **a
-host implementing the obvious feature (*let the user fix a wrong memory*) and
-calling it on whatever edge the user points at**, including a third-party claim
-rendered in the UNVERIFIED block. Intent: *fix this text*. Effect: *adopt this
-as my own testimony*. **No attacker, no misuse, ordinary operation.** On
-reachability alone M7 is **broader than 0.4.4**, which did get an advisory and
-required `maintain()` + ≥8 mixed cold episodes + >30 days + trusted-first
-ordering.
-
-**What actually justifies no advisory — and this is the reusable line:**
-**0.4.4 fired automatically during routine maintenance; M7 requires an explicit
-operator-initiated call on a specific edge. Automatic-versus-invoked is the
-distinction**, not host-facing-versus-not. Residual risk goes in the release
-note rather than being left implied.
-
-**Proposed fix, three lines:** refuse `correct()` on a non-assertable edge using
-`confirm()`'s existing error text, and either honour `actor` or delete it.
-
-### M8 — the wiki caches a trust decision and serves it after revocation
-
-**Found by research, reproduced here.** §3 marks `compile.py` clean and the
-architectural note covers *a correct filter defeated by upstream corruption of
-its input*. **This is a third failure shape: the filter is correct, its input is
-correct, and the OUTPUT is cached across subsequent trust changes.**
-
-`compile.py:74` recompiles only after `wiki_recompile_after_writes` store
-versions (**default 8**), and `__init__.py:225` appends the wiki to
-**`grounded_parts`**. So a revocation takes effect on the edge immediately and
-**not on the wiki**:
-
-```
-default wiki_recompile_after_writes = 8
-wiki built: True
-after dispute():
-  edge active       : [False]
-  'Acme' in GROUNDED: True      <-- disputed fact still asserted
-```
-
-**A user's explicit trust action is silently ineffective on the one surface that
-matters — what the model reads.** Same for a late supersession, correction or
-quarantine.
-
-**Reachability, measured rather than inferred.** `cli.py:198` sets
-`wiki_recompile_after_writes = 10**9 if has_wiki else 0`, so **once a wiki
-exists the CLI never recompiles**. But `dispute` and `correct` are **not CLI
-verbs** — `grep -n "add_parser" src/veracium/cli.py` lists telemetry ·
-selfcheck · diagnostics · export · import · forget · recall · remember ·
-introspect. **So the unbounded case is not "CLI user disputes and nothing
-happens"; it is the mixed path: a host revokes through the API, an operator
-later reads the same store with `veracium recall`, and that path never
-recompiles — so the revoked fact stays in the grounded block indefinitely.**
-Narrower than "the CLI is unbounded", and still real.
-
-**Fix costs nothing and fails closed: a trust-reducing event DROPS the wiki
-rather than recompiling it.** `invalidate_edge` with reason in
-`{disputed, corrected, superseded}`, and any quarantine, empties the cache. No
-LLM call, no latency; you lose curated breadth until the next natural recompile
-and never assert revoked content.
-
-**Finding for the spec, not an advisory** — attacker-free, and self-healing
-within 8 writes on the library default. But it is **the same shape as both
-advisories**: a derived artifact preserving a trust decision after the decision
-changed.
+**What stays here:** M1–M5, all shipped or resolved, plus the 28-site
+enumeration. That is a record of what happened, and it can be reviewed and
+accepted as one.
 
 ### M5 — merge-time `confidence = max(...)` (design, partly shipped)
 
@@ -562,7 +432,7 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 | Q2 | Should M2/M3/M4 ship as 0.4.5 without an advisory? None is a trust-boundary bypass; M2 puts a false date in model context. | **blocking** | Quentin | before release |
 | Q3 | Does the paper-2 conflict in §8 need a stated policy, or is per-case judgement enough? | `pre-release` | research | before paper 2 runs |
 | Q4 | Should `needs_confirmation` be per-author rather than a single boolean? Would dissolve M3 structurally. | `deferred` | dev | own design round |
-| **Q5** | **M7: what is a correction?** (a) mirror `confirm()` and refuse on non-assertable edges, or (b) inherit the corrected edge's trust class instead of hardcoding `USER`. Dev leans **(b)**; **(a) has the better precedent argument.** Plus: `actor` reaches only an f-string and must be resolved either way. **§11b.** | **blocking — HOLDS EXTERNAL REVIEW** | research | before 0002 is sent |
+| ~~Q5~~ | **MOVED to `specs/0003` with M7, and resolved there: (b) inherit.** The question only looked balanced under this spec's lens. `actor` remains open, tracked in 0003. | moved | research | — |
 
 ---
 
@@ -575,139 +445,19 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 | **M3** | cross-author clearing of `needs_confirmation` | ✅ **shipped 0.4.5** |
 | **M4** | `record_outcome` overwrote authorship | ✅ **shipped 0.4.5** |
 | **M5** | merge-time `confidence = max(...)` | 🟢 **RESOLVED 2026-08-01 — no code change needed today.** T1 keeps `max`; T2 keeps the survivor's own confidence. T2 is unwritten, so this is now a **constraint on the T2 design** rather than a fix. Note what the resolution corrects in *my* framing: I offered a blast-radius measurement (one consumer, no ranking effect) as the argument, and research's ruling names that as answering **"how bad is it"** when the question was **"is it justified."** Severity bounds the cost of being wrong; it says nothing about legitimacy. |
-| **M6** | `import_memory` has no trust boundary | 🟡 **FIX SPECIFIED (§11a), not yet implemented.** Cap at the remap with existing 0.1.7 machinery. **The cross-project-inheritance docs recipe stays held** until it ships. |
-| **M7** | `correct()` elevates non-assertable facts | 🔴 **open — needs an internal decision, see Q5 (§11b).** Two defensible fixes that disagree about what a correction *is*. **This is the one finding holding external review**, by explicit decision 2026-08-01: sending the spec with it open invites a review of the gap rather than of the argument. |
-| **M8** | wiki serves a revoked trust decision | 🟡 **FIX SPECIFIED (§11c), not yet implemented.** Drop the cache in `store.invalidate_edge` — a real single choke point. **§11c also strikes an unreachable clause from the original finding.** `compile.py` stays **guarded** (`8ad5167`). |
+| **M6** | `import_memory` has no trust boundary | ➡️ **MOVED — `specs/0005-import-trust-boundary.md`.** Fix designed there; **a new blocking question surfaced in the move** (`I-Q1`: the cap keys on an attacker-controlled header field). The docs recipe stays held against *that* spec now. |
+| **M7** | `correct()` elevates non-assertable facts | ➡️ **MOVED — `specs/0003-supersession-authority.md` §1b**, where it belongs: `correct()` is a supersession path. **The move resolved it** — `0002` Q5 dissolves into the ladder, (b) inherit. It also exposed that `apply_supersession` and `correct()` are disjoint, so 0003 gained I9. |
+| **M8** | wiki serves a revoked trust decision | ➡️ **MOVED — `specs/0004-derived-views-and-revocation.md`.** Fix designed there, plus the strike of an unreachable *"any quarantine"* clause. `compile.py` stays **guarded** (`8ad5167`). |
 
-**So the spec is half-executed:** the three shipped findings are the ones that
-were straightforward corrections; **the four open ones each need a decision or a
-design, not just a patch.** M5 is research's, M6 needs the remap-cap rule, M7
-needs `confirm()`'s guard applied to `correct()`, M8 needs the drop-on-revocation
-rule.
+**All five findings that remain here are closed.** M1–M4 shipped; M5 is ruled
+and constrains a design that does not exist yet. **This document is now what it
+always was — the 0.4.4 retrospective plus the 28-site audit — and it is
+reviewable as one thing.**
 
-**External review is outstanding and should not be requested until M5–M8 carry
-proposed resolutions** — sending a spec whose findings are half-open invites a
-review of the gaps rather than the argument. **Reaffirmed 2026-08-01 with the
-cost now visible:** M5 is resolved and M6/M8 carry specified fixes below, so
-**M7 alone holds the review, and three fixes are queued behind it.** That is
-accepted deliberately rather than by drift — see Q5.
+**External review: REQUESTABLE as of 2026-08-01.** The old note said it should
+wait until M5–M8 carried proposed resolutions, and that was right while they
+lived here. **The split, not the resolutions, is what unblocked it.** Accepting
+this spec also retroactively documents 0.4.5's basis, which is the honest fix
+for M2/M3/M4 having shipped citing a `draft` — see the gate finding (`3ef6519`).
 
 ---
-
-## 11a. M6 — the fix: cap at the remap
-
-**Where.** `portability.import_memory`, at the point `user_id=` is applied
-(`portability.py:85`, `rec["user_id"] = target_uid`). Not at `add_edge`, and not
-in `Edge.model_validate` — **the remap is the only place the referent changes**,
-which is the whole mechanism of the finding.
-
-**The rule.**
-
-> When `user_id=` is supplied **and differs from the export header's
-> `user_id`**, every imported edge is capped: `derived_from = THIRD_PARTY`
-> (already-capped edges keep their own value — `min`, never raised).
-
-**Restore is untouched** — no `user_id=`, or the same one, imports byte-for-byte
-with provenance preserved. That case is the reason `import` exists and
-preserving provenance there is correct.
-
-**Why cap rather than rewrite `author_of_evidence`.** The record is not false.
-Alice's edge honestly says *"authored by the user of this store"*; re-homing it
-changes what that sentence refers to. Overwriting the author to `THIRD_PARTY`
-would **destroy a true statement to fix a referent problem**, and it would lose
-the fact that this was somebody's first-person testimony — which a later
-operator may need. Capping leaves the record intact and makes the *effective*
-trust correct, which is exactly the 0.1.7 contract: **`derived_from` may cap,
-never raise.** No new machinery, and no dependency on `specs/0003`.
-
-**Consequence, stated plainly:** after a remapping import, nothing from the file
-is assertable in the target store. **That is the intended outcome** — the
-population this feature serves is importing content it did not author. A host
-that wants an imported fact asserted has the same answer `confirm()` gives:
-that affirmation is new user-authored evidence and belongs in `remember()`.
-
-**Checks.** `test_remapping_import_caps_trust` (Alice→Bob: `assertable` False,
-`derived_from` `THIRD_PARTY`) · `test_restore_preserves_provenance_exactly`
-(round-trip with no remap is byte-identical) · `test_import_cap_never_raises`
-(an edge already carrying `derived_from=THIRD_PARTY` and `author=THIRD_PARTY` is
-unchanged).
-
----
-
-## 11b. M7 — NOT specified; the decision is Q5
-
-**Deliberately left open.** Both candidates are one-liners; they disagree about
-**what a correction is**, and picking by ease would settle a trust-semantics
-question by accident.
-
-| | (a) mirror `confirm()` | (b) inherit the corrected edge's class |
-|---|---|---|
-| rule | refuse to `correct()` a non-assertable edge | the replacement edge takes the original's `author_of_evidence` / `disclosure` instead of hardcoded `USER` |
-| a correction is… | **an assertion** — so it is new user evidence and belongs in `remember()` | **an edit** — the value was wrong; who reported it did not change |
-| third-party typo fix | **blocked** | works; result stays a third-party claim |
-| precedent | **stronger** — `confirm()`'s docstring already makes this argument, and correcting a value is a *stronger* assertion than affirming one | **stronger** — *maintenance may narrow, never widen*; hardcoding `USER` is the widening, and this is the shape the rest of the system obeys |
-
-**Dev leans (b)**; **(a) has the better precedent argument.** Recorded that way
-on purpose — the two arguments point opposite ways and I do not want the lean
-to read as a resolution.
-
-**Independent of (a)/(b): `actor` must be resolved.** It appears twice — the
-signature and an episode f-string — so it reaches nothing that affects trust. A
-caller passing `actor="system"` is **silently ignored where it matters**, and
-`record_outcome` right next to it *does* validate actor↔outcome. Either make it
-govern or remove it; leaving a parameter that looks like it sets authorship and
-does not is its own hazard, independent of which fix lands.
-
----
-
-## 11c. M8 — the fix: drop the cache at the choke point
-
-**Where.** `store.invalidate_edge`. **Verified to be a real single choke point**
-— every invalidation in the codebase goes through it:
-
-```
-$ grep -rn "invalidate_edge(" --include=*.py src/veracium/
-lifecycle.py:45  "lapsed"     lifecycle.py:49  "decayed"
-graph.py:136     "absorbed_duplicate"   graph.py:141  "superseded"
-__init__.py:462  "disputed"   __init__.py:612  "corrected"
-```
-
-**Putting it in `Memory.dispute()`/`correct()` would miss `graph.py`'s
-supersession**, which is the path an attacker reaches — so the store layer is
-not a stylistic preference here.
-
-**Which reasons drop the wiki:** `disputed` · `corrected` · `superseded`.
-**Not** `lapsed` / `decayed` — those are time-based staleness, not a revoked
-trust decision, and dropping curated breadth on every decay cycle pays a real
-cost for no trust gain. `absorbed_duplicate` is **arguable and currently
-excluded**: the content survives in the surviving edge, so the wiki is not
-serving anything revoked. Flagged rather than decided.
-
-**Drop, do not recompile** — no LLM call, no latency, fails closed. Curated
-breadth is lost until the next natural recompile; revoked content is never
-asserted.
-
-### ⚠️ Correction to the M8 finding: one clause is unreachable
-
-The original text says the fix covers *"and any quarantine."* **There is no
-post-ingest quarantine path.** Verified mechanically rather than recalled:
-
-```
-$ grep -rn "disclosure\s*=" --include=*.py src/veracium/
-ingest.py:117   disclosure = _disclosure_for(author, relation, derived_from)
-ingest.py:128   disclosure=disclosure, ...
-```
-
-`disclosure` is written in **exactly one place**, at ingest, and never lowered
-afterwards. The clause describes an event that cannot occur, and it is **struck
-rather than implemented** — building a handler for it would have produced dead
-code that reads as coverage.
-
-**Worth naming as a method note:** this is the third time in this spec that a
-claim survived because it sounded right. It came from my own summary of
-research's finding, not from research.
-
-**Checks.** `test_dispute_drops_the_wiki` (the reproducer becomes the fixture) ·
-`test_third_party_supersession_drops_the_wiki` (the `graph.py` path, which is
-why the fix is in the store) · `test_decay_does_not_drop_the_wiki` (the
-exclusion is deliberate, so it is pinned).
