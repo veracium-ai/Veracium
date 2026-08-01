@@ -141,6 +141,28 @@ and fix it at source. Citing a retraction list is not applying it — we did
 exactly that this week and a retracted claim shipped into two downstream
 documents.
 
+**4b. Record the decision where a machine can read it.** Every spec carries a
+`Spec-Status:` line directly under its title — one of `draft · in review ·
+accepted · accepted-with-amendments · deferred · rejected`. It is the
+**canonical** state; the header table carries narrative only, because two
+sources drift.
+
+> **Only `accepted` authorises implementation.** The CI gate refuses a commit
+> that touches a guarded file and cites a spec in any other state, and fails
+> closed on a spec with no status line or an unrecognised one.
+
+`accepted-with-amendments` deliberately does **not** qualify. The amendments
+must be resolved and the amended version approved, at which point the line
+becomes `accepted`. Writing the spec, its tests, and its documentation while
+it is still in draft is expected — that is what `Spec-Exception: docs-only`
+and `test-only` are for.
+
+*Why this exists:* the gate previously proved only that the cited file
+**existed**. 0.4.5 shipped citing `0002-maintenance-provenance-invariant.md`
+while that spec's own header read *"draft — internal review not yet
+requested"*, and nothing objected. A process whose central control is a
+citation must check what is being cited.
+
 **5. Implementation** — the spec's invariants become executable checks
 *in the same change*, not afterwards. The T1 fix shipped with
 `engine.trust_canary_failures == 0` as a hard bench key; that is the

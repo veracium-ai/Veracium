@@ -1,5 +1,11 @@
 # Feature spec: generated-content trust class (`EvidenceAuthor.ASSISTANT`)
 
+Spec-Status: deferred
+
+*<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
+
+> **deferred** — external review 2026-07-31 deferred v2; v3 written and re-reviewed, amendments outstanding (see §13 and the v3 external review)
+
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 > First spec through the full process. Numbering starts at `0001`; the `0007`
@@ -9,7 +15,7 @@
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | **v3** — narrowed after external review deferred v2. §13 lists the changes. Previously v2 — (`spec-0001-research-review.md`); §11 lists the changes. *Re-read before editing; quote the version you approve.* |
-| **Status** | **draft (v3)** — v2 was deferred at external review; **the assertability widening is withdrawn, not re-argued.** v3 ships provenance without a new assertion channel. **Not implementable yet:** needs internal + external review, and one open decision in §4b. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 was deferred at external review; **the assertability widening is withdrawn, not re-argued.** v3 narrows to `use_only` for every subject and has its own external review outstanding. |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |

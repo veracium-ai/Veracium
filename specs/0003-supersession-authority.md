@@ -1,12 +1,18 @@
 # Feature spec: supersession authority
 
+Spec-Status: draft
+
+*<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
+
+> **draft** — ladder adopted by research; Q1/Q2 blocking; external review not sent
+
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | v1 — *re-read before editing; quote the version you approve* |
-| **Status** | draft |
+| **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 blocking**; external review not sent. |
 | **Internal reviewers** | research — **ladder already ADOPTED** (`proposals/supersession-authority-review.md`); two sub-decisions open, see §10 |
 | **External review** | required — full spec (`graph.py`, `gate.py`, `mcp_server.py`) · not yet sent |
 | **Decision + date** | — |

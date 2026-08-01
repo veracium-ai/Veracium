@@ -147,6 +147,24 @@ EXCEPTION_CATEGORIES = {
     "revert": "restores a guarded file to its last approved state; name what is being backed out and why",
 }
 
+# A spec's state, as a machine-readable line INSIDE the spec file:
+#
+#     Spec-Status: accepted
+#
+# Only `accepted` authorises implementation. `accepted-with-amendments`
+# deliberately does NOT — PROCESS.md says so in prose and this makes it true:
+# amendments must be resolved and the amended version approved first.
+#
+# This exists because the gate could not previously tell an accepted spec from a
+# blank draft. `Spec:` proved a file existed and nothing more, and 0.4.5 shipped
+# citing a spec whose status line read "draft". Flagged by the checker's own
+# external review ("its metadata has an acceptable status") and deferred to the
+# pilot; the pilot happened and it bit.
+SPEC_STATES = ("draft", "in review", "accepted", "accepted-with-amendments",
+               "deferred", "rejected")
+IMPLEMENTABLE = ("accepted",)
+_SPEC_STATUS = re.compile(r"^Spec-Status:\s*(\S[^\n]*)$", re.M)
+
 MIN_REASON_CHARS = 12
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -209,9 +227,31 @@ def _validate_spec_ref(sha: str, value: str) -> list[str]:
                         f"not a specification for this change")
         return problems
     try:
-        _git("cat-file", "-e", f"{sha}:{value}")
+        body = _git("show", f"{sha}:{value}")
     except CannotRun:
         problems.append(f"`Spec: {value}` — does not exist in this commit's tree")
+        return problems
+
+    # --- status gate --------------------------------------------------------
+    m = _SPEC_STATUS.search(body)
+    if not m:
+        problems.append(
+            f"`{value}` has no `Spec-Status:` line. The gate cannot tell an "
+            f"accepted spec from a blank draft without one, so it fails closed. "
+            f"Add one of: {', '.join(SPEC_STATES)}")
+        return problems
+    state = m.group(1).strip().lower()
+    if state not in SPEC_STATES:
+        problems.append(f"`{value}` has `Spec-Status: {m.group(1).strip()}` — "
+                        f"not one of {', '.join(SPEC_STATES)}")
+    elif state not in IMPLEMENTABLE:
+        extra = (" — amendments must be resolved and the amended version "
+                 "approved before implementation"
+                 if state == "accepted-with-amendments" else "")
+        problems.append(
+            f"`{value}` is `{state}`, which does not authorise implementation"
+            f"{extra}. Land the spec first, or use `Spec-Exception:` if this "
+            f"commit is docs/tests/a revert rather than implementing it.")
     return problems
 
 

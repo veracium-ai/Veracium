@@ -2,6 +2,18 @@
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
+> **First line of a new spec, after the title:**
+>
+> ```
+> Spec-Status: draft
+> ```
+>
+> One of `draft · in review · accepted · accepted-with-amendments · deferred ·
+> rejected`. **Only `accepted` authorises implementation** — the CI gate reads
+> this line and refuses a commit that touches a guarded file citing a spec in
+> any other state. `accepted-with-amendments` deliberately does not qualify:
+> amendments must be resolved and the amended version approved first.
+>
 > Copy this file. Process: `PROCESS.md`. **Every section below exists
 > because we shipped or nearly shipped a defect it would have caught** —
 > the provenance of each is noted in italics. Delete nothing; write
@@ -12,7 +24,7 @@
 |---|---|
 | **Author / session** | |
 | **Version** | v1 — *re-read before editing; quote the version you approve* |
-| **Status** | draft · in review · accepted · accepted-with-amendments · deferred · rejected |
+| **Status** | *narrative only — the canonical state is the `Spec-Status:` line at the top of the file, which the CI gate reads. Do not repeat the state here; two sources drift.* |
 | **Internal reviewers** | dev · research · workflow-platform *(name who actually reviewed; note any unavailable)* |
 | **External review** | required for **full** specs (= touches a guarded file); not required for lightweight · date sent / returned · reviewer-safe copy? · **retrospective** if security hotfix |
 | **Decision + date** | |

@@ -1,5 +1,11 @@
 # Feature spec: the maintenance provenance invariant
 
+Spec-Status: in review
+
+*<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
+
+> **in review** — internally reviewed twice by research; external review not sent; M5-M8 open (see §11)
+
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
 as an audit of the maintenance-time operations, because 0.4.1 and 0.4.4 are the
@@ -16,7 +22,7 @@ this spec reports findings, not coverage.*
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | v1 |
-| **Status** | **in review** — internally reviewed **twice** by research (2026-08-01: `spec-0002-research-review.md`, then the enumeration verification that produced M8). **External review NOT sent.** Header said *"internal review not yet requested"* until 2026-08-01; that was stale. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* Internally reviewed twice by research; external review not sent; **M5–M8 open (§11)**. Header previously read *"internal review not yet requested"*, which was stale. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
 | **Decision + date** | — · **3 of 8 findings already SHIPPED** in 0.4.5 (M2/M3/M4) and 0.4.4 (M1); M5–M8 open, see §11 |

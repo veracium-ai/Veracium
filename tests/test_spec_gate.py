@@ -33,14 +33,22 @@ class Repo:
         self._run("git", "init", "-q")
         self._run("git", "config", "user.email", "t@example.com")
         self._run("git", "config", "user.name", "t")
-        for f in ("src/veracium/graph.py", "src/veracium/gate.py",
-                  "specs/0007-thing.md", "README.md"):
+        for f in ("src/veracium/graph.py", "src/veracium/gate.py", "README.md"):
             p = path / f
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text("original\n")
+        # a spec must now declare a machine-readable state; only `accepted`
+        # authorises implementation
+        self.write_spec("specs/0007-thing.md", "accepted")
         self._run("git", "add", "-A")
         self._run("git", "commit", "-qm", "seed")
         self.base = self._out("git", "rev-parse", "HEAD").strip()
+
+    def write_spec(self, path, status):
+        p = self.path / path
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(f"# Spec: thing\n\nSpec-Status: {status}\n\nbody\n")
+        return p
 
     def _run(self, *a):
         return subprocess.run(a, cwd=self.path, check=True, capture_output=True,
@@ -310,3 +318,63 @@ def test_multiple_commits_in_one_range_are_all_checked(repo):
     code, out = repo.check()
     assert code == POLICY_FAIL
     assert "gate.py" in out
+
+
+
+# --- status gating: `Spec:` must name a spec that authorises implementation ---
+
+@pytest.mark.parametrize("status", ["draft", "in review", "deferred", "rejected",
+                                    "accepted-with-amendments"])
+def test_a_non_accepted_spec_does_not_authorise_implementation(repo, status):
+    """The gate could not previously tell an accepted spec from a blank draft:
+    `Spec:` proved a file existed and nothing more. 0.4.5 shipped citing a spec
+    whose status line read "draft"."""
+    repo.write_spec("specs/0008-pending.md", status)
+    code, out = repo.commit("implement it", ["Spec: specs/0008-pending.md"],
+                            touch=["src/veracium/graph.py"]).check()
+    assert code == POLICY_FAIL
+    assert "does not authorise implementation" in out
+
+
+def test_accepted_with_amendments_is_explicitly_not_enough(repo):
+    """PROCESS.md says so in prose; this makes it true."""
+    repo.write_spec("specs/0009-amend.md", "accepted-with-amendments")
+    code, out = repo.commit("implement", ["Spec: specs/0009-amend.md"],
+                            touch=["src/veracium/graph.py"]).check()
+    assert code == POLICY_FAIL
+    assert "amendments must be resolved" in out
+
+
+def test_an_accepted_spec_authorises_implementation(repo):
+    code, _ = repo.commit("implement it", ["Spec: specs/0007-thing.md"],
+                          touch=["src/veracium/graph.py"]).check()
+    assert code == OK
+
+
+def test_a_spec_with_no_status_line_fails_closed(repo):
+    """A spec that declares nothing must not be treated as permissive."""
+    p = repo.path / "specs/0010-nostatus.md"
+    p.write_text("# Spec\n\nbody with no status\n")
+    code, out = repo.commit("implement", ["Spec: specs/0010-nostatus.md"],
+                            touch=["src/veracium/graph.py"]).check()
+    assert code == POLICY_FAIL
+    assert "no `Spec-Status:` line" in out
+
+
+def test_an_unrecognised_status_is_rejected(repo):
+    repo.write_spec("specs/0011-weird.md", "probably fine")
+    code, out = repo.commit("implement", ["Spec: specs/0011-weird.md"],
+                            touch=["src/veracium/graph.py"]).check()
+    assert code == POLICY_FAIL
+    assert "not one of" in out
+
+
+def test_docs_and_tests_on_a_draft_spec_still_pass_via_exception(repo):
+    """The gate must not block writing the spec itself, or its tests."""
+    repo.write_spec("specs/0012-draft.md", "draft")
+    code, _ = repo.commit(
+        "add tests while the spec is drafted",
+        ["Spec-Exception: test-only",
+         "Spec-Exception-Reason: coverage for a spec still in draft"],
+        touch=["src/veracium/graph.py"]).check()
+    assert code == OK
