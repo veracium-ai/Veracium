@@ -90,7 +90,39 @@ $ grep -rn "store\.add_edge\|store\.add_episode\|store\.invalidate_edge\|\.model
     src/veracium/*.py src/veracium/store/*.py | grep -v ingest.py
 ```
 
-**24 sites, not nine.** The clean ones are listed in §3 alongside the findings,
+**⚠️ That was still wrong — 28 sites, not 24 — and research found it the same
+way I found the first correction.** The method moved from *field assignments* to
+*store writes*, which was right, but I instantiated it against a **remembered
+list** of store writes rather than against the interface definition. **The same
+recall-versus-enumerate step the template exists to force, one level up.**
+
+`store/base.py` declares **six** mutators; my grep covered three:
+
+| mutator | sites | in my grep? |
+|---|---|---|
+| `add_edge` | 9 | ✅ |
+| `add_episode` | 9 | ✅ |
+| `invalidate_edge` | 6 | ✅ |
+| **`delete_episode`** | 1 | ❌ |
+| **`forget_user`** | 2 | ❌ |
+| **`set_wiki`** | 1 | ❌ |
+
+**Derive the enumeration from `store/base.py`, not from recall** — that closes it
+permanently rather than for one more round:
+
+```
+$ grep -nE "def (add_|invalidate_|delete_|forget_|set_)" src/veracium/store/base.py
+$ # then grep each name across src/, excluding ingest.py
+```
+
+`forget_user` is deliberate erasure and `delete_episode` is clean, **but both are
+listed anyway** — `delete_episode` is the mechanism that made 0.4.4
+*unrepairable* (consolidation deletes its member episodes, so original
+authorship is unrecoverable). **The audit fixed how consolidation derives
+provenance and never looked at the site that destroys it.** And `set_wiki` is
+M8.
+
+**28 sites.** The clean ones are listed in §3 alongside the findings,
 because — research's phrasing, and it is right — *an audit listing only its
 findings cannot be distinguished from an audit that only looked where it found
 them.* The three the assignment-grep could not have found:
@@ -303,6 +335,52 @@ note rather than being left implied.
 
 **Proposed fix, three lines:** refuse `correct()` on a non-assertable edge using
 `confirm()`'s existing error text, and either honour `actor` or delete it.
+
+### M8 — the wiki caches a trust decision and serves it after revocation
+
+**Found by research, reproduced here.** §3 marks `compile.py` clean and the
+architectural note covers *a correct filter defeated by upstream corruption of
+its input*. **This is a third failure shape: the filter is correct, its input is
+correct, and the OUTPUT is cached across subsequent trust changes.**
+
+`compile.py:74` recompiles only after `wiki_recompile_after_writes` store
+versions (**default 8**), and `__init__.py:225` appends the wiki to
+**`grounded_parts`**. So a revocation takes effect on the edge immediately and
+**not on the wiki**:
+
+```
+default wiki_recompile_after_writes = 8
+wiki built: True
+after dispute():
+  edge active       : [False]
+  'Acme' in GROUNDED: True      <-- disputed fact still asserted
+```
+
+**A user's explicit trust action is silently ineffective on the one surface that
+matters — what the model reads.** Same for a late supersession, correction or
+quarantine.
+
+**Reachability, measured rather than inferred.** `cli.py:198` sets
+`wiki_recompile_after_writes = 10**9 if has_wiki else 0`, so **once a wiki
+exists the CLI never recompiles**. But `dispute` and `correct` are **not CLI
+verbs** — `grep -n "add_parser" src/veracium/cli.py` lists telemetry ·
+selfcheck · diagnostics · export · import · forget · recall · remember ·
+introspect. **So the unbounded case is not "CLI user disputes and nothing
+happens"; it is the mixed path: a host revokes through the API, an operator
+later reads the same store with `veracium recall`, and that path never
+recompiles — so the revoked fact stays in the grounded block indefinitely.**
+Narrower than "the CLI is unbounded", and still real.
+
+**Fix costs nothing and fails closed: a trust-reducing event DROPS the wiki
+rather than recompiling it.** `invalidate_edge` with reason in
+`{disputed, corrected, superseded}`, and any quarantine, empties the cache. No
+LLM call, no latency; you lose curated breadth until the next natural recompile
+and never assert revoked content.
+
+**Finding for the spec, not an advisory** — attacker-free, and self-healing
+within 8 writes on the library default. But it is **the same shape as both
+advisories**: a derived artifact preserving a trust decision after the decision
+changed.
 
 ### M5 — merge-time `confidence = max(...)` (design, partly shipped)
 
