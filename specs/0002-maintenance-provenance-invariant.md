@@ -879,6 +879,32 @@ defects in the manifest machinery I built to prevent exactly this:**
 | 6 | N9 omits `disclosure`; N9b omits most trust fields | **yes** |
 | 7 | malformed dates still silently become *now* | **yes — and this is live in released 0.4.6.** §7f says it is "not this fix's business"; the reviewer is right that it is the same principle — **a malformed statement about when an event happened is not evidence that it happened now** |
 
-**Status: `deferred`.** v4 is a deletion pass plus the tooling fixes, and the
-manifest's coverage guarantee is **not established** until N8 checks tests and
-identity survives reordering.
+### Tooling rebuilt — and it found the coverage claim was substantially unbacked
+
+**Items 3, 4 and 4b are fixed** (`audit_manifest.py`, rebuilt on the AST).
+
+| was | now |
+|---|---|
+| line-oriented regex; no `async def`, no class scope, first match per line | **`ast.parse`**, full scope qualification, every call node |
+| identity = **ordinal** — reordering silently reattached verdicts | identity = **fingerprint** of the call's normalised expression + enclosing branch **and its condition**. Verified: **moving** a call keeps its verdict; **changing what it does** produces an explicit *no disposition* / *no longer exists* pair |
+| `--check` validated the verdict, never the test | validates **5 fields, operation class, evidence value, trust fields, verdict, and test-or-owning-spec** — clean rows must name a **concrete test**, moved/open rows an **owning spec** |
+| no-argument path crashed | fixed; the store-implementation exclusion is now **reported**, not silent |
+
+**Then it found something worse than any of them.** With test-existence checked
+for the first time, **11 of the 17 sites certified *clean* named tests that do
+not exist.** I had written plausible test names rather than looking up real
+ones. **The "17 clean" figure in the v3 package was therefore not backed by 11 of
+its 17 rows** — the reviewer suspected the guarantee was not established and
+could not see how far.
+
+All 11 now point at tests verified present in the tree, and **a clean row citing
+a non-existent test is a hard failure**.
+
+**What this still does not establish**, stated because the last three drafts
+overstated it: direct calls only — **aliased or indirect invocation is
+invisible** — and the `evidence-bearing?` column remains a **reviewed
+classification**, not a derived fact (§6a).
+
+**Status: `deferred`.** Remaining for v4: the deletion pass, `disclosure` in N9,
+N9b's missing fields, malformed-date rejection, and an owning spec for
+crash-safe consolidation.
