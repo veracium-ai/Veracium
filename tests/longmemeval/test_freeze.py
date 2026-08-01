@@ -45,6 +45,9 @@ def _freeze(tmp_path, *, approved_at="2026-07-31T09:00:00Z", omit=(),
         "approved_by": "research",
         "approved_at": approved_at,
         "environment": "extractor gpt-4.1-mini; answerer gpt-4.1; judge gpt-4o",
+        "max_achievable": "10/12 items have baseline headroom",
+        "tail_guardrail": "no item with baseline >=0.8 may lose more than 0.2",
+        "replicate_rationale": "3 replicates absorb extractor sampling variance",
     }
     for k in omit:
         lines.pop(k, None)
@@ -314,3 +317,48 @@ def test_nested_arm_config_parses_like_the_real_artifact(tmp_path):
     assert arms["baseline"]["max_subgraph_edges"] == "40"
     assert arms["treatment_primary"]["subgraph_coverage_share"] == "0.25"
     assert "rationale_for_0_25" not in arms, "prose block captured as an arm"
+
+
+
+# --- the three fields R2 earned -------------------------------------------
+
+@pytest.mark.parametrize("field", ["max_achievable", "tail_guardrail",
+                                   "replicate_rationale"])
+def test_the_three_fields_r2_earned_are_required(tmp_path, field):
+    f = _freeze(tmp_path, omit=(field,))
+    v = verify(f, freeze_id=sha256_file(f), run_started_at=RUN_START,
+               item_ids=ITEMS)
+    assert not v.confirmatory
+    assert field in " ".join(v.problems)
+
+
+def test_an_unreachable_threshold_is_refused():
+    """**R2's exact failure.** It froze "≥10/12 improve" against a sample where
+    7 of 12 were already at a perfect score — max achievable 5/12, so
+    P(confirm) = 0 before a single paid call. Six freezes and two reviewers
+    walked past it. This makes it arithmetic instead of attention."""
+    from freeze import reachability_problem
+    bad = "max_achievable: 5/12 items have headroom\nminimum_improvement: 10/12 must improve\n"
+    p = reachability_problem(bad)
+    assert p and "UNREACHABLE" in p and "P(confirm) = 0" in p
+
+
+def test_a_reachable_threshold_passes():
+    from freeze import reachability_problem
+    ok = "max_achievable: 12/12 items have headroom\nminimum_improvement: 10/12 must improve\n"
+    assert reachability_problem(ok) is None
+
+
+def test_reachability_is_silent_when_not_both_numeric():
+    """Not every experiment states these as counts; the check must not invent a
+    problem it cannot actually evaluate — the mistake that made 'fails closed on
+    a recognised subject' unbuildable."""
+    from freeze import reachability_problem
+    assert reachability_problem("max_achievable: most items have headroom\n") is None
+
+
+def test_r2s_own_freeze_would_now_be_refused():
+    """The regression test that matters: the artifact we actually approved."""
+    from freeze import reachability_problem
+    assert reachability_problem(
+        "max_achievable: 5/12\nthreshold: 10/12 improve\n") is not None

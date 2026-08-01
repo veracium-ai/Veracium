@@ -47,6 +47,28 @@ REQUIRED_FIELDS = (
     # null result invites "you should have used a larger reserve", and choosing
     # the value after any outcome is exactly what G3 exists to prevent.
     "arm_config",
+    # Added 2026-08-01 after R2, adopted into the spec's required table by
+    # research. Each one exists because R2 failed in a way the previous list
+    # could not see:
+    #
+    #   max_achievable — R2 froze "≥10/12 items improve" against a sample where
+    #     7 of 12 were already at a perfect score. Maximum achievable was 5/12,
+    #     so P(confirm) = 0 before a single paid call. Six freezes enforced
+    #     "fix every degree of freedom" and none asked whether the experiment
+    #     could ever say yes. Checkable on paper, at approval time, for free.
+    #
+    #   tail_guardrail — one item went 1.000 -> 0.000 and the aggregate
+    #     criterion could not see it at all. A mean-improvement threshold is
+    #     blind to a single query losing everything.
+    #
+    #   replicate_rationale — R2 froze 3 replicates against a pipeline that is
+    #     deterministic by construction (cached extraction, temp 0.0). 0 of 24
+    #     cells varied; averaging three identical numbers spent ~1/3 of the
+    #     arm-run budget on an experiment whose real problem was too few items.
+    #     Replicates must name the variance they absorb.
+    "max_achievable",
+    "tail_guardrail",
+    "replicate_rationale",
 )
 
 # Proposed by dev, NOT yet adopted into `freeze-artifact-spec.md`'s required
@@ -170,6 +192,32 @@ def parse_arm_config(text: str) -> dict[str, dict[str, str]]:
     return {a: p for a, p in out.items() if p}
 
 
+_MAX_ACH = re.compile(r"max_achievable\s*:\s*([0-9]+)\s*/\s*([0-9]+)", re.I)
+_THRESH = re.compile(r"(?:minimum_improvement|threshold)\D{0,40}?([0-9]+)\s*/\s*([0-9]+)", re.I)
+
+
+def reachability_problem(text: str) -> str | None:
+    """Can the frozen sample actually produce the frozen threshold?
+
+    R2's answer was no, and nobody asked. `P(confirm) = 0` was determinable on
+    paper at approval time — this makes it determinable automatically.
+    """
+    a, t = _MAX_ACH.search(text), _THRESH.search(text)
+    if not a or not t:
+        return None            # not both stated numerically; nothing to compare
+    ach, ach_n = int(a.group(1)), int(a.group(2))
+    thr, thr_n = int(t.group(1)), int(t.group(2))
+    if ach_n != thr_n:
+        return (f"max_achievable is out of {ach_n} but the threshold is out of "
+                f"{thr_n} — cannot be compared")
+    if thr > ach:
+        return (f"UNREACHABLE THRESHOLD: needs {thr}/{thr_n} but the frozen "
+                f"sample can produce at most {ach}/{ach_n}. P(confirm) = 0 at "
+                f"any effectiveness. This is R2's failure exactly; the freeze "
+                f"cannot be approved.")
+    return None
+
+
 def config_conflicts(declared: dict[str, str], observed: dict[str, object],
                      *, arm: str) -> list[str]:
     """Frozen intent vs what the run actually did.
@@ -278,6 +326,10 @@ def verify(freeze_path, *, freeze_id: str | None, run_started_at: datetime,
 
     advisories = [f"{f} not declared (dev proposal, not yet in the spec's "
                   f"required table)" for f in ADVISORY_FIELDS if f not in present]
+    unreachable = reachability_problem(text)
+    if unreachable:
+        problems.append(unreachable)
+
     arms = parse_arm_config(text)
     if "arm_config" in present and not arms:
         problems.append("arm_config present but unparseable — a declaration "
