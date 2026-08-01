@@ -32,13 +32,34 @@ from typing import Optional
 # Anything not listed here is silently dropped by record(). Values are coerced to
 # int / float / bool. No string values are ever accepted (strings could be content),
 # except the event name itself, which is one of these fixed keys.
+# NOTE — six fields were removed from this whitelist because they were listed
+# here and populated NOWHERE. A whitelist describes what we send; an entry no
+# call site writes is a promise, not a payload. CONSENT_TEXT was built on this
+# list and promised users "token/latency totals" — we collected less than we
+# said, which is the safe direction for privacy but is still a claim the code
+# did not honour.
+#
+#   distill_in_tok, distill_out_tok, gate_in_tok, gate_out_tok
+#       Cannot be populated today BY DESIGN: `Complete` returns a bare string
+#       and veracium never owns credentials or model choice, so usage is not
+#       visible to us. Re-add only with the planned `veracium.llm.metered`
+#       opt-in wrapper that makes it visible.
+#
+#   supersessions, reinforcements
+#       CAN be populated — `apply_supersession` knows — but it returns None, so
+#       the counts would have to be threaded through graph.py and ingest.py,
+#       both guarded trust-surface files. That needs a spec, not a drive-by.
+#       These are the most product-relevant counters we could send (they measure
+#       the behaviour veracium exists for), so this is worth doing properly.
+#
+# `tests/test_telemetry_claims.py` fails if any field is whitelisted but never
+# populated, which is how all six were found.
 EVENT_FIELDS: dict[str, set[str]] = {
-    "ingest": {"facts", "quarantined", "episodes", "supersessions", "reinforcements",
-               "unparseable", "distill_in_tok", "distill_out_tok", "ms"},
+    "ingest": {"facts", "quarantined", "episodes", "unparseable", "ms"},
     "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items", "proactive",
                "trimmed", "ms"},  # "trimmed" not "truncated": the content-free
                                   # guard rejects payloads containing "cat"
-    "answer": {"abstained", "gate_in_tok", "gate_out_tok", "ms"},
+    "answer": {"abstained", "ms"},
     "maintain": {"lapsed", "decayed", "flagged", "consolidated_in", "consolidated_out"},
     "forget": {"edges", "episodes"},
     "introspect": {"facts", "claims", "episodes"},
@@ -163,7 +184,7 @@ def _post(endpoint: str, payload: dict) -> None:
 CONSENT_TEXT = """\
 veracium can send anonymous, content-free usage statistics once a week to help
 improve the library. It would share ONLY aggregate counters — how often facts are
-extracted, claims quarantined, and answers abstained; token/latency totals; and
+extracted, claims quarantined, and answers abstained; latency totals; and
 self-check scores. It NEVER sends your memory: no facts, names, messages, queries,
 or answers. It is anonymous (a random install id) and you can turn it off any time
 with `veracium telemetry disable`. Preview exactly what would be sent with
