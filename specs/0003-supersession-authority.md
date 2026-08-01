@@ -1,10 +1,10 @@
 # Feature spec: supersession authority
 
-Spec-Status: draft
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft** — ladder adopted by research; Q1/Q2 blocking; external review not sent
+> **in review** — ladder adopted by research and **both blocking questions answered 2026-08-01** (Q1 rung 1 with I5 as a precondition; Q2 capped authority). External review not sent.
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
@@ -12,7 +12,7 @@ Spec-Status: draft
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | v1 — *re-read before editing; quote the version you approve* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 blocking**; external review not sent. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 answered 2026-08-01**; I7 shipped (`362f474`); external review not sent. |
 | **Internal reviewers** | research — **ladder already ADOPTED** (`proposals/supersession-authority-review.md`); two sub-decisions open, see §10 |
 | **External review** | required — full spec (`graph.py`, `gate.py`, `mcp_server.py`) · not yet sent |
 | **Decision + date** | — |
@@ -93,7 +93,7 @@ $ grep -rn "invalidate_edge\|partition_parts\|render_edges" src/veracium/ | grep
 | **host/model `author`** (`mcp_server`) | rejected | rejected | **rejected — raises** | **model declares itself `SYSTEM`** to climb the ladder | **I7**: `_AUTHOR` has no `system` key **and** the lookup raises rather than defaulting |
 | **extractor `object` value** | no supersession | no supersession | — | **any differing value on a functional relation triggers supersession** — this is the attack vector | **I1/I2**: supersession requires authority ≥ prior |
 | **extractor `relation`** | — | unknown relation → non-functional → no supersession | — | extractor picks a *functional* relation for third-party content | **I2** — authority is checked regardless of relation |
-| **host `derived_from`** | none | rejected | **rejected — raises** | omitted where it should cap | I7; capping-only is unchanged (0.1.7) |
+| **host `derived_from`** | none | rejected | **rejected — raises** | omitted where it should cap | I7 ✅ shipped; capping-only unchanged (0.1.7). **Now also load-bearing for supersession** — it is the cap in `effective` (§3), so an omitted `derived_from` overstates authority as well as disclosure. |
 | **older-version store data** | — | pydantic rejects unknown enum | — | — | ⚠️ **no invariant** — carried from `0001` Q3 (`PRAGMA user_version`); a gate on that spec, not this one |
 
 ## 2c-ii. Assertions about reach
@@ -117,8 +117,31 @@ $ grep -rn "invalidate_edge\|partition_parts\|render_edges" src/veracium/ | grep
 USER 3  >  SYSTEM 2  >  ASSISTANT 1  >  THIRD_PARTY 0
 ```
 
-> **A functional supersession is permitted only when the incoming edge's author
-> authority is ≥ the prior edge's.**
+> **A functional supersession is permitted only when the incoming edge's
+> *effective* authority is ≥ the prior edge's**, where
+>
+> ```python
+> effective = min(AUTH[author_of_evidence], AUTH[derived_from or author_of_evidence])
+> ```
+
+**The authority is capped, not raw** — research's Q2 answer, and it is the whole
+reason `SYSTEM` can keep rung 2 without splitting the enum. `SYSTEM` means two
+different things today: host state veracium derived itself, and a summary of
+somebody else's content. Capping separates them **using machinery that already
+exists** rather than a new class:
+
+| edge | raw | `derived_from` | **effective** | consequence |
+|---|---|---|---|---|
+| host-state `SYSTEM` | 2 | — | **2** | keeps rung 2; may retire a third-party claim |
+| **`SYSTEM` summary of an attacker's email** | 2 | `THIRD_PARTY` | **0** | **retires nothing** — the door Q2 was about |
+| `USER` repeating something they read | 3 | `THIRD_PARTY` | **0** | consistent with it rendering `third-party-derived` under Q5 |
+| `ASSISTANT` inference over user testimony | 1 | `USER` | **1** | `min` — capping never raises |
+
+**This makes the ladder the fifth instance of the one shape, not an exception to
+it:** `derived_from` may cap never raise · configuration may narrow never widen ·
+maintenance may narrow never widen · **supersession authority is capped by
+provenance, never raised by it** · supersession by an equal-or-better-entitled
+party, never a lesser one.
 
 | prior → incoming | today | after | rationale |
 |---|---|---|---|
@@ -211,10 +234,20 @@ none; no stored data changes.
 | **I2** a functional relation does not exempt the rule | `test_functional_relation_does_not_bypass_authority` | CI |
 | **I3** a blocked supersession leaves **both** edges intact and visible | `test_blocked_supersession_keeps_both` | CI |
 | **I4** the user correction path (`third_party → user`) still works | `test_user_can_correct_third_party` — the permission, not the prohibition | CI |
-| **I5** superseded edges render with the SUPERSEDED marker **through the gate** | `test_superseded_reaches_the_model` | CI |
+| **I5** superseded edges render with the SUPERSEDED marker **through the gate** | `test_superseded_reaches_the_model` | CI — **PRECONDITION, see below** |
 | **I6** superseded accumulation does not displace current facts | `test_superseded_do_not_crowd_out_current` — frozen: 200 superseded + 40 current, fixed queries, **every current fact retrieved at baseline must still be retrieved** | CI |
-| **I7** the MCP surface refuses `system` **and fails closed on unknown** | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ *written* |
+| **I7** the MCP surface refuses `system` **and fails closed on unknown** | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
+
+**I5 is a PRECONDITION of the ladder shipping, not a sibling invariant** —
+research's Q1 answer, and the ordering matters. Rung 1 lets `ASSISTANT` retire a
+`THIRD_PARTY` claim. If I5 regresses, that stops being *suppression the user can
+see* and becomes **a silent suppression primitive — and nothing in the ladder
+itself would fail.** The visible rule stays green while an invisible dependency
+carries the risk, which is the same shape as the `_AUTHOR` trap I7 just closed:
+the map looked like a whitelist and the `.get(…, USER)` default was doing the
+damage. **So I5 lands first and is verified before rung 1 is enabled**, rather
+than both going in together and the dependency living only in this paragraph.
 
 **I6 carries a frozen acceptance rule deliberately** — `specs/0002`'s I6 said
 only *"user facts still reach the subgraph"*, and R2 proved an unfrozen
@@ -286,8 +319,9 @@ user-supersedes-own-fact case both become fixtures.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **Q1** | `ASSISTANT` at rung 1 — my proposal, not a measurement. It may **suppress** a `THIRD_PARTY` claim, harmless only if I5 holds. | **blocking** | research | before implementation |
-| **Q2** | Should `SYSTEM` outrank `THIRD_PARTY` given `SYSTEM` is host-settable? A narrower `SYSTEM` may deserve it; a host-declared one may not. | **blocking** | research | before implementation |
+| ~~**Q1**~~ | **ANSWERED 2026-08-01 20:56 — yes, rung 1.** *And the conditional was the right one:* **I5 becomes a precondition of shipping, not a sibling** (§6). | resolved | research | — |
+| ~~**Q2**~~ | **ANSWERED 2026-08-01 20:56 — `SYSTEM` keeps rung 2, but the ladder uses CAPPED authority** (§3). Do not split the enum; `min(author, derived_from)` already distinguishes host state from a summary of someone else's content. **Sufficient post-I7**, since `system` is no longer reachable through the MCP tool. | resolved | research | — |
+| **Q2a** | **Recorded trigger, not an open question:** if the CLI is ever agent-driven, `cli.py:180` becomes the same surface I7 just closed and rung 2 needs re-adjudicating. | `watch` | dev | on any CLI automation |
 | **Q3** | Fallback if the ladder proves wrong: never supersede cross-class, keep both, surface contention (Q1(3)'s diagnostic). | `deferred` | research | — |
 | **Q4** | Should superseded edges be **budget-capped** in the subgraph, given R2's rank-34 result? | `pre-release` | dev | before release |
 

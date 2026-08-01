@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review** — internally reviewed twice by research; external review not sent; M5-M8 open (see §11)
+> **in review** — internally reviewed twice by research; external review not sent; **M5 resolved 2026-08-01**, M6/M7/M8 open (see §11)
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -22,7 +22,7 @@ this spec reports findings, not coverage.*
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | v1 |
-| **Status** | *see `Spec-Status:` at the top — canonical.* Internally reviewed twice by research; external review not sent; **M5–M8 open (§11)**. Header previously read *"internal review not yet requested"*, which was stale. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* Internally reviewed twice by research; external review not sent; **M5 resolved 2026-08-01; M6/M7/M8 open (§11)**. Header previously read *"internal review not yet requested"*, which was stale. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
 | **Decision + date** | — · **3 of 8 findings already SHIPPED** in 0.4.5 (M2/M3/M4) and 0.4.4 (M1); M5–M8 open, see §11 |
@@ -170,7 +170,8 @@ other than new evidence from a party entitled to supply it?**
 | **`confirm()`** | 🔴 **M2 — shipped defect** | mutates `valid_from` |
 | **T1 reinforcement** | 🟠 **M3 — shipped defect** | clears `needs_confirmation` on cross-author evidence |
 | **`record_outcome()` upgrade-in-place** | 🟠 **M4 — shipped defect** | overwrites `author_of_evidence`, no history |
-| **T1/T2 `confidence = max(...)`** | 🟡 **M5 — design** | raises confidence at merge time |
+| **T1 `confidence = max(...)`** | 🟢 **M5 — permitted** | a new edge arrived; `max` retains earned strength |
+| **T2 `confidence = max(...)`** | 🔴 **M5 — forbidden by design constraint** | manufactures lifetime from recognition; survivor keeps its own |
 
 **Architectural note, and it is the most important line in this spec.**
 `compile.py` and `gate.py` both have **correct** defences. Both were bypassed by
@@ -399,6 +400,31 @@ defect. **It must be settled before T2 lands, not during.**
 
 ---
 
+> **RESOLVED 2026-08-01 21:04 (research).** **T1: `max` stands.** A new edge
+> arrived, so `max` retains the strongest value earned by an actual evidentiary
+> event. **T2: `max` is not acceptable — the survivor keeps its own confidence,
+> unchanged.** No new edge arrives at T2; it is recognition that two existing
+> statements match, and raising confidence there **manufactures lifetime from
+> recognition** exactly as advancing `observed_at` would manufacture freshness.
+>
+> **T2 must change no field encoding evidentiary strength or currency** —
+> `observed_at` not advanced, `needs_confirmation` not cleared, `confidence`
+> unchanged. **`valid_from = min` stays the sole exception**, because it
+> *corrects* first-known rather than manufacturing anything, and the merge-event
+> record keeps the absorbed edge's value recoverable.
+>
+> This is the write-time-evidence vs maintain-time-bookkeeping rule that already
+> settled `needs_confirmation` in July, applied to a different field. **Two
+> fields now follow it, which makes it a rule rather than a precedent.**
+>
+> **Recorded against my own argument:** I offered a blast-radius measurement —
+> `confidence` has one live consumer and no ranking effect — as the case for
+> letting `max` stand. Research's ruling names that as answering *"how bad is
+> it"* when the question was *"is it justified."* Severity bounds the cost of
+> being wrong; it says nothing about legitimacy, and I substituted the first for
+> the second. **T2 is unwritten, so this costs nothing today and becomes a
+> constraint on its design.**
+
 ## 3b. Authorization and scope
 
 n/a — no operation here crosses a user, tenant or scope boundary; all are
@@ -521,7 +547,7 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| Q1 | Is `confidence = max` acceptable for **T2 dedup**? M5 says no — dedup is maintenance-time bookkeeping. | **blocking** | research | before T2 lands |
+| ~~Q1~~ | **ANSWERED 2026-08-01 21:04 — no.** *(Corrected by research the same hour: their 20:06 ruling answered T1, and Q1 asks only about T2.)* **T1 `max` stands** — a new edge arrived, so `max` retains strength earned by an actual evidentiary event. **T2 `max` does not** — the survivor keeps its own confidence, unchanged. | resolved | research | — |
 | Q2 | Should M2/M3/M4 ship as 0.4.5 without an advisory? None is a trust-boundary bypass; M2 puts a false date in model context. | **blocking** | Quentin | before release |
 | Q3 | Does the paper-2 conflict in §8 need a stated policy, or is per-case judgement enough? | `pre-release` | research | before paper 2 runs |
 | Q4 | Should `needs_confirmation` be per-author rather than a single boolean? Would dissolve M3 structurally. | `deferred` | dev | own design round |
@@ -536,7 +562,7 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 | **M2** | `confirm()` mutated `valid_from` | ✅ **shipped 0.4.5** |
 | **M3** | cross-author clearing of `needs_confirmation` | ✅ **shipped 0.4.5** |
 | **M4** | `record_outcome` overwrote authorship | ✅ **shipped 0.4.5** |
-| **M5** | merge-time `confidence = max(...)` | 🔵 **open — research's call, BLOCKS T2.** Blast radius measured: `confidence` has exactly one live consumer (`expire()` DECAY) and **does not affect recall ranking**, so `max` vs `min` changes ~one decay cycle. Recommendation: T2 takes `min` (maintain-time). |
+| **M5** | merge-time `confidence = max(...)` | 🟢 **RESOLVED 2026-08-01 — no code change needed today.** T1 keeps `max`; T2 keeps the survivor's own confidence. T2 is unwritten, so this is now a **constraint on the T2 design** rather than a fix. Note what the resolution corrects in *my* framing: I offered a blast-radius measurement (one consumer, no ranking effect) as the argument, and research's ruling names that as answering **"how bad is it"** when the question was **"is it justified."** Severity bounds the cost of being wrong; it says nothing about legitimacy. |
 | **M6** | `import_memory` has no trust boundary | 🔴 **open — verified unfixed.** No capping code in `portability.py`. **The cross-project-inheritance docs recipe stays held.** |
 | **M7** | `correct()` elevates non-assertable facts | 🔴 **open — verified unfixed.** `__init__.py` still hardcodes `author_of_evidence=USER` at four sites. |
 | **M8** | wiki serves a revoked trust decision | 🔴 **open — verified unfixed.** No wiki-drop on `invalidate_edge`. Consequence: `compile.py` is now **guarded** (`8ad5167`) because this falsified its exclusion reasoning. |
