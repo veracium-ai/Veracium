@@ -138,6 +138,13 @@ EXCEPTION_CATEGORIES = {
     "test-only": "changes confined to test code",
     "behavior-preserving-refactor": "no observable change; say how that was established",
     "security-hotfix": "a live user-affecting defect; also needs Spec-Retrospective-Due",
+    # Added 2026-08-01 while backing out a change that landed by accident. The
+    # taxonomy had no way to say "this restores a guarded file to its last
+    # approved state", so the only labels available were false ones — and a
+    # false label is how the change got in: `git add -A` swept in held-back work
+    # and a docs-only exception written for a different file waved it through.
+    # A process with no exit is a process people mislabel their way out of.
+    "revert": "restores a guarded file to its last approved state; name what is being backed out and why",
 }
 
 MIN_REASON_CHARS = 12
