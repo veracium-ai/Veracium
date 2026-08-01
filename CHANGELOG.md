@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.6 — 2026-08-01
 
 - **Two defects found while verifying an external review of `specs/0002` — both
   live in released 0.4.5, both fixed.** Neither was reported by the review; both

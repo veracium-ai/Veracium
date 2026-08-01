@@ -197,4 +197,4 @@ exactly as they are.
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | **C-Q1** | Should `confirm()` be **rate-limited or audited** given §8's first limit? It is the one remaining path and we have no record of how often it is used. | `pre-release` | dev | before release |
-| **C-Q2** | Does the **release note for 0.4.5 need correcting**? It said *"a staleness flag can no longer be cleared by a different author"* — true, and it reads as closing the class. **Not my call.** | **blocking** | Quentin | before this ships |
+| ~~C-Q2~~ | **RULED 2026-08-01 (Quentin): no release-note correction.** The 0.4.5 note is accurate as written — cross-author clearing *was* closed. The residual same-class case is this spec's subject and ships as its own fix. **Not blocking.** | resolved | Quentin | — |

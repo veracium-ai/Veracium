@@ -227,4 +227,4 @@ demonstrated rather than hypothetical.
 |---|---|---|---|---|
 | **H-Q1** | Is `seq` **global** or **per-`(edge_id, evidence_ref)`**? Per-chain is smaller and enough for ordering; global also gives a store-wide audit order. **Dev leans per-chain** — global invites reuse as a general clock, which is how a field acquires an unintended contract. | **blocking** | research | before implementation |
 | **H-Q2** | Should the **head be materialised** on the edge (a pointer) or derived by query? Materialised is faster and adds a second place for truth to live. **Dev leans derived.** | `pre-release` | dev | before implementation |
-| **H-Q3** | Does the **0.4.5 release note need correcting**? It says *"outcome authorship is no longer overwritten"*, which is not true of the shipped code. Same question as `0008` C-Q2 and it should be answered once, for both. | **blocking** | Quentin | before this ships |
+| ~~H-Q3~~ | **RULED 2026-08-01 (Quentin): no release-note correction**, answered once for both specs. The gap is recorded here and in `0002` §11; the fix ships as this spec. **Not blocking.** | resolved | Quentin | — |
