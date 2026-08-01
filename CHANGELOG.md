@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased
+
+- **retrieval: coverage-aware subgraph selection was measured and stays OFF.**
+  0.4.2 shipped it disabled and said *"the default will change only if a
+  balanced measurement supports it."* **That measurement has now run, under a
+  pre-registered protocol, and it does not support it.**
+
+  30 items drawn stratified on distinct `valid_from` days — the variable the
+  code actually branches on — with the hypothesis, primary metric, thresholds,
+  analysis plan and stop rule fixed in advance and approved before any run.
+  Three replicates across four arms.
+
+  **Coverage rose on 12/12 items (+5.25 distinct sessions at the tested
+  setting). The primary metric — the fraction of answer-bearing turns actually
+  retrieved — improved on 2 of 12, against a pre-declared threshold of 10.**
+  The mechanism does exactly what it was built to do and does not buy the thing
+  it was built for. Read cost was flat, so it is not expensive — it is
+  ineffective on this measure. Exploratory arms at half and double the reserve
+  moved coverage monotonically (+2.75 / +7.67 sessions) and the primary metric
+  not at all, so this is not a mistuned parameter.
+
+  **`subgraph_coverage_share` keeps its default of `0.0`, and the code stays**
+  — off by default, tested, and re-runnable if the storage granularity that
+  bounds this result ever changes.
+
+  **What the result does not establish.** It is evidence about day-clustered
+  coverage selection **under day-granular storage**, on one benchmark and one
+  metric, n=12. Seven of the twelve items were already at a perfect hit rate in
+  the baseline, so more than half the sample had no room to improve and the
+  pre-declared threshold was, in hindsight, unreachable from the moment the
+  sample was fixed. That does not rescue the hypothesis — coverage rose
+  everywhere and the metric moved almost nowhere — but "ineffective in general"
+  is **not** what was shown.
+
+  One item regressed from a perfect hit rate to zero when coverage was enabled;
+  that is being investigated separately as a defect rather than folded into this
+  result.
+
 ## 0.4.5
 
 Three provenance defects, found by an audit of the maintenance-time operations
@@ -152,6 +190,12 @@ advisories would have failed N7.**
   relevance when there is no other period to reach, and stores below the
   budget are bit-identical to before. Set `subgraph_coverage_share=0.0` to
   restore pure relevance ranking.
+
+  > **Outcome (2026-08-01):** the balanced measurement promised above has run.
+  > **It does not support enabling this, and the default stays `0.0`** — see the
+  > Unreleased entry at the top of this file. Recorded here rather than by
+  > editing the text above, so the original commitment and its answer both stay
+  > readable.
 
 ## 0.4.2
 

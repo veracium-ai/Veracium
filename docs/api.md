@@ -216,6 +216,7 @@ Close the underlying store.
 | `db_path` | `"veracium.db"` | SQLite file path (default store). |
 | `relations` | built-in registry | edge vocabulary; add your own `Relation(name=..., functional=...)`. |
 | `max_subgraph_edges` | `40` | cap on per-query subgraph size (bounds read cost). |
+| `subgraph_coverage_share` | `0.0` | fraction of the subgraph budget reserved for time coverage rather than pure relevance. **Off by default and we recommend leaving it off** — it was measured under a pre-registered protocol and did not improve retrieval of answer-bearing facts. See [design rationale](design-rationale.md#measured-and-not-adopted). |
 | `max_recent_episodes` | `12` | recent episodes included in recall. |
 | `wiki_recompile_after_writes` | `8` | recompile the curated wiki after this many writes. **`0` disables the wiki** → recall renders the subgraph directly (no read-time LLM call). |
 | `volatility_lifetime_days` | permanent=∞, durable=730, slow=120, transient=7, ephemeral=1 | expected lifetime per volatility class. |

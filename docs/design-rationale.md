@@ -83,6 +83,56 @@ as retrievable-on-request as yesterday's.
   `confirm()` verbs are on the roadmap for hosts that want them as API calls
   with actor provenance.
 
+## Measured and not adopted
+
+*Things we built, measured properly, and did not turn on. Recorded because a
+design document that only lists wins is a sales document.*
+
+### Coverage-aware subgraph selection
+
+**Status: implemented, off by default (`subgraph_coverage_share = 0.0`), and
+staying off.**
+
+Pure top-k retrieval has no coverage term, so when many facts share a
+question's vocabulary the selection can collapse onto whichever period
+dominates — a question spanning months gets answered from a single day. The
+mechanism reserves a slice of the retrieval budget for periods not already
+represented, filling the head by relevance alone so the strongest matches are
+never displaced.
+
+It was shipped disabled in 0.4.2 as explicitly unvalidated, with a commitment
+that the default would change only if a balanced measurement supported it.
+
+**The measurement ran in August 2026 under a protocol fixed and approved before
+any data was collected** — hypothesis, primary metric, thresholds, analysis plan
+and stop rule all frozen in advance, 30 items stratified on the variable the
+code actually branches on, three replicates across four settings.
+
+| | result |
+|---|---|
+| distinct-session coverage | **rose on 12/12 items** |
+| answer-bearing turns retrieved | **improved on 2 of 12** (threshold: 10) |
+| read cost | flat |
+| half and double the reserve | coverage moved monotonically, the metric did not |
+
+**The mechanism does what it was designed to do and it does not buy the thing
+it was designed for.** Reserving budget for unrepresented periods reliably
+widens the time span of what is retrieved, and that width does not translate
+into retrieving the facts a question actually needs.
+
+**What this does not establish.** It is evidence about day-clustered coverage
+selection **under day-granular storage**, on one benchmark, one metric, twelve
+items in the deciding stratum. Seven of those twelve were already retrieving
+every answer-bearing fact in the baseline, so most of the sample had no room to
+improve — the threshold was, in hindsight, unreachable once the sample was
+fixed. That does not rescue the hypothesis, but it does mean *"coverage
+selection does not work"* is a stronger claim than the evidence carries.
+
+**Why the code stays.** It is off by default, costs nothing when disabled,
+carries its own tests, and the limitation above is about our storage
+granularity rather than the idea. If that changes, the experiment can be re-run
+rather than re-argued.
+
 ## On the roadmap (real gaps, agreed)
 
 See [ROADMAP.md](https://github.com/veracium-ai/Veracium/blob/main/ROADMAP.md) for status:
