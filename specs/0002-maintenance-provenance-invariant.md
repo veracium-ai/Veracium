@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v2)** — deferred at external review 2026-08-01, **all nine amendments applied the same day**. The two defects verification found are **fixed and released** (0.4.6, `533092c`); the 28-site manifest is generated and CI-verified (`specs/0002-audit-manifest.md`); N7's general claim is withdrawn and replaced by N9. **Three items are frozen design that has not yet been implemented** — M4 (§7a), M3 (§7b) and crash-safe consolidation (§7e) — and are marked as such rather than described as done.
+> **in review (v2)** — deferred at external review 2026-08-01, **all nine amendments applied the same day**. The two defects verification found are **fixed and released** (0.4.6, `533092c`); the 28-site manifest is generated and CI-verified (`specs/generated/0002-audit-manifest.md`); N7's general claim is withdrawn and replaced by N9. **Three items are frozen design that has not yet been implemented** — M4 (§7a), M3 (§7b) and crash-safe consolidation (§7e) — and are marked as such rather than described as done.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -597,7 +597,7 @@ follow, and this is the operation that proves it.
 - **What this does NOT establish.**
   - **Not that the class is now closed.** It establishes that **28 store-mutator
     call sites** were enumerated *from the mutator interface* and each given a
-    verdict — see **`specs/0002-audit-manifest.md`**, generated and CI-verified,
+    verdict — see **`specs/generated/0002-audit-manifest.md`**, generated and CI-verified,
     not asserted. **17 clean · 4 open · 7 moved.**
   - **N7 is not the general invariant**, and the previous draft called it one.
     It tests a single UNVERIFIED→GROUNDED transition across a full `maintain()`;

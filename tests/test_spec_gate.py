@@ -399,3 +399,28 @@ def test_every_store_mutation_site_carries_a_verdict():
         f"the audit manifest and the code disagree:\n{r.stdout}\n{r.stderr}\n"
         f"Regenerate with `python3 specs/audit_manifest.py --write` and give "
         f"every new site a verdict in specs/audit_dispositions.py.")
+
+
+def test_every_numbered_spec_file_is_actually_a_spec():
+    """`specs/NNNN-*.md` is the citable namespace: the leading number IS the
+    identity. A generated artifact was once named `0002-audit-manifest.md` and
+    sat next to `0002-maintenance-provenance-invariant.md`, reading as a second
+    spec 0002. It could never have been cited — the gate fails closed without a
+    `Spec-Status:` line — but "unciteable" is not the same as "unconfusing".
+    Generated artifacts live in `specs/generated/`."""
+    import pathlib, re, collections
+    specs = pathlib.Path(__file__).resolve().parent.parent / "specs"
+    numbered = sorted(p for p in specs.glob("[0-9][0-9][0-9][0-9]-*.md"))
+    assert numbered, "no numbered specs found — has the layout changed?"
+
+    missing = [p.name for p in numbered if not re.search(r"^Spec-Status:", p.read_text(), re.M)]
+    assert not missing, (
+        f"{missing} sit in the numbered spec namespace without a `Spec-Status:` "
+        f"line. Either it is a spec and needs one, or it is not and belongs in "
+        f"specs/generated/.")
+
+    by_number = collections.defaultdict(list)
+    for p in numbered:
+        by_number[p.name[:4]].append(p.name)
+    dupes = {n: v for n, v in by_number.items() if len(v) > 1}
+    assert not dupes, f"spec numbers must be unique: {dupes}"

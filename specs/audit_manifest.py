@@ -18,7 +18,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "src" / "veracium"
 BASE = SRC / "store" / "base.py"
-MANIFEST = ROOT / "specs" / "0002-audit-manifest.md"
+MANIFEST = ROOT / "specs" / "generated" / "0002-audit-manifest.md"
 
 # a mutator is a Store method that writes persistent state
 MUTATOR_DEF = re.compile(r"^\s*def (add_\w+|invalidate_\w+|delete_\w+|forget_\w+|set_\w+)\(", re.M)
