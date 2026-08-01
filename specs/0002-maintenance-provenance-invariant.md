@@ -344,6 +344,7 @@ the changelog.
 | **N3** `needs_confirmation` clears only on same-author evidence or `confirm()` | `test_cross_author_cannot_clear_staleness` | CI |
 | **N4** no maintenance operation raises `disclosure` toward assertable **or raises `confidence`** | `test_no_maintenance_op_widens_disclosure` · **`test_no_maintenance_op_raises_confidence`** — property-based over a random op sequence, **run under a hostile `MemoryConfig`** | CI |
 | **N4b** `MemoryConfig` rejects a `decay_factor` outside `[0, 1]`, and `NaN`/`±inf` | `test_decay_factor_bounds_are_validated` — 0 · 1 · interior · >1 · negative · NaN · ±inf | CI |
+| **N4c** a declared field bound is enforced **on assignment**, not only on construction | `test_confidence_bound_holds_under_in_place_mutation` — verified today that `validate_assignment` is `False` and `confidence *= 2.0` yields `1.8` | CI |
 | **N8** every store-mutator call site carries a verdict and a test | `test_every_store_mutation_site_carries_a_verdict` → `specs/audit_manifest.py --check` | CI |
 
 **N4 was extended to `confidence` on 2026-08-01** (research's 03:45 amendment 3,
@@ -516,8 +517,29 @@ MemoryConfig(decay_factor=-1.0)  -> accepted
 maintenance operation RAISE confidence — which makes N4 false as written**,
 three hours after it was extended to cover `confidence`.
 
-**Frozen:** `MemoryConfig` validates on construction — `0 ≤ decay_factor ≤ 1`,
-finite; `0 ≤ confidence_floor ≤ 1`, finite. **Invalid configuration fails at
+**And the field's own declared bound does not stop it.** `Provenance.confidence`
+is declared `Field(default=0.9, ge=0.0, le=1.0)`, which reads as enforcement and
+is not:
+
+```
+>>> p.model_config.get("validate_assignment", False)
+False
+>>> p.confidence *= 2.0
+1.8                      # declared le=1.0
+>>> p.confidence = float("nan")
+nan
+```
+
+**Pydantic validates on construction, not on assignment, and every maintenance
+site mutates in place.** So the bound holds exactly where trust data is *built*
+and nowhere it is *changed* — which is the entire subject of this spec. This
+generalises past `confidence`: **no `Field(...)` constraint on `Provenance` or
+`Edge` is enforced on the mutation path.**
+
+**Frozen, both halves:** `MemoryConfig` validates on construction — `0 ≤
+decay_factor ≤ 1`, finite; `0 ≤ confidence_floor ≤ 1`, finite — **and** the
+models that carry trust fields set `validate_assignment=True`, so a declared
+bound means what it appears to mean. **Invalid configuration fails at
 construction, not by N4 discovering corruption after maintenance has run.**
 
 **The general statement, which is why this is not a footnote:** *configuration
