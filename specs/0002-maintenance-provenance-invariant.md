@@ -145,9 +145,9 @@ them.* The three the assignment-grep could not have found:
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant that pins it** |
 |---|---|---|---|---|---|
-| **host-supplied `author`** (`mcp_server.py:26`, `cli.py:299`) | rejected by enum | rejected by enum | rejected by enum | **host may claim `system`, which shares `MENTIONABLE` with `user`** — this is M3's reachability | **M3 fix: `needs_confirmation` clears only on same-author evidence or `confirm()`** |
+| **host-supplied `author`** (`mcp_server.py:26`, `cli.py:299`) | rejected by enum | rejected by enum | rejected by enum | **host may claim `system`, which shares `MENTIONABLE` with `user`** — this is M3's reachability | ➡️ **`specs/0008`.** ⚠️ This cell previously read *"clears only on same-author evidence or `confirm()`"* — **the rule R3 overturned**, still stated normatively here after v2 amended it elsewhere. **Now: no value of this field clears anything** |
 | **host-supplied `actor`** (`record_outcome`) | defaults `user` | n/a | maps via `_OUTCOME_ACTORS` | **last writer's label silently wins** | **M4 fix: append, never overwrite** |
-| **host-supplied `date`** (`confirm()`, `remember()`) | defaults today | `_event_dt` falls back to now | — | **a future or back-dated value moves `valid_from`** | **M2 fix: `valid_from` immutable; confirmation date goes to `observed_at`** |
+| **host-supplied `date`** (`confirm()`, `remember()`) | defaults today | `_event_dt` falls back to now | — | **future dates were accepted and unrecoverable; back-dating moved `valid_from`** | **§7f (0.4.5 + 0.4.6): `valid_from` immutable · `observed_at` monotonic · future beyond 1 day rejected at `_event_dt`** |
 | **cold-episode set** (consolidation) | no-op below batch | — | — | **mixed authorship** | **M1 (0.4.4): provenance derived from the whole set** |
 | **older-version store data** | — | pydantic rejects unknown enum | — | — | ⚠️ **no invariant — no `PRAGMA user_version`.** Carried from spec 0001 Q3; **this empty cell is a gate on that spec, not this one** |
 
@@ -392,72 +392,22 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 
 ---
 
-## 7a. M4 — frozen: structured append-only history
+## 7a / 7b. M4 and M3 — MOVED OUT on 2026-08-01
 
-**External review item 7.** The spec offered two options; **the weaker one had
-already shipped**, and it does not hold. `record_outcome` rebuilds `summary` on
-every upgrade, so the appended note is overwritten rather than accumulated:
+**Both were frozen designs living inside a retrospective, which is the same
+structural error that forced the first split** — and I made it again, in the
+commit that applied v2's amendments. A retrospective must be closeable; a frozen
+design awaiting implementation is not.
 
-```
-initial (system)      author=system  (system) unreviewed: use of 'works_as: CFO'
-after corrected(user) author=user    (user) corrected: ... [prior judgment was system-authored]
-after 2nd challenged  author=system  (system) challenged: ... [prior judgment was user-authored]
-```
+| finding | now | why it moved |
+|---|---|---|
+| **M3** staleness clearing | **`specs/0008-staleness-clearing.md`** | The rule is settled by **R2 + R3**; what remains is acceptance and a one-conditional deletion. It was blocked only by this document. |
+| **M4** outcome authorship | **`specs/0009-outcome-authorship-history.md`** | The second review required **head and concurrency semantics** before acceptance; that is design work with its own open questions, not a line in a ledger. |
 
-**`system → user → system` reduces to "prior was user".** The structured field
-is still overwritten, and the English trail survives exactly one hop. **M4
-shipped as a fix for authorship erasure and still erases authorship.**
-
-**Frozen behaviour — the "note" alternative is withdrawn:**
-
-> The original outcome episode is **never mutated**. A judgment writes a **new**
-> outcome episode carrying its own `author_of_evidence`, event timestamp,
-> outcome state, and an explicit `supersedes_episode` link to the one it
-> revises. The **current** outcome for a `(edge_id, evidence_ref)` pair is the
-> newest episode in that chain; earlier ones remain queryable. Export and import
-> preserve the chain.
-
-**Why a note could never be right, stated once so it is not re-proposed:** a
-note is prose. It cannot be queried, gated on, exported as structure, or read by
-a later maintenance operation — and this system's stated principle is
-**supersession-never-erasure**. An append-only chain is the same shape the edge
-layer already uses for `supersedes`.
-
-**N5 must assert both halves:** prior authorship is structurally queryable
-**and** the new evidence carries its own provenance without mutating the earlier
-event.
-
----
-
-## 7b. M3 — frozen: what may clear `needs_confirmation`
-
-**External review item 3, ruled R2.** The shipped rule clears the flag when the
-reinforcing edge shares an `EvidenceAuthor` **class** (`graph.py:119`). **Author
-class is not source identity and not evidence basis.** Two unrelated `SYSTEM`
-processes are both `SYSTEM`; two unrelated third parties are both
-`THIRD_PARTY`; and a system may restate a derived claim having observed nothing
-new. **Same class ≠ same source · same speaker ≠ fresh evidence · repetition ≠
-renewed observation.**
-
-**This is the speaker-versus-witness problem that deferred `0001`, one layer
-down** — which the M3 code comment half-admits while shipping the rule anyway.
-
-**Frozen, fail-closed:**
-
-> - explicit `confirm()` by the user clears it;
-> - a **new user-authored observation** clears a **user-authored** fact when it
->   is independently stored as evidence;
-> - **`SYSTEM` repetition never clears it on class match alone**;
-> - maintenance, deduplication, consolidation and generated restatement **never**
->   clear it.
-
-**Ship the restriction now; relax it when the mechanism exists.** Research's
-ruling, and the ordering is the point: the rule forbids exactly the case we
-cannot currently distinguish, so it does **not** depend on the schema work.
-Waiting would leave a known-wrong rule live for the duration of a schema change.
-
-**Relaxation requires `source_id` + an evidence-basis field — `specs/0006`, not
-this spec.** `0002` is being split precisely because it kept absorbing work.
+**Both are inadequate fixes in a released version, not open questions** — 0.4.5
+claimed both and neither holds. That is the argument for giving them specs that
+can be *accepted*, rather than leaving them behind one that keeps being
+deferred.
 
 ---
 
@@ -577,6 +527,56 @@ follow, and this is the operation that proves it.
 
 ---
 
+## 7f. M2 — frozen: the confirmation-time contract (released 0.4.5 + 0.4.6)
+
+**Second external review item 2:** 0.4.6's behaviour was asserted in the header
+and the changelog and **specified nowhere**, while N2 still said only that
+`confirm()` *"advances `observed_at`"* — which constrains neither the response
+nor a hostile date. **A released fix that is not pinned is not closed.**
+
+> **Event dates.** Any host-supplied `date` more than `MAX_FUTURE_SKEW`
+> (**1 day**) beyond now is **rejected** — `ValueError`, not clamped. Applied in
+> `_event_dt`, the single point every event date passes through, so
+> `remember` · `confirm` · `correct` · `record_outcome` are covered by one rule.
+> Malformed dates keep their pre-existing fallback to now.
+>
+> **`observed_at`.** `max(existing, accepted event_time)` — monotonic, so a
+> back-dated confirmation cannot move currency backwards.
+>
+> **`valid_from`.** Never touched by confirmation. Immutable per §7c.
+>
+> **`confirm()` returns** `{"confirmed": <edge_id>, "valid_from": <the persisted
+> edge's immutable value>, "confirmed_at": <the accepted event date>}`.
+> **`valid_from` in the response is the stored value and never the caller's
+> argument.**
+
+**Why rejection rather than clamping.** A future event date has no legitimate
+meaning — the event date records *when a statement was made*, not what it is
+about, so *"the contract expires in 2027"* is a value and never a date. Clamping
+would silently rewrite a caller bug.
+
+**Why this needed both halves.** The monotonic `max` that correctly defeats
+back-dating is **exactly what made forward-dating permanent**: one future date
+removed an edge from lapse, decay and staleness flagging for 73 years, with no
+API to undo it. **Fixing back-dating alone created the unrecoverable case.**
+
+**N2 replaced.** *"`confirm()` advances `observed_at`, not `valid_from`"* is
+retained as one clause of a wider invariant:
+
+| invariant | executable check | where |
+|---|---|---|
+| **N2a** confirmation advances `observed_at`, never `valid_from` | `test_confirm_advances_liveness_not_first_known` | CI |
+| **N2b** a back-dated confirmation does not move currency backwards | `test_backdated_confirmation_is_monotonic` | CI |
+| **N2c** a future date is rejected at every entry point | `test_a_future_event_date_is_rejected` · `test_a_future_date_cannot_enter_through_ingest_either` | CI |
+| **N2d** the skew boundary is tested on both sides | `test_clock_skew_is_tolerated_but_a_typo_is_not` | CI |
+| **N2e** repeated confirmation is idempotent in `valid_from` | `test_past_and_today_still_work` | CI |
+| **N2f** the response reports the **persisted** `valid_from` | `test_confirm_returns_the_real_valid_from_not_the_confirmation_date` | CI |
+
+**All six pass today** (0.4.6, `533092c`); N2b is the one whose behaviour
+predates the fix and was never pinned.
+
+---
+
 ## 8. Claims and limits
 
 - **What we will say:** *"0.4.5 fixes three provenance defects identified during
@@ -651,10 +651,29 @@ follow, and this is the operation that proves it.
 
 ---
 
-## 11. Finding status (verified against code, 2026-08-01)
+## 11. Finding ledger
 
-| # | finding | status |
-|---|---|---|
+**Rebuilt to the second external review's shape.** The previous table said
+*"all five findings that remain here are closed"* while the header said three
+were unimplemented. **Both were written by me and "closed" silently meant two
+different things** — *a disposition exists* in one place, *the code is fixed* in
+the other. The columns now force the distinction.
+
+| finding | released behaviour | current defect | frozen behaviour | implemented? | test | release |
+|---|---|---|---|---|---|---|
+| **M1** consolidation derived provenance from `cold[0]` | whole-set minimum trust | — | — | **yes** | `test_consolidation_uses_whole_set_min_trust` | 0.4.4 + GHSA-hcj3-8jqc-wqrp |
+| **M2** `confirm()` mutated `valid_from` | `valid_from` immutable; confirmation advances `observed_at` | — | §7f | **yes** | `test_confirm_advances_liveness_not_first_known` | 0.4.5 |
+| **M2′** return value / future dates | returns real `valid_from` + `confirmed_at`; future dates rejected at `_event_dt` | — | §7f | **yes** | `test_confirm_returns_the_real_valid_from…` · `test_a_future_event_date_is_rejected` | **0.4.6 (unreleased — committed only)** |
+| **M3** staleness clearing | same-**class** clearing still permitted | 🔴 **the shipped fix is inadequate** — the host chooses the class | ➡️ **`0008`** | **no** | `0008` C1–C6 | — |
+| **M4** outcome authorship | note in `summary`, structured field still overwritten | 🔴 **the shipped fix is inadequate** — the note survives one hop | ➡️ **`0009`** | **no** | `0009` H1–H7 | — |
+| **M5** merge-time `confidence` | T1 `max` retained | — | T2 keeps the survivor's own | **n/a — T2 is unwritten** | constrains `0009`-era T2 design | — |
+| **crash-safe consolidation** | delete-all-then-write | 🔴 open | §7e (contract only; **strategy deliberately open**) | **no** | `test_consolidation_is_crash_safe` | — |
+
+**Three rows are red and two of them shipped as fixes.** That is the honest
+state, and it is why `0008` and `0009` exist separately: **they are corrections
+to released behaviour, not documentation debt.**
+
+---|---|---|
 | **M1** | consolidation derived provenance from `cold[0]` | ✅ **shipped 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp |
 | **M2** | `confirm()` mutated `valid_from` | ✅ **shipped 0.4.5** |
 | **M3** | cross-author clearing of `needs_confirmation` | ✅ **shipped 0.4.5** |
