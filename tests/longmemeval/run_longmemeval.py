@@ -306,6 +306,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
         try:
             ing = {"turns": 0, "facts": 0}
             context, n_edges, n_episodes, edge_sig = "", 0, 0, []
+            recalled_refs = []
             if control == "veracium":
                 ing = ingest_item(mem, item, arm=arm, serializer=serializer,
                                   cache=cache if cache_enabled else None)
@@ -317,6 +318,18 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                 # variance protocol needs a comparable extraction signature
                 context = r.context
                 n_edges, n_episodes = len(r.edges), len(r.episodes)
+                # The frozen primary metric is answer-turn hit rate, computed
+                # from recalled evidence_refs against turns marked has_answer.
+                # Counts and a signature hash cannot produce it: without this
+                # the run yields no computable primary measurement.
+                # Safe for R2 — zero of the 30 items carry repeated session
+                # ids, so Session.ref never diverges from the oracle's
+                # session_id (verified before the run).
+                recalled_refs = sorted(
+                    {e.provenance.evidence_ref for e in r.edges
+                     if e.provenance.evidence_ref}
+                    | {ep.provenance.evidence_ref for ep in r.episodes
+                       if ep.provenance.evidence_ref})
                 edge_sig = sorted(
                     _sha16(f"{e.subject}|{e.relation}|{e.object}".lower())[:8]
                     for e in mem.store.edges(item.question_id, active_only=False,
@@ -332,7 +345,7 @@ def run(items, *, provider, arm: str = "C", arms=("veracium",), cache_enabled=Tr
                     "control_arm": control, "context_tokens_estimated": ctx_tokens,
                     "ingested": ing, "recalled": {"edges": n_edges,
                                                   "episodes": n_episodes},
-                    "edge_sig": edge_sig,
+                    "edge_sig": edge_sig, "recalled_refs": recalled_refs,
                     "context": context,
                     "cache_frozen": bool(cache_enabled and control == "veracium")}
         finally:
