@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from .schema import DEFAULT_RELATIONS, Edge, Relation
+from .schema import DEFAULT_RELATIONS, Edge, EvidenceAuthor, Relation
 
 
 # Filler words that never change a value's meaning. Deliberately tiny: a false
@@ -291,6 +291,42 @@ def _outcome_note(e: Edge) -> str:
     return f" (in use: {e.times_used}×{detail})"
 
 
+# Origin labels for `use_only` material. Derived from provenance rather than
+# hardcoded, because the string reaches the model as context and a CONFIDENTLY
+# WRONG origin is worse than a missing one.
+#
+# Output is byte-identical to the previous hardcoded string for every author
+# that can reach `use_only` today (THIRD_PARTY-authored, and USER/SYSTEM content
+# capped by derived_from=THIRD_PARTY — in both cases the claim originates with a
+# third party, so "third-party-reported" is accurate).
+#
+# It exists because a FOURTH author class is proposed (spec 0001,
+# EvidenceAuthor.ASSISTANT, deferred). Under that spec every assistant edge sits
+# at use_only, and the old hardcoded string would have told the model
+# "third-party-reported" about assistant-generated text — an affirmatively false
+# origin, in the one release whose entire purpose is stopping hosts from
+# mislabelling assistant content. `_ORIGIN_LABELS` has no entry for a new author
+# class, and `tests/test_render_origin.py` fails loudly if one appears without
+# one. That converts a note in a deferred spec into a tripwire.
+_ORIGIN_LABELS: dict[EvidenceAuthor, str] = {
+    EvidenceAuthor.THIRD_PARTY: "third-party-reported",
+    # USER/SYSTEM only reach use_only via derived_from=THIRD_PARTY, i.e. the
+    # claim is a third party's and the author is relaying it
+    EvidenceAuthor.USER: "third-party-reported",
+    EvidenceAuthor.SYSTEM: "third-party-reported",
+}
+
+
+def _origin_label(e: Edge) -> str:
+    """Who this unverified material came from, in the model's words."""
+    label = _ORIGIN_LABELS.get(e.provenance.author_of_evidence)
+    if label is None:
+        # Fail SAFE, not confidently: an unlabelled author class must not
+        # inherit another class's origin string.
+        return "unverified-origin"
+    return label
+
+
 def render_edges(edges: list[Edge]) -> str:
     """Render edges as provenance-carrying lines for a prompt. Quarantined claims
     are fenced with an explicit never-assert marker; superseded edges show their
@@ -312,7 +348,7 @@ def render_edges(edges: list[Edge]) -> str:
                          f"(SUPERSEDED {e.valid_from.date()}→{e.invalidated_at.date() if e.invalidated_at else '?'})")
         else:
             stale = " [possibly stale — confirm before relying on it]" if e.needs_confirmation else ""
-            tp = " [third-party-reported; unconfirmed]" if e.use_only else ""
+            tp = f" [{_origin_label(e)}; unconfirmed]" if e.use_only else ""
             lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()})"
                          f"{_outcome_note(e)}{tp}{stale}")
     return "\n".join(lines)
