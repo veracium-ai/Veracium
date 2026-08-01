@@ -2,8 +2,16 @@
 
 ## 0.4.5
 
-Three provenance defects, found by an audit of **every** maintenance-time
-operation (`specs/0002-maintenance-provenance-invariant.md`). The audit was
+Three provenance defects, found by an audit of the maintenance-time operations
+(`specs/0002-maintenance-provenance-invariant.md`).
+
+> **Correction (2026-08-01):** this entry originally said the audit covered
+> **every** maintenance-time operation. It did not. Review found
+> `portability.import_memory` absent from the enumeration — a surface that
+> reconstructs *every* trust-bearing field from a file and writes it straight to
+> the store, bypassing the ingest path's trust machinery entirely. The word is
+> withdrawn until the enumeration is mechanical rather than recalled. See
+> `specs/0002` §M6. The audit was
 prompted by two advisories in four days — GHSA-r7j7-5jq9-3f5q and
 GHSA-hcj3-8jqc-wqrp — which are the same shape: a maintenance operation crossing
 a trust boundary the write path guards correctly. **None of the three below is a

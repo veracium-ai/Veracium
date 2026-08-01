@@ -2,8 +2,15 @@
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
-as an **audit of every maintenance-time operation**, because 0.4.1 and 0.4.4 are
-the same shape and one fix does not close a class.*
+as an audit of the maintenance-time operations, because 0.4.1 and 0.4.4 are the
+same shape and one fix does not close a class.*
+
+*🔴 **v1 claimed to audit "every" maintenance-time operation. It did not, and
+the word is withdrawn.** Research's review found `portability.import_memory`
+absent from §2, §2c and §3 — a file **on the guarded list because I put it
+there** — and it is the maximal case for this spec's own lens, not an edge of
+it. See §M6. The enumeration below is being rebuilt mechanically; until it is,
+this spec reports findings, not coverage.*
 
 | | |
 |---|---|
@@ -72,9 +79,27 @@ lifecycle.py:54       expire() CONFIRM: needs_confirmation
 lifecycle.py:114      consolidate(): whole provenance   <-- fixed in 0.4.4
 ```
 
-**Nine mutation sites outside `ingest.py`. Every one is a place trust state
-changes without new evidence arriving through the front door**, and until this
-audit no document listed them together.
+**That enumeration was the wrong shape and it is why the audit missed a class.**
+Grepping for *assignments* to provenance fields cannot see a write whose
+provenance arrived from somewhere else — a reconstructed object, or an edge
+built fresh with hardcoded authorship. Re-run mechanically over **store writes**
+instead:
+
+```
+$ grep -rn "store\.add_edge\|store\.add_episode\|store\.invalidate_edge\|\.model_validate(" \
+    src/veracium/*.py src/veracium/store/*.py | grep -v ingest.py
+```
+
+**24 sites, not nine.** The clean ones are listed in §3 alongside the findings,
+because — research's phrasing, and it is right — *an audit listing only its
+findings cannot be distinguished from an audit that only looked where it found
+them.* The three the assignment-grep could not have found:
+
+| site | why the first method missed it |
+|---|---|
+| `portability.py:87,91,94,98` | `Edge.model_validate(rec)` → `store.add_edge` — provenance arrives **from a file**, never assigned |
+| `__init__.py:614-621` (`correct`) | a **new** `Provenance(...)` with hardcoded authorship, not an assignment to an existing one |
+| `__init__.py:462` (`dispute`) | invalidate-only; clean, but absent from a findings-only list |
 
 ---
 
@@ -169,6 +194,79 @@ this is not privilege escalation; it is provenance destruction.
 
 **Fix:** append a new outcome episode rather than overwriting, or retain prior
 authorship in a note. Erasure is the part that is wrong, not the update.
+
+### M6 — `import_memory` has no trust boundary (design gap, queued trigger)
+
+**Found by research, verified here.** `portability.import_memory` does
+`Edge.model_validate(rec)` then `store.add_edge(edge)`: **every trust-bearing
+field reconstructed from a file** — `author_of_evidence`, `disclosure`,
+`confidence`, `valid_from`, `derived_from` — with no re-derivation, no capping,
+and a raw store write, so the ingest path's trust machinery never runs. Against
+this spec's own lens it re-derives **all four**, from a file. Reproduced:
+
+```
+import_memory(bob_store, alices_export.jsonl, user_id="bob")
+  → author=user  disclosure=mentionable  derived_from=None  assertable=True
+```
+
+**Alice's testimony is now Bob's own assertable fact.**
+
+**In the restore case this is correct** — preserving provenance is the point.
+Three things compound to make it otherwise: `user_id=` exists *to remap records
+into a different user*, i.e. its purpose is crossing a principal boundary; a
+docs recipe is already queued recommending exactly that ("seed a new project
+from a team memory export"); and the demand it answers is for **shared/inherited
+memory**, so the population most likely to follow it is the population importing
+content they did not author.
+
+**The finding is not "import is broken."** It is that import has no trust
+boundary, the API has a parameter whose purpose is to cross one, and a queued
+doc would tell users to. **Ship the recipe before the boundary and third-party
+content has a supported path to enter as first-party assertable fact — working
+as designed, no bug, no advisory to write.**
+
+**Rule (research's, adopted):** no `user_id=` (restore) → preserve provenance
+unchanged. With `user_id=` (cross-principal) → third-party by construction: cap
+to `use_only`, set `derived_from=THIRD_PARTY`, unless the caller explicitly
+asserts otherwise. Costs nothing in restore, needs no new concept, makes the
+convenient call the safe one. **⏳ Hold the cross-project-inheritance docs recipe
+until this lands.**
+
+### M7 — `correct()` elevates non-assertable facts, and `confirm()` refuses to
+
+**Found while rebuilding the enumeration.** `correct()` builds its replacement
+edge with **hardcoded `author_of_evidence=EvidenceAuthor.USER`**, regardless of
+the `actor` argument, and applies it to *any active edge*. Reproduced starting
+from a third-party, `use_only`, non-assertable edge:
+
+```
+correct(user_id, edge_id, "CEO", actor="system")
+  → author=user  disclosure=mentionable  assertable=True
+```
+
+**A system actor turned an unverified third-party claim into a user-authored
+assertable fact.**
+
+**The asymmetry is the defect, and it is self-evident once both are read
+together.** `confirm()` guards exactly this and says why:
+
+> *"Only assertable facts can be confirmed: elevating a quarantined claim or
+> third-party inference by 'confirmation' would be a laundering vector — if the
+> user affirms a claim, that affirmation is new user-authored evidence and
+> belongs in `remember()`."*
+
+`correct()` is the same shape of operation with the same laundering potential
+and **no such guard**. `record_outcome` even validates actor↔outcome pairing;
+`correct()` accepts `actor="system"` silently.
+
+**Severity, stated honestly:** host-facing only, not an MCP tool, and the host
+is generally trusted to attribute authorship — so this is a design gap, not an
+active exploit path. But `confirm()` establishes what we think the right
+behaviour is, in writing, and `correct()` does the opposite.
+
+**Proposed:** apply `confirm()`'s guard to `correct()` — refuse non-assertable
+edges, directing the caller to `remember()` — and derive authorship from `actor`
+rather than hardcoding `USER`.
 
 ### M5 — merge-time `confidence = max(...)` (design, partly shipped)
 
