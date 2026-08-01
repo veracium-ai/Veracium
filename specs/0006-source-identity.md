@@ -4,9 +4,43 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft** — opened 2026-08-01 on research's R2 ruling. **Three specs are
-> currently substituting `author_of_evidence` for something it is not**, and
-> each has had to weaken a rule to compensate.
+> **draft — §3 IS FALSIFIED AND MUST BE REWRITTEN.** Opened on research's R2
+> ruling; **R3 (2026-08-01 23:17 UTC) overturns its central mechanism.** The §3 matrix
+> below lets `source_id` **clear staleness**, and R3 rules that it must never
+> grant anything. Left visible rather than silently edited — see §0.
+
+## 0. ⚠️ R3 overturns §3 — read this before the rest
+
+**`source_id` may GROUP. It must never GRANT.** No authority, no staleness
+clearing, no supersession entitlement keyed on it.
+
+**My error, and it is worth stating exactly.** I posted R3 leaning *"(a) strict
+**for now**"*, implying `source_id` would later relax it. **Research corrected
+the premise: it cannot.** Their own constraint was *opaque and host-supplied,
+never model-supplied* — and **never model-supplied ≠ authenticated**. A host that
+sets `source_id` can give two unrelated statements the same one, and
+same-source reinforcement would then clear staleness on evidence with **no
+common source**. **That grants precisely what the strict rule withholds**, so
+this spec as drafted would have re-opened the hole the second external review
+found, one layer down and harder to see.
+
+**The principle that replaces it, which we already had and neither of us
+applied:** *an act through a dedicated entry point is evidence; a field
+asserting who acted is not.* **Add an entry point, not a parameter.** Verified
+independently: `author="user"` rides on `remember`, which is `@server.tool()`
+and **model-reachable**; `confirm()` is host-API only — not an MCP tool
+(`remember` · `recall` · `answer` · `maintain` are the four), not a CLI verb.
+
+**What v2 of this spec must become:** `source_id` and `evidence_basis` are
+**diagnostic** — they answer *did these come from the same place?* and improve
+grouping, dedup and inspection. **A lying host degrades grouping quality
+instead of crossing a trust boundary.** The thing that would actually unblock
+staleness relaxation is **provenance of the call, not of the claim** — recording
+which entry point was used and requiring hosts to gate the privileged ones. That
+is evidence-basis's territory, not a staleness rule's, and it is on no roadmap.
+
+---
+
 
 | | |
 |---|---|
@@ -92,15 +126,14 @@ currently fail-closed to open, and only for an exact match.**
 
 | prior edge | reinforcing evidence | today (`0002` §7b) | with `source_id` | rationale |
 |---|---|---|---|---|
-| USER, source A | USER, **source A**, `observed` | flag stays | **clears** | the same witness restating a fact it witnessed |
+| USER, source A | USER, **source A**, `observed` | flag stays | ~~clears~~ **flag stays — R3** | ⚠️ **falsified.** A host may give unrelated statements one `source_id`; this would clear on evidence with no common source |
 | USER, source A | USER, source **B**, `observed` | flag stays | **flag stays** | a different source is not a confirmation |
 | USER, source A | USER, source A, **`restated`** | flag stays | **flag stays** | repetition is not renewed observation |
-| SYSTEM, source A | SYSTEM, source A, `observed` | flag stays | **clears** | the requirement M3 had to refuse |
+| SYSTEM, source A | SYSTEM, source A, `observed` | flag stays | ~~clears~~ **flag stays — R3** | ⚠️ **falsified.** M3 refused this for a reason that `source_id` does not remove |
 | SYSTEM, source A | SYSTEM, source **B** | flag stays | **flag stays** | *"two unrelated `SYSTEM` processes"* — the exact case |
 | any | **`source_id` absent** on either side | flag stays | **flag stays** | I3 |
 
-**The change only ever moves cells from "flag stays" to "clears", never the
-reverse** — it is a relaxation of a deliberately over-strict rule, gated on
+⚠️ **This paragraph was the tell and I wrote it as reassurance.** *"Only ever moves cells toward `clears`"* is the property that made it unsafe, not the one that made it safe. **Under R3 no cell moves at all.** Original text: *the change only ever moves cells from "flag stays" to "clears", never the reverse* — it is a relaxation of a deliberately over-strict rule, gated on
 evidence we do not currently have.
 
 ---
