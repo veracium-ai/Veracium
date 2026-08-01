@@ -1,10 +1,10 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred** — external review 2026-08-01: **invariant accepted in principle, retrospective deferred for major amendment.** Nine of ten items verified against code and **all stand**; two escalated beyond what the reviewer claimed, and verification found **two further defects the review did not reach** (§12). **The invariant is not in doubt; the retrospective's coverage and closure claims are.**
+> **in review (v2)** — deferred at external review 2026-08-01, **all nine amendments applied the same day**. The two defects verification found are **fixed and released** (0.4.6, `533092c`); the 28-site manifest is generated and CI-verified (`specs/0002-audit-manifest.md`); N7's general claim is withdrawn and replaced by N9. **Three items are frozen design that has not yet been implemented** — M4 (§7a), M3 (§7b) and crash-safe consolidation (§7e) — and are marked as such rather than described as done.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -21,8 +21,8 @@ this spec reports findings, not coverage.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 |
-| **Status** | *see `Spec-Status:` at the top — canonical.* Internally reviewed twice by research; **external review requestable** — the 2026-08-01 split moved M6/M7/M8 to their own specs, leaving a closeable retrospective. Header previously read *"internal review not yet requested"*, which was stale. |
+| **Version** | **v2** — *re-read before editing; quote the version you approve.* v1 was deferred at external review 2026-08-01; all nine amendments applied. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* **v2 — deferred at external review, amended, re-submission requested.** The nine required amendments are applied (§7a–§7e, N1/N4b/N8/N9/N10, §8, Q2) and the 28-site manifest now exists as a generated, CI-verified artifact. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
 | **Decision + date** | — · **scope narrowed 2026-08-01** to M1–M5, all closed. M6/M7/M8 moved out; see §11. |
@@ -339,10 +339,12 @@ the changelog.
 
 | invariant | executable check | where |
 |---|---|---|
-| **N1** `valid_from` is never mutated after creation by *any* operation | `test_valid_from_immutable_across_every_mutation_site` — parametrised over confirm / reinforce / absorb / expire / consolidate | CI |
+| **N1** `valid_from` is **never mutated on a persisted edge**, by any operation, without exception | `test_valid_from_immutable_across_every_mutation_site` — parametrised over confirm / reinforce / absorb / expire / consolidate | CI |
 | **N2** `confirm()` advances `observed_at`, not `valid_from` | `test_confirm_advances_liveness_not_first_known` | CI |
 | **N3** `needs_confirmation` clears only on same-author evidence or `confirm()` | `test_cross_author_cannot_clear_staleness` | CI |
-| **N4** no maintenance operation raises `disclosure` toward assertable **or raises `confidence`** | `test_no_maintenance_op_widens_disclosure` · **`test_no_maintenance_op_raises_confidence`** — property-based over a random op sequence | CI |
+| **N4** no maintenance operation raises `disclosure` toward assertable **or raises `confidence`** | `test_no_maintenance_op_widens_disclosure` · **`test_no_maintenance_op_raises_confidence`** — property-based over a random op sequence, **run under a hostile `MemoryConfig`** | CI |
+| **N4b** `MemoryConfig` rejects a `decay_factor` outside `[0, 1]`, and `NaN`/`±inf` | `test_decay_factor_bounds_are_validated` — 0 · 1 · interior · >1 · negative · NaN · ±inf | CI |
+| **N8** every store-mutator call site carries a verdict and a test | `test_every_store_mutation_site_carries_a_verdict` → `specs/audit_manifest.py --check` | CI |
 
 **N4 was extended to `confidence` on 2026-08-01** (research's 03:45 amendment 3,
 which never landed and became load-bearing when M5 was ruled). **The M5 ruling
@@ -357,6 +359,8 @@ second.
 | **N5** `author_of_evidence` is never overwritten without retaining the prior value | `test_outcome_upgrade_retains_prior_authorship` | CI |
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
 | **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **the general form of both advisories** | CI + bench |
+| **N9** *(replaces N7's general claim)* for an **evidence-free** operation the post-state is no stronger than the pre-state under a defined partial order over `assertable` · `needs_confirmation` · `confidence` · `observed_at` · `author_of_evidence` · `derived_from` · `valid_from` | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
+| **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
 **N7 is the one that matters.** It is stated over the *observable boundary*
 rather than over any field, so it catches the next instance of this class even if
@@ -373,23 +377,212 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 - **Reversibility:** the fixes are reversible. **The damage is not** — M2 has
   already destroyed original `valid_from` values in any store where a stale fact
   was confirmed, and consolidation has already destroyed member episodes.
-- **Partial failure:** `maintain()` is idempotent and per-edge; a crash leaves a
-  partially-maintained store, which is safe because every operation narrows.
+- **Partial failure:** ⚠️ **this previously read *"a crash leaves a partially-
+  maintained store, which is safe because every operation narrows."* That is
+  false and is withdrawn.** `expire()` is per-edge and idempotent, so it does
+  hold there. **`consolidate()` is neither**: it deletes every member episode
+  *before* writing any replacement (`lifecycle.py:123`), so a crash between the
+  loops is **total loss of that batch**, and a retry re-consolidates whatever
+  survived. **Narrowing trust is not crash consistency** — a narrower state can
+  still be destroyed, and consolidation is the one maintenance operation that
+  destroys rather than retires. Contract frozen in **§7e**; until it lands, the
+  honest statement is *"`expire()` is crash-safe; `consolidate()` is not."*
 - **New attack surface:** none. This spec only removes capability.
+
+---
+
+## 7a. M4 — frozen: structured append-only history
+
+**External review item 7.** The spec offered two options; **the weaker one had
+already shipped**, and it does not hold. `record_outcome` rebuilds `summary` on
+every upgrade, so the appended note is overwritten rather than accumulated:
+
+```
+initial (system)      author=system  (system) unreviewed: use of 'works_as: CFO'
+after corrected(user) author=user    (user) corrected: ... [prior judgment was system-authored]
+after 2nd challenged  author=system  (system) challenged: ... [prior judgment was user-authored]
+```
+
+**`system → user → system` reduces to "prior was user".** The structured field
+is still overwritten, and the English trail survives exactly one hop. **M4
+shipped as a fix for authorship erasure and still erases authorship.**
+
+**Frozen behaviour — the "note" alternative is withdrawn:**
+
+> The original outcome episode is **never mutated**. A judgment writes a **new**
+> outcome episode carrying its own `author_of_evidence`, event timestamp,
+> outcome state, and an explicit `supersedes_episode` link to the one it
+> revises. The **current** outcome for a `(edge_id, evidence_ref)` pair is the
+> newest episode in that chain; earlier ones remain queryable. Export and import
+> preserve the chain.
+
+**Why a note could never be right, stated once so it is not re-proposed:** a
+note is prose. It cannot be queried, gated on, exported as structure, or read by
+a later maintenance operation — and this system's stated principle is
+**supersession-never-erasure**. An append-only chain is the same shape the edge
+layer already uses for `supersedes`.
+
+**N5 must assert both halves:** prior authorship is structurally queryable
+**and** the new evidence carries its own provenance without mutating the earlier
+event.
+
+---
+
+## 7b. M3 — frozen: what may clear `needs_confirmation`
+
+**External review item 3, ruled R2.** The shipped rule clears the flag when the
+reinforcing edge shares an `EvidenceAuthor` **class** (`graph.py:119`). **Author
+class is not source identity and not evidence basis.** Two unrelated `SYSTEM`
+processes are both `SYSTEM`; two unrelated third parties are both
+`THIRD_PARTY`; and a system may restate a derived claim having observed nothing
+new. **Same class ≠ same source · same speaker ≠ fresh evidence · repetition ≠
+renewed observation.**
+
+**This is the speaker-versus-witness problem that deferred `0001`, one layer
+down** — which the M3 code comment half-admits while shipping the rule anyway.
+
+**Frozen, fail-closed:**
+
+> - explicit `confirm()` by the user clears it;
+> - a **new user-authored observation** clears a **user-authored** fact when it
+>   is independently stored as evidence;
+> - **`SYSTEM` repetition never clears it on class match alone**;
+> - maintenance, deduplication, consolidation and generated restatement **never**
+>   clear it.
+
+**Ship the restriction now; relax it when the mechanism exists.** Research's
+ruling, and the ordering is the point: the rule forbids exactly the case we
+cannot currently distinguish, so it does **not** depend on the schema work.
+Waiting would leave a known-wrong rule live for the duration of a schema change.
+
+**Relaxation requires `source_id` + an evidence-basis field — `specs/0006`, not
+this spec.** `0002` is being split precisely because it kept absorbing work.
+
+---
+
+## 7c. R1 — frozen: `valid_from` is immutable edge identity
+
+**External review item 1.** The spec asserted both *"never mutated after
+creation by any operation"* (N1) and *"`valid_from = min` stays the sole
+exception"* (M5). **Research owns the contradiction** — the exception was in
+their M5 ruling.
+
+**Narrow correction to the reviewer's premise, which does not save it.** The
+shipped code is *technically* consistent: absorption mutates `graph.py:128`, but
+`store.add_edge(edge)` is `graph.py:143`, so **the edge is not yet persisted**.
+Under *creation = persistence* N1 holds, which is why its test passes. **A
+contract that survives only under an unstated reading of one word is not a
+contract**, and T2 applies `min` to an existing **survivor**, which breaks it
+outright.
+
+**Frozen — option (1), immutable edge identity:**
+
+> `valid_from` never changes on a persisted edge. A merge whose first-known date
+> is earlier than the survivor's produces a **new merged edge** (or merge record)
+> whose `valid_from` is the `min` of its inputs, with the originals retained and
+> recoverable.
+
+**The cost is already paid, which is the decisive argument and not the one I
+gave.** T2 v2.1 delta (d) already requires a structured merge-event record with
+full pre-merge states. **Option (1) does not add a merge record; it makes the one
+we already agreed to load-bearing instead of decorative.** Marginal cost: an
+edge id and a supersession link.
+
+**And it removes the exception rather than relocating it** — N1 becomes
+absolute, and `min` becomes a property of *constructing* a new edge rather than
+of mutating an existing one.
+
+**Why not option (2), monotonic correction.** *"No operation may move
+`valid_from` later"* forbids the direction of the C′ defect we have already had
+and **permits the one that still carries risk**: a merged edge rendering
+`(since <earlier>)` for an unverified claim that now looks longer-established.
+**A rule shaped to forbid only the failure we have already had is how we get the
+next one.**
+
+---
+
+## 7d. Decay bounds — configuration may not invert an invariant
+
+**External review item 8, and it is worse than reported.** `MemoryConfig` is a
+plain `@dataclass` with no validation:
+
+```
+MemoryConfig(decay_factor=2.0)   -> accepted
+MemoryConfig(decay_factor=nan)   -> accepted
+MemoryConfig(decay_factor=-1.0)  -> accepted
+```
+
+`expire()` does `confidence *= decay_factor`, so **a host config can make a
+maintenance operation RAISE confidence — which makes N4 false as written**,
+three hours after it was extended to cover `confidence`.
+
+**Frozen:** `MemoryConfig` validates on construction — `0 ≤ decay_factor ≤ 1`,
+finite; `0 ≤ confidence_floor ≤ 1`, finite. **Invalid configuration fails at
+construction, not by N4 discovering corruption after maintenance has run.**
+
+**The general statement, which is why this is not a footnote:** *configuration
+may narrow, never widen* has been one of our recurring invariants since 0001,
+and it was **never enforced on the numeric knobs**. N4b is the enforcement.
+
+---
+
+## 7e. Consolidation must be crash-safe
+
+**External review item 9 — not a hypothesis, the shipped order:**
+
+```python
+for e in cold:  store.delete_episode(e.id)     # lifecycle.py:123
+for r in new:   store.add_episode(...)         # lifecycle.py:125
+```
+
+**Delete-all, then write.** A crash between the loops loses the cold episodes
+**with no replacement at all** — total loss, not the partial states the review
+enumerates. *"A partial `maintain` is safe because every operation narrows"* is
+false in the worst available direction: **narrower is not the same as
+recoverable**, and consolidation is the one maintenance operation that destroys
+rather than retires.
+
+**Frozen persistence contract:**
+
+> - consolidation commits **atomically**, or runs as a recoverable state machine;
+> - **originals are not deleted until the replacement and its provenance lineage
+>   are durable**;
+> - retry is **idempotent**;
+> - partial state is detected and repaired before ordinary reads depend on it.
+
+**§7 must stop claiming crash-safety follows from narrowing.** It does not
+follow, and this is the operation that proves it.
 
 ---
 
 ## 8. Claims and limits
 
-- **What we will say:** *"0.4.5 fixes three provenance defects found by an audit
-  of every maintenance-time operation, prompted by two advisories in the same
-  class. `confirm()` no longer moves a fact's first-known date; a staleness flag
-  can no longer be cleared by a different author; outcome authorship is no longer
-  overwritten."*
+- **What we will say:** *"0.4.5 fixes three provenance defects identified during
+  a mechanically derived audit of the store-mutation sites scoped to spec 0002.
+  Import, supersession and derived-view findings are governed by specs 0005,
+  0003 and 0004."*
+
+  **⚠️ The previous wording was *"an audit of every maintenance-time
+  operation"*, and §1 had already withdrawn exactly that claim.** It survived
+  into the release language and out the door. External review item 6 caught it.
+  **This is the fourth claim-versus-artifact gap** — after the `_cover`
+  docstring, the `valid_from` changelog and the r2 headline — **and the first an
+  outside reader found before we did.** A retraction that is not applied by
+  `grep` is not applied.
+
+  **Also corrected:** the limits below said *"nine mutation sites"* while the
+  enumeration had grown to **28**. Both numbers were in the same document.
 - **What this does NOT establish.**
-  - **Not that the class is now closed.** It establishes that nine mutation sites
-    were enumerated and checked on **2026-07-31 at commit `06c6f13`**. N7 is the
-    only check that generalises; the rest are instance checks.
+  - **Not that the class is now closed.** It establishes that **28 store-mutator
+    call sites** were enumerated *from the mutator interface* and each given a
+    verdict — see **`specs/0002-audit-manifest.md`**, generated and CI-verified,
+    not asserted. **17 clean · 4 open · 7 moved.**
+  - **N7 is not the general invariant**, and the previous draft called it one.
+    It tests a single UNVERIFIED→GROUNDED transition across a full `maintain()`;
+    **M2 changes a date without changing tier, M3 removes a caveat without
+    necessarily crossing tiers, and M4 destroys authorship without touching
+    disclosure at all.** N7 stays as an end-to-end gate. **N9** is the general
+    form.
   - Not that `expire`, `compile` and `proactive` are *correct* — only that they
     do not violate **this** invariant. `compile` and `gate` were both individually
     correct and were bypassed anyway.
@@ -429,7 +622,7 @@ the mechanism is one nobody has thought of. Both advisories would have failed it
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~Q1~~ | **ANSWERED 2026-08-01 21:04 — no.** *(Corrected by research the same hour: their 20:06 ruling answered T1, and Q1 asks only about T2.)* **T1 `max` stands** — a new edge arrived, so `max` retains strength earned by an actual evidentiary event. **T2 `max` does not** — the survivor keeps its own confidence, unchanged. | resolved | research | — |
-| Q2 | Should M2/M3/M4 ship as 0.4.5 without an advisory? None is a trust-boundary bypass; M2 puts a false date in model context. | **blocking** | Quentin | before release |
+| ~~Q2~~ | **MOOT — 0.4.5 was tagged, released and published to PyPI on 2026-07-31, without an advisory.** The question was still marked *blocking / before release* a day later, which a canonical machine-readable status must never coexist with. **Acceptance of this spec is retrospective documentation, not authorisation for already-landed code.** External review item 10. | resolved | — | — |
 | Q3 | Does the paper-2 conflict in §8 need a stated policy, or is per-case judgement enough? | `pre-release` | research | before paper 2 runs |
 | Q4 | Should `needs_confirmation` be per-author rather than a single boolean? Would dissolve M3 structurally. | `deferred` | dev | own design round |
 | ~~Q5~~ | **MOVED to `specs/0003` with M7, and resolved there: (b) inherit.** The question only looked balanced under this spec's lens. `actor` remains open, tracked in 0003. | moved | research | — |

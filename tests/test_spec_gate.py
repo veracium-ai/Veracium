@@ -378,3 +378,24 @@ def test_docs_and_tests_on_a_draft_spec_still_pass_via_exception(repo):
          "Spec-Exception-Reason: coverage for a spec still in draft"],
         touch=["src/veracium/graph.py"]).check()
     assert code == OK
+
+
+# --- the 0002 audit manifest must stay in sync with the code ----------------
+
+def test_every_store_mutation_site_carries_a_verdict():
+    """External review item 5: the spec claimed 28 enumerated sites were listed
+    alongside the findings and presented an 11-row operation summary instead.
+
+    The manifest is now generated from the mutator interface and this check
+    fails when the code and the verdicts disagree — so the coverage claim is an
+    artifact rather than an assertion. Two earlier enumerations (from memory,
+    then from a grep keyed on assignment) were both incomplete, which is why
+    prose is not an acceptable form for this."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "audit_manifest.py"), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, (
+        f"the audit manifest and the code disagree:\n{r.stdout}\n{r.stderr}\n"
+        f"Regenerate with `python3 specs/audit_manifest.py --write` and give "
+        f"every new site a verdict in specs/audit_dispositions.py.")
