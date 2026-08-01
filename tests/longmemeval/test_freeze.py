@@ -273,11 +273,44 @@ def test_unparseable_arm_config_is_a_problem_not_a_skip(tmp_path):
     assert "unparseable" in " ".join(v.problems)
 
 
-def test_environment_is_required(tmp_path):
+def test_environment_is_advisory_not_required():
     """Model pins and code version: a protocol frozen against unspecified code
-    is not frozen. Zero of the four real freezes pinned a model."""
-    f = _freeze(tmp_path, omit=("environment",))
+    is not frozen, and zero of the five real freezes pin a model.
+
+    But this is a DEV PROPOSAL that research has not adopted into the spec's
+    required table. The verifier enforces the agreed spec — a rule one session
+    invented an hour ago must not silently veto the other session's artifact.
+    So it reports and does not block, until the spec adopts it.
+    """
+    import tempfile
+    tmp = Path(tempfile.mkdtemp())
+    f = _freeze(tmp, omit=("environment",))
     v = verify(f, freeze_id=sha256_file(f), run_started_at=RUN_START,
                item_ids=ITEMS)
-    assert not v.confirmatory
-    assert "environment" in " ".join(v.problems)
+    assert v.confirmatory, v.problems
+    assert any("environment" in a for a in v.advisories)
+
+
+def test_nested_arm_config_parses_like_the_real_artifact(tmp_path):
+    """The real freeze writes arms as nested YAML, not inline braces. v1 of the
+    parser handled only the inline form and returned
+    {"treatment_primary": {"name": ...}} — it read the first sub-key and
+    reported success. A parser that half-succeeds is worse than one that
+    fails, because the cross-check then compares against nothing."""
+    from freeze import parse_arm_config
+    text = ("arm_config:\n"
+            "  baseline:\n"
+            "    subgraph_coverage_share: 0.0        # the shipped default\n"
+            "    max_subgraph_edges: 40\n"
+            "  treatment_primary:\n"
+            "    name: mmr-coverage-on\n"
+            "    subgraph_coverage_share: 0.25\n"
+            "    max_subgraph_edges: 40\n"
+            "\n  rationale_for_0_25: >\n"
+            "    prose that is not an arm\n"
+            "\nnext_top_level: x\n")
+    arms = parse_arm_config(text)
+    assert arms["baseline"]["subgraph_coverage_share"] == "0.0"
+    assert arms["baseline"]["max_subgraph_edges"] == "40"
+    assert arms["treatment_primary"]["subgraph_coverage_share"] == "0.25"
+    assert "rationale_for_0_25" not in arms, "prose block captured as an arm"

@@ -47,12 +47,18 @@ REQUIRED_FIELDS = (
     # null result invites "you should have used a larger reserve", and choosing
     # the value after any outcome is exactly what G3 exists to prevent.
     "arm_config",
-    # Same argument one axis over: a protocol frozen against unspecified code
-    # and models is not frozen. The "matched pair" that straddled ce66282 was
-    # two runs compared across a retrieval change — this is that defect declared
-    # in advance instead of discovered afterwards.
-    "environment",
 )
+
+# Proposed by dev, NOT yet adopted into `freeze-artifact-spec.md`'s required
+# table. The verifier enforces the agreed spec; a rule one session invented an
+# hour ago must not silently veto the other session's artifact. Reported as an
+# advisory so the finding stays visible without blocking:
+#
+#   a protocol frozen against unspecified code and models is not frozen. The
+#   "matched pair" that straddled ce66282 was two runs compared across a
+#   retrieval change — this is that defect declared in advance rather than
+#   discovered after. Zero of the five real freezes pin a model.
+ADVISORY_FIELDS = ("environment",)
 
 # "default" is not a value. Defaults change between versions, so a freeze saying
 # "0.4.2 behaviour" silently means something else after 0.5.0 — the frozen
@@ -75,12 +81,13 @@ class FreezeVerdict:
     fields_present: list[str] = field(default_factory=list)
     approved_at: str | None = None
     arm_config: dict = field(default_factory=dict)
+    advisories: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
         return {"confirmatory": self.confirmatory, "freeze_id": self.freeze_id,
                 "path": self.path, "problems": self.problems,
                 "approved_at": self.approved_at,
-                "arm_config": self.arm_config,
+                "arm_config": self.arm_config, "advisories": self.advisories,
                 "fields_present": self.fields_present}
 
     def explain(self) -> str:
@@ -109,8 +116,14 @@ def sha256_items(item_ids) -> str:
 
 _FIELD = re.compile(r"^([a-z_]+):", re.M)
 _ARM_BLOCK = re.compile(r"^arm_config:\s*$(.*?)(?=^\S|\Z)", re.M | re.S)
-_ARM_LINE = re.compile(r"^\s{2,}([a-z_]+)\s*:\s*\{?([^}\n]*)\}?\s*$", re.M)
-_KV = re.compile(r"([a-z_]+)\s*:\s*([^,\s]+)")
+_KV = re.compile(r"([a-z_]+)\s*:\s*([^,\s}]+)")
+# Arms may be written inline (`arm: {k: v, k: v}`) or nested over following
+# indented lines. v1 handled only the inline form and silently returned
+# `{"treatment_primary": {"name": ...}}` for the real artifact — it read the
+# first sub-key and reported success. A parser that half-succeeds is worse than
+# one that fails, so both forms are handled and anything else is a problem.
+_ARM_HEAD = re.compile(r"^(\s+)([a-z_0-9]+)\s*:\s*(.*)$")
+_NUMERIC = re.compile(r"^-?\d+(\.\d+)?$")
 _ISO = re.compile(r"^\s*approved_at:\s*(\S+)", re.M)
 _ITEMSET_HASH = re.compile(r"item_set_hash:\s*([0-9a-f]{16,64})", re.I)
 
@@ -130,11 +143,31 @@ def parse_arm_config(text: str) -> dict[str, dict[str, str]]:
     if not m:
         return {}
     out: dict[str, dict[str, str]] = {}
-    for arm, body in _ARM_LINE.findall(m.group(1)):
-        params = {k: v.strip().rstrip(",") for k, v in _KV.findall(body)}
-        if params:
-            out[arm] = params
-    return out
+    current, base_indent = None, None
+    for raw in m.group(1).splitlines():
+        line = raw.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        h = _ARM_HEAD.match(line)
+        if not h:
+            continue
+        indent, key, rest = len(h.group(1)), h.group(2), h.group(3).strip()
+        if base_indent is None:
+            base_indent = indent
+        if indent <= base_indent:
+            # an arm heading: inline params, or a nested block follows
+            inline = {k: v for k, v in _KV.findall(rest)} if rest else {}
+            # prose keys (rationale_for_0_25: >) are not arms
+            if rest.startswith(">") or rest.startswith("|"):
+                current = None
+                continue
+            current = key
+            out[key] = inline
+        elif current is not None and rest and not rest.startswith((">", "|")):
+            # a parameter line under the current arm; keep numerics and pins
+            out[current][key] = rest.rstrip(",")
+    # drop anything that captured no usable parameter
+    return {a: p for a, p in out.items() if p}
 
 
 def config_conflicts(declared: dict[str, str], observed: dict[str, object],
@@ -243,6 +276,8 @@ def verify(freeze_path, *, freeze_id: str | None, run_started_at: datetime,
                     f"runner is about to execute {actual_items[:16]} "
                     f"({len(list(item_ids))} items)")
 
+    advisories = [f"{f} not declared (dev proposal, not yet in the spec's "
+                  f"required table)" for f in ADVISORY_FIELDS if f not in present]
     arms = parse_arm_config(text)
     if "arm_config" in present and not arms:
         problems.append("arm_config present but unparseable — a declaration "
@@ -253,4 +288,4 @@ def verify(freeze_path, *, freeze_id: str | None, run_started_at: datetime,
         confirmatory=not problems, freeze_id=actual, path=str(path),
         problems=problems, fields_present=sorted(present),
         approved_at=approved.isoformat() if approved else None,
-        arm_config=arms)
+        arm_config=arms, advisories=advisories)
