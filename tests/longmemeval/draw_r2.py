@@ -42,6 +42,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import S_FILE, load, stratified_pilot
+from variance import subset as variance_subset
 
 SEED = 20260801
 PER_BAND = 6
@@ -98,9 +99,16 @@ def main() -> int:
     picked, detail = draw(items, evals)
     ids = [i.question_id for i in picked]
 
-    # exposure: what this draw costs the confirmatory set
+    # Exposure: what this draw costs the confirmatory set.
+    # v1 checked the pilot ONLY and reported "30 newly exposed". It missed the
+    # variance protocol's subset, which had already burned one of these items —
+    # the same incomplete-enumeration failure as the audit, in the exposure
+    # dimension. Every prior exposure event belongs here, not the one that came
+    # to mind.
     pilot = {i.question_id for i in stratified_pilot(items, evals)}
-    already = [q for q in ids if q in pilot]
+    variance = {i.question_id for i in variance_subset(items, evals)}
+    prior = pilot | variance
+    already = [q for q in ids if q in prior]
 
     print(f"seed={SEED}  per_band={PER_BAND}  items={len(ids)}")
     print()
@@ -108,7 +116,8 @@ def main() -> int:
         print(f"  {d['question_type']:<20} {d['band']:<5} "
               f"drawn {d['drawn']}/{d['available']:<3} days={d['session_days']}")
     print()
-    print(f"  already exposed (in the 44-item pilot): {len(already)}"
+    print(f"  already exposed (pilot {len(pilot)} ∪ variance {len(variance)} "
+          f"= {len(prior)}): {len(already)}"
           f"{' — ' + ', '.join(already) if already else ''}")
     print(f"  newly exposed, leaving the confirmatory set: {len(ids) - len(already)}")
     print()
