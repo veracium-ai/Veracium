@@ -54,7 +54,8 @@ guarded list (`specs/check_spec_reference.py`); otherwise it is
 **lightweight**. The trigger is the list, never a prose judgement, so the
 process and the checker cannot disagree.
 
-**Lightweight specs still require §1, §2c, §4, §6, §7 and §8.** Only §§2, 3,
+**Lightweight specs still require §1, §2c (including §2c-ii), §4, §6, §7 and
+§8.** Only §§2, 3,
 3b and 5 — field contracts, trust-class matrix, authorization, regime analysis —
 are conditional on being a full spec, because those are the guarded-surface
 questions. **§2c is not**, because untrusted input does not care whether a file

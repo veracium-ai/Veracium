@@ -75,6 +75,35 @@ One row per input this change consumes but does not control.
 | *(data written by an older version)* | | | | | |
 | *(network / provider response)* | | | | | |
 
+### 2c-ii. Assertions about reach — REQUIRED
+
+*Provenance: in one night, four claims turned out wrong on checking — a
+consumer table written from memory; "we audited **every** maintenance
+operation"; "closable without an account by self-hosting via Ollama" (the
+weights are gated **and** non-commercial); "host-facing only" (it is a shipped
+CLI verb). **Every one was a claim about what is reachable, exposed, licensed or
+available — not about logic — and each was verifiable in about two minutes by
+the person asserting it.** The code gets verified rigorously; claims *about* the
+code did not, because nothing in the loop asked for evidence. The mirror-image
+error happened the same night in the other direction: a rule required a
+"recognised" subject without checking that recognition could be evaluated at all
+— asserting a capability **exists**. A rule catching only one direction is not
+the rule.*
+
+**Any statement in this spec about what is reachable, exposed, licensed,
+available, or callable carries the command that establishes it — not prose
+saying you checked.**
+
+| assertion | command that establishes it | result |
+|---|---|---|
+| *(e.g. "not exposed via CLI")* | `grep -n "add_parser" src/veracium/cli.py` | |
+| *(e.g. "no MCP tool for this")* | `grep -n "@server.tool" src/veracium/mcp_server.py` | |
+| *(e.g. "this model is self-hostable")* | `curl -s -o /dev/null -w '%{http_code}' <weights-url>` | |
+
+**A cell with prose instead of a command is an unmet requirement**, for the same
+reason §2c takes a table rather than a paragraph: a judgement is answered from
+the same mental model that produced the claim.
+
 **An empty cell in the invariant column blocks the change.** That column is the
 whole point: a behaviour with no mechanism to enforce it is a hope. The rule was
 tested against a real case before adoption — an amendment that made a rule
@@ -274,6 +303,8 @@ first.
       rather than granting it
 - [ ] §2c has a row per uncontrolled input, and **no empty invariant cell** —
       "fails closed" on a predicate the code cannot evaluate is not a control
+- [ ] §2c-ii: every claim about what is reachable / exposed / licensed /
+      available carries **the command**, not a statement that it was checked
 - [ ] §2 consumers were enumerated by grep, not recall
 - [ ] Every §6 invariant has a check that actually runs
 - [ ] §5 regimes are reachable by tests, or the change is experimental,

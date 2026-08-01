@@ -219,6 +219,23 @@ from a team memory export"); and the demand it answers is for **shared/inherited
 memory**, so the population most likely to follow it is the population importing
 content they did not author.
 
+**⚠️ Correction (research, verified here): this is NOT host-facing only. It is
+a shipped CLI verb.** `cli.py:278` registers `import`, `cli.py:280` adds
+`--user` (*"remap the records into this user id"*), `cli.py:149` passes it
+through. **`veracium import alices_export.jsonl --user bob` is available to
+anyone with the package installed.** Record it as **CLI-reachable,
+operator-initiated** — the earlier phrasing is what gets re-checked if this is
+ever revisited.
+
+**And the mechanism is sharper than "fails to cap".** `author_of_evidence=USER`
+is a claim **relative to the store owner**, and `--user` changes what it is
+relative to. Nothing is falsified or mis-parsed: Alice's edge honestly says
+*"authored by the user of this store"*, and re-homing it makes that sentence
+mean Bob. **The re-attribution is a side effect of the remap, not a missing
+check** — which is exactly why grepping provenance assignments could never have
+found it, and why it reads as correct on inspection. It also relocates the fix:
+**the cap belongs at the remap**, the only place the referent changes.
+
 **The finding is not "import is broken."** It is that import has no trust
 boundary, the API has a parameter whose purpose is to cross one, and a queued
 doc would tell users to. **Ship the recipe before the boundary and third-party
@@ -259,14 +276,33 @@ together.** `confirm()` guards exactly this and says why:
 and **no such guard**. `record_outcome` even validates actor↔outcome pairing;
 `correct()` accepts `actor="system"` silently.
 
-**Severity, stated honestly:** host-facing only, not an MCP tool, and the host
-is generally trusted to attribute authorship — so this is a design gap, not an
-active exploit path. But `confirm()` establishes what we think the right
-behaviour is, in writing, and `correct()` does the opposite.
+**⚠️ Correction: `actor` has ZERO effect on trust.** Verified — it appears
+exactly twice, in the signature and in the episode summary f-string. A caller
+passing `actor="system"` is **silently ignored where it matters**, so my
+original framing (a system actor producing user-authored facts) named the wrong
+vector. `source_type=STATED` is also hardcoded, so a third-party claim becomes
+*stated by the user*. **An argument that looks like it sets authorship and does
+not is its own hazard.**
 
-**Proposed:** apply `confirm()`'s guard to `correct()` — refuse non-assertable
-edges, directing the caller to `remember()` — and derive authorship from `actor`
-rather than hardcoding `USER`.
+**⚠️ My severity reasoning was also wrong, and research's replacement is
+better.** I wrote "host-facing only, so a design gap not an active exploit
+path". The realistic path was never an attacker calling `correct()` — it is **a
+host implementing the obvious feature (*let the user fix a wrong memory*) and
+calling it on whatever edge the user points at**, including a third-party claim
+rendered in the UNVERIFIED block. Intent: *fix this text*. Effect: *adopt this
+as my own testimony*. **No attacker, no misuse, ordinary operation.** On
+reachability alone M7 is **broader than 0.4.4**, which did get an advisory and
+required `maintain()` + ≥8 mixed cold episodes + >30 days + trusted-first
+ordering.
+
+**What actually justifies no advisory — and this is the reusable line:**
+**0.4.4 fired automatically during routine maintenance; M7 requires an explicit
+operator-initiated call on a specific edge. Automatic-versus-invoked is the
+distinction**, not host-facing-versus-not. Residual risk goes in the release
+note rather than being left implied.
+
+**Proposed fix, three lines:** refuse `correct()` on a non-assertable edge using
+`confirm()`'s existing error text, and either honour `actor` or delete it.
 
 ### M5 — merge-time `confidence = max(...)` (design, partly shipped)
 
