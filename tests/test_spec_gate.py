@@ -269,10 +269,13 @@ def test_both_a_spec_and_an_exception_is_rejected(repo):
 
 
 def test_unguarded_files_do_not_trip_the_gate(repo):
-    """A noisy gate gets bypassed; docs and the wiki compiler are excluded on
-    purpose."""
-    code, _ = repo.commit("docs",
-                          touch=["README.md", "src/veracium/compile.py"]).check()
+    """A noisy gate gets bypassed, so the exclusions must stay real.
+
+    This used `compile.py` until M8 showed the wiki caches a trust decision and
+    serves it after revocation — so it is guarded now, and the test moved to
+    files that genuinely decide nothing about trust."""
+    code, _ = repo.commit("docs", touch=["README.md",
+                                         "src/veracium/selfcheck.py"]).check()
     assert code == OK
 
 

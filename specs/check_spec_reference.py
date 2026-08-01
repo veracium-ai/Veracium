@@ -81,13 +81,46 @@ GUARDED = (
                                     # for an untrusted caller, is the trust
                                     # surface — it was missing from this list
                                     # for the same reason the first three were.
+
+    "src/veracium/compile.py",      # ADDED after M8. It was excluded on the
+                                    # reasoning that the wiki is a derived view
+                                    # whose inputs are guarded upstream — and
+                                    # M8 falsified exactly that: the wiki CACHES
+                                    # a trust decision and keeps serving it into
+                                    # the GROUNDED block after the decision is
+                                    # revoked. A derived view that outlives its
+                                    # inputs is not downstream of them.
 )
 
-# Deliberately NOT guarded, so the exclusions are a decision rather than an
-# oversight: compile.py builds the wiki, which is a derived view and never the
-# source of truth, and its inputs are already guarded via graph and gate. The
-# list covers what changes "what may be asserted, what is visible, or what
-# reaches model context" — not "important files". A noisy gate gets bypassed.
+# --- how this list is derived, since recalling it kept failing ---------------
+#
+# A file is guarded if it DECIDES WHAT A CALLER-SUPPLIED VALUE IS PERMITTED TO
+# MEAN, or if it WRITES, DERIVES, ROUTES ON, OR RENDERS a trust-bearing field.
+# (research, 2026-08-01, after the fourth recalled-list failure in one session:
+# consumers, store mutators, freeze content, and this.)
+#
+# Re-derive and diff rather than edit from memory:
+#   trust fields: author_of_evidence · derived_from · disclosure · confidence ·
+#                 valid_from · observed_at · needs_confirmation · quarantined ·
+#                 assertable · active · invalidation_reason
+#   forms that count: literal->enum maps · assignment · construction/validate ·
+#                     `if ...<field>` routing · rendering into text
+#
+# Adjudicated exclusions from the last derivation, recorded so they are
+# decisions rather than oversights:
+#
+#   cli.py       — offers `--author system`, which LOOKS like the mcp_server
+#                  defect and is not: the CLI caller is a human operator, and a
+#                  host attributing authorship is the trusted model. mcp_server
+#                  was different because `remember` is @server.tool(), so the
+#                  caller is the MODEL declaring its own class. Also cannot
+#                  fail open — argparse `choices` constrains it. NOT guarded,
+#                  but re-examine if the CLI is ever driven by an agent.
+#   selfcheck.py — asserts guarantees against a throwaway store; it TESTS trust
+#                  rather than deciding it. A defect there is claim-accuracy,
+#                  not trust behaviour.
+#   store/base.py — the interface declaration; the implementation
+#                  (store/sqlite.py) is guarded and is where behaviour lives.
 
 # The process controls themselves. A commit could otherwise weaken this script,
 # or the workflow that runs it, and have the weakened version approve its own
