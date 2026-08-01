@@ -243,9 +243,17 @@ def _cover(scored: list[tuple[int, Edge]], max_edges: int,
     that most callers never supply, so a session-based rule would be
     unimplementable outside a benchmark harness.
 
-    Deliberately conservative:
-      * the head is filled by relevance alone, so the most relevant facts are
-        never displaced by coverage;
+    Deliberately conservative, with one edge that is NOT conservative and is
+    stated here because measurement found it (R2, 2026-08-01):
+      * the head is filled by relevance alone, so the TOP-RANKED facts are never
+        displaced by coverage — but the head SHRINKS by the reserve, so
+        candidates ranked between `max_edges - reserve` and `max_edges` ARE
+        displaced, by construction. **Relevance rank is not answer-bearingness.**
+        In R2 an item whose single answer-bearing fact ranked 34/40 lost it
+        entirely at share=0.25 (head 30), taking its hit rate from 1.000 to
+        0.000. Across that sample 8 of 30 items had exactly ONE answer-bearing
+        turn, so "costs a few of the least-relevant head slots" can mean
+        "costs the whole answer" and is not a rare shape;
       * coverage only spends the reserved tail, and only on candidates that
         already passed the relevance filter;
       * with fewer candidates than the budget this never runs at all, so small
