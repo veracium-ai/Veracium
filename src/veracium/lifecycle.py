@@ -21,7 +21,7 @@ from typing import Optional
 
 from ._json import extract_json
 from .llm.base import Complete
-from .schema import (DEFAULT_EXPIRY, Episode, EvidenceAuthor, ExpiryBehavior,
+from .schema import (DEFAULT_EXPIRY, Disclosure, Episode, EvidenceAuthor, ExpiryBehavior,
                      utcnow)
 
 
@@ -111,6 +111,13 @@ def consolidate(store, llm: Complete, user_id: str, config, *,
     # the defence its own module describes. Security fix, 0.4.4.
     import uuid
     influenced = any(e.provenance.third_party_influenced for e in cold)
+    # N9b (spec 0002): a summary is no stronger than its weakest input, across
+    # EVERY trust-bearing field. `confidence` used to be a flat 0.9 here, so a
+    # batch containing a 0.2 episode produced a summary at 0.9 -- confidence
+    # manufactured from recognition, which is the same defect M5 forbids at T2.
+    _DISCLOSURE_RANK = {Disclosure.QUARANTINED: 0, Disclosure.USE_ONLY: 1,
+                        Disclosure.MENTIONABLE: 2}
+    weakest = min(cold, key=lambda e: _DISCLOSURE_RANK[e.provenance.disclosure])
     prov = cold[0].provenance.model_copy(update={
         # say what it is, rather than inheriting an author we did not choose
         "author_of_evidence": EvidenceAuthor.SYSTEM,
@@ -118,7 +125,11 @@ def consolidate(store, llm: Complete, user_id: str, config, *,
         # is third-party-influenced, whoever wrote the first line of it
         "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced
                          else cold[0].provenance.derived_from),
-        "confidence": 0.9})
+        "disclosure": weakest.provenance.disclosure,
+        "confidence": min(e.provenance.confidence for e in cold),
+        # recognition is not observation: currency may not exceed the newest
+        # input, and must never be "now"
+        "observed_at": max(e.provenance.observed_at for e in cold)})
     for e in cold:
         store.delete_episode(e.id)
     for r in new:

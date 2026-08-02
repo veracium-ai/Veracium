@@ -104,29 +104,82 @@ N9b's premise true.**
 
 ## 4. Behaviour
 
-**Chosen strategy: write-before-delete with a lineage-based recovery pass.**
-Not a store transaction — `Store` is an interface with a Postgres implementation
-contemplated (`0002` Q-carry), and requiring cross-backend atomic multi-statement
-transactions would push a durability guarantee into every future backend.
-**Ordering plus a recovery rule needs nothing the interface does not already
-have.**
+**Rewritten after the fourth external review of `0002` showed the first draft
+was not implementable.** Three gaps, each real: multiple summaries had no
+input→output mapping, the claim was not atomic, and recovery could not tell a
+crash from a live writer mid-LLM-call.
 
-1. **Claim** — mark each input `consolidated_into = <new id>`, durable.
-2. **Write** — persist the summary with `lineage = [input ids]`, durable.
-3. **Delete** — remove the claimed inputs.
-4. **Recover** — on the next `consolidate()`, any episode with
-   `consolidated_into` pointing at an **existing** summary is a leftover from
-   step 3 and is deleted; pointing at a **missing** summary means the crash
-   happened between 1 and 2, and the claim is cleared.
+### 4a. The operation is a fenced batch, not a per-episode claim
 
-**Every crash point lands in a recoverable state, and no state is ambiguous** —
-that is the property the delete-first order cannot have at any cost.
+> A consolidation is one **operation** with an id and a **fence** (a monotonic
+> integer from the store). It claims a **set** of episodes in a single
+> conditional update — *claim every episode in this id-set whose `claim` is null
+> or whose fence is lower than mine* — which either takes the whole set or takes
+> nothing.
 
-**Cost:** one extra write per input episode, on an operation that already makes
-an LLM call. **Negligible against what it buys**, and it is why this is not
-worth optimising into a transaction.
+**Per-episode marking cannot work**, and the review is right about why: two
+workers both read the set as unclaimed and then claim overlapping halves.
+**Atomicity has to be in the claim itself**, not in a convention about who marks
+first.
 
----
+**The fence is what makes recovery decidable.** A lower-fenced claim is
+provably stale; a higher one is provably live. The previous draft's rule —
+*"clear the claim if the summary is missing"* — cannot distinguish a crashed
+worker from one still waiting on an LLM call, and would let a second worker
+delete a live claim.
+
+### 4b. Multi-summary lineage is explicit, complete and non-overlapping
+
+The compactor returns **several** records. The previous draft spoke of *"the
+summary"* and gave recovery a single target, so it could not say which output
+absorbed which input — **and the LLM output carries dates and text, not episode
+ids.**
+
+> Each output record names the episode ids it absorbs. The union must equal the
+> claimed set **exactly**: no input unaccounted for, no input in two outputs.
+> **A partition that fails this check aborts the operation and releases the
+> claim** — the inputs are still there, because nothing has been deleted.
+
+**Assigning inputs to outputs is not a job for the model**, so the partition is
+computed by the caller from the records' date ranges and **validated** rather
+than trusted. A model that returns an incoherent grouping fails a check instead
+of silently losing episodes.
+
+### 4c. Ordered phases, each individually crash-safe
+
+| phase | action | crash here leaves |
+|---|---|---|
+| 1 | fence + atomic claim of the set | claimed inputs, no output — recovery releases a stale-fenced claim |
+| 2 | validate the partition | as above |
+| 3 | write every summary, each with `lineage` and the operation id | inputs + outputs, **inputs still hidden** (§4d) |
+| 4 | delete the claimed inputs | partially deleted; recovery finishes by lineage |
+| 5 | clear the operation | complete |
+
+**Every crash point is recoverable and none is ambiguous** — the property the
+delete-first order could not have at any price.
+
+### 4d. Claimed inputs are hidden from ordinary reads
+
+**The review's sharpest point, and it is not a detail.** Between phases 3 and 4
+both the inputs and their summary exist, so an ordinary `recall()` would see the
+same content twice — and `0002` §7e requires partial state be repaired *before
+ordinary reads depend on it*.
+
+> **A claimed episode is excluded from ordinary reads** — `store.episodes()`
+> filters on an active claim. Visibility flips at the claim, not at the delete,
+> so no read ever observes both.
+
+This also makes recovery timing a **non-issue rather than an open question**: a
+crashed operation's inputs stay hidden until its stale-fenced claim is released,
+at which point they become visible again. **Nothing is lost and nothing is
+double-counted, whenever recovery happens to run.**
+
+### 4e. Why not a store transaction
+
+`Store` is an interface with a Postgres implementation contemplated. Requiring
+cross-backend atomic multi-statement transactions pushes a durability guarantee
+into every future backend. **The only primitive this needs is one conditional
+update**, which any store worth using already has.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -135,7 +188,10 @@ worth optimising into a transaction.
 | **X1** an input is never deleted before its summary is durable | `test_consolidation_writes_before_deleting` — a store wrapper that raises after the write | CI |
 | **X2** a crash mid-delete is recovered, not repeated | `test_recovery_completes_a_partial_delete` | CI |
 | **X3** retry is idempotent by **lineage**, not by content | `test_consolidation_retry_is_idempotent` — **no summary-of-summary** | CI |
-| **X4** a claimed input is not consolidated twice | `test_concurrent_consolidation_claims_once` | CI |
+| **X4** the claim is **atomic over the whole set** | `test_concurrent_consolidation_claims_all_or_nothing` — two workers, overlapping candidate sets; exactly one wins | CI |
+| **X7** a lower-fenced claim is released; a higher-fenced one is not | `test_recovery_does_not_steal_a_live_claim` — **the case that distinguishes a crash from a slow LLM call** | CI |
+| **X8** the output partition is exact | `test_partition_must_cover_every_claimed_input_exactly` — gaps and overlaps both abort **and release**, losing nothing | CI |
+| **X9** claimed inputs are invisible to ordinary reads | `test_no_read_ever_sees_an_input_and_its_summary` — sweeps every phase boundary | CI |
 | **X5** no crash point loses an episode without a replacement | `test_no_crash_point_loses_data` — **parametrised over every store call in the operation**, failing at each in turn | CI |
 | **X6** lineage is complete | `test_summary_lineage_lists_every_absorbed_episode` — **N9b's premise** | CI |
 
@@ -185,5 +241,5 @@ would never run recovery. **Silent misinterpretation, not failure.**
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **X-Q1** | Should recovery run on **every** `consolidate()`, or on a dedicated `repair()` the host calls? Running it automatically is safer and means a read path can encounter unrecovered state between crash and next maintenance. **Dev leans automatic, plus surfacing the count in `introspect()`.** | **blocking** | research | before implementation |
+| ~~X-Q1~~ | **DISSOLVED by §4d.** The question assumed reads could observe unrecovered state; hiding claimed inputs means they cannot. Recovery timing stops being a correctness question and becomes a housekeeping one — run it at the start of each `consolidate()`, and surface the count in `introspect()`. | resolved | dev | — |
 | **X-Q2** | Should the wiki drop when recovery fires (`0004`)? A recovered store's episode set changed underneath a cached view. **Dev leans yes** — same argument as `0004` W1. | `pre-release` | dev | before release |

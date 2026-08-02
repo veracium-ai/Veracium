@@ -231,3 +231,68 @@ def test_a_malformed_date_cannot_enter_through_ingest():
         m = _mem(d, [{"triples": [], "episode": "said"}])
         with pytest.raises(ValueError, match="not an ISO date"):
             m.remember("u", "hello", date="yesterday")
+
+
+def test_an_offset_bearing_timestamp_is_converted_not_relabelled():
+    """`.replace(tzinfo=utc)` discarded an existing offset, so `T20:00-12:00`
+    was checked as if it were 20:00 UTC when the instant is 08:00 the next day.
+    Measured at 12 hours of skew-limit bypass; up to 26 across the legal offset
+    range."""
+    import pytest
+    from veracium.ingest import _event_dt
+    from veracium.schema import utcnow
+    from datetime import timedelta
+    now = utcnow()
+    future = (now + timedelta(hours=20)).strftime("%Y-%m-%dT%H:%M:%S") + "-12:00"
+    with pytest.raises(ValueError, match="in the future"):
+        _event_dt(future)
+
+
+def test_a_legitimate_offset_timestamp_is_accepted_and_converted():
+    from veracium.ingest import _event_dt
+    from veracium.schema import utcnow
+    from datetime import timedelta, timezone
+    past = (utcnow() - timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%S") + "+05:30"
+    got = _event_dt(past)
+    assert got.tzinfo == timezone.utc
+    assert got < utcnow()
+
+
+def test_a_naive_date_still_means_utc():
+    from veracium.ingest import _event_dt
+    from datetime import timezone
+    assert _event_dt("2026-01-01").tzinfo == timezone.utc
+
+
+def test_consolidation_output_is_no_stronger_than_its_weakest_input():
+    """N9b (spec 0002). `confidence` was a flat 0.9, so a batch containing a 0.2
+    episode produced a summary at 0.9 — confidence manufactured from
+    recognition, the same defect M5 forbids at T2."""
+    from veracium.lifecycle import consolidate
+    from veracium.schema import Episode, Provenance, SourceType, Disclosure
+    from veracium.store.sqlite import SqliteStore
+    from datetime import timedelta
+    import os, json
+    with tempfile.TemporaryDirectory() as d:
+        st = SqliteStore(os.path.join(d, "t.db"))
+        old = datetime.now(timezone.utc) - timedelta(days=90)
+        for i in range(8):
+            st.add_episode(Episode(
+                id=f"ep{i}", user_id="u", date=old.date().isoformat(),
+                summary=f"thing {i}",
+                provenance=Provenance(
+                    source_type=SourceType.STATED,
+                    author_of_evidence=EvidenceAuthor.USER, evidence_ref="x",
+                    observed_at=old,
+                    confidence=0.2 if i == 3 else 0.95,
+                    disclosure=(Disclosure.USE_ONLY if i == 5
+                                else Disclosure.MENTIONABLE))))
+        llm = lambda *a, **k: json.dumps(
+            {"records": [{"date": old.date().isoformat(), "summary": "s"}]})
+        consolidate(st, llm, "u", MemoryConfig(consolidate_after_days=30,
+                                               consolidate_min_batch=8))
+        out = [e for e in st.episodes("u") if e.id.startswith("epc")][0]
+        assert out.provenance.confidence == 0.2, "confidence manufactured"
+        assert out.provenance.disclosure == Disclosure.USE_ONLY, "disclosure widened"
+        assert out.provenance.observed_at <= old, "currency manufactured"
+        assert out.provenance.author_of_evidence == EvidenceAuthor.SYSTEM

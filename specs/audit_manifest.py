@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+from collections import Counter
 import hashlib
 import pathlib
 import re
@@ -49,17 +50,26 @@ def mutators() -> list[str]:
 
 
 def _fingerprint(call: ast.Call, context: str) -> str:
-    """Identity of a call: its normalised expression plus enclosing context.
+    """The canonical record of a call: normalised expression + enclosing context.
 
-    Deliberately NOT positional. Two different calls to one mutator in one
-    function are distinguished by their arguments and branch; reordering them
-    changes nothing, swapping them changes both.
+    Deliberately NOT positional -- two different calls to one mutator in one
+    function are distinguished by their arguments and branch, so reordering
+    changes nothing and swapping changes both.
+
+    Returned in FULL, not hashed. An abbreviated digest is a collision risk with
+    no compensating benefit, and the fourth external review was right that
+    nothing checked for one. `call_sites` hashes it for display only, after
+    appending a disambiguator for syntactically identical siblings.
+
+    Narrow claim, since v4 overstated it: this follows the call's SYNTAX and its
+    selected branch. It does not prove that upstream dataflow still makes the
+    operation mean the same thing.
     """
     try:
         expr = ast.unparse(call)
     except Exception:                       # pragma: no cover - very old Python
         expr = f"{getattr(call.func, 'attr', '?')}(...)"
-    return hashlib.sha1(f"{context}|{expr}".encode()).hexdigest()[:8]
+    return f"{context}|{expr}"
 
 
 class _Visitor(ast.NodeVisitor):
@@ -142,21 +152,51 @@ def call_sites(names: list[str]):
         # and REPORTED, because a silent filter is how coverage claims rot.
         (excluded if "/store/" in rel else out).extend(v.found)
     out.sort(key=lambda r: (r[0], r[4]))
-    return out, excluded
+
+    # Syntactically identical calls in the same branch share a canonical record
+    # -- `store.add_edge(edge)` twice in one block is legal and meaningful. They
+    # get an explicit `#n` suffix in source order rather than silently
+    # collapsing, which is what v4 did: two sites, one key, one disposition
+    # satisfying both.
+    from collections import Counter, defaultdict
+    counts = Counter((r, s, m, fp) for r, s, m, fp, _, _ in out)
+    seen = defaultdict(int)
+    final = []
+    for rel, scope, mut, canon, ln, ctx in out:
+        key = (rel, scope, mut, canon)
+        if counts[key] > 1:
+            seen[key] += 1
+            canon = f"{canon}#{seen[key]}"
+        final.append((rel, scope, mut,
+                      hashlib.sha256(canon.encode()).hexdigest()[:12], ln, ctx))
+    ids = [(r, s, m, fp) for r, s, m, fp, _, _ in final]
+    if len(set(ids)) != len(ids):
+        dupes = {k for k in ids if ids.count(k) > 1}
+        raise SystemExit(f"identity collision after disambiguation: {dupes}. "
+                         f"The manifest cannot certify a site it cannot name.")
+    return final, excluded
 
 
 def _validate(sites) -> list[str]:
     """N8: every site carries a verdict AND a test or an owning spec."""
     from audit_dispositions import DISPOSITIONS
     problems = []
-    want = {(r, s, m, fp) for r, s, m, fp, _, _ in sites}
-    have = set(DISPOSITIONS)
+    ids = [(r, s, m, fp) for r, s, m, fp, _, _ in sites]
+    if len(set(ids)) != len(ids):
+        problems.append("duplicate call-site identities — cardinality lost")
+    want, have = set(ids), set(DISPOSITIONS)
     for k in sorted(want - have):
         problems.append(f"call site with no disposition: {k}")
     for k in sorted(have - want):
         problems.append(f"disposition for a call site that no longer exists: {k}")
 
+    from audit_dispositions import STATES
     for k in sorted(want & have):
+        st = STATES.get(k)
+        if st is None:
+            problems.append(f"{k}: no declared state — add one to STATES")
+        elif st not in VALID_STATES:
+            problems.append(f"{k}: state {st!r} not in {sorted(VALID_STATES)}")
         v = DISPOSITIONS[k]
         if len(v) != 5:
             problems.append(f"{k}: expected 5 fields, got {len(v)}"); continue
@@ -172,13 +212,31 @@ def _validate(sites) -> list[str]:
         if not test.strip():
             problems.append(f"{k}: no test or owning spec — N8 requires both")
             continue
-        moved_or_open = "➡️" in verdict or "🔴" in verdict
-        if moved_or_open:
+        if STATES.get(k) in ("open", "moved", "open_moved"):
             if not SPEC_REF.search(test) and not SPEC_REF.search(verdict):
                 problems.append(f"{k}: moved/open rows must name an owning spec, got {test!r}")
         elif not TEST_REF.search(test):
             problems.append(f"{k}: clean/fixed rows must name a concrete test, got {test!r}")
     return problems
+
+
+VALID_STATES = {"clean", "fixed", "open", "moved", "open_moved"}
+
+
+def _collected_tests() -> set[str]:
+    """Exact test function names, parsed from the AST.
+
+    v4 asked whether `f"def {name}"` appeared anywhere in the concatenated test
+    files, which `def test_foobar` satisfies for `test_foo`, and which a
+    commented-out or string-embedded name also satisfies. A coverage claim
+    backed by a substring match is not backed.
+    """
+    names = set()
+    for f in TESTS.rglob("test_*.py"):
+        for node in ast.walk(ast.parse(f.read_text())):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                names.add(node.name)
+    return names
 
 
 def _missing_tests():
@@ -189,28 +247,30 @@ def _missing_tests():
     built to prevent, and 11 of 17 clean rows were in that state when the check
     was added. Advisory for moved/open rows, whose tests land with their spec.
     """
-    from audit_dispositions import DISPOSITIONS
-    corpus = "\n".join(p.read_text() for p in TESTS.rglob("test_*.py"))
+    from audit_dispositions import DISPOSITIONS, STATES
+    collected = _collected_tests()
     clean, pending = [], []
     for k, v in DISPOSITIONS.items():
-        gone = [n for n in TEST_REF.findall(v[4]) if f"def {n}" not in corpus]
+        gone = [n for n in TEST_REF.findall(v[4]) if n not in collected]
         if not gone:
             continue
-        target = pending if ("\u27a1\ufe0f" in v[3] or "\U0001f534" in v[3]) else clean
+        state = STATES.get(k, "clean")
+        target = pending if state in ("open", "moved", "open_moved") else clean
         target.append((k, gone))
     return clean, pending
 
 
 def render(sites) -> str:
-    from audit_dispositions import DISPOSITIONS
+    from audit_dispositions import DISPOSITIONS, STATES
     rows = []
     for rel, scope, mut, fp, ln, ctx in sites:
         cls, fields, ev, verdict, test = DISPOSITIONS.get(
             (rel, scope, mut, fp), ("", "", "", "**NO VERDICT**", ""))
-        rows.append(f"| `{rel}:{ln}` | `{scope}()` | `{mut}` | `{fp}` | {cls} | "
+        rows.append(f"| `{rel}:{ln}` | `{scope}()` | `{mut}` | `{fp}` | "
+                    f"`{STATES.get((rel, scope, mut, fp), '?')}` | {cls} | "
                     f"{fields} | {ev} | {verdict} | {test} |")
-    open_n = sum(1 for r in rows if "🔴" in r)
-    moved = sum(1 for r in rows if "➡️" in r)
+    tally = Counter(STATES.values())
+    unaffected = tally["clean"] + tally["fixed"]
     return ("<!-- GENERATED by specs/audit_manifest.py — do not hand-edit.\n"
             "     Verdicts live in specs/audit_dispositions.py.\n"
             "     Regenerate: python3 specs/audit_manifest.py --write\n"
@@ -223,9 +283,15 @@ def render(sites) -> str:
             "grep keyed on assignment) were incomplete, and a third (a "
             "line-oriented regex scan) could silently reattach a verdict to a "
             "different operation.\n\n"
-            f"**{len(sites) - open_n - moved} clean · {open_n} open · {moved} "
-            "moved to another spec.** Clean sites are listed because a "
-            "findings-only audit cannot demonstrate coverage.\n\n"
+            f"**{tally['clean']} clean · {tally['fixed']} fixed · "
+            f"{tally['open']} open · {tally['moved']} moved · "
+            f"{tally['open_moved']} open and moved** "
+            f"— {unaffected} of {len(sites)} sites are unaffected. **States are "
+            "declared in `audit_dispositions.py`, not inferred from the rendered "
+            "table**: deriving them by searching rows for emoji double-counted "
+            "every row whose verdict and test column disagreed, and shipped two "
+            "different totals in one review package. Clean sites are listed "
+            "because a findings-only audit cannot demonstrate coverage.\n\n"
             "**Identity is `(file, scope, mutator, fingerprint)`.** The "
             "fingerprint is a hash of the call's normalised expression and its "
             "enclosing control-flow context — **what the call is, not where it "
@@ -238,9 +304,9 @@ def render(sites) -> str:
             "which are the mutators rather than callers of them. **The "
             "`evidence-bearing?` column is a reviewed classification, not a "
             "derived fact** — see `0002` §6a.\n\n"
-            "| call site | in | mutator | fp | class | trust fields touched | "
+            "| call site | in | mutator | fp | state | class | trust fields touched | "
             "evidence-bearing? | verdict | test / owning spec |\n"
-            "|---|---|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
+            "|---|---|---|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
 
 
 def main() -> int:

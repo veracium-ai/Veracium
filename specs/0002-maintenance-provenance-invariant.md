@@ -27,8 +27,8 @@ this spec reports findings, not coverage.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — *re-read before editing; quote the version you approve.* v1 deferred (9 findings) · v2 deferred (10) · v3 deferred (7) · **v4 replaces rather than annotates.** |
-| **Status** | *see `Spec-Status:` at the top — canonical.* **v3 — re-submitted with all twenty findings from two external reviews closed.** Research: **GO** (2026-08-01). |
+| **Version** | **v5** — *re-read before editing; quote the version you approve.* v1 (9 findings) · v2 (10) · v3 (7) · v4 (8) — **all deferred, all for stale text surviving a pass that claimed to remove it. v5 is the first backed by a lint.** |
+| **Status** | *see `Spec-Status:` at the top — canonical.* **v5 — four external reviews, 34 findings.** The invariant was approved in all four; the retrospective was deferred in all four. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
 | **Decision + date** | — · **scope narrowed 2026-08-01** to M1–M5, all closed. M6/M7/M8 moved out; see §11. |
@@ -153,7 +153,7 @@ them.* The three the assignment-grep could not have found:
 |---|---|---|---|---|---|
 | **host-supplied `author`** (`mcp_server.py:26`, `cli.py:299`) | rejected by enum | rejected by enum | rejected by enum | **host may claim `system`, which shares `MENTIONABLE` with `user`**; and `author` rides on `remember`, an `@server.tool()` — **the model reaches it** | ➡️ **`specs/0008` C1** — **no value of this field clears `needs_confirmation`**; only `confirm()`, which is host-API only |
 | **host-supplied `actor`** (`record_outcome`) | defaults `user` | n/a | maps via `_OUTCOME_ACTORS` | **last writer's label silently wins** | **M4 fix: append, never overwrite** |
-| **host-supplied `date`** (`confirm()`, `remember()`) | defaults today | `_event_dt` falls back to now | — | **future dates were accepted and unrecoverable; back-dating moved `valid_from`** | **§7f (0.4.5 + 0.4.6): `valid_from` immutable · `observed_at` monotonic · future beyond 1 day rejected at `_event_dt`** |
+| **host-supplied `date`** (`confirm()`, `remember()`) | **absence** means now — the only thing that does | **rejected** — `_event_dt` raises | — | **future dates were accepted and unrecoverable; back-dating moved `valid_from`** | **§7f (0.4.5 + 0.4.6): `valid_from` immutable · `observed_at` monotonic · future beyond 1 day rejected at `_event_dt`** |
 | **cold-episode set** (consolidation) | no-op below batch | — | — | **mixed authorship** | **M1 (0.4.4): provenance derived from the whole set** |
 | **older-version store data** | — | pydantic rejects unknown enum | — | — | ⚠️ **no invariant — no `PRAGMA user_version`.** Carried from spec 0001 Q3; **this empty cell is a gate on that spec, not this one** |
 
@@ -226,8 +226,14 @@ it just guards the wrong axis for this field.
 becomes assertable that was not. It removes a caveat on someone else's
 authority.
 
-**Fix:** `needs_confirmation` clears only on evidence from the **same author
-class** as the flagged edge, or via `confirm()`.
+**OBSOLETE released behaviour (0.4.5):** the fix shipped was *"clears only on
+evidence from the same author class, or via `confirm()`"*. **It is inadequate and
+is not the rule.** It closed cross-*class* clearing and left same-*class*
+clearing open — the case that matters, because **the host chooses the class**,
+and `author` rides on `remember`, which the model calls.
+
+**Current rule → `specs/0008`:** only `confirm()` clears `needs_confirmation`;
+**no value of any provenance field ever does.**
 
 ### M4 — `record_outcome` overwrites authorship without history (shipped)
 
@@ -237,8 +243,14 @@ authorship is unrecoverable** — in a system whose stated principle is
 **supersession-never-erasure**. The host controls `actor` in both directions, so
 this is not privilege escalation; it is provenance destruction.
 
-**Fix:** append a new outcome episode rather than overwriting, or retain prior
-authorship in a note. Erasure is the part that is wrong, not the update.
+**OBSOLETE released behaviour (0.4.5):** the fix shipped appends a phrase to the
+episode summary and **still overwrites the structured field**. `summary` is
+rebuilt on every upgrade, so the trail survives **exactly one hop** —
+`system → user → system` reduces to *"prior was user"*. **The "note"
+alternative is withdrawn**; a note cannot be queried, gated on, or exported.
+
+**Current rule → `specs/0009`:** an append-only chain of outcome episodes, each
+with its own provenance, ordered by a store-assigned per-chain sequence.
 
 ### M6 / M7 / M8 — MOVED OUT on 2026-08-01
 
@@ -680,7 +692,9 @@ nor a hostile date. **A released fix that is not pinned is not closed.**
 > (**1 day**) beyond now is **rejected** — `ValueError`, not clamped. Applied in
 > `_event_dt`, the single point every event date passes through, so
 > `remember` · `confirm` · `correct` · `record_outcome` are covered by one rule.
-> Malformed dates keep their pre-existing fallback to now.
+> **Malformed dates are rejected**, and an offset-bearing timestamp is
+> **converted** to UTC, never relabelled — `.replace(tzinfo=utc)` discarded the
+> offset, so a `-12:00` value bypassed the skew limit by 12 hours.
 >
 > **`observed_at`.** `max(existing, accepted event_time)` — monotonic, so a
 > back-dated confirmation cannot move currency backwards.
@@ -727,9 +741,11 @@ predates the fix and was never pinned.
   inadequate** and are governed by specs 0008 and 0009. Import, supersession and
   derived-view findings are governed by specs 0005, 0003 and 0004."*
 
-  ⚠️ **Corrected twice.** v1 said *"an audit of every maintenance-time
-  operation"* after §1 had withdrawn that claim. v2/v3 said *"fixes three
-  provenance defects"* after §11 recorded that two of the three do not hold.
+  ⚠️ **WITHDRAWN wording, quoted here as history:** v1 said *"an audit of every
+  maintenance-time operation"* after §1 had withdrawn that claim; v2/v3 said
+  *"fixes three provenance defects"* after §11 recorded that two of the three do
+  not hold. **Both phrases are in `specs/withdrawn_phrases.py` and the lint
+  fails if either reappears outside a block marked WITHDRAWN or OBSOLETE.**
   **The release claim has now been wrong in the same direction in three
   consecutive drafts**, and each time the correcting fact was already in the
   document.
@@ -737,9 +753,10 @@ predates the fix and was never pinned.
   **"Mechanically derived" is also withdrawn** — the call-site *enumeration* is
   mechanical; the per-site **classification** is hand-authored (§12 item 5).
 
-  **⚠️ The previous wording was *"an audit of every maintenance-time
-  operation"*, and §1 had already withdrawn exactly that claim.** It survived
-  into the release language and out the door. External review item 6 caught it.
+  **⚠️ WITHDRAWN wording:** the previous release language claimed *"an audit of
+  every maintenance-time operation"*, and §1 had already withdrawn exactly that
+  claim. It survived into the release language and out the door. External review
+  item 6 caught it.
   **This is the fourth claim-versus-artifact gap** — after the `_cover`
   docstring, the `valid_from` changelog and the r2 headline — **and the first an
   outside reader found before we did.** A retraction that is not applied by
@@ -751,7 +768,10 @@ predates the fix and was never pinned.
   - **Not that the class is now closed.** It establishes that **28 store-mutator
     call sites** were enumerated *from the mutator interface* and each given a
     verdict — see **`specs/generated/0002-audit-manifest.md`**, generated and CI-verified,
-    not asserted. **17 clean · 4 open · 7 moved.**
+    not asserted. **15 clean · 2 fixed · 4 open · 7 moved** — 17 of 28
+    unaffected. **States are declared, not inferred from the rendered table**;
+    deriving them by searching rows for emoji shipped two different totals in
+    one review package.
   - **N7 is not the general invariant**, and the previous draft called it one.
     It tests a single UNVERIFIED→GROUNDED transition across a full `maintain()`;
     **M2 changes a date without changing tier, M3 removes a caveat without
@@ -833,11 +853,11 @@ verdicts disagree.
 
 ## 11. Finding ledger
 
-**Rebuilt to the second external review's shape.** The previous table said
-*"all five findings that remain here are closed"* while the header said three
-were unimplemented. **Both were written by me and "closed" silently meant two
-different things** — *a disposition exists* in one place, *the code is fixed* in
-the other. The columns now force the distinction.
+**Rebuilt to the second external review's shape.** The WITHDRAWN predecessor
+claimed every remaining finding was closed while the header said three were
+unimplemented. **Both were written by me, and "closed" silently meant *a
+disposition exists* in one place and *the code is fixed* in the other.** The
+columns now force the distinction.
 
 | finding | released behaviour | current defect | frozen behaviour | implemented? | test | release |
 |---|---|---|---|---|---|---|

@@ -1,6 +1,31 @@
 # Changelog
 
-## Unreleased
+## 0.4.7 — 2026-08-02
+
+- **An offset-bearing event date was relabelled UTC instead of converted.**
+  `_event_dt` did `datetime.fromisoformat(x).replace(tzinfo=utc)`, which
+  **discards** an existing offset rather than converting the instant. A
+  timestamp written `...T20:00:00-12:00` was checked as if it were 20:00 UTC
+  when the instant it names is 08:00 the following day — **measured at 12 hours
+  of future-skew bypass, and up to 26 across the legal offset range.** It
+  partially defeated the future-date rejection shipped in 0.4.6.
+
+  Offset-bearing values are now converted with `astimezone(utc)`; a naive value
+  still means UTC, which is the documented contract for a bare date.
+
+- **Consolidation manufactured confidence, disclosure and currency.**
+  `consolidate()` set `confidence = 0.9` unconditionally and inherited the first
+  input's disclosure, so **a batch containing a 0.2 episode produced a summary at
+  0.9**, and a batch containing one `use_only` episode could produce a
+  `mentionable` summary. A summary is now **no stronger than its weakest input**
+  across every trust-bearing field: `confidence = min`, `disclosure = weakest`,
+  `observed_at = max(inputs)` and never *now*.
+
+  This is the same rule that governs T2 deduplication — **recognition is not
+  observation, and a summary of old material is not new evidence.**
+
+  Found by external review of `specs/0002`, against an invariant that spec had
+  itself added while the code violated it.
 
 - **A malformed `date=` is now rejected instead of silently becoming *now*.**
   `_event_dt` fell back to the current time on any unparseable date. That is the

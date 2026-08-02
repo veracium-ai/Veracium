@@ -59,7 +59,15 @@ def _event_dt(date_str: str) -> datetime:
     that genuinely mean *now* omit `date=` entirely; absence is the only thing
     that means now."""
     try:
-        dt = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+        dt = datetime.fromisoformat(date_str)
+        # An offset-bearing timestamp is CONVERTED, never relabelled. `.replace(
+        # tzinfo=utc)` discarded the offset, so `...T20:00-12:00` was checked as
+        # if it were 20:00 UTC when the instant is 08:00 the next day —
+        # measured at 12 hours of skew-limit bypass, and up to 26 across the
+        # legal offset range. A naive value still means UTC, which is the
+        # documented contract for a bare date.
+        dt = (dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None
+              else dt.astimezone(timezone.utc))
     except (ValueError, TypeError):
         raise ValueError(
             f"event date {date_str!r} is not an ISO date. Memory timestamps "

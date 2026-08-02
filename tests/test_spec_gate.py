@@ -448,3 +448,18 @@ def test_an_accepted_spec_with_a_closure_passes(repo):
     code, _ = repo.commit("implement", ["Spec: specs/0014-cls.md"],
                           touch=["src/veracium/graph.py"]).check()
     assert code == OK
+
+
+def test_no_withdrawn_rule_is_stated_as_live_spec_text():
+    """Four external reviews in a row found withdrawn rules still normative,
+    each time after the document claimed they were removed. Every pass searched
+    for my own annotations rather than for the rule, and a search for one's own
+    corrections cannot find text one never annotated.
+
+    History may quote a withdrawn phrase; the block must be marked WITHDRAWN or
+    OBSOLETE, which is explicit and cannot be applied by accident."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "lint_withdrawn.py")],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr
