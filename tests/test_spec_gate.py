@@ -477,3 +477,37 @@ def test_status_prose_is_generated_from_the_structured_records():
     r = subprocess.run([sys.executable, str(root / "specs" / "render_status.py"), "--check"],
                        capture_output=True, text=True, cwd=root)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_authority_tables_are_generated_from_the_ladder():
+    """specs/0003 v1 stated the ladder as arithmetic and wrote its consequences
+    out in prose, inverting two of four ASSISTANT cases — including
+    `assistant -> third_party`, the unsafe direction. The document it was
+    transcribed from had all four right."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "render_ladder.py"), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_ladder_permits_and_blocks_the_right_assistant_cases():
+    """The four cases v1 got wrong, asserted directly rather than via the table."""
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    from ladder import permitted
+    assert permitted("assistant", None, "user", None), "a user may retire assistant content"
+    assert not permitted("user", None, "assistant", None), "assistant must not retire user"
+    assert permitted("third_party", None, "assistant", None)
+    assert not permitted("assistant", None, "third_party", None), \
+        "assistant content must not retire a third-party record"
+
+
+def test_capping_changes_the_answer_on_a_real_subset():
+    """The rule is min(author, derived_from); a matrix over authors alone cannot
+    see the rows an attacker reaches by omitting derived_from."""
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    from ladder import divergent, effective_matrix
+    assert len(effective_matrix()) == 400
+    assert len(divergent()) == 80, "the coverage gap finding 2 described"

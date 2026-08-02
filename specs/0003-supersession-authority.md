@@ -1,28 +1,36 @@
 # Feature spec: supersession authority
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred (v1)** — first external review 2026-08-02 04:26 UTC. **Ladder direction approved;
-> implementation deferred for major amendment.** Eight findings, all verified.
-> **Finding 1 is a normative contradiction I introduced by mis-transcribing a
-> source that had it right** — see §12.
+> **in review (v2)** — submitted 2026-08-02 04:33 UTC. **All eight findings closed.** The
+> authority tables are now **generated from `specs/ladder.py`**, which is the
+> fix for finding 1: v1 wrote them out and inverted two of four. The matrix
+> covers the **full 400-row `(author, derived_from)` product** including the 80
+> rows where capping changes the answer; entitlement is **scoped by subject
+> class**; **every retirement path** including absorption goes through one
+> authority operation; `correct()` preserves the **complete** trust basis; and
+> inactive-edge routing is a **table, not a sentence**.
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 — *re-read before editing; quote the version you approve* |
+| **Version** | **v2** — *re-read before editing; quote the version you approve.* v1 deferred at first external review (8 findings). |
 | **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 answered 2026-08-01**; I7 shipped (`362f474`); external review not sent. |
 | **Internal reviewers** | research — **ladder already ADOPTED** (`proposals/supersession-authority-review.md`); two sub-decisions open, see §10 |
 | **External review** | required — full spec (`graph.py`, `gate.py`, `mcp_server.py`) · not yet sent |
 | **Decision + date** | — |
 | **Path** | full |
 
-> **Quentin ruled no advisory** — no real external users yet, only tyre-kickers.
-> This is design work, not a hotfix.
+> **No advisory.** The technical rationale is the one that carries it:
+> **exploitation requires third-party content to be ingested and then a
+> functional-relation collision — it is not automatic**, and the
+> automatic-versus-invoked distinction is the same line that governed 0.4.4.
+> *Deployment count is release context, not a security rationale* — v1 led with
+> "no real external users", which would not survive the first real one.
 
 ---
 
@@ -146,22 +154,56 @@ maintenance may narrow never widen · **supersession authority is capped by
 provenance, never raised by it** · supersession by an equal-or-better-entitled
 party, never a lesser one.
 
-| prior → incoming | today | after | rationale |
-|---|---|---|---|
-| user → user | allow | allow | the user revises their own fact |
-| **user → system** | **allow** | **BLOCK** | our own inference must not retire user testimony |
-| **user → third_party** | **allow** | **BLOCK** | **the attack** |
-| system → user | allow | allow | the user corrects our inference |
-| system → system | allow | allow | same class |
-| **system → third_party** | **allow** | **BLOCK** | untrusted content must not retire our derivation |
-| third_party → user | allow | allow | **the `I3b` correction path** |
-| third_party → system | allow | allow | our maintenance may retire an unverified claim |
-| third_party → third_party | allow | allow | same class |
+<!-- GENERATED:matrix -->
+`USER 3 > SYSTEM 2 > ASSISTANT 1 > THIRD_PARTY 0`
 
-**Measured 9/9 correct** — the only candidate rule that is. Assertability
-ordering and like-for-like+user-override both score 8/9, **failing on different
-cases**, which is the diagnostic: disclosure answers *may this be asserted*,
-supersession asks *who may declare this stale*. Different axis.
+| prior | incoming | result | |
+|---|---|---|---|
+| `user` | `user` | allow | same class |
+| `user` | `system` | **BLOCK** |  |
+| `user` | `assistant` | **BLOCK** |  |
+| `user` | `third_party` | **BLOCK** |  |
+| `system` | `user` | allow |  |
+| `system` | `system` | allow | same class |
+| `system` | `assistant` | **BLOCK** |  |
+| `system` | `third_party` | **BLOCK** |  |
+| `assistant` | `user` | allow |  |
+| `assistant` | `system` | allow |  |
+| `assistant` | `assistant` | allow | same class |
+| `assistant` | `third_party` | **BLOCK** |  |
+| `third_party` | `user` | allow |  |
+| `third_party` | `system` | allow |  |
+| `third_party` | `assistant` | allow |  |
+| `third_party` | `third_party` | allow | same class |
+<!-- /GENERATED:matrix -->
+
+**Generated from `specs/ladder.py`.** v1 wrote this table by hand and inverted
+two of four `ASSISTANT` cases, including `assistant → third_party` — the unsafe
+direction, which would have let assistant-generated content retire a
+third-party record. **The document it was transcribed from had all four right.**
+
+<!-- GENERATED:coverage -->
+**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows, not 16.** **80 of them give a different answer than authorship alone**, and those are exactly the rows an attacker reaches by omitting `derived_from`.
+
+| prior author/derived | incoming author/derived | result | |
+|---|---|---|---|
+| `user`/`—` | `user`/`system` | **BLOCK** | differs from the author-only answer |
+| `user`/`—` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
+| `user`/`—` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`system` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
+
+*(first 6 of 80; the test enumerates all 400)*
+<!-- /GENERATED:coverage -->
+
+**The nine non-`ASSISTANT` pairs were measured against the running code.**
+Assertability ordering and like-for-like+user-override both score 8/9, **failing
+on different cases**, which is the diagnostic: disclosure answers *may this be
+asserted*, supersession asks *who may declare this stale*. Different axis.
+
+⚠️ **The `ASSISTANT` row was never measured**, and v1's prose implied it had
+been. It is now generated, so the claim and the table cannot diverge again.
 
 **Extends to `ASSISTANT` with no new concept**, and **v2 must generate that row
 from the constants rather than write it out.** v1 wrote it out and inverted two
@@ -272,28 +314,81 @@ inherits the corrected edge's trust basis. See §Q5 and I10.
 
 ### What moving it resolves — `0002` Q5
 
-**Q5 asked whether a correction is an assertion (refuse on non-assertable
-edges, mirroring `confirm()`) or an edit (inherit the corrected edge's class).**
-I recorded them as balanced. **They are not balanced in this spec's frame, and
-the balance was an artifact of the wrong filing.**
+**Q5 is resolved: a correction is an *edit*.** The replacement inherits the
+corrected edge's **complete trust basis** — `author_of_evidence`,
+**`derived_from`**, `disclosure`, and a source type of `CORRECTED` rather than
+`STATED`.
 
-> **(b) — the replacement edge inherits the corrected edge's
-> `author_of_evidence` and `disclosure`.**
+**v1 resolved it as "inherit the class" and that was two fields short.**
+`derived_from` is half of `effective()`, so a replacement preserving
+`author=USER, disclosure=USE_ONLY` while dropping `derived_from=THIRD_PARTY`
+moves from effective authority **0 to 3** — and could then retire edges the
+original was never entitled to touch. **Inheriting "the class" was exactly the
+kind of partial preservation the capping rule exists to prevent.**
 
-**It is what the ladder already says.** `correct()` retires E and writes E′ with
-`supersedes=E`. Under §3 that is permitted only when E′'s effective authority is
-≥ E's. Inheriting makes them **equal**, so every legitimate correction passes
-and no correction can retire a fact its author was not entitled to retire.
-
-**(a) tests `disclosure`** — *may this be asserted* — which is precisely the
-axis error §3 exists to name: *disclosure answers may this be asserted;
-supersession asks who may declare this stale.* **A rule that scores well and
-answers on the wrong axis is the failure mode this spec was written about**, so
-adopting it here would have contradicted the document's own §3.
+`source_type=STATED` was hardcoded, which turned third-party material into user
+testimony on correction. **`CORRECTED` is a new source type**, because neither
+`STATED` nor `INFERRED` is true of an edited value.
 
 **Consequence for the implementation:** the ladder check cannot live only in
 `apply_supersession`. **It belongs where a supersession is recorded**, and both
 paths must reach it — see I9.
+
+---
+
+## 3a. Entitlement is scoped by subject — the ladder alone is overbroad
+
+**First external review, finding 6, and it is not a corner case.** A global
+author ladder says a `USER` assertion may retire **any** prior, including
+sourced third-party evidence about another person, an organisation, or a
+document. **The user is authoritative about their own testimony, not about every
+subject in the graph.**
+
+> **Entitlement is `(author, derived_from, subject_class)`, not author alone.**
+>
+> | subject class | who may retire | rationale |
+> |---|---|---|
+> | **user-self** — the user's own preferences, attributes, testimony | the ladder, unmodified | the motivating `works_as` case; the user is the source of record |
+> | **assistant/system state** — tool results, derived state, run records | `SYSTEM` or `USER` | nobody outside the system observed it |
+> | **external-world** — another person, an organisation, a public event, a document | **no cross-author retirement.** Both remain active and **contention is surfaced** | user testimony does not erase sourced evidence about a third party |
+
+**The third row is a deliberate refusal to decide**, and it is the conservative
+answer: *surface the tension, never reconcile it* is this project's existing
+rule for exactly this situation, and it is what the fallback in Q3 already
+proposed. **A wrong retirement destroys evidence; a surfaced contradiction is
+additive and inspectable.**
+
+**Subject class is derived from the relation registry**, not guessed per edge —
+`MemoryConfig.relations` already carries the relation set, so classification is
+a property of a declared relation rather than a heuristic over a subject string.
+**Relations without a declared class fall into `external-world`**, which is the
+narrowest treatment.
+
+**This narrows the spec's claim, and the narrowing is the honest part.** v1's
+"9/9 correct" meant *internally consistent with the chosen ladder*, not
+*semantically correct across the graph*.
+
+---
+
+## 3c. Every retirement path, not only functional supersession
+
+**Finding 4.** The ladder was scoped to the functional-supersession loop, leaving
+**absorption** guarded by disclosure-class equality (`graph.py:94`) — which §1 of
+this same spec argues is inadequate **because `USER` and `SYSTEM` share
+`MENTIONABLE`**.
+
+**So a `SYSTEM` edge can absorb a `USER` edge**, setting `active = False` and
+removing it from recall. *"Absorption, not supersession"* is a distinction in
+our vocabulary and not one in the consequence.
+
+> **Every operation that retires an edge because another edge arrived must
+> satisfy the ladder** — functional supersession, absorption, and any future
+> path. Where the ladder blocks a merge, **both edges stay active** and the
+> contention is surfaced.
+
+**I9 is widened accordingly**: it covered writers of `supersedes=`, which is a
+syntactic property. The authority check moves into **one operation**
+(§4a) so no future path can retire an edge without passing it.
 
 ---
 
@@ -328,6 +423,86 @@ none; no stored data changes.
 
 ---
 
+## 4a. One authority operation, and a trusted ingress
+
+**Centralising the check** — the review's amendment, and the reason I9's
+set-equality test is not enough. A future path could retire an edge through
+`model_copy`, deserialisation, a helper, or a new store method without ever
+writing `supersedes=`.
+
+> **`supersede_edge(prior, replacement, context)` is the only way an edge is
+> retired because another arrived.** Ingest and `correct()` both call it.
+> **`store.invalidate_edge(..., reason="superseded" | "absorbed_duplicate")`
+> requires an authorisation result**, so the store refuses a retirement that
+> did not come through the check.
+
+**Finding 3 — provenance is host-supplied, and the ladder reads it.** I7 closed
+the model-facing route: MCP cannot request `SYSTEM`, and an unknown author
+raises. **It establishes nothing about the other entry points.** Nothing today
+guarantees that third-party content receives `derived_from=THIRD_PARTY`, and
+**omitting it overstates authority** — which this spec says and did not guard.
+
+> **I11 — trusted ingress.** Every edge-construction path must establish its
+> evidence source from the **call path**, not from a caller-selected enum.
+> Content arriving through a third-party/tool/document ingress receives the
+> corresponding derivation cap **by construction**, and a path that cannot
+> establish a source gets the **least** favourable one.
+
+**This is `0008`'s principle generalised:** *an act through a dedicated entry
+point is evidence; a field asserting what happened is not.* **Without I11 the
+ladder is a rule about labels**, and the claim that third-party content can no
+longer retire a user's facts holds only as far as the labels are honest.
+
+**The edge-construction paths are enumerated mechanically**, from the
+`@store_mutator` call sites already in `specs/generated/0002-audit-manifest.md`,
+so a new one cannot be added without appearing in that manifest.
+
+---
+
+## 4b. Inactive-edge routing — which history reaches the model
+
+**Finding 7. I5 said superseded edges must reach the model and never said
+which block, which disclosure classes, or which invalidation reasons.**
+**Making previously invisible attacker-controlled text visible is an exposure
+change**, so §7's *"no new attack surface"* was unsupported as written.
+
+| reason | disclosure | visible? | block | marker |
+|---|---|---|---|---|
+| `superseded` | mentionable | **yes** | grounded, as history | `SUPERSEDED` |
+| `superseded` | use_only | **yes** | **unverified only** | `SUPERSEDED` + third-party origin |
+| `superseded` | quarantined | **no** | — | — |
+| `absorbed_duplicate` | any | **no** | — | the surviving edge carries the value |
+| `corrected` | mentionable | **yes** | grounded, as history | `CORRECTED` |
+| `corrected` | use_only / quarantined | **no** | — | — |
+| `disputed` | any | **no** | — | a user rejection is not history to re-surface |
+| `lapsed` · `decayed` | any | **no** | — | absence of evidence, not superseded evidence |
+
+**Two rules generate the table**, and stating them is what stops the next row
+being guessed: **quarantined content never becomes visible by being retired** —
+retirement is not a laundering path — and **only reasons meaning *"something
+replaced this"* produce history.** `disputed`, `lapsed` and `decayed` do not.
+
+**I5 tests every cell**, not the one benign user-to-user case v1 used.
+
+---
+
+## 4c. Active-first retrieval, with a bounded history budget
+
+**Finding 8: I6 froze a fixture, not a policy**, and Q4 still asked whether
+history needed its own cap — which means the general property was unfrozen while
+a test asserted an instance of it.
+
+> **Active edges are selected first.** Superseded history is drawn from a
+> **separate bounded budget** and **may never displace an active edge of equal
+> query relevance.** Trust partitioning holds inside the history budget exactly
+> as outside it.
+
+**Q4 is resolved by this** rather than left pre-release. R2 measured the
+displacement risk at rank 34 of a 40-edge budget; **a policy that keeps history
+in its own budget makes that measurement irrelevant rather than marginal.**
+
+---
+
 ## 5. Regime analysis
 
 - **Scale.** Superseded edges accumulate forever. A long-lived store with a
@@ -348,16 +523,20 @@ none; no stored data changes.
 
 | invariant | executable check | where |
 |---|---|---|
-| **I1** authority ≥ prior, over all 9 pairs (16 with `ASSISTANT`) | `test_supersession_authority_matrix` — table-driven over the enum product | CI |
+| **I1** effective authority ≥ prior, over the **full 400-row product** of `(author, derived_from)` on both sides | `test_supersession_authority_matrix` — **generated from `specs/ladder.py`**, so the test and the table cannot disagree; includes the **80 rows where capping changes the answer** | CI |
 | **I2** a functional relation does not exempt the rule | `test_functional_relation_does_not_bypass_authority` | CI |
 | **I3** a blocked supersession leaves **both** edges intact and visible | `test_blocked_supersession_keeps_both` | CI |
 | **I4** the user correction path (`third_party → user`) still works | `test_user_can_correct_third_party` — the permission, not the prohibition | CI |
 | **I5** superseded edges render with the SUPERSEDED marker **through the gate** | `test_superseded_reaches_the_model` | CI — **PRECONDITION, see below** |
-| **I6** superseded accumulation does not displace current facts | `test_superseded_do_not_crowd_out_current` — frozen: 200 superseded + 40 current, fixed queries, **every current fact retrieved at baseline must still be retrieved** | CI |
+| **I6** active-first selection with a **separate** history budget (§4c) | `test_history_never_displaces_an_active_edge` — the **policy**, plus the 200/40 fixture as one instance of it | CI |
 | **I7** the MCP surface refuses `system` **and fails closed on unknown** | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
-| **I9** **every** supersession path is subject to the ladder — `apply_supersession` **and** `correct()` | `test_correct_is_subject_to_the_ladder` · **`test_no_unguarded_supersession_path`** — asserts the set of `supersedes=` writers equals the set of guarded call sites, so a *future* third path fails the suite rather than shipping | CI |
-| **I10** `correct()` does not widen trust: the replacement inherits the original's `author_of_evidence` and `disclosure` | `test_correcting_a_third_party_claim_stays_third_party` | CI |
+| **I9** **every retirement path** goes through `supersede_edge` — supersession **and absorption** | `test_no_edge_is_retired_outside_the_authority_check` — the store refuses `reason=superseded\|absorbed_duplicate` without an authorisation result, so a **new** path fails at runtime rather than passing a syntactic test | CI |
+| **I10** `correct()` preserves the **complete** trust basis — `author_of_evidence` · **`derived_from`** · `disclosure` · source type | `test_correction_preserves_the_whole_trust_basis` — asserts **effective authority is unchanged**, not that two fields match | CI |
+| **I10b** a corrected third-party claim is not converted into user testimony | `test_correction_does_not_become_stated` — `source_type` becomes **`CORRECTED`**, never `STATED` | CI |
+| **I11** every edge-construction path establishes its source from the **call path**, not a caller-supplied enum | `test_no_ingress_can_assert_authority_it_did_not_earn` — enumerated from the `@store_mutator` call sites in `0002`'s manifest | CI |
+| **I12** entitlement is scoped by subject class (§3a) | `test_user_cannot_retire_external_world_evidence` — the permission *and* the prohibition | CI |
+| **I13** inactive-edge routing matches §4b exactly | `test_inactive_routing_matrix` — every `(reason × disclosure)` cell, not one benign case | CI |
 
 **I9 is written as a set-equality test on purpose, not as two cases.** Two cases
 would pass today and say nothing about tomorrow — and the defect it guards is
@@ -393,8 +572,11 @@ user-supersedes-own-fact case both become fixtures.
 - **The surprise case:** a user whose world genuinely changed, where only a third
   party knows, now keeps a stale current value. **We prefer that**, and §8 says
   so rather than hiding it.
-- **Reversibility.** Fully reversible: no stored data changes. Edges retired by
-  the old behaviour stay retired — **not repaired**, and unrepairable, since we
+- **Reversibility.** **The implementation is rollbackable; the data consequences
+  are not.** Reverting restores the old behaviour, and **historical illegitimate
+  retirements cannot be automatically repaired** — we cannot tell, after the
+  fact, which retirements the ladder would have blocked. v1 called this "fully
+  reversible" while also saying prior retirements were unrepairable.
   cannot know which retirements were illegitimate.
 - **New attack surface?** None added. This removes a capability and makes
   retained history visible.
@@ -498,7 +680,8 @@ from the ladder constants rather than writing it out, which is what v2 must do.
 | ~~**Q2**~~ | **ANSWERED 2026-08-01 20:56 — `SYSTEM` keeps rung 2, but the ladder uses CAPPED authority** (§3). Do not split the enum; `min(author, derived_from)` already distinguishes host state from a summary of someone else's content. **Sufficient post-I7**, since `system` is no longer reachable through the MCP tool. | resolved | research | — |
 | **Q2a** | **Recorded trigger, not an open question:** if the CLI is ever agent-driven, `cli.py:180` becomes the same surface I7 just closed and rung 2 needs re-adjudicating. | `watch` | dev | on any CLI automation |
 | **Q3** | Fallback if the ladder proves wrong: never supersede cross-class, keep both, surface contention (Q1(3)'s diagnostic). | `deferred` | research | — |
-| ~~**Q5** *(was `0002` Q5)*~~ | **RESOLVED by the move, 2026-08-01: (b) inherit the corrected edge's class.** It is what the ladder already requires; (a) answers on the disclosure axis. **Still open and independent: `actor` reaches only an episode f-string** — make it govern or remove it. | resolved / **`actor` open** | research | `actor` before implementation |
+| ~~**Q5**~~ | **RESOLVED: a correction is an edit.** The replacement inherits the **complete** trust basis — v1 said "class", meaning two fields, and **`derived_from` was not among them**, so a corrected edge could move from effective authority 0 → 3. I10/I10b. | resolved | research | — |
+| ~~**Q6** `actor`~~ | **RESOLVED: `actor` is removed from `correct()`.** It reached only an episode f-string, so it looked like it set authority and set nothing. **The third option — "give it an authorisation role" — is refused**: authority comes from the call path (I11), and adding a parameter that grants it would rebuild the defect I7 closed. Correction authorship is the corrected edge's, inherited. | resolved | dev | — |
 | **Q4** | Should superseded edges be **budget-capped** in the subgraph, given R2's rank-34 result? | `pre-release` | dev | before release |
 
 ---
