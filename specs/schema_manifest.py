@@ -35,7 +35,10 @@ worst failure mode this project has.
                   `specs/generated/legacy_stores.json` -- tag, commit sha,
                   sqlite version, digest. A prose count over mutable tag names
                   is not evidence (round 2, finding 9).
-  `--check`       verify that artifact still matches, for CI.
+  `--check`       verify that artifact still matches, for CI. **Needs a git
+                  checkout** -- it rebuilds a store from every released tag, so
+                  it exits 2 with an explicit message inside an extracted
+                  review archive rather than reporting every tag as missing.
   `--digest <db>` print one file's manifest and digest.
 
 Nothing here is an implementation of 0007. It is the measuring instrument the
@@ -186,26 +189,185 @@ def manifest(conn: sqlite3.Connection) -> dict:
     return objs
 
 
+
+
+MIGRATIONS: dict = {}
+"""from_version -> list of (to_version, callable(executor)).
+
+**Empty today**, which is the point: the mechanism lands with zero migrations so
+its first real use in `0006` is not also its first execution. `--selfcheck`
+exercises path generation against a simulated version 2 so "empty" never means
+"untested"."""
+
+
+class MigrationResult(NamedTuple):
+    """What a migration statement returns. **Never a `sqlite3.Cursor`.**
+
+    Round 4, finding 7: a raw cursor exposes `cursor.connection`, and from there
+    `set_authorizer(None)` followed by `commit()` ends the outer transaction.
+    Measured: the direct `COMMIT` is denied and the cursor route succeeds. A
+    proxy that only hides the connection attribute does not make the connection
+    unreachable -- the *result type* has to be inert."""
+    rowcount: int
+    rows: tuple
+    lastrowid: int | None
+
+
+class MigrationExecutor:
+    """The only thing a migration function receives.
+
+    No connection, no `commit`, no `rollback`, no `executescript`, and no cursor.
+    The authorizer denies transaction and schema-attachment operations outright,
+    so containment is structural rather than a keyword blacklist -- v4's
+    blacklist missed `END`, `END TRANSACTION` and `RELEASE`, all measured."""
+
+    _DENIED = (sqlite3.SQLITE_TRANSACTION, sqlite3.SQLITE_SAVEPOINT,
+               sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH)
+
+    def __init__(self, conn: sqlite3.Connection):
+        self.__conn = conn          # name-mangled; not part of the interface
+
+    def execute(self, sql: str, params=()) -> MigrationResult:
+        cur = self.__conn.execute(sql, params)
+        try:
+            rows = tuple(cur.fetchall())
+            return MigrationResult(cur.rowcount, rows, cur.lastrowid)
+        finally:
+            cur.close()             # the cursor never escapes
+
+
+def run_migration(conn: sqlite3.Connection, fn) -> None:
+    """Run `fn` under the authorizer, and **restore it in `finally`**.
+
+    Leaving a denying authorizer installed would break the planner's own commit;
+    leaving it off after a failure would silently drop containment for whatever
+    ran next."""
+    def auth(action, *_rest):
+        return (sqlite3.SQLITE_DENY if action in MigrationExecutor._DENIED
+                else sqlite3.SQLITE_OK)
+    conn.set_authorizer(auth)
+    try:
+        fn(MigrationExecutor(conn))
+    finally:
+        conn.set_authorizer(None)
+
+
+# --------------------------------------------------------------------------
+# SQLite runtime policy -- round 4, finding 8 / S-Q6
+
+TESTED_SQLITE = ("3.45.1", "3.46.1")
+"""Runtimes for which an accepted manifest has actually been observed.
+
+3.45.1 here; 3.46.1 in the round-3 review environment, which agreed. **That is
+two observations, not a matrix**, and v5 declared `3.35 <= sqlite < 4` on the
+strength of it. Round 4 is right that a declared range with neither evidence nor
+enforcement is not a contract.
+
+**Ruled: the runtime-gated model.** Support is the tested set; anything else is
+refused with `unsupported-sqlite` rather than silently assumed compatible.
+Widening happens by adding evidence, not by widening the sentence."""
+
+
+def sqlite_supported(version: str | None = None) -> bool:
+    return (version or sqlite3.sqlite_version) in TESTED_SQLITE
+
+
+def identity(objs: dict) -> dict:
+    """The version-independent record: every typed object, nothing excluded.
+
+    **`digest()` cannot be the identity of a store**, because which objects it
+    excludes depends on the version's rebuildable policy -- and resolving an
+    unstamped store means not knowing the version yet. Round 4, finding 3,
+    measured: a simulated version 2 with its own rebuildable index digests to
+    `4b250945...` under version 1's policy and `754ec416...` under version 2's,
+    and only the second is in version 2's accepted set. The default-to-version-1
+    digest resolved to **nothing**.
+
+    So identity is computed once, and each *candidate* version applies its own
+    policy to it."""
+    return {f"{k[0]}:{k[1]}": v for k, v in sorted(objs.items())}
+
+
 def digest(objs: dict, version: int = 1) -> str:
-    """sha256 over every object except the rebuildable ones, by typed identity.
+    """sha256 over every object except the rebuildable ones **of `version`**.
 
     Exact set equality falls out rather than being a separate rule: an extra
     view, an unknown index, a foreign table and a trigger all change the digest.
-    **A trigger named like one of our indexes is no longer excluded**, because
-    the exclusion is `("index", name)` and the trigger is `("trigger", name)`."""
+    A trigger named like one of our indexes is not excluded, because the
+    exclusion is `("index", name)` and the trigger is `("trigger", name)`."""
     skip = rebuildable_keys(version)
-    scoped = {f"{k[0]}:{k[1]}": v for k, v in objs.items() if k not in skip}
+    scoped = {k: v for k, v in identity(objs).items()
+              if tuple(k.split(":", 1)) not in skip}
     return hashlib.sha256(
         json.dumps(scoped, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
 
-def digest_of_path(path: str) -> str:
+def digest_of_path(path: str, version: int = 1) -> str:
     conn = sqlite3.connect(path)
     try:
-        return digest(manifest(conn))
+        return digest(manifest(conn), version)
     finally:
         conn.close()
+
+
+def resolve(objs: dict, records: dict) -> int | None:
+    """Which schema version this store is, by trying each candidate's policy.
+
+    Returns None when nothing matches **or when more than one version matches**
+    -- if two versions ever declare the same persistent shape the answer is
+    ambiguous, and §4-i needs an explicit rule rather than a dictionary
+    inversion that silently picks one."""
+    hits = set()
+    for v, rec in records.items():
+        version = int(v)
+        try:
+            dg = digest(objs, version)
+        except KeyError:
+            continue                # a version this build no longer constructs
+        if any(a["digest"] == dg for a in rec["accepted"]):
+            hits.add(version)
+    return hits.pop() if len(hits) == 1 else None
+
+
+def full_records(objs: dict) -> dict:
+    """Identity plus the policy each object is held under -- the S23 comparison.
+
+    v5's S23 compared `digest()`, **which excludes every rebuildable index**. So
+    it passed while the registry declared
+    `CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)` -- a materially
+    different index the registry would have instructed an implementation to
+    install. Measured: `digest_equal True`, `drift []`. **A conformance check
+    may not use the acceptance digest.**"""
+    return identity(objs)
+
+
+def registry_conformance(version: int = 1) -> list:
+    """Differences between the registry's database and the product's `_SCHEMA`.
+
+    Compares **complete typed records including rebuildable objects**, plus the
+    rebuildable identities and drift. Empty list means conformant."""
+    sys.path.insert(0, str(ROOT / "src"))
+    from veracium.store.sqlite import SqliteStore
+    probe = tempfile.mktemp(suffix=".db")
+    SqliteStore(probe)
+    pconn = sqlite3.connect(probe)
+    rconn = sqlite3.connect(":memory:")
+    create(rconn, version)
+    prod, reg = manifest(pconn), manifest(rconn)
+    problems = []
+    pf, rf = full_records(prod), full_records(reg)
+    for key in sorted(set(pf) | set(rf)):
+        if pf.get(key) != rf.get(key):
+            problems.append(f"{key}: registry {rf.get(key)!r} != product {pf.get(key)!r}")
+    if drift(reg, version):
+        problems.append(f"registry drifts against itself: {drift(reg, version)}")
+    expected = {o.key for o in SCHEMAS[version] if o.policy == REBUILDABLE}
+    if expected != rebuildable_keys(version):
+        problems.append("rebuildable identities disagree with the registry")
+    pconn.close()
+    rconn.close()
+    return problems
 
 
 def accepted_digests(version: int) -> set:
@@ -214,18 +376,14 @@ def accepted_digests(version: int) -> set:
 
     v4 declared one manifest per version, generated from the destination
     constructor, and required every migration result to equal it. Those rules
-    are incompatible: an `ALTER TABLE edges ADD COLUMN source_id TEXT` produces
-    a database whose `table_xinfo` is identical to a fresh constructor's but
-    whose stored DDL differs in whitespace placement -- `... json TEXT NOT NULL
-    , source_id TEXT)` against `... json TEXT NOT NULL, source_id TEXT )`.
-    Measured: different digests, structurally correct migration, destination
-    validation fails.
+    are incompatible: `ALTER TABLE edges ADD COLUMN source_id TEXT` produces a
+    database whose `table_xinfo` matches a fresh constructor's but whose stored
+    DDL differs in whitespace placement. Measured: different digests,
+    structurally correct migration, destination validation fails.
 
     So a version accepts a **set**: the constructor's output plus the output of
-    every supported migration path reaching it. The set is generated, closed,
-    and recorded in `specs/generated/schema_versions.json`. Today version 1 has
-    exactly one member because there are no migrations."""
-    return {v["digest"] for v in _version_records()[str(version)]["accepted"]}
+    every declared migration path reaching it, **generated by running them**."""
+    return {a["digest"] for a in _version_records()[str(version)]["accepted"]}
 
 
 def _version_records() -> dict:
@@ -234,32 +392,80 @@ def _version_records() -> dict:
     return {}
 
 
-def build_version_artifact() -> dict:
-    """Regenerate the current version's entry; never rewrite an older one.
+def _paths_to(version: int) -> list:
+    """Every declared migration path reaching `version`, as version chains."""
+    chains = []
+    def walk(v, acc):
+        for to_v, fn in MIGRATIONS.get(v, ()):
+            if to_v == version:
+                chains.append(acc + [(v, to_v, fn)])
+            elif to_v < version:
+                walk(to_v, acc + [(v, to_v, fn)])
+    for start in sorted(SCHEMAS):
+        if start < version:
+            walk(start, [])
+    return chains
 
-    **Old entries are immutable** (round 3, finding 5). Once `_SCHEMA` moves to
-    version 2, the current constructor can no longer produce version 1, and a
-    digest alone cannot support the object-level `diff` 0007 §4b promises. The
-    full canonical object records for every version therefore have to be kept,
-    not regenerated."""
+
+def build_version_artifact(strict: bool = True) -> dict:
+    """Regenerate accepted manifests. **Prior versions are immutable.**
+
+    Round 4, finding 6: v5 looped over every entry in `SCHEMAS` and replaced
+    each version's constructor record, so a changed version-1 constructor
+    silently rewrote history. Measured: `old_v1_preserved? False`.
+
+    Policy now:
+
+      version <  current : byte-for-byte immutable; a difference is an ERROR
+      version == current : regenerate the constructor output AND every declared
+                           migration-path output
+
+    Round 4, finding 2: v5 preserved whatever records happened to be in the JSON
+    and called them accepted, without ever running a migration. Preserved JSON
+    cannot be an authorization source, so every record for the current version
+    is produced by executing a declared constructor or path."""
     existing = {}
     if MANIFEST_ARTIFACT.exists():
         existing = json.loads(MANIFEST_ARTIFACT.read_text()).get("versions", {})
-    out = dict(existing)
+    current = max(SCHEMAS)
+    out, problems = {}, []
+
     for version in sorted(SCHEMAS):
+        accepted = []
         conn = sqlite3.connect(":memory:")
         create(conn, version)
-        objs = manifest(conn)
-        record = {
-            "provenance": f"constructor v{version}",
-            "digest": digest(objs, version),
-            "objects": {f"{k[0]}:{k[1]}": v for k, v in sorted(objs.items())},
-        }
-        prior = existing.get(str(version), {}).get("accepted", [])
-        keep = [a for a in prior if a["provenance"] != record["provenance"]]
-        out[str(version)] = {"accepted": [record] + keep}
+        accepted.append({"provenance": f"constructor v{version}",
+                         "digest": digest(manifest(conn), version),
+                         "objects": identity(manifest(conn))})
         conn.close()
-    return {"manifest_algorithm": 3, "versions": out}
+        for chain in _paths_to(version):
+            base = chain[0][0]
+            mc = sqlite3.connect(":memory:")
+            create(mc, base)
+            label = f"v{base}"
+            for frm, to_v, fn in chain:
+                run_migration(mc, fn)
+                label += f"->v{to_v}"
+            accepted.append({"provenance": f"migration {label}",
+                             "digest": digest(manifest(mc), version),
+                             "objects": identity(manifest(mc))})
+            mc.close()
+        record = {"accepted": accepted}
+        if version < current and str(version) in existing:
+            if existing[str(version)] != record:
+                problems.append(
+                    f"version {version} is historical and its regenerated record "
+                    f"differs from the checked-in one. Historical manifests are "
+                    f"immutable; a manifest-algorithm change needs a separately "
+                    f"reviewed artifact migration.")
+            out[str(version)] = existing[str(version)]
+        else:
+            out[str(version)] = record
+
+    if problems and strict:
+        raise SystemExit("\n".join(problems))
+    return {"manifest_algorithm": 4, "versions": out,
+            "tested_sqlite": list(TESTED_SQLITE)}
 
 
 def _tags() -> list[str]:
@@ -276,7 +482,8 @@ def _probe_at(ref: str, work: pathlib.Path) -> dict:
     today's schema -- which is what round 1 correctly refused."""
     sha = subprocess.run(["git", "rev-list", "-n1", ref], cwd=ROOT,
                          capture_output=True, text=True).stdout.strip()
-    row = {"tag": ref, "commit": sha, "digest": None, "result": None}
+    row = {"tag": ref, "commit": sha, "on_disk_user_version": None,
+           "store_schema_version": None, "digest": None, "result": None}
     wt = work / ref.replace("/", "_")
     r = subprocess.run(["git", "worktree", "add", "-q", "--detach", str(wt), ref],
                        cwd=ROOT, capture_output=True, text=True)
@@ -293,7 +500,14 @@ def _probe_at(ref: str, work: pathlib.Path) -> dict:
         if r.returncode:
             row["result"] = f"unbuildable: {r.stderr.strip().splitlines()[-1][:100]}"
             return row
-        row["digest"] = digest_of_path(db)
+        # Round 4, finding 4: the artifact could not tell a genuinely
+        # unstamped legacy store from a version-aware release that wrote a
+        # valid stamp -- and only the former may feed LEGACY_DIGESTS. Record
+        # what is actually in the header.
+        probe = sqlite3.connect(db)
+        row["on_disk_user_version"] = probe.execute("PRAGMA user_version").fetchone()[0]
+        row["objects"] = identity(manifest(probe))
+        probe.close()
         row["result"] = "ok"
         return row
     finally:
@@ -301,16 +515,6 @@ def _probe_at(ref: str, work: pathlib.Path) -> dict:
                        cwd=ROOT, capture_output=True)
 
 
-def _resolve_version(dg: str, records: dict) -> int | None:
-    """Which schema version a digest corresponds to, or None if unknown.
-
-    **The inversion must be unambiguous** (round 3, finding 5). If two versions
-    ever declare the same persistent shape, this returns None rather than
-    guessing, and the version-zero resolver in 0007 §4-i needs an explicit rule
-    instead of a dictionary inversion."""
-    hits = {int(v) for v, rec in records.items()
-            for a in rec["accepted"] if a["digest"] == dg}
-    return hits.pop() if len(hits) == 1 else None
 
 
 def releases(write: bool) -> int:
@@ -335,21 +539,35 @@ def releases(write: bool) -> int:
             return 1
         rows = [_probe_at(t, work) for t in tags]
 
-    unknown, broken = [], []
+    def _resolved(row):
+        """Candidate-based, never a default-version digest (finding 3)."""
+        objs = {tuple(k.split(":", 1)): v for k, v in row["objects"].items()}
+        v = resolve(objs, records)
+        row["store_schema_version"] = v
+        row["digest"] = None if v is None else digest(objs, v)
+        row.pop("objects", None)
+        return v
+
+    unknown, broken, mismatched = [], [], []
     for r in rows:
         if r["result"] != "ok":
             broken.append(r)
-            r["store_schema_version"] = None
-        else:
-            r["store_schema_version"] = _resolve_version(r["digest"], records)
-            if r["store_schema_version"] is None:
-                unknown.append(r)
-    head_version = _resolve_version(head["digest"], records)
+            continue
+        v = _resolved(r)
+        if v is None:
+            unknown.append(r)
+        elif r["on_disk_user_version"] not in (0, v):
+            # A version-aware release must stamp what it built.
+            mismatched.append(r)
+    head_version = _resolved(head)
 
     for r in rows:
         v = r["store_schema_version"]
+        stamp = r["on_disk_user_version"]
         mark = (r["result"] if r["result"] != "ok"
-                else f"schema v{v}" if v is not None else "** UNKNOWN MANIFEST **")
+                else f"schema v{v}, " + ("unstamped (legacy)" if stamp == 0
+                                         else f"stamped {stamp}")
+                if v is not None else "** UNKNOWN MANIFEST **")
         print(f"  {r['tag']:<10} {r['commit'][:12]}  {mark}")
     print(f"\n{len(rows) - len(unknown) - len(broken)}/{len(rows)} resolve to a known "
           f"schema version · {len(broken)} unbuildable · sqlite {sqlite3.sqlite_version}")
@@ -362,11 +580,14 @@ def releases(write: bool) -> int:
             "head_schema_version": head_version,
             "sqlite_version": sqlite3.sqlite_version,
             "manifest_algorithm": version_artifact["manifest_algorithm"],
+            "tested_sqlite": list(TESTED_SQLITE),
             # Pre-versioning releases carry no stamp; this is the base version
             # the version-zero resolver maps their digest to (0007 §4-i).
+            # ONLY genuinely unstamped stores are legacy candidates.
             "legacy_base_versions": sorted(
                 {r["store_schema_version"] for r in rows
-                 if r["store_schema_version"] is not None}),
+                 if r["store_schema_version"] is not None
+                 and r["on_disk_user_version"] == 0}),
             "releases": rows,
         }, indent=2) + "\n")
         MANIFEST_ARTIFACT.write_text(json.dumps(version_artifact, indent=2) + "\n")
@@ -381,61 +602,110 @@ def releases(write: bool) -> int:
               "unconditional: that store's shape is not one this build can name.",
               file=sys.stderr)
         return 1
+    if mismatched:
+        for r in mismatched:
+            print(f"\n{r['tag']}: stamped {r['on_disk_user_version']} but its shape "
+                  f"is v{r['store_schema_version']}", file=sys.stderr)
+        return 1
     return 0
 
 
 def check() -> int:
-    """CI: the stored artifact must still describe reality.
+    """CI: the stored artifact must still describe reality, field by field.
 
-    Compares the per-release digests and their resolved commit shas -- a tag is
-    a mutable name, so recording where it pointed is half the evidence. The
-    recorded `sqlite_version` is informational and reported rather than failed:
-    the digest is what carries the claim."""
+    **Round 4, finding 5: v5 checked that a digest resolved to *some* version,
+    not to the *recorded* one.** A synthetic artifact claiming
+    `store_schema_version: 999` for every release passed with rc 0 -- measured.
+    That number selects the migration base for unstamped stores, so an unchecked
+    one is a live wrong answer, not a cosmetic drift."""
+    if subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT,
+                      capture_output=True).returncode:
+        print("--check needs a git checkout: it rebuilds a store from every "
+              "released tag. An extracted archive has no git metadata.",
+              file=sys.stderr)
+        return 2
     if not ARTIFACT.exists():
         print(f"{ARTIFACT.name} missing — run --releases --write", file=sys.stderr)
         return 1
     stored = json.loads(ARTIFACT.read_text())
+    records = build_version_artifact()["versions"]
+
+    bad = []
+    if stored.get("manifest_algorithm") != build_version_artifact()["manifest_algorithm"]:
+        bad.append(f"manifest algorithm changed: artifact says "
+                   f"{stored.get('manifest_algorithm')}, this build computes "
+                   f"{build_version_artifact()['manifest_algorithm']} — historical "
+                   f"records need a reviewed migration, not a silent rewrite")
+    if sorted(stored.get("tested_sqlite", [])) != sorted(TESTED_SQLITE):
+        bad.append(f"tested sqlite set changed: {stored.get('tested_sqlite')} → "
+                   f"{list(TESTED_SQLITE)}")
+    if MANIFEST_ARTIFACT.exists():
+        on_disk = json.loads(MANIFEST_ARTIFACT.read_text())
+        if on_disk.get("versions") != records:
+            bad.append("schema_versions.json does not match what this build "
+                       "generates — regenerate, or restore the historical record")
+
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)
         head = _probe_at("HEAD", work)
-        fresh_rows = {r["tag"]: r for r in (_probe_at(t, work) for t in _tags())}
-    bad = []
-    # NOT "HEAD must equal the recorded head digest" -- that is what round 3's
-    # finding 4 showed becomes unsatisfiable at version 2. What must hold is
-    # that HEAD still resolves to a KNOWN version.
-    records = build_version_artifact()["versions"]
-    if _resolve_version(head["digest"], records) is None:
+        fresh = {r["tag"]: r for r in (_probe_at(t, work) for t in _tags())}
+
+    def _res(row):
+        objs = {tuple(k.split(":", 1)): v for k, v in row.get("objects", {}).items()}
+        v = resolve(objs, records)
+        return v, (None if v is None else digest(objs, v))
+
+    hv, _ = _res(head)
+    if hv is None:
         bad.append("HEAD matches no known manifest — regenerate with "
                    "--releases --write, and bump SCHEMA_VERSION if the schema "
                    "actually changed")
+
     for row in stored["releases"]:
-        now = fresh_rows.get(row["tag"])
+        now = fresh.get(row["tag"])
         if now is None:
             bad.append(f"{row['tag']}: recorded but no longer a tag")
-        elif now["commit"] != row["commit"]:
-            bad.append(f"{row['tag']}: tag moved {row['commit'][:12]} → {now['commit'][:12]}")
-        elif now["digest"] != row["digest"]:
-            bad.append(f"{row['tag']}: digest changed — a released tag's store shape "
-                       f"cannot change; either the tag moved or the manifest "
-                       f"algorithm did")
-        elif _resolve_version(now["digest"], records) is None:
-            bad.append(f"{row['tag']}: no longer resolves to a known schema version")
+            continue
+        if now["commit"] != row["commit"]:
+            bad.append(f"{row['tag']}: tag moved {row['commit'][:12]} → "
+                       f"{now['commit'][:12]}")
+            continue
+        v, dg = _res(now)
+        # Every recorded field is re-derived and compared. Verifying only that
+        # the digest resolves to *something* is what let 999 through.
+        if dg != row["digest"]:
+            bad.append(f"{row['tag']}: digest changed — a released tag's store "
+                       f"shape cannot change; either the tag moved or the "
+                       f"manifest algorithm did")
+        if v != row.get("store_schema_version"):
+            bad.append(f"{row['tag']}: recorded schema version "
+                       f"{row.get('store_schema_version')} but resolves to {v}")
+        if now["on_disk_user_version"] != row.get("on_disk_user_version"):
+            bad.append(f"{row['tag']}: recorded stamp "
+                       f"{row.get('on_disk_user_version')} but reads "
+                       f"{now['on_disk_user_version']}")
+
     for t in _tags():
         if t not in {r["tag"] for r in stored["releases"]}:
             bad.append(f"{t}: released since the artifact was generated")
+
     if stored.get("sqlite_version") != sqlite3.sqlite_version:
         print(f"note: artifact gathered with sqlite {stored.get('sqlite_version')}, "
               f"this environment has {sqlite3.sqlite_version}")
+    if not sqlite_supported():
+        bad.append(f"sqlite {sqlite3.sqlite_version} is not in the tested set "
+                   f"{list(TESTED_SQLITE)} — see 0007 §8, runtime-gated support")
+
     for b in bad:
         print(b, file=sys.stderr)
     if bad:
         print(f"\n{len(bad)} problem(s) — run --releases --write", file=sys.stderr)
         return 1
-    versions = sorted({r.get("store_schema_version") for r in stored["releases"]}
-                      - {None})
+    legacy = sorted({r["store_schema_version"] for r in stored["releases"]
+                     if r.get("on_disk_user_version") == 0})
     print(f"legacy store evidence current — {len(stored['releases'])} releases, "
-          f"schema version(s) {versions}, HEAD at "
-          f"v{_resolve_version(head['digest'], records)}")
+          f"unstamped legacy base version(s) {legacy}, HEAD at v{hv}, "
+          f"sqlite {sqlite3.sqlite_version}")
     return 0
 
 
@@ -595,33 +865,102 @@ def selfcheck() -> int:
         digest(pobjs) != good and not drift(pobjs))
     pc.close()
 
-    # R3 finding 4: the evidence must survive the first schema change. Simulate
-    # version 2 without touching the artifact, and check that a version-1 store
-    # -- an old release -- still resolves, while HEAD resolves to 2.
-    v2 = SCHEMA_V1 + (SchemaObject(
-        "table", "sources",
-        "CREATE TABLE sources (id TEXT PRIMARY KEY, label TEXT)", REQUIRED),)
+    # R3 finding 4 + R4 findings 2 and 3, together, because they are the same
+    # experiment: simulate version 2 WITH a migration and a version-2-only
+    # rebuildable index, then check resolution, path generation and immutability.
+    v2 = SCHEMA_V1 + (
+        SchemaObject("table", "sources",
+                     "CREATE TABLE sources (id TEXT PRIMARY KEY, label TEXT)", REQUIRED),
+        SchemaObject("index", "ix_sources",
+                     "CREATE INDEX ix_sources ON sources(id)", REBUILDABLE))
+
+    def migrate_1_to_2(ex):
+        ex.execute("CREATE TABLE sources (id TEXT PRIMARY KEY, label TEXT)")
+        ex.execute("CREATE INDEX ix_sources ON sources(id)")
+
     SCHEMAS[2] = v2
+    MIGRATIONS[1] = [(2, migrate_1_to_2)]
     try:
-        sim = build_version_artifact()["versions"]
+        sim = build_version_artifact(strict=False)["versions"]
+        prov = [a["provenance"] for a in sim["2"]["accepted"]]
+        row("R4: the migration path is GENERATED into the accepted set",
+            "migration v1->v2" in prov and "constructor v2" in prov)
+
         c1 = sqlite3.connect(":memory:"); create(c1, 1)
         c2 = sqlite3.connect(":memory:"); create(c2, 2)
-        d1, d2 = digest(manifest(c1), 1), digest(manifest(c2), 2)
+        o1, o2 = manifest(c1), manifest(c2)
         row("R3: a v1 store still resolves once HEAD is v2",
-            _resolve_version(d1, sim) == 1 and _resolve_version(d2, sim) == 2)
+            resolve(o1, sim) == 1 and resolve(o2, sim) == 2)
+        # R4 finding 3: the v1-policy digest of a v2 store resolves to nothing.
+        # Candidate matching must not depend on knowing the answer first.
+        row("R4: resolution does not depend on a default-version digest",
+            digest(o2, 1) != digest(o2, 2)
+            and not any(a["digest"] == digest(o2, 1) for a in sim["2"]["accepted"])
+            and resolve(o2, sim) == 2)
+        # the migrated store must itself be accepted at v2
+        mc = sqlite3.connect(":memory:"); create(mc, 1)
+        run_migration(mc, migrate_1_to_2)
+        row("R4: a migrated store is accepted at its destination version",
+            resolve(manifest(mc), sim) == 2)
         row("R3: an unknown shape resolves to nothing, not to a guess",
-            _resolve_version("0" * 64, sim) is None)
-        c1.close(); c2.close()
+            resolve({("table", "nope"): {"type": "table", "table": "nope",
+                                        "sql": "CREATE TABLE nope (x)",
+                                        "columns": []}}, sim) is None)
+        c1.close(); c2.close(); mc.close()
     finally:
         del SCHEMAS[2]
+        MIGRATIONS.pop(1, None)
 
-    # R2 finding 10: an in-memory store is a supported constructor.
+    # R4 finding 1: the registry-conformance check must compare complete typed
+    # records, including rebuildable indexes -- the acceptance digest excludes
+    # them, so it cannot serve as a conformance check.
+    row("R4: registry conformance covers rebuildable definitions",
+        registry_conformance(1) == [])
+    saved = SCHEMAS[1]
+    SCHEMAS[1] = tuple(o._replace(ddl="CREATE UNIQUE INDEX ix_edges_subj_rel "
+                                      "ON edges(user_id)")
+                       if o.name == "ix_edges_subj_rel" else o for o in saved)
+    row("R4: a wrong rebuildable definition FAILS conformance",
+        len(registry_conformance(1)) == 1)
+    SCHEMAS[1] = saved
+
+    # R4 finding 7: nothing a migration receives may reach the connection.
+    esc = {}
+    probe = sqlite3.connect(":memory:")
+    probe.isolation_level = None
+    probe.execute("CREATE TABLE t(a)")
+    probe.execute("BEGIN IMMEDIATE")
+
+    def escape_attempt(ex):
+        res = ex.execute("SELECT 1")
+        esc["cursor"] = hasattr(res, "connection")
+        for stmt in ("COMMIT", "END", "END TRANSACTION", "ROLLBACK",
+                     "SAVEPOINT s", "RELEASE s", "ATTACH ':memory:' AS x"):
+            try:
+                ex.execute(stmt)
+                esc[stmt] = "ALLOWED"
+            except sqlite3.DatabaseError:
+                pass
+
+    run_migration(probe, escape_attempt)
+    row("R4: the migration result exposes no connection, and no escape allowed",
+        esc.get("cursor") is False and len(esc) == 1 and probe.in_transaction)
+    probe.execute("COMMIT")          # authorizer restored in finally
+    row("R4: the authorizer is restored after the migration", not probe.in_transaction)
+    probe.close()
+
+    # R4 finding 8 / S-Q6: runtime-gated support, not a declared range.
+    row("R4: the running sqlite is in the tested set",
+        sqlite_supported() and sqlite3.sqlite_version in TESTED_SQLITE)
+    row("R4: an untested runtime is refused, not assumed", not sqlite_supported("3.99.0"))
+
+        # R2 finding 10: an in-memory store is a supported constructor.
     mem = SqliteStore(":memory:")
     mem_objs = manifest(mem._conn)
     row("in-memory store, via its own connection",
         digest(mem_objs) == good and not drift(mem_objs))
 
-    total = len(cases) + 8
+    total = len(cases) + 15
     print(f"\n{total - bad}/{total} as specified")
     return 1 if bad else 0
 

@@ -11,6 +11,12 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    (r"3\.35 ?<= ?sqlite|declares? (the )?(supported )?range",
+     "R4/0007: a declared range with no evidence or enforcement is not a contract; gate on TESTED_SQLITE",
+     "specs/0007 §4a-viii"),
+    (r"old entries .{0,20}are immutable(?!,? and now actually)|regenerates only the current constructor entry",
+     "R4/0007: v5 said so and rewrote them; regenerating a historical version differently is now an error",
+     "specs/0007 §4a-iv"),
     (r'" ?"\.join\(sql\.split\(\)\)|whitespace[- ]collapsed DDL|canonicalisation is deliberately minimal',
      "R3/0007: collapsing whitespace rewrites quoted literals; keep sqlite_master.sql byte-for-byte",
      "specs/0007 §4a"),
