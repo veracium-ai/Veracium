@@ -10,15 +10,18 @@ Spec number first so archives sort and group by spec; version so the archive is
 tied to the document it carried; UTC timestamp so two archives of one version
 are distinguishable and the ordering is unambiguous across sessions.
 
-**The index is committed; the tarballs are not.** Each archive is a snapshot of
-a tree that is already in git, so committing it stores the repo inside itself --
-undiffable, unprunable, ~400KB per review round against a 93KiB packed history.
-The sha256 recorded here is *stronger* provenance than an uncommitted binary:
-it is tamper-evident, and anyone holding a copy can verify it is the one that
-was sent.
+**The index is committed; the tarballs are not** -- Quentin's decision,
+2026-08-02, on the size argument: each archive snapshots a tree already in git,
+so committing it stores the repo inside itself, ~400KB per review round against
+a 93KiB packed history.
 
-If that trade is wrong, committing them later is one line in .gitignore.
-Un-committing them is not.
+The sha256 recorded here is what carries the provenance: it is tamper-evident,
+and anyone holding a copy can verify it is the one that was sent.
+
+**The known limit of that trade, stated because it is real:** a hash of a file
+nobody kept proves nothing. The archives live on the dev machine only, so if
+they are lost the index becomes a record that something existed rather than a
+way to check it. Reversing this is one deleted line in `.gitignore`.
 """
 from __future__ import annotations
 
@@ -77,11 +80,16 @@ archives group by spec, version so the archive is tied to the document it
 carried, UTC timestamp so two archives of one version are distinguishable and
 the ordering is unambiguous across sessions. **The name is machine-checked.**
 
-**The tarballs are not committed; this index is.** Each archive snapshots a tree
-already in git, so committing it stores the repo inside itself — undiffable,
-unprunable, and roughly 400 KB per review round against a 93 KiB packed history.
-**The `sha256` below is stronger provenance than an uncommitted binary:** it is
-tamper-evident, and anyone holding a copy can prove it is the one that was sent.
+**The tarballs are not committed; this index is** — *decided 2026-08-02*. Each
+archive snapshots a tree already in git, so committing it stores the repo inside
+itself: undiffable, unprunable, ~400 KB per review round against a 93 KiB packed
+history.
+
+**The `sha256` is what carries the provenance** — tamper-evident, and anyone
+holding a copy can prove it is the one that was sent. **The limit, stated
+because it is real: a hash of a file nobody kept proves nothing.** These live on
+the dev machine only; if they are lost this becomes a record that something
+existed rather than a way to check it.
 
 | archive | spec | version | sent (UTC) | files | size | sha256 |
 |---|---|---|---|---|---|---|

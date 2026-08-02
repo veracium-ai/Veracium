@@ -12,11 +12,16 @@ archives group by spec, version so the archive is tied to the document it
 carried, UTC timestamp so two archives of one version are distinguishable and
 the ordering is unambiguous across sessions. **The name is machine-checked.**
 
-**The tarballs are not committed; this index is.** Each archive snapshots a tree
-already in git, so committing it stores the repo inside itself — undiffable,
-unprunable, and roughly 400 KB per review round against a 93 KiB packed history.
-**The `sha256` below is stronger provenance than an uncommitted binary:** it is
-tamper-evident, and anyone holding a copy can prove it is the one that was sent.
+**The tarballs are not committed; this index is** — *decided 2026-08-02*. Each
+archive snapshots a tree already in git, so committing it stores the repo inside
+itself: undiffable, unprunable, ~400 KB per review round against a 93 KiB packed
+history.
+
+**The `sha256` is what carries the provenance** — tamper-evident, and anyone
+holding a copy can prove it is the one that was sent. **The limit, stated
+because it is real: a hash of a file nobody kept proves nothing.** These live on
+the dev machine only; if they are lost this becomes a record that something
+existed rather than a way to check it.
 
 | archive | spec | version | sent (UTC) | files | size | sha256 |
 |---|---|---|---|---|---|---|
