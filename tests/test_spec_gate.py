@@ -628,3 +628,21 @@ def test_no_spec_has_a_duplicated_section_heading():
         if dupes:
             problems.append(f"{f.name}: duplicated {sorted(dupes)}")
     assert not problems, "\n".join(problems)
+
+
+def test_a_spec_cannot_be_accepted_while_its_prerequisite_is_unresolved(repo):
+    """0008 adds a `confirmations` table. An older build opens the newer store,
+    ignores the table, and clears the flag unaudited through the old path — so
+    accepting 0008 without 0007 authorises an unsafe partial cut.
+
+    Four specs now declare `Spec-Requires: 0007`, and 0007 has never been
+    reviewed."""
+    p = repo.path / "specs/0020-dep.md"
+    p.write_text("# Spec\n\nSpec-Status: draft\n\nbody\n")
+    q = repo.path / "specs/0021-needs.md"
+    q.write_text("# Spec\n\nSpec-Status: accepted\nSpec-Requires: 0020\n\nbody\n"
+                 "\n## Review closure\n\n| f | evidence |\n|---|---|\n| 1 | `x` |\n")
+    code, out = repo.commit("implement", ["Spec: specs/0021-needs.md"],
+                            touch=["src/veracium/graph.py"]).check()
+    assert code == POLICY_FAIL
+    assert "requires `0020`" in out

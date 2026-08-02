@@ -1,6 +1,7 @@
 # Feature spec: crash-safe consolidation
 
 Spec-Status: draft
+Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 

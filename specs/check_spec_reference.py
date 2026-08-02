@@ -168,6 +168,12 @@ _SPEC_STATUS = re.compile(r"^Spec-Status:\s*(\S[^\n]*)$", re.M)
 # Dev has been wrong about "satisfied" three times, so the claim needs an
 # artifact: one row per finding, each naming a command, test or commit.
 _CLOSURE = re.compile(r"^##+\s*Review closure", re.M)
+# A spec may declare `Spec-Requires: 0007` — a spec that must be accepted before
+# this one authorises implementation. 0008's confirmations table is the case
+# that forced it: an older build opens the newer store, ignores the table, and
+# clears unaudited through the old path. Accepting 0008 alone would authorise an
+# unsafe partial cut.
+_REQUIRES = re.compile(r"^Spec-Requires:\s*([0-9, ]+)$", re.M)
 
 MIN_REASON_CHARS = 12
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -256,7 +262,28 @@ def _validate_spec_ref(sha: str, value: str) -> list[str]:
             f"`{value}` is `{state}`, which does not authorise implementation"
             f"{extra}. Land the spec first, or use `Spec-Exception:` if this "
             f"commit is docs/tests/a revert rather than implementing it.")
-    elif not _CLOSURE.search(body):
+    else:
+        for dep in (_REQUIRES.search(body).group(1).split(",")
+                    if _REQUIRES.search(body) else []):
+            dep = dep.strip()
+            if not dep:
+                continue
+            # Read the prerequisite from the SAME commit's tree, so the check
+            # reflects the state that held when the change was written.
+            names = [n for n in _git("ls-tree", "--name-only", f"{sha}:specs").split()
+                     if n.startswith(f"{dep}-") and n.endswith(".md")]
+            if not names:
+                problems.append(f"`{value}` requires `{dep}`, which does not exist")
+                continue
+            m2 = _SPEC_STATUS.search(_git("show", f"{sha}:specs/{names[0]}"))
+            dep_state = m2.group(1).strip().lower() if m2 else "missing"
+            if dep_state not in IMPLEMENTABLE:
+                problems.append(
+                    f"`{value}` is `accepted` but requires `{dep}`, which is "
+                    f"`{dep_state}`. Accepting a spec whose prerequisite is "
+                    f"unresolved authorises a partial cut — see its "
+                    f"`Spec-Requires:` line for why.")
+    if state in IMPLEMENTABLE and not _CLOSURE.search(body):
         problems.append(
             f"`{value}` is `accepted` but carries no `## Review closure` "
             f"section. Dev sets `accepted` once external-review comments are "
