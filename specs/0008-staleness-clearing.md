@@ -4,20 +4,21 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3)** — submitted 2026-08-02 18:17 UTC. **The clearing rule has now been
-> approved twice; the spec was deferred twice for things around it.** v2's
-> liveness rule is **withdrawn**: it used recorded effective authority as a
-> proxy for renewed observation, which is this spec's own error one level up,
-> and it contradicted this spec's own matrix in two rows. **Liveness moves to
-> `specs/0012`** and `0008` claims one sentence. The confirmation audit is now
-> one atomic operation with a declared schema, the clearing transition is
-> centralised rather than checked by AST alone, and `call_path` is stated as
-> host-attested and non-authoritative.
+> **in review (v4)** — submitted 2026-08-02 19:01 UTC. **The clearing rule is approved for the
+> third time; v3 was deferred on the implementation contract around it, and
+> fairly.** v3 named **two incompatible mechanisms** — one of them a
+> caller-constructible authorisation context, which is the thing §6a rejects —
+> and its "atomic" operation covered the flag and the audit while
+> `Memory.confirm()` also moves `observed_at`, `confidence` and writes an
+> episode. **`Store.confirm_edge()` is now the single primitive and the whole
+> transaction.** The public signature, idempotency, audit-field constraints and
+> the store contract are frozen; the claim is transition-specific; C4's
+> completeness boundary is corrected.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — *re-read before editing; quote the version you approve.* v1 deferred (7 findings) · v2 deferred (11) — **the clearing rule was approved in both.** v3 narrows to it. |
+| **Version** | **v4** — *re-read before editing; quote the version you approve.* v1 (7) · v2 (11) · v3 (8) — **the clearing rule was approved in all three.** |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M3/§7b. **`0002` is a retrospective and must be closeable; this is a proposal and is not.** |
 | **Internal reviewers** | research — **R2** (fail-closed rule) and **R3** (strict; not temporary) |
 | **External review** | required — **two rounds complete on this spec** (r1 7 findings · r2 11). Counts are generated into `specs/STATUS.md`. Not to be confused with the `0002` review that first found M3. |
@@ -200,11 +201,11 @@ ships today.
 
 | invariant | executable check | where |
 |---|---|---|
-| **C1** no value of any provenance field clears `needs_confirmation` | **three checks, because neither alone establishes it.** `test_no_provenance_value_clears_staleness` — behavioural, over **every** provenance input, not `EvidenceAuthor` alone · `test_only_confirm_clears_the_flag` — **runtime**: the transition is centralised in `clear_needs_confirmation(edge, confirmation_context)` and the store **rejects a `True → False` write without that context** · `test_no_direct_writer_outside_the_helper` — an AST inventory as *defence in depth*. **v2 had the AST check alone, and it cannot see `model_copy(update=…)`, `setattr`, a reconstructed edge, or deserialisation** | CI |
+| **C1** only `Store.confirm_edge()` may transition an **existing stored edge** from `needs_confirmation` `True → False` | **three checks.** `test_no_provenance_value_clears_staleness` — behavioural, over every provenance input · `test_add_edge_refuses_the_transition` — **runtime**: generic `add_edge()` rejects it, with **no context parameter that could authorise it** · `test_no_direct_writer_outside_confirm_edge` — AST inventory as *defence in depth*; it cannot see `model_copy(update=…)`, `setattr`, a reconstructed edge or deserialisation, which is why it is not the guard | CI |
 | **C2** `confirm()` clears it | `test_confirm_clears_staleness` | CI |
 | **C2a** `actor` is audit metadata and grants nothing | `test_actor_metadata_does_not_grant_confirmation_authority` — authority comes from the protected call path; v1's name (*"clears regardless of actor label"*) read as normalising arbitrary labels | CI |
-| **C3** reinforcement still refreshes liveness — **unchanged by this spec** | `test_reinforcement_still_advances_observed_at` — **the permission, not the prohibition.** A deletion drawn too broadly would remove liveness refresh along with the flag clearing, and no other test distinguishes them. **Whether this behaviour is right at all is `0012`** |
-| **C4** maintenance never clears | `test_no_maintenance_op_clears_staleness` — property-based over random op sequences, and **asserts its operation registry against the `@store_mutator` surface**, so a newly added maintenance operation cannot stay invisible to it | CI |
+| **C3** *(temporary — owned for replacement by `0012`)* reinforcement still refreshes liveness, **unchanged by this spec** | `test_reinforcement_still_advances_observed_at` — **the permission, not the prohibition.** A deletion drawn too broadly would remove liveness refresh along with the flag clearing, and no other test distinguishes them. **Whether this behaviour is right at all is `0012`. Marked temporary so an accepted `0008` does not later read as prohibiting the correction `0012` exists to make.** |
+| **C4** maintenance never clears | `test_no_maintenance_op_clears_staleness` — property-based over random op sequences, asserting its registry against the **maintenance entry points reachable from `maintain()`/`lifecycle`**, *not* the `@store_mutator` surface. **Those sets are not equal**: the manifest's 28 sites include `ingest_event`, `correct`, `forget`, `import_memory` and now `confirm_edge` — which is *allowed* to clear. The two inventories cross-check ownership and are never equated | CI |
 | **C5** the flag reaches the model when set | `test_stale_marker_renders` | CI |
 | **C6** the 0.4.5 reproducer stays fixed | `test_cross_author_restatement_does_not_clear` — regression, cross-class was the half 0.4.5 got right | CI |
 
@@ -262,34 +263,132 @@ a caller at all.
 auditability `pre-release`.** Making a transition the entire trust boundary and
 leaving it unobservable is not a defensible pairing.
 
-> **One atomic store operation**, `@store_mutator`:
+> **One primitive, and it is the only way the transition happens:**
 > ```
-> confirm_edge(principal, edge_id, confirmed_at,
->              call_path, correlation_id) -> None
+> @store_mutator
+> Store.confirm_edge(user_id, edge_id, confirmed_at,
+>                    call_path, correlation_id) -> Confirmation
 > ```
-> It validates the edge and principal, enforces the assertability rule,
-> rejects a replayed `correlation_id`, clears the flag, and **persists the audit
-> record — in one commit.**
+> The **store** loads the edge, verifies ownership and current state, enforces
+> the assertability rule, applies **every** confirmation mutation, and persists
+> the record — **in one commit.**
 
-**If the audit cannot commit, the confirmation fails and the flag is not
-cleared.** v2 required the record and said nothing about failure, which makes
-the sole clearing transition unobservable in exactly the cases worth observing.
-**A confirmation without its audit must not be allowed.**
+**v3 defined two mechanisms and they were incompatible.** C1 named
+`clear_needs_confirmation(edge, confirmation_context)`; §6b named
+`confirm_edge(...)`. **A caller-constructible `confirmation_context` is another
+field claiming authorisation** — exactly what §6a rejects — so it is gone.
+**`add_edge()` refuses a `True → False` transition on an existing edge**, with no
+context parameter that would let it through.
 
-**Schema — declared, not waved at.** A new `confirmations` table: `principal ·
-edge_id · confirmed_at · call_path · correlation_id`, unique on
-`correlation_id`, indexed on `edge_id`. **`forget_user()` deletes the user's
-rows**; **export/import excludes them** — a confirmation is a fact about this
-store's history, not about the memory. Retained while the edge exists.
-**No edge content is recorded.**
+**Every trust-bearing mutation is inside the transaction**, not just the flag.
+v3's operation covered the flag and the audit; `Memory.confirm()` also advances
+`observed_at`, raises `confidence`, and writes an episode
+(`__init__.py:507-517`), so a partial outcome was possible:
 
-**`call_path` is host-attested and non-authoritative.** It is a label the host
-supplies describing which integration route was used, kept for audit only.
-**It grants nothing** — if it were load-bearing it would be `actor` again,
-which §6a rejects. Authorisation comes from the host's gating of the operation
-(§6a), never from a field inside it.
+| inside the transaction | why |
+|---|---|
+| `needs_confirmation = False` | the transition being authorised |
+| `observed_at = max(old, confirmed_at)` | confirmation *is* an observation; splitting it lets the flag clear while currency does not move |
+| `confidence = max(old, 0.9)` | same |
+| the **confirmation record** | mandatory; **if it cannot commit, the confirmation fails and the flag stays set** |
+| the confirmation **episode** | it is part of confirmation behaviour today, and dropping it silently would be a behaviour change nobody asked for |
+
+**`Memory.confirm()` is not "unchanged", and v3 said it was.** Its persistence
+mechanism moves from four independent store calls to one operation.
+
+**The existing optional `AuditLog` does not satisfy this.** It is best-effort and
+swallows failures (`_record`), which is right for telemetry and wrong for the
+sole clearing transition. **The `confirmations` table is separate and
+mandatory.**
 
 **C-Q1 is resolved by this**, not deferred.
+
+---
+
+## 6c. The public contract, frozen
+
+**Finding 3: v3 changed the persistence mechanism and never said what callers
+see.**
+
+```python
+Memory.confirm(
+    user_id: str,
+    edge_id: str,
+    *,
+    date: str | None = None,
+    actor: str = "user",                       # audit metadata; grants nothing
+    call_path: ConfirmationCallPath = ConfirmationCallPath.HOST_API,
+    correlation_id: str | None = None,
+) -> ConfirmationResult
+```
+
+**Backward compatible.** Existing callers keep working: both new parameters have
+defaults. **`principal` is `user_id`** — the store is tenant-scoped, so a
+separate principal would be a second identity with no source of truth.
+
+**`correlation_id` is optional, and the cost of omitting it is stated rather
+than hidden:** supplied, it gives replay protection across an unknown commit
+outcome; absent, the library generates one and **there is none.** A host that
+retries a request whose result it never saw needs to supply it.
+
+### Idempotency (finding 5)
+
+**Rejecting a replayed id tells the host only that the id exists** — not whether
+its confirmation succeeded, so a host can report failure for a confirmation that
+committed.
+
+| case | result |
+|---|---|
+| same `correlation_id`, same `(user_id, edge_id)` | **return the original success** — `ConfirmationResult(replayed=True)` |
+| same `correlation_id`, different payload | **fail** — integrity conflict |
+| concurrent duplicates | **exactly one** mutation and one record |
+
+**Ids are globally unique and opaque**, not scoped per principal — simplest to
+reason about and it makes the conflict case detectable.
+
+### Audit metadata is constrained, not merely discouraged (finding 4)
+
+**v3 called the record content-free while two of its fields were free-form host
+strings.** A host could put a whole sentence — or a memory — in `call_path`, and
+the table would quietly become a content store.
+
+| field | constraint | rejection |
+|---|---|---|
+| `call_path` | **closed enum** `ConfirmationCallPath` — no free text | unknown value raises |
+| `correlation_id` | opaque, **≤ 64 chars**, `[A-Za-z0-9._:-]` | anything else raises |
+| `user_id` · `edge_id` | opaque identifiers, unchanged | — |
+| `confirmed_at` | **the normalised UTC instant**, not the caller's string — following the 0.4.7/0.4.8 date fixes | — |
+
+**A policy that hosts should not put content in strings is not a constraint.**
+This is the same free-form-metadata problem `actor` already demonstrated.
+
+---
+
+## 6d. The store contract, and what it costs every backend
+
+**Finding 6: `Store` is a replaceable interface**, so this is not a SQLite
+change.
+
+> **`confirm_edge` joins the interface as `@store_mutator`.** A backend that
+> cannot write the edge and the confirmation atomically **must raise**, not
+> degrade — a best-effort confirmation is the failure mode §6b exists to
+> prevent.
+
+**SQLite:** a `confirmations` table, `UNIQUE(correlation_id)`, indexed on
+`edge_id`, created by `_SCHEMA`'s `CREATE TABLE IF NOT EXISTS`.
+
+| question | answer |
+|---|---|
+| edge invalidated | records **retained** — the confirmation happened |
+| edge physically removed | records removed with it |
+| `forget_user()` | deletes them **and counts them** in its result |
+| export / import | **excluded** — a confirmation is a fact about this store, not about the memory |
+| audit inspection | `confirmations_for(user_id, edge_id)` — read-only |
+
+**⚠️ This is a schema upgrade, and `CREATE TABLE IF NOT EXISTS` is not a
+migration story.** An older build opening a newer store ignores the table and
+loses the record silently. **`specs/0007` — and this is the fifth spec to meet
+it.**
 
 ---
 
@@ -303,9 +402,11 @@ against silent removal of a caveat that should have stayed.
 existing values stay exactly as they are"* and that was wrong in a way that
 matters:
 
-> **A new `confirmations` table is added** (§6b). **No existing table or field
-> changes and no stored edge or episode is migrated. The implementation is
-> rollbackable, but behaviour during deployment changes persisted edge state**,
+> **A new `confirmations` table and a new `Store` method** (§6b, §6d).
+> `Memory.confirm()` gains two defaulted parameters — **additive, existing
+> callers unaffected.** No existing table or field changes and no stored edge or
+> episode is migrated. **The implementation is rollbackable, but behaviour
+> during deployment changes persisted edge state**,
 > and reverting does not reconstruct the counterfactual the old rule would have
 > produced.
 
@@ -319,8 +420,14 @@ right direction to fail, and it is still not "no data changes".**
 
 ## 8. Claims and limits
 
-**Claim, and it is one sentence on purpose:** *only an explicit `confirm()`
-clears `needs_confirmation`.*
+**Claim, and it is one sentence on purpose:** *only `Store.confirm_edge()` may
+transition an **existing stored edge** from `needs_confirmation = True` to
+`False`.*
+
+**"Transition on an existing edge" is precise on purpose.** New edges are
+created with `False`, and import and deserialisation load `False` values — those
+are not clearing events, and v3's wording implied every `False` should have a
+confirmation record behind it.
 
 **Liveness is explicitly out of claim.** §3d measures a second way to defeat the
 warning — repeated restatement prevents the flag being set at all — and **this
