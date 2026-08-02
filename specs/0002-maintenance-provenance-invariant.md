@@ -1,16 +1,18 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred (v4)** — fourth external review 2026-08-02 00:39 UTC. **Invariant approved a
-> fourth time; retrospective deferred a fourth time.** All eight findings
-> verified and **all stand**, including **three live code defects** and **a
-> package that contained two different manifest counts.** §12 has the
-> disposition. **The deletion pass failed again, and the reason is specific: I
-> swept for the shape of my own correction pattern rather than for every place a
-> rule is stated.**
+> **in review (v5)** — submitted 2026-08-02 02:41 UTC. **All eight findings of the fourth
+> review are closed, and three were live code defects fixed and released in
+> 0.4.7.** The deletion pass is now **executable** (`specs/lint_withdrawn.py`,
+> in CI) rather than asserted — the failure that deferred v2, v3 and v4 was that
+> every pass searched for my own annotations rather than for the rule. Manifest
+> identity is collision-checked and cardinality-preserving, states are declared
+> rather than inferred from rendered emoji, and test existence is AST-exact.
+> **The two contradictory evidence columns are replaced by one positive
+> vocabulary.**
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
