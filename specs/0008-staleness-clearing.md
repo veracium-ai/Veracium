@@ -1,19 +1,15 @@
 # Feature spec: what may clear `needs_confirmation`
 
-Spec-Status: in review
+Spec-Status: accepted
 Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v5)** — submitted 2026-08-02 19:20 UTC. **Fourth approval of the clearing
-> rule.** v4 froze a store signature that **could not write the episode it
-> promised to preserve** — `actor` lives in that episode and was not in the
-> request — and that exposed `actor` as an unconstrained string in a
-> content-bearing record, bypassing the limits placed on the other two fields.
-> Fixed, with the idempotency identity, correlation scope, return shape and
-> `add_edge()` backend contract all frozen; **C7–C12 pin the storage and API
-> contract, which v4 left untested**; and **`Spec-Requires: 0007` is now
-> enforced by the gate** rather than noted in prose.
+> **accepted 2026-08-02 19:27 UTC** — under `PROCESS.md` §4a, after four external rounds in
+> which **the clearing rule was approved every time**. Every finding is closed
+> in *Review closure* with openable evidence. **`Spec-Requires: 0007` still
+> blocks implementation**, which is the intended outcome: the rule is settled,
+> the prerequisite is not.
 
 | | |
 |---|---|
@@ -514,6 +510,79 @@ this spec's own error one level up.
 - **Not anything about liveness.** §3d's bypass is open and owned by `0012`.
   **v2 claimed this and the mechanism was rejected**; nothing replaced it here.
 
+
+## Review closure
+
+**Set `accepted` 2026-08-02 19:27 UTC by dev, under `PROCESS.md` §4a: external review is
+required and dev sets the status once the review's comments are satisfied.**
+
+**Four external rounds. The clearing rule was approved in all four**; every
+deferral was about the contract around it. Every finding raised is closed below
+with something openable — a section, an invariant, a test, or a commit.
+
+**What `accepted` does and does not mean here.** It authorises implementation of
+**this spec's rule**. It does **not** mean the code can land: `Spec-Requires:
+0007` is enforced by the gate, and `0007` is `draft`, so a commit citing this
+spec still fails. **That is the intended outcome** — the invariant is settled,
+the prerequisite is not.
+
+### Round 1 — 7 findings
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | reinforcement can prevent the flag being set | §3d, **measured**; owner `specs/0012` |
+| 2 | matrix conflates clearing with liveness | §3 — two columns |
+| 3 | C1 tested only `EvidenceAuthor` | C1 — behavioural + runtime + AST |
+| 4 | `confirm()` is a call path, not proof | §6a host obligations |
+| 5 | field contract overstated the reaffirming party | §2 row, narrowed |
+| 6 | reversibility claim incorrect | §7 |
+| 7 | audit/rate policy unresolved | §6b; C-Q1 resolved |
+
+### Round 2 — 11 findings
+
+| # | finding | closed by |
+|---|---|---|
+| 1–3, 7 | authority is not entitlement to renew; contradicts the matrix; `0003` not accepted | **rule withdrawn**; `specs/0012` §2 |
+| 4–6 | incoming-evidence representation · §4 contradiction · the withdrawn rule's test coverage | `specs/0012` §3 — the invariant those findings attached to no longer exists here |
+| 8 | AST writer check bypassable | C1 — runtime guard, AST demoted |
+| 9–10 | audit atomicity and schema | §6b, §6d |
+| 11 | `call_path` undefined | §6c — closed enum |
+
+### Round 3 — 8 findings
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | two incompatible mechanisms | `Store.confirm_edge()` sole primitive; context parameter removed |
+| 2 | transaction omitted other effects | §6b table — flag, `observed_at`, `confidence`, episode, record |
+| 3 | public API undefined | §6c |
+| 4 | "content-free" fields were free-form | §6c constraints |
+| 5 | replay under unknown commit | §6c idempotency |
+| 6 | store contract incomplete | §6d |
+| 7 | C4's boundary wrong | C4 — maintenance entry points, not the mutator surface |
+| 8 | claim not transition-specific | §8 |
+
+### Round 4 — 9 findings
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | signature could not write the episode | `actor` in the request; `ConfirmationActor` closed enum |
+| 2 | idempotency identity undefined | §6c — canonical request, `OMITTED` sentinel |
+| 3 | global correlation ids unsafe | `UNIQUE(user_id, correlation_id)` |
+| 4 | return not backward compatible | §6c — mapping contract retained |
+| 5 | storage contract untested | **C7–C12** |
+| 6 | `add_edge()` guard not formalised | §6d — backend conformance, C10 |
+| 7 | `0007` prerequisite | `Spec-Requires: 0007`, **gate-enforced** (`feb81ff`) |
+| 8 | manifest claimed a future state | C4 — future tense |
+| 9 | review metadata drifted | header row states no counts |
+
+### What remains open, and is not claimed
+
+- **The §3d liveness bypass** — measured, unfixed, `specs/0012`.
+- **Nothing is implemented.** C1–C12 are unwritten; the source still clears on
+  same-author reinforcement and the historical reproducer is `xfail`.
+- **The guarantee is conditional** on the §6a host obligations.
+
+---
 
 ## 10. Open questions
 
