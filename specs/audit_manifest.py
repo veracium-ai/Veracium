@@ -33,7 +33,7 @@ MANIFEST = ROOT / "specs" / "generated" / "0002-audit-manifest.md"
 
 MUTATOR_PREFIXES = ("add_", "invalidate_", "delete_", "forget_", "set_")
 OP_CLASSES = {"write-time", "maintain-time"}
-EVIDENCE_VALUES = {"yes", "**no**"}
+EVIDENCE_VALUES = {"act", "observation", "none", "transfer"}
 SPEC_REF = re.compile(r"\b\d{4}\b")   # spec numbers are four digits; 000\d stopped at 0009
 TEST_REF = re.compile(r"\btest_\w+")
 
@@ -204,7 +204,7 @@ def _validate(sites) -> list[str]:
         if cls not in OP_CLASSES:
             problems.append(f"{k}: operation class {cls!r} not in {sorted(OP_CLASSES)}")
         if ev not in EVIDENCE_VALUES:
-            problems.append(f"{k}: evidence-bearing {ev!r} not in {sorted(EVIDENCE_VALUES)}")
+            problems.append(f"{k}: evidence class {ev!r} not in {sorted(EVIDENCE_VALUES)}")
         if not fields.strip():
             problems.append(f"{k}: no trust fields recorded")
         if not verdict.strip():
@@ -302,10 +302,10 @@ def render(sites) -> str:
             "(`getattr(store, name)(...)`, a bound method passed as a callback), "
             "and it deliberately excludes the store implementations themselves, "
             "which are the mutators rather than callers of them. **The "
-            "`evidence-bearing?` column is a reviewed classification, not a "
+            "`evidence` column is a reviewed classification, not a "
             "derived fact** — see `0002` §6a.\n\n"
             "| call site | in | mutator | fp | state | class | trust fields touched | "
-            "evidence-bearing? | verdict | test / owning spec |\n"
+            "evidence | verdict | test / owning spec |\n"
             "|---|---|---|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
 
 
@@ -329,7 +329,7 @@ def main() -> int:
                 print(p, file=sys.stderr)
             print(f"\n{len(problems)} problem(s). Every store mutation must carry "
                   f"an operation class, the trust fields it touches, an "
-                  f"evidence-bearing classification, a verdict, and a concrete "
+                  f"evidence classification, a verdict, and a concrete "
                   f"test (clean rows) or owning spec (moved/open rows). "
                   f"Regenerate with --write after fixing "
                   f"specs/audit_dispositions.py.", file=sys.stderr)

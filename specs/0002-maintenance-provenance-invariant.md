@@ -380,7 +380,7 @@ second.
 | **N5** ➡️ **`specs/0009`** — outcome authorship is an append-only chain; `0009` H7 asserts on **structure**, not on a retained value | `0009` H1–H7 | `0009` |
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
 | **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** Not the general form; see N9 | CI + bench |
-| **N9** *(replaces N7's general claim)* for an **evidence-free** operation the post-state is no stronger than the pre-state under the partial order **defined in §6a** | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
+| **N9** *(replaces N7's general claim)* for an operation whose evidence class is **`none`** (§6a), the post-state is no stronger than the pre-state under the partial order **defined below** | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
 | **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
 **N7 is the strongest *end-to-end* check and it is not the general form.**
@@ -400,10 +400,11 @@ is what the second external review objected to. **N9 carries that role.**
 one.** A field list is not a relation, and a property test cannot implement one.
 Defined here so N9 is executable rather than aspirational.
 
-**For an evidence-free operation on a single persisted edge**, every clause must
-hold:
+**For an operation of evidence class `none`, on a single persisted edge**, every
+clause must hold:
 
 ```
+post.active              <=  pre.active              # a retired edge stays retired
 post.assertable          <=  pre.assertable          # False is weaker than True
 post.needs_confirmation  >=  pre.needs_confirmation  # True  is weaker than False
 post.disclosure          <=T pre.disclosure          # MENTIONABLE > USE_ONLY > QUARANTINED
@@ -417,6 +418,13 @@ post.valid_from          ==  pre.valid_from          # immutable identity, §7c
 **`<=T` is the disclosure trust order**, taken from the enum's own documented
 meanings (`schema.py:45`): `MENTIONABLE` (may be volunteered) **>** `USE_ONLY`
 (may shape behaviour, never volunteered) **>** `QUARANTINED` (never asserted).
+
+**`active` is a separate clause too, and it is the one v4 missed.** An
+evidence-free operation could **reactivate a retired edge** while every other
+clause held — `assertable` stays `False` (the edge is quarantined), disclosure
+unchanged, dates unchanged. **Persistent trust state widens and N9 passes.**
+`invalidation_reason` is preserved alongside it: a re-activated edge that kept
+its reason would render as history while being live.
 
 **`disclosure` is a separate clause from `assertable`, and third external review
 item 6 is why.** `assertable` is derived and collapses two of the three levels:
@@ -438,33 +446,46 @@ about evidence and maintenance has none. Advancing it is the same manufacture
 `0002` M5 forbids for `confidence` at T2 — *manufacturing freshness from
 recognition*.
 
-### Which operations are evidence-free — enumerated, not judged
+### Which operations N9 applies to
+
+**Fourth external review item 5: this table and the manifest gave opposite
+answers for `import_memory`, and neither was wrong on its own terms.** The
+manifest asked *"evidence-bearing?"* and answered **no**; this table asked
+*"evidence-free?"* and answered **no**. **Two negations of one question is how a
+contradiction hides** — reading either alone looks consistent.
+
+**Both columns are replaced by one positive vocabulary**, declared per call site
+in `audit_dispositions.py` and CI-checked:
+
+| class | meaning | N9 applies? |
+|---|---|---|
+| **`act`** | an authorised call through a dedicated entry point that is **not model-reachable** — `0008`'s principle: *the act is the evidence* | no |
+| **`observation`** | new content arriving from outside and being extracted | no |
+| **`none`** | maintenance — no new information, only **recognition of existing records** | **yes** |
+| **`transfer`** | records moved between stores | **see below** |
+
+**`import_memory` is `transfer`, and that is the reconciliation.** The
+operator's *act* is authorised; **the records it carries are vouched for by
+nobody.** So it is not `act` (the act authorises the move, not the content) and
+not `observation` (nothing was observed). It gets **no evidence exception**: it
+takes `0005`'s cap, and it becomes `observation` only if `0005` ever
+authenticates the source — which `I-Q1` shows is harder than it looked, since
+the cap keyed on a field inside the imported file.
+
+**Current tally: 12 `act` · 7 `observation` · 7 `none` · 2 `transfer`.**
 
 **This is a reviewed classification, not a derived fact.** The *call sites* are
-mechanically enumerated from the AST; the **`evidence-bearing?` column is
-hand-authored** in `audit_dispositions.py`, and `--check` proves somebody wrote
-`yes` or `no`, **not that the answer follows from anything.** The sharpest
-illustration: every `apply_supersession` write is marked evidence-bearing **while
-M3 — the open defect — is precisely that a repetition can be mistaken for
-authoritative new evidence.**
+mechanically enumerated from the AST; the `evidence` column is hand-authored,
+and `--check` proves somebody chose a valid class, **not that the choice follows
+from anything.** The sharpest illustration: every `apply_supersession` write is
+`observation` **while M3 — the open defect — is precisely that a repetition can
+be mistaken for authoritative new evidence.**
 
-**A dedicated entry point is not proof of evidence, and neither is a
-host-supplied `author`, `actor` or `date`.** Making this mechanical needs an
-*evidence capability* checkable at the entry point — `0008`'s principle,
-generalised — and that does not exist yet.
-
-**Reviewed classification** (`specs/generated/0002-audit-manifest.md`, column
-*evidence-bearing?*):
-
-| operation | evidence-free? | why |
-|---|---|---|
-| `expire()` — lapse · decay · flag | **yes** | a clock ticked; nothing was observed |
-| `consolidate()` | **yes** | recognition of existing records — **and see below** |
-| wiki recompilation | **yes** | derived view over existing edges |
-| **T2 dedup** (unwritten) | **yes** | *"no new edge arrives"* — M5 |
-| `ingest` / reinforcement (**T1**) | **no** | **a new edge arrived**; `confidence = max` is earned, per M5 |
-| `confirm()` · `dispute()` · `correct()` · `record_outcome()` | **no** | an authorised act through a dedicated entry point — `0008`'s principle |
-| `import_memory` | **no** *(but see `0005`)* | it carries evidence; the question there is **whose** |
+**Making it mechanical needs an evidence capability checkable at the entry
+point** — `0008`'s principle generalised — and that does not exist. **`act` is
+the one class with a mechanical proxy today**: those entry points are absent
+from `mcp_server.py`'s tool list, which is checkable and is what `0008` C1
+rests on.
 
 ### Consolidation needs a second rule
 
@@ -867,7 +888,15 @@ columns now force the distinction.
 | **M3** staleness clearing | same-**class** clearing still permitted | 🔴 **the shipped fix is inadequate** — the host chooses the class | ➡️ **`0008`** | **no** | `0008` C1–C6 | — |
 | **M4** outcome authorship | note in `summary`, structured field still overwritten | 🔴 **the shipped fix is inadequate** — the note survives one hop | ➡️ **`0009`** | **no** | `0009` H1–H7 | — |
 | **M5** merge-time `confidence` | T1 `max` retained | — | T2 keeps the survivor's own | **n/a — T2 is unwritten** | constrains `0009`-era T2 design | — |
+| **N9b** consolidation set→output | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | ~~a `0.2` batch produced a `0.9` summary~~ | §6a — no stronger than the weakest input, every field | **yes** | `test_consolidation_output_is_no_stronger_than_its_weakest_input` | **0.4.7** |
+| **N9b lineage** | inputs deleted, no record of the set | 🔴 **open** — `observed_at` bounds currency but the **spread is not retained**, so N9b's mixed-currency row and N10 are unmet | ➡️ **`specs/0010`** §4b — validated per-summary lineage | **no** | `0010` X6, X8 | — |
 | **crash-safe consolidation** | delete-all-then-write | 🔴 open | ➡️ **`specs/0010`** — write-before-delete + lineage recovery | **no** | `0010` X1–X6 | — |
+
+**Added after the fourth review:** N9b had **no ledger row at all** — the
+invariant was expanded in v4 while the code violated it, and nothing in the
+table said so. **An invariant with no row is indistinguishable from an invariant
+that holds.** The trust-floor half shipped in 0.4.7; the lineage half is open and
+owned by `0010`.
 
 **Three rows are red and two of them shipped as fixes.** That is the honest
 state, and it is why `0008` and `0009` exist separately: **they are corrections
