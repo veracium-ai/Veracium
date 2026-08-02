@@ -8,8 +8,24 @@ being transcribed from had all four right. The first external review caught it.
 A consequence of a rule should be computed from the rule. Everything below is.
 """
 
-AUTH = {"user": 3, "system": 2, "assistant": 1, "third_party": 0}
-CLASSES = ("user", "system", "assistant", "third_party")
+# Authority is derived from the SHIPPED enum, not restated here. v5 hard-coded
+# four classes including `assistant`, which does not exist in
+# `veracium.schema.EvidenceAuthor` -- so the generated 400-state tables modelled
+# a rule the runtime cannot implement, and the "the code and the table are one
+# object" claim was false in the direction that matters.
+#
+# `ASSISTANT` arrives with specs/0001, which is `deferred`. Until then this
+# generates the CURRENT product; when 0001 lands the enum gains a member and
+# these tables regenerate with no edit here.
+try:                                              # normal case: importable tree
+    from veracium.schema import EvidenceAuthor as _E
+    CLASSES = tuple(e.value for e in _E)
+except Exception:                                 # pragma: no cover
+    CLASSES = ("user", "third_party", "system")
+
+# Rungs for every class that could exist. Only the shipped ones are enumerated.
+_RUNGS = {"user": 3, "system": 2, "assistant": 1, "third_party": 0}
+AUTH = {c: _RUNGS[c] for c in CLASSES}
 
 
 def effective(author: str, derived_from: str | None) -> int:
@@ -62,10 +78,17 @@ def divergent() -> list:
 # the author-only projection cannot see them.
 
 def disclosure(author: str, derived_from: str | None) -> str:
-    """Mirrors ingest._disclosure_for for a non-quarantine relation."""
-    if author == "third_party" or derived_from == "third_party":
-        return "use_only"
-    return "mentionable"
+    """The PRODUCTION rule, imported -- not a second implementation.
+
+    v5 reimplemented this here and the copy drifted: it treated ordinary
+    assistant content as `mentionable`, while specs/0001 v3 places it in
+    `use_only` for every subject. The contention count generated from the copy
+    was therefore neither the current runtime answer nor the post-0001 one.
+    """
+    from veracium.ingest import _disclosure_for
+    from veracium.schema import EvidenceAuthor
+    return _disclosure_for(EvidenceAuthor(author), "works_as",
+                           EvidenceAuthor(derived_from) if derived_from else None).value
 
 
 def blocked_states() -> list[tuple]:

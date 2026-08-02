@@ -491,15 +491,20 @@ def test_the_authority_tables_are_generated_from_the_ladder():
     assert r.returncode == 0, r.stdout + r.stderr
 
 
-def test_the_ladder_permits_and_blocks_the_right_assistant_cases():
-    """The four cases v1 got wrong, asserted directly rather than via the table."""
+def test_the_rule_gives_the_right_assistant_answers_when_assistant_exists():
+    """The four cases v1 inverted, asserted against the RULE rather than the
+    shipped enum — `ASSISTANT` arrives with specs/0001, which is deferred.
+
+    Written against `_RUNGS` because the property must hold the day the enum
+    gains the member, not only afterwards."""
     import sys, pathlib
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
-    from ladder import permitted
-    assert permitted("assistant", None, "user", None), "a user may retire assistant content"
-    assert not permitted("user", None, "assistant", None), "assistant must not retire user"
-    assert permitted("third_party", None, "assistant", None)
-    assert not permitted("assistant", None, "third_party", None), \
+    from ladder import _RUNGS
+    ok = lambda prior, inc: _RUNGS[inc] >= _RUNGS[prior]
+    assert ok("assistant", "user"), "a user may retire assistant content"
+    assert not ok("user", "assistant"), "assistant must not retire user"
+    assert ok("third_party", "assistant")
+    assert not ok("assistant", "third_party"), \
         "assistant content must not retire a third-party record"
 
 
@@ -508,9 +513,15 @@ def test_capping_changes_the_answer_on_a_real_subset():
     see the rows an attacker reaches by omitting derived_from."""
     import sys, pathlib
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
-    from ladder import divergent, effective_matrix
-    assert len(effective_matrix()) == 400
-    assert len(divergent()) == 80, "the coverage gap finding 2 described"
+    from ladder import CLASSES, divergent, effective_matrix
+    from veracium.schema import EvidenceAuthor
+    # The product follows the SHIPPED enum. v5 hard-coded 400, which described
+    # four classes including one that does not exist — so the generated tables
+    # modelled a rule the runtime cannot execute.
+    assert set(CLASSES) == {e.value for e in EvidenceAuthor}
+    n = len(CLASSES) * (len(CLASSES) + 1)          # (author, derived_from|None)
+    assert len(effective_matrix()) == n * n
+    assert divergent(), "capping must change the answer somewhere"
 
 
 def test_rulings_and_spec_question_tables_agree():
@@ -594,4 +605,26 @@ def test_no_spec_cites_an_invariant_it_does_not_define():
             if missing:
                 problems.append(f"{f.name}: cites {sorted(missing)}, "
                                 f"defines {sorted(ids)}")
+    assert not problems, "\n".join(problems)
+
+
+def test_no_spec_has_a_duplicated_section_heading():
+    """The v5 package shipped 0003 with two §2, two §2c, two §2c-ii, two §3 and
+    two §1b — the second copies stale and contradicting the first.
+
+    Every check passed on that file. lint_withdrawn scans for withdrawn phrases,
+    and both copies contained the same ones. render_ladder writes into every
+    matching region, so it kept BOTH generated tables in sync and --check was
+    green. A structural duplicate is invisible to a phrase lint by construction.
+    """
+    import re, pathlib, collections
+    specs = pathlib.Path(__file__).resolve().parent.parent / "specs"
+    problems = []
+    for f in sorted(specs.glob("[0-9][0-9][0-9][0-9]-*.md")):
+        # capture the whole number token: `### 3.1` and `### 3.2` are
+        # distinct, and truncating at the first dot made them collide.
+        heads = re.findall(r"^(##+ [0-9][0-9a-z.\-]*)", f.read_text(), re.M)
+        dupes = [h for h, n in collections.Counter(heads).items() if n > 1]
+        if dupes:
+            problems.append(f"{f.name}: duplicated {sorted(dupes)}")
     assert not problems, "\n".join(problems)

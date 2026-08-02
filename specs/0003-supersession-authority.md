@@ -1,17 +1,19 @@
 # Feature spec: supersession authority
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v5)** — submitted 2026-08-02 16:55 UTC. **The fourth review approved the narrow
-> design again** and returned five items. **The substantive one: v4's ranking
-> rule did not deliver I6a** — an authority tie-break only fires on a tie, and a
-> refused edge can simply be more relevant. Measured. §4d now makes authority
-> dominate **within an active functional-contention group**, scoped so ordering
-> between unrelated edges is untouched. **And "exactly one contention pair" was
-> the author-only projection: over the real product it is 44 states across six
-> shapes**, now generated rather than reasoned.
+> **deferred (v5)** — fifth external review 2026-08-02 17:51 UTC. **The narrow design is
+> approved for the third time; the document was not.** Two findings are fatal
+> and both were invisible to every check I had: **the file shipped with §1b,
+> §2, §2c, §2c-ii and §3 duplicated**, the second copies stale and
+> contradictory; and **`ladder.py` generated its tables from four classes
+> including `assistant`, which is not in the shipped enum**, so *"the code and
+> the table are one object"* was false in the direction that mattered. Both are
+> fixed and both now have checks. **The remaining findings — contention-group
+> identity, the refusal log as a store operation, I6/I6a coverage, and the
+> touched-surface claim — are v6 work.**
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
@@ -78,6 +80,20 @@ third-party ingest.
   ladder proves wrong** — see §10 Q3.
 
 ---
+
+## 1b. `correct()` is a second path, and it is out of scope
+
+**`correct()` is the only code that writes `supersedes=`, and it never calls
+`apply_supersession`** — the two sets are disjoint, so a guard in the functional
+loop does not cover it.
+
+**Recorded as a known gap, not designed here.** The fix — one authorised
+replacement operation covering supersession, absorption and correction — is
+**`specs/0011` E5**.
+
+**Why deferring it is defensible:** `correct()` requires an operator to select a
+specific edge and invoke it. The functional loop fires **automatically** on
+ingested content, and the reported attack is the automatic one.
 
 ## 2. Field contracts touched
 
@@ -155,26 +171,19 @@ provenance, never raised by it** · supersession by an equal-or-better-entitled
 party, never a lesser one.
 
 <!-- GENERATED:matrix -->
-`USER 3 > SYSTEM 2 > ASSISTANT 1 > THIRD_PARTY 0`
+`USER 3 > THIRD_PARTY 0 > SYSTEM 2`
 
 | prior | incoming | result | |
 |---|---|---|---|
 | `user` | `user` | allow | same class |
-| `user` | `system` | **BLOCK** |  |
-| `user` | `assistant` | **BLOCK** |  |
 | `user` | `third_party` | **BLOCK** |  |
-| `system` | `user` | allow |  |
-| `system` | `system` | allow | same class |
-| `system` | `assistant` | **BLOCK** |  |
-| `system` | `third_party` | **BLOCK** |  |
-| `assistant` | `user` | allow |  |
-| `assistant` | `system` | allow |  |
-| `assistant` | `assistant` | allow | same class |
-| `assistant` | `third_party` | **BLOCK** |  |
+| `user` | `system` | **BLOCK** |  |
 | `third_party` | `user` | allow |  |
-| `third_party` | `system` | allow |  |
-| `third_party` | `assistant` | allow |  |
 | `third_party` | `third_party` | allow | same class |
+| `third_party` | `system` | allow |  |
+| `system` | `user` | allow |  |
+| `system` | `third_party` | **BLOCK** |  |
+| `system` | `system` | allow | same class |
 <!-- /GENERATED:matrix -->
 
 **Generated from `specs/ladder.py`.** v1 wrote this table by hand and inverted
@@ -183,18 +192,18 @@ direction, which would have let assistant-generated content retire a
 third-party record. **The document it was transcribed from had all four right.**
 
 <!-- GENERATED:coverage -->
-**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows, not 16.** **80 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 80 have the cap absent on both sides.
+**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 144 rows over the shipped enum, not 9.** **26 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 26 have the cap absent on both sides.
 
 | prior author/derived | incoming author/derived | result | |
 |---|---|---|---|
-| `user`/`—` | `user`/`system` | **BLOCK** | differs from the author-only answer |
-| `user`/`—` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
 | `user`/`—` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
-| `user`/`user` | `user`/`system` | **BLOCK** | differs from the author-only answer |
-| `user`/`user` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
+| `user`/`—` | `user`/`system` | **BLOCK** | differs from the author-only answer |
 | `user`/`user` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`system` | **BLOCK** | differs from the author-only answer |
+| `user`/`third_party` | `third_party`/`—` | allow | differs from the author-only answer |
+| `user`/`third_party` | `third_party`/`user` | allow | differs from the author-only answer |
 
-*(first 6 of 80; the test enumerates all 400)*
+*(first 6 of 26; the test enumerates all 144)*
 <!-- /GENERATED:coverage -->
 
 **The nine non-`ASSISTANT` pairs were measured against the running code.**
@@ -224,278 +233,6 @@ introduced the only normative contradiction in this spec.**
 **Write-time or maintain-time?** **Write-time** — `apply_supersession` runs at
 ingest. Note this is the *first* trust defect we have found in the write path;
 0.4.1 and 0.4.4 were both maintenance.
-
----
-
-## 1b. `correct()` is a second path, and it is out of scope
-
-**`correct()` is the only code that writes `supersedes=`, and it never calls
-`apply_supersession`** — the two sets are disjoint, so a guard in the functional
-loop does not cover it.
-
-**Recorded as a known gap, not designed here.** The fix — one authorised
-replacement operation covering supersession, absorption and correction — is
-**`specs/0011` E5**.
-
-**Why deferring it is defensible:** `correct()` requires an operator to select a
-specific edge and invoke it. The functional loop fires **automatically** on
-ingested content, and the reported attack is the automatic one.
-
-## 2. Field contracts touched
-
-| field | read / written | documented contract | consumers | preserved? |
-|---|---|---|---|---|
-| `Edge.active` | `invalidate_edge`; read everywhere | "false = retired, retained as history" | `assertable`, `gate.partition_parts`, `render_edges`, `store.edges(active_only)` | **Unchanged.** History is retained and still unreachable through the gate — **this change does not restore it** (`0011` E6). It creates *fewer* inactive edges, not more reachable ones. |
-| `Edge.invalidation_reason` | `apply_supersession` | why an edge retired: `superseded` · `absorbed_duplicate` · `lapsed` · `decayed` · `disputed` · `corrected` | `render_edges` (SUPERSEDED marker), `introspect` | Yes — gains a *reader*, since the marker currently never renders through the gate. |
-| `Provenance.author_of_evidence` | `ingest`; **`mcp_server:_AUTHOR`** | "who authored the evidence — the core injection-resistance signal" | `_disclosure_for`, gate routing, this spec's ladder | **Extended in meaning**: it now also determines *entitlement to retire*, not only disclosure. Recorded as a real widening of the field's role. |
-
-**Enumerated mechanically** — from the interface, not from recall (the method
-that missed three surfaces in `specs/0002`):
-
-```
-$ grep -nE "def (add_|invalidate_|delete_|forget_|set_)" src/veracium/store/base.py
-$ grep -rn "invalidate_edge\|partition_parts\|render_edges" src/veracium/ | grep -v ingest.py
-```
-
----
-
-## 2c. Untrusted inputs — REQUIRED, blocking
-
-| uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant that pins it** |
-|---|---|---|---|---|---|
-| **host/model `author`** (`mcp_server`) | rejected | rejected | **rejected — raises** | **model declares itself `SYSTEM`** to climb the ladder | **I7**: `_AUTHOR` has no `system` key **and** the lookup raises rather than defaulting |
-| **extractor `object` value** | no supersession | no supersession | — | **any differing value on a functional relation triggers supersession** — this is the attack vector | **I1/I2**: supersession requires authority ≥ prior |
-| **extractor `relation`** | — | unknown relation → non-functional → no supersession | — | extractor picks a *functional* relation for third-party content | **I2** — authority is checked regardless of relation |
-| **host `derived_from`** | none | rejected | **rejected — raises** | omitted where it should cap | I7 ✅ shipped; capping-only unchanged (0.1.7). **Now also load-bearing for supersession** — it is the cap in `effective` (§3), so an omitted `derived_from` overstates authority as well as disclosure. |
-| **older-version store data** | — | pydantic rejects unknown enum | — | — | ⚠️ **no invariant** — carried from `0001` Q3 (`PRAGMA user_version`); a gate on that spec, not this one |
-
-## 2c-ii. Assertions about reach
-
-| assertion | command | result |
-|---|---|---|
-| the supersession loop is unfiltered | `sed -n '136,142p' src/veracium/graph.py` | `store.edges(...)`, no disclosure test |
-| 3 of 9 author pairs unsafe | drive `apply_supersession` over the enum product | user→system, user→3p, system→3p retire |
-| inactive edges reach neither block | `gate.partition(edges, [])` with a superseded edge | absent from both |
-| `remember` is a model-facing tool | `grep -n "@server.tool" src/veracium/mcp_server.py` | `:88` `remember` |
-| `SYSTEM` is host-settable | `grep -n "_AUTHOR" src/veracium/mcp_server.py` | mapped `"system"` → `SYSTEM` (removed by I7) |
-| `confidence` does not affect ranking | read `subgraph_for_query`'s scorer | overlap · active · `observed_at` only |
-
----
-
-## 3. Trust-class matrix — REQUIRED, blocking
-
-**Directional, because supersession is.** Authority ladder, adopted by research:
-
-```
-USER 3  >  SYSTEM 2  >  ASSISTANT 1  >  THIRD_PARTY 0
-```
-
-> **A functional supersession is permitted only when the incoming edge's
-> *effective* authority is ≥ the prior edge's**, where
->
-> ```python
-> effective = min(AUTH[author_of_evidence], AUTH[derived_from or author_of_evidence])
-> ```
-
-**The authority is capped, not raw** — research's Q2 answer, and it is the whole
-reason `SYSTEM` can keep rung 2 without splitting the enum. `SYSTEM` means two
-different things today: host state veracium derived itself, and a summary of
-somebody else's content. Capping separates them **using machinery that already
-exists** rather than a new class:
-
-| edge | raw | `derived_from` | **effective** | consequence |
-|---|---|---|---|---|
-| host-state `SYSTEM` | 2 | — | **2** | keeps rung 2; may retire a third-party claim |
-| **`SYSTEM` summary of an attacker's email** | 2 | `THIRD_PARTY` | **0** | **retires nothing** — the door Q2 was about |
-| `USER` repeating something they read | 3 | `THIRD_PARTY` | **0** | consistent with it rendering `third-party-derived` under Q5 |
-| `ASSISTANT` inference over user testimony | 1 | `USER` | **1** | `min` — capping never raises |
-
-**This makes the ladder the fifth instance of the one shape, not an exception to
-it:** `derived_from` may cap never raise · configuration may narrow never widen ·
-maintenance may narrow never widen · **supersession authority is capped by
-provenance, never raised by it** · supersession by an equal-or-better-entitled
-party, never a lesser one.
-
-<!-- GENERATED:matrix -->
-`USER 3 > SYSTEM 2 > ASSISTANT 1 > THIRD_PARTY 0`
-
-| prior | incoming | result | |
-|---|---|---|---|
-| `user` | `user` | allow | same class |
-| `user` | `system` | **BLOCK** |  |
-| `user` | `assistant` | **BLOCK** |  |
-| `user` | `third_party` | **BLOCK** |  |
-| `system` | `user` | allow |  |
-| `system` | `system` | allow | same class |
-| `system` | `assistant` | **BLOCK** |  |
-| `system` | `third_party` | **BLOCK** |  |
-| `assistant` | `user` | allow |  |
-| `assistant` | `system` | allow |  |
-| `assistant` | `assistant` | allow | same class |
-| `assistant` | `third_party` | **BLOCK** |  |
-| `third_party` | `user` | allow |  |
-| `third_party` | `system` | allow |  |
-| `third_party` | `assistant` | allow |  |
-| `third_party` | `third_party` | allow | same class |
-<!-- /GENERATED:matrix -->
-
-**Generated from `specs/ladder.py`.** v1 wrote this table by hand and inverted
-two of four `ASSISTANT` cases, including `assistant → third_party` — the unsafe
-direction, which would have let assistant-generated content retire a
-third-party record. **The document it was transcribed from had all four right.**
-
-<!-- GENERATED:coverage -->
-**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows, not 16.** **80 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 80 have the cap absent on both sides.
-
-| prior author/derived | incoming author/derived | result | |
-|---|---|---|---|
-| `user`/`—` | `user`/`system` | **BLOCK** | differs from the author-only answer |
-| `user`/`—` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
-| `user`/`—` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
-| `user`/`user` | `user`/`system` | **BLOCK** | differs from the author-only answer |
-| `user`/`user` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
-| `user`/`user` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
-
-*(first 6 of 80; the test enumerates all 400)*
-<!-- /GENERATED:coverage -->
-
-**The nine non-`ASSISTANT` pairs were measured against the running code.**
-Assertability ordering and like-for-like+user-override both score 8/9, **failing
-on different cases**, which is the diagnostic: disclosure answers *may this be
-asserted*, supersession asks *who may declare this stale*. Different axis.
-
-⚠️ **The `ASSISTANT` row was never measured**, and v1's prose implied it had
-been. It is now generated, so the claim and the table cannot diverge again.
-
-**Extends to `ASSISTANT` with no new concept**, and **v2 must generate that row
-from the constants rather than write it out.** v1 wrote it out and inverted two
-of four — `assistant → user` and `assistant → third_party` — while the source it
-was copied from had all four right. The rule is one line of arithmetic
-(`AUTH[incoming] >= AUTH[prior]`); **restating its consequences in prose is what
-introduced the only normative contradiction in this spec.**
-
-**Answering the required questions.**
-- *Can a user-asserted fact become non-assertable?* **Today yes — that is the
-  defect.** After: only by a party of equal or greater **recorded effective** authority.
-- *Can non-user content gain user-grade authority?* No. This change only
-  **removes** the ability to retire; it grants nothing.
-- *Can it clear `needs_confirmation`?* No path added.
-- *Does it merge, drop or overwrite provenance?* No. Blocked supersessions leave
-  both edges intact, which is the additive-noise side of the asymmetry.
-
-**Write-time or maintain-time?** **Write-time** — `apply_supersession` runs at
-ingest. Note this is the *first* trust defect we have found in the write path;
-0.4.1 and 0.4.4 were both maintenance.
-
----
-
-## 1b. The same defect on a second path — `correct()` (was `0002` M7)
-
-**Moved here from `specs/0002` on 2026-08-01, and moving it found a hole in
-this spec.** M7 was filed as a maintenance-provenance finding because that is
-where the audit ran. It is not one. **`correct()` is a supersession path**, and
-therefore this spec's subject.
-
-**The hole, measured — the two sets are disjoint:**
-
-```
-$ grep -rn "apply_supersession" --include=*.py src/veracium/
-ingest.py:131          <- the ONLY caller
-$ grep -rn "supersedes=" --include=*.py src/veracium/
-__init__.py:616        <- the ONLY place a supersession is recorded
-```
-
-**`correct()` is the only code that supersedes a fact, and it never calls the
-function this spec guards.** So the ladder as specified in §3 — a check inside
-`apply_supersession` — **would have shipped with an uncovered bypass**, and
-because `correct()` hardcodes `author_of_evidence=USER` (`__init__.py:618`) it
-is a **maximum-authority** bypass: it passes any ladder check by construction.
-
-**This is the third instance today of one shape**, and that is now the argument
-for treating it as a class rather than three incidents: `_AUTHOR`'s
-`.get(author, USER)` default, rung 1 without I5, and now this. **A visible rule
-stays green while an invisible dependency carries the risk.** In each case the
-rule was correct and the test for it would have passed.
-
-### The finding, as originally recorded
-
-**Found while rebuilding the enumeration.** `correct()` builds its replacement
-edge with **hardcoded `author_of_evidence=EvidenceAuthor.USER`**, regardless of
-the `actor` argument, and applies it to *any active edge*. Reproduced starting
-from a third-party, `use_only`, non-assertable edge:
-
-```
-correct(user_id, edge_id, "CEO", actor="system")
-  → author=user  disclosure=mentionable  assertable=True
-```
-
-**A system actor turned an unverified third-party claim into a user-authored
-assertable fact.**
-
-**The asymmetry is the defect, and it is self-evident once both are read
-together.** `confirm()` guards exactly this and says why:
-
-> *"Only assertable facts can be confirmed: elevating a quarantined claim or
-> third-party inference by 'confirmation' would be a laundering vector — if the
-> user affirms a claim, that affirmation is new user-authored evidence and
-> belongs in `remember()`."*
-
-`correct()` is the same shape of operation with the same laundering potential
-and **no such guard**. `record_outcome` even validates actor↔outcome pairing;
-`correct()` accepts `actor="system"` silently.
-
-**⚠️ Correction: `actor` has ZERO effect on trust.** Verified — it appears
-exactly twice, in the signature and in the episode summary f-string. A caller
-passing `actor="system"` is **silently ignored where it matters**, so my
-original framing (a system actor producing user-authored facts) named the wrong
-vector. `source_type=STATED` is also hardcoded, so a third-party claim becomes
-*stated by the user*. **An argument that looks like it sets authorship and does
-not is its own hazard.**
-
-**⚠️ My severity reasoning was also wrong, and research's replacement is
-better.** I wrote "host-facing only, so a design gap not an active exploit
-path". The realistic path was never an attacker calling `correct()` — it is **a
-host implementing the obvious feature (*let the user fix a wrong memory*) and
-calling it on whatever edge the user points at**, including a third-party claim
-rendered in the UNVERIFIED block. Intent: *fix this text*. Effect: *adopt this
-as my own testimony*. **No attacker, no misuse, ordinary operation.** On
-reachability alone M7 is **broader than 0.4.4**, which did get an advisory and
-required `maintain()` + ≥8 mixed cold episodes + >30 days + trusted-first
-ordering.
-
-**What actually justifies no advisory — and this is the reusable line:**
-**0.4.4 fired automatically during routine maintenance; M7 requires an explicit
-operator-initiated call on a specific edge. Automatic-versus-invoked is the
-distinction**, not host-facing-versus-not. Residual risk goes in the release
-note rather than being left implied.
-
-**OBSOLETE proposed fix**, retained so the change of direction is legible: v1
-proposed *refusing* `correct()` on a non-assertable edge, mirroring `confirm()`.
-**Q5 resolved the opposite way** — a correction is an *edit*, so the replacement
-inherits the corrected edge's **complete** trust basis. **The invariants for it are `0011` E5**, not this spec's table.
-
-### What moving it resolves — `0002` Q5
-
-**Q5 is resolved: a correction is an *edit*.** The replacement inherits the
-corrected edge's **complete trust basis** — `author_of_evidence`,
-**`derived_from`**, `disclosure`, and a source type of `CORRECTED` rather than
-`STATED`.
-
-**v1 resolved it as "inherit the class" and that was two fields short.**
-`derived_from` is half of `effective()`, so a replacement preserving
-`author=USER, disclosure=USE_ONLY` while dropping `derived_from=THIRD_PARTY`
-moves from effective authority **0 to 3** — and could then retire edges the
-original was never entitled to touch. **Inheriting "the class" was exactly the
-kind of partial preservation the capping rule exists to prevent.**
-
-`source_type=STATED` was hardcoded, which turned third-party material into user
-testimony on correction. **`CORRECTED` is a new source type**, because neither
-`STATED` nor `INFERRED` is true of an edited value.
-
-**Consequence, and it is `0011`'s not this spec's:** a guard living only in
-`apply_supersession` cannot cover `correct()`. **One authorised replacement
-operation reached by every retirement path is `0011` E5.** This spec guards the
-automatic path and says so.
 
 ---
 
@@ -637,18 +374,14 @@ states the existing gate already separates them — the incoming edge is
 `use_only` or `quarantined` and routes to the unverified block.
 
 <!-- GENERATED:contention -->
-**140 of the 400 states are refused. 44 of those put both edges in the SAME read partition** — the cases a reader sees as two competing values. The rest are already separated by the existing gate.
+**44 of the 144 states are refused. 8 of those put both edges in the SAME read partition** — the cases a reader sees as two competing values. The rest are already separated by the existing gate.
 
 | author shape | states | partition |
 |---|---|---|
-| `user` → `assistant` | 12 | both `mentionable` |
-| `system` → `assistant` | 12 | both `mentionable` |
-| `user` → `system` | 9 | both `mentionable` |
-| `user` → `user` | 5 | both `mentionable` |
-| `system` → `user` | 3 | both `mentionable` |
-| `system` → `system` | 3 | both `mentionable` |
+| `user` → `system` | 6 | both `mentionable` |
+| `user` → `user` | 2 | both `mentionable` |
 
-**v4 said "exactly one pair" and reasoned from the six author-only blocked pairs.** Over the real product it is 44 states across 6 shapes: **a derivation cap by `assistant` or `system` lowers effective authority without changing disclosure**, so the author-only projection cannot see those contentions at all.
+**Derived from the SHIPPED enum** (`user, third_party, system`) and the **production** `_disclosure_for`. v5 hard-coded four classes including `assistant`, which does not exist in `EvidenceAuthor`, and reimplemented disclosure — so its 256 extra states modelled a rule the runtime cannot execute. **When `0001` lands and the enum gains `ASSISTANT`, these tables regenerate with no edit here.**
 <!-- /GENERATED:contention -->
 
 **In those same-partition cases recall renders both values**, the

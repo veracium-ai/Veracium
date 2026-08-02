@@ -35,7 +35,8 @@ def _regions() -> dict[str, str]:
                   f"{'allow' if ok else '**BLOCK**'} | differs from the author-only answer |")
     coverage = (
         f"**The rule reads `min(author, derived_from)`, so the matrix is over "
-        f"the full product: {len(full)} rows, not {len(author_matrix())}.** "
+        f"the full product: {len(full)} rows over the shipped enum, "
+        f"not {len(author_matrix())}.** "
         f"**{len(div)} of them give a different answer than authorship alone.** "
         f"Those are the decisions that *depend on* the derivation cap: omitting "
         f"`derived_from` collapses them toward the author-only result — verified, "
@@ -44,7 +45,7 @@ def _regions() -> dict[str, str]:
         "|---|---|---|---|\n" + "\n".join(ex) +
         f"\n\n*(first {len(ex)} of {len(div)}; the test enumerates all "
         f"{len(full)})*")
-    from ladder import blocked_states, same_block_contention, disclosure
+    from ladder import CLASSES, blocked_states, same_block_contention, disclosure
     import collections
     sb = same_block_contention()
     shapes = collections.Counter((b[0], b[2]) for b in sb)
@@ -52,16 +53,18 @@ def _regions() -> dict[str, str]:
         f"| `{p}` → `{i}` | {n} | both `mentionable` |"
         for (p, i), n in sorted(shapes.items(), key=lambda x: -x[1]))
     contention = (
-        f"**{len(blocked_states())} of the 400 states are refused. "
+        f"**{len(blocked_states())} of the {len(effective_matrix())} states are refused. "
         f"{len(sb)} of those put both edges in the SAME read partition** — the "
         f"cases a reader sees as two competing values. The rest are already "
         f"separated by the existing gate.\n\n"
         f"| author shape | states | partition |\n|---|---|---|\n{srows}\n\n"
-        f"**v4 said \"exactly one pair\" and reasoned from the six author-only "
-        f"blocked pairs.** Over the real product it is {len(sb)} states across "
-        f"{len(shapes)} shapes: **a derivation cap by `assistant` or `system` "
-        f"lowers effective authority without changing disclosure**, so the "
-        f"author-only projection cannot see those contentions at all.")
+        f"**Derived from the SHIPPED enum** (`{', '.join(CLASSES)}`) and the "
+        f"**production** `_disclosure_for`. v5 hard-coded four classes including "
+        f"`assistant`, which does not exist in `EvidenceAuthor`, and "
+        f"reimplemented disclosure — so its {400 - len(effective_matrix())} extra "
+        f"states modelled a rule the runtime cannot execute. **When `0001` lands "
+        f"and the enum gains `ASSISTANT`, these tables regenerate with no edit "
+        f"here.**")
     return {"matrix": matrix, "coverage": coverage, "contention": contention}
 
 
