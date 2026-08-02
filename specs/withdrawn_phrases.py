@@ -11,6 +11,15 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    (r'" ?"\.join\(sql\.split\(\)\)|whitespace[- ]collapsed DDL|canonicalisation is deliberately minimal',
+     "R3/0007: collapsing whitespace rewrites quoted literals; keep sqlite_master.sql byte-for-byte",
+     "specs/0007 §4a"),
+    (r"REBUILDABLE = \(|excluded from the digest by name",
+     "R3/0007: identity is (type, name); a same-named trigger digested as clean",
+     "specs/0007 §4a-0"),
+    (r"one manifest per version|MANIFESTS: dict\[int, Manifest\]",
+     "R3/0007: a version accepts a SET; a correct ALTER migration produces a different digest",
+     "specs/0007 §4a-v"),
     (r"a semantic signature (bounds|is the strictest)|(indexes|indices) are (a )?performance only",
      "R2/0007: four more counterexamples passed it; the bound is known-constructor equality",
      "specs/0007 §4a"),

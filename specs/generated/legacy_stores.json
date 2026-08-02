@@ -1,145 +1,172 @@
 {
-  "head_digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
+  "head_digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+  "head_schema_version": 1,
   "sqlite_version": "3.45.1",
-  "manifest_version": 2,
+  "manifest_algorithm": 3,
+  "legacy_base_versions": [
+    1
+  ],
   "releases": [
     {
       "tag": "v0.1.0",
       "commit": "c7c09b0bf0dda3b502f85eb6a9933a9e74e92950",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.1",
       "commit": "1641b32cb1171039553032321a1695faf40ba73d",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.2",
       "commit": "31b605116bb4fc2c038ce9e58dab7ea1544a77e5",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.3",
       "commit": "f98a66d8101b7d6f1f0e4a54c8bf11361181a332",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.4",
       "commit": "ebc2bb1fb65352ad1de6dd12c3bdfeab89bf2869",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.5",
       "commit": "096e2c031f1805490707fd5f191c167ed95fde74",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.6",
       "commit": "567a0e328217b1f89f97f316d80ae2db548a17ce",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.1.7",
       "commit": "329f9d46d8d5651a9155ba3a98788b036cb2fa59",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.2.0",
       "commit": "ffb1c8d67a5fa537bf6fddbeec26fbcd9d876947",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.2.1",
       "commit": "4d789530d4045f734aebea63fd9439cf6bbdcdf3",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.2.2",
       "commit": "36f08cef793d41591680cbc44d647b1ab25aaaee",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.2.3",
       "commit": "e09b0c4a98d47bfebb14e0735fc69cf912b4034d",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.2.4",
       "commit": "4363b04953300e1dd42745820db26cc92634618b",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.3.0",
       "commit": "2493aea8e939fd6508a4855686aae8fb1229aa94",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.0",
       "commit": "7dde04ac1dba5cd594caacf4d9f8ee96dc9cc98e",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.1",
       "commit": "920acb8223320215bb0393f2af63d72f1941d9c1",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.2",
       "commit": "145ad711e3037ca1add2b58d8636b64c02df8da7",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.3",
       "commit": "a66d3af1905607b17a171665ad2c97cc22afd123",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.4",
       "commit": "ea2e1abe2677acd846fb2b7679cf23d75f78a228",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.5",
       "commit": "9d2959517014beb5e3254826d8b2dd796c89ca6b",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.6",
       "commit": "ecb376cc3285f288a38dd36f7d17ab67c6bad6aa",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.7",
       "commit": "f7f1bff0ae5f6725fb2962dce123ff0bc70426e5",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     },
     {
       "tag": "v0.4.8",
       "commit": "06ed6866c18da0bcca22f3dc1e19395d896c874e",
-      "digest": "7d6f1013ab40ee599164e395e619ccc6e624f871a7acc73660f10bb77c8236ad",
-      "result": "ok"
+      "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+      "result": "ok",
+      "store_schema_version": 1
     }
   ]
 }
