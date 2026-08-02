@@ -472,7 +472,7 @@ note rather than being left implied.
 **OBSOLETE proposed fix**, retained so the change of direction is legible: v1
 proposed *refusing* `correct()` on a non-assertable edge, mirroring `confirm()`.
 **Q5 resolved the opposite way** — a correction is an *edit*, so the replacement
-inherits the corrected edge's trust basis. See §Q5 and I10.
+inherits the corrected edge's **complete** trust basis. **The invariants for it are `0011` E5**, not this spec's table.
 
 ### What moving it resolves — `0002` Q5
 
@@ -492,9 +492,10 @@ kind of partial preservation the capping rule exists to prevent.**
 testimony on correction. **`CORRECTED` is a new source type**, because neither
 `STATED` nor `INFERRED` is true of an edited value.
 
-**Consequence for the implementation:** the ladder check cannot live only in
-`apply_supersession`. **It belongs where a supersession is recorded**, and both
-paths must reach it — see I9.
+**Consequence, and it is `0011`'s not this spec's:** a guard living only in
+`apply_supersession` cannot cover `correct()`. **One authorised replacement
+operation reached by every retirement path is `0011` E5.** This spec guards the
+automatic path and says so.
 
 ---
 
@@ -758,6 +759,19 @@ too broadly passes every prohibition test while breaking legitimate updates.
 else can hold while a query at the budget still evicts the fact the guard
 preserved — see §4d.
 
+**Release ordering** — the order these must land in, because a later one
+depends on an earlier one holding:
+
+1. **I4** — the permissions. A refusal drawn too broadly passes every
+   prohibition test; this is what catches it.
+2. **I1–I3** — the guard itself and that a refusal keeps both edges.
+3. **I6 / I6a** — contention rendering and, decisively, that a refusal does not
+   evict the prior. **Without I6a the rest is a store-level fix for a
+   recall-level defect.**
+4. **I5** — refusal telemetry, which is what makes `0011`'s reconciliation
+   possible later.
+5. **I8** — the bench regression gate.
+
 **I1 is generated from `specs/ladder.py`**, so the test and the table in §3
 cannot disagree. v1 wrote that table by hand and inverted two of four
 `ASSISTANT` cases.
@@ -868,8 +882,8 @@ lower-authority party is routinely the correct one.
 | ~~**Q2**~~ | **ANSWERED 2026-08-01 20:56 — `SYSTEM` keeps rung 2, but the ladder uses CAPPED authority** (§3). Do not split the enum; `min(author, derived_from)` already distinguishes host state from a summary of someone else's content. **Sufficient post-I7**, since `system` is no longer reachable through the MCP tool. | resolved | research | — |
 | **Q2a** | **Recorded trigger, not an open question:** if the CLI is ever agent-driven, `cli.py:180` becomes the same surface I7 just closed and rung 2 needs re-adjudicating. | `watch` | dev | on any CLI automation |
 | ~~**Q3**~~ | **ADOPTED, narrowly.** *Never supersede, keep both, surface contention* is exactly what a refusal now does — for the refused cases only, not as a wholesale replacement of functional semantics. §4c. | resolved | — | — |
-| ~~**Q5**~~ | **RESOLVED: a correction is an edit.** The replacement inherits the **complete** trust basis — v1 said "class", meaning two fields, and **`derived_from` was not among them**, so a corrected edge could move from effective authority 0 → 3. I10/I10b. | resolved | research | — |
-| ~~**Q6** `actor`~~ | **RESOLVED: `actor` is removed from `correct()`.** It reached only an episode f-string, so it looked like it set authority and set nothing. **The third option — "give it an authorisation role" — is refused**: authority comes from the call path (I11), and adding a parameter that grants it would rebuild the defect I7 closed. Correction authorship is the corrected edge's, inherited. | resolved | dev | — |
+| ~~**Q5**~~ | **RESOLVED: a correction is an edit.** The replacement inherits the **complete** trust basis — v1 said "class", meaning two fields, and **`derived_from` was not among them**, so a corrected edge could move from effective authority 0 → 3. **Invariants: `0011` E5.** | resolved | research | — |
+| ~~**Q6** `actor`~~ | **RESOLVED: `actor` is removed from `correct()`.** It reached only an episode f-string, so it looked like it set authority and set nothing. **The third option — "give it an authorisation role" — is refused**: authority must come from the call path (**`0011` E4**), and a parameter that granted it would rebuild the defect I7 closed in 0.4.5. Correction authorship is the corrected edge's, inherited. | resolved | dev | — |
 | ~~**Q4**~~ | **MOVED to `0011` E6.** History budgeting belongs to the history-visibility design; this change creates fewer superseded edges, not more. | moved | — | — |
 
 ---
@@ -904,7 +918,7 @@ and I repeated it the same day.
 - [ ] Every default fails **closed** (**I7** — the `get(..., USER)` trap)
 - [ ] §2c has no empty invariant cell
 - [ ] §2c-ii claims carry commands, not assurances
-- [ ] §5's regime is reachable by a test (**I6**), with a frozen threshold
+- [ ] §5's regime is reachable by a test — **I6/I6a** for contention, **I1** for the guard
 - [ ] §8 states what this does *not* establish
 - [ ] I have said where the **author's conclusion** is wrong
 - [ ] §9 brief written and external review sent

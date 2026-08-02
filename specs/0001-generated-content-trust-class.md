@@ -584,7 +584,7 @@ assistant content as `SYSTEM`) without opening a new persistent assertion
 channel. **Cost recorded before the fact: this is more conservative than current
 Arm C, so it moves our benchmark score down or nowhere, never up.**
 
-**Also accepted:** I2a (direct fail-closed tests); proactive eligibility assessed
+**Also accepted:** direct fail-closed tests — the reviewer numbered these in their own scheme, which this spec never adopted, so they are described rather than cited; proactive eligibility assessed
 separately from answer-context eligibility; the CLI contradiction (fixed in §4);
 Q4 promoted to **blocking**; the `PRAGMA user_version` guard promoted to a
 **hard release gate**; I10a widened to freeze *every* ranking-relevant field;

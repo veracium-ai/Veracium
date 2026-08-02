@@ -557,3 +557,24 @@ def test_review_archives_are_named_and_indexed():
     r = subprocess.run([sys.executable, str(root / "specs" / "render_archives.py"), "--check"],
                        capture_output=True, text=True, cwd=root)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_no_spec_cites_an_invariant_it_does_not_define():
+    """Four review rounds of 0003 found prose referring to invariants the table
+    no longer contained — I9 after it was replaced, I5 with its old meaning,
+    I11/I12/I13 after they moved to 0011. A contributor implementing from that
+    prose builds a different feature from the one named in the table."""
+    import re, pathlib
+    specs = pathlib.Path(__file__).resolve().parent.parent / "specs"
+    problems = []
+    for f in sorted(specs.glob("[0-9][0-9][0-9][0-9]-*.md")):
+        body = re.split(r"^##+ \d+\w*\.\s*Review history", f.read_text(), flags=re.M)[0]
+        defined = set(re.findall(r"^\| \*\*([A-Z]\d+[a-z]?)\*\*", body, re.M))
+        if not defined:
+            continue          # spec has no invariant table yet
+        cited = {c for c in re.findall(r"\b([A-Z]\d+[a-z]?)\b", body)
+                 if c[0] == next(iter(defined))[0]}
+        missing = cited - defined
+        if missing:
+            problems.append(f"{f.name}: cites {sorted(missing)}, defines {sorted(defined)}")
+    assert not problems, "\n".join(problems)

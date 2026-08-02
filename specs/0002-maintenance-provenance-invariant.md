@@ -391,6 +391,7 @@ second.
 | **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** Not the general form; see N9 | CI + bench |
 | **N9** *(replaces N7's general claim)* for an operation whose evidence class is **`none`** (§6a), the post-state is no stronger than the pre-state under the relation in **`specs/monotone.py`** | `test_n9_permits_the_retirement_the_trust_matrix_calls_clean` · `test_n9_still_forbids_reactivation_and_reason_rewriting` · `test_n9_refuses_a_retirement_with_no_reason` · `test_an_evidence_free_operation_cannot_claim_a_reason_it_did_not_earn` · **`test_the_real_expire_path_satisfies_n9`** — against the running code, not a constructed pair | CI |
 | **N9t** a **`transfer`** may not raise any trust field above the importing principal's cap, nor claim new observation currency | `test_transfer_cannot_raise_trust_or_currency` | CI |
+| **N9b** *(set→output)* a consolidated output is no stronger than its weakest input across **every** trust-bearing field — §6a defines the field rules | `test_consolidation_output_is_no_stronger_than_its_weakest_input` · `test_consolidated_provenance_is_internally_consistent` | CI |
 | **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
 **N7 is the strongest *end-to-end* check and it is not the general form.**
