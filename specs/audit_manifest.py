@@ -31,7 +31,6 @@ BASE = SRC / "store" / "base.py"
 TESTS = ROOT / "tests"
 MANIFEST = ROOT / "specs" / "generated" / "0002-audit-manifest.md"
 
-MUTATOR_PREFIXES = ("add_", "invalidate_", "delete_", "forget_", "set_")
 OP_CLASSES = {"write-time", "maintain-time"}
 EVIDENCE_VALUES = {"act", "observation", "none", "transfer"}
 SPEC_REF = re.compile(r"\b\d{4}\b")   # spec numbers are four digits; 000\d stopped at 0009
@@ -39,13 +38,32 @@ TEST_REF = re.compile(r"\btest_\w+")
 
 
 def mutators() -> list[str]:
-    """Store methods that write persistent state, from the interface itself."""
+    """Store methods that write persistent state, read from the `@store_mutator`
+    marker on the interface.
+
+    This used to match a remembered list of name prefixes (`add_`, `invalidate_`,
+    `delete_`, `forget_`, `set_`), which repeats the audit's original failure one
+    level up: the interface was scanned, but *which methods mutate* was still
+    recalled rather than declared. Spec 0010 needs `claim_episode_batch`, which
+    no prefix covers -- it would have written persistent trust state while being
+    invisible to this manifest.
+
+    Parsed rather than imported, so the manifest can be checked from a source
+    tree without installing the package.
+    """
     tree = ast.parse(BASE.read_text())
     out = set()
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if node.name.startswith(MUTATOR_PREFIXES):
-                out.add(node.name)
+            for dec in node.decorator_list:
+                nm = dec.id if isinstance(dec, ast.Name) else getattr(dec, "attr", None)
+                if nm == "store_mutator":
+                    out.add(node.name)
+    if not out:
+        raise SystemExit(
+            "no @store_mutator methods found in store/base.py. The manifest "
+            "cannot enumerate call sites for an empty mutator set, and failing "
+            "closed beats certifying zero sites as covered.")
     return sorted(out)
 
 
@@ -72,7 +90,26 @@ def _fingerprint(call: ast.Call, context: str) -> str:
     return f"{context}|{expr}"
 
 
+def _expr(node) -> str:
+    try:
+        return ast.unparse(node)
+    except Exception:                       # pragma: no cover
+        return type(node).__name__
+
+
 class _Visitor(ast.NodeVisitor):
+    """Walks every module, recording each mutator call with its full scope and
+    control-flow context.
+
+    The context carries the COMPLETE normalised discriminator of each enclosing
+    arm -- the `if` test, the `for` target and iterable, the `except` type and
+    position, the `match` pattern and guard -- not a truncated hash of it. v5
+    used four hex characters of SHA-1, and the reviewer found a real collision:
+    `x == 119` and `x == 125` both hash to `4bd2`, so two different branches
+    shared a context and the tie-break fell back to source order, which is the
+    failure the fingerprint replaced ordinals to prevent.
+    """
+
     def __init__(self, names: set[str], rel: str):
         self.names, self.rel = names, rel
         self.scope: list[str] = []
@@ -88,46 +125,74 @@ class _Visitor(ast.NodeVisitor):
     visit_FunctionDef = _scoped
     visit_AsyncFunctionDef = _scoped
 
-    def _block(self, node):
-        """Record WHICH BRANCH, not just the nesting depth.
+    def _arm(self, label: str, children):
+        for child in children or []:
+            self.ctx.append(label)
+            self.visit(child)
+            self.ctx.pop()
 
-        `if/else` at the same depth are different operations: in `expire()` the
-        decay write and the stale-flag write are both `store.add_edge(e)` inside
-        four nested conditionals, and are distinguishable only by branch.
-        """
-        kind = type(node).__name__
-        # The CONDITION is what makes two structurally identical branches
-        # different operations: apply_supersession has two `store.add_edge(prior)`
-        # calls at the same depth, one guarded by the reinforcement test and one
-        # by `_subsumes(...)`. Branch shape alone cannot tell them apart.
-        for attr in ("test", "iter"):
-            probe = getattr(node, attr, None)
-            if probe is not None:
-                try:
-                    kind += "(" + hashlib.sha1(
-                        ast.unparse(probe).encode()).hexdigest()[:4] + ")"
-                except Exception:
-                    pass
-                break
-        for field in ("body", "orelse", "finalbody", "handlers"):
-            for child in getattr(node, field, []) or []:
-                self.ctx.append(f"{kind}.{field}")
-                self.visit(child)
-                self.ctx.pop()
-        # everything that is not a branch body (test, iter, items, ...)
+    def _others(self, node, skip):
         for field, value in ast.iter_fields(node):
-            if field in ("body", "orelse", "finalbody", "handlers"):
+            if field in skip:
                 continue
             for child in (value if isinstance(value, list) else [value]):
                 if isinstance(child, ast.AST):
                     self.visit(child)
 
-    visit_If = _block
-    visit_For = _block
-    visit_AsyncFor = _block
-    visit_While = _block
-    visit_Try = _block
-    visit_With = _block
+    def visit_If(self, node):
+        t = _expr(node.test)
+        self._arm(f"if({t})", node.body)
+        self._arm(f"else-of-if({t})", node.orelse)
+        self._others(node, {"body", "orelse"})
+
+    def visit_While(self, node):
+        t = _expr(node.test)
+        self._arm(f"while({t})", node.body)
+        self._arm(f"else-of-while({t})", node.orelse)
+        self._others(node, {"body", "orelse"})
+
+    def _loop(self, node, kw):
+        d = f"{_expr(node.target)} in {_expr(node.iter)}"
+        self._arm(f"{kw}({d})", node.body)
+        self._arm(f"else-of-{kw}({d})", node.orelse)
+        self._others(node, {"body", "orelse"})
+
+    def visit_For(self, node):
+        self._loop(node, "for")
+
+    def visit_AsyncFor(self, node):
+        self._loop(node, "async-for")
+
+    def visit_Try(self, node):
+        self._arm("try", node.body)
+        for i, h in enumerate(node.handlers):
+            # handler TYPE and position: `except A` and `except B` are different
+            # operations, and v5 gave every handler the same context
+            self._arm(f"except[{i}]({_expr(h.type) if h.type else 'bare'})", h.body)
+        self._arm("else-of-try", node.orelse)
+        self._arm("finally", node.finalbody)
+        self._others(node, {"body", "handlers", "orelse", "finalbody"})
+
+    visit_TryStar = visit_Try
+
+    def _with(self, node, kw):
+        d = ", ".join(_expr(it.context_expr) for it in node.items)
+        self._arm(f"{kw}({d})", node.body)
+        self._others(node, {"body"})
+
+    def visit_With(self, node):
+        self._with(node, "with")
+
+    def visit_AsyncWith(self, node):
+        self._with(node, "async-with")
+
+    def visit_Match(self, node):
+        subj = _expr(node.subject)
+        for i, case in enumerate(node.cases):
+            guard = f" if {_expr(case.guard)}" if case.guard else ""
+            self._arm(f"match({subj})case[{i}]({_expr(case.pattern)}{guard})",
+                      case.body)
+        self._others(node, {"cases"})
 
     def visit_Call(self, node):
         f = node.func
@@ -153,20 +218,25 @@ def call_sites(names: list[str]):
         (excluded if "/store/" in rel else out).extend(v.found)
     out.sort(key=lambda r: (r[0], r[4]))
 
-    # Syntactically identical calls in the same branch share a canonical record
-    # -- `store.add_edge(edge)` twice in one block is legal and meaningful. They
-    # get an explicit `#n` suffix in source order rather than silently
-    # collapsing, which is what v4 did: two sites, one key, one disposition
-    # satisfying both.
-    from collections import Counter, defaultdict
+    # Two calls that are identical in expression AND in every enclosing arm are
+    # genuinely indistinguishable to this tool. v5 broke the tie with a source-
+    # order `#n`, which silently reattached verdicts when the two were swapped.
+    # There is no correct automatic answer, so it FAILS and asks for a label --
+    # `store.add_edge(e)  # audit: decay-write` -- which is a deliberate human
+    # act rather than a guess. No site in the tree needs one today.
+    from collections import Counter
     counts = Counter((r, s, m, fp) for r, s, m, fp, _, _ in out)
-    seen = defaultdict(int)
+    ambiguous = {k: n for k, n in counts.items() if n > 1}
+    if ambiguous:
+        lines = "\n".join(f"  {k[0]} {k[1]}() {k[2]} x{n}" for k, n in ambiguous.items())
+        raise SystemExit(
+            f"indistinguishable call sites -- identical expression and identical "
+            f"enclosing arms:\n{lines}\n"
+            f"Add `# audit: <label>` to each so they can be told apart. Source "
+            f"order is not an identity: swapping two such calls would silently "
+            f"move their verdicts.")
     final = []
     for rel, scope, mut, canon, ln, ctx in out:
-        key = (rel, scope, mut, canon)
-        if counts[key] > 1:
-            seen[key] += 1
-            canon = f"{canon}#{seen[key]}"
         final.append((rel, scope, mut,
                       hashlib.sha256(canon.encode()).hexdigest()[:12], ln, ctx))
     ids = [(r, s, m, fp) for r, s, m, fp, _, _ in final]
@@ -238,13 +308,32 @@ VALID_STATES = {"clean", "fixed", "open", "moved", "open_moved"}
 
 
 def _collected_tests() -> set[str]:
-    """Exact test function names, parsed from the AST.
+    """Tests pytest actually COLLECTS, via `--collect-only`.
 
-    v4 asked whether `f"def {name}"` appeared anywhere in the concatenated test
-    files, which `def test_foobar` satisfies for `test_foo`, and which a
-    commented-out or string-embedded name also satisfies. A coverage claim
-    backed by a substring match is not backed.
+    Three attempts at this claim, each narrower than it sounded. v4 asked
+    whether `f"def {name}"` appeared in the concatenated files, so `test_foo`
+    was satisfied by `def test_foobar`. v5 parsed exact function names from the
+    AST, which fixed that and still accepted a function nested inside another,
+    one under `if False`, or a method on a class pytest never collects.
+
+    Collection is the real predicate, so ask the collector. Falls back to the
+    AST scan when pytest is unavailable, and SAYS SO rather than silently
+    weakening the guarantee.
     """
+    import subprocess
+    r = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q",
+         "--no-header", "-p", "no:cacheprovider", str(TESTS)],
+        capture_output=True, text=True, cwd=ROOT)
+    if r.returncode == 0 and r.stdout.strip():
+        names = set()
+        for line in r.stdout.splitlines():
+            if "::" in line:
+                names.add(line.rsplit("::", 1)[-1].split("[")[0].strip())
+        if names:
+            return names
+    print("note: pytest --collect-only unavailable; falling back to an AST scan, "
+          "which cannot see collection", file=sys.stderr)
     names = set()
     for f in TESTS.rglob("test_*.py"):
         for node in ast.walk(ast.parse(f.read_text())):
@@ -277,6 +366,9 @@ def _missing_tests():
 def render(sites) -> str:
     from audit_dispositions import DISPOSITIONS, STATES
     rows = []
+    canon = {}
+    for rel, scope, mut, fp, ln, ctx in sites:
+        canon[fp] = ctx
     for rel, scope, mut, fp, ln, ctx in sites:
         cls, fields, ev, verdict, test = DISPOSITIONS.get(
             (rel, scope, mut, fp), ("", "", "", "**NO VERDICT**", ""))
@@ -318,9 +410,17 @@ def render(sites) -> str:
             "which are the mutators rather than callers of them. **The "
             "`evidence` column is a reviewed classification, not a "
             "derived fact** — see `0002` §6a.\n\n"
+            "**Full canonical context per site** is listed after the table, so "
+            "the digest can be recomputed rather than trusted.\n\n"
             "| call site | in | mutator | fp | state | class | trust fields touched | "
             "evidence | verdict | test / owning spec |\n"
-            "|---|---|---|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
+            "|---|---|---|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n\n"
+            "## Canonical context\n\n"
+            "The identity hashed into each `fp`. Full discriminators, never a "
+            "truncated hash: v5 used four hex characters of the branch condition "
+            "and `x == 119` / `x == 125` collided.\n\n```\n"
+            + "\n".join(f"{fp}  {ctx}" for fp, ctx in sorted(canon.items()))
+            + "\n```\n")
 
 
 def main() -> int:

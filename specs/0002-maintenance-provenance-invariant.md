@@ -1,16 +1,17 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred (v5)** — fifth external review 2026-08-02 02:57 UTC. **Invariant approved a fifth
-> time; retrospective deferred a fifth time.** Every falsifiable finding was
-> checked and **all stand**, including **the new lint failing on its first live
-> test** and **a hash collision the reviewer constructed and I reproduced**.
-> **The conclusion I now accept: status maintained in prose cannot be made
-> correct by checking it harder. §11 must be generated from structured records,
-> and every summary derived from the same source.** See §12.
+> **in review (v6)** — submitted 2026-08-02 03:12 UTC. **All eleven findings of the fifth
+> review are closed.** The change that matters is structural: **status prose is
+> now generated from `specs/findings.py`**, so the class of defect that deferred
+> all five previous versions — a status claim contradicting another status claim
+> — is no longer possible to introduce by hand. Identity carries full branch
+> discriminators (the reviewer's `4bd2` collision is resolved), mutator
+> discovery is declarative, `transfer` has a formal regime, and `0010`'s
+> whole-batch lineage closes a laundering path that would have shipped.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -381,6 +382,7 @@ second.
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
 | **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** Not the general form; see N9 | CI + bench |
 | **N9** *(replaces N7's general claim)* for an operation whose evidence class is **`none`** (§6a), the post-state is no stronger than the pre-state under the partial order **defined below** | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
+| **N9t** a **`transfer`** may not raise any trust field above the importing principal's cap, nor claim new observation currency | `test_transfer_cannot_raise_trust_or_currency` | CI |
 | **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
 **N7 is the strongest *end-to-end* check and it is not the general form.**
@@ -405,6 +407,7 @@ clause must hold:
 
 ```
 post.active              <=  pre.active              # a retired edge stays retired
+post.invalidation_reason ==  pre.invalidation_reason # why it retired may not be rewritten
 post.assertable          <=  pre.assertable          # False is weaker than True
 post.needs_confirmation  >=  pre.needs_confirmation  # True  is weaker than False
 post.disclosure          <=T pre.disclosure          # MENTIONABLE > USE_ONLY > QUARANTINED
@@ -418,6 +421,13 @@ post.valid_from          ==  pre.valid_from          # immutable identity, §7c
 **`<=T` is the disclosure trust order**, taken from the enum's own documented
 meanings (`schema.py:45`): `MENTIONABLE` (may be volunteered) **>** `USE_ONLY`
 (may shape behaviour, never volunteered) **>** `QUARANTINED` (never asserted).
+
+**`invalidation_reason` is in the relation, not only in prose.** v5 said it was
+*"preserved alongside `active`"* and left it out of the product rule, so N9
+could pass while a retirement's recorded cause changed — `superseded` rewritten
+to `lapsed` loses the fact that something replaced it, which is exactly what
+`render_edges`' SUPERSEDED marker depends on. **A field described as preserved
+and absent from the relation is not preserved by anything.**
 
 **`active` is a separate clause too, and it is the one v4 missed.** An
 evidence-free operation could **reactivate a retired edge** while every other
@@ -462,7 +472,19 @@ in `audit_dispositions.py` and CI-checked:
 | **`act`** | an authorised call through a dedicated entry point that is **not model-reachable** — `0008`'s principle: *the act is the evidence* | no |
 | **`observation`** | new content arriving from outside and being extracted | no |
 | **`none`** | maintenance — no new information, only **recognition of existing records** | **yes** |
-| **`transfer`** | records moved between stores | **see below** |
+| **`transfer`** | records moved between stores | **yes — via N9t** |
+
+> **N9t — the `transfer` regime.** A transfer may not raise any trust field
+> above the **importing principal's cap**, and **may not claim new observation
+> currency**: `observed_at` is carried from the record, never set to now, and
+> `valid_from` is never advanced. The `0005` cap applies on top; N9t is the
+> floor that holds whether or not `0005` has landed.
+
+**Fifth review, finding 5: `transfer` was in neither regime** — no evidence
+authority to widen trust, and outside N9's formal relation, constrained only by
+prose delegation to `0005`. **A class whose constraints exist only as a pointer
+to another spec is unconstrained until that spec lands.** N9t closes it now, and
+`transfer` becomes `observation` only when an authenticated source exists.
 
 **`import_memory` is `transfer`, and that is the reconciliation.** The
 operator's *act* is authorised; **the records it carries are vouched for by
@@ -916,6 +938,33 @@ second review's first finding was that *"closed"* silently meant *a disposition
 exists* in one place and *the code is fixed* in another.
 
 ---
+
+---
+
+## 11a. Dependency index
+
+**Generated.** The fifth review confirmed the split into separate specs was
+structurally right, and identified the real cost: **a reviewer of any one spec
+now sees less of the whole than a reviewer of v1 did.** The remedy is not to
+recombine the normative designs but to publish the map — from the same records
+as §11, so it cannot become another independently-maintained summary.
+
+<!-- GENERATED:index -->
+| finding | owner spec | disposition | implementation | test |
+|---|---|---|---|---|
+| `M1` | `0002` | resolved | shipped 0.4.4 | `test_consolidation_preserves_and_compresses` |
+| `M2` | `0002` | resolved | shipped 0.4.5 | `test_confirm_advances_liveness_not_first_known` |
+| `M2′` | `0002` | resolved | shipped 0.4.6 | `test_confirm_returns_the_real_valid_from_not_the_confirmation_date` |
+| `M2″` | `0002` | resolved | shipped 0.4.7 | `test_an_offset_bearing_timestamp_is_converted_not_relabelled` |
+| `M2‴` | `0002` | resolved | shipped 0.4.7 | `test_a_malformed_event_date_is_rejected_not_silently_now` |
+| `M3` | `0008` | resolved | **not implemented** | `0008 C1–C6` |
+| `M4` | `0009` | resolved | **not implemented** | `0009 H1–H7` |
+| `M5` | `0002` | resolved | n/a | `constrains the unwritten T2 design` |
+| `N9b-floor` | `0002` | resolved | shipped 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
+| `N9b-lineage` | `0010` | open | **not implemented** | `0010 X6, X8` |
+| `N4-decay` | `0002` | open | **not implemented** | `0002 N4b–N4d` |
+| `X-crash` | `0010` | open | **not implemented** | `0010 X1–X9` |
+<!-- /GENERATED:index -->
 
 ---
 

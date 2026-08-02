@@ -13,33 +13,69 @@
 
 **Stated limits** — this establishes coverage of *direct* calls only. It cannot see aliased or indirect invocation (`getattr(store, name)(...)`, a bound method passed as a callback), and it deliberately excludes the store implementations themselves, which are the mutators rather than callers of them. **The `evidence` column is a reviewed classification, not a derived fact** — see `0002` §6a.
 
+**Full canonical context per site** is listed after the table, so the digest can be recomputed rather than trusted.
+
 | call site | in | mutator | fp | state | class | trust fields touched | evidence | verdict | test / owning spec |
 |---|---|---|---|---|---|---|---|---|---|
 | `src/veracium/__init__.py:462` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
 | `src/veracium/__init__.py:464` | `Memory.dispute()` | `add_episode` | `4e11253939a4` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
 | `src/veracium/__init__.py:505` | `Memory.confirm()` | `add_edge` | `5b46e2531803` | `fixed` | write-time | `observed_at`, `needs_confirmation`, `confidence` | act | **M2 — fixed 0.4.5**; return-value sibling **fixed 0.4.6** (`533092c`) | `test_confirm_returns_the_real_valid_from_not_the_confirmation_date` |
 | `src/veracium/__init__.py:506` | `Memory.confirm()` | `add_episode` | `bdd949deaa6a` | `clean` | write-time | episode provenance | act | clean | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/__init__.py:583` | `Memory.record_outcome()` | `add_episode` | `02cff46798fc` | `open_moved` | write-time | **`author_of_evidence` (overwritten)** | act | 🔴 **M4 — OPEN.** The shipped note survives exactly one upgrade; the structured field is still overwritten. Frozen behaviour specified in **`specs/0009`** §4. | ➡️ **`specs/0009` H1–H7** — `test_outcome_authorship_is_never_overwritten`; **none passes today** |
-| `src/veracium/__init__.py:587` | `Memory.record_outcome()` | `add_episode` | `1b9e2cf47dcf` | `clean` | write-time | episode provenance (new outcome) | act | clean — new event, own provenance | `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:583` | `Memory.record_outcome()` | `add_episode` | `62926dc1caf5` | `open_moved` | write-time | **`author_of_evidence` (overwritten)** | act | 🔴 **M4 — OPEN.** The shipped note survives exactly one upgrade; the structured field is still overwritten. Frozen behaviour specified in **`specs/0009`** §4. | ➡️ **`specs/0009` H1–H7** — `test_outcome_authorship_is_never_overwritten`; **none passes today** |
+| `src/veracium/__init__.py:587` | `Memory.record_outcome()` | `add_episode` | `dd94666c34de` | `clean` | write-time | episode provenance (new outcome) | act | clean — new event, own provenance | `test_record_outcome_is_edge_blind_never_supersedes` |
 | `src/veracium/__init__.py:599` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
 | `src/veracium/__init__.py:621` | `Memory.correct()` | `invalidate_edge` | `c81beaca32cb` | `moved` | write-time | `active`, `invalidation_reason=corrected` | act | ➡️ **MOVED to `0003` §1b** — this is a supersession path | tracked as 0003 I9/I10 |
 | `src/veracium/__init__.py:630` | `Memory.correct()` | `add_edge` | `72b03718535b` | `moved` | write-time | **`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes` | act | ➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class | tracked as 0003 I10 |
 | `src/veracium/__init__.py:631` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 |
 | `src/veracium/__init__.py:652` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
-| `src/veracium/cli.py:238` | `_forget()` | `forget_user` | `2acc9db31dbe` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
+| `src/veracium/cli.py:238` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
 | `src/veracium/compile.py:83` | `compile_wiki()` | `set_wiki` | `8add728df9b1` | `moved` | maintain-time | none directly — **caches a trust decision** | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation | tracked as 0004 W1–W4 |
-| `src/veracium/graph.py:122` | `apply_supersession()` | `add_edge` | `b766ab223c71` | `open_moved` | write-time | **`needs_confirmation` cleared**, `observed_at`, `confidence` | observation | 🔴 **M3 — OPEN.** Same-author-class is not source identity; external review item 3, ruled R2. Fail-closed rule specified in §7b | ➡️ **`specs/0008` C1–C6** — `test_no_author_value_clears_staleness`; **none passes today** |
-| `src/veracium/graph.py:135` | `apply_supersession()` | `add_edge` | `509e20030c74` | `clean` | write-time | `note` on the absorbed prior | observation | clean — annotates, never widens | `test_absorbed_edges_never_render_as_history` |
-| `src/veracium/graph.py:136` | `apply_supersession()` | `invalidate_edge` | `5d67f0861b5f` | `clean` | write-time | `active`, reason `absorbed_duplicate` | observation | clean — narrows | `test_more_specific_arrival_absorbs_prior` |
-| `src/veracium/graph.py:141` | `apply_supersession()` | `invalidate_edge` | `ddcab09b4f04` | `moved` | write-time | `active`, reason `superseded` | observation | ➡️ **`0003`** — cross-class supersession; unfiltered today | tracked as 0003 I1/I2 |
+| `src/veracium/graph.py:122` | `apply_supersession()` | `add_edge` | `3a4052969394` | `open_moved` | write-time | **`needs_confirmation` cleared**, `observed_at`, `confidence` | observation | 🔴 **M3 — OPEN.** Same-author-class is not source identity; external review item 3, ruled R2. Fail-closed rule specified in §7b | ➡️ **`specs/0008` C1–C6** — `test_no_author_value_clears_staleness`; **none passes today** |
+| `src/veracium/graph.py:135` | `apply_supersession()` | `add_edge` | `98cd90a70fb3` | `clean` | write-time | `note` on the absorbed prior | observation | clean — annotates, never widens | `test_absorbed_edges_never_render_as_history` |
+| `src/veracium/graph.py:136` | `apply_supersession()` | `invalidate_edge` | `a7a961c78cbd` | `clean` | write-time | `active`, reason `absorbed_duplicate` | observation | clean — narrows | `test_more_specific_arrival_absorbs_prior` |
+| `src/veracium/graph.py:141` | `apply_supersession()` | `invalidate_edge` | `cda8875a699c` | `moved` | write-time | `active`, reason `superseded` | observation | ➡️ **`0003`** — cross-class supersession; unfiltered today | tracked as 0003 I1/I2 |
 | `src/veracium/graph.py:143` | `apply_supersession()` | `add_edge` | `1e539a527213` | `clean` | write-time | **`valid_from = min`** on the incoming edge, `observed_at`, `confidence` | observation | 🟡 **R1 — the edge is unpersisted here, so N1 holds narrowly.** Under immutable-identity this becomes construction, not mutation. §7c | `test_valid_from_immutable_across_every_mutation_site` |
-| `src/veracium/ingest.py:149` | `ingest_event()` | `add_episode` | `aa566aea9649` | `clean` | write-time | episode provenance (unparseable placeholder) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
-| `src/veracium/ingest.py:161` | `ingest_event()` | `add_episode` | `d4047bb84602` | `clean` | write-time | episode provenance | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
-| `src/veracium/lifecycle.py:45` | `expire()` | `invalidate_edge` | `9b770be5d140` | `clean` | maintain-time | `active`, reason `lapsed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/lifecycle.py:49` | `expire()` | `invalidate_edge` | `a150aebdecd7` | `clean` | maintain-time | `active`, reason `decayed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/lifecycle.py:51` | `expire()` | `add_edge` | `2c0f01cfbcbc` | `open` | maintain-time | **`confidence *= decay_factor`** | none | 🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d | 🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** |
-| `src/veracium/lifecycle.py:55` | `expire()` | `add_edge` | `adc9056f44a6` | `clean` | maintain-time | `needs_confirmation = True` | none | clean — narrows; flags, never clears | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/lifecycle.py:134` | `consolidate()` | `delete_episode` | `d24901a8b7ea` | `open_moved` | maintain-time | **destroys episodes** | none | 🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e | ➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery |
-| `src/veracium/lifecycle.py:136` | `consolidate()` | `add_episode` | `83dad266cecf` | `fixed` | maintain-time | `author_of_evidence`, `derived_from`, `confidence` | none | **M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust | `test_consolidation_preserves_and_compresses` |
-| `src/veracium/portability.py:91` | `import_memory()` | `add_edge` | `1cd414dfc13e` | `moved` | write-time | **every trust field, reconstructed from a file** | transfer | ➡️ **MOVED to `0005`.** No capping on the `user_id` remap | tracked as 0005 P1–P4 |
-| `src/veracium/portability.py:98` | `import_memory()` | `add_episode` | `741683ddf944` | `moved` | write-time | episode provenance from a file | transfer | ➡️ moved with M6 | tracked as 0005 P1–P4 |
+| `src/veracium/ingest.py:149` | `ingest_event()` | `add_episode` | `2c6f75f8f68a` | `clean` | write-time | episode provenance (unparseable placeholder) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
+| `src/veracium/ingest.py:161` | `ingest_event()` | `add_episode` | `17d36f4cb482` | `clean` | write-time | episode provenance | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
+| `src/veracium/lifecycle.py:45` | `expire()` | `invalidate_edge` | `52f316b93ba6` | `clean` | maintain-time | `active`, reason `lapsed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
+| `src/veracium/lifecycle.py:49` | `expire()` | `invalidate_edge` | `b832f3d50c54` | `clean` | maintain-time | `active`, reason `decayed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
+| `src/veracium/lifecycle.py:51` | `expire()` | `add_edge` | `79eaf6e63a9c` | `open` | maintain-time | **`confidence *= decay_factor`** | none | 🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d | 🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** |
+| `src/veracium/lifecycle.py:55` | `expire()` | `add_edge` | `1d9541b12c69` | `clean` | maintain-time | `needs_confirmation = True` | none | clean — narrows; flags, never clears | `test_expiry_lapse_confirm_and_reinforcement` |
+| `src/veracium/lifecycle.py:134` | `consolidate()` | `delete_episode` | `5bed480ae733` | `open_moved` | maintain-time | **destroys episodes** | none | 🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e | ➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery |
+| `src/veracium/lifecycle.py:136` | `consolidate()` | `add_episode` | `78d73ee79000` | `fixed` | maintain-time | `author_of_evidence`, `derived_from`, `confidence` | none | **M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust | `test_consolidation_preserves_and_compresses` |
+| `src/veracium/portability.py:91` | `import_memory()` | `add_edge` | `b1f56bc283b7` | `moved` | write-time | **every trust field, reconstructed from a file** | transfer | ➡️ **MOVED to `0005`.** No capping on the `user_id` remap | tracked as 0005 P1–P4 |
+| `src/veracium/portability.py:98` | `import_memory()` | `add_episode` | `bab7d192c8f8` | `moved` | write-time | episode provenance from a file | transfer | ➡️ moved with M6 | tracked as 0005 P1–P4 |
+
+## Canonical context
+
+The identity hashed into each `fp`. Full discriminators, never a truncated hash: v5 used four hex characters of the branch condition and `x == 119` / `x == 125` collided.
+
+```
+17d36f4cb482  if(episode_text)
+1d9541b12c69  for(e in store.edges(user_id, active_only=True))>else-of-if(behavior == ExpiryBehavior.LAPSE)>else-of-if(behavior == ExpiryBehavior.DECAY)>if(not e.needs_confirmation)
+1e539a527213  -
+23255a7f3c3f  -
+269b73112fab  try
+2c6f75f8f68a  except[0](ValueError)
+3a4052969394  for(prior in priors)>if(pk == same or _subsumes(pk, same))
+3bbd6e160bb1  -
+4e11253939a4  -
+52f316b93ba6  for(e in store.edges(user_id, active_only=True))>if(behavior == ExpiryBehavior.LAPSE)
+5b46e2531803  -
+5bed480ae733  for(e in cold)
+62926dc1caf5  if(prior is not None)
+72b03718535b  -
+78d73ee79000  for(r in new)
+79eaf6e63a9c  for(e in store.edges(user_id, active_only=True))>else-of-if(behavior == ExpiryBehavior.LAPSE)>if(behavior == ExpiryBehavior.DECAY)>else-of-if(e.provenance.confidence < config.confidence_floor)
+8add728df9b1  -
+98cd90a70fb3  for(prior in priors)>if(_subsumes(same, _value_key(prior.object)))
+a7a961c78cbd  for(prior in priors)>if(_subsumes(same, _value_key(prior.object)))
+b1f56bc283b7  for(ln in lines[1:])>if(kind == 'edge')
+b832f3d50c54  for(e in store.edges(user_id, active_only=True))>else-of-if(behavior == ExpiryBehavior.LAPSE)>if(behavior == ExpiryBehavior.DECAY)>if(e.provenance.confidence < config.confidence_floor)
+bab7d192c8f8  for(ln in lines[1:])>else-of-if(kind == 'edge')>if(kind == 'episode')
+bdd949deaa6a  -
+c5d9e9e2da39  -
+c81beaca32cb  -
+cda8875a699c  if(rel and rel.functional)>for(prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation))>if(prior.id != edge.id and _value_key(prior.object) != same)
+dd94666c34de  else-of-if(prior is not None)
+```

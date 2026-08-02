@@ -64,7 +64,21 @@ def _regions() -> dict[str, str]:
                f"findings: {rv}.** The invariant was approved in every one; the "
                f"retrospective was deferred in every one.")
 
-    return {"ledger": ledger, "summary": summary, "reviews": reviews}
+    # The reviewer's remedy for the split's lost overview: one page showing
+    # finding -> owner -> status -> release, generated from the same records so
+    # it cannot become another independently-maintained summary.
+    idx_rows = []
+    for f in FINDINGS:
+        owner = "0002" if f["owner"] == "0002" else f["owner"]
+        st = "open" if f["disposition"] == "open" else "resolved"
+        impl = {"shipped": f"shipped {f['release']}", "none": "**not implemented**",
+                "n/a": "n/a"}[f["implementation"]]
+        idx_rows.append(f"| `{f['id']}` | `{owner}` | {st} | {impl} | `{f['test']}` |")
+    index = ("| finding | owner spec | disposition | implementation | test |\n"
+             "|---|---|---|---|---|\n" + "\n".join(idx_rows))
+
+    return {"ledger": ledger, "summary": summary, "reviews": reviews,
+            "index": index}
 
 
 def _apply(text: str, regions: dict[str, str]) -> str:

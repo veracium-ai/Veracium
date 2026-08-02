@@ -16,11 +16,30 @@ from typing import Optional
 from ..schema import Edge, Episode
 
 
+def store_mutator(fn):
+    """Marks a Store method that writes persistent state.
+
+    The specs/0002 audit manifest enumerates every call site of every mutator.
+    It used to discover them from a remembered list of name prefixes -- add_,
+    invalidate_, delete_, forget_, set_ -- which is the original failure of that
+    audit repeated one level up: the interface was scanned, but *which methods
+    mutate* was still recalled rather than declared. A new primitive named
+    anything else (spec 0010 needs `claim_episode_batch`) would have been
+    invisible to the manifest while writing persistent trust state.
+
+    Marking is declarative and survives renaming. `audit_manifest.py` reads it.
+    """
+    fn.__store_mutator__ = True
+    return fn
+
+
 class Store(ABC):
     # -- edges -------------------------------------------------------------
+    @store_mutator
     @abstractmethod
     def add_edge(self, edge: Edge) -> None: ...
 
+    @store_mutator
     @abstractmethod
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None: ...
 
@@ -30,12 +49,14 @@ class Store(ABC):
               include_quarantined: bool = True) -> list[Edge]: ...
 
     # -- episodes ----------------------------------------------------------
+    @store_mutator
     @abstractmethod
     def add_episode(self, episode: Episode) -> None: ...
 
     @abstractmethod
     def episodes(self, user_id: str, *, limit: Optional[int] = None) -> list[Episode]: ...
 
+    @store_mutator
     @abstractmethod
     def delete_episode(self, episode_id: str) -> None: ...
 
@@ -51,6 +72,7 @@ class Store(ABC):
             f"{type(self).__name__} does not implement list_users")
 
     # -- compliance erasure -------------------------------------------------
+    @store_mutator
     def forget_user(self, user_id: str) -> dict:
         """Irreversibly erase EVERYTHING stored for `user_id` — edges (including
         superseded history and quarantined claims), episodes, the wiki cache,
@@ -66,6 +88,7 @@ class Store(ABC):
     def get_wiki(self, user_id: str) -> Optional[tuple[str, int]]:
         """Return (wiki_text, store_version_at_compile) or None."""
 
+    @store_mutator
     @abstractmethod
     def set_wiki(self, user_id: str, text: str, store_version: int) -> None: ...
 

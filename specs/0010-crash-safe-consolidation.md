@@ -60,7 +60,9 @@ been said four times now and should not become reflexive.
 |---|---|---|
 | `Episode` records | **write-before-delete** | no input is destroyed before its replacement is durable |
 | **`Episode.consolidated_into`** | **NEW**, optional | the summary that absorbed this episode; retained on the input until deletion is safe |
-| **`Episode.lineage`** | **NEW**, optional list | on the output: the ids it absorbed — **`0002` N9b's lineage row, made storable** |
+| **`Episode.lineage`** | **NEW**, optional list | on the output: **the whole claimed set** it absorbed — `0002` N9b's lineage row, made storable |
+| **`Episode.operation_id`** | **NEW**, optional | the consolidation that produced or claimed this record |
+| **consolidation operation record** | **NEW** | `operation_id · fence · state · owner · lease_expires_at · claimed_ids` (§4a) |
 | `FORMAT_VERSION` | **2 → 3** | shares the bump with `0009`; see §9 |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
@@ -109,77 +111,104 @@ was not implementable.** Three gaps, each real: multiple summaries had no
 input→output mapping, the claim was not atomic, and recovery could not tell a
 crash from a live writer mid-LLM-call.
 
-### 4a. The operation is a fenced batch, not a per-episode claim
+### 4a. A persistent operation record, not a fence alone
 
-> A consolidation is one **operation** with an id and a **fence** (a monotonic
-> integer from the store). It claims a **set** of episodes in a single
-> conditional update — *claim every episode in this id-set whose `claim` is null
-> or whose fence is lower than mine* — which either takes the whole set or takes
-> nothing.
+**Fifth review, finding 8: a fence orders; it does not prove liveness.** A
+lower-fenced worker may still be running a slow LLM call, so "higher fence wins"
+permits a live worker's inputs to be stolen. **Preemption is only safe if the
+preempted worker can no longer write anything.**
 
-**Per-episode marking cannot work**, and the review is right about why: two
-workers both read the set as unclaimed and then claim overlapping halves.
-**Atomicity has to be in the claim itself**, not in a convention about who marks
-first.
+```
+ConsolidationOp:
+  operation_id     opaque, unique
+  fence            monotonic from the store
+  state            CLAIMED | GENERATING | OUTPUTS_DURABLE | FINALIZED | ABANDONED
+  owner            worker identity
+  lease_expires_at when the claim may be preempted
+  claimed_ids      the exact input set
+```
 
-**The fence is what makes recovery decidable.** A lower-fenced claim is
-provably stale; a higher one is provably live. The previous draft's rule —
-*"clear the claim if the summary is missing"* — cannot distinguish a crashed
-worker from one still waiting on an LLM call, and would let a second worker
-delete a live claim.
+> **Every write, visibility change and delete compares-and-sets on
+> `(operation_id, fence)`.** A worker that has lost its fence **cannot write an
+> output, cannot change visibility, and cannot delete an input** — its
+> operations fail rather than racing.
 
-### 4b. Multi-summary lineage is explicit, complete and non-overlapping
+**Preemption requires an expired lease, not merely a higher number.** A
+heartbeat extends the lease while an LLM call is genuinely in flight; an expired
+lease is evidence of abandonment in a way a fence is not.
 
-The compactor returns **several** records. The previous draft spoke of *"the
-summary"* and gave recovery a single target, so it could not say which output
-absorbed which input — **and the LLM output carries dates and text, not episode
-ids.**
+### 4b. An explicit atomic batch-claim primitive
 
-> Each output record names the episode ids it absorbs. The union must equal the
-> claimed set **exactly**: no input unaccounted for, no input in two outputs.
-> **A partition that fails this check aborts the operation and releases the
-> claim** — the inputs are still there, because nothing has been deleted.
+**Finding 9: "one conditional update" does not give all-or-nothing.** An
+ordinary `UPDATE ... WHERE` claims the eligible subset and reports a smaller row
+count — **a partial claim, the exact state the design called impossible.**
 
-**Assigning inputs to outputs is not a job for the model**, so the partition is
-computed by the caller from the records' date ranges and **validated** rather
-than trusted. A model that returns an incoherent grouping fails a check instead
-of silently losing episodes.
+> **New `Store` method, marked `@store_mutator`:**
+> ```
+> claim_episode_batch(ids, operation_id, fence, expected_unclaimed) -> bool
+>     True  — every id claimed, atomically
+>     False — nothing changed
+> ```
+> Each backend implements the atomicity; **the interface states the contract.**
 
-### 4c. Ordered phases, each individually crash-safe
+*(This is why `store_mutator` had to become a marker rather than a name prefix —
+`claim_episode_batch` matches none of the old ones and would have been invisible
+to the audit manifest while writing persistent trust state.)*
 
-| phase | action | crash here leaves |
+### 4c. Exactly one representation is visible
+
+**Finding 10: hiding inputs at claim time creates a window where a read sees
+neither inputs nor outputs** — the LLM call, or a crash before outputs are
+durable. That is not duplication or data loss, it is **missing user history**,
+and if recovery only runs at the next consolidation it can persist indefinitely.
+**v5's claim that recovery timing became a non-issue was wrong.**
+
+| state | inputs | outputs |
 |---|---|---|
-| 1 | fence + atomic claim of the set | claimed inputs, no output — recovery releases a stale-fenced claim |
-| 2 | validate the partition | as above |
-| 3 | write every summary, each with `lineage` and the operation id | inputs + outputs, **inputs still hidden** (§4d) |
-| 4 | delete the claimed inputs | partially deleted; recovery finishes by lineage |
-| 5 | clear the operation | complete |
+| `CLAIMED` / `GENERATING` | **visible** | absent |
+| `OUTPUTS_DURABLE` | hidden | **visible** |
+| `FINALIZED` | deleted | **visible** |
 
-**Every crash point is recoverable and none is ambiguous** — the property the
-delete-first order could not have at any price.
+> **X9 (restated): every ordinary read sees exactly one complete
+> representation** — all relevant inputs, or all committed outputs. **Never both
+> and never neither.**
 
-### 4d. Claimed inputs are hidden from ordinary reads
+The visibility flip is a single state transition under compare-and-set, so it is
+atomic with respect to readers.
 
-**The review's sharpest point, and it is not a detail.** Between phases 3 and 4
-both the inputs and their summary exist, so an ordinary `recall()` would see the
-same content twice — and `0002` §7e requires partial state be repaired *before
-ordinary reads depend on it*.
+### 4d. Lineage must be established before generation, not inferred after
 
-> **A claimed episode is excluded from ordinary reads** — `store.episodes()`
-> filters on an active claim. Visibility flips at the claim, not at the delete,
-> so no read ever observes both.
+**Finding 11, and this is the one that would have shipped a defect.** v5 had the
+caller partition inputs across outputs by date range *after* a whole-batch LLM
+call. **The model sees every input**, so any output may carry content derived
+from any of them — and a date partition then **understates provenance**:
 
-This also makes recovery timing a **non-issue rather than an open question**: a
-crashed operation's inputs stay hidden until its stale-fenced claim is released,
-at which point they become visible again. **Nothing is lost and nothing is
-double-counted, whenever recovery happens to run.**
+```
+third-party-influenced input A ─┐
+                                ├─ whole-batch prompt ─→ output nominally
+user input B ───────────────────┘                        assigned only to B
+```
+
+**That recreates the laundering defect N9b exists to prevent, inside the spec
+written to satisfy N9b.** A post-hoc partition is not evidence of influence.
+
+> **Frozen: whole-batch lineage.** One claimed set produces outputs that **all
+> inherit the entire claimed set as lineage**, and **all carry the minimum trust
+> across it** (N9b). If narrower lineage is wanted, the batch must be
+> **partitioned before generation**, so each model call sees only the inputs
+> that will become its output's lineage.
+
+**Chosen because it cannot be got wrong by accident.** Pre-partitioning is
+strictly better provenance and more LLM calls; whole-batch is one call and a
+conservative over-attribution. **Over-attributing influence is safe;
+under-attributing is the laundering defect.**
 
 ### 4e. Why not a store transaction
 
 `Store` is an interface with a Postgres implementation contemplated. Requiring
 cross-backend atomic multi-statement transactions pushes a durability guarantee
-into every future backend. **The only primitive this needs is one conditional
-update**, which any store worth using already has.
+into every future backend. **`claim_episode_batch` is one primitive with a
+stated contract**, which is a smaller ask than "implement transactions".
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -189,9 +218,12 @@ update**, which any store worth using already has.
 | **X2** a crash mid-delete is recovered, not repeated | `test_recovery_completes_a_partial_delete` | CI |
 | **X3** retry is idempotent by **lineage**, not by content | `test_consolidation_retry_is_idempotent` — **no summary-of-summary** | CI |
 | **X4** the claim is **atomic over the whole set** | `test_concurrent_consolidation_claims_all_or_nothing` — two workers, overlapping candidate sets; exactly one wins | CI |
-| **X7** a lower-fenced claim is released; a higher-fenced one is not | `test_recovery_does_not_steal_a_live_claim` — **the case that distinguishes a crash from a slow LLM call** | CI |
+| **X7** a claim is preemptible only on an **expired lease**, never on fence order alone | `test_a_live_lease_is_not_preempted` — a heartbeating worker mid-LLM-call keeps its claim | CI |
+| **X10** a worker that has lost its fence **cannot write, flip visibility, or delete** | `test_a_preempted_worker_cannot_write_or_delete` — the invariant that makes preemption safe | CI |
+| **X11** `claim_episode_batch` is all-or-nothing | `test_partial_claim_is_impossible` — contend for an overlapping set; the loser changes nothing | CI |
+| **X12** every output's lineage is the **whole claimed set** | `test_lineage_is_the_whole_batch` — **a post-hoc date partition would under-attribute third-party influence** | CI |
 | **X8** the output partition is exact | `test_partition_must_cover_every_claimed_input_exactly` — gaps and overlaps both abort **and release**, losing nothing | CI |
-| **X9** claimed inputs are invisible to ordinary reads | `test_no_read_ever_sees_an_input_and_its_summary` — sweeps every phase boundary | CI |
+| **X9** every read sees **exactly one** complete representation — never both, **never neither** | `test_every_read_sees_exactly_one_representation` — sweeps every state and every phase boundary | CI |
 | **X5** no crash point loses an episode without a replacement | `test_no_crash_point_loses_data` — **parametrised over every store call in the operation**, failing at each in turn | CI |
 | **X6** lineage is complete | `test_summary_lineage_lists_every_absorbed_episode` — **N9b's premise** | CI |
 
