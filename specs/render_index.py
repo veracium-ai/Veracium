@@ -39,7 +39,9 @@ QROW = re.compile(r"^\|\s*(~{0,2})\*\*([A-Z]{0,2}-?Q\d+[a-z]?)\*\*~{0,2}\s*\|(.*
 def _updated(path: pathlib.Path) -> str:
     r = subprocess.run(["git", "log", "-1", "--format=%cs", "--", str(path)],
                        capture_output=True, text=True, cwd=ROOT)
-    return r.stdout.strip() or "—"
+    # An archive is not a checkout: say so rather than printing a bare dash that
+    # reads like "never updated".
+    return r.stdout.strip() or "(no git)"
 
 
 def _questions(body: str):

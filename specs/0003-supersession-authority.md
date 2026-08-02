@@ -19,7 +19,7 @@ Spec-Status: in review
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | **v5** — *re-read before editing; quote the version you approve.* v1 (8) · v2 (12) · v3 narrowed · v4 (5) — **narrow design approved at r3 and r4.** |
-| **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 answered 2026-08-01**; I7 shipped (`362f474`); external review not sent. |
+| **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | required — **four rounds complete**; the narrow design was approved at r3 and r4. Counts are generated into `specs/STATUS.md` from `specs/reviews.py`. |
 | **Decision + date** | — |

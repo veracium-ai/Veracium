@@ -539,6 +539,13 @@ def test_the_spec_status_index_is_current():
     deferred seven times."""
     import subprocess, sys, pathlib
     root = pathlib.Path(__file__).resolve().parent.parent
+    # The index derives `updated` from `git log`, so it cannot be reproduced
+    # outside a checkout — an extracted review archive has no .git. Skip there
+    # rather than fail, and say why.
+    if subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True,
+                      cwd=root).returncode != 0:
+        import pytest
+        pytest.skip("not a git checkout; STATUS.md derives `updated` from git log")
     r = subprocess.run([sys.executable, str(root / "specs" / "render_index.py"), "--check"],
                        capture_output=True, text=True, cwd=root)
     assert r.returncode == 0, r.stdout + r.stderr
@@ -569,12 +576,22 @@ def test_no_spec_cites_an_invariant_it_does_not_define():
     problems = []
     for f in sorted(specs.glob("[0-9][0-9][0-9][0-9]-*.md")):
         body = re.split(r"^##+ \d+\w*\.\s*Review history", f.read_text(), flags=re.M)[0]
-        defined = set(re.findall(r"^\| \*\*([A-Z]\d+[a-z]?)\*\*", body, re.M))
+        # struck rows still DEFINE an id — `~~**Q5**~~` is a resolved question,
+        # not an undefined one.
+        defined = set(re.findall(r"^\| ~{0,2}\*\*([A-Z]\d+[a-z]?)\*\*", body, re.M))
         if not defined:
-            continue          # spec has no invariant table yet
-        cited = {c for c in re.findall(r"\b([A-Z]\d+[a-z]?)\b", body)
-                 if c[0] == next(iter(defined))[0]}
-        missing = cited - defined
-        if missing:
-            problems.append(f"{f.name}: cites {sorted(missing)}, defines {sorted(defined)}")
+            continue          # spec has no table yet
+        # Compare within each prefix letter separately. The first version picked
+        # one prefix with `next(iter(defined))`, whose order depends on hash
+        # randomisation — so it passed or failed run to run.
+        by_prefix = {}
+        for d in defined:
+            by_prefix.setdefault(d[0], set()).add(d)
+        for prefix, ids in sorted(by_prefix.items()):
+            cited = {c for c in re.findall(r"\b([A-Z]\d+[a-z]?)\b", body)
+                     if c[0] == prefix}
+            missing = cited - ids
+            if missing:
+                problems.append(f"{f.name}: cites {sorted(missing)}, "
+                                f"defines {sorted(ids)}")
     assert not problems, "\n".join(problems)
