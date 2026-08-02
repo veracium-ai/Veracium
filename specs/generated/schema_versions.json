@@ -1,5 +1,6 @@
 {
-  "manifest_algorithm": 4,
+  "manifest_algorithm": 5,
+  "schema_version": 1,
   "versions": {
     "1": {
       "accepted": [
@@ -190,9 +191,5 @@
         }
       ]
     }
-  },
-  "tested_sqlite": [
-    "3.45.1",
-    "3.46.1"
-  ]
+  }
 }

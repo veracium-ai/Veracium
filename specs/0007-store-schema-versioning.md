@@ -4,29 +4,28 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v6)** — opened 2026-08-01. **Round 4 approved the architecture
-> again and deferred the instrument**, on the grounds that it did not implement
-> several contracts the spec claimed it proved. v6 changes no architecture:
-> **it makes the generator truthful.** Registry conformance now covers
-> rebuildable definitions, migration outputs are *generated* rather than
-> preserved, legacy resolution is candidate-based, releases record their on-disk
-> stamp, historical manifests are genuinely immutable, the executor returns an
-> inert result, and **S-Q6 is resolved by gating on the tested SQLite set rather
-> than declaring a range.** **It is the `Spec-Requires:` prerequisite of `0006`,
-> `0008`, `0009` and `0010`.**
+> **in review (v7)** — opened 2026-08-01. **Round 5 approved the architecture a
+> fourth time, deferred again, and answered a question I had asked: the
+> instrument should be smaller.** v7 splits it into a `schema_model` kernel,
+> declarative migrations, and evidence generation, and **moves every adversarial
+> counterexample into the real test suite**. It also **withdraws the migration
+> containment claim** — name mangling is not access control — replaces it with
+> migrations that carry no connection at all, and derives the SQLite gate from
+> an evidence artifact instead of a hand-edited tuple. **It is the
+> `Spec-Requires:` prerequisite of `0006`, `0008`, `0009` and `0010`.**
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v6 |
+| **Version** | v7 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0006`, not a part of it. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a bad migration makes stores unopenable |
 | **Review history** | *see `specs/STATUS.md`, generated from `specs/reviews.py`. No counts are stated here; a hand-maintained count drifted in `0008` and was found by the reviewer.* |
 | **Decision + date** | — |
 | **Path** | full |
-| **Measuring instrument** | `specs/schema_manifest.py` — runs today, against real files |
-| **Generated evidence** | `specs/generated/legacy_stores.json` (per-release resolved schema version) and `specs/generated/schema_versions.json` (immutable full manifest per version), `--check` in CI |
+| **Measuring instrument** | `specs/schema_model.py` (kernel) · `schema_migrations.py` · `schema_evidence.py`; every counterexample lives in `tests/test_schema_model.py` and is counted by collection |
+| **Generated evidence** | `legacy_stores.json` (per-release stamp + resolved version) · `schema_versions.json` (immutable manifests per version) · `schema_policy.json` (reviewed policies) · `sqlite_runtimes.json` (qualified runtimes), all gated by `schema_evidence.py --check` |
 
 ---
 
@@ -71,7 +70,7 @@ has.**
 |---|---|---|---|
 | **`PRAGMA user_version`** | **NEW** — written on create/adopt/migrate, read on every open | the integer shape-id of this store file | `SqliteStore.__init__` only |
 | **`MANIFESTS`** | **NEW** — **generated** by executing each constructor and every declared migration path | the **closed set** of object sets accepted *at* that version | open, migrate |
-| **`LEGACY_DIGESTS`** | **NEW** — generated from `specs/generated/legacy_stores.json` | which base version an *unstamped* shape corresponds to | the version-zero path |
+| **`LEGACY_BASE_VERSIONS`** | **NEW** — `frozenset[int]`, generated from release evidence | the **only** candidate versions the version-zero path may try | the version-zero path |
 | `_SCHEMA` | unchanged | `CREATE TABLE IF NOT EXISTS …` | unchanged; **stops being the sole definition of shape** |
 | `FORMAT_VERSION` | unchanged | export/import wire format | **explicitly independent** — see §8 |
 
@@ -89,7 +88,7 @@ provenance; it constrains *when a store may be opened at all*.
 | **a lower `user_version`** | — | — | — | downgrade to re-enter an unmigrated path, or to skip validation | **S4** gap refuses · **S15** the *source* signature is validated before any migration runs |
 | **a stamped-but-wrong store** | — | — | — | stamp a foreign file `1` to bypass adoption entirely | **S16** — every version validates its manifest, not only version zero |
 | **a schema that is *equivalent* but not identical** | — | — | **a `CHECK`, a `COLLATE`, a view, a custom-collation index** | any of the four round-2 counterexamples | **S28** — exact-match against known manifests; equivalence is **not** attempted (§4a) |
-| **a migration callback** | — | — | — | `commit()` then `BEGIN IMMEDIATE` — `in_transaction` reads `True` again | **S22** — a restricted executor, so transaction control is unreachable rather than forbidden |
+| **a migration** | — | — | — | v5's callback recovered the connection via `_MigrationExecutor__conn` | **S22/S43** — migrations are **declarative statement tuples**; there is no connection-bearing object to escape through (§4d) |
 | **an audit sink** | — | — | — | blocks, or re-enters the same store under the write lock | **§4e** — bounded time, must not access the store; the guarantee is named `attempted` / `committed` |
 | **concurrent first open** | — | — | — | two processes decide from stale state | **S5** — `BEGIN IMMEDIATE` *before* the read, §4c |
 | **extra objects in the file** | — | — | sqlite's own `sqlite_stat1` | a foreign table, view or **trigger** beside ours | **S8** exact set · **S10** internal exclusion · **S17** an unstamped file with *any* non-internal object is not "new" |
@@ -162,8 +161,9 @@ widen**.
 `2147483648` to `0`, i.e. into the adoption path). `MANIFESTS` maps every
 supported version to the **set** of manifests accepted at that version (§4a-v),
 and
-`LEGACY_DIGESTS` maps the digest of each *unstamped* historical shape to the
-version it corresponds to (§4a-iv).
+`LEGACY_BASE_VERSIONS` is the set of versions whose release evidence shows a
+genuinely **unstamped** store (§4a-iv) — and the *only* candidates version-zero
+resolution may try.
 
 On open, exactly one of — **and the table is total over the integers**:
 
@@ -171,9 +171,9 @@ On open, exactly one of — **and the table is total over the integers**:
 |---|---|---|
 | **invalid** | `user_version < 0` | **REFUSE** `reason="invalid-version"` |
 | **new** | `user_version = 0` **and no non-internal object at all** — no table, view, trigger or index | create schema, validate the result against `MANIFESTS[SCHEMA_VERSION]` (**S25**), stamp |
-| **legacy** | `user_version = 0` **and the manifest matches exactly one candidate version** (§4a-vii) | **resolve that base version**, then take the *older* path from it — migrate, validate, stamp |
+| **legacy** | `user_version = 0` **and the manifest matches exactly one version in `LEGACY_BASE_VERSIONS`** (§4a-vii) | **resolve that base version**, then take the *older* path from it — migrate, validate, stamp |
 | **foreign** | `user_version = 0` **and anything else** | **REFUSE** `reason="foreign-shape"` |
-| **unsupported runtime** | `sqlite3.sqlite_version` is not in `TESTED_SQLITE` | **REFUSE** `reason="unsupported-sqlite"` (§4a-viii) — checked **before** any of the rows below |
+| **unsupported runtime** | this runtime is not qualified by `sqlite_runtimes.json` (§4a-viii) | **REFUSE** `reason="unsupported-sqlite"` — checked **before** any of the rows below |
 | **current** | `user_version = SCHEMA_VERSION` **and the manifest is in `MANIFESTS[SCHEMA_VERSION]`** | repair index drift if any (§4a-iii), **revalidate**, open |
 | **stamped-wrong** | `user_version = SCHEMA_VERSION` **and it does not** | **REFUSE** `reason="stamped-shape-mismatch"` |
 | **older** | `0 < user_version < SCHEMA_VERSION` | validate `MANIFESTS[found]`, migrate step by step validating each destination, stamp (§4d) |
@@ -406,14 +406,36 @@ candidates. Each release row now records `on_disk_user_version`; **only rows
 reading `0` feed the legacy set**, and a version-aware release whose stamp
 disagrees with its shape is an error rather than a data point.
 
-**The gate re-derives every recorded field.** v5's `--check` verified that a
-digest resolved to *some* version; a synthetic artifact claiming
-`store_schema_version: 999` for all 23 releases passed with **rc 0** (round 4,
-finding 5, measured). That number selects the migration base for unstamped
-stores, so an unchecked one is a live wrong answer. The gate now compares the
-freshly resolved version, the digest, the on-disk stamp, the manifest-algorithm
-version and the tested-SQLite set. Re-run against the same synthetic artifact:
-**23 problems, one per release.**
+**Every field is classified, and the classification is the fix.** v6 said the
+gate re-derived everything; an artifact with `head_digest="BAD"`,
+`head_schema_version=999`, `legacy_base_versions=[999]`, `sqlite_version="0.0.0"`
+and every release `result="fabricated"` passed with **rc 0** (round 5, finding 4,
+measured). The rule now is: **a field kept as evidence must be checked; a field
+that cannot be checked must not be kept as evidence.**
+
+| class | fields | treatment |
+|---|---|---|
+| **authoritative** | `tag`, `commit`, `on_disk_user_version`, `store_schema_version`, `digest`, `result` | re-derived per release and compared |
+| **summary** | `legacy_base_versions`, `head_digest`, `head_schema_version` | **recomputed** from the authoritative fields |
+| **structural** | `manifest_algorithm`, the policy artifact, the runtime artifact | compared against what this build generates |
+
+`sqlite_version` is gone from the release artifact: it was informational, it was
+never checked, and the runtime artifact now carries the qualified identity
+properly.
+
+**Deleting a historical version is an error too.** v6 detected a *changed*
+historical entry but iterated only the versions currently declared, so running
+the generator with version 1 dropped from the registry emitted an artifact
+without it — silently (round 5, finding 5, measured). Generation is also bound
+to a **declared `SCHEMA_VERSION`** rather than `max(SCHEMAS)`, so adding or
+removing a registry entry can no longer change which version gets mutable
+treatment.
+
+**The gate re-derives every authoritative field.** v5's `--check` verified only
+that a digest resolved to *some* version; a synthetic artifact claiming
+`store_schema_version: 999` for all 23 releases passed with **rc 0**. That number
+selects the migration base for unstamped stores, so an unchecked one is a live
+wrong answer.
 
 **Historical manifests are immutable, and now actually are.** v5 said so and its
 generator looped over every version replacing each constructor record —
@@ -491,6 +513,21 @@ typed rebuildable identities, the repair statements and the drift check.
 **`--selfcheck` proves the registry reproduces `_SCHEMA`'s database exactly**
 rather than assuming it — **S23**, executable today.
 
+**Policies are compared against an independently reviewed artifact, not against
+the registry itself.** v6's check computed the expected rebuildable set *from
+the same registry it was checking*, so it was tautological: flipping
+`ix_edges_subj_rel` from `REBUILDABLE` to `REQUIRED` left conformance empty
+(round 5, finding 2, measured). **A policy is not a comment** — it decides
+whether an object is excluded from the acceptance digest, whether drift is
+repaired or refused, and how candidate matching behaves. It cannot be
+self-certifying. `specs/generated/schema_policy.json` is that second
+declaration, and changing it is a reviewable diff.
+
+**The honest end state is that the product schema is generated from this
+registry**, at which point there is no second declaration to compare and the
+artifact can go. That belongs to implementation, and until then the duplication
+is real and is stated rather than glossed.
+
 **And S23 compares complete typed records, not the acceptance digest.** v5's did
 use the digest, **which excludes every rebuildable index**, so it passed while
 the registry declared `CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)`
@@ -534,35 +571,42 @@ accept only a UNIQUE match
 **More than one match resolves to nothing**, not to a guess — if two versions
 ever declare the same persistent shape, §4-i needs an explicit rule.
 
-#### 4a-viii. The SQLite runtime — gated, not declared
+#### 4a-viii. The SQLite runtime — qualified by evidence, not by a tuple
 
-**S-Q6 is resolved, and the previous answer is withdrawn.** v5 declared support
-for `3.35 ≤ sqlite < 4` on the strength of two agreeing observations. **Round 4
-is right that a declared range with neither evidence nor enforcement is not a
-contract**, and it is the more dangerous of the two failure modes: exact
-matching depends on stored `sqlite_master.sql`, `table_xinfo` behaviour and
-SQLite's DDL rewriting, so an untested runtime can produce a *different accepted
-shape* rather than an error.
+**S-Q6's answer stands; v6's implementation of it did not.** Gating rather than
+declaring a range is right. But the WITHDRAWN `TESTED_SQLITE` was a hand-edited tuple: adding
+`"3.99.0"` made an untested runtime supported with **no manifest, no probe and
+no CI result behind it** (round 5, measured). The document even admitted nothing
+enforced the evidence requirement — which made it an intention, not a gate.
 
-**The runtime-gated model is adopted:**
+**A runtime is qualified only if `specs/generated/sqlite_runtimes.json` records
+it and this process reproduces that record:**
 
-| | |
+| recorded | why |
 |---|---|
-| `TESTED_SQLITE` | the runtimes for which an accepted manifest has actually been observed — today `3.45.1` and `3.46.1` |
-| on open | a runtime outside that set is **refused** with `reason="unsupported-sqlite"`, before any version or shape decision |
-| widening | by adding evidence to the set, never by widening a sentence |
+| `sqlite_version` | the release number |
+| **`sqlite_source_id()`** | **a version names a release, not a build.** Two builds of `3.45.1` can differ in compile options, authorizer availability and DDL support — all of which exact matching leans on |
+| feature probes | generated columns, authorizer availability, `STRICT` tables, verbatim DDL storage — the behaviours the manifest actually depends on |
+| constructor digests | the accepted manifest *this runtime produces*, per version |
 
-**This is deliberately narrow, and narrow in the direction that fails loudly.**
-A user on an untested SQLite gets a refusal naming the reason, not a store
-adopted under an unverified assumption. **The alternative — a tested-range
-matrix — remains the better end state**, and §9 says what it would take.
+`runtime_supported()` matches version **and** source id **and** probes, then
+**re-derives the constructor digests here** and compares. Anything else is
+refused with `reason="unsupported-sqlite"`, **before** any version or shape
+decision.
+
+**Adding a runtime now means running the generator on it.** There is no edit
+that qualifies a runtime without producing its evidence — which is the property
+v6 claimed and did not have.
+
+**This remains deliberately narrow**, and narrow in the direction that fails
+loudly. **S-Q7** stays open for the CI matrix that would widen it.
 
 ### 4b. The public contract, frozen
 
 ```python
 SCHEMA_VERSION: int = 1                        # constrained to 1 … 2147483647
 MANIFESTS: dict[int, frozenset[Manifest]]      # generated; constructor + migrations
-LEGACY_DIGESTS: dict[str, int]                 # unstamped digest -> base version
+LEGACY_BASE_VERSIONS: frozenset[int]           # generated from release evidence
 
 class StoreVersionError(RuntimeError):
     # The store on disk is not a shape this build can open.
@@ -582,7 +626,10 @@ class SqliteStore(Store):
 **`reason` is a closed set** — `"invalid-version"`, `"newer"`,
 `"foreign-shape"`, `"stamped-shape-mismatch"`, `"migration-gap"`,
 `"migration-source-mismatch"`, `"migration-result-mismatch"`,
-`"adoption-refused"`, `"locked"`. Closed because hosts will branch on it.
+`"adoption-refused"`, `"locked"`, **`"unsupported-sqlite"`**. Closed because
+hosts will branch on it — and v6 introduced the last one in the state table
+while leaving it out of this list, so a host branching on the *closed* set would
+have met an undocumented value.
 
 **`allow_adopt=False`** resolves **S-Q2**; default `True`, justified by §4a-iv
 and not before it. **It can only narrow.**
@@ -650,78 +697,70 @@ manifests as a hang is worse than one that manifests as an error.
 **Scope:** S5 tests threads; **S20 tests processes**, because the product
 boundary is a file multiple processes can open.
 
-### 4d. The migration registry — one source of truth
+### 4d. Migrations are declarative, and the containment claim is withdrawn
 
-Round 2, finding 5: v3 embedded expected source and destination signatures *in
-each migration*, duplicating what `MANIFESTS` already declares, so the two could
-disagree. **The migration type is smaller and the planner reads shapes only from
-`MANIFESTS`:**
-
-```python
-Migration = namedtuple("Migration", "from_version migrate to_version")
-```
-
-| check | reason | invariant |
-|---|---|---|
-| the chain from `found` to `SCHEMA_VERSION` is contiguous | a gap means an unwritten step | **S4** |
-| the file matches `MANIFESTS[found]` **before** the first step | a downgraded counter, or a partly-modified source | **S15** |
-| the file matches `MANIFESTS[step.to_version]` **after each** step | a migration that produced only part of its target | **S21** |
-| the schema constructor's own output equals `MANIFESTS[SCHEMA_VERSION]` | `_SCHEMA` changed and nobody regenerated | **S23** |
-| every migration's versions are adjacent keys of `MANIFESTS` | a step pointing at a version that does not exist | **S24** |
-| creation and adoption validate the destination **before** stamping | stamping a shape that was never checked | **S25** |
-| the whole chain runs in the single §4c transaction | a partial chain must not be observable | **S5** |
-
-**`MANIFESTS` is generated from the constructors, not transcribed.** S23 is what
-makes that true rather than aspirational: a contributor who edits `_SCHEMA`
-without regenerating fails the build instead of stamping a store whose real
-shape is not the shape declared for its version.
-
-**Migration callbacks do not get a `sqlite3.Connection`.** v3 forbade
-`commit()`, `rollback()` and `executescript()`, and proposed detecting a direct
-`commit()`. Round 2's finding 7 is right that this is not enough:
+*(The v5/v6 phrasing quoted here is WITHDRAWN.)* **v5 and v6 claimed a migration
+could not reach transaction control, "enforced by construction". That claim was
+false**, and round 5 disproved it in one line:
 
 ```python
-conn.commit(); conn.execute("BEGIN IMMEDIATE")   # in_transaction is True again
+def migration(executor):
+    conn = executor._MigrationExecutor__conn      # name mangling is not access control
+    conn.set_authorizer(None)
+    conn.commit()
 ```
 
-Measured: `in_transaction` reads `True` after that pair, **and atomicity is
-already gone.** Post-hoc inspection cannot detect it. So a migration receives a
-**restricted executor** that accepts individual migration statements and rejects
-transaction control — `commit`, `rollback`, `executescript` and `BEGIN` /
-`COMMIT` / `ROLLBACK` / `SAVEPOINT` in statement text are **not reachable**
-rather than forbidden. **And the mechanism is an authorizer, not a keyword scan.** v4 specified
-rejecting transaction-control words in statement text; round 3 is right that
-this is a blacklist and that the list was incomplete. **`END` and `END
-TRANSACTION` commit** — measured, `in_transaction` goes `True` → `False` — and
-`RELEASE` is a savepoint operation v4 never named. Text filtering also matches
-inside comments and string literals.
+Measured: **raw connection recovered, outer transaction gone.** An arbitrary
+in-process Python callback cannot be sandboxed behind a private attribute, and
+**a false containment claim is worse than an admitted trusted one** — it invites
+exactly the code it pretends to contain.
 
-**`sqlite3.Connection.set_authorizer` denies the operations themselves.**
-Measured, with the transaction open:
+**So a migration receives nothing connection-bearing. It declares statements,
+and the planner executes them:**
 
-| statement | result |
+```python
+class Migration(NamedTuple):
+    from_version: int
+    to_version: int
+    statements: tuple[str, ...]      # executed in order, by the planner alone
+```
+
+There is no object to escape through. **The authorizer stays, with its role
+honestly restated:** it denies `SQLITE_TRANSACTION`, `SQLITE_SAVEPOINT`,
+`SQLITE_ATTACH` and `SQLITE_DETACH` so that a *declared statement* cannot end
+the transaction — `END`, `END TRANSACTION` and `RELEASE` all commit, and a
+keyword blacklist missed all three (measured). **It is defence against an
+accidental statement, not a sandbox around hostile code.** It is restored in
+`finally`: left installed it breaks the planner's own commit; left off after a
+failure it drops containment for whatever runs next.
+
+#### 4d-i. The single-step model
+
+Round 5, finding 7: a version accepting a *set* of manifests needs a route
+contract, and v6 had none — nothing said whether two migrations could leave the
+same version, which one ran, or whether one migration had to work for every
+accepted source.
+
+**Ruled: exactly one migration from `n` to `n+1`, generated and validated
+against every accepted manifest of `n`.** Route selection, cycles, non-adjacent
+steps and duplicate edges are then *unrepresentable* rather than rejected. What
+remains checkable is adjacency, that both versions have registry entries, and
+that **every version below the current one has a route forward** — an accepted
+source manifest with no path to the current version can never be opened, and
+`validate_registry()` fails the build for it.
+
+| check | invariant |
 |---|---|
-| `COMMIT` · `END` · `END TRANSACTION` · `ROLLBACK` | **denied** |
-| `SAVEPOINT s` · `RELEASE s` · `ATTACH` | **denied** |
-| `INSERT INTO t VALUES(1)` · `ALTER TABLE t ADD COLUMN b TEXT` | allowed |
+| the chain from `found` to `SCHEMA_VERSION` is contiguous | **S4** |
+| the file matches an accepted manifest of `found` **before** the first step | **S15** |
+| the file matches an accepted manifest of `to_version` **after each** step | **S21** |
+| the constructor's own output is an accepted manifest of its version | **S23** |
+| every step is adjacent, unique, and reachable | **S24** |
+| creation and adoption validate **before** stamping | **S25** |
+| the whole chain runs in the single §4c transaction | **S5** |
 
-`in_transaction` still `True` afterwards. The authorizer denies
-`SQLITE_TRANSACTION`, `SQLITE_SAVEPOINT`, `SQLITE_ATTACH` and `SQLITE_DETACH`;
-the migration receives a proxy exposing only `execute`, with no reachable
-`commit`, `rollback`, `executescript` or raw connection.
-
-**And `execute` returns an inert result, never a `sqlite3.Cursor`.** Round 4,
-finding 7: a cursor exposes `cursor.connection`, and from there
-`set_authorizer(None)` then `commit()` ends the outer transaction. Measured —
-the direct `COMMIT` is denied and the cursor route succeeds. **Hiding the
-connection attribute on the proxy is not enough; the result type has to be
-inert.** `execute` returns `MigrationResult(rowcount, rows, lastrowid)` and
-closes its cursor. **The authorizer is installed around the call and restored in
-`finally`** — left installed it would break the planner's own commit, left off
-after a failure it would silently drop containment for whatever ran next. **Atomicity is enforced
-by construction rather than by inspection.** **S22** covers `END`,
-`END TRANSACTION`, `RELEASE`, comments and string-literal cases as well as the
-direct calls.
+The registry is **empty** in this change; the test suite generates a simulated
+`v1->v2` path so that "empty" never means "untested".
 
 ### 4e. The adoption audit — what a callback can honestly prove
 
@@ -754,9 +793,34 @@ events and left the interesting failure unspecified:
 
 **Both events carry one opaque `adoption_id`** so a host can pair them.
 
-**Sink contract:** a **versioned, closed event schema**; **must not access the
-same store** — it is called under the write lock, so re-entering deadlocks;
-**cannot modify the decision**. **Bounded execution time is a host obligation,
+**The event is now actually frozen.** v6 called it "a versioned, closed event
+schema" and specified only two names and a shared id — which cannot be
+implemented or compatibility-tested (round 5, finding 8):
+
+```python
+class AdoptionAuditEvent(NamedTuple):
+    schema_version: Literal[1]
+    event: Literal["adoption_attempted", "adoption_committed"]
+    adoption_id: str            # uuid4, identical across the pair
+    path: str                   # the store path, verbatim
+    from_version: int           # 0 for an unstamped store
+    to_version: int
+    source_manifest_digest: str
+    matched_provenance: str     # e.g. "constructor v1"
+    occurred_at: str            # RFC 3339, UTC, normalised by veracium
+```
+
+`adoption_committed` **repeats every field** of its `attempted` partner except
+`event` and `occurred_at`, so a sink can process either in isolation. String
+fields are capped at 4096 bytes.
+
+**`path` may contain host-sensitive information** — usernames, deployment
+layout — and it is passed verbatim because a truncated path is useless for
+audit. **A sink that persists or forwards events is handling that**, and this is
+stated so the decision is the host's rather than an accident.
+
+**Sink contract:** **must not access the same store** — it is called under the
+write lock, so re-entering deadlocks; **cannot modify the decision**. **Bounded execution time is a host obligation,
 not something a `Callable` can enforce** — stated as an obligation rather than
 implied as a guarantee. Where no sink is supplied, adoption is written to the
 module logger at `INFO` and **the durability claim is not made**.
@@ -791,11 +855,24 @@ below are the contract for what must be written, not a description of what is
 there. **Stated in this form because a previous manifest listed 17 rows of which
 11 cited tests that did not exist.**
 
-**`specs/schema_manifest.py` is the exception** — it exists, it runs, and every
-measurement in §4a is made through it today. **Thirteen of the invariants above
-are already executable in it**: S23/S37, S30, S31, S32, S34, S36, S38, S39, S41,
-S42, S43, plus the counterexample rows. `--selfcheck` reports **28/28 as
-specified**. Both generated artifacts are gated by `--check`.
+**The measuring instrument is the exception, and in v7 it is three small
+modules plus a test file** — `schema_model.py` (identity, digest, drift,
+candidate matching), `schema_migrations.py` (declarative steps, planner-owned
+execution), `schema_evidence.py` (tag probing and artifacts). **Only the kernel
+would be shared with production**; git probing and presentation are outside the
+trust boundary.
+
+**Every counterexample is now a pytest test** in `tests/test_schema_model.py`,
+**and that is what fixed the last reporting defect**: the old harness printed 30
+result rows and reported `28/28`, because its total was a hand-maintained
+arithmetic expression. A tool whose purpose is truthful evidence was miscounting
+its own evidence. **The count now comes from collection**, and the counterexamples
+run in CI with everything else rather than in a bespoke script.
+
+**Invariants are named for what they actually test**, per round 5's non-blocking
+note: S36 tests evidence-backed qualification (not tuple membership), S37 covers
+DDL *and* policy, S41 covers every authoritative field, S43 is replaced by the
+declarative model.
 
 | invariant | executable check |
 |---|---|
@@ -808,7 +885,7 @@ specified**. Both generated artifacts are gated by `--check`.
 | **S7** `FORMAT_VERSION` is untouched | `test_export_format_version_is_independent` |
 | **S8** exact set equality (falls out of the digest) | `test_a_store_with_extra_tables_is_refused` |
 | **S9** adoption is recorded, and a failing sink aborts it | `test_adoption_audit_sink_failure_aborts` — sink raises, assert **not** stamped |
-| **S10** the **production** internal-exclusion query excludes `sqlite_stat1` | `test_analyze_does_not_make_a_store_foreign` — `ANALYZE`, reopen, assert adopted. **Must call the shipped query** |
+| **S10** the **production** internal-exclusion query excludes `sqlite_stat1` | `test_analyze_does_not_change_the_digest` — `ANALYZE`, reopen, assert adopted. **Must call the shipped query** |
 | **S11** no code depends on column order | `test_every_statement_names_its_columns` — no `SELECT *` (except aggregates), **every `INSERT` names its destination columns**. *(Round 4: this is now a **general quality lint**, not a justification. v5 still described it as licensing an "unordered column comparison"; the manifest stores ordered `table_xinfo` rows and byte-for-byte DDL, so nothing about acceptance rests on it.)* |
 | **S12** index drift is repaired on **every** path | `test_drifted_acceleration_index_is_rebuilt` — replace with a UNIQUE index on an already-**stamped** store, reopen, assert the canonical definition |
 | **S13** the stamp is transactional in the installed sqlite | `test_user_version_rolls_back` |
@@ -817,31 +894,37 @@ specified**. Both generated artifacts are gated by `--check`.
 | **S16** a stamped store validates its manifest | `test_a_stamped_store_with_the_wrong_shape_is_refused` |
 | **S17** an unstamped file with any foreign object is not "new" | `test_a_database_with_only_an_unrelated_table_is_refused` |
 | **S18** foreign table names are never interpolated | `test_a_hostile_table_name_is_passed_as_a_value` — a name containing a quote and a semicolon |
-| **S19** generated columns are seen | `test_a_generated_column_makes_a_store_foreign` |
-| **S23** the constructor's output **is** `MANIFESTS[SCHEMA_VERSION]` | `test_schema_constructor_matches_its_declared_manifest` — edit `_SCHEMA` without regenerating and the build fails |
-| **S24** every migration names adjacent existing `MANIFESTS` keys | `test_migration_versions_are_adjacent_and_known` |
+| **S19** generated columns are seen | `test_a_non_identical_schema_is_refused` |
+| **S23** the constructor's output **is** `MANIFESTS[SCHEMA_VERSION]` | `test_the_registry_reproduces_the_product_schema` — edit `_SCHEMA` without regenerating and the build fails |
+| **S24** every migration names adjacent existing `MANIFESTS` keys | `test_the_migration_registry_is_well_formed` |
 | **S25** creation and adoption validate **before** stamping | `test_creation_validates_before_stamping` |
 | **S26** an unstamped v1 store migrates **directly** to v2 | `test_legacy_store_upgrades_across_a_skipped_release` — inject `SCHEMA_VERSION = 2`; **the case v3 refused** |
 | **S27** an in-memory store works end to end | `test_in_memory_store_is_versioned` — create, stamp, use; manifest read from the live connection |
-| **S28** the four round-2 counterexamples are refused | `test_equivalent_but_not_identical_schemas_are_refused` — CHECK, COLLATE, VIEW, custom-collation index |
+| **S28** the four round-2 counterexamples are refused | `test_a_non_identical_schema_is_refused` — CHECK, COLLATE, VIEW, custom-collation index |
 | **S29** the historical artifact is current | `specs/schema_manifest.py --check` in CI |
-| **S30** a normal `ALTER` migration reaches an **accepted** destination | `test_alter_migration_reaches_an_accepted_manifest` — measured today in `--selfcheck` |
-| **S31** canonicalisation preserves quoted-literal semantics | `test_two_space_and_one_space_check_literals_differ` — **measured today**; they accept opposite values |
-| **S32** a `(type, name)` collision cannot hide an object | `test_a_trigger_named_like_an_index_is_refused` — **measured today**; v4 digested it as clean |
+| **S30** a normal `ALTER` migration reaches an **accepted** destination | `test_a_migrated_store_is_accepted_at_its_destination` — measured today in `--selfcheck` |
+| **S31** canonicalisation preserves quoted-literal semantics | `test_two_literal_variants_are_not_the_same_schema` — **measured today**; they accept opposite values |
+| **S32** a `(type, name)` collision cannot hide an object | `test_a_trigger_named_like_an_index_is_not_mistaken_for_drift` — **measured today**; v4 digested it as clean |
 | **S33** drift repair is followed by **complete revalidation** | `test_repair_revalidates_before_stamping` — digest accepted **and** drift empty |
-| **S34** the evidence supports multiple schema versions | `test_a_v1_store_resolves_once_head_is_v2` — **measured today** by simulating version 2 |
+| **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today** by simulating version 2 |
 | **S35** post-commit audit failure has the specified result | `test_committed_sink_failure_leaves_the_store_adopted` — raises `PostCommitAuditError`, not `StoreVersionError` |
-| **S36** the runtime is gated to the tested set | `test_an_untested_sqlite_is_refused` — `reason="unsupported-sqlite"`; **measured today** in `--selfcheck` |
-| **S37** registry conformance covers **rebuildable** definitions | `test_a_wrong_rebuildable_definition_fails_conformance` — **measured today**; v5's digest-based S23 passed it |
-| **S38** migration outputs are **generated** into the accepted set | `test_migration_path_is_generated_not_preserved` — **measured today** against a simulated `v1->v2` |
+| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_by_evidence` — version **and** source id **and** probes **and** reproduced constructor digests |
+| **S37** conformance covers rebuildable **DDL** | `test_a_wrong_rebuildable_ddl_fails_conformance` — v5's digest-based S23 passed it |
+| **S38** migration outputs are **generated** into the accepted set | `test_the_migration_path_is_generated_not_preserved` — **measured today** against a simulated `v1->v2` |
 | **S39** legacy resolution is candidate-based | `test_resolution_does_not_use_a_default_version_digest` — **measured today** |
-| **S40** only unstamped releases feed the legacy set | `test_a_stamped_release_is_not_a_legacy_candidate` |
-| **S41** the gate re-derives every recorded field | `test_a_fabricated_schema_version_fails_check` — **measured today**: 999 → 23 problems |
-| **S42** historical manifests are immutable | `test_rewriting_a_historical_version_is_an_error` — **measured today** |
-| **S43** the migration result exposes no connection | `test_migration_result_is_inert` — `.connection` absent; authorizer restored in `finally` |
+| **S40** only unstamped releases feed the legacy set | `test_resolution_is_restricted_to_legacy_base_versions` |
+| **S41** the gate re-derives every **authoritative** field | `schema_evidence.py --check` in CI. *(Manual probe, not a suite test: it rebuilds 23 worktrees. The fabricated-artifact result is recorded in §15, not claimed as an automated check.)* |
+| **S42** historical manifests are immutable | `test_deleting_a_historical_version_is_an_error` — **measured today** |
+| **S43** a migration **carries no connection at all** | `test_a_migration_cannot_reach_the_connection` — the declarative model has no object to escape through; `test_transaction_control_in_a_declared_statement_is_denied` covers all seven forms, `test_the_authorizer_is_restored_after_a_failed_migration` the `finally` |
+| **S44** flipping only a **policy** fails conformance | `test_flipping_only_a_policy_fails_conformance` — **v6's check was tautological** |
+| **S45** version-zero tries only `LEGACY_BASE_VERSIONS` | `test_resolution_is_restricted_to_legacy_base_versions` |
+| **S46** deleting a historical version is an error | `test_deleting_a_historical_version_is_an_error` |
+| **S47** a runtime is qualified by **evidence** | `test_an_unrecorded_runtime_is_not_qualified` · `test_a_matching_version_with_different_features_is_not_qualified` |
+| **S48** the migration registry is well-formed | `test_the_migration_registry_is_well_formed` — adjacency, uniqueness, reachability |
+| **S49** the audit event payload is the frozen type | `test_adoption_event_payload_is_typed` — §4e, both events, paired `adoption_id`. **Not yet written**; needs the store |
 | **S20** concurrent first open across **processes** stamps once | `test_concurrent_first_open_across_processes` |
 | **S21** the destination signature is validated after migrating | `test_migration_refuses_a_partial_result` |
-| **S22** a migration **cannot reach** transaction control | `test_migration_executor_rejects_transaction_control` — direct `commit`; `commit` then `BEGIN`; `rollback` then `BEGIN`; `executescript`; `BEGIN` in statement text. **Five evasions, one restricted executor** |
+| **S22** a migration **cannot reach** transaction control | `test_transaction_control_in_a_declared_statement_is_denied` — direct `commit`; `commit` then `BEGIN`; `rollback` then `BEGIN`; `executescript`; `BEGIN` in statement text. **Five evasions, one restricted executor** |
 
 **S6 is the one that protects users** and is why adoption is specified before it
 is convenient: everyone who has a store today goes through that path exactly
@@ -937,56 +1020,68 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 4 approved the architecture for the second time and deferred the
-instrument, because it did not implement several contracts this document claimed
-it proved. That framing is correct and it is the most useful thing anyone has
-said about this spec.** All 8 findings are taken. I reproduced all five
-executable probes before changing anything; every one behaves as reported.
+**Round 5 approved the architecture a fourth time, deferred v6, and answered a
+question I had asked. The answer was yes — the instrument should be smaller —
+and the decomposition offered was better than the one I would have chosen.** All
+8 blocking findings and both non-blocking ones are taken. Every executable probe
+was reproduced first.
 
-**v6 changes no architecture. It makes the generator truthful:**
+**The most important change is not on the findings list.** The instrument is now
+three small modules and a pytest file:
 
-| what the spec claimed | what the instrument did | now |
-|---|---|---|
-| the registry reproduces `_SCHEMA` exactly | compared the **acceptance digest**, which excludes rebuildable indexes | complete typed records, policies and drift |
-| a version accepts constructor **and migration** outputs | never ran a migration; preserved whatever JSON was present | every record produced by **executing** a declaration |
-| legacy stores resolve to a base version | computed the digest with a **default** version, then asked which version it was | candidate matching, one inventory, each version's own policy |
-| historical manifests are immutable | replaced every version's record on each run | regenerating a historical version differently is an **error** |
-| CI verifies the evidence | verified only that a digest resolved to *something* | every recorded field re-derived and compared |
-| migrations cannot reach the connection | returned a raw cursor, which exposes `.connection` | an inert `MigrationResult`; authorizer restored in `finally` |
+```
+schema_model.py       identity, digest, drift, candidate matching   <- the kernel
+schema_migrations.py  declarative steps, planner-owned execution
+schema_evidence.py    tag probing and the generated artifacts
+tests/test_schema_model.py   every counterexample, 41 tests
+```
 
-**S-Q6 is resolved by narrowing, not by widening.** I could have kept
-`3.35 ≤ sqlite < 4` and added a sentence about intent. Gating on the two
-runtimes actually observed is worse for users and better as a contract, and it
-fails in the direction that is loud. **What would change my mind is a matrix**:
-build the constructor and every migration path across the supported runtimes in
-CI, record accepted manifests per runtime where they differ, and widen
-`TESTED_SQLITE` from evidence. That is a CI-infrastructure task, and I would
-rather ship the gate now than block on it.
+**Only the kernel would be shared with production.** And moving the
+counterexamples into pytest is what actually fixed the reporting defect: the old
+harness printed 30 rows and reported `28/28` because its total was a
+hand-maintained arithmetic expression. **The count now comes from collection.**
+A tool whose purpose is truthful evidence should not be able to miscount itself.
+
+**Two claims are withdrawn rather than repaired:**
+
+1. **Migration containment.** `executor._MigrationExecutor__conn` recovers the
+   connection in one line — name mangling is not access control, and I should
+   have known that when I wrote it. *(The WITHDRAWN v5/v6 phrasing is quoted in
+   §15.)* Migrations are now
+   **declarative**: a closed tuple of statements the planner executes. There is
+   no object to escape through. The authorizer stays, with its role restated as
+   defence against an *accidental* statement, not a sandbox around hostile code.
+2. **`LEGACY_DIGESTS`.** It described a digest→version map, which is the
+   circular design §4a-vii had already rejected. Replaced by
+   `LEGACY_BASE_VERSIONS`, and — your finding 3 — resolution is now *restricted*
+   to it, so release history is an authorization boundary rather than a printed
+   summary.
+
+**A new gate, because this class of error has recurred.** A spec row that claims
+a check is "measured today" must cite a test that exists;
+`test_a_spec_claiming_a_test_is_measured_today_must_have_it` fails the build
+otherwise. It currently guards seven rows, and I verified it fires. **After the
+module split, several rows in this document still cited pre-split test names** —
+exactly the drift you have caught twice by hand.
 
 **Where I am least confident:**
 
-1. **`TESTED_SQLITE` with two members will annoy real users**, and the pressure
-   to widen it by editing a tuple will be constant. The gate is only as good as
-   the discipline behind it, and I have not built anything that enforces that
-   discipline — an entry added without evidence looks exactly like one added
-   with it.
-2. **The `diff` candidate-selection rule** (§4b) is deterministic but arbitrary:
-   minimum distance, ties by declaration order. I have no argument that
-   minimum-distance is the *useful* one for a human reading a refusal.
-3. **The registry still duplicates DDL text** with `_SCHEMA` (§4a-vi), checked
-   to agree rather than generated from one source. That last step belongs to
-   implementation.
+1. **The registry still duplicates DDL with `_SCHEMA`**, now with a reviewed
+   policy artifact as a second declaration alongside it. **That is two
+   duplications where v6 had one**, and it is only justified while the product
+   is not generated from the registry. Generating it is the right fix and it
+   belongs to implementation — but I want to flag that I have added a moving
+   part to close a hole, which is the trade this spec has been making for five
+   rounds.
+2. **S-Q7 remains open**: the runtime gate is now evidence-derived, but the
+   evidence is still one machine. Qualifying a second runtime requires running
+   the generator there, and I have no CI that does it.
+3. **`AdoptionAuditEvent.path` is passed verbatim** and may carry host-sensitive
+   information. I chose that over truncation because a truncated path is useless
+   for audit, and stated it so the decision is the host's.
 
-**A standing observation, offered rather than argued.** Four rounds have now
-found real defects in the *instrument* rather than the design, and the
-architecture has been approved three times. That is a good trade and I am not
-complaining about it — but it does mean the thing under review has drifted from
-"is this the right rule" to "is this measuring script correct", and the script
-is not what ships. **If a fifth round is mostly instrument findings again, the
-useful question may be whether the instrument should be smaller.**
-
-**What I deliberately did not do:** no offline import tool; no SQLite matrix in
-CI (named, scoped, not built); no rebuild-every-table canonicalisation model.
+**What I deliberately did not do:** no offline import tool; no CI matrix; no
+generation of `_SCHEMA` from the registry.
 
 ## 10. Open questions
 
@@ -996,8 +1091,8 @@ CI (named, scoped, not built); no rebuild-every-table canonicalisation model.
 | ~~S-Q2~~ | **RULED 2026-08-02: `allow_adopt: bool = True`**, §4b — and the default is now justified by §4a-iv rather than by convenience. | resolved | dev | — |
 | ~~S-Q4~~ | **ANSWERED by round 2, 2026-08-02: known-constructor equality, not semantic equivalence.** It was a list that grew — v3's signature admitted four more counterexamples. §4a. | resolved | external | — |
 | ~~S-Q5~~ | **RESOLVED by round 3, 2026-08-02: a structured schema registry.** `SchemaObject(kind, name, ddl, policy)` generates creation, expectation, typed rebuildable identities, repair and drift from one declaration. §4a-vi. **It was blocking, and it was the cause of the `(type, name)` bypass.** | resolved | external | — |
-| ~~S-Q6~~ | **RESOLVED by round 4, 2026-08-02: gate on the tested set.** A declared range with neither evidence nor enforcement is not a contract. `TESTED_SQLITE` today is `3.45.1`, `3.46.1`; anything else refuses with `unsupported-sqlite`. §4a-viii. **Widening happens by adding evidence.** | resolved | external | — |
-| **S-Q7** | **Should `TESTED_SQLITE` be widened by a CI matrix before release?** The gate is correct but narrow, and nothing enforces that a new entry arrives with evidence. §9 names this as my least confident point. | `pre-release` | dev | before release |
+| ~~S-Q6~~ | **RESOLVED by round 4, refined by round 5:** gate the runtime, and **derive qualification from evidence** rather than a hand-edited list. §4a-viii. | resolved | external | — |
+| **S-Q7** | **Should the qualified-runtime set be widened by a CI matrix before release?** The gate is evidence-derived now, but the evidence is still one machine: qualifying a second runtime means running the generator there. | `pre-release` | dev | before release |
 | **S-Q3** | Does anything other than `SqliteStore` need this? `base.py` is an interface; a Postgres store would need its own mechanism. **Not in scope, recorded so it is not assumed covered.** | `deferred` | dev | — |
 
 ---
@@ -1103,3 +1198,31 @@ before it is raised.
 **On the package defect:** `--check` needed git and said so only obliquely. It
 now exits `2` with an explicit message when there is no checkout, and the README
 lists it with `--releases` and `render_index --check` as archive-unrunnable.
+
+---
+
+## 15. Round 5 review disposition
+
+**Verdict: architecture approved; v6 deferred.** 8 blocking findings, 2
+non-blocking, and an answer to my own question. **All taken.**
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | a migration recovers the raw connection | **§4d — the containment claim is withdrawn**, and the callback model with it. Migrations are declarative statement tuples; there is no connection-bearing object. Measured: `executor._MigrationExecutor__conn` then `set_authorizer(None)` then `commit()` ended the transaction |
+| 2 | registry conformance did not verify policy | **§4a-vi** — policies compare against `schema_policy.json`, independently reviewed. v6's check computed the expectation from the registry it was checking; flipping `REBUILDABLE`→`REQUIRED` left it empty. **S44** |
+| 3 | the legacy contract contradicted candidate resolution | **§4-i, §4b** — `LEGACY_DIGESTS` withdrawn; `LEGACY_BASE_VERSIONS` **restricts** resolution. Measured: v6 resolved an unstamped v2 shape to 2. **S45** |
+| 4 | the gate did not re-derive every field | **§4a-iv** — fields classified authoritative / summary / structural; `sqlite_version` removed from the release artifact rather than kept unchecked. Measured: the fabricated artifact passed v6 with rc 0 |
+| 5 | a historical version could be deleted | **§4a-iv** — a recorded version this build no longer declares is an error; generation binds to a declared `SCHEMA_VERSION`, not `max(SCHEMAS)`. **S46** |
+| 6 | the SQLite gate was hand-authorized | **§4a-viii** — qualification requires a recorded runtime whose **source id** and feature probes match and whose constructor digests reproduce here. `unsupported-sqlite` added to the closed reason set, which v6 had introduced in the state table only. **S47** |
+| 7 | multiple migration routes had no contract | **§4d-i — the single-step model.** Exactly one migration `n`→`n+1`, validated against every accepted manifest of `n`. Cycles, non-adjacent steps and duplicate edges become unrepresentable. **S48** |
+| 8 | the audit event had no frozen schema | **§4e** — `AdoptionAuditEvent` typed in full, `committed` repeats its partner's fields, string caps stated, and `path` sensitivity named as the host's decision. **S49** |
+
+**Non-blocking, both taken:** the self-check summary undercounted its own rows —
+fixed by deleting the harness and moving the counterexamples into pytest, where
+the count comes from collection; and the overstated "already executable" claims
+are renamed to the property each check actually tests, **with a new gate that
+fails the build when a row claims present-tense evidence it does not have.**
+
+**"Should the instrument be smaller?" — yes, and the split is adopted as
+proposed.** `schema_model` / `schema_migrations` / `schema_evidence` /
+`tests/test_schema_model.py`, with only the kernel inside the trust boundary.

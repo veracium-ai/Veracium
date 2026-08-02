@@ -1,0 +1,11 @@
+{
+  "1": {
+    "table:edges": "required",
+    "index:ix_edges_user_active": "rebuildable",
+    "index:ix_edges_subj_rel": "rebuildable",
+    "table:episodes": "required",
+    "index:ix_episodes_user": "rebuildable",
+    "table:wiki": "required",
+    "table:write_counter": "required"
+  }
+}

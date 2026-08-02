@@ -662,3 +662,28 @@ def test_a_spec_cannot_be_accepted_while_its_prerequisite_is_unresolved(repo):
                             touch=["src/veracium/graph.py"]).check()
     assert code == POLICY_FAIL
     assert "requires `0020`" in out
+
+
+def test_a_spec_claiming_a_test_is_measured_today_must_have_it():
+    """A row that says "measured today" must cite a test that exists.
+
+    0007's invariant table mixes checks that run now with a contract for checks
+    still to be written. That is fine -- but an earlier manifest in this project
+    listed 17 rows of which 11 cited tests that did not exist, and after the
+    round-5 module split several 0007 rows still cited pre-split names. A claim
+    of present-tense evidence is exactly the claim worth gating."""
+    import re
+    root = Path(__file__).resolve().parent.parent
+    have = set()
+    for f in (root / "tests").rglob("test_*.py"):
+        have |= set(re.findall(r"def (test_\w+)", f.read_text()))
+    bad = []
+    for spec in (root / "specs").glob("[0-9][0-9][0-9][0-9]-*.md"):
+        for line in spec.read_text().splitlines():
+            if "measured today" not in line.lower():
+                continue
+            for name in re.findall(r"`(test_\w+)`", line):
+                if name not in have:
+                    bad.append(f"{spec.name}: claims `{name}` is measured today, "
+                               f"but no such test exists")
+    assert not bad, "\n".join(bad)

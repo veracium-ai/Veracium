@@ -11,6 +11,19 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    (r"transaction control .{0,30}(is|are) (not reachable|unreachable)|enforced by construction",
+     "R5/0007: name mangling is not access control; migrations are declarative, and the claim is withdrawn",
+     "specs/0007 §4d"),
+    # `_normalise` strips underscores, so an identifier must be written
+    # against the NORMALISED text: `LEGACY_DIGESTS` arrives as `LEGACYDIGESTS`.
+    # This is the second time a pattern was written against raw markdown and
+    # could never fire; a dead entry reads as coverage.
+    (r"LEGACY_?DIGESTS",
+     "R5/0007: a digest->version map is the circular design; LEGACY_BASE_VERSIONS restricts resolution",
+     "specs/0007 §4-i"),
+    (r"TESTED_?SQLITE|the tested set is the contract",
+     "R5/0007: a hand-edited tuple is not evidence; qualification is derived from sqlite_runtimes.json",
+     "specs/0007 §4a-viii"),
     (r"3\.35 ?<= ?sqlite|declares? (the )?(supported )?range",
      "R4/0007: a declared range with no evidence or enforcement is not a contract; gate on TESTED_SQLITE",
      "specs/0007 §4a-viii"),
