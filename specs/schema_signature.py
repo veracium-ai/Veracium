@@ -10,10 +10,15 @@ by id, duplicate ids become possible, and the per-user write counter loses its
 uniqueness. **Names and declared types are not the schema the application relies
 on.** This module implements the signature v3 specifies instead.
 
-Two uses, and they are different:
+Three uses, and they are different:
 
   `--signature <db>`   the signature of one file -- what an implementation of
                        0007 would compare on open.
+  `--selfcheck`        build every counterexample and report what the signature
+                       sees. Runs anywhere, including inside an extracted review
+                       archive, because it needs no git. **A signature is only
+                       worth what it discriminates**, and two of its seven cases
+                       assert that it does NOT fire.
   `--releases`         build a store with the code of **every released tag** and
                        report whether its signature matches today's. This is the
                        evidence for the adoption premise ("the schema has never
@@ -213,12 +218,92 @@ def releases() -> int:
         return 0
 
 
+def selfcheck() -> int:
+    """Build every counterexample and report whether the signature sees it.
+
+    `--releases` needs a git checkout, so it cannot run inside an extracted
+    review archive. This can, and it is the claim that actually matters: **a
+    signature is only worth what it discriminates.** Each case below is either
+    one the round-1 reviewer constructed or one 0007 §4a-iii measured.
+
+    The last two rows are the ones to read sceptically -- they assert the
+    signature does **not** fire. A comparison that refuses stores which are
+    genuinely fine gets bypassed, and a bypassed check is weaker than a
+    narrower one that holds."""
+    sys.path.insert(0, str(ROOT / "src"))
+    try:
+        from veracium.store.sqlite import SqliteStore
+    except ImportError:
+        print("needs the veracium package importable: PYTHONPATH=src", file=sys.stderr)
+        return 1
+
+    def fresh() -> str:
+        p = tempfile.mktemp(suffix=".db")
+        SqliteStore(p)
+        return p
+
+    def mutate(sql: list[str]) -> str:
+        p = fresh()
+        c = sqlite3.connect(p)
+        for s in sql:
+            c.execute(s)
+        c.commit()
+        c.close()
+        return p
+
+    good = signature(fresh())
+
+    cases = [
+        ("constraint-stripped clone (reviewer's counterexample)", True, None),
+        ("generated column added to edges", True,
+         ["ALTER TABLE edges ADD COLUMN leak TEXT "
+          "GENERATED ALWAYS AS (subject||object) VIRTUAL"]),
+        ("unrelated table beside ours", True,
+         ["CREATE TABLE unrelated_application_data (x)"]),
+        ("trigger on a protected table", True,
+         ["CREATE TRIGGER t AFTER INSERT ON edges BEGIN UPDATE edges SET active=0; END"]),
+        ("wrong same-named UNIQUE index", True,
+         ["DROP INDEX ix_edges_subj_rel",
+          "CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id, subject)"]),
+        ("ANALYZE (must NOT be a difference)", False, ["ANALYZE"]),
+        ("missing non-unique index (must NOT be a difference)", False,
+         ["DROP INDEX ix_edges_subj_rel"]),
+    ]
+
+    stripped = tempfile.mktemp(suffix=".db")
+    c = sqlite3.connect(stripped)
+    c.executescript(
+        "CREATE TABLE edges (id TEXT, user_id TEXT, subject TEXT, relation TEXT,"
+        " object TEXT, active INTEGER, quarantined INTEGER, json TEXT);"
+        "CREATE TABLE episodes (id TEXT, user_id TEXT, date TEXT, json TEXT);"
+        "CREATE TABLE wiki (user_id TEXT, text TEXT, store_version INTEGER);"
+        "CREATE TABLE write_counter (user_id TEXT, n INTEGER);")
+    c.commit()
+    c.close()
+
+    bad = 0
+    print("case                                                    expect  result")
+    for name, should_differ, sql in cases:
+        path = stripped if sql is None else mutate(sql)
+        differs = signature(path) != good
+        ok = differs == should_differ
+        bad += not ok
+        print(f"  {name:<52} {'differ' if should_differ else 'same':>6}  "
+              f"{'differs' if differs else 'same':>7}  {'ok' if ok else '** WRONG **'}")
+    print(f"\n{len(cases) - bad}/{len(cases)} as specified")
+    return 1 if bad else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--selfcheck", action="store_true",
+                    help="build every counterexample and report what the signature sees")
     ap.add_argument("--signature", metavar="DB", help="print one file's signature")
     ap.add_argument("--releases", action="store_true",
                     help="build a store with every released tag's own code and compare")
     a = ap.parse_args()
+    if a.selfcheck:
+        return selfcheck()
     if a.releases:
         return releases()
     if a.signature:
