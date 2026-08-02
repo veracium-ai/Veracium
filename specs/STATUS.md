@@ -24,7 +24,7 @@ is the number that decides what can be built.
 | **0009** | outcome authorship is append-only history | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 1 | 0/1 |
 | **0010** | crash-safe consolidation | `draft` | 2026-08-02 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
-| **0012** | who may renew a fact's currency | `draft` | (no git) | 0 | 0 | 3 | 🔴 2 | 0 | — |
+| **0012** | who may renew a fact's currency | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

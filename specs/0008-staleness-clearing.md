@@ -173,7 +173,9 @@ representation, not a narrower version of this change.
 ## 4. Behaviour
 
 Delete the conditional at `graph.py:119-121`. Reinforcement continues to refresh
-**liveness** (`observed_at`) and to retain confidence per `0002` M5 T1; it stops
+**liveness** (`observed_at`) **unchanged — that behaviour is `0012`'s subject,
+neither endorsed nor altered here** — and to retain confidence per `0002` M5 T1;
+it stops
 touching `needs_confirmation`.
 
 **`confirm()` is unchanged** and already carries the correct guard — only
@@ -310,7 +312,8 @@ matters:
 Before, reinforcement wrote `needs_confirmation=False`; after, it leaves `True`
 persisted. **After a rollback we cannot tell which flags the old behaviour would
 have cleared during the intervening period** — the safer flags simply remain set
-until a later `confirm()` or entitled reinforcement changes them. **That is the
+until a later `confirm()` clears them — **reinforcement no longer changes the
+flag at all.** **That is the
 right direction to fail, and it is still not "no data changes".**
 
 
@@ -336,8 +339,8 @@ this spec's own error one level up.
 - **Not per-author staleness.** `needs_confirmation` is one boolean for the
   whole edge; `0002` Q4 would dissolve this structurally rather than fence it.
 - **Not why the flag was set.** `expire()`'s CONFIRM behaviour is untouched.
-- **Not source identity.** Entitlement is recorded effective authority, and
-  whether the labels are honest is `0011` E4.
+- **Not anything about liveness.** §3d's bypass is open and owned by `0012`.
+  **v2 claimed this and the mechanism was rejected**; nothing replaced it here.
 
 
 ## 10. Open questions
