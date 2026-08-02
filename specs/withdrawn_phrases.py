@@ -56,4 +56,10 @@ WITHDRAWN = [
     (r"assistant . third_party.{0,10}allow|assistant . user.{0,10}block",
      "inverted: the ladder gives assistant->user ALLOW and assistant->third_party BLOCK",
      "specs/0003 §3"),
+    (r"one guard in one loop",
+     "the change spans write, read and storage — specs/0003 §7a",
+     "specs/0003 §7a"),
+    (r"the full 400.row",
+     "the product follows the SHIPPED enum; 400 assumed a class that does not exist",
+     "specs/ladder.py"),
 ]
