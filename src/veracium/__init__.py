@@ -498,8 +498,13 @@ class Memory:
         # model: a preference stated in January and confirmed in March read
         # "(since March)". A confirmation is new evidence about LIVENESS, so it
         # advances observed_at — the same resolution C′ applied to reinforcement.
-        edge.provenance.observed_at = max(edge.provenance.observed_at,
-                                          _event_dt(date))
+        # Normalise once. This stored the CALLER's string in the episode and
+        # returned it as `confirmed_at`, so an offset-bearing input produced an
+        # episode date later consumers (`date.fromisoformat`) could not parse,
+        # and a response that did not name the instant actually accepted.
+        when = _event_dt(date)
+        date = when.date().isoformat()
+        edge.provenance.observed_at = max(edge.provenance.observed_at, when)
         edge.needs_confirmation = False
         edge.provenance.confidence = max(edge.provenance.confidence, 0.9)
         self.store.add_edge(edge)
@@ -593,7 +598,9 @@ class Memory:
                     author_of_evidence=author, evidence_ref=evidence_ref)))
         edge.outcome_counts[outcome.value] = edge.outcome_counts.get(outcome.value, 0) + 1
         edge.last_outcome = outcome
-        edge.last_outcome_at = _event_dt(date)
+        _oc_when = _event_dt(date)
+        date = _oc_when.date().isoformat()      # normalise once, as confirm()
+        edge.last_outcome_at = _oc_when
         if outcome is Outcome.CHALLENGED:
             edge.needs_confirmation = True   # "confirm before relying" — existing surface
         self.store.add_edge(edge)
@@ -618,6 +625,7 @@ class Memory:
         from datetime import date as _date
         date = date or _date.today().isoformat()
         when = _event_dt(date)
+        date = when.date().isoformat()          # normalise once, as confirm()
         self.store.invalidate_edge(edge_id, when, "corrected")
         new = Edge(
             id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,

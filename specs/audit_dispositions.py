@@ -50,12 +50,12 @@ DISPOSITIONS = {
     "clean — counters are information, never gating", "`test_record_outcome_is_edge_blind_never_supersedes`"),
  ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"):
    (W, "`active`, `invalidation_reason=corrected`", "act",
-    "➡️ **MOVED to `0003` §1b** — this is a supersession path", "tracked as 0003 I9/I10"),
+    "➡️ **MOVED to `0003` §1b** — this is a supersession path", "tracked as 0003 I9/I10 [M7-correct]"),
  ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"):
    (W, "**`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes`", "act",
-    "➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class", "tracked as 0003 I10"),
+    "➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class", "tracked as 0003 I10 [M7-correct]"),
  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "23255a7f3c3f"):
-   (W, "episode provenance", "act", "➡️ moved with M7", "tracked as 0003 I10"),
+   (W, "episode provenance", "act", "➡️ moved with M7", "tracked as 0003 I10 [M7-correct]"),
  ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"):
    (W, "**all** — irreversible erasure", "act", "clean — erasure is the contract", "`test_forget_erases_everything_and_only_that_user`"),
  ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"):
@@ -64,7 +64,7 @@ DISPOSITIONS = {
  # -- derived views ----------------------------------------------------------
  ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"):
    (M, "none directly — **caches a trust decision**", "none",
-    "➡️ **MOVED to `0004`.** Output outlives the inputs' revocation", "tracked as 0004 W1–W4"),
+    "➡️ **MOVED to `0004`.** Output outlives the inputs' revocation", "tracked as 0004 W1–W4 [M8-wiki]"),
 
  # -- the write path ---------------------------------------------------------
  ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"):
@@ -77,7 +77,7 @@ DISPOSITIONS = {
    (W, "`active`, reason `absorbed_duplicate`", "observation", "clean — narrows", "`test_more_specific_arrival_absorbs_prior`"),
  ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "cda8875a699c"):
    (W, "`active`, reason `superseded`", "observation",
-    "➡️ **`0003`** — cross-class supersession; unfiltered today", "tracked as 0003 I1/I2"),
+    "➡️ **`0003`** — cross-class supersession; unfiltered today", "tracked as 0003 I1/I2 [M7-correct]"),
  ("src/veracium/graph.py", "apply_supersession", "add_edge", "1e539a527213"):
    (W, "**`valid_from = min`** on the incoming edge, `observed_at`, `confidence`", "observation",
     "🟡 **R1 — the edge is unpersisted here, so N1 holds narrowly.** Under immutable-identity this becomes construction, not mutation. §7c",
@@ -96,13 +96,13 @@ DISPOSITIONS = {
  ("src/veracium/lifecycle.py", "expire", "add_edge", "79eaf6e63a9c"):
    (M, "**`confidence *= decay_factor`**", "none",
     "🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d",
-    "🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today**"),
+    "🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** [N4-decay]"),
  ("src/veracium/lifecycle.py", "expire", "add_edge", "1d9541b12c69"):
    (M, "`needs_confirmation = True`", "none", "clean — narrows; flags, never clears", "`test_expiry_lapse_confirm_and_reinforcement`"),
  ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "5bed480ae733"):
    (M, "**destroys episodes**", "none",
     "🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e",
-    "➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery"),
+    "➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery [X-crash]"),
  ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"):
    (M, "`author_of_evidence`, `derived_from`, `confidence`", "none",
     "**M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust",
@@ -111,9 +111,9 @@ DISPOSITIONS = {
  # -- portability ------------------------------------------------------------
  ("src/veracium/portability.py", "import_memory", "add_edge", "b1f56bc283b7"):
    (W, "**every trust field, reconstructed from a file**", "transfer",
-    "➡️ **MOVED to `0005`.** No capping on the `user_id` remap", "tracked as 0005 P1–P4"),
+    "➡️ **MOVED to `0005`.** No capping on the `user_id` remap", "tracked as 0005 P1–P4 [M6-import]"),
  ("src/veracium/portability.py", "import_memory", "add_episode", "bab7d192c8f8"):
-   (W, "episode provenance from a file", "transfer", "➡️ moved with M6", "tracked as 0005 P1–P4"),
+   (W, "episode provenance from a file", "transfer", "➡️ moved with M6", "tracked as 0005 P1–P4 [M6-import]"),
 }
 
 

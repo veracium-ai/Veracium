@@ -164,19 +164,28 @@ Every maintenance-time or trust-mutating operation, against the lens:
 **does it re-derive provenance, disclosure, authorship or currency from anything
 other than new evidence from a party entitled to supply it?**
 
+<!-- GENERATED:matrix -->
 | operation | verdict | detail |
 |---|---|---|
-| `lifecycle.expire()` — LAPSE | ✅ clean | invalidates only; ages against `observed_at`, which is the C′ liveness axis |
-| `lifecycle.expire()` — DECAY | ✅ clean | `confidence *= decay_factor` **narrows only**; re-add via `add_edge` is a pure upsert with no timestamp mutation (verified) |
+| `lifecycle.expire()` — LAPSE | ✅ clean | invalidates only; ages against `observed_at` |
+| `lifecycle.expire()` — DECAY | 🔴 **open** — `N4-decay` | `confidence *= decay_factor` |
 | `lifecycle.expire()` — CONFIRM | ✅ clean | sets `needs_confirmation = True`; narrowing |
-| `lifecycle.consolidate()` | ✅ **fixed 0.4.4** | **M1** — derived provenance from `cold[0]`; now whole-set, min-trust |
-| `compile.py` (wiki) | ✅ clean | filters `not e.use_only` **and** `not third_party_influenced`, explicitly mirroring `gate.partition`. **But see the architectural note below** |
+| `lifecycle.consolidate()` | ✅ **fixed 0.4.4** — `M1` | provenance across the whole set |
+| `lifecycle.consolidate()` — provenance fields | 🔴 **open** — `N9b-provenance` | `source_type` / `evidence_ref` |
+| `compile.py` (wiki) | ✅ clean | filters `use_only` and `third_party_influenced` |
 | `proactive.assemble()` | ✅ clean | `if not e.assertable: continue` |
-| **`confirm()`** | 🔴 **M2 — shipped defect** | mutates `valid_from` |
-| **T1 reinforcement** | 🟠 **M3 — shipped defect** | clears `needs_confirmation` on cross-author evidence |
-| **`record_outcome()` upgrade-in-place** | 🟠 **M4 — shipped defect** | overwrites `author_of_evidence`, no history |
-| **T1 `confidence = max(...)`** | 🟢 **M5 — permitted** | a new edge arrived; `max` retains earned strength |
-| **T2 `confidence = max(...)`** | 🔴 **M5 — forbidden by design constraint** | manufactures lifetime from recognition; survivor keeps its own |
+| `confirm()` | ✅ **fixed 0.4.5** — `M2` | first-known vs liveness |
+| T1 reinforcement | 🟠 **unimplemented** — `M3` | clears `needs_confirmation` |
+| `record_outcome()` upgrade-in-place | 🟠 **unimplemented** — `M4` | overwrites `author_of_evidence` |
+| T1 `confidence = max(...)` | 🟠 **unimplemented** — `M5` | a new edge arrived |
+| `import_memory()` | 🔴 **open** — `N9t-transfer` | trust fields reconstructed from a file |
+<!-- /GENERATED:matrix -->
+
+**This table is generated.** The sixth review found it still calling
+`expire()` DECAY *"✅ clean — narrows only"* while the generated ledger said
+`N4-decay` was open and permits confidence **increases**. **A trust-class matrix
+is a status table**, and generating the ledger while hand-maintaining this one
+left the mechanism governing only the regions it wrote.
 
 **Architectural note, and it is the most important line in this spec.**
 `compile.py` and `gate.py` both have **correct** defences. Both were bypassed by
@@ -272,9 +281,10 @@ question **dissolved** once it was read against the ladder instead of against
 the maintenance lens; M6 **grew** a blocking question that this document's frame
 had no reason to ask.
 
-**What stays here:** M1–M5, all shipped or resolved, plus the 28-site
-enumeration. That is a record of what happened, and it can be reviewed and
-accepted as one.
+**What stays here:** the findings owned by this spec plus the 28-site
+enumeration — **see §11 for which are shipped and which are open; this sentence
+deliberately names none of them.** It said *"M1–M5, all shipped or resolved"*
+while `N4-decay` was open and owned here.
 
 ### M5 — merge-time `confidence = max(...)` (design, partly shipped)
 
@@ -907,9 +917,9 @@ better hand-check rather than a different mechanism. **So the summaries are now
 derived and nothing below is restated by hand.**
 
 <!-- GENERATED:summary -->
-**12 findings · 6 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7) · 5 unimplemented · 3 still open.**
+**18 findings · 6 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7) · 11 unimplemented · 9 still open.**
 
-**Unimplemented:** `M3`, `M4`, `N9b-lineage`, `N4-decay`, `X-crash`. **Open:** `N9b-lineage`, `N4-decay`, `X-crash`.
+**Unimplemented:** `M3`, `M4`, `N9b-lineage`, `N4-decay`, `N9t-transfer`, `N9b-provenance`, `M2⁗`, `M7-correct`, `M8-wiki`, `M6-import`, `X-crash`. **Open:** `N9b-lineage`, `N4-decay`, `N9t-transfer`, `N9b-provenance`, `M2⁗`, `M7-correct`, `M8-wiki`, `M6-import`, `X-crash`.
 
 *Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes that do not hold.*
 <!-- /GENERATED:summary -->
@@ -928,6 +938,12 @@ derived and nothing below is restated by hand.**
 | **N9b-floor** consolidation manufactured confidence, disclosure and currency | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | — | this spec | **yes** — 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | **N9b-lineage** consolidation retains no record of the absorbed set | inputs deleted, no lineage | 🔴 mixed-currency spread unretained, so N9b's premise and N10 are unmet | **`specs/0010`** | **no** | `0010 X6, X8` |
 | **N4-decay** `MemoryConfig` bounds are unvalidated, and declared field bounds are not enforced on assignment | `decay_factor=2.0`, `NaN`, `-1.0` all accepted; `validate_assignment` is False | 🔴 `expire()` can RAISE confidence, which makes N4 false as written | this spec | **no** | `0002 N4b–N4d` |
+| **N9t-transfer** `transfer` may raise trust and claim new currency | `import_memory` persists every claimed trust field verbatim | 🔴 no importing-principal cap and no currency restriction; N9t is frozen design only | **`specs/0005`** | **no** | `test_transfer_cannot_raise_trust_or_currency` |
+| **N9b-provenance** consolidation inherits `source_type` and `evidence_ref` from `cold[0]` | a SYSTEM summary reports `source_type=stated` and the first input's `evidence_ref` | 🔴 internally false provenance — M1's `cold[0]` inheritance surviving on two unexamined fields | this spec | **no** | `test_consolidated_provenance_is_internally_consistent` |
+| **M2⁗** offset timestamps fail through `remember()` | `prompts.date_context` parses the raw string and rejects offsets | 🔴 one input, two parsers — `_event_dt` is not the single contract §7f claims | this spec | **no** | `test_an_offset_timestamp_survives_every_public_entry_point` |
+| **M7-correct** `correct()` bypasses the supersession ladder | `correct()` writes a replacement with hardcoded `author=USER` | 🔴 it is the only `supersedes=` writer and never calls `apply_supersession` | **`specs/0003`** | **no** | `0003 I9, I10` |
+| **M8-wiki** the wiki serves a revoked trust decision | a cached wiki outlives the revocation of its inputs | 🔴 no wiki drop on a trust-reducing invalidation | **`specs/0004`** | **no** | `0004 W1–W4` |
+| **M6-import** `import_memory` has no trust boundary | `--user` remap re-homes another principal's records verbatim | 🔴 no cap; and the cap as designed keys on an attacker-controlled header | **`specs/0005`** | **no** | `0005 P1–P6` |
 | **X-crash** consolidation deletes every input before writing any output | delete-all-then-write; a crash loses the batch | 🔴 no fenced operation, no atomic claim, no read-visibility rule | **`specs/0010`** | **no** | `0010 X1–X9` |
 <!-- /GENERATED:ledger -->
 
@@ -961,6 +977,12 @@ as §11, so it cannot become another independently-maintained summary.
 | `N9b-floor` | `0002` | resolved | shipped 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | `N9b-lineage` | `0010` | open | **not implemented** | `0010 X6, X8` |
 | `N4-decay` | `0002` | open | **not implemented** | `0002 N4b–N4d` |
+| `N9t-transfer` | `0005` | open | **not implemented** | `test_transfer_cannot_raise_trust_or_currency` |
+| `N9b-provenance` | `0002` | open | **not implemented** | `test_consolidated_provenance_is_internally_consistent` |
+| `M2⁗` | `0002` | open | **not implemented** | `test_an_offset_timestamp_survives_every_public_entry_point` |
+| `M7-correct` | `0003` | open | **not implemented** | `0003 I9, I10` |
+| `M8-wiki` | `0004` | open | **not implemented** | `0004 W1–W4` |
+| `M6-import` | `0005` | open | **not implemented** | `0005 P1–P6` |
 | `X-crash` | `0010` | open | **not implemented** | `0010 X1–X9` |
 <!-- /GENERATED:index -->
 

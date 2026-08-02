@@ -33,6 +33,10 @@ def violations() -> list[tuple[str, str, str, str]]:
     from withdrawn_phrases import WITHDRAWN
     out = []
     for f in sorted(SPECS.glob("*.md")):
+        # 0010 was outside the review package's lint run because the recipe
+        # never copied it in, so its stale X-Q1 and partition text survived a
+        # pass that reported "no withdrawn phrases". The lint scans every spec
+        # in the directory; the packaging must ship every spec it scans.
         body = f.read_text().split("## 12. Review history")[0]
         # paragraph granularity: a marker exempts the block it appears in
         for para in re.split(r"\n\s*\n", body):

@@ -59,7 +59,7 @@ been said four times now and should not become reflexive.
 | field | change | contract |
 |---|---|---|
 | `Episode` records | **write-before-delete** | no input is destroyed before its replacement is durable |
-| **`Episode.consolidated_into`** | **NEW**, optional | the summary that absorbed this episode; retained on the input until deletion is safe |
+| **`Episode.claimed_by`** | **NEW**, optional | the **operation** that claimed this input — one operation may produce several summaries, so this cannot name "the summary" as v5 had it |
 | **`Episode.lineage`** | **NEW**, optional list | on the output: **the whole claimed set** it absorbed — `0002` N9b's lineage row, made storable |
 | **`Episode.operation_id`** | **NEW**, optional | the consolidation that produced or claimed this record |
 | **consolidation operation record** | **NEW** | `operation_id · fence · state · owner · lease_expires_at · claimed_ids` (§4a) |
@@ -143,17 +143,50 @@ lease is evidence of abandonment in a way a fence is not.
 ordinary `UPDATE ... WHERE` claims the eligible subset and reports a smaller row
 count — **a partial claim, the exact state the design called impossible.**
 
-> **New `Store` method, marked `@store_mutator`:**
+> **New `Store` methods, all marked `@store_mutator`:**
 > ```
-> claim_episode_batch(ids, operation_id, fence, expected_unclaimed) -> bool
->     True  — every id claimed, atomically
->     False — nothing changed
+> create_or_takeover_consolidation(user_id, ids, owner, lease) -> Op | None
+> renew_consolidation_lease(operation_id, fence, owner)        -> bool
+> write_consolidation_output_if_current(op_id, fence, episode) -> bool
+> transition_consolidation_if_current(op_id, fence, to_state)  -> bool
+> delete_claimed_inputs_if_current(op_id, fence)               -> bool
+> abandon_consolidation_if_current(op_id, fence)               -> bool
 > ```
-> Each backend implements the atomicity; **the interface states the contract.**
+> **Every one takes `(operation_id, fence)` and returns `False` if the caller no
+> longer owns it.** Each backend implements the atomicity; the interface states
+> the contract.
+
+**Sixth review, finding 7:** v6 required every write, visibility change and
+delete to compare-and-set on `(operation_id, fence)` and then specified **one**
+new method. `add_episode` and `delete_episode` take neither, so **the design
+could not enforce its most important rule** — a prose requirement that writes be
+fenced does not make the interface capable of fencing them.
 
 *(This is why `store_mutator` had to become a marker rather than a name prefix —
 `claim_episode_batch` matches none of the old ones and would have been invisible
 to the audit manifest while writing persistent trust state.)*
+
+### 4b-ii. The complete transition table
+
+**Finding 8: several states were named and none was fully defined.**
+
+| state | who may act | inputs | outputs | permitted next | recovery | idempotency key |
+|---|---|---|---|---|---|---|
+| `CLAIMED` | owner with live lease | **visible** | absent | `GENERATING` · `ABANDONED` | lease expired → `ABANDONED` | `operation_id` |
+| `GENERATING` | owner with live lease | **visible** | absent | `OUTPUTS_DURABLE` · `ABANDONED` | lease expired → `ABANDONED`; **partial outputs deleted by `operation_id`** | `operation_id` |
+| `OUTPUTS_DURABLE` | owner, or recovery | hidden | **visible** | `FINALIZED` | **roll forward, never back** — outputs exist and are correct | `operation_id` |
+| `FINALIZED` | — | deleted | **visible** | — | none needed | — |
+| `ABANDONED` | any worker may take over | **visible** | absent | `CLAIMED` (new fence) | delete any output tagged `operation_id`, release claims | `operation_id` |
+
+**`OUTPUTS_DURABLE` is the point of no return.** Before it, recovery deletes
+partial outputs and releases inputs; after it, recovery only completes the
+deletion. **The expected output set is persisted before the transition**, so
+recovery can tell a complete write from a partial one.
+
+**Takeover creates a new fence on the same `operation_id`**, so outputs written
+by the preempted worker are identifiable and removable. **The lease clock is the
+store's**, not any worker's — worker clocks disagree and a lease decided by the
+holder is not a lease.
 
 ### 4c. Exactly one representation is visible
 
@@ -173,8 +206,18 @@ and if recovery only runs at the next consolidation it can persist indefinitely.
 > representation** — all relevant inputs, or all committed outputs. **Never both
 > and never neither.**
 
-The visibility flip is a single state transition under compare-and-set, so it is
-atomic with respect to readers.
+**Finding 9: "atomic with respect to readers" is not a read contract.**
+
+> **`store.episodes()` reads episodes and the operation record in one
+> snapshot**, and returns the representation for the state observed in that
+> snapshot. A backend without snapshot reads must instead **tag each episode row
+> with the operation generation** and have readers retry when the generation
+> changes mid-read.
+
+Without one of those, a transition and an ordinary query can interleave and
+still expose both representations or neither — **which is the failure this
+section exists to prevent, so leaving it to the backend is leaving the
+guarantee unimplemented.**
 
 ### 4d. Lineage must be established before generation, not inferred after
 
@@ -203,7 +246,20 @@ strictly better provenance and more LLM calls; whole-batch is one call and a
 conservative over-attribution. **Over-attributing influence is safe;
 under-attributing is the laundering defect.**
 
-### 4e. Why not a store transaction
+### 4d-ii. A summary must not claim a single date it does not have
+
+**Finding 10, and it is the one N9b's mixed-currency row actually needs.**
+Whole-batch lineage preserves *influence*; it does not fix *visible time*. A
+consolidated episode still has one `date`, chosen by the model, **rendered
+directly into recall and compiled history** — and N9b already says neither the
+minimum nor the maximum input time represents a mixed set honestly.
+
+> **The output carries `date_start` and `date_end`** (the min and max of the
+> claimed set's dates) and renders as a **range**. A single `date` is written
+> only when the range is degenerate.
+
+**A lineage list in storage does not stop a misleading date reaching the
+model** — which is the only place any of this matters.
 
 `Store` is an interface with a Postgres implementation contemplated. Requiring
 cross-backend atomic multi-statement transactions pushes a durability guarantee
@@ -222,7 +278,7 @@ stated contract**, which is a smaller ask than "implement transactions".
 | **X10** a worker that has lost its fence **cannot write, flip visibility, or delete** | `test_a_preempted_worker_cannot_write_or_delete` — the invariant that makes preemption safe | CI |
 | **X11** `claim_episode_batch` is all-or-nothing | `test_partial_claim_is_impossible` — contend for an overlapping set; the loser changes nothing | CI |
 | **X12** every output's lineage is the **whole claimed set** | `test_lineage_is_the_whole_batch` — **a post-hoc date partition would under-attribute third-party influence** | CI |
-| **X8** the output partition is exact | `test_partition_must_cover_every_claimed_input_exactly` — gaps and overlaps both abort **and release**, losing nothing | CI |
+| **X8** every output carries the **whole** claimed set as lineage | `test_lineage_is_the_whole_batch` — **there is no input→output partition**; v5's exact-partition rule contradicted whole-batch lineage | CI |
 | **X9** every read sees **exactly one** complete representation — never both, **never neither** | `test_every_read_sees_exactly_one_representation` — sweeps every state and every phase boundary | CI |
 | **X5** no crash point loses an episode without a replacement | `test_no_crash_point_loses_data` — **parametrised over every store call in the operation**, failing at each in turn | CI |
 | **X6** lineage is complete | `test_summary_lineage_lists_every_absorbed_episode` — **N9b's premise** | CI |
@@ -236,7 +292,7 @@ enumerated*.
 ## 7. Failure modes and reversibility
 
 **Failure mode is a leftover claim or a duplicate**, both detectable and both
-resolved by the recovery pass. **Reversible in code**; the two new fields are
+resolved by the recovery pass. **Reversible in code**; the new fields are
 additive and older builds ignore them — **which is the `0007` problem again**:
 an older build would not run recovery and would not know a claim means anything.
 See §9.
@@ -273,5 +329,5 @@ would never run recovery. **Silent misinterpretation, not failure.**
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| ~~X-Q1~~ | **DISSOLVED by §4d.** The question assumed reads could observe unrecovered state; hiding claimed inputs means they cannot. Recovery timing stops being a correctness question and becomes a housekeeping one — run it at the start of each `consolidate()`, and surface the count in `introspect()`. | resolved | dev | — |
+| ~~X-Q1~~ | **ANSWERED, and v5's answer was wrong.** v5 said hiding claimed inputs made recovery timing a non-issue; the sixth review showed that leaves a window where a read sees **neither** inputs nor outputs. §4c now keeps inputs **visible** until outputs are durable, so **recovery timing is a liveness question, not a correctness one** — run it at the start of each `consolidate()` and surface the count in `introspect()`. | resolved | dev | — |
 | **X-Q2** | Should the wiki drop when recovery fires (`0004`)? A recovered store's episode set changed underneath a cached view. **Dev leans yes** — same argument as `0004` W1. | `pre-release` | dev | before release |

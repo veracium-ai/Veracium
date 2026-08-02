@@ -121,11 +121,14 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     rel_names = "\n".join(
         f"- {name}: {rel.desc}" if rel.desc else f"- {name}"
         for name, rel in relations.items())
-    # Validate the event date FIRST, through the one contract, so a malformed
-    # date fails with the reason rather than with prompts.date_context's raw
-    # `Invalid isoformat string`. Two parsers meant two error contracts for one
-    # input; this keeps _event_dt authoritative.
-    _event_dt(date)
+    # Normalise ONCE, then pass the normalised value to every consumer.
+    # Validating here and then handing the RAW string to date_context still left
+    # two parsers: `date_context` calls `date.fromisoformat`, which rejects an
+    # offset-bearing timestamp, so `remember(date="...T12:00:00+05:30")` raised
+    # `Invalid isoformat string` after _event_dt had already accepted it. The
+    # single-contract claim was true of the helper and false of the entry point.
+    when = _event_dt(date)
+    date = when.date().isoformat()
     prompt = prompts.EXTRACT_PROMPT.format(
         date_context=prompts.date_context(date), author=author.value,
         event_text=event_text, relations=rel_names)
@@ -152,7 +155,6 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   author_of_evidence=author, evidence_ref=evidence_ref,
                                   derived_from=derived_from, observed_at=_event_dt(date))))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True}
-    when = _event_dt(date)
 
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.

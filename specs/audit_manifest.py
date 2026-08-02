@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import os
 from collections import Counter
 import hashlib
 import pathlib
@@ -90,6 +91,27 @@ def _fingerprint(call: ast.Call, context: str) -> str:
     return f"{context}|{expr}"
 
 
+def _audit_labels(path: pathlib.Path) -> dict:
+    """`# audit: <label>` comments, keyed by line.
+
+    v6 told contributors to disambiguate identical calls with this comment while
+    the AST walker could not see comments at all -- a remediation the tool
+    prescribed and could not observe. Comments survive only in the token stream.
+    """
+    import tokenize
+    out = {}
+    try:
+        with path.open("rb") as fh:
+            for tok in tokenize.tokenize(fh.readline):
+                if tok.type == tokenize.COMMENT:
+                    m = re.match(r"#\s*audit:\s*(\S.*?)\s*$", tok.string)
+                    if m:
+                        out[tok.start[0]] = m.group(1)
+    except Exception:                               # pragma: no cover
+        pass
+    return out
+
+
 def _expr(node) -> str:
     try:
         return ast.unparse(node)
@@ -110,8 +132,9 @@ class _Visitor(ast.NodeVisitor):
     failure the fingerprint replaced ordinals to prevent.
     """
 
-    def __init__(self, names: set[str], rel: str):
+    def __init__(self, names: set[str], rel: str, labels=None):
         self.names, self.rel = names, rel
+        self.labels = labels or {}
         self.scope: list[str] = []
         self.ctx: list[str] = []
         self.found: list[tuple] = []
@@ -199,8 +222,13 @@ class _Visitor(ast.NodeVisitor):
         if isinstance(f, ast.Attribute) and f.attr in self.names:
             scope = ".".join(self.scope) or "<module>"
             context = ">".join(self.ctx) or "-"
-            self.found.append((self.rel, scope, f.attr,
-                               _fingerprint(node, context), node.lineno, context))
+            expr = _expr(node)
+            canon = _fingerprint(node, context)
+            label = self.labels.get(node.lineno)
+            if label:
+                canon = f"{canon}|audit:{label}"
+            self.found.append((self.rel, scope, f.attr, canon, node.lineno,
+                               context, expr))
         self.generic_visit(node)
 
 
@@ -210,7 +238,7 @@ def call_sites(names: list[str]):
     nameset = set(names)
     for p in sorted(SRC.rglob("*.py")):
         rel = p.relative_to(ROOT).as_posix()
-        v = _Visitor(nameset, rel)
+        v = _Visitor(nameset, rel, _audit_labels(p))
         v.visit(ast.parse(p.read_text()))
         # The store implementations ARE the mutators; auditing their internals is
         # a different question from auditing who calls them. Excluded on purpose
@@ -225,7 +253,7 @@ def call_sites(names: list[str]):
     # `store.add_edge(e)  # audit: decay-write` -- which is a deliberate human
     # act rather than a guess. No site in the tree needs one today.
     from collections import Counter
-    counts = Counter((r, s, m, fp) for r, s, m, fp, _, _ in out)
+    counts = Counter((r, s, m, fp) for r, s, m, fp, _, _, _ in out)
     ambiguous = {k: n for k, n in counts.items() if n > 1}
     if ambiguous:
         lines = "\n".join(f"  {k[0]} {k[1]}() {k[2]} x{n}" for k, n in ambiguous.items())
@@ -236,10 +264,10 @@ def call_sites(names: list[str]):
             f"order is not an identity: swapping two such calls would silently "
             f"move their verdicts.")
     final = []
-    for rel, scope, mut, canon, ln, ctx in out:
+    for rel, scope, mut, canon, ln, ctx, expr in out:
         final.append((rel, scope, mut,
-                      hashlib.sha256(canon.encode()).hexdigest()[:12], ln, ctx))
-    ids = [(r, s, m, fp) for r, s, m, fp, _, _ in final]
+                      hashlib.sha256(canon.encode()).hexdigest()[:12], ln, ctx, expr))
+    ids = [(r, s, m, fp) for r, s, m, fp, _, _, _ in final]
     if len(set(ids)) != len(ids):
         dupes = {k for k in ids if ids.count(k) > 1}
         raise SystemExit(f"identity collision after disambiguation: {dupes}. "
@@ -251,7 +279,7 @@ def _validate(sites) -> list[str]:
     """N8: every site carries a verdict AND a test or an owning spec."""
     from audit_dispositions import DISPOSITIONS
     problems = []
-    ids = [(r, s, m, fp) for r, s, m, fp, _, _ in sites]
+    ids = [(r, s, m, fp) for r, s, m, fp, _, _, _ in sites]
     if len(set(ids)) != len(ids):
         problems.append("duplicate call-site identities — cardinality lost")
     want, have = set(ids), set(DISPOSITIONS)
@@ -301,6 +329,37 @@ def _validate(sites) -> list[str]:
                 problems.append(f"{k}: moved/open rows must name an owning spec, got {test!r}")
         elif not TEST_REF.search(test):
             problems.append(f"{k}: clean/fixed rows must name a concrete test, got {test!r}")
+    # findings.py and audit_dispositions.py are two status sources. The sixth
+    # review's finding 1 was that generating one while hand-maintaining the
+    # other leaves the mechanism governing only what it writes; the same is true
+    # one layer down, so they are cross-checked rather than trusted to agree.
+    try:
+        from findings import FINDINGS
+    except Exception:                            # pragma: no cover
+        FINDINGS = None
+    if FINDINGS is not None:
+        known = {f["id"] for f in FINDINGS}
+        openish = {f["id"] for f in FINDINGS if f["disposition"] == "open"
+                   or f["implementation"] == "none"}
+        for k in sorted(want & have):
+            v = DISPOSITIONS[k]
+            st = STATES.get(k)
+            cited = {i for i in known if i in v[3] or i in v[4]}
+            # A non-clean row MUST name its governing finding. Without this the
+            # cross-check was vacuous on 24 of 28 rows -- it looked like it
+            # covered the class and covered a corner.
+            if st in ("open", "moved", "open_moved") and not cited:
+                problems.append(
+                    f"{k}: state `{st}` but no finding id from findings.py is "
+                    f"named — the manifest and the ledger cannot be cross-checked")
+            if st in ("open", "open_moved") and cited and not (cited & openish):
+                problems.append(
+                    f"{k}: manifest says `{st}` but findings.py records "
+                    f"{sorted(cited)} as neither open nor unimplemented")
+            if st in ("clean", "fixed") and (cited & openish):
+                problems.append(
+                    f"{k}: manifest says `{st}` but findings.py records "
+                    f"{sorted(cited & openish)} as open/unimplemented")
     return problems
 
 
@@ -308,37 +367,52 @@ VALID_STATES = {"clean", "fixed", "open", "moved", "open_moved"}
 
 
 def _collected_tests() -> set[str]:
-    """Tests pytest actually COLLECTS, via `--collect-only`.
+    """Tests pytest actually COLLECTS. Fails closed on a collection error.
 
-    Three attempts at this claim, each narrower than it sounded. v4 asked
-    whether `f"def {name}"` appeared in the concatenated files, so `test_foo`
-    was satisfied by `def test_foobar`. v5 parsed exact function names from the
-    AST, which fixed that and still accepted a function nested inside another,
-    one under `if False`, or a method on a class pytest never collects.
+    v6 treated ANY nonzero return as "pytest unavailable" and degraded to an AST
+    scan with a printed note. That is fail-open: the sixth reviewer's run hit a
+    real collection error, took the fallback, and my "every clean row backed by
+    a test that exists" message was produced by the AST scan rather than by
+    collection. A check that weakens itself on error and prints a note has not
+    told you anything -- the note is not read by the exit code.
 
-    Collection is the real predicate, so ask the collector. Falls back to the
-    AST scan when pytest is unavailable, and SAYS SO rather than silently
-    weakening the guarantee.
+    So: fall back ONLY when importing pytest fails, which is a genuine
+    environment fact. A collection error is a defect and is fatal.
     """
+    import importlib.util
     import subprocess
-    r = subprocess.run(
-        [sys.executable, "-m", "pytest", "--collect-only", "-q",
-         "--no-header", "-p", "no:cacheprovider", str(TESTS)],
-        capture_output=True, text=True, cwd=ROOT)
-    if r.returncode == 0 and r.stdout.strip():
+
+    if importlib.util.find_spec("pytest") is None:
+        print("note: pytest is not installed; falling back to an AST scan, "
+              "which cannot see collection. The manifest's test-existence "
+              "guarantee is weakened for this run.", file=sys.stderr)
         names = set()
-        for line in r.stdout.splitlines():
-            if "::" in line:
-                names.add(line.rsplit("::", 1)[-1].split("[")[0].strip())
-        if names:
-            return names
-    print("note: pytest --collect-only unavailable; falling back to an AST scan, "
-          "which cannot see collection", file=sys.stderr)
-    names = set()
-    for f in TESTS.rglob("test_*.py"):
-        for node in ast.walk(ast.parse(f.read_text())):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                names.add(node.name)
+        for f in TESTS.rglob("test_*.py"):
+            for node in ast.walk(ast.parse(f.read_text())):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    names.add(node.name)
+        return names
+
+    env = dict(os.environ)
+    # tests import `veracium`; make that work from a bare source tree rather
+    # than requiring an install, which is what broke the reviewer's run.
+    src = ROOT / "src"
+    if src.is_dir():
+        env["PYTHONPATH"] = os.pathsep.join(
+            [str(src)] + ([env["PYTHONPATH"]] if env.get("PYTHONPATH") else []))
+    r = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", "--no-header",
+         "-p", "no:cacheprovider", str(TESTS)],
+        capture_output=True, text=True, cwd=ROOT, env=env)
+    if r.returncode != 0:
+        raise SystemExit(
+            f"pytest collection FAILED (exit {r.returncode}). This is fatal: a "
+            f"manifest that certifies sites against tests it could not collect "
+            f"certifies nothing.\n\n{r.stdout[-3000:]}\n{r.stderr[-3000:]}")
+    names = {line.rsplit("::", 1)[-1].split("[")[0].strip()
+             for line in r.stdout.splitlines() if "::" in line}
+    if not names:
+        raise SystemExit("pytest collected no tests; refusing to certify.")
     return names
 
 
@@ -366,10 +440,7 @@ def _missing_tests():
 def render(sites) -> str:
     from audit_dispositions import DISPOSITIONS, STATES
     rows = []
-    canon = {}
-    for rel, scope, mut, fp, ln, ctx in sites:
-        canon[fp] = ctx
-    for rel, scope, mut, fp, ln, ctx in sites:
+    for rel, scope, mut, fp, ln, ctx, expr in sites:
         cls, fields, ev, verdict, test = DISPOSITIONS.get(
             (rel, scope, mut, fp), ("", "", "", "**NO VERDICT**", ""))
         rows.append(f"| `{rel}:{ln}` | `{scope}()` | `{mut}` | `{fp}` | "
@@ -416,10 +487,16 @@ def render(sites) -> str:
             "evidence | verdict | test / owning spec |\n"
             "|---|---|---|---|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n\n"
             "## Canonical context\n\n"
-            "The identity hashed into each `fp`. Full discriminators, never a "
-            "truncated hash: v5 used four hex characters of the branch condition "
-            "and `x == 119` / `x == 125` collided.\n\n```\n"
-            + "\n".join(f"{fp}  {ctx}" for fp, ctx in sorted(canon.items()))
+            "**One record per site, carrying every component hashed into the "
+            "digest** — file, scope, mutator, normalised call expression and "
+            "full control-flow context — so `fp` can be recomputed rather than "
+            "trusted. v6 published the context alone, which is not the identity: "
+            "the digest is `context|expression`, and two different scopes shared "
+            "a digest in that section.\n\n```\n"
+            + "\n\n".join(
+                f"{fp}\n  file:    {rel}:{ln}\n  scope:   {scope}()\n"
+                f"  mutator: {mut}\n  call:    {expr}\n  context: {ctx}"
+                for rel, scope, mut, fp, ln, ctx, expr in sites)
             + "\n```\n")
 
 
@@ -469,7 +546,7 @@ def main() -> int:
         return 0
 
     print(f"{len(sites)} call sites across {len(mutators())} mutators")
-    for rel, scope, mut, fp, ln, ctx in sites:
+    for rel, scope, mut, fp, ln, ctx, expr in sites:
         print(f"  {rel}:{ln:<5} {scope}()  {mut}  fp={fp}  ctx={ctx}")
     print(f"\n{len(excluded)} call(s) excluded (store implementations — the "
           f"mutators themselves, not callers of them)")

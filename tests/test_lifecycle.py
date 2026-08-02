@@ -296,3 +296,58 @@ def test_consolidation_output_is_no_stronger_than_its_weakest_input():
         assert out.provenance.disclosure == Disclosure.USE_ONLY, "disclosure widened"
         assert out.provenance.observed_at <= old, "currency manufactured"
         assert out.provenance.author_of_evidence == EvidenceAuthor.SYSTEM
+
+
+def test_consolidated_provenance_is_internally_consistent():
+    """A SYSTEM-authored summary reported `source_type=STATED` and the FIRST
+    input's `evidence_ref`, because both were inherited from cold[0] — M1's
+    original defect surviving on two fields the 0.4.7 test never inspected."""
+    from veracium.lifecycle import consolidate
+    from veracium.schema import Episode, Provenance, SourceType
+    from veracium.store.sqlite import SqliteStore
+    from datetime import timedelta
+    import os, json
+    with tempfile.TemporaryDirectory() as d:
+        st = SqliteStore(os.path.join(d, "t.db"))
+        old = datetime.now(timezone.utc) - timedelta(days=90)
+        for i in range(8):
+            st.add_episode(Episode(
+                id=f"e{i}", user_id="u", date=old.date().isoformat(), summary=f"s{i}",
+                provenance=Provenance(source_type=SourceType.STATED,
+                                      author_of_evidence=EvidenceAuthor.USER,
+                                      evidence_ref=f"event-{i}", observed_at=old)))
+        consolidate(st, lambda *a, **k: json.dumps(
+            {"records": [{"date": old.date().isoformat(), "summary": "S"}]}),
+            "u", MemoryConfig(consolidate_after_days=30, consolidate_min_batch=8))
+        p = [e for e in st.episodes("u") if e.id.startswith("epc")][0].provenance
+        assert p.author_of_evidence == EvidenceAuthor.SYSTEM
+        assert p.source_type == SourceType.INFERRED, "a summary is not STATED"
+        assert not p.evidence_ref.startswith("event-"), \
+            "evidence_ref still points at one arbitrary input"
+        assert p.evidence_ref.startswith("consolidate:")
+
+
+def test_an_offset_timestamp_survives_every_public_entry_point():
+    """`_event_dt` converted offsets correctly while `remember()` still raised,
+    because `prompts.date_context` parsed the raw string with
+    `date.fromisoformat`. One input, two parsers."""
+    from veracium.schema import Edge, Provenance, SourceType
+    from datetime import date as _date
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [{"triples": [], "episode": "x"}])
+        # 23:00-08:00 is 07:00 the NEXT day in UTC — same-day offsets prove nothing
+        m.remember("u", "hello", date="2026-01-01T23:00:00-08:00")
+        ep = m.store.episodes("u")[-1]
+        assert ep.date == "2026-01-02", f"not normalised: {ep.date}"
+        _date.fromisoformat(ep.date)          # every downstream consumer does this
+
+        m.store.add_edge(Edge(
+            id="e", user_id="u", subject="user", relation="likes", object="tea",
+            valid_from=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref="x",
+                                  observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc))))
+        r = m.confirm("u", "e", date="2026-03-15T23:00:00-08:00")
+        assert r["confirmed_at"] == "2026-03-16", "the response echoed the caller"
+        _date.fromisoformat(m.store.episodes("u")[-1].date)

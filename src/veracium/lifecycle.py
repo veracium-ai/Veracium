@@ -22,6 +22,7 @@ from typing import Optional
 from ._json import extract_json
 from .llm.base import Complete
 from .schema import (DEFAULT_EXPIRY, Disclosure, Episode, EvidenceAuthor, ExpiryBehavior,
+                     SourceType,
                      utcnow)
 
 
@@ -118,7 +119,16 @@ def consolidate(store, llm: Complete, user_id: str, config, *,
     _DISCLOSURE_RANK = {Disclosure.QUARANTINED: 0, Disclosure.USE_ONLY: 1,
                         Disclosure.MENTIONABLE: 2}
     weakest = min(cold, key=lambda e: _DISCLOSURE_RANK[e.provenance.disclosure])
+    # `source_type` and `evidence_ref` were inherited from cold[0] -- so a
+    # SYSTEM-authored summary reported `source_type=STATED` and pointed at the
+    # FIRST input's event. Internally false provenance, and M1's cold[0]
+    # inheritance surviving on two fields the 0.4.7 test never inspected. A
+    # summary is INFERRED by construction, and its evidence is the consolidation
+    # itself, not any one member.
+    op_ref = f"consolidate:{uuid.uuid4().hex[:12]}"
     prov = cold[0].provenance.model_copy(update={
+        "source_type": SourceType.INFERRED,
+        "evidence_ref": op_ref,
         # say what it is, rather than inheriting an author we did not choose
         "author_of_evidence": EvidenceAuthor.SYSTEM,
         # min-trust across the set: a summary of third-party-influenced material

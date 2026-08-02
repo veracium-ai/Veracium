@@ -77,8 +77,41 @@ def _regions() -> dict[str, str]:
     index = ("| finding | owner spec | disposition | implementation | test |\n"
              "|---|---|---|---|---|\n" + "\n".join(idx_rows))
 
+    # The trust-class matrix is a status table too. v6 generated the ledger and
+    # left this one hand-maintained, so it still called DECAY "clean" while the
+    # ledger called N4-decay open.
+    OPS = [
+        ("`lifecycle.expire()` — LAPSE", None, "invalidates only; ages against `observed_at`"),
+        ("`lifecycle.expire()` — DECAY", "N4-decay", "`confidence *= decay_factor`"),
+        ("`lifecycle.expire()` — CONFIRM", None, "sets `needs_confirmation = True`; narrowing"),
+        ("`lifecycle.consolidate()`", "M1", "provenance across the whole set"),
+        ("`lifecycle.consolidate()` — provenance fields", "N9b-provenance", "`source_type` / `evidence_ref`"),
+        ("`compile.py` (wiki)", None, "filters `use_only` and `third_party_influenced`"),
+        ("`proactive.assemble()`", None, "`if not e.assertable: continue`"),
+        ("`confirm()`", "M2", "first-known vs liveness"),
+        ("T1 reinforcement", "M3", "clears `needs_confirmation`"),
+        ("`record_outcome()` upgrade-in-place", "M4", "overwrites `author_of_evidence`"),
+        ("T1 `confidence = max(...)`", "M5", "a new edge arrived"),
+        ("`import_memory()`", "N9t-transfer", "trust fields reconstructed from a file"),
+    ]
+    by_id = {f["id"]: f for f in FINDINGS}
+    mrows = []
+    for op, fid, detail in OPS:
+        if fid is None:
+            verdict = "✅ clean"
+        else:
+            f = by_id[fid]
+            if f["implementation"] == "shipped":
+                verdict = f"✅ **fixed {f['release']}** — `{fid}`"
+            elif f["disposition"] == "open":
+                verdict = f"🔴 **open** — `{fid}`"
+            else:
+                verdict = f"🟠 **unimplemented** — `{fid}`"
+        mrows.append(f"| {op} | {verdict} | {detail} |")
+    matrix = ("| operation | verdict | detail |\n|---|---|---|\n" + "\n".join(mrows))
+
     return {"ledger": ledger, "summary": summary, "reviews": reviews,
-            "index": index}
+            "index": index, "matrix": matrix}
 
 
 def _apply(text: str, regions: dict[str, str]) -> str:
