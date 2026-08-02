@@ -389,7 +389,7 @@ second.
 | **N5** ➡️ **`specs/0009`** — outcome authorship is an append-only chain; `0009` H7 asserts on **structure**, not on a retained value | `0009` H1–H7 | `0009` |
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
 | **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** Not the general form; see N9 | CI + bench |
-| **N9** *(replaces N7's general claim)* for an operation whose evidence class is **`none`** (§6a), the post-state is no stronger than the pre-state under the partial order **defined below** | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
+| **N9** *(replaces N7's general claim)* for an operation whose evidence class is **`none`** (§6a), the post-state is no stronger than the pre-state under the relation in **`specs/monotone.py`** | `test_n9_permits_the_retirement_the_trust_matrix_calls_clean` · `test_n9_still_forbids_reactivation_and_reason_rewriting` · `test_n9_refuses_a_retirement_with_no_reason` · `test_an_evidence_free_operation_cannot_claim_a_reason_it_did_not_earn` · **`test_the_real_expire_path_satisfies_n9`** — against the running code, not a constructed pair | CI |
 | **N9t** a **`transfer`** may not raise any trust field above the importing principal's cap, nor claim new observation currency | `test_transfer_cannot_raise_trust_or_currency` | CI |
 | **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
@@ -413,18 +413,51 @@ Defined here so N9 is executable rather than aspirational.
 **For an operation of evidence class `none`, on a single persisted edge**, every
 clause must hold:
 
+<!-- GENERATED:n9 -->
 ```
-post.active              <=  pre.active              # a retired edge stays retired
-post.invalidation_reason ==  pre.invalidation_reason # why it retired may not be rewritten
-post.assertable          <=  pre.assertable          # False is weaker than True
-post.needs_confirmation  >=  pre.needs_confirmation  # True  is weaker than False
-post.disclosure          <=T pre.disclosure          # MENTIONABLE > USE_ONLY > QUARANTINED
+pre.active is False:                       # already retired
+    post.active is False
+    post.invalidation_reason == pre.invalidation_reason
+
+pre.active and not post.active:            # THE retirement transition
+    post.invalidation_reason is assigned, known, and
+    permitted for this operation class
+
+pre.active == post.active:                 # no transition
+    post.invalidation_reason == pre.invalidation_reason
+
+# and, in every case:
+post.assertable          <=  pre.assertable
+post.needs_confirmation  >=  pre.needs_confirmation   # keeping the caveat is weaker
+post.disclosure          <=T pre.disclosure           # MENTIONABLE > USE_ONLY > QUARANTINED
 post.confidence          <=  pre.confidence
-post.observed_at         <=  pre.observed_at         # currency may not advance
-post.author_of_evidence  ==  pre.author_of_evidence  # categorical: equality
-post.derived_from        ==  pre.derived_from        # categorical: equality
-post.valid_from          ==  pre.valid_from          # immutable identity, §7c
+post.observed_at         <=  pre.observed_at
+post.author_of_evidence  ==  pre.author_of_evidence   # categorical
+post.derived_from        ==  pre.derived_from         # categorical
+post.valid_from          ==  pre.valid_from
 ```
+
+**A reason says what happened, so only the operation that did it may assign
+one.** An evidence-free operation may assign only the reasons in the last
+column; `superseded`, `corrected` and `disputed` all require either new evidence
+or an authorised act, so N9 rejects an evidence-free operation claiming them.
+
+| reason | assigned by | evidence-free may assign? |
+|---|---|---|
+| `lapsed` | expire() | **yes** |
+| `decayed` | expire() | **yes** |
+| `superseded` | supersede_edge()  (specs/0003) | no |
+| `absorbed_duplicate` | supersede_edge()  (specs/0003) | no |
+| `corrected` | correct() | no |
+| `disputed` | dispute() | no |
+<!-- /GENERATED:n9 -->
+
+**Generated from `specs/monotone.py`.** v7 wrote this as a flat product of
+per-field comparisons including `post.invalidation_reason ==
+pre.invalidation_reason` — **which forbids the first-time retirement §3 lists as
+clean**, since expiry moves that field from `None` to `"lapsed"`. Equality is
+right for an **already-retired** edge and wrong for **the transition that
+retires it**. The relation is now code, and this block is rendered from it.
 
 **`<=T` is the disclosure trust order**, taken from the enum's own documented
 meanings (`schema.py:45`): `MENTIONABLE` (may be volunteered) **>** `USE_ONLY`

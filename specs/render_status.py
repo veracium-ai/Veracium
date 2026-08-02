@@ -115,8 +115,45 @@ def _regions() -> dict[str, str]:
         mrows.append(f"| {op} | {verdict} | {detail} |")
     matrix = ("| operation | verdict | detail |\n|---|---|---|\n" + "\n".join(mrows))
 
+    # N9's relation, from specs/monotone.py. v7 stated it as a flat product of
+    # per-field comparisons including `invalidation_reason` equality, which
+    # forbids the first-time retirement the trust matrix calls clean.
+    from monotone import EVIDENCE_FREE_REASONS, REASON_OWNER
+    owners = "\n".join(f"| `{r}` | {o} | {'**yes**' if r in EVIDENCE_FREE_REASONS else 'no'} |"
+                       for r, o in REASON_OWNER.items())
+    n9 = ("""```
+pre.active is False:                       # already retired
+    post.active is False
+    post.invalidation_reason == pre.invalidation_reason
+
+pre.active and not post.active:            # THE retirement transition
+    post.invalidation_reason is assigned, known, and
+    permitted for this operation class
+
+pre.active == post.active:                 # no transition
+    post.invalidation_reason == pre.invalidation_reason
+
+# and, in every case:
+post.assertable          <=  pre.assertable
+post.needs_confirmation  >=  pre.needs_confirmation   # keeping the caveat is weaker
+post.disclosure          <=T pre.disclosure           # MENTIONABLE > USE_ONLY > QUARANTINED
+post.confidence          <=  pre.confidence
+post.observed_at         <=  pre.observed_at
+post.author_of_evidence  ==  pre.author_of_evidence   # categorical
+post.derived_from        ==  pre.derived_from         # categorical
+post.valid_from          ==  pre.valid_from
+```
+
+**A reason says what happened, so only the operation that did it may assign
+one.** An evidence-free operation may assign only the reasons in the last
+column; `superseded`, `corrected` and `disputed` all require either new evidence
+or an authorised act, so N9 rejects an evidence-free operation claiming them.
+
+| reason | assigned by | evidence-free may assign? |
+|---|---|---|
+""" + owners)
     return {"ledger": ledger, "summary": summary, "reviews": reviews,
-            "index": index, "matrix": matrix}
+            "index": index, "matrix": matrix, "n9": n9}
 
 
 def _apply(text: str, regions: dict[str, str]) -> str:

@@ -351,3 +351,82 @@ def test_an_offset_timestamp_survives_every_public_entry_point():
         r = m.confirm("u", "e", date="2026-03-15T23:00:00-08:00")
         assert r["confirmed_at"] == "2026-03-16", "the response echoed the caller"
         _date.fromisoformat(m.store.episodes("u")[-1].date)
+
+
+# --- N9's transition rule (specs/0002, seventh review finding 3) ------------
+
+def _n9():
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    import monotone
+    return monotone
+
+
+# A FIXED instant, not now(). Two calls to now() differ by microseconds, and
+# N9 compares observed_at — so a helper that stamps the clock twice makes every
+# pair look like it advanced currency.
+_T0 = datetime(2025, 1, 1, tzinfo=timezone.utc)
+
+
+def _edge(**kw):
+    from veracium.schema import Edge, Provenance, SourceType, Volatility
+    old = _T0
+    e = Edge(id="e", user_id="u", subject="user", relation="works_at", object="Acme",
+             volatility=Volatility.TRANSIENT, valid_from=old,
+             provenance=Provenance(source_type=SourceType.STATED,
+                                   author_of_evidence=EvidenceAuthor.USER,
+                                   evidence_ref="x", observed_at=old))
+    for k, v in kw.items():
+        setattr(e, k, v)
+    return e
+
+
+def test_n9_permits_the_retirement_the_trust_matrix_calls_clean():
+    """v7 required post.invalidation_reason == pre.invalidation_reason, which
+    forbids expiry: it moves that field from None to 'lapsed'. The rule
+    forbade the operation the same document listed as clean."""
+    M = _n9()
+    old = _T0
+    assert M.holds(_edge(), _edge(invalidated_at=old, invalidation_reason="lapsed"))
+
+
+def test_n9_still_forbids_reactivation_and_reason_rewriting():
+    M = _n9()
+    old = _T0
+    retired = _edge(invalidated_at=old, invalidation_reason="lapsed")
+    assert "reactivated" in " ".join(M.violations(retired, _edge()))
+    rewritten = _edge(invalidated_at=old, invalidation_reason="decayed")
+    assert "rewritten" in " ".join(M.violations(retired, rewritten))
+
+
+def test_n9_refuses_a_retirement_with_no_reason():
+    M = _n9()
+    old = _T0
+    assert M.violations(_edge(), _edge(invalidated_at=old))
+
+
+def test_an_evidence_free_operation_cannot_claim_a_reason_it_did_not_earn():
+    """`superseded` means new evidence arrived; `corrected`/`disputed` mean an
+    authorised act. None of those is evidence-free, so maintenance may not
+    label its own retirement with them."""
+    M = _n9()
+    old = _T0
+    sup = _edge(invalidated_at=old, invalidation_reason="superseded")
+    assert M.violations(_edge(), sup, evidence_free=True)
+    assert M.holds(_edge(), sup, evidence_free=False)
+
+
+def test_the_real_expire_path_satisfies_n9():
+    """Against the running code, not a constructed pair."""
+    import copy, os
+    from veracium.lifecycle import expire
+    from veracium.store.sqlite import SqliteStore
+    M = _n9()
+    with tempfile.TemporaryDirectory() as d:
+        st = SqliteStore(os.path.join(d, "t.db"))
+        st.add_edge(_edge(id="e1"))
+        pre = copy.deepcopy(st.edges("u", active_only=False)[0])
+        expire(st, "u", MemoryConfig())
+        post = st.edges("u", active_only=False)[0]
+        assert not post.active and post.invalidation_reason == "lapsed"
+        assert M.holds(pre, post), M.violations(pre, post)
