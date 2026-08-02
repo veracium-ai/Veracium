@@ -151,7 +151,7 @@ them.* The three the assignment-grep could not have found:
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant that pins it** |
 |---|---|---|---|---|---|
-| **host-supplied `author`** (`mcp_server.py:26`, `cli.py:299`) | rejected by enum | rejected by enum | rejected by enum | **host may claim `system`, which shares `MENTIONABLE` with `user`** — this is M3's reachability | ➡️ **`specs/0008`.** ⚠️ This cell previously read *"clears only on same-author evidence or `confirm()`"* — **the rule R3 overturned**, still stated normatively here after v2 amended it elsewhere. **Now: no value of this field clears anything** |
+| **host-supplied `author`** (`mcp_server.py:26`, `cli.py:299`) | rejected by enum | rejected by enum | rejected by enum | **host may claim `system`, which shares `MENTIONABLE` with `user`**; and `author` rides on `remember`, an `@server.tool()` — **the model reaches it** | ➡️ **`specs/0008` C1** — **no value of this field clears `needs_confirmation`**; only `confirm()`, which is host-API only |
 | **host-supplied `actor`** (`record_outcome`) | defaults `user` | n/a | maps via `_OUTCOME_ACTORS` | **last writer's label silently wins** | **M4 fix: append, never overwrite** |
 | **host-supplied `date`** (`confirm()`, `remember()`) | defaults today | `_event_dt` falls back to now | — | **future dates were accepted and unrecoverable; back-dating moved `valid_from`** | **§7f (0.4.5 + 0.4.6): `valid_from` immutable · `observed_at` monotonic · future beyond 1 day rejected at `_event_dt`** |
 | **cold-episode set** (consolidation) | no-op below batch | — | — | **mixed authorship** | **M1 (0.4.4): provenance derived from the whole set** |
@@ -285,11 +285,9 @@ defect. **It must be settled before T2 lands, not during.**
 >
 > **T2 must change no field encoding evidentiary strength or currency** —
 > `observed_at` not advanced, `needs_confirmation` not cleared, `confidence`
-> unchanged. ⚠️ **This previously read *"`valid_from = min` stays the sole
-> exception"* and is withdrawn** — R1 removed the exception rather than
-> relocating it. Under §7c, `min` is a property of **constructing a new edge**,
-> not of mutating an existing one, so N1 is absolute and nothing is excepted from
-> it. The merge record still keeps the absorbed edge's value recoverable.
+> unchanged. **N1 is absolute and nothing is excepted from it** — under §7c,
+> `min` is a property of *constructing a new edge*, never of mutating an
+> existing one. The merge record keeps the absorbed edge's value recoverable.
 >
 > This is the write-time-evidence vs maintain-time-bookkeeping rule that already
 > settled `needs_confirmation` in July, applied to a different field. **Two
@@ -316,7 +314,7 @@ blank heading is indistinguishable from an unasked question.
 | | before | after |
 |---|---|---|
 | confirm a fact stated in January, in March | context reads `(since March)` | `(since January)`; `observed_at` advances to March |
-| system-authored restatement of a stale user fact | staleness marker removed | marker retained; only user evidence or `confirm()` clears it |
+| system-authored restatement of a stale user fact | staleness marker removed | marker retained — **only `confirm()` clears it**; no field value ever does (`specs/0008`) |
 | second outcome recorded by a different actor | prior authorship overwritten | prior authorship retained |
 
 **Interfaces:** no signature changes. **Migration:** none — no backfill. Edges
@@ -349,7 +347,7 @@ the changelog.
 |---|---|---|
 | **N1** `valid_from` is **never mutated on a persisted edge**, by any operation, without exception | `test_valid_from_immutable_across_every_mutation_site` — parametrised over confirm / reinforce / absorb / expire / consolidate | CI |
 | **N2** `confirm()` advances `observed_at`, not `valid_from` | `test_confirm_advances_liveness_not_first_known` | CI |
-| **N3** ➡️ **MOVED to `specs/0008`.** ⚠️ Previously read *"clears only on same-author evidence or `confirm()`"* — **the rule R3 overturned.** Now: **only `confirm()` clears; no field value ever does** | `0008` C1–C6 | `0008` |
+| **N3** ➡️ **`specs/0008`** — only `confirm()` clears `needs_confirmation`; no field value ever does | `0008` C1–C6 | `0008` |
 | **N4** no maintenance operation raises `disclosure` toward assertable **or raises `confidence`** | `test_no_maintenance_op_widens_disclosure` · **`test_no_maintenance_op_raises_confidence`** — property-based over a random op sequence, **run under a hostile `MemoryConfig`** | CI |
 | **N4b** `MemoryConfig` rejects **`decay_factor` and `confidence_floor`** outside `[0, 1]`, and `NaN`/`±inf` | `test_config_bounds_are_validated` — **both fields** × 0 · 1 · interior · >1 · negative · NaN · +inf · −inf | CI |
 | **N4b′** the exact boundaries **remain accepted** | `test_boundary_configs_are_still_valid` — `0.0` and `1.0` on both fields; **a regression test, because the cheapest wrong fix is an exclusive bound** | CI |
@@ -367,9 +365,9 @@ The two clauses are the same statement about different fields, which is why they
 belong in one invariant: **maintenance-time bookkeeping may not manufacture
 what only evidence can earn** — assertability in the first case, strength in the
 second.
-| **N5** ➡️ **MOVED to `specs/0009`.** ⚠️ *"without retaining the prior value"* was **broad enough to be satisfied by a prose note**, which is how the inadequate fix passed. `0009` H7 asserts on **structure** | `0009` H1–H7 | `0009` |
+| **N5** ➡️ **`specs/0009`** — outcome authorship is an append-only chain; `0009` H7 asserts on **structure**, not on a retained value | `0009` H1–H7 | `0009` |
 | **N6** consolidation provenance derives from the whole set (0.4.4) | existing `test_consolidation_provenance.py` | CI |
-| **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** ⚠️ **Not the general form** — see N9 | CI + bench |
+| **N7** a full `maintain()` cycle over simulated months never moves an edge from UNVERIFIED to GROUNDED | `test_maintenance_never_promotes_across_the_gate` — **an end-to-end gate over the observable boundary.** Not the general form; see N9 | CI + bench |
 | **N9** *(replaces N7's general claim)* for an **evidence-free** operation the post-state is no stronger than the pre-state under the partial order **defined in §6a** | `test_evidence_free_maintenance_is_monotone` — property-based over random op sequences | CI |
 | **N10** history preservation is checked **separately** from trust rank | `test_maintenance_preserves_authorship_history` | CI |
 
@@ -396,12 +394,24 @@ hold:
 ```
 post.assertable          <=  pre.assertable          # False is weaker than True
 post.needs_confirmation  >=  pre.needs_confirmation  # True  is weaker than False
+post.disclosure          <=T pre.disclosure          # MENTIONABLE > USE_ONLY > QUARANTINED
 post.confidence          <=  pre.confidence
 post.observed_at         <=  pre.observed_at         # currency may not advance
 post.author_of_evidence  ==  pre.author_of_evidence  # categorical: equality
 post.derived_from        ==  pre.derived_from        # categorical: equality
 post.valid_from          ==  pre.valid_from          # immutable identity, §7c
 ```
+
+**`<=T` is the disclosure trust order**, taken from the enum's own documented
+meanings (`schema.py:45`): `MENTIONABLE` (may be volunteered) **>** `USE_ONLY`
+(may shape behaviour, never volunteered) **>** `QUARANTINED` (never asserted).
+
+**`disclosure` is a separate clause from `assertable`, and third external review
+item 6 is why.** `assertable` is derived and collapses two of the three levels:
+a move from `QUARANTINED` to `USE_ONLY` leaves `assertable` `False` throughout,
+so **a maintenance operation could widen disclosure without N9 noticing.** N4
+would catch it, but then **N4 — not N9 — would be doing the work**, and N9 would
+not be the general form it claims to be.
 
 **The boolean clauses express trust strength, not ordinary ordering** —
 `needs_confirmation` is written `>=` because *keeping* the caveat is the weaker,
@@ -418,14 +428,13 @@ recognition*.
 
 ### Which operations are evidence-free — enumerated, not judged
 
-⚠️ **This previously claimed the list was "derived from the manifest… so it
-cannot drift". Withdrawn — third external review item 5.** The *call sites* are
-mechanically enumerated; the **`evidence-bearing?` column is hand-authored** in
-`audit_dispositions.py`. `--check` proves somebody wrote `yes` or `no`, **not
-that the answer follows from anything.** It is a **reviewed classification**, and
-the reviewer's sharpest example is that every `apply_supersession` write is
-marked evidence-bearing **while M3 — the open defect — is precisely that a
-repetition can be mistaken for authoritative new evidence.**
+**This is a reviewed classification, not a derived fact.** The *call sites* are
+mechanically enumerated from the AST; the **`evidence-bearing?` column is
+hand-authored** in `audit_dispositions.py`, and `--check` proves somebody wrote
+`yes` or `no`, **not that the answer follows from anything.** The sharpest
+illustration: every `apply_supersession` write is marked evidence-bearing **while
+M3 — the open defect — is precisely that a repetition can be mistaken for
+authoritative new evidence.**
 
 **A dedicated entry point is not proof of evidence, and neither is a
 host-supplied `author`, `actor` or `date`.** Making this mechanical needs an
@@ -450,10 +459,31 @@ generalised — and that does not exist yet.
 **N9 as written compares one edge before and after. Consolidation maps a *set* of
 episodes to a *new* object**, so there is no pre-state to compare against:
 
-> **N9b — set→output.** The output's disclosure is **no stronger than the
-> least-trusted input**, `author_of_evidence` is `SYSTEM` (what it is, not an
-> inherited author), and `derived_from` retains **any** third-party influence
-> present in the set.
+> **N9b — set→output**, over **every** trust-bearing field, because a rule that
+> constrains three of them permits manufacture in the rest:
+>
+> | field | rule |
+> |---|---|
+> | `disclosure` | **no stronger than the least-trusted input** (`min` under `<=T`) |
+> | `author_of_evidence` | **`SYSTEM`** — what the output *is*, never an inherited author |
+> | `derived_from` | retains **any** third-party influence present in the set |
+> | `confidence` | **`<= min(inputs)`** — a summary is not better evidence than its worst member |
+> | `observed_at` | **`<= max(inputs)`**, and never *now* — recognition is not observation |
+> | `valid_from` | **`min(inputs)`** — first-known of the set, by construction (§7c) |
+> | `needs_confirmation` | **`True` if any input has it** — the caveat propagates |
+> | lineage | every input is recorded; **a member may not be dropped silently** |
+> | mixed currency | the spread is **retained, not averaged** — see below |
+
+**Third external review item 6:** the previous N9b specified only the first three
+rows, so **a consolidation could satisfy it while manufacturing confidence or
+freshness** — the precise defect M5 forbids at T2, one operation over.
+
+**Mixed currency is the row most likely to be got wrong.** Consolidating
+episodes from January and June produces one record. Taking `max` makes the
+January content look current; taking `min` makes the June content look stale.
+**Neither is true, so the summary must not claim a single currency it does not
+have** — `observed_at` bounds it and the lineage carries the spread. *(Consistent
+with the standing rule: surface the tension, never reconcile it.)*
 
 **That is M1's shipped rule** (0.4.4, GHSA-hcj3-8jqc-wqrp), stated as an
 invariant rather than as a fix, which is what lets it be checked on operations
@@ -474,10 +504,9 @@ launder a destroyed record.
 - **Reversibility:** the fixes are reversible. **The damage is not** — M2 has
   already destroyed original `valid_from` values in any store where a stale fact
   was confirmed, and consolidation has already destroyed member episodes.
-- **Partial failure:** ⚠️ **this previously read *"a crash leaves a partially-
-  maintained store, which is safe because every operation narrows."* That is
-  false and is withdrawn.** `expire()` is per-edge and idempotent, so it does
-  hold there. **`consolidate()` is neither**: it deletes every member episode
+- **Partial failure:** **`expire()` is crash-safe; `consolidate()` is not.**
+  `expire()` is per-edge and idempotent. **`consolidate()` is neither**: it
+  deletes every member episode
   *before* writing any replacement (`lifecycle.py:123`), so a crash between the
   loops is **total loss of that batch**, and a retry re-consolidates whatever
   survived. **Narrowing trust is not crash consistency** — a narrower state can
@@ -621,6 +650,11 @@ enumerates. *"A partial `maintain` is safe because every operation narrows"* is
 false in the worst available direction: **narrower is not the same as
 recoverable**, and consolidation is the one maintenance operation that destroys
 rather than retires.
+
+**Owned by `specs/0010`**, which picks one of the two strategies this contract
+left open — third external review: acceptance authorises implementation, so
+*"atomic or a state machine"* would authorise two materially different designs
+without specifying either.
 
 **Frozen persistence contract:**
 
@@ -813,32 +847,11 @@ the other. The columns now force the distinction.
 | **M3** staleness clearing | same-**class** clearing still permitted | 🔴 **the shipped fix is inadequate** — the host chooses the class | ➡️ **`0008`** | **no** | `0008` C1–C6 | — |
 | **M4** outcome authorship | note in `summary`, structured field still overwritten | 🔴 **the shipped fix is inadequate** — the note survives one hop | ➡️ **`0009`** | **no** | `0009` H1–H7 | — |
 | **M5** merge-time `confidence` | T1 `max` retained | — | T2 keeps the survivor's own | **n/a — T2 is unwritten** | constrains `0009`-era T2 design | — |
-| **crash-safe consolidation** | delete-all-then-write | 🔴 open | §7e (contract only; **strategy deliberately open**) | **no** | `test_consolidation_is_crash_safe` | — |
+| **crash-safe consolidation** | delete-all-then-write | 🔴 open | ➡️ **`specs/0010`** — write-before-delete + lineage recovery | **no** | `0010` X1–X6 | — |
 
 **Three rows are red and two of them shipped as fixes.** That is the honest
 state, and it is why `0008` and `0009` exist separately: **they are corrections
 to released behaviour, not documentation debt.**
-
----|---|---|
-| **M1** | consolidation derived provenance from `cold[0]` | ✅ **shipped 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp |
-| **M2** | `confirm()` mutated `valid_from` | ✅ **shipped 0.4.5** |
-| **M3** | cross-author clearing of `needs_confirmation` | ✅ **shipped 0.4.5** |
-| **M4** | `record_outcome` overwrote authorship | ✅ **shipped 0.4.5** |
-| **M5** | merge-time `confidence = max(...)` | 🟢 **RESOLVED 2026-08-01 — no code change needed today.** T1 keeps `max`; T2 keeps the survivor's own confidence. T2 is unwritten, so this is now a **constraint on the T2 design** rather than a fix. Note what the resolution corrects in *my* framing: I offered a blast-radius measurement (one consumer, no ranking effect) as the argument, and research's ruling names that as answering **"how bad is it"** when the question was **"is it justified."** Severity bounds the cost of being wrong; it says nothing about legitimacy. |
-| **M6** | `import_memory` has no trust boundary | ➡️ **MOVED — `specs/0005-import-trust-boundary.md`.** Fix designed there; **a new blocking question surfaced in the move** (`I-Q1`: the cap keys on an attacker-controlled header field). The docs recipe stays held against *that* spec now. |
-| **M7** | `correct()` elevates non-assertable facts | ➡️ **MOVED — `specs/0003-supersession-authority.md` §1b**, where it belongs: `correct()` is a supersession path. **The move resolved it** — `0002` Q5 dissolves into the ladder, (b) inherit. It also exposed that `apply_supersession` and `correct()` are disjoint, so 0003 gained I9. |
-| **M8** | wiki serves a revoked trust decision | ➡️ **MOVED — `specs/0004-derived-views-and-revocation.md`.** Fix designed there, plus the strike of an unreachable *"any quarantine"* clause. `compile.py` stays **guarded** (`8ad5167`). |
-
-**All five findings that remain here are closed.** M1–M4 shipped; M5 is ruled
-and constrains a design that does not exist yet. **This document is now what it
-always was — the 0.4.4 retrospective plus the 28-site audit — and it is
-reviewable as one thing.**
-
-**External review: REQUESTABLE as of 2026-08-01.** The old note said it should
-wait until M5–M8 carried proposed resolutions, and that was right while they
-lived here. **The split, not the resolutions, is what unblocked it.** Accepting
-this spec also retroactively documents 0.4.5's basis, which is the honest fix
-for M2/M3/M4 having shipped citing a `draft` — see the gate finding (`3ef6519`).
 
 ---
 

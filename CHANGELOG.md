@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **A malformed `date=` is now rejected instead of silently becoming *now*.**
+  `_event_dt` fell back to the current time on any unparseable date. That is the
+  same manufacture 0.4.6 removed for *future* dates, in a quieter form: **a
+  malformed statement about when an event happened is not evidence that it
+  happened now.** The fallback could refresh a stale fact, relieve lifecycle
+  pressure through a later `observed_at`, and write an audit record attributing
+  an invented time to a caller that believed it had supplied one.
+
+  **Absence is now the only thing that means now** — omit `date=` and you get
+  the current time, as before.
+
+  Ingest validates through the same function before building its prompt, so a
+  bad date fails with the reason rather than with `date_context`'s raw
+  `Invalid isoformat string`. **One input had two parsers and two error
+  contracts.**
+
+  Found by external review of `specs/0002`; the reviewer noted §7f rejected
+  future dates while retaining the malformed fallback, which violates the
+  principle that section exists to enforce.
+
 ## 0.4.6 — 2026-08-01
 
 - **Two defects found while verifying an external review of `specs/0002` — both

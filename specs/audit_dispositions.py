@@ -88,7 +88,7 @@ DISPOSITIONS = {
  ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "41eb6c4d"):
    (M, "**destroys episodes**", NO,
     "🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e",
-    "🔴 **`specs/0002` §7e** — `test_consolidation_is_crash_safe`; **contract only, no owning implementation spec yet** (third review, package issues)"),
+    "➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery"),
  ("src/veracium/lifecycle.py", "consolidate", "add_episode", "346796a6"):
    (M, "`author_of_evidence`, `derived_from`, `confidence`", NO,
     "**M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust",

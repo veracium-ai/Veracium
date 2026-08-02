@@ -33,7 +33,7 @@ MANIFEST = ROOT / "specs" / "generated" / "0002-audit-manifest.md"
 MUTATOR_PREFIXES = ("add_", "invalidate_", "delete_", "forget_", "set_")
 OP_CLASSES = {"write-time", "maintain-time"}
 EVIDENCE_VALUES = {"yes", "**no**"}
-SPEC_REF = re.compile(r"\b000\d\b")
+SPEC_REF = re.compile(r"\b\d{4}\b")   # spec numbers are four digits; 000\d stopped at 0009
 TEST_REF = re.compile(r"\btest_\w+")
 
 

@@ -201,3 +201,33 @@ def test_past_and_today_still_work():
         m = _mem(d, [])
         _one_edge(m, datetime(2026, 1, 1, tzinfo=timezone.utc))
         assert m.confirm("u", "e-t", date="2026-02-01")["confirmed"] == "e-t"
+
+
+def test_a_malformed_event_date_is_rejected_not_silently_now():
+    """It used to fall back to utcnow(), which is the same manufacture as
+    accepting a future date, in a quieter form: a malformed statement about when
+    an event happened is not evidence that it happened now. The fallback could
+    refresh a stale fact and relieve lifecycle pressure."""
+    import pytest
+    from veracium.ingest import _event_dt
+    for bad in ("not-a-date", "", "2026-13-45", "01/02/2026"):
+        with pytest.raises(ValueError, match="not an ISO date"):
+            _event_dt(bad)
+
+
+def test_omitting_the_date_still_means_now():
+    """Absence is the only thing that means now — the escape hatch the
+    rejection above depends on."""
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [])
+        _one_edge(m, datetime(2026, 1, 1, tzinfo=timezone.utc))
+        r = m.confirm("u", "e-t")          # no date=
+        assert r["confirmed"] == "e-t"
+
+
+def test_a_malformed_date_cannot_enter_through_ingest():
+    import pytest
+    with tempfile.TemporaryDirectory() as d:
+        m = _mem(d, [{"triples": [], "episode": "said"}])
+        with pytest.raises(ValueError, match="not an ISO date"):
+            m.remember("u", "hello", date="yesterday")

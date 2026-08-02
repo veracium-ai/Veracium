@@ -47,14 +47,25 @@ def _event_dt(date_str: str) -> datetime:
                     removed an edge from lapse, decay and staleness flagging
                     for 73 years, with no API to undo it.
 
-    Fails closed and loudly rather than clamping: a future event date is
-    unambiguously a caller bug, and silently rewriting it hides that.
-    Malformed dates keep their existing behaviour (fall back to now) — that is
-    long-standing and not this fix's business."""
+    A malformed date is REJECTED for the same reason. This used to fall back to
+    `utcnow()`, which is the same manufacture in a quieter form: **a malformed
+    statement about when an event happened is not evidence that it happened
+    now.** The fallback could refresh a stale fact, relieve lifecycle pressure
+    through a later `observed_at`, and write an audit record attributing an
+    invented time to the caller — while the caller believed it had supplied one.
+
+    Fails closed and loudly rather than clamping or defaulting: a bad event date
+    is unambiguously a caller bug, and silently rewriting it hides that. Callers
+    that genuinely mean *now* omit `date=` entirely; absence is the only thing
+    that means now."""
     try:
         dt = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
-    except ValueError:
-        return utcnow()
+    except (ValueError, TypeError):
+        raise ValueError(
+            f"event date {date_str!r} is not an ISO date. Memory timestamps "
+            f"record when a statement was made; falling back to the current "
+            f"time would manufacture an observation date the caller never "
+            f"supplied. Omit `date=` if you mean now.") from None
     if dt > utcnow() + MAX_FUTURE_SKEW:
         raise ValueError(
             f"event date {date_str!r} is in the future. Memory timestamps record "
@@ -102,6 +113,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     rel_names = "\n".join(
         f"- {name}: {rel.desc}" if rel.desc else f"- {name}"
         for name, rel in relations.items())
+    # Validate the event date FIRST, through the one contract, so a malformed
+    # date fails with the reason rather than with prompts.date_context's raw
+    # `Invalid isoformat string`. Two parsers meant two error contracts for one
+    # input; this keeps _event_dt authoritative.
+    _event_dt(date)
     prompt = prompts.EXTRACT_PROMPT.format(
         date_context=prompts.date_context(date), author=author.value,
         event_text=event_text, relations=rel_names)
