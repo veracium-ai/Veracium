@@ -33,9 +33,9 @@ Spec-Status: in review
 the user.**
 
 `needs_confirmation` renders as `[possibly stale — confirm before relying on
-it]` (`graph.py:358`). It is **a question addressed to the party who stated the
-fact.** `graph.py:119-121` clears it whenever reinforcing evidence carries the
-same `EvidenceAuthor` **class**:
+it]` (`graph.py:358`). It is **a question addressed to whoever is entitled to reaffirm the fact** —
+v1 said *"the party who stated it"*, and §6a establishes the mechanism cannot
+prove the original speaker acted, only that an authorised principal did.
 
 ```python
 if (prior.provenance.author_of_evidence
