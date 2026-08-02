@@ -23,7 +23,13 @@ restated anywhere by hand.
 """
 
 # disposition: resolved | open
-# implementation: shipped | none | n/a
+# implementation: shipped | committed | none | n/a
+#
+#   shipped    in a released version -- users have it
+#   committed  on main and unreleased -- users DO NOT have it. Added after the
+#              v7 package shipped a ledger saying `none` for two fixes made in
+#              the same session: there was no state between "not done" and "in
+#              a release", so a real fix had to be recorded as neither.
 FINDINGS = [
     dict(id="M1", title="consolidation derived provenance from `cold[0]`",
          owner="0002", disposition="resolved", implementation="shipped",
@@ -92,13 +98,13 @@ FINDINGS = [
          released_defect="`import_memory` persists every claimed trust field verbatim",
          current_defect="no importing-principal cap and no currency restriction; N9t is frozen design only"),
     dict(id="N9b-provenance", title="consolidation inherits `source_type` and `evidence_ref` from `cold[0]`",
-         owner="0002", disposition="open", implementation="none",
-         release=None, advisory=None, test="test_consolidated_provenance_is_internally_consistent",
+         owner="0002", disposition="resolved", implementation="committed",
+         release="unreleased (c83b31b)", advisory=None, test="test_consolidated_provenance_is_internally_consistent",
          released_defect="a SYSTEM summary reports `source_type=stated` and the first input's `evidence_ref`",
          current_defect="internally false provenance — M1's `cold[0]` inheritance surviving on two unexamined fields"),
     dict(id="M2⁗", title="offset timestamps fail through `remember()`",
-         owner="0002", disposition="open", implementation="none",
-         release=None, advisory=None, test="test_an_offset_timestamp_survives_every_public_entry_point",
+         owner="0002", disposition="resolved", implementation="committed",
+         release="unreleased (c83b31b)", advisory=None, test="test_an_offset_timestamp_survives_every_public_entry_point",
          released_defect="`prompts.date_context` parses the raw string and rejects offsets",
          current_defect="one input, two parsers — `_event_dt` is not the single contract §7f claims"),
     dict(id="M7-correct", title="`correct()` bypasses the supersession ladder",

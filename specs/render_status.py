@@ -32,6 +32,7 @@ def _regions() -> dict[str, str]:
     open_f = [f for f in FINDINGS if f["disposition"] == "open"]
     unimpl = [f for f in FINDINGS if f["implementation"] == "none"]
     shipped = [f for f in FINDINGS if f["implementation"] == "shipped"]
+    committed = [f for f in FINDINGS if f["implementation"] == "committed"]
     releases = sorted({f["release"] for f in shipped if f["release"]})
 
     ids = lambda fs: ', '.join(f"`{f['id']}`" for f in fs)
@@ -40,6 +41,7 @@ def _regions() -> dict[str, str]:
     for f in FINDINGS:
         owner = "this spec" if f["owner"] == "0002" else f"**`specs/{f['owner']}`**"
         impl = {"shipped": f"**yes** — {f['release']}",
+                "committed": f"**code yes, {f['release']}** — users do not have it",
                 "none": "**no**", "n/a": "n/a"}[f["implementation"]]
         cur = f["current_defect"] or "—"
         if f["disposition"] == "open":
@@ -54,7 +56,7 @@ def _regions() -> dict[str, str]:
     summary = (
         f"**{len(FINDINGS)} findings · {len(shipped)} shipped "
         f"({', '.join(releases)}) · {len(unimpl)} unimplemented · "
-        f"{len(open_f)} still open.**\n\n"
+        f"{len(open_f)} still open · **{len(committed)} fixed but unreleased**.**\n\n"
         f"**Unimplemented:** {ids(unimpl)}. **Open:** {ids(open_f)}.\n\n"
         f"*Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes "
         f"that do not hold.*")
@@ -71,8 +73,9 @@ def _regions() -> dict[str, str]:
     for f in FINDINGS:
         owner = "0002" if f["owner"] == "0002" else f["owner"]
         st = "open" if f["disposition"] == "open" else "resolved"
-        impl = {"shipped": f"shipped {f['release']}", "none": "**not implemented**",
-                "n/a": "n/a"}[f["implementation"]]
+        impl = {"shipped": f"shipped {f['release']}",
+                "committed": "**committed, unreleased**",
+                "none": "**not implemented**", "n/a": "n/a"}[f["implementation"]]
         idx_rows.append(f"| `{f['id']}` | `{owner}` | {st} | {impl} | `{f['test']}` |")
     index = ("| finding | owner spec | disposition | implementation | test |\n"
              "|---|---|---|---|---|\n" + "\n".join(idx_rows))
@@ -101,7 +104,9 @@ def _regions() -> dict[str, str]:
             verdict = "✅ clean"
         else:
             f = by_id[fid]
-            if f["implementation"] == "shipped":
+            if f["implementation"] == "committed":
+                verdict = f"🟡 **fixed, unreleased** — `{fid}`"
+            elif f["implementation"] == "shipped":
                 verdict = f"✅ **fixed {f['release']}** — `{fid}`"
             elif f["disposition"] == "open":
                 verdict = f"🔴 **open** — `{fid}`"
