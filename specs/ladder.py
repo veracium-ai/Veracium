@@ -17,11 +17,20 @@ A consequence of a rule should be computed from the rule. Everything below is.
 # `ASSISTANT` arrives with specs/0001, which is `deferred`. Until then this
 # generates the CURRENT product; when 0001 lands the enum gains a member and
 # these tables regenerate with no edit here.
-try:                                              # normal case: importable tree
+try:
     from veracium.schema import EvidenceAuthor as _E
     CLASSES = tuple(e.value for e in _E)
-except Exception:                                 # pragma: no cover
-    CLASSES = ("user", "third_party", "system")
+except ImportError as exc:                        # pragma: no cover
+    # FAIL, do not fall back. A hard-coded default is exactly the drift this
+    # grounding removed: v5 hard-coded four classes and generated tables for a
+    # rule the runtime cannot execute. A wrong table is worse than no table.
+    raise SystemExit(
+        f"specs/ladder.py needs the veracium package importable "
+        f"({exc}).\n\nRun it with the same interpreter and environment you use "
+        f"for pytest, with the source on the path:\n"
+        f"    PYTHONPATH=src python3 specs/render_ladder.py --check\n\n"
+        f"It derives the authority classes from EvidenceAuthor and imports the "
+        f"production disclosure rule, so it cannot be checked without them.") from None
 
 # Rungs for every class that could exist. Only the shipped ones are enumerated.
 _RUNGS = {"user": 3, "system": 2, "assistant": 1, "third_party": 0}
