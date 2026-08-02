@@ -7,3 +7,11 @@ dist/
 build/
 .pytest_cache/
 site/
+
+# Review archives: the INDEX.md is committed, the tarballs are not.
+# Each archive snapshots a tree already in git, so committing one stores the
+# repo inside itself — undiffable, unprunable, ~400KB per review round against a
+# 93KiB packed history. INDEX.md records a sha256 per archive, which is
+# tamper-evident and lets any holder verify the copy they were sent.
+# Reversing this is one deleted line; un-committing binaries is not.
+specs/archives/*.tar.gz

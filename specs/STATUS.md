@@ -25,6 +25,9 @@ is the number that decides what can be built.
 | **0010** | crash-safe consolidation | `draft` | 2026-08-02 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 
+**Review archives** — the exact package sent for each round, with a sha256 per
+archive — are indexed in `specs/archives/INDEX.md`.
+
 **Columns.** *updated* is `git log -1` on the file, not a typed date. *int*/*ext*
 are review rounds from `specs/reviews.py`. *open Q* counts question-table rows
 not struck, resolved, moved or ruled. *findings* is how many entries in

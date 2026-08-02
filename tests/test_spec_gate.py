@@ -542,3 +542,18 @@ def test_the_spec_status_index_is_current():
     r = subprocess.run([sys.executable, str(root / "specs" / "render_index.py"), "--check"],
                        capture_output=True, text=True, cwd=root)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_review_archives_are_named_and_indexed():
+    """specs/archives/ holds the exact package sent for each external review
+    round. Names must match `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz`, and
+    INDEX.md — which is committed while the tarballs are not — must carry a
+    current sha256 for each."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    if not list((root / "specs" / "archives").glob("*.tar.gz")):
+        import pytest
+        pytest.skip("no archives present (they are gitignored; a clone has none)")
+    r = subprocess.run([sys.executable, str(root / "specs" / "render_archives.py"), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr

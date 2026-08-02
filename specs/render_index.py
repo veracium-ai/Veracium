@@ -106,6 +106,9 @@ is the number that decides what can be built.
 |---|---|---|---|---|---|---|---|---|---|
 {chr(10).join(rows)}
 
+**Review archives** — the exact package sent for each round, with a sha256 per
+archive — are indexed in `specs/archives/INDEX.md`.
+
 **Columns.** *updated* is `git log -1` on the file, not a typed date. *int*/*ext*
 are review rounds from `specs/reviews.py`. *open Q* counts question-table rows
 not struck, resolved, moved or ruled. *findings* is how many entries in
