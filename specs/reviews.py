@@ -39,6 +39,8 @@ REVIEWS = [
     # --- 0007 -------------------------------------------------------------
     dict(spec="0007", round=1, kind="external", date="2026-08-02",
          verdict="design direction approved; deferred on the shape comparison", findings=12),
+    dict(spec="0007", round=2, kind="external", date="2026-08-02",
+         verdict="direction approved; deferred; S-Q4 answered — known-constructor equality", findings=10),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

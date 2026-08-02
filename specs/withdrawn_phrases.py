@@ -11,6 +11,15 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    (r"a semantic signature (bounds|is the strictest)|(indexes|indices) are (a )?performance only",
+     "R2/0007: four more counterexamples passed it; the bound is known-constructor equality",
+     "specs/0007 §4a"),
+    (r"adoption and (the )?audit are atomic|sink .{0,30}makes .{0,20}atomic",
+     "R2/0007: a Python callback is outside the sqlite transaction; attempted/committed instead",
+     "specs/0007 §4e"),
+    (r"a veracium build refuses to open a store it does not understand",
+     "R2/0007: false of all 23 released builds; the claim covers version-aware builds only",
+     "specs/0007 §8"),
     (r"names ?\+ ?columns.{0,40}strictest|names and declared types.{0,30}(strictest|sufficient)",
      "R1/0007: the reviewer built a constraint-stripped counterexample that matched",
      "specs/0007 §4a"),
