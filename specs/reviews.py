@@ -30,6 +30,9 @@ REVIEWS = [
     dict(spec="0002", round=7, kind="external", date="2026-08-02", verdict="deferred", findings=8),
     dict(spec="0002", round=8, kind="external", date="2026-08-02", verdict="deferred", findings=11),
 
+    # --- 0008 -------------------------------------------------------------
+    dict(spec="0008", round=1, kind="external", date="2026-08-02", verdict="clearing rule approved; deferred", findings=7),
+
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),
     dict(spec="0003", round=1, kind="external", date="2026-08-02", verdict="deferred", findings=8),

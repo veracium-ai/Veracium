@@ -1,18 +1,24 @@
 # Feature spec: what may clear `needs_confirmation`
 
-Spec-Status: draft
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft** — split out of `0002` M3 on 2026-08-01. **The rule is frozen by two
-> rulings (R2, R3) and one external review**; what remains is acceptance and
-> implementation. **The fix that shipped in 0.4.5 is inadequate and this is the
-> spec that replaces it.**
+> **in review (v2)** — submitted 2026-08-02 18:07 UTC. **The clearing rule was approved at the
+> first external review; the spec was not.** The blocking finding is one I had
+> not seen: **closing the path that *clears* the flag left open the path that
+> stops it being set** — reinforcement advances `observed_at` unconditionally,
+> so repeated third-party restatement suppresses the warning entirely.
+> **Measured (§3d).** C3a closes it. Also: the matrix now separates *clears* from
+> *advances liveness*, C1 gains a structural writer check, the `confirm()`
+> guarantee is **conditional on stated host obligations**, the field's meaning is
+> narrowed to what the mechanism proves, and the audit record resolves C-Q1
+> rather than deferring it.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 |
+| **Version** | **v2** — *re-read before editing; quote the version you approve.* v1 deferred at first external review (7 findings); the clearing rule was approved. |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M3/§7b. **`0002` is a retrospective and must be closeable; this is a proposal and is not.** |
 | **Internal reviewers** | research — **R2** (fail-closed rule) and **R3** (strict; not temporary) |
 | **External review** | required — `graph.py` is guarded; **second review of `0002` found the hole this spec closes** |
@@ -73,7 +79,7 @@ other.
 
 | field | read / written | contract | preserved? |
 |---|---|---|---|
-| `Edge.needs_confirmation` | set by `expire()`; **cleared by `confirm()` only, after this change** | "the party who stated this should re-affirm it" | **restored** — currently cleared by parties that did not state it |
+| `Edge.needs_confirmation` | set by `expire()`; **cleared by `confirm()` only, after this change** | "an **authorised principal** must explicitly reaffirm this edge through `confirm()`" — v1 said *"the party who stated this should re-affirm it"*, which the mechanism does not establish (§6a) | **restored** — currently cleared by parties that did not state it |
 | `Provenance.author_of_evidence` | read by the rule being **removed** | authorship of evidence | **unchanged** — this spec stops *relying* on it for authority, it does not alter it |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
@@ -103,26 +109,68 @@ other.
 
 ## 3. Trust-class matrix — REQUIRED, blocking
 
-**The matrix is one column wide, and that is the finding.**
+**Two effects, not one.** v1 wrote a single **BLOCK** column, which was
+ambiguous: a restatement blocked from *clearing* the flag still advanced
+liveness, and that decides whether the flag is ever **set** (§3d).
 
-| clearing candidate | today | after | why |
-|---|---|---|---|
-| explicit `confirm()` (host API) | clears | **clears** | an authorised act through a dedicated entry point |
-| `remember(author="user")`, same class | **clears** | **BLOCKS** | `remember` is model-reachable; the model can set `author` |
-| `remember(author="system")`, same class | **clears** | **BLOCKS** | two unrelated `SYSTEM` processes are both `SYSTEM` |
-| third-party restatement, same class | **clears** | **BLOCKS** | repetition is not renewed observation |
-| cross-class restatement | blocks | blocks | unchanged (0.4.5) |
-| `expire()` / consolidation / dedup / wiki | blocks | blocks | maintenance never clears — `0002` N4 |
-| same `source_id` (future) | n/a | **BLOCKS** | R3 — grouping is not authentication |
+| candidate | clears the flag? | advances liveness? |
+|---|---|---|
+| **`confirm()`** — host API, not model-reachable | **yes** | yes |
+| `remember(author="user")`, same value | **no** | **only if entitled** (C3a) |
+| `remember(author="system")`, same value | **no** | **only if entitled** (C3a) |
+| third-party restatement | **no** | **no** — not entitled |
+| cross-class restatement | no *(0.4.5)* | no |
+| `expire()` · consolidation · dedup · wiki | **no** | no — maintenance never refreshes |
+| same `source_id` *(future, `0006`)* | **no** | **no** — grouping is not authentication |
 
-> **The governing principle, and it generalises past this spec:**
-> **an act through a dedicated entry point is evidence; a field asserting who
-> acted is not. Add an entry point, not a parameter.**
+> **The governing principle:** *an act through a dedicated entry point is
+> evidence; a field asserting who acted is not.* **Add an entry point, not a
+> parameter.**
 
-**Why that distinction is real rather than nominal:** `author="user"` rides on
-`remember`, which is an `@server.tool()` — **the model calls it**. `confirm()`
-is host-API only: not an MCP tool, not a CLI verb. **It is the only candidate
-whose evidence the model cannot fabricate.**
+**And a distinction integrators mistake:** a user who agrees with a third-party
+claim has produced **new user evidence**, which belongs in `remember()`.
+`confirm()` is not a mechanism for adopting untrusted content — it reaffirms
+what is already there, at the trust it already has.
+
+
+## 3d. Clearing is not the only way to defeat the flag
+
+**First external review, finding 1, and it is measured.** This spec closes the
+path that *clears* `needs_confirmation`. It left open the path that stops the
+flag from ever being **set** — and that path is reachable by the same untrusted
+content.
+
+`expire()` ages a fact against `observed_at` (`lifecycle.py:41`), and
+reinforcement advances `observed_at` unconditionally (`graph.py:107`). So a
+repeated restatement keeps a fact permanently fresh:
+
+```
+SLOW relation, lifetime 120 days, edge 200 days old
+
+control, no restatement          -> needs_confirmation = True
+4 THIRD_PARTY restatements       -> needs_confirmation = False
+                                    observed_at pushed forward each time
+```
+
+**The restatements are `THIRD_PARTY`** — the class this spec's own §1 treats as
+adversarial. **A party that cannot clear the flag does not need to: it can
+prevent the flag appearing.** Closing one and not the other leaves the boundary
+open while the document claims it is shut.
+
+> **C3a — reinforcement that is not entitled to reaffirm an edge may not
+> postpone that edge's confirmation deadline.** The incoming observation is
+> stored as its own evidence; **its currency is not transferred onto the prior
+> assertion.**
+
+**This is deliberately narrower than "reinforcement may not refresh liveness".**
+Same-source, same-authority restatement is the case the liveness rule exists for
+and C3 still protects it. **The entitlement test is the one this spec already
+uses** — recorded effective authority, per `specs/0003` — so no new concept is
+introduced.
+
+**The lapse argument still holds and is why C3 stays.** A fact stated once and
+never again should lapse; a fact genuinely re-observed should not. **What was
+wrong was treating *any* repetition as re-observation.**
 
 ---
 
@@ -154,10 +202,12 @@ ships today.
 
 | invariant | executable check | where |
 |---|---|---|
-| **C1** no value of any provenance field clears `needs_confirmation` | `test_no_author_value_clears_staleness` — table-driven over the **full `EvidenceAuthor` product**, not the two cases we happen to worry about | CI |
-| **C2** `confirm()` clears it; `actor` does not change that either way | `test_confirm_clears_regardless_of_actor_label` | CI |
-| **C3** reinforcement still refreshes liveness | `test_reinforcement_still_advances_observed_at` — **the permission, not the prohibition**; without this the fix looks correct and quietly breaks lapse behaviour | CI |
-| **C4** maintenance never clears | `test_no_maintenance_op_clears_staleness` — property-based over random op sequences (`0002` N4 family) | CI |
+| **C1** no value of any provenance field clears `needs_confirmation` | **two checks, because one cannot establish this.** `test_no_provenance_value_clears_staleness` — behavioural, over **every** provenance input (`author_of_evidence` · `derived_from` · `source_type` · `evidence_ref` · `disclosure` · `confidence`), not `EvidenceAuthor` alone · `test_only_confirm_writes_the_flag_false` — **structural**, an AST inventory of every site assigning `needs_confirmation = False`, whose expected set is `{confirm()}` | CI |
+| **C2** `confirm()` clears it | `test_confirm_clears_staleness` | CI |
+| **C2a** `actor` is audit metadata and grants nothing | `test_actor_metadata_does_not_grant_confirmation_authority` — authority comes from the protected call path; v1's name (*"clears regardless of actor label"*) read as normalising arbitrary labels | CI |
+| **C3** **entitled** reinforcement still refreshes liveness | `test_entitled_reinforcement_still_advances_observed_at` — **the permission, not the prohibition**; without it the fix looks correct and quietly breaks lapse behaviour |
+| **C3a** un-entitled reinforcement **may not postpone the confirmation deadline** | `test_third_party_repetition_cannot_suppress_the_flag` — the measured §3d reproduction becomes the fixture: control flags, four third-party restatements must still flag | CI |
+| **C4** maintenance never clears | `test_no_maintenance_op_clears_staleness` — property-based over random op sequences, and **asserts its operation registry against the `@store_mutator` surface**, so a newly added maintenance operation cannot stay invisible to it | CI |
 | **C5** the flag reaches the model when set | `test_stale_marker_renders` | CI |
 | **C6** the 0.4.5 reproducer stays fixed | `test_cross_author_restatement_does_not_clear` — regression, cross-class was the half 0.4.5 got right | CI |
 
@@ -167,34 +217,118 @@ no test currently distinguishes.
 
 ---
 
-## 7. Failure modes and reversibility
+## 6a. What `confirm()` proves, and what the host must supply
 
-**Failure mode is a caveat that outstays its welcome.** Reversible by reverting
-one conditional; no data is written or destroyed, and no stored field changes
-meaning. **Nothing needs migrating** — existing `needs_confirmation` values stay
-exactly as they are.
+**Finding 4: `confirm()` is a call path, not proof that a user affirmed
+anything.** v1 argued it is safe because it is absent from the bundled MCP tool
+list and the CLI. **That is true and it is not the same claim.** A host service,
+a background job, or a custom model-facing tool the host writes can all call the
+same API.
+
+> **The contract, stated conditionally because that is what is true:**
+> **veracium treats a call to `confirm()` as confirmation.** The host must
+> expose that operation **only** through an authenticated, intent-bound action
+> by the principal whose edge is being changed.
+
+**Host obligations — the integrator's half, and it is not optional:**
+
+| obligation | why |
+|---|---|
+| authenticate the principal | veracium cannot; it sees a function call |
+| authorise for **that store and that edge** | a principal may be authenticated and still not own the edge |
+| bind to explicit intent | a background job is not a reaffirmation |
+| replay protection | a re-sent request is not a second confirmation |
+| **never expose it to model control** | the whole boundary; a model-callable `confirm()` returns us to 0.4.5 |
+
+**`actor` remains audit metadata and grants nothing** (C2a). It is retained
+rather than removed because `record_outcome` beside it validates actor↔outcome
+pairing and a silent removal would break callers — **but a caller could
+reasonably read it as authorisation, so the spec says plainly that it is not.**
+
+**Finding 5 — the field's own meaning was overstated.** §2 defined
+`needs_confirmation` as *"the party who stated this should re-affirm it"* —
+**WITHDRAWN wording.** The mechanism proves no such thing: not that the original
+speaker acted, not that a human did.
+
+> **Narrowed:** *an authorised principal must explicitly reaffirm this edge
+> through `confirm()`.*
+
+**That matters for system-authored, third-party-derived, imported, and
+non-human-principal edges**, where "the party who stated this" may not exist as
+a caller at all.
 
 ---
+
+## 6b. The confirmation audit record
+
+**Finding 7: `confirm()` becomes the only clearing path, and v1 left its
+auditability `pre-release`.** Making a transition the entire trust boundary and
+leaving it unobservable is not a defensible pairing.
+
+> **Every `confirm()` writes a content-free record:**
+> ```
+> principal · edge_id · confirmed_at · call-path identity · correlation_id
+> ```
+> **No edge content.** Same shape and erasure policy as `0003`'s refusal record.
+
+**Repeated confirmation is allowed without limit and audited.** Rate limiting is
+host policy — veracium cannot tell a legitimate re-affirmation from an
+automated one, and **guessing a limit would substitute our judgement for the
+host's while still not detecting misuse.** The record is what makes misuse
+*visible*, which is the part we can actually provide.
+
+**C-Q1 is resolved by this**, not deferred.
+
+---
+
+## 7. Failure modes and reversibility
+
+**Failure mode is a caveat that outstays its welcome** — a fact stays marked
+`[possibly stale]` until someone calls `confirm()`. Additive and visible,
+against silent removal of a caveat that should have stayed.
+
+**Reversibility, corrected.** v1 said *"no data is written or destroyed;
+existing values stay exactly as they are"* and that was wrong in a way that
+matters:
+
+> **No schema or migration change is required. The implementation is
+> rollbackable, but behaviour during deployment changes persisted edge state**,
+> and reverting does not reconstruct the counterfactual the old rule would have
+> produced.
+
+Before, reinforcement wrote `needs_confirmation=False`; after, it leaves `True`
+persisted. **After a rollback we cannot tell which flags the old behaviour would
+have cleared during the intervening period** — the safer flags simply remain set
+until a later `confirm()` or entitled reinforcement changes them. **That is the
+right direction to fail, and it is still not "no data changes".**
+
 
 ## 8. Claims and limits
 
-**Claim:** only an explicit confirmation clears a staleness flag.
+**Claim:** *only an explicit `confirm()` clears `needs_confirmation`, and
+reinforcement that is not entitled to reaffirm an edge cannot postpone its
+confirmation deadline.*
 
-**Limits:**
+**The second clause is new in v2 and it is the one that makes the first worth
+having.** Closing the clearing path alone left the flag suppressible by anyone
+who could repeat a fact — measured in §3d, using the `THIRD_PARTY` class this
+spec calls adversarial.
 
-- **Not authentication.** We do not verify a user is present, only that the
-  **host API** was used rather than a model-reachable tool. A host that calls
-  `confirm()` in a loop defeats it, by design and by its own authority.
-- **Does not make `needs_confirmation` per-author** — carried as `0002` Q4, and
-  it would dissolve this problem structurally rather than fence it.
-- **Does not address why the flag was set.** `expire()`'s CONFIRM behaviour is
-  out of scope.
+**What this does NOT establish:**
 
----
+- **Not that a user confirmed anything.** veracium sees a call, not a person.
+  **The guarantee is conditional on the host obligations in §6a** — and if the
+  host exposes `confirm()` to a model, this spec buys nothing.
+- **Not per-author staleness.** `needs_confirmation` is one boolean for the
+  whole edge; `0002` Q4 would dissolve this structurally rather than fence it.
+- **Not why the flag was set.** `expire()`'s CONFIRM behaviour is untouched.
+- **Not source identity.** Entitlement is recorded effective authority, and
+  whether the labels are honest is `0011` E4.
+
 
 ## 10. Open questions
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **C-Q1** | Should `confirm()` be **rate-limited or audited** given §8's first limit? It is the one remaining path and we have no record of how often it is used. | `pre-release` | dev | before release |
+| ~~**C-Q1**~~ | **RESOLVED in §6b, not deferred.** Every `confirm()` writes a content-free audit record; repeated confirmation is allowed without limit, because veracium cannot distinguish a legitimate re-affirmation from an automated one and **a guessed limit would substitute our judgement for the host's while still not detecting misuse.** The record makes misuse visible, which is the part we can provide. | resolved | dev | — |
 | ~~C-Q2~~ | **RULED 2026-08-01 (Quentin): no release-note correction.** The 0.4.5 note is accurate as written — cross-author clearing *was* closed. The residual same-class case is this spec's subject and ships as its own fix. **Not blocking.** | resolved | Quentin | — |
