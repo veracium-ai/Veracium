@@ -52,3 +52,34 @@ def divergent() -> list:
     """
     return [r for r in effective_matrix()
             if r[4] != permitted(r[0], None, r[2], None)]
+
+
+# --- disclosure, so contention routing is computed rather than reasoned -----
+# specs/0003 v4 argued from the six author-only blocked pairs and concluded
+# "exactly one pair puts both values in the grounded block". Over the real
+# 400-state product that is 44 states across six author shapes: derivation caps
+# by `assistant` and `system` lower authority WITHOUT changing disclosure, and
+# the author-only projection cannot see them.
+
+def disclosure(author: str, derived_from: str | None) -> str:
+    """Mirrors ingest._disclosure_for for a non-quarantine relation."""
+    if author == "third_party" or derived_from == "third_party":
+        return "use_only"
+    return "mentionable"
+
+
+def blocked_states() -> list[tuple]:
+    opts = [None, *CLASSES]
+    return [(pa, pf, ia, if_) for pa in CLASSES for pf in opts
+            for ia in CLASSES for if_ in opts
+            if not permitted(pa, pf, ia, if_)]
+
+
+def same_block_contention() -> list[tuple]:
+    """Blocked states where both edges land in the SAME read partition.
+
+    These are the ones a reader sees as two competing values; the rest are
+    already separated by the existing gate.
+    """
+    return [b for b in blocked_states()
+            if disclosure(b[0], b[1]) == disclosure(b[2], b[3])]

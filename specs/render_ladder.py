@@ -44,7 +44,25 @@ def _regions() -> dict[str, str]:
         "|---|---|---|---|\n" + "\n".join(ex) +
         f"\n\n*(first {len(ex)} of {len(div)}; the test enumerates all "
         f"{len(full)})*")
-    return {"matrix": matrix, "coverage": coverage}
+    from ladder import blocked_states, same_block_contention, disclosure
+    import collections
+    sb = same_block_contention()
+    shapes = collections.Counter((b[0], b[2]) for b in sb)
+    srows = "\n".join(
+        f"| `{p}` → `{i}` | {n} | both `mentionable` |"
+        for (p, i), n in sorted(shapes.items(), key=lambda x: -x[1]))
+    contention = (
+        f"**{len(blocked_states())} of the 400 states are refused. "
+        f"{len(sb)} of those put both edges in the SAME read partition** — the "
+        f"cases a reader sees as two competing values. The rest are already "
+        f"separated by the existing gate.\n\n"
+        f"| author shape | states | partition |\n|---|---|---|\n{srows}\n\n"
+        f"**v4 said \"exactly one pair\" and reasoned from the six author-only "
+        f"blocked pairs.** Over the real product it is {len(sb)} states across "
+        f"{len(shapes)} shapes: **a derivation cap by `assistant` or `system` "
+        f"lowers effective authority without changing disclosure**, so the "
+        f"author-only projection cannot see those contentions at all.")
+    return {"matrix": matrix, "coverage": coverage, "contention": contention}
 
 
 def _apply(text: str, regions: dict[str, str]) -> str:

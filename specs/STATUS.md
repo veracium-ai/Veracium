@@ -4,7 +4,7 @@
 
 # Spec status
 
-**11 specs · 0 accepted · 13 external review
+**11 specs · 0 accepted · 14 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -15,7 +15,7 @@ is the number that decides what can be built.
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `deferred` | 2026-08-02 | 1 | 2 | 3 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-02 | 2 | 8 | 0 | 0 | 10 | 8/10 |
-| **0003** | supersession authority | `in review` | 2026-08-02 | 1 | 3 | 1 | 0 | 1 | 0/1 |
+| **0003** | supersession authority | `in review` | 2026-08-02 | 1 | 4 | 1 | 0 | 1 | 0/1 |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0006** | source identity and evidence basis | `draft` | 2026-08-02 | 0 | 0 | 2 | 0 | 0 | — |

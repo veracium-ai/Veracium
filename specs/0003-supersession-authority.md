@@ -4,24 +4,24 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v4)** — submitted 2026-08-02 16:17 UTC. **The third review approved the narrow
-> design** and returned five focused items, all applied. **The substantive one:
-> refusing a retirement kept the edge and not the fact** — measured, a query at
-> the budget still evicted the user's fact, because ranking ties break on
-> recency and authority is not an input. **§4d adds the one clause that closes
-> it, and withdraws v3's claim that recall was untouched.** The claim is now
-> qualified by *recorded* authority; the stale v2 history/interface text is
-> deleted rather than annotated.
+> **in review (v5)** — submitted 2026-08-02 16:55 UTC. **The fourth review approved the narrow
+> design again** and returned five items. **The substantive one: v4's ranking
+> rule did not deliver I6a** — an authority tie-break only fires on a tie, and a
+> refused edge can simply be more relevant. Measured. §4d now makes authority
+> dominate **within an active functional-contention group**, scoped so ordering
+> between unrelated edges is untouched. **And "exactly one contention pair" was
+> the author-only projection: over the real product it is 44 states across six
+> shapes**, now generated rather than reasoned.
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — *re-read before editing; quote the version you approve.* v1 (8) · v2 (12) · **v3 narrowed scope; r3 approved the narrow design** and returned 5 focused items, applied here. |
+| **Version** | **v5** — *re-read before editing; quote the version you approve.* v1 (8) · v2 (12) · v3 narrowed · v4 (5) — **narrow design approved at r3 and r4.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 answered 2026-08-01**; I7 shipped (`362f474`); external review not sent. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
-| **External review** | required — **three rounds completed** (r1 8 findings · r2 12 · r3 5, narrow design approved). `specs/reviews.py` is the source. |
+| **External review** | required — **four rounds complete**; the narrow design was approved at r3 and r4. Counts are generated into `specs/STATUS.md` from `specs/reviews.py`. |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -78,6 +78,168 @@ third-party ingest.
   ladder proves wrong** — see §10 Q3.
 
 ---
+
+## 2. Field contracts touched
+
+| field | read / written | documented contract | consumers | preserved? |
+|---|---|---|---|---|
+| `Edge.active` | `invalidate_edge`; read everywhere | "false = retired, retained as history" | `assertable`, `gate.partition_parts`, `render_edges`, `store.edges(active_only)` | **Unchanged.** History is retained and still unreachable through the gate — **this change does not restore it** (`0011` E6). It creates *fewer* inactive edges, not more reachable ones. |
+| `Edge.invalidation_reason` | `apply_supersession` | why an edge retired | `render_edges`, `introspect` | **Unchanged.** This change writes it **less often** and adds no reader — the `SUPERSEDED` marker still never renders through the gate (`0011` E6). |
+| `Provenance.author_of_evidence` | `ingest` | "who authored the evidence — the core injection-resistance signal" | `_disclosure_for`, gate routing, **this guard** | **Read in one more place**; its writers are unchanged. `mcp_server`'s `_AUTHOR` narrowing shipped separately in 0.4.5 and is not part of this change. |
+
+**Enumerated mechanically** — from the interface, not from recall (the method
+that missed three surfaces in `specs/0002`):
+
+```
+$ grep -nE "def (add_|invalidate_|delete_|forget_|set_)" src/veracium/store/base.py
+$ grep -rn "invalidate_edge\|partition_parts\|render_edges" src/veracium/ | grep -v ingest.py
+```
+
+---
+
+## 2c. Untrusted inputs — REQUIRED, blocking
+
+| uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant that pins it** |
+|---|---|---|---|---|---|
+| **host/model `author`** (`mcp_server`) | rejected | rejected | **rejected — raises** | **model declares itself `SYSTEM`** to climb the ladder | **I7**: `_AUTHOR` has no `system` key **and** the lookup raises rather than defaulting |
+| **extractor `object` value** | no supersession | no supersession | — | **any differing value on a functional relation triggers supersession** — this is the attack vector | **I1/I2**: supersession requires authority ≥ prior |
+| **extractor `relation`** | — | unknown relation → non-functional → no supersession | — | extractor picks a *functional* relation for third-party content | **I2** — authority is checked regardless of relation |
+| **host `derived_from`** | none | rejected | **rejected — raises** | omitted where it should cap | I7 ✅ shipped; capping-only unchanged (0.1.7). **Now also load-bearing for supersession** — it is the cap in `effective` (§3), so an omitted `derived_from` overstates authority as well as disclosure. |
+| **older-version store data** | — | pydantic rejects unknown enum | — | — | ⚠️ **no invariant** — carried from `0001` Q3 (`PRAGMA user_version`); a gate on that spec, not this one |
+
+## 2c-ii. Assertions about reach
+
+| assertion | command | result |
+|---|---|---|
+| the supersession loop is unfiltered | `sed -n '136,142p' src/veracium/graph.py` | `store.edges(...)`, no disclosure test |
+| 3 of 9 author pairs unsafe | drive `apply_supersession` over the enum product | user→system, user→3p, system→3p retire |
+| inactive edges reach neither block | `gate.partition(edges, [])` with a superseded edge | absent from both |
+| `remember` is a model-facing tool | `grep -n "@server.tool" src/veracium/mcp_server.py` | `:88` `remember` |
+| `SYSTEM` is host-settable | `grep -n "_AUTHOR" src/veracium/mcp_server.py` | mapped `"system"` → `SYSTEM` (removed by I7) |
+| `confidence` does not affect ranking | read `subgraph_for_query`'s scorer | overlap · active · `observed_at` only |
+
+---
+
+## 3. Trust-class matrix — REQUIRED, blocking
+
+**Directional, because supersession is.** Authority ladder, adopted by research:
+
+```
+USER 3  >  SYSTEM 2  >  ASSISTANT 1  >  THIRD_PARTY 0
+```
+
+> **A functional supersession is permitted only when the incoming edge's
+> *effective* authority is ≥ the prior edge's**, where
+>
+> ```python
+> effective = min(AUTH[author_of_evidence], AUTH[derived_from or author_of_evidence])
+> ```
+
+**The authority is capped, not raw** — research's Q2 answer, and it is the whole
+reason `SYSTEM` can keep rung 2 without splitting the enum. `SYSTEM` means two
+different things today: host state veracium derived itself, and a summary of
+somebody else's content. Capping separates them **using machinery that already
+exists** rather than a new class:
+
+| edge | raw | `derived_from` | **effective** | consequence |
+|---|---|---|---|---|
+| host-state `SYSTEM` | 2 | — | **2** | keeps rung 2; may retire a third-party claim |
+| **`SYSTEM` summary of an attacker's email** | 2 | `THIRD_PARTY` | **0** | **retires nothing** — the door Q2 was about |
+| `USER` repeating something they read | 3 | `THIRD_PARTY` | **0** | consistent with it rendering `third-party-derived` under Q5 |
+| `ASSISTANT` inference over user testimony | 1 | `USER` | **1** | `min` — capping never raises |
+
+**This makes the ladder the fifth instance of the one shape, not an exception to
+it:** `derived_from` may cap never raise · configuration may narrow never widen ·
+maintenance may narrow never widen · **supersession authority is capped by
+provenance, never raised by it** · supersession by an equal-or-better-entitled
+party, never a lesser one.
+
+<!-- GENERATED:matrix -->
+`USER 3 > SYSTEM 2 > ASSISTANT 1 > THIRD_PARTY 0`
+
+| prior | incoming | result | |
+|---|---|---|---|
+| `user` | `user` | allow | same class |
+| `user` | `system` | **BLOCK** |  |
+| `user` | `assistant` | **BLOCK** |  |
+| `user` | `third_party` | **BLOCK** |  |
+| `system` | `user` | allow |  |
+| `system` | `system` | allow | same class |
+| `system` | `assistant` | **BLOCK** |  |
+| `system` | `third_party` | **BLOCK** |  |
+| `assistant` | `user` | allow |  |
+| `assistant` | `system` | allow |  |
+| `assistant` | `assistant` | allow | same class |
+| `assistant` | `third_party` | **BLOCK** |  |
+| `third_party` | `user` | allow |  |
+| `third_party` | `system` | allow |  |
+| `third_party` | `assistant` | allow |  |
+| `third_party` | `third_party` | allow | same class |
+<!-- /GENERATED:matrix -->
+
+**Generated from `specs/ladder.py`.** v1 wrote this table by hand and inverted
+two of four `ASSISTANT` cases, including `assistant → third_party` — the unsafe
+direction, which would have let assistant-generated content retire a
+third-party record. **The document it was transcribed from had all four right.**
+
+<!-- GENERATED:coverage -->
+**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows, not 16.** **80 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 80 have the cap absent on both sides.
+
+| prior author/derived | incoming author/derived | result | |
+|---|---|---|---|
+| `user`/`—` | `user`/`system` | **BLOCK** | differs from the author-only answer |
+| `user`/`—` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
+| `user`/`—` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`system` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
+| `user`/`user` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
+
+*(first 6 of 80; the test enumerates all 400)*
+<!-- /GENERATED:coverage -->
+
+**The nine non-`ASSISTANT` pairs were measured against the running code.**
+Assertability ordering and like-for-like+user-override both score 8/9, **failing
+on different cases**, which is the diagnostic: disclosure answers *may this be
+asserted*, supersession asks *who may declare this stale*. Different axis.
+
+⚠️ **The `ASSISTANT` row was never measured**, and v1's prose implied it had
+been. It is now generated, so the claim and the table cannot diverge again.
+
+**Extends to `ASSISTANT` with no new concept**, and **v2 must generate that row
+from the constants rather than write it out.** v1 wrote it out and inverted two
+of four — `assistant → user` and `assistant → third_party` — while the source it
+was copied from had all four right. The rule is one line of arithmetic
+(`AUTH[incoming] >= AUTH[prior]`); **restating its consequences in prose is what
+introduced the only normative contradiction in this spec.**
+
+**Answering the required questions.**
+- *Can a user-asserted fact become non-assertable?* **Today yes — that is the
+  defect.** After: only by a party of equal or greater **recorded effective** authority.
+- *Can non-user content gain user-grade authority?* No. This change only
+  **removes** the ability to retire; it grants nothing.
+- *Can it clear `needs_confirmation`?* No path added.
+- *Does it merge, drop or overwrite provenance?* No. Blocked supersessions leave
+  both edges intact, which is the additive-noise side of the asymmetry.
+
+**Write-time or maintain-time?** **Write-time** — `apply_supersession` runs at
+ingest. Note this is the *first* trust defect we have found in the write path;
+0.4.1 and 0.4.4 were both maintenance.
+
+---
+
+## 1b. `correct()` is a second path, and it is out of scope
+
+**`correct()` is the only code that writes `supersedes=`, and it never calls
+`apply_supersession`** — the two sets are disjoint, so a guard in the functional
+loop does not cover it.
+
+**Recorded as a known gap, not designed here.** The fix — one authorised
+replacement operation covering supersession, absorption and correction — is
+**`specs/0011` E5**.
+
+**Why deferring it is defensible:** `correct()` requires an operator to select a
+specific edge and invoke it. The functional loop fires **automatically** on
+ingested content, and the reported attack is the automatic one.
 
 ## 2. Field contracts touched
 
@@ -214,7 +376,7 @@ introduced the only normative contradiction in this spec.**
 
 **Answering the required questions.**
 - *Can a user-asserted fact become non-assertable?* **Today yes — that is the
-  defect.** After: only by a party of equal or greater authority.
+  defect.** After: only by a party of equal or greater **recorded effective** authority.
 - *Can non-user content gain user-grade authority?* No. This change only
   **removes** the ability to retire; it grants nothing.
 - *Can it clear `needs_confirmation`?* No path added.
@@ -392,21 +554,24 @@ reported attack is the second; the first is a narrower loss.
 
 | | before | after |
 |---|---|---|
-| email claims a different job | user's fact **retired and invisible** | user's fact **stays current**; the claim shows in UNVERIFIED |
-| user states a new job | old retired, **invisible** | old retired, **shown as SUPERSEDED** |
-| model calls `remember(author="system")` | accepted → `SYSTEM` | **raises** |
-| `remember(author="typo")` | **silently became `USER`** | **raises** |
+| email claims a different job | user's fact **retired and invisible** | user's fact **stays active and stays retrievable** (§4d); the claim shows in UNVERIFIED |
+| a `SYSTEM` inference contradicts a `USER` fact | user's fact retired | **both active**, user's first — one of 44 same-partition states (§4c) |
+| user states a new job | old retired, invisible | **unchanged** — still retired, still invisible (`0011` E6) |
 
-**Exact rendering change** — superseded edges now reach the grounded block via
-the existing branch, unchanged in wording:
+**Two things change, and only two:**
 
-```
-works_as: CFO at Acme (SUPERSEDED 2026-01-15→2026-05-02)
-```
+1. **the guard** — `apply_supersession`'s functional branch refuses a retirement
+   by lower recorded effective authority (§4a);
+2. **contention ordering** — within an active functional-contention group,
+   authority ranks ahead of relevance and recency (§4d).
 
-**Interfaces:** MCP `remember` no longer accepts `author="system"` — a
-**narrowing** of what a caller may claim, adding no capability. **Migration:**
-none; no stored data changes.
+**Interfaces:** none. **Schema:** none. **Migration:** none — no stored data
+changes, and no field is added or removed. The refusal record (§4b) is a new
+durable log, not a change to any existing record.
+
+**Not changed:** `correct()`, absorption, ingest labelling, disclosure routing,
+history visibility, and the MCP author narrowing — which shipped in 0.4.5 and is
+listed here only because v2 wrongly claimed it as an effect of this change.
 
 ---
 
@@ -439,11 +604,24 @@ recall are untouched.
 
 **A refusal must be observable or it is indistinguishable from a bug.**
 
-> When a retirement is refused, `apply_supersession` records it: a counter for
-> telemetry (`supersessions_refused`) and a `diagnostics` line naming the
-> relation, the two effective authorities, and the reason. **No memory content
-> is recorded** — the field contract is the same content-free shape the existing
-> counters use.
+> When a retirement is refused, `apply_supersession` records a **durable,
+> content-free** entry:
+>
+> ```
+> refusal_id · user_id · prior_edge_id · incoming_edge_id · relation
+> prior_effective · incoming_effective · rule_version · timestamp
+> ```
+>
+> plus a `supersessions_refused` counter. **Opaque edge ids are not memory
+> content** — no subject, object or note is recorded.
+
+**v4 recorded only the relation and two authority levels, and §3a claimed that
+made later reconciliation tractable. It did not** — many refusals share a
+relation and an authority pair, so the record could not identify *which* edges
+contended. **`0011` cannot re-evaluate an inventory it cannot enumerate.**
+
+**The counter is per-store and durable**, not process-local: a process-local
+count is telemetry, and this needs to be an inventory.
 
 **This is how a host discovers that the guard is doing something**, and it is
 the only way we will learn whether legitimate updates are being blocked in real
@@ -453,26 +631,36 @@ deployments — which §8 lists as this change's main risk.
 
 ## 4c. What a refusal leaves behind
 
-**Blocking means two active edges on a functional relation.** For five of the
-six blocked pairs that is already handled: the incoming edge is `use_only` or
-`quarantined`, so the existing gate routes it to the unverified block and the
-partitioning separates them.
+**Blocking means two active edges on a functional relation.** For most refused
+states the existing gate already separates them — the incoming edge is
+`use_only` or `quarantined` and routes to the unverified block.
 
-**Exactly one pair puts both in the grounded block: `user` prior, `system`
-incoming** — both `MENTIONABLE`. There, recall renders **both values**, the
-user's first.
+<!-- GENERATED:contention -->
+**140 of the 400 states are refused. 44 of those put both edges in the SAME read partition** — the cases a reader sees as two competing values. The rest are already separated by the existing gate.
+
+| author shape | states | partition |
+|---|---|---|
+| `user` → `assistant` | 12 | both `mentionable` |
+| `system` → `assistant` | 12 | both `mentionable` |
+| `user` → `system` | 9 | both `mentionable` |
+| `user` → `user` | 5 | both `mentionable` |
+| `system` → `user` | 3 | both `mentionable` |
+| `system` → `system` | 3 | both `mentionable` |
+
+**v4 said "exactly one pair" and reasoned from the six author-only blocked pairs.** Over the real product it is 44 states across 6 shapes: **a derivation cap by `assistant` or `system` lowers effective authority without changing disclosure**, so the author-only projection cannot see those contentions at all.
+<!-- /GENERATED:contention -->
+
+**In those same-partition cases recall renders both values**, the
+higher-authority one first (§4d).
 
 **That is a real change in what a host sees, and it is the correct direction.**
-Today the system inference **replaces** the user's fact and the model sees one
+Today the lower-authority edge **replaces** the prior and the model sees one
 wrong value. After this it sees two, one of which is right, and the
-contradiction is visible. *Surface the tension, never reconcile it* is this
-project's existing rule for exactly this case.
+contradiction is visible. *Surface the tension, never reconcile it.*
 
 **Stated as a limit, not solved:** a functional relation with two active values
-has no unique current value, and consumers that assume one will see the newest.
-**Contested-relation semantics are `0011` E3.**
-
----
+has no unique current value, and a consumer that assumes one will take the
+first. **Contested-relation semantics are `0011` E3.**
 
 ## 4d. Keeping the edge is not keeping the fact
 
@@ -496,9 +684,26 @@ pair straddles the cutoff the user's fact is evicted anyway. **The guard alone
 would have closed the store-level symptom and left the reported behaviour
 intact.**
 
-> **One clause closes it:** among edges of equal relevance, rank by **effective
-> authority before recency**. A user fact outranks a third-party claim it ties
-> with; recency continues to break ties within an authority level.
+> **The rule, corrected:** within one **active functional-contention group** —
+> the active edges sharing a `(subject, relation)` key — **recorded effective
+> authority dominates, ahead of relevance and recency.** Ordering *between*
+> unrelated edges is unchanged.
+
+**v4 said "among edges of equal relevance, authority before recency", and that
+does not deliver I6a.** The tie-break only fires on a tie, and the refused edge
+can simply be more relevant. **Measured:**
+
+```
+prior    USER        "CFO"                       relevance lower
+incoming THIRD_PARTY "unemployed job work role"  relevance higher, refused
+
+max_edges=1  ['incoming']   -> the authority tie-break is never reached
+```
+
+**Scoping it to the contention group is what keeps the change small.** Authority
+does **not** become a global ranking term — two unrelated edges of equal
+relevance are ordered exactly as before. It applies only where the guard has
+already established that one edge failed to retire another.
 
 **This is a recall change, and v3 claimed there was none.** That claim was wrong
 and is withdrawn — the guard needs this clause to deliver what it promises. It
@@ -574,8 +779,9 @@ cannot disagree. v1 wrote that table by hand and inverted two of four
   reversible" while also saying prior retirements were unrepairable.
 - **New attack surface?** None added — this removes a capability. **It does not
   make retained history visible**; superseded edges still do not reach the model
-  (`0011` E6). §4d's ranking clause orders two *active* edges and exposes
-  nothing that was hidden.
+  (`0011` E6). §4d's ranking clause orders two *active* edges — it adds no
+  authorisation surface, but it **does change which active facts enter the
+  prompt**, which is a top-k exposure change and is stated as one.
 
 ---
 
@@ -658,7 +864,7 @@ lower-authority party is routinely the correct one.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| ~~**Q1**~~ | **ANSWERED 2026-08-01 20:56 — yes, rung 1.** *And the conditional was the right one:* **I5 becomes a precondition of shipping, not a sibling** (§6). | resolved | research | — |
+| ~~I5 (as a history prerequisite)~~ | **Superseded.** In the narrowed design **I5 is refusal telemetry**; history visibility is `0011` E6. | moved | — | — |
 | ~~**Q2**~~ | **ANSWERED 2026-08-01 20:56 — `SYSTEM` keeps rung 2, but the ladder uses CAPPED authority** (§3). Do not split the enum; `min(author, derived_from)` already distinguishes host state from a summary of someone else's content. **Sufficient post-I7**, since `system` is no longer reachable through the MCP tool. | resolved | research | — |
 | **Q2a** | **Recorded trigger, not an open question:** if the CLI is ever agent-driven, `cli.py:180` becomes the same surface I7 just closed and rung 2 needs re-adjudicating. | `watch` | dev | on any CLI automation |
 | ~~**Q3**~~ | **ADOPTED, narrowly.** *Never supersede, keep both, surface contention* is exactly what a refusal now does — for the refused cases only, not as a wholesale replacement of functional semantics. §4c. | resolved | — | — |
@@ -674,7 +880,9 @@ lower-authority party is routinely the correct one.
 |---|---|---|---|
 | v1 | deferred — direction approved | 8 | `proposals/0003-review-1.md` |
 | v2 | deferred — direction approved, blockers architectural | 12 | `proposals/0003-review-2.md` |
-| **v3** | **narrowed to the reported defect**; breadth → `specs/0011` | — | this document |
+| v3 | narrowed to the reported defect; breadth → `specs/0011` | — | `proposals/0003-review-3.md` |
+| v4 | narrow design approved; deferred for retrieval fix + deletion pass | 5 | `proposals/0003-review-4.md` |
+| **v5** | **retrieval rule corrected; broad text deleted** | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
