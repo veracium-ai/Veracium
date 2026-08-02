@@ -4,24 +4,23 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v2)** — submitted 2026-08-02 18:07 UTC. **The clearing rule was approved at the
-> first external review; the spec was not.** The blocking finding is one I had
-> not seen: **closing the path that *clears* the flag left open the path that
-> stops it being set** — reinforcement advances `observed_at` unconditionally,
-> so repeated third-party restatement suppresses the warning entirely.
-> **Measured (§3d).** C3a closes it. Also: the matrix now separates *clears* from
-> *advances liveness*, C1 gains a structural writer check, the `confirm()`
-> guarantee is **conditional on stated host obligations**, the field's meaning is
-> narrowed to what the mechanism proves, and the audit record resolves C-Q1
-> rather than deferring it.
+> **in review (v3)** — submitted 2026-08-02 18:17 UTC. **The clearing rule has now been
+> approved twice; the spec was deferred twice for things around it.** v2's
+> liveness rule is **withdrawn**: it used recorded effective authority as a
+> proxy for renewed observation, which is this spec's own error one level up,
+> and it contradicted this spec's own matrix in two rows. **Liveness moves to
+> `specs/0012`** and `0008` claims one sentence. The confirmation audit is now
+> one atomic operation with a declared schema, the clearing transition is
+> centralised rather than checked by AST alone, and `call_path` is stated as
+> host-attested and non-authoritative.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — *re-read before editing; quote the version you approve.* v1 deferred at first external review (7 findings); the clearing rule was approved. |
+| **Version** | **v3** — *re-read before editing; quote the version you approve.* v1 deferred (7 findings) · v2 deferred (11) — **the clearing rule was approved in both.** v3 narrows to it. |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M3/§7b. **`0002` is a retrospective and must be closeable; this is a proposal and is not.** |
 | **Internal reviewers** | research — **R2** (fail-closed rule) and **R3** (strict; not temporary) |
-| **External review** | required — `graph.py` is guarded; **second review of `0002` found the hole this spec closes** |
+| **External review** | required — **two rounds complete on this spec** (r1 7 findings · r2 11). Counts are generated into `specs/STATUS.md`. Not to be confused with the `0002` review that first found M3. |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -89,7 +88,7 @@ other.
 | **host/model `author`** on `remember` | enum-rejected | enum-rejected | enum-rejected | **`author="user"` on model-authored text** — and `remember` is `@server.tool()`, so **the model reaches this directly** | **C1** — no value of `author` clears the flag |
 | **`source_id`** (future, `0006`) | — | — | — | host reuses one id across unrelated sources | **C1** — no field clears the flag, whatever it is |
 | **`actor`** on `confirm()` | defaults `user` | — | — | mislabelled | **C2** — `actor` is recorded, never load-bearing; the **call** is the evidence |
-| **call frequency** | — | — | — | repeated `confirm()` to hold a fact fresh forever | ⚠️ **no invariant.** A host with API access can do this by design; stated so it is not mistaken for covered |
+| **call frequency** | — | — | — | repeated `confirm()` to hold a fact fresh forever | **audited, not limited** (§6b). A host with API access can do this by design; the record makes it **visible**, which is the part veracium can provide. Rate limiting is host policy |
 
 > **Template rule this spec is the first to follow** *(research, 2026-08-01;
 > proposed as a `Process-Change`)*: **a rule that relies on an input listed in
@@ -116,12 +115,17 @@ liveness, and that decides whether the flag is ever **set** (§3d).
 | candidate | clears the flag? | advances liveness? |
 |---|---|---|
 | **`confirm()`** — host API, not model-reachable | **yes** | yes |
-| `remember(author="user")`, same value | **no** | **only if entitled** (C3a) |
-| `remember(author="system")`, same value | **no** | **only if entitled** (C3a) |
-| third-party restatement | **no** | **no** — not entitled |
-| cross-class restatement | no *(0.4.5)* | no |
+| `remember(author="user")`, same value | **no** | **unchanged — `0012`** |
+| `remember(author="system")`, same value | **no** | **unchanged — `0012`** |
+| third-party restatement | **no** | **unchanged — `0012`** |
+| cross-class restatement | no *(0.4.5)* | **unchanged — `0012`** |
 | `expire()` · consolidation · dedup · wiki | **no** | no — maintenance never refreshes |
-| same `source_id` *(future, `0006`)* | **no** | **no** — grouping is not authentication |
+| same `source_id` *(future, `0006`)* | **no** | **unchanged — `0012`** |
+
+**The liveness column says `unchanged` rather than a rule**, because this spec
+does not have one. v2 filled it from the supersession ladder and the result
+contradicted this very table in two rows — `third_party → third_party` and
+`third_party → user` both renew under authority and are denied here.
 
 > **The governing principle:** *an act through a dedicated entry point is
 > evidence; a field asserting who acted is not.* **Add an entry point, not a
@@ -133,46 +137,38 @@ claim has produced **new user evidence**, which belongs in `remember()`.
 what is already there, at the trust it already has.
 
 
-## 3d. Clearing is not the only way to defeat the flag
+## 3d. Clearing is not the only way to defeat the flag — and that is `0012`
 
-**First external review, finding 1, and it is measured.** This spec closes the
-path that *clears* `needs_confirmation`. It left open the path that stops the
-flag from ever being **set** — and that path is reachable by the same untrusted
-content.
-
-`expire()` ages a fact against `observed_at` (`lifecycle.py:41`), and
-reinforcement advances `observed_at` unconditionally (`graph.py:107`). So a
-repeated restatement keeps a fact permanently fresh:
+**Measured.** `expire()` ages against `observed_at` and reinforcement advances
+`observed_at` unconditionally, so repeated restatement keeps a fact permanently
+fresh and the flag never fires:
 
 ```
 SLOW relation, lifetime 120 days, edge 200 days old
-
-control, no restatement          -> needs_confirmation = True
-4 THIRD_PARTY restatements       -> needs_confirmation = False
-                                    observed_at pushed forward each time
+control, no restatement       -> needs_confirmation = True
+4 THIRD_PARTY restatements    -> needs_confirmation = False
 ```
 
-**The restatements are `THIRD_PARTY`** — the class this spec's own §1 treats as
-adversarial. **A party that cannot clear the flag does not need to: it can
-prevent the flag appearing.** Closing one and not the other leaves the boundary
-open while the document claims it is shut.
+**A party that cannot clear the flag can prevent it appearing**, and the
+restatements are the class §1 treats as adversarial.
 
-> **C3a — reinforcement that is not entitled to reaffirm an edge may not
-> postpone that edge's confirmation deadline.** The incoming observation is
-> stored as its own evidence; **its currency is not transferred onto the prior
-> assertion.**
+**v2 tried to fix this here, with recorded effective authority, and the second
+external review rejected it. Correctly.** Authority answers *how strongly may
+this evidence affect trust decisions*; it does not answer *did this source
+observe the fact again*. **That is this spec's own error one level up** — §1
+rejects same-author-class because unrelated sources share a class, and unrelated
+sources share an authority rung too. It also contradicted the matrix below and
+depended on `0003`, which is not accepted.
 
-**This is deliberately narrower than "reinforcement may not refresh liveness".**
-Same-source, same-authority restatement is the case the liveness rule exists for
-and C3 still protects it. **The entitlement test is the one this spec already
-uses** — recorded effective authority, per `specs/0003` — so no new concept is
-introduced.
+> **Moved to `specs/0012`.** `0008` closes the clearing path and **claims
+> nothing about liveness.** §8 says so.
 
-**The lapse argument still holds and is why C3 stays.** A fact stated once and
-never again should lapse; a fact genuinely re-observed should not. **What was
-wrong was treating *any* repetition as re-observation.**
+**Why it cannot be a smaller fix here:** reinforcement **discards** the incoming
+edge today, so *"store the incoming observation as its own evidence"* is a new
+representation, not a narrower version of this change.
 
 ---
+
 
 ## 4. Behaviour
 
@@ -202,11 +198,10 @@ ships today.
 
 | invariant | executable check | where |
 |---|---|---|
-| **C1** no value of any provenance field clears `needs_confirmation` | **two checks, because one cannot establish this.** `test_no_provenance_value_clears_staleness` — behavioural, over **every** provenance input (`author_of_evidence` · `derived_from` · `source_type` · `evidence_ref` · `disclosure` · `confidence`), not `EvidenceAuthor` alone · `test_only_confirm_writes_the_flag_false` — **structural**, an AST inventory of every site assigning `needs_confirmation = False`, whose expected set is `{confirm()}` | CI |
+| **C1** no value of any provenance field clears `needs_confirmation` | **three checks, because neither alone establishes it.** `test_no_provenance_value_clears_staleness` — behavioural, over **every** provenance input, not `EvidenceAuthor` alone · `test_only_confirm_clears_the_flag` — **runtime**: the transition is centralised in `clear_needs_confirmation(edge, confirmation_context)` and the store **rejects a `True → False` write without that context** · `test_no_direct_writer_outside_the_helper` — an AST inventory as *defence in depth*. **v2 had the AST check alone, and it cannot see `model_copy(update=…)`, `setattr`, a reconstructed edge, or deserialisation** | CI |
 | **C2** `confirm()` clears it | `test_confirm_clears_staleness` | CI |
 | **C2a** `actor` is audit metadata and grants nothing | `test_actor_metadata_does_not_grant_confirmation_authority` — authority comes from the protected call path; v1's name (*"clears regardless of actor label"*) read as normalising arbitrary labels | CI |
-| **C3** **entitled** reinforcement still refreshes liveness | `test_entitled_reinforcement_still_advances_observed_at` — **the permission, not the prohibition**; without it the fix looks correct and quietly breaks lapse behaviour |
-| **C3a** un-entitled reinforcement **may not postpone the confirmation deadline** | `test_third_party_repetition_cannot_suppress_the_flag` — the measured §3d reproduction becomes the fixture: control flags, four third-party restatements must still flag | CI |
+| **C3** reinforcement still refreshes liveness — **unchanged by this spec** | `test_reinforcement_still_advances_observed_at` — **the permission, not the prohibition.** A deletion drawn too broadly would remove liveness refresh along with the flag clearing, and no other test distinguishes them. **Whether this behaviour is right at all is `0012`** |
 | **C4** maintenance never clears | `test_no_maintenance_op_clears_staleness` — property-based over random op sequences, and **asserts its operation registry against the `@store_mutator` surface**, so a newly added maintenance operation cannot stay invisible to it | CI |
 | **C5** the flag reaches the model when set | `test_stale_marker_renders` | CI |
 | **C6** the 0.4.5 reproducer stays fixed | `test_cross_author_restatement_does_not_clear` — regression, cross-class was the half 0.4.5 got right | CI |
@@ -265,17 +260,32 @@ a caller at all.
 auditability `pre-release`.** Making a transition the entire trust boundary and
 leaving it unobservable is not a defensible pairing.
 
-> **Every `confirm()` writes a content-free record:**
+> **One atomic store operation**, `@store_mutator`:
 > ```
-> principal · edge_id · confirmed_at · call-path identity · correlation_id
+> confirm_edge(principal, edge_id, confirmed_at,
+>              call_path, correlation_id) -> None
 > ```
-> **No edge content.** Same shape and erasure policy as `0003`'s refusal record.
+> It validates the edge and principal, enforces the assertability rule,
+> rejects a replayed `correlation_id`, clears the flag, and **persists the audit
+> record — in one commit.**
 
-**Repeated confirmation is allowed without limit and audited.** Rate limiting is
-host policy — veracium cannot tell a legitimate re-affirmation from an
-automated one, and **guessing a limit would substitute our judgement for the
-host's while still not detecting misuse.** The record is what makes misuse
-*visible*, which is the part we can actually provide.
+**If the audit cannot commit, the confirmation fails and the flag is not
+cleared.** v2 required the record and said nothing about failure, which makes
+the sole clearing transition unobservable in exactly the cases worth observing.
+**A confirmation without its audit must not be allowed.**
+
+**Schema — declared, not waved at.** A new `confirmations` table: `principal ·
+edge_id · confirmed_at · call_path · correlation_id`, unique on
+`correlation_id`, indexed on `edge_id`. **`forget_user()` deletes the user's
+rows**; **export/import excludes them** — a confirmation is a fact about this
+store's history, not about the memory. Retained while the edge exists.
+**No edge content is recorded.**
+
+**`call_path` is host-attested and non-authoritative.** It is a label the host
+supplies describing which integration route was used, kept for audit only.
+**It grants nothing** — if it were load-bearing it would be `actor` again,
+which §6a rejects. Authorisation comes from the host's gating of the operation
+(§6a), never from a field inside it.
 
 **C-Q1 is resolved by this**, not deferred.
 
@@ -291,7 +301,8 @@ against silent removal of a caveat that should have stayed.
 existing values stay exactly as they are"* and that was wrong in a way that
 matters:
 
-> **No schema or migration change is required. The implementation is
+> **A new `confirmations` table is added** (§6b). **No existing table or field
+> changes and no stored edge or episode is migrated. The implementation is
 > rollbackable, but behaviour during deployment changes persisted edge state**,
 > and reverting does not reconstruct the counterfactual the old rule would have
 > produced.
@@ -305,14 +316,17 @@ right direction to fail, and it is still not "no data changes".**
 
 ## 8. Claims and limits
 
-**Claim:** *only an explicit `confirm()` clears `needs_confirmation`, and
-reinforcement that is not entitled to reaffirm an edge cannot postpone its
-confirmation deadline.*
+**Claim, and it is one sentence on purpose:** *only an explicit `confirm()`
+clears `needs_confirmation`.*
 
-**The second clause is new in v2 and it is the one that makes the first worth
-having.** Closing the clearing path alone left the flag suppressible by anyone
-who could repeat a fact — measured in §3d, using the `THIRD_PARTY` class this
-spec calls adversarial.
+**Liveness is explicitly out of claim.** §3d measures a second way to defeat the
+warning — repeated restatement prevents the flag being set at all — and **this
+spec does not fix it.** `specs/0012` owns it. **A reader must not take this
+spec as closing the staleness boundary; it closes one of its two doors.**
+
+**v2 claimed both doors and the second external review rejected the mechanism**
+— it used supersession authority as a proxy for renewed observation, which is
+this spec's own error one level up.
 
 **What this does NOT establish:**
 
