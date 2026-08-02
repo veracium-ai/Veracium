@@ -8,7 +8,8 @@ round found a status claim contradicting another status claim.
 Every column is derived:
 
   status        the `Spec-Status:` line in the file
-  updated       `git log -1` on the file -- not a date anyone types
+  updated       `git log -1` on the file, or today if it is uncommitted --
+                never a date anyone types
   internal /    specs/reviews.py
   external
   open Qs       question-table rows not struck through or marked resolved
@@ -21,6 +22,7 @@ Every column is derived:
 from __future__ import annotations
 
 import argparse
+import datetime
 import pathlib
 import re
 import subprocess
@@ -37,6 +39,23 @@ QROW = re.compile(r"^\|\s*(~{0,2})\*\*([A-Z]{0,2}-?Q\d+[a-z]?)\*\*~{0,2}\s*\|(.*
 
 
 def _updated(path: pathlib.Path) -> str:
+    """The last commit date of `path` -- or **today**, if the working tree's copy
+    differs from what is committed.
+
+    The fallback is the whole point. Reading `git log -1` alone makes this
+    renderer's output depend on a commit that does not exist yet: edit a spec on
+    a later day than its previous commit, regenerate (still yesterday's date),
+    commit -- and the commit itself makes STATUS.md stale, because now
+    `git log -1` says today. `--check` then fails in CI on **every** spec commit
+    that crosses a day boundary, and the only escape is to regenerate and amend.
+
+    Anticipating the date the pending commit will carry converges instead: the
+    rendered value already says today, so committing does not change it. Found
+    by running `--check` after committing `0007` v2 rather than only before."""
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", str(path)],
+                           capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    if dirty:
+        return datetime.date.today().isoformat()
     r = subprocess.run(["git", "log", "-1", "--format=%cs", "--", str(path)],
                        capture_output=True, text=True, cwd=ROOT)
     # An archive is not a checkout: say so rather than printing a bare dash that
@@ -111,7 +130,9 @@ is the number that decides what can be built.
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
-**Columns.** *updated* is `git log -1` on the file, not a typed date. *int*/*ext*
+**Columns.** *updated* is `git log -1` on the file — or today, when the file has
+uncommitted changes, since the commit that would carry that date does not exist
+while this runs. Never a typed date. *int*/*ext*
 are review rounds from `specs/reviews.py`. *open Q* counts question-table rows
 not struck, resolved, moved or ruled. *findings* is how many entries in
 `specs/findings.py` this spec owns; *code* is how many of those are shipped or

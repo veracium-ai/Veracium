@@ -19,7 +19,7 @@ is the number that decides what can be built.
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0006** | source identity and evidence basis | `draft` | 2026-08-02 | 0 | 0 | 2 | 0 | 0 | — |
-| **0007** | on-disk store schema versioning | `in review` | 2026-08-01 | 0 | 0 | 1 | 0 | 0 | — |
+| **0007** | on-disk store schema versioning | `in review` | 2026-08-02 | 0 | 0 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-02 | 0 | 4 | 0 | 0 | 1 | 0/1 |
 | **0009** | outcome authorship is append-only history | `draft` | 2026-08-02 | 0 | 0 | 1 | 0 | 1 | 0/1 |
 | **0010** | crash-safe consolidation | `draft` | 2026-08-02 | 0 | 0 | 1 | 0 | 2 | 0/2 |
@@ -29,7 +29,9 @@ is the number that decides what can be built.
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
 
-**Columns.** *updated* is `git log -1` on the file, not a typed date. *int*/*ext*
+**Columns.** *updated* is `git log -1` on the file — or today, when the file has
+uncommitted changes, since the commit that would carry that date does not exist
+while this runs. Never a typed date. *int*/*ext*
 are review rounds from `specs/reviews.py`. *open Q* counts question-table rows
 not struck, resolved, moved or ruled. *findings* is how many entries in
 `specs/findings.py` this spec owns; *code* is how many of those are shipped or
