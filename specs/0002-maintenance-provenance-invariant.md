@@ -1,17 +1,15 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v6)** — submitted 2026-08-02 03:12 UTC. **All eleven findings of the fifth
-> review are closed.** The change that matters is structural: **status prose is
-> now generated from `specs/findings.py`**, so the class of defect that deferred
-> all five previous versions — a status claim contradicting another status claim
-> — is no longer possible to introduce by hand. Identity carries full branch
-> discriminators (the reviewer's `4bd2` collision is resolved), mutator
-> discovery is declarative, `transfer` has a formal regime, and `0010`'s
-> whole-batch lineage closes a laundering path that would have shipped.
+> **deferred (v6)** — sixth external review 2026-08-02 03:46 UTC. **Invariant approved a sixth
+> time.** Every falsifiable finding checked; **all stand**, including three live
+> code defects and a check that **fails open in the exact place it claims to
+> fail closed.** The generated-records mechanism was necessary and is not
+> sufficient: **it governs the regions it generates, and the rest of the
+> document still carries hand-maintained verdicts.** See §12.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -1053,6 +1051,45 @@ I swept for **`previously read`-style annotations and the obsolete ledger** —
 the shape of my *own correction pattern* — and never for **every place a rule is
 stated.** §3's `**Fix:**` lines were never annotated, so the sweep could not see
 them. **A search for one's own edits is not a search for the rule.**
+
+### Sixth review — disposition
+
+**All findings stand. The reviewer ran the code this time** — 210 tests
+collected, 36 targeted tests passed — which is why three of these are defects
+rather than documentation gaps.
+
+**Finding 1 is the one that matters, and it is the same class again.**
+Generating the ledger fixed *the ledger*. **§3's trust-class matrix is also a
+status table, and I never converted it:** it still says `expire()` DECAY is
+*"✅ clean — narrows only"* (`:172`) while the generated ledger says `N4-decay`
+is **open and permits confidence increases**, and §3 still says *"M1–M5, all
+shipped or resolved"* (`:277`) while `N4-decay` is open and owned here.
+**The generated regions are internally consistent and the document around them
+is not.** A mechanism that covers the summaries I remembered to generate is a
+better hand-check wearing a generator's clothes.
+
+| # | finding | verified |
+|---|---|---|
+| 1 | status verdicts survive outside the generated regions | **yes** — §3 `:172`, `:277` |
+| 2 | the pytest collection check **fails open** | **yes** — any nonzero return is read as *"pytest unavailable"*, so a real collection error silently degrades to an AST scan. **The reviewer's run took that path and my success message came from the fallback.** Their environment failed only because the recipe never set `PYTHONPATH` |
+| 3 | N9t is "closed" but unimplemented and untracked | **yes** — `test_transfer_cannot_raise_trust_or_currency` does not exist, `import_memory` still persists claimed trust fields verbatim, and **N9t has no record in `findings.py`, so the generated ledger cannot show it is open** |
+| 4 | N9b omits `source_type` and `evidence_ref` | **yes — measured.** A consolidated summary reports `author_of_evidence=system` **with `source_type=stated` and `evidence_ref=event-0`**. Internally false provenance, and **the original M1 `cold[0]` inheritance surviving on two fields the 0.4.7 test does not inspect** |
+| 5 | the offset fix does not cover `remember()` | **yes — reproduced.** `remember(date="2026-01-01T12:00:00+05:30")` raises `Invalid isoformat string` from `prompts.date_context`, not from `_event_dt`. **One input still has two parsers** |
+| 6 | the manifest does not publish the identity it claims | **yes** — the canonical section publishes the *context only*, not the call expression, so no digest can be recomputed. And `canon[fp] = ctx` collapses rows: `confirm()` and `record_outcome()` both hash to `5b46e2531803`. **The `# audit:` label the tool demands is invisible to an AST walker — a remediation that cannot work** |
+| 7–10 | `0010` fencing primitives, state machine, read contract, mixed time | **accepted in full** |
+
+**Three unimplemented invariants are presented as frozen and closed** — N9t,
+N9b's provenance fields, and `0010`'s protocol. **The structured records only
+know about findings I remembered to record**, which is the fifth review's
+finding relocated one level up: the mechanism narrows the class and does not
+close it.
+
+**And finding 2 deserves naming plainly:** I wrote a fallback that announces
+itself, and treated announcing as sufficient. **A check that degrades on error
+and prints a note is fail-open.** The correct behaviour is to fall back only
+when *importing pytest* fails, and to treat a collection error as fatal.
+
+---
 
 ### Fifth review — disposition
 
