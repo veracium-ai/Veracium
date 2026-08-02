@@ -50,4 +50,10 @@ WITHDRAWN = [
     (r"0\.4\.6 \(unreleased",
      "0.4.6 and 0.4.7 are both published",
      "specs/0002 §11 — generated"),
+    (r"refuse `?correct\(\)`? on a non-assertable edge",
+     "Q5 resolved the other way: a correction inherits the corrected edge's class",
+     "specs/0003 Q5, §M7"),
+    (r"assistant . third_party.{0,10}allow|assistant . user.{0,10}block",
+     "inverted: the ladder gives assistant->user ALLOW and assistant->third_party BLOCK",
+     "specs/0003 §3"),
 ]

@@ -37,7 +37,12 @@ def violations() -> list[tuple[str, str, str, str]]:
         # never copied it in, so its stale X-Q1 and partition text survived a
         # pass that reported "no withdrawn phrases". The lint scans every spec
         # in the directory; the packaging must ship every spec it scans.
-        body = f.read_text().split("## 12. Review history")[0]
+        # Review dispositions quote the text they retract. 0002 calls that
+        # section "Review history" and 0003 calls it "First external review";
+        # splitting on one spec's heading left the other's quotations live, so
+        # the boundary is any "## <n>. ...review..." heading.
+        body = re.split(r"^##+ \d+\w*\..*review",
+                        f.read_text(), flags=re.M | re.I)[0]
         # paragraph granularity: a marker exempts the block it appears in
         for para in re.split(r"\n\s*\n", body):
             flat = _normalise(para)
