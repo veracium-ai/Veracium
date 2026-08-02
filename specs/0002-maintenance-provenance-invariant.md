@@ -1,16 +1,15 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v7)** — submitted 2026-08-02 04:07 UTC. **All ten findings of the sixth review
-> are closed**, including three live code defects. The collection check now
-> **fails closed** — it was reading any pytest error as "pytest unavailable",
-> which is how the reviewer's run produced a green result from an AST fallback.
-> The trust-class matrix is generated, so §3 can no longer disagree with §11.
-> **The archive now ships the complete `tests/` tree**, because the fail-closed
-> check makes a package that cannot collect a package that cannot be verified.
+> **deferred (v7)** — seventh external review 2026-08-02 12:53 UTC. **Invariant approved a
+> seventh time.** All eight findings verified; **all stand**. Two are the
+> generated-status mechanism drifting from itself, and **finding 3 is a logic
+> error in a relation I wrote: N9 forbids the first-time retirement the trust
+> matrix calls clean.** **The review was document-only — the archive was not
+> delivered**, so no implementation claim could be checked. See §12.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -1074,6 +1073,38 @@ I swept for **`previously read`-style annotations and the obsolete ledger** —
 the shape of my *own correction pattern* — and never for **every place a rule is
 stated.** §3's `**Fix:**` lines were never annotated, so the sweep could not see
 them. **A search for one's own edits is not a search for the rule.**
+
+### Seventh review — disposition
+
+**All eight stand. Two are the mechanism failing on its own terms.**
+
+**Finding 3 is a real logic error, not a documentation gap.** N9 governs
+evidence class `none`, which includes `expire()`, and its relation requires
+`post.invalidation_reason == pre.invalidation_reason`. **A first-time retirement
+moves that field from `None` to `"lapsed"`** — so the relation forbids the
+operation §3 lists as clean. Equality is right for an **already-retired** edge
+and wrong for **the transition that retires it**; the rule needs to be
+transition-aware.
+
+| # | finding | verified |
+|---|---|---|
+| 1 | the generated status system has already drifted | **yes** — the header says **v7** (`:7`) and the version row says **v6** (`:30`); the generated summary says *"5 external reviews, 45 findings"* while this document contains **six** dispositions. **`REVIEWS` in `findings.py` still ends at v5**: I wrote the sixth review's prose and never added its record. **The generator covers what I remember to record**, which is the same failure one level up |
+| 2 | the process gate contradicts the ledger | **yes** — only `accepted` authorises implementation, the status is not `accepted`, and two corrective fixes are **committed**. They are new implementations produced during review, not retrospective description |
+| 3 | N9 forbids legitimate expiry | **yes** — above |
+| 4 | N9b still omits `source_type` / `evidence_ref` | **yes** — fixed in code and recorded in the ledger, **absent from the field contract**. A later implementation could reintroduce the defect while satisfying the table |
+| 5 | N9t is declared closed and open | **yes** — `:495` says *"N9t closes it now"*; the ledger says open and unimplemented |
+| 6 | §8 still carries manual counts | **yes** — *"15 clean · 2 fixed · 4 open · 7 moved"* (`:825`), which **omits `open_moved`** — the state added to distinguish open defects owned elsewhere — and is wrong |
+| 7 | §12 recreated the append pattern | **yes** — it says dispositions live elsewhere and then contains four of them |
+| 8 | the invariant table is malformed | **yes** — rows at `:370–378`, prose, then `:390–395` **with no new header**; N9 and N9t are in the orphaned part |
+
+**Not verifiable this round: the archive was not delivered.** The reviewer
+received the Markdown alone, so pytest behaviour, the manifest generator, the
+canonical identity output, the 28-site count and the unreleased fixes are
+**unverified rather than rejected**. **The tarball exists and was tested**
+(`proposals/0002-v7-review-package.tar.gz`); what reached the reviewer was one
+file.
+
+---
 
 ### Sixth review — disposition
 
