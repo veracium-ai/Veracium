@@ -1,16 +1,18 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred (v3)** — third external review 2026-08-01: **invariant approved for
-> the third time; retrospective deferred for the third time.** **The recurring
-> finding recurred, and this time the header asserted it had not** — v3 said the
-> stale rules were *"replaced, not annotated"* and they were annotated. **§11 is
-> the authoritative statement of what is fixed; where this header and §11 ever
-> disagree, §11 wins.** v4 is a deletion pass. **The manifest's coverage
-> guarantee is NOT established** — see §12 items 3–5.
+> **in review (v4)** — submitted 2026-08-02 00:11 UTC. **All seven findings of the third
+> review are closed, and the two things it could not check have been checked.**
+> The manifest tooling is rebuilt on the AST with content-based identity, and
+> **verifying test existence for the first time showed 11 of 17 "clean" rows
+> cited tests that do not exist** — all now point at tests present in the tree.
+> **Every correction replaces the text it corrects**; zero annotated-in-place
+> corrections remain, which was the finding that recurred in v2 and v3.
+> Malformed-date rejection shipped; crash-safe consolidation has an owning spec
+> (`0010`).
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -27,7 +29,7 @@ this spec reports findings, not coverage.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — *re-read before editing; quote the version you approve.* v1 deferred (nine amendments); **v2 deferred for appending rather than replacing**; v3 replaces. |
+| **Version** | **v4** — *re-read before editing; quote the version you approve.* v1 deferred (9 findings) · v2 deferred (10) · v3 deferred (7) · **v4 replaces rather than annotates.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **v3 — re-submitted with all twenty findings from two external reviews closed.** Research: **GO** (2026-08-01). |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
