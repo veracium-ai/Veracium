@@ -44,10 +44,12 @@ class Repo:
         self._run("git", "commit", "-qm", "seed")
         self.base = self._out("git", "rev-parse", "HEAD").strip()
 
-    def write_spec(self, path, status):
+    def write_spec(self, path, status, closure=True):
         p = self.path / path
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(f"# Spec: thing\n\nSpec-Status: {status}\n\nbody\n")
+        tail = ("\n## Review closure\n\n| finding | evidence |\n|---|---|\n"
+                "| item 1 | `pytest tests/test_thing.py` |\n" if closure else "")
+        p.write_text(f"# Spec: thing\n\nSpec-Status: {status}\n\nbody\n{tail}")
         return p
 
     def _run(self, *a):
@@ -424,3 +426,25 @@ def test_every_numbered_spec_file_is_actually_a_spec():
         by_number[p.name[:4]].append(p.name)
     dupes = {n: v for n, v in by_number.items() if len(v) > 1}
     assert not dupes, f"spec numbers must be unique: {dupes}"
+
+
+
+def test_an_accepted_spec_must_carry_a_review_closure(repo):
+    """PROCESS.md §4a: dev sets `accepted` once external-review comments are
+    satisfied. Dev's judgement of "satisfied" was wrong three times this week —
+    v3 asserted stale rules were replaced when they were annotated, the manifest
+    certified 17 sites clean while 11 cited tests that do not exist, and §6a
+    called a hand-authored column mechanically derived. The closure record turns
+    "I fixed it" into something openable."""
+    repo.write_spec("specs/0013-nocls.md", "accepted", closure=False)
+    code, out = repo.commit("implement", ["Spec: specs/0013-nocls.md"],
+                            touch=["src/veracium/graph.py"]).check()
+    assert code == POLICY_FAIL
+    assert "Review closure" in out
+
+
+def test_an_accepted_spec_with_a_closure_passes(repo):
+    repo.write_spec("specs/0014-cls.md", "accepted")
+    code, _ = repo.commit("implement", ["Spec: specs/0014-cls.md"],
+                          touch=["src/veracium/graph.py"]).check()
+    assert code == OK

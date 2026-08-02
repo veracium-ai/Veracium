@@ -164,6 +164,10 @@ SPEC_STATES = ("draft", "in review", "accepted", "accepted-with-amendments",
                "deferred", "rejected")
 IMPLEMENTABLE = ("accepted",)
 _SPEC_STATUS = re.compile(r"^Spec-Status:\s*(\S[^\n]*)$", re.M)
+# Dev sets `accepted` once external-review comments are satisfied (PROCESS §4a).
+# Dev has been wrong about "satisfied" three times, so the claim needs an
+# artifact: one row per finding, each naming a command, test or commit.
+_CLOSURE = re.compile(r"^##+\s*Review closure", re.M)
 
 MIN_REASON_CHARS = 12
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -252,6 +256,14 @@ def _validate_spec_ref(sha: str, value: str) -> list[str]:
             f"`{value}` is `{state}`, which does not authorise implementation"
             f"{extra}. Land the spec first, or use `Spec-Exception:` if this "
             f"commit is docs/tests/a revert rather than implementing it.")
+    elif not _CLOSURE.search(body):
+        problems.append(
+            f"`{value}` is `accepted` but carries no `## Review closure` "
+            f"section. Dev sets `accepted` once external-review comments are "
+            f"satisfied (PROCESS.md §4a) — so record one row per finding with "
+            f"the command, test or commit that closes it. Three of dev's own "
+            f"'this is fixed' claims were wrong this week; the artifact is what "
+            f"removes the wrong answer.")
     return problems
 
 

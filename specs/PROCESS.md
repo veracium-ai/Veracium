@@ -141,6 +141,39 @@ and fix it at source. Citing a retraction list is not applying it — we did
 exactly that this week and a retracted claim shipped into two downstream
 documents.
 
+**4a. Who accepts a spec** *(Quentin, 2026-08-02)*.
+
+> **External review is required to reach `accepted`. Dev sets the status once
+> the review's comments have been satisfied.**
+
+Research advises and rules on trust semantics; **external review is not
+optional and not advisory for this step** — a spec cannot reach `accepted`
+without one. There is **no lightweight lane**: a spec that would touch a
+guarded file goes through external review, whatever its §3 says.
+
+**Dev is the acceptor, which means dev judges whether the comments are
+satisfied — and dev's judgement on exactly that has been wrong three times.**
+v3 of `0002` asserted the stale rules were *"replaced, not annotated"* and they
+were annotated; the manifest certified 17 sites clean while 11 of them cited
+tests that do not exist; §6a claimed a classification was mechanically derived
+when it was hand-authored. **Each was a claim about work being finished, made by
+the person who did it.**
+
+So the ruling comes with a mechanism, not because the ruling is doubted but
+because self-certification is the one thing this process has already failed at:
+
+> **A spec at `accepted` carries a `## Review closure` section with one row per
+> review finding: the finding, and *the command, test, or commit that
+> demonstrates it is closed*.** Prose is not a closure. "Fixed" is not a
+> closure. A row whose evidence column cannot be executed or opened is not a
+> closure.
+
+**Machine-checked** — `check_spec_reference.py` refuses a spec at `accepted`
+with no closure section, and `test_accepted_specs_carry_a_review_closure`
+enforces it in CI. **The point is not to slow acceptance down.** It is that the
+question *"did I actually do this?"* has a wrong answer available, and writing
+the evidence down is what removes it.
+
 **4b. Record the decision where a machine can read it.** Every spec carries a
 `Spec-Status:` line directly under its title — one of `draft · in review ·
 accepted · accepted-with-amendments · deferred · rejected`. It is the

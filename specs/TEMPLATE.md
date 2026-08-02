@@ -14,6 +14,23 @@
 > any other state. `accepted-with-amendments` deliberately does not qualify:
 > amendments must be resolved and the amended version approved first.
 >
+> **Before setting `Spec-Status: accepted`** — which dev does, once
+> external-review comments are satisfied (`PROCESS.md` §4a) — **add a
+> `## Review closure` section**, one row per review finding:
+>
+> ```
+> ## Review closure
+>
+> | # | finding | closed by |
+> |---|---|---|
+> | 1 | N9 named a partial order and never defined one | §6a; `test_evidence_free_maintenance_is_monotone` |
+> | 2 | manifest cited but not sent | `proposals/0002-v4-review-package/` |
+> ```
+>
+> **Evidence must be openable or executable** — a command, a test name, a
+> commit, a file. *"Fixed"* is not a closure. The CI gate refuses an `accepted`
+> spec without this section.
+>
 > Copy this file. Process: `PROCESS.md`. **Every section below exists
 > because we shipped or nearly shipped a defect it would have caught** —
 > the provenance of each is noted in italics. Delete nothing; write
