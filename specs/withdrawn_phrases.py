@@ -11,6 +11,23 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    (r"names ?\+ ?columns.{0,40}strictest|names and declared types.{0,30}(strictest|sufficient)",
+     "R1/0007: the reviewer built a constraint-stripped counterexample that matched",
+     "specs/0007 §4a"),
+    (r"(indexes|indices) are a performance property",
+     "R1/0007: a UNIQUE index decides which writes are accepted",
+     "specs/0007 §4a-iii"),
+    (r"CREATE INDEX IF NOT EXISTS.{0,40}restores",
+     "R1/0007: measured -- a wrong same-named index survives untouched",
+     "specs/0007 §4a-iii"),
+    # `_normalise` strips underscores and backticks before matching, so the
+    # pattern must describe the NORMALISED text: `sqlite\_%` arrives as
+    # `sqlite\%`. Written against the raw form first, this regex matched
+    # nothing at all -- a lint entry that cannot fire is worse than none,
+    # because it reads as coverage.
+    (r"NOT LIKE 'sqlite\\?%'(?! *(does not|ESCAPE))",
+     "R1/0007: backslash is not a LIKE escape without ESCAPE; use GLOB",
+     "specs/0007 §4a-i"),
     (r"clears only on (evidence from the )?(the )?same author",
      "R3: only confirm() clears needs_confirmation; no field value does",
      "specs/0008 §3"),
