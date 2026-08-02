@@ -34,4 +34,5 @@ REVIEWS = [
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),
     dict(spec="0003", round=1, kind="external", date="2026-08-02", verdict="deferred", findings=8),
     dict(spec="0003", round=2, kind="external", date="2026-08-02", verdict="deferred", findings=12),
+    dict(spec="0003", round=3, kind="external", date="2026-08-02", verdict="narrow design approved; deferred for cleanup", findings=5),
 ]

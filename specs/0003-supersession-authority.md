@@ -4,32 +4,33 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3)** — submitted 2026-08-02 15:55 UTC. **A scope change, not another
-> amendment.** Two reviews approved the direction and drew twenty findings, most
-> about design this spec did not need in order to fix the defect that motivated
-> it. **v3 is one guard in one loop**; subject entitlement, trusted-ingress
-> capabilities, `correct()`, absorption, history partitioning and contested
-> relations move to **`specs/0011`**. **Blocking is strictly conservative, so
-> nothing in `0011` is made harder by shipping this first.**
+> **in review (v4)** — submitted 2026-08-02 16:17 UTC. **The third review approved the narrow
+> design** and returned five focused items, all applied. **The substantive one:
+> refusing a retirement kept the edge and not the fact** — measured, a query at
+> the budget still evicted the user's fact, because ranking ties break on
+> recency and authority is not an input. **§4d adds the one clause that closes
+> it, and withdraws v3's claim that recall was untouched.** The claim is now
+> qualified by *recorded* authority; the stale v2 history/interface text is
+> deleted rather than annotated.
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — *re-read before editing; quote the version you approve.* v1 deferred (8) · v2 deferred (12) · **v3 narrows rather than amends.** |
+| **Version** | **v4** — *re-read before editing; quote the version you approve.* v1 (8) · v2 (12) · **v3 narrowed scope; r3 approved the narrow design** and returned 5 focused items, applied here. |
 | **Status** | *see `Spec-Status:` at the top — canonical.* Ladder adopted by research; **Q1/Q2 answered 2026-08-01**; I7 shipped (`362f474`); external review not sent. |
-| **Internal reviewers** | research — **ladder already ADOPTED** (`proposals/supersession-authority-review.md`); two sub-decisions open, see §10 |
-| **External review** | required — full spec (`graph.py`, `gate.py`, `mcp_server.py`) · not yet sent |
+| **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
+| **External review** | required — **three rounds completed** (r1 8 findings · r2 12 · r3 5, narrow design approved). `specs/reviews.py` is the source. |
 | **Decision + date** | — |
 | **Path** | full |
 
-> **No advisory.** The technical rationale is the one that carries it:
-> **exploitation requires third-party content to be ingested and then a
-> functional-relation collision — it is not automatic**, and the
-> automatic-versus-invoked distinction is the same line that governed 0.4.4.
-> *Deployment count is release context, not a security rationale* — v1 led with
-> "no real external users", which would not survive the first real one.
+> **Advisory disposition is not made here.** v2 argued exploitation *"is not
+> automatic"*; §8 establishes that is false for this defect — once third-party
+> content reaches extraction the retirement fires with no further privileged
+> call. **The automatic/invoked distinction belongs to `correct()`, not to
+> ingest**, so this spec offers no technical argument either way and the
+> decision rests on deployment and exposure.
 
 ---
 
@@ -82,7 +83,7 @@ third-party ingest.
 
 | field | read / written | documented contract | consumers | preserved? |
 |---|---|---|---|---|
-| `Edge.active` | `invalidate_edge`; read everywhere | "false = retired, retained as history" | `assertable`, `gate.partition_parts`, `render_edges`, `store.edges(active_only)` | **NO today** — history is retained but unreachable through the gate. Restored by this change. |
+| `Edge.active` | `invalidate_edge`; read everywhere | "false = retired, retained as history" | `assertable`, `gate.partition_parts`, `render_edges`, `store.edges(active_only)` | **Unchanged.** History is retained and still unreachable through the gate — **this change does not restore it** (`0011` E6). It creates *fewer* inactive edges, not more reachable ones. |
 | `Edge.invalidation_reason` | `apply_supersession` | why an edge retired: `superseded` · `absorbed_duplicate` · `lapsed` · `decayed` · `disputed` · `corrected` | `render_edges` (SUPERSEDED marker), `introspect` | Yes — gains a *reader*, since the marker currently never renders through the gate. |
 | `Provenance.author_of_evidence` | `ingest`; **`mcp_server:_AUTHOR`** | "who authored the evidence — the core injection-resistance signal" | `_disclosure_for`, gate routing, this spec's ladder | **Extended in meaning**: it now also determines *entitlement to retire*, not only disclosure. Recorded as a real widening of the field's role. |
 
@@ -182,7 +183,7 @@ direction, which would have let assistant-generated content retire a
 third-party record. **The document it was transcribed from had all four right.**
 
 <!-- GENERATED:coverage -->
-**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows, not 16.** **80 of them give a different answer than authorship alone**, and those are exactly the rows an attacker reaches by omitting `derived_from`.
+**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows, not 16.** **80 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 80 have the cap absent on both sides.
 
 | prior author/derived | incoming author/derived | result | |
 |---|---|---|---|
@@ -350,10 +351,20 @@ reported attack**, and the breadth moves to **`specs/0011`**.
 | one contention case (§4d) | a distinct history partition |
 | | contested functional-relation semantics |
 
-**The narrowing is safe because blocking is strictly conservative.** This spec
-only **refuses** retirements the code currently permits. It grants nothing,
-hides nothing, and adds no field, so every rule in `0011` can later be added as
-a further restriction without unwinding this one.
+**The narrowing is safe because blocking does not destroy evidence.** This spec
+only **refuses** retirements the code currently permits; it grants no authority
+and hides nothing.
+
+**It is not consequence-free for `0011`, and v3 overstated that.** A refusal
+leaves two active values where a later subject-aware model might have permitted
+the retirement — and §8 notes legitimate `SYSTEM` updates to `USER` facts are
+plausible. **Those contentions accumulate**, and `0011` will have to either
+retain them or reconcile them explicitly; changing the forward rule does not
+repair them retroactively.
+
+**§4b's refusal record is what makes that tractable** — it carries the relation
+and both effective authorities, so the accumulated set can be re-evaluated
+without logging memory content.
 
 **What it therefore does not claim** — stated here and again in §8: it does not
 stop a user retiring third-party evidence about someone else, it does not
@@ -463,6 +474,44 @@ has no unique current value, and consumers that assume one will see the newest.
 
 ---
 
+## 4d. Keeping the edge is not keeping the fact
+
+**The motivating defect is recall-level erasure, not store-level retirement.**
+Refusing the retirement leaves the prior `active`; it does **not**, on its own,
+guarantee the prior still reaches the model. **Measured, on the motivating
+case:**
+
+```
+prior    USER        "CFO at Acme"      effective 3
+incoming THIRD_PARTY "unemployed"       effective 0   -> refused
+
+max_edges=2   ['incoming', 'prior']    prior kept
+max_edges=1   ['incoming']             prior GONE
+```
+
+`subgraph_for_query` scores relevance, adds `+1` for `active`, and **breaks ties
+on `observed_at` — recency.** Authority is not an input. So the refused edge,
+being newer, outranks the fact it failed to retire, and at any budget where the
+pair straddles the cutoff the user's fact is evicted anyway. **The guard alone
+would have closed the store-level symptom and left the reported behaviour
+intact.**
+
+> **One clause closes it:** among edges of equal relevance, rank by **effective
+> authority before recency**. A user fact outranks a third-party claim it ties
+> with; recency continues to break ties within an authority level.
+
+**This is a recall change, and v3 claimed there was none.** That claim was wrong
+and is withdrawn — the guard needs this clause to deliver what it promises. It
+is still small: one sort key, no schema, no new field, and it is **conservative
+in the same direction as the guard** (it can only prefer higher-authority
+evidence).
+
+**It is not the `0011` retrieval model.** No separate history budget, no
+partition, no contested state — those stay deferred. This orders two edges that
+are already both active and already both candidates.
+
+---
+
 ## 5. Regime analysis
 
 **The regime is ordinary ingest**, which every test reaches — no simulated
@@ -492,32 +541,21 @@ before** — it only creates fewer.
 | **I4** the permitted directions still work | `test_a_user_can_still_correct_a_third_party_claim` · `test_same_author_update_still_supersedes` — **the permissions, not only the prohibitions.** A guard drawn too broadly passes every prohibition test | CI |
 | **I5** a refusal is recorded | `test_a_refused_supersession_is_counted_and_logged` — content-free | CI |
 | **I6** the one grounded-contention case renders both values | `test_user_and_system_contention_shows_both` | CI |
+| **I6a** **a refusal must not reduce the prior's recall visibility** — if a query returned the prior before the incoming write, it still returns it after | `test_a_refused_supersession_does_not_evict_the_prior` — the motivating user/third-party case · the grounded user/system case · **a query at the active-edge budget** · a consumer taking a single value | CI |
 | **I7** the MCP surface refuses `system` and fails closed on unknown | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
 
-**I9 is written as a set-equality test on purpose, not as two cases.** Two cases
-would pass today and say nothing about tomorrow — and the defect it guards is
-exactly *a supersession path nobody remembered to guard*. The check must fail
-when someone adds a third writer, which a hand-listed test cannot do.
+**I4 is the one to write first.** The change is a refusal, and a refusal drawn
+too broadly passes every prohibition test while breaking legitimate updates.
+`test_same_author_update_still_supersedes` is what catches that.
 
-**I5 is a PRECONDITION of the ladder shipping, not a sibling invariant** —
-research's Q1 answer, and the ordering matters. Rung 1 lets `ASSISTANT` retire a
-`THIRD_PARTY` claim. If I5 regresses, that stops being *suppression the user can
-see* and becomes **a silent suppression primitive — and nothing in the ladder
-itself would fail.** The visible rule stays green while an invisible dependency
-carries the risk, which is the same shape as the `_AUTHOR` trap I7 just closed:
-the map looked like a whitelist and the `.get(…, USER)` default was doing the
-damage. **So I5 lands first and is verified before rung 1 is enabled**, rather
-than both going in together and the dependency living only in this paragraph.
+**I6a is the one that decides whether this change is worth making.** Everything
+else can hold while a query at the budget still evicts the fact the guard
+preserved — see §4d.
 
-**I6 carries a frozen acceptance rule deliberately** — `specs/0002`'s I6 said
-only *"user facts still reach the subgraph"*, and R2 proved an unfrozen
-threshold is worth nothing.
-
-**Reproducer retention:** the email-retires-CFO case and the benign
-user-supersedes-own-fact case both become fixtures.
-
----
+**I1 is generated from `specs/ladder.py`**, so the test and the table in §3
+cannot disagree. v1 wrote that table by hand and inverted two of four
+`ASSISTANT` cases.
 
 ## 7. Failure modes and reversibility
 
@@ -534,16 +572,25 @@ user-supersedes-own-fact case both become fixtures.
   retirements cannot be automatically repaired** — we cannot tell, after the
   fact, which retirements the ladder would have blocked. v1 called this "fully
   reversible" while also saying prior retirements were unrepairable.
-  cannot know which retirements were illegitimate.
-- **New attack surface?** None added. This removes a capability and makes
-  retained history visible.
+- **New attack surface?** None added — this removes a capability. **It does not
+  make retained history visible**; superseded edges still do not reach the model
+  (`0011` E6). §4d's ranking clause orders two *active* edges and exposes
+  nothing that was hidden.
 
 ---
 
 ## 8. Claims and limits
 
-**Claim, and it is deliberately narrow:** *no edge may retire a
-higher-authority edge through functional supersession.*
+**Claim, and it is deliberately narrow:** *no edge whose **recorded** effective
+authority is lower may retire a higher-recorded-authority edge through the
+functional-supersession loop, and refusing does not reduce the prior's recall
+visibility.*
+
+**"Recorded" is load-bearing.** The guard compares the labels in the store. A
+mislabelled `SYSTEM` edge, or one whose `derived_from` cap was omitted, still
+receives the authority its labels claim. **Establishing that labels are honest is
+`0011` E4**, and until it lands this is a guard over recorded provenance, not
+over evidence origin.
 
 **What this does NOT establish** — each was true before this change and remains
 true after it, and each is owned by a named spec:

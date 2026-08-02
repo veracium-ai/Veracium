@@ -36,9 +36,10 @@ def _regions() -> dict[str, str]:
     coverage = (
         f"**The rule reads `min(author, derived_from)`, so the matrix is over "
         f"the full product: {len(full)} rows, not {len(author_matrix())}.** "
-        f"**{len(div)} of them give a different answer than authorship alone**, "
-        f"and those are exactly the rows an attacker reaches by omitting "
-        f"`derived_from`.\n\n"
+        f"**{len(div)} of them give a different answer than authorship alone.** "
+        f"Those are the decisions that *depend on* the derivation cap: omitting "
+        f"`derived_from` collapses them toward the author-only result — verified, "
+        f"**zero** of the {len(div)} have the cap absent on both sides.\n\n"
         "| prior author/derived | incoming author/derived | result | |\n"
         "|---|---|---|---|\n" + "\n".join(ex) +
         f"\n\n*(first {len(ex)} of {len(div)}; the test enumerates all "
