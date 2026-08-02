@@ -1,15 +1,16 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: deferred
+Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred (v6)** — sixth external review 2026-08-02 03:46 UTC. **Invariant approved a sixth
-> time.** Every falsifiable finding checked; **all stand**, including three live
-> code defects and a check that **fails open in the exact place it claims to
-> fail closed.** The generated-records mechanism was necessary and is not
-> sufficient: **it governs the regions it generates, and the rest of the
-> document still carries hand-maintained verdicts.** See §12.
+> **in review (v7)** — submitted 2026-08-02 04:07 UTC. **All ten findings of the sixth review
+> are closed**, including three live code defects. The collection check now
+> **fails closed** — it was reading any pytest error as "pytest unavailable",
+> which is how the reviewer's run produced a green result from an AST fallback.
+> The trust-class matrix is generated, so §3 can no longer disagree with §11.
+> **The archive now ships the complete `tests/` tree**, because the fail-closed
+> check makes a package that cannot collect a package that cannot be verified.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
