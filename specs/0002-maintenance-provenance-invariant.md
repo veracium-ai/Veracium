@@ -1,18 +1,16 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v4)** — submitted 2026-08-02 00:11 UTC. **All seven findings of the third
-> review are closed, and the two things it could not check have been checked.**
-> The manifest tooling is rebuilt on the AST with content-based identity, and
-> **verifying test existence for the first time showed 11 of 17 "clean" rows
-> cited tests that do not exist** — all now point at tests present in the tree.
-> **Every correction replaces the text it corrects**; zero annotated-in-place
-> corrections remain, which was the finding that recurred in v2 and v3.
-> Malformed-date rejection shipped; crash-safe consolidation has an owning spec
-> (`0010`).
+> **deferred (v4)** — fourth external review 2026-08-02 00:39 UTC. **Invariant approved a
+> fourth time; retrospective deferred a fourth time.** All eight findings
+> verified and **all stand**, including **three live code defects** and **a
+> package that contained two different manifest counts.** §12 has the
+> disposition. **The deletion pass failed again, and the reason is specific: I
+> swept for the shape of my own correction pattern rather than for every place a
+> rule is stated.**
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -920,6 +918,28 @@ overstated it: direct calls only — **aliased or indirect invocation is
 invisible** — and the `evidence-bearing?` column remains a **reviewed
 classification**, not a derived fact (§6a).
 
-**Status: `deferred`.** Remaining for v4: the deletion pass, `disclosure` in N9,
-N9b's missing fields, malformed-date rejection, and an owning spec for
-crash-safe consolidation.
+### Fourth review — disposition
+
+**All eight stand. Three are live code defects; one means the v4 package
+contradicted itself.**
+
+| # | finding | verified |
+|---|---|---|
+| 1 | stale rules survive a pass that claimed to delete them | **yes** — §3's **M3 and M4 sections still state the rejected rules under bare `**Fix:**` headings** (`:231`, `:242`), the malformed fallback is still normative in §2c and §7f, the status row still says v3, and §8 still says *17 clean · 4 open · 7 moved* |
+| 2 | manifest counts are arithmetically wrong | **yes — and the package shipped both numbers.** `render()` derives state by searching **rendered rows** for emoji, so a row is counted twice when its verdict says `🔴` and its test column says `➡️`. **28 − 4 − 10 = 14** double-subtracts 3 rows; the true unaffected count is **17**. The manifest headline said 14, the cover note said 17, **and I did not notice** |
+| 3 | the fingerprint is not a unique identity | **yes** — two syntactically identical calls in one branch produce **one key**, and `_validate` converts to a `set`, so **one disposition satisfies both**. No collision check exists |
+| 4 | independent verification still impossible | **yes** — the package carried 3 of the 7 modules the manifest cites, and neither `store/base.py` (the mutator source) nor the tests. **And the test-existence check is a substring match**: `def test_foo` is satisfied by `def test_foobar` |
+| 5 | N9 omits `active`; import classification contradicts itself | **yes** — an evidence-free op could reactivate a retired edge with every other clause holding. And `import_memory` is **`evidence-bearing = no`** in the manifest while §6a says **`evidence-free = no`** — opposite answers to one question, readable only by noticing both columns are negatively phrased |
+| 6 | N9b is unimplemented and unrepresented | **yes** — `consolidate()` copies `cold[0]`'s provenance and sets **`confidence = 0.9`**, computing neither minimum. A batch containing `0.2` yields a summary at `0.9`, **directly violating the invariant added in v4**. The ledger has no row saying so |
+| 7 | `_event_dt` mishandles offsets | **yes — live in released 0.4.6.** `.replace(tzinfo=utc)` **discards** an existing offset instead of converting. Measured: a `-12:00` timestamp **bypasses the future-skew limit by 12 hours** |
+| 8 | `0010`'s protocol is not implementation-ready | **yes** — no input→summary mapping for multiple outputs, no atomic claim, and recovery cannot distinguish a crash from a live writer mid-LLM-call |
+
+**The root cause of #1, stated precisely because "I swept for it" was v4's claim:**
+I swept for **`previously read`-style annotations and the obsolete ledger** —
+the shape of my *own correction pattern* — and never for **every place a rule is
+stated.** §3's `**Fix:**` lines were never annotated, so the sweep could not see
+them. **A search for one's own edits is not a search for the rule.**
+
+**Status: `deferred`.** v5 must not restate that stale text was removed without
+a mechanical check backing it — four recurrences justify the lint the reviewer
+proposes.
