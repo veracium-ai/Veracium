@@ -451,7 +451,7 @@ def test_an_accepted_spec_with_a_closure_passes(repo):
 
 
 def test_no_withdrawn_rule_is_stated_as_live_spec_text():
-    """Four external reviews in a row found withdrawn rules still normative,
+    """Four external reviews (WITHDRAWN wording) in a row found withdrawn rules still normative,
     each time after the document claimed they were removed. Every pass searched
     for my own annotations rather than for the rule, and a search for one's own
     corrections cannot find text one never annotated.
@@ -468,7 +468,7 @@ def test_no_withdrawn_rule_is_stated_as_live_spec_text():
 def test_status_prose_is_generated_from_the_structured_records():
     """Five external reviews were deferred for a status claim contradicting
     another status claim in the same document — most recently a header saying
-    "M1–M5, all closed" beside a ledger showing five unimplemented. Every fix
+    "M1–M5, all closed" (WITHDRAWN wording) beside a ledger showing five unimplemented. Every fix
     was a better hand-check; the phrase lint passed straight through that one.
 
     Summaries are now derived from specs/findings.py."""

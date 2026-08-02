@@ -82,7 +82,7 @@ DISPOSITIONS = {
    (W, "**`valid_from = min`** on the incoming edge, `observed_at`, `confidence`", "observation",
     "🟡 **R1 — the edge is unpersisted here, so N1 holds narrowly.** Under immutable-identity this becomes construction, not mutation. §7c",
     "`test_valid_from_immutable_across_every_mutation_site`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "2c6f75f8f68a"):
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"):
    (W, "episode provenance (unparseable placeholder)", "observation",
     "clean — never retains raw event text", "`test_unparseable_extraction_degrades_gracefully`"),
  ("src/veracium/ingest.py", "ingest_event", "add_episode", "17d36f4cb482"):
@@ -104,7 +104,7 @@ DISPOSITIONS = {
     "🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e",
     "➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery [X-crash]"),
  ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"):
-   (M, "`author_of_evidence`, `derived_from`, `confidence`", "none",
+   (M, "`author_of_evidence`, `derived_from`, `confidence`, `disclosure`, `observed_at`, `source_type`, `evidence_ref`", "none",
     "**M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust",
     "`test_consolidation_preserves_and_compresses`"),
 
@@ -137,18 +137,18 @@ STATES = {
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_episode", "62926dc1caf5"): "open_moved",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_episode", "dd94666c34de"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "5b46e2531803"): "clean",
-  ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"): "moved",
-  ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"): "moved",
-  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "23255a7f3c3f"): "moved",
+  ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"): "open_moved",
+  ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"): "open_moved",
+  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "23255a7f3c3f"): "open_moved",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
-  ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"): "moved",
+  ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "add_edge", "98cd90a70fb3"): "clean",
   ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "a7a961c78cbd"): "clean",
-  ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "cda8875a699c"): "moved",
+  ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "cda8875a699c"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "add_edge", "1e539a527213"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "2c6f75f8f68a"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "17d36f4cb482"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
@@ -156,6 +156,6 @@ STATES = {
   ("src/veracium/lifecycle.py", "expire", "add_edge", "1d9541b12c69"): "clean",
   ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "5bed480ae733"): "open_moved",
   ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"): "fixed",
-  ("src/veracium/portability.py", "import_memory", "add_edge", "b1f56bc283b7"): "moved",
-  ("src/veracium/portability.py", "import_memory", "add_episode", "bab7d192c8f8"): "moved",
+  ("src/veracium/portability.py", "import_memory", "add_edge", "b1f56bc283b7"): "open_moved",
+  ("src/veracium/portability.py", "import_memory", "add_episode", "bab7d192c8f8"): "open_moved",
 }

@@ -127,6 +127,12 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # offset-bearing timestamp, so `remember(date="...T12:00:00+05:30")` raised
     # `Invalid isoformat string` after _event_dt had already accepted it. The
     # single-contract claim was true of the helper and false of the entry point.
+    # Normalise ONCE and reuse `when` everywhere. Re-deriving from the reduced
+    # `date` string loses the time of day: the unparseable-extraction branch did
+    # `_event_dt(date)` after `date` had already become a bare date, so an input
+    # of 12:30+05:30 stored observed_at as midnight instead of 07:00 UTC.
+    # "One input, two parsers" became "one input, two normalisations" -- the
+    # same failure the normalisation was added to fix.
     when = _event_dt(date)
     date = when.date().isoformat()
     prompt = prompts.EXTRACT_PROMPT.format(
@@ -153,7 +159,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             id=_uid("ep"), user_id=user_id, date=date, summary=summary,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  derived_from=derived_from, observed_at=_event_dt(date))))
+                                  derived_from=derived_from, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True}
 
     # episode — always recorded; carries author so the gate knows a third-party

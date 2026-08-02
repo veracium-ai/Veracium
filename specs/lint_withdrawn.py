@@ -29,10 +29,25 @@ def _normalise(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[*`_~]", "", text))
 
 
+def _targets() -> list:
+    out = sorted(SPECS.glob("*.md"))
+    tests = ROOT / "tests"
+    if tests.is_dir():
+        out += sorted(tests.rglob("test_*.py"))
+    return out
+
+
+def _n_targets() -> int:
+    return len(_targets())
+
+
 def violations() -> list[tuple[str, str, str, str]]:
     from withdrawn_phrases import WITHDRAWN
     out = []
-    for f in sorted(SPECS.glob("*.md")):
+    # Specs AND the test tree. The seventh review found a GREEN test asserting
+    # the M3 behaviour R3 forbids: a suite that asserts withdrawn behaviour
+    # cannot verify the new invariant, and scanning only specs/ could not see it.
+    for f in _targets():
         # 0010 was outside the review package's lint run because the recipe
         # never copied it in, so its stale X-Q1 and partition text survived a
         # pass that reported "no withdrawn phrases". The lint scans every spec
@@ -67,7 +82,7 @@ def main() -> int:
               f"or -- if it is deliberately quoted as history -- mark the block "
               f"WITHDRAWN or OBSOLETE.", file=sys.stderr)
         return 1
-    print(f"no withdrawn phrases in {len(list(SPECS.glob('*.md')))} spec(s)")
+    print(f"no withdrawn phrases in {_n_targets()} spec/test file(s)")
     return 0
 
 

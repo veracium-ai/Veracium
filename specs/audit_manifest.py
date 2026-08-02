@@ -356,6 +356,14 @@ def _validate(sites) -> list[str]:
                 problems.append(
                     f"{k}: manifest says `{st}` but findings.py records "
                     f"{sorted(cited)} as neither open nor unimplemented")
+            # `moved` means owned elsewhere AND not open. v7 checked three of
+            # the four state relations and passed 7 sites declared `moved`
+            # while their findings were open -- the check covered the cases its
+            # author anticipated, not the relation it claimed to enforce.
+            if st == "moved" and (cited & openish):
+                problems.append(
+                    f"{k}: state `moved` but {sorted(cited & openish)} is open "
+                    f"or unimplemented in findings.py — use `open_moved`")
             if st in ("clean", "fixed") and (cited & openish):
                 problems.append(
                     f"{k}: manifest says `{st}` but findings.py records "
@@ -474,7 +482,13 @@ def render(sites) -> str:
             "enclosing control-flow context — **what the call is, not where it "
             "sits**. Moving a call keeps its verdict; swapping two different "
             "calls invalidates both. **Line numbers are informational.**\n\n"
-            "**Stated limits** — this establishes coverage of *direct* calls "
+            "**Stated limits** — **call-site enumeration is mechanical; both the "
+            "`evidence` classification and the `trust fields touched` list are "
+            "reviewed judgement.** `--check` proves the field list is non-empty, "
+            "not that it is complete: the consolidation row named three fields "
+            "while the code set seven. Deriving them from the constructed object "
+            "is the fix and does not exist. This also establishes coverage of "
+            "*direct* calls "
             "only. It cannot see aliased or indirect invocation "
             "(`getattr(store, name)(...)`, a bound method passed as a callback), "
             "and it deliberately excludes the store implementations themselves, "

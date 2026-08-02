@@ -190,8 +190,20 @@ def main(argv=None) -> None:
         print(_USAGE)
         return
     if "--version" in args:
-        from importlib.metadata import version
-        print(version("veracium"))
+        # Distribution metadata is absent from a bare source tree -- a checkout,
+        # or the review archive, where `--version` raised PackageNotFoundError
+        # and took the whole suite down. A version report should degrade, not
+        # fail: the code is present either way and its version is knowable.
+        from importlib.metadata import PackageNotFoundError, version
+        try:
+            print(version("veracium"))
+        except PackageNotFoundError:
+            # Deliberately NOT a `__version__` constant. pyproject.toml is the
+            # single source of the version, and adding a second copy in code is
+            # the drift this project has spent a week removing. An uninstalled
+            # tree honestly has no version -- say so.
+            print("veracium (source tree — no distribution metadata; "
+                  "install the package for a version)")
         return
     if args:
         raise SystemExit(f"veracium-mcp: unknown argument {args[0]!r} (see --help). "

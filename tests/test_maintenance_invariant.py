@@ -8,13 +8,10 @@ Two advisories in four days (GHSA-r7j7-5jq9-3f5q, GHSA-hcj3-8jqc-wqrp) were the
 same shape: a maintenance operation crossing a boundary the write path guards
 correctly. These checks are the class, not the instances.
 
-**N7 is the one that matters.** It is stated over the *observable boundary*
-rather than over any field, so it catches the next instance even if the
-mechanism is one nobody has thought of. Both advisories would have failed it.
-
-Duration is the regime these defects live in — every one needs elapsed time to
-become visible, and the suite runs in seconds. Every test here injects the clock
-rather than waiting.
+**OBSOLETE framing, kept so the change is legible:** this module said *"N7 is
+the one that matters"* and called it the general form. `specs/0002` withdrew
+that — N7 misses M2, M3 and M4 — and **N9 (`specs/monotone.py`) is the general
+form.** N7 remains a valuable end-to-end gate over the observable boundary.
 """
 
 import json
@@ -112,9 +109,20 @@ def test_cross_author_cannot_clear_staleness():
 
 
 def test_same_author_evidence_does_clear_staleness():
-    """The permission, not just the prohibition — a guard drawn too broadly
-    would block legitimate user restatements and every prohibition test above
-    would still pass."""
+    """HISTORICAL REPRODUCER — asserts 0.4.5 behaviour that specs/0008 FORBIDS.
+
+    R3 ruled that only an explicit `confirm()` clears `needs_confirmation`: no
+    value of any provenance field does, because `author` rides on `remember`,
+    which the model can call. This test asserts the opposite, and it is green.
+
+    A suite that asserts withdrawn behaviour cannot verify the new invariant,
+    so it is marked here rather than left looking like a requirement. It flips
+    to a prohibition when 0008 is implemented — the fix is deleting one
+    conditional at graph.py:119, and this test is its reproducer.
+    """
+    import pytest
+    pytest.xfail("specs/0008: only confirm() may clear staleness; "
+                 "this asserts the 0.4.5 behaviour that rule withdraws")
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d)
         mem.store.add_edge(_edge("e-user", author=EvidenceAuthor.USER, needs=True))
@@ -181,7 +189,7 @@ class _Compactor:
 
 
 def test_maintenance_never_promotes_across_the_gate():
-    """**N7 — the general form of both advisories.**
+    """**N7 — the general form of both advisories (WITHDRAWN wording).**
 
     Stated over the observable boundary rather than any field, so it catches
     the next instance of this class even when the mechanism is one nobody
