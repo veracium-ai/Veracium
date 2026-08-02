@@ -322,8 +322,8 @@ elif author is ASSISTANT:                     " [assistant-generated; unverified
 else:                                         " [unverified origin]"   # fail closed
 ```
 
-**Open question Q5 (§10), blocking.** Nothing here is implementable until it is
-settled.
+**Q5 is resolved** — `(author, derived_from)` (research, 2026-08-01). The
+implementation blocker here is now this spec's `deferred` status, not Q5.
 
 **Interfaces:** `EvidenceAuthor` gains a member (additive for callers that pass
 it; **not** additive for callers that exhaustively match on it). MCP `remember`
@@ -514,7 +514,7 @@ improving recall.
 
 | # | question | class | who decides | by when |
 |---|---|---|---|---|
-| **Q5** | **Rendering key: `(author, derived_from)`, or author alone?** §4b. Research proposed author-only; measurement shows that mislabels `system+third_party` and omits `user+third_party` — the two commonest `use_only` shapes after plain third-party. | **blocking** | research | before implementation |
+| ~~**Q5**~~ | **RULED 0001-Q5 (research, 2026-08-01 20:06): `(author, derived_from)`.** Author-only mislabels `system+third_party` and omits `user+third_party` — the two commonest `use_only` shapes after plain third-party. **Stale here for 16 hours** while the answer sat in COORDINATION; see the reconciliation check. | resolved | research | — |
 | ~~**Q1**~~ | ~~Should `ASSISTANT × ASSISTANT` merges be blocked?~~ **ANSWERED 2026-07-31 (research):** do not block the merge; block the `observed_at` refresh. The hazard is currency, not confidence. See §3.2 and I10a. | ~~blocking~~ **resolved** | research | done |
 | **Q2** | Does an assistant *restating* user testimony reinforce the user's edge instead of creating an assistant edge? The elegant fix; blocked by the same-disclosure-class rule; would remove most of §8's stated cost. | `deferred` | research | own design round |
 | **Q3** | Store-level version guard (`PRAGMA user_version`) so an old library fails cleanly on a new `.db`, as exports now do. | `pre-release` | dev | before 0.5.0 |
@@ -655,7 +655,7 @@ one source class, which interacts directly with §3.2's self-reinforcement rule.
 3. **§4b added (rendering).** Research's four design decisions adopted
    unchanged; **one correction** — key on `(author, derived_from)`, because
    author alone mislabels `system+third_party` as system-derived and omits
-   `user+third_party` entirely. **Q5, blocking.**
+   `user+third_party` entirely. **RULED 0001-Q5: `(author, derived_from)`.**
 4. **§2c-ii added.** Every reachability claim now carries its command.
 5. **Q3 (store-version guard) remains a hard release gate.**
 6. **Recorded before the fact:** v3 is **more conservative than current Arm C**,

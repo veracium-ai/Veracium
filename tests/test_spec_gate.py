@@ -511,3 +511,22 @@ def test_capping_changes_the_answer_on_a_real_subset():
     from ladder import divergent, effective_matrix
     assert len(effective_matrix()) == 400
     assert len(divergent()) == 80, "the coverage gap finding 2 described"
+
+
+def test_rulings_and_spec_question_tables_agree():
+    """A ruling lands in COORDINATION, the spec's question table is updated
+    separately, and the two drift: 0001 Q5 read "blocking / research" for 16
+    hours after it was answered, 0006 Q1 for 12. Anyone auditing what is blocked
+    reads the stale copy, and for a spec in external review that reader is the
+    reviewer.
+
+    Skips when COORDINATION.md is absent — it is local-only coordination state,
+    not repo content, so a clone must not fail on it."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    if not (pathlib.Path.home() / "Documents" / "veracium" / "COORDINATION.md").exists():
+        import pytest
+        pytest.skip("COORDINATION.md not present (local-only coordination state)")
+    r = subprocess.run([sys.executable, str(root / "specs" / "lint_rulings.py")],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr

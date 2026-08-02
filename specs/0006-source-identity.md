@@ -200,6 +200,6 @@ repetition.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **Q1** | **`PRAGMA user_version` still does not exist** — carried from `0001` Q3, and this spec is what makes it bite: `FORMAT_VERSION` guards *exports*, nothing guards an on-disk store opened by a newer or older build. **Should the store migration land first, as its own change?** Dev leans **yes**. | **blocking** | research | before implementation |
+| ~~**Q1**~~ | **RULED 0006-Q1 (research, 2026-08-02 00:08): yes — `0007` lands first.** Cheap precisely because R3 means `source_id` does **not** lift the staleness restriction, so nothing urgent queues behind it. `FORMAT_VERSION` guards exports; nothing guards an on-disk store opened by a different build. | resolved | research | — |
 | **Q2** | Should `evidence_basis` default to `restated` (least favourable, as specified) or be strictly required when `source_id` is present? Required is safer and is a harder ask of hosts. | `pre-release` | research | before implementation |
 | **Q3** | Does `0003`'s ladder consume `source_id` in v1, or is that a follow-up? Keeping it out keeps this spec small; putting it in avoids a second migration. | `pre-release` | dev + research | before implementation |
