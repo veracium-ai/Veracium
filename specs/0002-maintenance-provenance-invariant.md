@@ -1,18 +1,16 @@
 # Feature spec: the maintenance provenance invariant
 
-Spec-Status: in review
+Spec-Status: deferred
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v5)** — submitted 2026-08-02 02:41 UTC. **All eight findings of the fourth
-> review are closed, and three were live code defects fixed and released in
-> 0.4.7.** The deletion pass is now **executable** (`specs/lint_withdrawn.py`,
-> in CI) rather than asserted — the failure that deferred v2, v3 and v4 was that
-> every pass searched for my own annotations rather than for the rule. Manifest
-> identity is collision-checked and cardinality-preserving, states are declared
-> rather than inferred from rendered emoji, and test existence is AST-exact.
-> **The two contradictory evidence columns are replaced by one positive
-> vocabulary.**
+> **deferred (v5)** — fifth external review 2026-08-02 02:57 UTC. **Invariant approved a fifth
+> time; retrospective deferred a fifth time.** Every falsifiable finding was
+> checked and **all stand**, including **the new lint failing on its first live
+> test** and **a hash collision the reviewer constructed and I reproduced**.
+> **The conclusion I now accept: status maintained in prose cannot be made
+> correct by checking it harder. §11 must be generated from structured records,
+> and every summary derived from the same source.** See §12.
 
 *Retrospective spec for **0.4.4** (GHSA-hcj3-8jqc-wqrp), discharging the
 `Spec-Retrospective-Due: 2026-08-07` obligation recorded in `ea2e1ab`. Written
@@ -991,6 +989,70 @@ the shape of my *own correction pattern* — and never for **every place a rule 
 stated.** §3's `**Fix:**` lines were never annotated, so the sweep could not see
 them. **A search for one's own edits is not a search for the rule.**
 
-**Status: `deferred`.** v5 must not restate that stale text was removed without
-a mechanical check backing it — four recurrences justify the lint the reviewer
-proposes.
+### Fifth review — disposition
+
+**All findings stand. The two that matter most are about the fixes themselves.**
+
+**The lint I added in v5 to end this cycle failed on its first live test.** It
+passed while **`| Decision + date | … M1–M5, all closed |`** sat in the header
+against a ledger saying M3 and M4 are unimplemented. The phrase list knows
+*"all five findings … are closed"* and not the equivalent **"M1–M5, all
+closed"**. Two further live contradictions in the same document: *"three rows
+are red"* where the table has **four**, and *"three external reviews"* where
+there had been four.
+
+**That settles the design question rather than the instance.** A phrase list
+catches recurrences of retractions **we remembered to record** — I said so in
+the cover note and still treated it as the fix. **Status stated in prose cannot
+be made correct by checking it harder.** §11 must be the generated view of
+structured records (`finding_id · owner_spec · disposition · implementation ·
+verification · release`), with the header, the manifest counts, the ledger
+summary and the review count **all derived from it**. Adopted for v6.
+
+| # | finding | verified |
+|---|---|---|
+| 1 | the lint already misses a live contradiction | **yes — reproduced.** Plus the open **decay** defect (`expire()` `add_edge`, N4 false, no passing test) is **absent from the ledger entirely** |
+| 2 | states assigned contrary to their own definitions | **yes** — M3, M4 and consolidation are `open` while owned by `0008`/`0009`/`0010`; all three are **`open_moved`**. Correct tally: **15 clean · 2 fixed · 1 open · 7 moved · 3 open_moved**. Only decay is genuinely `open` and owned here |
+| 3 | the fingerprint still reattaches on reorder | **yes — their collision reproduced.** `x == 119` and `x == 125` both hash to **`4bd2`** at four hex chars, so two different branches share a context and the `#n` suffix then follows **source order**. `except` type, `match` case and `async with` are unencoded |
+| 4 | mutator discovery is a remembered verb list | **yes** — `0010`'s `claim_episode_batch` would be invisible. **The original failure, one level up:** the interface is scanned, mutation is still inferred from remembered prefixes |
+| 5 | `transfer` is in neither regime | **yes** — no evidence authority *and* outside N9, constrained only by prose delegation to `0005`. `invalidation_reason` is also prose-only, absent from the formal relation |
+| 6 | the release record contradicts itself | **yes** — §7f's heading says *"released 0.4.5 + 0.4.6"*, §7f says the tests pass *"(0.4.6)"*, and §11 calls 0.4.6 **"unreleased — committed only"**. **0.4.6 and 0.4.7 are both published.** No `M2″` row for the offset fix |
+| 7 | test-name validation ≠ collection | **yes** — a nested function, one under `if False`, or a method on an uncollected class all satisfy it. The claim narrows to *a function of that name occurs syntactically in the tests tree* |
+| 8–11 | `0010` fencing, atomicity, visibility, lineage | **accepted in full** — see below |
+
+### `0010`: the lineage finding is the serious one
+
+**A fence orders; it does not prove liveness** (8), *"one conditional update"*
+does not give an all-or-nothing set claim without an explicit store primitive
+(9), and hiding inputs at claim time creates a window where a read sees
+**neither** inputs nor outputs (10) — so recovery timing is a real availability
+question, not the non-issue v5 claimed.
+
+**But (11) is the one that would have shipped a defect.** Per-summary lineage was
+to be computed by the caller from output date ranges. **The model sees the whole
+batch**, so any output may carry content derived from any input, and a date
+partition understates provenance: **a third-party-influenced input can inform an
+output whose lineage names only user inputs.** That **recreates the laundering
+defect N9b exists to prevent**, inside the spec written to satisfy N9b. Fix:
+pre-partition before generation, or every output inherits the whole claimed set
+and its minimum trust.
+
+### The package failure is mine
+
+The cover asserted the complete `src/` and `tests/` trees were included. **They
+were written to the package directory and never transmitted** — the reviewer
+received the eight top-level files only, and could execute nothing that touches
+source. **v4 was deferred partly for asserting reproducibility the package could
+not support; v5 asserted it, built it correctly, and failed at delivery.**
+
+### Answers received to §9's questions
+
+- **`observed_at` monotonicity: keep it.** A legitimate maintenance-time liveness
+  signal *would itself be a new observation*, so it belongs in `observation`,
+  **not as an exception inside `none`.**
+- **Categorical equality: keep it** for single-object evidence-free mutation. A
+  lattice belongs in N9b, supersession and import capping — letting a persisted
+  object's authorship move *down* during maintenance still rewrites provenance.
+- **The split was correct.** The remedy for lost overview is **not** recombining
+  the normative designs but a one-page dependency index — which is the same
+  structured record §11 should be generated from.
