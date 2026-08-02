@@ -1024,7 +1024,7 @@ as §11, so it cannot become another independently-maintained summary.
 ## 12. Review history
 
 <!-- GENERATED:reviews -->
-**5 external reviews, 45 findings: v1 (9) · v2 (10) · v3 (7) · v4 (8) · v5 (11).** The invariant was approved in every one; the retrospective was deferred in every one.
+**8 external review rounds, 74 findings raised: r1 (9) · r2 (10) · r3 (7) · r4 (8) · r5 (11) · r6 (10) · r7 (8) · r8 (11).** The invariant was approved in every one; the retrospective was deferred in every one.
 <!-- /GENERATED:reviews -->
 
 Full dispositions live in `~/Documents/veracium/proposals/` — **not here**,

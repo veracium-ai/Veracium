@@ -56,8 +56,14 @@ def violations() -> list[tuple[str, str, str, str]]:
         # section "Review history" and 0003 calls it "First external review";
         # splitting on one spec's heading left the other's quotations live, so
         # the boundary is any "## <n>. ...review..." heading.
-        body = re.split(r"^##+ \d+\w*\..*review",
-                        f.read_text(), flags=re.M | re.I)[0]
+        # Matches ONLY a review-disposition section, not any heading containing
+        # "review". The looser pattern also matched "Brief for the external
+        # reviewer" and "Scope inherited from 0003's reviews", silently
+        # truncating 27-61% of four specs -- a coverage loss inside a check that
+        # exists to prevent coverage loss.
+        body = re.split(
+            r"^##+ \d+\w*\.\s*(?:Review history\b|[^\n]*review[^\n]*disposition\b)",
+            f.read_text(), flags=re.M | re.I)[0]
         # paragraph granularity: a marker exempts the block it appears in
         for para in re.split(r"\n\s*\n", body):
             flat = _normalise(para)

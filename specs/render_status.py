@@ -27,7 +27,8 @@ sys.path.insert(0, str(ROOT / "specs"))
 
 
 def _regions() -> dict[str, str]:
-    from findings import FINDINGS, REVIEWS
+    from findings import FINDINGS
+    from reviews import REVIEWS as _ALL
 
     open_f = [f for f in FINDINGS if f["disposition"] == "open"]
     unimpl = [f for f in FINDINGS if f["implementation"] == "none"]
@@ -61,9 +62,15 @@ def _regions() -> dict[str, str]:
         f"*Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes "
         f"that do not hold.*")
 
-    rv = " · ".join(f"{r['version']} ({r['findings']})" for r in REVIEWS)
-    reviews = (f"**{len(REVIEWS)} external reviews, {sum(r['findings'] for r in REVIEWS)} "
-               f"findings: {rv}.** The invariant was approved in every one; the "
+    # 0002's rounds, from the one cross-spec source. The previous copy lived in
+    # findings.py, covered only this spec, and stopped at v5 while a sixth
+    # disposition sat in the document.
+    REVIEWS = [r for r in _ALL if r["spec"] == "0002" and r["kind"] == "external"]
+    # "round" is not "version": round 8 reviewed v7, and conflating them is how
+    # a count becomes a contradiction two documents later.
+    rv = " · ".join(f"r{r['round']} ({r['findings']})" for r in REVIEWS)
+    reviews = (f"**{len(REVIEWS)} external review rounds, "
+               f"{sum(r['findings'] for r in REVIEWS)} findings raised: {rv}.** The invariant was approved in every one; the "
                f"retrospective was deferred in every one.")
 
     # The reviewer's remedy for the split's lost overview: one page showing

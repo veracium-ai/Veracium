@@ -129,11 +129,6 @@ FINDINGS = [
          current_defect="no fenced operation, no atomic claim, no read-visibility rule"),
 ]
 
-# One row per external review, so the count is never stated by hand.
-REVIEWS = [
-    dict(version="v1", findings=9,  outcome="deferred"),
-    dict(version="v2", findings=10, outcome="deferred"),
-    dict(version="v3", findings=7,  outcome="deferred"),
-    dict(version="v4", findings=8,  outcome="deferred"),
-    dict(version="v5", findings=11, outcome="deferred"),
-]
+# Review rounds live in specs/reviews.py -- ONE source across all specs. They
+# were here (0002 only) and in a hand-written table in 0003, and this copy
+# stopped at v5 while a sixth disposition sat in the document.

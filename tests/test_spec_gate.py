@@ -530,3 +530,15 @@ def test_rulings_and_spec_question_tables_agree():
     r = subprocess.run([sys.executable, str(root / "specs" / "lint_rulings.py")],
                        capture_output=True, text=True, cwd=root)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_spec_status_index_is_current():
+    """specs/STATUS.md is the at-a-glance view for Quentin and the coordination
+    session. It is generated: every column comes from the spec files, git,
+    findings.py or reviews.py. A hand-maintained status table is what got 0002
+    deferred seven times."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "render_index.py"), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr
