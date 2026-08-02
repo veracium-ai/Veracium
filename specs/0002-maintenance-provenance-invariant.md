@@ -27,11 +27,11 @@ this spec reports findings, not coverage.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v5** — *re-read before editing; quote the version you approve.* v1 (9 findings) · v2 (10) · v3 (7) · v4 (8) — **all deferred, all for stale text surviving a pass that claimed to remove it. v5 is the first backed by a lint.** |
-| **Status** | *see `Spec-Status:` at the top — canonical.* **v5 — four external reviews, 34 findings.** The invariant was approved in all four; the retrospective was deferred in all four. |
+| **Version** | **v6** — *re-read before editing; quote the version you approve.* Per-review counts are generated (§12). **Every version through v5 was deferred for status prose contradicting other status prose; v6 is the first where the prose is derived rather than checked.** |
+| **Status** | *see `Spec-Status:` at the top — canonical.* **Review count and finding totals are generated — §12.** Restating them here is what drifted — the WITHDRAWN wording claimed four external reviews and 34 findings, after the fifth had landed. |
 | **Internal reviewers** | research *(trust semantics; and paper 2 is on this exact subject — see §8)* |
 | **External review** | required — full spec (touches `graph.py`, `lifecycle.py`, `__init__.py`) |
-| **Decision + date** | — · **scope narrowed 2026-08-01** to M1–M5, all closed. M6/M7/M8 moved out; see §11. |
+| **Decision + date** | — · scope narrowed 2026-08-01; M6/M7/M8 moved out. **Status is generated — see §11; nothing here restates it.** |
 | **Path** | full |
 
 ---
@@ -702,7 +702,7 @@ follow, and this is the operation that proves it.
 
 ---
 
-## 7f. M2 — frozen: the confirmation-time contract (released 0.4.5 + 0.4.6)
+## 7f. M2 — frozen: the confirmation-time contract
 
 **Second external review item 2:** 0.4.6's behaviour was asserted in the header
 and the changelog and **specified nowhere**, while N2 still said only that
@@ -749,8 +749,10 @@ retained as one clause of a wider invariant:
 | **N2e** repeated confirmation is idempotent in `valid_from` | `test_past_and_today_still_work` | CI |
 | **N2f** the response reports the **persisted** `valid_from` | `test_confirm_returns_the_real_valid_from_not_the_confirmation_date` | CI |
 
-**All six pass today** (0.4.6, `533092c`); N2b is the one whose behaviour
-predates the fix and was never pinned.
+**All pass today.** N2b is the one whose behaviour predates the fix and was
+never pinned. **Which release carries which clause is in §11 and is generated** —
+this section deliberately names no version, because it named 0.4.5/0.4.6 and was
+still saying so after 0.4.7 shipped.
 
 ---
 
@@ -874,33 +876,44 @@ verdicts disagree.
 
 ## 11. Finding ledger
 
-**Rebuilt to the second external review's shape.** The WITHDRAWN predecessor
-claimed every remaining finding was closed while the header said three were
-unimplemented. **Both were written by me, and "closed" silently meant *a
-disposition exists* in one place and *the code is fixed* in the other.** The
-columns now force the distinction.
+**Generated from `specs/findings.py`.** Do not edit this section — edit the
+records and run `render_status.py --write`. `--check` runs in CI.
 
-| finding | released behaviour | current defect | frozen behaviour | implemented? | test | release |
-|---|---|---|---|---|---|---|
-| **M1** consolidation derived provenance from `cold[0]` | whole-set minimum trust | — | — | **yes** | `test_consolidation_uses_whole_set_min_trust` | 0.4.4 + GHSA-hcj3-8jqc-wqrp |
-| **M2** `confirm()` mutated `valid_from` | `valid_from` immutable; confirmation advances `observed_at` | — | §7f | **yes** | `test_confirm_advances_liveness_not_first_known` | 0.4.5 |
-| **M2′** return value / future dates | returns real `valid_from` + `confirmed_at`; future dates rejected at `_event_dt` | — | §7f | **yes** | `test_confirm_returns_the_real_valid_from…` · `test_a_future_event_date_is_rejected` | **0.4.6 (unreleased — committed only)** |
-| **M3** staleness clearing | same-**class** clearing still permitted | 🔴 **the shipped fix is inadequate** — the host chooses the class | ➡️ **`0008`** | **no** | `0008` C1–C6 | — |
-| **M4** outcome authorship | note in `summary`, structured field still overwritten | 🔴 **the shipped fix is inadequate** — the note survives one hop | ➡️ **`0009`** | **no** | `0009` H1–H7 | — |
-| **M5** merge-time `confidence` | T1 `max` retained | — | T2 keeps the survivor's own | **n/a — T2 is unwritten** | constrains `0009`-era T2 design | — |
-| **N9b** consolidation set→output | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | ~~a `0.2` batch produced a `0.9` summary~~ | §6a — no stronger than the weakest input, every field | **yes** | `test_consolidation_output_is_no_stronger_than_its_weakest_input` | **0.4.7** |
-| **N9b lineage** | inputs deleted, no record of the set | 🔴 **open** — `observed_at` bounds currency but the **spread is not retained**, so N9b's mixed-currency row and N10 are unmet | ➡️ **`specs/0010`** §4b — validated per-summary lineage | **no** | `0010` X6, X8 | — |
-| **crash-safe consolidation** | delete-all-then-write | 🔴 open | ➡️ **`specs/0010`** — write-before-delete + lineage recovery | **no** | `0010` X1–X6 | — |
+**Five reviews were deferred for status prose contradicting other status prose
+in the same document.** Most recently a WITHDRAWN header claim — *"M1–M5, all
+closed"* — sat beside this table showing five unimplemented. Each was corrected by hand and the
+next appeared. The v5 phrase lint passed through that one, because a lint is a
+better hand-check rather than a different mechanism. **So the summaries are now
+derived and nothing below is restated by hand.**
 
-**Added after the fourth review:** N9b had **no ledger row at all** — the
-invariant was expanded in v4 while the code violated it, and nothing in the
-table said so. **An invariant with no row is indistinguishable from an invariant
-that holds.** The trust-floor half shipped in 0.4.7; the lineage half is open and
-owned by `0010`.
+<!-- GENERATED:summary -->
+**12 findings · 6 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7) · 5 unimplemented · 3 still open.**
 
-**Three rows are red and two of them shipped as fixes.** That is the honest
-state, and it is why `0008` and `0009` exist separately: **they are corrections
-to released behaviour, not documentation debt.**
+**Unimplemented:** `M3`, `M4`, `N9b-lineage`, `N4-decay`, `X-crash`. **Open:** `N9b-lineage`, `N4-decay`, `X-crash`.
+
+*Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes that do not hold.*
+<!-- /GENERATED:summary -->
+
+<!-- GENERATED:ledger -->
+| finding | released behaviour | current defect | owner | implemented? | test |
+|---|---|---|---|---|---|
+| **M1** consolidation derived provenance from `cold[0]` | provenance inherited from the first cold episode | — | this spec | **yes** — 0.4.4 + GHSA-hcj3-8jqc-wqrp | `test_consolidation_preserves_and_compresses` |
+| **M2** `confirm()` mutated `valid_from` | confirmation moved a fact's first-known date | — | this spec | **yes** — 0.4.5 | `test_confirm_advances_liveness_not_first_known` |
+| **M2′** `confirm()` returned a `valid_from` it never set; future dates accepted | the return contract carried the caller's date; a future date was unrecoverable | — | this spec | **yes** — 0.4.6 | `test_confirm_returns_the_real_valid_from_not_the_confirmation_date` |
+| **M2″** offset-bearing dates relabelled UTC instead of converted | `.replace(tzinfo=utc)` discarded the offset — 12h of skew bypass measured | — | this spec | **yes** — 0.4.7 | `test_an_offset_bearing_timestamp_is_converted_not_relabelled` |
+| **M2‴** malformed dates silently became *now* | an invented observation time the caller never supplied | — | this spec | **yes** — 0.4.7 | `test_a_malformed_event_date_is_rejected_not_silently_now` |
+| **M3** staleness cleared on same-author-class evidence | 0.4.5 closed cross-class clearing and left same-class open | the host chooses the class, and `author` is model-reachable | **`specs/0008`** | **no** | `0008 C1–C6` |
+| **M4** `record_outcome` overwrites authorship | 0.4.5 appends a note to a summary rebuilt on every upgrade | the trail survives exactly one hop; the field is still overwritten | **`specs/0009`** | **no** | `0009 H1–H7` |
+| **M5** merge-time `confidence = max(...)` | T1 retains `max`, which is earned | — | this spec | n/a | `constrains the unwritten T2 design` |
+| **N9b-floor** consolidation manufactured confidence, disclosure and currency | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | — | this spec | **yes** — 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
+| **N9b-lineage** consolidation retains no record of the absorbed set | inputs deleted, no lineage | 🔴 mixed-currency spread unretained, so N9b's premise and N10 are unmet | **`specs/0010`** | **no** | `0010 X6, X8` |
+| **N4-decay** `MemoryConfig` bounds are unvalidated, and declared field bounds are not enforced on assignment | `decay_factor=2.0`, `NaN`, `-1.0` all accepted; `validate_assignment` is False | 🔴 `expire()` can RAISE confidence, which makes N4 false as written | this spec | **no** | `0002 N4b–N4d` |
+| **X-crash** consolidation deletes every input before writing any output | delete-all-then-write; a crash loses the batch | 🔴 no fenced operation, no atomic claim, no read-visibility rule | **`specs/0010`** | **no** | `0010 X1–X9` |
+<!-- /GENERATED:ledger -->
+
+**`disposition` and `implementation` are separate columns on purpose.** The
+second review's first finding was that *"closed"* silently meant *a disposition
+exists* in one place and *the code is fixed* in another.
 
 ---
 
@@ -908,10 +921,13 @@ to released behaviour, not documentation debt.**
 
 ## 12. Review history
 
-**Three external reviews. The invariant was approved by all three; the
-retrospective was deferred by all three.** Full dispositions live in
-`~/Documents/veracium/proposals/` — **not here**, because two full appendices
-inside the spec were themselves finding #1 of the third review.
+<!-- GENERATED:reviews -->
+**5 external reviews, 45 findings: v1 (9) · v2 (10) · v3 (7) · v4 (8) · v5 (11).** The invariant was approved in every one; the retrospective was deferred in every one.
+<!-- /GENERATED:reviews -->
+
+Full dispositions live in `~/Documents/veracium/proposals/` — **not here**,
+because two full appendices inside the spec were themselves finding #1 of the
+third review.
 
 | round | verdict | findings | what recurred |
 |---|---|---|---|

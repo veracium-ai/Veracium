@@ -463,3 +463,17 @@ def test_no_withdrawn_rule_is_stated_as_live_spec_text():
     r = subprocess.run([sys.executable, str(root / "specs" / "lint_withdrawn.py")],
                        capture_output=True, text=True, cwd=root)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_status_prose_is_generated_from_the_structured_records():
+    """Five external reviews were deferred for a status claim contradicting
+    another status claim in the same document — most recently a header saying
+    "M1–M5, all closed" beside a ledger showing five unimplemented. Every fix
+    was a better hand-check; the phrase lint passed straight through that one.
+
+    Summaries are now derived from specs/findings.py."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "render_status.py"), "--check"],
+                       capture_output=True, text=True, cwd=root)
+    assert r.returncode == 0, r.stdout + r.stderr

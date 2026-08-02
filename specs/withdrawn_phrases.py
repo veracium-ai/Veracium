@@ -41,4 +41,13 @@ WITHDRAWN = [
     (r"all five findings.{0,20}are closed",
      "M3, M4 and consolidation are unimplemented",
      "specs/0002 §11"),
+    (r"M1.M5,? all closed",
+     "M3, M4, N9b-lineage, N4-decay and X-crash are unimplemented",
+     "specs/0002 §11 — generated"),
+    (r"(three|four) (rows are red|external reviews)",
+     "counts are generated from specs/findings.py",
+     "specs/0002 §11, §12"),
+    (r"0\.4\.6 \(unreleased",
+     "0.4.6 and 0.4.7 are both published",
+     "specs/0002 §11 — generated"),
 ]

@@ -212,7 +212,21 @@ def _validate(sites) -> list[str]:
         if not test.strip():
             problems.append(f"{k}: no test or owning spec — N8 requires both")
             continue
-        if STATES.get(k) in ("open", "moved", "open_moved"):
+        # State semantics are enforced, not just spelling. v5 declared the
+        # vocabulary and then assigned three sites `open` while they were owned
+        # by 0008/0009/0010 -- a definition nothing checked is a comment.
+        # "External" means another spec -- 0002 naming itself is not delegation.
+        external = any(m not in ("0002",) for m in SPEC_REF.findall(verdict + test))
+        if st == "open" and external:
+            problems.append(f"{k}: state `open` means owned by 0002, but the "
+                            f"verdict names another spec — use `open_moved`")
+        if st in ("moved", "open_moved") and not external:
+            problems.append(f"{k}: state `{st}` requires an owning spec, and "
+                            f"none is named")
+        if st == "moved" and "🔴" in verdict:
+            problems.append(f"{k}: state `moved` means the defect is not open "
+                            f"here; the verdict says otherwise — use `open_moved`")
+        if st in ("open", "moved", "open_moved"):
             if not SPEC_REF.search(test) and not SPEC_REF.search(verdict):
                 problems.append(f"{k}: moved/open rows must name an owning spec, got {test!r}")
         elif not TEST_REF.search(test):
