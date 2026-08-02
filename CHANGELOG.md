@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.8 — 2026-08-02
+
+- **Consolidation wrote internally false provenance.** A summary reported
+  `author_of_evidence=SYSTEM` while carrying `source_type=STATED` and the
+  **first input's** `evidence_ref`, because both were inherited from `cold[0]`.
+  A system-authored summary is not a stated fact and its evidence is not one
+  arbitrary member. Now `INFERRED`, with an `evidence_ref` naming the
+  consolidation.
+
+  This is the 0.4.4 `cold[0]` defect surviving on two fields the 0.4.7 test
+  never inspected.
+
+- **An offset-bearing `date=` failed through `remember()`.** 0.4.7 taught
+  `_event_dt` to convert offsets, then handed the **raw string** to the prompt
+  builder, which parses with `date.fromisoformat` and rejects them — so
+  `remember(date="2026-01-01T12:00:00+05:30")` raised `Invalid isoformat
+  string`. Every public entry point now normalises once and passes the
+  normalised value on.
+
+- **The unparseable-extraction path recorded the wrong instant.** When
+  extraction returned no parseable JSON, `observed_at` was re-derived from the
+  already-reduced date, so `12:30+05:30` was stored as **midnight** rather than
+  07:00 UTC. Both branches now reuse the accepted instant.
+
+- **`veracium-mcp --version` no longer fails outside an installed package.** It
+  reported `PackageNotFoundError` from a bare source tree; it now says so and
+  continues. Deliberately without a `__version__` constant — `pyproject.toml`
+  stays the single source of the version.
+
 ## 0.4.7 — 2026-08-02
 
 - **An offset-bearing event date was relabelled UTC instead of converted.**
