@@ -12,6 +12,7 @@ FAILURE, not the feature, so a regression reads as "the banana case passes
 again" rather than "test_17 broke".
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -52,13 +53,25 @@ class Repo:
         p.write_text(f"# Spec: thing\n\nSpec-Status: {status}\n\nbody\n{tail}")
         return p
 
+    # A scratch repo must not inherit the developer's git configuration.
+    # `commit.gpgsign = true` globally makes every `git commit` here wait on a
+    # GPG agent that a sandbox or CI container does not have, and the wait has
+    # no timeout -- the run hangs rather than fails. An external reviewer hit
+    # exactly that on 0007 v3 and could not finish the suite. Templates, hooks
+    # and aliases are the same class of problem. `GIT_CONFIG_GLOBAL` and
+    # `GIT_CONFIG_SYSTEM` pointing at /dev/null make the fixture hermetic, and
+    # every git call below inherits it.
+    _ENV = {**os.environ, "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_SYSTEM": os.devnull, "GIT_TERMINAL_PROMPT": "0",
+            "GIT_OPTIONAL_LOCKS": "0"}
+
     def _run(self, *a):
         return subprocess.run(a, cwd=self.path, check=True, capture_output=True,
-                              text=True)
+                              text=True, env=self._ENV, timeout=60)
 
     def _out(self, *a):
         return subprocess.run(a, cwd=self.path, capture_output=True,
-                              text=True).stdout
+                              text=True, env=self._ENV, timeout=60).stdout
 
     def commit(self, subject, trailers=(), touch=(), delete=(), rename=None):
         for f in touch:
@@ -77,8 +90,11 @@ class Repo:
         return self
 
     def check(self, rng=None, *extra):
+        # the checker shells out to git inside this scratch repo, so it needs
+        # the same hermetic environment the fixture's own git calls use
         r = subprocess.run([sys.executable, str(CHECK), rng or f"{self.base}..HEAD",
-                            *extra], cwd=self.path, capture_output=True, text=True)
+                            *extra], cwd=self.path, capture_output=True, text=True,
+                           env=self._ENV, timeout=120)
         return r.returncode, r.stdout + r.stderr
 
 
