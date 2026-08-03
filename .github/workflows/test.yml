@@ -25,6 +25,9 @@ jobs:
           # the committed index against a fresh render. A depth-1 clone has no
           # history for files the HEAD commit did not touch, so the render
           # could never match — 63 consecutive red runs before anyone looked.
+          # (This change shipped without its Process-Change trailer and the
+          # spec-reference gate failed that push — correctly. Trailer carried
+          # by the follow-up commit that added this note.)
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
