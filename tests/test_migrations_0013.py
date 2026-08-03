@@ -673,13 +673,15 @@ def test_a_non_database_file_is_a_closed_refusal():
 
 def test_an_unopenable_path_is_a_closed_refusal():
     """Round 4 measured an uncaught OperationalError for a missing parent
-    directory."""
+    directory. Round 6 split the outcome by mode: ordinary opening reports
+    the storage failure; the dedicated migration reports the SOURCE failure,
+    because its authority attests a store that is not there."""
     import os
     p = tempfile.mktemp(suffix=".db") + "-no-such-dir/store.db"
     assert m13.open_or_migrate(p) == "store-unopenable"
     bound = m13.make_authority(_v1_store())._replace(
         store_path=os.path.realpath(p))
-    assert m13.migrate_store(p, bound) == "store-unopenable"
+    assert m13.migrate_store(p, bound) == "migration-source-missing"
 
 
 def test_registry_validation_is_total_over_malformed_keys():
@@ -1031,3 +1033,217 @@ def test_a_non_pathlike_argument_is_a_closed_outcome():
 def test_an_oversized_path_is_a_closed_outcome():
     p = "/tmp/" + "x" * 5000
     assert m13.open_or_migrate(p) == "store-unopenable"
+
+
+# --- round 6, finding 1: a migration never creates -------------------------
+
+def test_a_deleted_source_cannot_become_a_new_store():
+    """THE round-6 probe: mint a valid authority, delete the file, migrate —
+    v7 CREATED and stamped a fresh v2 store the authority never attested.
+    Now: source-specific refusal, and the path stays uncreated."""
+    import os
+    p = _v1_store(rows=2)
+    auth = m13.make_authority(p)
+    os.remove(p)
+    assert m13.migrate_store(p, auth) == "migration-source-missing"
+    assert not os.path.exists(p)
+
+
+def test_a_truncated_source_cannot_become_a_new_store():
+    import os
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    with open(p, "w"):
+        pass                                   # truncate to zero bytes
+    assert m13.migrate_store(p, auth) == "migration-source-missing"
+    assert os.path.getsize(p) == 0
+
+
+def test_an_empty_database_replacement_cannot_be_migrated():
+    import os
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    os.remove(p)
+    sqlite3.connect(p).close()                 # empty SQLite database
+    before = open(p, "rb").read()
+    assert m13.migrate_store(p, auth) == "migration-source-missing"
+    assert open(p, "rb").read() == before
+
+
+def test_an_unstamped_current_shape_replacement_is_refused_not_adopted():
+    import os
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    os.remove(p)
+    c = sqlite3.connect(p)                     # unstamped v2 shape
+    for o in m13.SCHEMA_V2:
+        c.execute(o.ddl)
+    c.commit()
+    c.close()
+    before = open(p, "rb").read()
+    assert m13.migrate_store(p, auth) == "foreign-shape"
+    assert open(p, "rb").read() == before
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 0
+
+
+def test_ordinary_open_still_creates():
+    """The creation seam is migrate-mode only; §4's new row is untouched for
+    ordinary opening."""
+    p = tempfile.mktemp(suffix=".db")
+    assert m13.open_or_migrate(p) == "created"
+
+
+# --- round 6, finding 2: serialized monotone publication -------------------
+
+def test_a_concurrent_future_publication_is_not_downgraded(tmp_path,
+                                                           monkeypatch):
+    """Round 6's race: writer B publishes a future revision while writer A
+    is past its inspection — v7's pre-generation check let A replace it.
+    Inspection now happens under the same interprocess lock as publication:
+    a future artifact published while this writer BLOCKS on the lock is
+    seen by the re-read and refused, byte-unchanged."""
+    import json as _json
+    import subprocess
+    import sys as _sys
+    import time
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    seeded = tmp_path / "evidence.json"
+    seeded.write_text(json.dumps(art, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
+    lock_path = seeded.with_suffix(".lock")
+    signal = tmp_path / "holding"
+    helper = f"""
+import fcntl, json, pathlib, time
+lock = open({str(lock_path)!r}, "w")
+fcntl.flock(lock, fcntl.LOCK_EX)
+pathlib.Path({str(signal)!r}).write_text("held")
+art = json.loads(pathlib.Path({str(seeded)!r}).read_text())
+art["migration_evidence_algorithm"] = 2
+pathlib.Path({str(seeded)!r}).write_text(json.dumps(art, indent=1, sort_keys=True))
+time.sleep(0.6)
+fcntl.flock(lock, fcntl.LOCK_UN)
+"""
+    proc = subprocess.Popen([_sys.executable, "-c", helper])
+    try:
+        deadline = time.monotonic() + 10
+        while not signal.exists():
+            assert time.monotonic() < deadline, "helper never acquired lock"
+            time.sleep(0.02)
+        # This writer blocks on the lock, then re-reads and must refuse.
+        assert m13.write_evidence() == 1
+        assert _json.loads(seeded.read_text())[
+            "migration_evidence_algorithm"] == 2
+    finally:
+        proc.wait(timeout=10)
+
+
+# --- round 6, finding 3: Unicode- and PathLike-safe boundary ---------------
+
+def test_a_non_utf8_bytes_path_works_end_to_end():
+    """A valid POSIX filename with non-UTF-8 bytes — v6 raised
+    UnicodeEncodeError from `canonical.encode()`. The conversions are
+    filesystem-encoding-aware now, so the store simply works."""
+    import os
+    raw = os.fsencode(tempfile.mktemp(suffix="-\udcff.db"))
+    p = os.fsdecode(raw)
+    c = sqlite3.connect(p)
+    for o in m13.SCHEMA_V1:
+        c.execute(o.ddl)
+    c.execute("PRAGMA user_version = 1")
+    c.commit()
+    c.close()
+    assert m13.open_or_migrate(raw) == "migration-required"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
+
+
+def test_a_pathlike_that_raises_is_a_closed_outcome():
+    class BadPath:
+        def __fspath__(self):
+            raise RuntimeError("boom")
+
+        def __repr__(self):
+            raise RuntimeError("repr boom")   # diagnostics must survive too
+    assert m13.open_or_migrate(BadPath()) == "invalid-request"
+
+
+def test_a_surrogate_token_field_is_a_closed_refusal():
+    """v7's byte-cap check raised UnicodeEncodeError from `.encode()`; the
+    frozen token grammar matches on the str and simply refuses."""
+    p = _v1_store()
+    surr = m13.make_authority(p)._replace(operation_id="op-\udcff")
+    assert m13.migrate_store(p, surr) == "migration-quiescence-required"
+
+
+def test_a_prose_token_field_is_refused():
+    """Round 6 (non-blocking): a size cap bounds a prose channel, a grammar
+    closes it."""
+    p = _v1_store()
+    prose = m13.make_authority(p)._replace(
+        backup_ref="please restore from the tape in drawer three")
+    assert m13.migrate_store(p, prose) == "migration-quiescence-required"
+
+
+# --- round 6, findings 4-5: audit contract and release identity ------------
+
+def test_the_audit_contract_is_frozen():
+    """The typed escape carries the caller's decision inputs, and the
+    attempted-record failure has a closed outcome with nothing consumed."""
+    assert "migration-audit-unavailable" in m13.MIGRATION_FAILURES
+    assert m13.Outcome("migration-audit-unavailable") == \
+        "migration-audit-unavailable"
+    err = m13.MigrationAuditWriteError(
+        committed=True, operation_id="op-x", store_path="/s", resulting_version=2)
+    assert err.committed is True and err.resulting_version == 2
+    assert isinstance(err, RuntimeError)
+
+
+def test_the_release_identity_is_content_derived():
+    """`veracium-<version>+<source-digest>`: two builds sharing a package
+    version but differing in instrument or kernel code get different
+    identities."""
+    import re
+    ident = m13._release_identity()
+    assert re.fullmatch(r"veracium-[0-9a-zA-Z.]+\+[0-9a-f]{12}", ident), ident
+    assert m13._TOKEN_RE.fullmatch(ident)
+
+
+def test_a_version_only_release_ref_is_refused():
+    """Round 6: a mutable semantic version alone let an authority cross
+    builds."""
+    p = _v1_store()
+    old_style = m13.make_authority(p)._replace(release_ref="veracium-0.4.8")
+    assert m13.migrate_store(p, old_style) == "migration-quiescence-required"
+
+
+def test_a_cross_build_authority_is_refused(monkeypatch):
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_release_identity",
+                        lambda: "veracium-0.4.8+aaaaaaaaaaaa")
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_an_authority_binds_the_evidence_artifact(monkeypatch, tmp_path):
+    """Round 6: the authority additionally binds the digest of the exact
+    evidence artifact being consumed — regenerating the artifact between
+    mint and consume unbinds it."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    changed = tmp_path / "evidence.json"
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["generated_at"] = "2026-01-01T00:00:00+00:00"
+    changed.write_text(json.dumps(art, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", changed)
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_check_evidence_reports_cardinality_before_the_identity_return(
+        monkeypatch, tmp_path):
+    """Round 6 (non-blocking): a foreign-runtime artifact with its path
+    records stripped must not read 'structural checks pass'."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"] = []
+    stripped = tmp_path / "evidence.json"
+    stripped.write_text(json.dumps(art, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", stripped)
+    assert m13.check_evidence() == 1

@@ -77,6 +77,8 @@ REVIEWS = [
          verdict="architecture standing; deferred; evidence totality, artifact-wide cardinality, probe soundness, authority lifecycle", findings=5),
     dict(spec="0013", round=5, kind="external", date="2026-08-03",
          verdict="architecture standing; deferred; monotone evidence writes, operation-level consumption, exact scalar typing, outermost boundary", findings=4),
+    dict(spec="0013", round=6, kind="external", date="2026-08-03",
+         verdict="approved architecture restated; deferred; migrate-only planner mode, serialized publication, Unicode-safe boundary, audit state machine, immutable release identity", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

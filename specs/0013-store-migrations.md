@@ -5,30 +5,30 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v7)** — round 5: *architecture standing; v6 deferred on four
-> falsifiable gaps*. All taken; per the reviewer's constraint the migration,
-> the planner and the evidence-selection model are unchanged: **evidence
-> writes are monotone** (an older checkout seeded with future
-> migration/manifest/schema revisions now refuses byte-unchanged — the
-> `MigrationEvidenceRevision` triple, 0007's downgrade rule applied to this
-> writer); **authority consumption covers the complete operation** (v6
-> consumed only inside the older-row hook, so an authority whose operation
-> found the store already current stayed spendable and later migrated a
-> replacement — acceptance now spends the operation id before any store
-> access, and `issued_at ≤ now < expires_at` with a frozen maximum lifetime
-> and release-identity binding closes the future-dating hole); **scalar
-> typing is exact everywhere** (`True`/`13.0`/`2.0` passed Python's coercive
-> equality at the top level and in path records — a numerically equal
-> wrong-typed value is malformed and poisons); and **the failure boundary is
-> genuinely outermost** (path conversion, canonicalization and timeout
-> validation were running before it — an embedded-NUL path and a mistyped
-> `busy_timeout_ms` escaped raw; `invalid-request` joins the vocabulary for
-> malformed calls). §5e freezes the durable authority state machine.
+> **in review (v8)** — round 6: *approved architecture restated in full
+> (planner, DDL, path evidence, qualification, deferrals); v7 deferred on
+> five load-bearing problems*. All taken: **a migration never creates** (v7's
+> dedicated operation CREATED a fresh v2 store after its attested v1 source
+> was deleted — the shared planner gains a migrate-only mode: `mode=rw`
+> connection that cannot materialise files, a creation seam mirroring the
+> older-row hook, adoption off; `migration-source-missing` joins the
+> vocabulary); **evidence publication is serialized** (v7's pre-generation
+> inspection was a check-then-replace race, measured with a forced
+> interleaving — inspection now happens under the same interprocess lock as
+> publication, staging is writer-unique); **the boundary is Unicode- and
+> PathLike-safe** (surrogate-escaped POSIX names now work end-to-end,
+> anything `__fspath__` raises is a closed outcome, token grammars match on
+> the str); **the audit state machine is complete** (typed
+> `MigrationAuditWriteError` with a `committed` flag as the second named
+> escape, `migration-audit-unavailable` for the attempted record, payload
+> schema frozen); and **the release identity is content-derived** —
+> `veracium-<version>+<source-digest>` over the instrument and kernel bytes,
+> plus an `evidence_digest` binding the exact artifact consumed.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v7 |
+| **Version** | v8 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -262,7 +262,7 @@ model is deferred to the first real `ALTER` and must be externally reviewed
 there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
 **Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
-(93 tests: every round-2 through round-5 probe as a regression, the full inherited
+(109 tests: every round-2 through round-6 probe as a regression, the full inherited
 planner across empty/unstamped/foreign/malformed/newer stores, the evidence
 gate's adversarial records, confinement qualification, the closed failure
 model, and the stale-connection hazard below).
@@ -311,7 +311,18 @@ other processes — it is *owned*, explicitly, by the party that can.
 
 Migration is a **dedicated operation** (`migrate_store`), never a parameter on
 tenant-facing opening — `open_or_migrate` has no authority argument at all
-(round 3). The `MigrationAuthority` is an **attestation the library validates
+(round 3). **And the dedicated operation is a MODE of the shared planner,
+not a second state machine** (round 6, finding 1: v7's operation reached the
+planner's new-row and CREATED a fresh v2 store after its attested v1 source
+was deleted — likewise over an empty replacement database). In migrate mode:
+an accepted older source runs the migration hook; a current destination is a
+permitted no-op (`current`, the race case); **a new or empty store refuses
+`migration-source-missing` and never creates** (the connection itself is
+`mode=rw` and cannot materialise a file; a nonexistent path refuses with the
+path left uncreated); an unstamped shape is never adopted (`allow_adopt` off
+— the candidate restriction already refuses it as `foreign-shape`); foreign,
+malformed and newer keep their normal closed refusals. The creation seam is
+the kernel's `new=` hook, the exact mirror of the older-row hook. The `MigrationAuthority` is an **attestation the library validates
 but cannot verify** — and round 4 showed that binding it to a path *string*
 is not binding it to an *operation*: an authority was replayed after the
 store at its path was replaced (the replacement migrated under an attestation
@@ -327,10 +338,11 @@ ruling):
 | `from_version` · `to_version` | the step's endpoints | exact ints, equal to the selected step's |
 | `source_digest` | the source manifestation being migrated | equals the acceptance digest measured under the write lock, pre-repair (rebuildable-blind, so incidental index drift does not unbind) |
 | `migration_digest` | the reviewed statements | equals the declaration digest of the registered step |
-| `backup_ref` | the backup this operation made | nonempty string, ≤ 256 bytes (token fields are not prose channels) |
-| `release_ref` | the minting release/deployment | must equal the RUNNING release identity (draft: the tree's own `pyproject.toml` version; production: real deployment identity) |
-| `operation_id` | this one migration operation | **single-use over the COMPLETE operation** (round 5) — consumed at acceptance, before any store access; ≤ 256 bytes |
-| `issued_at` · `expires_at` | the validity window | RFC 3339, timezone-aware; `issued ≤ now < expires`; `expires − issued ≤` the frozen `MAX_AUTHORITY_LIFETIME` (1 h); **no clock-skew allowance** — skew handling, if production ever permits it, must be explicit and bounded |
+| `backup_ref` | the backup this operation made | the frozen token grammar: ASCII `[A-Za-z0-9._+:/-]`, ≤ 128 chars, no whitespace — a grammar closes the prose channel a byte cap only bounded (round 6); normalization is moot because the charset admits one representation |
+| `release_ref` | the minting release/deployment | must equal the RUNNING release identity — **frozen (round 6): `veracium-<version>+<source-digest>`**, where the digest is sha256 over the instrument and kernel bytes. Representation: the token grammar; size ≤ 128; source of truth: the running tree's own bytes (identical rule in editable and archive builds — no git, no installed-dist metadata); comparison: exact string equality; rotation: ANY change to the covered files rotates it, so an authority is minted and consumed by the same build. A mutable semantic version alone was measured crossing builds. Production may substitute a signed release-artifact digest; the rule that the identity is immutable per build is what is frozen |
+| `operation_id` | this one migration operation | **single-use over the COMPLETE operation** (round 5) — consumed at acceptance, before any store access; the literal `op-<uuid4>` grammar |
+| `issued_at` · `expires_at` | the validity window | timezone-aware ISO 8601 as accepted by the parser (round 6 narrowed the wording); `issued ≤ now < expires`; `expires − issued ≤` the frozen `MAX_AUTHORITY_LIFETIME` (1 h); **no clock-skew allowance** — skew handling, if production ever permits it, must be explicit and bounded |
+| `evidence_digest` | the exact evidence artifact consumed | sha256 of the artifact bytes; a regenerated artifact unbinds the authority (round 6) |
 
 An expired, future-issued, over-long-lived, previously consumed,
 retargeted, source-mismatched, wrong-release, mistyped or unbound authority
@@ -382,11 +394,17 @@ plus exact re-derivation on the recording runtime), and consumed by
 `(migration_evidence_algorithm, manifest_algorithm, draft_schema_version)`
 (round 5: the writer replaced artifacts seeded with future revisions of
 every component — the downgrade class `0007`'s runtime-evidence writer
-already refuses). The generator inspects the existing artifact before
-producing anything and **refuses without changing a byte** when any existing
-component exceeds its own, or when the existing revision is unreadable
-(overwriting what cannot be identified is data loss; an explicit delete is
-the only way past it). Same-revision replacement is the explicit
+already refuses) — **and the complete write operation is serialized by an
+interprocess lock** (round 6: a pre-generation inspection was a
+check-then-replace race — a future artifact published while an older writer
+generated was downgraded, measured with a forced interleaving). The
+sequence: acquire the writer lock · re-read and validate the existing
+revision UNDER it · generate · validate the complete prospective artifact ·
+stage to a writer-unique temporary · publish · release. The inspection
+**refuses without changing a byte** when any existing component exceeds the
+tool's own, or when the existing revision is unreadable (overwriting what
+cannot be identified is data loss; an explicit delete is the only way past
+it). Same-revision replacement is the explicit
 active-runtime policy: regenerating on a new runner replaces the whole
 artifact at equal revision — the reviewer's disposable-copy workflow. The
 complete prospective artifact validates before the file is replaced. Every
@@ -490,7 +508,9 @@ invalid-SQL and free-form-string escapes.)
 | lock acquisition exhausted | `locked` |
 | unqualified schema- or migration-runtime; malformed or poisoned schema/runtime evidence — **at any nesting depth** | `unsupported-sqlite` |
 | source not an accepted manifestation | `stamped-shape-mismatch` / `foreign-shape` |
-| invalid, unbound, expired, consumed or retargeted authority | `migration-quiescence-required` |
+| invalid, unbound, expired, consumed, retargeted, cross-build or evidence-unbound authority | `migration-quiescence-required` |
+| the dedicated operation finds no source where its authority attests one — vanished file, empty or truncated replacement, nonexistent path | `migration-source-missing` (the path stays uncreated) |
+| the attempted audit record cannot be written (production) | `migration-audit-unavailable` — nothing consumed, no store access |
 | absent, ambiguous, malformed, foreign or non-matching path evidence | `migration-evidence-missing` |
 | SQL execution or protocol failure during the migration | `migration-failed` |
 | executed output differs from the recorded output | `migration-result-mismatch` |
@@ -503,10 +523,14 @@ Successes are equally closed: `created` · `adopted` · `current` · `migrated`.
 The entry points return an `Outcome` — a value that string-compares as its
 closed member and carries diagnostics separately, and that **refuses to exist
 outside the vocabulary**. Detailed exception text rides the diagnostic, never
-the branch value. One deliberate exception, inherited from `0007`'s reviewed
-behaviour: package-consistency impossibilities (the constructor disagreeing
-with the build's own shipped evidence) raise, because they are properties of a
-broken package, not of the store on disk.
+the branch value. Exactly TWO deliberate, NAMED exceptions escape the
+boundary (round 6 made both classes explicit): `PackageConsistencyError` —
+the build's own pieces disagree, a property of a broken package, not of the
+store — and `MigrationAuditWriteError` (§5e) — the audit of an irreversible
+operation failed after the operation touched the store, and its `committed`
+flag is the caller's decision input. Everything else, including whatever a
+`PathLike.__fspath__` or a diagnostic `__repr__` raises, maps to the closed
+vocabulary.
 
 ## 5e. The migration audit and the durable authority state machine
 
@@ -521,19 +545,40 @@ source and output versions with their manifestation digests, the migration
 declaration digest, and the opaque `backup_ref` — all under the frozen
 opaque-token caps (§5b), so audit fields cannot become prose channels.
 
-**The frozen durable-consumption rules:**
+**The frozen durable-consumption rules — the complete outcome model
+(round 6):**
 
 | rule | contract |
 |---|---|
 | durable key | `operation_id`, unique across the audit — the draft's in-process set becomes a uniqueness lookup against recorded operations |
-| activation | **atomic compare-and-set**: the attempted record's insert IS the consumption; two racers cannot both insert one `operation_id` |
-| attempted-record failure | the operation refuses `migration-quiescence-required` **before any store access** — an operation that cannot record itself cannot run |
-| crash between consumption and migration | the authority is spent; the store is unchanged (the migration transaction never committed). Recovery is a NEW authority — a consumed-but-unexecuted operation is **not retryable**, and whether its backup is still current is part of the host's fresh quiescence attestation |
-| store commits, completed-record fails | the migration HAPPENED — mirror `0007` §4e's post-commit semantics: surface a distinct loud error, never `migration-failed`; a retry opens `current` and correctly does not re-migrate |
+| activation | **atomic compare-and-set**: the attempted record's insert IS the consumption; two racers cannot both insert one `operation_id` (measured in-process: two threads, one authority, exactly one acceptance) |
+| attempted-record failure | closed outcome **`migration-audit-unavailable`** — no store access, and the authority is NOT consumed (the insert is the consumption; a failed insert consumed nothing), so a retry may re-present it |
+| migration rolls back, failed-record fails | store unchanged, authority spent; **`MigrationAuditWriteError(committed=False)`** — surfaced distinctly, never `migration-failed`, because the caller must know the audit record of a refused irreversible operation is missing |
+| store commits, completed-record fails | the migration HAPPENED: **`MigrationAuditWriteError(committed=True)`** — the caller's `committed` flag answers "did it run"; a retry opens `current` and correctly does not re-migrate. Mirrors `0007` §4e |
+| no-op `current` | the consumed operation still writes a completed record carrying outcome `current` — a spent authority with no record is indistinguishable from a crash |
+
+**The frozen record schema** — every field typed and capped, so a record is
+data, not prose:
+
+```
+schema_version        int, 1
+event                 "migration_attempted" | "migration_completed" | "migration_failed"
+operation_id          the op-<uuid4> grammar
+store_path            canonical, ≤ 4096 fs-encoded bytes
+from_version          int          to_version   int
+source_acceptance_digest · output_acceptance_digest      64 lowercase hex
+migration_declaration_digest · evidence_digest           64 lowercase hex
+outcome               a member of §5d's closed vocabulary (completed/failed only)
+release_ref · backup_ref                                 the token grammar
+issued_at · expires_at · occurred_at                     timezone-aware ISO 8601
+```
 
 Lands with the `0008` implementation; the draft demonstrates the complete
-lifecycle in-process, including atomic consumption under concurrency
-(measured — two threads racing one authority: exactly one acceptance).
+lifecycle in-process — atomic consumption under concurrency, the typed
+`MigrationAuditWriteError` contract (declared, with `committed`,
+`operation_id`, store identity and resulting version), and the
+`migration-audit-unavailable` outcome — so the production sink implements a
+frozen contract rather than designing one.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -568,6 +613,11 @@ tests at implementation.
 | **M22** consumption covers the complete operation, atomically | `test_an_authority_finding_the_store_current_is_still_consumed` · `test_authorities_losing_the_concurrent_race_are_consumed` · `test_operation_consumption_is_atomic_under_concurrency` — **measured today** |
 | **M23** the validity window is real: `issued ≤ now < expires`, lifetime-capped, release-bound | `test_a_future_issued_authority_is_refused` · `test_an_authority_lifetime_above_the_frozen_maximum_refuses` · `test_an_authority_from_a_different_release_refuses` · `test_an_oversized_token_field_refuses` — **measured today** |
 | **M24** scalar typing is exact and the boundary is outermost | `test_coerced_top_level_scalars_poison_the_artifact` · `test_a_coerced_path_algorithm_poisons_the_paths` · `test_an_embedded_nul_path_is_a_closed_outcome` · `test_a_mistyped_timeout_is_a_closed_outcome` · `test_a_non_pathlike_argument_is_a_closed_outcome` · `test_an_oversized_path_is_a_closed_outcome` — **measured today** |
+| **M25** a migration never creates or adopts | `test_a_deleted_source_cannot_become_a_new_store` · `test_a_truncated_source_cannot_become_a_new_store` · `test_an_empty_database_replacement_cannot_be_migrated` · `test_an_unstamped_current_shape_replacement_is_refused_not_adopted` · `test_ordinary_open_still_creates` — **measured today**; every case leaves the path uncreated or byte-unchanged |
+| **M26** evidence publication is serialized and monotone under concurrency | `test_a_concurrent_future_publication_is_not_downgraded` (two-process barrier) — **measured today**; the round-5 static seeds remain |
+| **M27** the boundary is Unicode- and PathLike-safe | `test_a_non_utf8_bytes_path_works_end_to_end` · `test_a_pathlike_that_raises_is_a_closed_outcome` · `test_a_surrogate_token_field_is_a_closed_refusal` — **measured today** |
+| **M28** the audit contract is frozen, including its two named escapes | `test_the_audit_contract_is_frozen` — **measured today**; the state machine and record schema are §5e |
+| **M29** the release identity is immutable per build and the evidence artifact is bound | `test_the_release_identity_is_content_derived` · `test_a_version_only_release_ref_is_refused` · `test_a_cross_build_authority_is_refused` · `test_an_authority_binds_the_evidence_artifact` — **measured today** |
 
 ---
 
@@ -613,60 +663,61 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 6 of this spec. All four round-5 blockers, the durable-state-machine
-requirement, and the additional corrections taken; every probe reproduced
-first** — the three revision downgrades, the no-op authority migrating a
-replacement store, the future-dated authority, the coerced
-`True`/`13.0`/`2.0` scalars at top level and in path records, the
-embedded-NUL `ValueError` and the timeout `TypeError`. Per your v7 guidance
-the migration, the planner and the evidence-selection model are unchanged.
+**Round 7 of this spec. All five round-6 blockers and the three non-blocking
+corrections taken; every probe reproduced first** — the authority creating a
+v2 store over its deleted source, the forced writer interleaving downgrading
+a future artifact, the surrogate-path and raising-`__fspath__` escapes, the
+absent audit outcome, the version-only release identity. Per your v8
+guidance the concrete migration, path evidence, authorizer probes and
+ordinary planner states are untouched.
 
-1. **Monotone writes** (finding 1): `write_evidence` inspects the existing
-   artifact first and refuses byte-unchanged when any
-   `MigrationEvidenceRevision` component exceeds its own — or when the
-   existing revision is unreadable (explicit delete required). Your three
-   seeds are parametrized regressions asserting byte-identity. Same-revision
-   replacement of the single active runtime is stated as the explicit
-   policy; the full prospective artifact validates before replacement.
-2. **Operation-level consumption** (finding 2): acceptance spends the
-   operation id before any store access, so `current`, evidence refusals,
-   lost races and even `locked` all consume. Your replay probe is the
-   regression: A2's no-op spends it, and the replacement store stays v1.
-   The five-opener race now spends all five. `issued_at ≤ now` (no
-   clock-skew allowance, stated), `expires − issued ≤ MAX_AUTHORITY_LIFETIME`
-   (1 h, frozen), `release_ref` must equal the running release identity
-   (draft: the tree's own `pyproject.toml`), and token fields cap at 256
-   bytes. Atomic consumption under concurrency is measured (two threads,
-   one authority, exactly one acceptance).
-3. **Exact scalars** (finding 3): `type(v) is int` before equality for all
-   three revision components, at the top level and in every path record;
-   `artifact` must be the expected string; `generated_at` must parse
-   timezone-aware. Your five top-level mutations and the path
-   `manifest_algorithm: 13.0` each poison and are parametrized regressions.
-4. **The outermost boundary** (finding 4): parameter validation, `fspath`/
-   `fsdecode`, `realpath`, the kernel's 4096-byte path cap, context entry,
-   connection and planner are all inside. `invalid-request` (one member)
-   joins §5d for malformed calls; NUL and oversized paths are
-   `store-unopenable`. `busy_timeout_ms` is an exact int in 1..600000 —
-   bool refused.
+1. **A migration never creates** (finding 1): migrate mode = a `mode=rw`
+   connection that cannot materialise files, a nonexistent path refusing
+   with the path left uncreated, the kernel's `new=` creation seam (the
+   exact mirror of the older-row hook) raising `migration-source-missing`,
+   and adoption off. Your regression list is implemented verbatim: deleted
+   file, zero-byte truncation, empty-database replacement, nonexistent
+   path, unstamped current-shape replacement — each a closed refusal with
+   the path uncreated or byte-unchanged, plus the guard that ordinary
+   opening still creates.
+2. **Serialized monotone publication** (finding 2): the complete write
+   operation holds an interprocess lock; the revision inspection happens
+   under the SAME lock as publication, staging is writer-unique. The
+   two-process barrier test holds the lock in a child, publishes a future
+   revision, releases — the blocked older writer re-reads, refuses, and
+   the future bytes survive.
+3. **Unicode- and PathLike-safe boundary** (finding 3): filesystem-aware
+   conversions end to end (a store at a non-UTF-8 POSIX name now simply
+   works — opens, refuses ordinarily, migrates under authority), anything
+   `__fspath__` raises is `invalid-request`, diagnostics survive raising
+   `__repr__`s, and token grammars match on the str so a lone surrogate
+   fails the grammar instead of `.encode()`. The kernel's caps are
+   fs-encoded. Exactly two NAMED classes escape, both frozen: the kernel's
+   `PackageConsistencyError` and §5e's `MigrationAuditWriteError`.
+4. **The audit state machine is complete** (finding 4): every cell filled —
+   attempted-record failure is the closed `migration-audit-unavailable`
+   with nothing consumed; rolled-back-plus-failed-record and
+   committed-plus-failed-record are the typed error with `committed`
+   False/True; a no-op `current` still writes its completed record. The
+   record schema is frozen with types and caps.
+5. **The release identity is immutable per build** (finding 5):
+   `veracium-<version>+<source-digest>` over the instrument and kernel
+   bytes — representation, charset, size, source of truth, comparison and
+   rotation all frozen; identical rule in editable and archive builds. The
+   authority additionally binds `evidence_digest`, the sha256 of the exact
+   artifact consumed; regeneration between mint and consume unbinds.
 
-**§5e freezes the durable state machine** you required: atomic
-compare-and-set insertion as consumption, refuse-before-store-access on
-attempted-record failure, crash-between semantics (spent; new authority;
-backup currency is the fresh attestation's problem), and the post-commit
-audit-failure rule mirroring `0007` §4e. The generator records diagnostic
-provenance (tool + repository commit), stated as never a substitute for the
-declaration digest.
+**Non-blocking corrections**: `--check-evidence` runs cardinality validation
+before the foreign-runtime early return; the token grammars replace the
+byte caps; the timestamp wording says what the parser accepts.
 
-**Where I am least confident:** the consumption point. You sketched
-lock-then-consume; the draft consumes at static acceptance, BEFORE the lock,
-because injecting between the kernel's `BEGIN IMMEDIATE` and its
-classification would mean altering the planner your ruling froze. The
-consequence — a `locked` or `store-unopenable` outcome spends the authority
-— is disclosed in §5b and I believe operationally right (the world changed
-while the operation waited; re-mint). If you rule the lock must precede
-consumption, that is a planner-seam question for the implementation round,
-and I would want it settled before `0008` builds the durable form.
+**Where I am least confident:** the residual catch-all. The boundary's last
+handler maps anything unforeseen to `invalid-store` (ordinary) or
+`migration-failed` (dedicated) with the class in the diagnostic — closed,
+but the mapping of a truly unknown failure to those members is a judgement
+call between totality and honesty. The alternative — a third named escape
+for "unclassifiable" — seemed worse than a diagnosed closed outcome. Yours
+to rule.
 
 ## 10. Open questions
 
@@ -767,3 +818,25 @@ unchanged per the reviewer's constraint.
 | — | durable authority semantics under-specified | **§5e frozen**: unique durable key, atomic compare-and-set insertion as consumption, refuse-before-store-access on attempted-record failure, crash-between = spent + re-mint with fresh attestation, post-commit audit failure mirrors `0007` §4e |
 | a | generator provenance | `generator: {tool, repository_commit}` recorded and validated — diagnostic, never a substitute for the declaration digest |
 | b | token fields as prose channels | 256-byte caps in the draft; frozen opaque-token formats at implementation (§5b/§5e) |
+
+---
+
+## 16. Round 6 review disposition
+
+**Verdict: approved architecture restated in full; v7 deferred on five
+load-bearing problems.** All taken; the concrete migration, path evidence,
+authorizer probes and ordinary planner states untouched per the reviewer's
+constraint. The pre-lock consumption point was **ruled an acceptable
+conservative policy** — the defect was what a consumed operation could still
+do.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the dedicated operation CREATED a v2 store where its attested v1 source had vanished (deleted file, empty replacement) | **migrate mode of the shared planner**: `mode=rw` connection (cannot materialise files), nonexistent path refuses uncreated, the kernel `new=` creation seam raises `migration-source-missing`, adoption off; five regression cases, each path uncreated or byte-unchanged |
+| 2 | evidence monotonicity was a check-then-replace race — a future artifact published mid-generation was downgraded (measured, forced interleaving); the shared `.tmp` path collided | **serialized publication**: interprocess lock around inspect-generate-validate-stage-publish; inspection under the SAME lock; writer-unique staging; two-process barrier regression |
+| 3 | the boundary leaked `UnicodeEncodeError` (surrogate paths, surrogate tokens) and whatever `__fspath__` raised | **fs-aware conversions end to end** (kernel caps fs-encoded; a non-UTF-8-named store works), guarded `fspath` mapping any exception to `invalid-request`, `_safe_repr` diagnostics, token grammars matching on the str; exactly two NAMED escapes (`PackageConsistencyError`, `MigrationAuditWriteError`) |
+| 4 | no representable post-commit audit-failure outcome; four state-machine cells undefined | **§5e completed**: `migration-audit-unavailable` (attempted record; nothing consumed), `MigrationAuditWriteError(committed=False/True)` for the rolled-back and committed cases, no-op `current` writes its record, frozen typed-and-capped record schema |
+| 5 | `release_ref` was a mutable package version — an authority crossed builds sharing `0.4.8` | **content-derived identity** `veracium-<version>+<source-digest>` with representation/charset/size/source/comparison/rotation frozen; `evidence_digest` binds the exact artifact consumed |
+| a | `--check-evidence` said "structural checks pass" for a foreign artifact with stripped paths | cardinality validation before the identity early-return — regression test |
+| b | byte caps bound, not close, a prose channel | frozen token grammars (ASCII charset, `op-<uuid4>` shape); normalization moot by construction |
+| c | "RFC 3339" overclaimed the parser | wording narrowed to what the parser accepts |

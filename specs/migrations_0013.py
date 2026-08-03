@@ -296,8 +296,17 @@ def _v2_constructor_objects() -> dict:
 
 MIGRATION_FAILURES = ("migration-required", "migration-evidence-missing",
                       "migration-failed", "migration-result-mismatch",
-                      "migration-quiescence-required")
-"""The closed failure model: hosts branch on these, plus 0007's REASONS."""
+                      "migration-quiescence-required",
+                      "migration-source-missing",
+                      "migration-audit-unavailable")
+"""The closed failure model: hosts branch on these, plus 0007's REASONS.
+Round 6 added the last two: `migration-source-missing` — the dedicated
+operation found no accepted older source where its authority attests one (a
+vanished file, an empty or truncated replacement, a nonexistent path; v7
+CREATED a fresh v2 store there, measured) — and `migration-audit-unavailable`
+— the attempted audit record cannot be written, so the operation refuses
+before any store access with the authority NOT consumed (§5e: the insert IS
+the consumption)."""
 
 STORE_FAILURES = ("invalid-store", "store-unopenable")
 """Round 4: the bytes at the path may fail before any version decision —
@@ -347,6 +356,43 @@ class MigrationRefused(Exception):
         super().__init__(f"{reason}: {diagnostic or ''}")
 
 
+class MigrationAuditWriteError(RuntimeError):
+    """An audit record could not be written AFTER the operation touched or
+    changed the store (round 6; §5e freezes the full state machine). Like
+    `0007`'s `PostCommitAuditError` this is a deliberate, NAMED exception to
+    §5d's total-Outcome claim: `committed` says whether the migration
+    happened — `True` means the store IS migrated and a retry opens
+    `current`; `False` means the store is unchanged and the authority is
+    spent. The one audit failure that maps to a closed outcome instead is
+    the ATTEMPTED record (`migration-audit-unavailable`), because nothing
+    has happened yet. Declared here as frozen contract; the production sink
+    raises it at implementation."""
+
+    def __init__(self, committed: bool, operation_id: str, store_path: str,
+                 resulting_version: int, cause: BaseException | None = None):
+        self.committed = committed
+        self.operation_id = operation_id
+        self.store_path = store_path
+        self.resulting_version = resulting_version
+        super().__init__(
+            f"audit write failed after the operation ran "
+            f"(committed={committed}, operation {operation_id!r}, store "
+            f"{store_path!r}, v{resulting_version}); the audit is the record "
+            f"of an irreversible operation and its failure is surfaced "
+            f"loudly, never as migration-failed")
+        self.__cause__ = cause
+
+
+def _safe_repr(x) -> str:
+    """Diagnostics are built from foreign objects whose __repr__ may itself
+    raise (round 6, measured with a PathLike whose repr raised) — a
+    diagnostic must never be the thing that breaks the boundary."""
+    try:
+        return repr(x)
+    except Exception:
+        return f"<unrepresentable {type(x).__name__}>"
+
+
 # --------------------------------------------------------------------------
 # the offline-boundary attestation (0013 §5b)
 
@@ -381,8 +427,9 @@ class MigrationAuthority(NamedTuple):
     migration_digest: str   # migration_declaration_digest of the reviewed step
     release_ref: str        # the release/deployment minting this authority
     operation_id: str       # single-use identity for this migration operation
-    issued_at: str          # RFC 3339 UTC, read from the clock at issuance
-    expires_at: str         # RFC 3339 UTC; consumption after this refuses
+    issued_at: str          # timezone-aware ISO 8601, clock-read at issuance
+    expires_at: str         # timezone-aware ISO 8601; consumption after this refuses
+    evidence_digest: str    # sha256 of the exact evidence artifact consumed
 
 
 _CONSUMED_OPERATIONS: set = set()
@@ -393,26 +440,62 @@ MAX_AUTHORITY_LIFETIME = timedelta(hours=1)
 `expires_at - issued_at` exceeds this refuses. Hosts needing a longer
 operation re-mint; an unbounded window is an unbounded replay surface."""
 
-_AUTHORITY_TOKEN_CAP = 256
-"""Byte cap on `backup_ref`, `release_ref` and `operation_id` (round 5): the
-audit consumes these verbatim, and an uncapped string field is an arbitrary
-prose channel into an audit record. Production freezes opaque-token formats;
-the draft freezes the size."""
+_TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+:/-]{0,127}$")
+_OPERATION_RE = re.compile(
+    r"^op-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+"""The frozen token grammars (round 6: a byte CAP bounds a prose channel, it
+does not close one). `backup_ref` and `release_ref`: ASCII, no whitespace,
+128 chars — normalization is moot because the charset admits exactly one
+representation. `operation_id`: the literal `op-<uuid4>` shape. Matching is
+on the str, so a lone surrogate simply fails the grammar instead of raising
+from `.encode()` (round 6, measured)."""
+
+
+def _source_identity() -> str:
+    """A content digest over the exact files that define migration behaviour
+    — this instrument and the `0007` kernel. Two checkouts sharing a package
+    version but differing in planner, validator or evidence code get
+    DIFFERENT identities (round 6: a mutable semantic version alone let an
+    authority cross builds). Deterministic in every environment — editable
+    installs and extracted archives included — because it reads the running
+    tree's own bytes; no git required."""
+    h = hashlib.sha256()
+    for f in (pathlib.Path(__file__),
+              ROOT / "src" / "veracium" / "store" / "schema_version.py"):
+        h.update(f.read_bytes())
+    return h.hexdigest()[:12]
 
 
 def _release_identity() -> str:
-    """The running release identity the authority's `release_ref` must match.
-    Read from the tree's own `pyproject.toml` — the installed-distribution
-    metadata is wrong in exactly the environments that matter (an extracted
-    review archive has no installed dist; a stale editable install reports an
-    old version). Falls back to a sentinel both mint and validation share, so
-    an unreadable pyproject cannot mint an authority that then refuses."""
+    """The running release identity the authority's `release_ref` must match:
+    `veracium-<version>+<source-digest>` (§5b freezes representation,
+    charset, size, source of truth, comparison and rotation). The version is
+    read from the tree's own `pyproject.toml` — installed-distribution
+    metadata is wrong in exactly the environments that matter — and the
+    source digest makes the identity immutable per build: any change to the
+    instrument or kernel rotates it, which is the point. Falls back to a
+    sentinel both mint and validation share."""
     try:
         text = (ROOT / "pyproject.toml").read_text()
         mv = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
-        return f"veracium-{mv.group(1)}" if mv else "veracium-unknown"
+        version = mv.group(1) if mv else "unknown"
     except OSError:
-        return "veracium-unknown"
+        version = "unknown"
+    try:
+        src = _source_identity()
+    except OSError:
+        src = "unknown"
+    return f"veracium-{version}+{src}"
+
+
+def _evidence_digest() -> str:
+    """sha256 over the exact artifact bytes — what the authority's
+    `evidence_digest` binds (round 6): an authority minted against one
+    evidence artifact must not authorise a migration consuming another."""
+    try:
+        return hashlib.sha256(EVIDENCE_FILE.read_bytes()).hexdigest()
+    except OSError:
+        return "unavailable"
 
 
 def _draft_digest(objs: dict, version: int) -> str:
@@ -456,7 +539,8 @@ def make_authority(path, backup_ref: str = "draft-backup",
         release_ref=_release_identity() if release_ref is None else release_ref,
         operation_id=f"op-{uuid.uuid4()}",
         issued_at=now.isoformat(),
-        expires_at=(now + timedelta(minutes=ttl_minutes)).isoformat())
+        expires_at=(now + timedelta(minutes=ttl_minutes)).isoformat(),
+        evidence_digest=_evidence_digest())
 
 
 def authority_static_problems(a, canonical: str) -> list:
@@ -474,16 +558,21 @@ def authority_static_problems(a, canonical: str) -> list:
         problems.append("the host has not attested quiescence")
     for field in ("backup_ref", "store_path", "source_digest",
                   "migration_digest", "release_ref", "operation_id",
-                  "issued_at", "expires_at"):
+                  "issued_at", "expires_at", "evidence_digest"):
         v = getattr(a, field)
         if not isinstance(v, str) or not v.strip():
             problems.append(f"{field} must be a nonempty string, is "
                             f"{type(v).__name__}")
-    for field in ("backup_ref", "release_ref", "operation_id"):
+    for field in ("backup_ref", "release_ref"):
         v = getattr(a, field)
-        if isinstance(v, str) and len(v.encode()) > _AUTHORITY_TOKEN_CAP:
-            problems.append(f"{field} exceeds {_AUTHORITY_TOKEN_CAP} bytes — "
-                            f"audit token fields are not prose channels")
+        if isinstance(v, str) and not _TOKEN_RE.fullmatch(v):
+            problems.append(f"{field} does not match the frozen token "
+                            f"grammar — audit token fields are not prose "
+                            f"channels")
+    if isinstance(a.operation_id, str) and \
+            not _OPERATION_RE.fullmatch(a.operation_id):
+        problems.append("operation_id does not match the frozen op-<uuid4> "
+                        "grammar")
     step = MIGRATIONS_DRAFT.get(a.from_version) \
         if type(a.from_version) is int else None
     if type(a.from_version) is not int or type(a.to_version) is not int:
@@ -1291,91 +1380,148 @@ def _select_path_record(art, base, objs, step) -> dict:
     return hits[0]
 
 
+def _source_missing_hook(conn, spath, found, objs):
+    """The migrate-mode new-row seam (round 6): the dedicated operation must
+    NEVER create — v7 measured `migrate_store` creating and stamping a fresh
+    v2 store after the attested v1 source was deleted, and doing the same
+    over an empty replacement database."""
+    raise MigrationRefused(
+        "migration-source-missing",
+        f"the store at {spath!r} is empty; the authority attests an "
+        f"existing source and a backup of it — a migration never creates")
+
+
+def _migration_uri(canonical: str) -> str:
+    """A mode=rw SQLite URI from the canonical path: opening it FAILS rather
+    than creating a file, so a nonexistent target path stays nonexistent
+    (round 6's regression list). Percent-encoding goes through the
+    filesystem bytes, so surrogate-escaped names round-trip."""
+    import urllib.parse
+    return ("file:" + urllib.parse.quote(os.fsencode(canonical)) + "?mode=rw")
+
+
 def _run(path, busy_timeout_ms: int, migrating: bool,
          authority=None) -> Outcome:
-    # THE outermost boundary (round 5): a public entry point claiming
-    # totality cannot require callers to know which preprocessing runs before
-    # it. Parameter validation, path conversion and canonicalization all
-    # happen inside — a mistyped timeout was escaping as TypeError from
-    # division, an embedded-NUL path as ValueError from lstat.
-    if type(busy_timeout_ms) is not int or not 0 < busy_timeout_ms <= 600_000:
-        return Outcome("invalid-request",
-                       f"busy_timeout_ms must be an int in 1..600000, got "
-                       f"{busy_timeout_ms!r}")
+    # THE outermost boundary (rounds 5 and 6): parameter validation, path
+    # conversion, canonicalization, authority validation, context entry,
+    # evidence loading, the connection and the planner all sit inside it —
+    # and the conversions are FILESYSTEM-encoding-aware, because a valid
+    # POSIX name with non-UTF-8 bytes is a surrogate-escaped str that plain
+    # `.encode()` rejects (round 6, measured). Only the kernel's named
+    # package-consistency class escapes, deliberately.
     try:
-        fs = os.fsdecode(os.fspath(path))
-    except (TypeError, ValueError) as exc:
-        return Outcome("invalid-request", f"path is not path-like: {exc!r}")
-    try:
-        # Canonical from the first byte (round 4): symlinks resolve HERE,
-        # once, so the path the planner opens, the path in every diagnostic,
-        # and the path the authority binds are the same real file.
-        canonical = os.path.realpath(fs)
-    except (ValueError, OSError) as exc:
-        return Outcome("store-unopenable", diagnostic=repr(exc))
-    if len(canonical.encode()) > 4096:
-        # The kernel refuses oversized paths with a raised ValueError (an
-        # audit-field cap, 0007 §4e); at this boundary it is a closed outcome.
-        return Outcome("store-unopenable",
-                       "canonical path exceeds 4096 bytes")
-    if migrating:
-        # Acceptance, then consumption, then ANY store access (round 5): once
-        # an operation id is accepted it is spent — a no-op `current`, an
-        # evidence refusal, a lost race, even `locked` all consume, so an
-        # authority can never outlive its operation and drift to a
-        # replacement store. Static validation cannot consult the store, so
-        # source-binding is re-checked under the lock in the hook.
-        probs = authority_static_problems(authority, canonical)
-        if probs:
-            return Outcome("migration-quiescence-required",
-                           diagnostic="; ".join(probs))
+        if type(busy_timeout_ms) is not int or \
+                not 0 < busy_timeout_ms <= 600_000:
+            return Outcome("invalid-request",
+                           f"busy_timeout_ms must be an int in 1..600000, "
+                           f"got {_safe_repr(busy_timeout_ms)}")
         try:
-            _consume_authority(authority)
-        except MigrationRefused as e:
-            return Outcome(e.reason, diagnostic=e.diagnostic)
-    with _draft() as art:
+            # A PathLike may raise ANYTHING from __fspath__ (round 6:
+            # RuntimeError escaped) — a malformed argument is a closed call
+            # error, whatever its exception class.
+            fs = os.fsdecode(os.fspath(path))
+        except Exception as exc:
+            return Outcome("invalid-request",
+                           f"path is not path-like: {_safe_repr(exc)}")
         try:
-            if not sv.runtime_supported():
-                return Outcome(
-                    "unsupported-sqlite",
-                    f"sqlite {sqlite3.sqlite_version} has no qualified "
-                    f"schema-runtime record in the draft evidence; "
-                    f"regenerate it here (migrations_0013.py "
-                    f"--write-evidence)")
-            if migrating and not migration_runtime_supported(art):
-                return Outcome(
-                    "unsupported-sqlite",
-                    "this runtime has no migration-confinement "
-                    "qualification (or its recorded authorizer behaviours "
-                    "do not reproduce here); migration refuses before "
-                    "touching the store")
-            hook = (_migrating_hook(art, authority) if migrating
-                    else _refusing_hook(art))
-            # Round 4, finding 1: the failure boundary covers the connection
-            # itself — an unopenable path was escaping as OperationalError.
+            canonical = os.path.realpath(fs)
+        except Exception as exc:
+            return Outcome("store-unopenable", diagnostic=_safe_repr(exc))
+        if len(os.fsencode(canonical)) > 4096:
+            return Outcome("store-unopenable",
+                           "canonical path exceeds 4096 bytes")
+        if migrating:
+            # Acceptance, then consumption, then ANY store access (round 5;
+            # the pre-lock consumption point was ruled an acceptable
+            # conservative policy in round 6). Static validation cannot
+            # consult the store; source binding is re-checked under the
+            # lock in the hook.
+            probs = authority_static_problems(authority, canonical)
+            if probs:
+                return Outcome("migration-quiescence-required",
+                               diagnostic="; ".join(probs))
             try:
-                conn = sqlite3.connect(canonical,
-                                       timeout=busy_timeout_ms / 1000)
-            except sqlite3.Error as exc:
-                return Outcome("store-unopenable", diagnostic=repr(exc))
-            conn.isolation_level = None
+                _consume_authority(authority)
+            except MigrationRefused as e:
+                return Outcome(e.reason, diagnostic=e.diagnostic)
+            if authority.evidence_digest != _evidence_digest():
+                return Outcome(
+                    "migration-quiescence-required",
+                    "the authority binds a different evidence artifact "
+                    "than the one this process would consume; re-mint "
+                    "against the current artifact")
+            if not os.path.lexists(canonical):
+                # Source-specific, and the path stays uncreated: connecting
+                # normally would materialise an empty file (round 6).
+                return Outcome(
+                    "migration-source-missing",
+                    f"no store exists at {canonical!r}; the authority "
+                    f"attests an existing source — a migration never "
+                    f"creates")
+        with _draft() as art:
             try:
-                conn.execute(f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
-                label = sv.open_versioned(conn, canonical, allow_adopt=True,
-                                          older=hook)
-                return Outcome(label)
-            finally:
-                conn.close()
-        except sv.StoreVersionError as e:
-            return Outcome(e.reason, diagnostic=e.diff)
-        except MigrationRefused as e:
-            return Outcome(e.reason, diagnostic=e.diagnostic)
-        except sqlite3.DatabaseError as exc:
-            # Round 4, finding 1: bytes that are not a database — or any
-            # SQLite-level failure while reading them — were escaping raw.
-            # The kernel already mapped its own expected cases (locked); what
-            # reaches here means the file could not be read as a store.
-            return Outcome("invalid-store", diagnostic=repr(exc))
+                if not sv.runtime_supported():
+                    return Outcome(
+                        "unsupported-sqlite",
+                        f"sqlite {sqlite3.sqlite_version} has no qualified "
+                        f"schema-runtime record in the draft evidence; "
+                        f"regenerate it here (migrations_0013.py "
+                        f"--write-evidence)")
+                if migrating and not migration_runtime_supported(art):
+                    return Outcome(
+                        "unsupported-sqlite",
+                        "this runtime has no migration-confinement "
+                        "qualification (or its recorded authorizer "
+                        "behaviours do not reproduce here); migration "
+                        "refuses before touching the store")
+                hook = (_migrating_hook(art, authority) if migrating
+                        else _refusing_hook(art))
+                try:
+                    if migrating:
+                        # mode=rw: refuses to create; the dedicated
+                        # operation opens existing stores only.
+                        conn = sqlite3.connect(_migration_uri(canonical),
+                                               uri=True,
+                                               timeout=busy_timeout_ms / 1000)
+                    else:
+                        conn = sqlite3.connect(canonical,
+                                               timeout=busy_timeout_ms / 1000)
+                except sqlite3.Error as exc:
+                    return Outcome("store-unopenable",
+                                   diagnostic=_safe_repr(exc))
+                conn.isolation_level = None
+                try:
+                    conn.execute(
+                        f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
+                    label = sv.open_versioned(
+                        conn, canonical,
+                        allow_adopt=not migrating,   # a migration never adopts
+                        older=hook,
+                        new=_source_missing_hook if migrating else None)
+                    return Outcome(label)
+                finally:
+                    conn.close()
+            except sv.StoreVersionError as e:
+                return Outcome(e.reason, diagnostic=e.diff)
+            except MigrationRefused as e:
+                return Outcome(e.reason, diagnostic=e.diagnostic)
+            except sqlite3.DatabaseError as exc:
+                # Round 4, finding 1: bytes that are not a database — or any
+                # SQLite-level failure while reading them — were escaping
+                # raw. The kernel already mapped its own expected cases
+                # (locked); what reaches here means the file could not be
+                # read as a store.
+                return Outcome("invalid-store", diagnostic=_safe_repr(exc))
+    except sv.PackageConsistencyError:
+        raise                        # the one deliberate, NAMED escape (§5d)
+    except MigrationAuditWriteError:
+        raise                        # the audit contract's named escape (§5e)
+    except Exception as exc:
+        # Residual totality (round 6): whatever slipped every specific
+        # mapping is still a closed outcome, with the diagnostic carrying
+        # the class and message.
+        return Outcome("migration-failed" if migrating else "invalid-store",
+                       diagnostic=_safe_repr(exc))
 
 
 def open_or_migrate(path, busy_timeout_ms: int = 5000) -> Outcome:
@@ -1553,8 +1699,12 @@ def _revision_components(art):
     return vals if all(type(v) is int for v in vals) else None
 
 
-def write_evidence() -> int:
-    # Monotone-revision refusal BEFORE anything else (round 5): refuse
+def _write_evidence_locked() -> int:
+    # Monotone-revision refusal, WITH the inspection under the same
+    # interprocess lock as publication (round 6: a pre-generation check was a
+    # check-then-replace race — a future artifact published while an older
+    # writer generated was downgraded, measured with a forced interleaving).
+    # Round 5's rule stands: refuse
     # without changing a byte when any existing component exceeds this
     # tool's. Same-revision replacement is the explicit policy for the
     # single active runtime — regenerating on a new runner (the reviewer's
@@ -1586,17 +1736,36 @@ def write_evidence() -> int:
         for p in problems:
             print(f"  - {p}")
         return 1
-    tmp = EVIDENCE_FILE.with_suffix(".json.tmp")
+    # Writer-unique staging (round 6: a fixed shared .tmp path is its own
+    # concurrent-writer collision).
+    tmp = EVIDENCE_FILE.with_name(
+        f"{EVIDENCE_FILE.name}.{os.getpid()}-{uuid.uuid4().hex[:8]}.tmp")
     try:
         tmp.write_text(json.dumps(art, indent=1, sort_keys=True) + "\n")
         os.replace(tmp, EVIDENCE_FILE)
     finally:
         if tmp.exists():                      # v12's lesson: no stray .tmp
             tmp.unlink()
-    print(f"recorded {EVIDENCE_FILE.relative_to(ROOT)} for sqlite "
+    print(f"recorded {EVIDENCE_FILE} for sqlite "
           f"{sqlite3.sqlite_version}: {len(art['paths'])} path record(s), "
           f"1 runtime, 1 migration-runtime qualification")
     return 0
+
+
+def write_evidence() -> int:
+    """The complete operation is serialized by an interprocess lock (round
+    6): acquire, RE-read and validate the existing revision under the lock,
+    generate, validate, stage to a writer-unique temporary, publish,
+    release. The monotone inspection cannot race a concurrent publication
+    because no publication happens outside the lock."""
+    import fcntl
+    lock_path = EVIDENCE_FILE.with_suffix(".lock")
+    with open(lock_path, "w") as lockf:
+        fcntl.flock(lockf, fcntl.LOCK_EX)
+        try:
+            return _write_evidence_locked()
+        finally:
+            fcntl.flock(lockf, fcntl.LOCK_UN)
 
 
 def check_evidence() -> int:
@@ -1608,6 +1777,10 @@ def check_evidence() -> int:
         problems = schema_evidence_problems(art)
         problems += migration_runtime_artifact_problems(art)
         problems += path_evidence_problems(art)
+        # Round 6 (non-blocking): cardinality validation runs BEFORE the
+        # foreign-runtime early return, so "structural checks pass" is never
+        # said of an artifact whose expected record set is wrong.
+        problems += expected_path_problems(art)
         recorded = {sv.build_identity(r) for r in
                     sv.active_records(art.get("runtimes", []))}
     if problems:

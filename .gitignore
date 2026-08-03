@@ -19,3 +19,4 @@ specs/archives/*.tar.gz
 # staged evidence artifacts — `_stage()` writes these beside their target and
 # renames; one escaped into a review package in v12
 specs/generated/*.tmp
+specs/generated/migration_0013_evidence.lock
