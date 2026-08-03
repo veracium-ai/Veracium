@@ -103,7 +103,7 @@ than dropped — a reach table that quietly loses its own errors is not a record
 
 | assertion | command | result |
 |---|---|---|
-| no version check exists | `grep -rn "user_version" src/veracium/ tests/` | no matches — **nothing in this spec is implemented** |
+| ~~no version check exists~~ | `grep -rn "user_version" src/veracium/` | **implemented 2026-08-03**, post-acceptance: `store/schema_version.py` carries the kernel and `SqliteStore` opens through the §4 table. The row is struck, not deleted — it was true for the entire review |
 | the schema is applied unconditionally | `sed -n '45,47p' src/veracium/store/sqlite.py` | `executescript(_SCHEMA)` on every open, line 46 |
 | exports *are* version-checked | `portability.py:69` | newer-than-ours rejected; `FORMAT_VERSION = 2` |
 | `_SCHEMA` defines **4 tables and 3 indices** | `grep -nE "CREATE (TABLE\|INDEX)"` | `edges`, `episodes`, `wiki`, `write_counter`; `ix_edges_user_active`, `ix_edges_subj_rel`, `ix_episodes_user` |
@@ -837,31 +837,14 @@ and exactly why it was the bypass. Reached by stamping a hand-built file.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
-**None of these tests exist. Nothing in this spec is implemented.**
-`grep -rn "user_version" src/veracium/ tests/` returns nothing today. The names
-below are the contract for what must be written, not a description of what is
-there. **Stated in this form because a previous manifest listed 17 rows of which
-11 cited tests that did not exist.**
-
-**The measuring instrument is the exception, and after the scope cut it is two
-modules plus a test file** — `schema_model.py` (identity, digest, drift,
-candidate matching) and `schema_evidence.py` (tag probing and artifacts).
-**The shared production boundary is `schema_model` + runtime-evidence
-validation**; only git probing, release enumeration and presentation are
-outside it. **`specs/0013` extends both** — its migration declarations and
-execution confinement join the shared kernel, and runtime evidence gains
-per-path entries — **when migrations exist.**
-
-**Every counterexample is now a pytest test** in `tests/test_schema_model.py`,
-**and that is what fixed the last reporting defect**: the old harness printed 30
-result rows and reported `28/28`, because its total was a hand-maintained
-arithmetic expression. A tool whose purpose is truthful evidence was miscounting
-its own evidence. **The count now comes from collection**, and the counterexamples
-run in CI with everything else rather than in a bespoke script.
-
-**Invariants are named for what they actually test**, per round 5's non-blocking
-note: S36 tests evidence-backed qualification (not tuple membership), S37 covers
-DDL *and* policy, S41 covers every authoritative field.
+**Implemented 2026-08-03, after acceptance.** The kernel is
+`src/veracium/store/schema_version.py` — production owns it, and
+`specs/schema_model.py` / `specs/schema_evidence.py` import it, which closes the
+shared-boundary requirement of rounds 6 and 8. The store-level invariants run in
+`tests/test_store_versioning.py`; the kernel counterexamples in
+`tests/test_schema_model.py`. Rows whose checks exist are real names the
+"measured today" gate verifies; the migration-borne rows the scope cut
+retired stay with `specs/0013`.
 
 | invariant | executable check |
 |---|---|
@@ -1114,8 +1097,9 @@ and, by the round-9 M-Q1 ruling, **must be reviewed against `0008`'s
 
 **What remains open, and is not claimed:**
 
-- **Nothing is implemented.** `grep -rn "user_version" src/veracium/` still
-  returns nothing; the store still opens anything.
+- ~~Nothing is implemented~~ — **no longer true**: the versioning layer landed
+  2026-08-03 after acceptance, in the commit citing this spec. Kept struck
+  because it was true when acceptance was recorded, minutes earlier.
 - **One qualified runtime** (SQLite 3.45.1 by build identity). Release on any
   other identity must refuse with `unsupported-sqlite` until evidence is
   regenerated there — **S-Q7 is a release gate**, per the round-12 and round-14

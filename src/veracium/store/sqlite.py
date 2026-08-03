@@ -16,35 +16,45 @@ from typing import Optional
 
 from ..schema import Edge, Episode
 from .base import Store
+from .schema_version import (SCHEMA_V1, PostCommitAuditError,  # noqa: F401
+                             StoreVersionError, open_versioned)
 
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS edges (
-    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,
-    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS ix_edges_user_active ON edges(user_id, active);
-CREATE INDEX IF NOT EXISTS ix_edges_subj_rel ON edges(user_id, subject, relation, active);
-CREATE TABLE IF NOT EXISTS episodes (
-    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS ix_episodes_user ON episodes(user_id, date);
-CREATE TABLE IF NOT EXISTS wiki (
-    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER
-);
-CREATE TABLE IF NOT EXISTS write_counter (
-    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL
-);
-"""
+# The schema is DERIVED from the versioning registry — one declaration, which
+# is 0007 §4a-vi's "honest end state": there is no second copy to drift, and
+# `registry_conformance` compares this module against the registry it is built
+# from. `IF NOT EXISTS` is gone with it: creation now happens exactly once, on
+# the §4 "new" path, inside the open transaction.
+_SCHEMA = ";\n".join(o.ddl for o in SCHEMA_V1) + ";\n"
 
 
 class SqliteStore(Store):
-    def __init__(self, path: str | Path = "veracium.db"):
+    def __init__(self, path: str | Path = "veracium.db", *,
+                 allow_adopt: bool = True, audit_sink=None,
+                 busy_timeout_ms: int = 5000):
         self._path = str(path)
+        # 0007 §4e: audit strings are validated against a 4096-byte cap, never
+        # truncated — and the path is checked before connecting, so the limit
+        # is ours rather than whatever the OS happens to raise.
+        if len(self._path.encode()) > 4096:
+            raise ValueError("store path exceeds the 4096-byte audit limit")
         # check_same_thread=False + a lock: safe for the library's typical
         # single-writer, many-reader agent usage without a connection pool.
         self._conn = sqlite3.connect(self._path, check_same_thread=False)
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        # 0007 §4c: `database is locked` waits this long, then refuses loudly
+        # with reason="locked" — a startup failure that manifests as a hang is
+        # worse than one that manifests as an error.
+        self._conn.execute(f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
+        try:
+            # The 0007 §4 decision table: refuse-unrecognised, stamp, adopt-v1.
+            # Replaces the former unconditional `executescript(_SCHEMA)`, which
+            # opened ANY store and silently added missing tables to foreign
+            # ones. open_versioned() takes BEGIN IMMEDIATE before reading
+            # anything and commits exactly once.
+            open_versioned(self._conn, self._path,
+                           allow_adopt=allow_adopt, audit_sink=audit_sink)
+        except BaseException:
+            self._conn.close()
+            raise
         self._lock = threading.Lock()
 
     def _bump(self, user_id: str) -> None:

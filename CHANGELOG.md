@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **On-disk store schema versioning** (`specs/0007`, accepted after 14 external
+  review rounds). A store now carries `PRAGMA user_version`; on open the store
+  is recognised exactly or refused loudly, replacing the previous unconditional
+  `CREATE TABLE IF NOT EXISTS` that opened any file and silently added missing
+  tables to foreign ones. Concretely:
+  - a **new** store is created and stamped in one `BEGIN IMMEDIATE` transaction;
+  - every store written by any released veracium (all are unstamped) is
+    **adopted losslessly** on first open — data unchanged, drifted acceleration
+    indexes repaired, stamp written — with optional typed audit events
+    (`audit_sink=`) and an `allow_adopt=False` opt-out;
+  - anything else — newer stamps, foreign schemas, stamped-but-wrong shapes,
+    negative versions — raises `StoreVersionError` with a closed `reason` and a
+    diff naming the nearest accepted shape;
+  - the running SQLite must match the packaged runtime evidence
+    (`unsupported-sqlite` otherwise; 3.45.1 is the qualified build identity).
+  `SqliteStore` gains keyword-only `allow_adopt`, `audit_sink`,
+  `busy_timeout_ms`. The schema is now derived from a single registry shared
+  with the spec tooling, and the evidence artifacts ship as package data.
+
+
 ## 0.4.8 — 2026-08-02
 
 - **Consolidation wrote internally false provenance.** A summary reported
