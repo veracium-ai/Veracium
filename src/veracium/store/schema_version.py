@@ -1029,15 +1029,55 @@ def _repair_drift(conn: sqlite3.Connection, version: int) -> None:
         conn.execute(declared[key].ddl)
 
 
+def _validated_current(conn: sqlite3.Connection, spath: str, found) -> None:
+    """The *current* row's validation: accepted-set membership, typed
+    rebuildable drift repair, complete revalidation (§4a-iii, S33).
+
+    Shared by the current branch and the post-migration re-check, so a store a
+    migration hook returns is held to exactly the standard a stamped-current
+    store is held to — one validator, not two."""
+    accepted = accepted_digests(SCHEMA_VERSION)
+    objs = manifest(conn)
+    if digest(objs, SCHEMA_VERSION) not in accepted:
+        raise StoreVersionError(spath, found, SCHEMA_VERSION,
+                                "stamped-shape-mismatch",
+                                diff=_shape_diff(objs, SCHEMA_VERSION))
+    if drift(objs, SCHEMA_VERSION):
+        _repair_drift(conn, SCHEMA_VERSION)
+        after = manifest(conn)      # S33: complete revalidation
+        if (digest(after, SCHEMA_VERSION) not in accepted
+                or drift(after, SCHEMA_VERSION)):
+            raise StoreVersionError(spath, found, SCHEMA_VERSION,
+                                    "stamped-shape-mismatch",
+                                    diff=_shape_diff(after, SCHEMA_VERSION))
+
+
 def open_versioned(conn: sqlite3.Connection, path: str, *,
-                   allow_adopt: bool = True, audit_sink=None) -> None:
+                   allow_adopt: bool = True, audit_sink=None,
+                   older=None) -> str:
     """The 0007 §4 decision table, executed under the write lock (§4c).
 
     `BEGIN IMMEDIATE` is taken BEFORE the version and manifest reads — a
     deferred transaction acquires the write lock at the first write, which is
     after the decision has already been made. The manifest is computed on THIS
     connection, never by reopening the path: `":memory:"` reopened by path is a
-    different, empty database (measured, round 2)."""
+    different, empty database (measured, round 2).
+
+    Returns the branch that ran — `"current"`, `"created"`, `"adopted"`, or
+    `"migrated"` — so callers can log or audit without re-deriving it.
+
+    **`older` is §4's older-row seam, delegated to `specs/0013`.** The row —
+    a stamped `0 < found < SCHEMA_VERSION` store, or an unstamped store whose
+    evidenced base is below current — is `0013`'s migration contract, and this
+    hook is where its dedicated offline operation plugs in so there is exactly
+    ONE planner (round 3 of `0013`'s review: the instrument's hand-written
+    second state machine omitted the new, legacy and foreign rows entirely).
+    The hook runs inside the open transaction as `older(conn, path, found,
+    objs, base)` and must either raise or bring the store to the current
+    version; the store it returns is then revalidated by the same `current`
+    validator and committed here. With no hook the row refuses exactly as
+    before: both sites are unreachable while `SCHEMA_VERSION == 1`, and
+    `validate_schema_registry()` keeps the declared range contiguous."""
     spath = str(path)
     if len(spath.encode()) > _AUDIT_STRING_CAP:
         raise ValueError(f"store path exceeds {_AUDIT_STRING_CAP} bytes")
@@ -1078,21 +1118,25 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                          "install a build whose SCHEMA_VERSION covers the store")
 
             if found == SCHEMA_VERSION:
-                if digest(objs, SCHEMA_VERSION) not in accepted:
-                    raise StoreVersionError(
-                        spath, found, SCHEMA_VERSION, "stamped-shape-mismatch",
-                        diff=_shape_diff(objs, SCHEMA_VERSION))
-                if drift(objs, SCHEMA_VERSION):
-                    _repair_drift(conn, SCHEMA_VERSION)
-                    after = manifest(conn)      # S33: complete revalidation
-                    if (digest(after, SCHEMA_VERSION) not in accepted
-                            or drift(after, SCHEMA_VERSION)):
-                        raise StoreVersionError(
-                            spath, found, SCHEMA_VERSION,
-                            "stamped-shape-mismatch",
-                            diff=_shape_diff(after, SCHEMA_VERSION))
+                _validated_current(conn, spath, found)
                 conn.execute("COMMIT")
-                return
+                return "current"
+
+            if 0 < found < SCHEMA_VERSION:
+                # §4's *older* row: a stamped store this build predates on.
+                # Migrating it forward is specs/0013's contract; without its
+                # hook the row is a package-consistency impossibility —
+                # unreachable while SCHEMA_VERSION == 1 — not a store property.
+                if older is None:
+                    raise RuntimeError(
+                        f"store {spath!r} is stamped v{found} and this build "
+                        f"is v{SCHEMA_VERSION} with no migration hook "
+                        f"installed; migrating forward is specs/0013's "
+                        f"contract")
+                older(conn, spath, found, objs, found)
+                _validated_current(conn, spath, found)
+                conn.execute("COMMIT")
+                return "migrated"
 
             # found == 0 — unstamped
             if not objs:                        # §4 "new": no non-internal object
@@ -1108,7 +1152,7 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                         "its schema registry")
                 conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
                 conn.execute("COMMIT")
-                return
+                return "created"
 
             # §4 "legacy" / "foreign": resolve against the evidenced bases only
             base = resolve(objs, version_records(),
@@ -1118,13 +1162,21 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                     spath, found, SCHEMA_VERSION, "foreign-shape",
                     diff=_shape_diff(objs, SCHEMA_VERSION))
             if base != SCHEMA_VERSION:
-                # 0 < base < SCHEMA_VERSION is 0013's migration path and cannot
-                # arise while SCHEMA_VERSION == 1; refuse rather than guess.
-                raise StoreVersionError(
-                    spath, found, SCHEMA_VERSION, "foreign-shape",
-                    diff=f"store resolves to base version {base}; migrating it "
-                         f"forward is specs/0013's contract and is not "
-                         f"implemented")
+                # An unstamped store whose evidenced base is BELOW current:
+                # 0013's migration path, reached through the same older-row
+                # seam. Without the hook, refuse exactly as before — this
+                # cannot arise while SCHEMA_VERSION == 1, because no legacy
+                # base below 1 exists.
+                if older is None:
+                    raise StoreVersionError(
+                        spath, found, SCHEMA_VERSION, "foreign-shape",
+                        diff=f"store resolves to base version {base}; "
+                             f"migrating it forward is specs/0013's contract "
+                             f"and is not implemented")
+                older(conn, spath, found, objs, base)
+                _validated_current(conn, spath, found)
+                conn.execute("COMMIT")
+                return "migrated"
             if not allow_adopt:
                 raise StoreVersionError(
                     spath, found, SCHEMA_VERSION, "adoption-refused",
@@ -1173,4 +1225,5 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
             conn.close()                      # §4e: closed before raising
             raise PostCommitAuditError(spath, committed_event.adoption_id,
                                        exc) from exc
+    return "adopted"
 

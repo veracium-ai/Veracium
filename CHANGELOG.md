@@ -20,6 +20,11 @@
   `SqliteStore` gains keyword-only `allow_adopt`, `audit_sink`,
   `busy_timeout_ms`. The schema is now derived from a single registry shared
   with the spec tooling, and the evidence artifacts ship as package data.
+  `open_versioned()` now returns which branch ran (`"current"` / `"created"` /
+  `"adopted"` / `"migrated"`) and exposes the §4 *older*-row seam as a
+  keyword-only `older=` hook — the delegation point `specs/0013` plugs into;
+  with no hook (the production default while `SCHEMA_VERSION == 1`) behaviour
+  is unchanged.
 
 
 ## 0.4.8 — 2026-08-02
