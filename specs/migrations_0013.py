@@ -124,10 +124,20 @@ def apply_migration(conn: sqlite3.Connection, mig: Migration) -> None:
     Authorizer installed around the statements and restored in `finally`;
     `sqlite_temp_master` asserted empty afterwards — an effect the persistent
     manifest cannot see is exactly what round 6 exploited."""
+    # Round 3, finding 4: the one-transaction caveat was a calling convention,
+    # not a boundary — on an autocommit connection a failed two-statement
+    # migration left its first statement durably applied. The invariant is now
+    # executable, and checked again after every statement.
+    if not conn.in_transaction:
+        raise RuntimeError("migration-protocol: a migration requires an "
+                           "existing transaction; nothing may autocommit")
     conn.set_authorizer(_authorizer)
     try:
         for stmt in mig.statements:
             conn.execute(stmt)
+            if not conn.in_transaction:
+                raise RuntimeError("migration-protocol: transaction ended "
+                                   "mid-migration")
     finally:
         conn.set_authorizer(None)
     leaked = [r[0] for r in conn.execute("SELECT name FROM sqlite_temp_master")]
@@ -137,10 +147,10 @@ def apply_migration(conn: sqlite3.Connection, mig: Migration) -> None:
 
 def destination_problems(objs: dict, to_version: int,
                          schemas=None) -> list:
-    """Structural capability, not DDL text (0007 round 7): a migration may not
-    define its own destination (round 6), and byte-comparing DDL rejects a
-    correct ALTER. Every REQUIRED object present with matching structure, every
-    REBUILDABLE present-or-drift, nothing unapproved."""
+    """**Non-authorizing, deferred scaffolding** (round 3): capability describes
+    a destination, it never authorises one — only exact identity and recorded
+    evidence do. Kept for the first real ALTER's review, where the structural
+    model gets its own round."""
     schemas = SCHEMAS_DRAFT if schemas is None else schemas
     declared = {o.key: o for o in schemas[to_version]}
     ref = sqlite3.connect(":memory:")
@@ -175,6 +185,9 @@ def validate_registry(schemas=None, migrations=None, current=2) -> list:
     schemas = SCHEMAS_DRAFT if schemas is None else schemas
     migrations = MIGRATIONS_DRAFT if migrations is None else migrations
     problems = []
+    if not isinstance(schemas, dict) or not schemas or \
+            not isinstance(migrations, dict):
+        return ["registry must be nonempty mappings"]
     if max(schemas) != current:
         problems.append(f"current {current} != max declared {max(schemas)}")
     if set(schemas) != set(range(1, current + 1)):
@@ -190,7 +203,7 @@ def validate_registry(schemas=None, migrations=None, current=2) -> list:
             problems.append(f"step {frm}: not adjacent")
         if mig.to_version not in schemas or mig.from_version not in schemas:
             problems.append(f"step {frm}: endpoint not declared")
-        if (not mig.statements
+        if (not isinstance(mig.statements, tuple) or not mig.statements
                 or not all(isinstance(x, str) and x.strip()
                            for x in mig.statements)):
             problems.append(f"step {frm}: statements must be a nonempty tuple "
@@ -202,9 +215,83 @@ def validate_registry(schemas=None, migrations=None, current=2) -> list:
 # --------------------------------------------------------------------------
 # the open path with the *older* row restored (0013's addition to 0007 §4)
 
-def open_or_migrate(path: str, busy_timeout_ms: int = 5000) -> str:
-    """The §4c protocol with migration: the answer to M-Q2 is that **SQLite's
-    write lock is the single-process enforcement.**
+import hashlib
+import json as _json
+
+
+class MigrationAuthority(NamedTuple):
+    """The explicit offline-boundary attestation (round 3, finding 3).
+
+    A library cannot infer host quiescence, so the HOST asserts it — old
+    processes stopped, admission closed, backup taken — and the migration
+    refuses without it. `allow_adopt` never doubles as migration permission."""
+    quiesced: bool
+    backup_ref: str
+
+
+MIGRATION_FAILURES = ("migration-required", "migration-evidence-missing",
+                      "migration-failed", "migration-result-mismatch",
+                      "migration-quiescence-required")
+"""The closed failure model (round 3): hosts branch on these."""
+
+
+def canonical_migration_bytes(mig: Migration) -> bytes:
+    """The reproducible encoding §5c's digest is defined over: domain-separated
+    canonical JSON of the ordered statement list — "sha256 over the tuple" was
+    not an algorithm without this."""
+    return (b"veracium-migration-v1:"
+            + _json.dumps([mig.from_version, mig.to_version,
+                           list(mig.statements)],
+                          separators=(",", ":")).encode())
+
+
+def migration_declaration_digest(mig: Migration) -> str:
+    return hashlib.sha256(canonical_migration_bytes(mig)).hexdigest()
+
+
+def full_manifest_hash(objs: dict) -> str:
+    """EVERY object, rebuildables included (round 3, finding 2): the acceptance
+    digest deliberately excludes them, so it can attest an output missing the
+    very index §5 requires repaired — measured, digests equal while complete
+    manifestations differ."""
+    return hashlib.sha256(
+        _json.dumps(identity(objs), sort_keys=True,
+                    separators=(",", ":")).encode()).hexdigest()
+
+
+def _v2_constructor_objects():
+    cons = sqlite3.connect(":memory:")
+    for o in SCHEMA_V2:
+        cons.execute(o.ddl)
+    objs = manifest(cons)
+    cons.close()
+    return objs
+
+
+def path_evidence_record() -> dict:
+    """The §5c record, generated — the draft form of what M11/M12 implement."""
+    src = sqlite3.connect(":memory:")
+    for o in SCHEMA_V1:
+        src.execute(o.ddl)
+    out = _v2_constructor_objects()
+    rec = {
+        "migration_evidence_algorithm": 1,
+        "from_version": 1, "to_version": 2,
+        "source_full_manifest_hash": full_manifest_hash(manifest(src)),
+        "output_full_manifest_hash": full_manifest_hash(out),
+        "migration_declaration_digest": migration_declaration_digest(MIGRATION_1_TO_2),
+    }
+    src.close()
+    return rec
+
+
+def open_or_migrate(path: str, busy_timeout_ms: int = 5000,
+                    authority: MigrationAuthority | None = None) -> str:
+    """The integrated planner: 0007's decision order plus the *older* row.
+
+    The write lock serialises **cooperating** openers (M-Q2, adopt-with-
+    conditions); it is NOT mixed-version fencing, and migration itself demands
+    an explicit `MigrationAuthority` — the offline boundary of §5b.
 
     `BEGIN IMMEDIATE` before any read serialises openers. The winner reads
     `user_version`, migrates, validates the destination, stamps, commits — one
@@ -214,6 +301,13 @@ def open_or_migrate(path: str, busy_timeout_ms: int = 5000) -> str:
     shape being migrated), no advisory file (not a guarantee). **The caveat is
     the contract**: a migration must fit in one transaction, which the additive
     v2 does, and which the single-step model makes reviewable per step."""
+    # Round 3, finding 1: this planner must preserve the FULL inherited 0007
+    # order, not substitute a smaller table. Runtime gate first; the *current*
+    # row validates and repairs exactly as 0007 does; *older* refuses without
+    # the explicit offline authority (finding 3).
+    from veracium.store.schema_version import runtime_supported
+    if not runtime_supported():
+        return "unsupported-sqlite"
     conn = sqlite3.connect(path, timeout=busy_timeout_ms / 1000)
     conn.isolation_level = None
     try:
@@ -224,9 +318,27 @@ def open_or_migrate(path: str, busy_timeout_ms: int = 5000) -> str:
             return "locked"
         found = conn.execute("PRAGMA user_version").fetchone()[0]
         if found == 2:
+            objs = manifest(conn)
+            want = _v2_constructor_objects()
+            drifted = [o for o in SCHEMA_V2 if o.policy == REBUILDABLE
+                       and objs.get(o.key, {}).get("sql") != o.ddl]
+            for o in drifted:
+                conn.execute(f"DROP INDEX IF EXISTS {o.name}")
+                conn.execute(o.ddl)
+            if identity(manifest(conn)) != identity(want):
+                conn.execute("ROLLBACK")
+                return "stamped-shape-mismatch"
             conn.execute("COMMIT")
             return "current"
         if found == 1:
+            if authority is None or not authority.quiesced or not authority.backup_ref:
+                conn.execute("ROLLBACK")
+                return ("migration-required" if authority is None
+                        else "migration-quiescence-required")
+            expected = path_evidence_record()
+            if migration_declaration_digest(MIGRATION_1_TO_2) !=                     expected["migration_declaration_digest"]:
+                conn.execute("ROLLBACK")
+                return "migration-evidence-missing"
             apply_migration(conn, MIGRATION_1_TO_2)
             # **Exact constructor identity, not capability** (round 2, findings
             # 2–4). Capability compared columns only, so a destination with the
@@ -248,11 +360,13 @@ def open_or_migrate(path: str, busy_timeout_ms: int = 5000) -> str:
             cons = sqlite3.connect(":memory:")
             for o in SCHEMA_V2:
                 cons.execute(o.ddl)
-            same = identity(manifest(conn)) == identity(manifest(cons))
+            same = (identity(manifest(conn)) == identity(manifest(cons))
+                    and full_manifest_hash(manifest(conn))
+                    == expected["output_full_manifest_hash"])
             cons.close()
             if not same:
                 conn.execute("ROLLBACK")
-                return "migration-result-mismatch: output is not the v2 constructor manifestation"
+                return "migration-result-mismatch"
             conn.execute("PRAGMA user_version = 2")
             conn.execute("COMMIT")
             return "migrated"
@@ -278,8 +392,10 @@ def simulate() -> int:
     c.commit()
     c.close()
 
-    print(f"open_or_migrate: {open_or_migrate(p)}")
-    print(f"reopen:          {open_or_migrate(p)}")
+    auth = MigrationAuthority(quiesced=True, backup_ref="sim-backup")
+    print(f"ordinary open on v1: {open_or_migrate(p)}")
+    print(f"with authority:      {open_or_migrate(p, authority=auth)}")
+    print(f"reopen:              {open_or_migrate(p)}")
 
     c = sqlite3.connect(p)
     rows = c.execute("SELECT COUNT(*) FROM edges").fetchone()[0]

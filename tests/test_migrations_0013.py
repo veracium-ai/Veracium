@@ -19,6 +19,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "specs"))
 
 import migrations_0013 as m13  # noqa: E402
+def _auth():
+    return m13.MigrationAuthority(quiesced=True, backup_ref="test-backup")
+
 from veracium.store.schema_version import identity, manifest  # noqa: E402
 
 
@@ -43,7 +46,7 @@ def test_the_concrete_migration_reaches_the_v2_constructor_output():
     """The additive change means the two provenances converge on one digest —
     stated in the spec as a measured property, verified here."""
     p = _v1_store()
-    assert m13.open_or_migrate(p) == "migrated"
+    assert m13.open_or_migrate(p, authority=_auth()) == "migrated"
     mig = sqlite3.connect(p)
     cons = sqlite3.connect(":memory:")
     for o in m13.SCHEMA_V2:
@@ -55,7 +58,7 @@ def test_migration_preserves_every_row():
     p = _v1_store(rows=5)
     before = sqlite3.connect(p).execute(
         "SELECT id FROM edges ORDER BY id").fetchall()
-    m13.open_or_migrate(p)
+    m13.open_or_migrate(p, authority=_auth())
     after = sqlite3.connect(p).execute(
         "SELECT id FROM edges ORDER BY id").fetchall()
     assert after == before
@@ -138,7 +141,7 @@ def test_mq2_concurrent_migration_runs_exactly_once():
     results = []
 
     def worker():
-        results.append(m13.open_or_migrate(p, busy_timeout_ms=10000))
+        results.append(m13.open_or_migrate(p, busy_timeout_ms=10000, authority=_auth()))
 
     threads = [threading.Thread(target=worker) for _ in range(5)]
     for t in threads:
@@ -159,7 +162,7 @@ def test_the_0008_uniqueness_contract_holds():
     generated ids coexist, a reused pair conflicts, and the scope is the
     tenant — another user may reuse the same id."""
     p = _v1_store()
-    m13.open_or_migrate(p)
+    m13.open_or_migrate(p, authority=_auth())
     c = sqlite3.connect(p)
     ins = ("INSERT INTO confirmations(id,user_id,edge_id,confirmed_at,actor,"
            "call_path,correlation_id,request_digest) VALUES(?,?,?,?,?,?,?,?)")
@@ -184,7 +187,7 @@ def test_a_wrong_unique_constraint_is_not_stamped(monkeypatch):
     monkeypatch.setattr(m13, "MIGRATION_1_TO_2",
                         m13.Migration(1, 2, (bad, m13.IX_CONFIRMATIONS_DDL)))
     p = _v1_store()
-    assert m13.open_or_migrate(p).startswith("migration-result-mismatch")
+    assert m13.open_or_migrate(p, authority=_auth()).startswith("migration-result-mismatch")
     c = sqlite3.connect(p)
     assert c.execute("PRAGMA user_version").fetchone()[0] == 1   # rolled back
 
@@ -195,7 +198,7 @@ def test_a_missing_rebuildable_index_is_repaired_before_stamping(monkeypatch):
     monkeypatch.setattr(m13, "MIGRATION_1_TO_2",
                         m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL,)))
     p = _v1_store()
-    assert m13.open_or_migrate(p) == "migrated"
+    assert m13.open_or_migrate(p, authority=_auth()) == "migrated"
     c = sqlite3.connect(p)
     ddl = c.execute("SELECT sql FROM sqlite_master WHERE "
                     "name='ix_confirmations_edge'").fetchone()
@@ -229,10 +232,91 @@ def test_mq2_hazard_a_stale_v1_connection_writes_after_migration():
     makes it so."""
     p = _v1_store()
     old = sqlite3.connect(p)                       # a v1-era process
-    assert m13.open_or_migrate(p) == "migrated"
+    assert m13.open_or_migrate(p, authority=_auth()) == "migrated"
     old.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,"
                 "quarantined,json) VALUES('stale','u','s','r','o',1,0,'{}')")
     old.commit()                                   # succeeds: nothing fences it
     c = sqlite3.connect(p)
     assert c.execute("SELECT COUNT(*) FROM edges WHERE id='stale'"
                      ).fetchone()[0] == 1
+
+
+# --- round 3 of this spec's review ----------------------------------------
+
+def test_ordinary_open_refuses_with_migration_required():
+    """Round 3, finding 3: auto-migration on ordinary open raced the stale
+    connection by design. Migration is an explicit offline operation now."""
+    p = _v1_store()
+    assert m13.open_or_migrate(p) == "migration-required"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_an_unquiesced_authority_is_refused():
+    p = _v1_store()
+    bad = m13.MigrationAuthority(quiesced=False, backup_ref="b")
+    assert m13.open_or_migrate(p, authority=bad) == "migration-quiescence-required"
+
+
+def test_an_unqualified_runtime_cannot_migrate(monkeypatch):
+    """Round 3, finding 1: the instrument migrated on an unqualified runtime."""
+    from veracium.store import schema_version as sv
+    monkeypatch.setattr(sv, "runtime_supported", lambda: False)
+    assert m13.open_or_migrate(_v1_store(), authority=_auth()) == "unsupported-sqlite"
+
+
+def test_a_malformed_stamped_v2_store_is_refused():
+    """Round 3, finding 1: the instrument called it 'current' with no
+    validation; 0007 would refuse it as stamped-shape-mismatch."""
+    p = _v1_store()
+    m13.open_or_migrate(p, authority=_auth())
+    c = sqlite3.connect(p)
+    c.execute("ALTER TABLE confirmations ADD COLUMN sneaky TEXT")
+    c.commit()
+    c.close()
+    assert m13.open_or_migrate(p) == "stamped-shape-mismatch"
+
+
+def test_a_drifted_v2_index_is_repaired_on_current(monkeypatch):
+    p = _v1_store()
+    m13.open_or_migrate(p, authority=_auth())
+    c = sqlite3.connect(p)
+    c.execute("DROP INDEX ix_confirmations_edge")
+    c.commit()
+    c.close()
+    assert m13.open_or_migrate(p) == "current"
+    c = sqlite3.connect(p)
+    assert c.execute("SELECT sql FROM sqlite_master WHERE "
+                     "name='ix_confirmations_edge'").fetchone()
+
+
+def test_the_executor_requires_an_existing_transaction():
+    """Round 3, finding 4: on autocommit, a failed migration left its first
+    statement durably applied."""
+    c = sqlite3.connect(tempfile.mktemp(suffix=".db"))
+    c.isolation_level = None                     # autocommit, no BEGIN
+    with pytest.raises(RuntimeError, match="migration-protocol"):
+        m13.apply_migration(c, m13.Migration(1, 2, ("CREATE TABLE partial (x)",)))
+    assert not c.execute("SELECT name FROM sqlite_master "
+                         "WHERE name='partial'").fetchone()
+
+
+def test_full_manifest_hash_sees_what_the_acceptance_digest_excludes():
+    """Round 3, finding 2, the executable half: acceptance digests were equal
+    while complete manifestations differed on the rebuildable index."""
+    from veracium.store.schema_version import SCHEMAS, digest
+    SCHEMAS[2] = m13.SCHEMA_V2          # v2 policy: the new index is rebuildable
+    try:
+        full = m13._v2_constructor_objects()
+        partial = {k: v for k, v in full.items()
+                   if k != ("index", "ix_confirmations_edge")}
+        assert digest(full, 2) == digest(partial, 2)     # blind, by design
+        assert m13.full_manifest_hash(full) != m13.full_manifest_hash(partial)
+    finally:
+        del SCHEMAS[2]
+
+
+def test_a_list_statement_container_does_not_validate():
+    probs = m13.validate_registry(
+        schemas={1: m13.SCHEMA_V1, 2: m13.SCHEMA_V2},
+        migrations={1: m13.Migration(1, 2, ["SELECT 1"])}, current=2)
+    assert any("nonempty" in p or "tuple" in p for p in probs)

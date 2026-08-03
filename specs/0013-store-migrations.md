@@ -5,19 +5,21 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3)** — first external round: *architecture approved
-> directionally, v2 deferred, 7 findings*, all taken. **The DDL is corrected**
-> (`correlation_id` NOT NULL — an omitted id is *generated*, per `0008` §6c —
-> and `id` NOT NULL), **this CREATE-only migration is authorised by exact
-> constructor identity** rather than the column-only capability check the
-> review bypassed, **and the M-Q2 ruling is adopt-with-conditions**: the write
-> lock serialises cooperating openers and does NOT fence an already-running v1
-> process — the quiescence contract in §5b is load-bearing and measured.
+> **in review (v4)** — round 2: *concrete migration and direction approved,
+> v3 deferred, 4 blockers*. All taken: **the instrument now runs `0007`'s full
+> inherited order** (runtime gate first; the *current* row validates and
+> repairs exactly as `0007` does — a malformed stamped v2 store refuses as
+> `stamped-shape-mismatch`); **migration is an explicit offline operation**
+> (ordinary open refuses `migration-required`; a host-supplied
+> `MigrationAuthority` attesting quiescence and backup is the only path in);
+> **the path-evidence contract is re-frozen over full-manifest hashes** (the
+> acceptance digest is blind to rebuildables, measured); and **the
+> one-transaction invariant is executable**, not a calling convention.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v3 |
+| **Version** | v4 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -270,9 +272,14 @@ close.
 | migration performed before service admission | old binaries prevented from restarting against the migrated store |
 | backup taken; rollback procedure in place | a "one-way" declaration is not a fence |
 
-**Enforceability is an implementation obligation** for the first migrating
-release (`0008`'s), stated here so it cannot be quietly narrowed: release
-tooling must make the quiescence condition checkable, not aspirational.
+**The boundary is now a mechanism, not tooling prose** (round 2, finding 3).
+Ordinary opening **refuses an older store** with `migration-required` — it
+never auto-migrates, so nothing races a stale connection by design. Migration
+is a **dedicated operation** requiring a host-supplied `MigrationAuthority`
+attesting quiescence and a backup reference; `allow_adopt` never doubles as
+migration permission. **The closed failure model**: `migration-required` ·
+`migration-quiescence-required` · `migration-evidence-missing` ·
+`migration-failed` · `migration-result-mismatch`.
 
 *(v2's §8 said "not multi-process" while §5b demonstrated five concurrent
 openers — the contradiction is resolved as above: concurrent **cooperating**
@@ -286,16 +293,25 @@ has more than one accepted manifestation, and M11/M12's artifact contract is
 load-bearing — frozen now, reviewed here, implemented with `0008`:
 
 ```
-runtime build identity          (0007 §4a-viii)
-from_version
-source manifestation digest
-to_version
-output manifestation digest
-migration declaration digest    (sha256 over the statement tuple)
+migration_evidence_algorithm · manifest_algorithm · runtime build identity
+from_version  · source acceptance digest · source FULL-manifest hash
+to_version    · output acceptance digest · output FULL-manifest hash
+              · complete output manifestation (for diagnostics/reproduction)
+canonical migration bytes · migration declaration digest
 ```
 
-**Capability is necessary; only recorded evidence authorises** — the migrated
-manifestation must be accepted for this source × path × runtime before a stamp.
+**Full-manifest hashes, because the acceptance digest is blind to rebuildables
+by design** (round 2, finding 2, measured: digests equal while complete
+manifestations differed on the new index). **The digest algorithm is defined,
+not gestured at**: sha256 over domain-separated canonical JSON of
+`[from, to, [statements…]]` — `canonical_migration_bytes()` in the instrument.
+**Cardinality is exact**: every active runtime × every declared migration ×
+every accepted source manifestation; missing, extra, duplicate or conflicting
+records fail closed. The complete output is reproduced before any stamp.
+
+**Capability is necessary; only recorded evidence authorises** — and
+`destination_problems()` is now explicitly **non-authorizing deferred
+scaffolding** for the first `ALTER`'s own review.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -337,13 +353,17 @@ backup. **A declaration that a migration is "one-way" is not a fence.**
 
 ## 8. Claims and limits
 
-**Claim:** a store created by any supported released version can be brought to
-the current version without installing intermediate releases, or is refused.
+**Claim, bounded (round 2):** a version-1 store can be brought to version 2 by
+the declared migration under an explicit offline authority, or is refused with
+a closed reason. **Skipped-release upgrading is not claimed** — it is the
+mandatory requirement the first two-step spec must demonstrate.
 
 **Limits:**
 
-- **Not multi-process.** Migration must be run by one process (**M13**).
-  `0007`'s S20 covers concurrent *first open*, not concurrent migration.
+- **Cooperating concurrent openers are serialised** by the write lock (§5b);
+  **stale old-version processes are unsupported unless quiesced** — the
+  distinction round 2 required in place of v3's contradictory "not
+  multi-process" line.
 - **Not a sandbox.** §4b's authorizer defends against an accidental declared
   statement. **Migration statements are trusted code.**
 - **Not equivalence.** A third-party database that is equivalent but differently
@@ -355,61 +375,42 @@ the current version without installing intermediate releases, or is refused.
 
 ## 9. Brief for the external reviewer
 
-**Round 2 of this spec. All 7 round-1 findings taken; every executable one
-reproduced first** — the NULL-accepting `id`, the wrong-UNIQUE stamping, the
-unrepaired index, the stale-connection write, the stray 2→3 step.
+**Round 3 of this spec. All four blockers taken; every executable probe
+reproduced first** — the unqualified-runtime migration, the malformed stamped
+v2 called "current", the autocommit partial migration, the digest blind spot.
 
-**The corrections that matter most:**
+1. **One integrated planner** (finding 1): runtime gate before anything; the
+   *current* row validates the complete manifestation and repairs drift exactly
+   as `0007`'s kernel does — your malformed-stamped-v2 store now refuses as
+   `stamped-shape-mismatch`, and your unqualified-runtime case refuses before
+   any decision. The concurrency test races the integrated planner.
+2. **The offline boundary is a mechanism** (finding 3): ordinary open refuses
+   `migration-required`; only a `MigrationAuthority(quiesced, backup_ref)` can
+   migrate; the failure model is a closed five-member set. **The stale-process
+   race is gone by construction**, not mitigated by tooling prose.
+3. **Path evidence re-frozen over full-manifest hashes** (finding 2), with the
+   digest algorithm actually defined (domain-separated canonical JSON) and
+   exact cardinality. Your equal-digests probe is the regression test.
+4. **The transaction precondition is executable** (finding 4): the executor
+   raises without a transaction and re-checks after every statement; your
+   autocommit case leaves nothing behind.
 
-1. **The DDL now says what `0008` §6c says** — `correlation_id NOT NULL`
-   because an omitted id is *generated and returned as `str`*, `id NOT NULL`
-   because a rowid `TEXT PRIMARY KEY` accepts NULLs (measured), tenant-scoped
-   uniqueness — **and `0008` §6d's contradictory global line is corrected in
-   `0008` itself, dated and attributed to your finding.** An accepted spec
-   carrying an internal contradiction is worse than a dated correction.
-2. **Exact constructor identity authorises this migration** (§5). Your
-   wrong-UNIQUE and missing-index cases are regressions now: both roll back,
-   nothing stamps. Capability survives as context only; **the general model is
-   deferred to the first real `ALTER` for its own external review**, per your
-   acceptance-bar answer — not banked as residual risk.
-3. **M-Q2 is recorded as you ruled it** (§5b): the lock serialises cooperating
-   openers — your five-process verification is cited — and does not fence a
-   stale v1 process. **The hazard is a test now**, and the quiescence contract
-   is spec text with enforceability named as an implementation obligation for
-   the first migrating release.
-4. **The path-evidence record is frozen** (§5c): runtime identity ×
-   from/source-digest × to/output-digest × migration-declaration digest.
-   M11/M12 implement it; the contract is reviewable in this round.
+**All four specification inconsistencies corrected**: §8's skipped-release
+overclaim and multi-process line, M-Q2's stale metadata, the docstring's
+withdrawn "single-process enforcement" claim. Registry validation requires the
+exact tuple type and reports malformed registries instead of raising.
 
-**Bounded, per your finding 7:** `0013` authorises the concrete adjacent v1→v2
-migration and freezes the one-step transaction contract. Skipped-release
-upgrading is a mandatory requirement that the first two-step spec must
-demonstrate; **it is not claimed today.**
-
-**Also corrected from your package verification:** v2's README misdescribed
-what happens on an unqualified runtime — ordinary `SqliteStore` tests *refuse*,
-they do not skip. This package's README states the actual behaviour and the
-sanctioned path (regenerate runtime evidence on that runner), which is what you
-did.
-
-**Where I am least confident:**
-
-1. **The quiescence contract is prose until `0008`'s release tooling exists.**
-   I have made it load-bearing spec text with a measured hazard behind it, but
-   "release tooling must make it checkable" is a promissory note, and you have
-   seen what happens to those here.
-2. **Whether the narrowed acceptance bar is now met.** Against your list:
-   adjacent additive transactional migration ✓ · exact constructor
-   manifestation after repair ✓ · corrected DDL ✓ · exact registry ✓ · path
-   evidence frozen (not implemented) · operational fencing specified (not
-   enforced). **The last two are the open judgement.**
+**Where I am least confident:** the `MigrationAuthority` is an attestation, not
+a verification — the library trusts `quiesced=True`. I believe that is the
+honest maximum for a library (§5b says why), but it is the remaining judgement
+in this design.
 
 ## 10. Open questions
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~M-Q1~~ | **RULED by round 9, 2026-08-03: wait.** `0013` must not reach `accepted` before it is reviewed **against an actual migration** — that is the principle that justified the `0007` scope cut, and it applies equally to the replacement. **The first case is `0008`'s `confirmations` table**: accepted, simple, additive, already blocked on `0013`, and independent of `0006`'s unresolved source-identity design. **`0013` may generalise only what that real migration demonstrates.** | resolved | external | — |
-| **M-Q2** | **PROPOSED in §5b, awaiting external ruling:** SQLite's write lock under the §4c lock-before-read protocol is the enforcement; the caveat (one transaction per migration) is the contract. Measured with five racing openers. | `blocking → proposed` | external | this review |
+| ~~M-Q2~~ | **RULED (round 1) adopt-with-conditions; condition RESOLVED (round 2) by the offline boundary**: the lock serialises cooperating openers, and the stale-process hazard is answered by `migration-required` on ordinary open plus the explicit `MigrationAuthority`. | resolved | external | — |
 | ~~M-Q3~~ | **RULED by round 9: yes, it belongs here.** The capability comparison exists to decide whether a *migration result* satisfies its destination despite differing DDL, so it is `0013`'s. `0007` retains exact manifestation identity, digest comparison, rebuildable drift and candidate resolution — and `capability_problems()` has been removed from its kernel. | resolved | external | — |
 
 ---
@@ -429,3 +430,17 @@ demonstrates, and reopen the general model at the first `ALTER`.
 | 5 | the write lock does not fence a stale v1 process | **M-Q2 ruled adopt-with-conditions**; hazard measured as a test; **quiescence contract is spec text**, enforceability an implementation obligation |
 | 6 | a stray 2→3 step validated | **exact key sets both directions**, nonempty statement tuples; regression test |
 | 7 | skipped-release not demonstrated | **claim withdrawn and bounded**: adjacent v1→v2 only; the planner is reviewed at the first two-step spec |
+
+---
+
+## 12. Round 2 review disposition
+
+**Verdict: concrete migration and direction approved; v3 deferred.** 4
+blockers, 4 inconsistencies, all taken.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the instrument bypassed `0007`'s gates | **integrated planner** — runtime gate first; *current* validates + repairs; malformed stamped v2 refuses. Regression tests for both probes |
+| 2 | path evidence attested less than it authorised | **full-manifest hashes** (acceptance digest is rebuildable-blind, measured); defined canonical bytes; exact cardinality; complete output reproduced |
+| 3 | quiescence was prose over auto-migration | **offline boundary**: `migration-required` on ordinary open; `MigrationAuthority`; closed failure model. M-Q2's condition resolved |
+| 4 | one-transaction was a calling convention | **executable precondition**, re-checked per statement; the autocommit partial-migration case is a regression |
