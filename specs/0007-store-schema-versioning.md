@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v15) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
+> **in review (v16) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
 > the product owner's decision.** Seven external rounds produced ~63 findings,
 > and the large majority lived in **migration machinery with no users** —
 > `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
@@ -19,7 +19,7 @@ Spec-Status: in review
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v15 |
+| **Version** | v16 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0013` and of every schema-changing spec, not a part of any of them. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
@@ -586,7 +586,7 @@ declared schema versions:
 | `sqlite_version` | the release number |
 | **`sqlite_source_id()`** | **a version names a release, not a build.** Two builds of `3.45.1` can differ in compile options, authorizer availability and DDL support — all of which exact matching leans on |
 | feature probes | **behavioural, not nominal** (round 7, finding 5), and **only the ones schema matching needs**: a valid strict table, **body-preservation of submitted DDL**, and `table_xinfo` exposing a generated column with a nonzero hidden flag. v8's `STRICT` probe used invalid SQL — a strict table's column must declare a datatype — so it recorded "unsupported" on a runtime that supports it; the DDL probe only checked that a row existed. **The authorizer/confinement probe moved to `0013`** with the code that needs it |
-| constructor digests **and complete manifestations** | the full object records *this runtime produces*, per version — key set **equal to** the declared versions, digest matching, **and qualification compares the complete manifestation byte-for-byte, rebuildable objects included** (the acceptance digest excludes them by design, so digests alone attest nothing about them) |
+| constructor digests **and complete manifestations** | **the qualification rule, in one place:** build identity matches · the record is structurally valid · the constructor digest matches · **the complete constructor manifestation matches byte-for-byte, rebuildable objects included** (the acceptance digest excludes them by design, so digests alone attest nothing about them) |
 | ~~migration-path digests~~ | **`0013`'s**, not `0007`'s. DDL rewriting is why a version can have several accepted manifests, so a runtime agreeing on constructors could still disagree on an `ALTER` path — but at `SCHEMA_VERSION = 1` there are no paths and this build records none |
 | manifest algorithm, schema version | a record generated under a different algorithm or schema version qualifies nothing |
 
@@ -916,6 +916,10 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S72** feature results are a closed, typed vocabulary | `test_a_mistyped_feature_is_rejected` — **measured today**; `1 == True` in Python |
 | **S73** a manifestation's key set **equals** the declaration | `test_a_missing_declared_object_fails_the_record` — **measured today**; "no extras" was only half of "exact" |
 | **S74** a malformed current-algorithm record poisons the artifact | `test_a_malformed_current_algorithm_record_poisons_the_artifact` — **measured today**; superseded records are ignored, malformed current ones are evidence of breakage |
+| **S75** evidence revisions are **monotone** | `test_future_evidence_is_not_overwritten` — **measured today**; an older checkout silently downgraded a future algorithm and a future schema version, rc 0 both times |
+| **S76** the validators are **total** | `test_the_record_validator_is_total` · `test_the_predicate_is_total_over_garbage` — **measured today**; `features=[]` raised `AttributeError` out of the predicate, and `13.0`/`True` revision fields qualified via Python equality |
+| **S77** superseded records cannot disqualify | `test_superseded_duplicates_do_not_disqualify` — **measured today**; two stale leftovers beside a valid record caused a needless startup failure. `--check` reports them for cleanup instead |
+| **S78** manifestation structure is genuinely closed | `test_an_extra_manifestation_field_is_rejected` — exact field sets, typed fields, exact column-row width |
 | **S69** the predicate attests the **complete** manifestation | `test_a_modified_rebuildable_ddl_disqualifies_the_runtime` · `test_a_missing_rebuildable_index_disqualifies_the_runtime` — **measured today**; the acceptance digest excludes rebuildable objects, so digests alone attest nothing about them |
 | **S70** `SCHEMA_VERSION` is bound to the registry | `test_schema_version_must_match_the_registry` · `test_the_registry_versions_are_contiguous` — **measured today**. *(This invariant existed before the scope cut, regressed when the module holding it was deleted, and the round-6 disposition went on claiming it. The citation gate now catches that class.)* |
 | **S71** a missing versions artifact fails the gate | `test_a_missing_versions_artifact_fails_the_gate` — **measured today** |
@@ -1028,59 +1032,54 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 12 approved the store-versioning architecture outright and ruled that
-one qualified runtime is sufficient to authorise implementation.** What remains
-is runtime-evidence validation, and this v15 is limited to exactly that, as you
-asked. All three findings reproduced; all three fixed.
+**Round 13: the store design stands approved; three findings in the evidence
+file, all reproduced, all fixed. This v16 touches nothing else.**
 
-**Finding 1 — your split is adopted as stated.** `RuntimeBuildIdentity`
-(version · source id · canonical typed feature results) now governs one-active
-enforcement, matching, replacement, attestation and reporting;
-`EvidenceRevision` (algorithm · schema version) only versions the record.
-Replacement: **same build identity → replaced** (a new revision of the same
-build); **same version+source at an *older* algorithm → replaced** (superseded
-either way — this carve-out is what clears a bump without the round-11
-deadlock); **same version+source, current algorithm, different probes →
-refused**, because that artifact is self-contradictory and this code must not
-guess which record to believe. Your seeded-record probe now gets rc 1 and an
-unchanged artifact.
+**Finding 1 — my "older" was actually "any other".** The replacement carve-out
+was written `!= current algorithm` while the comments said *older*, so an old
+checkout silently overwrote evidence generated by newer code — a record at
+algorithm 14 became 13, a schema-version-2 record became 1, rc 0 both times.
+**The evidence revision is now monotone**: a future component on the same build
+refuses with the message naming the direction ("this checkout is older than the
+artifact"), and the carve-out replaces **strictly older** revisions only. Both
+of your regression cases are tests, asserting nonzero rc and byte-identical
+artifacts. **S75.**
 
-**Your `1 == True` case is the sharpest thing this round.** Dict equality
-accepted an int-typed probe that the canonical JSON identity distinguished, so
-the predicate and the declared identity disagreed. Features are now a **closed,
-typed vocabulary** — exact key set, real bools, enforced in the record
-validator — and matching compares the canonical identity, never raw dicts.
+**Finding 2 — the validator was not total, and the revision fields were
+untyped.** `features = []` raised `AttributeError` out of
+`runtime_supported()`, so the caller got an implementation exception instead of
+the closed `unsupported-sqlite` outcome. And `manifest_algorithm = 13.0` with
+`schema_version = True` qualified — the same Python-equality class as round 12,
+one field over. Now: **structural typing before any field is used**
+(`type(v) is int`, never `isinstance` — bool is an int subclass), the artifact
+boundary validated (non-list, non-dict members, unreadable JSON), and the
+predicate wrapped so **any escape is False**. Diagnostics live in `--check`;
+the predicate only answers the question. **S76.**
 
-**Finding 2 — "no extras" was only half of "exact".** The manifestation key set
-must now *equal* the declaration — missing objects, including a missing
-required table, fail the record validator itself rather than being caught one
-layer later. Every entry must also carry the closed field shape. The operative
-runtime table now freezes what the tests and brief said: **qualification
-compares the complete manifestation byte-for-byte, rebuildable objects
-included.**
+**Finding 3 — superseded records now actually contribute nothing.** The
+duplicate loop examined all records, so two identical stale leftovers beside a
+valid current record caused a needless startup failure. Every production check
+is scoped to current-algorithm records; `--check` reports stale and duplicate
+leftovers for repository cleanup, which is where you said the diagnostics
+belong. **S77.**
 
-**Finding 3 — malformed current-algorithm records poison the artifact.**
-`artifact_problems()` now runs every current-algorithm record through the
-record validator before the cross-record checks, so `runtime_supported()`
-refuses the whole artifact rather than skipping the broken record and
-qualifying on the good one beside it. Superseded records stay ignored — being
-out of date is not evidence of tampering; failing validation at the current
-algorithm is.
-
-**Corrections:** the STRICT test asserts a real bool rather than demanding
-support the policy says is optional; the union comments in the generator are
-marked historical.
+**Corrections:** the runtime table now states the qualification rule in one
+place — build identity · structural validity · digest · complete manifestation
+byte-for-byte; and "closed field structure" is now true — exact field sets,
+typed fields, exact column-row width, with the extra-field case tested.
+**S78.**
 
 **Where I am least confident:**
 
-1. **The replacement carve-out** (older-algorithm records replaceable by
-   version+source pair rather than full build identity). I believe it is
-   forced — probe definitions can change across algorithm revisions, so the old
-   record's features are not comparable — but it is the one place the build
-   identity is not the key, and it is exactly the kind of seam you have found
-   things in.
-2. **Nothing else.** The store design is approved and untouched; this round was
-   three local fixes in one file plus their tests.
+1. **The `!=` vs `<` bug is the one that should worry us both**, because it was
+   introduced *while implementing your previous finding* and survived my own
+   re-probes — I tested the deadlock direction and not the downgrade direction.
+   The regression tests now cover both directions of that comparison; I do not
+   have a general defence against testing only the direction I was thinking
+   about.
+2. **Nothing else.** The evidence file has now had five consecutive rounds of
+   findings; every predicate in it is total, typed, monotone and scoped, and
+   the remaining surface is small.
 
 ## 10. Open questions
 
@@ -1413,3 +1412,19 @@ wording in the generator is historical.
 evidenced runtime; release remains blocked on unqualified SQLite identities;
 widening requires durable per-runtime attestation. **The store-shape design has
 no remaining blocker.**
+
+---
+
+## 24. Round 13 review disposition
+
+**Verdict: store architecture approved (standing); v15 deferred on 3
+runtime-evidence findings.** All taken, plus both corrections.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | evidence revisions can be silently downgraded | **monotone revisions** — a future algorithm or schema version on the same build refuses; the carve-out replaces strictly older only. The bug: `!=` where the comments said *older*. **S75** |
+| 2 | the validator is not total; revision fields untyped | **structural typing before use**, `type(v) is int` (bool is an int subclass), artifact-boundary validation, and a predicate that returns False on any escape. **S76** |
+| 3 | superseded records still disqualify | **production checks scoped to current-algorithm records**; `--check` carries the stale-record diagnostics. **S77** |
+
+**Corrections:** the qualification rule stated in one place; manifestation
+structure genuinely closed (**S78**).

@@ -61,6 +61,8 @@ REVIEWS = [
          verdict="core spec approved; deferred; identity, attestation and a regressed guard", findings=3),
     dict(spec="0007", round=12, kind="external", date="2026-08-03",
          verdict="architecture approved outright; S-Q7 ruled; deferred on runtime-evidence validation", findings=3),
+    dict(spec="0007", round=13, kind="external", date="2026-08-03",
+         verdict="architecture standing; deferred on monotonicity, totality and stale-record scoping", findings=3),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

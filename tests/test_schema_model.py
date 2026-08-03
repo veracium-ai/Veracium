@@ -776,3 +776,77 @@ def test_a_malformed_current_algorithm_record_poisons_the_artifact(monkeypatch):
     assert ev.artifact_problems([good, broken])
     monkeypatch.setattr(ev, "qualified_runtimes", lambda: [good, broken])
     assert not ev.runtime_supported()
+
+
+# --- round 13 ------------------------------------------------------------
+
+@pytest.mark.parametrize("field,value", [
+    ("manifest_algorithm", None), ("schema_version", None)])
+def test_future_evidence_is_not_overwritten(monkeypatch, tmp_path, field, value):
+    """Round 13, finding 1: an older checkout silently overwrote evidence from
+    a newer algorithm or schema version — an evidence downgrade, rc 0."""
+    import copy
+    import json
+
+    import schema_evidence as ev
+    art = tmp_path / "sqlite_runtimes.json"
+    monkeypatch.setattr(ev, "RUNTIMES", art)
+    monkeypatch.setattr(ev, "VERSIONS", tmp_path / "schema_versions.json")
+    monkeypatch.setattr(ev, "GENERATED", tmp_path)
+    fut = copy.deepcopy(ev.build_runtime_record())
+    fut[field] = fut[field] + 1
+    art.write_text(json.dumps({"runtimes": [fut]}, indent=2) + "\n")
+    saved = art.read_text()
+    assert ev.write_runtime() == 1
+    assert art.read_text() == saved
+
+
+@pytest.mark.parametrize("mut", [
+    {"features": []}, {"constructor_digests": 1}, {"manifestations": 1},
+    {"sqlite_version": ""}, {"manifest_algorithm": 13.0},
+    {"schema_version": True}])
+def test_the_record_validator_is_total(mut):
+    """Round 13, finding 2: malformed containers raised implementation
+    exceptions, and float/bool revision fields passed via Python equality."""
+    import copy
+
+    import schema_evidence as ev
+    rec = dict(copy.deepcopy(ev.build_runtime_record()), **mut)
+    assert ev.runtime_record_problems(rec)          # returns, never raises
+
+
+def test_the_predicate_is_total_over_garbage(monkeypatch):
+    import schema_evidence as ev
+    for artifact in ("junk", [42], [{"features": []}], None):
+        monkeypatch.setattr(ev, "qualified_runtimes",
+                            lambda a=artifact: a if isinstance(a, list) else
+                            (_ for _ in ()).throw(ValueError("bad")))
+        assert ev.runtime_supported() is False
+
+
+def test_superseded_duplicates_do_not_disqualify(monkeypatch):
+    """Round 13, finding 3: two identical older-algorithm leftovers beside one
+    valid record disqualified the runtime — safe, but a needless startup
+    failure contradicting the stated policy."""
+    import copy
+
+    import schema_evidence as ev
+    good = ev.build_runtime_record()
+    stale = copy.deepcopy(good)
+    stale["manifest_algorithm"] = ev.MANIFEST_ALGORITHM - 1
+    monkeypatch.setattr(ev, "qualified_runtimes",
+                        lambda: [good, copy.deepcopy(stale), copy.deepcopy(stale)])
+    assert ev.artifact_problems() == []
+    assert ev.runtime_supported() is True
+
+
+def test_an_extra_manifestation_field_is_rejected():
+    """Round 13 correction: "closed" had meant only "these fields present"."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    key = next(iter(rec["manifestations"]["constructor v1"]))
+    rec["manifestations"]["constructor v1"][key] = dict(
+        rec["manifestations"]["constructor v1"][key], extra="field")
+    assert any("not exactly" in p for p in ev.runtime_record_problems(rec))
