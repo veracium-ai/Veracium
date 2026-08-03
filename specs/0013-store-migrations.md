@@ -10,8 +10,13 @@ Spec-Requires: 0007
 > contract out; `0008` is `accepted`, adds a `confirmations` table, and declared
 > only `Spec-Requires: 0007` — so accepting `0007` would have **authorised a
 > schema-changing implementation whose migration design was unresolved.** Found
-> by the round-8 external reviewer, and it is the most serious defect the scope
-> cut introduced.
+> by the round-8 external reviewer; the most serious defect the scope cut
+> introduced.
+>
+> **Round 9 ruled** that this spec must be reviewed **against `0008`'s
+> `confirmations` table** before it can be accepted (M-Q1), and that the
+> capability comparison belongs here (M-Q3). **M-Q2 — enforceable
+> single-process migration — remains independently blocking.**
 
 | | |
 |---|---|
@@ -40,11 +45,11 @@ two reasons the reviewer named.**
 **So the graph is now:**
 
 ```
-0013  requires 0007          (versioning must exist before shape changes)
-0006  requires 0013
-0008  requires 0013          <- the accepted spec whose gate the cut broke
-0009  requires 0013
-0010  requires 0013
+0013  requires 0007                (versioning must exist before shape changes)
+0006  requires 0007, 0013
+0008  requires 0007, 0013          <- the accepted spec whose gate the cut broke
+0009  requires 0007, 0013
+0010  requires 0007, 0013
 ```
 
 **And the conclusions below are stated here in full, not cited.** The v9 archive
@@ -297,6 +302,6 @@ the cut.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **M-Q1** | Should `0013` reach `accepted` **before** a concrete first migration exists, or wait for `0008`'s `confirmations` table? §9 argues for waiting. | `blocking` | external | before acceptance |
+| ~~M-Q1~~ | **RULED by round 9, 2026-08-03: wait.** `0013` must not reach `accepted` before it is reviewed **against an actual migration** — that is the principle that justified the `0007` scope cut, and it applies equally to the replacement. **The first case is `0008`'s `confirmations` table**: accepted, simple, additive, already blocked on `0013`, and independent of `0006`'s unresolved source-identity design. **`0013` may generalise only what that real migration demonstrates.** | resolved | external | — |
 | **M-Q2** | How is single-process migration enforced (**M13**)? A lock table changes the shape being migrated; an advisory file is not a guarantee. | `blocking` | dev | before implementation |
-| **M-Q3** | Does `0007`'s capability comparison belong here instead, leaving `0007` with digest and drift only? | `pre-release` | external | before implementation |
+| ~~M-Q3~~ | **RULED by round 9: yes, it belongs here.** The capability comparison exists to decide whether a *migration result* satisfies its destination despite differing DDL, so it is `0013`'s. `0007` retains exact manifestation identity, digest comparison, rebuildable drift and candidate resolution — and `capability_problems()` has been removed from its kernel. | resolved | external | — |

@@ -42,7 +42,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 9
+MANIFEST_ALGORITHM = 10
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -114,8 +114,27 @@ def runtime_identity() -> dict:
             "features": _feature_probes()}
 
 
+_RUNTIME_OVERRIDE: list = []
+
+
 def qualified_runtimes() -> list:
+    """Recorded runtimes — or the prospective set, while `write_runtime()` is
+    validating a pair it has not published yet."""
+    if _RUNTIME_OVERRIDE:
+        return _RUNTIME_OVERRIDE[0]
     return json.loads(RUNTIMES.read_text())["runtimes"] if RUNTIMES.exists() else []
+
+
+def _stage(path: pathlib.Path, text: str) -> pathlib.Path:
+    """Write the new content beside its target, without publishing it.
+
+    **The residual limit, stated rather than claimed away:** two renames are not
+    one transaction. A crash between them can still leave the pair disagreeing.
+    **The honest atomic boundary is the git commit**, and `--check` fails on a
+    disagreeing pair — which is the guarantee that actually holds."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text)
+    return tmp
 
 
 def runtime_record_problems(r: dict) -> list:
@@ -169,7 +188,57 @@ def runtime_record_problems(r: dict) -> list:
                 problems.append(f"manifestation 'constructor v{v}' does not hash "
                                 f"to its recorded digest — the object records and "
                                 f"the digest disagree")
+            problems.extend(manifestation_problems(objs, v))
     return problems
+
+
+def _identity_key(r: dict) -> tuple:
+    return (r.get("sqlite_version"), r.get("source_id"),
+            json.dumps(r.get("features"), sort_keys=True),
+            r.get("manifest_algorithm"), r.get("schema_version"))
+
+
+def artifact_problems(records=None) -> list:
+    """Problems visible only across the whole runtime artifact.
+
+    **Round 9, finding 1b: two individually valid records with the SAME runtime
+    identity and DIFFERENT constructor output both passed.** Measured. One
+    SQLite build cannot legitimately produce two different constructor outputs,
+    so the artifact is self-contradictory — and a per-record validator cannot
+    see it, because each record is internally consistent.
+
+    Duplicate identity is rejected outright rather than resolved: picking one
+    would be guessing which record is the forgery."""
+    records = qualified_runtimes() if records is None else records
+    problems, seen = [], {}
+    for r in records:
+        key = _identity_key(r)
+        if key in seen:
+            if seen[key] != r.get("constructor_digests"):
+                problems.append(
+                    f"two runtime records share identity {key[0]!r}/{key[1][:20]!r} "
+                    f"but declare different constructor output — the artifact is "
+                    f"self-contradictory and neither can be trusted")
+            else:
+                problems.append(f"duplicate runtime record for {key[0]!r}")
+        seen[key] = r.get("constructor_digests")
+    return problems
+
+
+def manifestation_problems(objs: dict, version: int) -> list:
+    """Undeclared persistent objects in a recorded manifestation.
+
+    **Round 9, finding 1a: a *self-consistent* fabrication was accepted.** v11
+    only checked that a manifestation hashed to its recorded digest — so adding
+    a trigger AND updating the digest passed, and the trigger became an accepted
+    version-1 shape. Measured.
+
+    Hashing proves internal consistency, **not provenance**. This is the
+    independent check the reviewer asked for: a manifestation may contain only
+    objects this build declares, whatever runtime claims to have produced it."""
+    declared = {f"{o.kind}:{o.name}" for o in SCHEMAS[version]}
+    return [f"manifestation for v{version} contains undeclared object {k!r}"
+            for k in sorted(set(objs) - declared)]
 
 
 def runtime_supported() -> bool:
@@ -248,29 +317,70 @@ def write_runtime(force: bool = False) -> int:
     # a runtime produces different stored DDL, which is the entire reason the
     # union model exists, it would be marked qualified while the stores it
     # creates were NOT in MANIFESTS.
-    previous = RUNTIMES.read_text() if RUNTIMES.exists() else None
-    RUNTIMES.write_text(json.dumps({"runtimes": others + [rec]}, indent=2) + "\n")
+    # **Round 9, finding 2: the "both or neither" claim was false.** v11 wrote
+    # the runtime file first and restored it only on `SystemExit`; an ordinary
+    # `OSError` from the second write left a qualified-but-stale artifact.
+    # Measured against a simulated disk failure.
+    #
+    # The order is now: build and validate the complete prospective pair in
+    # memory, then publish both by atomic rename. A crash between the two
+    # renames is still possible -- **os.replace is per-file, not a two-file
+    # transaction** -- so the honest boundary is the git commit, and `--check`
+    # fails on a disagreeing pair. That limit is stated rather than claimed
+    # away.
+    prospective = {"runtimes": others + [rec]}
+    saved_runtimes = qualified_runtimes()
     try:
+        _RUNTIME_OVERRIDE.append(prospective["runtimes"])
         versions = build_version_artifact()
         accepted = {a["digest"] for recs in versions["versions"].values()
                     for a in recs["accepted"]}
-        orphan = [f"{prov} @ {rt['sqlite_version']}"
-                  for rt in qualified_runtimes()
-                  for prov, objs in rt["manifestations"].items()
-                  if _digest_of_identity(objs, int(prov.rsplit("v", 1)[1]))
-                  not in accepted]
-        if orphan:
-            raise SystemExit(f"runtime output not in the accepted set: {orphan}")
-        VERSIONS.write_text(json.dumps(versions, indent=2) + "\n")
-    except SystemExit as exc:
-        if previous is None:
-            RUNTIMES.unlink()
-        else:
-            RUNTIMES.write_text(previous)
+        for rt in prospective["runtimes"]:
+            if runtime_record_problems(rt) or rt.get("manifest_algorithm") != MANIFEST_ALGORITHM:
+                continue
+            for prov, objs in rt["manifestations"].items():
+                v = int(prov.rsplit("v", 1)[1])
+                if _digest_of_identity(objs, v) not in accepted:
+                    raise SystemExit(f"runtime output {prov} @ "
+                                     f"{rt['sqlite_version']} is not in the "
+                                     f"accepted set")
+    except Exception as exc:                     # validation OR filesystem
         print(f"qualification refused, artifacts unchanged: {exc}", file=sys.stderr)
         return 1
+    finally:
+        _RUNTIME_OVERRIDE.clear()
+
+    # Stage BOTH temporaries before renaming either, so a filesystem failure
+    # happens while nothing is published. The two renames are then back to back,
+    # and the first is rolled back if the second fails.
+    saved = RUNTIMES.read_text() if RUNTIMES.exists() else None
+    try:
+        t_rt = _stage(RUNTIMES, json.dumps(prospective, indent=2) + "\n")
+        t_vs = _stage(VERSIONS, json.dumps(versions, indent=2) + "\n")
+    except OSError as exc:
+        print(f"staging failed, nothing published: {exc}", file=sys.stderr)
+        return 1
+    try:
+        t_rt.replace(RUNTIMES)
+        t_vs.replace(VERSIONS)
+    except OSError as exc:
+        if saved is None:
+            RUNTIMES.unlink(missing_ok=True)
+        else:
+            RUNTIMES.write_text(saved)
+        print(f"publish failed and was rolled back: {exc}", file=sys.stderr)
+        return 1
+    active = sum(1 for r in prospective["runtimes"]
+                 if r.get("manifest_algorithm") == MANIFEST_ALGORITHM
+                 and not runtime_record_problems(r))
+    stale = len(prospective["runtimes"]) - active
+    # Round 9: superseded records were counted as "qualified". They are not.
     print(f"recorded {rec['sqlite_version']} ({rec['source_id'][:20]}…) — "
-          f"{len(others) + 1} qualified runtime(s); accepted manifests updated")
+          f"{active} active, {stale} superseded or invalid; accepted manifests "
+          f"updated")
+    if stale:
+        print(f"note: {stale} record(s) contribute nothing and --check will fail "
+              f"until they are regenerated or removed")
     return 0
 
 
@@ -319,6 +429,7 @@ def build_version_artifact(strict: bool = True) -> dict:
         # runtime's manifestation. Measured: an inserted foreign manifestation
         # was silently dropped.
         have = {a["digest"] for a in accepted}
+        problems.extend(artifact_problems())
         for rt in qualified_runtimes():
             # A record written under an older manifest algorithm describes a
             # different computation. It is **superseded, not fraudulent**: it
@@ -337,6 +448,22 @@ def build_version_artifact(strict: bool = True) -> dict:
                                 f"contributes no accepted manifest: "
                                 f"{runtime_record_problems(rt)[0]}")
                 continue
+            # **Attestation, round 9 finding 1.** A record's objects agreeing
+            # with its own digest proves internal consistency, not that the
+            # claimed runtime produced them. Until a CI job attests a foreign
+            # runtime, the only record that may contribute is one this process
+            # can REPRODUCE -- and reproducing means running the constructor
+            # here and getting the same objects.
+            if _identity_key(rt) != _identity_key(build_runtime_record()):
+                print(f"note: runtime {rt.get('sqlite_version')!r} is recorded but "
+                      f"not attested by this process; it contributes no accepted "
+                      f"manifest until a job on that runtime regenerates it")
+                continue
+            for v in SCHEMAS:
+                if rt["manifestations"][f"constructor v{v}"] != _constructor_objects(v):
+                    problems.append(
+                        f"runtime {rt.get('sqlite_version')!r} claims a v{v} "
+                        f"manifestation this process does not reproduce")
             for prov, objs in (rt.get("manifestations") or {}).items():
                 if not prov.endswith(f"v{version}") and prov != f"constructor v{version}":
                     continue

@@ -4,8 +4,8 @@
 
 # Spec status
 
-**13 specs · 1 accepted · 27 external review
-rounds · 6 blocking questions open.**
+**13 specs · 1 accepted · 28 external review
+rounds · 5 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
 review is required to reach it. **1 of 13 are accepted**, which
@@ -19,13 +19,13 @@ is the number that decides what can be built.
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0006** | source identity and evidence basis | `draft` | 2026-08-03 | 0 | 0 | 2 | 0 | 0 | — |
-| **0007** | on-disk store schema versioning | `in review` | 2026-08-03 | 0 | 8 | 2 | 0 | 0 | — |
+| **0007** | on-disk store schema versioning | `in review` | 2026-08-03 | 0 | 9 | 2 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-03 | 0 | 4 | 0 | 0 | 1 | 0/1 |
 | **0009** | outcome authorship is append-only history | `draft` | 2026-08-03 | 0 | 0 | 1 | 0 | 1 | 0/1 |
 | **0010** | crash-safe consolidation | `draft` | 2026-08-03 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 | **0012** | who may renew a fact's currency | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
-| **0013** | on-disk store migrations | `draft` | 2026-08-03 | 0 | 0 | 3 | 🔴 2 | 0 | — |
+| **0013** | on-disk store migrations | `draft` | 2026-08-03 | 0 | 0 | 1 | 🔴 1 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

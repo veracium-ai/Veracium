@@ -19,10 +19,10 @@ The split is:
 produced ~63 findings, of which the large majority lived in migration and
 migration-driven runtime machinery -- for a registry that was *empty*. `0007`
 now covers stamping, refusing what it does not recognise, and adopting the one
-historical shape. **`specs/0006` owns the migration contract**, where the first
-real migration exists to design against. The withdrawn work is not lost: it is
-preserved in `specs/archives/0007-v9-20260803T0056Z.tar.gz`, and `0006` §0
-points at it.
+historical shape. **`specs/0013` owns the migration contract** and states the
+inherited conclusions in full; every schema-changing spec requires both. *(v10
+first moved the work into `0006`; round 8 showed the gate could not express that
+dependency.)*
 
 **Shared with production:** this registry and its policies, manifest / digest /
 drift / candidate matching, and runtime-evidence validation. **Evidence only:**

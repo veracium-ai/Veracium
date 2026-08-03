@@ -361,8 +361,13 @@ def test_a_rebuildable_non_index_is_a_build_error():
         del SCHEMAS[99]
 
 
-def test_a_foreign_runtime_manifestation_is_preserved(monkeypatch):
-    """Round 7, finding 4: regenerating dropped another runtime's output."""
+def test_an_unattested_foreign_runtime_contributes_nothing(monkeypatch):
+    """Round 9, finding 1: a record's objects agreeing with its own digest
+    proves internal consistency, **not provenance**. Until a job on that runtime
+    regenerates it, a foreign record contributes no accepted manifest.
+
+    This replaces an earlier test that asserted the opposite — the union was
+    unconditional, which is what let a self-consistent fabrication in."""
     import schema_evidence as ev
     foreign = dict(ev.build_runtime_record())
     foreign["sqlite_version"] = "9.9.9"
@@ -370,14 +375,47 @@ def test_a_foreign_runtime_manifestation_is_preserved(monkeypatch):
     key = next(k for k in objs if k.startswith("table:wiki"))
     objs[key] = dict(objs[key], sql=objs[key]["sql"] + " -- other runtime")
     foreign["manifestations"] = {"constructor v1": objs}
-    # A legitimate foreign runtime records a SELF-CONSISTENT pair: different
-    # stored DDL and the digest that matches it. Mutating objects while keeping
-    # the old digest is round 8's fabrication case, covered separately.
     foreign["constructor_digests"] = {"1": ev._digest_of_identity(objs, 1)}
     monkeypatch.setattr(ev, "qualified_runtimes", lambda: [foreign])
     records = ev.build_version_artifact(strict=False)["versions"]
-    prov = [a["provenance"] for a in records["1"]["accepted"]]
-    assert any("9.9.9" in p for p in prov), prov
+    assert not any("9.9.9" in a["provenance"] for a in records["1"]["accepted"])
+
+
+def test_a_self_consistent_fabrication_is_rejected():
+    """Round 9, finding 1a: v11 checked only that a manifestation hashed to its
+    recorded digest, so updating both together passed."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    objs = dict(rec["manifestations"]["constructor v1"])
+    objs["trigger:evil"] = {
+        "type": "trigger", "table": "edges",
+        "sql": "CREATE TRIGGER evil AFTER INSERT ON edges BEGIN DELETE FROM edges; END"}
+    rec["manifestations"]["constructor v1"] = objs
+    rec["constructor_digests"]["1"] = ev._digest_of_identity(objs, 1)
+    problems = ev.runtime_record_problems(rec)
+    assert any("undeclared object" in p for p in problems), problems
+
+
+def test_conflicting_runtime_identities_reject_the_artifact():
+    """Round 9, finding 1b: two individually valid records with the same
+    identity and different output both passed. One build cannot produce two."""
+    import copy
+
+    import schema_evidence as ev
+    good = copy.deepcopy(ev.build_runtime_record())
+    other = copy.deepcopy(good)
+    other["constructor_digests"] = {"1": "0" * 64}
+    assert ev.artifact_problems([good, other])
+
+
+def test_a_duplicate_runtime_record_is_rejected():
+    import copy
+
+    import schema_evidence as ev
+    rec = ev.build_runtime_record()
+    assert ev.artifact_problems([copy.deepcopy(rec), copy.deepcopy(rec)])
 
 
 def test_the_release_result_is_rederived():
