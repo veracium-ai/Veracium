@@ -614,7 +614,7 @@ def test_the_committed_evidence_artifact_is_valid_and_reproduces():
                     "regenerate with --write-evidence to verify here")
     expected, problems = m13._generate_artifact()
     assert problems == []
-    drop = {"generated_at"}
+    drop = {"generated_at", "generator"}      # volatile provenance fields
     assert {k: v for k, v in art.items() if k not in drop} \
         == {k: v for k, v in expected.items() if k not in drop}
 
