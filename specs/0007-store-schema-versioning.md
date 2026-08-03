@@ -4,20 +4,20 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v7)** — opened 2026-08-01. **Round 5 approved the architecture a
-> fourth time, deferred again, and answered a question I had asked: the
-> instrument should be smaller.** v7 splits it into a `schema_model` kernel,
-> declarative migrations, and evidence generation, and **moves every adversarial
-> counterexample into the real test suite**. It also **withdraws the migration
-> containment claim** — name mangling is not access control — replaces it with
-> migrations that carry no connection at all, and derives the SQLite gate from
-> an evidence artifact instead of a hand-edited tuple. **It is the
+> **in review (v8)** — opened 2026-08-01. **Round 6 found a real hole in the
+> migration model, not only in the instrument: a migration's own output defined
+> the destination it was validated against, so an empty migration could
+> authorise its own broken result.** v8 gives the destination an **independent**
+> contract, confines a migration's effects to persistent `main` schema (a
+> declared `TEMP TRIGGER` passed while silently deleting rows), makes runtime
+> qualification non-vacuous and actually writable, binds `SCHEMA_VERSION` to the
+> registry, and **fails closed when legacy evidence is missing**. **It is the
 > `Spec-Requires:` prerequisite of `0006`, `0008`, `0009` and `0010`.**
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v7 |
+| **Version** | v8 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0006`, not a part of it. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a bad migration makes stores unopenable |
@@ -114,8 +114,8 @@ than dropped — a reach table that quietly loses its own errors is not a record
 | **`user_version` accepts negative values** | set `-1`, `-2147483648`, `2147483648` | reads back `-1`, `-2147483648`, and **`0`** — the out-of-range value wrapped to zero, i.e. **into the adoption path** |
 | **`CREATE INDEX IF NOT EXISTS` keeps a wrong same-named index** | replace `ix_edges_subj_rel` with a UNIQUE index, re-run `_SCHEMA` | unchanged: `CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id, subject)` |
 | every read **and write** names its columns | `grep -nE "SELECT\|INSERT"` | 11 `SELECT`, **no `SELECT *`**; 4 `INSERT`, **0 positional** |
-| **all 23 released versions build an identical store** | `specs/schema_manifest.py --releases --write` | **23/23 identical · 0 unbuildable · sqlite 3.45.1**, recorded with tag + commit sha in `specs/generated/legacy_stores.json` |
-| **v3's signature accepted four non-equivalent databases** | `specs/schema_manifest.py --selfcheck` | reproduced all four; the manifest catches all four. **12/12 as specified** |
+| **all 23 released versions build a known store** | `specs/schema_evidence.py --releases --write` | **23/23 identical · 0 unbuildable · sqlite 3.45.1**, recorded with tag + commit sha in `specs/generated/legacy_stores.json` |
+| **v3's signature accepted four non-equivalent databases** | `pytest tests/test_schema_model.py` | reproduced all four; all four refused |
 | **`commit()` then `BEGIN` restores `in_transaction`** | measured | `True` — so post-hoc inspection cannot detect a broken transaction |
 | **reopening `":memory:"` yields a different database** | `signature(":memory:")` on an open in-memory store | **empty manifest**, silently — not an error |
 | ~~"`_SCHEMA` is `IF NOT EXISTS` — every table"~~ | v1 | **wrong: 7 = 4 tables + 3 indices** |
@@ -236,7 +236,7 @@ all.**
 Veracium does not need to decide whether an arbitrary SQLite schema is
 semantically equivalent to its own. That is an open-ended SQL-equivalence
 problem and it is unnecessary. **The acceptance model is exact-match against
-known manifests**, implemented in `specs/schema_manifest.py`:
+known manifests**, implemented in `specs/schema_model.py`:
 
 1. Build a reference database with each supported constructor and migration.
 2. Inventory **every** non-internal persistent object — tables, views, indexes,
@@ -580,23 +580,44 @@ no CI result behind it** (round 5, measured). The document even admitted nothing
 enforced the evidence requirement — which made it an intention, not a gate.
 
 **A runtime is qualified only if `specs/generated/sqlite_runtimes.json` records
-it and this process reproduces that record:**
+it *completely* and this process reproduces that record.** v7 checked
+`all(constructor_digest == recorded)` — and `all()` over an **empty** mapping is
+`True`, so a record with no digests qualified vacuously (round 6, finding 4,
+measured). Completeness is now a precondition and the key set must **equal** the
+declared schema versions:
 
 | recorded | why |
 |---|---|
 | `sqlite_version` | the release number |
 | **`sqlite_source_id()`** | **a version names a release, not a build.** Two builds of `3.45.1` can differ in compile options, authorizer availability and DDL support — all of which exact matching leans on |
 | feature probes | generated columns, authorizer availability, `STRICT` tables, verbatim DDL storage — the behaviours the manifest actually depends on |
-| constructor digests | the accepted manifest *this runtime produces*, per version |
+| constructor digests | the accepted manifest *this runtime produces*, per version — key set **equal to** the declared versions, and non-empty |
+| **migration-path digests** | **DDL rewriting is the reason a version has multiple accepted manifests**, so a runtime agreeing on constructors could still disagree on an `ALTER` path |
+| manifest algorithm, schema version | a record generated under a different algorithm or schema version qualifies nothing |
 
 `runtime_supported()` matches version **and** source id **and** probes, then
 **re-derives the constructor digests here** and compares. Anything else is
 refused with `reason="unsupported-sqlite"`, **before** any version or shape
 decision.
 
-**Adding a runtime now means running the generator on it.** There is no edit
-that qualifies a runtime without producing its evidence — which is the property
-v6 claimed and did not have.
+**Adding a runtime means running `schema_evidence.py --runtime --write` on it**,
+which **now actually writes**: v7 documented that workflow and ignored the flag
+on that path, so the stated route to qualifying a second runtime did not exist
+(round 6, finding 5, measured — the artifact checksum was unchanged). It refuses
+to write an incomplete record. **S55**.
+
+**And the WITHDRAWN claim that 3.46.1 was qualified is retracted.** v7's text said 3.45.1
+and 3.46.1 had been observed to agree while the shipped artifact recorded only
+3.45.1 — so the package failed its own runtime test in the reviewer's
+environment, on a runtime the document called qualified. **Only 3.45.1 is
+recorded, because only 3.45.1 has been run through the generator.**
+
+**An unqualified runtime is a skip, not a suite failure.** v7 asserted
+`runtime_supported()` unconditionally, so the entire adversarial schema suite
+failed on an unrecorded SQLite. Those are two different questions and they are
+now two different tests: *is the recorded evidence complete and self-consistent*
+(always runs), and *is this runner one of the recorded runtimes* (skips, with
+the command to fix it in the message). **S56**.
 
 **This remains deliberately narrow**, and narrow in the direction that fails
 loudly. **S-Q7** stays open for the CI matrix that would widen it.
@@ -619,7 +640,7 @@ class StoreVersionError(RuntimeError):
 class SqliteStore(Store):
     def __init__(self, path: str | Path = "veracium.db", *,
                  allow_adopt: bool = True,
-                 audit_sink: Callable[[dict], None] | None = None,
+                 audit_sink: Callable[[AdoptionAuditEvent], None] | None = None,
                  busy_timeout_ms: int = 5000) -> None: ...
 ```
 
@@ -636,9 +657,16 @@ and not before it. **It can only narrow.**
 
 **`diff` is populated for the shape reasons, against a deterministically chosen
 candidate.** A version now has a *set* of accepted manifests, so "which one do
-we differ from" needs an answer: **the minimum-distance accepted candidate,
-ties broken by provenance in declaration order — constructor first, then
-migration paths in registry order.** `diff` names the candidate it chose. A
+we differ from" needs an answer — **and the metric has to be frozen too, or two
+implementations produce different diagnostics.**
+
+> **Distance** = the number of typed keys `(type, name)` on which the two
+> manifests disagree, counting a key present in one and absent from the other as
+> one disagreement, and a key present in both with any differing field as one.
+> **Ties break by provenance in declaration order** — constructor first, then
+> migration paths in registry order.
+
+`diff` names the candidate it chose and its provenance. A
 refusal a user cannot act on becomes a bug report, and a refusal that diffs
 against an arbitrary member of a set is worse than none.
 
@@ -734,7 +762,70 @@ accidental statement, not a sandbox around hostile code.** It is restored in
 `finally`: left installed it breaks the planner's own commit; left off after a
 failure it drops containment for whatever runs next.
 
-#### 4d-i. The single-step model
+#### 4d-0. A migration does not define its own destination
+
+**Round 6, finding 1, and it is the most serious defect since the trigger
+bypass.** *(The v7 rule described in this paragraph is WITHDRAWN.)* v7 ran every
+migration and added **whatever it produced** to the destination version's
+accepted set. There was no independent destination
+requirement, so:
+
+```
+version 2 constructor:  edges, episodes, wiki, write_counter, sources
+migration v1 -> v2:     (empty)
+validate_registry():    []          <- clean
+MANIFESTS[2]:           BOTH outputs accepted
+```
+
+Measured. **The migration defined its own broken output as a valid version 2**,
+and a store missing a table the application expects would have passed
+destination validation. That is the headline guarantee inverted.
+
+**The two things v4a-v conflated are now separate:**
+
+| | |
+|---|---|
+| **observed exact output** | may legitimately differ in DDL text between the constructor and an `ALTER` path — this is why a version accepts a *set* |
+| **required destination capability** | defined by the destination's own registry entry, **independently of any migration** |
+
+A migration result is added to the accepted set **only if** every `REQUIRED`
+object of the destination exists with matching DDL, every `REBUILDABLE` object
+exists or is repairable drift, and no unapproved persistent object is present.
+**A failure is a build error, not a new accepted manifest.** **S50**.
+
+#### 4d-i. Effects are confined to persistent `main` schema
+
+**A declared statement can act outside anything the manifest can see.** Round 6,
+finding 2, both measured:
+
+```sql
+CREATE TEMP TRIGGER sabotage AFTER INSERT ON t BEGIN DELETE FROM t; END
+```
+
+accepted · **persistent manifest byte-identical** · every subsequent insert
+silently deleted.
+
+```sql
+PRAGMA writable_schema=ON
+```
+
+accepted · persistent manifest unchanged · **still set on the live connection
+afterwards**.
+
+Post-migration manifest validation cannot detect either, because neither is in
+`sqlite_master`. **Validating the persistent shape afterwards is only a complete
+check if effects are confined to the persistent shape.** So the authorizer now
+also denies `SQLITE_PRAGMA` and **any action outside `main`**, and
+`sqlite_temp_master` is asserted empty after every step. Measured against the
+tighter authorizer: `ALTER TABLE`, `CREATE TABLE`, `CREATE INDEX`, `INSERT` and
+`UPDATE` all still allowed; both bypasses denied. **S51**, **S52**.
+
+*(A typed migration-operation model would be stronger than SQL strings, and the
+reviewer is right about that. It is not in v8 — the confinement above closes the
+measured holes, and I would rather ship a narrower mechanism than design a
+statement algebra in a round that already has eight findings.)*
+
+#### 4d-ii. The single-step model
 
 Round 5, finding 7: a version accepting a *set* of manifests needs a route
 contract, and v6 had none — nothing said whether two migrations could leave the
@@ -811,8 +902,13 @@ class AdoptionAuditEvent(NamedTuple):
 ```
 
 `adoption_committed` **repeats every field** of its `attempted` partner except
-`event` and `occurred_at`, so a sink can process either in isolation. String
-fields are capped at 4096 bytes.
+`event` and `occurred_at`, so a sink can process either in isolation.
+
+**On the 4096-byte cap, which v7 stated inconsistently alongside "verbatim":**
+the cap is a **validation limit, not a truncation** — a `path` longer than 4096
+bytes raises rather than being silently shortened, because a silently truncated
+path in an audit record is a falsified audit record. `path` is otherwise
+verbatim. The two statements are now compatible.
 
 **`path` may contain host-sensitive information** — usernames, deployment
 layout — and it is passed verbatim because a truncated path is useless for
@@ -901,14 +997,14 @@ declarative model.
 | **S26** an unstamped v1 store migrates **directly** to v2 | `test_legacy_store_upgrades_across_a_skipped_release` — inject `SCHEMA_VERSION = 2`; **the case v3 refused** |
 | **S27** an in-memory store works end to end | `test_in_memory_store_is_versioned` — create, stamp, use; manifest read from the live connection |
 | **S28** the four round-2 counterexamples are refused | `test_a_non_identical_schema_is_refused` — CHECK, COLLATE, VIEW, custom-collation index |
-| **S29** the historical artifact is current | `specs/schema_manifest.py --check` in CI |
+| **S29** the historical artifact is current | `specs/schema_evidence.py --check` in CI |
 | **S30** a normal `ALTER` migration reaches an **accepted** destination | `test_a_migrated_store_is_accepted_at_its_destination` — measured today in `--selfcheck` |
 | **S31** canonicalisation preserves quoted-literal semantics | `test_two_literal_variants_are_not_the_same_schema` — **measured today**; they accept opposite values |
 | **S32** a `(type, name)` collision cannot hide an object | `test_a_trigger_named_like_an_index_is_not_mistaken_for_drift` — **measured today**; v4 digested it as clean |
 | **S33** drift repair is followed by **complete revalidation** | `test_repair_revalidates_before_stamping` — digest accepted **and** drift empty |
 | **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today** by simulating version 2 |
 | **S35** post-commit audit failure has the specified result | `test_committed_sink_failure_leaves_the_store_adopted` — raises `PostCommitAuditError`, not `StoreVersionError` |
-| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_by_evidence` — version **and** source id **and** probes **and** reproduced constructor digests |
+| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_or_explicitly_is_not` — version **and** source id **and** probes **and** reproduced constructor **and migration** digests |
 | **S37** conformance covers rebuildable **DDL** | `test_a_wrong_rebuildable_ddl_fails_conformance` — v5's digest-based S23 passed it |
 | **S38** migration outputs are **generated** into the accepted set | `test_the_migration_path_is_generated_not_preserved` — **measured today** against a simulated `v1->v2` |
 | **S39** legacy resolution is candidate-based | `test_resolution_does_not_use_a_default_version_digest` — **measured today** |
@@ -922,6 +1018,13 @@ declarative model.
 | **S47** a runtime is qualified by **evidence** | `test_an_unrecorded_runtime_is_not_qualified` · `test_a_matching_version_with_different_features_is_not_qualified` |
 | **S48** the migration registry is well-formed | `test_the_migration_registry_is_well_formed` — adjacency, uniqueness, reachability |
 | **S49** the audit event payload is the frozen type | `test_adoption_event_payload_is_typed` — §4e, both events, paired `adoption_id`. **Not yet written**; needs the store |
+| **S50** a migration cannot authorise its own output | `test_an_empty_migration_cannot_authorize_its_own_output` — **measured today**; an empty migration was accepted as a valid destination |
+| **S51** a temp object in a migration is refused | `test_a_temp_object_is_refused_even_though_the_manifest_is_unchanged` — **measured today** |
+| **S52** a pragma in a migration is refused | `test_a_pragma_in_a_declared_migration_is_refused` — **measured today** |
+| **S53** `SCHEMA_VERSION` is bound to the registry | `test_a_schema_above_the_declared_current_version_fails_validation` — **measured today** |
+| **S54** missing legacy evidence authorises nothing | `test_missing_legacy_evidence_authorizes_nothing` — **measured today** |
+| **S55** runtime evidence can actually be written | `test_writing_runtime_evidence_actually_writes` — **measured today**; v7's flag was ignored |
+| **S56** recorded runtimes are internally valid | `test_the_recorded_runtimes_are_internally_valid` (always) · `test_this_runtime_is_qualified_or_explicitly_is_not` (skips) · `test_an_empty_digest_map_does_not_qualify_vacuously` — **measured today** |
 | **S20** concurrent first open across **processes** stamps once | `test_concurrent_first_open_across_processes` |
 | **S21** the destination signature is validated after migrating | `test_migration_refuses_a_partial_result` |
 | **S22** a migration **cannot reach** transaction control | `test_transaction_control_in_a_declared_statement_is_denied` — direct `commit`; `commit` then `BEGIN`; `rollback` then `BEGIN`; `executescript`; `BEGIN` in statement text. **Five evasions, one restricted executor** |
@@ -1007,12 +1110,13 @@ all. The claim can only ever cover code that performs the check.
   `adoption_attempted` and `adoption_committed`, and neither is a two-phase
   commit. A sink that raises *after* commit leaves the store adopted, by design
   and by name.
-- **SQLite support is the tested set, not a range** (§4a-viii). `3.45.1` and
-  `3.46.1` are what has been observed to agree; **anything else is refused**
-  with `unsupported-sqlite`. v5 declared `3.35 ≤ sqlite < 4` on those same two
-  observations, which was a claim rather than a contract. **This is narrow, and
-  narrow in the direction that fails loudly** — the honest end state is a tested
-  matrix, and §9 says what that would take.
+- **SQLite support is the recorded set, and it currently has one member**
+  (§4a-viii). **`3.45.1` is the only runtime run through the generator**;
+  everything else is refused with `unsupported-sqlite`. v7's text named a second
+  runtime the artifact did not record, and the package then failed its own test
+  on it. **One recorded runtime is a narrow contract but a true one**, and it
+  fails loudly. The honest end state is a tested matrix — **S-Q7**, and §9 says
+  what it would take.
 - **The historical evidence covers veracium's own releases only** (§4a-iv). A
   store written by another tool is exactly what the signature check is for.
 
@@ -1020,68 +1124,63 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 5 approved the architecture a fourth time, deferred v6, and answered a
-question I had asked. The answer was yes — the instrument should be smaller —
-and the decomposition offered was better than the one I would have chosen.** All
-8 blocking findings and both non-blocking ones are taken. Every executable probe
-was reproduced first.
+**Round 6 found a hole in the design, not only in the instrument, and it is the
+one that matters: a migration was authorising its own output.** All 8 blocking
+findings and all 3 specification corrections are taken. Every executable probe
+was reproduced first; all six reproduce exactly.
 
-**The most important change is not on the findings list.** The instrument is now
-three small modules and a pytest file:
+**The two design findings:**
 
-```
-schema_model.py       identity, digest, drift, candidate matching   <- the kernel
-schema_migrations.py  declarative steps, planner-owned execution
-schema_evidence.py    tag probing and the generated artifacts
-tests/test_schema_model.py   every counterexample, 41 tests
-```
+1. **A migration defined its own destination** (§4d-0). The generator added
+   whatever a migration produced to the destination's accepted set, so an
+   **empty** migration from 1 to 2 was accepted as a valid version 2 — a store
+   missing a table the application requires would have passed validation. The
+   destination requirement is now independent of any migration.
+2. **Declared SQL acted outside the manifest** (§4d-i). A `TEMP TRIGGER` was
+   accepted, left the persistent manifest byte-identical, and silently deleted
+   every inserted row; `PRAGMA writable_schema=ON` stayed set on the live
+   connection. **Validating the persistent shape afterwards is only a complete
+   check if effects are confined to the persistent shape**, so the authorizer
+   now denies pragmas and anything outside `main`, and `sqlite_temp_master` is
+   asserted empty.
 
-**Only the kernel would be shared with production.** And moving the
-counterexamples into pytest is what actually fixed the reporting defect: the old
-harness printed 30 rows and reported `28/28` because its total was a
-hand-maintained arithmetic expression. **The count now comes from collection.**
-A tool whose purpose is truthful evidence should not be able to miscount itself.
+**Three things I got wrong in the package itself, which I want to name plainly
+rather than bury in the table:**
 
-**Two claims are withdrawn rather than repaired:**
+- **The package failed its own test in your environment**, and the README
+  claimed `41 passed`. I built a runtime gate and then asserted it
+  unconditionally, so any SQLite not in the artifact fails the whole adversarial
+  suite. That is a bad test, and it made a false claim in a document whose
+  entire purpose is truthful evidence. Now: recorded-evidence validity always
+  runs; *this runner is qualified* skips with the fixing command in the message.
+- **The document said 3.46.1 was qualified and the artifact recorded only
+  3.45.1.** The claim is withdrawn rather than the artifact fabricated. Only
+  runtimes actually run through the generator are recorded.
+- **`--runtime --write` was documented and did nothing.** The flag was ignored
+  on that path, so the stated route to resolving S-Q7 did not exist. It is
+  implemented and tested.
 
-1. **Migration containment.** `executor._MigrationExecutor__conn` recovers the
-   connection in one line — name mangling is not access control, and I should
-   have known that when I wrote it. *(The WITHDRAWN v5/v6 phrasing is quoted in
-   §15.)* Migrations are now
-   **declarative**: a closed tuple of statements the planner executes. There is
-   no object to escape through. The authorizer stays, with its role restated as
-   defence against an *accidental* statement, not a sandbox around hostile code.
-2. **`LEGACY_DIGESTS`.** It described a digest→version map, which is the
-   circular design §4a-vii had already rejected. Replaced by
-   `LEGACY_BASE_VERSIONS`, and — your finding 3 — resolution is now *restricted*
-   to it, so release history is an authorization boundary rather than a printed
-   summary.
-
-**A new gate, because this class of error has recurred.** A spec row that claims
-a check is "measured today" must cite a test that exists;
-`test_a_spec_claiming_a_test_is_measured_today_must_have_it` fails the build
-otherwise. It currently guards seven rows, and I verified it fires. **After the
-module split, several rows in this document still cited pre-split test names** —
-exactly the drift you have caught twice by hand.
+**A second gate**, since the "measured today" one could not catch this class:
+**a spec naming `specs/<something>.py` must name a file that exists.** Three
+normative references still pointed at `schema_manifest.py`, which the same
+document said was gone. Verified to fire.
 
 **Where I am least confident:**
 
-1. **The registry still duplicates DDL with `_SCHEMA`**, now with a reviewed
-   policy artifact as a second declaration alongside it. **That is two
-   duplications where v6 had one**, and it is only justified while the product
-   is not generated from the registry. Generating it is the right fix and it
-   belongs to implementation — but I want to flag that I have added a moving
-   part to close a hole, which is the trade this spec has been making for five
-   rounds.
-2. **S-Q7 remains open**: the runtime gate is now evidence-derived, but the
-   evidence is still one machine. Qualifying a second runtime requires running
-   the generator there, and I have no CI that does it.
-3. **`AdoptionAuditEvent.path` is passed verbatim** and may carry host-sensitive
-   information. I chose that over truncation because a truncated path is useless
-   for audit, and stated it so the decision is the host's.
+1. **I did not adopt the typed migration-operation model**, which you are right
+   would be stronger than SQL strings. The confinement above closes both
+   measured holes, and I would rather ship a narrower mechanism than design a
+   statement algebra in a round that already has eight findings. **If you think
+   that is the wrong call, say so and I will do it next.**
+2. **S-Q7 is still open and now more visibly so**: qualification works, and the
+   evidence is one machine. Adding a runtime is a one-command operation now, but
+   nothing runs that command anywhere but here.
+3. **Two duplications remain** — the registry against `_SCHEMA`, and the policy
+   artifact against the registry — both closed by checks rather than by
+   generation.
 
-**What I deliberately did not do:** no offline import tool; no CI matrix; no
-generation of `_SCHEMA` from the registry.
+**What I deliberately did not do:** no typed migration operations; no CI matrix;
+`_SCHEMA` is still not generated from the registry.
 
 ## 10. Open questions
 
@@ -1226,3 +1325,34 @@ fails the build when a row claims present-tense evidence it does not have.**
 **"Should the instrument be smaller?" — yes, and the split is adopted as
 proposed.** `schema_model` / `schema_migrations` / `schema_evidence` /
 `tests/test_schema_model.py`, with only the kernel inside the trust boundary.
+
+---
+
+## 16. Round 6 review disposition
+
+**Verdict: architecture approved; v7 deferred.** 8 blocking findings and 3
+specification corrections. **All taken.** **Two were design defects, not
+instrument defects** — the first time since round 3.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | migration output authorises itself | **§4d-0** — the destination requirement is independent of the migration; a failing result is a build error, not a new accepted manifest. Measured: an empty `v1->v2` was accepted as a valid version 2. **S50** |
+| 2 | declared SQL acts outside the manifest | **§4d-i** — authorizer denies `SQLITE_PRAGMA` and anything outside `main`; `sqlite_temp_master` asserted empty. Measured: a `TEMP TRIGGER` left the manifest byte-identical and deleted every inserted row; `writable_schema` stayed on. **S51, S52** |
+| 3 | the package fails its own runtime test | **§4a-viii** — the 3.46.1 claim is **withdrawn**, and the two questions are split: recorded-evidence validity always runs, *this runner is qualified* skips. **My README claimed 41 passed; on your runtime it was 40 passed, 1 failed.** **S56** |
+| 4 | qualification can succeed with no evidence | **§4a-viii** — completeness is a precondition; key set must **equal** the declared versions; migration-path digests recorded too. Measured: `all()` over an empty mapping is `True` |
+| 5 | `--runtime --write` does not write | **Implemented**, refuses incomplete records, and tested. Measured: the artifact checksum was unchanged. **S55** |
+| 6 | `SCHEMA_VERSION` not bound to the registry | **§4d-ii** — `validate_registry()` requires it to equal `max(SCHEMAS)` over a contiguous range, and no migration at or beyond it. **S53** |
+| 7 | missing legacy evidence fails open | **§4-i** — the empty set, so a nonempty unstamped store is refused when the evidence is unverified. **S54** |
+| 8 | the shared kernel is too narrow | **Widened**: `schema_model` **and** `schema_migrations` **and** runtime-evidence validation. Only git probing, release enumeration and presentation stay outside |
+
+**Specification corrections, all applied:** three stale `schema_manifest.py`
+references removed **and gated** by a new check; `audit_sink` typed as
+`Callable[[AdoptionAuditEvent], None]`; the 4096-byte cap defined as a
+**validation limit, not truncation**, which resolves the "verbatim" conflict;
+and the `diff` distance metric frozen as typed-key disagreement count with
+declaration-order tie-breaking.
+
+**Not adopted, and flagged rather than argued:** the typed
+migration-operation model. §4d-i closes both measured holes with confinement;
+the algebra is a larger design than this round should carry, and §9 asks
+directly whether that is the wrong call.

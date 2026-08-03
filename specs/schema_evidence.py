@@ -31,7 +31,8 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from schema_migrations import MIGRATIONS, apply_migration, chain, validate_registry
+from schema_migrations import (MIGRATIONS, apply_migration, chain,
+                               destination_problems, validate_registry)
 from schema_model import (GENERATED, POLICY_ARTIFACT, ROOT, SCHEMA_VERSION, SCHEMAS,
                           create, declared_policies, digest, identity, manifest,
                           resolve)
@@ -40,7 +41,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 5
+MANIFEST_ALGORITHM = 6
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -94,22 +95,109 @@ def qualified_runtimes() -> list:
     return json.loads(RUNTIMES.read_text())["runtimes"] if RUNTIMES.exists() else []
 
 
+def runtime_record_problems(r: dict) -> list:
+    """Whether a recorded runtime is complete enough to qualify anything.
+
+    **Round 6, finding 4: an empty `constructor_digests` qualified vacuously**,
+    because `all(...)` over an empty mapping is `True`. Measured. Completeness
+    is now a precondition, and the key set must *equal* the declared schema
+    versions rather than being whatever happened to be recorded."""
+    problems = []
+    for field in ("sqlite_version", "source_id", "features", "constructor_digests",
+                  "migration_digests", "manifest_algorithm", "schema_version"):
+        if field not in r:
+            problems.append(f"runtime record is missing {field!r}")
+    if problems:
+        return problems
+    if r["manifest_algorithm"] != MANIFEST_ALGORITHM:
+        problems.append(f"runtime record uses manifest algorithm "
+                        f"{r['manifest_algorithm']}, build uses {MANIFEST_ALGORITHM}")
+    if r["schema_version"] != SCHEMA_VERSION:
+        problems.append(f"runtime record is for schema version {r['schema_version']}, "
+                        f"build declares {SCHEMA_VERSION}")
+    want = {str(v) for v in SCHEMAS}
+    if set(r["constructor_digests"]) != want:
+        problems.append(f"runtime record covers versions "
+                        f"{sorted(r['constructor_digests'])}, build declares "
+                        f"{sorted(want)}")
+    if not r["constructor_digests"]:
+        problems.append("runtime record has no constructor digests")
+    if not r["features"]:
+        problems.append("runtime record has no feature probes")
+    return problems
+
+
 def runtime_supported() -> bool:
     """**Derived from the evidence artifact, never from a hand-edited tuple.**
 
-    v6's `TESTED_SQLITE` was editable in place: adding `"3.99.0"` made an
-    untested runtime supported with no manifest, probe or CI result behind it
-    (round 5, measured). Qualification now means *a recorded runtime whose
-    source id and feature probes match, and whose recorded constructor digests
-    reproduce here*."""
+    Qualification means: a *complete* recorded runtime whose version, source id
+    and feature probes match this process, and whose recorded constructor **and
+    migration-path** digests all reproduce here. Migration digests are included
+    because DDL rewriting is the reason a version has multiple accepted
+    manifests in the first place — a runtime that agrees on constructors could
+    still disagree on an `ALTER` path."""
     me = runtime_identity()
     for r in qualified_runtimes():
-        if (r["sqlite_version"] == me["sqlite_version"]
+        if runtime_record_problems(r):
+            continue
+        if not (r["sqlite_version"] == me["sqlite_version"]
                 and r["source_id"] == me["source_id"]
                 and r["features"] == me["features"]):
-            return all(_constructor_digest(int(v)) == d
-                       for v, d in r["constructor_digests"].items())
+            continue
+        if any(_constructor_digest(int(v)) != d
+               for v, d in r["constructor_digests"].items()):
+            return False
+        return all(_migration_digest(int(v)) == d
+                   for v, d in r["migration_digests"].items())
     return False
+
+
+def _migration_digest(to_version: int) -> str | None:
+    """The digest an `ALTER`-path migration produces here, if there is one."""
+    for base in sorted(v for v in SCHEMAS if v < to_version):
+        try:
+            steps = chain(base, to_version)
+        except KeyError:
+            continue
+        c = sqlite3.connect(":memory:")
+        create(c, base)
+        for mig in steps:
+            apply_migration(c, mig)
+        d = digest(manifest(c), to_version)
+        c.close()
+        return d
+    return None
+
+
+def build_runtime_record() -> dict:
+    me = runtime_identity()
+    me["manifest_algorithm"] = MANIFEST_ALGORITHM
+    me["schema_version"] = SCHEMA_VERSION
+    me["constructor_digests"] = {str(v): _constructor_digest(v) for v in sorted(SCHEMAS)}
+    me["migration_digests"] = {str(v): d for v in sorted(SCHEMAS)
+                               if (d := _migration_digest(v)) is not None}
+    return me
+
+
+def write_runtime(force: bool = False) -> int:
+    """Record **this** runtime as qualified. Round 6, finding 5: `--runtime
+    --write` was documented and did nothing — the flag was ignored on that path,
+    so the stated workflow for qualifying a second runtime did not exist."""
+    rec = build_runtime_record()
+    problems = runtime_record_problems(rec)
+    if problems and not force:
+        for p in problems:
+            print(p, file=sys.stderr)
+        print("refusing to write incomplete runtime evidence", file=sys.stderr)
+        return 1
+    others = [r for r in qualified_runtimes()
+              if (r.get("source_id"), r.get("sqlite_version")) !=
+                 (rec["source_id"], rec["sqlite_version"])]
+    GENERATED.mkdir(parents=True, exist_ok=True)
+    RUNTIMES.write_text(json.dumps({"runtimes": others + [rec]}, indent=2) + "\n")
+    print(f"recorded {rec['sqlite_version']} ({rec['source_id'][:20]}…) — "
+          f"{len(others) + 1} qualified runtime(s)")
+    return 0
 
 
 def _constructor_digest(version: int) -> str:
@@ -159,9 +247,16 @@ def build_version_artifact(strict: bool = True) -> dict:
             create(mc, base)
             for mig in steps:
                 apply_migration(mc, mig)
-            accepted.append({"provenance": f"migration v{base}->v{version}",
-                             "digest": digest(manifest(mc), version),
-                             "objects": identity(manifest(mc))})
+            # **The destination contract is independent of what the migration
+            # produced** (round 6, finding 1). Without this an empty migration
+            # authorises its own broken output as a valid destination.
+            dp = destination_problems(manifest(mc), version)
+            if dp:
+                problems.extend(f"migration v{base}->v{version}: {p}" for p in dp)
+            else:
+                accepted.append({"provenance": f"migration v{base}->v{version}",
+                                 "digest": digest(manifest(mc), version),
+                                 "objects": identity(manifest(mc))})
             mc.close()
         record = {"accepted": accepted}
         if version < SCHEMA_VERSION and str(version) in existing:
@@ -192,7 +287,10 @@ def legacy_base_versions() -> frozenset:
 
     The only candidates version-zero resolution may try (round 5, finding 3)."""
     if not RELEASES.exists():
-        return frozenset({SCHEMA_VERSION})
+        # **Fails closed** (round 6, finding 7). v7 returned {SCHEMA_VERSION},
+        # which silently authorised adoption using the very evidence that was
+        # missing. No verified legacy artifact means no adoption candidates.
+        return frozenset()
     return frozenset(
         r["store_schema_version"] for r in json.loads(RELEASES.read_text())["releases"]
         if r.get("on_disk_user_version") == 0 and r.get("store_schema_version"))
@@ -287,13 +385,8 @@ def releases(write: bool) -> int:
         VERSIONS.write_text(json.dumps(build_version_artifact(), indent=2) + "\n")
         POLICY_ARTIFACT.write_text(json.dumps(
             {str(v): declared_policies(v) for v in sorted(SCHEMAS)}, indent=2) + "\n")
-        me = runtime_identity()
-        me["constructor_digests"] = {str(v): _constructor_digest(v) for v in sorted(SCHEMAS)}
-        others = [r for r in qualified_runtimes()
-                  if r["source_id"] != me["source_id"]]
-        RUNTIMES.write_text(json.dumps({"runtimes": others + [me]}, indent=2) + "\n")
-        print(f"wrote {RELEASES.name}, {VERSIONS.name}, {POLICY_ARTIFACT.name}, "
-              f"{RUNTIMES.name}")
+        write_runtime()
+        print(f"wrote {RELEASES.name}, {VERSIONS.name}, {POLICY_ARTIFACT.name}")
     return 1 if (unknown or broken or bad_stamp) else 0
 
 
@@ -382,7 +475,9 @@ def main() -> int:
     if a.releases:
         return releases(a.write)
     if a.runtime:
-        print(json.dumps(runtime_identity(), indent=2))
+        if a.write:
+            return write_runtime()
+        print(json.dumps(build_runtime_record(), indent=2))
         print("qualified:", runtime_supported())
         return 0
     if a.check:

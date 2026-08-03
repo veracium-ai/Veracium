@@ -13,6 +13,7 @@ review would have caught it.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 import sys
 import tempfile
@@ -200,6 +201,26 @@ def test_the_reviewed_policy_artifact_matches_the_registry():
 # --- versioning across a simulated schema change -------------------------
 
 @pytest.fixture
+def simulated_v2_empty(monkeypatch):
+    """Version 2 requiring a `sources` table, with an EMPTY migration to it."""
+    import schema_evidence as ev
+    v2 = SCHEMA_V1 + (SchemaObject("table", "sources",
+                                   "CREATE TABLE sources (id TEXT PRIMARY KEY)", REQUIRED),)
+    monkeypatch.setitem(SCHEMAS, 2, v2)
+    monkeypatch.setitem(MIGRATIONS, 1, Migration(1, 2, ()))
+    monkeypatch.setattr(ev, "SCHEMA_VERSION", 2)
+    monkeypatch.setattr("schema_migrations.SCHEMA_VERSION", 2)
+    monkeypatch.setattr("schema_model.SCHEMA_VERSION", 2)
+    problems = []
+    try:
+        art = ev.build_version_artifact(strict=True)
+    except SystemExit as e:
+        problems = str(e).split("\n")
+        art = ev.build_version_artifact(strict=False)
+    return problems, art["versions"]
+
+
+@pytest.fixture
 def simulated_v2(monkeypatch):
     """A version 2 with its own required table AND its own rebuildable index —
     the combination that exposed round 4's circular resolution."""
@@ -215,6 +236,7 @@ def simulated_v2(monkeypatch):
         "CREATE INDEX ix_sources ON sources(id)")))
     monkeypatch.setattr(ev, "SCHEMA_VERSION", 2)
     monkeypatch.setattr("schema_migrations.SCHEMA_VERSION", 2)
+    monkeypatch.setattr("schema_model.SCHEMA_VERSION", 2)
     return ev.build_version_artifact(strict=False)["versions"]
 
 
@@ -334,11 +356,34 @@ def test_the_migration_registry_is_well_formed():
 
 # --- runtime qualification ------------------------------------------------
 
-def test_this_runtime_is_qualified_by_evidence():
-    """Round 5: v6's WITHDRAWN hand-edited tuple made this trivially false —
-    adding '3.99.0' to it
-    made an untested runtime supported with nothing behind it."""
+def test_the_recorded_runtimes_are_internally_valid():
+    """**This is the check that must run everywhere.**
+
+    Round 6, finding 3: v7 asserted `runtime_supported()` unconditionally, so the
+    whole adversarial suite failed on the reviewer's SQLite 3.46.1 — a runtime
+    the document *claimed* was observed but the shipped artifact did not record.
+    The package made a false claim and then failed its own test proving it.
+
+    Two questions, separated: is the recorded evidence complete and
+    self-consistent (always), and is *this* runner one of the recorded runtimes
+    (environment-dependent, below)."""
     import schema_evidence as ev
+    records = ev.qualified_runtimes()
+    assert records, "no runtime evidence recorded"
+    for r in records:
+        assert ev.runtime_record_problems(r) == [], (r["sqlite_version"],
+                                                     ev.runtime_record_problems(r))
+
+
+def test_this_runtime_is_qualified_or_explicitly_is_not():
+    """Environment-dependent by design, and **skipping is the correct outcome**
+    on an unqualified runtime — not a failure of the schema model."""
+    import schema_evidence as ev
+    if not ev.runtime_supported():
+        pytest.skip(
+            f"sqlite {sqlite3.sqlite_version} is not a qualified runtime. That is "
+            f"the gate working: record it with "
+            f"`python3 specs/schema_evidence.py --runtime --write`.")
     assert ev.runtime_supported()
 
 
@@ -351,8 +396,82 @@ def test_an_unrecorded_runtime_is_not_qualified(monkeypatch):
 def test_a_matching_version_with_different_features_is_not_qualified(monkeypatch):
     """A version number names a release, not a build."""
     import schema_evidence as ev
-    me = ev.runtime_identity()
-    me["features"] = dict(me["features"], authorizer=not me["features"]["authorizer"])
-    me["constructor_digests"] = {"1": ev._constructor_digest(1)}
-    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [me])
+    rec = ev.build_runtime_record()
+    rec["features"] = dict(rec["features"], authorizer=not rec["features"]["authorizer"])
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [rec])
     assert not ev.runtime_supported()
+
+
+def test_an_empty_digest_map_does_not_qualify_vacuously(monkeypatch):
+    """Round 6, finding 4: `all(...)` over an empty mapping is True, so a record
+    with no constructor digests qualified."""
+    import schema_evidence as ev
+    rec = ev.build_runtime_record()
+    rec["constructor_digests"] = {}
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [rec])
+    assert ev.runtime_record_problems(rec)
+    assert not ev.runtime_supported()
+
+
+def test_writing_runtime_evidence_actually_writes(tmp_path, monkeypatch):
+    """Round 6, finding 5: `--runtime --write` was documented and ignored."""
+    import schema_evidence as ev
+    art = tmp_path / "sqlite_runtimes.json"
+    monkeypatch.setattr(ev, "RUNTIMES", art)
+    monkeypatch.setattr(ev, "GENERATED", tmp_path)
+    assert ev.write_runtime() == 0
+    assert art.exists() and json.loads(art.read_text())["runtimes"]
+
+
+# --- migration destination and confinement --------------------------------
+
+def test_an_empty_migration_cannot_authorize_its_own_output(simulated_v2_empty):
+    """Round 6, finding 1 — the most serious defect in v7. The generator added
+    whatever a migration produced to the destination's accepted set, so an empty
+    migration defined its own broken output as a valid version 2."""
+    problems, records = simulated_v2_empty
+    assert any("did not create" in p for p in problems), problems
+    prov = [a["provenance"] for a in records["2"]["accepted"]]
+    assert "migration v1->v2" not in prov, prov
+
+
+def test_a_temp_object_is_refused_even_though_the_manifest_is_unchanged():
+    """Round 6, finding 2: a TEMP trigger left the persistent manifest
+    byte-identical and then silently deleted every inserted row."""
+    conn = sqlite3.connect(":memory:")
+    conn.isolation_level = None
+    conn.execute("CREATE TABLE t (a)")
+    conn.execute("BEGIN IMMEDIATE")
+    with pytest.raises(sqlite3.DatabaseError):
+        apply_migration(conn, Migration(1, 2, (
+            "CREATE TEMP TRIGGER sabotage AFTER INSERT ON t BEGIN DELETE FROM t; END",)))
+    assert conn.execute("SELECT count(*) FROM sqlite_temp_master").fetchone()[0] == 0
+
+
+def test_a_pragma_in_a_declared_migration_is_refused():
+    """`PRAGMA writable_schema=ON` was accepted and stayed set afterwards."""
+    conn = sqlite3.connect(":memory:")
+    conn.isolation_level = None
+    conn.execute("CREATE TABLE t (a)")
+    conn.execute("BEGIN IMMEDIATE")
+    with pytest.raises(sqlite3.DatabaseError):
+        apply_migration(conn, Migration(1, 2, ("PRAGMA writable_schema=ON",)))
+    conn.set_authorizer(None)
+    assert conn.execute("PRAGMA writable_schema").fetchone()[0] == 0
+
+
+def test_a_schema_above_the_declared_current_version_fails_validation(monkeypatch):
+    """Round 6, finding 6: declaring SCHEMAS[2] while SCHEMA_VERSION stayed 1
+    validated clean and emitted an artifact containing a version the build did
+    not claim to be."""
+    monkeypatch.setitem(SCHEMAS, 2, SCHEMA_V1)
+    problems = validate_registry()
+    assert any("SCHEMA_VERSION" in p for p in problems), problems
+
+
+def test_missing_legacy_evidence_authorizes_nothing(monkeypatch, tmp_path):
+    """Round 6, finding 7: v7 returned {SCHEMA_VERSION}, authorising adoption
+    using the very evidence that was missing."""
+    import schema_evidence as ev
+    monkeypatch.setattr(ev, "RELEASES", tmp_path / "absent.json")
+    assert ev.legacy_base_versions() == frozenset()

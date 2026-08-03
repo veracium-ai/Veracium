@@ -11,6 +11,16 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    # Narrowed deliberately. A first attempt matched any *description* of the
+    # withdrawn rule -- "the generator added whatever a migration produced" --
+    # which every review disposition and test docstring has to contain. A
+    # pattern that forces a WITHDRAWN marker onto a dozen paragraphs stops being
+    # a lint and becomes noise, and noisy lints get bypassed. These match an
+    # affirmative restatement only. The real guard for the migration rule is
+    # S50, which is executable.
+    (r"(3\.45\.1 and 3\.46\.1|3\.46\.1 and 3\.45\.1) (are|is|have been) (qualified|supported|recorded)",
+     "R6/0007: the artifact records only 3.45.1; the package failed its own test on 3.46.1",
+     "specs/0007 §4a-viii"),
     (r"transaction control .{0,30}(is|are) (not reachable|unreachable)|enforced by construction",
      "R5/0007: name mangling is not access control; migrations are declarative, and the claim is withdrawn",
      "specs/0007 §4d"),

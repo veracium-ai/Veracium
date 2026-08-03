@@ -687,3 +687,25 @@ def test_a_spec_claiming_a_test_is_measured_today_must_have_it():
                     bad.append(f"{spec.name}: claims `{name}` is measured today, "
                                f"but no such test exists")
     assert not bad, "\n".join(bad)
+
+
+def test_no_spec_names_a_module_or_script_that_does_not_exist():
+    """A spec that cites `specs/<name>.py` must cite one that is there.
+
+    Round 6: after the module split, normative text in 0007 still pointed at
+    `specs/schema_manifest.py` -- a file the same document said was gone -- in
+    three places, including an invariant's executable check. The "measured
+    today" gate catches a stale *test* name and could not catch a stale
+    *module* name. Same class of drift, so the same kind of gate."""
+    import re
+    root = Path(__file__).resolve().parent.parent
+    bad = []
+    for spec in (root / "specs").glob("[0-9][0-9][0-9][0-9]-*.md"):
+        body = spec.read_text()
+        # historical dispositions legitimately name retired modules
+        body = re.split(r"^##+ \d+\w*\.\s*(?:Review history\b|[^\n]*review[^\n]*disposition\b)",
+                        body, flags=re.M | re.I)[0]
+        for ref in set(re.findall(r"`(specs/[\w./-]+\.py)`", body)):
+            if not (root / ref).exists():
+                bad.append(f"{spec.name}: names `{ref}`, which does not exist")
+    assert not bad, "\n".join(bad)
