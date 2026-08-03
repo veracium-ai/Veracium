@@ -324,10 +324,14 @@ def qualified_runtimes() -> list:
 
 
 def active_records(records=None) -> list:
-    """Records that are current-algorithm and internally valid."""
+    """Records that are current-algorithm and internally valid. Total over
+    any list content (0013 round 7: a non-mapping member raised
+    AttributeError out of a validator that promises problems, not
+    exceptions)."""
     records = qualified_runtimes() if records is None else records
     return [r for r in records
-            if r.get("manifest_algorithm") == MANIFEST_ALGORITHM
+            if isinstance(r, dict)
+            and r.get("manifest_algorithm") == MANIFEST_ALGORITHM
             and not runtime_record_problems(r)]
 
 
@@ -612,10 +616,14 @@ def _identity_key(r: dict) -> tuple:
 
 
 def active_records(records=None) -> list:
-    """Records that are current-algorithm and internally valid."""
+    """Records that are current-algorithm and internally valid. Total over
+    any list content (0013 round 7: a non-mapping member raised
+    AttributeError out of a validator that promises problems, not
+    exceptions)."""
     records = qualified_runtimes() if records is None else records
     return [r for r in records
-            if r.get("manifest_algorithm") == MANIFEST_ALGORITHM
+            if isinstance(r, dict)
+            and r.get("manifest_algorithm") == MANIFEST_ALGORITHM
             and not runtime_record_problems(r)]
 
 
