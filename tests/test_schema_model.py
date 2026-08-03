@@ -665,8 +665,19 @@ def test_the_registry_versions_are_contiguous():
 
 
 def test_a_missing_versions_artifact_fails_the_gate(monkeypatch, tmp_path):
-    """Round 11 correction: `--check` compared the file only when it existed."""
+    """Round 11 correction: `--check` compared the file only when it existed.
+
+    **Skips outside a git checkout.** `check()` returns 2 there — the documented
+    "release probing needs git" status — before it can reach the missing-file
+    condition. Asserting 1 unconditionally made this pass in the repo and fail
+    in the extracted review package, which is the environment-dependence class
+    round 10 objected to."""
+    import subprocess
+
     import schema_evidence as ev
+    if subprocess.run(["git", "rev-parse", "--git-dir"], cwd=ROOT,
+                      capture_output=True).returncode:
+        pytest.skip("no git checkout: check() returns 2 before reaching this")
     monkeypatch.setattr(ev, "VERSIONS", tmp_path / "absent.json")
     monkeypatch.setattr(ev, "_tags", lambda: [])
     monkeypatch.setattr(ev, "_probe_at",
