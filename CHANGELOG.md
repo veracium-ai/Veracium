@@ -21,10 +21,14 @@
   `busy_timeout_ms`. The schema is now derived from a single registry shared
   with the spec tooling, and the evidence artifacts ship as package data.
   `open_versioned()` now returns which branch ran (`"current"` / `"created"` /
-  `"adopted"` / `"migrated"`) and exposes the §4 *older*-row seam as a
-  keyword-only `older=` hook — the delegation point `specs/0013` plugs into;
-  with no hook (the production default while `SCHEMA_VERSION == 1`) behaviour
-  is unchanged.
+  `"adopted"` / `"migrated"`) and exposes two delegation seams for
+  `specs/0013` as keyword-only hooks — `older=` (the §4 older row) and `new=`
+  (creation, so a dedicated migration mode can refuse to create); with no
+  hooks (the production default while `SCHEMA_VERSION == 1`) behaviour is
+  unchanged. Package-consistency impossibilities now raise the named
+  `PackageConsistencyError` (a `RuntimeError` subclass), and path/audit
+  string caps measure filesystem bytes, so stores at non-UTF-8 POSIX
+  filenames work.
 
 
 ## 0.4.8 — 2026-08-02

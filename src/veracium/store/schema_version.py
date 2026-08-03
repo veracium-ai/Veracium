@@ -22,6 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 import pathlib
 import sqlite3
 import uuid
@@ -943,6 +944,15 @@ class StoreVersionError(RuntimeError):
         super().__init__(msg)
 
 
+class PackageConsistencyError(RuntimeError):
+    """The build's own pieces disagree — the constructor with its shipped
+    evidence, or a decision-table row whose delegated hook is absent. A
+    property of a broken PACKAGE, never of the store on disk, which is why it
+    deliberately escapes the closed-outcome boundaries built on this planner
+    (0013 round 6 named the class so callers can preserve exactly this and
+    nothing else)."""
+
+
 class PostCommitAuditError(RuntimeError):
     """The store WAS adopted; the audit sink raised afterwards (0007 §4e).
 
@@ -984,7 +994,7 @@ def _event(kind: str, adoption_id: str, path: str, from_v: int, to_v: int,
            source_digest: str, provenance: str) -> AdoptionAuditEvent:
     for name, value in (("path", path), ("matched_provenance", provenance),
                         ("source_manifest_digest", source_digest)):
-        if len(str(value).encode()) > _AUDIT_STRING_CAP:
+        if len(str(value).encode("utf-8", "surrogateescape")) > _AUDIT_STRING_CAP:
             raise ValueError(f"audit field {name!r} exceeds "
                              f"{_AUDIT_STRING_CAP} bytes; refusing rather than "
                              f"truncating an audit record")
@@ -1054,7 +1064,7 @@ def _validated_current(conn: sqlite3.Connection, spath: str, found) -> None:
 
 def open_versioned(conn: sqlite3.Connection, path: str, *,
                    allow_adopt: bool = True, audit_sink=None,
-                   older=None) -> str:
+                   older=None, new=None) -> str:
     """The 0007 §4 decision table, executed under the write lock (§4c).
 
     `BEGIN IMMEDIATE` is taken BEFORE the version and manifest reads — a
@@ -1077,9 +1087,19 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
     version; the store it returns is then revalidated by the same `current`
     validator and committed here. With no hook the row refuses exactly as
     before: both sites are unreachable while `SCHEMA_VERSION == 1`, and
-    `validate_schema_registry()` keeps the declared range contiguous."""
+    `validate_schema_registry()` keeps the declared range contiguous.
+
+    **`new` is the creation seam** (`0013` round 6): a dedicated *migration*
+    operation must never CREATE a store — an authority attests an existing
+    source, and a vanished or empty file is a missing source, not a blank
+    slate. When set, the hook is called as `new(conn, path, found, objs)`
+    in place of creation and must raise; `None` (the default, and ordinary
+    opening) keeps §4's new-row creation exactly as before."""
     spath = str(path)
-    if len(spath.encode()) > _AUDIT_STRING_CAP:
+    # os.fsencode, not str.encode: a valid POSIX filename with non-UTF-8
+    # bytes arrives as a surrogate-escaped str, which plain UTF-8 encoding
+    # rejects (0013 round 6, measured).
+    if len(os.fsencode(spath)) > _AUDIT_STRING_CAP:
         raise ValueError(f"store path exceeds {_AUDIT_STRING_CAP} bytes")
 
     # The runtime gate runs before ANY version or shape decision (§4a-viii).
@@ -1128,7 +1148,7 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                 # hook the row is a package-consistency impossibility —
                 # unreachable while SCHEMA_VERSION == 1 — not a store property.
                 if older is None:
-                    raise RuntimeError(
+                    raise PackageConsistencyError(
                         f"store {spath!r} is stamped v{found} and this build "
                         f"is v{SCHEMA_VERSION} with no migration hook "
                         f"installed; migrating forward is specs/0013's "
@@ -1140,13 +1160,17 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
 
             # found == 0 — unstamped
             if not objs:                        # §4 "new": no non-internal object
+                if new is not None:
+                    new(conn, spath, found, objs)
+                    raise PackageConsistencyError(
+                        "the new-row hook returned instead of raising")
                 create(conn, SCHEMA_VERSION)
                 after = manifest(conn)
                 if (digest(after, SCHEMA_VERSION) not in accepted
                         or drift(after, SCHEMA_VERSION)):
                     # Not a property of the store on disk: the constructor and
                     # the shipped evidence disagree, i.e. the package is broken.
-                    raise RuntimeError(
+                    raise PackageConsistencyError(
                         "constructor output is not in the accepted manifest "
                         "set — the package's evidence artifacts disagree with "
                         "its schema registry")
