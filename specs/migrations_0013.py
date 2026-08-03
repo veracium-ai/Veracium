@@ -316,6 +316,11 @@ opened at all). Both were escaping as raw `DatabaseError`/`OperationalError`,
 which the closed model claimed to represent and did not."""
 
 PROTOCOL_FAILURES = ("invalid-request",)
+INTERNAL_FAILURES = ("internal-error",)
+"""Round 7: an unforeseen failure mapped to `invalid-store` or
+`migration-failed` was a FALSE outcome — hosts remediate stores over those.
+`internal-error` says what is true: a defect in this library, phase named in
+the diagnostic, commit state unknown unless the phase proves otherwise."""
 """Round 5: a malformed CALL — a mistyped or out-of-range `busy_timeout_ms`,
 a non-pathlike path argument — is neither a store property nor an evidence
 property, and it was escaping as `TypeError` from timeout arithmetic before
@@ -323,7 +328,8 @@ any boundary. One closed member; the diagnostic says which parameter."""
 
 OUTCOMES = (frozenset({"created", "current", "adopted", "migrated"})
             | sv.REASONS | frozenset(MIGRATION_FAILURES)
-            | frozenset(STORE_FAILURES) | frozenset(PROTOCOL_FAILURES))
+            | frozenset(STORE_FAILURES) | frozenset(PROTOCOL_FAILURES)
+            | frozenset(INTERNAL_FAILURES))
 """Every value the two entry points can return. Free-form strings — round 3
 measured `unexpected version 0` — are unrepresentable: `Outcome` refuses any
 value outside this set."""
@@ -432,8 +438,46 @@ class MigrationAuthority(NamedTuple):
     evidence_digest: str    # sha256 of the exact evidence artifact consumed
 
 
-_CONSUMED_OPERATIONS: set = set()
-_CONSUME_LOCK = threading.Lock()
+class DraftAuditStore:
+    """The in-process reference of §5e's two-table model (round 7, finding 3:
+    one append-only table with a globally unique operation id cannot hold an
+    attempted AND a terminal event for the same operation — the machine was
+    internally inconsistent). `_ops` is `migration_operations` — the
+    operation-row insert IS the compare-and-set consumption; `_events` is
+    `migration_audit_events` with `UNIQUE(operation_id, event)`. The
+    distinction v8 conflated is explicit in `activate`'s return: a DUPLICATE
+    means the authority is consumed (`migration-quiescence-required`); only
+    a storage failure is the retryable `migration-audit-unavailable`."""
+
+    def __init__(self):
+        self._ops: dict = {}
+        self._events: dict = {}
+        self._lock = threading.Lock()
+
+    def activate(self, a) -> str:
+        with self._lock:
+            if a.operation_id in self._ops:
+                return "duplicate"
+            self._ops[a.operation_id] = {
+                "release_ref": a.release_ref, "store_path": a.store_path,
+                "from_version": a.from_version, "to_version": a.to_version,
+                "attempted_at": datetime.now(timezone.utc).isoformat()}
+            self._events[(a.operation_id, "migration_attempted")] = {
+                "occurred_at": self._ops[a.operation_id]["attempted_at"]}
+            return "activated"
+
+    def record(self, operation_id: str, event: str, payload: dict) -> None:
+        with self._lock:
+            if operation_id not in self._ops:
+                raise ValueError(f"unknown operation {operation_id!r}")
+            if (operation_id, event) in self._events:
+                raise ValueError(
+                    f"UNIQUE(operation_id, event) violated for "
+                    f"({operation_id!r}, {event!r})")
+            self._events[(operation_id, event)] = payload
+
+
+_AUDIT = DraftAuditStore()
 
 MAX_AUTHORITY_LIFETIME = timedelta(hours=1)
 """Frozen maximum validity window (round 5): an authority whose
@@ -451,19 +495,38 @@ on the str, so a lone surrogate simply fails the grammar instead of raising
 from `.encode()` (round 6, measured)."""
 
 
-def _source_identity() -> str:
-    """A content digest over the exact files that define migration behaviour
-    — this instrument and the `0007` kernel. Two checkouts sharing a package
-    version but differing in planner, validator or evidence code get
-    DIFFERENT identities (round 6: a mutable semantic version alone let an
-    authority cross builds). Deterministic in every environment — editable
-    installs and extracted archives included — because it reads the running
-    tree's own bytes; no git required."""
-    h = hashlib.sha256()
-    for f in (pathlib.Path(__file__),
-              ROOT / "src" / "veracium" / "store" / "schema_version.py"):
-        h.update(f.read_bytes())
-    return h.hexdigest()[:12]
+_RELEASE_IDENTITY_FILES = (
+    pathlib.Path(__file__),
+    ROOT / "src" / "veracium" / "store" / "schema_version.py")
+"""The frozen, ORDERED covered-file list the release identity is computed
+over — the instrument and the `0007` kernel."""
+
+
+def _source_identity(files=None) -> str:
+    """A content digest over the exact files that define migration behaviour.
+    Two checkouts sharing a package version but differing in planner,
+    validator or evidence code get DIFFERENT identities (round 6).
+    Deterministic in every environment because it reads the running tree's
+    own bytes; no git required.
+
+    **Framed and domain-separated, full length** (round 7, finding 2: v8
+    concatenated raw file bytes, so moving a docstring across the file
+    boundary — both files changed, both compiled — kept the identity
+    byte-identical; and the 12-hex truncation left 48 bits against an
+    adversary who can CONSTRUCT builds). Each file contributes its
+    length-framed name and length-framed content under a domain prefix, and
+    the full 64-hex digest is used — the token grammar's 128-char allowance
+    holds it."""
+    files = _RELEASE_IDENTITY_FILES if files is None else files
+    h = hashlib.sha256(b"veracium-release-identity-v1")
+    for f in files:
+        name = f.name.encode()
+        data = f.read_bytes()
+        h.update(len(name).to_bytes(8, "big"))
+        h.update(name)
+        h.update(len(data).to_bytes(8, "big"))
+        h.update(data)
+    return h.hexdigest()
 
 
 def _release_identity() -> str:
@@ -491,11 +554,9 @@ def _release_identity() -> str:
 def _evidence_digest() -> str:
     """sha256 over the exact artifact bytes — what the authority's
     `evidence_digest` binds (round 6): an authority minted against one
-    evidence artifact must not authorise a migration consuming another."""
-    try:
-        return hashlib.sha256(EVIDENCE_FILE.read_bytes()).hexdigest()
-    except OSError:
-        return "unavailable"
+    evidence artifact must not authorise a migration consuming another.
+    Mint-side convenience over the same single-read snapshot."""
+    return _artifact_snapshot()[1]
 
 
 def _draft_digest(objs: dict, version: int) -> str:
@@ -525,11 +586,27 @@ def make_authority(path, backup_ref: str = "draft-backup",
     release identity and durable consumption (§5b, §5e)."""
     mig = MIGRATION_1_TO_2 if migration is None else migration
     canonical = os.path.realpath(str(path))
-    c = sqlite3.connect(canonical)
+    # mode=rw: minting must never materialise the store it attests (round 7,
+    # finding 4: plain connect() created a zero-byte database at a missing
+    # path and returned an authority carrying the empty manifestation).
+    try:
+        c = sqlite3.connect(_migration_uri(canonical), uri=True)
+    except sqlite3.Error as exc:
+        raise ValueError(
+            f"cannot mint an authority: no source store at {canonical!r} "
+            f"({exc})") from exc
     try:
         src_digest = _draft_digest(manifest(c), mig.from_version)
     finally:
         c.close()
+    art, _ = _artifact_snapshot()
+    accepted = _accepted_at(art, mig.from_version) if isinstance(art, dict) \
+        else set()
+    if src_digest not in accepted:
+        raise ValueError(
+            f"cannot mint an authority: the store at {canonical!r} is not "
+            f"an accepted v{mig.from_version} source; there is nothing to "
+            f"attest")
     now = datetime.now(timezone.utc)
     return MigrationAuthority(
         quiesced=True, backup_ref=backup_ref, store_path=canonical,
@@ -543,12 +620,20 @@ def make_authority(path, backup_ref: str = "draft-backup",
         evidence_digest=_evidence_digest())
 
 
-def authority_static_problems(a, canonical: str) -> list:
+_HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def authority_static_problems(a, canonical: str, snapshot=None) -> list:
     """Everything checkable WITHOUT touching the store — types, bindings to
     the registered step, the canonical path, the validity window, the release
-    identity, and the token caps. This is the acceptance gate: an authority
-    passing it is CONSUMED before anything else happens (round 5). Total over
-    any input."""
+    identity, the token grammars, and (round 7, finding 4) the EVIDENCE-side
+    bindings: every digest field exactly 64 lowercase hex, the evidence
+    digest equal to the snapshot's, and the authority's
+    (from, to, source, migration) key resolving to exactly one current path
+    record in the snapshot artifact — so even an operation that ends in the
+    no-op `current` branch was valid for one exact evidenced source. This is
+    the acceptance gate: an authority passing it is CONSUMED before anything
+    else happens (round 5). Total over any input."""
     if not isinstance(a, MigrationAuthority):
         return [f"authority is {type(a).__name__}, not a MigrationAuthority"]
     problems = []
@@ -590,6 +675,18 @@ def authority_static_problems(a, canonical: str) -> list:
         problems.append(f"authority covers store {a.store_path!r}, "
                         f"not {canonical!r} (paths are canonical; a "
                         f"retargeted symlink is a different store)")
+    for field in ("source_digest", "migration_digest", "evidence_digest"):
+        v = getattr(a, field)
+        if isinstance(v, str) and v.strip() and not _HEX64_RE.fullmatch(v):
+            problems.append(f"{field} must be exactly 64 lowercase hex "
+                            f"characters")
+    if snapshot is not None:
+        if isinstance(a.evidence_digest, str) and \
+                _HEX64_RE.fullmatch(a.evidence_digest) and \
+                a.evidence_digest != snapshot[1]:
+            problems.append("the authority binds a different evidence "
+                            "artifact than this operation's snapshot; "
+                            "re-mint against the current artifact")
     if isinstance(a.release_ref, str) and a.release_ref.strip() and \
             a.release_ref != _release_identity():
         problems.append(f"authority was minted by {a.release_ref!r}; this "
@@ -620,12 +717,45 @@ def authority_static_problems(a, canonical: str) -> list:
     return problems
 
 
-def authority_problems(a, spath: str, step, source_digest: str) -> list:
+def _static_resolution_problems(a, snapshot) -> list:
+    """The evidence-side static requirement (round 7, finding 4): the
+    authority's (from, to, source, migration) bindings must resolve to
+    exactly ONE current path record in the operation's snapshot — checked
+    before consumption, so even an operation that ends in the no-op
+    `current` branch was valid for one exact evidenced source. A failure
+    here is an ARTIFACT property, so it maps to `migration-evidence-missing`
+    rather than an authority refusal. Total over any input."""
+    if not isinstance(a, MigrationAuthority):
+        return ["no authority to resolve"]
+    art = snapshot[0] if snapshot is not None else None
+    if not isinstance(art, dict):
+        return ["no parseable evidence snapshot to resolve the authority "
+                "against"]
+    if type(a.from_version) is not int or type(a.to_version) is not int or \
+            not isinstance(a.source_digest, str) or \
+            not isinstance(a.migration_digest, str):
+        return ["authority bindings are not resolvable"]
+    hits = [r for r in art.get("paths", [])
+            if _algorithm_class(r) == "current"
+            and _keyable_path_record(r)
+            and r["from_version"] == a.from_version
+            and r["to_version"] == a.to_version
+            and r["source_acceptance_digest"] == a.source_digest
+            and r["migration_declaration_digest"] == a.migration_digest]
+    if len(hits) != 1:
+        return [f"the authority's (from, to, source, migration) bindings "
+                f"resolve to {len(hits)} current path records in the "
+                f"evidence snapshot, not exactly one"]
+    return []
+
+
+def authority_problems(a, spath: str, step, source_digest: str,
+                       snapshot=None) -> list:
     """The full check the hook runs under the write lock: everything static,
     plus the source-manifestation binding measured from the store before any
     repair (the acceptance digest is rebuildable-blind, so incidental index
     drift does not unbind an authority)."""
-    problems = authority_static_problems(a, spath)
+    problems = authority_static_problems(a, spath, snapshot)
     if isinstance(a, MigrationAuthority) and \
             isinstance(a.source_digest, str) and \
             a.source_digest != source_digest:
@@ -643,14 +773,24 @@ def _consume_authority(a: MigrationAuthority) -> None:
     whose operation found the store already current was never consumed and
     later migrated a replacement store. In-process for the draft; production
     consumes durably via the migration audit (§5e)."""
-    with _CONSUME_LOCK:
-        if a.operation_id in _CONSUMED_OPERATIONS:
-            raise MigrationRefused(
-                "migration-quiescence-required",
-                f"authority operation {a.operation_id!r} was already "
-                f"consumed; authorities are single-use — mint a fresh one "
-                f"for a fresh operation")
-        _CONSUMED_OPERATIONS.add(a.operation_id)
+    try:
+        state = _AUDIT.activate(a)
+    except MigrationRefused:
+        raise
+    except Exception as exc:
+        # Storage failure BEFORE activation: nothing was consumed, and the
+        # closed outcome says so — a retry may re-present this authority
+        # (round 7 split this from the duplicate case v8 conflated).
+        raise MigrationRefused(
+            "migration-audit-unavailable",
+            f"the attempted record could not be written; the authority was "
+            f"NOT consumed: {_safe_repr(exc)}") from exc
+    if state == "duplicate":
+        raise MigrationRefused(
+            "migration-quiescence-required",
+            f"authority operation {a.operation_id!r} was already consumed; "
+            f"authorities are single-use — mint a fresh one for a fresh "
+            f"operation")
 
 
 # --------------------------------------------------------------------------
@@ -874,11 +1014,23 @@ def migration_runtime_supported(art) -> bool:
 # the draft evidence artifact: loaded, validated, consumed — never re-derived
 # at decision time (round 3, finding 2)
 
-def _load_artifact():
+def _artifact_snapshot() -> tuple:
+    """ONE byte snapshot (round 7, finding 1): the bytes are read once, the
+    digest is computed over exactly those bytes, and the parse is of exactly
+    those bytes — v8 hashed the file in one read and parsed it in another,
+    and a publication between the two let an authority bound to artifact A
+    authorise a migration that consumed artifact B. Returns
+    (artifact_or_None, digest); digest is "unavailable" only when the bytes
+    could not be read at all."""
     try:
-        return json.loads(EVIDENCE_FILE.read_text())
-    except (OSError, ValueError):
-        return None
+        raw = EVIDENCE_FILE.read_bytes()
+    except OSError:
+        return None, "unavailable"
+    digest = hashlib.sha256(raw).hexdigest()
+    try:
+        return json.loads(raw), digest
+    except ValueError:
+        return None, digest
 
 
 ARTIFACT_FIELDS = frozenset({
@@ -1196,11 +1348,18 @@ def expected_path_problems(art) -> list:
 # the draft context: the 0007 kernel, running as the v2 build would ship it
 
 _DRAFT_LOCK = threading.Lock()
-_DRAFT = {"depth": 0, "saved": None, "artifact": None}
+_DRAFT = {"depth": 0, "saved": None, "artifact": None, "digest": None}
+
+
+class _DraftContextMismatch(Exception):
+    """A nested draft context arrived pinned to a different artifact digest
+    than the one already installed (round 7, finding 1's second variant: the
+    nested migration silently reused the outer context's artifact while a
+    B-bound authority was accepted). Refuse, never silently share."""
 
 
 @contextmanager
-def _draft():
+def _draft(loaded=None):
     """Install the draft registry and evidence into the production kernel.
 
     This is how the instrument runs **the** planner rather than a second one
@@ -1213,7 +1372,8 @@ def _draft():
     identical values."""
     with _DRAFT_LOCK:
         if _DRAFT["depth"] == 0:
-            art = _load_artifact()
+            art, digest = loaded if loaded is not None else _artifact_snapshot()
+            _DRAFT["digest"] = digest
             _DRAFT["saved"] = {
                 "SCHEMAS": sv.SCHEMAS,
                 "SCHEMA_VERSION": sv.SCHEMA_VERSION,
@@ -1241,6 +1401,12 @@ def _draft():
             sv.version_records = lambda: versions
             sv.legacy_base_versions = lambda: legacy
             _DRAFT["artifact"] = art
+        else:
+            if loaded is not None and loaded[1] != _DRAFT["digest"]:
+                raise _DraftContextMismatch(
+                    f"a draft context pinned to artifact {loaded[1][:12]}… "
+                    f"cannot nest inside one installed from "
+                    f"{str(_DRAFT['digest'])[:12]}…")
         _DRAFT["depth"] += 1
         art = _DRAFT["artifact"]
     try:
@@ -1256,6 +1422,7 @@ def _draft():
                 sv.legacy_base_versions = saved["legacy_base_versions"]
                 sv._RUNTIME_OVERRIDE[:] = saved["override"]
                 _DRAFT["saved"] = _DRAFT["artifact"] = None
+                _DRAFT["digest"] = None
 
 
 # --------------------------------------------------------------------------
@@ -1307,7 +1474,8 @@ def _migrating_hook(art, authority):
                 f"no adjacent declared step migrates v{base} to "
                 f"v{sv.SCHEMA_VERSION}")
         probs = authority_problems(authority, spath, step,
-                                   sv.digest(objs, base))
+                                   sv.digest(objs, base),
+                                   snapshot=(art, _DRAFT["digest"]))
         if probs:
             raise MigrationRefused("migration-quiescence-required",
                                    "; ".join(probs))
@@ -1402,13 +1570,46 @@ def _migration_uri(canonical: str) -> str:
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
          authority=None) -> Outcome:
-    # THE outermost boundary (rounds 5 and 6): parameter validation, path
-    # conversion, canonicalization, authority validation, context entry,
-    # evidence loading, the connection and the planner all sit inside it —
-    # and the conversions are FILESYSTEM-encoding-aware, because a valid
-    # POSIX name with non-UTF-8 bytes is a surrogate-escaped str that plain
-    # `.encode()` rejects (round 6, measured). Only the kernel's named
-    # package-consistency class escapes, deliberately.
+    """The terminal-audit wrapper (round 7, finding 3): once an operation is
+    consumed, EVERY closed outcome — `migrated`, the no-op `current`, any
+    refusal — writes its terminal event, so a spent authority with no record
+    is impossible in the draft exactly as §5e requires of production. A
+    terminal write failing raises the typed `MigrationAuditWriteError` with
+    the committed flag."""
+    state = {"consumed": False}
+    out = _run_inner(path, busy_timeout_ms, migrating, authority, state)
+    if migrating and state["consumed"]:
+        committed = out == "migrated"
+        try:
+            _AUDIT.record(
+                authority.operation_id,
+                "migration_completed" if out in ("migrated", "current")
+                else "migration_failed",
+                {"outcome": str(out),
+                 "occurred_at": datetime.now(timezone.utc).isoformat()})
+        except Exception as exc:
+            raise MigrationAuditWriteError(
+                committed=committed,
+                operation_id=authority.operation_id,
+                store_path=authority.store_path,
+                resulting_version=(authority.to_version if committed
+                                   else authority.from_version),
+                cause=exc)
+    return out
+
+
+def _run_inner(path, busy_timeout_ms: int, migrating: bool,
+               authority, state) -> Outcome:
+    # THE outermost boundary (rounds 5-7): parameter validation, path
+    # conversion, canonicalization, the evidence SNAPSHOT, authority
+    # validation, context entry, the connection and the planner all sit
+    # inside it, with filesystem-encoding-aware conversions throughout.
+    # Exactly two named classes escape (PackageConsistencyError,
+    # MigrationAuditWriteError); anything else unforeseen is
+    # `internal-error` — round 7: labelling an internal defect
+    # `invalid-store` or `migration-failed` invited hosts to remediate a
+    # healthy database.
+    phase = "parameter-validation"
     try:
         if type(busy_timeout_ms) is not int or \
                 not 0 < busy_timeout_ms <= 600_000:
@@ -1416,13 +1617,11 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
                            f"busy_timeout_ms must be an int in 1..600000, "
                            f"got {_safe_repr(busy_timeout_ms)}")
         try:
-            # A PathLike may raise ANYTHING from __fspath__ (round 6:
-            # RuntimeError escaped) — a malformed argument is a closed call
-            # error, whatever its exception class.
             fs = os.fsdecode(os.fspath(path))
         except Exception as exc:
             return Outcome("invalid-request",
                            f"path is not path-like: {_safe_repr(exc)}")
+        phase = "canonicalization"
         try:
             canonical = os.path.realpath(fs)
         except Exception as exc:
@@ -1430,36 +1629,39 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
         if len(os.fsencode(canonical)) > 4096:
             return Outcome("store-unopenable",
                            "canonical path exceeds 4096 bytes")
+        # ONE evidence snapshot for the whole operation (round 7, finding 1):
+        # digest and parse are of the same bytes, the authority is compared
+        # against that digest, and the SAME parsed object enters the planner
+        # context — nothing re-reads the path.
+        phase = "evidence-snapshot"
+        snapshot = _artifact_snapshot()
         if migrating:
-            # Acceptance, then consumption, then ANY store access (round 5;
-            # the pre-lock consumption point was ruled an acceptable
-            # conservative policy in round 6). Static validation cannot
-            # consult the store; source binding is re-checked under the
-            # lock in the hook.
-            probs = authority_static_problems(authority, canonical)
+            phase = "authority-validation"
+            probs = authority_static_problems(authority, canonical,
+                                              snapshot=snapshot)
             if probs:
                 return Outcome("migration-quiescence-required",
                                diagnostic="; ".join(probs))
+            res = _static_resolution_problems(authority, snapshot)
+            if res:
+                return Outcome("migration-evidence-missing",
+                               diagnostic="; ".join(res))
+            phase = "authority-consumption"
             try:
                 _consume_authority(authority)
             except MigrationRefused as e:
                 return Outcome(e.reason, diagnostic=e.diagnostic)
-            if authority.evidence_digest != _evidence_digest():
-                return Outcome(
-                    "migration-quiescence-required",
-                    "the authority binds a different evidence artifact "
-                    "than the one this process would consume; re-mint "
-                    "against the current artifact")
+            state["consumed"] = True
             if not os.path.lexists(canonical):
-                # Source-specific, and the path stays uncreated: connecting
-                # normally would materialise an empty file (round 6).
                 return Outcome(
                     "migration-source-missing",
                     f"no store exists at {canonical!r}; the authority "
                     f"attests an existing source — a migration never "
                     f"creates")
-        with _draft() as art:
+        phase = "context-entry"
+        with _draft(loaded=snapshot) as art:
             try:
+                phase = "runtime-gates"
                 if not sv.runtime_supported():
                     return Outcome(
                         "unsupported-sqlite",
@@ -1476,10 +1678,9 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
                         "refuses before touching the store")
                 hook = (_migrating_hook(art, authority) if migrating
                         else _refusing_hook(art))
+                phase = "connect"
                 try:
                     if migrating:
-                        # mode=rw: refuses to create; the dedicated
-                        # operation opens existing stores only.
                         conn = sqlite3.connect(_migration_uri(canonical),
                                                uri=True,
                                                timeout=busy_timeout_ms / 1000)
@@ -1490,6 +1691,7 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
                     return Outcome("store-unopenable",
                                    diagnostic=_safe_repr(exc))
                 conn.isolation_level = None
+                phase = "planner"
                 try:
                     conn.execute(
                         f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
@@ -1506,22 +1708,26 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
             except MigrationRefused as e:
                 return Outcome(e.reason, diagnostic=e.diagnostic)
             except sqlite3.DatabaseError as exc:
-                # Round 4, finding 1: bytes that are not a database — or any
-                # SQLite-level failure while reading them — were escaping
-                # raw. The kernel already mapped its own expected cases
-                # (locked); what reaches here means the file could not be
-                # read as a store.
                 return Outcome("invalid-store", diagnostic=_safe_repr(exc))
     except sv.PackageConsistencyError:
-        raise                        # the one deliberate, NAMED escape (§5d)
+        raise                        # named escape 1 (§5d)
     except MigrationAuditWriteError:
-        raise                        # the audit contract's named escape (§5e)
-    except Exception as exc:
-        # Residual totality (round 6): whatever slipped every specific
-        # mapping is still a closed outcome, with the diagnostic carrying
-        # the class and message.
-        return Outcome("migration-failed" if migrating else "invalid-store",
+        raise                        # named escape 2 (§5e)
+    except _DraftContextMismatch as exc:
+        return Outcome("migration-evidence-missing" if migrating
+                       else "unsupported-sqlite",
                        diagnostic=_safe_repr(exc))
+    except Exception as exc:
+        # Round 7, finding 5: an unforeseen failure is a defect in THIS
+        # library, not a property of the store and not a migration outcome —
+        # labelling it invalid-store invited hosts to restore a healthy
+        # database. `internal-error` is truthful: phase named, commit state
+        # unknown unless the phase proves otherwise.
+        return Outcome(
+            "internal-error",
+            diagnostic=f"phase={phase}; commit-state="
+                       f"{'false' if phase != 'planner' else 'unknown'}; "
+                       f"{_safe_repr(exc)}")
 
 
 def open_or_migrate(path, busy_timeout_ms: int = 5000) -> Outcome:
@@ -1715,7 +1921,7 @@ def _write_evidence_locked() -> int:
     mine = (MIGRATION_EVIDENCE_ALGORITHM, sv.MANIFEST_ALGORITHM,
             DRAFT_SCHEMA_VERSION)
     if EVIDENCE_FILE.exists():
-        existing = _revision_components(_load_artifact())
+        existing = _revision_components(_artifact_snapshot()[0])
         if existing is None:
             print(f"refusing: {EVIDENCE_FILE} exists but its revision "
                   f"fields are unreadable; delete it explicitly to "
@@ -1769,7 +1975,7 @@ def write_evidence() -> int:
 
 
 def check_evidence() -> int:
-    art = _load_artifact()
+    art = _artifact_snapshot()[0]
     if art is None:
         print(f"missing or unreadable {EVIDENCE_FILE.relative_to(ROOT)}")
         return 1

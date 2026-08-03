@@ -5,30 +5,34 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v8)** — round 6: *approved architecture restated in full
-> (planner, DDL, path evidence, qualification, deferrals); v7 deferred on
-> five load-bearing problems*. All taken: **a migration never creates** (v7's
-> dedicated operation CREATED a fresh v2 store after its attested v1 source
-> was deleted — the shared planner gains a migrate-only mode: `mode=rw`
-> connection that cannot materialise files, a creation seam mirroring the
-> older-row hook, adoption off; `migration-source-missing` joins the
-> vocabulary); **evidence publication is serialized** (v7's pre-generation
-> inspection was a check-then-replace race, measured with a forced
-> interleaving — inspection now happens under the same interprocess lock as
-> publication, staging is writer-unique); **the boundary is Unicode- and
-> PathLike-safe** (surrogate-escaped POSIX names now work end-to-end,
-> anything `__fspath__` raises is a closed outcome, token grammars match on
-> the str); **the audit state machine is complete** (typed
-> `MigrationAuditWriteError` with a `committed` flag as the second named
-> escape, `migration-audit-unavailable` for the attempted record, payload
-> schema frozen); and **the release identity is content-derived** —
-> `veracium-<version>+<source-digest>` over the instrument and kernel bytes,
-> plus an `evidence_digest` binding the exact artifact consumed.
+> **in review (v9)** — round 7: *the migrate-only mode, serialized
+> writer-vs-writer publication, and the Unicode boundary held; v8 deferred on
+> five issues*. All taken: **one evidence byte-snapshot per operation** (v8
+> hashed the file in one read and parsed it in another — a publication
+> between them let an A-bound authority consume artifact B; digest,
+> comparison, parse and planner context now share one read, and a nested
+> context pinned to a different digest refuses instead of silently sharing);
+> **the release identity is framed and full-length** (v8's raw concatenation
+> kept the identity while a docstring moved across the file boundary —
+> measured, no hash collision required — and 12 hex chars were 48 bits;
+> length-framed names and contents under a domain prefix, full sha256);
+> **the audit machine is consistent** (operations table = compare-and-set
+> consumption, events table with `UNIQUE(operation_id, event)` — an
+> append-only table with a globally unique operation id could not hold
+> attempted AND terminal events; a duplicate id is CONSUMED, only storage
+> failure is the retryable outage; executable in the draft, terminal records
+> written for every consumed outcome); **source binding is static** (hex64
+> digests plus resolution to exactly one current path record BEFORE
+> consumption — v8's `current` branch accepted a garbage source digest; and
+> minting uses `mode=rw`, refusing rather than materialising a zero-byte
+> database at a missing path); and **internal failures tell the truth** —
+> `internal-error` with the phase named, never `invalid-store` for a library
+> defect a host would "fix" by restoring a healthy database.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v8 |
+| **Version** | v9 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -262,7 +266,7 @@ model is deferred to the first real `ALTER` and must be externally reviewed
 there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
 **Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
-(109 tests: every round-2 through round-6 probe as a regression, the full inherited
+(120 tests: every round-2 through round-7 probe as a regression, the full inherited
 planner across empty/unstamped/foreign/malformed/newer stores, the evidence
 gate's adversarial records, confinement qualification, the closed failure
 model, and the stale-connection hazard below).
@@ -339,14 +343,23 @@ ruling):
 | `source_digest` | the source manifestation being migrated | equals the acceptance digest measured under the write lock, pre-repair (rebuildable-blind, so incidental index drift does not unbind) |
 | `migration_digest` | the reviewed statements | equals the declaration digest of the registered step |
 | `backup_ref` | the backup this operation made | the frozen token grammar: ASCII `[A-Za-z0-9._+:/-]`, ≤ 128 chars, no whitespace — a grammar closes the prose channel a byte cap only bounded (round 6); normalization is moot because the charset admits one representation |
-| `release_ref` | the minting release/deployment | must equal the RUNNING release identity — **frozen (round 6): `veracium-<version>+<source-digest>`**, where the digest is sha256 over the instrument and kernel bytes. Representation: the token grammar; size ≤ 128; source of truth: the running tree's own bytes (identical rule in editable and archive builds — no git, no installed-dist metadata); comparison: exact string equality; rotation: ANY change to the covered files rotates it, so an authority is minted and consumed by the same build. A mutable semantic version alone was measured crossing builds. Production may substitute a signed release-artifact digest; the rule that the identity is immutable per build is what is frozen |
-| `operation_id` | this one migration operation | **single-use over the COMPLETE operation** (round 5) — consumed at acceptance, before any store access; the literal `op-<uuid4>` grammar |
+| `release_ref` | the minting release/deployment | must equal the RUNNING release identity — **frozen: `veracium-<version>+<source-digest>`**, the digest being the FULL sha256 (round 7: 12 hex chars were 48 bits against an adversary who constructs builds) over a **framed, domain-separated** encoding: `"veracium-release-identity-v1"` then, per file in the frozen ordered list (this instrument, the `0007` kernel), length-framed name and length-framed content — round 7 measured a docstring moved across the raw-concatenation boundary keeping the identity byte-identical, no hash collision required. Representation: the token grammar (128 chars holds it); source of truth: the running tree's own bytes, identical in editable and archive builds; comparison: exact equality; rotation: any covered-file change. Production may substitute a signed release-artifact digest |
+| `operation_id` | this one migration operation | **single-use over the COMPLETE operation** (round 5) — consumed at acceptance, before any store access; an opaque UUID-shaped token (the grammar checks shape, not version/variant bits — round 7's wording ruling) |
 | `issued_at` · `expires_at` | the validity window | timezone-aware ISO 8601 as accepted by the parser (round 6 narrowed the wording); `issued ≤ now < expires`; `expires − issued ≤` the frozen `MAX_AUTHORITY_LIFETIME` (1 h); **no clock-skew allowance** — skew handling, if production ever permits it, must be explicit and bounded |
-| `evidence_digest` | the exact evidence artifact consumed | sha256 of the artifact bytes; a regenerated artifact unbinds the authority (round 6) |
+| `evidence_digest` | the exact evidence artifact consumed | sha256 of the operation's SNAPSHOT bytes (round 7: one read feeds digest, comparison, parse and planner — v8's two reads were a TOCTOU, measured); a regenerated artifact unbinds the authority |
+| *(all three digests)* | — | exactly 64 lowercase hex, statically; and the authority's (from, to, source, migration) key must resolve to **exactly one current path record in the snapshot** before consumption — so even a no-op `current` operation was valid for one exact evidenced source (round 7: v8's current branch accepted a garbage source digest) |
 
 An expired, future-issued, over-long-lived, previously consumed,
 retargeted, source-mismatched, wrong-release, mistyped or unbound authority
-refuses `migration-quiescence-required`. **Consumption covers the complete
+refuses `migration-quiescence-required`; a resolution failure — bindings no
+current path record evidences — is an ARTIFACT property and refuses
+`migration-evidence-missing`. **Minting never creates**: `make_authority`
+opens the source `mode=rw` and refuses when there is no store or the store
+is not an accepted source — round 7 measured plain `connect()`
+materialising a zero-byte database at a missing path and returning an
+authority over the empty manifestation. A nested draft context pinned to a
+different artifact digest than the installed one refuses rather than
+silently sharing (round 7's second TOCTOU variant). **Consumption covers the complete
 dedicated operation** (round 5): once static validation accepts an operation
 id — before the store is even opened — it is spent, and EVERY subsequent
 outcome spends it: `migrated`, a no-op `current`, an evidence refusal, a
@@ -400,7 +413,17 @@ check-then-replace race — a future artifact published while an older writer
 generated was downgraded, measured with a forced interleaving). The
 sequence: acquire the writer lock · re-read and validate the existing
 revision UNDER it · generate · validate the complete prospective artifact ·
-stage to a writer-unique temporary · publish · release. The inspection
+stage to a writer-unique temporary · publish · release. *(The draft's lock
+is `fcntl` — evidence GENERATION is POSIX-only in the draft, stated as a
+platform bound per round 7; production may adopt cross-platform locking.
+Consumption has no platform bound.)*
+
+**Readers take ONE byte snapshot per operation** (round 7, finding 1): the
+artifact bytes are read once; the digest is computed over those bytes; the
+authority's `evidence_digest` is compared against that digest; those same
+bytes are parsed; and that exact object enters the planner context — nothing
+re-reads the path mid-operation. Concurrent nested contexts must agree on
+the installed digest or refuse. The inspection
 **refuses without changing a byte** when any existing component exceeds the
 tool's own, or when the existing revision is unreadable (overwriting what
 cannot be identified is data loss; an explicit delete is the only way past
@@ -514,6 +537,7 @@ invalid-SQL and free-form-string escapes.)
 | absent, ambiguous, malformed, foreign or non-matching path evidence | `migration-evidence-missing` |
 | SQL execution or protocol failure during the migration | `migration-failed` |
 | executed output differs from the recorded output | `migration-result-mismatch` |
+| an unforeseen failure in THIS library — never a store or migration semantic | `internal-error`, phase named in the diagnostic, commit state unknown unless the phase proves otherwise (round 7: labelling a library defect `invalid-store` invited hosts to restore a healthy database) |
 
 **Every validator type-checks a field before iterating, hashing, sorting, or
 using it as a key** — the round-4 totality rule; a validator escape at
@@ -545,17 +569,30 @@ source and output versions with their manifestation digests, the migration
 declaration digest, and the opaque `backup_ref` — all under the frozen
 opaque-token caps (§5b), so audit fields cannot become prose channels.
 
-**The frozen durable-consumption rules — the complete outcome model
-(round 6):**
+**The frozen durable model is TWO tables, not one** (round 7, finding 3: a
+single append-only table whose `operation_id` is globally unique cannot hold
+an attempted AND a terminal event for one operation — the previous freeze
+was internally inconsistent):
+
+```
+migration_operations                    migration_audit_events
+    operation_id  PRIMARY KEY               event_id       PRIMARY KEY
+    authority bindings                      operation_id   FOREIGN KEY
+    activation state                        event · occurred_at · payload
+    attempted_at                            UNIQUE(operation_id, event)
+```
+
+**The operation-row insert IS the compare-and-set consumption.** The rules:
 
 | rule | contract |
 |---|---|
-| durable key | `operation_id`, unique across the audit — the draft's in-process set becomes a uniqueness lookup against recorded operations |
-| activation | **atomic compare-and-set**: the attempted record's insert IS the consumption; two racers cannot both insert one `operation_id` (measured in-process: two threads, one authority, exactly one acceptance) |
-| attempted-record failure | closed outcome **`migration-audit-unavailable`** — no store access, and the authority is NOT consumed (the insert is the consumption; a failed insert consumed nothing), so a retry may re-present it |
-| migration rolls back, failed-record fails | store unchanged, authority spent; **`MigrationAuditWriteError(committed=False)`** — surfaced distinctly, never `migration-failed`, because the caller must know the audit record of a refused irreversible operation is missing |
-| store commits, completed-record fails | the migration HAPPENED: **`MigrationAuditWriteError(committed=True)`** — the caller's `committed` flag answers "did it run"; a retry opens `current` and correctly does not re-migrate. Mirrors `0007` §4e |
-| no-op `current` | the consumed operation still writes a completed record carrying outcome `current` — a spent authority with no record is indistinguishable from a crash |
+| duplicate operation id on activation | the authority IS consumed — `migration-quiescence-required` (round 7 split this from the outage case v8 conflated) |
+| audit storage unavailable before activation | **`migration-audit-unavailable`** — no store access, nothing consumed (a failed insert consumed nothing); a retry may re-present the authority |
+| migrated and committed, terminal write fails | **`MigrationAuditWriteError(committed=True)`** — "did it run" answered; a retry opens `current`. Mirrors `0007` §4e |
+| rolled back, terminal write fails | store unchanged, authority spent; **`MigrationAuditWriteError(committed=False)`** |
+| `current` with no repair | terminal record written (outcome `current`); a terminal-write failure is `committed=False` — nothing changed |
+| `current` with a committed rebuildable repair | the repair transaction committed: a terminal-write failure is `committed=True`, resulting version unchanged — requires the production planner to report repairs (a precise implementation obligation; the draft cannot observe the kernel's repair) |
+| every consumed outcome | writes its terminal event — a spent authority with no record is indistinguishable from a crash. Executable in the draft: `DraftAuditStore` implements both tables in-process, `UNIQUE(operation_id, event)` enforced, terminal records measured for `migrated` and the no-op `current` |
 
 **The frozen record schema** — every field typed and capped, so a record is
 data, not prose:
@@ -618,6 +655,11 @@ tests at implementation.
 | **M27** the boundary is Unicode- and PathLike-safe | `test_a_non_utf8_bytes_path_works_end_to_end` · `test_a_pathlike_that_raises_is_a_closed_outcome` · `test_a_surrogate_token_field_is_a_closed_refusal` — **measured today** |
 | **M28** the audit contract is frozen, including its two named escapes | `test_the_audit_contract_is_frozen` — **measured today**; the state machine and record schema are §5e |
 | **M29** the release identity is immutable per build and the evidence artifact is bound | `test_the_release_identity_is_content_derived` · `test_a_version_only_release_ref_is_refused` · `test_a_cross_build_authority_is_refused` · `test_an_authority_binds_the_evidence_artifact` — **measured today** |
+| **M30** one evidence snapshot per operation; nested contexts agree or refuse | `test_the_operation_consumes_the_bytes_the_authority_bound` · `test_a_nested_context_never_silently_swaps_artifacts` — **measured today** |
+| **M31** the release identity binds the file boundary at full digest length | `test_moving_bytes_across_the_file_boundary_changes_the_identity` — **measured today** |
+| **M32** the audit machine is consistent and executable | `test_audit_unavailability_consumes_nothing_and_is_retryable` · `test_a_duplicate_operation_is_consumed_not_an_audit_outage` · `test_terminal_records_are_written_for_migrated_and_noop_current` · `test_a_failed_terminal_write_raises_the_typed_error` — **measured today** |
+| **M33** source binding is static, and minting never creates | `test_an_authority_binds_the_source_manifestation` · `test_minting_never_creates_a_store` · `test_minting_refuses_a_non_accepted_source` — **measured today** |
+| **M34** internal failures are `internal-error`, never store semantics | `test_an_internal_defect_is_not_a_store_outcome` · `test_check_evidence_is_total_over_non_mapping_runtime_members` — **measured today** |
 
 ---
 
@@ -663,61 +705,61 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 7 of this spec. All five round-6 blockers and the three non-blocking
-corrections taken; every probe reproduced first** — the authority creating a
-v2 store over its deleted source, the forced writer interleaving downgrading
-a future artifact, the surrogate-path and raising-`__fspath__` escapes, the
-absent audit outcome, the version-only release identity. Per your v8
-guidance the concrete migration, path evidence, authorizer probes and
-ordinary planner states are untouched.
+**Round 8 of this spec. All five round-7 blockers and the three additional
+corrections taken; every probe reproduced first** — the two-read TOCTOU and
+its nested-context variant, the docstring moved across the raw-concatenation
+boundary (identity unchanged, both files modified, no collision needed), the
+internally inconsistent audit freeze, the garbage source digest accepted by
+the `current` branch, the minting helper materialising a zero-byte database,
+the `internal-error` lie, and `active_records([42])`.
 
-1. **A migration never creates** (finding 1): migrate mode = a `mode=rw`
-   connection that cannot materialise files, a nonexistent path refusing
-   with the path left uncreated, the kernel's `new=` creation seam (the
-   exact mirror of the older-row hook) raising `migration-source-missing`,
-   and adoption off. Your regression list is implemented verbatim: deleted
-   file, zero-byte truncation, empty-database replacement, nonexistent
-   path, unstamped current-shape replacement — each a closed refusal with
-   the path uncreated or byte-unchanged, plus the guard that ordinary
-   opening still creates.
-2. **Serialized monotone publication** (finding 2): the complete write
-   operation holds an interprocess lock; the revision inspection happens
-   under the SAME lock as publication, staging is writer-unique. The
-   two-process barrier test holds the lock in a child, publishes a future
-   revision, releases — the blocked older writer re-reads, refuses, and
-   the future bytes survive.
-3. **Unicode- and PathLike-safe boundary** (finding 3): filesystem-aware
-   conversions end to end (a store at a non-UTF-8 POSIX name now simply
-   works — opens, refuses ordinarily, migrates under authority), anything
-   `__fspath__` raises is `invalid-request`, diagnostics survive raising
-   `__repr__`s, and token grammars match on the str so a lone surrogate
-   fails the grammar instead of `.encode()`. The kernel's caps are
-   fs-encoded. Exactly two NAMED classes escape, both frozen: the kernel's
-   `PackageConsistencyError` and §5e's `MigrationAuditWriteError`.
-4. **The audit state machine is complete** (finding 4): every cell filled —
-   attempted-record failure is the closed `migration-audit-unavailable`
-   with nothing consumed; rolled-back-plus-failed-record and
-   committed-plus-failed-record are the typed error with `committed`
-   False/True; a no-op `current` still writes its completed record. The
-   record schema is frozen with types and caps.
-5. **The release identity is immutable per build** (finding 5):
-   `veracium-<version>+<source-digest>` over the instrument and kernel
-   bytes — representation, charset, size, source of truth, comparison and
-   rotation all frozen; identical rule in editable and archive builds. The
-   authority additionally binds `evidence_digest`, the sha256 of the exact
-   artifact consumed; regeneration between mint and consume unbinds.
+1. **One snapshot** (finding 1): `_artifact_snapshot()` reads the bytes
+   once; digest, authority comparison, parse and the planner context all
+   consume that read; `_draft(loaded=…)` accepts the object instead of
+   re-reading the path, and a nested context pinned to a different digest
+   refuses (`migration-evidence-missing`) rather than silently sharing.
+   Both of your variants are regressions.
+2. **Framed, full-length identity** (finding 2): domain prefix, per-file
+   length-framed name and content, frozen ordered file list, full 64-hex
+   digest. Your boundary-move construction is the regression test — same
+   raw concatenation, different identities.
+3. **Two tables** (finding 3): `migration_operations` (the row insert IS
+   consumption) and `migration_audit_events` with
+   `UNIQUE(operation_id, event)`. A duplicate id is CONSUMED
+   (`migration-quiescence-required`); only a storage failure before
+   activation is `migration-audit-unavailable`, with nothing consumed and
+   the retry measured to succeed. All four terminal cells are frozen —
+   including `current` with a committed rebuildable repair, which is stated
+   as a precise implementation obligation (the draft cannot observe the
+   kernel's repair). The machine is now EXECUTABLE: `DraftAuditStore`
+   implements both tables; terminal records are measured for `migrated` and
+   the no-op `current`; a failed terminal write raises the typed error with
+   the right `committed` flag.
+4. **Static source binding, and minting never creates** (finding 4): all
+   three digests must be 64 lowercase hex statically, and the authority's
+   (from, to, source, migration) key must resolve to exactly one current
+   path record in the snapshot BEFORE consumption — your
+   garbage-source-on-current probe now refuses. `make_authority` opens
+   `mode=rw` and refuses a missing path (nothing created — measured) or a
+   non-accepted source.
+5. **`internal-error`** (finding 5): the residual handler names the phase
+   and reports commit state (`false` before the planner phase, `unknown`
+   inside it) — never `invalid-store`, never `migration-failed`, for a
+   defect in this library.
 
-**Non-blocking corrections**: `--check-evidence` runs cardinality validation
-before the foreign-runtime early return; the token grammars replace the
-byte caps; the timestamp wording says what the parser accepts.
+**Additional corrections**: `active_records` is total (both copies of the
+`0007` accessor); evidence generation is stated as POSIX-only in the draft
+(`fcntl`); the operation token is called what it is — an opaque UUID-shaped
+token, shape-checked, version bits unverified.
 
-**Where I am least confident:** the residual catch-all. The boundary's last
-handler maps anything unforeseen to `invalid-store` (ordinary) or
-`migration-failed` (dedicated) with the class in the diagnostic — closed,
-but the mapping of a truly unknown failure to those members is a judgement
-call between totality and honesty. The alternative — a third named escape
-for "unclassifiable" — seemed worse than a diagnosed closed outcome. Yours
-to rule.
+**Where I am least confident:** the resolution/refusal split. A static
+failure that is an authority property (types, grammar, window, path,
+release) refuses `migration-quiescence-required`; one that is an artifact
+property (bindings resolving to no current record) refuses
+`migration-evidence-missing` — including a source digest that is
+well-formed but unevidenced. The split follows what the host should DO
+(re-mint vs fix evidence), but a mismatched source could be read as either;
+if you'd draw the line elsewhere, that is the remaining judgement.
 
 ## 10. Open questions
 
@@ -840,3 +882,23 @@ do.
 | a | `--check-evidence` said "structural checks pass" for a foreign artifact with stripped paths | cardinality validation before the identity early-return — regression test |
 | b | byte caps bound, not close, a prose channel | frozen token grammars (ASCII charset, `op-<uuid4>` shape); normalization moot by construction |
 | c | "RFC 3339" overclaimed the parser | wording narrowed to what the parser accepts |
+
+---
+
+## 17. Round 7 review disposition
+
+**Verdict: migrate-only mode, serialized writer publication and the Unicode
+boundary held; v8 deferred on five issues.** All taken; the concrete
+migration, path evidence, authorizer probes and ordinary planner states
+untouched.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | evidence-digest binding was a reader-side TOCTOU — digest from one file read, planner context from another; a nested context silently reused the outer artifact while a B-bound authority was accepted | **one byte snapshot per operation** feeding digest, comparison, parse and planner; `_draft(loaded=…)` takes the object; nested contexts pinned to a different digest refuse. Both variants are regressions |
+| 2 | the release identity concatenated raw bytes — a docstring moved across the file boundary kept the identity (measured, no collision); 12 hex chars = 48 bits | **framed, domain-separated, full-length**: per-file length-framed name and content under `veracium-release-identity-v1`, frozen ordered list, full sha256; boundary-move regression |
+| 3 | the audit freeze was internally inconsistent (globally unique `operation_id` vs attempted+terminal events); duplicate-vs-outage conflated; the `current`-with-repair cell undefined | **two tables** — operations (insert = CAS consumption) and events with `UNIQUE(operation_id, event)`; duplicate = consumed (`quiescence-required`), outage = `audit-unavailable` with nothing consumed (retry measured); all four terminal cells frozen; **executable `DraftAuditStore`** with terminal records measured for `migrated` and no-op `current` |
+| 4 | `source_digest` was checked only in the older hook — a garbage digest passed the `current` branch; `make_authority` materialised a zero-byte database at a missing path | **static hex64 + resolution to exactly one current path record before consumption**; minting opens `mode=rw` and refuses missing paths (nothing created) and non-accepted sources |
+| 5 | the residual catch-all labelled internal defects `invalid-store` / `migration-failed` — false semantics hosts act on | **`internal-error`** with phase named and commit state (`false`/`unknown`); the two named escapes remain the only escapes |
+| a | `check_evidence` raised `AttributeError` on `runtimes: [42]` | the `0007` `active_records` accessor is total (both copies); regression at the `check_evidence` level |
+| b | `fcntl` is POSIX-only | stated platform bound for draft evidence GENERATION; consumption unaffected |
+| c | the grammar accepts any UUID-shaped value | wording: an opaque UUID-shaped operation token |

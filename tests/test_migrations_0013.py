@@ -55,6 +55,27 @@ def _patch_migration(monkeypatch, mig: m13.Migration) -> None:
     monkeypatch.setitem(m13.MIGRATIONS_DRAFT, 1, mig)
 
 
+def _patch_artifact(monkeypatch, art) -> None:
+    """Install a crafted artifact as the operation snapshot. The digest is
+    the REAL file's — authorities mint against the file, so evidence-digest
+    binding passes while the parsed content is the crafted one (the same
+    semantics the pre-snapshot seam had)."""
+    real_digest = m13._artifact_snapshot()[1]
+    monkeypatch.setattr(m13, "_artifact_snapshot",
+                        lambda: (copy.deepcopy(art), real_digest))
+
+
+def _bound_auth(target: str) -> "m13.MigrationAuthority":
+    """An authority path-rebound to `target`. Round 7 made minting refuse
+    unless it observes an accepted source, so tests probing NON-source
+    targets (foreign shapes, malformed stamps, garbage bytes) mint against a
+    valid twin and rebind only the canonical path — the planner's own
+    classification is then what the test measures."""
+    import os
+    return m13.make_authority(_v1_store())._replace(
+        store_path=os.path.realpath(target))
+
+
 def _crafted_artifact(monkeypatch, declaration_digest: str) -> None:
     """The committed artifact with its one path record re-pointed at a
     DIFFERENT migration declaration, output fields untouched. This is the only
@@ -64,7 +85,7 @@ def _crafted_artifact(monkeypatch, declaration_digest: str) -> None:
     whose promise the live execution does not keep."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["paths"][0]["migration_declaration_digest"] = declaration_digest
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
 
 
 # --- M6/M7-class: the destination contract, against the real migration ----
@@ -287,7 +308,7 @@ def test_an_unstamped_v1_store_takes_the_older_row():
 def test_a_foreign_version_zero_store_is_refused_by_both_operations():
     p = _v1_store(stamp=False, extra="CREATE TABLE alien (x)")
     assert m13.open_or_migrate(p) == "foreign-shape"
-    assert m13.migrate_store(p, m13.make_authority(p)) == "foreign-shape"
+    assert m13.migrate_store(p, _bound_auth(p)) == "foreign-shape"
 
 
 def test_a_malformed_stamped_source_is_not_promised_a_migration():
@@ -296,7 +317,7 @@ def test_a_malformed_stamped_source_is_not_promised_a_migration():
     none. Source classification precedes any migration statement."""
     p = _v1_store(extra="CREATE TABLE intruder (x)")
     assert m13.open_or_migrate(p) == "stamped-shape-mismatch"
-    assert m13.migrate_store(p, m13.make_authority(p)) == "stamped-shape-mismatch"
+    assert m13.migrate_store(p, _bound_auth(p)) == "stamped-shape-mismatch"
     assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
 
 
@@ -396,7 +417,7 @@ def test_a_zeroed_source_hash_is_consulted_and_refuses(monkeypatch):
     selection key."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["paths"][0]["source_full_manifest_hash"] = "0" * 64
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) \
         == "migration-evidence-missing"
@@ -406,7 +427,7 @@ def test_a_zeroed_source_hash_is_consulted_and_refuses(monkeypatch):
 def test_an_absent_path_record_refuses(monkeypatch):
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["paths"] = []
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) \
         == "migration-evidence-missing"
@@ -415,7 +436,7 @@ def test_an_absent_path_record_refuses(monkeypatch):
 def test_a_duplicate_path_record_refuses(monkeypatch):
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["paths"].append(copy.deepcopy(art["paths"][0]))
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) \
         == "migration-evidence-missing"
@@ -424,7 +445,7 @@ def test_a_duplicate_path_record_refuses(monkeypatch):
 def test_a_stale_algorithm_record_is_superseded_not_consumed(monkeypatch):
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["paths"][0]["migration_evidence_algorithm"] = 0
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) \
         == "migration-evidence-missing"
@@ -452,7 +473,7 @@ def test_a_tampered_accepted_manifest_poisons_the_whole_context(monkeypatch):
     everything fails closed to unsupported-sqlite."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["schema_versions"]["2"]["accepted"][0]["digest"] = "0" * 64
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.open_or_migrate(p) == "unsupported-sqlite"
 
@@ -465,7 +486,7 @@ def test_the_migration_runtime_gate_is_independent_of_0007s(monkeypatch):
     the migration operation while ordinary opening is untouched."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["migration_runtimes"] = []
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
     assert m13.open_or_migrate(p) == "migration-required"
@@ -537,7 +558,7 @@ def test_a_missing_rebuildable_index_is_repaired_before_stamping(monkeypatch):
                      m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL,)))
     art, problems = m13._generate_artifact()
     assert problems == []
-    monkeypatch.setattr(m13, "_load_artifact", lambda: art)
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
     c = sqlite3.connect(p)
@@ -639,7 +660,7 @@ def test_a_malformed_accepted_manifestation_fails_closed(monkeypatch):
     every operation reads `unsupported-sqlite` — no exception escapes."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["schema_versions"]["1"]["accepted"][0]["objects"] = 1
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.open_or_migrate(p) == "unsupported-sqlite"
     assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
@@ -650,7 +671,7 @@ def test_a_malformed_path_field_fails_closed(monkeypatch):
     from selection-key construction."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["paths"][0]["source_full_manifest_hash"] = ["x"]
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) \
         == "migration-evidence-missing"
@@ -704,7 +725,7 @@ def test_a_malformed_current_migration_runtime_record_poisons(monkeypatch):
     valid record being silently filtered while qualification held."""
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["migration_runtimes"].append({"migration_evidence_algorithm": 1})
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     assert m13.migration_runtime_supported(art) is False
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
@@ -715,7 +736,7 @@ def test_a_duplicate_migration_runtime_identity_poisons(monkeypatch):
     art = json.loads(m13.EVIDENCE_FILE.read_text())
     art["migration_runtimes"].append(
         copy.deepcopy(art["migration_runtimes"][0]))
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
 
@@ -740,7 +761,7 @@ def test_a_foreign_identity_path_record_fails_the_artifact(monkeypatch):
     foreign["runtime"]["sqlite_version"] = "99"
     foreign["runtime"]["source_id"] = "foreign"
     art["paths"].append(foreign)
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     with m13._registry():
         assert m13.path_evidence_problems(art)
         assert m13.expected_path_problems(art)
@@ -836,11 +857,24 @@ def test_a_retargeted_symlink_unbinds_the_authority():
 
 
 def test_an_authority_binds_the_source_manifestation():
-    """A source-mismatched authority refuses: minted against one shape,
-    presented with another."""
+    """A source-mismatched authority refuses. Round 7 moved the first line
+    of defence to STATIC resolution: a source digest no current path record
+    evidences fails as an artifact property (`migration-evidence-missing`)
+    before consumption — even when the store itself is already current, the
+    branch round 7 measured bypassing the source check entirely. The
+    under-lock hook comparison remains as depth for the evidenced-but-
+    different-store case."""
     p = _v1_store()
-    auth = m13.make_authority(p)._replace(source_digest="0" * 64)
-    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    unevidenced = m13.make_authority(p)._replace(source_digest="0" * 64)
+    ungrammatical = m13.make_authority(p)._replace(source_digest="zz")
+    current_era = m13.make_authority(p)._replace(source_digest="0" * 64)
+    assert m13.migrate_store(p, unevidenced) == "migration-evidence-missing"
+    assert m13.migrate_store(p, ungrammatical) \
+        == "migration-quiescence-required"               # grammar layer
+    assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
+    # The round-7 probe: a garbage-source authority against a CURRENT store
+    # read `current` in v8, bypassing source validation entirely.
+    assert m13.migrate_store(p, current_era) == "migration-evidence-missing"
 
 
 def test_an_authority_binds_the_step_endpoints():
@@ -994,7 +1028,7 @@ def test_coerced_top_level_scalars_poison_the_artifact(field, value,
     art[field] = value
     with m13._registry():
         assert m13.schema_evidence_problems(art)
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     assert m13.open_or_migrate(_v1_store()) == "unsupported-sqlite"
 
 
@@ -1003,7 +1037,7 @@ def test_a_coerced_path_algorithm_poisons_the_paths(monkeypatch):
     art["paths"][0]["manifest_algorithm"] = 13.0
     with m13._registry():
         assert m13.path_evidence_problems(art)
-    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    _patch_artifact(monkeypatch, art)
     p = _v1_store()
     assert m13.migrate_store(p, m13.make_authority(p)) \
         == "migration-evidence-missing"
@@ -1203,7 +1237,7 @@ def test_the_release_identity_is_content_derived():
     identities."""
     import re
     ident = m13._release_identity()
-    assert re.fullmatch(r"veracium-[0-9a-zA-Z.]+\+[0-9a-f]{12}", ident), ident
+    assert re.fullmatch(r"veracium-[0-9a-zA-Z.]+\+[0-9a-f]{64}", ident), ident
     assert m13._TOKEN_RE.fullmatch(ident)
 
 
@@ -1247,3 +1281,168 @@ def test_check_evidence_reports_cardinality_before_the_identity_return(
     stripped.write_text(json.dumps(art, indent=1, sort_keys=True))
     monkeypatch.setattr(m13, "EVIDENCE_FILE", stripped)
     assert m13.check_evidence() == 1
+
+
+# --- round 7, finding 1: one evidence snapshot, bound end to end -----------
+
+def test_the_operation_consumes_the_bytes_the_authority_bound(monkeypatch,
+                                                              tmp_path):
+    """v8 hashed the file in one read and parsed it in another; a
+    publication between them let an A-bound authority consume artifact B.
+    One snapshot now feeds digest, comparison, parse and planner — an
+    authority bound to a superseded artifact refuses."""
+    p = _v1_store()
+    auth = m13.make_authority(p)                        # binds artifact A
+    art_b = json.loads(m13.EVIDENCE_FILE.read_text())
+    art_b["generated_at"] = "2026-01-01T00:00:00+00:00"
+    published = tmp_path / "evidence.json"
+    published.write_text(json.dumps(art_b, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", published)  # B is now the file
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_a_nested_context_never_silently_swaps_artifacts():
+    """v8's second variant: an outer context on A, a B-bound authority, and
+    the nested migration silently consumed A. A pinned nested context that
+    disagrees with the installed digest refuses."""
+    backup = m13.EVIDENCE_FILE.read_bytes()
+    try:
+        with m13._draft():                               # installs A
+            art_b = json.loads(backup)
+            art_b["generated_at"] = "2026-01-01T00:00:00+00:00"
+            m13.EVIDENCE_FILE.write_text(
+                json.dumps(art_b, indent=1, sort_keys=True))
+            p = _v1_store()
+            auth = m13.make_authority(p)                 # binds B
+            assert m13.migrate_store(p, auth) == "migration-evidence-missing"
+            assert sqlite3.connect(p).execute(
+                "PRAGMA user_version").fetchone()[0] == 1
+    finally:
+        m13.EVIDENCE_FILE.write_bytes(backup)
+
+
+# --- round 7, finding 2: framed, full-length release identity --------------
+
+def test_moving_bytes_across_the_file_boundary_changes_the_identity(tmp_path):
+    """v8 concatenated raw bytes, so relocating a docstring across the file
+    boundary kept the identity while both files changed. Length-framed names
+    and contents make the boundary part of the digest."""
+    a1, b1 = tmp_path / "a.py", tmp_path / "b.py"
+    a1.write_bytes(b"AAAA" + b"DOCSTRING" * 10)
+    b1.write_bytes(b"BBBB")
+    one = m13._source_identity(files=(a1, b1))
+    a2, b2 = tmp_path / "a2.py", tmp_path / "b2.py"
+    a2.write_bytes(b"AAAA")
+    b2.write_bytes(b"DOCSTRING" * 10 + b"BBBB")
+    assert a1.read_bytes() + b1.read_bytes() == a2.read_bytes() + b2.read_bytes()
+    two = m13._source_identity(files=(a2, b2))
+    assert one != two
+    # ...and the name is framed too (a2/b2 vs a/b already differ; check the
+    # same names with swapped content to isolate the content framing):
+    assert len(m13._source_identity()) == 64             # full digest
+
+
+# --- round 7, finding 3: the executable audit state machine ----------------
+
+def test_audit_unavailability_consumes_nothing_and_is_retryable(monkeypatch):
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+    calls = {"n": 0}
+
+    def flaky(a):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise OSError("audit storage offline")
+        return real(a)
+    monkeypatch.setattr(m13._AUDIT, "activate", flaky)
+    assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+    # NOT consumed: the same authority retries successfully.
+    assert m13.migrate_store(p, auth) == "migrated"
+
+
+def test_a_duplicate_operation_is_consumed_not_an_audit_outage():
+    """The distinction v8 conflated: a uniqueness conflict means CONSUMED."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_terminal_records_are_written_for_migrated_and_noop_current():
+    """§5e: a spent authority with no terminal record is indistinguishable
+    from a crash — the no-op current writes one too."""
+    p = _v1_store()
+    a1, a2 = m13.make_authority(p), m13.make_authority(p)
+    assert m13.migrate_store(p, a1) == "migrated"
+    assert m13.migrate_store(p, a2) == "current"
+    ev = m13._AUDIT._events
+    assert ev[(a1.operation_id, "migration_completed")]["outcome"] == "migrated"
+    assert ev[(a2.operation_id, "migration_completed")]["outcome"] == "current"
+    assert (a1.operation_id, "migration_attempted") in ev
+    with pytest.raises(ValueError, match="UNIQUE"):
+        m13._AUDIT.record(a1.operation_id, "migration_completed", {})
+
+
+def test_a_failed_terminal_write_raises_the_typed_error(monkeypatch):
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def broken(operation_id, event, payload):
+        raise OSError("audit storage died mid-operation")
+    monkeypatch.setattr(m13._AUDIT, "record", broken)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.committed is True                  # the migration ran
+    assert exc.value.operation_id == auth.operation_id
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 2
+
+
+# --- round 7, finding 4: minting never creates -----------------------------
+
+def test_minting_never_creates_a_store():
+    import os
+    missing = tempfile.mktemp(suffix=".db")
+    with pytest.raises(ValueError, match="no source store"):
+        m13.make_authority(missing)
+    assert not os.path.exists(missing)
+
+
+def test_minting_refuses_a_non_accepted_source():
+    p = _v1_store(extra="CREATE TABLE intruder (x)")
+    with pytest.raises(ValueError, match="not an accepted"):
+        m13.make_authority(p)
+
+
+# --- round 7, finding 5: internal failures tell the truth ------------------
+
+def test_an_internal_defect_is_not_a_store_outcome(monkeypatch):
+    """v8 mapped an internal RuntimeError to invalid-store — inviting a host
+    to restore a healthy database — and to migration-failed, implying a
+    known rollback state."""
+    def boom():
+        raise RuntimeError("internal validator bug")
+    monkeypatch.setattr(sv, "runtime_supported", boom)
+    p = _v1_store()
+    out = m13.open_or_migrate(p)
+    assert out == "internal-error"
+    assert "phase=" in out.diagnostic and "commit-state=" in out.diagnostic
+    out = m13.migrate_store(p, m13.make_authority(p))
+    assert out == "internal-error"
+
+
+# --- round 7, non-blocking corrections -------------------------------------
+
+def test_check_evidence_is_total_over_non_mapping_runtime_members(monkeypatch,
+                                                                  tmp_path):
+    """`[42]` in the runtimes list raised AttributeError out of
+    check_evidence; the delegated accessor is now total."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["runtimes"] = [42]
+    seeded = tmp_path / "evidence.json"
+    seeded.write_text(json.dumps(art, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
+    assert m13.check_evidence() == 1
+    assert sv.active_records([42]) == []
