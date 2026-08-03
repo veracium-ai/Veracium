@@ -5,29 +5,30 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v6)** — round 4: *architecture standing (planner, evidence
-> consumption, qualification design, DDL all approved); v5 deferred on five
-> falsifiable gaps*. All taken, with the reviewer's constraint honoured — the
-> migration and the shared planner are unchanged: **the failure boundary is
-> actually total** (malformed nested evidence fields, non-database bytes and
-> unopenable paths were escaping as raw exceptions; validators type-check
-> before use, context entry is inside the boundary, and two store-failure
-> outcomes — `invalid-store`, `store-unopenable` — join the vocabulary);
-> **malformed current migration-runtime records POISON the qualification**
-> (v5 silently filtered them); **path cardinality is exact artifact-wide**
-> (expected = every active identity × step × accepted source; a
-> foreign-identity record now fails both validators); **confinement probes
-> require `SQLITE_AUTH` specifically** (the `RELEASE` probe held no savepoint,
-> so `no such savepoint` was recorded as a denial — a permissive authorizer
-> now flips all twelve denial probes False); and **the authority has a
-> lifecycle** — canonical realpath binding, source and step binding, an
-> issuance/expiry window, and single-use consumption, so the round-4 replay
-> and symlink-retarget probes both refuse with no store touched.
+> **in review (v7)** — round 5: *architecture standing; v6 deferred on four
+> falsifiable gaps*. All taken; per the reviewer's constraint the migration,
+> the planner and the evidence-selection model are unchanged: **evidence
+> writes are monotone** (an older checkout seeded with future
+> migration/manifest/schema revisions now refuses byte-unchanged — the
+> `MigrationEvidenceRevision` triple, 0007's downgrade rule applied to this
+> writer); **authority consumption covers the complete operation** (v6
+> consumed only inside the older-row hook, so an authority whose operation
+> found the store already current stayed spendable and later migrated a
+> replacement — acceptance now spends the operation id before any store
+> access, and `issued_at ≤ now < expires_at` with a frozen maximum lifetime
+> and release-identity binding closes the future-dating hole); **scalar
+> typing is exact everywhere** (`True`/`13.0`/`2.0` passed Python's coercive
+> equality at the top level and in path records — a numerically equal
+> wrong-typed value is malformed and poisons); and **the failure boundary is
+> genuinely outermost** (path conversion, canonicalization and timeout
+> validation were running before it — an embedded-NUL path and a mistyped
+> `busy_timeout_ms` escaped raw; `invalid-request` joins the vocabulary for
+> malformed calls). §5e freezes the durable authority state machine.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v6 |
+| **Version** | v7 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -261,7 +262,7 @@ model is deferred to the first real `ALTER` and must be externally reviewed
 there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
 **Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
-(72 tests: every round-2, round-3 and round-4 probe as a regression, the full inherited
+(93 tests: every round-2 through round-5 probe as a regression, the full inherited
 planner across empty/unstamped/foreign/malformed/newer stores, the evidence
 gate's adversarial records, confinement qualification, the closed failure
 model, and the stale-connection hazard below).
@@ -326,15 +327,26 @@ ruling):
 | `from_version` · `to_version` | the step's endpoints | exact ints, equal to the selected step's |
 | `source_digest` | the source manifestation being migrated | equals the acceptance digest measured under the write lock, pre-repair (rebuildable-blind, so incidental index drift does not unbind) |
 | `migration_digest` | the reviewed statements | equals the declaration digest of the registered step |
-| `backup_ref` | the backup this operation made | nonempty string |
-| `release_ref` | the minting release/deployment | nonempty string; **real release identity at implementation** |
-| `operation_id` | this one migration operation | **single-use** — consumed on acceptance, before execution; a replay refuses |
-| `issued_at` · `expires_at` | the validity window | RFC 3339, timezone-aware, parseable; `issued ≤ expires`, `now < expires` |
+| `backup_ref` | the backup this operation made | nonempty string, ≤ 256 bytes (token fields are not prose channels) |
+| `release_ref` | the minting release/deployment | must equal the RUNNING release identity (draft: the tree's own `pyproject.toml` version; production: real deployment identity) |
+| `operation_id` | this one migration operation | **single-use over the COMPLETE operation** (round 5) — consumed at acceptance, before any store access; ≤ 256 bytes |
+| `issued_at` · `expires_at` | the validity window | RFC 3339, timezone-aware; `issued ≤ now < expires`; `expires − issued ≤` the frozen `MAX_AUTHORITY_LIFETIME` (1 h); **no clock-skew allowance** — skew handling, if production ever permits it, must be explicit and bounded |
 
-An expired, previously consumed, retargeted, source-mismatched, mistyped or
-unbound authority refuses `migration-quiescence-required`. **Consumption is
-in-process in the draft and durable in production — the migration audit
-(§5e) is the durable consumer.** What remains host-trust, stated rather than
+An expired, future-issued, over-long-lived, previously consumed,
+retargeted, source-mismatched, wrong-release, mistyped or unbound authority
+refuses `migration-quiescence-required`. **Consumption covers the complete
+dedicated operation** (round 5): once static validation accepts an operation
+id — before the store is even opened — it is spent, and EVERY subsequent
+outcome spends it: `migrated`, a no-op `current`, an evidence refusal, a
+lost race, even `locked`. Round 5 measured why the narrower hook-only rule
+fails: an authority whose operation found the store already current was
+never consumed and later migrated a replacement store at the same canonical
+path; the five-opener race leaves four such authorities. The cost is stated
+plainly: an operation that ends in `locked` or `store-unopenable` has spent
+its authority and the host mints a fresh one — operationally correct, since
+the world changed while it waited. **Consumption is in-process in the draft
+and durable in production — the migration audit (§5e) is the durable
+consumer.** What remains host-trust, stated rather than
 hidden: a host that atomically swaps in an identical-shape store at the same
 canonical path inside the validity window defeats path binding. The host is
 explicitly trusted; the lifecycle exists so its assertion cannot silently
@@ -364,7 +376,28 @@ The artifact — `specs/generated/migration_0013_evidence.json`, the M11/M12
 draft forms — is generated by `migrations_0013.py --write-evidence` on a
 runtime being qualified, verified by `--check-evidence` (structural validation
 plus exact re-derivation on the recording runtime), and consumed by
-`migrate_store`. One path record carries:
+`migrate_store`.
+
+**Writes are monotone over the `MigrationEvidenceRevision`** — the triple
+`(migration_evidence_algorithm, manifest_algorithm, draft_schema_version)`
+(round 5: the writer replaced artifacts seeded with future revisions of
+every component — the downgrade class `0007`'s runtime-evidence writer
+already refuses). The generator inspects the existing artifact before
+producing anything and **refuses without changing a byte** when any existing
+component exceeds its own, or when the existing revision is unreadable
+(overwriting what cannot be identified is data loss; an explicit delete is
+the only way past it). Same-revision replacement is the explicit
+active-runtime policy: regenerating on a new runner replaces the whole
+artifact at equal revision — the reviewer's disposable-copy workflow. The
+complete prospective artifact validates before the file is replaced. Every
+revision scalar is **exact-typed** (`type(v) is int` — round 5 measured
+`True`, `13.0` and `2.0` passing coercive equality at the top level and in
+path records; a numerically equal wrong-typed value is malformed and
+poisons). The artifact also records its **generator** (tool and repository
+commit, `unavailable` outside a checkout) — diagnostic provenance, never a
+substitute for the declaration digest.
+
+One path record carries:
 
 ```
 migration_evidence_algorithm · manifest_algorithm · runtime build identity
@@ -436,17 +469,23 @@ requires only `0007`'s, because it executes no confined statement.
 ## 5d. The closed outcome contract
 
 **Total over expected store, SQLite, evidence, authority and protocol
-failures** — and the boundary covers **evidence loading, context entry, and
-the database connection itself** (round 4, finding 1: v5's boundary started
+failures** — and the boundary is **genuinely outermost**: parameter
+validation, path conversion, canonicalization, draft-context entry, evidence
+loading, the database connection, and planner execution all sit inside it.
+Round 5 measured the v6 boundary starting too late — an embedded-NUL path
+escaped as `ValueError` from `lstat` and a mistyped `busy_timeout_ms` as
+`TypeError` from division, both BEFORE any mapping ran; a public entry point
+claiming totality cannot require its callers to know which preprocessing
+precedes the boundary. (Round 4, finding 1: v5's boundary started
 after context entry, so a malformed nested evidence field raised `TypeError`
 out of the validators, non-database bytes raised `DatabaseError`, and an
-unopenable path raised `OperationalError` — three raw escapes from a model
-that claimed totality; round 3 had already closed the invalid-SQL and
-free-form-string escapes):
+unopenable path raised `OperationalError`; round 3 had closed the
+invalid-SQL and free-form-string escapes.)
 
 | failure class | closed outcome |
 |---|---|
-| the path cannot be opened at all | `store-unopenable` |
+| a malformed CALL — mistyped/out-of-range `busy_timeout_ms` (exact int, 1..600000), a non-pathlike path argument | `invalid-request` |
+| the path cannot be opened, canonicalized or represented at all — missing parent, embedded NUL, over 4096 bytes | `store-unopenable` |
 | the bytes are not readable as a SQLite database | `invalid-store` |
 | lock acquisition exhausted | `locked` |
 | unqualified schema- or migration-runtime; malformed or poisoned schema/runtime evidence — **at any nesting depth** | `unsupported-sqlite` |
@@ -469,20 +508,32 @@ behaviour: package-consistency impossibilities (the constructor disagreeing
 with the build's own shipped evidence) raise, because they are properties of a
 broken package, not of the store on disk.
 
-## 5e. The migration audit — implementation obligation
+## 5e. The migration audit and the durable authority state machine
 
-*(Round 4's additional correction, recorded as load-bearing spec text.)*
-Migration is irreversible, so the production migration operation appends
-audit records the way `0007` §4e's adoption path does: an **attempted**
-record before execution and a **completed or failed** record after, each
-carrying the closed outcome, the authority's identity (`operation_id`,
-`release_ref`, issuance window), source and output versions with their
-manifestation digests, the migration declaration digest, and the opaque
-`backup_ref`. **The audit is also the authority's durable consumer**: the
-draft's in-process single-use set (§5b) becomes a lookup against previously
-recorded operations, which is what makes single-use survive a process
-restart. Lands with the `0008` implementation; the draft demonstrates the
-lifecycle in-process.
+*(Round 4 made the audit load-bearing; round 5 requires the durable
+consumption rules frozen as spec text, because they are single-use
+semantics, not audit formatting.)* Migration is irreversible, so the
+production migration operation appends audit records the way `0007` §4e's
+adoption path does: an **attempted** record before execution and a
+**completed or failed** record after, each carrying the closed outcome, the
+authority's identity (`operation_id`, `release_ref`, issuance window),
+source and output versions with their manifestation digests, the migration
+declaration digest, and the opaque `backup_ref` — all under the frozen
+opaque-token caps (§5b), so audit fields cannot become prose channels.
+
+**The frozen durable-consumption rules:**
+
+| rule | contract |
+|---|---|
+| durable key | `operation_id`, unique across the audit — the draft's in-process set becomes a uniqueness lookup against recorded operations |
+| activation | **atomic compare-and-set**: the attempted record's insert IS the consumption; two racers cannot both insert one `operation_id` |
+| attempted-record failure | the operation refuses `migration-quiescence-required` **before any store access** — an operation that cannot record itself cannot run |
+| crash between consumption and migration | the authority is spent; the store is unchanged (the migration transaction never committed). Recovery is a NEW authority — a consumed-but-unexecuted operation is **not retryable**, and whether its backup is still current is part of the host's fresh quiescence attestation |
+| store commits, completed-record fails | the migration HAPPENED — mirror `0007` §4e's post-commit semantics: surface a distinct loud error, never `migration-failed`; a retry opens `current` and correctly does not re-migrate |
+
+Lands with the `0008` implementation; the draft demonstrates the complete
+lifecycle in-process, including atomic consumption under concurrency
+(measured — two threads racing one authority: exactly one acceptance).
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -513,6 +564,10 @@ tests at implementation.
 | **M18** malformed current-algorithm records poison their artifact class; foreign records fail cardinality | `test_a_malformed_current_migration_runtime_record_poisons` · `test_a_foreign_identity_path_record_fails_the_artifact` · `test_a_missing_algorithm_field_is_malformed_not_superseded` — **measured today** |
 | **M19** confinement denial means `SQLITE_AUTH`, nothing else | `test_a_permissive_authorizer_fails_every_denial_probe` · `test_the_release_probe_holds_a_real_savepoint` — **measured today** |
 | **M20** an authority authorises exactly one operation, inside its window, on its canonical store | `test_an_authority_is_single_use_and_cannot_migrate_a_replacement` · `test_a_retargeted_symlink_unbinds_the_authority` · `test_an_unparseable_or_expired_authority_is_refused` — **measured today** |
+| **M21** evidence writes are monotone over the `MigrationEvidenceRevision` | `test_a_future_evidence_revision_is_never_overwritten` (three components, byte-unchanged) · `test_an_unreadable_existing_revision_refuses_regeneration` — **measured today** |
+| **M22** consumption covers the complete operation, atomically | `test_an_authority_finding_the_store_current_is_still_consumed` · `test_authorities_losing_the_concurrent_race_are_consumed` · `test_operation_consumption_is_atomic_under_concurrency` — **measured today** |
+| **M23** the validity window is real: `issued ≤ now < expires`, lifetime-capped, release-bound | `test_a_future_issued_authority_is_refused` · `test_an_authority_lifetime_above_the_frozen_maximum_refuses` · `test_an_authority_from_a_different_release_refuses` · `test_an_oversized_token_field_refuses` — **measured today** |
+| **M24** scalar typing is exact and the boundary is outermost | `test_coerced_top_level_scalars_poison_the_artifact` · `test_a_coerced_path_algorithm_poisons_the_paths` · `test_an_embedded_nul_path_is_a_closed_outcome` · `test_a_mistyped_timeout_is_a_closed_outcome` · `test_a_non_pathlike_argument_is_a_closed_outcome` · `test_an_oversized_path_is_a_closed_outcome` — **measured today** |
 
 ---
 
@@ -558,64 +613,60 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 5 of this spec. All five round-4 blockers and both additional
-corrections taken; every probe reproduced first** — the `objects: 1`
-TypeError at context entry, the list-valued hash crash, the raw
-`file is not a database`, the silently filtered malformed migration-runtime
-record, the foreign-identity path record, the savepoint-less `RELEASE` probe
-reporting denial under a fully permissive authorizer, the replayed authority
-migrating a replacement store, and the retargeted symlink. Per your v6
-guidance, **the migration and the shared planner are unchanged** — every
-edit is in the evidence validators, the probes, the authority, and the entry
-points' failure boundary.
+**Round 6 of this spec. All four round-5 blockers, the durable-state-machine
+requirement, and the additional corrections taken; every probe reproduced
+first** — the three revision downgrades, the no-op authority migrating a
+replacement store, the future-dated authority, the coerced
+`True`/`13.0`/`2.0` scalars at top level and in path records, the
+embedded-NUL `ValueError` and the timeout `TypeError`. Per your v7 guidance
+the migration, the planner and the evidence-selection model are unchanged.
 
-1. **Totality, actually** (finding 1): every validator type-checks before
-   iterating, hashing or keying; context entry is inside the boundary; the
-   connection is inside the boundary. Your probes are regressions:
-   malformed nested evidence at any depth → `unsupported-sqlite` (schema
-   class) or `migration-evidence-missing` (path class); non-database bytes →
-   `invalid-store`; missing parent directory → `store-unopenable` — two new
-   frozen members, §5d. Registry validation reports mixed, string and
-   bool-typed keys instead of raising.
-2. **Malformed current records poison** (finding 2):
-   `migration_runtime_artifact_problems` — complete validity for every
-   current-algorithm record, identity uniqueness, contradiction rejection,
-   resolution to an active schema-runtime record, single-active-runtime
-   policy. Your `{"migration_evidence_algorithm": 1}` record now disqualifies
-   the runtime; a missing algorithm field is malformed, not superseded.
-3. **Cardinality is artifact-wide** (finding 3): expected = every active
-   build identity × declared step × accepted source; actual keys must equal
-   it exactly; every current path record must resolve to both
-   qualifications. Your foreign-identity duplicate now fails both validators
-   and the operation refuses; a features-as-list foreign record is reported,
-   not skipped.
-4. **Denial means `SQLITE_AUTH`** (finding 4): every probe setup is a valid
-   statement sequence — the `RELEASE` probe holds a real savepoint created
-   before the authorizer is installed — and only an authorization error
-   counts (error code on 3.11+, message fallback on 3.10, stated in code).
-   Your falsifier is the regression test: a fully permissive authorizer
-   flips all twelve denial probes False. `denies_rollback` added; the
-   artifact is regenerated under the twelve-probe vocabulary.
-5. **The authority has a lifecycle** (finding 5): the contract is **frozen
-   in §5b as a table, not an implementation note** — canonical realpath
-   binding (symlinks resolve at mint and consumption), source-manifestation
-   and step binding, backup and release references, RFC 3339
-   issuance/expiry window, and **single-use consumption spent on
-   acceptance**. Your replay probe now refuses with the replacement store
-   untouched; your symlink probe refuses with neither store touched; §5e
-   names the migration audit as the durable consumer at implementation.
+1. **Monotone writes** (finding 1): `write_evidence` inspects the existing
+   artifact first and refuses byte-unchanged when any
+   `MigrationEvidenceRevision` component exceeds its own — or when the
+   existing revision is unreadable (explicit delete required). Your three
+   seeds are parametrized regressions asserting byte-identity. Same-revision
+   replacement of the single active runtime is stated as the explicit
+   policy; the full prospective artifact validates before replacement.
+2. **Operation-level consumption** (finding 2): acceptance spends the
+   operation id before any store access, so `current`, evidence refusals,
+   lost races and even `locked` all consume. Your replay probe is the
+   regression: A2's no-op spends it, and the replacement store stays v1.
+   The five-opener race now spends all five. `issued_at ≤ now` (no
+   clock-skew allowance, stated), `expires − issued ≤ MAX_AUTHORITY_LIFETIME`
+   (1 h, frozen), `release_ref` must equal the running release identity
+   (draft: the tree's own `pyproject.toml`), and token fields cap at 256
+   bytes. Atomic consumption under concurrency is measured (two threads,
+   one authority, exactly one acceptance).
+3. **Exact scalars** (finding 3): `type(v) is int` before equality for all
+   three revision components, at the top level and in every path record;
+   `artifact` must be the expected string; `generated_at` must parse
+   timezone-aware. Your five top-level mutations and the path
+   `manifest_algorithm: 13.0` each poison and are parametrized regressions.
+4. **The outermost boundary** (finding 4): parameter validation, `fspath`/
+   `fsdecode`, `realpath`, the kernel's 4096-byte path cap, context entry,
+   connection and planner are all inside. `invalid-request` (one member)
+   joins §5d for malformed calls; NUL and oversized paths are
+   `store-unopenable`. `busy_timeout_ms` is an exact int in 1..600000 —
+   bool refused.
 
-**Also per your rulings**: the artifact is described as *committed, not
-immutable* (§5c states exactly what is and is not claimed); the migration
-audit is load-bearing spec text (§5e).
+**§5e freezes the durable state machine** you required: atomic
+compare-and-set insertion as consumption, refuse-before-store-access on
+attempted-record failure, crash-between semantics (spent; new authority;
+backup currency is the fresh attestation's problem), and the post-commit
+audit-failure rule mirroring `0007` §4e. The generator records diagnostic
+provenance (tool + repository commit), stated as never a substitute for the
+declaration digest.
 
-**Where I am least confident:** the draft/production consumption split for
-single-use authorities — in-process consumption demonstrates the semantics
-but only the audit-backed durable form survives a restart, and that lands
-with `0008`'s implementation. The residual host-trust statement in §5b (an
-atomic identical-shape swap inside the validity window) is stated as
-narrowly as I can make it; if it is still too wide, that is the judgement
-left.
+**Where I am least confident:** the consumption point. You sketched
+lock-then-consume; the draft consumes at static acceptance, BEFORE the lock,
+because injecting between the kernel's `BEGIN IMMEDIATE` and its
+classification would mean altering the planner your ruling froze. The
+consequence — a `locked` or `store-unopenable` outcome spends the authority
+— is disclosed in §5b and I believe operationally right (the world changed
+while the operation waited; re-mint). If you rule the lock must precede
+consumption, that is a planner-seam question for the implementation round,
+and I would want it settled before `0008` builds the durable form.
 
 ## 10. Open questions
 
@@ -697,3 +748,22 @@ unchanged per the reviewer's v6 guidance.
 | a | registry validation raised on malformed keys | exact-int key typing before `max()`/`sorted()`/arithmetic, reported not raised |
 | b | "immutable" overclaimed the artifact | *committed, not immutable* — §5c states exactly what is and is not claimed |
 | c | `operation_id` had no durable consumer | §5e: the migration audit is load-bearing spec text and the authority's durable consumer at implementation |
+
+---
+
+## 15. Round 5 review disposition
+
+**Verdict: architecture standing — planner, evidence-selection, artifact
+cardinality, qualification and DDL all approved; v6 deferred on four
+falsifiable gaps.** All taken; migration, planner and evidence-selection
+unchanged per the reviewer's constraint.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | `write_evidence` overwrote artifacts seeded with future migration/manifest/schema revisions — the downgrade class `0007`'s writer refuses | **monotone writes over `MigrationEvidenceRevision`**: inspect before generating, refuse byte-unchanged on any newer component or an unreadable revision; same-revision active-runtime replacement stated as explicit policy; three parametrized byte-identity regressions |
+| 2 | consumption lived only in the older-row hook — an authority whose operation found the store current stayed spendable and migrated a replacement; future-dated authorities validated; no lifetime cap; `release_ref` unchecked | **acceptance = consumption, before any store access** — every outcome spends; `issued ≤ now < expires` with no skew allowance; frozen 1-hour `MAX_AUTHORITY_LIFETIME`; release-identity binding (draft: in-tree `pyproject.toml`); 256-byte token caps; atomic CAS measured under concurrency |
+| 3 | `True`/`13.0`/`2.0` passed coercive equality at top level and in path records; `artifact`/`generated_at` accepted integers | **exact scalar typing before equality** everywhere; `artifact` exact string; `generated_at` parsed timezone-aware; numerically-equal wrong types poison; parametrized regressions |
+| 4 | the boundary began after path canonicalization and timeout arithmetic — NUL path and mistyped timeout escaped raw | **genuinely outermost boundary**: parameter validation, fspath/realpath, the 4096-byte cap, context entry, connection, planner; `invalid-request` joins the vocabulary for malformed calls |
+| — | durable authority semantics under-specified | **§5e frozen**: unique durable key, atomic compare-and-set insertion as consumption, refuse-before-store-access on attempted-record failure, crash-between = spent + re-mint with fresh attestation, post-commit audit failure mirrors `0007` §4e |
+| a | generator provenance | `generator: {tool, repository_commit}` recorded and validated — diagnostic, never a substitute for the declaration digest |
+| b | token fields as prose channels | 256-byte caps in the draft; frozen opaque-token formats at implementation (§5b/§5e) |

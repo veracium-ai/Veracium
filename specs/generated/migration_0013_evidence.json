@@ -1,7 +1,11 @@
 {
  "artifact": "specs/0013 draft evidence",
  "draft_schema_version": 2,
- "generated_at": "2026-08-03T20:37:55.194660+00:00",
+ "generated_at": "2026-08-03T21:31:34.522383+00:00",
+ "generator": {
+  "repository_commit": "82e6ded90a66e6637b008c8c5f0b751ed7552178",
+  "tool": "specs/migrations_0013.py"
+ },
  "legacy_base_versions": [
   1
  ],

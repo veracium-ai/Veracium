@@ -33,6 +33,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import sqlite3
 import sys
 import threading
@@ -305,9 +306,15 @@ the SQLite level while being read) and `store-unopenable` (the path cannot be
 opened at all). Both were escaping as raw `DatabaseError`/`OperationalError`,
 which the closed model claimed to represent and did not."""
 
+PROTOCOL_FAILURES = ("invalid-request",)
+"""Round 5: a malformed CALL — a mistyped or out-of-range `busy_timeout_ms`,
+a non-pathlike path argument — is neither a store property nor an evidence
+property, and it was escaping as `TypeError` from timeout arithmetic before
+any boundary. One closed member; the diagnostic says which parameter."""
+
 OUTCOMES = (frozenset({"created", "current", "adopted", "migrated"})
             | sv.REASONS | frozenset(MIGRATION_FAILURES)
-            | frozenset(STORE_FAILURES))
+            | frozenset(STORE_FAILURES) | frozenset(PROTOCOL_FAILURES))
 """Every value the two entry points can return. Free-form strings — round 3
 measured `unexpected version 0` — are unrepresentable: `Outcome` refuses any
 value outside this set."""
@@ -381,6 +388,32 @@ class MigrationAuthority(NamedTuple):
 _CONSUMED_OPERATIONS: set = set()
 _CONSUME_LOCK = threading.Lock()
 
+MAX_AUTHORITY_LIFETIME = timedelta(hours=1)
+"""Frozen maximum validity window (round 5): an authority whose
+`expires_at - issued_at` exceeds this refuses. Hosts needing a longer
+operation re-mint; an unbounded window is an unbounded replay surface."""
+
+_AUTHORITY_TOKEN_CAP = 256
+"""Byte cap on `backup_ref`, `release_ref` and `operation_id` (round 5): the
+audit consumes these verbatim, and an uncapped string field is an arbitrary
+prose channel into an audit record. Production freezes opaque-token formats;
+the draft freezes the size."""
+
+
+def _release_identity() -> str:
+    """The running release identity the authority's `release_ref` must match.
+    Read from the tree's own `pyproject.toml` — the installed-distribution
+    metadata is wrong in exactly the environments that matter (an extracted
+    review archive has no installed dist; a stale editable install reports an
+    old version). Falls back to a sentinel both mint and validation share, so
+    an unreadable pyproject cannot mint an authority that then refuses."""
+    try:
+        text = (ROOT / "pyproject.toml").read_text()
+        mv = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+        return f"veracium-{mv.group(1)}" if mv else "veracium-unknown"
+    except OSError:
+        return "veracium-unknown"
+
 
 def _draft_digest(objs: dict, version: int) -> str:
     """The acceptance digest against the DRAFT registry, computed without
@@ -399,7 +432,7 @@ def _draft_digest(objs: dict, version: int) -> str:
 def make_authority(path, backup_ref: str = "draft-backup",
                    migration: Migration | None = None,
                    ttl_minutes: int = 15,
-                   release_ref: str = "draft-release") -> MigrationAuthority:
+                   release_ref: str | None = None) -> MigrationAuthority:
     """Draft convenience for hosts and tests; reads the module's current
     migration so a test that patches `MIGRATION_1_TO_2` mints an authority for
     what it patched in — the authority attests the *reviewed statements*, and
@@ -420,17 +453,18 @@ def make_authority(path, backup_ref: str = "draft-backup",
         from_version=mig.from_version, to_version=mig.to_version,
         source_digest=src_digest,
         migration_digest=migration_declaration_digest(mig),
-        release_ref=release_ref, operation_id=f"op-{uuid.uuid4()}",
+        release_ref=_release_identity() if release_ref is None else release_ref,
+        operation_id=f"op-{uuid.uuid4()}",
         issued_at=now.isoformat(),
         expires_at=(now + timedelta(minutes=ttl_minutes)).isoformat())
 
 
-def authority_problems(a, spath: str, step, source_digest: str) -> list:
-    """Exact types, exact bindings, bounded validity; total over any input.
-    `spath` is the canonical path; `source_digest` is measured from the store
-    under the write lock, before any repair (the acceptance digest is
-    rebuildable-blind, so incidental index drift does not unbind an
-    authority)."""
+def authority_static_problems(a, canonical: str) -> list:
+    """Everything checkable WITHOUT touching the store — types, bindings to
+    the registered step, the canonical path, the validity window, the release
+    identity, and the token caps. This is the acceptance gate: an authority
+    passing it is CONSUMED before anything else happens (round 5). Total over
+    any input."""
     if not isinstance(a, MigrationAuthority):
         return [f"authority is {type(a).__name__}, not a MigrationAuthority"]
     problems = []
@@ -445,27 +479,33 @@ def authority_problems(a, spath: str, step, source_digest: str) -> list:
         if not isinstance(v, str) or not v.strip():
             problems.append(f"{field} must be a nonempty string, is "
                             f"{type(v).__name__}")
-    for field, want in (("from_version", step.from_version),
-                        ("to_version", step.to_version)):
+    for field in ("backup_ref", "release_ref", "operation_id"):
         v = getattr(a, field)
-        if type(v) is not int:
-            problems.append(f"{field} must be an exact int")
-        elif v != want:
-            problems.append(f"authority attests step "
-                            f"{a.from_version}->{a.to_version}, not "
-                            f"{step.from_version}->{step.to_version}")
-            break
-    if isinstance(a.store_path, str) and a.store_path != spath:
-        problems.append(f"authority covers store {a.store_path!r}, "
-                        f"not {spath!r} (paths are canonical; a retargeted "
-                        f"symlink is a different store)")
-    if isinstance(a.source_digest, str) and a.source_digest != source_digest:
-        problems.append("authority attests a different source manifestation "
-                        "than the store presents under the lock")
-    if isinstance(a.migration_digest, str) and \
+        if isinstance(v, str) and len(v.encode()) > _AUTHORITY_TOKEN_CAP:
+            problems.append(f"{field} exceeds {_AUTHORITY_TOKEN_CAP} bytes — "
+                            f"audit token fields are not prose channels")
+    step = MIGRATIONS_DRAFT.get(a.from_version) \
+        if type(a.from_version) is int else None
+    if type(a.from_version) is not int or type(a.to_version) is not int:
+        problems.append("from_version and to_version must be exact ints")
+    elif step is None or (a.from_version, a.to_version) != \
+            (step.from_version, step.to_version):
+        problems.append(f"authority attests step "
+                        f"{a.from_version}->{a.to_version}, which is not a "
+                        f"registered adjacent step")
+    elif isinstance(a.migration_digest, str) and \
             a.migration_digest != migration_declaration_digest(step):
         problems.append("authority attests a different migration declaration "
                         "than the one registered for this step")
+    if isinstance(a.store_path, str) and a.store_path != canonical:
+        problems.append(f"authority covers store {a.store_path!r}, "
+                        f"not {canonical!r} (paths are canonical; a "
+                        f"retargeted symlink is a different store)")
+    if isinstance(a.release_ref, str) and a.release_ref.strip() and \
+            a.release_ref != _release_identity():
+        problems.append(f"authority was minted by {a.release_ref!r}; this "
+                        f"process is {_release_identity()!r} — release "
+                        f"identities must match")
     if isinstance(a.issued_at, str) and isinstance(a.expires_at, str):
         try:
             issued = datetime.fromisoformat(a.issued_at)
@@ -475,6 +515,15 @@ def authority_problems(a, spath: str, step, source_digest: str) -> list:
                 problems.append("authority timestamps must be timezone-aware")
             elif issued > expires:
                 problems.append("authority expires before it was issued")
+            elif expires - issued > MAX_AUTHORITY_LIFETIME:
+                problems.append(f"authority window exceeds the frozen "
+                                f"maximum lifetime {MAX_AUTHORITY_LIFETIME}")
+            elif issued > now:
+                # Round 5: a future-dated authority validated. No clock-skew
+                # allowance in the draft — skew handling, if production ever
+                # permits it, must be explicit and bounded (§5b).
+                problems.append(f"authority is issued in the future "
+                                f"({a.issued_at}); no clock-skew allowance")
             elif now >= expires:
                 problems.append(f"authority expired at {a.expires_at}")
         except ValueError:
@@ -482,12 +531,29 @@ def authority_problems(a, spath: str, step, source_digest: str) -> list:
     return problems
 
 
+def authority_problems(a, spath: str, step, source_digest: str) -> list:
+    """The full check the hook runs under the write lock: everything static,
+    plus the source-manifestation binding measured from the store before any
+    repair (the acceptance digest is rebuildable-blind, so incidental index
+    drift does not unbind an authority)."""
+    problems = authority_static_problems(a, spath)
+    if isinstance(a, MigrationAuthority) and \
+            isinstance(a.source_digest, str) and \
+            a.source_digest != source_digest:
+        problems.append("authority attests a different source manifestation "
+                        "than the store presents under the lock")
+    return problems
+
+
 def _consume_authority(a: MigrationAuthority) -> None:
-    """Single-use consumption (round 4): an operation id authorises exactly
-    one migration ATTEMPT — consumed on acceptance, before execution, so a
-    replay after the store at the path has been swapped finds the authority
-    spent. In-process for the draft; production consumes durably via the
-    migration audit (§5e)."""
+    """Single-use consumption covering the COMPLETE dedicated operation
+    (round 5): consumed at acceptance — after static validation, before the
+    store is touched — so EVERY subsequent outcome spends the authority:
+    `migrated`, a no-op `current`, an evidence refusal, a lost race, even
+    `locked`. Round 5 measured why the narrower rule fails: an authority
+    whose operation found the store already current was never consumed and
+    later migrated a replacement store. In-process for the draft; production
+    consumes durably via the migration audit (§5e)."""
     with _CONSUME_LOCK:
         if a.operation_id in _CONSUMED_OPERATIONS:
             raise MigrationRefused(
@@ -728,7 +794,7 @@ def _load_artifact():
 
 ARTIFACT_FIELDS = frozenset({
     "artifact", "migration_evidence_algorithm", "manifest_algorithm",
-    "draft_schema_version", "generated_at", "schema_versions",
+    "draft_schema_version", "generated_at", "generator", "schema_versions",
     "legacy_base_versions", "runtimes", "migration_runtimes", "paths"})
 
 PATH_RECORD_FIELDS = frozenset({
@@ -753,15 +819,39 @@ def schema_evidence_problems(art) -> list:
     if set(art) != ARTIFACT_FIELDS:
         return [f"artifact fields {sorted(art)} are not exactly "
                 f"{sorted(ARTIFACT_FIELDS)}"]
-    if art.get("manifest_algorithm") != sv.MANIFEST_ALGORITHM:
-        problems.append(f"artifact manifest algorithm "
-                        f"{art.get('manifest_algorithm')!r} is not "
-                        f"{sv.MANIFEST_ALGORITHM}")
-    if art.get("migration_evidence_algorithm") != MIGRATION_EVIDENCE_ALGORITHM:
-        problems.append("artifact migration-evidence algorithm is not current")
-    if art.get("draft_schema_version") != DRAFT_SCHEMA_VERSION:
-        problems.append("artifact draft schema version disagrees with the "
-                        "registry")
+    # Round 5: exact scalar typing BEFORE equality — Python's coercive
+    # equality accepted `True`, `13.0` and `2.0` for these (`True == 1`,
+    # `13.0 == 13`), the same class 0007 round 13 closed for its own
+    # revision fields. A numerically equal wrong-typed value is malformed.
+    for f, want in (("migration_evidence_algorithm",
+                     MIGRATION_EVIDENCE_ALGORITHM),
+                    ("manifest_algorithm", sv.MANIFEST_ALGORITHM),
+                    ("draft_schema_version", DRAFT_SCHEMA_VERSION)):
+        v = art.get(f)
+        if type(v) is not int or v != want:
+            problems.append(f"artifact {f} must be exactly the int {want}, "
+                            f"is {v!r} ({type(v).__name__})")
+    if not isinstance(art.get("artifact"), str) or \
+            art["artifact"] != "specs/0013 draft evidence":
+        problems.append(f"artifact self-description is "
+                        f"{art.get('artifact')!r}, not the expected string")
+    ga = art.get("generated_at")
+    if not isinstance(ga, str):
+        problems.append(f"generated_at must be a string timestamp, is "
+                        f"{type(ga).__name__}")
+    else:
+        try:
+            if datetime.fromisoformat(ga).tzinfo is None:
+                problems.append("generated_at must be timezone-aware")
+        except ValueError:
+            problems.append("generated_at does not parse as RFC 3339")
+    gen = art.get("generator")
+    if not isinstance(gen, dict) or set(gen) != {"tool", "repository_commit"} \
+            or not all(isinstance(gen.get(k), str) and gen[k]
+                       for k in ("tool", "repository_commit")):
+        problems.append("generator must be {tool, repository_commit} with "
+                        "nonempty strings — diagnostic provenance, not a "
+                        "substitute for the declaration digest")
     versions = art.get("schema_versions")
     if not isinstance(versions, dict) or \
             set(versions) != {str(v) for v in SCHEMAS_DRAFT}:
@@ -826,9 +916,14 @@ def path_record_problems(rec, art) -> list:
         return [f"path record fields {sorted(rec)} are not exactly "
                 f"{sorted(PATH_RECORD_FIELDS)}"]
     problems = []
-    if rec["manifest_algorithm"] != sv.MANIFEST_ALGORITHM or \
+    # Round 5: exact scalar typing here too — a path record carrying
+    # `manifest_algorithm: 13.0` passed ordinary equality.
+    if type(rec["manifest_algorithm"]) is not int or \
+            rec["manifest_algorithm"] != sv.MANIFEST_ALGORITHM or \
+            type(rec["migration_evidence_algorithm"]) is not int or \
             rec["migration_evidence_algorithm"] != MIGRATION_EVIDENCE_ALGORITHM:
-        problems.append("path record algorithms are not current")
+        problems.append("path record algorithms must be exactly the current "
+                        "ints")
     rt = rec["runtime"]
     if not isinstance(rt, dict) or \
             set(rt) != {"sqlite_version", "source_id", "features"} or \
@@ -1127,7 +1222,8 @@ def _migrating_hook(art, authority):
         if probs:
             raise MigrationRefused("migration-quiescence-required",
                                    "; ".join(probs))
-        _consume_authority(authority)      # single-use, spent on acceptance
+        # Consumption happened at operation entry (round 5): by the time the
+        # hook runs, this authority is already spent regardless of outcome.
         reg = validate_registry(current=sv.SCHEMA_VERSION)
         if reg:
             raise MigrationRefused("migration-evidence-missing",
@@ -1197,10 +1293,46 @@ def _select_path_record(art, base, objs, step) -> dict:
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
          authority=None) -> Outcome:
-    # Canonical from the first byte (round 4): symlinks resolve HERE, once,
-    # so the path the planner opens, the path in every diagnostic, and the
-    # path the authority binds are the same real file.
-    canonical = os.path.realpath(str(path))
+    # THE outermost boundary (round 5): a public entry point claiming
+    # totality cannot require callers to know which preprocessing runs before
+    # it. Parameter validation, path conversion and canonicalization all
+    # happen inside — a mistyped timeout was escaping as TypeError from
+    # division, an embedded-NUL path as ValueError from lstat.
+    if type(busy_timeout_ms) is not int or not 0 < busy_timeout_ms <= 600_000:
+        return Outcome("invalid-request",
+                       f"busy_timeout_ms must be an int in 1..600000, got "
+                       f"{busy_timeout_ms!r}")
+    try:
+        fs = os.fsdecode(os.fspath(path))
+    except (TypeError, ValueError) as exc:
+        return Outcome("invalid-request", f"path is not path-like: {exc!r}")
+    try:
+        # Canonical from the first byte (round 4): symlinks resolve HERE,
+        # once, so the path the planner opens, the path in every diagnostic,
+        # and the path the authority binds are the same real file.
+        canonical = os.path.realpath(fs)
+    except (ValueError, OSError) as exc:
+        return Outcome("store-unopenable", diagnostic=repr(exc))
+    if len(canonical.encode()) > 4096:
+        # The kernel refuses oversized paths with a raised ValueError (an
+        # audit-field cap, 0007 §4e); at this boundary it is a closed outcome.
+        return Outcome("store-unopenable",
+                       "canonical path exceeds 4096 bytes")
+    if migrating:
+        # Acceptance, then consumption, then ANY store access (round 5): once
+        # an operation id is accepted it is spent — a no-op `current`, an
+        # evidence refusal, a lost race, even `locked` all consume, so an
+        # authority can never outlive its operation and drift to a
+        # replacement store. Static validation cannot consult the store, so
+        # source-binding is re-checked under the lock in the hook.
+        probs = authority_static_problems(authority, canonical)
+        if probs:
+            return Outcome("migration-quiescence-required",
+                           diagnostic="; ".join(probs))
+        try:
+            _consume_authority(authority)
+        except MigrationRefused as e:
+            return Outcome(e.reason, diagnostic=e.diagnostic)
     with _draft() as art:
         try:
             if not sv.runtime_supported():
@@ -1264,6 +1396,21 @@ def migrate_store(path, authority: MigrationAuthority,
 
 # --------------------------------------------------------------------------
 # evidence generation and verification (the M11/M12 draft forms)
+
+def _repo_commit() -> str:
+    """Diagnostic provenance for the generator field (round 5): which
+    revision of the tooling produced the artifact. `unavailable` outside a
+    git checkout (an extracted review archive) — provenance, never a
+    substitute for the declaration digest."""
+    import subprocess
+    try:
+        r = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                           capture_output=True, text=True, timeout=10)
+        return r.stdout.strip() if r.returncode == 0 and r.stdout.strip() \
+            else "unavailable"
+    except Exception:
+        return "unavailable"
+
 
 def _constructor_accepted(version: int) -> dict:
     c = sqlite3.connect(":memory:")
@@ -1355,6 +1502,8 @@ def _generate_artifact() -> tuple:
         "manifest_algorithm": sv.MANIFEST_ALGORITHM,
         "draft_schema_version": DRAFT_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generator": {"tool": "specs/migrations_0013.py",
+                      "repository_commit": _repo_commit()},
         "schema_versions": versions,
         "legacy_base_versions": sorted(legacy_src()),
         "runtimes": [runtime_rec],
@@ -1386,7 +1535,51 @@ def _registry():
             sv.SCHEMAS, sv.SCHEMA_VERSION = saved
 
 
+MIGRATION_EVIDENCE_REVISION_FIELDS = (
+    "migration_evidence_algorithm", "manifest_algorithm",
+    "draft_schema_version")
+"""MigrationEvidenceRevision (round 5): the components that say which
+GENERATION of tooling produced an artifact. Writes are monotone over this
+tuple — an older checkout must never overwrite prospective evidence written
+by newer migration, manifest or schema code. The same downgrade class 0007's
+runtime-evidence writer already refuses."""
+
+
+def _revision_components(art):
+    """The existing artifact's revision, or None when unreadable."""
+    if not isinstance(art, dict):
+        return None
+    vals = tuple(art.get(f) for f in MIGRATION_EVIDENCE_REVISION_FIELDS)
+    return vals if all(type(v) is int for v in vals) else None
+
+
 def write_evidence() -> int:
+    # Monotone-revision refusal BEFORE anything else (round 5): refuse
+    # without changing a byte when any existing component exceeds this
+    # tool's. Same-revision replacement is the explicit policy for the
+    # single active runtime — regenerating on a new runner (the reviewer's
+    # disposable-copy workflow) replaces the whole artifact at equal
+    # revision. An unreadable existing revision also refuses: overwriting
+    # what cannot be identified is not regeneration, it is data loss —
+    # delete the file explicitly to start over.
+    mine = (MIGRATION_EVIDENCE_ALGORITHM, sv.MANIFEST_ALGORITHM,
+            DRAFT_SCHEMA_VERSION)
+    if EVIDENCE_FILE.exists():
+        existing = _revision_components(_load_artifact())
+        if existing is None:
+            print(f"refusing: {EVIDENCE_FILE} exists but its revision "
+                  f"fields are unreadable; delete it explicitly to "
+                  f"regenerate")
+            return 1
+        newer = [f"{name} {have} > {tool}" for name, have, tool
+                 in zip(MIGRATION_EVIDENCE_REVISION_FIELDS, existing, mine)
+                 if have > tool]
+        if newer:
+            print("refusing: the existing artifact was written by newer "
+                  "tooling; nothing was changed:")
+            for n in newer:
+                print(f"  - {n}")
+            return 1
     art, problems = _generate_artifact()
     if problems:
         print("refusing to record evidence; this runtime does not qualify:")
@@ -1431,7 +1624,7 @@ def check_evidence() -> int:
         for p in gen_problems:
             print(f"  - regeneration: {p}")
         return 1
-    drop = {"generated_at"}
+    drop = {"generated_at", "generator"}      # volatile provenance fields
     a = {k: v for k, v in art.items() if k not in drop}
     b = {k: v for k, v in expected.items() if k not in drop}
     if a != b:

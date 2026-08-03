@@ -658,22 +658,28 @@ def test_a_malformed_path_field_fails_closed(monkeypatch):
 
 def test_a_non_database_file_is_a_closed_refusal():
     """Round 4 measured `sqlite3.DatabaseError: file is not a database`
-    escaping both operations."""
+    escaping both operations. The migrating authority is path-bound to the
+    garbage file: round 5 moved static authority validation ahead of any
+    store access, so only a path-matching authority reaches the store at all."""
+    import os
     p = tempfile.mktemp(suffix=".db")
     with open(p, "w") as f:
         f.write("these bytes are not a sqlite database")
     assert m13.open_or_migrate(p) == "invalid-store"
-    dummy = m13.make_authority(_v1_store())
-    assert m13.migrate_store(p, dummy) == "invalid-store"
+    bound = m13.make_authority(_v1_store())._replace(
+        store_path=os.path.realpath(p))
+    assert m13.migrate_store(p, bound) == "invalid-store"
 
 
 def test_an_unopenable_path_is_a_closed_refusal():
     """Round 4 measured an uncaught OperationalError for a missing parent
     directory."""
+    import os
     p = tempfile.mktemp(suffix=".db") + "-no-such-dir/store.db"
     assert m13.open_or_migrate(p) == "store-unopenable"
-    dummy = m13.make_authority(_v1_store())
-    assert m13.migrate_store(p, dummy) == "store-unopenable"
+    bound = m13.make_authority(_v1_store())._replace(
+        store_path=os.path.realpath(p))
+    assert m13.migrate_store(p, bound) == "store-unopenable"
 
 
 def test_registry_validation_is_total_over_malformed_keys():
@@ -839,3 +845,189 @@ def test_an_authority_binds_the_step_endpoints():
     p = _v1_store()
     auth = m13.make_authority(p)._replace(from_version=2, to_version=3)
     assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+# --- round 5, finding 1: monotone evidence writes --------------------------
+
+@pytest.mark.parametrize("field,future", [
+    ("migration_evidence_algorithm", 2),
+    ("manifest_algorithm", 14),
+    ("draft_schema_version", 3),
+])
+def test_a_future_evidence_revision_is_never_overwritten(field, future,
+                                                         monkeypatch,
+                                                         tmp_path):
+    """Round 5 measured write_evidence() replacing artifacts seeded with
+    future revisions of every component — the downgrade class 0007's
+    runtime-evidence writer already refuses. The refusal changes no byte."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art[field] = future
+    seeded = tmp_path / "evidence.json"
+    seeded.write_text(json.dumps(art, indent=1, sort_keys=True))
+    before = seeded.read_bytes()
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
+    assert m13.write_evidence() == 1
+    assert seeded.read_bytes() == before
+
+
+def test_an_unreadable_existing_revision_refuses_regeneration(monkeypatch,
+                                                              tmp_path):
+    """Overwriting what cannot be identified is data loss, not regeneration —
+    an explicit delete is the only way past it."""
+    seeded = tmp_path / "evidence.json"
+    seeded.write_text("{not json")
+    before = seeded.read_bytes()
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
+    assert m13.write_evidence() == 1
+    assert seeded.read_bytes() == before
+
+
+# --- round 5, finding 2: consumption covers the complete operation ---------
+
+def test_an_authority_finding_the_store_current_is_still_consumed():
+    """THE round-5 replay: A1 migrates; A2's operation finds the store
+    current (a no-op) — v6 left A2 unspent, and it later migrated a
+    replacement store at the same path. Acceptance consumes, whatever the
+    outcome."""
+    import os
+    p = _v1_store(rows=1)
+    a1, a2 = m13.make_authority(p), m13.make_authority(p)
+    assert m13.migrate_store(p, a1) == "migrated"
+    assert m13.migrate_store(p, a2) == "current"        # no-op — but spent
+    os.remove(p)
+    replacement = _v1_store(rows=3)
+    os.rename(replacement, p)
+    assert m13.migrate_store(p, a2) == "migration-quiescence-required"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_authorities_losing_the_concurrent_race_are_consumed():
+    """The five-opener race: one migrates, four observe `current` — and all
+    five authorities are spent; none can be replayed afterwards."""
+    p = _v1_store()
+    auths = [m13.make_authority(p) for _ in range(5)]
+    results = []
+
+    def worker(a):
+        results.append(m13.migrate_store(p, a, busy_timeout_ms=10000))
+
+    threads = [threading.Thread(target=worker, args=(a,)) for a in auths]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sorted(results) == ["current"] * 4 + ["migrated"], results
+    for a in auths:
+        assert m13.migrate_store(p, a) == "migration-quiescence-required"
+
+
+def test_operation_consumption_is_atomic_under_concurrency():
+    """Two threads racing ONE authority: exactly one acceptance consumes;
+    the other reads already-consumed. The consumed set is the draft's
+    compare-and-set; §5e freezes the durable equivalent."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    results = []
+
+    def worker():
+        results.append(m13.migrate_store(p, auth, busy_timeout_ms=10000))
+
+    threads = [threading.Thread(target=worker) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sorted(results) == ["migrated", "migration-quiescence-required"], \
+        results
+
+
+def test_a_future_issued_authority_is_refused():
+    """Round 5 measured issued_at = now + 365d validating. No clock-skew
+    allowance in the draft."""
+    from datetime import datetime, timedelta, timezone
+    p = _v1_store()
+    now = datetime.now(timezone.utc)
+    fut = m13.make_authority(p)._replace(
+        issued_at=(now + timedelta(days=365)).isoformat(),
+        expires_at=(now + timedelta(days=365, minutes=15)).isoformat())
+    assert m13.migrate_store(p, fut) == "migration-quiescence-required"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_an_authority_lifetime_above_the_frozen_maximum_refuses():
+    p = _v1_store()
+    wide = m13.make_authority(p, ttl_minutes=24 * 60)
+    assert m13.migrate_store(p, wide) == "migration-quiescence-required"
+
+
+def test_an_authority_from_a_different_release_refuses():
+    p = _v1_store()
+    other = m13.make_authority(p)._replace(release_ref="veracium-0.0.1")
+    assert m13.migrate_store(p, other) == "migration-quiescence-required"
+
+
+def test_an_oversized_token_field_refuses():
+    """Audit token fields are not prose channels — round 5's cap."""
+    p = _v1_store()
+    prose = m13.make_authority(p)._replace(backup_ref="x" * 300)
+    assert m13.migrate_store(p, prose) == "migration-quiescence-required"
+
+
+# --- round 5, finding 3: exact scalar typing -------------------------------
+
+@pytest.mark.parametrize("field,value", [
+    ("migration_evidence_algorithm", True),
+    ("manifest_algorithm", 13.0),
+    ("draft_schema_version", 2.0),
+    ("artifact", 12345),
+    ("generated_at", 99),
+])
+def test_coerced_top_level_scalars_poison_the_artifact(field, value,
+                                                       monkeypatch):
+    """Round 5: `True == 1`, `13.0 == 13`, `2.0 == 2` all passed ordinary
+    equality — the class 0007 round 13 closed for its own revision fields.
+    A numerically equal wrong-typed value is malformed, and malformed
+    schema evidence fails the whole context closed."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art[field] = value
+    with m13._registry():
+        assert m13.schema_evidence_problems(art)
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    assert m13.open_or_migrate(_v1_store()) == "unsupported-sqlite"
+
+
+def test_a_coerced_path_algorithm_poisons_the_paths(monkeypatch):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"][0]["manifest_algorithm"] = 13.0
+    with m13._registry():
+        assert m13.path_evidence_problems(art)
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+# --- round 5, finding 4: the genuinely outermost boundary ------------------
+
+def test_an_embedded_nul_path_is_a_closed_outcome():
+    """Round 5 measured ValueError escaping from realpath."""
+    assert m13.open_or_migrate("\x00") == "store-unopenable"
+
+
+def test_a_mistyped_timeout_is_a_closed_outcome():
+    """Round 5 measured TypeError escaping from timeout arithmetic. Exact
+    int in a frozen range; bool is not an int here either."""
+    p = _v1_store()
+    assert m13.open_or_migrate(p, busy_timeout_ms="x") == "invalid-request"
+    assert m13.open_or_migrate(p, busy_timeout_ms=True) == "invalid-request"
+    assert m13.open_or_migrate(p, busy_timeout_ms=0) == "invalid-request"
+    assert m13.open_or_migrate(p, busy_timeout_ms=10 ** 9) == "invalid-request"
+
+
+def test_a_non_pathlike_argument_is_a_closed_outcome():
+    assert m13.open_or_migrate(12345) == "invalid-request"
+
+
+def test_an_oversized_path_is_a_closed_outcome():
+    p = "/tmp/" + "x" * 5000
+    assert m13.open_or_migrate(p) == "store-unopenable"
