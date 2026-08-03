@@ -154,15 +154,85 @@ def test_mq2_concurrent_migration_runs_exactly_once():
 # --- 0008 §6c semantics hold in the migrated schema -----------------------
 
 def test_the_0008_uniqueness_contract_holds():
+    """Round 2 corrected the model: an omitted correlation id is GENERATED and
+    persisted (0008 §6c returns `str`, never null), so NULL is refused, distinct
+    generated ids coexist, a reused pair conflicts, and the scope is the
+    tenant — another user may reuse the same id."""
     p = _v1_store()
     m13.open_or_migrate(p)
     c = sqlite3.connect(p)
     ins = ("INSERT INTO confirmations(id,user_id,edge_id,confirmed_at,actor,"
            "call_path,correlation_id,request_digest) VALUES(?,?,?,?,?,?,?,?)")
-    c.execute(ins, ("c1", "u", "e0", "t", "user", "host_api", None, "d1"))
-    c.execute(ins, ("c2", "u", "e1", "t", "user", "host_api", None, "d2"))
-    c.execute(ins, ("c3", "u", "e0", "t", "user", "host_api", "corr", "d3"))
+    c.execute(ins, ("c1", "u", "e0", "t", "user", "host_api", "gen-a", "d1"))
+    c.execute(ins, ("c2", "u", "e1", "t", "user", "host_api", "gen-b", "d2"))
     with pytest.raises(sqlite3.IntegrityError):
-        c.execute(ins, ("c4", "u", "e2", "t", "user", "host_api", "corr", "d4"))
-    # tenant-scoped, not global (0008 §6c): another user may reuse the id
-    c.execute(ins, ("c5", "v", "e9", "t", "user", "host_api", "corr", "d5"))
+        c.execute(ins, ("c3", "u", "e2", "t", "user", "host_api", "gen-a", "d3"))
+    c.execute(ins, ("c5", "v", "e9", "t", "user", "host_api", "gen-a", "d5"))
+    with pytest.raises(sqlite3.IntegrityError):     # NULL correlation refused
+        c.execute(ins, ("c6", "u", "e4", "t", "user", "host_api", None, "d6"))
+    with pytest.raises(sqlite3.IntegrityError):     # NULL id refused too
+        c.execute(ins, (None, "u", "e5", "t", "user", "host_api", "gen-z", "d7"))
+
+
+# --- round 2 of this spec's review ----------------------------------------
+
+def test_a_wrong_unique_constraint_is_not_stamped(monkeypatch):
+    """Round 2, findings 2–3: capability compared columns only, so a global
+    UNIQUE(correlation_id) — violating 0008's tenant scoping — was stamped."""
+    bad = m13.CONFIRMATIONS_DDL.replace("UNIQUE(user_id, correlation_id)",
+                                        "UNIQUE(correlation_id)")
+    monkeypatch.setattr(m13, "MIGRATION_1_TO_2",
+                        m13.Migration(1, 2, (bad, m13.IX_CONFIRMATIONS_DDL)))
+    p = _v1_store()
+    assert m13.open_or_migrate(p).startswith("migration-result-mismatch")
+    c = sqlite3.connect(p)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 1   # rolled back
+
+
+def test_a_missing_rebuildable_index_is_repaired_before_stamping(monkeypatch):
+    """Round 2, finding 4: a migrated store must not be returned in a state
+    0007 would immediately call drifted."""
+    monkeypatch.setattr(m13, "MIGRATION_1_TO_2",
+                        m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL,)))
+    p = _v1_store()
+    assert m13.open_or_migrate(p) == "migrated"
+    c = sqlite3.connect(p)
+    ddl = c.execute("SELECT sql FROM sqlite_master WHERE "
+                    "name='ix_confirmations_edge'").fetchone()
+    assert ddl and ddl[0] == m13.IX_CONFIRMATIONS_DDL
+
+
+def test_a_stray_step_beyond_the_current_version_is_rejected():
+    """Round 2, finding 6: exact key sets, both directions."""
+    probs = m13.validate_registry(
+        schemas={1: m13.SCHEMA_V1, 2: m13.SCHEMA_V2},
+        migrations={1: m13.MIGRATION_1_TO_2,
+                    2: m13.Migration(2, 3, ("SELECT 1",))},
+        current=2)
+    assert any("exactly" in p for p in probs)
+
+
+def test_an_empty_statement_tuple_does_not_validate():
+    probs = m13.validate_registry(
+        schemas={1: m13.SCHEMA_V1, 2: m13.SCHEMA_V2},
+        migrations={1: m13.Migration(1, 2, ())}, current=2)
+    assert any("nonempty" in p for p in probs)
+
+
+def test_mq2_hazard_a_stale_v1_connection_writes_after_migration():
+    """Round 2, finding 5 — DEMONSTRATED, not fixed: the write lock serialises
+    the migration itself, but a connection opened before it never re-runs the
+    version gate, so an already-running v1 process keeps applying v1 behaviour
+    to a v2 store. For 0008 that is the unaudited clearing path. This is why
+    the M-Q2 ruling is adopt-WITH-CONDITIONS: the deployment quiescence
+    contract in §5b is load-bearing, and this test is the measurement that
+    makes it so."""
+    p = _v1_store()
+    old = sqlite3.connect(p)                       # a v1-era process
+    assert m13.open_or_migrate(p) == "migrated"
+    old.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,"
+                "quarantined,json) VALUES('stale','u','s','r','o',1,0,'{}')")
+    old.commit()                                   # succeeds: nothing fences it
+    c = sqlite3.connect(p)
+    assert c.execute("SELECT COUNT(*) FROM edges WHERE id='stale'"
+                     ).fetchone()[0] == 1

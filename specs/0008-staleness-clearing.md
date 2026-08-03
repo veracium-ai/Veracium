@@ -429,8 +429,12 @@ A custom store could implement an atomic `confirm_edge()` and still accept a
 reconstructed edge with the flag cleared through `add_edge()` — satisfying the
 new signature while **violating the headline invariant.**
 
-**SQLite:** a `confirmations` table, `UNIQUE(correlation_id)`, indexed on
-`edge_id`, created by `_SCHEMA`'s `CREATE TABLE IF NOT EXISTS`.
+**SQLite:** a `confirmations` table, **`UNIQUE(user_id, correlation_id)`**,
+indexed on `edge_id`, created by the `0013` v1→v2 migration. *(Corrected
+2026-08-03: this line said `UNIQUE(correlation_id)` — global — while §6c's
+round-4 ruling is explicitly tenant-scoped, and said `CREATE TABLE IF NOT
+EXISTS` — the model `0007` replaced. Found by `0013`'s first external review;
+§6c was always the ruling, this line had drifted from it.)*
 
 | question | answer |
 |---|---|

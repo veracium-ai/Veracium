@@ -5,18 +5,19 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v2)** — opened 2026-08-03; **v2 adds the concrete v1→v2
-> migration the round-9 M-Q1 ruling requires** — `0008`'s `confirmations`
-> table, executable in `specs/migrations_0013.py` — and **proposes the M-Q2
-> answer**: SQLite's write lock *is* the single-process enforcement, under the
-> same lock-before-read protocol `0007` shipped. This spec still authorises
-> nothing; the instrument is draft-side, and the store contains no migration
-> code.
+> **in review (v3)** — first external round: *architecture approved
+> directionally, v2 deferred, 7 findings*, all taken. **The DDL is corrected**
+> (`correlation_id` NOT NULL — an omitted id is *generated*, per `0008` §6c —
+> and `id` NOT NULL), **this CREATE-only migration is authorised by exact
+> constructor identity** rather than the column-only capability check the
+> review bypassed, **and the M-Q2 ruling is adopt-with-conditions**: the write
+> lock serialises cooperating openers and does NOT fence an already-running v1
+> process — the quiescence contract in §5b is load-bearing and measured.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v2 |
+| **Version** | v3 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -205,9 +206,9 @@ first schema change is `0008`'s audit table, derived field-by-field from its
 
 ```sql
 CREATE TABLE confirmations (
-    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,
+    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,
     confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,
-    correlation_id TEXT, request_digest TEXT NOT NULL,
+    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,
     UNIQUE(user_id, correlation_id)
 );
 CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id);
@@ -217,7 +218,8 @@ CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id);
 |---|---|
 | `confirmed_at` stores the **normalised instant** | §6c — never the caller's string |
 | `actor`, `call_path` are closed-enum **values** | §6c — free text in either was the bypass `actor` demonstrated |
-| `correlation_id` **nullable**; `UNIQUE(user_id, correlation_id)` | §6c — omitted means no replay protection; SQLite treats NULLs as distinct, so unprotected confirmations coexist while a reused pair conflicts, **tenant-scoped, not global** |
+| `correlation_id` **NOT NULL**; `UNIQUE(user_id, correlation_id)` | §6c — **an omitted id is *generated* by the library and returned as `str`**, so a value is always persisted; a NULL row could never identify its record on replay. "No replay protection" comes from the caller not retaining the value, not from NULL storage. Tenant-scoped per §6c's ruling — **and §6d's contradictory global line is corrected in `0008` itself, dated** |
+| `id` **NOT NULL**, store-generated (`c-<12 hex>`) | round 2 measured `TEXT PRIMARY KEY` accepting multiple NULLs in a rowid table |
 | `request_digest` mandatory | §6c — replay compares the canonical request; a same-id different-payload replay is an integrity conflict, not a lookup hit |
 | the index is `REBUILDABLE` | `0007` §4a-iii — non-unique acceleration; the UNIQUE constraint lives in the table DDL and is therefore in the digest |
 | **the migration is two `CREATE` statements** | §4a's declarative model; nothing else changes |
@@ -231,39 +233,69 @@ here. **The set model earns its keep on the first `ALTER`, not on this
 migration** — stated so the convergence is not mistaken for evidence that the
 set was unnecessary.
 
-**Executable**: `specs/migrations_0013.py` (draft instrument, imports the
-production kernel, implements §4a–§4d against this migration) and
-`tests/test_migrations_0013.py` (16 tests: destination contract with the real
-table, confinement re-proven, registry validation, the M-Q2 race, and `0008`'s
-uniqueness semantics holding in the migrated schema).
+**This migration is authorised by exact constructor identity, not
+capability.** Round 2 demonstrated the column-only capability check stamping a
+destination with `UNIQUE(correlation_id)` — global, violating `0008`'s tenant
+scoping — and stamping a store missing its rebuildable index, which `0007`
+would immediately call drifted. For a CREATE-only migration the byte-identical
+constructor **is** the contract, so `open_or_migrate` now: applies the declared
+statements → repairs rebuildable drift → recomputes the complete manifestation
+→ **requires exact equality with the v2 constructor's** → stamps. Capability
+is necessary context, never authorisation. **The general structural-capability
+model is deferred to the first real `ALTER` and must be externally reviewed
+there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
-## 5b. M-Q2 proposed: the write lock is the enforcement
+**Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
+(21 tests, including the wrong-UNIQUE and missing-index cases as regressions,
+the strict registry, and the stale-connection hazard below).
 
-**Proposed answer for review — this was the remaining blocking question.**
+## 5b. M-Q2 RULED: adopt with conditions — the lock serialises, it does not fence
 
-`0007` §4c already takes `BEGIN IMMEDIATE` before reading anything. Extending
-the same protocol with the *older* row gives migration mutual exclusion **from
-SQLite itself**:
+**Round 2's ruling, recorded.** `BEGIN IMMEDIATE` under the §4c protocol is
+**approved as migration mutual exclusion** — verified by the reviewer with five
+separate *processes*, one `migrated`, four `current`. **It is not
+mixed-version fencing**, and v2 claimed more than the lock provides.
+
+**The hazard, measured** (`test_mq2_hazard_a_stale_v1_connection_writes_after_migration`):
+a connection opened *before* the migration never re-runs the version gate, so
+an already-running v1 process keeps applying v1 behaviour to the v2 store. For
+`0008` that is precisely the unaudited clearing path the whole chain exists to
+close.
+
+**So the deployment quiescence contract is part of this spec, load-bearing:**
+
+| before a migrating release is admitted | |
+|---|---|
+| all old application processes stopped | no old worker retains an open connection |
+| migration performed before service admission | old binaries prevented from restarting against the migrated store |
+| backup taken; rollback procedure in place | a "one-way" declaration is not a fence |
+
+**Enforceability is an implementation obligation** for the first migrating
+release (`0008`'s), stated here so it cannot be quietly narrowed: release
+tooling must make the quiescence condition checkable, not aspirational.
+
+*(v2's §8 said "not multi-process" while §5b demonstrated five concurrent
+openers — the contradiction is resolved as above: concurrent **cooperating**
+openers are serialised by the lock; **stale** openers are the operational
+contract's problem.)*
+
+## 5c. The path-evidence record, frozen before implementation
+
+Round 2: `v<base>:constructor-><dest>` is insufficient once a source version
+has more than one accepted manifestation, and M11/M12's artifact contract is
+load-bearing — frozen now, reviewed here, implemented with `0008`:
 
 ```
-open:  BEGIN IMMEDIATE            <- serialises ALL openers
-       read user_version
-       found == 2  ->  open as current
-       found == 1  ->  apply_migration; validate destination; stamp 2; COMMIT
+runtime build identity          (0007 §4a-viii)
+from_version
+source manifestation digest
+to_version
+output manifestation digest
+migration declaration digest    (sha256 over the statement tuple)
 ```
 
-A concurrent opener blocks on the lock (bounded by `busy_timeout`, then a loud
-`locked` refusal), acquires it after the winner commits, **re-reads under its
-own lock**, and finds the store already migrated. Measured in
-`test_mq2_concurrent_migration_runs_exactly_once`: five racing openers, one
-`migrated`, four `current`, zero errors, zero duplicate work.
-
-**Why not the alternatives:** a lock *table* changes the shape being migrated —
-circular; an advisory *file* is not a guarantee and adds a second consistency
-domain. **The caveat is the contract:** a migration must fit in one
-transaction. The additive v2 trivially does; the single-step model (§4d) makes
-that reviewable per step, and a future migration too large for one transaction
-is a design problem to be caught at *its* review, not an operational surprise.
+**Capability is necessary; only recorded evidence authorises** — the migrated
+manifestation must be accepted for this source × path × runtime before a stamp.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -283,10 +315,10 @@ tests at implementation.
 | **M7** a correct migration reaches its declared destination | `test_the_concrete_migration_reaches_the_v2_constructor_output` — **measured today**; output byte-identical to the constructor |
 | **M8** a partial or wrong-shape result is rejected | `test_a_partial_migration_is_rejected` — **measured today** |
 | **M9** the registry is well-formed | `test_m9_the_draft_registry_is_well_formed` · `test_a_gap_refuses` — **measured today** |
-| **M10** a skipped release still upgrades | at implementation: version-zero resolution (`0007` §4-i) feeds the *older* path. The instrument's `open_or_migrate` demonstrates the stamped-v1 half |
+| **M10** a skipped release still upgrades | **NOT demonstrated, and not claimed** (round 2, finding 7). `0013` today authorises the concrete adjacent v1→v2 only; the multi-step planner is reviewed at the first spec needing two real steps |
 | **M11** every migration path is keyed individually | at implementation — `0007`'s evidence gains per-path entries |
 | **M12** runtime evidence covers every declared path | at implementation |
-| **M13** migration runs exactly once under concurrency | `test_mq2_concurrent_migration_runs_exactly_once` — **measured today**: five racers, one migrates, four open current. §5b |
+| **M13** migration runs exactly once among cooperating openers | `test_mq2_concurrent_migration_runs_exactly_once`, and the reviewer's independent five-**process** run. **The stale-opener hazard is measured, not solved** — §5b's quiescence contract. |
 
 ---
 
@@ -323,31 +355,54 @@ the current version without installing intermediate releases, or is refused.
 
 ## 9. Brief for the external reviewer
 
-**This is `0013`'s first review, and per your M-Q1 ruling it arrives with the
-real migration**: `0008`'s `confirmations` table, two `CREATE` statements,
-executable in `specs/migrations_0013.py` and exercised by 16 tests. `0007` is
-`accepted` and implemented, so the migration runs against the real kernel.
+**Round 2 of this spec. All 7 round-1 findings taken; every executable one
+reproduced first** — the NULL-accepting `id`, the wrong-UNIQUE stamping, the
+unrepaired index, the stale-connection write, the stray 2→3 step.
 
-**The three things to review hardest:**
+**The corrections that matter most:**
 
-1. **The table DDL against `0008` §6b–§6d** (§5). Every column decision cites
-   its clause; if I have mistranslated the frozen contract into DDL, this is
-   the round to catch it — `0008`'s implementation will inherit this shape.
-2. **The M-Q2 proposal** (§5b): the write lock is the enforcement, and the
-   one-transaction caveat is the contract. Measured under a five-way race. If
-   this is wrong, everything downstream of the *older* row is wrong with it.
-3. **The convergence caveat** (§5): this migration's output is byte-identical
-   to the constructor's, so it does NOT exercise the `ALTER`-divergence case
-   the accepted-set model exists for. I have said so rather than presenting
-   the convergence as evidence. **Generalising only what this migration
-   demonstrates — your ruling — means the set model's divergence handling
-   stays unproven until the first `ALTER`**, and I would like that recorded as
-   accepted residual risk rather than discovered later.
+1. **The DDL now says what `0008` §6c says** — `correlation_id NOT NULL`
+   because an omitted id is *generated and returned as `str`*, `id NOT NULL`
+   because a rowid `TEXT PRIMARY KEY` accepts NULLs (measured), tenant-scoped
+   uniqueness — **and `0008` §6d's contradictory global line is corrected in
+   `0008` itself, dated and attributed to your finding.** An accepted spec
+   carrying an internal contradiction is worse than a dated correction.
+2. **Exact constructor identity authorises this migration** (§5). Your
+   wrong-UNIQUE and missing-index cases are regressions now: both roll back,
+   nothing stamps. Capability survives as context only; **the general model is
+   deferred to the first real `ALTER` for its own external review**, per your
+   acceptance-bar answer — not banked as residual risk.
+3. **M-Q2 is recorded as you ruled it** (§5b): the lock serialises cooperating
+   openers — your five-process verification is cited — and does not fence a
+   stale v1 process. **The hazard is a test now**, and the quiescence contract
+   is spec text with enforceability named as an implementation obligation for
+   the first migrating release.
+4. **The path-evidence record is frozen** (§5c): runtime identity ×
+   from/source-digest × to/output-digest × migration-declaration digest.
+   M11/M12 implement it; the contract is reviewable in this round.
 
-**What this spec still does not do:** authorise implementation (it is not
-`accepted`); ship migration code in the store (the instrument is spec-side);
-extend runtime evidence with per-path entries (M11/M12 land with
-implementation).
+**Bounded, per your finding 7:** `0013` authorises the concrete adjacent v1→v2
+migration and freezes the one-step transaction contract. Skipped-release
+upgrading is a mandatory requirement that the first two-step spec must
+demonstrate; **it is not claimed today.**
+
+**Also corrected from your package verification:** v2's README misdescribed
+what happens on an unqualified runtime — ordinary `SqliteStore` tests *refuse*,
+they do not skip. This package's README states the actual behaviour and the
+sanctioned path (regenerate runtime evidence on that runner), which is what you
+did.
+
+**Where I am least confident:**
+
+1. **The quiescence contract is prose until `0008`'s release tooling exists.**
+   I have made it load-bearing spec text with a measured hazard behind it, but
+   "release tooling must make it checkable" is a promissory note, and you have
+   seen what happens to those here.
+2. **Whether the narrowed acceptance bar is now met.** Against your list:
+   adjacent additive transactional migration ✓ · exact constructor
+   manifestation after repair ✓ · corrected DDL ✓ · exact registry ✓ · path
+   evidence frozen (not implemented) · operational fencing specified (not
+   enforced). **The last two are the open judgement.**
 
 ## 10. Open questions
 
@@ -356,3 +411,21 @@ implementation).
 | ~~M-Q1~~ | **RULED by round 9, 2026-08-03: wait.** `0013` must not reach `accepted` before it is reviewed **against an actual migration** — that is the principle that justified the `0007` scope cut, and it applies equally to the replacement. **The first case is `0008`'s `confirmations` table**: accepted, simple, additive, already blocked on `0013`, and independent of `0006`'s unresolved source-identity design. **`0013` may generalise only what that real migration demonstrates.** | resolved | external | — |
 | **M-Q2** | **PROPOSED in §5b, awaiting external ruling:** SQLite's write lock under the §4c lock-before-read protocol is the enforcement; the caveat (one transaction per migration) is the contract. Measured with five racing openers. | `blocking → proposed` | external | this review |
 | ~~M-Q3~~ | **RULED by round 9: yes, it belongs here.** The capability comparison exists to decide whether a *migration result* satisfies its destination despite differing DDL, so it is `0013`'s. `0007` retains exact manifestation identity, digest comparison, rebuildable drift and candidate resolution — and `capability_problems()` has been removed from its kernel. | resolved | external | — |
+
+---
+
+## 11. Round 1 review disposition
+
+**Verdict: architecture approved directionally; v2 deferred.** 7 findings, all
+taken; the acceptance bar was answered — narrow `0013` to what this migration
+demonstrates, and reopen the general model at the first `ALTER`.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | `correlation_id` nullable contradicts §6c; `id` accepts NULLs; `0008` §6d contradicts §6c | **DDL corrected** — both NOT NULL, generation model stated; **`0008` §6d corrected in place, dated** |
+| 2 | column-only capability stamped a wrong-UNIQUE destination | **exact constructor identity** authorises this migration; regression test rolls it back |
+| 3 | capability treated as authorisation; path identity too weak | **§5c freezes the evidence record** — runtime × source digest × output digest × declaration digest; capability is context only |
+| 4 | missing rebuildable index stamped unrepaired | **repair before stamp**, then exact-identity revalidation; regression test |
+| 5 | the write lock does not fence a stale v1 process | **M-Q2 ruled adopt-with-conditions**; hazard measured as a test; **quiescence contract is spec text**, enforceability an implementation obligation |
+| 6 | a stray 2→3 step validated | **exact key sets both directions**, nonempty statement tuples; regression test |
+| 7 | skipped-release not demonstrated | **claim withdrawn and bounded**: adjacent v1→v2 only; the planner is reviewed at the first two-step spec |
