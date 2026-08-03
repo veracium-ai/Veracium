@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v13) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
+> **in review (v14) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
 > the product owner's decision.** Seven external rounds produced ~63 findings,
 > and the large majority lived in **migration machinery with no users** —
 > `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
@@ -19,7 +19,7 @@ Spec-Status: in review
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v13 |
+| **Version** | v14 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0013` and of every schema-changing spec, not a part of any of them. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
@@ -268,7 +268,8 @@ semantically equivalent to its own. That is an open-ended SQL-equivalence
 problem and it is unnecessary. **The acceptance model is exact-match against
 known manifests**, implemented in `specs/schema_model.py`:
 
-1. Build a reference database with each supported constructor and migration.
+1. Build a reference database with each supported constructor. *(`0013` adds
+   migration outputs.)*
 2. Inventory **every** non-internal persistent object — tables, views, indexes,
    triggers — from `sqlite_master`.
 3. Record each **by typed identity `(type, name)`**, with the stored DDL
@@ -594,14 +595,12 @@ declared schema versions:
 refused with `reason="unsupported-sqlite"`, **before** any version or shape
 decision.
 
-**Every declared migration path is keyed individually, and coverage is
-validated.** v8 keyed migration digests by *destination version* and returned
-after the first viable base, so only one path per destination could be recorded
-— while the reason those digests exist is that different bases can produce
-different exact output at the same destination (round 7, finding 3). And the
-constructor key set was validated while the migration key set was not, so `{}`
-and `{"999": "bad"}` both passed (finding 2, measured). Both key sets must now
-**equal** what the registry declares.
+**The constructor key set must equal what the registry declares** — not merely
+contain no extras. *(Historical, and `0013`'s to carry: v8 keyed migration
+digests by destination version and returned after the first viable base, so only
+one path per destination could be recorded, while different bases can produce
+different exact output at the same destination. `0007` records no migration
+paths, so it makes no claim about their coverage.)*
 
 **`0007` supports exactly one active runtime** (round 10, finding 2). v9
 described accepted manifests as a union across qualified runtimes and v12
@@ -913,7 +912,10 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S56** recorded runtimes are internally valid | `test_the_recorded_runtimes_are_internally_valid` (always) · `test_this_runtime_is_qualified_or_explicitly_is_not` (skips) · `test_an_empty_digest_map_does_not_qualify_vacuously` — **measured today** |
 | **S58** an **unattested** runtime contributes nothing | `test_an_unattested_foreign_runtime_contributes_nothing` — **measured today**. Internal consistency is not provenance |
 | **S65** the **production predicate** rejects a conflicting artifact | `test_a_conflicting_artifact_disqualifies_the_runtime` · `test_the_recorded_artifact_has_no_conflicts` — **measured today**; v12 checked this only in the generator |
-| **S66** exactly one active runtime identity | `test_two_active_runtime_identities_are_refused` — **measured today**; the union claim is withdrawn |
+| **S66** exactly one active runtime identity | `test_two_active_runtime_identities_are_refused` · `test_one_canonical_identity_is_used_everywhere` — **measured today**. **One canonical five-field key** is used for uniqueness, one-active enforcement, replacement, attestation and reporting |
+| **S69** the predicate attests the **complete** manifestation | `test_a_modified_rebuildable_ddl_disqualifies_the_runtime` · `test_a_missing_rebuildable_index_disqualifies_the_runtime` — **measured today**; the acceptance digest excludes rebuildable objects, so digests alone attest nothing about them |
+| **S70** `SCHEMA_VERSION` is bound to the registry | `test_schema_version_must_match_the_registry` · `test_the_registry_versions_are_contiguous` — **measured today**. *(This invariant existed before the scope cut, regressed when the module holding it was deleted, and the round-6 disposition went on claiming it. The citation gate now catches that class.)* |
+| **S71** a missing versions artifact fails the gate | `test_a_missing_versions_artifact_fails_the_gate` — **measured today** |
 | **S67** a failed publish leaves nothing published | `test_a_staging_failure_publishes_nothing` · `test_a_failed_publish_rolls_the_first_file_back` — **measured today**; v12 claimed rollback with no test |
 | **S68** staged temporaries are cleaned up | `test_staged_temporaries_are_not_left_behind` · `test_the_repository_has_no_stray_staged_artifacts` — **measured today**; v12 shipped a `.tmp` in the review package |
 | **S63** a self-consistent fabrication is rejected | `test_a_self_consistent_fabrication_is_rejected` — **measured today**; a manifestation may hold only declared objects |
@@ -1023,64 +1025,61 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 10 approved the core design and found three narrow defects, all in
-runtime evidence rather than store shape.** All three reproduced; all three
-fixed; plus the four corrections.
+**Round 11: three findings, all reproduced, all fixed. No architectural change,
+as you asked.**
 
-**Finding 1 — the check was in the wrong place.** `artifact_problems()` existed
-and `build_version_artifact()` called it, so **CI would notice a contradictory
-artifact and the store opening it would not.** `runtime_supported()` now
-validates the artifact before evaluating any record, and the always-running test
-asserts at artifact level rather than record by record. **S65.**
+**Finding 1 — I had three definitions of one thing.** `_identity_key()` used
+five fields for attestation; the one-active check used `version + source_id`;
+replacement used the same pair. Two records agreeing on version and source id
+but disagreeing on feature probes therefore passed every check. **One canonical
+key is now used for uniqueness, one-active enforcement, replacement, attestation
+and reporting**, and two records describing one build inconsistently reject the
+artifact.
 
-**Finding 2 — I described a union I could not build, and then made it
-unreachable.** v9 said accepted manifests are the union across qualified
-runtimes; v12's attestation narrowed contribution to records this process
-reproduces. Those two are incompatible: on runtime A only A contributes, on B
-only B, and nothing persists an attestation that A was reproduced by its own
-job. `write_runtime()` then refused a second differing runtime outright, because
-it required every valid prospective manifestation to be in an accepted set that
-excluded it — your measurement.
+*(Fixing it deadlocked once, and the fix is worth stating: re-qualifying a build
+must supersede **its own** previous record — including one written under an
+older manifest algorithm, which is how a bump is cleared. Keying replacement on
+the full identity meant the new and superseded records shared a build, so the
+new "one build cannot have two" check blocked the very write that removes the
+old one. Replacement is by build; a **different** build is kept and then refused
+as a second active identity, which is the behaviour you asked for.)*
 
-**I have taken the option you called simplest and safest: `0007` supports
-exactly one active runtime identity.** A second is refused with a message
-pointing at S-Q7, which owns durable per-runtime attestation. The union claim is
-withdrawn and the historical reasoning is kept as history, because it is still
-why `MANIFESTS` is a set. **S66.**
+**Finding 2 — digests attest nothing about rebuildable objects, by design.** The
+acceptance digest deliberately excludes them, so a record claiming
+`CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)` reproduced its digest
+exactly. **`runtime_supported()` now compares the complete constructor
+manifestation**, and the record's key set must *equal* the declared set rather
+than merely contain no extras. **S69.**
 
-*(And `SystemExit` is not an `Exception`, so v12's handler never caught the
-validation failure it was written for. Corrected.)*
+This is the third time the same shape has appeared — a check living in the
+generator while the store-facing path had none. I have no structural answer
+beyond noticing it faster.
 
-**Finding 3 — the constructor-only pass, finished.** The runtime-evidence table
-no longer requires migration-path digests or confinement probes; the feature
-probes are scoped to what schema matching needs, with the authorizer probe moved
-to `0013`. The remaining present-tense `0006` statements are `0013` in the
-public contract, the `MANIFESTS` comment, the closed-reason note, S34,
-`schema_evidence`'s docstring and its module comments.
+**Finding 3 — a regression I introduced, and my own gate should have caught
+it.** The `SCHEMA_VERSION`/`SCHEMAS` guard lived in the module the scope cut
+deleted, and the round-6 disposition went on claiming it was enforced.
+Restored in `validate_schema_registry()` where it belongs — it is a consistency
+condition of `0007`'s own registry, not migration machinery. **S70.**
 
-**On the corrections — one of them was embarrassing and correct.** v12 shipped
-`sqlite_runtimes.json.tmp` **inside the review package**, and the rollback path
-I claimed to have fixed had **no test at all**. Both now covered: staging
-failure, failed second rename, and temp-file lifecycle, plus a repository check
-for stray staged artifacts. **S67, S68.** The claim is narrowed to
-**best-effort working-tree rollback**, with the git commit as the publication
-boundary. And `write_runtime()` reports three categories — attested and
-contributing, recorded but unattested, superseded or invalid — instead of
-counting an unattested foreign record as active.
+**And the citation gate now catches that class**: writing the new invariant's
+note as "the former S53" failed the build, because S53 no longer exists. That is
+exactly the drift you found by hand, caught mechanically the first time it
+recurred.
 
-**The historical-coverage wording is narrowed in both places it appears.** It
-now says only that every released *codebase*, probed under the qualified
-runtime, produced the accepted manifestation — and states explicitly that a
-store created under a different SQLite runtime may be refused, so **the
-availability of adoption for it is not established.**
+**Corrections.** The migration-path coverage paragraph is now historical and
+attributed to `0013`; the manifest procedure is constructor-only; a **missing**
+`schema_versions.json` fails the gate instead of passing silently (**S71**); and
+`strict_tables` is recorded as identity but explicitly **not** required, since
+nothing in `0007`'s matching uses it — stated rather than listed among required
+behaviours and left unenforced.
 
 **Where I am least confident:**
 
-1. **One active runtime is honest but restrictive**, and it makes S-Q7 the
-   gate for something users will hit — not a compatibility nicety. I think that
-   is the right trade at this stage and I would rather you told me it is not.
-2. **Nothing else.** This is the first round where I do not have a second item,
-   which itself makes me want a careful read of §4a-viii.
+1. **Nothing new this round.** The three findings were narrow, and the fixes are
+   local. If that is also your read, the remaining question is whether
+   `SCHEMA_VERSION = 1` with one qualified runtime is enough to authorise
+   implementation — which is a judgement about scope rather than correctness.
+2. **S-Q7 unchanged**, and now a gate users hit.
 
 ## 10. Open questions
 
@@ -1373,3 +1372,21 @@ stray `.tmp` inside the review package — both now covered, and the claim
 narrowed to **best-effort working-tree rollback**; reporting distinguishes
 attested / unattested / superseded; and the historical-coverage wording is
 narrowed in both places, with the availability limit stated.
+
+---
+
+## 22. Round 11 review disposition
+
+**Verdict: core specification approved; v13 deferred.** 3 blocking findings and
+3 corrections. **All taken.**
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | three incompatible definitions of runtime identity | **one canonical five-field key** for uniqueness, one-active enforcement, replacement, attestation and reporting; two records describing one build inconsistently reject the artifact. Replacement is by build, so a bump can be cleared; a different build is refused. **S66** |
+| 2 | the predicate attests digests, not manifestations | **complete constructor manifestation compared**, exact key set required. The acceptance digest excludes rebuildable objects by design, so digests alone attested nothing about them. **S69** |
+| 3 | the `SCHEMA_VERSION`/`SCHEMAS` guard regressed in the cut | **restored in `validate_schema_registry()`** — a consistency condition of `0007`'s own registry. **S70**. The citation gate caught the stale reference to its retired predecessor on the first attempt |
+
+**Corrections:** the migration-path coverage paragraph is historical and
+attributed to `0013`; the manifest procedure is constructor-only; a missing
+`schema_versions.json` fails the gate (**S71**); `strict_tables` is identity,
+explicitly not a required behaviour.

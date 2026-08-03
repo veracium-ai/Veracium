@@ -104,7 +104,24 @@ def validate_schema_registry() -> list:
     as faithfully, so artifact-versus-registry equality does not catch it.
 
     Unknown values are build errors, never implicit third behaviours."""
-    problems, seen = [], set()
+    problems, seen = [], []
+    # **Round 11, finding 3: this guard regressed during the scope cut.** It
+    # lived in the deleted `schema_migrations` module, and the round-6
+    # disposition still claimed S53 enforced it. Declaring `SCHEMAS[2]` while
+    # `SCHEMA_VERSION` stayed 1 produced an artifact declaring itself version 1
+    # while authorising records for version 2. Measured. This is a consistency
+    # condition of `0007`'s own registry, not migration machinery -- `0013` adds
+    # route adjacency and reachability on top.
+    if not 1 <= SCHEMA_VERSION <= 2147483647:
+        problems.append(f"SCHEMA_VERSION {SCHEMA_VERSION} is outside 1..2147483647")
+    if SCHEMAS and max(SCHEMAS) != SCHEMA_VERSION:
+        problems.append(f"SCHEMA_VERSION is {SCHEMA_VERSION} but the registry "
+                        f"declares up to {max(SCHEMAS)}; a schema above the "
+                        f"current version must not exist")
+    if set(SCHEMAS) != set(range(1, SCHEMA_VERSION + 1)):
+        problems.append(f"registry versions {sorted(SCHEMAS)} are not the "
+                        f"contiguous range 1..{SCHEMA_VERSION}")
+    seen = set()
     for version, objs in sorted(SCHEMAS.items()):
         for o in objs:
             where = f"v{version} {o.kind}:{o.name}"

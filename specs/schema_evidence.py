@@ -42,7 +42,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 11
+MANIFEST_ALGORITHM = 12
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -83,6 +83,9 @@ def _feature_probes() -> dict:
         c.execute("CREATE TABLE s (a TEXT) STRICT")
         out["strict_tables"] = True
     except sqlite3.DatabaseError:
+        # Recorded as part of runtime identity, but NOT required: nothing in
+        # `0007`'s schema matching uses strict tables (round 11). Being explicit
+        # beats listing it among required behaviours and not enforcing it.
         out["strict_tables"] = False
     # ...and this one only checked that a row existed, which cannot establish
     # that DDL is stored verbatim. Submit distinctive text and compare it.
@@ -186,6 +189,7 @@ def runtime_record_problems(r: dict) -> list:
     # accepted version-1 shape while `runtime_record_problems()` returned `[]`
     # and `runtime_supported()` returned True. Measured. That falsifies the
     # headline guarantee -- an unrecognised store was recognised.
+    # Exact key set, not merely "no extras" (round 11).
     want_prov = {f"constructor v{v}" for v in SCHEMAS}
     if set(r["manifestations"]) != want_prov:
         problems.append(f"runtime manifestations {sorted(r['manifestations'])} "
@@ -203,6 +207,15 @@ def runtime_record_problems(r: dict) -> list:
 
 
 def _identity_key(r: dict) -> tuple:
+    """**The one canonical runtime identity.**
+
+    Round 11, finding 1: three different keys were in use — this five-field one
+    for attestation, `version + source_id` for the one-active check, and the
+    same pair for replacement. Two records agreeing on version and source id but
+    disagreeing on feature probes therefore passed every check. Measured. A
+    single SQLite build cannot have two probe results; if compile options make
+    them genuinely different builds, they are two identities and the one-active
+    policy applies. Either way the artifact is wrong."""
     return (r.get("sqlite_version"), r.get("source_id"),
             json.dumps(r.get("features"), sort_keys=True),
             r.get("manifest_algorithm"), r.get("schema_version"))
@@ -238,12 +251,24 @@ def artifact_problems(records=None) -> list:
     # **A half-built union is worse than an honest single-runtime contract**, so
     # the union claim is withdrawn and S-Q7 owns widening it with durable
     # per-runtime attestation.
-    identities = {_identity_key(r)[:2] for r in active_records(records)}
+    identities = {_identity_key(r) for r in active_records(records)}
     if len(identities) > 1:
         problems.append(
             f"{len(identities)} active runtime identities recorded "
             f"({sorted(i[0] for i in identities)}); `0007` supports exactly one. "
             f"Durable cross-runtime attestation is S-Q7.")
+    # Two records agreeing on version+source_id but differing anywhere else are
+    # not two runtimes -- they are one runtime described inconsistently.
+    by_build = {}
+    for r in records:
+        by_build.setdefault((r.get("sqlite_version"), r.get("source_id")),
+                            set()).add(_identity_key(r))
+    for build, keys in sorted(by_build.items()):
+        if len(keys) > 1:
+            problems.append(
+                f"runtime {build[0]!r} has {len(keys)} records that agree on "
+                f"version and source id but disagree on probes, algorithm or "
+                f"schema version — one build cannot have two")
     for r in records:
         key = _identity_key(r)
         if key in seen:
@@ -277,11 +302,16 @@ def manifestation_problems(objs: dict, version: int) -> list:
 def runtime_supported() -> bool:
     """**Derived from the evidence artifact, never from a hand-edited tuple.**
 
-    Qualification means: a *complete* recorded runtime whose version, source id
-    and feature probes match this process, and whose recorded constructor
-    digests all reproduce here. **`specs/0013` adds per-path migration digests**
-    when migrations exist -- DDL rewriting is why a version can have several
-    accepted manifests -- but at `SCHEMA_VERSION = 1` there are no paths."""
+    Qualification means: a *complete* recorded runtime whose identity matches
+    this process, and whose recorded **complete constructor manifestations**
+    reproduce here.
+
+    **Round 11, finding 2: comparing digests was not enough.** The acceptance
+    digest deliberately excludes rebuildable indexes, so a record claiming
+    `CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)` reproduced its
+    digest exactly while describing an index that changes which writes succeed.
+    Measured: the generator caught it, this predicate did not — the same
+    wrong-place class round 10's finding 1 was about."""
     records = qualified_runtimes()
     # **Round 10, finding 1: the production-facing predicate ignored
     # artifact-level conflicts.** `build_version_artifact()` called
@@ -298,8 +328,12 @@ def runtime_supported() -> bool:
                 and r["source_id"] == me["source_id"]
                 and r["features"] == me["features"]):
             continue
-        return all(_constructor_digest(int(v)) == d
-                   for v, d in r["constructor_digests"].items())
+        if any(_constructor_digest(int(v)) != d
+               for v, d in r["constructor_digests"].items()):
+            return False
+        # The complete manifestation, including rebuildable objects.
+        return all(r["manifestations"].get(f"constructor v{v}")
+                   == _constructor_objects(v) for v in SCHEMAS)
     return False
 
 
@@ -345,9 +379,17 @@ def write_runtime(force: bool = False) -> int:
             print(p, file=sys.stderr)
         print("refusing to write incomplete runtime evidence", file=sys.stderr)
         return 1
+    # **Re-qualifying a build supersedes its own previous record** -- including
+    # one written under an older manifest algorithm, which is how a bump is
+    # cleared. A record for a *different* build is kept, and then refused by
+    # `artifact_problems()` as a second active identity rather than being
+    # silently replaced (round 11, finding 1). Keying replacement on the full
+    # identity instead deadlocked: the new and superseded records share a build,
+    # so the "one build cannot have two" check blocked the very write that
+    # removes the old one.
     others = [r for r in qualified_runtimes()
-              if (r.get("source_id"), r.get("sqlite_version")) !=
-                 (rec["source_id"], rec["sqlite_version"])]
+              if (r.get("sqlite_version"), r.get("source_id"))
+              != (rec["sqlite_version"], rec["source_id"])]
     GENERATED.mkdir(parents=True, exist_ok=True)
 
     # **Round 8, finding 3: qualification must be atomic at the artifact level.**
@@ -674,7 +716,10 @@ def check() -> int:
     if stored.get("manifest_algorithm") != MANIFEST_ALGORITHM:
         bad.append(f"manifest algorithm: artifact {stored.get('manifest_algorithm')} "
                    f"vs build {MANIFEST_ALGORITHM}")
-    if VERSIONS.exists() and json.loads(VERSIONS.read_text()) != generated:
+    if not VERSIONS.exists():
+        bad.append(f"{VERSIONS.name} is missing — it is load-bearing evidence and "
+                   f"its absence must fail, not pass silently (round 11)")
+    elif json.loads(VERSIONS.read_text()) != generated:
         bad.append("schema_versions.json does not match what this build generates")
     if POLICY_ARTIFACT.exists():
         want = {str(v): declared_policies(v) for v in sorted(SCHEMAS)}

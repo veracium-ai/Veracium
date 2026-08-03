@@ -592,3 +592,87 @@ def test_staged_temporaries_are_not_left_behind(monkeypatch, tmp_path):
 
 def test_the_repository_has_no_stray_staged_artifacts():
     assert not list((ROOT / "specs" / "generated").glob("*.tmp"))
+
+
+# --- round 11 ------------------------------------------------------------
+
+def test_one_canonical_identity_is_used_everywhere(monkeypatch):
+    """Round 11, finding 1: three keys were in use — five fields for
+    attestation, `version + source_id` for the one-active check and for
+    replacement. Two records agreeing on version and source id but disagreeing
+    on probes passed everything."""
+    import copy
+
+    import schema_evidence as ev
+    a = ev.build_runtime_record()
+    b = copy.deepcopy(a)
+    b["features"] = dict(b["features"],
+                         strict_tables=not b["features"]["strict_tables"])
+    assert ev._identity_key(a) != ev._identity_key(b)
+    assert any("one build cannot have two" in p for p in ev.artifact_problems([a, b]))
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [a, b])
+    assert not ev.runtime_supported()
+
+
+def test_a_modified_rebuildable_ddl_disqualifies_the_runtime(monkeypatch):
+    """Round 11, finding 2: the acceptance digest excludes rebuildable indexes,
+    so a record claiming a UNIQUE index on the same name reproduced its digest
+    exactly — while describing an index that changes which writes succeed."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    objs = dict(rec["manifestations"]["constructor v1"])
+    key = "index:ix_edges_subj_rel"
+    objs[key] = dict(objs[key],
+                     sql="CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)")
+    rec["manifestations"]["constructor v1"] = objs
+    assert ev._digest_of_identity(objs, 1) == rec["constructor_digests"]["1"]
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [rec])
+    assert not ev.runtime_supported()
+
+
+def test_a_missing_rebuildable_index_disqualifies_the_runtime(monkeypatch):
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    del rec["manifestations"]["constructor v1"]["index:ix_edges_subj_rel"]
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [rec])
+    assert not ev.runtime_supported()
+
+
+def test_schema_version_must_match_the_registry():
+    """Round 11, finding 3 — a regression from the scope cut. The guard lived in
+    the deleted migrations module, and the round-6 disposition still claimed
+    S53 enforced it."""
+    from schema_model import validate_schema_registry
+    SCHEMAS[2] = SCHEMA_V1
+    try:
+        problems = validate_schema_registry()
+        assert any("SCHEMA_VERSION" in p for p in problems), problems
+    finally:
+        del SCHEMAS[2]
+
+
+def test_the_registry_versions_are_contiguous():
+    from schema_model import validate_schema_registry
+    SCHEMAS[3] = SCHEMA_V1
+    try:
+        assert validate_schema_registry()
+    finally:
+        del SCHEMAS[3]
+
+
+def test_a_missing_versions_artifact_fails_the_gate(monkeypatch, tmp_path):
+    """Round 11 correction: `--check` compared the file only when it existed."""
+    import schema_evidence as ev
+    monkeypatch.setattr(ev, "VERSIONS", tmp_path / "absent.json")
+    monkeypatch.setattr(ev, "_tags", lambda: [])
+    monkeypatch.setattr(ev, "_probe_at",
+                        lambda ref, work: {"tag": ref, "commit": "x",
+                                           "on_disk_user_version": 0,
+                                           "store_schema_version": 1,
+                                           "digest": None, "result": "ok",
+                                           "_objects": {}})
+    assert ev.check() == 1
