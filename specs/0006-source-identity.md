@@ -1,7 +1,7 @@
 # Feature spec: source identity and evidence basis
 
 Spec-Status: draft
-Spec-Requires: 0007
+Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
@@ -10,51 +10,20 @@ Spec-Requires: 0007
 > below lets `source_id` **clear staleness**, and R3 rules that it must never
 > grant anything. Left visible rather than silently edited — see §0.
 
-## 0b. 📥 INHERITED 2026-08-03: `0006` owns the migration contract
+## 0b. 📥 Migrations are owned by `specs/0013`
 
-**`0007` was cut to stamp · refuse-newer · adopt-v1 on the product owner's
-decision, and the on-disk migration contract moved here.** Seven external review
-rounds of `0007` produced ~63 findings, the large majority in migration
-machinery that had **no users** — `MIGRATIONS` was empty and `SCHEMAS` had one
-member. `0006` is the first change that alters the on-disk shape, so it is the
-first place a migration can be designed against something real.
+**`0006` changes the on-disk shape (it adds a column), so it cannot land without
+a migration contract.** That contract is **`specs/0013`**, not this spec.
 
-**This is scope `0006` now carries, and it is substantial. It is not optional:**
-`0006` cannot land without it, because changing the schema is exactly what needs
-a migration.
+It was briefly placed here when `0007` was cut on 2026-08-03. **The round-8
+external reviewer was right that this was wrong**: `0006` is a `draft` whose §3
+is falsified, and hanging every other schema-changing spec off it would make
+them wait on an unrelated unresolved design — and the gate reads direct
+`Spec-Requires:` entries, so it could not have expressed the dependency anyway.
 
-**The requirement `0007` round 1 established, which must survive:**
-
-> A user upgrading across a schema change **must not be required to install
-> every intermediate release.** A store presenting `user_version = 0` with a
-> version-1 shape to a version-2 build must resolve to base 1 and migrate
-> forward — not be refused as foreign.
-
-**Seven rounds of design are preserved, not discarded**, in
-`specs/archives/0007-v9-20260803T0056Z.tar.gz` — the full spec text, the
-`schema_migrations.py` module, and the tests. **The conclusions that survived
-external review**, each of which cost at least one round to find:
-
-| conclusion | why |
-|---|---|
-| **Declarative statements, not Python callbacks** | a callback's connection was recoverable through name mangling, so the WITHDRAWN containment claim was false |
-| **Effects confined to persistent `main`** | a `TEMP TRIGGER` passed validation, left the manifest byte-identical, and silently deleted every inserted row |
-| **Authorizer denies transaction control, pragmas, non-`main`** | `END` and `RELEASE` commit, and a keyword blacklist missed both |
-| **Capability, not DDL text, is the destination contract** | comparing text byte-for-byte rejects a correct `ALTER TABLE … ADD COLUMN` |
-| **A migration may not define its own destination** | an *empty* migration was otherwise accepted as a valid destination |
-| **Single step `n`→`n+1`, validated against every accepted source manifest** | makes cycles, duplicate routes and non-adjacent steps unrepresentable |
-| **Per-path runtime evidence** | different bases produce different exact DDL at the same destination |
-| **A version accepts a *set* of manifests** | a constructor and an `ALTER` path legitimately differ in stored text |
-
-**What `0007` still provides**, so this spec need not restate it: typed object
-identity `(type, name)`, the manifest digest and drift model, candidate-based
-version resolution, the structured schema registry with closed policy
-vocabulary, runtime qualification by evidence, and the lock-before-read
-transaction protocol. `MANIFESTS` is already a *set* per version for exactly
-this reason.
-
-**The `Spec-Requires: 0007` line above stands** — versioning must exist before
-the shape changes.
+`0006` now declares `Spec-Requires: 0007, 0013`. **The eight conclusions that
+survived seven rounds of `0007` review are stated in full in `0013` §4**, not
+left in an archive.
 
 ---
 

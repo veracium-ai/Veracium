@@ -42,7 +42,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 8
+MANIFEST_ALGORITHM = 9
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -127,7 +127,7 @@ def runtime_record_problems(r: dict) -> list:
     versions rather than being whatever happened to be recorded."""
     problems = []
     for field in ("sqlite_version", "source_id", "features", "constructor_digests",
-                  "manifest_algorithm", "schema_version"):
+                  "manifestations", "manifest_algorithm", "schema_version"):
         if field not in r:
             problems.append(f"runtime record is missing {field!r}")
     if problems:
@@ -151,6 +151,24 @@ def runtime_record_problems(r: dict) -> list:
                        ("xinfo_exposes_generated", True)):
         if r["features"].get(name) is not must:
             problems.append(f"runtime fails a required behaviour: {name}")
+    # **Round 8, finding 2: `manifestations` was load-bearing and unvalidated.**
+    # `build_version_artifact()` imports object records from every runtime
+    # record, so an added `CREATE TRIGGER evil ... DELETE FROM edges` became an
+    # accepted version-1 shape while `runtime_record_problems()` returned `[]`
+    # and `runtime_supported()` returned True. Measured. That falsifies the
+    # headline guarantee -- an unrecognised store was recognised.
+    want_prov = {f"constructor v{v}" for v in SCHEMAS}
+    if set(r["manifestations"]) != want_prov:
+        problems.append(f"runtime manifestations {sorted(r['manifestations'])} "
+                        f"are not exactly {sorted(want_prov)}")
+    else:
+        for v in SCHEMAS:
+            objs = r["manifestations"][f"constructor v{v}"]
+            recorded = r["constructor_digests"].get(str(v))
+            if _digest_of_identity(objs, v) != recorded:
+                problems.append(f"manifestation 'constructor v{v}' does not hash "
+                                f"to its recorded digest — the object records and "
+                                f"the digest disagree")
     return problems
 
 
@@ -158,11 +176,10 @@ def runtime_supported() -> bool:
     """**Derived from the evidence artifact, never from a hand-edited tuple.**
 
     Qualification means: a *complete* recorded runtime whose version, source id
-    and feature probes match this process, and whose recorded constructor **and
-    migration-path** digests all reproduce here. Migration digests are included
-    because DDL rewriting is the reason a version has multiple accepted
-    manifests in the first place — a runtime that agrees on constructors could
-    still disagree on an `ALTER` path."""
+    and feature probes match this process, and whose recorded constructor
+    digests all reproduce here. **`specs/0013` adds per-path migration digests**
+    when migrations exist -- DDL rewriting is why a version can have several
+    accepted manifests -- but at `SCHEMA_VERSION = 1` there are no paths."""
     me = runtime_identity()
     for r in qualified_runtimes():
         if runtime_record_problems(r):
@@ -222,9 +239,38 @@ def write_runtime(force: bool = False) -> int:
               if (r.get("source_id"), r.get("sqlite_version")) !=
                  (rec["source_id"], rec["sqlite_version"])]
     GENERATED.mkdir(parents=True, exist_ok=True)
+
+    # **Round 8, finding 3: qualification must be atomic at the artifact level.**
+    # v10 wrote only `sqlite_runtimes.json` and reported success, leaving
+    # `schema_versions.json` byte-for-byte unchanged. Measured by adding 3.46.1:
+    # rc 0, two runtime records, accepted provenance still "constructor v1"
+    # only. On those two runtimes the digests agree so nothing broke -- but when
+    # a runtime produces different stored DDL, which is the entire reason the
+    # union model exists, it would be marked qualified while the stores it
+    # creates were NOT in MANIFESTS.
+    previous = RUNTIMES.read_text() if RUNTIMES.exists() else None
     RUNTIMES.write_text(json.dumps({"runtimes": others + [rec]}, indent=2) + "\n")
+    try:
+        versions = build_version_artifact()
+        accepted = {a["digest"] for recs in versions["versions"].values()
+                    for a in recs["accepted"]}
+        orphan = [f"{prov} @ {rt['sqlite_version']}"
+                  for rt in qualified_runtimes()
+                  for prov, objs in rt["manifestations"].items()
+                  if _digest_of_identity(objs, int(prov.rsplit("v", 1)[1]))
+                  not in accepted]
+        if orphan:
+            raise SystemExit(f"runtime output not in the accepted set: {orphan}")
+        VERSIONS.write_text(json.dumps(versions, indent=2) + "\n")
+    except SystemExit as exc:
+        if previous is None:
+            RUNTIMES.unlink()
+        else:
+            RUNTIMES.write_text(previous)
+        print(f"qualification refused, artifacts unchanged: {exc}", file=sys.stderr)
+        return 1
     print(f"recorded {rec['sqlite_version']} ({rec['source_id'][:20]}…) — "
-          f"{len(others) + 1} qualified runtime(s)")
+          f"{len(others) + 1} qualified runtime(s); accepted manifests updated")
     return 0
 
 
@@ -274,6 +320,23 @@ def build_version_artifact(strict: bool = True) -> dict:
         # was silently dropped.
         have = {a["digest"] for a in accepted}
         for rt in qualified_runtimes():
+            # A record written under an older manifest algorithm describes a
+            # different computation. It is **superseded, not fraudulent**: it
+            # contributes nothing and is reported, but it does not block
+            # regeneration -- otherwise bumping the algorithm deadlocks, since
+            # the artifact can only be rewritten by a run that first refuses to
+            # read it. Skipping is fail-closed: nothing it holds is accepted.
+            if rt.get("manifest_algorithm") != MANIFEST_ALGORITHM:
+                print(f"note: runtime {rt.get('sqlite_version')!r} was recorded "
+                      f"under manifest algorithm {rt.get('manifest_algorithm')}; "
+                      f"re-run --runtime --write there to qualify it again")
+                continue
+            if runtime_record_problems(rt):
+                problems.append(f"runtime record for sqlite "
+                                f"{rt.get('sqlite_version')!r} is invalid and "
+                                f"contributes no accepted manifest: "
+                                f"{runtime_record_problems(rt)[0]}")
+                continue
             for prov, objs in (rt.get("manifestations") or {}).items():
                 if not prov.endswith(f"v{version}") and prov != f"constructor v{version}":
                     continue
@@ -447,6 +510,16 @@ def check() -> int:
     if not runtime_supported():
         bad.append(f"sqlite {sqlite3.sqlite_version} is not a qualified runtime "
                    f"(see {RUNTIMES.name}); 0007 §4a-viii refuses it")
+    # Every stored record, not merely the one this process matches: an invalid
+    # record beside a valid one still feeds the accepted set.
+    for rt in qualified_runtimes():
+        if rt.get("manifest_algorithm") != MANIFEST_ALGORITHM:
+            bad.append(f"runtime {rt.get('sqlite_version')!r} was recorded under "
+                       f"manifest algorithm {rt.get('manifest_algorithm')}, build "
+                       f"uses {MANIFEST_ALGORITHM} — re-qualify it")
+            continue
+        for p in runtime_record_problems(rt):
+            bad.append(f"runtime {rt.get('sqlite_version')!r}: {p}")
 
     with tempfile.TemporaryDirectory() as tmp:
         work = pathlib.Path(tmp)

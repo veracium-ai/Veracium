@@ -370,6 +370,10 @@ def test_a_foreign_runtime_manifestation_is_preserved(monkeypatch):
     key = next(k for k in objs if k.startswith("table:wiki"))
     objs[key] = dict(objs[key], sql=objs[key]["sql"] + " -- other runtime")
     foreign["manifestations"] = {"constructor v1": objs}
+    # A legitimate foreign runtime records a SELF-CONSISTENT pair: different
+    # stored DDL and the digest that matches it. Mutating objects while keeping
+    # the old digest is round 8's fabrication case, covered separately.
+    foreign["constructor_digests"] = {"1": ev._digest_of_identity(objs, 1)}
     monkeypatch.setattr(ev, "qualified_runtimes", lambda: [foreign])
     records = ev.build_version_artifact(strict=False)["versions"]
     prov = [a["provenance"] for a in records["1"]["accepted"]]
@@ -394,3 +398,69 @@ def test_the_ddl_probe_asserts_body_preservation():
     import schema_evidence as ev
     f = ev.runtime_identity()["features"]
     assert f["preserves_ddl_body"] is True and f["xinfo_exposes_generated"] is True
+
+
+# --- round 8: runtime-record validation ----------------------------------
+
+def _valid_record():
+    import schema_evidence as ev
+    return ev.build_runtime_record()
+
+
+def test_a_fabricated_manifestation_is_rejected():
+    """Round 8, finding 2 — a demonstrated bypass. An added trigger became an
+    accepted version-1 shape while the validator returned no problems."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(_valid_record())
+    objs = dict(rec["manifestations"]["constructor v1"])
+    objs["trigger:evil"] = {
+        "type": "trigger", "table": "edges",
+        "sql": "CREATE TRIGGER evil AFTER INSERT ON edges BEGIN DELETE FROM edges; END"}
+    rec["manifestations"]["constructor v1"] = objs
+    assert ev.runtime_record_problems(rec)
+
+
+def test_a_record_without_manifestations_is_rejected():
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(_valid_record())
+    del rec["manifestations"]
+    assert ev.runtime_record_problems(rec)
+
+
+def test_an_extra_manifestation_is_rejected():
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(_valid_record())
+    rec["manifestations"]["constructor v9"] = {}
+    assert ev.runtime_record_problems(rec)
+
+
+def test_an_invalid_record_beside_a_valid_one_contributes_nothing(monkeypatch):
+    """`build_version_artifact()` imported manifestations from every record
+    without first validating it."""
+    import copy
+
+    import schema_evidence as ev
+    good = copy.deepcopy(_valid_record())
+    bad = copy.deepcopy(good)
+    bad["sqlite_version"] = "9.9.9"
+    objs = dict(bad["manifestations"]["constructor v1"])
+    objs["table:sneaky"] = {"type": "table", "table": "sneaky",
+                            "sql": "CREATE TABLE sneaky (x)", "columns": []}
+    bad["manifestations"]["constructor v1"] = objs
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [good, bad])
+    sneaky = ev._digest_of_identity(objs, 1)
+    records = ev.build_version_artifact(strict=False)["versions"]
+    assert not any(a["digest"] == sneaky for a in records["1"]["accepted"])
+
+
+def test_the_capability_validator_is_not_in_the_0007_kernel():
+    """Round 8, finding 4: it is a migration destination validator with no
+    caller here. `specs/0013` owns it."""
+    import schema_model
+    assert not hasattr(schema_model, "capability_problems")

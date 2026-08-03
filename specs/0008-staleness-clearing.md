@@ -1,7 +1,7 @@
 # Feature spec: what may clear `needs_confirmation`
 
 Spec-Status: accepted
-Spec-Requires: 0007
+Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 

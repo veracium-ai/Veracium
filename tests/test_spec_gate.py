@@ -715,4 +715,15 @@ def test_no_spec_names_a_module_or_script_that_does_not_exist():
         for ref in set(re.findall(r"`(specs/[\w./-]+\.py)`", body)):
             if not (root / ref).exists():
                 bad.append(f"{spec.name}: names `{ref}`, which does not exist")
+        # Round 8, finding 4: the gate matched only `specs/<name>.py` and missed
+        # a bare `schema_migrations.py` in the normative instrument row, so the
+        # scope cut left a live reference to a deleted module.
+        # A bare module name may live anywhere in the tree -- `base.py` is
+        # `src/veracium/store/base.py`. Match on basename, not on a guessed
+        # directory, or the gate invents violations.
+        for ref in set(re.findall(r"`(\w+\.py)`", body)):
+            if not any(p.name == ref for p in root.rglob("*.py")
+                       if ".git" not in p.parts):
+                bad.append(f"{spec.name}: names `{ref}`, which does not exist "
+                           f"anywhere in the tree")
     assert not bad, "\n".join(bad)

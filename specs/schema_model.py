@@ -25,12 +25,14 @@ preserved in `specs/archives/0007-v9-20260803T0056Z.tar.gz`, and `0006` §0
 points at it.
 
 **Shared with production:** this registry and its policies, manifest / digest /
-drift / candidate matching, the migration declarations and their validation,
-migration execution confinement, and runtime-evidence validation. **Evidence
-only:** git worktree probing, release enumeration, artifact presentation. If the
-store reimplemented the migration registry or the runtime predicate, evidence
-could be generated from one set of declarations while the store executed
-another. And the
+drift / candidate matching, and runtime-evidence validation. **Evidence only:**
+git worktree probing, release enumeration, artifact presentation. If the store
+reimplemented the runtime predicate, evidence could be generated from one set of
+declarations while the store executed another.
+
+**`specs/0013` extends both when migrations exist** — its declarations and
+execution confinement join the shared kernel, and runtime evidence gains
+per-path entries. And the
 counterexamples are now pytest tests rather than a hand-rolled harness — which
 is what killed the last reporting defect: the harness printed 30 rows and
 reported `28/28`, because its total was a hand-maintained arithmetic expression.
@@ -39,7 +41,10 @@ A tool whose purpose is truthful evidence cannot count its own checks by hand.
 The acceptance model itself (round 2, unchanged since):
 
     A store is understood when its persistent schema is EXACTLY what one of
-    this build's known constructors or migrations produces.
+    this build's known constructors produces.
+
+(`specs/0013` widens that to "constructors or migrations" when migrations
+exist. At `SCHEMA_VERSION = 1` there are none.)
 """
 from __future__ import annotations
 
@@ -122,57 +127,14 @@ def _columns_of(entry: dict) -> dict:
     return {c[0]: tuple(c[1:]) for c in entry.get("columns", [])}
 
 
-def capability_problems(objs: dict, version: int) -> list:
-    """Does this database provide what `version` REQUIRES — by structure?
-
-    **Round 7, finding 1, and it was a contradiction I introduced in v8.** The
-    destination check compared a migrated object's stored DDL byte-for-byte with
-    the constructor's, while the spec said in the same breath that an `ALTER`
-    path may legitimately produce different DDL text. Measured: a correct
-    `ALTER TABLE edges ADD COLUMN source_id TEXT` was **rejected** — the exact
-    case the accepted-*set* model was introduced to support.
-
-    So capability is structural, not textual:
-
-      * every declared object exists, of the right kind;
-      * every declared column exists with the same declared type, nullability,
-        default, primary-key position and generated flag;
-      * no extra columns on a required table, and no unapproved objects;
-      * a **rebuildable** object may be absent — that is repairable drift.
-
-    Exact DDL text is still what the *digest* records. Capability is what
-    authorises a migration output to become an accepted manifestation."""
-    problems = []
-    declared = {o.key: o for o in SCHEMAS[version]}
-    reference = sqlite3.connect(":memory:")
-    create(reference, version)
-    ref = manifest(reference)
-    reference.close()
-    for key, o in declared.items():
-        got = objs.get(key)
-        if got is None:
-            if o.policy == REBUILDABLE:
-                continue                    # repairable drift, not a failure
-            problems.append(f"v{version} requires {key[0]} {key[1]!r}, absent")
-            continue
-        if o.kind != "table":
-            if got.get("sql") != o.ddl:
-                problems.append(f"{key[0]} {key[1]!r} differs from its declaration")
-            continue
-        want, have = _columns_of(ref[key]), _columns_of(got)
-        for col, props in want.items():
-            if col not in have:
-                problems.append(f"{key[1]}.{col} is required and absent")
-            elif have[col] != props:
-                problems.append(f"{key[1]}.{col} has properties {have[col]}, "
-                                f"required {props}")
-        for col in have:
-            if col not in want:
-                problems.append(f"{key[1]}.{col} is not declared at v{version}")
-    for key in objs:
-        if key not in declared:
-            problems.append(f"unapproved persistent object {key[0]} {key[1]!r}")
-    return problems
+# `capability_problems()` lived here until the scope cut was finished. It is a
+# **migration destination validator** -- it answers "does this database provide
+# what version N requires", which only matters when something migrated into it.
+# `0007` v10 has one version and no migrations, so it had no caller. It is
+# specified in `specs/0013` §4c and belongs with the code that uses it.
+#
+# Round 8, finding 4: leaving it here is the exact drift the scope cut existed
+# to remove -- dormant migration machinery with no caller.
 
 
 # The v1 schema, declared structurally. `ddl` is byte-identical to what SQLite

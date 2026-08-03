@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v10) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
+> **in review (v11) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
 > the product owner's decision.** Seven external rounds produced ~63 findings,
 > and the large majority lived in **migration machinery with no users** —
 > `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
@@ -18,7 +18,7 @@ Spec-Status: in review
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v10 |
+| **Version** | v11 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0006`, not a part of it. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
@@ -202,14 +202,24 @@ intermediate release**. A store presenting `user_version = 0` with a version-1
 shape to a version-2 build must resolve to base 1 and then migrate forward —
 not be refused as foreign.
 
-**That requirement is recorded here and owned by `0006`**, because `0006` is the
-first change that alters the on-disk shape and therefore the first place a
-migration can be designed against something real. The design work is not lost:
+**That requirement is owned by `specs/0013`**, a dedicated store-migrations
+spec. The scope cut first put it in `0006` §0b, and **that was wrong**: `0006`
+is a `draft` whose §3 is falsified, and the gate reads a spec's *direct*
+`Spec-Requires:` entries — it cannot infer that adding a table needs migration
+work living inside a source-identity spec. Round 8 caught it. The design work is not lost:
 **seven review rounds of it are preserved in
 `specs/archives/0007-v9-20260803T0056Z.tar.gz`**, and the conclusions that
 survived review are listed in `0006` §0 — the single-step model, declarative
 statements rather than callbacks, effects confined to persistent `main` schema,
 capability-not-DDL-text destination validation, and per-path runtime evidence.
+
+**The dependency graph, repaired.** `0013` requires `0007`; **`0006`, `0008`,
+`0009` and `0010` each require `0007` and `0013`.** Verified: a commit citing
+the `accepted` `0008` is refused by name for **both** unresolved prerequisites.
+**Without this, accepting `0007` would have authorised implementing `0008`'s
+`confirmations` table with no migration design** — `0008`'s own C12 names that
+exact failure. That is the most serious defect the scope cut introduced, and it
+was mine.
 
 **Why the cut.** Seven rounds produced ~63 findings. The large majority were in
 migration and migration-driven runtime machinery, **for a registry that was
@@ -816,13 +826,14 @@ below are the contract for what must be written, not a description of what is
 there. **Stated in this form because a previous manifest listed 17 rows of which
 11 cited tests that did not exist.**
 
-**The measuring instrument is the exception, and in v7 it is three small
+**The measuring instrument is the exception, and after the scope cut it is two
 modules plus a test file** — `schema_model.py` (identity, digest, drift,
-candidate matching), `schema_migrations.py` (declarative steps, planner-owned
-execution), `schema_evidence.py` (tag probing and artifacts). **The shared
-production boundary is `schema_model` + `schema_migrations` + runtime-evidence
-validation** — see §4a; only git probing, release enumeration and presentation
-are outside it.
+candidate matching) and `schema_evidence.py` (tag probing and artifacts).
+**The shared production boundary is `schema_model` + runtime-evidence
+validation**; only git probing, release enumeration and presentation are
+outside it. **`specs/0013` extends both** — its migration declarations and
+execution confinement join the shared kernel, and runtime evidence gains
+per-path entries — **when migrations exist.**
 
 **Every counterexample is now a pytest test** in `tests/test_schema_model.py`,
 **and that is what fixed the last reporting defect**: the old harness printed 30
@@ -982,66 +993,69 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**This is not a round-8 response. It is a scope cut, made by the product owner
-on 2026-08-03**, and the honest framing is that your round-7 note about where
-the findings kept landing was the deciding input.
+**Round 8 approved the scope cut and found that the cut itself introduced a
+safety regression. That is the most important thing here, and it was mine.**
 
-**`0007` is now: stamp on create · refuse what it does not recognise · adopt the
-one historical shape.** The migration contract has moved to **`specs/0006`**,
-which is the first change that alters the on-disk shape and therefore the first
-place a migration can be designed against something real.
+**Finding 1.** Moving the migration contract to `0006` §0b broke the gate
+protecting `0008`. `0008` is `accepted`, adds a `confirmations` table, and
+declared only `Spec-Requires: 0007` — so accepting `0007` would have authorised
+a schema-changing implementation whose migration design was unresolved.
+**`0008`'s own C12 names that exact failure**: without the compatibility gate an
+older build ignores the table and clears unaudited.
 
-**Why.** Seven rounds, ~63 findings. The large majority were in migration and
-migration-driven runtime machinery — **for a registry that was empty and a
-`SCHEMAS` with one member**. Every finding was real and two were total
-bypasses; the problem was never the reviews. It was that I kept rewriting a
-mechanism nothing called, and each rewrite introduced a defect the next round
-found. Round 7's finding 1 is the clearest case: I broke a correct `ALTER` while
-fixing round 6's finding 1, in code with no callers.
+Repaired with a dedicated spec, `specs/0013`, as you recommended:
 
-**What is gone from this document:** §4d and its subsections, the `MANIFESTS`
-migration-path generation, the three `migration-*` reasons in the closed reason
-set, and the sixteen migration-borne invariants. The `schema_migrations` module
-and its tests are deleted. **The v9 package is the diff** if you want the exact
-list.
+```
+0013 requires 0007
+0006, 0008, 0009, 0010  each require 0007 and 0013
+```
 
-**What is preserved and where.** Nothing is discarded. `0006` §0b now carries
-the requirement your round 1 established — *a user must not be required to
-install every intermediate release* — and tabulates the eight conclusions that
-survived review, each costing at least one round to find: declarative statements
-not callbacks; effects confined to persistent `main`; the authorizer's denial
-set; capability-not-DDL-text; a migration may not define its own destination;
-single-step routing; per-path runtime evidence; a *set* of manifests per
-version. The full v9 text and module are in
-`specs/archives/0007-v9-20260803T0056Z.tar.gz`, cited from `0006`.
+**Verified against a clone**: a commit citing the accepted `0008` is now refused
+by name for **both** unresolved prerequisites. And `0013` states the eight
+inherited conclusions **in full** rather than citing the uncommitted archive —
+your non-blocking observation was right that a spec must not depend on a tarball
+on one machine.
 
-**What remains here, and what I would like reviewed:**
+**Finding 2 was a demonstrated bypass and the fix is measured.** `manifestations`
+was load-bearing and unvalidated; your `CREATE TRIGGER evil` record returned no
+problems, qualified, and became an accepted version-1 shape. Now the key set
+must equal the declared constructors, **every manifestation must hash to its
+recorded digest**, and `build_version_artifact()` consumes only records that
+pass. Re-probed: the fabricated record is rejected, and the evil manifest is not
+accepted.
 
-- §4's decision table, now total and short: invalid · unsupported-runtime · new ·
-  legacy · foreign · current · stamped-wrong · newer.
-- §4a's manifest model — typed identity, no SQL normalisation, structured
-  registry with a closed policy vocabulary, candidate-restricted legacy
-  resolution.
-- §4a-iv's evidence: 23 releases, resolved commit shas, on-disk stamps, the
-  legacy base set, and a gate that re-derives every authoritative field.
-- §4c's lock-before-read protocol and live-connection inspection.
-- §4e's audit events.
+**Finding 3, and one thing I had to decide.** Qualification is now atomic —
+both artifacts are written, or the runtime file is restored and the command
+fails. Implementing it surfaced a bootstrap deadlock: bumping the manifest
+algorithm made the stored record invalid, and the artifact can only be rewritten
+by a run that first reads it. **I ruled that a record at an older algorithm is
+*superseded, not fraudulent*** — it contributes nothing, is reported, and does
+not block regeneration. That is fail-closed (nothing it holds is accepted) but
+it is a judgement call, and it is the one place where "invalid" and "stale" are
+treated differently.
 
-**`MANIFESTS` is still a set per version, deliberately.** That is the one piece
-of migration-shaped structure I kept: `0006` will add outputs to it, and
-removing it would have to be undone.
+**Findings 4 and 5.** `capability_problems()` is gone from the kernel — it is a
+migration destination validator with no caller here, specified in `0013` §4c.
+The stale normative text is corrected. **And the module-reference gate is
+widened to bare names**, which caught the deleted migrations-module reference
+immediately; it then correctly flagged `base.py`, which taught me the gate's
+search path was wrong rather than the reference. The historical-coverage claim
+is narrowed to what the evidence supports: *every released codebase, probed
+under the qualified runtime, produced the accepted manifestation* — and the
+refused population is no longer claimed to be empty.
 
 **Where I am least confident:**
 
-1. **The cut may have removed something `0007` still needs.** The *older* row of
-   the decision table is now "cannot arise at `SCHEMA_VERSION = 1`; `0006` owns
-   it". If you think a version-aware build must do something more specific with
-   a lower stamp even before migrations exist, that is the gap.
-2. **`0006` is now carrying a lot**, and it is a `draft` with a falsified §3. I
-   have written the inheritance down rather than assumed it survives in
-   conversation, but a large inherited scope in a draft spec is a risk worth
-   naming.
+1. **`0013` has no first migration**, which is the argument the cut was made on.
+   I have opened **M-Q1** as blocking on exactly that: `0013` probably should
+   not reach `accepted` before `0008`'s table or `0006`'s column is concrete
+   enough to hold it to. **If you disagree, that is the question to answer.**
+2. **The stale-versus-invalid distinction** in the previous paragraph.
 3. **S-Q7 unchanged**: one qualified runtime.
+
+**What I did not do:** `0013` is a `draft` with two blocking questions of its
+own, and I have not attempted to advance it — it needs its own review round, and
+this package is `0007`.
 
 ## 10. Open questions
 
@@ -1257,7 +1271,7 @@ large majority in migration machinery with **no users**: `MIGRATIONS` empty,
 |---|---|
 | **`0007` keeps** | stamp on create · refuse newer/invalid/foreign/stamped-wrong · adopt the one historical unstamped shape · index drift repair · runtime qualification · the audit events |
 | **`0006` inherits** | the entire migration contract, recorded in `0006` §0b with the eight review-tested conclusions |
-| **Preserved** | `specs/archives/0007-v9-20260803T0056Z.tar.gz` — full v9 text, `schema_migrations.py`, and its tests |
+| **Preserved** | `specs/archives/0007-v9-20260803T0056Z.tar.gz` — full v9 text, the migrations module and its tests. **The conclusions themselves are stated in full in `specs/0013` §4**, not left in an uncommitted archive (round 8, non-blocking) |
 | **Deleted here** | §4d and subsections · the `migration-*` reasons · sixteen migration-borne invariants · the `schema_migrations` module · the migration tests |
 
 **What the cut does not change:** the acceptance model, typed object identity,
@@ -1271,3 +1285,22 @@ called, and fixing them introduced the next round's defects. Round 7's finding 1
 — a correct `ALTER` rejected by the check added in round 6 to protect it — is
 the clearest example. **`0006` will hold the migration contract to a real
 migration**, which is the thing this spec could never do.
+
+---
+
+## 19. Round 8 review disposition
+
+**Verdict: scope cut approved; v10 deferred.** 5 blocking findings, 2
+non-blocking. **All taken.**
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the cut broke `0008`'s prerequisite | **`specs/0013`** — `0013` requires `0007`; `0006`/`0008`/`0009`/`0010` require both. **Verified against a clone**: the accepted `0008` is refused by name for both. **The most serious defect the cut introduced** |
+| 2 | a fabricated manifestation is accepted | **`runtime_record_problems()` validates `manifestations`** — exact key set, and each must hash to its recorded digest; `build_version_artifact()` consumes only passing records; `--check` validates every stored record. Re-probed: rejected |
+| 3 | qualification is not atomic | **both artifacts written or neither**, with the runtime file restored on failure. A stale-algorithm record is *superseded, not fraudulent* — reported, contributes nothing, does not deadlock regeneration |
+| 4 | the cut was incomplete | `capability_problems()` removed from the kernel; normative text corrected; **the module gate widened to bare names**, which caught the stale reference immediately |
+| 5 | the historical claim is overstated | narrowed to *every released codebase, probed under the qualified runtime*; the refused population is no longer claimed empty |
+
+**Non-blocking, both taken:** S-Q7 remains a release gate, not an acceptance
+blocker, and is stated as such; and **the inherited conclusions are stated in
+full in `0013` §4** rather than depending on an uncommitted archive.
