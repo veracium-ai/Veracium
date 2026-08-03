@@ -16,8 +16,13 @@ The split is:
     schema_evidence.py    tag probing and the generated artifacts
     tests/test_schema_model.py   every adversarial counterexample, in pytest
 
-**Only this kernel is shared between production and evidence generation.** Git
-probing and result presentation are not part of the trust boundary. And the
+**Shared with production:** this registry and its policies, manifest / digest /
+drift / candidate matching, the migration declarations and their validation,
+migration execution confinement, and runtime-evidence validation. **Evidence
+only:** git worktree probing, release enumeration, artifact presentation. If the
+store reimplemented the migration registry or the runtime predicate, evidence
+could be generated from one set of declarations while the store executed
+another. And the
 counterexamples are now pytest tests rather than a hand-rolled harness — which
 is what killed the last reporting defect: the harness printed 30 rows and
 reported `28/28`, because its total was a hand-maintained arithmetic expression.
@@ -48,6 +53,12 @@ _OBJECTS = ("SELECT type, name, tbl_name, sql FROM sqlite_master "
 
 REBUILDABLE = "rebuildable"
 REQUIRED = "required"
+POLICIES = frozenset({REQUIRED, REBUILDABLE})
+KINDS = frozenset({"table", "index", "view", "trigger"})
+REBUILDABLE_KINDS = frozenset({"index"})
+"""Only an index may be repaired by dropping and recreating it. Repairing a
+table would destroy data; repairing a trigger or view silently changes
+behaviour."""
 
 
 class SchemaObject(NamedTuple):
@@ -66,6 +77,94 @@ class SchemaObject(NamedTuple):
     @property
     def key(self) -> tuple:
         return (self.kind, self.name)
+
+
+def validate_schema_registry() -> list:
+    """Closed vocabularies, checked before anything is generated.
+
+    **Round 7, finding 6: `policy` was an unrestricted string**, and the
+    destination validator only enforced DDL when `policy == REQUIRED`. A typo —
+    `"requried"` — therefore silently created a *third* behaviour that checked
+    nothing. Measured: a `sources` table declared `CREATE TABLE sources (id TEXT
+    PRIMARY KEY)` and migrated as `CREATE TABLE sources (id INTEGER)` produced
+    **no destination problems at all**. A policy artifact records the typo just
+    as faithfully, so artifact-versus-registry equality does not catch it.
+
+    Unknown values are build errors, never implicit third behaviours."""
+    problems, seen = [], set()
+    for version, objs in sorted(SCHEMAS.items()):
+        for o in objs:
+            where = f"v{version} {o.kind}:{o.name}"
+            if o.kind not in KINDS:
+                problems.append(f"{where}: kind {o.kind!r} is not one of {sorted(KINDS)}")
+            if o.policy not in POLICIES:
+                problems.append(f"{where}: policy {o.policy!r} is not one of "
+                                f"{sorted(POLICIES)}")
+            if o.policy == REBUILDABLE and o.kind not in REBUILDABLE_KINDS:
+                problems.append(f"{where}: only {sorted(REBUILDABLE_KINDS)} may be "
+                                f"rebuildable — repairing a {o.kind} would destroy "
+                                f"data or silently change behaviour")
+            if (version, o.key) in seen:
+                problems.append(f"{where}: duplicate typed key")
+            seen.add((version, o.key))
+    return problems
+
+
+def _columns_of(entry: dict) -> dict:
+    return {c[0]: tuple(c[1:]) for c in entry.get("columns", [])}
+
+
+def capability_problems(objs: dict, version: int) -> list:
+    """Does this database provide what `version` REQUIRES — by structure?
+
+    **Round 7, finding 1, and it was a contradiction I introduced in v8.** The
+    destination check compared a migrated object's stored DDL byte-for-byte with
+    the constructor's, while the spec said in the same breath that an `ALTER`
+    path may legitimately produce different DDL text. Measured: a correct
+    `ALTER TABLE edges ADD COLUMN source_id TEXT` was **rejected** — the exact
+    case the accepted-*set* model was introduced to support.
+
+    So capability is structural, not textual:
+
+      * every declared object exists, of the right kind;
+      * every declared column exists with the same declared type, nullability,
+        default, primary-key position and generated flag;
+      * no extra columns on a required table, and no unapproved objects;
+      * a **rebuildable** object may be absent — that is repairable drift.
+
+    Exact DDL text is still what the *digest* records. Capability is what
+    authorises a migration output to become an accepted manifestation."""
+    problems = []
+    declared = {o.key: o for o in SCHEMAS[version]}
+    reference = sqlite3.connect(":memory:")
+    create(reference, version)
+    ref = manifest(reference)
+    reference.close()
+    for key, o in declared.items():
+        got = objs.get(key)
+        if got is None:
+            if o.policy == REBUILDABLE:
+                continue                    # repairable drift, not a failure
+            problems.append(f"v{version} requires {key[0]} {key[1]!r}, absent")
+            continue
+        if o.kind != "table":
+            if got.get("sql") != o.ddl:
+                problems.append(f"{key[0]} {key[1]!r} differs from its declaration")
+            continue
+        want, have = _columns_of(ref[key]), _columns_of(got)
+        for col, props in want.items():
+            if col not in have:
+                problems.append(f"{key[1]}.{col} is required and absent")
+            elif have[col] != props:
+                problems.append(f"{key[1]}.{col} has properties {have[col]}, "
+                                f"required {props}")
+        for col in have:
+            if col not in want:
+                problems.append(f"{key[1]}.{col} is not declared at v{version}")
+    for key in objs:
+        if key not in declared:
+            problems.append(f"unapproved persistent object {key[0]} {key[1]!r}")
+    return problems
 
 
 # The v1 schema, declared structurally. `ddl` is byte-identical to what SQLite

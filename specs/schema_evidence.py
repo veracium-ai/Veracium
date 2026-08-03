@@ -41,12 +41,15 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 6
+MANIFEST_ALGORITHM = 7
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
+# `result` is authoritative and was NOT compared until round 7, finding 7:
+# the gate inspected the *stored* value, so a record could describe a
+# freshly unbuildable release as "ok".
 AUTHORITATIVE = ("tag", "commit", "on_disk_user_version", "store_schema_version",
-                 "digest")
+                 "digest", "result")
 SUMMARY = ("legacy_base_versions", "head_digest", "head_schema_version")
 
 
@@ -73,13 +76,52 @@ def _feature_probes() -> dict:
         out["authorizer"] = True
     except Exception:
         out["authorizer"] = False
+    # Round 7, finding 5: this probe used `CREATE TABLE s (a) STRICT`, which is
+    # invalid -- a strict table's column must declare a datatype. It therefore
+    # recorded `strict_tables: False` on a runtime that fully supports them.
+    # Measured on 3.46.1. A probe that fails for the wrong reason is worse than
+    # no probe: it records a false property as evidence.
     try:
-        c.execute("CREATE TABLE s (a) STRICT")
+        c.execute("CREATE TABLE s (a TEXT) STRICT")
         out["strict_tables"] = True
     except sqlite3.DatabaseError:
         out["strict_tables"] = False
-    out["stores_ddl_verbatim"] = bool(
-        c.execute("SELECT sql FROM sqlite_master WHERE name='t'").fetchone())
+    # ...and this one only checked that a row existed, which cannot establish
+    # that DDL is stored verbatim. Submit distinctive text and compare it.
+    # Writing this probe found that "verbatim" was too strong a word for what
+    # the manifest actually needs. SQLite normalises the whitespace *before* the
+    # object name -- `CREATE TABLE  vp` is stored as `CREATE TABLE vp` -- while
+    # preserving the body exactly. The property §4a depends on is body
+    # preservation, which is why two-space and one-space CHECK literals produce
+    # different digests. Probe the property, not the slogan.
+    marker = ("CREATE TABLE verbatim_probe ( a   TEXT ,\n"
+              "  b TEXT DEFAULT 'x  y' , c TEXT CHECK(c <> 'p  q') )")
+    c.execute(marker)
+    stored = c.execute(
+        "SELECT sql FROM sqlite_master WHERE name='verbatim_probe'").fetchone()[0]
+    out["preserves_ddl_body"] = stored[stored.index("("):] == marker[marker.index("("):]
+    # The authorizer probe checked only that `set_authorizer` was callable. What
+    # migration confinement actually relies on is that these specific actions
+    # are denied, so exercise them.
+    from schema_migrations import Migration, apply_migration
+    c.execute("BEGIN IMMEDIATE")
+    denied = []
+    for stmt in ("COMMIT", "END", "RELEASE s", "PRAGMA writable_schema=ON",
+                 "CREATE TEMP TABLE tmp_probe (x)"):
+        try:
+            apply_migration(c, Migration(0, 0, (stmt,)))
+        except Exception:
+            denied.append(stmt)
+    out["authorizer_denies_all"] = len(denied) == 5
+    try:
+        c.execute("ROLLBACK")
+    except sqlite3.DatabaseError:
+        pass
+    # `table_xinfo` must expose a generated column with a nonzero hidden flag --
+    # the property §4a-ii depends on.
+    out["xinfo_exposes_generated"] = any(
+        r[1] == "b" and int(r[6]) != 0
+        for r in c.execute("SELECT * FROM pragma_table_xinfo('t')"))
     c.close()
     return out
 
@@ -124,6 +166,19 @@ def runtime_record_problems(r: dict) -> list:
         problems.append("runtime record has no constructor digests")
     if not r["features"]:
         problems.append("runtime record has no feature probes")
+    # Round 7, finding 2: the constructor key set was validated and the
+    # migration key set was not, so `{}` and `{"999": "bad"}` both passed and
+    # `runtime_supported()` then checked whichever entries happened to exist.
+    want_paths = set(migration_paths())
+    if set(r["migration_digests"]) != want_paths:
+        problems.append(f"runtime record covers migration paths "
+                        f"{sorted(r['migration_digests'])}, build declares "
+                        f"{sorted(want_paths)}")
+    for name, must in (("authorizer_denies_all", True),
+                       ("preserves_ddl_body", True),
+                       ("xinfo_exposes_generated", True)):
+        if r["features"].get(name) is not must:
+            problems.append(f"runtime fails a required behaviour: {name}")
     return problems
 
 
@@ -147,26 +202,35 @@ def runtime_supported() -> bool:
         if any(_constructor_digest(int(v)) != d
                for v, d in r["constructor_digests"].items()):
             return False
-        return all(_migration_digest(int(v)) == d
-                   for v, d in r["migration_digests"].items())
+        here = migration_paths()
+        return all(here[k]["digest"] == d for k, d in r["migration_digests"].items())
     return False
 
 
-def _migration_digest(to_version: int) -> str | None:
-    """The digest an `ALTER`-path migration produces here, if there is one."""
-    for base in sorted(v for v in SCHEMAS if v < to_version):
-        try:
-            steps = chain(base, to_version)
-        except KeyError:
-            continue
-        c = sqlite3.connect(":memory:")
-        create(c, base)
-        for mig in steps:
-            apply_migration(c, mig)
-        d = digest(manifest(c), to_version)
-        c.close()
-        return d
-    return None
+def migration_paths() -> dict:
+    """Every declared path, keyed individually.
+
+    **Round 7, finding 3: v8 keyed by destination version and returned after the
+    first viable base**, so only one path per destination could ever be
+    recorded — while the whole reason migration digests exist is that different
+    bases can produce different exact output at the same destination."""
+    out = {}
+    for to_version in sorted(SCHEMAS):
+        for base in sorted(v for v in SCHEMAS if v < to_version):
+            try:
+                steps = chain(base, to_version)
+            except KeyError:
+                continue
+            c = sqlite3.connect(":memory:")
+            create(c, base)
+            for mig in steps:
+                apply_migration(c, mig)
+            out[f"v{base}:constructor->v{to_version}"] = {
+                "digest": digest(manifest(c), to_version),
+                "objects": identity(manifest(c)),
+                "to_version": to_version}
+            c.close()
+    return out
 
 
 def build_runtime_record() -> dict:
@@ -174,9 +238,33 @@ def build_runtime_record() -> dict:
     me["manifest_algorithm"] = MANIFEST_ALGORITHM
     me["schema_version"] = SCHEMA_VERSION
     me["constructor_digests"] = {str(v): _constructor_digest(v) for v in sorted(SCHEMAS)}
-    me["migration_digests"] = {str(v): d for v in sorted(SCHEMAS)
-                               if (d := _migration_digest(v)) is not None}
+    paths = migration_paths()
+    me["migration_digests"] = {k: v["digest"] for k, v in paths.items()}
+    # Full object records, not only digests: round 7, finding 4 -- a second
+    # qualified runtime's manifestations must be reconstructible, and an
+    # object-level `diff` cannot be built from a digest.
+    me["manifestations"] = {
+        **{f"constructor v{v}": _constructor_objects(v) for v in sorted(SCHEMAS)},
+        **{k: v["objects"] for k, v in paths.items()}}
     return me
+
+
+def _digest_of_identity(objs: dict, version: int) -> str:
+    """Digest a recorded identity mapping without rebuilding the database."""
+    from schema_model import rebuildable_keys
+    import hashlib as _h
+    skip = rebuildable_keys(version)
+    scoped = {k: v for k, v in objs.items() if tuple(k.split(":", 1)) not in skip}
+    return _h.sha256(
+        json.dumps(scoped, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _constructor_objects(version: int) -> dict:
+    c = sqlite3.connect(":memory:")
+    create(c, version)
+    o = identity(manifest(c))
+    c.close()
+    return o
 
 
 def write_runtime(force: bool = False) -> int:
@@ -226,7 +314,8 @@ def build_version_artifact(strict: bool = True) -> dict:
     Generation is bound to the declared `SCHEMA_VERSION`, not `max(SCHEMAS)`."""
     existing = (json.loads(VERSIONS.read_text()).get("versions", {})
                 if VERSIONS.exists() else {})
-    out, problems = {}, list(validate_registry())
+    from schema_model import validate_schema_registry
+    out, problems = {}, validate_schema_registry() + list(validate_registry())
 
     for version in sorted(SCHEMAS):
         accepted = []
@@ -258,6 +347,25 @@ def build_version_artifact(strict: bool = True) -> dict:
                                  "digest": digest(manifest(mc), version),
                                  "objects": identity(manifest(mc))})
             mc.close()
+        # **Round 7, finding 4: accepted manifests are the union across every
+        # qualified runtime.** v8 regenerated the current version solely from
+        # the runtime running the command, so qualifying a second runtime whose
+        # DDL differs would mark it qualified while stores it creates were not
+        # in MANIFESTS -- and regenerating there would delete the first
+        # runtime's manifestation. Measured: an inserted foreign manifestation
+        # was silently dropped.
+        have = {a["digest"] for a in accepted}
+        for rt in qualified_runtimes():
+            for prov, objs in (rt.get("manifestations") or {}).items():
+                if not prov.endswith(f"v{version}") and prov != f"constructor v{version}":
+                    continue
+                d = _digest_of_identity(objs, version)
+                if d in have:
+                    continue
+                have.add(d)
+                accepted.append({
+                    "provenance": f"{prov} @ sqlite {rt['sqlite_version']}",
+                    "digest": d, "objects": objs})
         record = {"accepted": accepted}
         if version < SCHEMA_VERSION and str(version) in existing:
             if existing[str(version)] != record:
@@ -385,7 +493,9 @@ def releases(write: bool) -> int:
         VERSIONS.write_text(json.dumps(build_version_artifact(), indent=2) + "\n")
         POLICY_ARTIFACT.write_text(json.dumps(
             {str(v): declared_policies(v) for v in sorted(SCHEMAS)}, indent=2) + "\n")
-        write_runtime()
+        if write_runtime() != 0:
+            print("runtime evidence was not written", file=sys.stderr)
+            return 1
         print(f"wrote {RELEASES.name}, {VERSIONS.name}, {POLICY_ARTIFACT.name}")
     return 1 if (unknown or broken or bad_stamp) else 0
 
@@ -436,8 +546,9 @@ def check() -> int:
             if now.get(field) != row.get(field):
                 bad.append(f"{row['tag']}: {field} recorded {row.get(field)!r}, "
                            f"re-derived {now.get(field)!r}")
-        if row.get("result") != "ok":
-            bad.append(f"{row['tag']}: recorded result {row.get('result')!r}")
+        if now.get("result") != "ok":
+            bad.append(f"{row['tag']}: freshly probed result "
+                       f"{now.get('result')!r}")
     for t in _tags():
         if t not in {r["tag"] for r in stored["releases"]}:
             bad.append(f"{t}: released since the artifact was generated")

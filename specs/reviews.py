@@ -49,6 +49,8 @@ REVIEWS = [
          verdict="architecture approved; deferred; instrument split adopted", findings=8),
     dict(spec="0007", round=6, kind="external", date="2026-08-03",
          verdict="architecture approved; deferred; migration self-authorisation found", findings=8),
+    dict(spec="0007", round=7, kind="external", date="2026-08-03",
+         verdict="architecture approved; deferred; destination contract contradicted itself", findings=8),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

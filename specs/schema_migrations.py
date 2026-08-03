@@ -112,35 +112,16 @@ def destination_problems(objs: dict, to_version: int) -> list:
     """Whether a migrated database satisfies the destination's **independent**
     requirement — not merely "whatever the migration produced".
 
-    **Round 6, finding 1, and it is the most serious thing in v7.** The
-    generator ran every migration and added the result to the destination's
-    accepted set, with no independent destination contract. Measured: an *empty*
-    migration from 1 to 2 produced a database with no `sources` table, and that
-    output was accepted as a valid version 2 — **the migration defined its own
-    broken output as correct.** That defeats the meaning of "understood store".
+    Round 6, finding 1: the generator added whatever a migration produced to the
+    destination's accepted set, so an *empty* migration from 1 to 2 was accepted
+    as a valid version 2.
 
-    So the accepted set records the *exact observed output* (which may
-    legitimately differ in DDL text between constructor and `ALTER` paths), and
-    this function enforces the *required capability* independently:
-
-      * every `REQUIRED` object of the destination exists, with matching DDL;
-      * every `REBUILDABLE` object exists or is repairable drift;
-      * no unapproved persistent object is present."""
-    from schema_model import REBUILDABLE, REQUIRED, SCHEMAS
-    problems = []
-    declared = {o.key: o for o in SCHEMAS[to_version]}
-    for key, o in declared.items():
-        got = objs.get(key)
-        if got is None:
-            problems.append(f"destination v{to_version} requires {key[0]} "
-                            f"{key[1]!r}, which the migration did not create")
-        elif o.policy == REQUIRED and got.get("sql") != o.ddl:
-            problems.append(f"{key[0]} {key[1]!r} does not match the destination "
-                            f"declaration")
-    for key in objs:
-        if key not in declared:
-            problems.append(f"unapproved persistent object {key[0]} {key[1]!r}")
-    return problems
+    **Round 7, finding 1: v8's fix then rejected a correct `ALTER`**, because it
+    compared DDL byte-for-byte against the constructor. The requirement is
+    structural capability, not identical text — see
+    `schema_model.capability_problems`."""
+    from schema_model import capability_problems
+    return capability_problems(objs, to_version)
 
 
 def validate_registry() -> list:

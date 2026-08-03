@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "specs"))
 
 from schema_migrations import (MIGRATIONS, Migration, apply_migration,  # noqa: E402
-                               validate_registry)
+                               destination_problems, validate_registry)
 from schema_model import (REBUILDABLE, REQUIRED, SCHEMA_V1, SCHEMAS,  # noqa: E402
                           SchemaObject, create, declared_policies, digest, drift,
                           identity, manifest, registry_conformance,
@@ -430,7 +430,7 @@ def test_an_empty_migration_cannot_authorize_its_own_output(simulated_v2_empty):
     whatever a migration produced to the destination's accepted set, so an empty
     migration defined its own broken output as a valid version 2."""
     problems, records = simulated_v2_empty
-    assert any("did not create" in p for p in problems), problems
+    assert any("requires table 'sources', absent" in p for p in problems), problems
     prov = [a["provenance"] for a in records["2"]["accepted"]]
     assert "migration v1->v2" not in prov, prov
 
@@ -475,3 +475,113 @@ def test_missing_legacy_evidence_authorizes_nothing(monkeypatch, tmp_path):
     import schema_evidence as ev
     monkeypatch.setattr(ev, "RELEASES", tmp_path / "absent.json")
     assert ev.legacy_base_versions() == frozenset()
+
+
+# --- round 7 -------------------------------------------------------------
+
+@pytest.fixture
+def simulated_alter_v2(monkeypatch):
+    """Version 2 that ADDS A COLUMN to a required table — the case v8 rejected."""
+    import schema_evidence as ev
+    alt = SCHEMA_V1[0].ddl.replace("json TEXT NOT NULL\n)",
+                                   "json TEXT NOT NULL, source_id TEXT\n)")
+    v2 = (SchemaObject("table", "edges", alt, REQUIRED),) + SCHEMA_V1[1:]
+    monkeypatch.setitem(SCHEMAS, 2, v2)
+    monkeypatch.setitem(MIGRATIONS, 1, Migration(1, 2, (
+        "ALTER TABLE edges ADD COLUMN source_id TEXT",)))
+    for mod in ("schema_evidence", "schema_migrations", "schema_model"):
+        monkeypatch.setattr(f"{mod}.SCHEMA_VERSION", 2)
+    return ev
+
+
+def test_a_normal_alter_reaches_an_accepted_destination(simulated_alter_v2):
+    """Round 7, finding 1 — the contradiction v8 introduced. Comparing DDL text
+    byte-for-byte rejected the exact case the accepted-set model exists for."""
+    conn = sqlite3.connect(":memory:")
+    create(conn, 1)
+    apply_migration(conn, MIGRATIONS[1])
+    assert destination_problems(manifest(conn), 2) == []
+    records = simulated_alter_v2.build_version_artifact(strict=True)["versions"]
+    prov = [a["provenance"] for a in records["2"]["accepted"]]
+    assert any("migration" in p for p in prov), prov
+
+
+def test_an_alter_that_omits_the_column_is_still_rejected(simulated_alter_v2):
+    """Structural capability is not "anything goes"."""
+    conn = sqlite3.connect(":memory:")
+    create(conn, 1)
+    assert destination_problems(manifest(conn), 2)
+
+
+def test_a_policy_typo_is_a_build_error():
+    """Round 7, finding 6: `policy` was an open string, so a typo created a
+    third, unchecked behaviour."""
+    from schema_model import validate_schema_registry
+    bad = SCHEMA_V1 + (SchemaObject("table", "sources",
+                                    "CREATE TABLE sources (id TEXT)", "requried"),)
+    SCHEMAS[99] = bad
+    try:
+        problems = validate_schema_registry()
+        assert any("policy" in p for p in problems), problems
+    finally:
+        del SCHEMAS[99]
+
+
+def test_a_rebuildable_non_index_is_a_build_error():
+    from schema_model import validate_schema_registry
+    SCHEMAS[99] = (SchemaObject("table", "t", "CREATE TABLE t (a)", REBUILDABLE),)
+    try:
+        assert any("rebuildable" in p for p in validate_schema_registry())
+    finally:
+        del SCHEMAS[99]
+
+
+def test_incomplete_migration_path_coverage_disqualifies(monkeypatch, simulated_alter_v2):
+    """Round 7, finding 2: `{}` and `{"999": "bad"}` both passed validation."""
+    ev = simulated_alter_v2
+    rec = ev.build_runtime_record()
+    for probe in ({}, {"999": "bad"}):
+        bad = dict(rec, migration_digests=probe)
+        assert ev.runtime_record_problems(bad), probe
+
+
+def test_every_migration_path_is_keyed_individually(simulated_alter_v2):
+    """Round 7, finding 3: v8 keyed by destination and returned the first path."""
+    paths = simulated_alter_v2.migration_paths()
+    assert list(paths) == ["v1:constructor->v2"], list(paths)
+    assert all("->" in k for k in paths)
+
+
+def test_a_foreign_runtime_manifestation_is_preserved(monkeypatch):
+    """Round 7, finding 4: regenerating dropped another runtime's output."""
+    import schema_evidence as ev
+    foreign = dict(ev.build_runtime_record())
+    foreign["sqlite_version"] = "9.9.9"
+    objs = dict(ev._constructor_objects(1))
+    key = next(k for k in objs if k.startswith("table:wiki"))
+    objs[key] = dict(objs[key], sql=objs[key]["sql"] + " -- other runtime")
+    foreign["manifestations"] = {"constructor v1": objs}
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [foreign])
+    records = ev.build_version_artifact(strict=False)["versions"]
+    prov = [a["provenance"] for a in records["1"]["accepted"]]
+    assert any("9.9.9" in p for p in prov), prov
+
+
+def test_the_release_result_is_rederived():
+    """Round 7, finding 7: the gate inspected the stored value."""
+    import schema_evidence as ev
+    assert "result" in ev.AUTHORITATIVE
+
+
+def test_the_strict_table_probe_uses_valid_sql():
+    """Round 7, finding 5: the probe was invalid SQL and recorded False on a
+    runtime that supports strict tables."""
+    import schema_evidence as ev
+    assert ev.runtime_identity()["features"]["strict_tables"] is True
+
+
+def test_the_ddl_probe_asserts_body_preservation():
+    """And this one only checked that a row existed."""
+    import schema_evidence as ev
+    f = ev.runtime_identity()["features"]
+    assert f["preserves_ddl_body"] is True and f["authorizer_denies_all"] is True
