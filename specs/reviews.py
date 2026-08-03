@@ -71,6 +71,8 @@ REVIEWS = [
          verdict="architecture approved directionally; deferred; M-Q2 ruled adopt-with-conditions", findings=7),
     dict(spec="0013", round=2, kind="external", date="2026-08-03",
          verdict="concrete migration approved; deferred; integration, evidence, offline boundary", findings=4),
+    dict(spec="0013", round=3, kind="external", date="2026-08-03",
+         verdict="concrete v1→v2 approved directionally; deferred; one planner, prior evidence, qualified confinement, total outcomes; M-Q2 ruled at the library boundary", findings=4),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

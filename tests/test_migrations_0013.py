@@ -1,12 +1,19 @@
 """The 0013 draft instrument, exercised against the concrete v1→v2 migration.
 
 These test the MEASURING INSTRUMENT (`specs/migrations_0013.py`), not the
-store: `0013` is `draft` and authorises no implementation. They exist so the
-first external review of `0013` reviews a migration that runs — the round-9
-M-Q1 ruling — rather than prose about one.
+store: `0013` is in review and authorises no implementation. They exist so the
+external review of `0013` reviews a migration that runs — the round-9 M-Q1
+ruling — rather than prose about one.
+
+Round 3's architecture holds throughout: `open_or_migrate` / `migrate_store`
+run the PRODUCTION `0007` planner under the draft registry, migrations are
+authorised by the recorded evidence artifact, and every outcome is a member of
+the closed vocabulary.
 """
 from __future__ import annotations
 
+import copy
+import json
 import sqlite3
 import sys
 import tempfile
@@ -19,13 +26,12 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "specs"))
 
 import migrations_0013 as m13  # noqa: E402
-def _auth():
-    return m13.MigrationAuthority(quiesced=True, backup_ref="test-backup")
 
+from veracium.store import schema_version as sv  # noqa: E402
 from veracium.store.schema_version import identity, manifest  # noqa: E402
 
 
-def _v1_store(rows: int = 3) -> str:
+def _v1_store(rows: int = 3, stamp: bool = True, extra: str | None = None) -> str:
     p = tempfile.mktemp(suffix=".db")
     c = sqlite3.connect(p)
     for o in m13.SCHEMA_V1:
@@ -34,10 +40,31 @@ def _v1_store(rows: int = 3) -> str:
         c.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,"
                   "quarantined,json) VALUES(?,?,?,?,?,1,0,'{}')",
                   (f"e{i}", "u", f"s{i}", "r", "o"))
-    c.execute("PRAGMA user_version = 1")
+    if extra:
+        c.execute(extra)
+    if stamp:
+        c.execute("PRAGMA user_version = 1")
     c.commit()
     c.close()
     return p
+
+
+def _patch_migration(monkeypatch, mig: m13.Migration) -> None:
+    """A patched declaration must land in BOTH names the instrument reads."""
+    monkeypatch.setattr(m13, "MIGRATION_1_TO_2", mig)
+    monkeypatch.setitem(m13.MIGRATIONS_DRAFT, 1, mig)
+
+
+def _crafted_artifact(monkeypatch, declaration_digest: str) -> None:
+    """The committed artifact with its one path record re-pointed at a
+    DIFFERENT migration declaration, output fields untouched. This is the only
+    way `migration-failed` and `migration-result-mismatch` stay reachable —
+    the evidence gate otherwise refuses an altered migration before it runs —
+    and it models the real hazard those outcomes exist for: recorded evidence
+    whose promise the live execution does not keep."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"][0]["migration_declaration_digest"] = declaration_digest
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
 
 
 # --- M6/M7-class: the destination contract, against the real migration ----
@@ -46,19 +73,16 @@ def test_the_concrete_migration_reaches_the_v2_constructor_output():
     """The additive change means the two provenances converge on one digest —
     stated in the spec as a measured property, verified here."""
     p = _v1_store()
-    assert m13.open_or_migrate(p, authority=_auth()) == "migrated"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
     mig = sqlite3.connect(p)
-    cons = sqlite3.connect(":memory:")
-    for o in m13.SCHEMA_V2:
-        cons.execute(o.ddl)
-    assert identity(manifest(mig)) == identity(manifest(cons))
+    assert identity(manifest(mig)) == m13._v2_constructor_objects()
 
 
 def test_migration_preserves_every_row():
     p = _v1_store(rows=5)
     before = sqlite3.connect(p).execute(
         "SELECT id FROM edges ORDER BY id").fetchall()
-    m13.open_or_migrate(p, authority=_auth())
+    m13.migrate_store(p, m13.make_authority(p))
     after = sqlite3.connect(p).execute(
         "SELECT id FROM edges ORDER BY id").fetchall()
     assert after == before
@@ -121,6 +145,17 @@ def test_the_authorizer_is_restored_after_failure():
     assert not c.in_transaction
 
 
+def test_the_executor_requires_an_existing_transaction():
+    """Round 3, finding 4 (round 2 lineage): on autocommit, a failed migration
+    left its first statement durably applied."""
+    c = sqlite3.connect(tempfile.mktemp(suffix=".db"))
+    c.isolation_level = None                     # autocommit, no BEGIN
+    with pytest.raises(RuntimeError, match="migration-protocol"):
+        m13.apply_migration(c, m13.Migration(1, 2, ("CREATE TABLE partial (x)",)))
+    assert not c.execute("SELECT name FROM sqlite_master "
+                         "WHERE name='partial'").fetchone()
+
+
 # --- M9: the registry -----------------------------------------------------
 
 def test_m9_the_draft_registry_is_well_formed():
@@ -130,79 +165,6 @@ def test_m9_the_draft_registry_is_well_formed():
 def test_a_gap_refuses():
     assert m13.validate_registry(
         schemas={1: m13.SCHEMA_V1, 2: m13.SCHEMA_V2}, migrations={}, current=2)
-
-
-# --- M13 / M-Q2: concurrency is the write lock ----------------------------
-
-def test_mq2_concurrent_migration_runs_exactly_once():
-    """The M-Q2 answer, demonstrated: SQLite's write lock serialises the
-    migration; losers re-read under their own lock and find it done."""
-    p = _v1_store()
-    results = []
-
-    def worker():
-        results.append(m13.open_or_migrate(p, busy_timeout_ms=10000, authority=_auth()))
-
-    threads = [threading.Thread(target=worker) for _ in range(5)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-    assert sorted(results) == ["current"] * 4 + ["migrated"], results
-    c = sqlite3.connect(p)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 2
-    assert c.execute("SELECT COUNT(*) FROM confirmations").fetchone()[0] == 0
-
-
-# --- 0008 §6c semantics hold in the migrated schema -----------------------
-
-def test_the_0008_uniqueness_contract_holds():
-    """Round 2 corrected the model: an omitted correlation id is GENERATED and
-    persisted (0008 §6c returns `str`, never null), so NULL is refused, distinct
-    generated ids coexist, a reused pair conflicts, and the scope is the
-    tenant — another user may reuse the same id."""
-    p = _v1_store()
-    m13.open_or_migrate(p, authority=_auth())
-    c = sqlite3.connect(p)
-    ins = ("INSERT INTO confirmations(id,user_id,edge_id,confirmed_at,actor,"
-           "call_path,correlation_id,request_digest) VALUES(?,?,?,?,?,?,?,?)")
-    c.execute(ins, ("c1", "u", "e0", "t", "user", "host_api", "gen-a", "d1"))
-    c.execute(ins, ("c2", "u", "e1", "t", "user", "host_api", "gen-b", "d2"))
-    with pytest.raises(sqlite3.IntegrityError):
-        c.execute(ins, ("c3", "u", "e2", "t", "user", "host_api", "gen-a", "d3"))
-    c.execute(ins, ("c5", "v", "e9", "t", "user", "host_api", "gen-a", "d5"))
-    with pytest.raises(sqlite3.IntegrityError):     # NULL correlation refused
-        c.execute(ins, ("c6", "u", "e4", "t", "user", "host_api", None, "d6"))
-    with pytest.raises(sqlite3.IntegrityError):     # NULL id refused too
-        c.execute(ins, (None, "u", "e5", "t", "user", "host_api", "gen-z", "d7"))
-
-
-# --- round 2 of this spec's review ----------------------------------------
-
-def test_a_wrong_unique_constraint_is_not_stamped(monkeypatch):
-    """Round 2, findings 2–3: capability compared columns only, so a global
-    UNIQUE(correlation_id) — violating 0008's tenant scoping — was stamped."""
-    bad = m13.CONFIRMATIONS_DDL.replace("UNIQUE(user_id, correlation_id)",
-                                        "UNIQUE(correlation_id)")
-    monkeypatch.setattr(m13, "MIGRATION_1_TO_2",
-                        m13.Migration(1, 2, (bad, m13.IX_CONFIRMATIONS_DDL)))
-    p = _v1_store()
-    assert m13.open_or_migrate(p, authority=_auth()).startswith("migration-result-mismatch")
-    c = sqlite3.connect(p)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 1   # rolled back
-
-
-def test_a_missing_rebuildable_index_is_repaired_before_stamping(monkeypatch):
-    """Round 2, finding 4: a migrated store must not be returned in a state
-    0007 would immediately call drifted."""
-    monkeypatch.setattr(m13, "MIGRATION_1_TO_2",
-                        m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL,)))
-    p = _v1_store()
-    assert m13.open_or_migrate(p, authority=_auth()) == "migrated"
-    c = sqlite3.connect(p)
-    ddl = c.execute("SELECT sql FROM sqlite_master WHERE "
-                    "name='ix_confirmations_edge'").fetchone()
-    assert ddl and ddl[0] == m13.IX_CONFIRMATIONS_DDL
 
 
 def test_a_stray_step_beyond_the_current_version_is_rejected():
@@ -222,17 +184,48 @@ def test_an_empty_statement_tuple_does_not_validate():
     assert any("nonempty" in p for p in probs)
 
 
+def test_a_list_statement_container_does_not_validate():
+    probs = m13.validate_registry(
+        schemas={1: m13.SCHEMA_V1, 2: m13.SCHEMA_V2},
+        migrations={1: m13.Migration(1, 2, ["SELECT 1"])}, current=2)
+    assert any("nonempty" in p or "tuple" in p for p in probs)
+
+
+# --- M13 / M-Q2: concurrency is the write lock ----------------------------
+
+def test_mq2_concurrent_migration_runs_exactly_once():
+    """The M-Q2 answer, demonstrated: SQLite's write lock serialises the
+    migration; losers re-read under their own lock and find it done."""
+    p = _v1_store()
+    results = []
+
+    def worker():
+        results.append(m13.migrate_store(p, m13.make_authority(p),
+                                         busy_timeout_ms=10000))
+
+    threads = [threading.Thread(target=worker) for _ in range(5)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert sorted(results) == ["current"] * 4 + ["migrated"], results
+    c = sqlite3.connect(p)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 2
+    assert c.execute("SELECT COUNT(*) FROM confirmations").fetchone()[0] == 0
+
+
 def test_mq2_hazard_a_stale_v1_connection_writes_after_migration():
     """Round 2, finding 5 — DEMONSTRATED, not fixed: the write lock serialises
     the migration itself, but a connection opened before it never re-runs the
     version gate, so an already-running v1 process keeps applying v1 behaviour
     to a v2 store. For 0008 that is the unaudited clearing path. This is why
-    the M-Q2 ruling is adopt-WITH-CONDITIONS: the deployment quiescence
-    contract in §5b is load-bearing, and this test is the measurement that
-    makes it so."""
+    ordinary opening refuses (`migration-required`) and migration is an
+    explicit offline operation whose authority attests quiescence: the library
+    cannot fence what it cannot see, so the trusted deployment authority owns
+    quiescence, old-binary fencing, and backup validity (§5b)."""
     p = _v1_store()
     old = sqlite3.connect(p)                       # a v1-era process
-    assert m13.open_or_migrate(p, authority=_auth()) == "migrated"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
     old.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,"
                 "quarantined,json) VALUES('stale','u','s','r','o',1,0,'{}')")
     old.commit()                                   # succeeds: nothing fences it
@@ -241,34 +234,109 @@ def test_mq2_hazard_a_stale_v1_connection_writes_after_migration():
                      ).fetchone()[0] == 1
 
 
-# --- round 3 of this spec's review ----------------------------------------
+# --- 0008 §6c semantics hold in the migrated schema -----------------------
+
+def test_the_0008_uniqueness_contract_holds():
+    """Round 2 corrected the model: an omitted correlation id is GENERATED and
+    persisted (0008 §6c returns `str`, never null), so NULL is refused, distinct
+    generated ids coexist, a reused pair conflicts, and the scope is the
+    tenant — another user may reuse the same id."""
+    p = _v1_store()
+    m13.migrate_store(p, m13.make_authority(p))
+    c = sqlite3.connect(p)
+    ins = ("INSERT INTO confirmations(id,user_id,edge_id,confirmed_at,actor,"
+           "call_path,correlation_id,request_digest) VALUES(?,?,?,?,?,?,?,?)")
+    c.execute(ins, ("c1", "u", "e0", "t", "user", "host_api", "gen-a", "d1"))
+    c.execute(ins, ("c2", "u", "e1", "t", "user", "host_api", "gen-b", "d2"))
+    with pytest.raises(sqlite3.IntegrityError):
+        c.execute(ins, ("c3", "u", "e2", "t", "user", "host_api", "gen-a", "d3"))
+    c.execute(ins, ("c5", "v", "e9", "t", "user", "host_api", "gen-a", "d5"))
+    with pytest.raises(sqlite3.IntegrityError):     # NULL correlation refused
+        c.execute(ins, ("c6", "u", "e4", "t", "user", "host_api", None, "d6"))
+    with pytest.raises(sqlite3.IntegrityError):     # NULL id refused too
+        c.execute(ins, (None, "u", "e5", "t", "user", "host_api", "gen-z", "d7"))
+
+
+# --- round 3, finding 1: the full inherited 0007 planner ------------------
+
+def test_an_empty_database_is_created_current():
+    """Round 3 measured `unexpected version 0`; the shared planner's *new*
+    row creates the current version."""
+    p = tempfile.mktemp(suffix=".db")
+    sqlite3.connect(p).close()
+    assert m13.open_or_migrate(p) == "created"
+    c = sqlite3.connect(p)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 2
+    assert identity(manifest(c)) == m13._v2_constructor_objects()
+    c.close()
+    assert m13.open_or_migrate(p) == "current"
+
+
+def test_an_unstamped_v1_store_takes_the_older_row():
+    """Round 3 measured `unexpected version 0`; candidate-restricted legacy
+    resolution finds base 1, and the older row refuses ordinarily / migrates
+    under authority — rows intact."""
+    p = _v1_store(rows=2, stamp=False)
+    assert m13.open_or_migrate(p) == "migration-required"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
+    c = sqlite3.connect(p)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 2
+    assert c.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 2
+
+
+def test_a_foreign_version_zero_store_is_refused_by_both_operations():
+    p = _v1_store(stamp=False, extra="CREATE TABLE alien (x)")
+    assert m13.open_or_migrate(p) == "foreign-shape"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "foreign-shape"
+
+
+def test_a_malformed_stamped_source_is_not_promised_a_migration():
+    """Round 3: a stamped v1 store with an unauthorized extra table answered
+    `migration-required`, promising a migration path for a store that has
+    none. Source classification precedes any migration statement."""
+    p = _v1_store(extra="CREATE TABLE intruder (x)")
+    assert m13.open_or_migrate(p) == "stamped-shape-mismatch"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "stamped-shape-mismatch"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_a_newer_store_is_refused():
+    p = _v1_store()
+    c = sqlite3.connect(p)
+    c.execute("PRAGMA user_version = 3")
+    c.commit()
+    c.close()
+    assert m13.open_or_migrate(p) == "newer"
+
+
+def test_a_table_squatting_a_rebuildable_index_name_is_a_closed_refusal():
+    """Round 3: the v4 current branch tried typed drift repair before
+    classifying the shape and raised OperationalError. The shared planner's
+    typed digest sees `table:ix_confirmations_edge` as a foreign object and
+    refuses closed, before any repair statement runs."""
+    p = tempfile.mktemp(suffix=".db")
+    c = sqlite3.connect(p)
+    for o in m13.SCHEMA_V2:
+        if o.name != "ix_confirmations_edge":
+            c.execute(o.ddl)
+    c.execute("CREATE TABLE ix_confirmations_edge (x)")
+    c.execute("PRAGMA user_version = 2")
+    c.commit()
+    c.close()
+    assert m13.open_or_migrate(p) == "stamped-shape-mismatch"
+
 
 def test_ordinary_open_refuses_with_migration_required():
-    """Round 3, finding 3: auto-migration on ordinary open raced the stale
-    connection by design. Migration is an explicit offline operation now."""
+    """Ordinary opening cannot initiate migration — the offline boundary as a
+    mechanism, not a convention."""
     p = _v1_store()
     assert m13.open_or_migrate(p) == "migration-required"
     assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
 
 
-def test_an_unquiesced_authority_is_refused():
-    p = _v1_store()
-    bad = m13.MigrationAuthority(quiesced=False, backup_ref="b")
-    assert m13.open_or_migrate(p, authority=bad) == "migration-quiescence-required"
-
-
-def test_an_unqualified_runtime_cannot_migrate(monkeypatch):
-    """Round 3, finding 1: the instrument migrated on an unqualified runtime."""
-    from veracium.store import schema_version as sv
-    monkeypatch.setattr(sv, "runtime_supported", lambda: False)
-    assert m13.open_or_migrate(_v1_store(), authority=_auth()) == "unsupported-sqlite"
-
-
 def test_a_malformed_stamped_v2_store_is_refused():
-    """Round 3, finding 1: the instrument called it 'current' with no
-    validation; 0007 would refuse it as stamped-shape-mismatch."""
     p = _v1_store()
-    m13.open_or_migrate(p, authority=_auth())
+    m13.migrate_store(p, m13.make_authority(p))
     c = sqlite3.connect(p)
     c.execute("ALTER TABLE confirmations ADD COLUMN sneaky TEXT")
     c.commit()
@@ -276,9 +344,9 @@ def test_a_malformed_stamped_v2_store_is_refused():
     assert m13.open_or_migrate(p) == "stamped-shape-mismatch"
 
 
-def test_a_drifted_v2_index_is_repaired_on_current(monkeypatch):
+def test_a_drifted_v2_index_is_repaired_on_current():
     p = _v1_store()
-    m13.open_or_migrate(p, authority=_auth())
+    m13.migrate_store(p, m13.make_authority(p))
     c = sqlite3.connect(p)
     c.execute("DROP INDEX ix_confirmations_edge")
     c.commit()
@@ -289,34 +357,277 @@ def test_a_drifted_v2_index_is_repaired_on_current(monkeypatch):
                      "name='ix_confirmations_edge'").fetchone()
 
 
-def test_the_executor_requires_an_existing_transaction():
-    """Round 3, finding 4: on autocommit, a failed migration left its first
-    statement durably applied."""
-    c = sqlite3.connect(tempfile.mktemp(suffix=".db"))
-    c.isolation_level = None                     # autocommit, no BEGIN
-    with pytest.raises(RuntimeError, match="migration-protocol"):
-        m13.apply_migration(c, m13.Migration(1, 2, ("CREATE TABLE partial (x)",)))
-    assert not c.execute("SELECT name FROM sqlite_master "
-                         "WHERE name='partial'").fetchone()
+def test_the_outcome_vocabulary_is_closed():
+    """`unexpected version 0` and its class are unrepresentable."""
+    with pytest.raises(ValueError):
+        m13.Outcome("unexpected version 0")
+
+
+# --- round 3, finding 2: recorded evidence, never self-generated ----------
+
+def test_a_data_destructive_alteration_cannot_authorize_itself(monkeypatch):
+    """THE round-3 probe: `DELETE FROM edges` appended to the migration
+    produced the exact v2 schema and stamped `migrated` with zero edge rows,
+    because the expected record was derived from the live code. Selection is
+    now over the committed artifact, keyed by the declaration digest — the
+    altered migration matches nothing, refuses before executing, and the data
+    and stamp are untouched."""
+    _patch_migration(monkeypatch, m13.Migration(
+        1, 2, m13.MIGRATION_1_TO_2.statements + ("DELETE FROM edges",)))
+    p = _v1_store(rows=3)
+    out = m13.migrate_store(p, m13.make_authority(p))
+    assert out == "migration-evidence-missing"
+    c = sqlite3.connect(p)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert c.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 3
+
+
+def test_a_side_effect_free_alteration_is_still_not_evidenced(monkeypatch):
+    _patch_migration(monkeypatch, m13.Migration(
+        1, 2, m13.MIGRATION_1_TO_2.statements + ("SELECT 1",)))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+def test_a_zeroed_source_hash_is_consulted_and_refuses(monkeypatch):
+    """Round 3 measured the recorded source hash being generated but never
+    read. It is now part of both the record's consistency rules and the
+    selection key."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"][0]["source_full_manifest_hash"] = "0" * 64
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_an_absent_path_record_refuses(monkeypatch):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"] = []
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+def test_a_duplicate_path_record_refuses(monkeypatch):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"].append(copy.deepcopy(art["paths"][0]))
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+def test_a_stale_algorithm_record_is_superseded_not_consumed(monkeypatch):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"][0]["migration_evidence_algorithm"] = 0
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+def test_a_contradictory_output_fails_the_record_consistency_rules():
+    """§5c's record-level rules, directly: recorded output must hash to BOTH
+    recorded hashes and resolve to an accepted destination manifestation."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    rec = copy.deepcopy(art["paths"][0])
+    rec["output_full_manifest_hash"] = "f" * 64
+    with m13._registry():
+        probs = m13.path_record_problems(rec, art)
+    assert any("full-manifest hash" in p for p in probs)
+    rec = copy.deepcopy(art["paths"][0])
+    del rec["output_manifestation"]["index:ix_confirmations_edge"]
+    with m13._registry():
+        probs = m13.path_record_problems(rec, art)
+    assert probs
+
+
+def test_a_tampered_accepted_manifest_poisons_the_whole_context(monkeypatch):
+    """0007 round 12's rule carried over: a malformed current-algorithm
+    record is evidence of tampering, and the safe reading is `unqualified` —
+    everything fails closed to unsupported-sqlite."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["schema_versions"]["2"]["accepted"][0]["digest"] = "0" * 64
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.open_or_migrate(p) == "unsupported-sqlite"
+
+
+# --- round 3, finding 3: migration-runtime qualification ------------------
+
+def test_the_migration_runtime_gate_is_independent_of_0007s(monkeypatch):
+    """A runtime qualified for schema construction is NOT thereby qualified
+    for migration confinement. Removing the migration-runtime record refuses
+    the migration operation while ordinary opening is untouched."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["migration_runtimes"] = []
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
+    assert m13.open_or_migrate(p) == "migration-required"
+
+
+def test_recorded_confinement_behaviours_must_reproduce_live(monkeypatch):
+    """The record is not trusted: consumption re-runs the probes and compares,
+    mirroring how runtime_supported() re-derives constructor manifestations."""
+    real = m13.authorizer_probes()
+    lying = dict(real, denies_pragma=False)
+    monkeypatch.setattr(m13, "authorizer_probes", lambda: lying)
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
+
+
+def test_a_record_with_a_failed_probe_never_qualifies():
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    rec = copy.deepcopy(art["migration_runtimes"][0])
+    rec["authorizer_probes"]["denies_attach"] = False
+    assert any("required confinement" in p
+               for p in m13.migration_runtime_record_problems(rec))
+
+
+def test_the_authorizer_probes_all_hold_on_this_runner():
+    probes = m13.authorizer_probes()
+    assert set(probes) == m13.AUTHORIZER_PROBE_KEYS
+    assert all(v is True for v in probes.values()), probes
+
+
+# --- round 3, finding 4: the closed failure model -------------------------
+
+def test_invalid_sql_returns_migration_failed_not_an_exception(monkeypatch):
+    """Round 3 measured a raw OperationalError escaping. With the declaration
+    digest matching recorded evidence (crafted — the honest generator refuses
+    to record a failing migration), execution fails and the caller receives
+    the closed outcome; the transaction rolled back."""
+    bad = m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL, "CREATE BOGUS ("))
+    _patch_migration(monkeypatch, bad)
+    _crafted_artifact(monkeypatch, m13.migration_declaration_digest(bad))
+    p = _v1_store(rows=2)
+    out = m13.migrate_store(p, m13.make_authority(p))
+    assert out == "migration-failed"
+    c = sqlite3.connect(p)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert c.execute("SELECT COUNT(*) FROM edges").fetchone()[0] == 2
+
+
+def test_a_wrong_unique_constraint_is_a_result_mismatch(monkeypatch):
+    """Round 2's regression, preserved at its correct layer: evidence promises
+    the true v2 output, the executed migration produces a global UNIQUE —
+    violating 0008's tenant scoping — and the comparison refuses and rolls
+    back before any stamp."""
+    bad_ddl = m13.CONFIRMATIONS_DDL.replace("UNIQUE(user_id, correlation_id)",
+                                            "UNIQUE(correlation_id)")
+    bad = m13.Migration(1, 2, (bad_ddl, m13.IX_CONFIRMATIONS_DDL))
+    _patch_migration(monkeypatch, bad)
+    _crafted_artifact(monkeypatch, m13.migration_declaration_digest(bad))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-result-mismatch"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_a_missing_rebuildable_index_is_repaired_before_stamping(monkeypatch):
+    """Round 2, finding 4, preserved: the evidence job records the REPAIRED
+    output, so an index-less declared migration is regenerated as evidence,
+    executes, is repaired, and matches — never stamped drifted."""
+    _patch_migration(monkeypatch,
+                     m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL,)))
+    art, problems = m13._generate_artifact()
+    assert problems == []
+    monkeypatch.setattr(m13, "_load_artifact", lambda: art)
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) == "migrated"
+    c = sqlite3.connect(p)
+    ddl = c.execute("SELECT sql FROM sqlite_master WHERE "
+                    "name='ix_confirmations_edge'").fetchone()
+    assert ddl and ddl[0] == m13.IX_CONFIRMATIONS_DDL
+
+
+def test_an_unqualified_runtime_cannot_open_or_migrate(monkeypatch):
+    monkeypatch.setattr(sv, "runtime_supported", lambda: False)
+    p = _v1_store()
+    assert m13.open_or_migrate(p) == "unsupported-sqlite"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
+
+
+def test_the_simulator_stops_cleanly_after_a_runtime_refusal(monkeypatch, capsys):
+    """Round 3: the simulator printed three refusals, then continued into
+    confirmation-table operations and crashed."""
+    monkeypatch.setattr(sv, "runtime_supported", lambda: False)
+    rc = m13.simulate()
+    assert rc == 2
+    assert "unsupported-sqlite" in capsys.readouterr().out
+
+
+# --- the migration authority: exact types, exact bindings ------------------
+
+def test_a_truthy_but_untyped_authority_is_refused():
+    """Round 3 measured MigrationAuthority(quiesced=1, backup_ref=object())
+    migrating."""
+    p = _v1_store()
+    loose = m13.MigrationAuthority(
+        quiesced=1, backup_ref=object(), store_path=p,
+        migration_digest="x", operation_id="o", issued_at="t")
+    assert m13.migrate_store(p, loose) == "migration-quiescence-required"
+
+
+def test_an_unquiesced_authority_is_refused():
+    p = _v1_store()
+    bad = m13.make_authority(p)._replace(quiesced=False)
+    assert m13.migrate_store(p, bad) == "migration-quiescence-required"
+
+
+def test_an_authority_is_bound_to_one_store():
+    p1, p2 = _v1_store(), _v1_store()
+    assert m13.migrate_store(p2, m13.make_authority(p1)) \
+        == "migration-quiescence-required"
+
+
+def test_an_authority_is_bound_to_the_reviewed_migration():
+    p = _v1_store()
+    bad = m13.make_authority(p)._replace(migration_digest="0" * 64)
+    assert m13.migrate_store(p, bad) == "migration-quiescence-required"
+
+
+def test_ordinary_open_has_no_authority_parameter():
+    """The migration operation is not exposed through tenant-facing opening."""
+    import inspect
+    assert "authority" not in inspect.signature(m13.open_or_migrate).parameters
+
+
+# --- the evidence artifact reproduces -------------------------------------
+
+def test_the_committed_evidence_artifact_is_valid_and_reproduces():
+    """`--check-evidence`'s core, as a regression: the committed artifact
+    passes every validator, and on the recording runtime it reproduces
+    exactly (modulo the generation timestamp)."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    with m13._registry():
+        assert m13.schema_evidence_problems(art) == []
+        assert m13.path_evidence_problems(art) == []
+        recorded = {sv.build_identity(r)
+                    for r in sv.active_records(art["runtimes"])}
+        mine = sv.build_identity(sv.runtime_identity())
+    if mine not in recorded:
+        pytest.skip("artifact records a different runtime identity; "
+                    "regenerate with --write-evidence to verify here")
+    expected, problems = m13._generate_artifact()
+    assert problems == []
+    drop = {"generated_at"}
+    assert {k: v for k, v in art.items() if k not in drop} \
+        == {k: v for k, v in expected.items() if k not in drop}
 
 
 def test_full_manifest_hash_sees_what_the_acceptance_digest_excludes():
-    """Round 3, finding 2, the executable half: acceptance digests were equal
-    while complete manifestations differed on the rebuildable index."""
-    from veracium.store.schema_version import SCHEMAS, digest
-    SCHEMAS[2] = m13.SCHEMA_V2          # v2 policy: the new index is rebuildable
-    try:
+    """Round 3, finding 2, the founding measurement: acceptance digests were
+    equal while complete manifestations differed on the rebuildable index."""
+    with m13._registry():
         full = m13._v2_constructor_objects()
         partial = {k: v for k, v in full.items()
-                   if k != ("index", "ix_confirmations_edge")}
-        assert digest(full, 2) == digest(partial, 2)     # blind, by design
+                   if k != "index:ix_confirmations_edge"}
+        assert sv._digest_of_identity(full, 2) \
+            == sv._digest_of_identity(partial, 2)        # blind, by design
         assert m13.full_manifest_hash(full) != m13.full_manifest_hash(partial)
-    finally:
-        del SCHEMAS[2]
-
-
-def test_a_list_statement_container_does_not_validate():
-    probs = m13.validate_registry(
-        schemas={1: m13.SCHEMA_V1, 2: m13.SCHEMA_V2},
-        migrations={1: m13.Migration(1, 2, ["SELECT 1"])}, current=2)
-    assert any("nonempty" in p or "tuple" in p for p in probs)

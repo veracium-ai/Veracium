@@ -1,0 +1,1231 @@
+{
+ "artifact": "specs/0013 draft evidence",
+ "draft_schema_version": 2,
+ "generated_at": "2026-08-03T19:33:18.704746+00:00",
+ "legacy_base_versions": [
+  1
+ ],
+ "manifest_algorithm": 13,
+ "migration_evidence_algorithm": 1,
+ "migration_runtimes": [
+  {
+   "authorizer_probes": {
+    "authorizer_api_available": true,
+    "authorizer_restored": true,
+    "denies_attach": true,
+    "denies_begin": true,
+    "denies_commit": true,
+    "denies_detach": true,
+    "denies_end": true,
+    "denies_pragma": true,
+    "denies_release": true,
+    "denies_savepoint": true,
+    "denies_temp_schema": true
+   },
+   "features": {
+    "generated_columns": true,
+    "preserves_ddl_body": true,
+    "strict_tables": true,
+    "xinfo_exposes_generated": true
+   },
+   "migration_evidence_algorithm": 1,
+   "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1",
+   "sqlite_version": "3.45.1"
+  }
+ ],
+ "paths": [
+  {
+   "from_version": 1,
+   "manifest_algorithm": 13,
+   "migration_declaration_digest": "a241398bf08eb6d59c0619afdab5e0ffce1cb15305d46d2cba17042660647ffc",
+   "migration_evidence_algorithm": 1,
+   "output_acceptance_digest": "15f606bb73c5ef5cb5f1c7100b53a6e0536acb3498e477b799c549b631328d83",
+   "output_full_manifest_hash": "fe09781563ecbb0374730384e5371fc06e28e36b3bf046064bc1fc08a05bc625",
+   "output_manifestation": {
+    "index:ix_confirmations_edge": {
+     "sql": "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)",
+     "table": "confirmations",
+     "type": "index"
+    },
+    "index:ix_edges_subj_rel": {
+     "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)",
+     "table": "edges",
+     "type": "index"
+    },
+    "index:ix_edges_user_active": {
+     "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)",
+     "table": "edges",
+     "type": "index"
+    },
+    "index:ix_episodes_user": {
+     "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)",
+     "table": "episodes",
+     "type": "index"
+    },
+    "table:confirmations": {
+     "columns": [
+      [
+       "id",
+       "TEXT",
+       1,
+       null,
+       1,
+       0
+      ],
+      [
+       "user_id",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "edge_id",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "confirmed_at",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "actor",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "call_path",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "correlation_id",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "request_digest",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ]
+     ],
+     "sql": "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)",
+     "table": "confirmations",
+     "type": "table"
+    },
+    "table:edges": {
+     "columns": [
+      [
+       "id",
+       "TEXT",
+       0,
+       null,
+       1,
+       0
+      ],
+      [
+       "user_id",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "subject",
+       "TEXT",
+       0,
+       null,
+       0,
+       0
+      ],
+      [
+       "relation",
+       "TEXT",
+       0,
+       null,
+       0,
+       0
+      ],
+      [
+       "object",
+       "TEXT",
+       0,
+       null,
+       0,
+       0
+      ],
+      [
+       "active",
+       "INTEGER",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "quarantined",
+       "INTEGER",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "json",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ]
+     ],
+     "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+     "table": "edges",
+     "type": "table"
+    },
+    "table:episodes": {
+     "columns": [
+      [
+       "id",
+       "TEXT",
+       0,
+       null,
+       1,
+       0
+      ],
+      [
+       "user_id",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ],
+      [
+       "date",
+       "TEXT",
+       0,
+       null,
+       0,
+       0
+      ],
+      [
+       "json",
+       "TEXT",
+       1,
+       null,
+       0,
+       0
+      ]
+     ],
+     "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+     "table": "episodes",
+     "type": "table"
+    },
+    "table:wiki": {
+     "columns": [
+      [
+       "user_id",
+       "TEXT",
+       0,
+       null,
+       1,
+       0
+      ],
+      [
+       "text",
+       "TEXT",
+       0,
+       null,
+       0,
+       0
+      ],
+      [
+       "store_version",
+       "INTEGER",
+       0,
+       null,
+       0,
+       0
+      ]
+     ],
+     "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+     "table": "wiki",
+     "type": "table"
+    },
+    "table:write_counter": {
+     "columns": [
+      [
+       "user_id",
+       "TEXT",
+       0,
+       null,
+       1,
+       0
+      ],
+      [
+       "n",
+       "INTEGER",
+       1,
+       null,
+       0,
+       0
+      ]
+     ],
+     "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+     "table": "write_counter",
+     "type": "table"
+    }
+   },
+   "provenance": "migrations_0013.py --write-evidence on sqlite 3.45.1",
+   "runtime": {
+    "features": {
+     "generated_columns": true,
+     "preserves_ddl_body": true,
+     "strict_tables": true,
+     "xinfo_exposes_generated": true
+    },
+    "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1",
+    "sqlite_version": "3.45.1"
+   },
+   "source_acceptance_digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+   "source_full_manifest_hash": "968acc9c78222b77037add376916595719ba916604116744a1064303cd6afc90",
+   "to_version": 2
+  }
+ ],
+ "runtimes": [
+  {
+   "constructor_digests": {
+    "1": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+    "2": "15f606bb73c5ef5cb5f1c7100b53a6e0536acb3498e477b799c549b631328d83"
+   },
+   "features": {
+    "generated_columns": true,
+    "preserves_ddl_body": true,
+    "strict_tables": true,
+    "xinfo_exposes_generated": true
+   },
+   "manifest_algorithm": 13,
+   "manifestations": {
+    "constructor v1": {
+     "index:ix_edges_subj_rel": {
+      "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)",
+      "table": "edges",
+      "type": "index"
+     },
+     "index:ix_edges_user_active": {
+      "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)",
+      "table": "edges",
+      "type": "index"
+     },
+     "index:ix_episodes_user": {
+      "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)",
+      "table": "episodes",
+      "type": "index"
+     },
+     "table:edges": {
+      "columns": [
+       [
+        "id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "user_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "subject",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "relation",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "object",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "active",
+        "INTEGER",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "quarantined",
+        "INTEGER",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "json",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+      "table": "edges",
+      "type": "table"
+     },
+     "table:episodes": {
+      "columns": [
+       [
+        "id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "user_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "date",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "json",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+      "table": "episodes",
+      "type": "table"
+     },
+     "table:wiki": {
+      "columns": [
+       [
+        "user_id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "text",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "store_version",
+        "INTEGER",
+        0,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+      "table": "wiki",
+      "type": "table"
+     },
+     "table:write_counter": {
+      "columns": [
+       [
+        "user_id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "n",
+        "INTEGER",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+      "table": "write_counter",
+      "type": "table"
+     }
+    },
+    "constructor v2": {
+     "index:ix_confirmations_edge": {
+      "sql": "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)",
+      "table": "confirmations",
+      "type": "index"
+     },
+     "index:ix_edges_subj_rel": {
+      "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)",
+      "table": "edges",
+      "type": "index"
+     },
+     "index:ix_edges_user_active": {
+      "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)",
+      "table": "edges",
+      "type": "index"
+     },
+     "index:ix_episodes_user": {
+      "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)",
+      "table": "episodes",
+      "type": "index"
+     },
+     "table:confirmations": {
+      "columns": [
+       [
+        "id",
+        "TEXT",
+        1,
+        null,
+        1,
+        0
+       ],
+       [
+        "user_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "edge_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "confirmed_at",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "actor",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "call_path",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "correlation_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "request_digest",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)",
+      "table": "confirmations",
+      "type": "table"
+     },
+     "table:edges": {
+      "columns": [
+       [
+        "id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "user_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "subject",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "relation",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "object",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "active",
+        "INTEGER",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "quarantined",
+        "INTEGER",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "json",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+      "table": "edges",
+      "type": "table"
+     },
+     "table:episodes": {
+      "columns": [
+       [
+        "id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "user_id",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ],
+       [
+        "date",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "json",
+        "TEXT",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+      "table": "episodes",
+      "type": "table"
+     },
+     "table:wiki": {
+      "columns": [
+       [
+        "user_id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "text",
+        "TEXT",
+        0,
+        null,
+        0,
+        0
+       ],
+       [
+        "store_version",
+        "INTEGER",
+        0,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+      "table": "wiki",
+      "type": "table"
+     },
+     "table:write_counter": {
+      "columns": [
+       [
+        "user_id",
+        "TEXT",
+        0,
+        null,
+        1,
+        0
+       ],
+       [
+        "n",
+        "INTEGER",
+        1,
+        null,
+        0,
+        0
+       ]
+      ],
+      "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+      "table": "write_counter",
+      "type": "table"
+     }
+    }
+   },
+   "schema_version": 2,
+   "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1",
+   "sqlite_version": "3.45.1"
+  }
+ ],
+ "schema_versions": {
+  "1": {
+   "accepted": [
+    {
+     "digest": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+     "objects": {
+      "index:ix_edges_subj_rel": {
+       "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)",
+       "table": "edges",
+       "type": "index"
+      },
+      "index:ix_edges_user_active": {
+       "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)",
+       "table": "edges",
+       "type": "index"
+      },
+      "index:ix_episodes_user": {
+       "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)",
+       "table": "episodes",
+       "type": "index"
+      },
+      "table:edges": {
+       "columns": [
+        [
+         "id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "user_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "subject",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "relation",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "object",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "active",
+         "INTEGER",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "quarantined",
+         "INTEGER",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "json",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+       "table": "edges",
+       "type": "table"
+      },
+      "table:episodes": {
+       "columns": [
+        [
+         "id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "user_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "date",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "json",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+       "table": "episodes",
+       "type": "table"
+      },
+      "table:wiki": {
+       "columns": [
+        [
+         "user_id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "text",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "store_version",
+         "INTEGER",
+         0,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+       "table": "wiki",
+       "type": "table"
+      },
+      "table:write_counter": {
+       "columns": [
+        [
+         "user_id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "n",
+         "INTEGER",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+       "table": "write_counter",
+       "type": "table"
+      }
+     },
+     "provenance": "constructor v1"
+    }
+   ]
+  },
+  "2": {
+   "accepted": [
+    {
+     "digest": "15f606bb73c5ef5cb5f1c7100b53a6e0536acb3498e477b799c549b631328d83",
+     "objects": {
+      "index:ix_confirmations_edge": {
+       "sql": "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)",
+       "table": "confirmations",
+       "type": "index"
+      },
+      "index:ix_edges_subj_rel": {
+       "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)",
+       "table": "edges",
+       "type": "index"
+      },
+      "index:ix_edges_user_active": {
+       "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)",
+       "table": "edges",
+       "type": "index"
+      },
+      "index:ix_episodes_user": {
+       "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)",
+       "table": "episodes",
+       "type": "index"
+      },
+      "table:confirmations": {
+       "columns": [
+        [
+         "id",
+         "TEXT",
+         1,
+         null,
+         1,
+         0
+        ],
+        [
+         "user_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "edge_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "confirmed_at",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "actor",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "call_path",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "correlation_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "request_digest",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)",
+       "table": "confirmations",
+       "type": "table"
+      },
+      "table:edges": {
+       "columns": [
+        [
+         "id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "user_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "subject",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "relation",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "object",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "active",
+         "INTEGER",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "quarantined",
+         "INTEGER",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "json",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+       "table": "edges",
+       "type": "table"
+      },
+      "table:episodes": {
+       "columns": [
+        [
+         "id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "user_id",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ],
+        [
+         "date",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "json",
+         "TEXT",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+       "table": "episodes",
+       "type": "table"
+      },
+      "table:wiki": {
+       "columns": [
+        [
+         "user_id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "text",
+         "TEXT",
+         0,
+         null,
+         0,
+         0
+        ],
+        [
+         "store_version",
+         "INTEGER",
+         0,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+       "table": "wiki",
+       "type": "table"
+      },
+      "table:write_counter": {
+       "columns": [
+        [
+         "user_id",
+         "TEXT",
+         0,
+         null,
+         1,
+         0
+        ],
+        [
+         "n",
+         "INTEGER",
+         1,
+         null,
+         0,
+         0
+        ]
+       ],
+       "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+       "table": "write_counter",
+       "type": "table"
+      }
+     },
+     "provenance": "constructor v2"
+    }
+   ]
+  }
+ }
+}
