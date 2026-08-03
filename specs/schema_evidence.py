@@ -5,6 +5,9 @@ Separated from the schema kernel because git probing and artifact presentation
 should not sit inside the trust boundary (round 5). This module *uses*
 `schema_model`; nothing in `schema_model` depends on it.
 
+**Migrations are out of `0007`'s scope from v10** -- see `specs/0006`. What
+remains here is constructor output per version, which is what adoption needs.
+
   `--releases --write`  build a store with every released tag's own code and
                         record tag, commit sha, on-disk stamp, resolved version
                         and digest.
@@ -31,8 +34,6 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
-from schema_migrations import (MIGRATIONS, apply_migration, chain,
-                               destination_problems, validate_registry)
 from schema_model import (GENERATED, POLICY_ARTIFACT, ROOT, SCHEMA_VERSION, SCHEMAS,
                           create, declared_policies, digest, identity, manifest,
                           resolve)
@@ -41,7 +42,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 7
+MANIFEST_ALGORITHM = 8
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -70,12 +71,9 @@ def _feature_probes() -> dict:
         out["generated_columns"] = True
     except sqlite3.DatabaseError:
         out["generated_columns"] = False
-    try:
-        c.set_authorizer(lambda *a: sqlite3.SQLITE_OK)
-        c.set_authorizer(None)
-        out["authorizer"] = True
-    except Exception:
-        out["authorizer"] = False
+    # No authorizer probe: with migrations out of 0007's scope (v10) nothing
+    # here installs one. `specs/0006` owns migration confinement and should
+    # probe it where it is used.
     # Round 7, finding 5: this probe used `CREATE TABLE s (a) STRICT`, which is
     # invalid -- a strict table's column must declare a datatype. It therefore
     # recorded `strict_tables: False` on a runtime that fully supports them.
@@ -100,23 +98,6 @@ def _feature_probes() -> dict:
     stored = c.execute(
         "SELECT sql FROM sqlite_master WHERE name='verbatim_probe'").fetchone()[0]
     out["preserves_ddl_body"] = stored[stored.index("("):] == marker[marker.index("("):]
-    # The authorizer probe checked only that `set_authorizer` was callable. What
-    # migration confinement actually relies on is that these specific actions
-    # are denied, so exercise them.
-    from schema_migrations import Migration, apply_migration
-    c.execute("BEGIN IMMEDIATE")
-    denied = []
-    for stmt in ("COMMIT", "END", "RELEASE s", "PRAGMA writable_schema=ON",
-                 "CREATE TEMP TABLE tmp_probe (x)"):
-        try:
-            apply_migration(c, Migration(0, 0, (stmt,)))
-        except Exception:
-            denied.append(stmt)
-    out["authorizer_denies_all"] = len(denied) == 5
-    try:
-        c.execute("ROLLBACK")
-    except sqlite3.DatabaseError:
-        pass
     # `table_xinfo` must expose a generated column with a nonzero hidden flag --
     # the property §4a-ii depends on.
     out["xinfo_exposes_generated"] = any(
@@ -146,7 +127,7 @@ def runtime_record_problems(r: dict) -> list:
     versions rather than being whatever happened to be recorded."""
     problems = []
     for field in ("sqlite_version", "source_id", "features", "constructor_digests",
-                  "migration_digests", "manifest_algorithm", "schema_version"):
+                  "manifest_algorithm", "schema_version"):
         if field not in r:
             problems.append(f"runtime record is missing {field!r}")
     if problems:
@@ -166,16 +147,7 @@ def runtime_record_problems(r: dict) -> list:
         problems.append("runtime record has no constructor digests")
     if not r["features"]:
         problems.append("runtime record has no feature probes")
-    # Round 7, finding 2: the constructor key set was validated and the
-    # migration key set was not, so `{}` and `{"999": "bad"}` both passed and
-    # `runtime_supported()` then checked whichever entries happened to exist.
-    want_paths = set(migration_paths())
-    if set(r["migration_digests"]) != want_paths:
-        problems.append(f"runtime record covers migration paths "
-                        f"{sorted(r['migration_digests'])}, build declares "
-                        f"{sorted(want_paths)}")
-    for name, must in (("authorizer_denies_all", True),
-                       ("preserves_ddl_body", True),
+    for name, must in (("preserves_ddl_body", True),
                        ("xinfo_exposes_generated", True)):
         if r["features"].get(name) is not must:
             problems.append(f"runtime fails a required behaviour: {name}")
@@ -199,38 +171,9 @@ def runtime_supported() -> bool:
                 and r["source_id"] == me["source_id"]
                 and r["features"] == me["features"]):
             continue
-        if any(_constructor_digest(int(v)) != d
-               for v, d in r["constructor_digests"].items()):
-            return False
-        here = migration_paths()
-        return all(here[k]["digest"] == d for k, d in r["migration_digests"].items())
+        return all(_constructor_digest(int(v)) == d
+                   for v, d in r["constructor_digests"].items())
     return False
-
-
-def migration_paths() -> dict:
-    """Every declared path, keyed individually.
-
-    **Round 7, finding 3: v8 keyed by destination version and returned after the
-    first viable base**, so only one path per destination could ever be
-    recorded — while the whole reason migration digests exist is that different
-    bases can produce different exact output at the same destination."""
-    out = {}
-    for to_version in sorted(SCHEMAS):
-        for base in sorted(v for v in SCHEMAS if v < to_version):
-            try:
-                steps = chain(base, to_version)
-            except KeyError:
-                continue
-            c = sqlite3.connect(":memory:")
-            create(c, base)
-            for mig in steps:
-                apply_migration(c, mig)
-            out[f"v{base}:constructor->v{to_version}"] = {
-                "digest": digest(manifest(c), to_version),
-                "objects": identity(manifest(c)),
-                "to_version": to_version}
-            c.close()
-    return out
 
 
 def build_runtime_record() -> dict:
@@ -238,14 +181,11 @@ def build_runtime_record() -> dict:
     me["manifest_algorithm"] = MANIFEST_ALGORITHM
     me["schema_version"] = SCHEMA_VERSION
     me["constructor_digests"] = {str(v): _constructor_digest(v) for v in sorted(SCHEMAS)}
-    paths = migration_paths()
-    me["migration_digests"] = {k: v["digest"] for k, v in paths.items()}
-    # Full object records, not only digests: round 7, finding 4 -- a second
-    # qualified runtime's manifestations must be reconstructible, and an
-    # object-level `diff` cannot be built from a digest.
-    me["manifestations"] = {
-        **{f"constructor v{v}": _constructor_objects(v) for v in sorted(SCHEMAS)},
-        **{k: v["objects"] for k, v in paths.items()}}
+    # Full object records, not only digests: a second qualified runtime's
+    # manifestations must be reconstructible, and an object-level `diff` cannot
+    # be built from a digest (round 7, finding 4).
+    me["manifestations"] = {f"constructor v{v}": _constructor_objects(v)
+                            for v in sorted(SCHEMAS)}
     return me
 
 
@@ -315,7 +255,7 @@ def build_version_artifact(strict: bool = True) -> dict:
     existing = (json.loads(VERSIONS.read_text()).get("versions", {})
                 if VERSIONS.exists() else {})
     from schema_model import validate_schema_registry
-    out, problems = {}, validate_schema_registry() + list(validate_registry())
+    out, problems = {}, validate_schema_registry()
 
     for version in sorted(SCHEMAS):
         accepted = []
@@ -325,28 +265,6 @@ def build_version_artifact(strict: bool = True) -> dict:
                          "digest": digest(manifest(c), version),
                          "objects": identity(manifest(c))})
         c.close()
-        # Single-step model: every accepted manifest of the source version must
-        # migrate, so paths are generated per accepted source rather than once.
-        for base in sorted(v for v in SCHEMAS if v < version):
-            try:
-                steps = chain(base, version)
-            except KeyError:
-                continue
-            mc = sqlite3.connect(":memory:")
-            create(mc, base)
-            for mig in steps:
-                apply_migration(mc, mig)
-            # **The destination contract is independent of what the migration
-            # produced** (round 6, finding 1). Without this an empty migration
-            # authorises its own broken output as a valid destination.
-            dp = destination_problems(manifest(mc), version)
-            if dp:
-                problems.extend(f"migration v{base}->v{version}: {p}" for p in dp)
-            else:
-                accepted.append({"provenance": f"migration v{base}->v{version}",
-                                 "digest": digest(manifest(mc), version),
-                                 "objects": identity(manifest(mc))})
-            mc.close()
         # **Round 7, finding 4: accepted manifests are the union across every
         # qualified runtime.** v8 regenerated the current version solely from
         # the runtime running the command, so qualifying a second runtime whose

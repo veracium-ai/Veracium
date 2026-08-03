@@ -24,8 +24,6 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "specs"))
 
-from schema_migrations import (MIGRATIONS, Migration, apply_migration,  # noqa: E402
-                               destination_problems, validate_registry)
 from schema_model import (REBUILDABLE, REQUIRED, SCHEMA_V1, SCHEMAS,  # noqa: E402
                           SchemaObject, create, declared_policies, digest, drift,
                           identity, manifest, registry_conformance,
@@ -119,11 +117,6 @@ REFUSED = {
 }
 
 
-@pytest.mark.parametrize("name", sorted(REFUSED))
-def test_a_non_identical_schema_is_refused(name, clean):
-    assert digest(_objs(REFUSED[name]())) != clean
-
-
 # --- shapes that must NOT be refused -------------------------------------
 # These are the ones to read sceptically. A check that refuses stores which are
 # genuinely fine gets bypassed, and a bypassed check is weaker than a narrower
@@ -198,28 +191,6 @@ def test_the_reviewed_policy_artifact_matches_the_registry():
     assert reviewed_policies(1) == declared_policies(1)
 
 
-# --- versioning across a simulated schema change -------------------------
-
-@pytest.fixture
-def simulated_v2_empty(monkeypatch):
-    """Version 2 requiring a `sources` table, with an EMPTY migration to it."""
-    import schema_evidence as ev
-    v2 = SCHEMA_V1 + (SchemaObject("table", "sources",
-                                   "CREATE TABLE sources (id TEXT PRIMARY KEY)", REQUIRED),)
-    monkeypatch.setitem(SCHEMAS, 2, v2)
-    monkeypatch.setitem(MIGRATIONS, 1, Migration(1, 2, ()))
-    monkeypatch.setattr(ev, "SCHEMA_VERSION", 2)
-    monkeypatch.setattr("schema_migrations.SCHEMA_VERSION", 2)
-    monkeypatch.setattr("schema_model.SCHEMA_VERSION", 2)
-    problems = []
-    try:
-        art = ev.build_version_artifact(strict=True)
-    except SystemExit as e:
-        problems = str(e).split("\n")
-        art = ev.build_version_artifact(strict=False)
-    return problems, art["versions"]
-
-
 @pytest.fixture
 def simulated_v2(monkeypatch):
     """A version 2 with its own required table AND its own rebuildable index —
@@ -231,11 +202,7 @@ def simulated_v2(monkeypatch):
         SchemaObject("index", "ix_sources",
                      "CREATE INDEX ix_sources ON sources(id)", REBUILDABLE))
     monkeypatch.setitem(SCHEMAS, 2, v2)
-    monkeypatch.setitem(MIGRATIONS, 1, Migration(1, 2, (
-        "CREATE TABLE sources (id TEXT PRIMARY KEY, label TEXT)",
-        "CREATE INDEX ix_sources ON sources(id)")))
     monkeypatch.setattr(ev, "SCHEMA_VERSION", 2)
-    monkeypatch.setattr("schema_migrations.SCHEMA_VERSION", 2)
     monkeypatch.setattr("schema_model.SCHEMA_VERSION", 2)
     return ev.build_version_artifact(strict=False)["versions"]
 
@@ -258,19 +225,6 @@ def test_resolution_does_not_use_a_default_version_digest(simulated_v2):
     assert digest(v2, 1) != digest(v2, 2)
     assert not any(a["digest"] == digest(v2, 1) for a in simulated_v2["2"]["accepted"])
     assert resolve(v2, simulated_v2) == 2
-
-
-def test_the_migration_path_is_generated_not_preserved(simulated_v2):
-    """Round 4: v5 preserved whatever JSON was present and called it accepted."""
-    prov = [a["provenance"] for a in simulated_v2["2"]["accepted"]]
-    assert "migration v1->v2" in prov and "constructor v2" in prov
-
-
-def test_a_migrated_store_is_accepted_at_its_destination(simulated_v2):
-    c = sqlite3.connect(":memory:")
-    create(c, 1)
-    apply_migration(c, MIGRATIONS[1])
-    assert resolve(manifest(c), simulated_v2) == 2
 
 
 def test_resolution_is_restricted_to_legacy_base_versions(simulated_v2):
@@ -299,59 +253,11 @@ def test_deleting_a_historical_version_is_an_error(simulated_v2, tmp_path, monke
     monkeypatch.setattr(ev, "VERSIONS", art)
     monkeypatch.setitem(SCHEMAS, 2, SCHEMAS[2])
     del SCHEMAS[2]
-    MIGRATIONS.pop(1, None)
     try:
         with pytest.raises(SystemExit, match="no longer declares it"):
             ev.build_version_artifact(strict=True)
     finally:
         pass
-
-
-# --- migration containment ------------------------------------------------
-
-def test_a_migration_cannot_reach_the_connection():
-    """Round 5: the callback model is withdrawn. A declared statement sequence
-    has nothing to escape from — there is no object to reach through."""
-    mig = Migration(1, 2, ("CREATE TABLE x (a)",))
-    assert all(isinstance(s, str) for s in mig.statements)
-    assert not any("conn" in f.lower() for f in Migration._fields)
-
-
-@pytest.mark.parametrize("stmt", ["COMMIT", "END", "END TRANSACTION", "ROLLBACK",
-                                  "SAVEPOINT s", "RELEASE s", "ATTACH ':memory:' AS x"])
-def test_transaction_control_in_a_declared_statement_is_denied(stmt):
-    conn = sqlite3.connect(":memory:")
-    conn.isolation_level = None
-    conn.execute("CREATE TABLE t (a)")
-    conn.execute("BEGIN IMMEDIATE")
-    with pytest.raises(sqlite3.DatabaseError):
-        apply_migration(conn, Migration(1, 2, (stmt,)))
-    assert conn.in_transaction, f"{stmt} ended the transaction"
-
-
-def test_the_authorizer_is_restored_after_a_failed_migration():
-    conn = sqlite3.connect(":memory:")
-    conn.isolation_level = None
-    conn.execute("CREATE TABLE t (a)")
-    conn.execute("BEGIN IMMEDIATE")
-    with pytest.raises(sqlite3.DatabaseError):
-        apply_migration(conn, Migration(1, 2, ("COMMIT",)))
-    conn.execute("COMMIT")            # the planner's own commit still works
-    assert not conn.in_transaction
-
-
-def test_ordinary_migration_statements_are_allowed():
-    conn = sqlite3.connect(":memory:")
-    conn.isolation_level = None
-    conn.execute("CREATE TABLE t (a)")
-    conn.execute("BEGIN IMMEDIATE")
-    apply_migration(conn, Migration(1, 2, ("ALTER TABLE t ADD COLUMN b TEXT",
-                                           "INSERT INTO t(a) VALUES('x')")))
-    assert conn.in_transaction
-
-
-def test_the_migration_registry_is_well_formed():
-    assert validate_registry() == []
 
 
 # --- runtime qualification ------------------------------------------------
@@ -397,7 +303,8 @@ def test_a_matching_version_with_different_features_is_not_qualified(monkeypatch
     """A version number names a release, not a build."""
     import schema_evidence as ev
     rec = ev.build_runtime_record()
-    rec["features"] = dict(rec["features"], authorizer=not rec["features"]["authorizer"])
+    rec["features"] = dict(rec["features"],
+                           strict_tables=not rec["features"]["strict_tables"])
     monkeypatch.setattr(ev, "qualified_runtimes", lambda: [rec])
     assert not ev.runtime_supported()
 
@@ -423,94 +330,12 @@ def test_writing_runtime_evidence_actually_writes(tmp_path, monkeypatch):
     assert art.exists() and json.loads(art.read_text())["runtimes"]
 
 
-# --- migration destination and confinement --------------------------------
-
-def test_an_empty_migration_cannot_authorize_its_own_output(simulated_v2_empty):
-    """Round 6, finding 1 — the most serious defect in v7. The generator added
-    whatever a migration produced to the destination's accepted set, so an empty
-    migration defined its own broken output as a valid version 2."""
-    problems, records = simulated_v2_empty
-    assert any("requires table 'sources', absent" in p for p in problems), problems
-    prov = [a["provenance"] for a in records["2"]["accepted"]]
-    assert "migration v1->v2" not in prov, prov
-
-
-def test_a_temp_object_is_refused_even_though_the_manifest_is_unchanged():
-    """Round 6, finding 2: a TEMP trigger left the persistent manifest
-    byte-identical and then silently deleted every inserted row."""
-    conn = sqlite3.connect(":memory:")
-    conn.isolation_level = None
-    conn.execute("CREATE TABLE t (a)")
-    conn.execute("BEGIN IMMEDIATE")
-    with pytest.raises(sqlite3.DatabaseError):
-        apply_migration(conn, Migration(1, 2, (
-            "CREATE TEMP TRIGGER sabotage AFTER INSERT ON t BEGIN DELETE FROM t; END",)))
-    assert conn.execute("SELECT count(*) FROM sqlite_temp_master").fetchone()[0] == 0
-
-
-def test_a_pragma_in_a_declared_migration_is_refused():
-    """`PRAGMA writable_schema=ON` was accepted and stayed set afterwards."""
-    conn = sqlite3.connect(":memory:")
-    conn.isolation_level = None
-    conn.execute("CREATE TABLE t (a)")
-    conn.execute("BEGIN IMMEDIATE")
-    with pytest.raises(sqlite3.DatabaseError):
-        apply_migration(conn, Migration(1, 2, ("PRAGMA writable_schema=ON",)))
-    conn.set_authorizer(None)
-    assert conn.execute("PRAGMA writable_schema").fetchone()[0] == 0
-
-
-def test_a_schema_above_the_declared_current_version_fails_validation(monkeypatch):
-    """Round 6, finding 6: declaring SCHEMAS[2] while SCHEMA_VERSION stayed 1
-    validated clean and emitted an artifact containing a version the build did
-    not claim to be."""
-    monkeypatch.setitem(SCHEMAS, 2, SCHEMA_V1)
-    problems = validate_registry()
-    assert any("SCHEMA_VERSION" in p for p in problems), problems
-
-
 def test_missing_legacy_evidence_authorizes_nothing(monkeypatch, tmp_path):
     """Round 6, finding 7: v7 returned {SCHEMA_VERSION}, authorising adoption
     using the very evidence that was missing."""
     import schema_evidence as ev
     monkeypatch.setattr(ev, "RELEASES", tmp_path / "absent.json")
     assert ev.legacy_base_versions() == frozenset()
-
-
-# --- round 7 -------------------------------------------------------------
-
-@pytest.fixture
-def simulated_alter_v2(monkeypatch):
-    """Version 2 that ADDS A COLUMN to a required table — the case v8 rejected."""
-    import schema_evidence as ev
-    alt = SCHEMA_V1[0].ddl.replace("json TEXT NOT NULL\n)",
-                                   "json TEXT NOT NULL, source_id TEXT\n)")
-    v2 = (SchemaObject("table", "edges", alt, REQUIRED),) + SCHEMA_V1[1:]
-    monkeypatch.setitem(SCHEMAS, 2, v2)
-    monkeypatch.setitem(MIGRATIONS, 1, Migration(1, 2, (
-        "ALTER TABLE edges ADD COLUMN source_id TEXT",)))
-    for mod in ("schema_evidence", "schema_migrations", "schema_model"):
-        monkeypatch.setattr(f"{mod}.SCHEMA_VERSION", 2)
-    return ev
-
-
-def test_a_normal_alter_reaches_an_accepted_destination(simulated_alter_v2):
-    """Round 7, finding 1 — the contradiction v8 introduced. Comparing DDL text
-    byte-for-byte rejected the exact case the accepted-set model exists for."""
-    conn = sqlite3.connect(":memory:")
-    create(conn, 1)
-    apply_migration(conn, MIGRATIONS[1])
-    assert destination_problems(manifest(conn), 2) == []
-    records = simulated_alter_v2.build_version_artifact(strict=True)["versions"]
-    prov = [a["provenance"] for a in records["2"]["accepted"]]
-    assert any("migration" in p for p in prov), prov
-
-
-def test_an_alter_that_omits_the_column_is_still_rejected(simulated_alter_v2):
-    """Structural capability is not "anything goes"."""
-    conn = sqlite3.connect(":memory:")
-    create(conn, 1)
-    assert destination_problems(manifest(conn), 2)
 
 
 def test_a_policy_typo_is_a_build_error():
@@ -534,22 +359,6 @@ def test_a_rebuildable_non_index_is_a_build_error():
         assert any("rebuildable" in p for p in validate_schema_registry())
     finally:
         del SCHEMAS[99]
-
-
-def test_incomplete_migration_path_coverage_disqualifies(monkeypatch, simulated_alter_v2):
-    """Round 7, finding 2: `{}` and `{"999": "bad"}` both passed validation."""
-    ev = simulated_alter_v2
-    rec = ev.build_runtime_record()
-    for probe in ({}, {"999": "bad"}):
-        bad = dict(rec, migration_digests=probe)
-        assert ev.runtime_record_problems(bad), probe
-
-
-def test_every_migration_path_is_keyed_individually(simulated_alter_v2):
-    """Round 7, finding 3: v8 keyed by destination and returned the first path."""
-    paths = simulated_alter_v2.migration_paths()
-    assert list(paths) == ["v1:constructor->v2"], list(paths)
-    assert all("->" in k for k in paths)
 
 
 def test_a_foreign_runtime_manifestation_is_preserved(monkeypatch):
@@ -584,4 +393,4 @@ def test_the_ddl_probe_asserts_body_preservation():
     """And this one only checked that a row existed."""
     import schema_evidence as ev
     f = ev.runtime_identity()["features"]
-    assert f["preserves_ddl_body"] is True and f["authorizer_denies_all"] is True
+    assert f["preserves_ddl_body"] is True and f["xinfo_exposes_generated"] is True

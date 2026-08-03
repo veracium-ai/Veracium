@@ -5,18 +5,15 @@
       "source_id": "2024-01-30 16:01:20 e876e51a0ed5c5b3126f52e532044363a014bc594cfefa87ffb5b82257ccalt1",
       "features": {
         "generated_columns": true,
-        "authorizer": true,
         "strict_tables": true,
         "preserves_ddl_body": true,
-        "authorizer_denies_all": true,
         "xinfo_exposes_generated": true
       },
-      "manifest_algorithm": 7,
+      "manifest_algorithm": 8,
       "schema_version": 1,
       "constructor_digests": {
         "1": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299"
       },
-      "migration_digests": {},
       "manifestations": {
         "constructor v1": {
           "index:ix_edges_subj_rel": {

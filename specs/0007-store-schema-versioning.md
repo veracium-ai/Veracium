@@ -4,27 +4,28 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v9)** — opened 2026-08-01. **Round 7 found that v8's destination
-> contract contradicted itself**: it compared DDL byte-for-byte, which rejected
-> the ordinary `ALTER` the accepted-set model exists to permit. v9 makes the
-> destination requirement **structural capability**, closes the policy
-> vocabulary (a typo silently disabled validation), keys every migration path
-> individually, **unions accepted manifests across qualified runtimes**, and
-> replaces three feature probes that did not test the behaviour they named.
-> **It is the `Spec-Requires:` prerequisite of `0006`, `0008`, `0009` and
+> **in review (v10) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
+> the product owner's decision.** Seven external rounds produced ~63 findings,
+> and the large majority lived in **migration machinery with no users** —
+> `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
+> stamp · refuse-newer · adopt-v1.** The migration contract moves to
+> **`specs/0006`**, where the first real migration exists to design against.
+> Nothing is discarded: the v9 migration design is preserved in
+> `specs/archives/0007-v9-20260803T0056Z.tar.gz` and `0006` §0 inherits it.
+> **It remains the `Spec-Requires:` prerequisite of `0006`, `0008`, `0009` and
 > `0010`.**
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v9 |
+| **Version** | v10 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0006`, not a part of it. |
 | **Internal reviewers** | research — pending |
-| **External review** | required — `store/sqlite.py` is guarded and a bad migration makes stores unopenable |
+| **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
 | **Review history** | *see `specs/STATUS.md`, generated from `specs/reviews.py`. No counts are stated here; a hand-maintained count drifted in `0008` and was found by the reviewer.* |
 | **Decision + date** | — |
 | **Path** | full |
-| **Measuring instrument** | `specs/schema_model.py` (kernel) · `schema_migrations.py` · `schema_evidence.py`; every counterexample lives in `tests/test_schema_model.py` and is counted by collection |
+| **Measuring instrument** | `specs/schema_model.py` (kernel) · `schema_evidence.py`; every counterexample lives in `tests/test_schema_model.py` and is counted by collection |
 | **Generated evidence** | `legacy_stores.json` (per-release stamp + resolved version) · `schema_versions.json` (immutable manifests per version) · `schema_policy.json` (reviewed policies) · `sqlite_runtimes.json` (qualified runtimes), all gated by `schema_evidence.py --check` |
 
 ---
@@ -69,7 +70,7 @@ has.**
 | field | read / written | contract | consumers |
 |---|---|---|---|
 | **`PRAGMA user_version`** | **NEW** — written on create/adopt/migrate, read on every open | the integer shape-id of this store file | `SqliteStore.__init__` only |
-| **`MANIFESTS`** | **NEW** — **generated** by executing each constructor and every declared migration path | the **closed set** of object sets accepted *at* that version | open, migrate |
+| **`MANIFESTS`** | **NEW** — **generated** by executing each constructor | the **closed set** of object sets accepted *at* that version. A *set*, because `0006` will add migration outputs | open |
 | **`LEGACY_BASE_VERSIONS`** | **NEW** — `frozenset[int]`, generated from release evidence | the **only** candidate versions the version-zero path may try | the version-zero path |
 | `_SCHEMA` | unchanged | `CREATE TABLE IF NOT EXISTS …` | unchanged; **stops being the sole definition of shape** |
 | `FORMAT_VERSION` | unchanged | export/import wire format | **explicitly independent** — see §8 |
@@ -85,10 +86,10 @@ provenance; it constrains *when a store may be opened at all*.
 |---|---|---|---|---|---|
 | **`user_version` in the file** | `0` → adopt-or-create, §4 | **negative, measured** — sqlite stores `-1` and `-2147483648` verbatim | **higher than ours → REFUSE** | set to `0` to force adoption of a foreign store | **S3** shape, not counter · **S14** negative → `invalid-version` |
 | **the db file** | new store | sqlite rejects | — | **anyone who can write this file already owns the process** — stated, not defended | out of scope, and named so it is not mistaken for covered |
-| **a lower `user_version`** | — | — | — | downgrade to re-enter an unmigrated path, or to skip validation | **S4** gap refuses · **S15** the *source* signature is validated before any migration runs |
+| **a lower `user_version`** | — | — | — | downgrade to skip validation | **cannot arise at `SCHEMA_VERSION = 1`**; recorded here because `0006` must handle it (§4f) |
 | **a stamped-but-wrong store** | — | — | — | stamp a foreign file `1` to bypass adoption entirely | **S16** — every version validates its manifest, not only version zero |
 | **a schema that is *equivalent* but not identical** | — | — | **a `CHECK`, a `COLLATE`, a view, a custom-collation index** | any of the four round-2 counterexamples | **S28** — exact-match against known manifests; equivalence is **not** attempted (§4a) |
-| **a migration** | — | — | — | v5's callback recovered the connection via `_MigrationExecutor__conn` | **S22/S43** — migrations are **declarative statement tuples**; there is no connection-bearing object to escape through (§4d) |
+| ~~a migration~~ | — | — | — | *(out of scope from v10 — `0006`, §4f)* | — |
 | **an audit sink** | — | — | — | blocks, or re-enters the same store under the write lock | **§4e** — bounded time, must not access the store; the guarantee is named `attempted` / `committed` |
 | **concurrent first open** | — | — | — | two processes decide from stale state | **S5** — `BEGIN IMMEDIATE` *before* the read, §4c |
 | **extra objects in the file** | — | — | sqlite's own `sqlite_stat1` | a foreign table, view or **trigger** beside ours | **S8** exact set · **S10** internal exclusion · **S17** an unstamped file with *any* non-internal object is not "new" |
@@ -171,39 +172,52 @@ On open, exactly one of — **and the table is total over the integers**:
 |---|---|---|
 | **invalid** | `user_version < 0` | **REFUSE** `reason="invalid-version"` |
 | **new** | `user_version = 0` **and no non-internal object at all** — no table, view, trigger or index | create schema, validate the result against `MANIFESTS[SCHEMA_VERSION]` (**S25**), stamp |
-| **legacy** | `user_version = 0` **and the manifest matches exactly one version in `LEGACY_BASE_VERSIONS`** (§4a-vii) | **resolve that base version**, then take the *older* path from it — migrate, validate, stamp |
+| **legacy** | `user_version = 0` **and the manifest matches exactly one version in `LEGACY_BASE_VERSIONS`** (§4a-vii) | **adopt**: repair index drift, stamp. **Today that is always version 1** |
 | **foreign** | `user_version = 0` **and anything else** | **REFUSE** `reason="foreign-shape"` |
 | **unsupported runtime** | this runtime is not qualified by `sqlite_runtimes.json` (§4a-viii) | **REFUSE** `reason="unsupported-sqlite"` — checked **before** any of the rows below |
 | **current** | `user_version = SCHEMA_VERSION` **and the manifest is in `MANIFESTS[SCHEMA_VERSION]`** | repair index drift if any (§4a-iii), **revalidate**, open |
 | **stamped-wrong** | `user_version = SCHEMA_VERSION` **and it does not** | **REFUSE** `reason="stamped-shape-mismatch"` |
-| **older** | `0 < user_version < SCHEMA_VERSION` | validate `MANIFESTS[found]`, migrate step by step validating each destination, stamp (§4d) |
+| **older** | `0 < user_version < SCHEMA_VERSION` | **cannot arise while `SCHEMA_VERSION = 1`.** When it can, `0006` owns it — see §4f |
 | **newer** | `user_version > SCHEMA_VERSION` | **REFUSE** `reason="newer"` |
 
-### 4-i. Why the *legacy* row is not simply "adopt"
+### 4-i. Version zero, and what `0006` inherits
 
-**v3's legacy row adopted a store whose signature matched
-`SIGNATURES[SCHEMA_VERSION]` — which works only while the current version *is*
-the legacy version.** Round 2's finding 1, and it is decisive:
+**Under `SCHEMA_VERSION = 1` the version-zero path is a stamping step.** The
+store's shape is resolved against `LEGACY_BASE_VERSIONS` — the versions whose
+release evidence shows a genuinely *unstamped* store — index drift is repaired,
+and the stamp is written. Today that set is `{1}`, so adoption is: recognise the
+one historical shape, or refuse.
 
-```
-old installation:  pre-0007, user_version = 0, shape = version 1
-new installation:  SCHEMA_VERSION = 2 (0006 has landed)
+**Missing evidence authorises nothing.** An earlier draft returned
+`{SCHEMA_VERSION}` when the artifact was absent, silently authorising adoption
+on the strength of the very evidence that was missing. It returns the empty set,
+so **a nonempty unstamped store is refused when the evidence is unverified.**
+`allow_adopt=False` may narrow that further; nothing may broaden it. **S54**.
 
-the user upgrades directly, skipping the versioning-only release
-  presented:  user_version = 0, digest = digest of version 1
-  v3 rule:    digest != SIGNATURES[2]  ->  "foreign"  ->  REFUSED
-```
+#### 4f. What `0006` inherits, and why
 
-**A user cannot be required to install every intermediate release**, and
-refusing them contradicts the reason for landing the mechanism before its first
-real use. So version zero **resolves to a base version and then re-enters the
-normal migration path** — adoption is a *stamping* step, not a bypass of
-migration.
+**Round 1 established the requirement that survives the cut:** a user who
+upgrades across a schema change **must not be required to install every
+intermediate release**. A store presenting `user_version = 0` with a version-1
+shape to a version-2 build must resolve to base 1 and then migrate forward —
+not be refused as foreign.
 
-Under `SCHEMA_VERSION = 1` the resolved base is 1 and the chain is empty, so
-today's behaviour is unchanged. **The difference appears at version 2, which is
-exactly where v3 broke.** **S26** proves it by injecting `SCHEMA_VERSION = 2`
-and migrating an unstamped version-1 fixture directly.
+**That requirement is recorded here and owned by `0006`**, because `0006` is the
+first change that alters the on-disk shape and therefore the first place a
+migration can be designed against something real. The design work is not lost:
+**seven review rounds of it are preserved in
+`specs/archives/0007-v9-20260803T0056Z.tar.gz`**, and the conclusions that
+survived review are listed in `0006` §0 — the single-step model, declarative
+statements rather than callbacks, effects confined to persistent `main` schema,
+capability-not-DDL-text destination validation, and per-path runtime evidence.
+
+**Why the cut.** Seven rounds produced ~63 findings. The large majority were in
+migration and migration-driven runtime machinery, **for a registry that was
+empty**. That is not a reflection on the reviews — every finding was real, and
+two were total bypasses. It is a statement about designing a mechanism with no
+users: each round I rewrote code nothing called, and each rewrite introduced a
+defect the next round found. **`0007` now covers what a store needs today**;
+`0006` will carry the rest when it has a concrete migration to hold it to.
 
 ### 4a. The schema manifest — known constructors, not equivalence
 
@@ -456,45 +470,6 @@ another tool wrote.
 **An unbuildable release fails the tool**, because it is a gap in the evidence
 rather than a pass.
 
-#### 4a-v. A version accepts a **set** of manifests, not one
-
-**v4 promised known-constructor-*or-migration* acceptance and implemented
-known-constructor-only.** Round 3's finding 1, and it rejects an ordinary
-correct migration. Measured on the likeliest first one:
-
-```sql
-ALTER TABLE edges ADD COLUMN source_id TEXT
-```
-
-against a fresh constructor whose `edges` carries the same final column.
-`table_xinfo` is identical; the stored DDL is not:
-
-```
-fresh constructor:  ... json TEXT NOT NULL, source_id TEXT )
-ALTER TABLE:        ... json TEXT NOT NULL , source_id TEXT)
-```
-
-**Different digests. The migration is structurally correct and destination
-validation fails.**
-
-**Ruled: the multiple-known-output model.**
-
-```python
-MANIFESTS: dict[int, frozenset[Manifest]]     # constructor + every migration path
-```
-
-The alternative — requiring every migration to rebuild affected tables so its
-output is byte-identical to a fresh constructor — was rejected: SQLite's
-table-rebuild procedure is twelve steps, and making every future migration
-perform one to satisfy a *comparison* puts the risk in the wrong place. **The
-accepted set is generated, closed, and recorded** in
-`specs/generated/schema_versions.json`. Version 1 has exactly one member today
-because there are no migrations.
-
-**The cost, stated:** the set must be regenerated whenever a migration path is
-added, and a path nobody generated is a refusal. That is the intended direction
-— a shape this build cannot *name* is not a shape it should open.
-
 #### 4a-vi. The schema is a structured registry — S-Q5 resolved
 
 **S-Q5 is resolved, and round 3's finding 8 is the answer.** v4's `REBUILDABLE`
@@ -644,7 +619,7 @@ loudly. **S-Q7** stays open for the CI matrix that would widen it.
 
 ```python
 SCHEMA_VERSION: int = 1                        # constrained to 1 … 2147483647
-MANIFESTS: dict[int, frozenset[Manifest]]      # generated; constructor + migrations
+MANIFESTS: dict[int, frozenset[Manifest]]      # generated; a set, because 0006 will add migration outputs
 LEGACY_BASE_VERSIONS: frozenset[int]           # generated from release evidence
 
 class StoreVersionError(RuntimeError):
@@ -663,9 +638,9 @@ class SqliteStore(Store):
 ```
 
 **`reason` is a closed set** — `"invalid-version"`, `"newer"`,
-`"foreign-shape"`, `"stamped-shape-mismatch"`, `"migration-gap"`,
-`"migration-source-mismatch"`, `"migration-result-mismatch"`,
-`"adoption-refused"`, `"locked"`, **`"unsupported-sqlite"`**. Closed because
+`"foreign-shape"`, `"stamped-shape-mismatch"`, `"adoption-refused"`,
+`"locked"`, `"unsupported-sqlite"`. **The three `migration-*` reasons are
+withdrawn with the scope cut — `0006` adds what it needs.** Closed because
 hosts will branch on it — and v6 introduced the last one in the state table
 while leaving it out of this list, so a host branching on the *closed* set would
 have met an undocumented value.
@@ -718,7 +693,7 @@ BEGIN IMMEDIATE                  -- take the write lock FIRST
   re-read user_version
   re-read the manifest           -- on THIS connection, see below
   decide from the locked state
-  execute the DDL / migration    -- statement by statement, never executescript
+  create the schema             -- statement by statement, never executescript
   repair index drift if any
   stamp user_version
 COMMIT
@@ -742,149 +717,6 @@ manifests as a hang is worse than one that manifests as an error.
 
 **Scope:** S5 tests threads; **S20 tests processes**, because the product
 boundary is a file multiple processes can open.
-
-### 4d. Migrations are declarative, and the containment claim is withdrawn
-
-*(The v5/v6 phrasing quoted here is WITHDRAWN.)* **v5 and v6 claimed a migration
-could not reach transaction control, "enforced by construction". That claim was
-false**, and round 5 disproved it in one line:
-
-```python
-def migration(executor):
-    conn = executor._MigrationExecutor__conn      # name mangling is not access control
-    conn.set_authorizer(None)
-    conn.commit()
-```
-
-Measured: **raw connection recovered, outer transaction gone.** An arbitrary
-in-process Python callback cannot be sandboxed behind a private attribute, and
-**a false containment claim is worse than an admitted trusted one** — it invites
-exactly the code it pretends to contain.
-
-**So a migration receives nothing connection-bearing. It declares statements,
-and the planner executes them:**
-
-```python
-class Migration(NamedTuple):
-    from_version: int
-    to_version: int
-    statements: tuple[str, ...]      # executed in order, by the planner alone
-```
-
-There is no object to escape through. **The authorizer stays, with its role
-honestly restated:** it denies `SQLITE_TRANSACTION`, `SQLITE_SAVEPOINT`,
-`SQLITE_ATTACH` and `SQLITE_DETACH` so that a *declared statement* cannot end
-the transaction — `END`, `END TRANSACTION` and `RELEASE` all commit, and a
-keyword blacklist missed all three (measured). **It is defence against an
-accidental statement, not a sandbox around hostile code.** It is restored in
-`finally`: left installed it breaks the planner's own commit; left off after a
-failure it drops containment for whatever runs next.
-
-#### 4d-0. A migration does not define its own destination
-
-**Round 6, finding 1, and it is the most serious defect since the trigger
-bypass.** *(The v7 rule described in this paragraph is WITHDRAWN.)* v7 ran every
-migration and added **whatever it produced** to the destination version's
-accepted set. There was no independent destination
-requirement, so:
-
-```
-version 2 constructor:  edges, episodes, wiki, write_counter, sources
-migration v1 -> v2:     (empty)
-validate_registry():    []          <- clean
-MANIFESTS[2]:           BOTH outputs accepted
-```
-
-Measured. **The migration defined its own broken output as a valid version 2**,
-and a store missing a table the application expects would have passed
-destination validation. That is the headline guarantee inverted.
-
-**The two things v4a-v conflated are now separate:**
-
-| | |
-|---|---|
-| **observed exact output** | may legitimately differ in DDL text between the constructor and an `ALTER` path — this is why a version accepts a *set* |
-| **required destination capability** | defined by the destination's own registry entry, **independently of any migration** |
-
-**And the requirement is *structural capability*, not identical DDL text.** v8
-wrote "matching DDL" and implemented exactly that — which **rejected a correct
-`ALTER TABLE edges ADD COLUMN source_id TEXT`** (round 7, finding 1, measured).
-That is the case the accepted-*set* model was introduced to support, so v8
-contradicted itself in the space of two paragraphs.
-
-A migration result joins the accepted set **only if**:
-
-| | |
-|---|---|
-| every declared object exists, of the right kind | a `REBUILDABLE` one may be **absent** — that is repairable drift |
-| every declared **column** matches | name, declared type, nullability, default, primary-key position, generated flag — compared against the constructor's `table_xinfo`, **not its DDL text** |
-| no extra column on a required table | and no unapproved persistent object anywhere |
-| non-table objects still match their DDL | an index, view or trigger has no structure apart from its definition |
-
-**Exact DDL text remains what the digest records.** Capability is what
-*authorises* an output to become an accepted manifestation; the digest is what
-*identifies* it afterwards. **A failure is a build error, not a new accepted
-manifest.** **S50**, and **S57** covers the `ALTER` case that v8 rejected.
-
-#### 4d-i. Effects are confined to persistent `main` schema
-
-**A declared statement can act outside anything the manifest can see.** Round 6,
-finding 2, both measured:
-
-```sql
-CREATE TEMP TRIGGER sabotage AFTER INSERT ON t BEGIN DELETE FROM t; END
-```
-
-accepted · **persistent manifest byte-identical** · every subsequent insert
-silently deleted.
-
-```sql
-PRAGMA writable_schema=ON
-```
-
-accepted · persistent manifest unchanged · **still set on the live connection
-afterwards**.
-
-Post-migration manifest validation cannot detect either, because neither is in
-`sqlite_master`. **Validating the persistent shape afterwards is only a complete
-check if effects are confined to the persistent shape.** So the authorizer now
-also denies `SQLITE_PRAGMA` and **any action outside `main`**, and
-`sqlite_temp_master` is asserted empty after every step. Measured against the
-tighter authorizer: `ALTER TABLE`, `CREATE TABLE`, `CREATE INDEX`, `INSERT` and
-`UPDATE` all still allowed; both bypasses denied. **S51**, **S52**.
-
-*(A typed migration-operation model would be stronger than SQL strings, and the
-reviewer is right about that. It is not in v8 — the confinement above closes the
-measured holes, and I would rather ship a narrower mechanism than design a
-statement algebra in a round that already has eight findings.)*
-
-#### 4d-ii. The single-step model
-
-Round 5, finding 7: a version accepting a *set* of manifests needs a route
-contract, and v6 had none — nothing said whether two migrations could leave the
-same version, which one ran, or whether one migration had to work for every
-accepted source.
-
-**Ruled: exactly one migration from `n` to `n+1`, generated and validated
-against every accepted manifest of `n`.** Route selection, cycles, non-adjacent
-steps and duplicate edges are then *unrepresentable* rather than rejected. What
-remains checkable is adjacency, that both versions have registry entries, and
-that **every version below the current one has a route forward** — an accepted
-source manifest with no path to the current version can never be opened, and
-`validate_registry()` fails the build for it.
-
-| check | invariant |
-|---|---|
-| the chain from `found` to `SCHEMA_VERSION` is contiguous | **S4** |
-| the file matches an accepted manifest of `found` **before** the first step | **S15** |
-| the file matches an accepted manifest of `to_version` **after each** step | **S21** |
-| the constructor's own output is an accepted manifest of its version | **S23** |
-| every step is adjacent, unique, and reachable | **S24** |
-| creation and adoption validate **before** stamping | **S25** |
-| the whole chain runs in the single §4c transaction | **S5** |
-
-The registry is **empty** in this change; the test suite generates a simulated
-`v1->v2` path so that "empty" never means "untested".
 
 ### 4e. The adoption audit — what a callback can honestly prove
 
@@ -964,11 +796,11 @@ store. Fixtures create fresh stores at the current version, so this path is
 invisible to ordinary tests — the same reason the maintenance regimes in `0002`
 needed simulated clocks. **S2 reaches it by writing `user_version` directly.**
 
-**The migration regime cannot be reached at all yet.** With `SCHEMA_VERSION = 1`
-and an empty registry there is no version to migrate from, so S4, S15, S21 and
-S22 **inject a registry**. Stated because the alternative is invariants that
-silently test nothing — which is how `0002` shipped four rows whose checks never
-ran.
+**The migration regime is out of scope from v10** (§4f). Earlier versions
+carried invariants that injected a fake registry to reach it, and stated that
+the alternative was invariants which silently test nothing. That was true — and
+the deeper problem was that the regime had no users at all. **`0006` owns it**,
+where a real migration reaches it without a fixture.
 
 **The regime v2 did not model:** a *stamped* store whose shape is wrong. It is
 unreachable by any veracium code path, which is exactly why v2 assumed it away —
@@ -1001,15 +833,13 @@ run in CI with everything else rather than in a bespoke script.
 
 **Invariants are named for what they actually test**, per round 5's non-blocking
 note: S36 tests evidence-backed qualification (not tuple membership), S37 covers
-DDL *and* policy, S41 covers every authoritative field, S43 is replaced by the
-declarative model.
+DDL *and* policy, S41 covers every authoritative field.
 
 | invariant | executable check |
 |---|---|
 | **S1** a fresh store is stamped | `test_new_store_is_stamped` |
 | **S2** a newer store is refused | `test_a_newer_store_is_refused` — write `SCHEMA_VERSION + 1` directly |
 | **S3** adoption verifies signature, not counter | `test_a_foreign_store_at_version_zero_is_refused` |
-| **S4** migrations are forward-only; a gap refuses | `test_a_missing_migration_refuses` — injected registry |
 | **S5** the decision is made under the write lock | `test_first_open_locks_before_reading` — assert `BEGIN IMMEDIATE` precedes the version read |
 | **S6** an existing store keeps working, no data change | `test_legacy_store_is_adopted_losslessly` — every edge/episode byte-identical after adoption |
 | **S7** `FORMAT_VERSION` is untouched | `test_export_format_version_is_independent` |
@@ -1020,54 +850,39 @@ declarative model.
 | **S12** index drift is repaired on **every** path | `test_drifted_acceleration_index_is_rebuilt` — replace with a UNIQUE index on an already-**stamped** store, reopen, assert the canonical definition |
 | **S13** the stamp is transactional in the installed sqlite | `test_user_version_rolls_back` |
 | **S14** a negative version refuses; `SCHEMA_VERSION` is in range | `test_a_negative_user_version_is_refused` |
-| **S15** the source signature is validated before migrating | `test_migration_refuses_a_mismatched_source` |
 | **S16** a stamped store validates its manifest | `test_a_stamped_store_with_the_wrong_shape_is_refused` |
 | **S17** an unstamped file with any foreign object is not "new" | `test_a_database_with_only_an_unrelated_table_is_refused` |
 | **S18** foreign table names are never interpolated | `test_a_hostile_table_name_is_passed_as_a_value` — a name containing a quote and a semicolon |
 | **S19** generated columns are seen | `test_a_non_identical_schema_is_refused` |
 | **S23** the constructor's output **is** `MANIFESTS[SCHEMA_VERSION]` | `test_the_registry_reproduces_the_product_schema` — edit `_SCHEMA` without regenerating and the build fails |
-| **S24** every migration names adjacent existing `MANIFESTS` keys | `test_the_migration_registry_is_well_formed` |
 | **S25** creation and adoption validate **before** stamping | `test_creation_validates_before_stamping` |
-| **S26** an unstamped v1 store migrates **directly** to v2 | `test_legacy_store_upgrades_across_a_skipped_release` — inject `SCHEMA_VERSION = 2`; **the case v3 refused** |
 | **S27** an in-memory store works end to end | `test_in_memory_store_is_versioned` — create, stamp, use; manifest read from the live connection |
 | **S28** the four round-2 counterexamples are refused | `test_a_non_identical_schema_is_refused` — CHECK, COLLATE, VIEW, custom-collation index |
 | **S29** the historical artifact is current | `specs/schema_evidence.py --check` in CI |
-| **S30** a migrated store is accepted at its destination | `test_a_migrated_store_is_accepted_at_its_destination` — **measured today**. *(v8 said "in `--selfcheck`", a harness deleted in v7, and its fixture created a new table rather than altering a required one — so it never tested the `ALTER` claim. **S57** does.)* |
 | **S31** canonicalisation preserves quoted-literal semantics | `test_two_literal_variants_are_not_the_same_schema` — **measured today**; they accept opposite values |
 | **S32** a `(type, name)` collision cannot hide an object | `test_a_trigger_named_like_an_index_is_not_mistaken_for_drift` — **measured today**; v4 digested it as clean |
 | **S33** drift repair is followed by **complete revalidation** | `test_repair_revalidates_before_stamping` — digest accepted **and** drift empty |
-| **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today** by simulating version 2 |
+| **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today**; the resolver is version-aware even though only one version exists, because `0006` will add the second |
 | **S35** post-commit audit failure has the specified result | `test_committed_sink_failure_leaves_the_store_adopted` — raises `PostCommitAuditError`, not `StoreVersionError` |
-| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_or_explicitly_is_not` — version **and** source id **and** probes **and** reproduced constructor **and migration** digests |
+| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_or_explicitly_is_not` — version **and** source id **and** probes **and** reproduced constructor digests |
 | **S37** conformance covers rebuildable **DDL** | `test_a_wrong_rebuildable_ddl_fails_conformance` — v5's digest-based S23 passed it |
-| **S38** migration outputs are **generated** into the accepted set | `test_the_migration_path_is_generated_not_preserved` — **measured today** against a simulated `v1->v2` |
 | **S39** legacy resolution is candidate-based | `test_resolution_does_not_use_a_default_version_digest` — **measured today** |
 | **S40** only unstamped releases feed the legacy set | `test_resolution_is_restricted_to_legacy_base_versions` |
 | **S41** the gate re-derives every **authoritative** field | `schema_evidence.py --check` in CI. *(Manual probe, not a suite test: it rebuilds 23 worktrees. The fabricated-artifact result is recorded in §15, not claimed as an automated check.)* |
 | **S42** historical manifests are immutable | `test_deleting_a_historical_version_is_an_error` — **measured today** |
-| **S43** a migration **carries no connection at all** | `test_a_migration_cannot_reach_the_connection` — the declarative model has no object to escape through; `test_transaction_control_in_a_declared_statement_is_denied` covers all seven forms, `test_the_authorizer_is_restored_after_a_failed_migration` the `finally` |
 | **S44** flipping only a **policy** fails conformance | `test_flipping_only_a_policy_fails_conformance` — **v6's check was tautological** |
 | **S45** version-zero tries only `LEGACY_BASE_VERSIONS` | `test_resolution_is_restricted_to_legacy_base_versions` |
 | **S46** deleting a historical version is an error | `test_deleting_a_historical_version_is_an_error` |
 | **S47** a runtime is qualified by **evidence** | `test_an_unrecorded_runtime_is_not_qualified` · `test_a_matching_version_with_different_features_is_not_qualified` |
-| **S48** the migration registry is well-formed | `test_the_migration_registry_is_well_formed` — adjacency, uniqueness, reachability |
 | **S49** the audit event payload is the frozen type | `test_adoption_event_payload_is_typed` — §4e, both events, paired `adoption_id`. **Not yet written**; needs the store |
-| **S50** a migration cannot authorise its own output | `test_an_empty_migration_cannot_authorize_its_own_output` — **measured today**; an empty migration was accepted as a valid destination |
-| **S51** a temp object in a migration is refused | `test_a_temp_object_is_refused_even_though_the_manifest_is_unchanged` — **measured today** |
-| **S52** a pragma in a migration is refused | `test_a_pragma_in_a_declared_migration_is_refused` — **measured today** |
-| **S53** `SCHEMA_VERSION` is bound to the registry | `test_a_schema_above_the_declared_current_version_fails_validation` — **measured today** |
 | **S54** missing legacy evidence authorises nothing | `test_missing_legacy_evidence_authorizes_nothing` — **measured today** |
 | **S55** runtime evidence can actually be written | `test_writing_runtime_evidence_actually_writes` — **measured today**; v7's flag was ignored |
 | **S56** recorded runtimes are internally valid | `test_the_recorded_runtimes_are_internally_valid` (always) · `test_this_runtime_is_qualified_or_explicitly_is_not` (skips) · `test_an_empty_digest_map_does_not_qualify_vacuously` — **measured today** |
-| **S57** a normal `ALTER` reaches an accepted destination | `test_a_normal_alter_reaches_an_accepted_destination` — **measured today**; v8 rejected it. `test_an_alter_that_omits_the_column_is_still_rejected` shows capability is not "anything goes" |
-| **S58** manifests union across qualified runtimes | `test_a_foreign_runtime_manifestation_is_preserved` — **measured today**; v8 dropped it |
+| **S58** manifests union across qualified runtimes | `test_a_foreign_runtime_manifestation_is_preserved` — **measured today** |
 | **S59** the policy vocabulary is closed | `test_a_policy_typo_is_a_build_error` · `test_a_rebuildable_non_index_is_a_build_error` — **measured today**; a typo disabled validation entirely |
-| **S60** every migration path is covered and keyed | `test_every_migration_path_is_keyed_individually` · `test_incomplete_migration_path_coverage_disqualifies` — **measured today** |
 | **S61** the release `result` is re-derived | `test_the_release_result_is_rederived` — **measured today**; v8 read the stored value |
 | **S62** feature probes assert their behaviour | `test_the_strict_table_probe_uses_valid_sql` · `test_the_ddl_probe_asserts_body_preservation` — **measured today** |
 | **S20** concurrent first open across **processes** stamps once | `test_concurrent_first_open_across_processes` |
-| **S21** the destination signature is validated after migrating | `test_migration_refuses_a_partial_result` |
-| **S22** a migration **cannot reach** transaction control | `test_transaction_control_in_a_declared_statement_is_denied` — direct `commit`; `commit` then `BEGIN`; `rollback` then `BEGIN`; `executescript`; `BEGIN` in statement text. **Five evasions, one restricted executor** |
 
 **S6 is the one that protects users** and is why adoption is specified before it
 is convenient: everyone who has a store today goes through that path exactly
@@ -1115,9 +930,11 @@ guarantee stops here.
 
 ## 8. Claims and limits
 
-**Claim, narrowed in v4:** **every *version-aware* build — that is, every
+**Claim, narrowed in v4 and again in v10:** **every *version-aware* build — every
 release from the one implementing 0007 onward — refuses to open a store it does
-not understand**, at every version and not only at adoption.
+not recognise.** With `SCHEMA_VERSION = 1` the recognised shapes are: a store
+this build created, and the one historical unstamped shape every released
+version produces. **Everything else is refused.**
 
 **The narrowing is not cosmetic.** v3 claimed "a veracium build refuses…", which
 is false of the 23 builds already released: none of them reads `user_version` at
@@ -1130,8 +947,9 @@ all. The claim can only ever cover code that performs the check.
   Against an adversary with write access to the file this proves nothing — **and
   that adversary already owns everything.** The signature raises the cost of a
   *mistake*, not of an attack.
-- **Not multi-process migration.** S20 covers concurrent *first open* across
-  processes. **Migration must be run by one process**, and `0006` must say so.
+- **No migrations.** `SCHEMA_VERSION = 1` and there is nothing to migrate from.
+  **`0006` owns the migration contract** (§4f), including one-process-only
+  execution and the skipped-release upgrade path round 1 established.
 - **Not a data-format guarantee.** The JSON blobs inside the rows are validated
   by pydantic on read, unchanged by this spec.
 - **Not a value-type guarantee.** The signature compares *declared* types.
@@ -1164,65 +982,66 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 7's finding 1 is a contradiction I introduced while fixing round 6's
-finding 1**, and it is the clearest signal in seven rounds. v8 required a
-migration's output to have "matching DDL" with the constructor, in a document
-that says two paragraphs earlier that an `ALTER` path legitimately produces
-different DDL text. **A correct `ALTER TABLE edges ADD COLUMN source_id TEXT`
-was rejected** — the exact case the accepted-set model exists to permit. All 8
-findings and all corrections are taken; every probe reproduced.
+**This is not a round-8 response. It is a scope cut, made by the product owner
+on 2026-08-03**, and the honest framing is that your round-7 note about where
+the findings kept landing was the deciding input.
 
-**The fix separates two things v8 fused:** *capability* (structural — declared
-objects present, declared columns matching by `table_xinfo` properties, no
-extras) authorises an output to become an accepted manifestation; the *digest*
-identifies it afterwards. **S57** covers the `ALTER` case, **and S30's old claim
-that it was already covered was false** — its fixture created a new table rather
-than altering a required one, and it still cited the `--selfcheck` harness
-deleted in v7.
+**`0007` is now: stamp on create · refuse what it does not recognise · adopt the
+one historical shape.** The migration contract has moved to **`specs/0006`**,
+which is the first change that alters the on-disk shape and therefore the first
+place a migration can be designed against something real.
 
-**Finding 6 is the one I would most like you to weigh.** `policy` was an open
-string, so `"requried"` created a silent third behaviour that validated
-nothing — a declared `sources` table and a migrated `CREATE TABLE sources (id
-INTEGER)` produced **no problems at all**. It is now a closed enum, with
-`rebuildable` permitted only for indexes. **That class of defect — an
-unconstrained vocabulary quietly becoming a bypass — is one this spec has now
-produced three times** (name-only identity, hand-edited runtime tuple, open
-policy string), and I do not have a general answer for it beyond closing each
-one as it is found.
+**Why.** Seven rounds, ~63 findings. The large majority were in migration and
+migration-driven runtime machinery — **for a registry that was empty and a
+`SCHEMAS` with one member**. Every finding was real and two were total
+bypasses; the problem was never the reviews. It was that I kept rewriting a
+mechanism nothing called, and each rewrite introduced a defect the next round
+found. Round 7's finding 1 is the clearest case: I broke a correct `ALTER` while
+fixing round 6's finding 1, in code with no callers.
 
-**Also fixed, all measured:** migration paths keyed individually and their
-coverage validated (`{}` and `{"999": "bad"}` both passed); accepted manifests
-unioned across qualified runtimes with full object records, so a second runtime
-cannot be qualified while its stores are unrecognised; three feature probes that
-did not test what they named — the `STRICT` probe used invalid SQL and recorded
-"unsupported" on a runtime that supports it; `result` added to the re-derived
-release fields; the shared-boundary statement corrected in all three places it
-was stale.
+**What is gone from this document:** §4d and its subsections, the `MANIFESTS`
+migration-path generation, the three `migration-*` reasons in the closed reason
+set, and the sixteen migration-borne invariants. The `schema_migrations` module
+and its tests are deleted. **The v9 package is the diff** if you want the exact
+list.
 
-**A discovery from writing the DDL probe, worth passing on:** "stores DDL
-verbatim" is too strong. SQLite normalises whitespace *before* the object name —
-`CREATE TABLE  vp` is stored as `CREATE TABLE vp` — while preserving the body
-exactly. The property this design actually needs is **body preservation**, which
-is what makes two-space and one-space `CHECK` literals differ. The probe now
-asserts that, and the spec no longer claims the stronger thing.
+**What is preserved and where.** Nothing is discarded. `0006` §0b now carries
+the requirement your round 1 established — *a user must not be required to
+install every intermediate release* — and tabulates the eight conclusions that
+survived review, each costing at least one round to find: declarative statements
+not callbacks; effects confined to persistent `main`; the authorizer's denial
+set; capability-not-DDL-text; a migration may not define its own destination;
+single-step routing; per-path runtime evidence; a *set* of manifests per
+version. The full v9 text and module are in
+`specs/archives/0007-v9-20260803T0056Z.tar.gz`, cited from `0006`.
+
+**What remains here, and what I would like reviewed:**
+
+- §4's decision table, now total and short: invalid · unsupported-runtime · new ·
+  legacy · foreign · current · stamped-wrong · newer.
+- §4a's manifest model — typed identity, no SQL normalisation, structured
+  registry with a closed policy vocabulary, candidate-restricted legacy
+  resolution.
+- §4a-iv's evidence: 23 releases, resolved commit shas, on-disk stamps, the
+  legacy base set, and a gate that re-derives every authoritative field.
+- §4c's lock-before-read protocol and live-connection inspection.
+- §4e's audit events.
+
+**`MANIFESTS` is still a set per version, deliberately.** That is the one piece
+of migration-shaped structure I kept: `0006` will add outputs to it, and
+removing it would have to be undone.
 
 **Where I am least confident:**
 
-1. **The capability comparison is now a third structural model** alongside the
-   digest and the drift check. Three ways of comparing schemas in one spec is a
-   smell, and I would rather you told me it is one than discovered it in round 9.
-2. **S-Q7 unchanged**: one qualified runtime, and nothing runs the qualifying
-   command anywhere but here.
-
-**A standing note on scope, offered once and not repeated.** Five of this
-round's eight findings live in the migration and runtime-evidence machinery.
-`MIGRATIONS` is empty and `SCHEMAS` has one member — **that machinery has no
-users yet.** A version of this spec limited to stamp / refuse-newer / adopt-v1,
-with the migration contract deferred to `0006` where the first real migration
-lives, would have had roughly two of this round's findings. I am not proposing
-it unilaterally; the decision is my principal's. **If you have a view on whether
-the migration mechanism should land before its first use, it would carry
-weight.**
+1. **The cut may have removed something `0007` still needs.** The *older* row of
+   the decision table is now "cannot arise at `SCHEMA_VERSION = 1`; `0006` owns
+   it". If you think a version-aware build must do something more specific with
+   a lower stamp even before migrations exist, that is the gap.
+2. **`0006` is now carrying a lot**, and it is a `draft` with a falsified §3. I
+   have written the inheritance down rather than assumed it survives in
+   conversation, but a large inherited scope in a draft spec is a risk worth
+   naming.
+3. **S-Q7 unchanged**: one qualified runtime.
 
 ## 10. Open questions
 
@@ -1423,3 +1242,32 @@ absence rule reconciled — absence is repairable drift and the accepted
 manifestation is captured **after** repair; migration runs only on a
 Veracium-owned connection with no pre-existing authorizer, stated because Python
 exposes no portable getter for a prior callback; S-Q7 remains a release gate.
+
+---
+
+## 18. Scope cut, 2026-08-03
+
+**Not a review round. A product decision.**
+
+Asked for and granted after seven external rounds produced ~63 findings, the
+large majority in migration machinery with **no users**: `MIGRATIONS` empty,
+`SCHEMAS` with one member.
+
+| | |
+|---|---|
+| **`0007` keeps** | stamp on create · refuse newer/invalid/foreign/stamped-wrong · adopt the one historical unstamped shape · index drift repair · runtime qualification · the audit events |
+| **`0006` inherits** | the entire migration contract, recorded in `0006` §0b with the eight review-tested conclusions |
+| **Preserved** | `specs/archives/0007-v9-20260803T0056Z.tar.gz` — full v9 text, `schema_migrations.py`, and its tests |
+| **Deleted here** | §4d and subsections · the `migration-*` reasons · sixteen migration-borne invariants · the `schema_migrations` module · the migration tests |
+
+**What the cut does not change:** the acceptance model, typed object identity,
+the digest and drift split, candidate-based resolution, the structured registry,
+runtime qualification by evidence, and the lock-before-read protocol. **Six
+rounds of architectural approval stand.**
+
+**Why it was right, stated plainly rather than defensively.** Landing a
+mechanism before its first user meant every round found defects in code nothing
+called, and fixing them introduced the next round's defects. Round 7's finding 1
+— a correct `ALTER` rejected by the check added in round 6 to protect it — is
+the clearest example. **`0006` will hold the migration contract to a real
+migration**, which is the thing this spec could never do.

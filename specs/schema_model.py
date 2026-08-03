@@ -12,9 +12,17 @@ are not free.
 The split is:
 
     schema_model.py       <- this: identity, digest, drift, candidate matching
-    schema_migrations.py  declarative migrations, executed only by the planner
     schema_evidence.py    tag probing and the generated artifacts
     tests/test_schema_model.py   every adversarial counterexample, in pytest
+
+**Migrations are not here, and that is v10's scope cut.** Seven review rounds
+produced ~63 findings, of which the large majority lived in migration and
+migration-driven runtime machinery -- for a registry that was *empty*. `0007`
+now covers stamping, refusing what it does not recognise, and adopting the one
+historical shape. **`specs/0006` owns the migration contract**, where the first
+real migration exists to design against. The withdrawn work is not lost: it is
+preserved in `specs/archives/0007-v9-20260803T0056Z.tar.gz`, and `0006` §0
+points at it.
 
 **Shared with production:** this registry and its policies, manifest / digest /
 drift / candidate matching, the migration declarations and their validation,

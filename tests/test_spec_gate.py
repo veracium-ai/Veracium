@@ -602,7 +602,14 @@ def test_no_spec_cites_an_invariant_it_does_not_define():
     specs = pathlib.Path(__file__).resolve().parent.parent / "specs"
     problems = []
     for f in sorted(specs.glob("[0-9][0-9][0-9][0-9]-*.md")):
-        body = re.split(r"^##+ \d+\w*\.\s*Review history", f.read_text(), flags=re.M)[0]
+        # Stop at a review disposition, the same boundary `lint_withdrawn` and
+        # `render_index` use. A disposition is history: it legitimately names
+        # invariants that existed when that round ran. 0007 v10 cut the
+        # migration scope and retired 16 ids that its round 1-7 dispositions
+        # still cite -- correctly, because those rounds did address them.
+        body = re.split(
+            r"^##+ \d+\w*\.\s*(?:Review history\b|[^\n]*review[^\n]*disposition\b)",
+            f.read_text(), flags=re.M | re.I)[0]
         # struck rows still DEFINE an id — `~~**Q5**~~` is a resolved question,
         # not an undefined one.
         defined = set(re.findall(r"^\| ~{0,2}\*\*([A-Z]\d+[a-z]?)\*\*", body, re.M))
