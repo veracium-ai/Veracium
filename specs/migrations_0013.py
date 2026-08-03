@@ -14,12 +14,14 @@ decision table the store executes, with `0013` supplying only the *older*-row
 hook that `0007` §4 delegates to it. Migration is a dedicated offline
 operation (`migrate_store`) requiring a `MigrationAuthority`; ordinary opening
 (`open_or_migrate`) never migrates. What authorises a migration is **recorded
-path evidence loaded from an immutable artifact**
-(`specs/generated/migration_0013_evidence.json`), selected by runtime build
+path evidence loaded from a shipped, committed artifact**
+(`specs/generated/migration_0013_evidence.json` — committed, not
+runtime-authenticated; round 4's distinction), selected by runtime build
 identity × source × declared-migration digest — never re-derived from the live
 migration code, which is how round 3's `DELETE FROM edges` probe authorised
 itself. Every outcome is a member of a closed vocabulary; raw SQLite and
-protocol exceptions do not escape.
+protocol exceptions do not escape, and the boundary covers evidence loading,
+context entry and the database connection itself (round 4).
 
 Run:  PYTHONPATH=src python3 specs/migrations_0013.py --simulate
       PYTHONPATH=src python3 specs/migrations_0013.py --write-evidence
@@ -36,7 +38,7 @@ import sys
 import threading
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import NamedTuple
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -209,6 +211,16 @@ def validate_registry(schemas=None, migrations=None, current=2) -> list:
     if not isinstance(schemas, dict) or not schemas or \
             not isinstance(migrations, dict):
         return ["registry must be nonempty mappings"]
+    # Round 4: total over malformed keys BEFORE max()/sorted()/arithmetic.
+    # `type(k) is int`, never isinstance — `True == 1` in Python, so a bool key
+    # passed every set comparison while being a different declaration.
+    bad = [repr(k) for k in list(schemas) + list(migrations)
+           if type(k) is not int]
+    if type(current) is not int:
+        bad.append(f"current={current!r}")
+    if bad:
+        return [f"registry keys and the current version must be exact ints; "
+                f"got {', '.join(sorted(bad))}"]
     if max(schemas) != current:
         problems.append(f"current {current} != max declared {max(schemas)}")
     if set(schemas) != set(range(1, current + 1)):
@@ -250,16 +262,23 @@ def migration_declaration_digest(mig: Migration) -> str:
     return hashlib.sha256(canonical_migration_bytes(mig)).hexdigest()
 
 
-def full_manifest_hash(objs: dict) -> str:
+def full_manifest_hash(objs) -> str:
     """EVERY object, rebuildables included (round 3, finding 2): the acceptance
     digest deliberately excludes them, so it can attest an output missing the
     very index §5 requires repaired — measured, digests equal while complete
     manifestations differ. Accepts either manifest form (typed-tuple keys) or
-    identity form (string keys)."""
+    identity form (string keys). Total (round 4): a malformed value hashes to
+    a typed sentinel no real manifestation can produce, so it fails comparison
+    instead of raising."""
+    if not isinstance(objs, dict):
+        return f"<not-a-manifestation:{type(objs).__name__}>"
     ident = objs if all(isinstance(k, str) for k in objs) else identity(objs)
-    return hashlib.sha256(
-        json.dumps(ident, sort_keys=True,
-                   separators=(",", ":")).encode()).hexdigest()
+    try:
+        return hashlib.sha256(
+            json.dumps(ident, sort_keys=True,
+                       separators=(",", ":")).encode()).hexdigest()
+    except (TypeError, ValueError):
+        return "<unhashable-manifestation>"
 
 
 def _v2_constructor_objects() -> dict:
@@ -279,8 +298,16 @@ MIGRATION_FAILURES = ("migration-required", "migration-evidence-missing",
                       "migration-quiescence-required")
 """The closed failure model: hosts branch on these, plus 0007's REASONS."""
 
+STORE_FAILURES = ("invalid-store", "store-unopenable")
+"""Round 4: the bytes at the path may fail before any version decision —
+`invalid-store` (the file is not readable as a SQLite database, or fails at
+the SQLite level while being read) and `store-unopenable` (the path cannot be
+opened at all). Both were escaping as raw `DatabaseError`/`OperationalError`,
+which the closed model claimed to represent and did not."""
+
 OUTCOMES = (frozenset({"created", "current", "adopted", "migrated"})
-            | sv.REASONS | frozenset(MIGRATION_FAILURES))
+            | sv.REASONS | frozenset(MIGRATION_FAILURES)
+            | frozenset(STORE_FAILURES))
 """Every value the two entry points can return. Free-form strings — round 3
 measured `unexpected version 0` — are unrepresentable: `Outcome` refuses any
 value outside this set."""
@@ -317,40 +344,93 @@ class MigrationRefused(Exception):
 # the offline-boundary attestation (0013 §5b)
 
 class MigrationAuthority(NamedTuple):
-    """The explicit offline-boundary attestation.
+    """The explicit offline-boundary attestation — now with a LIFECYCLE.
 
     A library cannot infer host quiescence, so the HOST asserts it — old
     processes stopped, admission closed, backup taken — and the migration
-    refuses without it. Round 3 tightened the shape: the assertion **binds**
-    what it authorises (this store, this reviewed migration, this operation)
-    and every field is exact-typed — `quiesced=1` with `backup_ref=object()`
-    migrated under v4's NamedTuple. Production authorities are minted by
-    release tooling and additionally bind the release/deployment identity;
-    that binding is recorded in §5b as an implementation obligation."""
+    refuses without it. Round 3 made the shape exact-typed and bound; round 4
+    showed binding to a path *string* is not binding to an *operation*: an
+    authority was replayed after the store at its path was replaced, and a
+    retargeted symlink carried an authority minted for a different store. The
+    contract is therefore frozen (§5b): canonical store identity (realpath —
+    symlinks resolve at mint AND at consumption, so retargeting breaks the
+    binding), source manifestation identity, the step's endpoints, the
+    reviewed migration's digest, a backup commitment, a release reference, an
+    operation id with SINGLE-USE consumption, and an issuance/expiry window.
+    An expired, previously consumed, retargeted or source-mismatched
+    authority refuses `migration-quiescence-required`. The draft consumes
+    operation ids in-process; production consumption is durable, in the
+    migration audit (§5e). What remains host-trust — stated, not hidden: a
+    host that atomically swaps in an identical-shape store at the same
+    canonical path inside the validity window defeats path binding; the host
+    is trusted, the authority exists so its assertion cannot silently DRIFT
+    to a different operation."""
     quiesced: bool          # exactly True — the host's quiescence attestation
-    backup_ref: str         # where the pre-migration backup lives
-    store_path: str         # the one store this authority covers
+    backup_ref: str         # the pre-migration backup this operation made
+    store_path: str         # canonical (realpath) store this authority covers
+    from_version: int       # the step's endpoints, as reviewed
+    to_version: int
+    source_digest: str      # acceptance digest of the source being migrated
     migration_digest: str   # migration_declaration_digest of the reviewed step
-    operation_id: str       # host-side identity for this migration operation
+    release_ref: str        # the release/deployment minting this authority
+    operation_id: str       # single-use identity for this migration operation
     issued_at: str          # RFC 3339 UTC, read from the clock at issuance
+    expires_at: str         # RFC 3339 UTC; consumption after this refuses
+
+
+_CONSUMED_OPERATIONS: set = set()
+_CONSUME_LOCK = threading.Lock()
+
+
+def _draft_digest(objs: dict, version: int) -> str:
+    """The acceptance digest against the DRAFT registry, computed without
+    touching the kernel's globals — `make_authority` runs host-side and may be
+    minted while another thread holds the draft context (the M-Q2 race), so it
+    must not enter `_registry()` itself. Identical arithmetic to
+    `sv.digest()` under the draft patch."""
+    skip = {o.key for o in SCHEMAS_DRAFT[version] if o.policy == REBUILDABLE}
+    scoped = {k: v for k, v in identity(objs).items()
+              if tuple(k.split(":", 1)) not in skip}
+    return hashlib.sha256(
+        json.dumps(scoped, sort_keys=True,
+                   separators=(",", ":")).encode()).hexdigest()
 
 
 def make_authority(path, backup_ref: str = "draft-backup",
-                   migration: Migration | None = None) -> MigrationAuthority:
+                   migration: Migration | None = None,
+                   ttl_minutes: int = 15,
+                   release_ref: str = "draft-release") -> MigrationAuthority:
     """Draft convenience for hosts and tests; reads the module's current
     migration so a test that patches `MIGRATION_1_TO_2` mints an authority for
     what it patched in — the authority attests the *reviewed statements*, and
-    the evidence gate is what catches statements no evidence covers."""
+    the evidence gate is what catches statements no evidence covers. Reads the
+    store to bind the source manifestation, and the clock for the validity
+    window. Production authorities are minted by release tooling with a real
+    release identity and durable consumption (§5b, §5e)."""
     mig = MIGRATION_1_TO_2 if migration is None else migration
+    canonical = os.path.realpath(str(path))
+    c = sqlite3.connect(canonical)
+    try:
+        src_digest = _draft_digest(manifest(c), mig.from_version)
+    finally:
+        c.close()
+    now = datetime.now(timezone.utc)
     return MigrationAuthority(
-        quiesced=True, backup_ref=backup_ref, store_path=str(path),
+        quiesced=True, backup_ref=backup_ref, store_path=canonical,
+        from_version=mig.from_version, to_version=mig.to_version,
+        source_digest=src_digest,
         migration_digest=migration_declaration_digest(mig),
-        operation_id=f"op-{uuid.uuid4()}",
-        issued_at=datetime.now(timezone.utc).isoformat())
+        release_ref=release_ref, operation_id=f"op-{uuid.uuid4()}",
+        issued_at=now.isoformat(),
+        expires_at=(now + timedelta(minutes=ttl_minutes)).isoformat())
 
 
-def authority_problems(a, spath: str, expected_digest: str) -> list:
-    """Exact types, exact bindings; total over any input."""
+def authority_problems(a, spath: str, step, source_digest: str) -> list:
+    """Exact types, exact bindings, bounded validity; total over any input.
+    `spath` is the canonical path; `source_digest` is measured from the store
+    under the write lock, before any repair (the acceptance digest is
+    rebuildable-blind, so incidental index drift does not unbind an
+    authority)."""
     if not isinstance(a, MigrationAuthority):
         return [f"authority is {type(a).__name__}, not a MigrationAuthority"]
     problems = []
@@ -358,20 +438,64 @@ def authority_problems(a, spath: str, expected_digest: str) -> list:
         problems.append(f"quiesced must be bool, is {type(a.quiesced).__name__}")
     elif a.quiesced is not True:
         problems.append("the host has not attested quiescence")
-    for field in ("backup_ref", "store_path", "migration_digest",
-                  "operation_id", "issued_at"):
+    for field in ("backup_ref", "store_path", "source_digest",
+                  "migration_digest", "release_ref", "operation_id",
+                  "issued_at", "expires_at"):
         v = getattr(a, field)
         if not isinstance(v, str) or not v.strip():
             problems.append(f"{field} must be a nonempty string, is "
                             f"{type(v).__name__}")
+    for field, want in (("from_version", step.from_version),
+                        ("to_version", step.to_version)):
+        v = getattr(a, field)
+        if type(v) is not int:
+            problems.append(f"{field} must be an exact int")
+        elif v != want:
+            problems.append(f"authority attests step "
+                            f"{a.from_version}->{a.to_version}, not "
+                            f"{step.from_version}->{step.to_version}")
+            break
     if isinstance(a.store_path, str) and a.store_path != spath:
         problems.append(f"authority covers store {a.store_path!r}, "
-                        f"not {spath!r}")
+                        f"not {spath!r} (paths are canonical; a retargeted "
+                        f"symlink is a different store)")
+    if isinstance(a.source_digest, str) and a.source_digest != source_digest:
+        problems.append("authority attests a different source manifestation "
+                        "than the store presents under the lock")
     if isinstance(a.migration_digest, str) and \
-            a.migration_digest != expected_digest:
+            a.migration_digest != migration_declaration_digest(step):
         problems.append("authority attests a different migration declaration "
                         "than the one registered for this step")
+    if isinstance(a.issued_at, str) and isinstance(a.expires_at, str):
+        try:
+            issued = datetime.fromisoformat(a.issued_at)
+            expires = datetime.fromisoformat(a.expires_at)
+            now = datetime.now(timezone.utc)
+            if issued.tzinfo is None or expires.tzinfo is None:
+                problems.append("authority timestamps must be timezone-aware")
+            elif issued > expires:
+                problems.append("authority expires before it was issued")
+            elif now >= expires:
+                problems.append(f"authority expired at {a.expires_at}")
+        except ValueError:
+            problems.append("authority timestamps do not parse as RFC 3339")
     return problems
+
+
+def _consume_authority(a: MigrationAuthority) -> None:
+    """Single-use consumption (round 4): an operation id authorises exactly
+    one migration ATTEMPT — consumed on acceptance, before execution, so a
+    replay after the store at the path has been swapped finds the authority
+    spent. In-process for the draft; production consumes durably via the
+    migration audit (§5e)."""
+    with _CONSUME_LOCK:
+        if a.operation_id in _CONSUMED_OPERATIONS:
+            raise MigrationRefused(
+                "migration-quiescence-required",
+                f"authority operation {a.operation_id!r} was already "
+                f"consumed; authorities are single-use — mint a fresh one "
+                f"for a fresh operation")
+        _CONSUMED_OPERATIONS.add(a.operation_id)
 
 
 # --------------------------------------------------------------------------
@@ -379,15 +503,35 @@ def authority_problems(a, spath: str, expected_digest: str) -> list:
 
 AUTHORIZER_PROBE_KEYS = frozenset({
     "authorizer_api_available", "denies_begin", "denies_commit", "denies_end",
-    "denies_savepoint", "denies_release", "denies_pragma", "denies_attach",
-    "denies_detach", "denies_temp_schema", "authorizer_restored"})
-"""The closed confinement vocabulary. 0007's runtime identity deliberately has
-no authorizer probe — migrations left its scope in v10 — so its qualification
-cannot attest the behaviours `apply_migration` leans on. These are ALL
-required: a runtime failing any of them may execute a migration outside the
-declared confinement, so it is not qualified to migrate at all."""
+    "denies_rollback", "denies_savepoint", "denies_release", "denies_pragma",
+    "denies_attach", "denies_detach", "denies_temp_schema",
+    "authorizer_restored"})
+"""The closed confinement vocabulary — twelve probes. 0007's runtime identity
+deliberately has no authorizer probe — migrations left its scope in v10 — so
+its qualification cannot attest the behaviours `apply_migration` leans on.
+These are ALL required: a runtime failing any of them may execute a migration
+outside the declared confinement, so it is not qualified to migrate at all.
+`denies_rollback` was added in round 4 alongside the shared
+`SQLITE_TRANSACTION` observation, because `ROLLBACK` is the one
+transaction-ending statement the other probes never issue."""
 
 MIGRATION_EVIDENCE_ALGORITHM = 1
+
+_SQLITE_AUTH = 23
+"""SQLite's SQLITE_AUTH primary result code. Python exposes it on the
+exception as `sqlite_errorcode` from 3.11; on 3.10 the attribute does not
+exist and the message-text fallback below is the only signal available."""
+
+
+def _denied_by_authorization(exc: sqlite3.DatabaseError) -> bool:
+    """Round 4, finding 4: a probe that treats ANY `DatabaseError` as denial
+    is a false positive — `RELEASE s1` with no savepoint fails with `no such
+    savepoint` under a fully permissive authorizer and was recorded as
+    denied. Failure must be SPECIFICALLY authorization."""
+    code = getattr(exc, "sqlite_errorcode", None)
+    if code is not None:
+        return code == _SQLITE_AUTH
+    return "not authorized" in str(exc)      # Python 3.10: no error-code attr
 
 
 def _denied_by_authorizer(setup: tuple, stmt: str) -> bool:
@@ -403,8 +547,8 @@ def _denied_by_authorizer(setup: tuple, stmt: str) -> bool:
         try:
             c.execute(stmt)
             return False
-        except sqlite3.DatabaseError:
-            return True
+        except sqlite3.DatabaseError as exc:
+            return _denied_by_authorization(exc)
     finally:
         c.close()
 
@@ -412,16 +556,22 @@ def _denied_by_authorizer(setup: tuple, stmt: str) -> bool:
 def authorizer_probes() -> dict:
     """Measure the confinement behaviours on THIS runtime — the generation-time
     source of the migration-runtime record, and the live half of the
-    consumption-time comparison."""
+    consumption-time comparison. Every setup is a VALID statement sequence, so
+    the probed statement can only fail by authorization: the round-4 falsifier
+    (a permissive authorizer) turns every denial probe False."""
     out = {"authorizer_api_available":
            hasattr(sqlite3.Connection, "set_authorizer")}
     out["denies_begin"] = _denied_by_authorizer((), "BEGIN")
     out["denies_commit"] = _denied_by_authorizer(("BEGIN IMMEDIATE",), "COMMIT")
     out["denies_end"] = _denied_by_authorizer(("BEGIN IMMEDIATE",), "END")
+    out["denies_rollback"] = _denied_by_authorizer(
+        ("BEGIN IMMEDIATE",), "ROLLBACK")
     out["denies_savepoint"] = _denied_by_authorizer(
         ("BEGIN IMMEDIATE",), "SAVEPOINT s1")
+    # The savepoint EXISTS before the authorizer is installed (round 4: with
+    # no savepoint, `no such savepoint` was recorded as a denial).
     out["denies_release"] = _denied_by_authorizer(
-        ("BEGIN IMMEDIATE",), "RELEASE s1")
+        ("BEGIN IMMEDIATE", "SAVEPOINT s1"), "RELEASE s1")
     out["denies_pragma"] = _denied_by_authorizer((), "PRAGMA user_version = 7")
     out["denies_attach"] = _denied_by_authorizer((), "ATTACH ':memory:' AS side")
     out["denies_detach"] = _denied_by_authorizer(
@@ -437,8 +587,9 @@ def authorizer_probes() -> dict:
             try:
                 c.execute("PRAGMA user_version = 3")
                 return False                       # was never denied
-            except sqlite3.DatabaseError:
-                pass
+            except sqlite3.DatabaseError as exc:
+                if not _denied_by_authorization(exc):
+                    return False                   # failed for a wrong reason
             c.set_authorizer(lambda *_a: sqlite3.SQLITE_OK)
             c.execute("PRAGMA user_version = 3")
             return c.execute("PRAGMA user_version").fetchone()[0] == 3
@@ -481,23 +632,81 @@ def migration_runtime_record_problems(rec) -> list:
     return problems
 
 
+def _algorithm_class(rec) -> str:
+    """Round 4's rule, carried from 0007 round 12: only an EXPLICITLY
+    superseded algorithm may be ignored. A missing or mistyped algorithm field
+    is a malformed current-class record, not a superseded one."""
+    if not isinstance(rec, dict):
+        return "malformed"
+    alg = rec.get("migration_evidence_algorithm")
+    if type(alg) is not int:
+        return "malformed"
+    return "current" if alg == MIGRATION_EVIDENCE_ALGORITHM else "superseded"
+
+
+def migration_runtime_artifact_problems(art) -> list:
+    """Artifact-level validation (round 4, finding 2): a malformed
+    current-algorithm migration-runtime record is evidence of corruption or
+    generator failure and POISONS the qualification — v5 silently filtered
+    `{"migration_evidence_algorithm": 1}` out and stayed qualified on the
+    valid record beside it. Also enforces build-identity uniqueness and the
+    single-active-runtime policy, and requires each identity to resolve to an
+    active schema-runtime record in the same artifact."""
+    if not isinstance(art, dict) or not isinstance(
+            art.get("migration_runtimes"), list):
+        return ["artifact has no migration-runtime record list"]
+    problems, seen = [], {}
+    active_schema = {sv.build_identity(r)
+                     for r in sv.active_records(art.get("runtimes", []))}
+    for rec in art["migration_runtimes"]:
+        cls = _algorithm_class(rec)
+        if cls == "superseded":
+            continue
+        if cls == "malformed":
+            problems.append("migration-runtime record with a missing or "
+                            "mistyped algorithm field — malformed, not "
+                            "superseded; the artifact cannot be trusted")
+            continue
+        rec_problems = migration_runtime_record_problems(rec)
+        if rec_problems:
+            problems += [f"current migration-runtime record: {p}"
+                         for p in rec_problems]
+            continue
+        ident = sv.build_identity(rec)
+        if ident in seen:
+            if seen[ident] != rec["authorizer_probes"]:
+                problems.append("two migration-runtime records share a build "
+                                "identity but declare different probe results "
+                                "— self-contradictory")
+            else:
+                problems.append("duplicate migration-runtime record for one "
+                                "build identity")
+        seen[ident] = rec["authorizer_probes"]
+        if ident not in active_schema:
+            problems.append("migration-runtime record for a build identity "
+                            "with no active schema-runtime record — an "
+                            "unattested qualification")
+    if len(seen) > 1:
+        problems.append(f"{len(seen)} migration-runtime build identities; "
+                        f"the single-active-runtime policy (0007, S-Q7) "
+                        f"allows one")
+    return problems
+
+
 def migration_runtime_supported(art) -> bool:
     """Both halves of finding 3's correction: a RECORDED qualification for this
     build identity, and the recorded behaviours REPRODUCED live — mirroring how
     `runtime_supported()` re-derives constructor manifestations rather than
-    trusting the record. Total, fail-closed."""
+    trusting the record. Artifact-level problems disqualify outright
+    (round 4, finding 2). Total, fail-closed."""
     try:
         if not isinstance(art, dict):
             return False
-        records = art.get("migration_runtimes")
-        if not isinstance(records, list):
+        if migration_runtime_artifact_problems(art):
             return False
         me = sv.build_identity(sv.runtime_identity())
-        hits = [r for r in records
-                if isinstance(r, dict)
-                and r.get("migration_evidence_algorithm")
-                == MIGRATION_EVIDENCE_ALGORITHM
-                and not migration_runtime_record_problems(r)
+        hits = [r for r in art["migration_runtimes"]
+                if _algorithm_class(r) == "current"
                 and sv.build_identity(r) == me]
         if len(hits) != 1:
             return False
@@ -570,6 +779,19 @@ def schema_evidence_problems(art) -> list:
                     problems.append(f"version {v}: accepted entry is not "
                                     f"exactly digest/objects/provenance")
                     continue
+                # Round 4, finding 1: type-check BEFORE iterating — an
+                # `objects: 1` here raised TypeError out of the validator, at
+                # context entry, outside every exception mapping.
+                if not isinstance(a["objects"], dict) or not all(
+                        isinstance(k, str) for k in a["objects"]):
+                    problems.append(f"version {v}: accepted objects is not a "
+                                    f"string-keyed mapping")
+                    continue
+                if not isinstance(a["digest"], str) or \
+                        not isinstance(a["provenance"], str):
+                    problems.append(f"version {v}: accepted digest and "
+                                    f"provenance must be strings")
+                    continue
                 problems += [f"version {v}: {p}" for p in
                              sv.manifestation_problems(a["objects"], int(v))]
                 if sv._digest_of_identity(a["objects"], int(v)) != a["digest"]:
@@ -609,8 +831,34 @@ def path_record_problems(rec, art) -> list:
         problems.append("path record algorithms are not current")
     rt = rec["runtime"]
     if not isinstance(rt, dict) or \
-            set(rt) != {"sqlite_version", "source_id", "features"}:
+            set(rt) != {"sqlite_version", "source_id", "features"} or \
+            not isinstance(rt.get("sqlite_version"), str) or \
+            not isinstance(rt.get("source_id"), str) or \
+            not isinstance(rt.get("features"), dict):
         problems.append("path record runtime identity is malformed")
+    else:
+        # Round 4, finding 3: a path record's runtime must RESOLVE — to
+        # exactly one active schema-runtime record and one valid current
+        # migration-runtime record in this artifact. A foreign identity is an
+        # unattested prospective record, not a spare.
+        ident = sv.build_identity(rt)
+        schema_hits = [r for r in sv.active_records(
+            art.get("runtimes", []) if isinstance(art, dict) else [])
+            if sv.build_identity(r) == ident]
+        if len(schema_hits) != 1:
+            problems.append(f"path record runtime resolves to "
+                            f"{len(schema_hits)} active schema-runtime "
+                            f"records, not exactly one")
+        mig_rt = (art.get("migration_runtimes", [])
+                  if isinstance(art, dict) else [])
+        mig_hits = [r for r in mig_rt
+                    if _algorithm_class(r) == "current"
+                    and not migration_runtime_record_problems(r)
+                    and sv.build_identity(r) == ident]
+        if len(mig_hits) != 1:
+            problems.append(f"path record runtime resolves to "
+                            f"{len(mig_hits)} valid migration-runtime "
+                            f"records, not exactly one")
     frm, to = rec["from_version"], rec["to_version"]
     if type(frm) is not int or type(to) is not int or to != frm + 1 or \
             frm not in SCHEMAS_DRAFT or to not in SCHEMAS_DRAFT:
@@ -624,8 +872,8 @@ def path_record_problems(rec, art) -> list:
             problems.append(f"path record field {f!r} must be a nonempty "
                             f"string")
     out = rec["output_manifestation"]
-    if not isinstance(out, dict):
-        problems.append("output_manifestation must be a mapping")
+    if not isinstance(out, dict) or not all(isinstance(k, str) for k in out):
+        problems.append("output_manifestation must be a string-keyed mapping")
         return problems
     problems += [f"output: {p}" for p in sv.manifestation_problems(out, to)]
     if sv._digest_of_identity(out, to) != rec["output_acceptance_digest"]:
@@ -667,19 +915,37 @@ def _path_key(rec) -> tuple:
             rec.get("migration_declaration_digest"))
 
 
+def _keyable_path_record(rec) -> bool:
+    """Whether `_path_key` can be built and hashed — round 4's totality rule:
+    type-check before hashing or set membership. A record failing this is
+    already reported by the validators; it must not ALSO crash them."""
+    return (isinstance(rec, dict)
+            and isinstance(rec.get("runtime"), dict)
+            and type(rec.get("from_version")) is int
+            and type(rec.get("to_version")) is int
+            and all(isinstance(rec.get(f), str) for f in
+                    ("source_acceptance_digest", "source_full_manifest_hash",
+                     "migration_declaration_digest")))
+
+
 def path_evidence_problems(art) -> list:
-    """Artifact-level: every current-algorithm path record valid, no duplicate
-    and no contradictory records under the same selection key."""
+    """Artifact-level: every current-algorithm path record valid — a missing
+    or mistyped algorithm field is malformed, not superseded (round 4) — with
+    no duplicate and no contradictory records under one selection key."""
     if not isinstance(art, dict) or not isinstance(art.get("paths"), list):
         return ["artifact has no path-record list"]
     problems, seen = [], {}
     for rec in art["paths"]:
-        if isinstance(rec, dict) and rec.get("migration_evidence_algorithm") \
-                != MIGRATION_EVIDENCE_ALGORITHM:
-            continue                       # superseded algorithm: contributes
-        problems += path_record_problems(rec, art)     # nothing, poisons nothing
-        if not isinstance(rec, dict):
+        cls = _algorithm_class(rec)
+        if cls == "superseded":
+            continue                       # contributes nothing, poisons nothing
+        if cls == "malformed":
+            problems.append("path record with a missing or mistyped algorithm "
+                            "field — malformed, not superseded")
             continue
+        problems += path_record_problems(rec, art)
+        if not _keyable_path_record(rec):
+            continue                       # already reported; cannot be keyed
         key = _path_key(rec)
         if key in seen:
             if seen[key] != rec.get("output_full_manifest_hash"):
@@ -693,36 +959,49 @@ def path_evidence_problems(art) -> list:
 
 
 def expected_path_problems(art) -> list:
-    """Exact cardinality against the LIVE registry (round 3): for the current
-    runtime, every (declared step × accepted source manifestation) pair has
-    exactly one record, and no current-algorithm record exists outside that
-    set. An altered migration digests differently, so its expected pair has
-    zero records — which is precisely the self-authorization hole this check
-    closes."""
+    """Exact cardinality against the LIVE registry, ARTIFACT-WIDE (rounds 3
+    and 4): the expected set is every active build identity × every declared
+    step × every accepted source manifestation, and the actual current-record
+    keys must equal it exactly. Round 4 measured a duplicated path with a
+    foreign runtime identity passing — v5 computed expectations only for the
+    process's own identity, so foreign, unattested prospective records could
+    accumulate. An altered migration digests differently, so its expected
+    pair has zero records — the round-3 self-authorization hole this closes."""
+    if not isinstance(art, dict):
+        return ["artifact is not a mapping"]
     problems = []
-    me = sv.build_identity(sv.runtime_identity())
-    current = [r for r in art.get("paths", []) if isinstance(r, dict)
-               and r.get("migration_evidence_algorithm")
-               == MIGRATION_EVIDENCE_ALGORITHM
-               and sv.build_identity(r.get("runtime", {})) == me]
-    versions = art.get("schema_versions", {})
+    identities = {sv.build_identity(r)
+                  for r in sv.active_records(art.get("runtimes", []))}
+    current = [r for r in art.get("paths", [])
+               if _algorithm_class(r) == "current"]
+    unsound = [r for r in current if not _keyable_path_record(r)]
+    if unsound:
+        problems.append(f"{len(unsound)} current path record(s) too "
+                        f"malformed to key — reported by the record "
+                        f"validator, counted here so cardinality stays exact")
+    versions = art.get("schema_versions", {}) \
+        if isinstance(art.get("schema_versions"), dict) else {}
     expected = set()
-    for frm, mig in sorted(MIGRATIONS_DRAFT.items()):
-        src = versions.get(str(frm), {})
-        for a in src.get("accepted", []) if isinstance(src, dict) else []:
-            expected.add((me, frm, mig.to_version, a.get("digest"),
-                          full_manifest_hash(a.get("objects", {})),
-                          migration_declaration_digest(mig)))
+    for ident in identities:
+        for frm, mig in sorted(MIGRATIONS_DRAFT.items()):
+            src = versions.get(str(frm), {})
+            for a in src.get("accepted", []) if isinstance(src, dict) else []:
+                if not isinstance(a, dict):
+                    continue
+                expected.add((ident, frm, mig.to_version, a.get("digest"),
+                              full_manifest_hash(a.get("objects", {})),
+                              migration_declaration_digest(mig)))
     have = {}
     for r in current:
-        have[_path_key(r)] = have.get(_path_key(r), 0) + 1
+        if _keyable_path_record(r):
+            have[_path_key(r)] = have.get(_path_key(r), 0) + 1
     for key in sorted(expected - set(have), key=repr):
         problems.append(f"no path-evidence record for expected combination "
                         f"(step {key[1]}→{key[2]})")
     for key in sorted(set(have) - expected, key=repr):
-        problems.append(f"path-evidence record exists for a combination the "
-                        f"live registry does not declare (step "
-                        f"{key[1]}→{key[2]})")
+        problems.append(f"path-evidence record outside the expected set — "
+                        f"foreign identity, undeclared step, or unaccepted "
+                        f"source (step {key[1]}→{key[2]})")
     for key, n in sorted(have.items(), key=repr):
         if n > 1:
             problems.append(f"{n} path-evidence records for one combination")
@@ -760,7 +1039,15 @@ def _draft():
             }
             sv.SCHEMAS = dict(SCHEMAS_DRAFT)
             sv.SCHEMA_VERSION = DRAFT_SCHEMA_VERSION
-            if art is not None and not schema_evidence_problems(art):
+            # Round 4, finding 1: context entry is INSIDE the failure
+            # boundary. The validators are total, and a validator escape is
+            # itself treated as a malformed artifact — either way the context
+            # installs empty evidence and every gate fails closed.
+            try:
+                usable = art is not None and not schema_evidence_problems(art)
+            except Exception:
+                usable = False
+            if usable:
                 versions = art["schema_versions"]
                 legacy = frozenset(art["legacy_base_versions"])
                 sv._RUNTIME_OVERRIDE[:] = [art["runtimes"]]
@@ -835,11 +1122,12 @@ def _migrating_hook(art, authority):
                 "migration-required",
                 f"no adjacent declared step migrates v{base} to "
                 f"v{sv.SCHEMA_VERSION}")
-        probs = authority_problems(authority, spath,
-                                   migration_declaration_digest(step))
+        probs = authority_problems(authority, spath, step,
+                                   sv.digest(objs, base))
         if probs:
             raise MigrationRefused("migration-quiescence-required",
                                    "; ".join(probs))
+        _consume_authority(authority)      # single-use, spent on acceptance
         reg = validate_registry(current=sv.SCHEMA_VERSION)
         if reg:
             raise MigrationRefused("migration-evidence-missing",
@@ -895,9 +1183,9 @@ def _select_path_record(art, base, objs, step) -> dict:
     me = sv.build_identity(sv.runtime_identity())
     want = (me, base, step.to_version, sv.digest(objs, base),
             full_manifest_hash(objs), migration_declaration_digest(step))
-    hits = [r for r in art["paths"] if isinstance(r, dict)
-            and r.get("migration_evidence_algorithm")
-            == MIGRATION_EVIDENCE_ALGORITHM and _path_key(r) == want]
+    hits = [r for r in art["paths"]
+            if _algorithm_class(r) == "current"
+            and _keyable_path_record(r) and _path_key(r) == want]
     if len(hits) != 1:
         raise MigrationRefused(
             "migration-evidence-missing",
@@ -909,6 +1197,10 @@ def _select_path_record(art, base, objs, step) -> dict:
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
          authority=None) -> Outcome:
+    # Canonical from the first byte (round 4): symlinks resolve HERE, once,
+    # so the path the planner opens, the path in every diagnostic, and the
+    # path the authority binds are the same real file.
+    canonical = os.path.realpath(str(path))
     with _draft() as art:
         try:
             if not sv.runtime_supported():
@@ -927,11 +1219,17 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
                     "touching the store")
             hook = (_migrating_hook(art, authority) if migrating
                     else _refusing_hook(art))
-            conn = sqlite3.connect(path, timeout=busy_timeout_ms / 1000)
+            # Round 4, finding 1: the failure boundary covers the connection
+            # itself — an unopenable path was escaping as OperationalError.
+            try:
+                conn = sqlite3.connect(canonical,
+                                       timeout=busy_timeout_ms / 1000)
+            except sqlite3.Error as exc:
+                return Outcome("store-unopenable", diagnostic=repr(exc))
             conn.isolation_level = None
             try:
                 conn.execute(f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
-                label = sv.open_versioned(conn, str(path), allow_adopt=True,
+                label = sv.open_versioned(conn, canonical, allow_adopt=True,
                                           older=hook)
                 return Outcome(label)
             finally:
@@ -940,6 +1238,12 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
             return Outcome(e.reason, diagnostic=e.diff)
         except MigrationRefused as e:
             return Outcome(e.reason, diagnostic=e.diagnostic)
+        except sqlite3.DatabaseError as exc:
+            # Round 4, finding 1: bytes that are not a database — or any
+            # SQLite-level failure while reading them — were escaping raw.
+            # The kernel already mapped its own expected cases (locked); what
+            # reaches here means the file could not be read as a store.
+            return Outcome("invalid-store", diagnostic=repr(exc))
 
 
 def open_or_migrate(path, busy_timeout_ms: int = 5000) -> Outcome:
@@ -1059,6 +1363,8 @@ def _generate_artifact() -> tuple:
     }
     with _registry():
         problems += [f"artifact: {p}" for p in schema_evidence_problems(art)]
+        problems += [f"migration runtimes: {p}"
+                     for p in migration_runtime_artifact_problems(art)]
         problems += [f"paths: {p}" for p in path_evidence_problems(art)]
         problems += [f"paths: {p}" for p in expected_path_problems(art)]
     return art, problems
@@ -1107,6 +1413,7 @@ def check_evidence() -> int:
         return 1
     with _registry():
         problems = schema_evidence_problems(art)
+        problems += migration_runtime_artifact_problems(art)
         problems += path_evidence_problems(art)
         recorded = {sv.build_identity(r) for r in
                     sv.active_records(art.get("runtimes", []))}

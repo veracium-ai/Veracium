@@ -568,9 +568,7 @@ def test_a_truthy_but_untyped_authority_is_refused():
     """Round 3 measured MigrationAuthority(quiesced=1, backup_ref=object())
     migrating."""
     p = _v1_store()
-    loose = m13.MigrationAuthority(
-        quiesced=1, backup_ref=object(), store_path=p,
-        migration_digest="x", operation_id="o", issued_at="t")
+    loose = m13.make_authority(p)._replace(quiesced=1, backup_ref=object())
     assert m13.migrate_store(p, loose) == "migration-quiescence-required"
 
 
@@ -631,3 +629,213 @@ def test_full_manifest_hash_sees_what_the_acceptance_digest_excludes():
         assert sv._digest_of_identity(full, 2) \
             == sv._digest_of_identity(partial, 2)        # blind, by design
         assert m13.full_manifest_hash(full) != m13.full_manifest_hash(partial)
+
+
+# --- round 4, finding 1: the failure boundary is actually total ------------
+
+def test_a_malformed_accepted_manifestation_fails_closed(monkeypatch):
+    """Round 4 measured `objects: 1` raising TypeError out of context entry.
+    Any malformed nested field in the schema evidence poisons the context and
+    every operation reads `unsupported-sqlite` — no exception escapes."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["schema_versions"]["1"]["accepted"][0]["objects"] = 1
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.open_or_migrate(p) == "unsupported-sqlite"
+    assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
+
+
+def test_a_malformed_path_field_fails_closed(monkeypatch):
+    """Round 4 measured a list-valued source hash raising `unhashable type`
+    from selection-key construction."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["paths"][0]["source_full_manifest_hash"] = ["x"]
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+def test_a_non_database_file_is_a_closed_refusal():
+    """Round 4 measured `sqlite3.DatabaseError: file is not a database`
+    escaping both operations."""
+    p = tempfile.mktemp(suffix=".db")
+    with open(p, "w") as f:
+        f.write("these bytes are not a sqlite database")
+    assert m13.open_or_migrate(p) == "invalid-store"
+    dummy = m13.make_authority(_v1_store())
+    assert m13.migrate_store(p, dummy) == "invalid-store"
+
+
+def test_an_unopenable_path_is_a_closed_refusal():
+    """Round 4 measured an uncaught OperationalError for a missing parent
+    directory."""
+    p = tempfile.mktemp(suffix=".db") + "-no-such-dir/store.db"
+    assert m13.open_or_migrate(p) == "store-unopenable"
+    dummy = m13.make_authority(_v1_store())
+    assert m13.migrate_store(p, dummy) == "store-unopenable"
+
+
+def test_registry_validation_is_total_over_malformed_keys():
+    """Round 4: mixed key types raised TypeError from max(); a `True` key
+    passed because `True == 1`."""
+    probs = m13.validate_registry(
+        schemas={1: m13.SCHEMA_V1, "2": m13.SCHEMA_V2},
+        migrations={1: m13.MIGRATION_1_TO_2}, current=2)
+    assert any("exact ints" in p for p in probs)
+    probs = m13.validate_registry(
+        schemas={True: m13.SCHEMA_V1, 2: m13.SCHEMA_V2},
+        migrations={1: m13.MIGRATION_1_TO_2}, current=2)
+    assert any("exact ints" in p for p in probs)
+
+
+# --- round 4, finding 2: malformed current migration-runtime records poison -
+
+def test_a_malformed_current_migration_runtime_record_poisons(monkeypatch):
+    """Round 4 measured `{"migration_evidence_algorithm": 1}` beside the
+    valid record being silently filtered while qualification held."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["migration_runtimes"].append({"migration_evidence_algorithm": 1})
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    assert m13.migration_runtime_supported(art) is False
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
+    assert m13.open_or_migrate(p) == "migration-required"   # ordinary open unaffected
+
+
+def test_a_duplicate_migration_runtime_identity_poisons(monkeypatch):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["migration_runtimes"].append(
+        copy.deepcopy(art["migration_runtimes"][0]))
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) == "unsupported-sqlite"
+
+
+def test_a_missing_algorithm_field_is_malformed_not_superseded():
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    rec = copy.deepcopy(art["migration_runtimes"][0])
+    del rec["migration_evidence_algorithm"]
+    art["migration_runtimes"] = [art["migration_runtimes"][0], rec]
+    with m13._registry():
+        assert any("malformed, not" in p
+                   for p in m13.migration_runtime_artifact_problems(art))
+
+
+# --- round 4, finding 3: path cardinality is exact across the artifact -----
+
+def test_a_foreign_identity_path_record_fails_the_artifact(monkeypatch):
+    """Round 4 measured a duplicated path with a foreign runtime identity
+    passing both validators and the migration proceeding."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    foreign = copy.deepcopy(art["paths"][0])
+    foreign["runtime"]["sqlite_version"] = "99"
+    foreign["runtime"]["source_id"] = "foreign"
+    art["paths"].append(foreign)
+    monkeypatch.setattr(m13, "_load_artifact", lambda: copy.deepcopy(art))
+    with m13._registry():
+        assert m13.path_evidence_problems(art)
+        assert m13.expected_path_problems(art)
+    p = _v1_store()
+    assert m13.migrate_store(p, m13.make_authority(p)) \
+        == "migration-evidence-missing"
+
+
+def test_a_path_runtime_must_resolve_to_both_qualifications():
+    """Every current path record's identity must resolve to exactly one
+    active schema-runtime record AND one valid migration-runtime record."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    rec = copy.deepcopy(art["paths"][0])
+    rec["runtime"]["features"] = ["not", "a", "mapping"]
+    with m13._registry():
+        probs = m13.path_record_problems(rec, art)
+    assert any("malformed" in p for p in probs)
+    art2 = json.loads(m13.EVIDENCE_FILE.read_text())
+    art2["migration_runtimes"] = []
+    with m13._registry():
+        probs = m13.path_record_problems(art2["paths"][0], art2)
+    assert any("migration-runtime" in p for p in probs)
+
+
+# --- round 4, finding 4: confinement probes require SQLITE_AUTH ------------
+
+def test_a_permissive_authorizer_fails_every_denial_probe(monkeypatch):
+    """Round 4's falsifier: with an authorizer that permits everything, v5
+    still reported denies_release=True because `no such savepoint` counted
+    as denial. Every denial probe must now read False."""
+    monkeypatch.setattr(m13, "_authorizer",
+                        lambda *_a: sqlite3.SQLITE_OK)
+    probes = m13.authorizer_probes()
+    denials = {k: v for k, v in probes.items() if k.startswith("denies_")}
+    assert denials and not any(denials.values()), denials
+
+
+def test_the_release_probe_holds_a_real_savepoint():
+    """The RELEASE probe's setup creates the savepoint before the authorizer
+    is installed, so the only way the statement can fail is authorization —
+    and on this runner it does, for that reason specifically."""
+    assert m13._denied_by_authorizer(
+        ("BEGIN IMMEDIATE", "SAVEPOINT s1"), "RELEASE s1") is True
+    probes = m13.authorizer_probes()
+    assert set(probes) == set(m13.AUTHORIZER_PROBE_KEYS)   # twelve, w/ rollback
+    assert probes["denies_rollback"] is True
+    assert all(v is True for v in probes.values()), probes
+
+
+# --- round 4, finding 5: the authority lifecycle ---------------------------
+
+def test_an_unparseable_or_expired_authority_is_refused():
+    p = _v1_store()
+    bad = m13.make_authority(p)._replace(issued_at="not-a-time")
+    assert m13.migrate_store(p, bad) == "migration-quiescence-required"
+    expired = m13.make_authority(p, ttl_minutes=0)
+    assert m13.migrate_store(p, expired) == "migration-quiescence-required"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_an_authority_is_single_use_and_cannot_migrate_a_replacement():
+    """Round 4's replay probe: mint, migrate, replace the file at the same
+    path with a different v1 store, replay — the replacement migrated under
+    an attestation that belonged to the earlier file. Consumption is
+    single-use, spent on acceptance."""
+    import os
+    p = _v1_store(rows=1)
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"
+    os.remove(p)
+    replacement = _v1_store(rows=3)
+    os.rename(replacement, p)
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_a_retargeted_symlink_unbinds_the_authority():
+    """Round 4's symlink probe: authority minted for a symlink to store A,
+    symlink retargeted to store B — B migrated, A stayed v1. Paths are
+    canonical at mint and at consumption, so retargeting breaks the binding
+    and NEITHER store is touched."""
+    import os
+    a_store, b_store = _v1_store(rows=1), _v1_store(rows=2)
+    link = tempfile.mktemp(suffix=".db")
+    os.symlink(a_store, link)
+    auth = m13.make_authority(link)
+    os.remove(link)
+    os.symlink(b_store, link)
+    assert m13.migrate_store(link, auth) == "migration-quiescence-required"
+    for s in (a_store, b_store):
+        assert sqlite3.connect(s).execute(
+            "PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_an_authority_binds_the_source_manifestation():
+    """A source-mismatched authority refuses: minted against one shape,
+    presented with another."""
+    p = _v1_store()
+    auth = m13.make_authority(p)._replace(source_digest="0" * 64)
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_an_authority_binds_the_step_endpoints():
+    p = _v1_store()
+    auth = m13.make_authority(p)._replace(from_version=2, to_version=3)
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"

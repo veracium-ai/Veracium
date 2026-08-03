@@ -1,7 +1,7 @@
 {
  "artifact": "specs/0013 draft evidence",
  "draft_schema_version": 2,
- "generated_at": "2026-08-03T19:33:18.704746+00:00",
+ "generated_at": "2026-08-03T20:37:55.194660+00:00",
  "legacy_base_versions": [
   1
  ],
@@ -19,6 +19,7 @@
     "denies_end": true,
     "denies_pragma": true,
     "denies_release": true,
+    "denies_rollback": true,
     "denies_savepoint": true,
     "denies_temp_schema": true
    },

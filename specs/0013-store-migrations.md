@@ -5,25 +5,29 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v5)** — round 3: *concrete v1→v2 approved directionally, v4
-> deferred, 4 load-bearing guarantees false in the instrument*. All taken:
-> **there is now exactly ONE planner** — the instrument installs the draft
-> registry and evidence into the production `0007` kernel and calls
-> `open_versioned()`, with `0013` supplying only the older-row hook §4
-> delegates to it (the hand-written second state machine that answered
-> `unexpected version 0` is deleted); **migrations are authorised by a
-> committed evidence artifact** (`specs/generated/migration_0013_evidence.json`
-> — loaded, validated, selected by declaration digest; the round-3
-> `DELETE FROM edges` probe that authorised itself now refuses with data and
-> stamp untouched); **migration confinement is runtime-qualified** (an
-> authorizer-probe record per build identity, re-verified live at consumption);
-> and **every outcome is a member of a closed vocabulary** — raw SQLite and
-> protocol exceptions are mapped, never escaped.
+> **in review (v6)** — round 4: *architecture standing (planner, evidence
+> consumption, qualification design, DDL all approved); v5 deferred on five
+> falsifiable gaps*. All taken, with the reviewer's constraint honoured — the
+> migration and the shared planner are unchanged: **the failure boundary is
+> actually total** (malformed nested evidence fields, non-database bytes and
+> unopenable paths were escaping as raw exceptions; validators type-check
+> before use, context entry is inside the boundary, and two store-failure
+> outcomes — `invalid-store`, `store-unopenable` — join the vocabulary);
+> **malformed current migration-runtime records POISON the qualification**
+> (v5 silently filtered them); **path cardinality is exact artifact-wide**
+> (expected = every active identity × step × accepted source; a
+> foreign-identity record now fails both validators); **confinement probes
+> require `SQLITE_AUTH` specifically** (the `RELEASE` probe held no savepoint,
+> so `no such savepoint` was recorded as a denial — a permissive authorizer
+> now flips all twelve denial probes False); and **the authority has a
+> lifecycle** — canonical realpath binding, source and step binding, an
+> issuance/expiry window, and single-use consumption, so the round-4 replay
+> and symlink-retarget probes both refuse with no store touched.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v5 |
+| **Version** | v6 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -257,7 +261,7 @@ model is deferred to the first real `ALTER` and must be externally reviewed
 there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
 **Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
-(55 tests: every round-2 and round-3 probe as a regression, the full inherited
+(72 tests: every round-2, round-3 and round-4 probe as a regression, the full inherited
 planner across empty/unstamped/foreign/malformed/newer stores, the evidence
 gate's adversarial records, confinement qualification, the closed failure
 model, and the stale-connection hazard below).
@@ -307,16 +311,35 @@ other processes — it is *owned*, explicitly, by the party that can.
 Migration is a **dedicated operation** (`migrate_store`), never a parameter on
 tenant-facing opening — `open_or_migrate` has no authority argument at all
 (round 3). The `MigrationAuthority` is an **attestation the library validates
-but cannot verify**, so it is exact-typed and **bound to what it authorises**:
-`quiesced` must be exactly `True` (a truthy `1` refused — round 3 measured
-`MigrationAuthority(quiesced=1, backup_ref=object())` migrating), and the
-authority carries `store_path`, `migration_digest` (the declaration digest of
-the reviewed step), `operation_id`, `backup_ref` and `issued_at`, each
-validated for exact type and binding. **Production authorities are minted by
-release tooling and must additionally bind the release/deployment identity
-and validate issuance freshness** — recorded here as an implementation
-obligation for the first migrating release. `allow_adopt` never doubles as
-migration permission.
+but cannot verify** — and round 4 showed that binding it to a path *string*
+is not binding it to an *operation*: an authority was replayed after the
+store at its path was replaced (the replacement migrated under an attestation
+belonging to the earlier file), and a retargeted symlink carried an authority
+minted for a different store. **The authority contract is therefore frozen
+here, not left as an implementation note** (round 4's acceptance-boundary
+ruling):
+
+| field | binds | validation at consumption |
+|---|---|---|
+| `quiesced` | the host's quiescence assertion | exactly `True` — a truthy `1` refuses (round 3's probe) |
+| `store_path` | canonical store identity | `os.path.realpath` at mint AND at consumption; a retargeted symlink is a different store and refuses |
+| `from_version` · `to_version` | the step's endpoints | exact ints, equal to the selected step's |
+| `source_digest` | the source manifestation being migrated | equals the acceptance digest measured under the write lock, pre-repair (rebuildable-blind, so incidental index drift does not unbind) |
+| `migration_digest` | the reviewed statements | equals the declaration digest of the registered step |
+| `backup_ref` | the backup this operation made | nonempty string |
+| `release_ref` | the minting release/deployment | nonempty string; **real release identity at implementation** |
+| `operation_id` | this one migration operation | **single-use** — consumed on acceptance, before execution; a replay refuses |
+| `issued_at` · `expires_at` | the validity window | RFC 3339, timezone-aware, parseable; `issued ≤ expires`, `now < expires` |
+
+An expired, previously consumed, retargeted, source-mismatched, mistyped or
+unbound authority refuses `migration-quiescence-required`. **Consumption is
+in-process in the draft and durable in production — the migration audit
+(§5e) is the durable consumer.** What remains host-trust, stated rather than
+hidden: a host that atomically swaps in an identical-shape store at the same
+canonical path inside the validity window defeats path binding. The host is
+explicitly trusted; the lifecycle exists so its assertion cannot silently
+**drift** to a different operation — which is the failure round 4 measured.
+`allow_adopt` never doubles as migration permission.
 
 *(v2's §8 said "not multi-process" while §5b demonstrated five concurrent
 openers — the contradiction is resolved as above: concurrent **cooperating**
@@ -330,8 +353,12 @@ currently loaded migration code, so an altered migration authorised itself.**
 Measured — `DELETE FROM edges` appended to the declared statements produced
 the exact v2 schema, stamped `migrated`, and left zero edge rows; exact schema
 identity cannot detect data destruction. **The correction is architectural:
-evidence is a committed, immutable artifact that the planner LOADS; the live
-code contributes only a digest to match against.**
+evidence is a shipped, committed artifact that the planner LOADS; the live
+code contributes only a digest to match against.** *Committed, not
+immutable* — round 4's distinction, adopted: the artifact is version-controlled
+package data, consumed rather than re-derived, but it is **not** independently
+authenticated or integrity-protected at runtime; package signing or filesystem
+integrity would be a separate boundary and is not claimed here.
 
 The artifact — `specs/generated/migration_0013_evidence.json`, the M11/M12
 draft forms — is generated by `migrations_0013.py --write-evidence` on a
@@ -363,10 +390,18 @@ domain-separated canonical JSON of `[from, to, [statements…]]` —
 `canonical_migration_bytes()`). Exactly one record or the migration does not
 run: an altered migration — even one producing the identical schema — digests
 differently, matches nothing, and refuses `migration-evidence-missing` with
-data and stamp untouched. **Cardinality is exact** against the live registry:
-every declared step × every accepted source manifestation for the current
-runtime has exactly one record; missing, extra, duplicate, stale-algorithm or
-contradictory records each fail closed, and each has an adversarial test.
+data and stamp untouched. **Cardinality is exact ARTIFACT-WIDE** (round 4:
+v5 computed expectations only for the running process's identity, so a
+foreign-identity record accumulated silently): the expected set is **every
+active build identity × every declared step × every accepted source
+manifestation**, actual current-record keys must equal it exactly, and every
+current record's runtime must **resolve** — to exactly one active
+schema-runtime record and exactly one valid migration-runtime record in the
+same artifact. Missing, extra, foreign, unattested, duplicate,
+stale-algorithm or contradictory records each fail closed, and each has an
+adversarial test. **A missing or mistyped algorithm field is malformed, not
+superseded** — only explicitly superseded algorithms are ignored (`0007`
+round 12's rule, applied to every record class in this artifact).
 After execution the complete output is repaired, recomputed and compared
 against the record's manifestation, acceptance digest AND full-manifest hash
 before any stamp — full-manifest hashes because the acceptance digest is
@@ -377,30 +412,53 @@ blind to rebuildables by design (round 2, measured).
 left its scope in v10 — so its qualification cannot attest the behaviours
 §4b's confinement leans on. The artifact therefore records a
 **migration-runtime qualification** per build identity: authorizer API
-available; `BEGIN`/`COMMIT`/`END`, savepoints and `RELEASE`, `PRAGMA`,
-`ATTACH`/`DETACH`, and TEMP-schema effects each **observed and denied**;
-restoration after rejection verified. All eleven probes are required, and
-consumption does not trust the record: the probes are re-run live and compared
-— mirroring how `0007`'s `runtime_supported()` re-derives constructor
-manifestations. `migrate_store` requires **both** the schema-runtime and the
+available; `BEGIN`/`COMMIT`/`END`/`ROLLBACK`, savepoints and `RELEASE`,
+`PRAGMA`, `ATTACH`/`DETACH`, and TEMP-schema effects each **observed and
+denied**; restoration after rejection verified. All twelve probes are
+required, and **a denial counts only when the failure is specifically
+authorization** — `sqlite_errorcode == SQLITE_AUTH` (message-text fallback on
+Python 3.10, which lacks the attribute). Round 4 measured why: the `RELEASE`
+probe held no savepoint, so `no such savepoint` — raised under a fully
+permissive authorizer — was recorded as a denial; every probe's setup is now
+a valid statement sequence (the savepoint exists before the authorizer is
+installed), and the permissive-authorizer falsifier flips all twelve denial
+results to False. Consumption does not trust the record: the probes are
+re-run live and compared — mirroring how `0007`'s `runtime_supported()`
+re-derives constructor manifestations — and **artifact-level validation
+poisons the qualification** on any malformed current-algorithm record,
+duplicate identity, identity without an active schema-runtime record, or
+violation of the single-active-runtime policy (round 4: v5 silently filtered
+a malformed record and stayed qualified on the valid one beside it).
+`migrate_store` requires **both** the schema-runtime and the
 migration-runtime qualification before touching the store; ordinary opening
 requires only `0007`'s, because it executes no confined statement.
 
 ## 5d. The closed outcome contract
 
 **Total over expected store, SQLite, evidence, authority and protocol
-failures** (round 3, finding 4 — v4 leaked `sqlite3.OperationalError` from
-invalid SQL and free-form strings like `unexpected version 0`):
+failures** — and the boundary covers **evidence loading, context entry, and
+the database connection itself** (round 4, finding 1: v5's boundary started
+after context entry, so a malformed nested evidence field raised `TypeError`
+out of the validators, non-database bytes raised `DatabaseError`, and an
+unopenable path raised `OperationalError` — three raw escapes from a model
+that claimed totality; round 3 had already closed the invalid-SQL and
+free-form-string escapes):
 
 | failure class | closed outcome |
 |---|---|
+| the path cannot be opened at all | `store-unopenable` |
+| the bytes are not readable as a SQLite database | `invalid-store` |
 | lock acquisition exhausted | `locked` |
-| unqualified schema- or migration-runtime, poisoned schema evidence | `unsupported-sqlite` |
+| unqualified schema- or migration-runtime; malformed or poisoned schema/runtime evidence — **at any nesting depth** | `unsupported-sqlite` |
 | source not an accepted manifestation | `stamped-shape-mismatch` / `foreign-shape` |
-| invalid or unbound authority | `migration-quiescence-required` |
-| absent, ambiguous, inconsistent or non-matching path evidence | `migration-evidence-missing` |
+| invalid, unbound, expired, consumed or retargeted authority | `migration-quiescence-required` |
+| absent, ambiguous, malformed, foreign or non-matching path evidence | `migration-evidence-missing` |
 | SQL execution or protocol failure during the migration | `migration-failed` |
 | executed output differs from the recorded output | `migration-result-mismatch` |
+
+**Every validator type-checks a field before iterating, hashing, sorting, or
+using it as a key** — the round-4 totality rule; a validator escape at
+context entry is itself treated as a malformed artifact and fails closed.
 
 Successes are equally closed: `created` · `adopted` · `current` · `migrated`.
 The entry points return an `Outcome` — a value that string-compares as its
@@ -410,6 +468,21 @@ the branch value. One deliberate exception, inherited from `0007`'s reviewed
 behaviour: package-consistency impossibilities (the constructor disagreeing
 with the build's own shipped evidence) raise, because they are properties of a
 broken package, not of the store on disk.
+
+## 5e. The migration audit — implementation obligation
+
+*(Round 4's additional correction, recorded as load-bearing spec text.)*
+Migration is irreversible, so the production migration operation appends
+audit records the way `0007` §4e's adoption path does: an **attempted**
+record before execution and a **completed or failed** record after, each
+carrying the closed outcome, the authority's identity (`operation_id`,
+`release_ref`, issuance window), source and output versions with their
+manifestation digests, the migration declaration digest, and the opaque
+`backup_ref`. **The audit is also the authority's durable consumer**: the
+draft's in-process single-use set (§5b) becomes a lookup against previously
+recorded operations, which is what makes single-use survive a process
+restart. Lands with the `0008` implementation; the draft demonstrates the
+lifecycle in-process.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -436,6 +509,10 @@ tests at implementation.
 | **M14** an altered migration cannot authorise itself | `test_a_data_destructive_alteration_cannot_authorize_itself` · `test_a_side_effect_free_alteration_is_still_not_evidenced` — **measured today**: refusal before execution, data and stamp untouched |
 | **M15** migration confinement is runtime-qualified, independently of `0007`'s gate | `test_the_migration_runtime_gate_is_independent_of_0007s` · `test_recorded_confinement_behaviours_must_reproduce_live` · `test_the_authorizer_probes_all_hold_on_this_runner` — **measured today** |
 | **M16** every outcome is a member of the closed vocabulary | `test_invalid_sql_returns_migration_failed_not_an_exception` · `test_a_wrong_unique_constraint_is_a_result_mismatch` · `test_the_outcome_vocabulary_is_closed` — **measured today** |
+| **M17** the failure boundary covers evidence loading, context entry and the connection | `test_a_malformed_accepted_manifestation_fails_closed` · `test_a_malformed_path_field_fails_closed` · `test_a_non_database_file_is_a_closed_refusal` · `test_an_unopenable_path_is_a_closed_refusal` — **measured today** |
+| **M18** malformed current-algorithm records poison their artifact class; foreign records fail cardinality | `test_a_malformed_current_migration_runtime_record_poisons` · `test_a_foreign_identity_path_record_fails_the_artifact` · `test_a_missing_algorithm_field_is_malformed_not_superseded` — **measured today** |
+| **M19** confinement denial means `SQLITE_AUTH`, nothing else | `test_a_permissive_authorizer_fails_every_denial_probe` · `test_the_release_probe_holds_a_real_savepoint` — **measured today** |
+| **M20** an authority authorises exactly one operation, inside its window, on its canonical store | `test_an_authority_is_single_use_and_cannot_migrate_a_replacement` · `test_a_retargeted_symlink_unbinds_the_authority` · `test_an_unparseable_or_expired_authority_is_refused` — **measured today** |
 
 ---
 
@@ -481,53 +558,64 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 4 of this spec. All four round-3 blockers taken; every executable
-probe reproduced first** — the `unexpected version 0` answers, the
-self-authorising `DELETE FROM edges` migration (edges destroyed, `migrated`
-stamped), the never-consulted source hash, the escaped `OperationalError`,
-and `MigrationAuthority(quiesced=1, backup_ref=object())`.
+**Round 5 of this spec. All five round-4 blockers and both additional
+corrections taken; every probe reproduced first** — the `objects: 1`
+TypeError at context entry, the list-valued hash crash, the raw
+`file is not a database`, the silently filtered malformed migration-runtime
+record, the foreign-identity path record, the savepoint-less `RELEASE` probe
+reporting denial under a fully permissive authorizer, the replayed authority
+migrating a replacement store, and the retargeted symlink. Per your v6
+guidance, **the migration and the shared planner are unchanged** — every
+edit is in the evidence validators, the probes, the authority, and the entry
+points' failure boundary.
 
-1. **One planner, actually** (finding 1): the second state machine is deleted.
-   The instrument installs the draft registry and evidence into the production
-   kernel and calls `open_versioned()`, with `0013` supplying only the
-   older-row hook `0007` §4 delegates. Your probes are regressions: empty →
-   `created`; unstamped v1 → `migration-required` / `migrated`; foreign v0 →
-   `foreign-shape`; stamped v1 with an intruder table →
-   `stamped-shape-mismatch` from **both** operations; table squatting the
-   index name → closed refusal, no exception.
-2. **Evidence is loaded, not manufactured** (finding 2): the committed
-   artifact carries schema, runtime, migration-runtime and path records;
-   `--write-evidence` generates, `--check-evidence` re-derives, the planner
-   selects by the full frozen key including the declaration digest. Your
-   `DELETE` and `SELECT 1` probes refuse `migration-evidence-missing` with
-   data and stamp untouched; your zeroed source hash fails both the record's
-   consistency rules and selection. The record now also resolves its
-   **output** to an accepted destination manifestation, symmetric with the
-   source rule.
-3. **Confinement is qualified where it is used** (finding 3): eleven
-   authorizer probes per build identity — transaction/savepoint/pragma/
-   attach/detach/temp-schema each observed and denied, restoration verified —
-   recorded in the artifact and **re-verified live at consumption**.
-   `migrate_store` requires both gates; ordinary opening only `0007`'s.
-4. **The outcome vocabulary is closed and total** (finding 4): invalid SQL
-   under matching evidence → `migration-failed`; a wrong result under
-   matching evidence → `migration-result-mismatch`, rolled back; free-form
-   strings are unrepresentable. §5d states the one deliberate exception
-   (package-consistency impossibilities raise, per `0007`'s reviewed
-   behaviour).
+1. **Totality, actually** (finding 1): every validator type-checks before
+   iterating, hashing or keying; context entry is inside the boundary; the
+   connection is inside the boundary. Your probes are regressions:
+   malformed nested evidence at any depth → `unsupported-sqlite` (schema
+   class) or `migration-evidence-missing` (path class); non-database bytes →
+   `invalid-store`; missing parent directory → `store-unopenable` — two new
+   frozen members, §5d. Registry validation reports mixed, string and
+   bool-typed keys instead of raising.
+2. **Malformed current records poison** (finding 2):
+   `migration_runtime_artifact_problems` — complete validity for every
+   current-algorithm record, identity uniqueness, contradiction rejection,
+   resolution to an active schema-runtime record, single-active-runtime
+   policy. Your `{"migration_evidence_algorithm": 1}` record now disqualifies
+   the runtime; a missing algorithm field is malformed, not superseded.
+3. **Cardinality is artifact-wide** (finding 3): expected = every active
+   build identity × declared step × accepted source; actual keys must equal
+   it exactly; every current path record must resolve to both
+   qualifications. Your foreign-identity duplicate now fails both validators
+   and the operation refuses; a features-as-list foreign record is reported,
+   not skipped.
+4. **Denial means `SQLITE_AUTH`** (finding 4): every probe setup is a valid
+   statement sequence — the `RELEASE` probe holds a real savepoint created
+   before the authorizer is installed — and only an authorization error
+   counts (error code on 3.11+, message fallback on 3.10, stated in code).
+   Your falsifier is the regression test: a fully permissive authorizer
+   flips all twelve denial probes False. `denies_rollback` added; the
+   artifact is regenerated under the twelve-probe vocabulary.
+5. **The authority has a lifecycle** (finding 5): the contract is **frozen
+   in §5b as a table, not an implementation note** — canonical realpath
+   binding (symlinks resolve at mint and consumption), source-manifestation
+   and step binding, backup and release references, RFC 3339
+   issuance/expiry window, and **single-use consumption spent on
+   acceptance**. Your replay probe now refuses with the replacement store
+   untouched; your symlink probe refuses with neither store touched; §5e
+   names the migration audit as the durable consumer at implementation.
 
-**The additional corrections**: §4c's capability model is explicitly deferred
-design with the present-tense authorisation claim removed; the simulator
-stops cleanly (rc 2) after a runtime refusal; §5b carries your narrowed M-Q2
-wording verbatim and the authority binding contract; §5c carries the
-record-level consistency rules; the package README states the measured
-3.46.1 behaviour.
+**Also per your rulings**: the artifact is described as *committed, not
+immutable* (§5c states exactly what is and is not claimed); the migration
+audit is load-bearing spec text (§5e).
 
-**Where I am least confident:** the boundary between what the draft
-instrument demonstrates and what remains implementation-time (M11/M12
-production artifacts, release-tooling-minted authorities binding release
-identity). Both are recorded as obligations with their draft forms measured;
-whether that split is acceptable for `0013`'s acceptance is yours to rule.
+**Where I am least confident:** the draft/production consumption split for
+single-use authorities — in-process consumption demonstrates the semantics
+but only the audit-backed durable form survives a restart, and that lands
+with `0008`'s implementation. The residual host-trust statement in §5b (an
+atomic identical-shape swap inside the validity window) is stated as
+narrowly as I can make it; if it is still too wide, that is the judgement
+left.
 
 ## 10. Open questions
 
@@ -588,3 +676,24 @@ all four taken, plus the M-Q2 ruling and every additional correction.
 | b | simulator crashed past its own refusal | gates first; clean `rc 2` on an unqualified runtime — regression test |
 | c | README claimed five failing tests on 3.46.1 | package README states the measured behaviour and the artifact-regeneration path |
 | d | §5c lacked record-level consistency rules | the four rules (plus output resolution) are spec text with adversarial tests for missing / extra / stale-algorithm / duplicate / contradictory records |
+
+---
+
+## 14. Round 4 review disposition
+
+**Verdict: architecture standing — planner, evidence consumption,
+qualification design and the concrete migration all approved; v5 deferred on
+five falsifiable gaps.** All five taken, plus both additional corrections and
+the acceptance-boundary ruling; the migration and the shared planner are
+unchanged per the reviewer's v6 guidance.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the closed contract was not total — malformed nested evidence raised `TypeError` at context entry, a list-valued hash crashed selection-key construction, non-database bytes and unopenable paths escaped as raw SQLite errors | **type-checks before every iterate/hash/key**; context entry and the connection inside the boundary; two new frozen outcomes `invalid-store` / `store-unopenable` (§5d); registry key-type totality (`True == 1` measured); adversarial tests per nested field class |
+| 2 | a malformed current-algorithm migration-runtime record was silently filtered while qualification held | **`migration_runtime_artifact_problems` poisons**: complete validity per current record, identity uniqueness, contradiction rejection, resolution to an active schema-runtime record, single-active-runtime policy; missing/mistyped algorithm = malformed, not superseded |
+| 3 | path cardinality ignored foreign runtime identities — an unattested prospective record accumulated | **artifact-wide exact cardinality**: expected = every active identity × step × accepted source, actual keys equal it exactly; every current path record resolves to both qualifications |
+| 4 | the `RELEASE` probe was a false positive (no savepoint; any `DatabaseError` counted as denial) — the qualification agreed with itself about a behaviour never established | **denial means `SQLITE_AUTH`** (error code on 3.11+, message fallback on 3.10); every setup is a valid statement sequence; `denies_rollback` added (twelve probes); the permissive-authorizer falsifier is the regression test |
+| 5 | the authority was indefinitely replayable and bound to a path string — a replacement store migrated under an attestation belonging to the earlier file; a retargeted symlink migrated the wrong store | **the lifecycle contract is frozen in §5b**: canonical realpath at mint and consumption, source + step + migration binding, backup and release references, RFC 3339 issuance/expiry window, single-use consumption spent on acceptance; §5e names the audit as the durable consumer |
+| a | registry validation raised on malformed keys | exact-int key typing before `max()`/`sorted()`/arithmetic, reported not raised |
+| b | "immutable" overclaimed the artifact | *committed, not immutable* — §5c states exactly what is and is not claimed |
+| c | `operation_id` had no durable consumer | §5e: the migration audit is load-bearing spec text and the authority's durable consumer at implementation |
