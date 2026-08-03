@@ -334,6 +334,33 @@ def test_an_oversized_path_is_a_validation_error_not_truncation():
         SqliteStore("/tmp/" + "x" * 5000)
 
 
+# --- packaging: the store must not depend on specs/ -----------------------
+
+def test_the_kernel_never_imports_from_specs():
+    """A wheel has no specs/. This lazily held until the 0013 package build:
+    `_digest_of_identity` imported `schema_model`, the repo always had specs/
+    on sys.path, and the fail-closed predicate swallowed the
+    ModuleNotFoundError into `unsupported-sqlite` in any clean environment —
+    a total predicate hiding a packaging bug."""
+    import re
+    src = (ROOT / "src" / "veracium" / "store" / "schema_version.py").read_text()
+    hits = re.findall(r"^\s*(?:from|import)\s+(schema_\w+)", src, re.M)
+    assert not hits, hits
+
+
+def test_the_store_qualifies_without_specs_on_the_path(tmp_path):
+    import subprocess
+    code = ("import sys; sys.path = [p for p in sys.path if 'specs' not in p]\n"
+            "from veracium.store.sqlite import SqliteStore\n"
+            f"SqliteStore({str(tmp_path / 'clean.db')!r})\n"
+            "print('ok')")
+    r = subprocess.run([sys.executable, "-c", code],
+                       env={"PYTHONPATH": str(ROOT / "src"),
+                            "PATH": "/usr/bin:/bin"},
+                       capture_output=True, text=True)
+    assert r.returncode == 0 and "ok" in r.stdout, r.stderr
+
+
 # --- S7: independence -----------------------------------------------------
 
 def test_s7_export_format_version_is_independent():

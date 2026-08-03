@@ -832,7 +832,12 @@ def runtime_supported() -> bool:
 
 def _digest_of_identity(objs: dict, version: int) -> str:
     """Digest a recorded identity mapping without rebuilding the database."""
-    from schema_model import rebuildable_keys
+    # This lazily imported `schema_model` from specs/ until 0013's first
+    # review package build: in the repo, specs/ was always on sys.path (tests
+    # and spec scripts put it there) so everything passed — while a wheel, or a
+    # release-probe worktree with only PYTHONPATH=src, raised ModuleNotFoundError
+    # that the fail-closed predicate swallowed into "unsupported-sqlite".
+    # A total predicate must not be where packaging bugs go to hide.
     import hashlib as _h
     skip = rebuildable_keys(version)
     scoped = {k: v for k, v in objs.items() if tuple(k.split(":", 1)) not in skip}
