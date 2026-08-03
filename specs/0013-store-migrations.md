@@ -1,27 +1,22 @@
 # Feature spec: on-disk store migrations
 
-Spec-Status: draft
+Spec-Status: in review
 Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft** — opened 2026-08-03. **This spec exists because cutting `0007`'s
-> scope broke the gate that protected `0008`.** `0007` v10 moved the migration
-> contract out; `0008` is `accepted`, adds a `confirmations` table, and declared
-> only `Spec-Requires: 0007` — so accepting `0007` would have **authorised a
-> schema-changing implementation whose migration design was unresolved.** Found
-> by the round-8 external reviewer; the most serious defect the scope cut
-> introduced.
->
-> **Round 9 ruled** that this spec must be reviewed **against `0008`'s
-> `confirmations` table** before it can be accepted (M-Q1), and that the
-> capability comparison belongs here (M-Q3). **M-Q2 — enforceable
-> single-process migration — remains independently blocking.**
+> **in review (v2)** — opened 2026-08-03; **v2 adds the concrete v1→v2
+> migration the round-9 M-Q1 ruling requires** — `0008`'s `confirmations`
+> table, executable in `specs/migrations_0013.py` — and **proposes the M-Q2
+> answer**: SQLite's write lock *is* the single-process enforcement, under the
+> same lock-before-read protocol `0007` shipped. This spec still authorises
+> nothing; the instrument is draft-side, and the store contains no migration
+> code.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 |
+| **Version** | v2 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -202,37 +197,96 @@ entire reason those digests exist.
 
 ---
 
-## 5. Regime analysis
+## 5. The concrete migration — v1 → v2, the `confirmations` table
 
-**The regime `0007` could never reach:** a store at a *lower* version. `0007`
-v10 has `SCHEMA_VERSION = 1`, so no positive integer is below it and the *older*
-row of its decision table cannot occur. **This spec is where that row becomes
-reachable**, and it is reachable by a real store rather than an injected
-fixture — which is the difference that motivated the split.
+**Per the M-Q1 ruling, this spec is reviewed against a real migration.** The
+first schema change is `0008`'s audit table, derived field-by-field from its
+§6b–§6d:
 
----
+```sql
+CREATE TABLE confirmations (
+    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,
+    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,
+    correlation_id TEXT, request_digest TEXT NOT NULL,
+    UNIQUE(user_id, correlation_id)
+);
+CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id);
+```
+
+| decision | from `0008` |
+|---|---|
+| `confirmed_at` stores the **normalised instant** | §6c — never the caller's string |
+| `actor`, `call_path` are closed-enum **values** | §6c — free text in either was the bypass `actor` demonstrated |
+| `correlation_id` **nullable**; `UNIQUE(user_id, correlation_id)` | §6c — omitted means no replay protection; SQLite treats NULLs as distinct, so unprotected confirmations coexist while a reused pair conflicts, **tenant-scoped, not global** |
+| `request_digest` mandatory | §6c — replay compares the canonical request; a same-id different-payload replay is an integrity conflict, not a lookup hit |
+| the index is `REBUILDABLE` | `0007` §4a-iii — non-unique acceleration; the UNIQUE constraint lives in the table DDL and is therefore in the digest |
+| **the migration is two `CREATE` statements** | §4a's declarative model; nothing else changes |
+
+**A measured property the review should weigh:** because the change is purely
+additive, the migration's stored DDL is **byte-identical** to the v2
+constructor's — `MANIFESTS[2]` has one digest with two provenances. The
+accepted-**set** model is still exercised (both paths are generated and
+compared), but the `ALTER`-class divergence `0007` measured does not occur
+here. **The set model earns its keep on the first `ALTER`, not on this
+migration** — stated so the convergence is not mistaken for evidence that the
+set was unnecessary.
+
+**Executable**: `specs/migrations_0013.py` (draft instrument, imports the
+production kernel, implements §4a–§4d against this migration) and
+`tests/test_migrations_0013.py` (16 tests: destination contract with the real
+table, confinement re-proven, registry validation, the M-Q2 race, and `0008`'s
+uniqueness semantics holding in the migrated schema).
+
+## 5b. M-Q2 proposed: the write lock is the enforcement
+
+**Proposed answer for review — this was the remaining blocking question.**
+
+`0007` §4c already takes `BEGIN IMMEDIATE` before reading anything. Extending
+the same protocol with the *older* row gives migration mutual exclusion **from
+SQLite itself**:
+
+```
+open:  BEGIN IMMEDIATE            <- serialises ALL openers
+       read user_version
+       found == 2  ->  open as current
+       found == 1  ->  apply_migration; validate destination; stamp 2; COMMIT
+```
+
+A concurrent opener blocks on the lock (bounded by `busy_timeout`, then a loud
+`locked` refusal), acquires it after the winner commits, **re-reads under its
+own lock**, and finds the store already migrated. Measured in
+`test_mq2_concurrent_migration_runs_exactly_once`: five racing openers, one
+`migrated`, four `current`, zero errors, zero duplicate work.
+
+**Why not the alternatives:** a lock *table* changes the shape being migrated —
+circular; an advisory *file* is not a guarantee and adds a second consistency
+domain. **The caveat is the contract:** a migration must fit in one
+transaction. The additive v2 trivially does; the single-step model (§4d) makes
+that reviewable per step, and a future migration too large for one transaction
+is a design problem to be caught at *its* review, not an operational surprise.
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
-**Nothing here is implemented, and no test below exists.** The v9 archive
-contains working implementations of most of them, written against `0007`'s
-instrument; they are a starting point, not evidence.
+**The store contains no migration code — `0013` authorises nothing.** The
+rows below marked with test names now run against the **draft instrument**
+(`specs/migrations_0013.py`) and the concrete migration; they become store
+tests at implementation.
 
 | invariant | executable check |
 |---|---|
-| **M1** a declared step runs inside the caller's transaction | `test_a_migration_runs_in_the_open_transaction` |
-| **M2** transaction control in a declared statement is denied | `test_transaction_control_is_denied` — `COMMIT`, `END`, `END TRANSACTION`, `ROLLBACK`, `SAVEPOINT`, `RELEASE`, `ATTACH` |
-| **M3** temp objects are refused | `test_a_temp_object_is_refused` — the manifest cannot see one |
-| **M4** pragmas are refused | `test_a_pragma_is_refused` |
-| **M5** the authorizer is restored after failure | `test_the_authorizer_is_restored_after_a_failed_migration` |
-| **M6** an empty migration cannot authorise its output | `test_an_empty_migration_is_rejected` |
-| **M7** a correct `ALTER` reaches an accepted destination | `test_a_normal_alter_is_accepted` |
-| **M8** an `ALTER` omitting the column is still rejected | `test_a_partial_alter_is_rejected` |
-| **M9** the registry is well-formed | `test_the_migration_registry_is_well_formed` — adjacency, reachability, `SCHEMA_VERSION` binding |
-| **M10** a skipped release still upgrades | `test_an_unstamped_v1_store_migrates_directly_to_v2` — **the round-1 requirement** |
-| **M11** every migration path is keyed individually | `test_every_path_is_keyed` |
-| **M12** runtime evidence covers every declared path | `test_incomplete_path_coverage_disqualifies_a_runtime` |
-| **M13** migration is single-process | `test_concurrent_migration_refuses` |
+| **M1** a declared step runs inside the caller's transaction | exercised by every instrument test via `open_or_migrate` |
+| **M2** transaction control in a declared statement is denied | `test_transaction_control_and_pragmas_are_denied` — **measured today**, six forms |
+| **M3** temp objects are refused | `test_a_temp_object_is_refused` — **measured today** |
+| **M4** pragmas are refused | `test_transaction_control_and_pragmas_are_denied` — **measured today** |
+| **M5** the authorizer is restored after failure | `test_the_authorizer_is_restored_after_failure` — **measured today** |
+| **M6** an empty migration cannot authorise its output | `test_an_empty_migration_cannot_authorize_its_output` — **measured today**, against the real `confirmations` requirement |
+| **M7** a correct migration reaches its declared destination | `test_the_concrete_migration_reaches_the_v2_constructor_output` — **measured today**; output byte-identical to the constructor |
+| **M8** a partial or wrong-shape result is rejected | `test_a_partial_migration_is_rejected` — **measured today** |
+| **M9** the registry is well-formed | `test_m9_the_draft_registry_is_well_formed` · `test_a_gap_refuses` — **measured today** |
+| **M10** a skipped release still upgrades | at implementation: version-zero resolution (`0007` §4-i) feeds the *older* path. The instrument's `open_or_migrate` demonstrates the stamped-v1 half |
+| **M11** every migration path is keyed individually | at implementation — `0007`'s evidence gains per-path entries |
+| **M12** runtime evidence covers every declared path | at implementation |
+| **M13** migration runs exactly once under concurrency | `test_mq2_concurrent_migration_runs_exactly_once` — **measured today**: five racers, one migrates, four open current. §5b |
 
 ---
 
@@ -269,39 +323,36 @@ the current version without installing intermediate releases, or is refused.
 
 ## 9. Brief for the external reviewer
 
-**This spec exists because of a defect in the previous round's scope cut, and
-that is the first thing to check.** `0007` v10 moved the migration contract into
-`0006` §0b. `0008` is `accepted`, adds a `confirmations` table, and required
-only `0007` — so accepting `0007` would have unlocked a schema-changing
-implementation with no migration design. `0013` makes the dependency
-expressible: every schema-changing spec requires it directly.
+**This is `0013`'s first review, and per your M-Q1 ruling it arrives with the
+real migration**: `0008`'s `confirmations` table, two `CREATE` statements,
+executable in `specs/migrations_0013.py` and exercised by 16 tests. `0007` is
+`accepted` and implemented, so the migration runs against the real kernel.
 
-**What is carried forward and what is not.** §4 states the eight conclusions
-that survived seven rounds of `0007` review, **in full rather than by reference
-to an uncommitted archive**. They have not been reviewed *as this spec*, and I
-am not claiming their prior approval transfers — several were approved only
-"directionally", and §4c in particular changed shape in the last round before
-the cut.
+**The three things to review hardest:**
 
-**Where I am least confident:**
+1. **The table DDL against `0008` §6b–§6d** (§5). Every column decision cites
+   its clause; if I have mistranslated the frozen contract into DDL, this is
+   the round to catch it — `0008`'s implementation will inherit this shape.
+2. **The M-Q2 proposal** (§5b): the write lock is the enforcement, and the
+   one-transaction caveat is the contract. Measured under a five-way race. If
+   this is wrong, everything downstream of the *older* row is wrong with it.
+3. **The convergence caveat** (§5): this migration's output is byte-identical
+   to the constructor's, so it does NOT exercise the `ALTER`-divergence case
+   the accepted-set model exists for. I have said so rather than presenting
+   the convergence as evidence. **Generalising only what this migration
+   demonstrates — your ruling — means the set model's divergence handling
+   stays unproven until the first `ALTER`**, and I would like that recorded as
+   accepted residual risk rather than discovered later.
 
-1. **§4c's capability comparison is a third structural model** alongside
-   `0007`'s digest and drift. Three ways of comparing schemas across two specs
-   is a smell I flagged before the cut and have not resolved.
-2. **This spec has no first migration yet.** It is opened against `0008`'s
-   `confirmations` table and `0006`'s new column, but neither is written. **The
-   whole argument for the cut was that a migration mechanism needs a real
-   migration** — so `0013` should probably not reach `accepted` before one of
-   those specs is concrete enough to hold it to.
-3. **M13 is unspecified beyond its name.** Cross-process migration locking was
-   pushed forward from `0007` three times without being designed.
-
----
+**What this spec still does not do:** authorise implementation (it is not
+`accepted`); ship migration code in the store (the instrument is spec-side);
+extend runtime evidence with per-path entries (M11/M12 land with
+implementation).
 
 ## 10. Open questions
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~M-Q1~~ | **RULED by round 9, 2026-08-03: wait.** `0013` must not reach `accepted` before it is reviewed **against an actual migration** — that is the principle that justified the `0007` scope cut, and it applies equally to the replacement. **The first case is `0008`'s `confirmations` table**: accepted, simple, additive, already blocked on `0013`, and independent of `0006`'s unresolved source-identity design. **`0013` may generalise only what that real migration demonstrates.** | resolved | external | — |
-| **M-Q2** | How is single-process migration enforced (**M13**)? A lock table changes the shape being migrated; an advisory file is not a guarantee. | `blocking` | dev | before implementation |
+| **M-Q2** | **PROPOSED in §5b, awaiting external ruling:** SQLite's write lock under the §4c lock-before-read protocol is the enforcement; the caveat (one transaction per migration) is the contract. Measured with five racing openers. | `blocking → proposed` | external | this review |
 | ~~M-Q3~~ | **RULED by round 9: yes, it belongs here.** The capability comparison exists to decide whether a *migration result* satisfies its destination despite differing DDL, so it is `0013`'s. `0007` retains exact manifestation identity, digest comparison, rebuildable drift and candidate resolution — and `capability_problems()` has been removed from its kernel. | resolved | external | — |
