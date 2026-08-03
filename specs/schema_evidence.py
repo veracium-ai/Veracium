@@ -393,23 +393,48 @@ def manifestation_problems(objs: dict, version: int) -> list:
         for f in ("type", "table"):
             if not isinstance(entry[f], str):
                 problems.append(f"object {k!r} field {f!r} is not a string")
-        if entry["sql"] is not None and not isinstance(entry["sql"], str):
-            problems.append(f"object {k!r} field 'sql' is neither string nor null")
+                break
+        else:
+            # Round 14 (non-blocking): "structurally valid" now also means
+            # internally consistent, not merely typed. The full attestation
+            # already rejected these; the record validator should say why.
+            kind, _, name = k.partition(":")
+            if entry["type"] != kind:
+                problems.append(f"object {k!r} declares type {entry['type']!r}, "
+                                f"disagreeing with its key")
+            declared = {o.key: o for o in SCHEMAS.get(version, ())}
+            own = declared.get((kind, name))
+            if own is not None:
+                want_tbl = name if kind == "table" else own.ddl.split(" ON ")[-1].split("(")[0].strip() if kind == "index" else entry["table"]
+                if kind in ("table", "index") and entry["table"] != want_tbl:
+                    problems.append(f"object {k!r} claims table {entry['table']!r}, "
+                                    f"expected {want_tbl!r}")
+        if entry["sql"] is None:
+            # every object 0007 declares is explicit DDL; only sqlite's own
+            # autoindexes lack stored SQL and those never enter a manifestation
+            problems.append(f"object {k!r} has null SQL; declared objects are "
+                            f"explicit")
+        elif not isinstance(entry["sql"], str):
+            problems.append(f"object {k!r} field 'sql' is not a string")
         if k.startswith("table:"):
             cols = entry["columns"]
             if not isinstance(cols, list):
                 problems.append(f"table {k!r} columns is not a list")
             else:
+                names = []
                 for row in cols:
                     if (not isinstance(row, list) or len(row) != 6
-                            or not isinstance(row[0], str)
+                            or not isinstance(row[0], str) or not row[0]
                             or not isinstance(row[1], str)
-                            or type(row[2]) is not int
+                            or type(row[2]) is not int or row[2] not in (0, 1)
                             or not (row[3] is None or isinstance(row[3], str))
-                            or type(row[4]) is not int
-                            or type(row[5]) is not int):
+                            or type(row[4]) is not int or row[4] < 0
+                            or type(row[5]) is not int or row[5] not in (0, 1, 2, 3)):
                         problems.append(f"table {k!r} has a malformed column row")
                         break
+                    names.append(row[0])
+                if len(names) != len(set(names)):
+                    problems.append(f"table {k!r} has duplicate column names")
     return problems
 
 
@@ -682,6 +707,13 @@ def build_version_artifact(strict: bool = True) -> dict:
         have = {a["digest"] for a in accepted}
         problems.extend(artifact_problems())
         for rt in qualified_runtimes():
+            # Round 14 (non-blocking): the predicate was total and this loop
+            # was not — `[42]` in the artifact raised AttributeError out of the
+            # generator. CI failed either way, but a traceback is a worse
+            # diagnostic than the problem statement artifact_problems() already
+            # recorded above.
+            if not isinstance(rt, dict):
+                continue
             # A record written under an older manifest algorithm describes a
             # different computation. It is **superseded, not fraudulent**: it
             # contributes nothing and is reported, but it does not block

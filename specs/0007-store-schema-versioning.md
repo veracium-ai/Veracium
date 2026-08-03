@@ -1,20 +1,16 @@
 # Feature spec: on-disk store schema versioning
 
-Spec-Status: in review
+Spec-Status: accepted
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v16) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
-> the product owner's decision.** Seven external rounds produced ~63 findings,
-> and the large majority lived in **migration machinery with no users** —
-> `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
-> stamp · refuse-newer · adopt-v1.** The migration contract moves to
-> **`specs/0013`**, a dedicated store-migrations spec. *(v10 first moved it to
-> `0006`; round 8 showed that could not express the dependency, and `0013`
-> replaced it.)* Nothing is discarded — `0013` §4 states the inherited
-> conclusions in full.
-> **It remains the `Spec-Requires:` prerequisite of `0006`, `0008`, `0009` and
-> `0010`.**
+> **accepted 2026-08-03 15:57 UTC** — under `PROCESS.md` §4a, on the round-14 external
+> verdict *"v16 approved for acceptance"*, after **14 external rounds**. The
+> three non-blocking corrections named at acceptance are applied in the same
+> commit. **Scope: stamp · refuse-newer · adopt-v1** — the migration contract is
+> `specs/0013`'s, still `draft`, so **`0006`/`0008`/`0009`/`0010` remain blocked
+> by the gate**; what `accepted` authorises is implementing **this spec's own
+> versioning layer**, the first implementable spec in the corpus.
 
 | | |
 |---|---|
@@ -24,7 +20,7 @@ Spec-Status: in review
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
 | **Review history** | *see `specs/STATUS.md`, generated from `specs/reviews.py`. No counts are stated here; a hand-maintained count drifted in `0008` and was found by the reviewer.* |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED** — external round 14, 2026-08-03; status set by dev under §4a |
 | **Path** | full |
 | **Measuring instrument** | `specs/schema_model.py` (kernel) · `schema_evidence.py`; every counterexample lives in `tests/test_schema_model.py` and is counted by collection |
 | **Generated evidence** | `legacy_stores.json` (per-release stamp + resolved version) · `schema_versions.json` (immutable manifests per version) · `schema_policy.json` (reviewed policies) · `sqlite_runtimes.json` (qualified runtimes), all gated by `schema_evidence.py --check` |
@@ -896,7 +892,7 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S33** drift repair is followed by **complete revalidation** | `test_repair_revalidates_before_stamping` — digest accepted **and** drift empty |
 | **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today**; the resolver is version-aware even though only one version exists, because `0013` will add the second |
 | **S35** post-commit audit failure has the specified result | `test_committed_sink_failure_leaves_the_store_adopted` — raises `PostCommitAuditError`, not `StoreVersionError` |
-| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_or_explicitly_is_not` — version **and** source id **and** probes **and** reproduced constructor digests |
+| **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_or_explicitly_is_not` — **the full §4a-viii rule**: build identity · structural validity · constructor digest · **complete manifestation byte-for-byte** |
 | **S37** conformance covers rebuildable **DDL** | `test_a_wrong_rebuildable_ddl_fails_conformance` — v5's digest-based S23 passed it |
 | **S39** legacy resolution is candidate-based | `test_resolution_does_not_use_a_default_version_digest` — **measured today** |
 | **S40** only unstamped releases feed the legacy set | `test_resolution_is_restricted_to_legacy_base_versions` |
@@ -1080,6 +1076,53 @@ typed fields, exact column-row width, with the extra-field case tested.
 2. **Nothing else.** The evidence file has now had five consecutive rounds of
    findings; every predicate in it is total, typed, monotone and scoped, and
    the remaining surface is small.
+
+## Review closure
+
+**Set `accepted` 2026-08-03 15:57 UTC by dev, under `PROCESS.md` §4a: external review is
+required and dev sets the status once the review's comments are satisfied.
+Round 14's verdict was itself "Accepted… approved for acceptance"; its three
+non-blocking corrections are applied in the acceptance commit** — the generator
+made total over malformed members, manifestation entries checked for internal
+consistency (type/key agreement, owning table, non-null SQL, unique column
+names, flag domains), and the last digest-only summary replaced by the full
+§4a-viii rule.
+
+**Fourteen external rounds.** Every finding of every round is closed in that
+round's disposition — **§11 through §24, one section per round, each finding
+against openable evidence**: a section, an invariant, a test name that the
+"measured today" gate verifies exists, or a measurement quoted with its output.
+The dispositions are the closure record; nothing is re-argued here.
+
+| rounds | what they settled |
+|---|---|
+| 1–3 | the shape comparison: names+types → semantic signature → **known-constructor manifests** (S-Q4 answered by the reviewer) |
+| 4–5 | a truthful generator; the instrument split into kernel / evidence / pytest |
+| 6–7 | migration containment and destination contracts — later **cut** |
+| 8 (scope cut) | **stamp · refuse-newer · adopt-v1**; migrations to a dedicated spec |
+| 9–13 | runtime evidence: attestation, atomicity, one build identity, monotone revisions, total validators |
+| 14 | **accepted**, three non-blocking corrections |
+
+**What `accepted` authorises, exactly.** Implementation of **this spec's
+versioning layer** — S1–S78's unimplemented contract. `0007` has no
+`Spec-Requires:`, so the gate passes a commit citing it.
+
+**What it does not authorise, and the gate enforces:** any schema-changing
+spec. `0006`, `0008`, `0009` and `0010` each require `0013`, which is `draft`
+and, by the round-9 M-Q1 ruling, **must be reviewed against `0008`'s
+`confirmations` table before it can be accepted.**
+
+**What remains open, and is not claimed:**
+
+- **Nothing is implemented.** `grep -rn "user_version" src/veracium/` still
+  returns nothing; the store still opens anything.
+- **One qualified runtime** (SQLite 3.45.1 by build identity). Release on any
+  other identity must refuse with `unsupported-sqlite` until evidence is
+  regenerated there — **S-Q7 is a release gate**, per the round-12 and round-14
+  rulings.
+- **S-Q3** (non-SQLite backends) remains deferred.
+
+---
 
 ## 10. Open questions
 

@@ -850,3 +850,55 @@ def test_an_extra_manifestation_field_is_rejected():
     rec["manifestations"]["constructor v1"][key] = dict(
         rec["manifestations"]["constructor v1"][key], extra="field")
     assert any("not exactly" in p for p in ev.runtime_record_problems(rec))
+
+
+# --- round 14 (non-blocking corrections at acceptance) --------------------
+
+def test_the_generator_is_total_over_malformed_members(monkeypatch):
+    """Round 14: the predicate was total and the generator was not — `[42]`
+    raised AttributeError out of build_version_artifact."""
+    import schema_evidence as ev
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [42])
+    art = ev.build_version_artifact(strict=False)
+    assert "1" in art["versions"]
+
+
+def test_a_type_key_mismatch_is_reported():
+    """Round 14: "structurally valid" now also means internally consistent."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    key = "index:ix_edges_subj_rel"
+    entry = rec["manifestations"]["constructor v1"][key]
+    rec["manifestations"]["constructor v1"][key] = dict(entry, type="trigger")
+    rec["constructor_digests"]["1"] = ev._digest_of_identity(
+        rec["manifestations"]["constructor v1"], 1)
+    assert any("disagreeing with its key" in p
+               for p in ev.runtime_record_problems(rec))
+
+
+def test_a_null_sql_declared_object_is_reported():
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    entry = rec["manifestations"]["constructor v1"]["table:wiki"]
+    rec["manifestations"]["constructor v1"]["table:wiki"] = dict(entry, sql=None)
+    rec["constructor_digests"]["1"] = ev._digest_of_identity(
+        rec["manifestations"]["constructor v1"], 1)
+    assert any("null SQL" in p for p in ev.runtime_record_problems(rec))
+
+
+def test_duplicate_column_names_are_reported():
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    entry = copy.deepcopy(rec["manifestations"]["constructor v1"]["table:wiki"])
+    entry["columns"] = entry["columns"] + [entry["columns"][0]]
+    rec["manifestations"]["constructor v1"]["table:wiki"] = entry
+    rec["constructor_digests"]["1"] = ev._digest_of_identity(
+        rec["manifestations"]["constructor v1"], 1)
+    assert any("duplicate column names" in p
+               for p in ev.runtime_record_problems(rec))

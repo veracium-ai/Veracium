@@ -63,6 +63,8 @@ REVIEWS = [
          verdict="architecture approved outright; S-Q7 ruled; deferred on runtime-evidence validation", findings=3),
     dict(spec="0007", round=13, kind="external", date="2026-08-03",
          verdict="architecture standing; deferred on monotonicity, totality and stale-record scoping", findings=3),
+    dict(spec="0007", round=14, kind="external", date="2026-08-03",
+         verdict="ACCEPTED — v16 approved for acceptance; three non-blocking corrections", findings=0),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),
