@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v14) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
+> **in review (v15) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
 > the product owner's decision.** Seven external rounds produced ~63 findings,
 > and the large majority lived in **migration machinery with no users** —
 > `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
@@ -19,7 +19,7 @@ Spec-Status: in review
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v14 |
+| **Version** | v15 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0013` and of every schema-changing spec, not a part of any of them. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
@@ -586,7 +586,7 @@ declared schema versions:
 | `sqlite_version` | the release number |
 | **`sqlite_source_id()`** | **a version names a release, not a build.** Two builds of `3.45.1` can differ in compile options, authorizer availability and DDL support — all of which exact matching leans on |
 | feature probes | **behavioural, not nominal** (round 7, finding 5), and **only the ones schema matching needs**: a valid strict table, **body-preservation of submitted DDL**, and `table_xinfo` exposing a generated column with a nonzero hidden flag. v8's `STRICT` probe used invalid SQL — a strict table's column must declare a datatype — so it recorded "unsupported" on a runtime that supports it; the DDL probe only checked that a row existed. **The authorizer/confinement probe moved to `0013`** with the code that needs it |
-| constructor digests | the accepted manifest *this runtime produces*, per version — key set **equal to** the declared versions, and non-empty |
+| constructor digests **and complete manifestations** | the full object records *this runtime produces*, per version — key set **equal to** the declared versions, digest matching, **and qualification compares the complete manifestation byte-for-byte, rebuildable objects included** (the acceptance digest excludes them by design, so digests alone attest nothing about them) |
 | ~~migration-path digests~~ | **`0013`'s**, not `0007`'s. DDL rewriting is why a version can have several accepted manifests, so a runtime agreeing on constructors could still disagree on an `ALTER` path — but at `SCHEMA_VERSION = 1` there are no paths and this build records none |
 | manifest algorithm, schema version | a record generated under a different algorithm or schema version qualifies nothing |
 
@@ -912,7 +912,10 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S56** recorded runtimes are internally valid | `test_the_recorded_runtimes_are_internally_valid` (always) · `test_this_runtime_is_qualified_or_explicitly_is_not` (skips) · `test_an_empty_digest_map_does_not_qualify_vacuously` — **measured today** |
 | **S58** an **unattested** runtime contributes nothing | `test_an_unattested_foreign_runtime_contributes_nothing` — **measured today**. Internal consistency is not provenance |
 | **S65** the **production predicate** rejects a conflicting artifact | `test_a_conflicting_artifact_disqualifies_the_runtime` · `test_the_recorded_artifact_has_no_conflicts` — **measured today**; v12 checked this only in the generator |
-| **S66** exactly one active runtime identity | `test_two_active_runtime_identities_are_refused` · `test_one_canonical_identity_is_used_everywhere` — **measured today**. **One canonical five-field key** is used for uniqueness, one-active enforcement, replacement, attestation and reporting |
+| **S66** exactly one active runtime **build identity** | `test_two_active_runtime_identities_are_refused` · `test_one_canonical_identity_is_used_everywhere` · `test_replacement_is_by_build_identity` · `test_a_superseded_revision_of_the_same_build_is_replaceable` — **measured today**. **Build identity** (version · source id · canonical typed probes) governs one-active, matching, replacement, attestation, reporting; **evidence revision** (algorithm · schema version) only versions the record. A superseded revision of the *same* build is replaceable — that carve-out is what clears an algorithm bump without deadlock |
+| **S72** feature results are a closed, typed vocabulary | `test_a_mistyped_feature_is_rejected` — **measured today**; `1 == True` in Python |
+| **S73** a manifestation's key set **equals** the declaration | `test_a_missing_declared_object_fails_the_record` — **measured today**; "no extras" was only half of "exact" |
+| **S74** a malformed current-algorithm record poisons the artifact | `test_a_malformed_current_algorithm_record_poisons_the_artifact` — **measured today**; superseded records are ignored, malformed current ones are evidence of breakage |
 | **S69** the predicate attests the **complete** manifestation | `test_a_modified_rebuildable_ddl_disqualifies_the_runtime` · `test_a_missing_rebuildable_index_disqualifies_the_runtime` — **measured today**; the acceptance digest excludes rebuildable objects, so digests alone attest nothing about them |
 | **S70** `SCHEMA_VERSION` is bound to the registry | `test_schema_version_must_match_the_registry` · `test_the_registry_versions_are_contiguous` — **measured today**. *(This invariant existed before the scope cut, regressed when the module holding it was deleted, and the round-6 disposition went on claiming it. The citation gate now catches that class.)* |
 | **S71** a missing versions artifact fails the gate | `test_a_missing_versions_artifact_fails_the_gate` — **measured today** |
@@ -922,7 +925,7 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S64** conflicting runtime identities reject the artifact | `test_conflicting_runtime_identities_reject_the_artifact` · `test_a_duplicate_runtime_record_is_rejected` — **measured today** |
 | **S59** the policy vocabulary is closed | `test_a_policy_typo_is_a_build_error` · `test_a_rebuildable_non_index_is_a_build_error` — **measured today**; a typo disabled validation entirely |
 | **S61** the release `result` is re-derived | `test_the_release_result_is_rederived` — **measured today**; v8 read the stored value |
-| **S62** feature probes assert their behaviour | `test_the_strict_table_probe_uses_valid_sql` · `test_the_ddl_probe_asserts_body_preservation` — **measured today** |
+| **S62** feature probes assert their behaviour | `test_the_strict_table_probe_reports_a_real_bool` · `test_the_ddl_probe_asserts_body_preservation` — **measured today**. *(Round 12: STRICT support is identity, not a requirement, so the probe reports rather than demands — and the report must be a real bool, because `1 == True` in Python split the canonical identity from dict equality.)* |
 | **S20** concurrent first open across **processes** stamps once | `test_concurrent_first_open_across_processes` |
 
 **S6 is the one that protects users** and is why adoption is specified before it
@@ -1025,61 +1028,59 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 11: three findings, all reproduced, all fixed. No architectural change,
-as you asked.**
+**Round 12 approved the store-versioning architecture outright and ruled that
+one qualified runtime is sufficient to authorise implementation.** What remains
+is runtime-evidence validation, and this v15 is limited to exactly that, as you
+asked. All three findings reproduced; all three fixed.
 
-**Finding 1 — I had three definitions of one thing.** `_identity_key()` used
-five fields for attestation; the one-active check used `version + source_id`;
-replacement used the same pair. Two records agreeing on version and source id
-but disagreeing on feature probes therefore passed every check. **One canonical
-key is now used for uniqueness, one-active enforcement, replacement, attestation
-and reporting**, and two records describing one build inconsistently reject the
-artifact.
+**Finding 1 — your split is adopted as stated.** `RuntimeBuildIdentity`
+(version · source id · canonical typed feature results) now governs one-active
+enforcement, matching, replacement, attestation and reporting;
+`EvidenceRevision` (algorithm · schema version) only versions the record.
+Replacement: **same build identity → replaced** (a new revision of the same
+build); **same version+source at an *older* algorithm → replaced** (superseded
+either way — this carve-out is what clears a bump without the round-11
+deadlock); **same version+source, current algorithm, different probes →
+refused**, because that artifact is self-contradictory and this code must not
+guess which record to believe. Your seeded-record probe now gets rc 1 and an
+unchanged artifact.
 
-*(Fixing it deadlocked once, and the fix is worth stating: re-qualifying a build
-must supersede **its own** previous record — including one written under an
-older manifest algorithm, which is how a bump is cleared. Keying replacement on
-the full identity meant the new and superseded records shared a build, so the
-new "one build cannot have two" check blocked the very write that removes the
-old one. Replacement is by build; a **different** build is kept and then refused
-as a second active identity, which is the behaviour you asked for.)*
+**Your `1 == True` case is the sharpest thing this round.** Dict equality
+accepted an int-typed probe that the canonical JSON identity distinguished, so
+the predicate and the declared identity disagreed. Features are now a **closed,
+typed vocabulary** — exact key set, real bools, enforced in the record
+validator — and matching compares the canonical identity, never raw dicts.
 
-**Finding 2 — digests attest nothing about rebuildable objects, by design.** The
-acceptance digest deliberately excludes them, so a record claiming
-`CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)` reproduced its digest
-exactly. **`runtime_supported()` now compares the complete constructor
-manifestation**, and the record's key set must *equal* the declared set rather
-than merely contain no extras. **S69.**
+**Finding 2 — "no extras" was only half of "exact".** The manifestation key set
+must now *equal* the declaration — missing objects, including a missing
+required table, fail the record validator itself rather than being caught one
+layer later. Every entry must also carry the closed field shape. The operative
+runtime table now freezes what the tests and brief said: **qualification
+compares the complete manifestation byte-for-byte, rebuildable objects
+included.**
 
-This is the third time the same shape has appeared — a check living in the
-generator while the store-facing path had none. I have no structural answer
-beyond noticing it faster.
+**Finding 3 — malformed current-algorithm records poison the artifact.**
+`artifact_problems()` now runs every current-algorithm record through the
+record validator before the cross-record checks, so `runtime_supported()`
+refuses the whole artifact rather than skipping the broken record and
+qualifying on the good one beside it. Superseded records stay ignored — being
+out of date is not evidence of tampering; failing validation at the current
+algorithm is.
 
-**Finding 3 — a regression I introduced, and my own gate should have caught
-it.** The `SCHEMA_VERSION`/`SCHEMAS` guard lived in the module the scope cut
-deleted, and the round-6 disposition went on claiming it was enforced.
-Restored in `validate_schema_registry()` where it belongs — it is a consistency
-condition of `0007`'s own registry, not migration machinery. **S70.**
-
-**And the citation gate caught that class on the first recurrence**: my first
-draft of the new invariant's note named its retired predecessor by identifier,
-and the build failed because that identifier no longer exists. Exactly the drift
-you found by hand — caught mechanically, in the same edit that introduced it.
-
-**Corrections.** The migration-path coverage paragraph is now historical and
-attributed to `0013`; the manifest procedure is constructor-only; a **missing**
-`schema_versions.json` fails the gate instead of passing silently (**S71**); and
-`strict_tables` is recorded as identity but explicitly **not** required, since
-nothing in `0007`'s matching uses it — stated rather than listed among required
-behaviours and left unenforced.
+**Corrections:** the STRICT test asserts a real bool rather than demanding
+support the policy says is optional; the union comments in the generator are
+marked historical.
 
 **Where I am least confident:**
 
-1. **Nothing new this round.** The three findings were narrow, and the fixes are
-   local. If that is also your read, the remaining question is whether
-   `SCHEMA_VERSION = 1` with one qualified runtime is enough to authorise
-   implementation — which is a judgement about scope rather than correctness.
-2. **S-Q7 unchanged**, and now a gate users hit.
+1. **The replacement carve-out** (older-algorithm records replaceable by
+   version+source pair rather than full build identity). I believe it is
+   forced — probe definitions can change across algorithm revisions, so the old
+   record's features are not comparable — but it is the one place the build
+   identity is not the key, and it is exactly the kind of seam you have found
+   things in.
+2. **Nothing else.** The store design is approved and untouched; this round was
+   three local fixes in one file plus their tests.
 
 ## 10. Open questions
 
@@ -1090,7 +1091,7 @@ behaviours and left unenforced.
 | ~~S-Q4~~ | **ANSWERED by round 2, 2026-08-02: known-constructor equality, not semantic equivalence.** It was a list that grew — v3's signature admitted four more counterexamples. §4a. | resolved | external | — |
 | ~~S-Q5~~ | **RESOLVED by round 3, 2026-08-02: a structured schema registry.** `SchemaObject(kind, name, ddl, policy)` generates creation, expectation, typed rebuildable identities, repair and drift from one declaration. §4a-vi. **It was blocking, and it was the cause of the `(type, name)` bypass.** | resolved | external | — |
 | ~~S-Q6~~ | **RESOLVED by round 4, refined by round 5:** gate the runtime, and **derive qualification from evidence** rather than a hand-edited list. §4a-viii. | resolved | external | — |
-| **S-Q7** | **Should the qualified-runtime set be widened by a CI matrix before release?** The gate is evidence-derived now, but the evidence is still one machine: qualifying a second runtime means running the generator there. | `pre-release` | dev | before release |
+| ~~S-Q7~~ | **RULED by round 12, 2026-08-03: one qualified runtime is sufficient to authorise implementation.** The limitation is operational, not architectural: implementation proceeds against the evidenced runtime; **release stays blocked where the packaged SQLite identity is not qualified**; widening needs durable per-runtime attestation and aggregation. Remains a **release gate**, no longer an acceptance question. | resolved | external | — |
 | **S-Q3** | Does anything other than `SqliteStore` need this? `base.py` is an interface; a Postgres store would need its own mechanism. **Not in scope, recorded so it is not assumed covered.** | `deferred` | dev | — |
 
 ---
@@ -1390,3 +1391,25 @@ narrowed in both places, with the availability limit stated.
 attributed to `0013`; the manifest procedure is constructor-only; a missing
 `schema_versions.json` fails the gate (**S71**); `strict_tables` is identity,
 explicitly not a required behaviour.
+
+---
+
+## 23. Round 12 review disposition
+
+**Verdict: core design approved — and S-Q7 ruled: one qualified runtime
+authorises implementation.** v14 deferred on 3 runtime-evidence findings and 2
+corrections. **All taken.**
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the canonical identity was still not used for replacement or matching | **`RuntimeBuildIdentity` / `EvidenceRevision` split adopted.** Replacement by build identity, with the superseded-revision carve-out; matching by canonical identity, never dict equality — `1 == True` in Python split the two. Features are a closed typed vocabulary. **S66 restated, S72** |
+| 2 | the record validator accepted missing objects | **exact key set** — missing declared objects and malformed field shapes fail the record itself; the operative table freezes complete-manifestation comparison. **S73** |
+| 3 | a malformed current-algorithm record was skipped, not fatal | **it poisons the artifact** — every current-algorithm record must pass validation before any qualification. Superseded records stay ignored. **S74** |
+
+**Corrections:** the STRICT probe test reports rather than demands; the union
+wording in the generator is historical.
+
+**Rulings:** S-Q7 resolved — implementation may proceed against the one
+evidenced runtime; release remains blocked on unqualified SQLite identities;
+widening requires durable per-runtime attestation. **The store-shape design has
+no remaining blocker.**

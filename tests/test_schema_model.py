@@ -424,11 +424,17 @@ def test_the_release_result_is_rederived():
     assert "result" in ev.AUTHORITATIVE
 
 
-def test_the_strict_table_probe_uses_valid_sql():
+def test_the_strict_table_probe_reports_a_real_bool():
     """Round 7, finding 5: the probe was invalid SQL and recorded False on a
-    runtime that supports strict tables."""
+    runtime that supports strict tables.
+
+    Round 12 correction: STRICT support is recorded as identity but NOT
+    required, so the test must not assert True — on a runtime without strict
+    tables the probe correctly reports False and nothing in `0007` breaks. What
+    must hold is that the result is a real bool (`1 == True` in Python made a
+    mistyped probe split the canonical identity from dict equality)."""
     import schema_evidence as ev
-    assert ev.runtime_identity()["features"]["strict_tables"] is True
+    assert isinstance(ev.runtime_identity()["features"]["strict_tables"], bool)
 
 
 def test_the_ddl_probe_asserts_body_preservation():
@@ -687,3 +693,86 @@ def test_a_missing_versions_artifact_fails_the_gate(monkeypatch, tmp_path):
                                            "digest": None, "result": "ok",
                                            "_objects": {}})
     assert ev.check() == 1
+
+
+# --- round 12 ------------------------------------------------------------
+
+def test_replacement_is_by_build_identity(monkeypatch, tmp_path):
+    """Round 12, finding 1a: replacement used (version, source_id), silently
+    replacing a record whose probes — and therefore build identity — differed."""
+    import copy
+    import json
+
+    import schema_evidence as ev
+    art = tmp_path / "sqlite_runtimes.json"
+    monkeypatch.setattr(ev, "RUNTIMES", art)
+    monkeypatch.setattr(ev, "VERSIONS", tmp_path / "schema_versions.json")
+    monkeypatch.setattr(ev, "GENERATED", tmp_path)
+    other = copy.deepcopy(ev.build_runtime_record())
+    other["features"] = dict(other["features"],
+                             strict_tables=not other["features"]["strict_tables"])
+    art.write_text(json.dumps({"runtimes": [other]}, indent=2) + "\n")
+    assert ev.write_runtime() == 1          # refused, not silently replaced
+    assert json.loads(art.read_text())["runtimes"] == [other]
+
+
+def test_a_superseded_revision_of_the_same_build_is_replaceable(monkeypatch, tmp_path):
+    """The carve-out that clears an algorithm bump without deadlocking."""
+    import copy
+    import json
+
+    import schema_evidence as ev
+    art = tmp_path / "sqlite_runtimes.json"
+    monkeypatch.setattr(ev, "RUNTIMES", art)
+    monkeypatch.setattr(ev, "VERSIONS", tmp_path / "schema_versions.json")
+    monkeypatch.setattr(ev, "GENERATED", tmp_path)
+    stale = copy.deepcopy(ev.build_runtime_record())
+    stale["manifest_algorithm"] = ev.MANIFEST_ALGORITHM - 1
+    art.write_text(json.dumps({"runtimes": [stale]}, indent=2) + "\n")
+    assert ev.write_runtime() == 0
+    records = json.loads(art.read_text())["runtimes"]
+    assert len(records) == 1
+    assert records[0]["manifest_algorithm"] == ev.MANIFEST_ALGORITHM
+
+
+def test_a_mistyped_feature_is_rejected(monkeypatch):
+    """Round 12, finding 1b: `1 == True` in Python, so an int-typed probe passed
+    dict equality while splitting from the canonical identity."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    rec["features"] = dict(rec["features"], strict_tables=1)
+    assert any("not bool" in p for p in ev.runtime_record_problems(rec))
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [rec])
+    assert not ev.runtime_supported()
+
+
+@pytest.mark.parametrize("victim", ["index:ix_edges_subj_rel", "table:wiki"])
+def test_a_missing_declared_object_fails_the_record(victim):
+    """Round 12, finding 2: "no extras" was only half of "exact" — a missing
+    object with an updated digest passed the validator."""
+    import copy
+
+    import schema_evidence as ev
+    rec = copy.deepcopy(ev.build_runtime_record())
+    del rec["manifestations"]["constructor v1"][victim]
+    rec["constructor_digests"]["1"] = ev._digest_of_identity(
+        rec["manifestations"]["constructor v1"], 1)
+    assert any("missing declared object" in p
+               for p in ev.runtime_record_problems(rec))
+
+
+def test_a_malformed_current_algorithm_record_poisons_the_artifact(monkeypatch):
+    """Round 12, finding 3: the predicate skipped a malformed current-algorithm
+    record and qualified on the good one beside it."""
+    import copy
+
+    import schema_evidence as ev
+    good = ev.build_runtime_record()
+    broken = copy.deepcopy(good)
+    broken["sqlite_version"] = "9.9.9"
+    del broken["manifestations"]
+    assert ev.artifact_problems([good, broken])
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [good, broken])
+    assert not ev.runtime_supported()

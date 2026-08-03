@@ -42,7 +42,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 12
+MANIFEST_ALGORITHM = 13
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -179,6 +179,16 @@ def runtime_record_problems(r: dict) -> list:
         problems.append("runtime record has no constructor digests")
     if not r["features"]:
         problems.append("runtime record has no feature probes")
+    else:
+        # Closed key set, real bools. `1 == True` in Python, so an int that
+        # slips in makes dict equality and the canonical identity disagree
+        # (round 12, finding 1b, measured).
+        if set(r["features"]) != FEATURE_KEYS:
+            problems.append(f"feature keys {sorted(r['features'])} are not exactly "
+                            f"{sorted(FEATURE_KEYS)}")
+        for k, v in r["features"].items():
+            if not isinstance(v, bool):
+                problems.append(f"feature {k!r} is {type(v).__name__}, not bool")
     for name, must in (("preserves_ddl_body", True),
                        ("xinfo_exposes_generated", True)):
         if r["features"].get(name) is not must:
@@ -206,19 +216,33 @@ def runtime_record_problems(r: dict) -> list:
     return problems
 
 
-def _identity_key(r: dict) -> tuple:
-    """**The one canonical runtime identity.**
+FEATURE_KEYS = frozenset({"generated_columns", "strict_tables",
+                          "preserves_ddl_body", "xinfo_exposes_generated"})
+"""The closed feature vocabulary. Every probe result is a real bool -- round 12
+measured `strict_tables: 1` passing dict equality because Python's `1 == True`,
+while the canonical JSON identity correctly distinguished them, so the
+production predicate and the declared identity disagreed."""
 
-    Round 11, finding 1: three different keys were in use — this five-field one
-    for attestation, `version + source_id` for the one-active check, and the
-    same pair for replacement. Two records agreeing on version and source id but
-    disagreeing on feature probes therefore passed every check. Measured. A
-    single SQLite build cannot have two probe results; if compile options make
-    them genuinely different builds, they are two identities and the one-active
-    policy applies. Either way the artifact is wrong."""
+
+def build_identity(r: dict) -> tuple:
+    """**RuntimeBuildIdentity: which SQLite build this is.**
+
+    Round 12, finding 1: v14 declared one canonical five-field key and then used
+    `(version, source_id)` for replacement anyway — so a record with the same
+    version and source id but *different feature results* was silently replaced,
+    though the spec itself says a source id does not identify compile options.
+    The reviewer's split is adopted: **build identity** (version, source id,
+    canonical typed features) is what one-active enforcement, matching,
+    replacement, attestation and reporting key on; **evidence revision**
+    (manifest algorithm, schema version) is merely which revision of the record
+    format described it."""
     return (r.get("sqlite_version"), r.get("source_id"),
-            json.dumps(r.get("features"), sort_keys=True),
-            r.get("manifest_algorithm"), r.get("schema_version"))
+            json.dumps(r.get("features"), sort_keys=True))
+
+
+def _identity_key(r: dict) -> tuple:
+    """Build identity plus the evidence revision — for exact-duplicate checks."""
+    return build_identity(r) + (r.get("manifest_algorithm"), r.get("schema_version"))
 
 
 def active_records(records=None) -> list:
@@ -251,24 +275,37 @@ def artifact_problems(records=None) -> list:
     # **A half-built union is worse than an honest single-runtime contract**, so
     # the union claim is withdrawn and S-Q7 owns widening it with durable
     # per-runtime attestation.
-    identities = {_identity_key(r) for r in active_records(records)}
+    # **Round 12, finding 3: a malformed CURRENT-algorithm record must poison
+    # the artifact, not be skipped.** A record at an older algorithm is
+    # superseded and ignored; a current-algorithm record that fails validation
+    # is evidence of tampering or generator breakage, and the safe reading of
+    # such an artifact is "unqualified".
+    for r in records:
+        if r.get("manifest_algorithm") != MANIFEST_ALGORITHM:
+            continue
+        for p in runtime_record_problems(r):
+            problems.append(f"current-algorithm record for "
+                            f"{r.get('sqlite_version')!r}: {p}")
+    identities = {build_identity(r) for r in active_records(records)}
     if len(identities) > 1:
         problems.append(
-            f"{len(identities)} active runtime identities recorded "
+            f"{len(identities)} active runtime build identities recorded "
             f"({sorted(i[0] for i in identities)}); `0007` supports exactly one. "
             f"Durable cross-runtime attestation is S-Q7.")
-    # Two records agreeing on version+source_id but differing anywhere else are
-    # not two runtimes -- they are one runtime described inconsistently.
+    # Two current-algorithm records agreeing on version+source_id but differing
+    # on probes are one build described inconsistently -- one build cannot have
+    # two probe results under the same probe definitions.
     by_build = {}
     for r in records:
+        if r.get("manifest_algorithm") != MANIFEST_ALGORITHM:
+            continue
         by_build.setdefault((r.get("sqlite_version"), r.get("source_id")),
-                            set()).add(_identity_key(r))
+                            set()).add(build_identity(r))
     for build, keys in sorted(by_build.items()):
         if len(keys) > 1:
             problems.append(
-                f"runtime {build[0]!r} has {len(keys)} records that agree on "
-                f"version and source id but disagree on probes, algorithm or "
-                f"schema version — one build cannot have two")
+                f"runtime {build[0]!r} has {len(keys)} current-algorithm records "
+                f"that disagree on probes — one build cannot have two")
     for r in records:
         key = _identity_key(r)
         if key in seen:
@@ -284,19 +321,28 @@ def artifact_problems(records=None) -> list:
 
 
 def manifestation_problems(objs: dict, version: int) -> list:
-    """Undeclared persistent objects in a recorded manifestation.
+    """A recorded manifestation must be EXACTLY the declared object set.
 
-    **Round 9, finding 1a: a *self-consistent* fabrication was accepted.** v11
-    only checked that a manifestation hashed to its recorded digest — so adding
-    a trigger AND updating the digest passed, and the trigger became an accepted
-    version-1 shape. Measured.
+    Round 9, finding 1a: a self-consistent fabrication was accepted — hashing
+    proves internal consistency, not provenance, so a manifestation may contain
+    only objects this build declares.
 
-    Hashing proves internal consistency, **not provenance**. This is the
-    independent check the reviewer asked for: a manifestation may contain only
-    objects this build declares, whatever runtime claims to have produced it."""
+    **Round 12, finding 2: "no extras" was only half of "exact".** A record with
+    a *missing* object — including a missing required table — passed the
+    validator once its digest was updated to match, and only the production
+    predicate's separate full-comparison recovered safety. The key set must
+    equal the declaration, and every entry must have the closed field shape."""
     declared = {f"{o.kind}:{o.name}" for o in SCHEMAS[version]}
-    return [f"manifestation for v{version} contains undeclared object {k!r}"
-            for k in sorted(set(objs) - declared)]
+    problems = [f"manifestation for v{version} contains undeclared object {k!r}"
+                for k in sorted(set(objs) - declared)]
+    problems += [f"manifestation for v{version} is missing declared object {k!r}"
+                 for k in sorted(declared - set(objs))]
+    for k, entry in sorted(objs.items()):
+        if not isinstance(entry, dict) or {"type", "table", "sql"} - set(entry):
+            problems.append(f"object {k!r} lacks the closed field structure")
+        elif k.startswith("table:") and not isinstance(entry.get("columns"), list):
+            problems.append(f"table {k!r} has no columns record")
+    return problems
 
 
 def runtime_supported() -> bool:
@@ -324,9 +370,11 @@ def runtime_supported() -> bool:
     for r in records:
         if runtime_record_problems(r):
             continue
-        if not (r["sqlite_version"] == me["sqlite_version"]
-                and r["source_id"] == me["source_id"]
-                and r["features"] == me["features"]):
+        # Canonical build identity, never raw dict equality: `1 == True` in
+        # Python, so a mistyped probe made the two disagree (round 12).
+        if build_identity(r) != build_identity({**me,
+                "manifest_algorithm": MANIFEST_ALGORITHM,
+                "schema_version": SCHEMA_VERSION}):
             continue
         if any(_constructor_digest(int(v)) != d
                for v, d in r["constructor_digests"].items()):
@@ -379,17 +427,22 @@ def write_runtime(force: bool = False) -> int:
             print(p, file=sys.stderr)
         print("refusing to write incomplete runtime evidence", file=sys.stderr)
         return 1
-    # **Re-qualifying a build supersedes its own previous record** -- including
-    # one written under an older manifest algorithm, which is how a bump is
-    # cleared. A record for a *different* build is kept, and then refused by
-    # `artifact_problems()` as a second active identity rather than being
-    # silently replaced (round 11, finding 1). Keying replacement on the full
-    # identity instead deadlocked: the new and superseded records share a build,
-    # so the "one build cannot have two" check blocked the very write that
-    # removes the old one.
-    others = [r for r in qualified_runtimes()
-              if (r.get("sqlite_version"), r.get("source_id"))
-              != (rec["sqlite_version"], rec["source_id"])]
+    # **Replacement is by build identity, with one carve-out for superseded
+    # revisions** (round 12, finding 1). Same build identity -> replaced: that
+    # is a new evidence revision of the same build. Same (version, source_id)
+    # at an OLDER algorithm -> also replaced, because probe definitions may
+    # have changed with the algorithm and the old record is superseded either
+    # way; this is what clears a bump without deadlocking. Same (version,
+    # source_id), CURRENT algorithm, different probes -> kept, and
+    # `artifact_problems()` refuses the contradiction rather than this code
+    # silently deciding which record to believe.
+    def _replaced(r):
+        if build_identity(r) == build_identity(rec):
+            return True
+        return ((r.get("sqlite_version"), r.get("source_id"))
+                == (rec["sqlite_version"], rec["source_id"])
+                and r.get("manifest_algorithm") != MANIFEST_ALGORITHM)
+    others = [r for r in qualified_runtimes() if not _replaced(r)]
     GENERATED.mkdir(parents=True, exist_ok=True)
 
     # **Round 8, finding 3: qualification must be atomic at the artifact level.**
@@ -512,8 +565,10 @@ def build_version_artifact(strict: bool = True) -> dict:
                          "digest": digest(manifest(c), version),
                          "objects": identity(manifest(c))})
         c.close()
-        # **Round 7, finding 4: accepted manifests are the union across every
-        # qualified runtime.** v8 regenerated the current version solely from
+        # *(Historical: round 7's union across qualified runtimes. `0007` now
+        # supports exactly one active build identity; this loop survives so the
+        # attestation refusal below is exercised, and `0013`/S-Q7 own any real
+        # widening.)* v8 regenerated the current version solely from
         # the runtime running the command, so qualifying a second runtime whose
         # DDL differs would mark it qualified while stores it creates were not
         # in MANIFESTS -- and regenerating there would delete the first
