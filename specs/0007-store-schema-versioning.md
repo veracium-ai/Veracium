@@ -1061,10 +1061,10 @@ deleted, and the round-6 disposition went on claiming it was enforced.
 Restored in `validate_schema_registry()` where it belongs — it is a consistency
 condition of `0007`'s own registry, not migration machinery. **S70.**
 
-**And the citation gate now catches that class**: writing the new invariant's
-note as "the former S53" failed the build, because S53 no longer exists. That is
-exactly the drift you found by hand, caught mechanically the first time it
-recurred.
+**And the citation gate caught that class on the first recurrence**: my first
+draft of the new invariant's note named its retired predecessor by identifier,
+and the build failed because that identifier no longer exists. Exactly the drift
+you found by hand — caught mechanically, in the same edit that introduced it.
 
 **Corrections.** The migration-path coverage paragraph is now historical and
 attributed to `0013`; the manifest procedure is constructor-only; a **missing**
