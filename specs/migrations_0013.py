@@ -139,7 +139,14 @@ def apply_migration(conn: sqlite3.Connection, mig: Migration) -> None:
                 raise RuntimeError("migration-protocol: transaction ended "
                                    "mid-migration")
     finally:
-        conn.set_authorizer(None)
+        # Python < 3.11 cannot DISABLE an authorizer: passing None only landed
+        # in 3.11, and on 3.10 it leaves a callback that denies everything —
+        # measured in CI as `not authorized` on every statement after the first
+        # migration, on a matrix version the dev machine does not run. A
+        # permissive callback is equivalent to disabled for this connection,
+        # which §4b already requires to be Veracium-owned with no pre-existing
+        # authorizer.
+        conn.set_authorizer(lambda *_a: sqlite3.SQLITE_OK)
     leaked = [r[0] for r in conn.execute("SELECT name FROM sqlite_temp_master")]
     if leaked:
         raise RuntimeError(f"migration left temporary objects {leaked}")

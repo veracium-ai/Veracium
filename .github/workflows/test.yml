@@ -19,6 +19,13 @@ jobs:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          # full history: specs/render_index.py derives every spec's `updated`
+          # column from `git log -1` on the file, and the STATUS gate compares
+          # the committed index against a fresh render. A depth-1 clone has no
+          # history for files the HEAD commit did not touch, so the render
+          # could never match — 63 consecutive red runs before anyone looked.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
