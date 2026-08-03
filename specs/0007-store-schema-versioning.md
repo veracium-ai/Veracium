@@ -4,7 +4,7 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v12) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
+> **in review (v13) — SCOPE CUT.** Opened 2026-08-01; **narrowed 2026-08-03 on
 > the product owner's decision.** Seven external rounds produced ~63 findings,
 > and the large majority lived in **migration machinery with no users** —
 > `MIGRATIONS` was empty and `SCHEMAS` had one member. **`0007` is now
@@ -19,7 +19,7 @@ Spec-Status: in review
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v12 |
+| **Version** | v13 |
 | **Status** | *see `Spec-Status:` — canonical.* Deliberately small and separable: it is a **prerequisite** of `0013` and of every schema-changing spec, not a part of any of them. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `store/sqlite.py` is guarded and a wrong adoption makes stores unopenable |
@@ -53,12 +53,13 @@ on it.
 **Why it has not bitten yet, stated plainly so the priority is honest:** the
 schema has never changed — and in v3 that is **measured across all 23 released
 versions** (§4a-iv) rather than asserted. This is a latent defect, not a live
-one, **and the next schema change is `0006`**, which is why it is being fixed
+one, **and the next schema change is `0008`'s `confirmations` table**, which is
+why this is being fixed
 now rather than alongside. Landing versioning *with* the change that needs it
 means the migration mechanism gets its first exercise on the same commit that
 first needs to be correct.
 
-**If we do nothing:** `0006` bumps the store shape, an older build opens a newer
+**If we do nothing:** a schema-changing spec bumps the store shape, an older build opens a newer
 store, `CREATE TABLE IF NOT EXISTS` silently no-ops on tables it thinks it
 understands, and reads return partial data with no error. **Silent
 misinterpretation of persisted trust data is the worst failure mode this project
@@ -210,7 +211,7 @@ is a `draft` whose §3 is falsified, and the gate reads a spec's *direct*
 work living inside a source-identity spec. Round 8 caught it. The design work is not lost:
 **seven review rounds of it are preserved in
 `specs/archives/0007-v9-20260803T0056Z.tar.gz`**, and the conclusions that
-survived review are listed in `0006` §0 — the single-step model, declarative
+survived review are listed in `0013` §4 — the single-step model, declarative
 statements rather than callbacks, effects confined to persistent `main` schema,
 capability-not-DDL-text destination validation, and per-path runtime evidence.
 
@@ -228,7 +229,7 @@ empty**. That is not a reflection on the reviews — every finding was real, and
 two were total bypasses. It is a statement about designing a mechanism with no
 users: each round I rewrote code nothing called, and each rewrite introduced a
 defect the next round found. **`0007` now covers what a store needs today**;
-`0006` will carry the rest when it has a concrete migration to hold it to.
+`0013` will carry the rest when it has a concrete migration to hold it to.
 
 ### 4a. The schema manifest — known constructors, not equivalence
 
@@ -478,9 +479,12 @@ and §4-i needs an explicit rule. **S34** simulates a version 2 and proves a
 version-1 store still resolves while HEAD resolves to 2 — the case v4's gate
 could not express.
 
-**This bounds `allow_adopt=True`:** *every store created by a released version
-of veracium resolves to a known schema version.* It says nothing about a store
-another tool wrote.
+**This bounds `allow_adopt=True`, and the bound is narrower than it reads:**
+*every released codebase, probed under the qualified SQLite runtime, produced
+the accepted manifestation.* It says nothing about a store another tool wrote —
+**and nothing about a store a user created under a different SQLite runtime.**
+Such a store is refused unless its actual manifest matches, which is a safety
+property; **the availability of adoption for it is not established.**
 
 **An unbuildable release fails the tool**, because it is a gap in the evidence
 rather than a pass.
@@ -580,9 +584,9 @@ declared schema versions:
 |---|---|
 | `sqlite_version` | the release number |
 | **`sqlite_source_id()`** | **a version names a release, not a build.** Two builds of `3.45.1` can differ in compile options, authorizer availability and DDL support — all of which exact matching leans on |
-| feature probes | **behavioural, not nominal** (round 7, finding 5). v8's `STRICT` probe used invalid SQL — a strict table's column must declare a datatype — so it recorded "unsupported" on a runtime that supports it; the DDL probe only checked that a row existed; the authorizer probe only checked that `set_authorizer` was callable. Each now asserts the property: a valid strict table, **body-preservation of submitted DDL**, every confinement action actually denied, and `table_xinfo` exposing a generated column with a nonzero hidden flag |
+| feature probes | **behavioural, not nominal** (round 7, finding 5), and **only the ones schema matching needs**: a valid strict table, **body-preservation of submitted DDL**, and `table_xinfo` exposing a generated column with a nonzero hidden flag. v8's `STRICT` probe used invalid SQL — a strict table's column must declare a datatype — so it recorded "unsupported" on a runtime that supports it; the DDL probe only checked that a row existed. **The authorizer/confinement probe moved to `0013`** with the code that needs it |
 | constructor digests | the accepted manifest *this runtime produces*, per version — key set **equal to** the declared versions, and non-empty |
-| **migration-path digests** | **DDL rewriting is the reason a version has multiple accepted manifests**, so a runtime agreeing on constructors could still disagree on an `ALTER` path |
+| ~~migration-path digests~~ | **`0013`'s**, not `0007`'s. DDL rewriting is why a version can have several accepted manifests, so a runtime agreeing on constructors could still disagree on an `ALTER` path — but at `SCHEMA_VERSION = 1` there are no paths and this build records none |
 | manifest algorithm, schema version | a record generated under a different algorithm or schema version qualifies nothing |
 
 `runtime_supported()` matches version **and** source id **and** probes, then
@@ -599,7 +603,20 @@ constructor key set was validated while the migration key set was not, so `{}`
 and `{"999": "bad"}` both passed (finding 2, measured). Both key sets must now
 **equal** what the registry declares.
 
-**Accepted manifests are the union across every qualified runtime** (finding 4).
+**`0007` supports exactly one active runtime** (round 10, finding 2). v9
+described accepted manifests as a union across qualified runtimes and v12
+narrowed contribution to records this process reproduces — which made the union
+undescribable: on runtime A only A contributes, on B only B, and nothing
+persists an attestation that A was reproduced by its own job. `write_runtime()`
+then refused a second differing runtime outright, because it required every
+valid prospective manifestation to be in an accepted set that excluded it.
+**A half-built union is worse than an honest single-runtime contract**, so the
+union claim is withdrawn: a second active identity is refused, and **S-Q7 owns
+widening it with durable per-runtime attestation.** The historical reasoning
+that motivated the union follows.
+
+*(Historical, and the reason `MANIFESTS` is a set:)* accepted manifests were
+described as a union across every qualified runtime (round 7, finding 4).
 v8 regenerated the current version solely from the runtime running the command,
 so a second qualified runtime whose DDL differed would be marked qualified while
 the stores it creates were **not** in `MANIFESTS` — and regenerating there would
@@ -634,7 +651,7 @@ loudly. **S-Q7** stays open for the CI matrix that would widen it.
 
 ```python
 SCHEMA_VERSION: int = 1                        # constrained to 1 … 2147483647
-MANIFESTS: dict[int, frozenset[Manifest]]      # generated; a set, because 0006 will add migration outputs
+MANIFESTS: dict[int, frozenset[Manifest]]      # generated; a set, because 0013 will add migration outputs
 LEGACY_BASE_VERSIONS: frozenset[int]           # generated from release evidence
 
 class StoreVersionError(RuntimeError):
@@ -655,7 +672,7 @@ class SqliteStore(Store):
 **`reason` is a closed set** — `"invalid-version"`, `"newer"`,
 `"foreign-shape"`, `"stamped-shape-mismatch"`, `"adoption-refused"`,
 `"locked"`, `"unsupported-sqlite"`. **The three `migration-*` reasons are
-withdrawn with the scope cut — `0006` adds what it needs.** Closed because
+withdrawn with the scope cut — `0013` adds what it needs.** Closed because
 hosts will branch on it — and v6 introduced the last one in the state table
 while leaving it out of this list, so a host branching on the *closed* set would
 have met an undocumented value.
@@ -878,7 +895,7 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S31** canonicalisation preserves quoted-literal semantics | `test_two_literal_variants_are_not_the_same_schema` — **measured today**; they accept opposite values |
 | **S32** a `(type, name)` collision cannot hide an object | `test_a_trigger_named_like_an_index_is_not_mistaken_for_drift` — **measured today**; v4 digested it as clean |
 | **S33** drift repair is followed by **complete revalidation** | `test_repair_revalidates_before_stamping` — digest accepted **and** drift empty |
-| **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today**; the resolver is version-aware even though only one version exists, because `0006` will add the second |
+| **S34** the evidence supports multiple schema versions | `test_a_v1_store_still_resolves_once_head_is_v2` — **measured today**; the resolver is version-aware even though only one version exists, because `0013` will add the second |
 | **S35** post-commit audit failure has the specified result | `test_committed_sink_failure_leaves_the_store_adopted` — raises `PostCommitAuditError`, not `StoreVersionError` |
 | **S36** the runtime is qualified by recorded evidence | `test_this_runtime_is_qualified_or_explicitly_is_not` — version **and** source id **and** probes **and** reproduced constructor digests |
 | **S37** conformance covers rebuildable **DDL** | `test_a_wrong_rebuildable_ddl_fails_conformance` — v5's digest-based S23 passed it |
@@ -894,7 +911,11 @@ DDL *and* policy, S41 covers every authoritative field.
 | **S54** missing legacy evidence authorises nothing | `test_missing_legacy_evidence_authorizes_nothing` — **measured today** |
 | **S55** runtime evidence can actually be written | `test_writing_runtime_evidence_actually_writes` — **measured today**; v7's flag was ignored |
 | **S56** recorded runtimes are internally valid | `test_the_recorded_runtimes_are_internally_valid` (always) · `test_this_runtime_is_qualified_or_explicitly_is_not` (skips) · `test_an_empty_digest_map_does_not_qualify_vacuously` — **measured today** |
-| **S58** an **unattested** runtime contributes nothing | `test_an_unattested_foreign_runtime_contributes_nothing` — **measured today**. The union is real but gated: internal consistency is not provenance |
+| **S58** an **unattested** runtime contributes nothing | `test_an_unattested_foreign_runtime_contributes_nothing` — **measured today**. Internal consistency is not provenance |
+| **S65** the **production predicate** rejects a conflicting artifact | `test_a_conflicting_artifact_disqualifies_the_runtime` · `test_the_recorded_artifact_has_no_conflicts` — **measured today**; v12 checked this only in the generator |
+| **S66** exactly one active runtime identity | `test_two_active_runtime_identities_are_refused` — **measured today**; the union claim is withdrawn |
+| **S67** a failed publish leaves nothing published | `test_a_staging_failure_publishes_nothing` · `test_a_failed_publish_rolls_the_first_file_back` — **measured today**; v12 claimed rollback with no test |
+| **S68** staged temporaries are cleaned up | `test_staged_temporaries_are_not_left_behind` · `test_the_repository_has_no_stray_staged_artifacts` — **measured today**; v12 shipped a `.tmp` in the review package |
 | **S63** a self-consistent fabrication is rejected | `test_a_self_consistent_fabrication_is_rejected` — **measured today**; a manifestation may hold only declared objects |
 | **S64** conflicting runtime identities reject the artifact | `test_conflicting_runtime_identities_reject_the_artifact` · `test_a_duplicate_runtime_record_is_rejected` — **measured today** |
 | **S59** the policy vocabulary is closed | `test_a_policy_typo_is_a_build_error` · `test_a_rebuildable_non_index_is_a_build_error` — **measured today**; a typo disabled validation entirely |
@@ -920,10 +941,12 @@ installing the matching build. **The unacceptable failure is the current one:
 opening and silently misreading.**
 
 **The cost, stated rather than minimised:** this change can make a store that
-opens today refuse to open tomorrow. Under `SCHEMA_VERSION = 1` that population
-should be empty — **and §4a-iv is the evidence, across all 23 releases, rather
-than the assertion v2 offered.** If that evidence is wrong, the blast radius is
-"the application will not start."
+opens today refuse to open tomorrow. **The refused population is not claimed to
+be empty** — §4a-iv establishes only that every released *codebase*, probed
+under the qualified runtime, produced the accepted manifestation. A store
+created under a different SQLite runtime may not match, and would be refused.
+The blast radius of that is "the application will not start", which is loud and
+recoverable by installing a matching build.
 
 **Reversibility, and the limit that cannot be fixed here.** Adoption writes one
 integer and no data, so downgrading to a pre-0007 build works — that build
@@ -932,7 +955,7 @@ ignores `user_version` entirely.
 **That is also the hole.** A build released before 0007 has no version check: it
 ignores the stamp, applies `CREATE TABLE IF NOT EXISTS`, and opens the file.
 **No value stored inside the database can make code that never reads that value
-refuse to open it.** Once `0006` or another schema-changing feature lands,
+refuse to open it.** Once a schema-changing feature lands,
 downgrading to an already-released binary recreates the original failure mode.
 
 **This is unavoidable when retrofitting versioning after releases exist**, and
@@ -1000,66 +1023,64 @@ all. The claim can only ever cover code that performs the check.
 
 ## 9. Brief for the external reviewer
 
-**Round 9 approved the narrowed design and found that two executable guarantees
-were still false.** Both reproduced; both fixed; both re-probed.
+**Round 10 approved the core design and found three narrow defects, all in
+runtime evidence rather than store shape.** All three reproduced; all three
+fixed; plus the four corrections.
 
-**Finding 1 — the bypass was only half closed, and the half I closed was the
-easier half.** v11 verified that a manifestation hashed to its recorded digest.
-**Hashing proves internal consistency, not provenance**, so updating the objects
-*and* the digest together passed — and two records with the *same* runtime
-identity but different constructor output both passed. Measured, both.
+**Finding 1 — the check was in the wrong place.** `artifact_problems()` existed
+and `build_version_artifact()` called it, so **CI would notice a contradictory
+artifact and the store opening it would not.** `runtime_supported()` now
+validates the artifact before evaluating any record, and the always-running test
+asserts at artifact level rather than record by record. **S65.**
 
-Three things now stand between a record and the accepted set:
+**Finding 2 — I described a union I could not build, and then made it
+unreachable.** v9 said accepted manifests are the union across qualified
+runtimes; v12's attestation narrowed contribution to records this process
+reproduces. Those two are incompatible: on runtime A only A contributes, on B
+only B, and nothing persists an attestation that A was reproduced by its own
+job. `write_runtime()` then refused a second differing runtime outright, because
+it required every valid prospective manifestation to be in an accepted set that
+excluded it — your measurement.
 
-| | |
-|---|---|
-| **declared-objects check** | a manifestation may contain only objects this build declares — catches the trigger before provenance is even considered |
-| **artifact-level identity uniqueness** | one SQLite build cannot produce two different constructor outputs; conflicting duplicates **reject the artifact** rather than being resolved, because picking one would be guessing which is the forgery |
-| **attestation** | a record contributes only if this process **reproduces** it. An unattested foreign runtime is recorded and reported, and contributes nothing |
+**I have taken the option you called simplest and safest: `0007` supports
+exactly one active runtime identity.** A second is refused with a message
+pointing at S-Q7, which owns durable per-runtime attestation. The union claim is
+withdrawn and the historical reasoning is kept as history, because it is still
+why `MANIFESTS` is a set. **S66.**
 
-**That last one narrows a feature I shipped in v9.** The cross-runtime union is
-now gated: until a job on that runtime regenerates its record, its manifestation
-is not accepted. **S58 is renamed to what it now tests.** I would rather ship
-the narrower guarantee than keep the broader one that was forgeable.
+*(And `SystemExit` is not an `Exception`, so v12's handler never caught the
+validation failure it was written for. Corrected.)*
 
-**Finding 2 — my atomicity claim was false and I should have tested it.** v11
-caught only `SystemExit`; an ordinary `OSError` from the second write left a
-qualified-but-stale artifact. Reproduced against a simulated disk failure: one
-runtime record published, versions unwritten.
+**Finding 3 — the constructor-only pass, finished.** The runtime-evidence table
+no longer requires migration-path digests or confinement probes; the feature
+probes are scoped to what schema matching needs, with the authorizer probe moved
+to `0013`. The remaining present-tense `0006` statements are `0013` in the
+public contract, the `MANIFESTS` comment, the closed-reason note, S34,
+`schema_evidence`'s docstring and its module comments.
 
-Now: build and validate the complete prospective pair **in memory**, stage both
-temporaries, then rename both back to back, rolling the first back if the second
-fails. Re-probed — the staging failure publishes nothing.
+**On the corrections — one of them was embarrassing and correct.** v12 shipped
+`sqlite_runtimes.json.tmp` **inside the review package**, and the rollback path
+I claimed to have fixed had **no test at all**. Both now covered: staging
+failure, failed second rename, and temp-file lifecycle, plus a repository check
+for stray staged artifacts. **S67, S68.** The claim is narrowed to
+**best-effort working-tree rollback**, with the git commit as the publication
+boundary. And `write_runtime()` reports three categories — attested and
+contributing, recorded but unattested, superseded or invalid — instead of
+counting an unattested foreign record as active.
 
-**And I have stated the residual limit rather than claiming it away**: two
-renames are not one transaction. A crash between them can still leave the pair
-disagreeing. **The honest atomic boundary is the git commit**, and `--check`
-fails on a disagreeing pair. That is the guarantee that actually holds, and it
-is the model you offered as option (b).
-
-**Finding 3.** Ownership is now `0013` throughout — the header, the field
-contracts, the decision table, §4-i, §4f, the claims, the scope-cut disposition
-and `schema_model`'s docstring. Historical passages say v10 *first* moved it to
-`0006`, in the past tense. The acceptance-model wording is constructor-only in
-current sections, with the widening attributed to `0013`.
-
-**Your rulings are recorded, not just followed.** M-Q1 and M-Q3 are struck in
-`0013` §10 with the reasoning attributed. **M-Q1 in particular I had asked and
-you answered against the easier path** — `0013` must be reviewed against
-`0008`'s `confirmations` table before acceptance, which is the same principle
-that produced the cut. The stale-versus-invalid distinction is approved
-directionally and the reporting is fixed: superseded records are counted
-separately and no longer inflate "qualified runtimes".
+**The historical-coverage wording is narrowed in both places it appears.** It
+now says only that every released *codebase*, probed under the qualified
+runtime, produced the accepted manifestation — and states explicitly that a
+store created under a different SQLite runtime may be refused, so **the
+availability of adoption for it is not established.**
 
 **Where I am least confident:**
 
-1. **Attestation makes the single-runtime case safe and leaves the multi-runtime
-   case unbuilt.** A second runtime can be recorded but contributes nothing
-   until CI runs there. That is fail-closed and it also means **S-Q7 is now
-   load-bearing for correctness, not only for compatibility** — as you noted.
-2. **The two-rename window.** I chose to state it rather than restructure into
-   a single artifact. If you think the single-artifact model is worth the churn,
-   say so and I will do it.
+1. **One active runtime is honest but restrictive**, and it makes S-Q7 the
+   gate for something users will hit — not a compatibility nicety. I think that
+   is the right trade at this stage and I would rather you told me it is not.
+2. **Nothing else.** This is the first round where I do not have a second item,
+   which itself makes me want a careful read of §4a-viii.
 
 ## 10. Open questions
 
@@ -1333,3 +1354,22 @@ table**; M-Q3 — the capability comparison belongs in `0013`, and
 `capability_problems()` is already out of `0007`'s kernel. Stale-versus-invalid
 approved directionally. S-Q7 remains a release gate — **and is now load-bearing
 for correctness**, since the matrix is what would attest a second runtime.
+
+---
+
+## 21. Round 10 review disposition
+
+**Verdict: core design approved; v12 deferred.** 3 blocking findings, 4
+corrections. **All taken.**
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the runtime predicate ignores artifact conflicts | **`runtime_supported()` validates the artifact first.** The generator caught it; the store opening a shipped artifact did not. **S65** |
+| 2 | the union cannot be constructed | **one active runtime identity**, a second refused, the union claim withdrawn and S-Q7 given the widening. `SystemExit` also escaped the handler written to catch it. **S66** |
+| 3 | the constructor-only pass is incomplete | migration-path digests and confinement probes out of the runtime table; feature probes scoped to schema matching; every present-tense `0006` ownership statement now `0013` |
+
+**Corrections:** the publication rollback had **no test** and v12 shipped a
+stray `.tmp` inside the review package — both now covered, and the claim
+narrowed to **best-effort working-tree rollback**; reporting distinguishes
+attested / unattested / superseded; and the historical-coverage wording is
+narrowed in both places, with the availability limit stated.

@@ -9,7 +9,7 @@
         "preserves_ddl_body": true,
         "xinfo_exposes_generated": true
       },
-      "manifest_algorithm": 10,
+      "manifest_algorithm": 11,
       "schema_version": 1,
       "constructor_digests": {
         "1": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299"

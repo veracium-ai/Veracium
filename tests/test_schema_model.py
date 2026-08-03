@@ -502,3 +502,93 @@ def test_the_capability_validator_is_not_in_the_0007_kernel():
     caller here. `specs/0013` owns it."""
     import schema_model
     assert not hasattr(schema_model, "capability_problems")
+
+
+# --- round 10: publication and artifact-level checks ----------------------
+
+def _isolate(monkeypatch, tmp_path):
+    """Point the evidence artifacts at a scratch directory."""
+    import schema_evidence as ev
+    monkeypatch.setattr(ev, "GENERATED", tmp_path)
+    monkeypatch.setattr(ev, "RUNTIMES", tmp_path / "sqlite_runtimes.json")
+    monkeypatch.setattr(ev, "VERSIONS", tmp_path / "schema_versions.json")
+    return ev
+
+
+def test_a_conflicting_artifact_disqualifies_the_runtime(monkeypatch):
+    """Round 10, finding 1: `build_version_artifact()` caught the conflict but
+    the production-facing predicate did not — and that is where it matters."""
+    import copy
+
+    import schema_evidence as ev
+    good = ev.build_runtime_record()
+    other = copy.deepcopy(good)
+    other["constructor_digests"] = {"1": "0" * 64}
+    monkeypatch.setattr(ev, "qualified_runtimes", lambda: [good, other])
+    assert not ev.runtime_supported()
+
+
+def test_the_recorded_artifact_has_no_conflicts():
+    """The always-running check, asserted at artifact level rather than
+    record by record."""
+    import schema_evidence as ev
+    assert ev.artifact_problems(ev.qualified_runtimes()) == []
+
+
+def test_two_active_runtime_identities_are_refused():
+    """Round 10, finding 2: `0007` supports exactly one active runtime. The
+    cross-runtime union was described but could not be constructed."""
+    import copy
+
+    import schema_evidence as ev
+    a = ev.build_runtime_record()
+    b = copy.deepcopy(a)
+    b["sqlite_version"] = "9.9.9"
+    assert any("exactly one" in p for p in ev.artifact_problems([a, b]))
+
+
+def test_a_staging_failure_publishes_nothing(monkeypatch, tmp_path):
+    """Round 10: the rollback path had no test at all."""
+    import json
+
+    ev = _isolate(monkeypatch, tmp_path)
+    ev.RUNTIMES.write_text(json.dumps({"runtimes": []}, indent=2) + "\n")
+    real = Path.write_text
+
+    def boom(self, *a, **k):
+        if self.name.startswith("schema_versions"):
+            raise OSError("simulated disk failure")
+        return real(self, *a, **k)
+
+    monkeypatch.setattr(Path, "write_text", boom)
+    assert ev.write_runtime() == 1
+    assert json.loads(ev.RUNTIMES.read_text())["runtimes"] == []
+
+
+def test_a_failed_publish_rolls_the_first_file_back(monkeypatch, tmp_path):
+    import json
+
+    ev = _isolate(monkeypatch, tmp_path)
+    ev.RUNTIMES.write_text(json.dumps({"runtimes": []}, indent=2) + "\n")
+    real = Path.replace
+
+    def boom(self, target):
+        if Path(target).name.startswith("schema_versions"):
+            raise OSError("simulated rename failure")
+        return real(self, target)
+
+    monkeypatch.setattr(Path, "replace", boom)
+    assert ev.write_runtime() == 1
+    assert json.loads(ev.RUNTIMES.read_text())["runtimes"] == []
+
+
+def test_staged_temporaries_are_not_left_behind(monkeypatch, tmp_path):
+    """v12 left `sqlite_runtimes.json.tmp` behind and it shipped in the review
+    package."""
+    ev = _isolate(monkeypatch, tmp_path)
+    assert ev.write_runtime() == 0
+    assert not list(tmp_path.glob("*.tmp")), list(tmp_path.glob("*.tmp"))
+
+
+def test_the_repository_has_no_stray_staged_artifacts():
+    assert not list((ROOT / "specs" / "generated").glob("*.tmp"))

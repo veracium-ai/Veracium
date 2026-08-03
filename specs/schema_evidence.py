@@ -5,7 +5,7 @@ Separated from the schema kernel because git probing and artifact presentation
 should not sit inside the trust boundary (round 5). This module *uses*
 `schema_model`; nothing in `schema_model` depends on it.
 
-**Migrations are out of `0007`'s scope from v10** -- see `specs/0006`. What
+**Migrations are out of `0007`'s scope from v10** -- see `specs/0013`. What
 remains here is constructor output per version, which is what adoption needs.
 
   `--releases --write`  build a store with every released tag's own code and
@@ -42,7 +42,7 @@ RELEASES = GENERATED / "legacy_stores.json"
 VERSIONS = GENERATED / "schema_versions.json"
 RUNTIMES = GENERATED / "sqlite_runtimes.json"
 
-MANIFEST_ALGORITHM = 10
+MANIFEST_ALGORITHM = 11
 
 # Which recorded fields are authoritative (re-derived and compared), which are
 # summaries (recomputed from the authoritative ones), and which are notes.
@@ -72,7 +72,7 @@ def _feature_probes() -> dict:
     except sqlite3.DatabaseError:
         out["generated_columns"] = False
     # No authorizer probe: with migrations out of 0007's scope (v10) nothing
-    # here installs one. `specs/0006` owns migration confinement and should
+    # here installs one. `specs/0013` owns migration confinement and should
     # probe it where it is used.
     # Round 7, finding 5: this probe used `CREATE TABLE s (a) STRICT`, which is
     # invalid -- a strict table's column must declare a datatype. It therefore
@@ -137,6 +137,16 @@ def _stage(path: pathlib.Path, text: str) -> pathlib.Path:
     return tmp
 
 
+def _discard(*tmps) -> None:
+    """Remove staged temporaries. v12 left `sqlite_runtimes.json.tmp` behind and
+    it shipped in the review package (round 10)."""
+    for t in tmps:
+        try:
+            t.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 def runtime_record_problems(r: dict) -> list:
     """Whether a recorded runtime is complete enough to qualify anything.
 
@@ -198,6 +208,14 @@ def _identity_key(r: dict) -> tuple:
             r.get("manifest_algorithm"), r.get("schema_version"))
 
 
+def active_records(records=None) -> list:
+    """Records that are current-algorithm and internally valid."""
+    records = qualified_runtimes() if records is None else records
+    return [r for r in records
+            if r.get("manifest_algorithm") == MANIFEST_ALGORITHM
+            and not runtime_record_problems(r)]
+
+
 def artifact_problems(records=None) -> list:
     """Problems visible only across the whole runtime artifact.
 
@@ -211,6 +229,21 @@ def artifact_problems(records=None) -> list:
     would be guessing which record is the forgery."""
     records = qualified_runtimes() if records is None else records
     problems, seen = [], {}
+    # **Round 10, finding 2: `0007` supports exactly ONE active runtime.**
+    # v12 described a cross-runtime union and could not construct it: on runtime
+    # A only A contributes, on B only B, and nothing persists an attestation
+    # that A was reproduced by its own job. `write_runtime()` then refused a
+    # second differing runtime outright, because it required every valid
+    # prospective manifestation to be in an accepted set that excluded it.
+    # **A half-built union is worse than an honest single-runtime contract**, so
+    # the union claim is withdrawn and S-Q7 owns widening it with durable
+    # per-runtime attestation.
+    identities = {_identity_key(r)[:2] for r in active_records(records)}
+    if len(identities) > 1:
+        problems.append(
+            f"{len(identities)} active runtime identities recorded "
+            f"({sorted(i[0] for i in identities)}); `0007` supports exactly one. "
+            f"Durable cross-runtime attestation is S-Q7.")
     for r in records:
         key = _identity_key(r)
         if key in seen:
@@ -249,8 +282,16 @@ def runtime_supported() -> bool:
     digests all reproduce here. **`specs/0013` adds per-path migration digests**
     when migrations exist -- DDL rewriting is why a version can have several
     accepted manifests -- but at `SCHEMA_VERSION = 1` there are no paths."""
+    records = qualified_runtimes()
+    # **Round 10, finding 1: the production-facing predicate ignored
+    # artifact-level conflicts.** `build_version_artifact()` called
+    # `artifact_problems()`, so CI eventually noticed — but a shipped
+    # contradictory artifact still qualified the runtime at open time, which is
+    # where it matters. Measured.
+    if artifact_problems(records):
+        return False
     me = runtime_identity()
-    for r in qualified_runtimes():
+    for r in records:
         if runtime_record_problems(r):
             continue
         if not (r["sqlite_version"] == me["sqlite_version"]
@@ -344,7 +385,9 @@ def write_runtime(force: bool = False) -> int:
                     raise SystemExit(f"runtime output {prov} @ "
                                      f"{rt['sqlite_version']} is not in the "
                                      f"accepted set")
-    except Exception as exc:                     # validation OR filesystem
+    except (Exception, SystemExit) as exc:      # validation OR filesystem
+        # `SystemExit` is not an `Exception`, so v12's handler never caught
+        # the validation failure it was written for (round 10).
         print(f"qualification refused, artifacts unchanged: {exc}", file=sys.stderr)
         return 1
     finally:
@@ -358,29 +401,35 @@ def write_runtime(force: bool = False) -> int:
         t_rt = _stage(RUNTIMES, json.dumps(prospective, indent=2) + "\n")
         t_vs = _stage(VERSIONS, json.dumps(versions, indent=2) + "\n")
     except OSError as exc:
+        _discard(RUNTIMES.with_suffix(RUNTIMES.suffix + ".tmp"),
+                 VERSIONS.with_suffix(VERSIONS.suffix + ".tmp"))
         print(f"staging failed, nothing published: {exc}", file=sys.stderr)
         return 1
     try:
         t_rt.replace(RUNTIMES)
         t_vs.replace(VERSIONS)
     except OSError as exc:
+        _discard(t_rt, t_vs)
         if saved is None:
             RUNTIMES.unlink(missing_ok=True)
         else:
             RUNTIMES.write_text(saved)
         print(f"publish failed and was rolled back: {exc}", file=sys.stderr)
         return 1
-    active = sum(1 for r in prospective["runtimes"]
-                 if r.get("manifest_algorithm") == MANIFEST_ALGORITHM
-                 and not runtime_record_problems(r))
-    stale = len(prospective["runtimes"]) - active
+    me_key = _identity_key(build_runtime_record())
+    valid = active_records(prospective["runtimes"])
+    attested = sum(1 for r in valid if _identity_key(r) == me_key)
+    unattested = len(valid) - attested
+    stale = len(prospective["runtimes"]) - len(valid)
     # Round 9: superseded records were counted as "qualified". They are not.
+    # Round 10: an internally valid but unattested foreign record was counted
+    # as "active" though it contributes nothing. Three categories, named.
     print(f"recorded {rec['sqlite_version']} ({rec['source_id'][:20]}…) — "
-          f"{active} active, {stale} superseded or invalid; accepted manifests "
-          f"updated")
-    if stale:
-        print(f"note: {stale} record(s) contribute nothing and --check will fail "
-              f"until they are regenerated or removed")
+          f"{attested} attested and contributing, {unattested} recorded but "
+          f"unattested, {stale} superseded or invalid")
+    if unattested or stale:
+        print(f"note: {unattested + stale} record(s) contribute no accepted "
+              f"manifest")
     return 0
 
 
@@ -450,10 +499,9 @@ def build_version_artifact(strict: bool = True) -> dict:
                 continue
             # **Attestation, round 9 finding 1.** A record's objects agreeing
             # with its own digest proves internal consistency, not that the
-            # claimed runtime produced them. Until a CI job attests a foreign
-            # runtime, the only record that may contribute is one this process
-            # can REPRODUCE -- and reproducing means running the constructor
-            # here and getting the same objects.
+            # claimed runtime produced them. The only record that may contribute
+            # is one this process can REPRODUCE -- running the constructor here
+            # and getting the same objects.
             if _identity_key(rt) != _identity_key(build_runtime_record()):
                 print(f"note: runtime {rt.get('sqlite_version')!r} is recorded but "
                       f"not attested by this process; it contributes no accepted "

@@ -55,6 +55,8 @@ REVIEWS = [
          verdict="scope cut approved; deferred; the cut broke 0008's prerequisite", findings=5),
     dict(spec="0007", round=9, kind="external", date="2026-08-03",
          verdict="narrowed design approved; deferred; fabrication and atomicity", findings=3),
+    dict(spec="0007", round=10, kind="external", date="2026-08-03",
+         verdict="core design approved; deferred; artifact conflicts and the unbuildable union", findings=3),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

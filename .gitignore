@@ -15,3 +15,7 @@ site/
 # tamper-evident and lets any holder verify the copy they were sent.
 # Reversing this is one deleted line; un-committing binaries is not.
 specs/archives/*.tar.gz
+
+# staged evidence artifacts — `_stage()` writes these beside their target and
+# renames; one escaped into a review package in v12
+specs/generated/*.tmp
