@@ -1398,6 +1398,7 @@ def _activate(auth):
 def _terminal_payload(**over):
     base = {"outcome": "migrated", "store_changed": True,
             "transaction_committed": True, "resulting_version": 2,
+            "resulting_state": "destination",
             "occurred_at": m13.canonical_timestamp(
                 __import__("datetime").datetime.now(
                     __import__("datetime").timezone.utc))}
@@ -1754,7 +1755,7 @@ def test_the_terminal_validator_rejects_contradictions():
     _activate(auth)
     op = auth.operation_id
     # outcome not in the closed vocabulary
-    with pytest.raises(ValueError, match="closed vocabulary"):
+    with pytest.raises(ValueError, match="not a known terminal outcome"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(outcome="totally-made-up"))
     # completed cannot carry a failure/foreign outcome
@@ -1771,12 +1772,12 @@ def test_the_terminal_validator_rejects_contradictions():
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(store_changed=True,
                                                      transaction_committed=False))
-    # a version that is neither source nor destination
-    with pytest.raises(ValueError, match="neither the source"):
+    # a destination state with a version that is not the destination
+    with pytest.raises(ValueError, match="destination requires version 2"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(resulting_version=999))
-    # a migrated outcome must resolve to the destination
-    with pytest.raises(ValueError, match="destination version"):
+    # a migrated outcome must resolve to the destination version
+    with pytest.raises(ValueError, match="destination requires version 2"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(outcome="migrated",
                                                      resulting_version=1))
@@ -1893,7 +1894,7 @@ def test_the_terminal_validator_rejects_impossible_success_records():
     _activate(auth)
     op = auth.operation_id
     # current must leave the store at the destination version
-    with pytest.raises(ValueError, match="destination version"):
+    with pytest.raises(ValueError, match="destination requires version 2"):
         m13._AUDIT.record_terminal(op, "migration_completed",
             _terminal_payload(outcome="current", store_changed=False,
                               transaction_committed=False, resulting_version=1))
@@ -1908,11 +1909,14 @@ def test_the_terminal_validator_accepts_every_valid_success_cell():
     """The three frozen successful payloads all pass."""
     for payload in (
         dict(outcome="migrated", store_changed=True,
-             transaction_committed=True, resulting_version=2),
+             transaction_committed=True, resulting_version=2,
+             resulting_state="destination"),
         dict(outcome="current", store_changed=False,
-             transaction_committed=False, resulting_version=2),   # no repair
+             transaction_committed=False, resulting_version=2,
+             resulting_state="destination"),                      # no repair
         dict(outcome="current", store_changed=True,
-             transaction_committed=True, resulting_version=2),    # repair
+             transaction_committed=True, resulting_version=2,
+             resulting_state="destination"),                      # repair
     ):
         auth = m13.make_authority(_v1_store())
         _activate(auth)
@@ -1966,7 +1970,8 @@ def test_the_terminal_validator_permits_a_committed_failure():
         __import__("datetime").timezone.utc))
     m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
         dict(outcome="internal-error", store_changed=True,
-             transaction_committed=True, resulting_version=2, occurred_at=ts))
+             transaction_committed=True, resulting_version=2,
+             resulting_state="destination", occurred_at=ts))
 
 
 # --- round 10, finding 4: storage outage vs internal defect ----------------
@@ -2040,3 +2045,200 @@ def test_the_operation_row_schema_check_survives_dash_o():
     # Under -O the assert would vanish; a real raise still fires (some error).
     assert r.returncode == 0, r.stderr
     assert r.stdout.strip()                      # an exception name was printed
+
+
+# ==========================================================================
+# Round 11 regressions
+# ==========================================================================
+
+# --- round 11, finding 1: honest resulting_state, no fabricated version ----
+
+def test_terminal_facts_never_fabricate_a_version_for_missing_or_unknown():
+    """Round 11, finding 1: v12 wrote `resulting_version = from_version` for
+    EVERY non-kernel ending, so a store that was missing or never observed was
+    recorded as sitting at the source version — a fact never established. The
+    honest derivation distinguishes four cells and refuses to invent a version
+    for the two where none is known."""
+    # a committed planner outcome → destination, its version
+    facts = sv.OpenResult("migrated", store_changed=True,
+                          transaction_committed=True, resulting_version=2)
+    dest = m13._terminal_facts("migrated",
+                               {"facts": facts, "observed_version": 1})
+    assert dest == {"store_changed": True, "transaction_committed": True,
+                    "resulting_version": 2, "resulting_state": "destination"}
+    # an ABSENT source → missing, NULL version (not from_version)
+    miss = m13._terminal_facts("migration-source-missing",
+                               {"facts": None, "observed_version": None})
+    assert miss["resulting_state"] == "missing"
+    assert miss["resulting_version"] is None
+    # a source observed under the lock then rolled back → source, its version
+    src = m13._terminal_facts("migration-failed",
+                              {"facts": None, "observed_version": 1})
+    assert src["resulting_state"] == "source"
+    assert src["resulting_version"] == 1
+    # nothing established (locked / unopenable / pre-planner escape) → unknown
+    unk = m13._terminal_facts("migration-locked",
+                              {"facts": None, "observed_version": None})
+    assert unk["resulting_state"] == "unknown"
+    assert unk["resulting_version"] is None
+
+
+def test_a_missing_and_an_unknown_failure_cell_are_legal_terminal_records():
+    """The two null-version cells the honest derivation produces must both be
+    accepted by the terminal contract — a failure can leave the store missing
+    or unobserved, and neither carries a version."""
+    ts = m13.canonical_timestamp(__import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc))
+    for state in ("missing", "unknown"):
+        auth = m13.make_authority(_v1_store())
+        _activate(auth)
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
+            dict(outcome="migration-source-missing", store_changed=False,
+                 transaction_committed=False, resulting_version=None,
+                 resulting_state=state, occurred_at=ts))
+
+
+def test_a_missing_or_unknown_state_rejects_a_non_null_version():
+    """The dual of the rule: a null-version state that carries a version is a
+    contradiction and is refused."""
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    with pytest.raises(ValueError, match="requires a null version"):
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
+            _terminal_payload(outcome="migration-source-missing",
+                              store_changed=False, transaction_committed=False,
+                              resulting_state="missing", resulting_version=1))
+
+
+# --- round 11, finding 3: a named escape is still terminalized --------------
+
+def test_a_package_consistency_error_is_terminalized_and_reraised(monkeypatch):
+    """Round 11, finding 3: a `PackageConsistencyError` raised AFTER the
+    authority is consumed escaped the wrapper without a terminal event, so a
+    consumed operation had no audit record at all. It is now terminalized as
+    `package-inconsistent` and re-raised (§5d)."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def boom(*a, **k):
+        raise sv.PackageConsistencyError("constructor evidence disagrees")
+    monkeypatch.setattr(m13.sv, "open_versioned", boom)
+    with pytest.raises(sv.PackageConsistencyError):
+        m13.migrate_store(p, auth)
+    # The authority was consumed AND a terminal failure event exists.
+    assert auth.operation_id in m13._AUDIT._ops
+    ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+    assert ev is not None
+    assert ev["outcome"] == "package-inconsistent"
+    assert ev["resulting_state"] == "unknown"     # the planner never published
+    assert ev["resulting_version"] is None
+
+
+# --- round 11, finding 4: the published state is deeply immutable -----------
+
+def test_the_published_audit_state_is_deeply_read_only():
+    """Round 11, finding 4: v12's `AuditState` held LIVE dicts exposed via
+    `_ops`, so a held reference could flip an operation to `terminal` and drop
+    its attempted event WITHOUT the single publish, its lock, or validation.
+    Both the containers and the rows are now read-only proxies."""
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    ops, events = m13._AUDIT._ops, m13._AUDIT._events
+    with pytest.raises(TypeError):
+        ops[auth.operation_id] = {}                       # container is frozen
+    with pytest.raises(TypeError):
+        ops[auth.operation_id]["state"] = "terminal"      # rows are frozen too
+    with pytest.raises(TypeError):
+        events[(auth.operation_id, "migration_attempted")]["event"] = "forged"
+
+
+# --- round 11, correction A: a lost activation response is disambiguated ----
+
+@pytest.mark.parametrize("committed,reason", [
+    (True, "migration-quiescence-required"),
+    (False, "migration-audit-unavailable"),
+    (None, "migration-audit-unavailable"),
+])
+def test_a_lost_activation_response_is_mapped_by_its_commit_flag(
+        committed, reason, monkeypatch):
+    """Round 11, correction A: v12 mapped EVERY `AuditStorageUnavailable` to
+    the retryable `migration-audit-unavailable`, so a response lost after a
+    durable activation wrongly invited a retry that then saw `duplicate`. The
+    `committed` flag now decides: proven-written → the authority IS consumed
+    (`migration-quiescence-required`); not-proven / unknown → retryable."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def flaky(a, output_digest):
+        raise m13.AuditStorageUnavailable("response lost", committed=committed)
+    monkeypatch.setattr(m13._AUDIT, "activate", flaky)
+    assert m13.migrate_store(p, auth) == reason
+
+
+# --- round 11, correction B: event_id uniqueness is enforced ----------------
+
+def test_a_repeated_event_id_is_rejected(monkeypatch):
+    """Round 11, correction B: v12 keyed events by `(operation_id, event)` and
+    never checked `event_id`, so a repeated generator produced two events with
+    one primary key. The store now enforces the `event_id` PK. Authorities are
+    minted BEFORE the generator is pinned, so their operation ids stay
+    distinct and it is the event id that collides."""
+    a1 = m13.make_authority(_v1_store())
+    a2 = m13.make_authority(_v1_store())
+    fixed = m13.uuid.UUID("00000000-0000-4000-8000-000000000000")
+    monkeypatch.setattr(m13.uuid, "uuid4", lambda: fixed)
+    _activate(a1)                                # first ev-<fixed> is accepted
+    with pytest.raises(ValueError, match="not unique"):
+        _activate(a2)                            # same id → PK violation
+
+
+# --- round 11, finding 5: every validator total over NESTED malformed JSON --
+
+_NESTED_MUTATIONS = {
+    "schema_versions=null":
+        lambda a: a.update(schema_versions=None),
+    "version-record=null":
+        lambda a: a["schema_versions"].update({"1": None}),
+    "accepted=false":
+        lambda a: a["schema_versions"]["1"].update(accepted=False),
+    "accepted-entry=null":
+        lambda a: a["schema_versions"]["1"]["accepted"].__setitem__(0, None),
+    "accepted-objects=false":
+        lambda a: a["schema_versions"]["1"]["accepted"][0].update(objects=False),
+    "runtime-schema_version={}":
+        lambda a: a["runtimes"][0].update(schema_version={}),
+    "runtime-sqlite_version=[]":
+        lambda a: a["runtimes"][0].update(sqlite_version=[]),
+}
+
+
+@pytest.mark.parametrize("label", list(_NESTED_MUTATIONS))
+def test_every_validator_is_total_over_nested_malformed_json(label):
+    """Round 11, finding 5: v12's validators were total over a malformed
+    top-level CONTAINER but not over malformed NESTED JSON — a
+    `schema_version={}` put a dict in a dedup key (`TypeError` from the kernel
+    at context entry), a null version-record `.get`-crashed the path resolver,
+    an `accepted: false` was iterated as a bool. Every validator now reports a
+    problem list and the artifact is refused; none raises."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    _NESTED_MUTATIONS[label](art)
+    with m13._registry():
+        reports = [fn(art) for fn in (m13.schema_evidence_problems,
+                                      m13.migration_runtime_artifact_problems,
+                                      m13.path_evidence_problems,
+                                      m13.expected_path_problems)]
+    assert all(isinstance(r, list) for r in reports)      # total: never raises
+    assert any(r for r in reports)                        # and the art is refused
+
+
+@pytest.mark.parametrize("label", list(_NESTED_MUTATIONS))
+def test_check_evidence_is_total_over_nested_malformed_json(label, monkeypatch,
+                                                            tmp_path):
+    """And the gate that wraps them returns a clean nonzero, never a
+    traceback, for every nested malformation."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    _NESTED_MUTATIONS[label](art)
+    seeded = tmp_path / "evidence.json"
+    seeded.write_text(json.dumps(art, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
+    assert m13.check_evidence() == 1                       # must NOT raise
