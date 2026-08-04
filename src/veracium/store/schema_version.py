@@ -329,6 +329,8 @@ def active_records(records=None) -> list:
     AttributeError out of a validator that promises problems, not
     exceptions)."""
     records = qualified_runtimes() if records is None else records
+    if not isinstance(records, list):          # round 10: total over any input
+        return []
     return [r for r in records
             if isinstance(r, dict)
             and r.get("manifest_algorithm") == MANIFEST_ALGORITHM
@@ -621,6 +623,8 @@ def active_records(records=None) -> list:
     AttributeError out of a validator that promises problems, not
     exceptions)."""
     records = qualified_runtimes() if records is None else records
+    if not isinstance(records, list):          # round 10: total over any input
+        return []
     return [r for r in records
             if isinstance(r, dict)
             and r.get("manifest_algorithm") == MANIFEST_ALGORITHM
