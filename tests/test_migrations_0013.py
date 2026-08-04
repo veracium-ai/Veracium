@@ -31,6 +31,8 @@ import migrations_0013 as m13  # noqa: E402
 from veracium.store import schema_version as sv  # noqa: E402
 from veracium.store.schema_version import identity, manifest  # noqa: E402
 
+_OP_ID = "op-00000000-0000-4000-8000-000000000000"   # a valid op-<uuid4>
+
 
 def _v1_store(rows: int = 3, stamp: bool = True, extra: str | None = None) -> str:
     p = tempfile.mktemp(suffix=".db")
@@ -1226,11 +1228,11 @@ def test_the_audit_contract_is_frozen():
     assert "migration-audit-unavailable" in m13.MIGRATION_FAILURES
     assert m13.Outcome("migration-audit-unavailable") == \
         "migration-audit-unavailable"
+    facts = m13.TerminalFacts("migrated", 1, 2, True, True, "destination", 2)
     err = m13.MigrationAuditWriteError(
-        committed=True, operation_id="op-x", store_path="/s",
-        resulting_version=2, resulting_state="destination")
+        operation_id=_OP_ID, store_path="/s", facts=facts)
     assert err.committed is True and err.resulting_version == 2
-    assert err.resulting_state == "destination"
+    assert err.resulting_state == "destination" and err.facts is facts
     assert isinstance(err, RuntimeError)
 
 
@@ -1533,7 +1535,7 @@ def test_the_audit_store_rejects_unknown_events_and_payloads():
     with pytest.raises(ValueError, match="fields"):
         m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
                                    {"arbitrary": object})
-    with pytest.raises(ValueError, match="malformed"):
+    with pytest.raises(ValueError, match="resulting_version must be int"):
         m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
                                    _terminal_payload(resulting_version="two"))
 
@@ -2109,17 +2111,21 @@ def test_terminal_facts_never_fabricate_a_version_for_missing_or_unknown():
 
 
 def test_a_missing_and_an_unknown_failure_cell_are_legal_terminal_records():
-    """The two null-version cells the honest derivation produces must both be
-    accepted by the terminal contract — a failure can leave the store missing
-    or unobserved, and neither carries a version."""
+    """The null-version cells the honest derivation produces are all accepted
+    by the terminal contract — a failure can leave the store missing,
+    unaccepted, or unobserved, each with its physically-valid outcome. The
+    `unknown` cell's Booleans are `None` (round 13, finding 1)."""
     ts = m13.canonical_timestamp(__import__("datetime").datetime.now(
         __import__("datetime").timezone.utc))
-    for state in ("missing", "unknown"):
+    for outcome, state, boolean in [
+            ("migration-source-missing", "missing", False),
+            ("migration-source-missing", "unaccepted", False),
+            ("migration-failed", "unknown", None)]:
         auth = m13.make_authority(_v1_store())
         _activate(auth)
         m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
-            dict(outcome="migration-source-missing", store_changed=False,
-                 transaction_committed=False, resulting_version=None,
+            dict(outcome=outcome, store_changed=boolean,
+                 transaction_committed=boolean, resulting_version=None,
                  resulting_state=state, occurred_at=ts))
 
 
@@ -2334,20 +2340,20 @@ def test_the_audit_write_error_carries_and_distinguishes_the_state():
     """Round 12, finding 4: v13's `MigrationAuditWriteError` dropped
     `resulting_state`, so a missing and an unknown ending raised indistinct
     `vNone` errors. Both now carry the state, and its message names it."""
-    miss = m13.MigrationAuditWriteError(
-        committed=False, operation_id="op-x", store_path="/s",
-        resulting_version=None, resulting_state="missing")
-    unk = m13.MigrationAuditWriteError(
-        committed=False, operation_id="op-x", store_path="/s",
-        resulting_version=None, resulting_state="unknown")
+    miss = m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+        facts=m13.TerminalFacts("migration-source-missing", 1, 2, False, False,
+                                "missing", None))
+    unk = m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+        facts=m13.TerminalFacts("migration-failed", 1, 2, None, None,
+                                "unknown", None))
     assert miss.resulting_state == "missing" and unk.resulting_state == "unknown"
     assert "missing" in str(miss) and "unknown" in str(unk)
     assert "vNone" not in str(miss)
     # the same state/version relationship the terminal schema enforces
     with pytest.raises(ValueError, match="requires a null version"):
-        m13.MigrationAuditWriteError(
-            committed=False, operation_id="op-x", store_path="/s",
-            resulting_version=1, resulting_state="missing")
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+            facts=m13.TerminalFacts("migration-source-missing", 1, 2, False,
+                                    False, "missing", 1))
 
 
 def test_a_forced_terminal_write_failure_preserves_the_state(monkeypatch):
@@ -2474,3 +2480,185 @@ def test_a_malformed_event_id_grammar_is_rejected(monkeypatch):
     monkeypatch.setattr(m13.uuid, "uuid4", lambda: FakeUUID())
     with pytest.raises(ValueError, match="ev-<uuid4> grammar"):
         store.activate(auth, "d" * 64)
+
+
+# ==========================================================================
+# Round 13 regressions
+# ==========================================================================
+
+# --- round 13, finding 1: an unconfirmed rollback leaves the facts unknown ---
+
+def test_an_unconfirmed_rollback_never_fabricates_boolean_facts():
+    """Round 13, finding 1: v14 forced `store_changed`/`transaction_committed`
+    to `False` for the unknown cell, asserting no change for a store a failed
+    rollback may have left partially migrated. A rollback whose own result is
+    unconfirmed leaves both facts `None` (unknown)."""
+    rbf = m13._terminal_facts("migration-failed",
+        {"facts": None, "observed_version": 1, "rolled_back": "rollback-failed",
+         "source_absent": False})
+    assert rbf["resulting_state"] == "unknown"
+    assert rbf["store_changed"] is None
+    assert rbf["transaction_committed"] is None
+    # a CONFIRMED rollback of a read-rejection, by contrast, is a known False
+    known = m13._terminal_facts("foreign-shape",
+        {"facts": None, "observed_version": None, "rolled_back": "rolled-back",
+         "source_absent": False})
+    assert known["store_changed"] is False
+
+
+def test_a_tri_state_unknown_terminal_record_is_accepted():
+    """The unknown cell with `None` Booleans is a legal terminal record; a
+    still-`None` pair must not be forced to agree with each other."""
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    ts = m13.canonical_timestamp(__import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc))
+    m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
+        dict(outcome="migration-failed", store_changed=None,
+             transaction_committed=None, resulting_version=None,
+             resulting_state="unknown", occurred_at=ts))
+
+
+# --- round 13, finding 2: post-commit cleanup is internal-error -------------
+
+class _CloseFails:
+    def __init__(self, real):
+        self._real = real
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    def close(self):
+        raise sqlite3.DatabaseError("forced connection-close failure")
+
+
+def test_a_post_commit_cleanup_failure_is_internal_error_not_invalid_store(
+        monkeypatch):
+    """Round 13, finding 2: v14 caught `sqlite3.DatabaseError` across the whole
+    planner+cleanup region, so a `conn.close()` failure AFTER a committed
+    migration was mislabeled `invalid-store` — telling the host to remediate a
+    valid v2 database. A cleanup failure is now `internal-error` carrying the
+    committed destination facts."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13.sqlite3.connect
+
+    def wrapped(*a, **k):
+        conn = real(*a, **k)
+        if a and isinstance(a[0], str) and a[0].startswith("file:"):
+            return _CloseFails(conn)
+        return conn
+    monkeypatch.setattr(m13.sqlite3, "connect", wrapped)
+    out = m13.migrate_store(p, auth)
+    assert out == "internal-error"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 2
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["outcome"] == "internal-error"
+    assert ev["resulting_state"] == "destination"      # committed facts kept
+    assert ev["resulting_version"] == 2
+    assert ev["transaction_committed"] is True
+
+
+# --- round 13, finding 3: lexists() is not proof of absence -----------------
+
+def test_an_unsearchable_existing_store_is_not_proven_missing():
+    """Round 13, finding 3: `os.path.lexists` returns False for a path the
+    process cannot SEARCH to (EACCES on a parent), which v14 treated as a
+    proven-absent `missing`. An unobservable path is now `store-unopenable`,
+    never `missing` — the store never vanished."""
+    import stat as _stat
+    d = tempfile.mkdtemp()
+    sp = os.path.join(d, "store.db")
+    c = sqlite3.connect(sp)
+    for o in m13.SCHEMA_V1:
+        c.execute(o.ddl)
+    c.execute("PRAGMA user_version=1")
+    c.commit()
+    c.close()
+    auth = m13.make_authority(sp)
+    os.chmod(d, 0)                              # remove search permission
+    try:
+        out = m13.migrate_store(sp, auth)
+    finally:
+        os.chmod(d, _stat.S_IRWXU)
+    assert out == "store-unopenable"           # NOT migration-source-missing
+    assert os.path.exists(sp)                  # the store never vanished
+
+
+# --- round 13, finding 4: each outcome permits only its physical states -----
+
+@pytest.mark.parametrize("outcome,state,ok", [
+    ("locked", "source", False),
+    ("migration-source-missing", "source", False),
+    ("invalid-store", "missing", False),
+    ("unsupported-sqlite", "unaccepted", False),
+    ("migrated", "source", False),
+    ("locked", "unknown", True),
+    ("migration-source-missing", "unaccepted", True),
+    ("migration-failed", "source", True),
+    ("migration-evidence-missing", "source", True),
+    ("migrated", "destination", True),
+])
+def test_each_outcome_permits_only_its_physical_states(outcome, state, ok):
+    """Round 13, finding 4: the terminal validator relates the OUTCOME to the
+    states it can physically reach, not just effect/state — v14 accepted
+    `locked`+source, `invalid-store`+missing and the like."""
+    ver = {"source": 1, "destination": 2}.get(state)
+    ch = (state == "destination")
+    facts = m13.TerminalFacts(outcome, 1, 2, ch, ch, state, ver)
+    problems = facts.problems()
+    if ok:
+        assert not problems, problems
+    else:
+        assert any("permits resulting_state" in p for p in problems), problems
+
+
+# --- round 13, finding 5: one validated TerminalFacts, shared ---------------
+
+def test_the_write_error_enforces_the_full_terminal_relationship():
+    """Round 13, finding 5: v14's `MigrationAuditWriteError` validated only the
+    null-version rule — a subset of the record's contract — so it accepted a
+    committed `source`, a `destination` at the wrong version, and a non-bool
+    `committed`. It now shares one validated `TerminalFacts`, so its contract is
+    exactly as strong as the record's."""
+    # a non-bool commit fact
+    with pytest.raises(ValueError):
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+            facts=m13.TerminalFacts("migrated", 1, 2, 1, 1, "destination", 2))
+    # a destination that does not carry the destination version
+    with pytest.raises(ValueError, match="destination requires version"):
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+            facts=m13.TerminalFacts("migrated", 1, 2, True, True,
+                                    "destination", 999))
+    # a committed operation claiming the source state
+    with pytest.raises(ValueError):
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+            facts=m13.TerminalFacts("migrated", 1, 2, True, True, "source", 1))
+    # operation_id grammar is validated
+    with pytest.raises(ValueError, match="op-<uuid4>"):
+        m13.MigrationAuditWriteError(operation_id="op-x", store_path="/s",
+            facts=m13.TerminalFacts("migrated", 1, 2, True, True,
+                                    "destination", 2))
+
+
+def test_the_record_and_the_exception_share_one_validator():
+    """The same `TerminalFacts.problems()` gates both carriers — a fact set the
+    record rejects, the exception rejects, and vice versa."""
+    bad = m13.TerminalFacts("migrated", 1, 2, True, True, "source", 1)
+    assert bad.problems()                                   # the shared verdict
+    with pytest.raises(ValueError):                         # exception carrier
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+                                     facts=bad)
+
+
+# --- round 13, correction A: operation-row paths reject embedded NULs -------
+
+@pytest.mark.parametrize("badpath", ["\x00bad", "bad\x00path"])
+def test_the_operation_row_rejects_embedded_nul_paths(badpath):
+    """Round 13, correction A: a canonical filesystem path cannot contain an
+    embedded NUL; the audit boundary rejects it rather than storing an unusable
+    path."""
+    auth = m13.make_authority(_v1_store())
+    store = m13.DraftAuditStore()
+    with pytest.raises(ValueError, match="NUL"):
+        store._operation_row(auth._replace(store_path=badpath), "d" * 64)

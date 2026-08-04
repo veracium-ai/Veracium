@@ -5,30 +5,28 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v14)** — round 12: *architecture standing; v13 deferred on five
+> **in review (v15)** — round 13: *architecture standing; v14 deferred on five
 > load-bearing gaps in the audit reference plus three corrections*. All taken;
 > concrete migration, evidence-selection key, release identity, source
 > binding, one-snapshot reader, TEMP confinement and ordinary planner states
-> untouched, and the evidence artifact reproduces byte-for-byte: **`source`
-> requires a CONFIRMED rollback** — the kernel now PUBLISHES the `ROLLBACK`
-> outcome through `on_rolled_back` (v13 discarded it, so the audit asserted the
-> source version for a store a failed rollback left partially migrated); **an
-> existing empty store is `unaccepted`, not `missing`** — `missing` is reserved
-> for a path proven absent (v13 collapsed a vanished file with a valid empty
-> database); **the unknown activation state is a distinct closed outcome** —
-> `migration-audit-state-unknown` for `committed=None` (query the durable
-> operation first), and `committed` defaults to `None`, never a fabricated
-> `False`; **`MigrationAuditWriteError` carries `resulting_state`** so a missing
-> and an unknown ending are distinguishable; and **every validator is total
-> under RECURSIVE nested mutation** — key construction is guarded by the
-> constructed key's hashability (v13 guarded seven known locations, not
-> recursively). The operation row validates field types and freezes deeply, and
-> the `event_id` grammar is enforced.
+> untouched, and the evidence artifact reproduces byte-for-byte: **the commit
+> and change facts are TRI-STATE** — a rollback that itself failed leaves
+> `store_changed`/`transaction_committed` `None`, never a fabricated `False`
+> that asserts no change for a possibly-partial store (finding 1); **a
+> post-commit cleanup error is `internal-error`, not `invalid-store`** — SQLite
+> exceptions are classified by PHASE (finding 2); **only a proven absence is
+> `missing`** — the presence check is `os.lstat`, and an unsearchable path is
+> `store-unopenable`, not a fabricated `missing` (finding 3); **each outcome
+> permits only its physically-reachable states** — `locked`+source and the like
+> now reject (finding 4); and **the terminal record and
+> `MigrationAuditWriteError` share ONE validated `TerminalFacts`**, so the
+> exception's contract is exactly as strong as the record's (finding 5). The
+> operation row rejects embedded-NUL paths; stale state wording is reconciled.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v14 |
+| **Version** | v15 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -531,13 +529,14 @@ invalid-SQL and free-form-string escapes.)
 |---|---|
 | a malformed CALL — mistyped/out-of-range `busy_timeout_ms` (exact int, 1..600000), a non-pathlike path argument | `invalid-request` |
 | the path cannot be opened, canonicalized or represented at all — missing parent, embedded NUL, over 4096 bytes | `store-unopenable` |
-| the bytes are not readable as a SQLite database | `invalid-store` |
+| the bytes are not readable as a SQLite database **WHILE being read/interpreted** | `invalid-store` — classified by PHASE, not exception superclass (round 13, finding 2: v14 caught `sqlite3.DatabaseError` across the whole planner+cleanup region, so a `conn.close()` failure after a committed migration was mislabeled `invalid-store`). A SQLite error from connection cleanup, or after committed facts were published, is `internal-error` carrying the committed facts |
 | lock acquisition exhausted | `locked` |
 | unqualified schema- or migration-runtime; malformed or poisoned schema/runtime evidence — **at any nesting depth** | `unsupported-sqlite` |
 | source not an accepted manifestation | `stamped-shape-mismatch` / `foreign-shape` |
 | invalid, unbound, expired, consumed, retargeted, cross-build or evidence-unbound authority | `migration-quiescence-required` |
-| the dedicated operation finds no source where its authority attests one — vanished file, empty or truncated replacement, nonexistent path | `migration-source-missing` (the path stays uncreated) |
-| the attempted audit record cannot be written (production) | `migration-audit-unavailable` — nothing consumed, no store access |
+| the dedicated operation finds no source where its authority attests one — vanished file, empty or truncated replacement | `migration-source-missing` (the path stays uncreated). Absence is proven by an `lstat` ENOENT, NEVER by `os.path.lexists` (round 13, finding 3: `lexists` returns False for a path the process cannot SEARCH to, which is `unknown`/`store-unopenable`, not proven-absent `missing`) |
+| the attempted audit record is PROVEN not written (production) | `migration-audit-unavailable` — nothing consumed, no store access, safe to retry |
+| the attempted audit record write is UNKNOWN — neither confirmed nor disproved (production) | `migration-audit-state-unknown` — the authority MAY be consumed; the host queries the durable `operation_id` before retrying (round 12, finding 3) |
 | absent, ambiguous, malformed, foreign or non-matching path evidence | `migration-evidence-missing` |
 | SQL execution or protocol failure during the migration | `migration-failed` |
 | executed output differs from the recorded output | `migration-result-mismatch` |
@@ -630,57 +629,68 @@ table's `event_id` PRIMARY KEY would. The rules:
 |---|---|
 | duplicate operation id on activation | the authority IS consumed — `migration-quiescence-required` (round 7 split this from the outage case v8 conflated) |
 | audit storage unavailable before activation (the typed `AuditStorageUnavailable` ONLY) | its `committed` flag maps to THREE structurally distinct outcomes (round 11, correction A + round 12, finding 3: v13 collapsed `False` and `None` into one retryable outcome, and DEFAULTED `committed` to `False` so an omitted fact was fabricated as proven-not-written). `committed=False` (PROVEN not written) → **`migration-audit-unavailable`**, nothing consumed, a retry may safely re-present the authority. `committed=None` (UNKNOWN — the default; an omitted fact is never a fabricated `False`) → **`migration-audit-state-unknown`**, the authority MAY be consumed, so the host must query the durable `operation_id` before retrying. `committed=True` (the row WAS written, response lost) → the authority IS consumed → **`migration-quiescence-required`**, mint a fresh one. **A library/validation defect during activation is NONE of these** — it is `internal-error` (round 10, finding 4: v11 mislabelled an `AssertionError` as retryable) |
-| migrated and committed, terminal write fails | **`MigrationAuditWriteError(committed=True, resulting_version, resulting_state)`** — the facts come from the kernel's `OpenResult` (`store_changed`, `transaction_committed`, `resulting_version`), NEVER inferred from the outcome string (round 8, finding 3: v9 read `resulting_version` from the label and reported v1 for a lost-race `current` whose store was already v2); a retry opens `current`. The exception carries the SAME `resulting_state`/`resulting_version` pair as the terminal record (round 12, finding 4: v13 dropped `resulting_state`, so a missing and an unknown ending raised indistinguishable `vNone` errors precisely when the durable record could not be written). Mirrors `0007` §4e |
-| failed, terminal write fails | **`MigrationAuditWriteError(committed=…, resulting_state, resulting_version)`** carrying the honest post-failure state. **`committed=False` does NOT prove the store is unchanged** (round 12, finding 4): a rollback-failed or never-observed store is `unknown`/`unaccepted`/`missing`, not `source` — the `resulting_state` says which |
+| terminal write fails (any consumed ending) | **`MigrationAuditWriteError(operation_id, store_path, facts)`** carrying the SAME validated `TerminalFacts` the record would have held (round 13, finding 5: v14's exception validated only the null-version rule — a subset — so it accepted a committed `source` and a `destination` at the wrong version). `facts.transaction_committed` (tri-state) drives the retry decision, and `facts.resulting_state` says which of `destination`/`source`/`missing`/`unaccepted`/`unknown` the store actually is — `False`/`None` do NOT prove it unchanged (round 12, finding 4). The facts come from the kernel's `OpenResult`, never inferred from the outcome string (round 8, finding 3). Mirrors `0007` §4e |
 | `current` with no repair | terminal record written (outcome `current`); a terminal-write failure is `committed=False` — nothing changed |
 | `current` with a committed rebuildable repair | the repair transaction committed: a terminal-write failure is `committed=True`, resulting version unchanged. The kernel's `OpenResult.transaction_committed` carries this fact (round 8) — the draft demonstrates it; **the production planner must report the same fact if it repairs in a separate transaction** (§5e implementation obligation) |
 | every consumed outcome, INCLUDING a named escape | writes its terminal event — a spent authority with no record is indistinguishable from a crash. Round 11, finding 3: a `PackageConsistencyError` raised after consumption escaped the wrapper WITHOUT a terminal event; it is now terminalized as the audit-only outcome `package-inconsistent` and re-raised (§5d). The one escape NOT terminalized is `MigrationAuditWriteError` — it IS the terminal-write failure. Executable in the draft: `DraftAuditStore` implements both tables, atomic activation, and terminal records measured for `migrated`, the no-op `current`, `current`-with-repair, the rolled-back cell and the terminalized named escape |
 
-**The terminal record is the EXACT per-cell contract** (round 10, findings
-2–3: v11 accepted impossible success records like `current`/v1 and
-`migrated`/no-change, and could not record a post-commit failure because
-every failed event was forced to the source version). A terminal payload is
-`outcome` · `store_changed` · `transaction_committed` · `resulting_version` ·
-`resulting_state` · `occurred_at`. **`resulting_state` distinguishes the
-OBSERVED store state from the operation's effect** (round 11, finding 1: v12
-wrote `resulting_version = from_version` for every non-kernel ending, so a
-store that was MISSING or never observed was recorded as sitting at the
-source version — a fact never established). It is one of `destination`,
-`source`, `missing`, `unaccepted`, `unknown`, and it FIXES the version:
-`destination` → `to_version`, `source` → `from_version`, and the three
-null-version states → NULL. **The three null-version states are DISTINCT
-physical realities** (round 12, finding 2: v13 recorded `missing` for an
-existing, valid, empty SQLite database — a materially different recovery
-action from a vanished file): `missing` (a path PROVEN absent), `unaccepted`
-(a store EXISTS and opened but is not an accepted source), `unknown` (never
-observed, OR a rollback that was not confirmed to have restored the source).
-Exactly these cells are valid:
+**The terminal record is the EXACT per-cell contract, validated through ONE
+`TerminalFacts` value shared with `MigrationAuditWriteError`** (round 13,
+finding 5: v14's exception validated only the null-version rule — a strict
+subset of the record's contract — so it accepted a committed `source` and a
+`destination` at the wrong version; the two carriers now share
+`TerminalFacts.problems()`, so the exception is exactly as strong as the
+record it replaces). A terminal payload is `outcome` · `store_changed` ·
+`transaction_committed` · `resulting_version` · `resulting_state` ·
+`occurred_at`, over the endpoints (`from_version`, `to_version`) the operation
+row carries.
+
+**`store_changed` and `transaction_committed` are TRI-STATE** — `True`,
+`False`, or `None` (unknown) (round 13, finding 1: v14 forced them to `False`
+for the unknown cell, ASSERTING no change for a store a failed rollback may
+have left partially migrated). They are `None` only when genuinely unknown — a
+rollback ATTEMPTED and FAILED; a confirmed rollback or a never-entered
+transaction is a known `False`.
+
+**`resulting_state` is one of `destination`, `source`, `missing`,
+`unaccepted`, `unknown`, and it FIXES the version**: `destination` →
+`to_version`, `source` → `from_version`, the three null-version states → NULL.
+Those three are DISTINCT physical realities (round 12, finding 2): `missing`
+(a path PROVEN absent), `unaccepted` (a store EXISTS and opened but is not an
+accepted source), `unknown` (never observed, or a rollback not confirmed to
+have restored the source).
+
+**Each outcome permits only the states it can PHYSICALLY reach** (round 13,
+finding 4: v14 froze effect/state relationships but not the outcome/state
+relationship, so it accepted `locked`+source, `invalid-store`+missing,
+`unsupported-sqlite`+unaccepted). The states are the union over every site the
+outcome can be raised from — an in-hook refusal fires after the source is
+observed and rolled back (→ `source`) or with an unconfirmed rollback (→
+`unknown`):
 
 ```
-migrated             changed · committed · destination · to_version
-current (no repair)  ¬changed · ¬committed · destination · to_version
-current (repair)     changed · committed · destination · to_version
-failed, rolled back  ¬changed · ¬committed · source · from_version       (rollback CONFIRMED)
-failed, post-commit  changed · committed · destination · to_version   (round 10)
-failed, no store     ¬changed · ¬committed · missing · NULL            (round 11; path absent)
-failed, empty store  ¬changed · ¬committed · unaccepted · NULL         (round 12)
-failed, unobserved   ¬changed · ¬committed · unknown · NULL            (round 11/12; incl. rollback unconfirmed)
+migrated / current              → destination
+migration-source-missing        → missing | unaccepted
+migration-failed / -result-mismatch / -evidence-missing / -quiescence-required
+                                → source | unknown
+stamped-shape-mismatch          → source | unknown
+internal-error                  → destination | source | unknown
+package-inconsistent            → unknown
+any kernel read-rejection       → unknown   (foreign-shape, newer, locked,
+  (the default)                              unsupported-sqlite, store-unopenable,
+                                             invalid-store)
 ```
 
-The unifying invariants: `store_changed == transaction_committed` (a disk
-change is exactly a commit); a committed change leaves the store at the
-`destination`; a `migration_completed` leaves the store at the destination; a
-`migration_failed` leaves the `source` ONLY after a CONFIRMED rollback
-re-established it on an observed store (round 12, finding 1: v13 claimed
-`source` from `observed_version` alone, but the kernel discarded the
-`ROLLBACK` result, so a rollback that itself failed left the store partially
-migrated — the kernel now PUBLISHES the rollback outcome and an unconfirmed
-rollback is `unknown`), the `destination` IF it committed before the defect
-(so a post-commit `internal-error` is recordable, `committed=True`, at the
-destination), and `missing`/`unaccepted`/`unknown` with a NULL version when
-the store was absent, unaccepted, or never established — v12's `from_version`
-fabrication is refused. Every `outcome` is a closed member. `event_id` is the
-`ev-<uuid4>` grammar; the `state` transitions `attempted → terminal` by
+The unifying invariants: `store_changed == transaction_committed` **when both
+are KNOWN** (an unknown pair is not forced to agree); a KNOWN committed change
+(`store_changed is True`) leaves the store at the `destination`; a
+`migration_completed` leaves the store at the destination; a `migrated`
+operation must have changed and committed; a `migration_failed` leaves the
+`source` ONLY after a CONFIRMED rollback on an observed store (round 12,
+finding 1), the `destination` if it committed before a post-commit defect, and
+`missing`/`unaccepted`/`unknown` with a NULL version otherwise. Every
+`outcome` is a closed member. `event_id` is the `ev-<uuid4>` grammar; the
+`state` transitions `attempted → terminal` by
 compare-and-set.
 
 Every timestamp — `issued_at`, `expires_at`, `attempted_at`, `occurred_at` —
@@ -750,7 +760,7 @@ tests at implementation.
 | **M45** the terminal validator freezes the exact per-cell contract, including the post-commit failure | `test_the_terminal_validator_rejects_impossible_success_records` · `test_the_terminal_validator_accepts_every_valid_success_cell` · `test_a_post_commit_failure_records_the_destination_version` · `test_the_terminal_validator_permits_a_committed_failure` — **measured today** |
 | **M46** only a typed storage outage is retryable; a library defect is `internal-error` | `test_an_internal_activation_defect_is_not_a_storage_outage` · `test_a_typed_storage_outage_is_retryable` — **measured today** |
 | **M47** every evidence validator and `--check-evidence` is total over malformed JSON containers | `test_check_evidence_is_total_over_malformed_list_fields` (15 combinations) · `test_the_artifact_validators_are_total_over_non_lists` — **measured today** |
-| **M48** the terminal record carries `resulting_state`, and missing/unknown stores are recorded without a fabricated version | `test_terminal_facts_never_fabricate_a_version_for_missing_or_unknown` · `test_a_missing_and_an_unknown_failure_cell_are_legal_terminal_records` · `test_a_missing_or_unknown_state_rejects_a_non_null_version` — **measured today**; `resulting_state` ∈ {destination, source, missing, unknown} fixes the version, and v12's `from_version` fabrication is refused |
+| **M48** the terminal record carries `resulting_state`, and missing/unaccepted/unknown stores are recorded without a fabricated version | `test_terminal_facts_never_fabricate_a_version_for_missing_or_unknown` · `test_a_missing_and_an_unknown_failure_cell_are_legal_terminal_records` · `test_a_missing_or_unknown_state_rejects_a_non_null_version` — **measured today**; `resulting_state` ∈ {destination, source, missing, unaccepted, unknown} fixes the version, and v12's `from_version` fabrication is refused |
 | **M49** every committing branch delivers its `OpenResult` to `on_committed` BEFORE the post-commit cleanup | `test_on_committed_delivers_the_committed_result_before_cleanup` (kernel) — **measured today**; a forced `isolation_level`-restore failure cannot erase a proven commit, closing v12's discard-on-cleanup path |
 | **M50** a named escape after consumption is terminalized and re-raised | `test_a_package_consistency_error_is_terminalized_and_reraised` — **measured today**; a `PackageConsistencyError` records `package-inconsistent` and re-raises, so no consumed operation lacks a terminal event |
 | **M51** the published audit state is deeply read-only and `event_id` is unique | `test_the_published_audit_state_is_deeply_read_only` · `test_a_repeated_event_id_is_rejected` — **measured today**; containers and rows are read-only proxies and a repeated `event_id` is refused as the PK it stands in for |
@@ -760,6 +770,11 @@ tests at implementation.
 | **M55** the unknown activation state is structurally distinct and `committed` defaults to unknown | `test_a_lost_activation_response_is_mapped_by_its_commit_flag` (None → `migration-audit-state-unknown`) · `test_the_committed_flag_defaults_to_unknown_and_is_typed` — **measured today** (round 12, finding 3) |
 | **M56** `MigrationAuditWriteError` preserves `resulting_state`/`resulting_version` | `test_the_audit_write_error_carries_and_distinguishes_the_state` · `test_a_forced_terminal_write_failure_preserves_the_state` — **measured today**; a missing and an unknown ending are distinguishable, message names the state (round 12, finding 4) |
 | **M57** every validator is total under RECURSIVE nested mutation; the operation row validates types and freezes deeply; the `event_id` grammar is enforced | `test_every_validator_is_total_under_recursive_nested_mutation` (>5000 combinations) · `test_the_specific_nested_key_escapes_are_closed` · `test_the_operation_row_validates_field_types` · `test_a_published_row_does_not_alias_caller_mutable_state` · `test_a_malformed_event_id_grammar_is_rejected` — **measured today** (round 12, finding 5 + corrections A, B) |
+| **M58** an unconfirmed rollback never fabricates Boolean change/commit facts | `test_an_unconfirmed_rollback_never_fabricates_boolean_facts` · `test_a_tri_state_unknown_terminal_record_is_accepted` — **measured today**; the unknown cell's `store_changed`/`transaction_committed` are `None`, not a fabricated `False` (round 13, finding 1) |
+| **M59** a post-commit SQLite cleanup failure is `internal-error`, not `invalid-store`, and keeps the committed facts | `test_a_post_commit_cleanup_failure_is_internal_error_not_invalid_store` — **measured today**; SQLite errors are classified by PHASE, not exception superclass (round 13, finding 2) |
+| **M60** only a proven absence (`lstat` ENOENT) is `missing`; an unsearchable path is `store-unopenable` | `test_an_unsearchable_existing_store_is_not_proven_missing` — **measured today**; `os.path.lexists` is not proof of absence (round 13, finding 3) |
+| **M61** each terminal outcome permits only the resulting_states it can physically reach | `test_each_outcome_permits_only_its_physical_states` (10 combinations) — **measured today**; `locked`+source, `invalid-store`+missing and the like reject (round 13, finding 4) |
+| **M62** the terminal record and `MigrationAuditWriteError` share ONE validated `TerminalFacts`; operation-row paths reject embedded NULs | `test_the_write_error_enforces_the_full_terminal_relationship` · `test_the_record_and_the_exception_share_one_validator` · `test_the_operation_row_rejects_embedded_nul_paths` — **measured today** (round 13, finding 5 + correction A) |
 
 ---
 
@@ -805,55 +820,52 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 13 of this spec. All five round-12 blockers and all three additional
-corrections taken; every probe reproduced first** — the failed rollback
-recorded as a confirmed `source`, the `missing` state conflating an absent
-path with an existing empty database, the `committed=None` collapsed into the
-proven-not-written outcome (and defaulting unsafely to `False`), the
-`MigrationAuditWriteError` that dropped `resulting_state`, and the validators
-still non-total over nested unhashable KEY fields. Per your v13 bar the
-concrete migration, evidence-selection key, release identity, source binding,
-one-snapshot reader, TEMP confinement and ordinary planner states are
-untouched; the evidence artifact reproduces byte-for-byte (no probe vocabulary
-changed).
+**Round 14 of this spec. All five round-13 blockers and all three additional
+corrections taken; every probe reproduced first** — the unknown cell still
+asserting `store_changed=False`/`committed=False`, the post-commit `conn.close`
+error mislabelled `invalid-store`, `os.path.lexists` treated as proof of
+absence, the terminal validator accepting impossible outcome/state pairs, and
+`MigrationAuditWriteError` enforcing only a subset of the record's contract.
+Per your v14 bar the concrete migration, evidence-selection key, release
+identity, source binding, one-snapshot reader, TEMP confinement and ordinary
+planner states are untouched; the evidence artifact reproduces byte-for-byte
+(no probe vocabulary changed).
 
-1. **A confirmed rollback is required for `source`** (finding 1): the kernel's
-   failure handler no longer discards the `ROLLBACK` result — it PUBLISHES it
-   through an infallible `on_rolled_back` sink (`rolled-back` /
-   `rollback-failed`), symmetric with `on_committed`. The wrapper records
-   `source` ONLY after a confirmed rollback on an observed store; an
-   unconfirmed rollback is `unknown`. A kernel regression forces `ROLLBACK` to
-   fail and proves the audit never asserts `source`.
-2. **Absent, unaccepted and unobserved are distinct** (finding 2): `missing`
-   is now reserved for a path PROVEN absent. An existing store that is not an
-   accepted source — a valid empty database, your exact probe — records
-   `unaccepted`, a materially different recovery action. Regressions cover the
-   absent path, the zero-byte/empty valid database, and the unobserved ending.
-3. **Unknown activation state is structurally distinct** (finding 3): a new
-   closed outcome `migration-audit-state-unknown` carries the `committed=None`
-   case — the host must query the durable `operation_id` before retrying —
-   separate from the proven-not-written `migration-audit-unavailable`. And
-   `AuditStorageUnavailable.committed` now DEFAULTS to `None` and is typed
-   `bool | None`: an omitted fact is unknown, never a fabricated `False`.
-4. **The write error carries `resulting_state`** (finding 4):
-   `MigrationAuditWriteError` gains `resulting_state` and a `resulting_version`
-   that may be `None`, validated against the same state/version relationship as
-   the terminal schema. A missing and an unknown ending are now distinguishable,
-   and the message names the state instead of rendering `vNone`. The
-   documentation no longer claims `committed=False` proves the store unchanged.
-5. **Every validator total under RECURSIVE nested mutation** (finding 5): the
-   fix is no longer a list of known locations — key construction is guarded by
-   the CONSTRUCTED KEY's hashability, which is total over any malformed
-   component at any depth (your `runtime.source_id={}` and accepted-manifest
-   `digest={}` included). A recursive walk of every artifact node × wrong-typed
-   values — 11,418 field/value combinations × four validators — raises nothing.
+1. **An unknown rollback fabricates no Boolean facts** (finding 1):
+   `store_changed`/`transaction_committed` are now TRI-STATE — `True`, `False`,
+   or `None`. A rollback ATTEMPTED and FAILED leaves both `None` (the store may
+   be partial); a confirmed rollback or a never-entered transaction is a known
+   `False`. The unknown cell no longer asserts a change did not happen.
+2. **Post-commit cleanup is `internal-error`, not `invalid-store`** (finding
+   2): SQLite exceptions are classified by PHASE. A `DatabaseError` from
+   connection cleanup, or after committed facts were published, is
+   `internal-error` carrying the committed destination facts; `invalid-store`
+   is only for bytes that fail WHILE being read. Your forced `conn.close`
+   failure after a committed v2 migration now reports `internal-error`/v2.
+3. **Only a proven absence is `missing`** (finding 3): the presence check is
+   `os.lstat`, not `os.path.lexists`. An explicit `FileNotFoundError` (ENOENT)
+   is `missing`; a path the process cannot search to (`EACCES`, your probe) is
+   `store-unopenable` — never a fabricated proven-absent `missing`.
+4. **Each outcome permits only its physical states** (finding 4): the validator
+   now relates the outcome to the states it can reach. `locked`+source,
+   `migration-source-missing`+source, `invalid-store`+missing and
+   `unsupported-sqlite`+unaccepted all reject; the legal pairs (an in-hook
+   refusal after a rolled-back observe → `source`; a post-commit
+   `internal-error` → `destination`) accept.
+5. **One validated `TerminalFacts`, shared** (finding 5): the terminal record
+   and `MigrationAuditWriteError` are built from and validate through the SAME
+   immutable `TerminalFacts` — outcome, endpoints, tri-state commit/change,
+   state and version. The exception now rejects a committed `source`, a
+   `destination` at the wrong version, a non-bool commit fact, and a malformed
+   `operation_id`, exactly as the record does.
 
-**Additional corrections**: (A) the audit store validates every operation-row
-field's TYPE and grammar (not just the name set — v13 accepted `backup_ref=[]`)
-and freezes each value DEEPLY, so no caller-held list aliases a published row.
-(B) the `event_id` GRAMMAR is enforced before publication, not only its
-uniqueness. (C) the spec no longer embeds a test count that goes stale each
-round.
+**Additional corrections**: (A) the operation-row store path rejects embedded
+NULs and explicit filesystem-encoding failures. (B) the stale normative wording
+is reconciled — M48 lists `unaccepted`, the §5d table lists
+`migration-audit-state-unknown`, and the lifecycle rows carry `resulting_state`.
+(C) the confirmed-rollback claim is narrowed to "`ROLLBACK` returned
+successfully"; the draft does not re-hash the source manifestation, so it does
+not assert the stronger "re-established".
 
 **Where I am least confident:** the same one carried since round 8 — the
 `current`-with-repair `committed=True` cell rests on the kernel reporting
@@ -1121,3 +1133,28 @@ byte-for-byte.
 | A | `_operation_row` validated only the field-NAME set (`backup_ref=[]` accepted) and `_readonly` aliased caller-held lists | **every field validated to type and grammar** at the store boundary, and the published copy is frozen DEEPLY (M57) |
 | B | the `event_id` grammar was declared but only uniqueness was checked | **`ev-<uuid4>` grammar enforced before publication**, alongside uniqueness (M57) |
 | C | the spec embedded a `170 tests` count that went stale (the archive ran 193) | the count is no longer embedded — it is whatever pytest collects that round |
+
+---
+
+## 23. Round 13 review disposition
+
+**Verdict: architecture standing — the concrete v1→v2 migration, shared
+planner, evidence-selection key, release identity, source binding, one-snapshot
+reader, TEMP confinement qualification, named-escape direction and canonical
+evidence timestamp remain approved; v15 deferred on five load-bearing gaps plus
+three corrections.** The resolution/refusal split and the bounded
+adjacent-migration claim remain approved. All taken; concrete migration,
+evidence-selection key, release identity, source binding, one-snapshot reader
+and ordinary planner states untouched; the evidence artifact reproduces
+byte-for-byte.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the unknown cell still asserted `store_changed=False`/`transaction_committed=False` even when a failed rollback may have committed partial changes | **tri-state facts**: `store_changed`/`transaction_committed` are `True`/`False`/`None`; a rollback attempted-and-failed leaves both `None`, a confirmed rollback or never-entered transaction a known `False` (M58) |
+| 2 | a post-commit `conn.close()` `DatabaseError` was mislabelled `invalid-store`, telling the host to remediate a valid v2 database | **classify by PHASE**: a cleanup-phase or post-committed-facts `DatabaseError` is `internal-error` carrying the committed facts; `invalid-store` is only for bytes failing WHILE read (M59) |
+| 3 | `os.path.lexists` (False on `EACCES`) was treated as proof a path was absent | **`os.lstat`**: only an explicit `FileNotFoundError` is `missing`; an unsearchable path is `store-unopenable` (M60) |
+| 4 | the terminal validator accepted outcome/state pairs the outcome cannot produce (`locked`+source, `invalid-store`+missing, …) | **a per-outcome allowed-state map**, the union over every raise site; records outside it reject (M61) |
+| 5 | `MigrationAuditWriteError` enforced only the null-version rule — a subset of the record's contract | **one validated `TerminalFacts`** shared by the record and the exception, carrying outcome/endpoints/tri-state facts/state/version; the exception's contract is now identical to the record's (M62) |
+| A | the operation-row store path accepted embedded NULs | rejected, along with explicit filesystem-encoding failures (M62) |
+| B | M48, the §5d table and the lifecycle rows omitted newly-frozen states | reconciled — `unaccepted`, `migration-audit-state-unknown` and `resulting_state` now appear where they belong |
+| C | "confirmed rollback re-established the source" overclaimed | narrowed to "`ROLLBACK` returned successfully"; the draft does not re-hash the source manifestation |

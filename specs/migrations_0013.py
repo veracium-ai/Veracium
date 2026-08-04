@@ -373,43 +373,48 @@ class MigrationAuditWriteError(RuntimeError):
     """An audit record could not be written AFTER the operation touched or
     changed the store (round 6; §5e freezes the full state machine). Like
     `0007`'s `PostCommitAuditError` this is a deliberate, NAMED exception to
-    §5d's total-Outcome claim: `committed` says whether the migration
-    happened — `True` means the store IS migrated and a retry opens
-    `current`. **`False` does NOT prove the store is unchanged** (round 12,
-    finding 4): the operation may have ended `missing`, `unaccepted` or
-    `unknown` — a rollback-failed or never-observed store is not classifiable
-    from `committed` alone. The `resulting_state`/`resulting_version` pair
-    carries the honest post-operation state, exactly as the terminal record
-    would have, so the caller's decision input is not lost precisely when the
-    durable record cannot be written. The one audit failure that maps to a
-    closed outcome instead is the ATTEMPTED record
-    (`migration-audit-unavailable`/`migration-audit-state-unknown`), because
-    nothing has happened yet. Declared here as frozen contract; the production
-    sink raises it at implementation."""
+    §5d's total-Outcome claim. It carries the SAME validated `TerminalFacts`
+    the terminal record would have (round 13, finding 5: v14 validated only the
+    null-version rule — a subset — so it accepted a committed `source` and a
+    `destination` at the wrong version). `facts.transaction_committed` says
+    whether the migration happened — `True` means the store IS migrated and a
+    retry opens `current`. **`False`/`None` do NOT prove the store is
+    unchanged** (round 12, finding 4): `facts.resulting_state` says which of
+    `missing`/`unaccepted`/`unknown`/`source`/`destination` it actually is. The
+    audit failures that map to a closed outcome instead are the ATTEMPTED-record
+    ones (`migration-audit-unavailable`/`migration-audit-state-unknown`),
+    because nothing has happened yet. Declared here as frozen contract; the
+    production sink raises it at implementation."""
 
-    def __init__(self, committed: bool, operation_id: str, store_path: str,
-                 resulting_version, resulting_state: str,
+    def __init__(self, operation_id: str, store_path: str,
+                 facts: "TerminalFacts",
                  cause: BaseException | None = None):
-        if resulting_state not in _RESULTING_STATES:
-            raise ValueError(f"resulting_state {resulting_state!r} is not a "
-                             f"known state")
-        if not (resulting_version is None or type(resulting_version) is int):
-            raise TypeError("resulting_version must be int | None")
-        # The same state/version relationship the terminal schema enforces.
-        if resulting_state in ("missing", "unaccepted", "unknown") \
-                and resulting_version is not None:
-            raise ValueError(f"resulting_state {resulting_state} requires a "
-                             f"null version")
-        self.committed = committed
+        if not isinstance(facts, TerminalFacts):
+            raise TypeError("facts must be a TerminalFacts")
+        problems = facts.problems()
+        if problems:
+            raise ValueError("MigrationAuditWriteError given invalid terminal "
+                             "facts: " + "; ".join(problems))
+        if not (isinstance(operation_id, str)
+                and _OPERATION_RE.fullmatch(operation_id)):
+            raise ValueError(f"operation_id {operation_id!r} is not op-<uuid4>")
+        if not isinstance(store_path, str):
+            raise TypeError("store_path must be a string")
         self.operation_id = operation_id
         self.store_path = store_path
-        self.resulting_version = resulting_version
-        self.resulting_state = resulting_state
-        vstr = ("v" + str(resulting_version) if resulting_version is not None
-                else resulting_state)
+        self.facts = facts
+        # convenience mirrors of the load-bearing fields
+        self.committed = facts.transaction_committed
+        self.store_changed = facts.store_changed
+        self.resulting_state = facts.resulting_state
+        self.resulting_version = facts.resulting_version
+        vstr = (f"v{facts.resulting_version}"
+                if facts.resulting_version is not None
+                else facts.resulting_state)
         super().__init__(
             f"audit write failed after the operation ran "
-            f"(committed={committed}, operation {operation_id!r}, store "
+            f"(outcome {facts.outcome!r}, committed="
+            f"{facts.transaction_committed}, operation {operation_id!r}, store "
             f"{store_path!r}, {vstr}); the audit is the record "
             f"of an irreversible operation and its failure is surfaced "
             f"loudly, never as migration-failed")
@@ -503,6 +508,106 @@ _TERMINAL_PAYLOAD_FIELDS = frozenset({
     "resulting_state", "occurred_at"})
 
 _SUCCESS_OUTCOMES = frozenset({"migrated", "current", "created", "adopted"})
+
+_OUTCOME_TERMINAL_STATES = {
+    # Round 13, finding 4: each outcome permits only the resulting_states it can
+    # PHYSICALLY reach. v14's validator froze effect/state relationships but not
+    # this outcome/state relationship, so it accepted `locked`+source,
+    # `invalid-store`+missing, `unsupported-sqlite`+unaccepted — all impossible.
+    # The states are the UNION over every site the outcome can be raised from:
+    # an in-hook refusal fires AFTER the source is observed and rolled back
+    # (→ `source`), or with an unconfirmed rollback (→ `unknown`).
+    "migrated": frozenset({"destination"}),
+    "current": frozenset({"destination"}),
+    "migration-source-missing": frozenset({"missing", "unaccepted"}),
+    "migration-failed": frozenset({"source", "unknown"}),
+    "migration-result-mismatch": frozenset({"source", "unknown"}),
+    "migration-evidence-missing": frozenset({"source", "unknown"}),
+    "migration-quiescence-required": frozenset({"source", "unknown"}),
+    "stamped-shape-mismatch": frozenset({"source", "unknown"}),
+    "internal-error": frozenset({"destination", "source", "unknown"}),
+    "package-inconsistent": frozenset({"unknown"}),
+}
+"""The only resulting_states each terminal outcome can carry. An outcome absent
+here defaults to `{unknown}` (a kernel read-rejection — `foreign-shape`,
+`newer`, `locked`, `unsupported-sqlite`, `store-unopenable`, `invalid-store` —
+that establishes no migratable state). The pre-consumption refusals
+(`migration-audit-unavailable`, `migration-audit-state-unknown`, and the
+pre-observation `migration-quiescence-required`/`migration-evidence-missing`)
+never reach a terminal record at all; the two listed here are their IN-HOOK
+sites, which do."""
+
+
+class TerminalFacts(NamedTuple):
+    """One validated, immutable terminal-facts value, shared by the terminal
+    record AND `MigrationAuditWriteError` (round 13, finding 5: v14's exception
+    validated only the null-version rule — a strict subset of the record's
+    contract — so it accepted a committed `source` and a `destination` at the
+    wrong version). `store_changed`/`transaction_committed` are TRI-STATE —
+    `True`, `False` or `None` (unknown) — because a rollback whose own result
+    is unconfirmed leaves both GENUINELY unknown (round 13, finding 1: v14
+    forced them to `False`, asserting no change for a store a failed rollback
+    may have left partially migrated)."""
+    outcome: str
+    from_version: int
+    to_version: int
+    store_changed: object          # True | False | None (unknown)
+    transaction_committed: object  # True | False | None (unknown)
+    resulting_state: str
+    resulting_version: object      # int | None
+
+    def problems(self) -> list:
+        p = []
+        if self.outcome not in OUTCOMES and \
+                self.outcome not in _AUDIT_ONLY_OUTCOMES:
+            p.append(f"outcome {self.outcome!r} is not a known terminal "
+                     f"outcome")
+        for f, v in (("store_changed", self.store_changed),
+                     ("transaction_committed", self.transaction_committed)):
+            if v is not None and v is not True and v is not False:
+                p.append(f"{f} must be True, False, or None (unknown), not "
+                         f"{_safe_repr(v)}")
+        for f in ("from_version", "to_version"):
+            if type(getattr(self, f)) is not int:
+                p.append(f"{f} must be an int")
+        v = self.resulting_version
+        if not (v is None or type(v) is int):
+            p.append("resulting_version must be int | None")
+        if self.resulting_state not in _RESULTING_STATES:
+            p.append(f"resulting_state {self.resulting_state!r} is not a known "
+                     f"state")
+            return p                       # nothing below is meaningful
+        ch, co = self.store_changed, self.transaction_committed
+        # store_changed == transaction_committed ONLY when both are KNOWN
+        # (round 13, finding 1: an unknown pair must not be forced to agree).
+        if ch in (True, False) and co in (True, False) and ch != co:
+            p.append("store_changed and transaction_committed must agree when "
+                     "both are known — a disk change is exactly a commit")
+        if ch is True and self.resulting_state != "destination":
+            p.append("a committed change leaves the store at the destination")
+        # resulting_state ⇄ resulting_version
+        if self.resulting_state == "destination" and v != self.to_version:
+            p.append(f"resulting_state destination requires version "
+                     f"{self.to_version}")
+        if self.resulting_state == "source" and v != self.from_version:
+            p.append(f"resulting_state source requires version "
+                     f"{self.from_version}")
+        if self.resulting_state in ("missing", "unaccepted", "unknown") \
+                and v is not None:
+            p.append(f"resulting_state {self.resulting_state} requires a null "
+                     f"version")
+        # outcome ⇄ resulting_state (round 13, finding 4). An outcome with no
+        # richer classification (kernel read-rejections like `foreign-shape`,
+        # `locked`, `unsupported-sqlite`) leaves the store's migratable state
+        # UNESTABLISHED — its only legal terminal state is `unknown`.
+        allowed = _OUTCOME_TERMINAL_STATES.get(self.outcome,
+                                               frozenset({"unknown"}))
+        if self.resulting_state not in allowed:
+            p.append(f"outcome {self.outcome!r} permits resulting_state "
+                     f"{sorted(allowed)}, not {self.resulting_state!r}")
+        return p
+
+
 _EVENT_ID_RE = re.compile(r"^ev-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
                           r"[0-9a-f]{4}-[0-9a-f]{12}$")
 """`event_id` grammar (round 10, correction 2): `ev-<uuid4>`, so an audit
@@ -602,8 +707,20 @@ def _operation_row_problems(row: dict) -> list:
     if not isinstance(sp, str):
         problems.append(f"store_path must be a string, is "
                         f"{type(sp).__name__}")
-    elif len(os.fsencode(sp)) > 4096:
-        problems.append("store_path exceeds 4096 bytes")
+    elif "\x00" in sp:
+        # Round 13, correction A: a canonical filesystem path cannot contain an
+        # embedded NUL (`os.fsencode`/`open` reject it); the audit boundary must
+        # too, rather than storing an unusable path.
+        problems.append("store_path contains an embedded NUL")
+    else:
+        try:
+            encoded = os.fsencode(sp)
+        except (UnicodeEncodeError, ValueError) as exc:
+            problems.append(f"store_path is not filesystem-encodable: "
+                            f"{_safe_repr(exc)}")
+        else:
+            if len(encoded) > 4096:
+                problems.append("store_path exceeds 4096 bytes")
     if row.get("state") != "attempted":
         problems.append(f"a new operation row's state must be 'attempted', "
                         f"is {_safe_repr(row.get('state'))}")
@@ -725,58 +842,33 @@ class DraftAuditStore:
         if set(payload) != _TERMINAL_PAYLOAD_FIELDS:
             return [f"terminal payload fields {sorted(payload)} are not "
                     f"exactly {sorted(_TERMINAL_PAYLOAD_FIELDS)}"]
-        version = payload["resulting_version"]
-        if (not isinstance(payload["outcome"], str)
-                or type(payload["store_changed"]) is not bool
-                or type(payload["transaction_committed"]) is not bool
-                or payload["resulting_state"] not in _RESULTING_STATES
-                or not (version is None or type(version) is int)
-                or _timestamp_problems(payload["occurred_at"], "occurred_at")):
+        if not isinstance(payload["outcome"], str) or \
+                _timestamp_problems(payload["occurred_at"], "occurred_at"):
             return ["terminal payload has a malformed field"]
-        problems = []
-        outcome = payload["outcome"]
+        # The COMPLETE terminal-facts contract lives in one validated value,
+        # shared with `MigrationAuditWriteError` (round 13, finding 5): tri-state
+        # commit/change facts, state⇄version, and the outcome⇄state map.
+        facts = TerminalFacts(
+            payload["outcome"], op["from_version"], op["to_version"],
+            payload["store_changed"], payload["transaction_committed"],
+            payload["resulting_state"], payload["resulting_version"])
+        problems = list(facts.problems())
+        outcome, state = payload["outcome"], payload["resulting_state"]
         changed = payload["store_changed"]
         committed = payload["transaction_committed"]
-        state = payload["resulting_state"]
-        frm, to = op["from_version"], op["to_version"]
-        if outcome not in OUTCOMES and outcome not in _AUDIT_ONLY_OUTCOMES:
-            problems.append(f"outcome {outcome!r} is not a known terminal "
-                            f"outcome")
-        if changed != committed:
-            problems.append("store_changed and transaction_committed must "
-                            "agree — a disk change is exactly a commit")
-        # resulting_state ⇄ resulting_version.
-        if state == "destination" and version != to:
-            problems.append(f"resulting_state destination requires version "
-                            f"{to}")
-        if state == "source" and version != frm:
-            problems.append(f"resulting_state source requires version {frm}")
-        if state in ("missing", "unaccepted", "unknown") and version is not None:
-            problems.append(f"resulting_state {state} requires a null version")
-        # A committed change means the store reached the destination.
-        if changed and state != "destination":
-            problems.append("a committed change leaves the store at the "
-                            "destination")
+        # Event ⇄ outcome (the event is derived from the outcome by the writer).
         if event == "migration_completed":
             if outcome not in ("migrated", "current"):
                 problems.append(f"migration_completed permits only migrated "
                                 f"or current, not {outcome!r}")
-            if state != "destination":
-                problems.append("a completed operation leaves the store at "
-                                "the destination")
-            if outcome == "migrated" and not (changed and committed):
+            if outcome == "migrated" and not (changed is True
+                                              and committed is True):
                 problems.append("a migrated operation must have changed and "
                                 "committed the store")
         elif event == "migration_failed":
             if outcome in _SUCCESS_OUTCOMES:
                 problems.append(f"migration_failed cannot carry the success "
                                 f"outcome {outcome!r}")
-            if committed and state != "destination":
-                problems.append("a failure that committed leaves the "
-                                "destination")
-            if not committed and state == "destination":
-                problems.append("a failure that did not commit did not reach "
-                                "the destination")
         return problems
 
     def record_terminal(self, operation_id: str, event: str,
@@ -2074,11 +2166,14 @@ def _terminal_facts(out, state) -> dict:
         12, finding 2: v13 recorded `missing` for an existing, valid, empty
         SQLite database — a materially different physical state from a vanished
         file; `missing` is now reserved for a path proven absent);
-      a source observed under the lock AND a CONFIRMED rollback re-established
-        it → source, its version (round 12, finding 1: v13 claimed `source`
-        from `observed_version` alone, with no evidence the rollback actually
+      a source observed under the lock AND a rollback that RETURNED SUCCESSFULLY
+        → source, its version (round 12, finding 1: v13 claimed `source` from
+        `observed_version` alone, with no evidence the rollback actually
         succeeded — a rollback that itself fails leaves the store partially
-        migrated, NOT at the source);
+        migrated, NOT at the source. Round 13, correction C: the claim is
+        precisely that `ROLLBACK` returned success under the qualified SQLite
+        contract — the draft does not re-open and re-hash the source
+        manifestation, so it does not assert the stronger "re-established");
       otherwise (locked, unopenable, an escape before the planner published, OR
       a rollback that was not confirmed) → unknown, null."""
     facts = state["facts"]
@@ -2096,15 +2191,34 @@ def _terminal_facts(out, state) -> dict:
         return {"store_changed": False, "transaction_committed": False,
                 "resulting_version": state["observed_version"],
                 "resulting_state": "source"}
-    return {"store_changed": False, "transaction_committed": False,
+    # Unknown state. The change/commit facts are `None` (genuinely unknown)
+    # ONLY when a rollback was ATTEMPTED and FAILED — it may have left the store
+    # partially migrated (round 13, finding 1). When no transaction was entered
+    # (a gate/read rejection, a lock before BEGIN) or a rollback CONFIRMED the
+    # undo, we can prove the store was not net-changed, so `False` is honest.
+    if state.get("rolled_back") == "rollback-failed":
+        ch = co = None
+    else:
+        ch = co = False
+    return {"store_changed": ch, "transaction_committed": co,
             "resulting_version": None, "resulting_state": "unknown"}
+
+
+class _ConnectionCleanupError(Exception):
+    """Internal: `conn.close()` raised after the operation's outcome was
+    decided (round 13, finding 2). Mapped to `internal-error`, never
+    `invalid-store` — a close defect is not invalid store bytes."""
 
 
 def _write_terminal(out, outcome, state, authority) -> None:
     """Write the consumed operation's one terminal event. On a write failure
-    raise `MigrationAuditWriteError` carrying the truthful facts."""
+    raise `MigrationAuditWriteError` carrying the same validated `TerminalFacts`
+    the record would have held (round 13, finding 5)."""
     store = _terminal_facts(out, state)
-    committed = store["transaction_committed"]
+    facts = TerminalFacts(
+        outcome, authority.from_version, authority.to_version,
+        store["store_changed"], store["transaction_committed"],
+        store["resulting_state"], store["resulting_version"])
     terminal = ("migration_completed" if outcome in ("migrated", "current")
                 else "migration_failed")
     try:
@@ -2116,10 +2230,8 @@ def _write_terminal(out, outcome, state, authority) -> None:
         raise
     except Exception as exc:
         raise MigrationAuditWriteError(
-            committed=committed, operation_id=authority.operation_id,
-            store_path=authority.store_path,
-            resulting_version=store["resulting_version"],
-            resulting_state=store["resulting_state"], cause=exc) from exc
+            operation_id=authority.operation_id,
+            store_path=authority.store_path, facts=facts, cause=exc) from exc
 
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
@@ -2202,16 +2314,26 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
             except MigrationRefused as e:
                 return Outcome(e.reason, diagnostic=e.diagnostic)
             state["consumed"] = True
-            if not os.path.lexists(canonical):
-                # Round 12, finding 2: the path is PROVEN absent — this is the
-                # only `missing` case. An existing-but-empty store reaches the
-                # planner's new-row seam below and terminalizes as `unaccepted`.
-                state["source_absent"] = True
+            # Round 13, finding 3: `os.path.lexists` returns False for a path
+            # the process merely cannot SEARCH to (EACCES on a parent) — it is
+            # not proof of absence. Only an explicit ENOENT is `missing`; an
+            # access/other error means the store's presence is UNKNOWN, so the
+            # operation refuses `store-unopenable` (never fabricates `missing`).
+            try:
+                os.lstat(canonical)
+            except FileNotFoundError:
+                state["source_absent"] = True     # PROVEN absent → the only missing
                 return Outcome(
                     "migration-source-missing",
                     f"no store exists at {canonical!r}; the authority "
                     f"attests an existing source — a migration never "
                     f"creates")
+            except OSError as exc:
+                return Outcome(
+                    "store-unopenable",
+                    f"cannot determine whether a source exists at "
+                    f"{canonical!r} (the path is not observable): "
+                    f"{_safe_repr(exc)}")
         phase = "context-entry"
         with _draft(loaded=snapshot) as art:
             try:
@@ -2265,12 +2387,33 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                     state["facts"] = label       # belt and suspenders
                     return Outcome(label)
                 finally:
-                    conn.close()
+                    # Round 13, finding 2: closing the connection is CLEANUP,
+                    # not a read of the store. A close defect must not
+                    # masquerade as `invalid-store`, so it raises a distinct
+                    # sentinel classified below as `internal-error`.
+                    try:
+                        conn.close()
+                    except sqlite3.Error as exc:
+                        raise _ConnectionCleanupError(_safe_repr(exc)) from exc
+            except _ConnectionCleanupError as exc:
+                return Outcome("internal-error",
+                               diagnostic=f"connection cleanup failed after "
+                                          f"the operation: {exc}")
             except sv.StoreVersionError as e:
                 return Outcome(e.reason, diagnostic=e.diff)
             except MigrationRefused as e:
                 return Outcome(e.reason, diagnostic=e.diagnostic)
             except sqlite3.DatabaseError as exc:
+                # Round 13, finding 2: classify by PHASE, not exception
+                # superclass. If committed facts were already published, a
+                # DatabaseError now is a post-read defect (e.g. the kernel's
+                # isolation-level restore) — `internal-error` carrying the
+                # committed facts, NOT invalid store bytes. `invalid-store` is
+                # only for bytes that failed WHILE being read/interpreted.
+                if state.get("facts") is not None:
+                    return Outcome("internal-error",
+                                   diagnostic=f"post-read defect: "
+                                              f"{_safe_repr(exc)}")
                 return Outcome("invalid-store", diagnostic=_safe_repr(exc))
     except sv.PackageConsistencyError:
         raise                        # named escape 1 (§5d)
