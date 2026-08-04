@@ -1,9 +1,9 @@
 {
  "artifact": "specs/0013 draft evidence",
  "draft_schema_version": 2,
- "generated_at": "2026-08-03T21:31:34.522383+00:00",
+ "generated_at": "2026-08-04T00:01:34.169976+00:00",
  "generator": {
-  "repository_commit": "82e6ded90a66e6637b008c8c5f0b751ed7552178",
+  "repository_commit": "e54032fed56ffbd6706de7f337c281ce136be915",
   "tool": "specs/migrations_0013.py"
  },
  "legacy_base_versions": [
@@ -25,7 +25,10 @@
     "denies_release": true,
     "denies_rollback": true,
     "denies_savepoint": true,
-    "denies_temp_schema": true
+    "denies_temp_index": true,
+    "denies_temp_table": true,
+    "denies_temp_trigger": true,
+    "denies_temp_view": true
    },
    "features": {
     "generated_columns": true,

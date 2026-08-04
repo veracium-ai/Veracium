@@ -5,34 +5,32 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v9)** — round 7: *the migrate-only mode, serialized
-> writer-vs-writer publication, and the Unicode boundary held; v8 deferred on
-> five issues*. All taken: **one evidence byte-snapshot per operation** (v8
-> hashed the file in one read and parsed it in another — a publication
-> between them let an A-bound authority consume artifact B; digest,
-> comparison, parse and planner context now share one read, and a nested
-> context pinned to a different digest refuses instead of silently sharing);
-> **the release identity is framed and full-length** (v8's raw concatenation
-> kept the identity while a docstring moved across the file boundary —
-> measured, no hash collision required — and 12 hex chars were 48 bits;
-> length-framed names and contents under a domain prefix, full sha256);
-> **the audit machine is consistent** (operations table = compare-and-set
-> consumption, events table with `UNIQUE(operation_id, event)` — an
-> append-only table with a globally unique operation id could not hold
-> attempted AND terminal events; a duplicate id is CONSUMED, only storage
-> failure is the retryable outage; executable in the draft, terminal records
-> written for every consumed outcome); **source binding is static** (hex64
-> digests plus resolution to exactly one current path record BEFORE
-> consumption — v8's `current` branch accepted a garbage source digest; and
-> minting uses `mode=rw`, refusing rather than materialising a zero-byte
-> database at a missing path); and **internal failures tell the truth** —
-> `internal-error` with the phase named, never `invalid-store` for a library
-> defect a host would "fix" by restoring a healthy database.
+> **in review (v10)** — round 8: *architecture standing; v9 deferred on five
+> load-bearing gaps*. All taken; concrete migration, evidence selection key
+> and ordinary planner states untouched: **TEMP confinement is probed per
+> object class** (v9's one probe created a TEMP *table*; SQLite gives tables,
+> indexes, views and triggers different action codes, and a weak authorizer
+> allowing TEMP triggers passed all twelve — each class now has its own
+> `SQLITE_AUTH` probe, fifteen total); **the audit machine enforces its
+> schema and state** (v9 accepted both terminal events for one operation,
+> arbitrary event names and payloads — activation is now one transaction,
+> `migration_operations`/`migration_audit_events` with the event enum, exact
+> terminal payload schema, and **at most one terminal event per operation**);
+> **terminal facts come from the kernel** (v9 inferred `resulting_version`
+> from the outcome string and reported v1 for a v2 store — `open_versioned`
+> now returns an `OpenResult` carrying `store_changed`,
+> `transaction_committed`, `resulting_version`); **release identity fails
+> closed** (v9 substituted a shared `+unknown` sentinel on an unreadable
+> input, re-opening the cross-build hole — acquisition now raises
+> `PackageConsistencyError`); and **timestamps are canonical and capped**
+> (v9 accepted a 100 kB fractional-second string — a 32-char
+> `YYYY-MM-DDTHH:MM:SS.ffffff+00:00` grammar, checked before parse, with a
+> canonical round-trip). The resolution/refusal split was APPROVED.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v9 |
+| **Version** | v10 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -266,7 +264,7 @@ model is deferred to the first real `ALTER` and must be externally reviewed
 there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
 **Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
-(120 tests: every round-2 through round-7 probe as a regression, the full inherited
+(135 tests: every round-2 through round-8 probe as a regression, the full inherited
 planner across empty/unstamped/foreign/malformed/newer stores, the evidence
 gate's adversarial records, confinement qualification, the closed failure
 model, and the stale-connection hazard below).
@@ -588,7 +586,7 @@ migration_operations                    migration_audit_events
 |---|---|
 | duplicate operation id on activation | the authority IS consumed — `migration-quiescence-required` (round 7 split this from the outage case v8 conflated) |
 | audit storage unavailable before activation | **`migration-audit-unavailable`** — no store access, nothing consumed (a failed insert consumed nothing); a retry may re-present the authority |
-| migrated and committed, terminal write fails | **`MigrationAuditWriteError(committed=True)`** — "did it run" answered; a retry opens `current`. Mirrors `0007` §4e |
+| migrated and committed, terminal write fails | **`MigrationAuditWriteError(committed=True, resulting_version)`** — the facts come from the kernel's `OpenResult` (`store_changed`, `transaction_committed`, `resulting_version`), NEVER inferred from the outcome string (round 8, finding 3: v9 read `resulting_version` from the label and reported v1 for a lost-race `current` whose store was already v2); a retry opens `current`. Mirrors `0007` §4e |
 | rolled back, terminal write fails | store unchanged, authority spent; **`MigrationAuditWriteError(committed=False)`** |
 | `current` with no repair | terminal record written (outcome `current`); a terminal-write failure is `committed=False` — nothing changed |
 | `current` with a committed rebuildable repair | the repair transaction committed: a terminal-write failure is `committed=True`, resulting version unchanged — requires the production planner to report repairs (a precise implementation obligation; the draft cannot observe the kernel's repair) |
@@ -653,13 +651,18 @@ tests at implementation.
 | **M25** a migration never creates or adopts | `test_a_deleted_source_cannot_become_a_new_store` · `test_a_truncated_source_cannot_become_a_new_store` · `test_an_empty_database_replacement_cannot_be_migrated` · `test_an_unstamped_current_shape_replacement_is_refused_not_adopted` · `test_ordinary_open_still_creates` — **measured today**; every case leaves the path uncreated or byte-unchanged |
 | **M26** evidence publication is serialized and monotone under concurrency | `test_a_concurrent_future_publication_is_not_downgraded` (two-process barrier) — **measured today**; the round-5 static seeds remain |
 | **M27** the boundary is Unicode- and PathLike-safe | `test_a_non_utf8_bytes_path_works_end_to_end` · `test_a_pathlike_that_raises_is_a_closed_outcome` · `test_a_surrogate_token_field_is_a_closed_refusal` — **measured today** |
-| **M28** the audit contract is frozen, including its two named escapes | `test_the_audit_contract_is_frozen` — **measured today**; the state machine and record schema are §5e |
+| **M28** the audit contract's two named escapes exist | `test_the_audit_contract_is_frozen` — **measured today**; the enforced state machine and record schema are M36/M37 and §5e (round 8: M28/M32 no longer claim the complete lifecycle is measured — schema validation, atomic activation, terminal exclusivity and the four terminal cells are the M36/M37 evidence) |
 | **M29** the release identity is immutable per build and the evidence artifact is bound | `test_the_release_identity_is_content_derived` · `test_a_version_only_release_ref_is_refused` · `test_a_cross_build_authority_is_refused` · `test_an_authority_binds_the_evidence_artifact` — **measured today** |
 | **M30** one evidence snapshot per operation; nested contexts agree or refuse | `test_the_operation_consumes_the_bytes_the_authority_bound` · `test_a_nested_context_never_silently_swaps_artifacts` — **measured today** |
 | **M31** the release identity binds the file boundary at full digest length | `test_moving_bytes_across_the_file_boundary_changes_the_identity` — **measured today** |
-| **M32** the audit machine is consistent and executable | `test_audit_unavailability_consumes_nothing_and_is_retryable` · `test_a_duplicate_operation_is_consumed_not_an_audit_outage` · `test_terminal_records_are_written_for_migrated_and_noop_current` · `test_a_failed_terminal_write_raises_the_typed_error` — **measured today** |
+| **M32** consumption is split from audit outage; both are executable | `test_audit_unavailability_consumes_nothing_and_is_retryable` · `test_a_duplicate_operation_is_consumed_not_an_audit_outage` · `test_terminal_records_are_written_for_migrated_and_noop_current` · `test_a_failed_terminal_write_raises_the_typed_error` — **measured today**. Schema/atomicity/exclusivity/terminal-cells are M36/M37 |
 | **M33** source binding is static, and minting never creates | `test_an_authority_binds_the_source_manifestation` · `test_minting_never_creates_a_store` · `test_minting_refuses_a_non_accepted_source` — **measured today** |
 | **M34** internal failures are `internal-error`, never store semantics | `test_an_internal_defect_is_not_a_store_outcome` · `test_check_evidence_is_total_over_non_mapping_runtime_members` — **measured today** |
+| **M35** each TEMP object class is qualified independently, `SQLITE_AUTH`-specific | `test_the_temp_probes_cover_every_object_class` · `test_an_authorizer_allowing_temp_triggers_fails_qualification` — **measured today** |
+| **M36** the audit store enforces schema, event enum and one-terminal-per-operation, atomically | `test_the_audit_store_rejects_two_terminal_events` · `test_the_audit_store_rejects_unknown_events_and_payloads` · `test_the_operation_row_carries_the_full_frozen_schema` · `test_activation_is_atomic` — **measured today** |
+| **M37** terminal audit facts come from the kernel, correct on every branch | `test_the_current_branch_reports_the_actual_resulting_version` · `test_the_current_with_repair_branch_reports_committed_true` · `test_the_migrated_branch_reports_committed_true` — **measured today** |
+| **M38** release identity acquisition fails closed | `test_an_unreadable_covered_file_fails_closed` · `test_a_missing_version_declaration_fails_closed` · `test_no_unknown_sentinel_authority_migrates` — **measured today** |
+| **M39** every persisted timestamp is canonical and length-capped | `test_a_hundred_kilobyte_timestamp_is_refused` · `test_a_noncanonical_but_valid_instant_is_refused` · `test_minted_timestamps_are_canonical` — **measured today** |
 
 ---
 
@@ -705,61 +708,57 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 8 of this spec. All five round-7 blockers and the three additional
-corrections taken; every probe reproduced first** — the two-read TOCTOU and
-its nested-context variant, the docstring moved across the raw-concatenation
-boundary (identity unchanged, both files modified, no collision needed), the
-internally inconsistent audit freeze, the garbage source digest accepted by
-the `current` branch, the minting helper materialising a zero-byte database,
-the `internal-error` lie, and `active_records([42])`.
+**Round 9 of this spec. All five round-8 blockers and the four additional
+corrections taken; every probe reproduced first** — the weak authorizer
+allowing TEMP triggers past all twelve v9 probes, both terminal events
+accepted for one operation, the lost-race `current` reporting
+`resulting_version=1` for a v2 store, the `+unknown` sentinel identity, and
+the 100 kB timestamp. Per your v10 bar the concrete migration, evidence
+selection key and ordinary planner states are untouched, and the
+resolution/refusal split you approved is unchanged.
 
-1. **One snapshot** (finding 1): `_artifact_snapshot()` reads the bytes
-   once; digest, authority comparison, parse and the planner context all
-   consume that read; `_draft(loaded=…)` accepts the object instead of
-   re-reading the path, and a nested context pinned to a different digest
-   refuses (`migration-evidence-missing`) rather than silently sharing.
-   Both of your variants are regressions.
-2. **Framed, full-length identity** (finding 2): domain prefix, per-file
-   length-framed name and content, frozen ordered file list, full 64-hex
-   digest. Your boundary-move construction is the regression test — same
-   raw concatenation, different identities.
-3. **Two tables** (finding 3): `migration_operations` (the row insert IS
-   consumption) and `migration_audit_events` with
-   `UNIQUE(operation_id, event)`. A duplicate id is CONSUMED
-   (`migration-quiescence-required`); only a storage failure before
-   activation is `migration-audit-unavailable`, with nothing consumed and
-   the retry measured to succeed. All four terminal cells are frozen —
-   including `current` with a committed rebuildable repair, which is stated
-   as a precise implementation obligation (the draft cannot observe the
-   kernel's repair). The machine is now EXECUTABLE: `DraftAuditStore`
-   implements both tables; terminal records are measured for `migrated` and
-   the no-op `current`; a failed terminal write raises the typed error with
-   the right `committed` flag.
-4. **Static source binding, and minting never creates** (finding 4): all
-   three digests must be 64 lowercase hex statically, and the authority's
-   (from, to, source, migration) key must resolve to exactly one current
-   path record in the snapshot BEFORE consumption — your
-   garbage-source-on-current probe now refuses. `make_authority` opens
-   `mode=rw` and refuses a missing path (nothing created — measured) or a
-   non-accepted source.
-5. **`internal-error`** (finding 5): the residual handler names the phase
-   and reports commit state (`false` before the planner phase, `unknown`
-   inside it) — never `invalid-store`, never `migration-failed`, for a
-   defect in this library.
+1. **Per-class TEMP qualification** (finding 1): table, index, view and
+   trigger each get their own `SQLITE_AUTH`-specific probe (fifteen total).
+   Your falsifier is the regression — a full-replacement authorizer denying
+   temp tables while allowing temp triggers flips `denies_temp_trigger`
+   False and fails runtime qualification.
+2. **Enforced audit schema and state machine** (finding 2): two tables,
+   activation as one transaction (operation row + attempted event together),
+   the event enum, the exact terminal payload field set and types, and
+   **one terminal event per operation** via a compare-and-set `state`.
+   Unknown events, arbitrary payloads and a second terminal all reject.
+3. **Kernel terminal facts** (finding 3): `open_versioned` returns an
+   `OpenResult` carrying `store_changed`, `transaction_committed`,
+   `resulting_version`; the wrapper uses them, never the label. All four
+   cells are exercised with a forced terminal-write failure — lost-race
+   `current` now reports version 2 and `committed=False`; `current` with a
+   committed rebuildable repair reports `committed=True`; `migrated` reports
+   `committed=True`, version 2.
+4. **Fail-closed release identity** (finding 4): an unreadable covered file,
+   an unreadable or version-less `pyproject.toml`, or a
+   non-grammar-safe version each raise `PackageConsistencyError` before any
+   authority is minted or accepted — no sentinel is ever a valid component.
+5. **Canonical, bounded timestamps** (finding 5): a 32-char
+   `YYYY-MM-DDTHH:MM:SS.ffffff+00:00` grammar checked before parse, UTC,
+   with a canonical round-trip; minting emits it; every persisted timestamp
+   uses it. The 100 kB string and a valid-but-noncanonical instant both
+   refuse.
 
-**Additional corrections**: `active_records` is total (both copies of the
-`0007` accessor); evidence generation is stated as POSIX-only in the draft
-(`fcntl`); the operation token is called what it is — an opaque UUID-shaped
-token, shape-checked, version bits unverified.
+**Additional corrections**: the record schema names and types `event_id`,
+`state` and every field (no undefined names); `DraftAuditStore` stores the
+full frozen operation-row schema; M28/M32 no longer claim the complete
+lifecycle is "measured" (M36/M37 carry the schema, atomicity, exclusivity
+and four-cell evidence); and `make_authority`'s defaulted `quiesced`/backup
+are documented as test-only draft convenience, outside any production host
+API.
 
-**Where I am least confident:** the resolution/refusal split. A static
-failure that is an authority property (types, grammar, window, path,
-release) refuses `migration-quiescence-required`; one that is an artifact
-property (bindings resolving to no current record) refuses
-`migration-evidence-missing` — including a source digest that is
-well-formed but unevidenced. The split follows what the host should DO
-(re-mint vs fix evidence), but a mismatched source could be read as either;
-if you'd draw the line elsewhere, that is the remaining judgement.
+**Where I am least confident:** the `current`-with-repair `committed` flag
+depends on the kernel's `OpenResult.transaction_committed`, which the draft
+reports as "drift was repaired". A production planner that repairs in a
+separate transaction, or batches repair with the stamp differently, must
+report the same fact — I have written that as an implementation obligation
+in §5e, but it is the one terminal cell whose correctness rests on a
+kernel contract the draft can only demonstrate, not freeze for production.
 
 ## 10. Open questions
 
@@ -902,3 +901,26 @@ untouched.
 | a | `check_evidence` raised `AttributeError` on `runtimes: [42]` | the `0007` `active_records` accessor is total (both copies); regression at the `check_evidence` level |
 | b | `fcntl` is POSIX-only | stated platform bound for draft evidence GENERATION; consumption unaffected |
 | c | the grammar accepts any UUID-shaped value | wording: an opaque UUID-shaped operation token |
+
+---
+
+## 18. Round 8 review disposition
+
+**Verdict (reviewer's, recorded verbatim in substance): architecture
+standing — the concrete migration, shared planner, evidence snapshot,
+static source binding and closed-outcome direction remain approved; v9
+deferred on five load-bearing gaps.** The resolution-versus-refusal split
+was **approved as written**. All five taken; migration, evidence selection
+key and ordinary planner states untouched.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | runtime qualification attested TEMP-table denial but not the TEMP-trigger behaviour the contract depends on — a weak authorizer allowing temp triggers passed all twelve probes | **per-class probes** (table, index, view, trigger), each requiring `SQLITE_AUTH`; fifteen total; weak-authorizer falsifier as regression |
+| 2 | the two-table model still admitted both terminal events for one operation, arbitrary event names and payloads, and did not freeze activation as one transaction | **enforced schema + state machine**: activation is one transaction; event enum; exact terminal payload field set/types; one terminal per operation via CAS `state`; full operation-row schema |
+| 3 | terminal-write failure misreported `resulting_version` for `current` (v1 for a v2 store) and could not represent a committed repair | **kernel `OpenResult`** carries `store_changed` / `transaction_committed` / `resulting_version`; the wrapper uses them; all four terminal cells tested under forced terminal-write failure |
+| 4 | release identity fell open to a shared `+unknown` sentinel on unreadable inputs, re-opening the cross-build hole | **fail-closed acquisition** — unreadable covered file, unreadable/version-less pyproject, or non-grammar-safe version each raise `PackageConsistencyError` before mint or acceptance |
+| 5 | `issued_at`/`expires_at` were unbounded, noncanonical audit channels (a 100 kB string validated) | **canonical 32-char grammar** capped before parse, UTC, canonical round-trip; applied to every persisted timestamp |
+| a | `event_id`/`state` named but untyped in the diagram | the record schema now types every field including `event_id` and the `state` transition |
+| b | `DraftAuditStore` stored a subset of the operation-row schema | the full frozen schema is asserted on insert |
+| c | M28/M32 overclaimed "measured today" | reworded; M36/M37 carry the schema/atomicity/exclusivity/four-cell evidence |
+| d | `make_authority` silently defaults `quiesced` and backup | documented as test-only draft convenience, outside any production host API |

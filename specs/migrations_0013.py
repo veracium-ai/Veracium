@@ -438,43 +438,114 @@ class MigrationAuthority(NamedTuple):
     evidence_digest: str    # sha256 of the exact evidence artifact consumed
 
 
+_ATTEMPTED_EVENT = "migration_attempted"
+_TERMINAL_EVENTS = frozenset({"migration_completed", "migration_failed"})
+_AUDIT_EVENTS = frozenset({_ATTEMPTED_EVENT}) | _TERMINAL_EVENTS
+
+_AUDIT_OPERATION_FIELDS = frozenset({
+    "release_ref", "store_path", "from_version", "to_version",
+    "source_digest", "migration_digest", "evidence_digest", "operation_id",
+    "attempted_at", "state"})
+_TERMINAL_PAYLOAD_FIELDS = frozenset({
+    "outcome", "store_changed", "transaction_committed", "resulting_version",
+    "occurred_at"})
+
+
 class DraftAuditStore:
-    """The in-process reference of §5e's two-table model (round 7, finding 3:
-    one append-only table with a globally unique operation id cannot hold an
-    attempted AND a terminal event for the same operation — the machine was
-    internally inconsistent). `_ops` is `migration_operations` — the
-    operation-row insert IS the compare-and-set consumption; `_events` is
-    `migration_audit_events` with `UNIQUE(operation_id, event)`. The
-    distinction v8 conflated is explicit in `activate`'s return: a DUPLICATE
-    means the authority is consumed (`migration-quiescence-required`); only
-    a storage failure is the retryable `migration-audit-unavailable`."""
+    """The in-process reference of §5e's two-table model, with the schema and
+    state machine ENFORCED (round 8, finding 2: v9 accepted both terminal
+    events for one operation, arbitrary event names and arbitrary payloads,
+    and did not freeze activation as one transaction). Two tables:
+
+      migration_operations   keyed by operation_id; the row insert is the
+                             compare-and-set consumption; carries the full
+                             frozen authority bindings and a `state`
+                             (`attempted` → `terminal`).
+      migration_audit_events UNIQUE(operation_id, event); `event` is a member
+                             of the closed enum; **at most one TERMINAL event
+                             per operation**; terminal payloads have the exact
+                             frozen field set.
+
+    Activation inserts the operation row AND the attempted event as ONE
+    transaction — a failure rolls back both, so a consumed operation without
+    its attempted record cannot exist (finding 2's atomicity gap). `activate`
+    returns `duplicate` (the authority IS consumed →
+    `migration-quiescence-required`) or `activated`; a storage failure raises,
+    and the caller maps it to the retryable `migration-audit-unavailable`."""
 
     def __init__(self):
         self._ops: dict = {}
         self._events: dict = {}
+        self._event_seq = 0
         self._lock = threading.Lock()
+
+    def _operation_row(self, a) -> dict:
+        row = {"release_ref": a.release_ref, "store_path": a.store_path,
+               "from_version": a.from_version, "to_version": a.to_version,
+               "source_digest": a.source_digest,
+               "migration_digest": a.migration_digest,
+               "evidence_digest": a.evidence_digest,
+               "operation_id": a.operation_id,
+               "attempted_at": canonical_timestamp(datetime.now(timezone.utc)),
+               "state": "attempted"}
+        assert set(row) == _AUDIT_OPERATION_FIELDS      # the full frozen schema
+        return row
 
     def activate(self, a) -> str:
         with self._lock:
             if a.operation_id in self._ops:
                 return "duplicate"
-            self._ops[a.operation_id] = {
-                "release_ref": a.release_ref, "store_path": a.store_path,
-                "from_version": a.from_version, "to_version": a.to_version,
-                "attempted_at": datetime.now(timezone.utc).isoformat()}
-            self._events[(a.operation_id, "migration_attempted")] = {
-                "occurred_at": self._ops[a.operation_id]["attempted_at"]}
+            # One transaction: build both, then commit both, so a failure
+            # constructing either leaves neither (the draft's analogue of
+            # BEGIN/INSERT/INSERT/COMMIT).
+            row = self._operation_row(a)
+            event_id = f"ev-{self._event_seq}"
+            attempted = {"event_id": event_id,
+                         "operation_id": a.operation_id,
+                         "event": _ATTEMPTED_EVENT,
+                         "occurred_at": row["attempted_at"]}
+            self._ops[a.operation_id] = row
+            self._events[(a.operation_id, _ATTEMPTED_EVENT)] = attempted
+            self._event_seq += 1
             return "activated"
 
-    def record(self, operation_id: str, event: str, payload: dict) -> None:
+    def record_terminal(self, operation_id: str, event: str,
+                        payload: dict) -> None:
         with self._lock:
-            if operation_id not in self._ops:
+            if event not in _TERMINAL_EVENTS:
+                raise ValueError(f"{event!r} is not a terminal event")
+            op = self._ops.get(operation_id)
+            if op is None:
                 raise ValueError(f"unknown operation {operation_id!r}")
-            if (operation_id, event) in self._events:
+            if op["state"] == "terminal":
                 raise ValueError(
-                    f"UNIQUE(operation_id, event) violated for "
-                    f"({operation_id!r}, {event!r})")
-            self._events[(operation_id, event)] = payload
+                    f"operation {operation_id!r} already has a terminal "
+                    f"event — exactly one is permitted")
+            if set(payload) != _TERMINAL_PAYLOAD_FIELDS:
+                raise ValueError(
+                    f"terminal payload fields {sorted(payload)} are not "
+                    f"exactly {sorted(_TERMINAL_PAYLOAD_FIELDS)}")
+            if not (isinstance(payload["outcome"], str)
+                    and type(payload["store_changed"]) is bool
+                    and type(payload["transaction_committed"]) is bool
+                    and type(payload["resulting_version"]) is int
+                    and not _timestamp_problems(payload["occurred_at"],
+                                                "occurred_at")):
+                raise ValueError("terminal payload has a malformed field")
+            self._events[(operation_id, event)] = {
+                "event_id": f"ev-{self._event_seq}",
+                "operation_id": operation_id, "event": event, **payload}
+            self._event_seq += 1
+            op["state"] = "terminal"
+
+    # Retained name for the finding-3 tests that assert the UNIQUE rule
+    # directly; delegates to the terminal path.
+    def record(self, operation_id: str, event: str, payload: dict) -> None:
+        if (operation_id, event) in self._events:
+            raise ValueError(
+                f"UNIQUE(operation_id, event) violated for "
+                f"({operation_id!r}, {event!r})")
+        self.record_terminal(operation_id, event, payload)
 
 
 _AUDIT = DraftAuditStore()
@@ -487,6 +558,39 @@ operation re-mint; an unbounded window is an unbounded replay surface."""
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+:/-]{0,127}$")
 _OPERATION_RE = re.compile(
     r"^op-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+_TIMESTAMP_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+00:00$")
+_TIMESTAMP_LEN = 32
+"""The frozen canonical timestamp: exactly `YYYY-MM-DDTHH:MM:SS.ffffff+00:00`,
+UTC, 32 ASCII chars (round 8, finding 5: `issued_at`/`expires_at` were only
+`fromisoformat()`-checked — a 100,026-char fractional-second string validated
+and was eligible for the durable audit record, an unbounded prose channel,
+and many strings mapped to one instant)."""
+
+
+def canonical_timestamp(dt: datetime) -> str:
+    """The one representation every persisted timestamp uses — forces 6-digit
+    microseconds and a literal `+00:00`, so `.isoformat()` dropping zero
+    microseconds cannot produce a non-canonical form."""
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f+00:00")
+
+
+def _timestamp_problems(value, field: str) -> list:
+    """Cap BEFORE parse; exact grammar; UTC; canonical round-trip
+    (byte-for-byte equal to the reserialization of the parsed instant)."""
+    if not isinstance(value, str):
+        return [f"{field} must be a string timestamp"]
+    if len(value) != _TIMESTAMP_LEN or not _TIMESTAMP_RE.fullmatch(value):
+        return [f"{field} is not the canonical "
+                f"YYYY-MM-DDTHH:MM:SS.ffffff+00:00 form"]
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return [f"{field} does not parse"]
+    if canonical_timestamp(parsed) != value:
+        return [f"{field} is not canonical"]
+    return []
 """The frozen token grammars (round 6: a byte CAP bounds a prose channel, it
 does not close one). `backup_ref` and `release_ref`: ASCII, no whitespace,
 128 chars — normalization is moot because the charset admits exactly one
@@ -500,6 +604,19 @@ _RELEASE_IDENTITY_FILES = (
     ROOT / "src" / "veracium" / "store" / "schema_version.py")
 """The frozen, ORDERED covered-file list the release identity is computed
 over — the instrument and the `0007` kernel."""
+
+
+def _read_covered_file(f: pathlib.Path) -> bytes:
+    """Fail CLOSED (round 8, finding 4): an unreadable covered file is a
+    broken package, not a build with identity `+unknown`. v9 substituted a
+    sentinel, so two differently-damaged builds shared an identity — exactly
+    the cross-build hole content-derivation was introduced to close."""
+    try:
+        return f.read_bytes()
+    except OSError as exc:
+        raise sv.PackageConsistencyError(
+            f"release identity cannot be computed: covered file {f} is "
+            f"unreadable ({exc}); no sentinel is a valid identity") from exc
 
 
 def _source_identity(files=None) -> str:
@@ -521,7 +638,7 @@ def _source_identity(files=None) -> str:
     h = hashlib.sha256(b"veracium-release-identity-v1")
     for f in files:
         name = f.name.encode()
-        data = f.read_bytes()
+        data = _read_covered_file(f)
         h.update(len(name).to_bytes(8, "big"))
         h.update(name)
         h.update(len(data).to_bytes(8, "big"))
@@ -532,23 +649,31 @@ def _source_identity(files=None) -> str:
 def _release_identity() -> str:
     """The running release identity the authority's `release_ref` must match:
     `veracium-<version>+<source-digest>` (§5b freezes representation,
-    charset, size, source of truth, comparison and rotation). The version is
-    read from the tree's own `pyproject.toml` — installed-distribution
-    metadata is wrong in exactly the environments that matter — and the
-    source digest makes the identity immutable per build: any change to the
-    instrument or kernel rotates it, which is the point. Falls back to a
-    sentinel both mint and validation share."""
+    charset, size, source of truth, comparison and rotation). **Fail-closed
+    (round 8, finding 4): a missing/unreadable pyproject, an absent or
+    malformed version declaration, or an unreadable covered file raises
+    `PackageConsistencyError` — no sentinel is ever a valid identity
+    component.** The version comes from the tree's own `pyproject.toml`
+    (installed-distribution metadata is wrong in exactly the environments
+    that matter); the framed source digest makes the identity immutable per
+    build."""
     try:
         text = (ROOT / "pyproject.toml").read_text()
-        mv = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
-        version = mv.group(1) if mv else "unknown"
-    except OSError:
-        version = "unknown"
-    try:
-        src = _source_identity()
-    except OSError:
-        src = "unknown"
-    return f"veracium-{version}+{src}"
+    except OSError as exc:
+        raise sv.PackageConsistencyError(
+            f"release identity cannot be computed: pyproject.toml is "
+            f"unreadable ({exc})") from exc
+    mv = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    if mv is None or not mv.group(1).strip():
+        raise sv.PackageConsistencyError(
+            "release identity cannot be computed: no version declaration in "
+            "pyproject.toml")
+    version = mv.group(1)
+    if not _TOKEN_RE.fullmatch(f"veracium-{version}+" + "0" * 64):
+        raise sv.PackageConsistencyError(
+            f"release identity cannot be computed: version {version!r} is "
+            f"not token-grammar-safe")
+    return f"veracium-{version}+{_source_identity()}"
 
 
 def _evidence_digest() -> str:
@@ -577,13 +702,19 @@ def make_authority(path, backup_ref: str = "draft-backup",
                    migration: Migration | None = None,
                    ttl_minutes: int = 15,
                    release_ref: str | None = None) -> MigrationAuthority:
-    """Draft convenience for hosts and tests; reads the module's current
-    migration so a test that patches `MIGRATION_1_TO_2` mints an authority for
-    what it patched in — the authority attests the *reviewed statements*, and
-    the evidence gate is what catches statements no evidence covers. Reads the
-    store to bind the source manifestation, and the clock for the validity
-    window. Production authorities are minted by release tooling with a real
-    release identity and durable consumption (§5b, §5e)."""
+    """**Draft/test convenience ONLY — not a production host API** (round 8,
+    additional correction d): it silently supplies `quiesced=True` and a
+    default `backup_ref`, which are the two things a real host must
+    ATTEST, not have defaulted. Production authorities are minted by release
+    tooling that takes an explicit quiescence attestation and a real backup
+    reference, with a real release identity and durable consumption (§5b,
+    §5e). Kept here so tests and the simulator can exercise the acceptance
+    path against the reviewed migration.
+
+    Reads the module's current migration so a test that patches
+    `MIGRATION_1_TO_2` mints an authority for what it patched in; reads the
+    store `mode=rw` to bind the source manifestation without creating it; and
+    reads the clock for the canonical validity window."""
     mig = MIGRATION_1_TO_2 if migration is None else migration
     canonical = os.path.realpath(str(path))
     # mode=rw: minting must never materialise the store it attests (round 7,
@@ -615,8 +746,8 @@ def make_authority(path, backup_ref: str = "draft-backup",
         migration_digest=migration_declaration_digest(mig),
         release_ref=_release_identity() if release_ref is None else release_ref,
         operation_id=f"op-{uuid.uuid4()}",
-        issued_at=now.isoformat(),
-        expires_at=(now + timedelta(minutes=ttl_minutes)).isoformat(),
+        issued_at=canonical_timestamp(now),
+        expires_at=canonical_timestamp(now + timedelta(minutes=ttl_minutes)),
         evidence_digest=_evidence_digest())
 
 
@@ -692,28 +823,25 @@ def authority_static_problems(a, canonical: str, snapshot=None) -> list:
         problems.append(f"authority was minted by {a.release_ref!r}; this "
                         f"process is {_release_identity()!r} — release "
                         f"identities must match")
-    if isinstance(a.issued_at, str) and isinstance(a.expires_at, str):
-        try:
-            issued = datetime.fromisoformat(a.issued_at)
-            expires = datetime.fromisoformat(a.expires_at)
-            now = datetime.now(timezone.utc)
-            if issued.tzinfo is None or expires.tzinfo is None:
-                problems.append("authority timestamps must be timezone-aware")
-            elif issued > expires:
-                problems.append("authority expires before it was issued")
-            elif expires - issued > MAX_AUTHORITY_LIFETIME:
-                problems.append(f"authority window exceeds the frozen "
-                                f"maximum lifetime {MAX_AUTHORITY_LIFETIME}")
-            elif issued > now:
-                # Round 5: a future-dated authority validated. No clock-skew
-                # allowance in the draft — skew handling, if production ever
-                # permits it, must be explicit and bounded (§5b).
-                problems.append(f"authority is issued in the future "
-                                f"({a.issued_at}); no clock-skew allowance")
-            elif now >= expires:
-                problems.append(f"authority expired at {a.expires_at}")
-        except ValueError:
-            problems.append("authority timestamps do not parse as RFC 3339")
+    # Round 8: canonical, length-capped timestamps BEFORE any window logic —
+    # v9 parsed a 100k-char fractional second and let it through.
+    ts_problems = (_timestamp_problems(a.issued_at, "issued_at")
+                   + _timestamp_problems(a.expires_at, "expires_at"))
+    problems += ts_problems
+    if not ts_problems:
+        issued = datetime.fromisoformat(a.issued_at)
+        expires = datetime.fromisoformat(a.expires_at)
+        now = datetime.now(timezone.utc)
+        if issued > expires:
+            problems.append("authority expires before it was issued")
+        elif expires - issued > MAX_AUTHORITY_LIFETIME:
+            problems.append(f"authority window exceeds the frozen maximum "
+                            f"lifetime {MAX_AUTHORITY_LIFETIME}")
+        elif issued > now:
+            problems.append(f"authority is issued in the future "
+                            f"({a.issued_at}); no clock-skew allowance")
+        elif now >= expires:
+            problems.append(f"authority expired at {a.expires_at}")
     return problems
 
 
@@ -799,16 +927,26 @@ def _consume_authority(a: MigrationAuthority) -> None:
 AUTHORIZER_PROBE_KEYS = frozenset({
     "authorizer_api_available", "denies_begin", "denies_commit", "denies_end",
     "denies_rollback", "denies_savepoint", "denies_release", "denies_pragma",
-    "denies_attach", "denies_detach", "denies_temp_schema",
-    "authorizer_restored"})
-"""The closed confinement vocabulary — twelve probes. 0007's runtime identity
+    "denies_attach", "denies_detach",
+    "denies_temp_table", "denies_temp_index", "denies_temp_view",
+    "denies_temp_trigger", "authorizer_restored"})
+"""The closed confinement vocabulary — fifteen probes. 0007's runtime identity
 deliberately has no authorizer probe — migrations left its scope in v10 — so
 its qualification cannot attest the behaviours `apply_migration` leans on.
 These are ALL required: a runtime failing any of them may execute a migration
 outside the declared confinement, so it is not qualified to migrate at all.
-`denies_rollback` was added in round 4 alongside the shared
-`SQLITE_TRANSACTION` observation, because `ROLLBACK` is the one
-transaction-ending statement the other probes never issue."""
+
+**Round 8, finding 1: one `denies_temp_schema` probe attested the wrong
+object.** It created a TEMP *table*; SQLite gives TEMP tables, indexes,
+views and triggers DIFFERENT authorizer action codes, so denying one
+establishes nothing about the others — and the motivating exploit is a TEMP
+*trigger*, which can perform persistent side effects when a later migration
+statement activates it. A weak authorizer denying TEMP tables while allowing
+TEMP triggers passed all twelve v9 probes; only the post-step leak assertion
+caught the trigger, after it had already executed. Each TEMP object class is
+now probed independently and each attempted creation must fail specifically
+with `SQLITE_AUTH`. `denies_rollback` covers the one transaction-ending
+statement the others never issue."""
 
 MIGRATION_EVIDENCE_ALGORITHM = 1
 
@@ -871,8 +1009,17 @@ def authorizer_probes() -> dict:
     out["denies_attach"] = _denied_by_authorizer((), "ATTACH ':memory:' AS side")
     out["denies_detach"] = _denied_by_authorizer(
         ("ATTACH ':memory:' AS side",), "DETACH side")
-    out["denies_temp_schema"] = _denied_by_authorizer(
+    out["denies_temp_table"] = _denied_by_authorizer(
         ("BEGIN IMMEDIATE",), "CREATE TEMP TABLE tprobe (x)")
+    out["denies_temp_index"] = _denied_by_authorizer(
+        ("BEGIN IMMEDIATE", "CREATE TEMP TABLE tprobe (x)"),
+        "CREATE INDEX temp.ixprobe ON tprobe(x)")
+    out["denies_temp_view"] = _denied_by_authorizer(
+        ("BEGIN IMMEDIATE",), "CREATE TEMP VIEW vprobe AS SELECT 1")
+    out["denies_temp_trigger"] = _denied_by_authorizer(
+        ("BEGIN IMMEDIATE", "CREATE TABLE mainprobe (a)"),
+        "CREATE TEMP TRIGGER trprobe AFTER INSERT ON mainprobe "
+        "BEGIN DELETE FROM mainprobe; END")
 
     def _restored() -> bool:
         c = sqlite3.connect(":memory:")
@@ -1570,30 +1717,43 @@ def _migration_uri(canonical: str) -> str:
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
          authority=None) -> Outcome:
-    """The terminal-audit wrapper (round 7, finding 3): once an operation is
-    consumed, EVERY closed outcome — `migrated`, the no-op `current`, any
-    refusal — writes its terminal event, so a spent authority with no record
-    is impossible in the draft exactly as §5e requires of production. A
-    terminal write failing raises the typed `MigrationAuditWriteError` with
-    the committed flag."""
-    state = {"consumed": False}
+    """The terminal-audit wrapper (round 7, finding 3; corrected round 8,
+    finding 3): once an operation is consumed, EVERY closed outcome writes
+    its terminal event, and the record's facts come from the kernel's
+    `OpenResult` — `store_changed`, `transaction_committed`,
+    `resulting_version` — NOT inferred from the outcome string. v9 derived
+    `resulting_version` from the label and reported v1 for a lost-race
+    `current` operation whose store was already v2. A terminal write failing
+    raises `MigrationAuditWriteError` carrying those exact facts."""
+    state = {"consumed": False, "facts": None}
     out = _run_inner(path, busy_timeout_ms, migrating, authority, state)
     if migrating and state["consumed"]:
-        committed = out == "migrated"
+        facts = state["facts"]
+        if facts is not None:
+            store_changed = facts.store_changed
+            committed = facts.transaction_committed
+            resulting_version = facts.resulting_version
+        else:
+            # A refusal after consumption but before the planner ran (a
+            # missing source, an unqualified runtime): nothing happened.
+            store_changed = committed = False
+            resulting_version = authority.from_version
+        terminal = ("migration_completed" if out in ("migrated", "current")
+                    else "migration_failed")
         try:
-            _AUDIT.record(
-                authority.operation_id,
-                "migration_completed" if out in ("migrated", "current")
-                else "migration_failed",
-                {"outcome": str(out),
-                 "occurred_at": datetime.now(timezone.utc).isoformat()})
+            _AUDIT.record_terminal(
+                authority.operation_id, terminal,
+                {"outcome": str(out), "store_changed": store_changed,
+                 "transaction_committed": committed,
+                 "resulting_version": resulting_version,
+                 "occurred_at": canonical_timestamp(
+                     datetime.now(timezone.utc))})
         except Exception as exc:
             raise MigrationAuditWriteError(
                 committed=committed,
                 operation_id=authority.operation_id,
                 store_path=authority.store_path,
-                resulting_version=(authority.to_version if committed
-                                   else authority.from_version),
+                resulting_version=resulting_version,
                 cause=exc)
     return out
 
@@ -1700,6 +1860,7 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                         allow_adopt=not migrating,   # a migration never adopts
                         older=hook,
                         new=_source_missing_hook if migrating else None)
+                    state["facts"] = label       # the kernel's OpenResult
                     return Outcome(label)
                 finally:
                     conn.close()

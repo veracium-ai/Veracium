@@ -81,6 +81,8 @@ REVIEWS = [
          verdict="approved architecture restated; deferred; migrate-only planner mode, serialized publication, Unicode-safe boundary, audit state machine, immutable release identity", findings=5),
     dict(spec="0013", round=7, kind="external", date="2026-08-03",
          verdict="mode, publication and boundary held; deferred; evidence snapshot binding, framed full-length identity, two-table audit machine, static source resolution, truthful internal-error", findings=5),
+    dict(spec="0013", round=8, kind="external", date="2026-08-04",
+         verdict="architecture standing; deferred; per-class TEMP qualification, enforced audit schema/atomicity, kernel terminal facts, fail-closed release identity, canonical timestamps; resolution/refusal split approved", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

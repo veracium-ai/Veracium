@@ -1382,8 +1382,19 @@ def test_terminal_records_are_written_for_migrated_and_noop_current():
     assert ev[(a1.operation_id, "migration_completed")]["outcome"] == "migrated"
     assert ev[(a2.operation_id, "migration_completed")]["outcome"] == "current"
     assert (a1.operation_id, "migration_attempted") in ev
-    with pytest.raises(ValueError, match="UNIQUE"):
-        m13._AUDIT.record(a1.operation_id, "migration_completed", {})
+    with pytest.raises(ValueError, match="already has a terminal"):
+        m13._AUDIT.record_terminal(a1.operation_id, "migration_completed",
+                                   _terminal_payload())
+
+
+def _terminal_payload(**over):
+    base = {"outcome": "migrated", "store_changed": True,
+            "transaction_committed": True, "resulting_version": 2,
+            "occurred_at": m13.canonical_timestamp(
+                __import__("datetime").datetime.now(
+                    __import__("datetime").timezone.utc))}
+    base.update(over)
+    return base
 
 
 def test_a_failed_terminal_write_raises_the_typed_error(monkeypatch):
@@ -1392,11 +1403,12 @@ def test_a_failed_terminal_write_raises_the_typed_error(monkeypatch):
 
     def broken(operation_id, event, payload):
         raise OSError("audit storage died mid-operation")
-    monkeypatch.setattr(m13._AUDIT, "record", broken)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", broken)
     with pytest.raises(m13.MigrationAuditWriteError) as exc:
         m13.migrate_store(p, auth)
     assert exc.value.committed is True                  # the migration ran
     assert exc.value.operation_id == auth.operation_id
+    assert exc.value.resulting_version == 2
     assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 2
 
 
@@ -1446,3 +1458,207 @@ def test_check_evidence_is_total_over_non_mapping_runtime_members(monkeypatch,
     monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
     assert m13.check_evidence() == 1
     assert sv.active_records([42]) == []
+
+
+# --- round 8, finding 1: each TEMP object class is probed independently -----
+
+def test_the_temp_probes_cover_every_object_class():
+    probes = m13.authorizer_probes()
+    assert {"denies_temp_table", "denies_temp_index", "denies_temp_view",
+            "denies_temp_trigger"} <= set(probes)
+    assert set(probes) == set(m13.AUTHORIZER_PROBE_KEYS)      # fifteen
+    assert all(v is True for v in probes.values()), probes
+
+
+def test_an_authorizer_allowing_temp_triggers_fails_qualification(monkeypatch):
+    """Round 8's falsifier: an authorizer that denies TEMP tables but ALLOWS
+    TEMP triggers passed all twelve v9 probes — only the post-step leak
+    assertion caught the trigger, after it executed. Each TEMP class now has
+    its own SQLITE_AUTH probe, so the weak authorizer flips
+    denies_temp_trigger False."""
+    # The reviewer's construction: a full replacement that denies the
+    # transaction/pragma set and TEMP tables/indexes/views but ALLOWS temp
+    # triggers (and the temp-schema writes their creation needs) — the real
+    # authorizer's db-name rule is what normally denies all four, so the
+    # falsifier must drop that rule for the trigger to actually be created.
+    deny = {sqlite3.SQLITE_TRANSACTION, sqlite3.SQLITE_SAVEPOINT,
+            sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH, sqlite3.SQLITE_PRAGMA,
+            sqlite3.SQLITE_CREATE_TEMP_TABLE, sqlite3.SQLITE_CREATE_TEMP_INDEX,
+            sqlite3.SQLITE_CREATE_TEMP_VIEW}
+
+    def weak(action, a1, a2, db, trig):
+        return sqlite3.SQLITE_DENY if action in deny else sqlite3.SQLITE_OK
+    monkeypatch.setattr(m13, "_authorizer", weak)
+    probes = m13.authorizer_probes()
+    assert probes["denies_temp_trigger"] is False            # allowed → not denied
+    assert probes["denies_temp_table"] is True               # still denied
+    # ...and a runtime whose live probes don't reproduce the record refuses.
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    assert m13.migration_runtime_supported(art) is False
+
+
+# --- round 8, finding 2: audit schema and state machine enforced -----------
+
+def test_the_audit_store_rejects_two_terminal_events():
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    m13._AUDIT.activate(auth)
+    m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
+                               _terminal_payload())
+    with pytest.raises(ValueError, match="already has a terminal"):
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
+                                   _terminal_payload(outcome="x"))
+
+
+def test_the_audit_store_rejects_unknown_events_and_payloads():
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    m13._AUDIT.activate(auth)
+    with pytest.raises(ValueError, match="not a terminal event"):
+        m13._AUDIT.record_terminal(auth.operation_id, "totally-made-up",
+                                   _terminal_payload())
+    with pytest.raises(ValueError, match="fields"):
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
+                                   {"arbitrary": object})
+    with pytest.raises(ValueError, match="malformed"):
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
+                                   _terminal_payload(resulting_version="two"))
+
+
+def test_the_operation_row_carries_the_full_frozen_schema():
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    m13._AUDIT.activate(auth)
+    row = m13._AUDIT._ops[auth.operation_id]
+    assert set(row) == m13._AUDIT_OPERATION_FIELDS
+    assert row["evidence_digest"] == auth.evidence_digest
+    assert row["source_digest"] == auth.source_digest
+    assert row["state"] == "attempted"
+
+
+def test_activation_is_atomic():
+    """The operation row and the attempted event appear together or not at
+    all — a consumed operation without its attempted record cannot exist."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13._AUDIT.activate(auth) == "activated"
+    assert auth.operation_id in m13._AUDIT._ops
+    assert (auth.operation_id, "migration_attempted") in m13._AUDIT._events
+
+
+# --- round 8, finding 3: correct terminal facts per branch -----------------
+
+def test_the_current_branch_reports_the_actual_resulting_version(monkeypatch):
+    """v9 reported resulting_version=1 for a lost-race current whose store
+    was already v2. The kernel's OpenResult carries the truth."""
+    p = _v1_store()
+    a1, a2 = m13.make_authority(p), m13.make_authority(p)
+    assert m13.migrate_store(p, a1) == "migrated"
+
+    def broken(operation_id, event, payload):
+        raise OSError("died")
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", broken)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, a2)                          # lost-race current
+    assert exc.value.resulting_version == 2               # NOT 1
+    assert exc.value.committed is False                   # this op changed nothing
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 2
+
+
+def test_the_current_with_repair_branch_reports_committed_true(monkeypatch):
+    """A current operation that repairs rebuildable drift DID commit a change
+    — its committed flag is True, distinguished from the no-repair case."""
+    p = _v1_store()
+    # Mint the current-branch authority WHILE the store is still a v1 source
+    # (minting refuses a v2 store — round 7). Then migrate with a different
+    # authority, introduce rebuildable drift, and present the pre-minted one.
+    a = m13.make_authority(p)
+    m13.migrate_store(p, m13.make_authority(p))           # -> v2
+    c = sqlite3.connect(p)
+    c.execute("DROP INDEX ix_confirmations_edge")         # rebuildable drift
+    c.commit()
+    c.close()
+
+    def broken(operation_id, event, payload):
+        raise OSError("died")
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", broken)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, a)                           # current WITH repair
+    assert exc.value.committed is True
+    assert exc.value.resulting_version == 2
+
+
+def test_the_migrated_branch_reports_committed_true(monkeypatch):
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def broken(operation_id, event, payload):
+        raise OSError("died")
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", broken)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.committed is True
+    assert exc.value.resulting_version == 2
+
+
+# --- round 8, finding 4: release identity fails closed ---------------------
+
+def test_an_unreadable_covered_file_fails_closed(monkeypatch, tmp_path):
+    missing = tmp_path / "gone.py"                        # never created
+    monkeypatch.setattr(m13, "_RELEASE_IDENTITY_FILES",
+                        (missing,))
+    with pytest.raises(sv.PackageConsistencyError):
+        m13._release_identity()
+
+
+def test_a_missing_version_declaration_fails_closed(monkeypatch, tmp_path):
+    fake_root = tmp_path
+    (fake_root / "pyproject.toml").write_text("[project]\nname='x'\n")
+    monkeypatch.setattr(m13, "ROOT", fake_root)
+    monkeypatch.setattr(m13, "_RELEASE_IDENTITY_FILES",
+                        (Path(m13.__file__),))
+    with pytest.raises(sv.PackageConsistencyError):
+        m13._release_identity()
+
+
+def test_no_unknown_sentinel_authority_migrates(monkeypatch):
+    """v9 accepted `veracium-0.4.8+unknown` on both sides. Now identity
+    acquisition raises before any authority is minted or accepted."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def fail(files=None):
+        raise sv.PackageConsistencyError("unreadable")
+    monkeypatch.setattr(m13, "_source_identity", fail)
+    with pytest.raises(sv.PackageConsistencyError):
+        m13.migrate_store(p, auth)
+
+
+# --- round 8, finding 5: canonical, bounded timestamps ---------------------
+
+def test_a_hundred_kilobyte_timestamp_is_refused():
+    p = _v1_store()
+    long_ts = "2026-08-03T00:00:00." + "1" * 100000 + "+00:00"
+    a = m13.make_authority(p)._replace(issued_at=long_ts)
+    probs = m13.authority_static_problems(
+        a, __import__("os").path.realpath(p), m13._artifact_snapshot())
+    assert any("canonical" in pr for pr in probs)
+    assert m13.migrate_store(p, a) == "migration-quiescence-required"
+
+
+def test_a_noncanonical_but_valid_instant_is_refused():
+    """Many strings map to one instant; only the canonical form is accepted."""
+    p = _v1_store()
+    # A valid ISO 8601 instant, but not the frozen 6-digit-microsecond form.
+    a = m13.make_authority(p)._replace(issued_at="2026-08-03T00:00:00+00:00")
+    probs = m13.authority_static_problems(
+        a, __import__("os").path.realpath(p), m13._artifact_snapshot())
+    assert any("canonical" in pr for pr in probs)
+
+
+def test_minted_timestamps_are_canonical():
+    p = _v1_store()
+    a = m13.make_authority(p)
+    assert m13._timestamp_problems(a.issued_at, "issued_at") == []
+    assert m13._timestamp_problems(a.expires_at, "expires_at") == []
+    assert len(a.issued_at) == 32
