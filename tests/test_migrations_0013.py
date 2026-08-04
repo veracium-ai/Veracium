@@ -1351,11 +1351,11 @@ def test_audit_unavailability_consumes_nothing_and_is_retryable(monkeypatch):
     real = m13._AUDIT.activate
     calls = {"n": 0}
 
-    def flaky(a):
+    def flaky(a, output_digest):
         calls["n"] += 1
         if calls["n"] == 1:
             raise OSError("audit storage offline")
-        return real(a)
+        return real(a, output_digest)
     monkeypatch.setattr(m13._AUDIT, "activate", flaky)
     assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
     assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
@@ -1385,6 +1385,14 @@ def test_terminal_records_are_written_for_migrated_and_noop_current():
     with pytest.raises(ValueError, match="already has a terminal"):
         m13._AUDIT.record_terminal(a1.operation_id, "migration_completed",
                                    _terminal_payload())
+
+
+def _activate(auth):
+    """Activate directly in a test — resolve the output digest the operation
+    row needs from the committed artifact, exactly as _run does."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    rec = m13._resolve_path_record(auth, art)
+    return m13._AUDIT.activate(auth, rec["output_acceptance_digest"])
 
 
 def _terminal_payload(**over):
@@ -1502,7 +1510,7 @@ def test_an_authorizer_allowing_temp_triggers_fails_qualification(monkeypatch):
 def test_the_audit_store_rejects_two_terminal_events():
     p = _v1_store()
     auth = m13.make_authority(p)
-    m13._AUDIT.activate(auth)
+    _activate(auth)
     m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
                                _terminal_payload())
     with pytest.raises(ValueError, match="already has a terminal"):
@@ -1513,7 +1521,7 @@ def test_the_audit_store_rejects_two_terminal_events():
 def test_the_audit_store_rejects_unknown_events_and_payloads():
     p = _v1_store()
     auth = m13.make_authority(p)
-    m13._AUDIT.activate(auth)
+    _activate(auth)
     with pytest.raises(ValueError, match="not a terminal event"):
         m13._AUDIT.record_terminal(auth.operation_id, "totally-made-up",
                                    _terminal_payload())
@@ -1528,7 +1536,7 @@ def test_the_audit_store_rejects_unknown_events_and_payloads():
 def test_the_operation_row_carries_the_full_frozen_schema():
     p = _v1_store()
     auth = m13.make_authority(p)
-    m13._AUDIT.activate(auth)
+    _activate(auth)
     row = m13._AUDIT._ops[auth.operation_id]
     assert set(row) == m13._AUDIT_OPERATION_FIELDS
     assert row["evidence_digest"] == auth.evidence_digest
@@ -1541,7 +1549,7 @@ def test_activation_is_atomic():
     all — a consumed operation without its attempted record cannot exist."""
     p = _v1_store()
     auth = m13.make_authority(p)
-    assert m13._AUDIT.activate(auth) == "activated"
+    assert _activate(auth) == "activated"
     assert auth.operation_id in m13._AUDIT._ops
     assert (auth.operation_id, "migration_attempted") in m13._AUDIT._events
 
@@ -1662,3 +1670,199 @@ def test_minted_timestamps_are_canonical():
     assert m13._timestamp_problems(a.issued_at, "issued_at") == []
     assert m13._timestamp_problems(a.expires_at, "expires_at") == []
     assert len(a.issued_at) == 32
+
+
+# --- round 9, finding 1: activation is genuinely atomic --------------------
+
+def test_activation_rolls_back_on_a_forced_failure(monkeypatch):
+    """Round 9: v10 did two dict writes; a failure between them left the
+    operation consumed with no attempted record, and a retry saw a
+    duplicate. A failure anywhere in activation must leave BOTH tables
+    untouched and the authority retryable."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real_row = m13._AUDIT._operation_row
+
+    def boom(a, output_digest):
+        raise OSError("audit storage failed mid-activation")
+    monkeypatch.setattr(m13._AUDIT, "_operation_row", boom)
+    assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
+    monkeypatch.setattr(m13._AUDIT, "_operation_row", real_row)
+    # NOTHING was consumed or recorded — the same authority activates fresh.
+    assert auth.operation_id not in m13._AUDIT._ops
+    assert (auth.operation_id, "migration_attempted") not in m13._AUDIT._events
+    assert m13.migrate_store(p, auth) == "migrated"
+
+
+def test_terminal_publication_is_atomic(monkeypatch):
+    """A failure building the terminal event leaves the operation's state at
+    `attempted` and no terminal event — the swap is the only mutation."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    _activate(auth)
+    real_ts = m13._timestamp_problems
+
+    def boom(value, field):
+        if field == "occurred_at":
+            raise OSError("mid-terminal failure")
+        return real_ts(value, field)
+    monkeypatch.setattr(m13, "_timestamp_problems", boom)
+    with pytest.raises(OSError):
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
+                                   _terminal_payload())
+    monkeypatch.setattr(m13, "_timestamp_problems", real_ts)
+    assert m13._AUDIT._ops[auth.operation_id]["state"] == "attempted"
+    assert (auth.operation_id, "migration_completed") not in m13._AUDIT._events
+
+
+# --- round 9, finding 2: complete schema + semantic consistency ------------
+
+def test_the_operation_row_carries_every_frozen_field():
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    _activate(auth)
+    row = m13._AUDIT._ops[auth.operation_id]
+    assert set(row) == m13._AUDIT_OPERATION_FIELDS
+    for f in ("backup_ref", "issued_at", "expires_at", "output_digest"):
+        assert f in row and row[f]
+    assert row["backup_ref"] == auth.backup_ref
+    assert row["issued_at"] == auth.issued_at
+    assert row["expires_at"] == auth.expires_at
+    assert m13._timestamp_problems(row["attempted_at"], "a") == []
+
+
+def test_the_terminal_validator_rejects_contradictions():
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    _activate(auth)
+    op = auth.operation_id
+    # outcome not in the closed vocabulary
+    with pytest.raises(ValueError, match="closed vocabulary"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+                                   _terminal_payload(outcome="totally-made-up"))
+    # completed cannot carry a failure/foreign outcome
+    with pytest.raises(ValueError, match="permits only migrated or current"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+                                   _terminal_payload(outcome="locked",
+                                                     resulting_version=1))
+    # failed cannot carry a success outcome
+    with pytest.raises(ValueError, match="cannot carry the success"):
+        m13._AUDIT.record_terminal(op, "migration_failed",
+                                   _terminal_payload(outcome="migrated"))
+    # store_changed without a commit is impossible
+    with pytest.raises(ValueError, match="impossible"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+                                   _terminal_payload(store_changed=True,
+                                                     transaction_committed=False))
+    # a version that is neither source nor destination
+    with pytest.raises(ValueError, match="neither the source"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+                                   _terminal_payload(resulting_version=999))
+    # a migrated outcome must resolve to the destination
+    with pytest.raises(ValueError, match="destination version"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+                                   _terminal_payload(outcome="migrated",
+                                                     resulting_version=1))
+
+
+# --- round 9, finding 3: post-commit internal defect tells the truth -------
+
+def test_a_post_commit_internal_defect_never_reports_the_wrong_version():
+    """Round 9: v10 built the OpenResult AFTER commit; forcing it to raise
+    recorded committed=False and v1 for a store committed at v2. The kernel
+    now builds the result BEFORE commit, so a raise rolls the store back and
+    every fact is truthful — the store is v1 and the outcome is
+    internal-error."""
+    p = _v1_store()
+    orig = sv.OpenResult
+
+    def boom(label, **kw):
+        if label == "migrated":
+            raise RuntimeError("internal defect at result construction")
+        return orig(label, **kw)
+    try:
+        sv.OpenResult = boom
+        auth = m13.make_authority(p)
+        out = m13.migrate_store(p, auth)
+        assert out == "internal-error"
+        assert sqlite3.connect(p).execute(
+            "PRAGMA user_version").fetchone()[0] == 1        # rolled back
+        ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+        assert ev is not None
+        assert ev["resulting_version"] == 1                  # truthful
+        assert ev["store_changed"] is False
+    finally:
+        sv.OpenResult = orig
+
+
+# --- round 9, finding 4: TEMP virtual tables are qualified ------------------
+
+def test_temp_virtual_tables_are_probed():
+    probes = m13.authorizer_probes()
+    assert "denies_temp_virtual_table" in probes
+    assert probes["denies_temp_virtual_table"] is True
+    assert set(probes) == set(m13.AUTHORIZER_PROBE_KEYS)     # sixteen
+
+
+def test_an_authorizer_allowing_temp_vtables_fails_qualification(monkeypatch):
+    """Round 9's falsifier: deny every named TEMP object class but allow
+    virtual tables — v10's fifteen probes all passed."""
+    deny = {sqlite3.SQLITE_TRANSACTION, sqlite3.SQLITE_SAVEPOINT,
+            sqlite3.SQLITE_ATTACH, sqlite3.SQLITE_DETACH, sqlite3.SQLITE_PRAGMA,
+            sqlite3.SQLITE_CREATE_TEMP_TABLE, sqlite3.SQLITE_CREATE_TEMP_INDEX,
+            sqlite3.SQLITE_CREATE_TEMP_VIEW, sqlite3.SQLITE_CREATE_TEMP_TRIGGER}
+
+    def weak(action, a1, a2, db, trig):
+        return sqlite3.SQLITE_DENY if action in deny else sqlite3.SQLITE_OK
+    monkeypatch.setattr(m13, "_authorizer", weak)
+    probes = m13.authorizer_probes()
+    assert probes["denies_temp_virtual_table"] is False
+    assert probes["denies_temp_table"] is True
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    assert m13.migration_runtime_supported(art) is False
+
+
+# --- round 9, finding 5: generated_at is canonical -------------------------
+
+def test_a_noncanonical_generated_at_poisons_the_artifact(monkeypatch):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art["generated_at"] = "2026-01-01T00:00:00+00:00"        # valid but not canonical
+    with m13._registry():
+        assert any("generated_at" in pr
+                   for pr in m13.schema_evidence_problems(art))
+    art["generated_at"] = "2026-01-01T00:00:00." + "1" * 100000 + "+00:00"
+    with m13._registry():
+        assert any("generated_at" in pr
+                   for pr in m13.schema_evidence_problems(art))
+
+
+def test_the_committed_generated_at_is_canonical():
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    assert m13._timestamp_problems(art["generated_at"], "generated_at") == []
+    assert len(art["generated_at"]) == 32
+
+
+# --- round 9 evidence gap: the rolled-back terminal cell -------------------
+
+def test_the_rolled_back_cell_reports_the_source_version(monkeypatch):
+    """The fourth terminal cell round 8 required but v10 left unexercised: a
+    migration that fails after a statement rolls the store back; the forced
+    terminal-write failure must report committed=False and the SOURCE
+    version, with the authority consumed."""
+    bad = m13.Migration(1, 2, (m13.CONFIRMATIONS_DDL, "CREATE BOGUS ("))
+    _patch_migration(monkeypatch, bad)
+    _crafted_artifact(monkeypatch, m13.migration_declaration_digest(bad))
+    p = _v1_store(rows=2)
+    auth = m13.make_authority(p)
+
+    def broken(operation_id, event, payload):
+        raise OSError("terminal write died")
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", broken)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.committed is False
+    assert exc.value.resulting_version == 1                  # source, rolled back
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+    assert sqlite3.connect(p).execute(
+        "SELECT COUNT(*) FROM edges").fetchone()[0] == 2
+    assert auth.operation_id in m13._AUDIT._ops              # consumed

@@ -5,32 +5,30 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v10)** — round 8: *architecture standing; v9 deferred on five
-> load-bearing gaps*. All taken; concrete migration, evidence selection key
-> and ordinary planner states untouched: **TEMP confinement is probed per
-> object class** (v9's one probe created a TEMP *table*; SQLite gives tables,
-> indexes, views and triggers different action codes, and a weak authorizer
-> allowing TEMP triggers passed all twelve — each class now has its own
-> `SQLITE_AUTH` probe, fifteen total); **the audit machine enforces its
-> schema and state** (v9 accepted both terminal events for one operation,
-> arbitrary event names and payloads — activation is now one transaction,
-> `migration_operations`/`migration_audit_events` with the event enum, exact
-> terminal payload schema, and **at most one terminal event per operation**);
-> **terminal facts come from the kernel** (v9 inferred `resulting_version`
-> from the outcome string and reported v1 for a v2 store — `open_versioned`
-> now returns an `OpenResult` carrying `store_changed`,
-> `transaction_committed`, `resulting_version`); **release identity fails
-> closed** (v9 substituted a shared `+unknown` sentinel on an unreadable
-> input, re-opening the cross-build hole — acquisition now raises
-> `PackageConsistencyError`); and **timestamps are canonical and capped**
-> (v9 accepted a 100 kB fractional-second string — a 32-char
-> `YYYY-MM-DDTHH:MM:SS.ffffff+00:00` grammar, checked before parse, with a
-> canonical round-trip). The resolution/refusal split was APPROVED.
+> **in review (v11)** — round 9: *architecture standing; v10 deferred on five
+> load-bearing gaps plus the rolled-back terminal cell and stale wording*.
+> All taken; concrete migration, path-evidence key, release framing, the
+> one-snapshot reader and ordinary planner states untouched: **audit
+> activation is genuinely atomic** (v10 did two dict writes — a failure
+> between them left the operation consumed with no attempted record; the
+> whole `_ops`/`_events` state is now replaced in one unfailable swap);
+> **the audit schema is complete and semantically enforced** (the operation
+> row regained `backup_ref`, `issued_at`, `expires_at` and the output
+> acceptance digest; a terminal record's outcome must be a closed member
+> consistent with its event, and impossible
+> `store_changed`/`committed`/`resulting_version` combinations reject);
+> **post-commit truth** (the kernel builds its `OpenResult` BEFORE `COMMIT`,
+> so an internal defect can never coexist with a committed store the audit
+> misreports — v10 recorded `committed=False` and v1 for a v2 store); **TEMP
+> virtual tables are qualified** (a sixteenth `SQLITE_CREATE_VTABLE` probe);
+> and **the evidence `generated_at` is canonical** (it is inside the
+> authority's `evidence_digest`). The rolled-back terminal cell is now
+> exercised and the stale probe-count/ISO-8601 wording corrected.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v10 |
+| **Version** | v11 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -264,7 +262,7 @@ model is deferred to the first real `ALTER` and must be externally reviewed
 there** — per the round-2 acceptance-bar ruling, not as accepted residual risk.
 
 **Executable**: `specs/migrations_0013.py` and `tests/test_migrations_0013.py`
-(135 tests: every round-2 through round-8 probe as a regression, the full inherited
+(145 tests: every round-2 through round-9 probe as a regression, the full inherited
 planner across empty/unstamped/foreign/malformed/newer stores, the evidence
 gate's adversarial records, confinement qualification, the closed failure
 model, and the stale-connection hazard below).
@@ -343,7 +341,7 @@ ruling):
 | `backup_ref` | the backup this operation made | the frozen token grammar: ASCII `[A-Za-z0-9._+:/-]`, ≤ 128 chars, no whitespace — a grammar closes the prose channel a byte cap only bounded (round 6); normalization is moot because the charset admits one representation |
 | `release_ref` | the minting release/deployment | must equal the RUNNING release identity — **frozen: `veracium-<version>+<source-digest>`**, the digest being the FULL sha256 (round 7: 12 hex chars were 48 bits against an adversary who constructs builds) over a **framed, domain-separated** encoding: `"veracium-release-identity-v1"` then, per file in the frozen ordered list (this instrument, the `0007` kernel), length-framed name and length-framed content — round 7 measured a docstring moved across the raw-concatenation boundary keeping the identity byte-identical, no hash collision required. Representation: the token grammar (128 chars holds it); source of truth: the running tree's own bytes, identical in editable and archive builds; comparison: exact equality; rotation: any covered-file change. Production may substitute a signed release-artifact digest |
 | `operation_id` | this one migration operation | **single-use over the COMPLETE operation** (round 5) — consumed at acceptance, before any store access; an opaque UUID-shaped token (the grammar checks shape, not version/variant bits — round 7's wording ruling) |
-| `issued_at` · `expires_at` | the validity window | timezone-aware ISO 8601 as accepted by the parser (round 6 narrowed the wording); `issued ≤ now < expires`; `expires − issued ≤` the frozen `MAX_AUTHORITY_LIFETIME` (1 h); **no clock-skew allowance** — skew handling, if production ever permits it, must be explicit and bounded |
+| `issued_at` · `expires_at` | the validity window | **the one canonical timestamp contract** (round 9, finding 5, applied uniformly): exact `str`, 32 ASCII chars, `YYYY-MM-DDTHH:MM:SS.ffffff+00:00`, UTC only, length-capped before parse, byte-equal to the reserialization of the parsed instant; `issued ≤ now < expires`; `expires − issued ≤` the frozen `MAX_AUTHORITY_LIFETIME` (1 h); **no clock-skew allowance**. EVERY persisted timestamp — `attempted_at`, `occurred_at`, and the evidence artifact's `generated_at` — uses this exact contract |
 | `evidence_digest` | the exact evidence artifact consumed | sha256 of the operation's SNAPSHOT bytes (round 7: one read feeds digest, comparison, parse and planner — v8's two reads were a TOCTOU, measured); a regenerated artifact unbinds the authority |
 | *(all three digests)* | — | exactly 64 lowercase hex, statically; and the authority's (from, to, source, migration) key must resolve to **exactly one current path record in the snapshot** before consumption — so even a no-op `current` operation was valid for one exact evidenced source (round 7: v8's current branch accepted a garbage source digest) |
 
@@ -485,16 +483,22 @@ left its scope in v10 — so its qualification cannot attest the behaviours
 §4b's confinement leans on. The artifact therefore records a
 **migration-runtime qualification** per build identity: authorizer API
 available; `BEGIN`/`COMMIT`/`END`/`ROLLBACK`, savepoints and `RELEASE`,
-`PRAGMA`, `ATTACH`/`DETACH`, and TEMP-schema effects each **observed and
-denied**; restoration after rejection verified. All twelve probes are
-required, and **a denial counts only when the failure is specifically
+`PRAGMA`, `ATTACH`/`DETACH`, and **each TEMP object class — table, index,
+view, trigger and virtual table — separately** each **observed and denied**;
+restoration after rejection verified. **All SIXTEEN probes are required**
+(round 8 split the single TEMP probe into per-class probes because SQLite
+gives each class a distinct action code, and a weak authorizer allowing TEMP
+triggers passed the one probe; round 9, finding 4 added
+`denies_temp_virtual_table` after a weak authorizer allowing TEMP virtual
+tables — whose constructor runs before the post-step leak assertion —
+passed all fifteen). **A denial counts only when the failure is specifically
 authorization** — `sqlite_errorcode == SQLITE_AUTH` (message-text fallback on
 Python 3.10, which lacks the attribute). Round 4 measured why: the `RELEASE`
 probe held no savepoint, so `no such savepoint` — raised under a fully
 permissive authorizer — was recorded as a denial; every probe's setup is now
 a valid statement sequence (the savepoint exists before the authorizer is
-installed), and the permissive-authorizer falsifier flips all twelve denial
-results to False. Consumption does not trust the record: the probes are
+installed), and the permissive-authorizer falsifier flips every denial
+result to False. Consumption does not trust the record: the probes are
 re-run live and compared — mirroring how `0007`'s `runtime_supported()`
 re-derives constructor manifestations — and **artifact-level validation
 poisons the qualification** on any malformed current-algorithm record,
@@ -575,38 +579,54 @@ was internally inconsistent):
 ```
 migration_operations                    migration_audit_events
     operation_id  PRIMARY KEY               event_id       PRIMARY KEY
-    authority bindings                      operation_id   FOREIGN KEY
-    activation state                        event · occurred_at · payload
-    attempted_at                            UNIQUE(operation_id, event)
+    release_ref · backup_ref                operation_id   FOREIGN KEY
+    store_path · from_version · to_version  event  (the closed enum)
+    source_digest · output_digest           occurred_at
+    migration_digest · evidence_digest      payload (terminal only)
+    issued_at · expires_at · attempted_at   UNIQUE(operation_id, event)
+    state  attempted | terminal            ≤ one TERMINAL event per operation
 ```
 
-**The operation-row insert IS the compare-and-set consumption.** The rules:
+**The COMPLETE operation-row schema** (round 9, finding 2: v10's row omitted
+`backup_ref`, `issued_at`, `expires_at` and the output acceptance digest) —
+every authority binding plus the resolved destination identity. **The
+operation-row insert IS the compare-and-set consumption, and activation is
+one transaction** (round 9, finding 1: v10 did two independent writes, so a
+failure between them left the operation consumed with no attempted record;
+the draft replaces the whole `_ops`/`_events` state in one unfailable swap,
+production in one DB transaction, so a forced failure at any step leaves
+nothing persisted). The rules:
 
 | rule | contract |
 |---|---|
 | duplicate operation id on activation | the authority IS consumed — `migration-quiescence-required` (round 7 split this from the outage case v8 conflated) |
-| audit storage unavailable before activation | **`migration-audit-unavailable`** — no store access, nothing consumed (a failed insert consumed nothing); a retry may re-present the authority |
+| audit storage unavailable before activation | **`migration-audit-unavailable`** — no store access, nothing consumed (activation is atomic; a failed activation consumed nothing); a retry may re-present the authority |
 | migrated and committed, terminal write fails | **`MigrationAuditWriteError(committed=True, resulting_version)`** — the facts come from the kernel's `OpenResult` (`store_changed`, `transaction_committed`, `resulting_version`), NEVER inferred from the outcome string (round 8, finding 3: v9 read `resulting_version` from the label and reported v1 for a lost-race `current` whose store was already v2); a retry opens `current`. Mirrors `0007` §4e |
 | rolled back, terminal write fails | store unchanged, authority spent; **`MigrationAuditWriteError(committed=False)`** |
 | `current` with no repair | terminal record written (outcome `current`); a terminal-write failure is `committed=False` — nothing changed |
-| `current` with a committed rebuildable repair | the repair transaction committed: a terminal-write failure is `committed=True`, resulting version unchanged — requires the production planner to report repairs (a precise implementation obligation; the draft cannot observe the kernel's repair) |
-| every consumed outcome | writes its terminal event — a spent authority with no record is indistinguishable from a crash. Executable in the draft: `DraftAuditStore` implements both tables in-process, `UNIQUE(operation_id, event)` enforced, terminal records measured for `migrated` and the no-op `current` |
+| `current` with a committed rebuildable repair | the repair transaction committed: a terminal-write failure is `committed=True`, resulting version unchanged. The kernel's `OpenResult.transaction_committed` carries this fact (round 8) — the draft demonstrates it; **the production planner must report the same fact if it repairs in a separate transaction** (§5e implementation obligation) |
+| every consumed outcome | writes its terminal event — a spent authority with no record is indistinguishable from a crash. Executable in the draft: `DraftAuditStore` implements both tables, atomic activation, and terminal records measured for `migrated`, the no-op `current`, `current`-with-repair and the rolled-back cell |
 
-**The frozen record schema** — every field typed and capped, so a record is
-data, not prose:
+**The terminal record is SEMANTICALLY consistent, not merely typed** (round 9,
+finding 2: v10 accepted `migration_completed`+`outcome=locked`+
+`resulting_version=999`). A terminal payload is `outcome` · `store_changed` ·
+`transaction_committed` · `resulting_version` · `occurred_at`, and:
 
 ```
-schema_version        int, 1
-event                 "migration_attempted" | "migration_completed" | "migration_failed"
-operation_id          the op-<uuid4> grammar
-store_path            canonical, ≤ 4096 fs-encoded bytes
-from_version          int          to_version   int
-source_acceptance_digest · output_acceptance_digest      64 lowercase hex
-migration_declaration_digest · evidence_digest           64 lowercase hex
-outcome               a member of §5d's closed vocabulary (completed/failed only)
-release_ref · backup_ref                                 the token grammar
-issued_at · expires_at · occurred_at                     timezone-aware ISO 8601
+outcome                        a member of §5d's closed vocabulary
+migration_completed            outcome ∈ {migrated, current}
+migration_failed               outcome ∉ the success set
+store_changed=True             implies transaction_committed=True
+resulting_version              ∈ {from_version, to_version}
+outcome=migrated               resulting_version == to_version
+migration_failed               resulting_version == from_version
+event_id                       a per-store-unique id; state transitions
+                               attempted → terminal by compare-and-set
 ```
+
+Every timestamp — `issued_at`, `expires_at`, `attempted_at`, `occurred_at` —
+is the canonical 32-char form (§5b); every digest 64 lowercase hex; the
+token fields the frozen grammars.
 
 Lands with the `0008` implementation; the draft demonstrates the complete
 lifecycle in-process — atomic consumption under concurrency, the typed
@@ -662,7 +682,11 @@ tests at implementation.
 | **M36** the audit store enforces schema, event enum and one-terminal-per-operation, atomically | `test_the_audit_store_rejects_two_terminal_events` · `test_the_audit_store_rejects_unknown_events_and_payloads` · `test_the_operation_row_carries_the_full_frozen_schema` · `test_activation_is_atomic` — **measured today** |
 | **M37** terminal audit facts come from the kernel, correct on every branch | `test_the_current_branch_reports_the_actual_resulting_version` · `test_the_current_with_repair_branch_reports_committed_true` · `test_the_migrated_branch_reports_committed_true` — **measured today** |
 | **M38** release identity acquisition fails closed | `test_an_unreadable_covered_file_fails_closed` · `test_a_missing_version_declaration_fails_closed` · `test_no_unknown_sentinel_authority_migrates` — **measured today** |
-| **M39** every persisted timestamp is canonical and length-capped | `test_a_hundred_kilobyte_timestamp_is_refused` · `test_a_noncanonical_but_valid_instant_is_refused` · `test_minted_timestamps_are_canonical` — **measured today** |
+| **M39** every persisted timestamp is canonical and length-capped, INCLUDING the evidence artifact | `test_a_hundred_kilobyte_timestamp_is_refused` · `test_a_noncanonical_but_valid_instant_is_refused` · `test_minted_timestamps_are_canonical` · `test_a_noncanonical_generated_at_poisons_the_artifact` · `test_the_committed_generated_at_is_canonical` — **measured today** |
+| **M40** audit activation and terminal publication are atomic | `test_activation_rolls_back_on_a_forced_failure` · `test_terminal_publication_is_atomic` — **measured today**; a forced failure at any step leaves nothing persisted |
+| **M41** the operation row carries every frozen field; terminal records are semantically consistent | `test_the_operation_row_carries_every_frozen_field` · `test_the_terminal_validator_rejects_contradictions` — **measured today** |
+| **M42** a post-commit internal defect never misreports the version | `test_a_post_commit_internal_defect_never_reports_the_wrong_version` — **measured today**; the kernel builds `OpenResult` before COMMIT |
+| **M43** TEMP virtual tables are qualified; the four terminal cells including rolled-back are exercised | `test_temp_virtual_tables_are_probed` · `test_an_authorizer_allowing_temp_vtables_fails_qualification` · `test_the_rolled_back_cell_reports_the_source_version` — **measured today** |
 
 ---
 
@@ -708,57 +732,55 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 9 of this spec. All five round-8 blockers and the four additional
-corrections taken; every probe reproduced first** — the weak authorizer
-allowing TEMP triggers past all twelve v9 probes, both terminal events
-accepted for one operation, the lost-race `current` reporting
-`resulting_version=1` for a v2 store, the `+unknown` sentinel identity, and
-the 100 kB timestamp. Per your v10 bar the concrete migration, evidence
-selection key and ordinary planner states are untouched, and the
-resolution/refusal split you approved is unchanged.
+**Round 10 of this spec. All five round-9 blockers, the rolled-back-cell
+evidence gap and the stale wording taken; every probe reproduced first** —
+the two-write activation left consumed with no attempted record, the
+contradictory terminal records, the post-commit `OpenResult` raise
+reporting v1 for a v2 store, the fifteen probes passing a TEMP-vtable-
+allowing authorizer, and the uncapped `generated_at`. Per your v11 bar the
+concrete migration, path-evidence key, release framing, one-snapshot reader
+and ordinary planner states are untouched.
 
-1. **Per-class TEMP qualification** (finding 1): table, index, view and
-   trigger each get their own `SQLITE_AUTH`-specific probe (fifteen total).
-   Your falsifier is the regression — a full-replacement authorizer denying
-   temp tables while allowing temp triggers flips `denies_temp_trigger`
-   False and fails runtime qualification.
-2. **Enforced audit schema and state machine** (finding 2): two tables,
-   activation as one transaction (operation row + attempted event together),
-   the event enum, the exact terminal payload field set and types, and
-   **one terminal event per operation** via a compare-and-set `state`.
-   Unknown events, arbitrary payloads and a second terminal all reject.
-3. **Kernel terminal facts** (finding 3): `open_versioned` returns an
-   `OpenResult` carrying `store_changed`, `transaction_committed`,
-   `resulting_version`; the wrapper uses them, never the label. All four
-   cells are exercised with a forced terminal-write failure — lost-race
-   `current` now reports version 2 and `committed=False`; `current` with a
-   committed rebuildable repair reports `committed=True`; `migrated` reports
-   `committed=True`, version 2.
-4. **Fail-closed release identity** (finding 4): an unreadable covered file,
-   an unreadable or version-less `pyproject.toml`, or a
-   non-grammar-safe version each raise `PackageConsistencyError` before any
-   authority is minted or accepted — no sentinel is ever a valid component.
-5. **Canonical, bounded timestamps** (finding 5): a 32-char
-   `YYYY-MM-DDTHH:MM:SS.ffffff+00:00` grammar checked before parse, UTC,
-   with a canonical round-trip; minting emits it; every persisted timestamp
-   uses it. The 100 kB string and a valid-but-noncanonical instant both
-   refuse.
+1. **Genuinely atomic activation** (finding 1): `DraftAuditStore` builds and
+   validates the entire new state, then replaces the whole `_ops`/`_events`
+   pair in one unfailable swap — your `FailingDict` injection has no
+   `__setitem__` on the path, and a forced failure at construction leaves
+   nothing consumed and the authority retryable. Terminal publication is the
+   same. §5e states production uses one DB transaction.
+2. **Complete, semantic schema** (finding 2): the operation row regained
+   `backup_ref`, `issued_at`, `expires_at` and the resolved
+   `output_digest`; a terminal record's `outcome` must be a closed member
+   consistent with its event, `resulting_version` must be the source or
+   destination, `store_changed` implies a commit, and `migrated` must
+   resolve to the destination. Your `outcome=locked`+`v999` and the other
+   contradictions all reject.
+3. **Post-commit truth** (finding 3): the kernel builds its `OpenResult`
+   BEFORE `COMMIT`, so a raise there rolls the store back — your injection
+   now leaves the store at v1 and records `committed=False`, version 1,
+   truthfully. Nothing fallible runs after COMMIT, so the wrapper's
+   facts-None-means-nothing-committed assumption is now sound.
+4. **TEMP virtual tables** (finding 4): a sixteenth `SQLITE_CREATE_VTABLE`
+   probe; the authorizer fires for the temp-schema write before module
+   resolution, so it is `SQLITE_AUTH` on any runtime. Your vtable-allowing
+   falsifier fails qualification.
+5. **Canonical `generated_at`** (finding 5): the writer emits it via
+   `canonical_timestamp` and `schema_evidence_problems` validates it with
+   `_timestamp_problems` — it is inside the `evidence_digest`, so it is
+   contract-bearing. The 100 kB and noncanonical forms both poison.
 
-**Additional corrections**: the record schema names and types `event_id`,
-`state` and every field (no undefined names); `DraftAuditStore` stores the
-full frozen operation-row schema; M28/M32 no longer claim the complete
-lifecycle is "measured" (M36/M37 carry the schema, atomicity, exclusivity
-and four-cell evidence); and `make_authority`'s defaulted `quiesced`/backup
-are documented as test-only draft convenience, outside any production host
-API.
+**The rolled-back terminal cell** is now exercised (a migration failing
+after a statement, forced terminal-write failure → `committed=False`,
+version 1, store rolled back, authority consumed). The stale "twelve
+probes" and generic ISO-8601 wording are corrected to the sixteen-probe
+vocabulary and the one canonical timestamp contract.
 
-**Where I am least confident:** the `current`-with-repair `committed` flag
-depends on the kernel's `OpenResult.transaction_committed`, which the draft
-reports as "drift was repaired". A production planner that repairs in a
-separate transaction, or batches repair with the stamp differently, must
-report the same fact — I have written that as an implementation obligation
-in §5e, but it is the one terminal cell whose correctness rests on a
-kernel contract the draft can only demonstrate, not freeze for production.
+**Where I am least confident:** the `current`-with-repair `committed=True`
+cell still rests on the kernel reporting `OpenResult.transaction_committed`
+truthfully — the draft demonstrates it for a repair batched with the
+current-branch commit, but a production planner that repairs in a distinct
+transaction must uphold the same fact. It is written as an implementation
+obligation in §5e; it is the one terminal fact the draft can demonstrate
+but cannot freeze for a production planner it does not contain.
 
 ## 10. Open questions
 
@@ -924,3 +946,25 @@ key and ordinary planner states untouched.
 | b | `DraftAuditStore` stored a subset of the operation-row schema | the full frozen schema is asserted on insert |
 | c | M28/M32 overclaimed "measured today" | reworded; M36/M37 carry the schema/atomicity/exclusivity/four-cell evidence |
 | d | `make_authority` silently defaults `quiesced` and backup | documented as test-only draft convenience, outside any production host API |
+
+---
+
+## 19. Round 9 review disposition
+
+**Verdict: architecture standing — the concrete v1→v2 migration, shared
+planner, evidence-selection key, one-snapshot evidence handling,
+release-identity direction and ordinary planner states remain approved; v11
+deferred on five load-bearing gaps plus the rolled-back cell and stale
+wording.** The resolution/refusal split remains approved. All taken;
+migration, path-evidence key, release framing, one-snapshot reader and
+ordinary planner states untouched.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | audit activation was two independent writes, not one rollback-capable transaction — a failure between them left the operation consumed with no attempted record | **atomic swap** of the whole `_ops`/`_events` state (production: one DB transaction); forced-failure regressions for activation and terminal publication prove nothing persists |
+| 2 | the operation row omitted `backup_ref`/`issued_at`/`expires_at`/output digest, and terminal records accepted contradictory outcomes | **complete operation-row schema** plus **semantic terminal validation** — closed-vocabulary outcome consistent with the event, version ∈ {source, destination}, `store_changed`⇒commit, `migrated`⇒destination |
+| 3 | an internal defect after commit recorded `committed=False` and v1 for a v2 store | **kernel builds `OpenResult` before `COMMIT`**, so a raise rolls back and every fact is truthful; regression injects a post-result-build failure and checks the store stays v1 |
+| 4 | the fifteen-probe vocabulary allowed TEMP virtual tables to execute before the leak assertion | **sixteenth `SQLITE_CREATE_VTABLE` probe** (fires before module resolution → `SQLITE_AUTH` on any runtime); vtable-allowing falsifier fails qualification |
+| 5 | the evidence `generated_at` — inside the `evidence_digest` — was uncapped and noncanonical | **canonical `generated_at`** at generation and validation, the same 32-char contract as every persisted timestamp |
+| gap | the rolled-back terminal cell was unexercised | regression: a migration failing after a statement, forced terminal-write failure → `committed=False`, source version, store rolled back, authority consumed |
+| a | §5c said "twelve probes"; timestamps described as generic ISO 8601 | corrected to the sixteen-probe vocabulary and the one canonical timestamp contract |
