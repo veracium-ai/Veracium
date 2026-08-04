@@ -1125,7 +1125,8 @@ def _validated_current(conn: sqlite3.Connection, spath: str, found) -> bool:
 
 def open_versioned(conn: sqlite3.Connection, path: str, *,
                    allow_adopt: bool = True, audit_sink=None,
-                   older=None, new=None, on_committed=None) -> OpenResult:
+                   older=None, new=None, on_committed=None,
+                   on_rolled_back=None) -> OpenResult:
     """The 0007 §4 decision table, executed under the write lock (§4c).
 
     **`on_committed`** is an infallible caller-owned sink invoked with the
@@ -1136,6 +1137,16 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
     reported v1 for a v2 store). A caller that records migration facts uses
     this so a cleanup failure cannot erase a proven commit; ordinary opens
     pass nothing.
+
+    **`on_rolled_back`** is the symmetric infallible sink for the FAILURE path
+    (0013 round 12, finding 1: the failure handler discarded the `ROLLBACK`
+    result with a bare `except: pass`, so a caller could not tell a confirmed
+    rollback from a rollback that itself failed and left the store partially
+    migrated — and the audit then asserted the source version for a store that
+    was never restored). It is called with `"rolled-back"` when the `ROLLBACK`
+    executed and `"rollback-failed"` when it raised. A caller that never sees
+    the sink (a failure before the transaction, or the sink not passed) must
+    treat the post-failure store state as UNKNOWN, never as the source.
 
     `BEGIN IMMEDIATE` is taken BEFORE the version and manifest reads — a
     deferred transaction acquires the write lock at the first write, which is
@@ -1327,10 +1338,17 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                 event="adoption_committed",
                 occurred_at=datetime.now(timezone.utc).isoformat())
         except BaseException:
+            # Round 12, finding 1: publish the rollback RESULT, do not discard
+            # it. A caller that records terminal facts must not claim the store
+            # was restored to its source unless the rollback is CONFIRMED.
+            status = "rollback-failed"
             try:
                 conn.execute("ROLLBACK")
+                status = "rolled-back"
             except sqlite3.Error:
-                pass
+                status = "rollback-failed"
+            if on_rolled_back is not None:
+                on_rolled_back(status)
             raise
     finally:
         conn.isolation_level = prev_isolation

@@ -425,6 +425,54 @@ def test_artifact_problems_is_total_over_an_unhashable_identity_field():
     assert any("schema_version" in p for p in problems)
 
 
+# --- 0013 round 12, finding 1 (kernel): rollback status is published --------
+
+class _RollbackFails:
+    """A connection proxy whose `ROLLBACK` raises, and which passes every other
+    statement and attribute through to a real connection."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    def execute(self, sql, *a):
+        if sql.strip().upper().startswith("ROLLBACK"):
+            raise sqlite3.OperationalError("rollback failed")
+        return self._real.execute(sql, *a)
+
+
+def test_on_rolled_back_reports_the_rollback_outcome():
+    """0013 round 12, finding 1: the failure handler discarded the `ROLLBACK`
+    result (`except sqlite3.Error: pass`), so a caller recording terminal facts
+    could not tell a confirmed rollback from one that itself failed and left the
+    store partially migrated — and then asserted the source version for a store
+    never restored. The handler now PUBLISHES the outcome."""
+    def boom(*a):
+        raise RuntimeError("forced failure inside the transaction")
+
+    # ROLLBACK succeeds → "rolled-back"
+    p = _tmp()
+    seen = []
+    with pytest.raises(RuntimeError):
+        sv.open_versioned(sqlite3.connect(p), p, new=boom,
+                          on_rolled_back=seen.append)
+    assert seen == ["rolled-back"]
+
+    # ROLLBACK itself fails → "rollback-failed" (never silently swallowed)
+    p2 = _tmp()
+    real = sqlite3.connect(p2)
+    seen2 = []
+    try:
+        with pytest.raises(RuntimeError):
+            sv.open_versioned(_RollbackFails(real), p2, new=boom,
+                              on_rolled_back=seen2.append)
+    finally:
+        real.close()
+    assert seen2 == ["rollback-failed"]
+
+
 # --- S7: independence -----------------------------------------------------
 
 def test_s7_export_format_version_is_independent():
