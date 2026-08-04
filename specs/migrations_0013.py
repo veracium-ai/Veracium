@@ -433,8 +433,8 @@ class MigrationAuthority(NamedTuple):
     migration_digest: str   # migration_declaration_digest of the reviewed step
     release_ref: str        # the release/deployment minting this authority
     operation_id: str       # single-use identity for this migration operation
-    issued_at: str          # timezone-aware ISO 8601, clock-read at issuance
-    expires_at: str         # timezone-aware ISO 8601; consumption after this refuses
+    issued_at: str          # canonical 32-char timestamp, clock-read at issuance
+    expires_at: str         # canonical 32-char timestamp; consumption after refuses
     evidence_digest: str    # sha256 of the exact evidence artifact consumed
 
 
@@ -456,15 +456,37 @@ _TERMINAL_PAYLOAD_FIELDS = frozenset({
     "occurred_at"})
 
 _SUCCESS_OUTCOMES = frozenset({"migrated", "current", "created", "adopted"})
+_EVENT_ID_RE = re.compile(r"^ev-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+                          r"[0-9a-f]{4}-[0-9a-f]{12}$")
+"""`event_id` grammar (round 10, correction 2): `ev-<uuid4>`, so an audit
+event id is a globally unique opaque token, restart-safe (no counter to
+resume), not a prose channel — same discipline as `operation_id`."""
+
+
+class AuditStorageUnavailable(Exception):
+    """The ONE retryable activation failure (round 10, finding 4): the durable
+    audit store could not be reached. Distinguished from an internal
+    validation/programming defect, which is `internal-error`, not something a
+    host should retry — v11 caught EVERY activation exception and reported
+    `migration-audit-unavailable`, mislabelling a library `AssertionError` as
+    a storage outage."""
+
+
+class AuditState(NamedTuple):
+    """The COMPLETE audit state as one immutable value (round 10, finding 1:
+    v11's `self._ops, self._events, self._event_seq = ...` is THREE attribute
+    stores — a failure on the second left the first applied, so an operation
+    was consumed with no attempted event). Publishing a new `AuditState` is
+    ONE attribute assignment; nothing partial can survive."""
+    ops: dict
+    events: dict
+    seq: int
 
 
 class DraftAuditStore:
     """The in-process reference of §5e's two-table model, with the schema,
-    state machine AND semantic consistency enforced, and activation genuinely
-    atomic (round 9, findings 1–2: v10 performed two independent dict writes
-    — a failure between them left the operation consumed with no attempted
-    record — and accepted contradictory terminal records like
-    `migration_completed`+`outcome=locked`+`resulting_version=999`).
+    state machine AND semantic consistency enforced, and publication a SINGLE
+    state mutation.
 
       migration_operations   keyed by operation_id; the row insert IS the
                              compare-and-set consumption; the COMPLETE frozen
@@ -476,22 +498,29 @@ class DraftAuditStore:
                              field set, typed, AND semantically consistent
                              with the operation and the event.
 
-    **Atomicity is real, not described.** Both `activate` and
-    `record_terminal` build and fully validate the new state, then apply it
-    with a single unfailable swap — the whole `_ops`/`_events` pair is
-    replaced in one assignment, so no partial state can survive a failure
-    injected at any construction or validation step (the draft's analogue of
-    one BEGIN/INSERT/INSERT/COMMIT; production uses one DB transaction, §5e).
-    `activate` returns `duplicate` (the authority IS consumed →
-    `migration-quiescence-required`) or `activated`; a storage failure raises
-    with NOTHING consumed, and the caller maps it to the retryable
+    **The whole state is one immutable `AuditState` behind one attribute.**
+    `activate` and `record_terminal` build and fully validate the next
+    `AuditState`, then publish it with a single `self._state = ...` — the ONLY
+    mutation. A failure at any construction or validation step, or injected on
+    the publish itself, leaves the previous state intact (the draft's analogue
+    of one BEGIN/INSERT/INSERT/COMMIT; production uses one DB transaction,
+    §5e). `activate` returns `duplicate` (consumed →
+    `migration-quiescence-required`) or `activated`; only
+    `AuditStorageUnavailable` is the retryable failure the caller maps to
     `migration-audit-unavailable`."""
 
     def __init__(self):
-        self._ops: dict = {}
-        self._events: dict = {}
-        self._event_seq = 0
+        self._state = AuditState({}, {}, 0)
         self._lock = threading.Lock()
+
+    # Compatibility views for tests and callers that read the two tables.
+    @property
+    def _ops(self):
+        return self._state.ops
+
+    @property
+    def _events(self):
+        return self._state.events
 
     def _operation_row(self, a, output_digest: str) -> dict:
         row = {"operation_id": a.operation_id, "release_ref": a.release_ref,
@@ -503,92 +532,117 @@ class DraftAuditStore:
                "issued_at": a.issued_at, "expires_at": a.expires_at,
                "attempted_at": canonical_timestamp(datetime.now(timezone.utc)),
                "state": "attempted"}
-        assert set(row) == _AUDIT_OPERATION_FIELDS      # the COMPLETE schema
+        if set(row) != _AUDIT_OPERATION_FIELDS:          # raise, not assert:
+            raise ValueError(                            # survives python -O
+                f"operation row fields {sorted(row)} are not the complete "
+                f"schema {sorted(_AUDIT_OPERATION_FIELDS)}")
         return row
 
     def activate(self, a, output_digest: str) -> str:
         with self._lock:
-            if a.operation_id in self._ops:
+            st = self._state
+            if a.operation_id in st.ops:
                 return "duplicate"
-            # Build and validate EVERYTHING first; the only mutation is the
-            # atomic swap below, so a raise anywhere above leaves the store
-            # untouched and the authority unconsumed.
+            # Build and validate EVERYTHING first; the ONLY mutation is the
+            # single publish below.
             row = self._operation_row(a, output_digest)
-            attempted = {"event_id": f"ev-{self._event_seq}",
+            attempted = {"event_id": f"ev-{uuid.uuid4()}",
                          "operation_id": a.operation_id,
                          "event": _ATTEMPTED_EVENT,
                          "occurred_at": row["attempted_at"]}
-            new_ops = {**self._ops, a.operation_id: row}
-            new_events = {**self._events,
-                          (a.operation_id, _ATTEMPTED_EVENT): attempted}
-            self._ops, self._events, self._event_seq = (
-                new_ops, new_events, self._event_seq + 1)   # atomic swap
+            self._state = AuditState(
+                {**st.ops, a.operation_id: row},
+                {**st.events, (a.operation_id, _ATTEMPTED_EVENT): attempted},
+                st.seq + 1)                              # single mutation
             return "activated"
 
     def _terminal_problems(self, op: dict, event: str, payload: dict) -> list:
-        """Schema, types AND semantic consistency (round 9, finding 2)."""
+        """Schema, types AND the EXACT per-cell contract (round 10, finding 2:
+        v11 accepted impossible success records like `current`/`v1` and
+        `migrated`/no-change; finding 3: a post-commit `internal-error` could
+        not be recorded because failed events were forced to the source
+        version). The complete contract:
+
+            migrated             changed·committed·resulting=to_version
+            current (no repair)  ¬changed·¬committed·resulting=to_version
+            current (repair)     changed·committed·resulting=to_version
+            failed, rolled back  ¬changed·¬committed·resulting=from_version
+            failed, post-commit  changed·committed·resulting=to_version
+
+        The unifying rule: `store_changed == transaction_committed`, and
+        `resulting_version == to_version IFF the store reached the
+        destination` (a completed op always did; a failed op did iff it
+        committed before the defect)."""
         if event not in _TERMINAL_EVENTS:
             return [f"{event!r} is not a terminal event"]
         if op["state"] == "terminal":
-            return [f"operation already has a terminal event — exactly one "
-                    f"is permitted"]
+            return ["operation already has a terminal event — exactly one "
+                    "is permitted"]
         if set(payload) != _TERMINAL_PAYLOAD_FIELDS:
             return [f"terminal payload fields {sorted(payload)} are not "
                     f"exactly {sorted(_TERMINAL_PAYLOAD_FIELDS)}"]
-        problems = []
         if (not isinstance(payload["outcome"], str)
                 or type(payload["store_changed"]) is not bool
                 or type(payload["transaction_committed"]) is not bool
                 or type(payload["resulting_version"]) is not int
                 or _timestamp_problems(payload["occurred_at"], "occurred_at")):
             return ["terminal payload has a malformed field"]
+        problems = []
         outcome = payload["outcome"]
+        changed = payload["store_changed"]
+        committed = payload["transaction_committed"]
+        version = payload["resulting_version"]
+        frm, to = op["from_version"], op["to_version"]
         if outcome not in OUTCOMES:
             problems.append(f"outcome {outcome!r} is not in the closed "
                             f"vocabulary")
-        succeeded = outcome in _SUCCESS_OUTCOMES
-        if event == "migration_completed" and outcome not in ("migrated",
-                                                              "current"):
-            problems.append(f"migration_completed permits only migrated or "
-                            f"current, not {outcome!r}")
-        if event == "migration_failed" and succeeded:
-            problems.append(f"migration_failed cannot carry the success "
-                            f"outcome {outcome!r}")
-        # Fact consistency: a disk change implies a commit; the version is
-        # from_version (nothing kept) or to_version (destination reached).
-        if payload["store_changed"] and not payload["transaction_committed"]:
-            problems.append("store_changed=True with "
-                            "transaction_committed=False is impossible")
-        if payload["resulting_version"] not in (op["from_version"],
-                                                op["to_version"]):
-            problems.append(f"resulting_version {payload['resulting_version']} "
-                            f"is neither the source nor the destination")
-        if outcome == "migrated" and \
-                payload["resulting_version"] != op["to_version"]:
-            problems.append("a migrated operation must resolve to the "
-                            "destination version")
-        if event == "migration_failed" and \
-                payload["resulting_version"] != op["from_version"]:
-            problems.append("a failed operation must resolve to the source "
-                            "version")
+        if changed != committed:
+            problems.append("store_changed and transaction_committed must "
+                            "agree — a disk change is exactly a commit")
+        if version not in (frm, to):
+            problems.append(f"resulting_version {version} is neither the "
+                            f"source {frm} nor the destination {to}")
+        if event == "migration_completed":
+            if outcome not in ("migrated", "current"):
+                problems.append(f"migration_completed permits only migrated "
+                                f"or current, not {outcome!r}")
+            if version != to:
+                problems.append("a completed operation leaves the store at "
+                                "the destination version")
+            if outcome == "migrated" and not (changed and committed):
+                problems.append("a migrated operation must have changed and "
+                                "committed the store")
+        elif event == "migration_failed":
+            if outcome in _SUCCESS_OUTCOMES:
+                problems.append(f"migration_failed cannot carry the success "
+                                f"outcome {outcome!r}")
+            # A failure that committed before the defect (round 10, finding 3:
+            # a post-commit internal-error) leaves the destination; one that
+            # rolled back leaves the source. The version follows the commit.
+            if committed and version != to:
+                problems.append("a failure that committed leaves the store at "
+                                "the destination version")
+            if not committed and version != frm:
+                problems.append("a failure that rolled back leaves the store "
+                                "at the source version")
         return problems
 
     def record_terminal(self, operation_id: str, event: str,
                         payload: dict) -> None:
         with self._lock:
-            op = self._ops.get(operation_id)
+            st = self._state
+            op = st.ops.get(operation_id)
             if op is None:
                 raise ValueError(f"unknown operation {operation_id!r}")
             problems = self._terminal_problems(op, event, payload)
             if problems:
                 raise ValueError("; ".join(problems))
-            new_events = {**self._events, (operation_id, event): {
-                "event_id": f"ev-{self._event_seq}",
-                "operation_id": operation_id, "event": event, **payload}}
-            new_ops = {**self._ops,
-                       operation_id: {**op, "state": "terminal"}}
-            self._ops, self._events, self._event_seq = (
-                new_ops, new_events, self._event_seq + 1)   # atomic swap
+            self._state = AuditState(
+                {**st.ops, operation_id: {**op, "state": "terminal"}},
+                {**st.events, (operation_id, event): {
+                    "event_id": f"ev-{uuid.uuid4()}",
+                    "operation_id": operation_id, "event": event, **payload}},
+                st.seq + 1)                              # single mutation
 
 
 _AUDIT = DraftAuditStore()
@@ -959,16 +1013,17 @@ def _consume_authority(a: MigrationAuthority, output_digest: str) -> None:
     resolved destination identity that completes the audit operation row."""
     try:
         state = _AUDIT.activate(a, output_digest)
-    except MigrationRefused:
-        raise
-    except Exception as exc:
-        # Storage failure BEFORE activation: nothing was consumed, and the
-        # closed outcome says so — a retry may re-present this authority
-        # (round 7 split this from the duplicate case v8 conflated).
+    except AuditStorageUnavailable as exc:
+        # The ONE retryable failure: the durable store was unreachable.
+        # Nothing consumed, so a retry may re-present this authority (round 7
+        # split this from the duplicate case v8 conflated; round 10 narrowed
+        # it to the typed storage exception — a library defect is NOT this).
         raise MigrationRefused(
             "migration-audit-unavailable",
             f"the attempted record could not be written; the authority was "
             f"NOT consumed: {_safe_repr(exc)}") from exc
+    # Any other exception — a validation or programming defect — propagates to
+    # the boundary and becomes `internal-error`, never a retry instruction.
     if state == "duplicate":
         raise MigrationRefused(
             "migration-quiescence-required",
@@ -1166,7 +1221,8 @@ def migration_runtime_artifact_problems(art) -> list:
         return ["artifact has no migration-runtime record list"]
     problems, seen = [], {}
     active_schema = {sv.build_identity(r)
-                     for r in sv.active_records(art.get("runtimes", []))}
+                     for r in sv.active_records(_artifact_list(art,
+                                                              "runtimes"))}
     for rec in art["migration_runtimes"]:
         cls = _algorithm_class(rec)
         if cls == "superseded":
@@ -1357,6 +1413,18 @@ def schema_evidence_problems(art) -> list:
     return problems
 
 
+def _artifact_list(art, key) -> list:
+    """A list-valued artifact field, or [] when the field is malformed
+    (round 10, finding 5): a downstream validator must not iterate `False`
+    and raise `TypeError` — the container-schema problem is already reported
+    by `schema_evidence_problems`; this keeps every dependent validator
+    independently total."""
+    if not isinstance(art, dict):
+        return []
+    v = art.get(key)
+    return v if isinstance(v, list) else []
+
+
 def path_record_problems(rec, art) -> list:
     """One §5c record: closed structure, and the record-level consistency
     rules round 3 required — the recorded output must hash to BOTH its
@@ -1389,16 +1457,13 @@ def path_record_problems(rec, art) -> list:
         # migration-runtime record in this artifact. A foreign identity is an
         # unattested prospective record, not a spare.
         ident = sv.build_identity(rt)
-        schema_hits = [r for r in sv.active_records(
-            art.get("runtimes", []) if isinstance(art, dict) else [])
-            if sv.build_identity(r) == ident]
+        schema_hits = [r for r in sv.active_records(_artifact_list(art,
+                       "runtimes")) if sv.build_identity(r) == ident]
         if len(schema_hits) != 1:
             problems.append(f"path record runtime resolves to "
                             f"{len(schema_hits)} active schema-runtime "
                             f"records, not exactly one")
-        mig_rt = (art.get("migration_runtimes", [])
-                  if isinstance(art, dict) else [])
-        mig_hits = [r for r in mig_rt
+        mig_hits = [r for r in _artifact_list(art, "migration_runtimes")
                     if _algorithm_class(r) == "current"
                     and not migration_runtime_record_problems(r)
                     and sv.build_identity(r) == ident]
@@ -1482,7 +1547,7 @@ def path_evidence_problems(art) -> list:
     if not isinstance(art, dict) or not isinstance(art.get("paths"), list):
         return ["artifact has no path-record list"]
     problems, seen = [], {}
-    for rec in art["paths"]:
+    for rec in _artifact_list(art, "paths"):
         cls = _algorithm_class(rec)
         if cls == "superseded":
             continue                       # contributes nothing, poisons nothing
@@ -1518,8 +1583,8 @@ def expected_path_problems(art) -> list:
         return ["artifact is not a mapping"]
     problems = []
     identities = {sv.build_identity(r)
-                  for r in sv.active_records(art.get("runtimes", []))}
-    current = [r for r in art.get("paths", [])
+                  for r in sv.active_records(_artifact_list(art, "runtimes"))}
+    current = [r for r in _artifact_list(art, "paths")
                if _algorithm_class(r) == "current"]
     unsound = [r for r in current if not _keyable_path_record(r)]
     if unsound:
@@ -2207,15 +2272,21 @@ def check_evidence() -> int:
         print(f"missing or unreadable {EVIDENCE_FILE.relative_to(ROOT)}")
         return 1
     with _registry():
-        problems = schema_evidence_problems(art)
-        problems += migration_runtime_artifact_problems(art)
-        problems += path_evidence_problems(art)
-        # Round 6 (non-blocking): cardinality validation runs BEFORE the
-        # foreign-runtime early return, so "structural checks pass" is never
-        # said of an artifact whose expected record set is wrong.
-        problems += expected_path_problems(art)
+        # Round 10, finding 5: every validator is independently total, but
+        # `check_evidence` is a release gate — it wraps each so even an
+        # unforeseen escape becomes a clean nonzero status, never a traceback.
+        problems = []
+        for validator in (schema_evidence_problems,
+                          migration_runtime_artifact_problems,
+                          path_evidence_problems, expected_path_problems):
+            try:
+                problems += validator(art)
+            except Exception as exc:      # a validator must not, but the gate
+                problems.append(          # never raises regardless
+                    f"{validator.__name__} escaped on this artifact: "
+                    f"{_safe_repr(exc)}")
         recorded = {sv.build_identity(r) for r in
-                    sv.active_records(art.get("runtimes", []))}
+                    sv.active_records(_artifact_list(art, "runtimes"))}
     if problems:
         for p in problems:
             print(f"  - {p}")

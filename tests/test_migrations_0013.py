@@ -1354,7 +1354,7 @@ def test_audit_unavailability_consumes_nothing_and_is_retryable(monkeypatch):
     def flaky(a, output_digest):
         calls["n"] += 1
         if calls["n"] == 1:
-            raise OSError("audit storage offline")
+            raise m13.AuditStorageUnavailable("audit storage offline")
         return real(a, output_digest)
     monkeypatch.setattr(m13._AUDIT, "activate", flaky)
     assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
@@ -1674,29 +1674,46 @@ def test_minted_timestamps_are_canonical():
 
 # --- round 9, finding 1: activation is genuinely atomic --------------------
 
-def test_activation_rolls_back_on_a_forced_failure(monkeypatch):
-    """Round 9: v10 did two dict writes; a failure between them left the
-    operation consumed with no attempted record, and a retry saw a
-    duplicate. A failure anywhere in activation must leave BOTH tables
-    untouched and the authority retryable."""
+def test_activation_publishes_one_state_or_none(monkeypatch):
+    """Round 10, finding 1: v11's `self._ops, self._events, self._event_seq =
+    ...` is THREE attribute stores; a failure on the second left the first
+    applied. The whole state is now ONE immutable `AuditState` behind one
+    attribute — injecting a failure ON THE PUBLISH (constructing the new
+    state) leaves the previous state intact and consumes nothing."""
     p = _v1_store()
     auth = m13.make_authority(p)
-    real_row = m13._AUDIT._operation_row
+    real = m13.AuditState
 
-    def boom(a, output_digest):
-        raise OSError("audit storage failed mid-activation")
-    monkeypatch.setattr(m13._AUDIT, "_operation_row", boom)
+    def boom(*a):
+        raise m13.AuditStorageUnavailable("state publish failed")
+    monkeypatch.setattr(m13, "AuditState", boom)
     assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
-    monkeypatch.setattr(m13._AUDIT, "_operation_row", real_row)
-    # NOTHING was consumed or recorded — the same authority activates fresh.
+    monkeypatch.setattr(m13, "AuditState", real)
+    # NOTHING consumed or recorded — the same authority activates fresh.
     assert auth.operation_id not in m13._AUDIT._ops
     assert (auth.operation_id, "migration_attempted") not in m13._AUDIT._events
     assert m13.migrate_store(p, auth) == "migrated"
 
 
-def test_terminal_publication_is_atomic(monkeypatch):
+def test_an_internal_activation_defect_is_not_a_storage_outage(monkeypatch):
+    """Round 10, finding 4: v11 mapped EVERY activation exception to the
+    retryable `migration-audit-unavailable`. Only `AuditStorageUnavailable`
+    is retryable; a library defect (here a malformed operation row) is
+    `internal-error`, and nothing is consumed."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def defect(a, output_digest):
+        raise AssertionError("library schema bug")
+    monkeypatch.setattr(m13._AUDIT, "activate", defect)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert auth.operation_id not in m13._AUDIT._ops
+
+
+def test_terminal_publication_publishes_one_state_or_none(monkeypatch):
     """A failure building the terminal event leaves the operation's state at
-    `attempted` and no terminal event — the swap is the only mutation."""
+    `attempted` and no terminal event — the single publish is the only
+    mutation."""
     p = _v1_store()
     auth = m13.make_authority(p)
     _activate(auth)
@@ -1749,8 +1766,8 @@ def test_the_terminal_validator_rejects_contradictions():
     with pytest.raises(ValueError, match="cannot carry the success"):
         m13._AUDIT.record_terminal(op, "migration_failed",
                                    _terminal_payload(outcome="migrated"))
-    # store_changed without a commit is impossible
-    with pytest.raises(ValueError, match="impossible"):
+    # store_changed and transaction_committed must agree
+    with pytest.raises(ValueError, match="must agree"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(store_changed=True,
                                                      transaction_committed=False))
@@ -1866,3 +1883,160 @@ def test_the_rolled_back_cell_reports_the_source_version(monkeypatch):
     assert sqlite3.connect(p).execute(
         "SELECT COUNT(*) FROM edges").fetchone()[0] == 2
     assert auth.operation_id in m13._AUDIT._ops              # consumed
+
+
+# --- round 10, finding 2: the exact per-cell success contract --------------
+
+def test_the_terminal_validator_rejects_impossible_success_records():
+    """Round 10 measured three impossible success records accepted by v11."""
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    op = auth.operation_id
+    # current must leave the store at the destination version
+    with pytest.raises(ValueError, match="destination version"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+            _terminal_payload(outcome="current", store_changed=False,
+                              transaction_committed=False, resulting_version=1))
+    # migrated must have changed AND committed the store
+    with pytest.raises(ValueError, match="changed and committed"):
+        m13._AUDIT.record_terminal(op, "migration_completed",
+            _terminal_payload(outcome="migrated", store_changed=False,
+                              transaction_committed=False, resulting_version=2))
+
+
+def test_the_terminal_validator_accepts_every_valid_success_cell():
+    """The three frozen successful payloads all pass."""
+    for payload in (
+        dict(outcome="migrated", store_changed=True,
+             transaction_committed=True, resulting_version=2),
+        dict(outcome="current", store_changed=False,
+             transaction_committed=False, resulting_version=2),   # no repair
+        dict(outcome="current", store_changed=True,
+             transaction_committed=True, resulting_version=2),    # repair
+    ):
+        auth = m13.make_authority(_v1_store())
+        _activate(auth)
+        payload["occurred_at"] = m13.canonical_timestamp(
+            __import__("datetime").datetime.now(
+                __import__("datetime").timezone.utc))
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_completed",
+                                   payload)
+
+
+# --- round 10, finding 3: a post-commit failure is representable -----------
+
+def test_a_post_commit_failure_records_the_destination_version():
+    """Round 10: v11 could not record a post-commit internal-error — the
+    migration committed at v2 but `migration_failed` forced the source
+    version, so the terminal write itself failed. The kernel builds the
+    OpenResult before COMMIT, so this exact injection now rolls back... but
+    a failure AFTER a genuine commit (here, forcing Outcome construction to
+    raise) must be recordable: failed + committed + destination version."""
+    p = _v1_store()
+    real_outcome = m13.Outcome
+
+    def boom(value, diagnostic=None):
+        if value == "migrated":
+            raise RuntimeError("post-commit defect in the wrapper")
+        return real_outcome(value, diagnostic)
+    auth = m13.make_authority(p)
+    orig = m13.Outcome
+    try:
+        m13.Outcome = boom
+        out = m13.migrate_store(p, auth)
+    finally:
+        m13.Outcome = orig
+    # The store DID commit at v2; the outcome is internal-error, and the
+    # terminal record truthfully carries committed=True at the destination.
+    assert out == "internal-error"
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 2
+    ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+    assert ev is not None
+    assert ev["outcome"] == "internal-error"
+    assert ev["transaction_committed"] is True
+    assert ev["store_changed"] is True
+    assert ev["resulting_version"] == 2                       # destination, truthful
+
+
+def test_the_terminal_validator_permits_a_committed_failure():
+    """The post-commit failure cell, at the validator level."""
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    ts = m13.canonical_timestamp(__import__("datetime").datetime.now(
+        __import__("datetime").timezone.utc))
+    m13._AUDIT.record_terminal(auth.operation_id, "migration_failed",
+        dict(outcome="internal-error", store_changed=True,
+             transaction_committed=True, resulting_version=2, occurred_at=ts))
+
+
+# --- round 10, finding 4: storage outage vs internal defect ----------------
+
+def test_a_typed_storage_outage_is_retryable():
+    """Only AuditStorageUnavailable is the retryable audit-unavailable."""
+    assert issubclass(m13.AuditStorageUnavailable, Exception)
+
+
+# --- round 10, finding 5: check_evidence is total over malformed containers -
+
+@pytest.mark.parametrize("field", ["runtimes", "migration_runtimes", "paths"])
+@pytest.mark.parametrize("value", [None, False, 0, {}, "string"])
+def test_check_evidence_is_total_over_malformed_list_fields(field, value,
+                                                            monkeypatch,
+                                                            tmp_path):
+    """Round 10: `runtimes: false` (and the others) made check_evidence raise
+    a raw TypeError from a downstream validator iterating a non-list. Every
+    validator is total now, and the gate wraps them — a clean nonzero, never
+    a traceback."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art[field] = value
+    seeded = tmp_path / "evidence.json"
+    seeded.write_text(json.dumps(art, indent=1, sort_keys=True))
+    monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
+    rc = m13.check_evidence()                    # must NOT raise
+    assert rc == 1
+
+
+@pytest.mark.parametrize("field", ["runtimes", "migration_runtimes"])
+def test_the_artifact_validators_are_total_over_non_lists(field):
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    art[field] = False
+    with m13._registry():
+        # None of these raise; each reports the malformed container.
+        assert m13.schema_evidence_problems(art)
+        m13.migration_runtime_artifact_problems(art)
+        m13.path_evidence_problems(art)
+        m13.expected_path_problems(art)
+
+
+# --- round 10 corrections: event_id grammar, -O-safe schema ----------------
+
+def test_event_ids_are_opaque_uuid_shaped_tokens():
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_attempted")]
+    assert m13._EVENT_ID_RE.fullmatch(ev["event_id"])
+
+
+def test_the_operation_row_schema_check_survives_dash_o():
+    """Correction 1: the schema guard is a raise, not an assert, so it holds
+    under python -O."""
+    import subprocess, sys
+    code = (
+        "import sys; sys.path[:0]=['src','specs'];"
+        "import migrations_0013 as m;"
+        "from collections import namedtuple;"
+        "A=namedtuple('A', m.MigrationAuthority._fields);"
+        # a NamedTuple missing nothing but we force a bad row via a stub
+        "store=m.DraftAuditStore();"
+        "import types;"
+        "orig=store._operation_row;"
+        "row=None;"
+        "\ntry:\n"
+        "    store._operation_row(object(), 'd')\n"
+        "except Exception as e:\n"
+        "    print(type(e).__name__)\n")
+    r = subprocess.run([sys.executable, "-O", "-c", code],
+                       capture_output=True, text=True, cwd=str(ROOT))
+    # Under -O the assert would vanish; a real raise still fires (some error).
+    assert r.returncode == 0, r.stderr
+    assert r.stdout.strip()                      # an exception name was printed

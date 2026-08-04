@@ -85,6 +85,8 @@ REVIEWS = [
          verdict="architecture standing; deferred; per-class TEMP qualification, enforced audit schema/atomicity, kernel terminal facts, fail-closed release identity, canonical timestamps; resolution/refusal split approved", findings=5),
     dict(spec="0013", round=9, kind="external", date="2026-08-04",
          verdict="architecture standing; deferred; atomic audit activation, complete+semantic audit schema, post-commit truth, TEMP vtable qualification, canonical generated_at, rolled-back cell", findings=5),
+    dict(spec="0013", round=10, kind="external", date="2026-08-04",
+         verdict="architecture standing; deferred; single-value audit state, exact per-cell terminal contract, post-commit representability, defect-vs-outage, total evidence validators", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),
