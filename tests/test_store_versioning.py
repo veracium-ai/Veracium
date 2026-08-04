@@ -361,6 +361,70 @@ def test_the_store_qualifies_without_specs_on_the_path(tmp_path):
     assert r.returncode == 0 and "ok" in r.stdout, r.stderr
 
 
+# --- 0013 round 11, finding 2: on_committed delivers before cleanup --------
+
+class _RaiseOnIsolationRestore:
+    """A connection proxy whose `isolation_level` restore (the post-commit
+    `finally`) raises, while `= None` (the arming write before the transaction)
+    and every other operation pass through to a real connection."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    @property
+    def isolation_level(self):
+        return self._real.isolation_level
+
+    @isolation_level.setter
+    def isolation_level(self, value):
+        if value is not None:                # the finally's restore, post-commit
+            raise RuntimeError("post-commit cleanup failed")
+        self._real.isolation_level = value
+
+
+def test_on_committed_delivers_the_committed_result_before_cleanup():
+    """0013 round 11, finding 2: every committing branch hands its `OpenResult`
+    to `on_committed` the instant it commits — BEFORE the function-level
+    `finally` that restores `isolation_level`. v12 built no such seam, so a
+    cleanup failure on the return path discarded the return and a caller's
+    audit reported v1 for a committed v2 store. Here the finally is forced to
+    raise; the caller has ALREADY received committed facts."""
+    p = _tmp()
+    real = sqlite3.connect(p)
+    try:
+        seen = []
+        with pytest.raises(RuntimeError, match="post-commit cleanup failed"):
+            sv.open_versioned(_RaiseOnIsolationRestore(real), p,
+                              on_committed=seen.append)
+        assert len(seen) == 1
+        assert seen[0].transaction_committed is True
+        assert seen[0].store_changed is True
+        assert seen[0].resulting_version == sv.SCHEMA_VERSION
+        assert str(seen[0]) == "created"
+    finally:
+        real.close()
+    # And the store did commit despite the cleanup failure.
+    assert _user_version(p) == sv.SCHEMA_VERSION
+
+
+# --- 0013 round 11, finding 5 (kernel): artifact_problems stays total -------
+
+def test_artifact_problems_is_total_over_an_unhashable_identity_field():
+    """0013 round 11, finding 5: a runtime record with `schema_version={}` put
+    a dict into the duplicate-check key and `artifact_problems` raised
+    `TypeError` at context entry, outside every exception mapping. The record
+    is malformed and already reported; the keyability guard means it can no
+    longer ALSO crash the by-build and duplicate checks."""
+    good = sv.qualified_runtimes()[0]
+    poisoned = {**good, "schema_version": {}}
+    problems = sv.artifact_problems([good, poisoned])
+    assert isinstance(problems, list)
+    assert any("schema_version" in p for p in problems)
+
+
 # --- S7: independence -----------------------------------------------------
 
 def test_s7_export_format_version_is_independent():

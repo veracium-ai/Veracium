@@ -397,6 +397,8 @@ def artifact_problems(records=None) -> list:
     for r in records:
         if not _current(r):
             continue
+        if not _keyable_runtime(r):
+            continue                       # already reported; cannot be keyed
         by_build.setdefault((r.get("sqlite_version"), r.get("source_id")),
                             set()).add(build_identity(r))
     for build, keys in sorted(by_build.items()):
@@ -409,6 +411,8 @@ def artifact_problems(records=None) -> list:
     for r in records:
         if not _current(r):
             continue
+        if not _keyable_runtime(r):
+            continue                       # already reported; cannot be keyed
         key = _identity_key(r)
         if key in seen:
             if seen[key] != r.get("constructor_digests"):
@@ -617,6 +621,22 @@ def _identity_key(r: dict) -> tuple:
     return build_identity(r) + (r.get("manifest_algorithm"), r.get("schema_version"))
 
 
+def _keyable_runtime(r) -> bool:
+    """Whether a record's identity fields can be hashed — round 4's totality
+    rule (mirrored from 0013's `_keyable_path_record`): type-check before set
+    membership or dict keying. A record failing this is ALREADY reported by
+    `runtime_record_problems`; it must not ALSO crash the by-build and
+    duplicate checks by placing a dict/list — e.g. a measured
+    `schema_version={}` — into a `set`/`dict` key. Kept strictly narrower than
+    full validity, so hashable-but-invalid records still get duplicate-checked
+    exactly as before."""
+    return (isinstance(r, dict)
+            and isinstance(r.get("sqlite_version"), str)
+            and isinstance(r.get("source_id"), str)
+            and type(r.get("manifest_algorithm")) is int
+            and type(r.get("schema_version")) is int)
+
+
 def active_records(records=None) -> list:
     """Records that are current-algorithm and internally valid. Total over
     any list content (0013 round 7: a non-mapping member raised
@@ -691,6 +711,8 @@ def artifact_problems(records=None) -> list:
     for r in records:
         if not _current(r):
             continue
+        if not _keyable_runtime(r):
+            continue                       # already reported; cannot be keyed
         by_build.setdefault((r.get("sqlite_version"), r.get("source_id")),
                             set()).add(build_identity(r))
     for build, keys in sorted(by_build.items()):
@@ -703,6 +725,8 @@ def artifact_problems(records=None) -> list:
     for r in records:
         if not _current(r):
             continue
+        if not _keyable_runtime(r):
+            continue                       # already reported; cannot be keyed
         key = _identity_key(r)
         if key in seen:
             if seen[key] != r.get("constructor_digests"):
@@ -1101,8 +1125,17 @@ def _validated_current(conn: sqlite3.Connection, spath: str, found) -> bool:
 
 def open_versioned(conn: sqlite3.Connection, path: str, *,
                    allow_adopt: bool = True, audit_sink=None,
-                   older=None, new=None) -> OpenResult:
+                   older=None, new=None, on_committed=None) -> OpenResult:
     """The 0007 §4 decision table, executed under the write lock (§4c).
+
+    **`on_committed`** is an infallible caller-owned sink invoked with the
+    `OpenResult` the instant a branch commits, BEFORE any post-commit cleanup
+    (0013 round 11, finding 2: the function-level `finally` restoring
+    `conn.isolation_level` runs on the return path and CAN raise, discarding
+    the return so the caller never sees the committed facts and its audit
+    reported v1 for a v2 store). A caller that records migration facts uses
+    this so a cleanup failure cannot erase a proven commit; ordinary opens
+    pass nothing.
 
     `BEGIN IMMEDIATE` is taken BEFORE the version and manifest reads — a
     deferred transaction acquires the write lock at the first write, which is
@@ -1183,7 +1216,9 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                                     transaction_committed=repaired,
                                     resulting_version=SCHEMA_VERSION)
                 conn.execute("COMMIT")
-                return result
+                if on_committed is not None:
+                    on_committed(result)      # facts reach the caller before
+                return result                 # any post-commit cleanup
 
             if 0 < found < SCHEMA_VERSION:
                 # §4's *older* row: a stamped store this build predates on.
@@ -1202,6 +1237,8 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                                     transaction_committed=True,
                                     resulting_version=SCHEMA_VERSION)
                 conn.execute("COMMIT")
+                if on_committed is not None:
+                    on_committed(result)
                 return result
 
             # found == 0 — unstamped
@@ -1225,6 +1262,8 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                                     transaction_committed=True,
                                     resulting_version=SCHEMA_VERSION)
                 conn.execute("COMMIT")
+                if on_committed is not None:
+                    on_committed(result)
                 return result
 
             # §4 "legacy" / "foreign": resolve against the evidenced bases only
@@ -1252,6 +1291,8 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                                     transaction_committed=True,
                                     resulting_version=SCHEMA_VERSION)
                 conn.execute("COMMIT")
+                if on_committed is not None:
+                    on_committed(result)
                 return result
             if not allow_adopt:
                 raise StoreVersionError(
