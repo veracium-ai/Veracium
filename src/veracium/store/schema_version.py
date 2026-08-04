@@ -1047,9 +1047,32 @@ def _repair_drift(conn: sqlite3.Connection, version: int) -> None:
         conn.execute(declared[key].ddl)
 
 
-def _validated_current(conn: sqlite3.Connection, spath: str, found) -> None:
+class OpenResult(str):
+    """The branch that ran, PLUS the structured terminal facts a caller's
+    audit needs and must not infer from the string (0013 round 8, finding 3:
+    the audit wrapper derived `resulting_version` from the label and reported
+    v1 for a store the operation left at v2). String-compares as the label —
+    every existing `== "current"` caller is unaffected — while carrying:
+
+      store_changed          did the objects on disk change this call
+      transaction_committed  did a write transaction commit this call
+      resulting_version      the store's user_version on return
+    """
+    __slots__ = ("store_changed", "transaction_committed", "resulting_version")
+
+    def __new__(cls, label: str, *, store_changed: bool,
+                transaction_committed: bool, resulting_version: int):
+        r = str.__new__(cls, label)
+        r.store_changed = store_changed
+        r.transaction_committed = transaction_committed
+        r.resulting_version = resulting_version
+        return r
+
+
+def _validated_current(conn: sqlite3.Connection, spath: str, found) -> bool:
     """The *current* row's validation: accepted-set membership, typed
-    rebuildable drift repair, complete revalidation (§4a-iii, S33).
+    rebuildable drift repair, complete revalidation (§4a-iii, S33). Returns
+    whether it repaired drift — the caller reports it as `store_changed`.
 
     Shared by the current branch and the post-migration re-check, so a store a
     migration hook returns is held to exactly the standard a stamped-current
@@ -1068,11 +1091,13 @@ def _validated_current(conn: sqlite3.Connection, spath: str, found) -> None:
             raise StoreVersionError(spath, found, SCHEMA_VERSION,
                                     "stamped-shape-mismatch",
                                     diff=_shape_diff(after, SCHEMA_VERSION))
+        return True
+    return False
 
 
 def open_versioned(conn: sqlite3.Connection, path: str, *,
                    allow_adopt: bool = True, audit_sink=None,
-                   older=None, new=None) -> str:
+                   older=None, new=None) -> OpenResult:
     """The 0007 §4 decision table, executed under the write lock (§4c).
 
     `BEGIN IMMEDIATE` is taken BEFORE the version and manifest reads — a
@@ -1146,9 +1171,11 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                          "install a build whose SCHEMA_VERSION covers the store")
 
             if found == SCHEMA_VERSION:
-                _validated_current(conn, spath, found)
+                repaired = _validated_current(conn, spath, found)
                 conn.execute("COMMIT")
-                return "current"
+                return OpenResult("current", store_changed=repaired,
+                                  transaction_committed=repaired,
+                                  resulting_version=SCHEMA_VERSION)
 
             if 0 < found < SCHEMA_VERSION:
                 # §4's *older* row: a stamped store this build predates on.
@@ -1164,7 +1191,9 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                 older(conn, spath, found, objs, found)
                 _validated_current(conn, spath, found)
                 conn.execute("COMMIT")
-                return "migrated"
+                return OpenResult("migrated", store_changed=True,
+                                  transaction_committed=True,
+                                  resulting_version=SCHEMA_VERSION)
 
             # found == 0 — unstamped
             if not objs:                        # §4 "new": no non-internal object
@@ -1184,7 +1213,9 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                         "its schema registry")
                 conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
                 conn.execute("COMMIT")
-                return "created"
+                return OpenResult("created", store_changed=True,
+                                  transaction_committed=True,
+                                  resulting_version=SCHEMA_VERSION)
 
             # §4 "legacy" / "foreign": resolve against the evidenced bases only
             base = resolve(objs, version_records(),
@@ -1208,7 +1239,9 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                 older(conn, spath, found, objs, base)
                 _validated_current(conn, spath, found)
                 conn.execute("COMMIT")
-                return "migrated"
+                return OpenResult("migrated", store_changed=True,
+                                  transaction_committed=True,
+                                  resulting_version=SCHEMA_VERSION)
             if not allow_adopt:
                 raise StoreVersionError(
                     spath, found, SCHEMA_VERSION, "adoption-refused",
@@ -1257,5 +1290,7 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
             conn.close()                      # §4e: closed before raising
             raise PostCommitAuditError(spath, committed_event.adoption_id,
                                        exc) from exc
-    return "adopted"
+    return OpenResult("adopted", store_changed=True,
+                      transaction_committed=True,
+                      resulting_version=SCHEMA_VERSION)
 
