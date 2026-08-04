@@ -89,6 +89,8 @@ REVIEWS = [
          verdict="architecture standing; deferred; single-value audit state, exact per-cell terminal contract, post-commit representability, defect-vs-outage, total evidence validators", findings=5),
     dict(spec="0013", round=11, kind="external", date="2026-08-04",
          verdict="architecture standing; deferred; honest resulting_state, committed facts survive cleanup, named-escape terminalization, deeply-immutable audit state + event_id PK, validators total over nested malformed JSON; commit-ambiguity mapping", findings=5),
+    dict(spec="0013", round=12, kind="external", date="2026-08-04",
+         verdict="architecture standing; deferred; confirmed-rollback for source, absent-vs-unaccepted classification, distinct audit-state-unknown outcome, MigrationAuditWriteError carries resulting_state, validators total under recursive nested mutation; operation-row type validation + deep freeze, event_id grammar", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

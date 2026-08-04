@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import sqlite3
 import sys
 import tempfile
@@ -1226,8 +1227,10 @@ def test_the_audit_contract_is_frozen():
     assert m13.Outcome("migration-audit-unavailable") == \
         "migration-audit-unavailable"
     err = m13.MigrationAuditWriteError(
-        committed=True, operation_id="op-x", store_path="/s", resulting_version=2)
+        committed=True, operation_id="op-x", store_path="/s",
+        resulting_version=2, resulting_state="destination")
     assert err.committed is True and err.resulting_version == 2
+    assert err.resulting_state == "destination"
     assert isinstance(err, RuntimeError)
 
 
@@ -1354,7 +1357,8 @@ def test_audit_unavailability_consumes_nothing_and_is_retryable(monkeypatch):
     def flaky(a, output_digest):
         calls["n"] += 1
         if calls["n"] == 1:
-            raise m13.AuditStorageUnavailable("audit storage offline")
+            raise m13.AuditStorageUnavailable("audit storage offline",
+                                              committed=False)   # proven unwritten
         return real(a, output_digest)
     monkeypatch.setattr(m13._AUDIT, "activate", flaky)
     assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
@@ -1686,7 +1690,10 @@ def test_activation_publishes_one_state_or_none(monkeypatch):
     real = m13.AuditState
 
     def boom(*a):
-        raise m13.AuditStorageUnavailable("state publish failed")
+        # A failed single publish is ATOMIC: nothing was written, so the honest
+        # commit fact is False (proven not written), not the ambiguous None.
+        raise m13.AuditStorageUnavailable("state publish failed",
+                                          committed=False)
     monkeypatch.setattr(m13, "AuditState", boom)
     assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
     monkeypatch.setattr(m13, "AuditState", real)
@@ -2053,32 +2060,50 @@ def test_the_operation_row_schema_check_survives_dash_o():
 
 # --- round 11, finding 1: honest resulting_state, no fabricated version ----
 
+def _facts_state(**over):
+    base = {"facts": None, "observed_version": None, "rolled_back": None,
+            "source_absent": False}
+    base.update(over)
+    return base
+
+
 def test_terminal_facts_never_fabricate_a_version_for_missing_or_unknown():
-    """Round 11, finding 1: v12 wrote `resulting_version = from_version` for
-    EVERY non-kernel ending, so a store that was missing or never observed was
-    recorded as sitting at the source version — a fact never established. The
-    honest derivation distinguishes four cells and refuses to invent a version
-    for the two where none is known."""
+    """Round 11, finding 1 and round 12, findings 1 & 2: the honest derivation
+    distinguishes every physical state and never invents a version. `source`
+    requires a CONFIRMED rollback (round 12 f1); `missing` requires a proven-
+    absent path, distinct from an existing-but-`unaccepted` store (round 12
+    f2)."""
     # a committed planner outcome → destination, its version
     facts = sv.OpenResult("migrated", store_changed=True,
                           transaction_committed=True, resulting_version=2)
     dest = m13._terminal_facts("migrated",
-                               {"facts": facts, "observed_version": 1})
+                               _facts_state(facts=facts, observed_version=1))
     assert dest == {"store_changed": True, "transaction_committed": True,
                     "resulting_version": 2, "resulting_state": "destination"}
-    # an ABSENT source → missing, NULL version (not from_version)
+    # a PROVEN-ABSENT path → missing, NULL version
     miss = m13._terminal_facts("migration-source-missing",
-                               {"facts": None, "observed_version": None})
+                               _facts_state(source_absent=True))
     assert miss["resulting_state"] == "missing"
     assert miss["resulting_version"] is None
-    # a source observed under the lock then rolled back → source, its version
+    # an EXISTING but non-source store → unaccepted, NULL (round 12, finding 2)
+    unacc = m13._terminal_facts("migration-source-missing",
+                                _facts_state(source_absent=False))
+    assert unacc["resulting_state"] == "unaccepted"
+    assert unacc["resulting_version"] is None
+    # observed under the lock AND a CONFIRMED rollback → source, its version
     src = m13._terminal_facts("migration-failed",
-                              {"facts": None, "observed_version": 1})
+                              _facts_state(observed_version=1,
+                                           rolled_back="rolled-back"))
     assert src["resulting_state"] == "source"
     assert src["resulting_version"] == 1
+    # observed but rollback NOT confirmed → unknown, NULL (round 12, finding 1)
+    rbf = m13._terminal_facts("migration-failed",
+                              _facts_state(observed_version=1,
+                                           rolled_back="rollback-failed"))
+    assert rbf["resulting_state"] == "unknown"
+    assert rbf["resulting_version"] is None
     # nothing established (locked / unopenable / pre-planner escape) → unknown
-    unk = m13._terminal_facts("migration-locked",
-                              {"facts": None, "observed_version": None})
+    unk = m13._terminal_facts("migration-locked", _facts_state())
     assert unk["resulting_state"] == "unknown"
     assert unk["resulting_version"] is None
 
@@ -2157,15 +2182,16 @@ def test_the_published_audit_state_is_deeply_read_only():
 @pytest.mark.parametrize("committed,reason", [
     (True, "migration-quiescence-required"),
     (False, "migration-audit-unavailable"),
-    (None, "migration-audit-unavailable"),
+    (None, "migration-audit-state-unknown"),
 ])
 def test_a_lost_activation_response_is_mapped_by_its_commit_flag(
         committed, reason, monkeypatch):
-    """Round 11, correction A: v12 mapped EVERY `AuditStorageUnavailable` to
-    the retryable `migration-audit-unavailable`, so a response lost after a
-    durable activation wrongly invited a retry that then saw `duplicate`. The
-    `committed` flag now decides: proven-written → the authority IS consumed
-    (`migration-quiescence-required`); not-proven / unknown → retryable."""
+    """Round 11 correction A and round 12 finding 3: each `committed` value maps
+    to a STRUCTURALLY DISTINCT closed outcome. Proven-written → the authority IS
+    consumed (`migration-quiescence-required`); proven-not-written → the
+    retryable `migration-audit-unavailable` (safe to re-present); UNKNOWN → the
+    distinct `migration-audit-state-unknown` (the host must query the durable
+    operation_id first — v13 collapsed None into the retryable outcome)."""
     p = _v1_store()
     auth = m13.make_authority(p)
 
@@ -2242,3 +2268,209 @@ def test_check_evidence_is_total_over_nested_malformed_json(label, monkeypatch,
     seeded.write_text(json.dumps(art, indent=1, sort_keys=True))
     monkeypatch.setattr(m13, "EVIDENCE_FILE", seeded)
     assert m13.check_evidence() == 1                       # must NOT raise
+
+
+# ==========================================================================
+# Round 12 regressions
+# ==========================================================================
+
+def _empty_valid_sqlite(path):
+    """A present, valid, nonzero-size SQLite database with no application
+    objects — materially different from an absent path."""
+    c = sqlite3.connect(path)
+    c.execute("PRAGMA user_version=0")
+    c.execute("CREATE TABLE t(x)")            # force a real header/page
+    c.execute("DROP TABLE t")
+    c.commit()
+    c.close()
+
+
+# --- round 12, finding 2: absent vs unaccepted vs unknown -------------------
+
+def test_an_existing_empty_store_is_unaccepted_not_missing():
+    """Round 12, finding 2: v13 recorded `missing` for an existing, valid,
+    empty SQLite database — collapsing a vanished file with an unexpected
+    replacement. An existing-but-unaccepted store is now `unaccepted`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    os.remove(p)
+    _empty_valid_sqlite(p)                    # a present, valid, empty database
+    assert os.path.exists(p) and os.path.getsize(p) > 0
+    out = m13.migrate_store(p, auth)
+    assert out == "migration-source-missing"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["resulting_state"] == "unaccepted"
+    assert ev["resulting_version"] is None
+
+
+def test_a_proven_absent_path_is_missing():
+    """The dual: a path proven absent is the only `missing` case."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    os.remove(p)                              # the path is now truly gone
+    assert not os.path.lexists(p)
+    out = m13.migrate_store(p, auth)
+    assert out == "migration-source-missing"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["resulting_state"] == "missing"
+    assert ev["resulting_version"] is None
+
+
+# --- round 12, finding 3: unknown activation state is distinct --------------
+
+def test_the_committed_flag_defaults_to_unknown_and_is_typed():
+    """Round 12, finding 3: an omitted `committed` is UNKNOWN, never a
+    fabricated `False`, and the value is exactly `bool | None`."""
+    assert m13.AuditStorageUnavailable("x").committed is None
+    assert m13.AuditStorageUnavailable("x", committed=True).committed is True
+    for bad in (0, 1, "false", []):
+        with pytest.raises(TypeError):
+            m13.AuditStorageUnavailable("x", committed=bad)
+
+
+# --- round 12, finding 4: the write error carries resulting_state -----------
+
+def test_the_audit_write_error_carries_and_distinguishes_the_state():
+    """Round 12, finding 4: v13's `MigrationAuditWriteError` dropped
+    `resulting_state`, so a missing and an unknown ending raised indistinct
+    `vNone` errors. Both now carry the state, and its message names it."""
+    miss = m13.MigrationAuditWriteError(
+        committed=False, operation_id="op-x", store_path="/s",
+        resulting_version=None, resulting_state="missing")
+    unk = m13.MigrationAuditWriteError(
+        committed=False, operation_id="op-x", store_path="/s",
+        resulting_version=None, resulting_state="unknown")
+    assert miss.resulting_state == "missing" and unk.resulting_state == "unknown"
+    assert "missing" in str(miss) and "unknown" in str(unk)
+    assert "vNone" not in str(miss)
+    # the same state/version relationship the terminal schema enforces
+    with pytest.raises(ValueError, match="requires a null version"):
+        m13.MigrationAuditWriteError(
+            committed=False, operation_id="op-x", store_path="/s",
+            resulting_version=1, resulting_state="missing")
+
+
+def test_a_forced_terminal_write_failure_preserves_the_state(monkeypatch):
+    """End to end: forcing the terminal write to fail on a missing source
+    raises a `MigrationAuditWriteError` that still carries `missing`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    os.remove(p)
+
+    def broken(operation_id, event, payload):
+        raise OSError("audit storage died")
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", broken)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.resulting_state == "missing"
+    assert exc.value.resulting_version is None
+
+
+# --- round 12, finding 5: validators total under RECURSIVE mutation ---------
+
+def test_every_validator_is_total_under_recursive_nested_mutation():
+    """Round 12, finding 5: v13 guarded seven KNOWN key locations, not
+    recursively — `paths[].runtime.source_id={}` and an accepted-manifestation
+    `digest={}` still put a dict in a set/dict key. This walks EVERY node in
+    the artifact tree × wrong-typed values; no validator may raise."""
+    base = json.loads(m13.EVIDENCE_FILE.read_text())
+    bad_values = [None, True, False, 0, 1, 1.5, "s", [], {}, [1], {"k": "v"}]
+
+    def node_paths(obj, prefix=()):
+        yield prefix
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                yield from node_paths(v, prefix + (k,))
+        elif isinstance(obj, list):
+            for i, v in enumerate(obj):
+                yield from node_paths(v, prefix + (i,))
+
+    def set_at(obj, path, val):
+        cur = obj
+        for p in path[:-1]:
+            cur = cur[p]
+        cur[path[-1]] = val
+
+    validators = [m13.schema_evidence_problems,
+                  m13.migration_runtime_artifact_problems,
+                  m13.path_evidence_problems, m13.expected_path_problems]
+    combos = 0
+    for path in node_paths(base):
+        if not path:
+            continue
+        for val in bad_values:
+            art = copy.deepcopy(base)
+            try:
+                set_at(art, path, val)
+            except Exception:
+                continue
+            combos += 1
+            with m13._registry():
+                for fn in validators:
+                    out = fn(art)             # must return a list, never raise
+                    assert isinstance(out, list)
+    assert combos > 5000                      # the tree is large; sanity floor
+
+
+@pytest.mark.parametrize("path,val,fn", [
+    (("paths", 0, "runtime", "source_id"), {}, "path_evidence_problems"),
+    (("paths", 0, "runtime", "sqlite_version"), [], "expected_path_problems"),
+    (("schema_versions", "1", "accepted", 0, "digest"), {}, "expected_path_problems"),
+])
+def test_the_specific_nested_key_escapes_are_closed(path, val, fn):
+    """The three unhashable key escapes the reviewer measured, pinned."""
+    art = json.loads(m13.EVIDENCE_FILE.read_text())
+    cur = art
+    for p in path[:-1]:
+        cur = cur[p]
+    cur[path[-1]] = val
+    with m13._registry():
+        assert isinstance(getattr(m13, fn)(art), list)   # no TypeError
+
+
+# --- round 12, correction A: the operation row validates and freezes deeply -
+
+def test_the_operation_row_validates_field_types():
+    """Round 12, correction A: the audit store is the enforcing reference, so
+    `_operation_row` validates every field's type and grammar — v13 accepted
+    `backup_ref=[]` on the strength of the field-name set alone."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    store = m13.DraftAuditStore()
+    with pytest.raises(ValueError, match="backup_ref"):
+        store._operation_row(auth._replace(backup_ref=[]), "d" * 64)
+    with pytest.raises(ValueError, match="digest"):
+        store._operation_row(auth, "not-a-digest")
+    # a well-formed row still passes
+    store._operation_row(auth, "d" * 64)
+
+
+def test_a_published_row_does_not_alias_caller_mutable_state():
+    """Round 12, correction A: v13 proxied dict values but passed list values
+    THROUGH by reference, so mutating the caller's original list mutated the
+    published, supposedly-immutable audit row. The freeze is now deep."""
+    frozen = m13._readonly({"backup_ref": ["a"], "nested": {"k": ["b"]}})
+    with pytest.raises(TypeError):
+        frozen["backup_ref"][0] = "x"         # tuples, not lists
+    with pytest.raises(TypeError):
+        frozen["nested"]["k"][0] = "x"
+    original = ["a"]
+    frozen2 = m13._readonly({"backup_ref": original})
+    original.append("mutated")                # cannot reach the frozen copy
+    assert frozen2["backup_ref"] == ("a",)
+
+
+# --- round 12, correction B: the event_id grammar is enforced ---------------
+
+def test_a_malformed_event_id_grammar_is_rejected(monkeypatch):
+    """Round 12, correction B: v13 checked event-id UNIQUENESS but never the
+    frozen `ev-<uuid4>` grammar, so a faulty generator's `ev-not-a-uuid` was
+    accepted. Both grammar and uniqueness are now enforced before publication."""
+    class FakeUUID:
+        def __str__(self):
+            return "not-a-uuid"
+    auth = m13.make_authority(_v1_store())
+    store = m13.DraftAuditStore()
+    monkeypatch.setattr(m13.uuid, "uuid4", lambda: FakeUUID())
+    with pytest.raises(ValueError, match="ev-<uuid4> grammar"):
+        store.activate(auth, "d" * 64)

@@ -299,15 +299,21 @@ MIGRATION_FAILURES = ("migration-required", "migration-evidence-missing",
                       "migration-failed", "migration-result-mismatch",
                       "migration-quiescence-required",
                       "migration-source-missing",
-                      "migration-audit-unavailable")
+                      "migration-audit-unavailable",
+                      "migration-audit-state-unknown")
 """The closed failure model: hosts branch on these, plus 0007's REASONS.
-Round 6 added the last two: `migration-source-missing` — the dedicated
-operation found no accepted older source where its authority attests one (a
-vanished file, an empty or truncated replacement, a nonexistent path; v7
-CREATED a fresh v2 store there, measured) — and `migration-audit-unavailable`
-— the attempted audit record cannot be written, so the operation refuses
-before any store access with the authority NOT consumed (§5e: the insert IS
-the consumption)."""
+Round 6 added `migration-source-missing` — the dedicated operation found no
+accepted older source where its authority attests one (a vanished file, an
+empty or truncated replacement, a nonexistent path; v7 CREATED a fresh v2
+store there, measured) — and `migration-audit-unavailable` — the attempted
+audit record is PROVEN not written, so the operation refuses before any store
+access with the authority NOT consumed (§5e: the insert IS the consumption).
+Round 12, finding 3 added `migration-audit-state-unknown`: the attempted-record
+write neither confirmed nor disproved (a lost response) — the authority MAY be
+consumed, so a retry is NOT safe until the host queries the durable
+`operation_id`. It is a structurally distinct outcome from the
+proven-not-written `migration-audit-unavailable`, which v13 collapsed them
+into."""
 
 STORE_FAILURES = ("invalid-store", "store-unopenable")
 """Round 4: the bytes at the path may fail before any version decision —
@@ -369,22 +375,42 @@ class MigrationAuditWriteError(RuntimeError):
     `0007`'s `PostCommitAuditError` this is a deliberate, NAMED exception to
     §5d's total-Outcome claim: `committed` says whether the migration
     happened — `True` means the store IS migrated and a retry opens
-    `current`; `False` means the store is unchanged and the authority is
-    spent. The one audit failure that maps to a closed outcome instead is
-    the ATTEMPTED record (`migration-audit-unavailable`), because nothing
-    has happened yet. Declared here as frozen contract; the production sink
-    raises it at implementation."""
+    `current`. **`False` does NOT prove the store is unchanged** (round 12,
+    finding 4): the operation may have ended `missing`, `unaccepted` or
+    `unknown` — a rollback-failed or never-observed store is not classifiable
+    from `committed` alone. The `resulting_state`/`resulting_version` pair
+    carries the honest post-operation state, exactly as the terminal record
+    would have, so the caller's decision input is not lost precisely when the
+    durable record cannot be written. The one audit failure that maps to a
+    closed outcome instead is the ATTEMPTED record
+    (`migration-audit-unavailable`/`migration-audit-state-unknown`), because
+    nothing has happened yet. Declared here as frozen contract; the production
+    sink raises it at implementation."""
 
     def __init__(self, committed: bool, operation_id: str, store_path: str,
-                 resulting_version: int, cause: BaseException | None = None):
+                 resulting_version, resulting_state: str,
+                 cause: BaseException | None = None):
+        if resulting_state not in _RESULTING_STATES:
+            raise ValueError(f"resulting_state {resulting_state!r} is not a "
+                             f"known state")
+        if not (resulting_version is None or type(resulting_version) is int):
+            raise TypeError("resulting_version must be int | None")
+        # The same state/version relationship the terminal schema enforces.
+        if resulting_state in ("missing", "unaccepted", "unknown") \
+                and resulting_version is not None:
+            raise ValueError(f"resulting_state {resulting_state} requires a "
+                             f"null version")
         self.committed = committed
         self.operation_id = operation_id
         self.store_path = store_path
         self.resulting_version = resulting_version
+        self.resulting_state = resulting_state
+        vstr = ("v" + str(resulting_version) if resulting_version is not None
+                else resulting_state)
         super().__init__(
             f"audit write failed after the operation ran "
             f"(committed={committed}, operation {operation_id!r}, store "
-            f"{store_path!r}, v{resulting_version}); the audit is the record "
+            f"{store_path!r}, {vstr}); the audit is the record "
             f"of an irreversible operation and its failure is surfaced "
             f"loudly, never as migration-failed")
         self.__cause__ = cause
@@ -452,13 +478,19 @@ _AUDIT_OPERATION_FIELDS = frozenset({
 omitted `backup_ref`, `issued_at`, `expires_at` and the output acceptance
 digest). Every authority binding plus the resolved destination identity."""
 
-_RESULTING_STATES = frozenset({"source", "destination", "missing", "unknown"})
+_RESULTING_STATES = frozenset({"source", "destination", "missing",
+                               "unaccepted", "unknown"})
 """What the store is KNOWN to be after the operation (round 11, finding 1: v12
 recorded `resulting_version = from_version` for a consumed operation whose
 path was DELETED — there was no store at all). `source`/`destination` carry
-that integer version; `missing` (no store on disk) and `unknown` (never
-observed — a lock timeout, an unopenable path, an escape before the planner
-published facts) carry `resulting_version = None`."""
+that integer version; the three null-version states carry
+`resulting_version = None` and are DISTINCT physical realities (round 12,
+finding 2): `missing` (a path PROVEN absent — nothing on disk), `unaccepted`
+(a store EXISTS and opened but is not an accepted source manifestation — an
+empty or foreign database, a distinct recovery action from restoring a
+vanished file), and `unknown` (never observed — a lock timeout, an unopenable
+path, an escape before the planner published, or a rollback that was not
+confirmed to have restored the source)."""
 
 _AUDIT_ONLY_OUTCOMES = frozenset({"package-inconsistent"})
 """Terminal outcomes for the NAMED escapes (round 11, finding 3): a
@@ -490,22 +522,92 @@ class AuditStorageUnavailable(Exception):
       committed is None  → genuinely unknown; the host must query the
                            operation_id before retrying.
     v11 mapped every `AuditStorageUnavailable` to "not consumed"; a lost
-    response after a durable commit then wrongly invited a retry."""
+    response after a durable commit then wrongly invited a retry.
 
-    def __init__(self, message: str, *, committed=False):
+    Round 12, finding 3: **`committed` DEFAULTS TO `None`, not `False`.** An
+    omitted fact is `unknown`, never a fabricated `False` — an adapter that
+    raises without positive knowledge of the commit state must not silently
+    claim the row definitely did not commit. The value is exactly
+    `bool | None`."""
+
+    def __init__(self, message: str, *, committed=None):
+        if not (committed is None or type(committed) is bool):
+            raise TypeError(
+                f"committed must be bool | None, not "
+                f"{type(committed).__name__}")
         super().__init__(message)
         self.committed = committed
 
 
+def _freeze(v):
+    """Deeply immutable COPY of a JSON-ish value (round 12, correction A: v13's
+    `_readonly` proxied dict values but passed list values THROUGH by
+    reference, so mutating the caller's original list mutated the published,
+    supposedly-immutable audit row). Dicts become read-only proxies over frozen
+    values; lists/tuples become tuples of frozen values; scalars pass. The copy
+    severs every alias to caller-held mutable state."""
+    if isinstance(v, dict):
+        return types.MappingProxyType({k: _freeze(x) for k, x in v.items()})
+    if isinstance(v, (list, tuple)):
+        return tuple(_freeze(x) for x in v)
+    return v
+
+
 def _readonly(mapping) -> "types.MappingProxyType":
-    """A read-only view whose values are themselves read-only (round 11,
-    finding 4: v12's `AuditState` was a NamedTuple of LIVE dicts, exposed via
-    `_ops`, so a caller mutated an operation's `state` to `terminal` and
-    deleted its attempted event WITHOUT the single publish, its lock or
-    validation)."""
-    return types.MappingProxyType(
-        {k: (types.MappingProxyType(dict(v)) if isinstance(v, dict) else v)
-         for k, v in mapping.items()})
+    """A read-only view whose values are themselves DEEPLY read-only copies
+    (round 11, finding 4: v12's `AuditState` was a NamedTuple of LIVE dicts,
+    exposed via `_ops`, so a caller mutated an operation's `state` to
+    `terminal` and deleted its attempted event WITHOUT the single publish, its
+    lock or validation; round 12, correction A: the copy must be deep, so no
+    caller-held list aliases a published row)."""
+    return types.MappingProxyType({k: _freeze(v) for k, v in mapping.items()})
+
+
+def _operation_row_problems(row: dict) -> list:
+    """Every operation-row field validated to its TYPE and grammar (round 12,
+    correction A). The audit store is the enforcing reference, so its boundary
+    refuses a malformed row rather than trusting upstream validation — token
+    grammars, 64-hex digests, canonical timestamps, int versions, path cap."""
+    problems = []
+
+    def _token(field):
+        v = row.get(field)
+        if not (isinstance(v, str) and _TOKEN_RE.fullmatch(v)):
+            problems.append(f"{field} is not a valid token: {_safe_repr(v)}")
+
+    def _digest(field):
+        v = row.get(field)
+        if not (isinstance(v, str) and _DIGEST_RE.fullmatch(v)):
+            problems.append(f"{field} is not 64 lowercase hex: {_safe_repr(v)}")
+
+    if not (isinstance(row.get("operation_id"), str)
+            and _OPERATION_RE.fullmatch(row["operation_id"])):
+        problems.append(f"operation_id is not op-<uuid4>: "
+                        f"{_safe_repr(row.get('operation_id'))}")
+    for f in ("release_ref", "backup_ref"):
+        _token(f)
+    for f in ("source_digest", "output_digest", "migration_digest",
+              "evidence_digest"):
+        _digest(f)
+    for f in ("issued_at", "expires_at", "attempted_at"):
+        problems += _timestamp_problems(row.get(f), f)
+    for f in ("from_version", "to_version"):
+        if type(row.get(f)) is not int:      # bool is an int subclass — exclude
+            problems.append(f"{f} must be an int, is "
+                            f"{type(row.get(f)).__name__}")
+    if type(row.get("from_version")) is int and type(row.get("to_version")) \
+            is int and not 0 <= row["from_version"] < row["to_version"]:
+        problems.append("require 0 <= from_version < to_version")
+    sp = row.get("store_path")
+    if not isinstance(sp, str):
+        problems.append(f"store_path must be a string, is "
+                        f"{type(sp).__name__}")
+    elif len(os.fsencode(sp)) > 4096:
+        problems.append("store_path exceeds 4096 bytes")
+    if row.get("state") != "attempted":
+        problems.append(f"a new operation row's state must be 'attempted', "
+                        f"is {_safe_repr(row.get('state'))}")
+    return problems
 
 
 class AuditState(NamedTuple):
@@ -563,6 +665,11 @@ class DraftAuditStore:
             raise ValueError(                            # survives python -O
                 f"operation row fields {sorted(row)} are not the complete "
                 f"schema {sorted(_AUDIT_OPERATION_FIELDS)}")
+        # Round 12, correction A: the audit store is the ENFORCING reference
+        # state machine, so its boundary validates every field's TYPE and
+        # grammar — not just the field-name set. v13 accepted `backup_ref=[]`.
+        for p in _operation_row_problems(row):
+            raise ValueError(f"operation row field invalid: {p}")
         return row
 
     def _publish(self, ops: dict, events: dict, event_ids: frozenset,
@@ -578,6 +685,10 @@ class DraftAuditStore:
                 return "duplicate"
             row = self._operation_row(a, output_digest)
             event_id = f"ev-{uuid.uuid4()}"
+            if not _EVENT_ID_RE.fullmatch(event_id):      # round 12, corr. B:
+                raise ValueError(                         # grammar, not just
+                    f"event_id {event_id!r} is not the frozen ev-<uuid4> "
+                    f"grammar")                           # uniqueness
             if event_id in st.event_ids:                 # the PK constraint
                 raise ValueError(f"event_id {event_id!r} is not unique")
             attempted = {"event_id": event_id,
@@ -640,7 +751,7 @@ class DraftAuditStore:
                             f"{to}")
         if state == "source" and version != frm:
             problems.append(f"resulting_state source requires version {frm}")
-        if state in ("missing", "unknown") and version is not None:
+        if state in ("missing", "unaccepted", "unknown") and version is not None:
             problems.append(f"resulting_state {state} requires a null version")
         # A committed change means the store reached the destination.
         if changed and state != "destination":
@@ -679,6 +790,10 @@ class DraftAuditStore:
             if problems:
                 raise ValueError("; ".join(problems))
             event_id = f"ev-{uuid.uuid4()}"
+            if not _EVENT_ID_RE.fullmatch(event_id):      # round 12, corr. B
+                raise ValueError(
+                    f"event_id {event_id!r} is not the frozen ev-<uuid4> "
+                    f"grammar")
             if event_id in st.event_ids:
                 raise ValueError(f"event_id {event_id!r} is not unique")
             self._publish(
@@ -700,6 +815,7 @@ operation re-mint; an unbounded window is an unbounded replay surface."""
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+:/-]{0,127}$")
 _OPERATION_RE = re.compile(
     r"^op-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 
 _TIMESTAMP_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}\+00:00$")
@@ -1071,14 +1187,25 @@ def _consume_authority(a: MigrationAuthority, output_digest: str) -> None:
                 f"the attempted record was written but the response was lost; "
                 f"the authority IS consumed — mint a fresh one: "
                 f"{_safe_repr(exc)}") from exc
-        # committed is False (proven not written) or None (unknown): nothing
-        # is known to be consumed, so the retryable outcome is correct. A None
-        # (ambiguous) case instructs the host to query the operation_id first.
+        if exc.committed is None:
+            # Round 12, finding 3: genuinely UNKNOWN — the row may or may not
+            # have been written, so a blind retry could see `duplicate`. This
+            # is a structurally distinct closed outcome from the proven-not-
+            # written case: the host must query the durable operation_id before
+            # retrying. v13 collapsed it into the retryable outcome.
+            raise MigrationRefused(
+                "migration-audit-state-unknown",
+                f"the attempted record was neither confirmed nor disproved "
+                f"(committed=None); the authority MAY be consumed — query "
+                f"operation {a.operation_id!r} in the durable audit before "
+                f"retrying: {_safe_repr(exc)}") from exc
+        # committed is False: PROVEN not written, so nothing is consumed and a
+        # retry may safely re-present the authority.
         raise MigrationRefused(
             "migration-audit-unavailable",
-            f"the attempted record could not be confirmed written "
-            f"(committed={exc.committed!r}); the authority was NOT confirmed "
-            f"consumed: {_safe_repr(exc)}") from exc
+            f"the attempted record is proven not written "
+            f"(committed=False); the authority was NOT consumed and a retry "
+            f"may re-present it: {_safe_repr(exc)}") from exc
     # Any other exception — a validation or programming defect — propagates to
     # the boundary and becomes `internal-error`, never a retry instruction.
     if state == "duplicate":
@@ -1581,6 +1708,19 @@ def path_record_problems(rec, art) -> list:
     return problems
 
 
+def _hashable(v) -> bool:
+    """Whether a fully-built key can be used as a set/dict key. Round 12,
+    finding 5: testing the CONSTRUCTED key is total over any nested malformed
+    component at any depth — enumerating individual scalar fields (v13's
+    approach) missed `runtime.source_id={}` and an accepted-manifestation
+    `digest={}`, both nested below the fields the record-level guard checked."""
+    try:
+        hash(v)
+        return True
+    except TypeError:
+        return False
+
+
 def _path_key(rec) -> tuple:
     return (sv.build_identity(rec.get("runtime", {})), rec.get("from_version"),
             rec.get("to_version"), rec.get("source_acceptance_digest"),
@@ -1589,16 +1729,19 @@ def _path_key(rec) -> tuple:
 
 
 def _keyable_path_record(rec) -> bool:
-    """Whether `_path_key` can be built and hashed — round 4's totality rule:
-    type-check before hashing or set membership. A record failing this is
-    already reported by the validators; it must not ALSO crash them."""
-    return (isinstance(rec, dict)
-            and isinstance(rec.get("runtime"), dict)
-            and type(rec.get("from_version")) is int
-            and type(rec.get("to_version")) is int
-            and all(isinstance(rec.get(f), str) for f in
-                    ("source_acceptance_digest", "source_full_manifest_hash",
-                     "migration_declaration_digest")))
+    """Whether `_path_key` can be built AND HASHED — round 4's totality rule,
+    made recursive (round 12, finding 5: v13 checked the record's OWN scalar
+    fields but not the NESTED `runtime` identity scalars, so a
+    `runtime.source_id={}` still put a dict in the selection key). Testing the
+    constructed key's hashability is total over any malformed component at any
+    depth. A record failing it is already reported by the validators; it must
+    not ALSO crash them."""
+    if not isinstance(rec, dict):
+        return False
+    try:
+        return _hashable(_path_key(rec))
+    except Exception:
+        return False       # build_identity itself could not form the key
 
 
 def path_evidence_problems(art) -> list:
@@ -1662,9 +1805,18 @@ def expected_path_problems(art) -> list:
             for a in accepted if isinstance(accepted, list) else []:
                 if not isinstance(a, dict):
                     continue
-                expected.add((ident, frm, mig.to_version, a.get("digest"),
-                              full_manifest_hash(a.get("objects", {})),
-                              migration_declaration_digest(mig)))
+                key = (ident, frm, mig.to_version, a.get("digest"),
+                       full_manifest_hash(a.get("objects", {})),
+                       migration_declaration_digest(mig))
+                # Round 12, finding 5: an accepted manifestation with a nested
+                # unhashable `digest` (measured `digest={}`) must be REPORTED,
+                # never raised out of the set insertion.
+                if _hashable(key):
+                    expected.add(key)
+                else:
+                    problems.append(f"an accepted v{frm} manifestation has an "
+                                    f"unhashable digest — malformed, reported "
+                                    f"by the evidence validator")
     have = {}
     for r in current:
         if _keyable_path_record(r):
@@ -1913,15 +2065,22 @@ def _migration_uri(canonical: str) -> str:
 
 
 def _terminal_facts(out, state) -> dict:
-    """Derive the terminal payload's store facts HONESTLY (round 11, findings
-    1 & 3). Preference order:
+    """Derive the terminal payload's store facts HONESTLY (round 11 findings 1
+    & 3; round 12 findings 1 & 2). Preference order:
 
       kernel facts (a committed planner outcome) → destination, its version;
-      a `missing` source (the path was absent)   → missing, null;
-      a source observed under the lock then rolled back → source, its version;
-      otherwise (locked, unopenable, an escape before the planner published) →
-      unknown, null — the store's state was never established, so v12's
-      `resulting_version = from_version` fabrication is refused."""
+      the path was proven ABSENT                 → missing, null;
+      a store exists but is not an accepted source → unaccepted, null (round
+        12, finding 2: v13 recorded `missing` for an existing, valid, empty
+        SQLite database — a materially different physical state from a vanished
+        file; `missing` is now reserved for a path proven absent);
+      a source observed under the lock AND a CONFIRMED rollback re-established
+        it → source, its version (round 12, finding 1: v13 claimed `source`
+        from `observed_version` alone, with no evidence the rollback actually
+        succeeded — a rollback that itself fails leaves the store partially
+        migrated, NOT at the source);
+      otherwise (locked, unopenable, an escape before the planner published, OR
+      a rollback that was not confirmed) → unknown, null."""
     facts = state["facts"]
     if facts is not None:
         return {"store_changed": facts.store_changed,
@@ -1929,9 +2088,11 @@ def _terminal_facts(out, state) -> dict:
                 "resulting_version": facts.resulting_version,
                 "resulting_state": "destination"}
     if out == "migration-source-missing":
+        st = "missing" if state.get("source_absent") else "unaccepted"
         return {"store_changed": False, "transaction_committed": False,
-                "resulting_version": None, "resulting_state": "missing"}
-    if state["observed_version"] is not None:
+                "resulting_version": None, "resulting_state": st}
+    if (state["observed_version"] is not None
+            and state.get("rolled_back") == "rolled-back"):
         return {"store_changed": False, "transaction_committed": False,
                 "resulting_version": state["observed_version"],
                 "resulting_state": "source"}
@@ -1957,7 +2118,8 @@ def _write_terminal(out, outcome, state, authority) -> None:
         raise MigrationAuditWriteError(
             committed=committed, operation_id=authority.operation_id,
             store_path=authority.store_path,
-            resulting_version=store["resulting_version"], cause=exc) from exc
+            resulting_version=store["resulting_version"],
+            resulting_state=store["resulting_state"], cause=exc) from exc
 
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
@@ -1968,7 +2130,8 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
     is terminalized as `package-inconsistent` and re-raised, so a consumed
     operation is never left without a terminal record. `MigrationAuditWriteError`
     is the one escape NOT terminalized — it IS the terminal-write failure."""
-    state = {"consumed": False, "facts": None, "observed_version": None}
+    state = {"consumed": False, "facts": None, "observed_version": None,
+             "rolled_back": None, "source_absent": False}
     try:
         out = _run_inner(path, busy_timeout_ms, migrating, authority, state)
     except MigrationAuditWriteError:
@@ -2040,6 +2203,10 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                 return Outcome(e.reason, diagnostic=e.diagnostic)
             state["consumed"] = True
             if not os.path.lexists(canonical):
+                # Round 12, finding 2: the path is PROVEN absent — this is the
+                # only `missing` case. An existing-but-empty store reaches the
+                # planner's new-row seam below and terminalizes as `unaccepted`.
+                state["source_absent"] = True
                 return Outcome(
                     "migration-source-missing",
                     f"no store exists at {canonical!r}; the authority "
@@ -2092,7 +2259,9 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                         allow_adopt=not migrating,   # a migration never adopts
                         older=hook,
                         new=_source_missing_hook if migrating else None,
-                        on_committed=lambda r: state.__setitem__("facts", r))
+                        on_committed=lambda r: state.__setitem__("facts", r),
+                        on_rolled_back=lambda s:
+                            state.__setitem__("rolled_back", s))
                     state["facts"] = label       # belt and suspenders
                     return Outcome(label)
                 finally:
