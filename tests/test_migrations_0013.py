@@ -2815,20 +2815,37 @@ def test_a_package_inconsistency_terminalizes_at_every_phase(phase, state,
     phase, and the original exception re-raised."""
     p = _v1_store()
     auth = m13.make_authority(p)
-    real = m13.sv.open_versioned
+    real_ov = m13.sv.open_versioned
+    real_vr = m13.validate_registry
 
-    def hook(*a, **k):
-        if phase == "before-observe":
-            raise sv.PackageConsistencyError("before any transaction")
-        r = real(*a, **k)                      # migrates + commits
-        raise sv.PackageConsistencyError(f"discovered {phase}")
-    monkeypatch.setattr(m13.sv, "open_versioned", hook)
+    if phase == "before-observe":
+        # raise before the transaction is entered
+        monkeypatch.setattr(m13.sv, "open_versioned",
+                            lambda *a, **k: (_ for _ in ()).throw(
+                                sv.PackageConsistencyError("before observe")))
+    elif phase == "after-rollback":
+        # raise INSIDE the hook, AFTER the source is observed under the lock, so
+        # the kernel genuinely ROLLS BACK (round 15, correction D: v16's
+        # 'after-rollback' case ran the planner to commit — a post-commit case)
+        def vr_boom(*a, **k):
+            raise sv.PackageConsistencyError("after observe, before execute")
+        monkeypatch.setattr(m13, "validate_registry", vr_boom)
+    else:  # after-commit
+        def ov_then(*a, **k):
+            r = real_ov(*a, **k)               # migrates + commits
+            raise sv.PackageConsistencyError("after commit")
+        monkeypatch.setattr(m13.sv, "open_versioned", ov_then)
+
     with pytest.raises(sv.PackageConsistencyError):   # the ORIGINAL, re-raised
         m13.migrate_store(p, auth)
     ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
     assert ev is not None and ev["outcome"] == "package-inconsistent"
-    if phase == "after-commit":
-        assert ev["resulting_state"] == "destination"
+    assert ev["resulting_state"] == state
+    if phase == "after-rollback":
+        assert m13._AUDIT._ops[auth.operation_id]  # observed → source facts
+        assert ev["resulting_version"] == 1        # the source version
+        assert sqlite3.connect(p).execute(
+            "PRAGMA user_version").fetchone()[0] == 1   # rolled back to v1
 
 
 # --- round 14, corrections A & B --------------------------------------------
@@ -2857,3 +2874,157 @@ def test_the_write_error_validates_its_context(store_path, from_v, to_v):
         m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path=store_path,
             facts=m13.TerminalFacts("migrated", from_v, to_v, True, True,
                                     "destination", to_v))
+
+
+# ==========================================================================
+# Round 15 regressions
+# ==========================================================================
+
+# --- round 15, finding 1: only 'activated' may proceed to store access ------
+
+@pytest.mark.parametrize("badval", [None, "bogus", True, object()])
+def test_a_malformed_activation_result_never_touches_the_store(badval,
+                                                               monkeypatch):
+    """Round 15, finding 1: `activate()` returning anything but the closed
+    vocabulary was treated as success, permitting an irreversible migration
+    with NO operation row or attempted event. Any other value is now
+    `internal-error` before the database is opened."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "activate", lambda a, od: badval)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert auth.operation_id not in m13._AUDIT._ops        # nothing consumed
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1          # store untouched
+
+
+# --- round 15, finding 2: a malformed kernel result terminalizes cleanly -----
+
+def test_a_malformed_kernel_result_is_internal_error_not_attribute_error(
+        monkeypatch):
+    """Round 15, finding 2: the kernel returning a bare string (not an
+    `OpenResult`) made terminal derivation raise `AttributeError` OUTSIDE the
+    closed boundary, stranding a consumed operation. It is validated and
+    terminalizes as `internal-error`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13.sv, "open_versioned", lambda *a, **k: "migrated")
+    assert m13.migrate_store(p, auth) == "internal-error"   # not an AttributeError
+    ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+    assert ev is not None and ev["outcome"] == "internal-error"
+
+
+# --- round 15, finding 3: hook SQLite errors are not invalid-store ----------
+
+def test_a_migration_hook_database_error_is_migration_failed(monkeypatch):
+    """Round 15, finding 3: a `sqlite3.DatabaseError` from WITHIN the migration
+    hook is a migration failure, not the planner reading invalid store bytes."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def fake_hook(art, authority, state):
+        def h(*a, **k):
+            raise sqlite3.DatabaseError("migration hook library defect")
+        return h
+    monkeypatch.setattr(m13, "_migrating_hook", fake_hook)
+    assert m13.migrate_store(p, auth) == "migration-failed"   # not invalid-store
+
+
+# --- round 15, finding 4: a read-rejected store is unaccepted, not unknown --
+
+def test_a_readable_rejected_store_is_unaccepted_not_unknown():
+    """Round 15, finding 4: a store that opened and was read but rejected as not
+    an accepted source (an unauthorized extra table → stamped-shape-mismatch) is
+    `unaccepted`, not `unknown` — it is the round-12 `unaccepted` case."""
+    p = _v1_store()
+    c = sqlite3.connect(p)
+    c.execute("CREATE TABLE alien(x)")         # not an accepted v1 source
+    c.commit()
+    c.close()
+    twin = _v1_store()
+    auth = m13.make_authority(twin)._replace(store_path=os.path.realpath(p))
+    out = m13.migrate_store(p, auth)
+    ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+    assert ev is not None
+    assert ev["resulting_state"] == "unaccepted"           # NOT unknown
+    assert ev["resulting_version"] is None
+
+
+# --- round 15, finding 5: a setup failure closes the connection -------------
+
+def test_an_isolation_level_setup_failure_closes_the_connection(monkeypatch):
+    """Round 15, finding 5: an opened connection whose `isolation_level` setter
+    raises must still be closed — cleanup begins the instant the connection
+    exists. Closed exactly once, outcome `internal-error`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    holder = {}
+    real = m13.sqlite3.connect
+
+    class Proxy:
+        def __init__(self, r):
+            self._r = r
+            self.closes = 0
+
+        def __getattr__(self, n):
+            return getattr(self._r, n)
+
+        @property
+        def isolation_level(self):
+            return self._r.isolation_level
+
+        @isolation_level.setter
+        def isolation_level(self, v):
+            raise sqlite3.DatabaseError("isolation setup failed")
+
+        def close(self):
+            self.closes += 1
+            return self._r.close()
+
+    def wrap(*a, **k):
+        c = real(*a, **k)
+        if a and isinstance(a[0], str) and a[0].startswith("file:"):
+            holder["p"] = Proxy(c)
+            return holder["p"]
+        return c
+    monkeypatch.setattr(m13.sqlite3, "connect", wrap)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert holder["p"].closes == 1
+
+
+# --- round 15, corrections A, B, C ------------------------------------------
+
+def test_the_write_error_preserves_a_supplied_commit_status(monkeypatch):
+    """Round 15, correction A: when the terminal-sink exception carries its own
+    `.committed`, the wrapper PRESERVES it rather than inferring from local
+    state (v16 always inferred, reporting False for a carried None/True)."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def rt(operation_id, event, payload):
+        raise m13.AuditStorageUnavailable("lost", committed=None)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", rt)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None               # preserved, not False
+
+
+def test_non_adjacent_endpoints_and_integer_commit_flags_reject():
+    """Round 15, correction B: the migration contract is adjacent (n → n+1), and
+    `audit_committed` is exact-typed — `1` is not `True`."""
+    assert m13.TerminalFacts("migrated", 1, 3, True, True, "destination",
+                             3).problems()                  # non-adjacent
+    with pytest.raises(TypeError):
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+            audit_committed=1,
+            facts=m13.TerminalFacts("migrated", 1, 2, True, True,
+                                    "destination", 2))
+
+
+def test_a_non_mapping_terminal_payload_is_a_controlled_error():
+    """Round 15, correction C: `record_terminal(op, event, None)` is a
+    controlled schema error, never a raw `TypeError` from `set(None)`."""
+    auth = m13.make_authority(_v1_store())
+    _activate(auth)
+    with pytest.raises(ValueError, match="payload must be a mapping"):
+        m13._AUDIT.record_terminal(auth.operation_id, "migration_failed", None)

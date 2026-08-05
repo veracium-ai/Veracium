@@ -95,6 +95,8 @@ REVIEWS = [
          verdict="architecture standing; deferred; tri-state commit/change facts, phase-classified post-commit cleanup, lstat-proven absence, per-outcome allowed-state map, one shared validated TerminalFacts; NUL-path rejection, stale-wording reconcile, narrowed rollback claim", findings=5),
     dict(spec="0013", round=14, kind="external", date="2026-08-05",
          verdict="architecture standing; deferred; complete-tuple TerminalFacts shared verbatim, committed-activation-loss terminalization, audit_committed on write error, read-site SQLite classification, package-inconsistent at every phase + re-raise; total problems(), write-error context validation, root-safe permission test", findings=5),
+    dict(spec="0013", round=15, kind="external", date="2026-08-05",
+         verdict="architecture standing; deferred; closed activation-result vocab, kernel-result validation + total terminal wrapper, hook SQLite -> migration-failed, read-rejected -> unaccepted, connection cleanup scope; preserve supplied commit status, adjacency + exact audit_committed typing, total payload validation, real after-rollback regression", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),

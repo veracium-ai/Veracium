@@ -212,8 +212,75 @@ def _write_error(audit_committed):
     return check
 
 
+class _IsoFails:
+    """A connection proxy whose `isolation_level` setter raises — a setup
+    failure the instant after the connection exists (round 15, finding 5)."""
+
+    def __init__(self, real):
+        self._real = real
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    @property
+    def isolation_level(self):
+        return self._real.isolation_level
+
+    @isolation_level.setter
+    def isolation_level(self, value):
+        raise sqlite3.DatabaseError("isolation-level setup failed")
+
+    def close(self):
+        return self._real.close()
+
+
+def _connect_iso_fails():
+    real = m.sqlite3.connect
+
+    def wrap(*a, **k):
+        c = real(*a, **k)
+        return _IsoFails(c) if (a and isinstance(a[0], str)
+                                and a[0].startswith("file:")) else c
+    m.sqlite3.connect = wrap
+    return lambda: setattr(m.sqlite3, "connect", real)
+
+
+def _hook_raises(exc):
+    real = m._migrating_hook
+
+    def fake(art, authority, state):
+        def h(*a, **k):
+            raise exc
+        return h
+    m._migrating_hook = fake
+    return lambda: setattr(m, "_migrating_hook", real)
+
+
+def _returns(obj, name, value):
+    return lambda: _install_attr(obj, name, lambda *a, **k: value)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
+    # --- round 15: bad RETURN values (not just raises) ----------------------
+    ("activate-returns-None",
+     _returns(m._AUDIT, "activate", None),
+     _outcome_is("internal-error")),
+    ("activate-returns-unknown-string",
+     _returns(m._AUDIT, "activate", "bogus"),
+     _outcome_is("internal-error")),
+    ("activate-returns-bool",
+     _returns(m._AUDIT, "activate", True),
+     _outcome_is("internal-error")),
+    ("open_versioned-returns-bad-type",
+     _returns(m.sv, "open_versioned", "migrated"),
+     _outcome_is("internal-error")),
+    ("migration-hook-DatabaseError",
+     lambda: _hook_raises(sqlite3.DatabaseError("hook defect")),
+     _outcome_is("migration-failed")),
+    ("isolation_level-DatabaseError",
+     _connect_iso_fails,
+     _outcome_is("internal-error")),
     ("runtime-gate-DatabaseError",
      lambda: _install_attr(m.sv, "runtime_supported",
                            _raiser(sqlite3.DatabaseError("probe defect"))),
@@ -307,3 +374,66 @@ def test_every_fault_seam_preserves_the_invariants(name, install, expect):
     if spec:
         errors.append(spec)
     assert not errors, f"[{name}] " + " | ".join(errors)
+
+
+class _CountsCloses:
+    """A connection proxy that counts `close()` calls and fails a chosen setup
+    step, to prove every opened connection is closed exactly once."""
+
+    def __init__(self, real, fail_isolation=False):
+        self._real = real
+        self._fail_isolation = fail_isolation
+        self.closes = 0
+
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+    @property
+    def isolation_level(self):
+        return self._real.isolation_level
+
+    @isolation_level.setter
+    def isolation_level(self, value):
+        if self._fail_isolation:
+            raise sqlite3.DatabaseError("isolation-level setup failed")
+        self._real.isolation_level = value
+
+    def close(self):
+        self.closes += 1
+        return self._real.close()
+
+
+def test_a_connection_setup_failure_closes_the_connection_exactly_once():
+    """Round 15, finding 5: an opened connection whose `isolation_level` setup
+    fails must still be closed — the cleanup scope starts the instant the
+    connection exists. The connection is closed exactly once."""
+    p = _v1_store()
+    auth = m.make_authority(p)
+    holder = {}
+    real = m.sqlite3.connect
+
+    def wrap(*a, **k):
+        c = real(*a, **k)
+        if a and isinstance(a[0], str) and a[0].startswith("file:"):
+            proxy = _CountsCloses(c, fail_isolation=True)
+            holder["proxy"] = proxy
+            return proxy
+        return c
+    m.sqlite3.connect = wrap
+    try:
+        out = m.migrate_store(p, auth)
+    finally:
+        m.sqlite3.connect = real
+    assert out == "internal-error"
+    assert holder["proxy"].closes == 1        # opened, and closed exactly once
+
+
+def test_non_adjacent_endpoints_reject_at_every_carrier():
+    """Round 15, correction B: the migration contract is adjacent (n → n+1).
+    Non-adjacent endpoints reject in TerminalFacts (hence both carriers)."""
+    assert m.TerminalFacts("migrated", 1, 3, True, True, "destination", 3).problems()
+    with pytest.raises(ValueError):
+        m.MigrationAuditWriteError(
+            operation_id="op-00000000-0000-4000-8000-000000000000",
+            store_path="/s",
+            facts=m.TerminalFacts("migrated", 1, 3, True, True, "destination", 3))

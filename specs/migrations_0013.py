@@ -404,16 +404,16 @@ class MigrationAuditWriteError(RuntimeError):
         # under the byte cap, and the endpoints must be adjacent and ordered.
         for pr in _store_path_problems(store_path):
             raise ValueError(f"store_path invalid: {pr}")
-        if not (facts.from_version < facts.to_version):
-            raise ValueError(f"endpoints must be ordered: from_version "
-                             f"{facts.from_version} < to_version "
-                             f"{facts.to_version}")
+        # Endpoint adjacency is enforced by `facts.problems()` above (round 15,
+        # correction B: v16's `from < to` here accepted 1 → 3).
         # Round 14, finding 3: whether the AUDIT write itself committed —
         # separate from `facts.transaction_committed` (the STORE). True = the
         # terminal record is durable though the response was lost; False =
         # definitely not written; None = unknown, query by operation_id.
-        if audit_committed not in (True, False, None):
-            raise TypeError("audit_committed must be True, False, or None")
+        if not (audit_committed is None or type(audit_committed) is bool):
+            raise TypeError("audit_committed must be True, False, or None "
+                            f"(not {type(audit_committed).__name__} — round 15 "
+                            f"correction B: `1` is not `True`)")
         self.operation_id = operation_id
         self.store_path = store_path
         self.facts = facts
@@ -444,6 +444,23 @@ def _safe_repr(x) -> str:
         return repr(x)
     except Exception:
         return f"<unrepresentable {type(x).__name__}>"
+
+
+_MISSING = object()   # sentinel: an exception carries no `.committed` attribute
+
+
+def _valid_open_result(label) -> bool:
+    """Whether the kernel returned a well-formed `OpenResult` — the shared
+    contract, validated before the wrapper trusts it (round 15, finding 2: a
+    kernel returning the bare string `"migrated"` made terminal derivation raise
+    `AttributeError` outside the closed boundary). Type, closed branch, exact
+    Boolean facts and an integer resulting version."""
+    return (isinstance(label, sv.OpenResult)
+            and str(label) in _SUCCESS_OUTCOMES
+            and type(label.store_changed) is bool
+            and type(label.transaction_committed) is bool
+            and type(label.resulting_version) is int
+            and label.resulting_version >= 0)
 
 
 def _store_path_problems(sp) -> list:
@@ -562,22 +579,34 @@ _OUTCOME_TERMINAL_STATES = {
     "migration-result-mismatch": frozenset({"source", "unknown"}),
     "migration-evidence-missing": frozenset({"source", "unknown"}),
     "migration-quiescence-required": frozenset({"source", "unknown"}),
-    "stamped-shape-mismatch": frozenset({"source", "unknown"}),
     "internal-error": frozenset({"destination", "source", "unknown"}),
     # Round 14, finding 5: a package inconsistency can be discovered before a
     # transaction (unknown), after a confirmed rollback (source), or AFTER a
     # commit (destination) — the terminal record must preserve whichever facts
     # are already proven, not force `unknown`.
     "package-inconsistent": frozenset({"destination", "source", "unknown"}),
+    # Round 15, finding 4: a store that OPENED and was READ but is not an
+    # accepted source is `unaccepted` (not `unknown`); the in-hook variant
+    # (after observation, rolled back) is `source`, an unconfirmed rollback
+    # `unknown`.
+    "foreign-shape": frozenset({"unaccepted", "unknown"}),
+    "newer": frozenset({"unaccepted", "unknown"}),
+    "invalid-version": frozenset({"unaccepted", "unknown"}),
+    "stamped-shape-mismatch": frozenset({"source", "unaccepted", "unknown"}),
 }
 """The only resulting_states each terminal outcome can carry. An outcome absent
-here defaults to `{unknown}` (a kernel read-rejection — `foreign-shape`,
-`newer`, `locked`, `unsupported-sqlite`, `store-unopenable`, `invalid-store` —
-that establishes no migratable state). The pre-consumption refusals
+here defaults to `{unknown}` (`locked`, `unsupported-sqlite`,
+`store-unopenable`, `invalid-store` — the store was never READ, so no migratable
+state was established). The pre-consumption refusals
 (`migration-audit-unavailable`, `migration-audit-state-unknown`, and the
 pre-observation `migration-quiescence-required`/`migration-evidence-missing`)
-never reach a terminal record at all; the two listed here are their IN-HOOK
-sites, which do."""
+never reach a terminal record at all; the in-hook sites listed here do."""
+
+_READ_REJECTED = frozenset({"foreign-shape", "stamped-shape-mismatch",
+                            "newer", "invalid-version"})
+"""Outcomes where the store OPENED and was READ but rejected as not an accepted
+source (round 15, finding 4). Distinct from the never-read outcomes (`locked`,
+`store-unopenable`, `unsupported-sqlite`, `invalid-store` bytes) → `unknown`."""
 
 
 class TerminalFacts(NamedTuple):
@@ -622,6 +651,14 @@ class TerminalFacts(NamedTuple):
         for f in ("from_version", "to_version"):
             if type(getattr(self, f)) is not int:
                 p.append(f"{f} must be an int")
+        # Round 15, correction B: the migration contract is ADJACENT single-step
+        # (n → n+1); non-adjacent endpoints are impossible.
+        if type(self.from_version) is int and type(self.to_version) is int \
+                and not (0 <= self.from_version
+                         and self.to_version == self.from_version + 1):
+            p.append(f"endpoints must be adjacent: to_version "
+                     f"{self.to_version} must be from_version "
+                     f"{self.from_version} + 1")
         v = self.resulting_version
         if not (v is None or type(v) is int):
             p.append("resulting_version must be int | None")
@@ -777,8 +814,10 @@ def _operation_row_problems(row: dict) -> list:
             problems.append(f"{f} must be an int, is "
                             f"{type(row.get(f)).__name__}")
     if type(row.get("from_version")) is int and type(row.get("to_version")) \
-            is int and not 0 <= row["from_version"] < row["to_version"]:
-        problems.append("require 0 <= from_version < to_version")
+            is int and not (0 <= row["from_version"]
+                            and row["to_version"] == row["from_version"] + 1):
+        problems.append("endpoints must be adjacent: to_version == "
+                        "from_version + 1 (round 15, correction B)")
     problems += _store_path_problems(row.get("store_path"))
     if row.get("state") != "attempted":
         problems.append(f"a new operation row's state must be 'attempted', "
@@ -898,6 +937,12 @@ class DraftAuditStore:
         if op["state"] == "terminal":
             return ["operation already has a terminal event — exactly one "
                     "is permitted"]
+        # Round 15, correction C: the reference state machine is TOTAL over a
+        # malformed payload — a non-mapping is a controlled schema error, never
+        # a raw `TypeError` from `set(None)`.
+        if not isinstance(payload, dict):
+            return [f"terminal payload must be a mapping, is "
+                    f"{type(payload).__name__}"]
         if set(payload) != _TERMINAL_PAYLOAD_FIELDS:
             return [f"terminal payload fields {sorted(payload)} are not "
                     f"exactly {sorted(_TERMINAL_PAYLOAD_FIELDS)}"]
@@ -1309,6 +1354,12 @@ def authority_problems(a, spath: str, step, source_digest: str,
     return problems
 
 
+class _ActivationResultError(Exception):
+    """Internal: the audit store returned a value outside the closed activation
+    vocabulary (round 15, finding 1). Propagates to the boundary as
+    `internal-error` — never a silent success — BEFORE any store access."""
+
+
 def _consume_authority(a: MigrationAuthority, output_digest: str,
                        state: dict) -> None:
     """Single-use consumption covering the COMPLETE dedicated operation
@@ -1369,6 +1420,15 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
             f"authority operation {a.operation_id!r} was already consumed; "
             f"authorities are single-use — mint a fresh one for a fresh "
             f"operation")
+    # Round 15, finding 1: the activation result is a CLOSED vocabulary; ONLY
+    # `activated` may proceed to store access. Any other value — `None`, a wrong
+    # type, an unknown string — is a library-contract defect that must become
+    # `internal-error` BEFORE the database is opened, never a silent success
+    # that migrates with no attempted audit record.
+    if result != "activated":
+        raise _ActivationResultError(
+            f"audit activate() returned {_safe_repr(result)}, not a closed "
+            f"activation result ('activated' | 'duplicate')")
 
 
 # --------------------------------------------------------------------------
@@ -2240,7 +2300,7 @@ def _terminal_facts(out, state) -> dict:
       otherwise (locked, unopenable, an escape before the planner published, OR
       a rollback that was not confirmed) → unknown, null."""
     facts = state["facts"]
-    if facts is not None:
+    if facts is not None and _valid_open_result(facts):
         return {"store_changed": facts.store_changed,
                 "transaction_committed": facts.transaction_committed,
                 "resulting_version": facts.resulting_version,
@@ -2254,6 +2314,12 @@ def _terminal_facts(out, state) -> dict:
         return {"store_changed": False, "transaction_committed": False,
                 "resulting_version": state["observed_version"],
                 "resulting_state": "source"}
+    # Round 15, finding 4: a store that OPENED and was READ but is not an
+    # accepted source (foreign/malformed/newer) is `unaccepted`, not `unknown` —
+    # it is the round-12 `unaccepted` case, and v16 collapsed it to `unknown`.
+    if state.get("opened") and out in _READ_REJECTED:
+        return {"store_changed": False, "transaction_committed": False,
+                "resulting_version": None, "resulting_state": "unaccepted"}
     # Unknown state. The change/commit facts are `None` (genuinely unknown)
     # ONLY when a rollback was ATTEMPTED and FAILED — it may have left the store
     # partially migrated (round 13, finding 1). When no transaction was entered
@@ -2302,14 +2368,21 @@ def _write_terminal(out, outcome, state, authority) -> None:
     except MigrationAuditWriteError:
         raise
     except Exception as exc:
-        # The record is durable IFF the event landed despite the exception (a
-        # lost response after a committed write). The draft can read its own
-        # state; a production sink reports None when it genuinely cannot tell.
-        landed = (authority.operation_id, terminal) in _AUDIT._events
+        # Round 15, correction A: PRESERVE the sink's own commit status when it
+        # carries one (a typed terminal-storage exception's `.committed`) —
+        # never infer over it. Only when the exception carries nothing (a raw
+        # OSError from the in-process draft) does the draft read its own state;
+        # a production sink that cannot tell reports None.
+        supplied = getattr(exc, "committed", _MISSING)
+        if supplied is None or type(supplied) is bool:
+            audit_committed = supplied
+        else:
+            landed = (authority.operation_id, terminal) in _AUDIT._events
+            audit_committed = True if landed else False
         raise MigrationAuditWriteError(
             operation_id=authority.operation_id,
             store_path=authority.store_path, facts=safe_facts,
-            audit_committed=True if landed else False, cause=exc) from exc
+            audit_committed=audit_committed, cause=exc) from exc
 
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
@@ -2321,7 +2394,7 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
     operation is never left without a terminal record. `MigrationAuditWriteError`
     is the one escape NOT terminalized — it IS the terminal-write failure."""
     state = {"consumed": False, "facts": None, "observed_version": None,
-             "rolled_back": None, "source_absent": False}
+             "rolled_back": None, "source_absent": False, "opened": False}
     try:
         out = _run_inner(path, busy_timeout_ms, migrating, authority, state)
     except MigrationAuditWriteError:
@@ -2433,8 +2506,22 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                         "qualification (or its recorded authorizer "
                         "behaviours do not reproduce here); migration "
                         "refuses before touching the store")
-                hook = (_migrating_hook(art, authority, state) if migrating
-                        else _refusing_hook(art))
+                raw_hook = (_migrating_hook(art, authority, state) if migrating
+                            else _refusing_hook(art))
+                if migrating:
+                    # Round 15, finding 3: a `sqlite3.DatabaseError` from WITHIN
+                    # the migration hook is a migration failure, not the planner
+                    # reading invalid store bytes — convert it here so it never
+                    # reaches the `invalid-store` classification below.
+                    def hook(*a, _raw=raw_hook, **k):
+                        try:
+                            return _raw(*a, **k)
+                        except sqlite3.DatabaseError as exc:
+                            raise MigrationRefused(
+                                "migration-failed",
+                                f"migration hook: {_safe_repr(exc)}") from exc
+                else:
+                    hook = raw_hook
                 phase = "connect"
                 try:
                     if migrating:
@@ -2447,9 +2534,13 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                 except sqlite3.Error as exc:
                     return Outcome("store-unopenable",
                                    diagnostic=_safe_repr(exc))
-                conn.isolation_level = None
+                state["opened"] = True           # the store opened successfully
                 phase = "planner"
+                # Round 15, finding 5: the cleanup scope starts the INSTANT the
+                # connection exists, so an `isolation_level`/PRAGMA setup failure
+                # cannot leak it — every opened connection is closed exactly once.
                 try:
+                    conn.isolation_level = None
                     conn.execute(
                         f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
                     # on_committed publishes the OpenResult the instant a
@@ -2468,18 +2559,25 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                             on_rolled_back=lambda s:
                                 state.__setitem__("rolled_back", s))
                     except sqlite3.DatabaseError as exc:
-                        # Round 14, finding 4: `invalid-store` is ONLY the bytes
-                        # failing WHILE the planner reads/interprets the store.
-                        # A DatabaseError from anywhere ELSE (runtime probes,
-                        # PRAGMA setup) is a library defect → `internal-error`
-                        # (the outer handler). A read defect AFTER a committed
-                        # publish is likewise our defect, not invalid bytes.
+                        # `invalid-store` is ONLY the kernel reading bad bytes
+                        # (round 14 f4; round 15 f3: hook failures are converted
+                        # above). A read defect AFTER a committed publish is our
+                        # defect, not invalid bytes.
                         if state.get("facts") is not None:
                             return Outcome("internal-error",
                                            diagnostic=f"post-commit read defect: "
                                                       f"{_safe_repr(exc)}")
                         return Outcome("invalid-store",
                                        diagnostic=_safe_repr(exc))
+                    # Round 15, finding 2: the kernel result is a library
+                    # contract — validate it before trusting it, so a malformed
+                    # return terminalizes as `internal-error` rather than
+                    # escaping as an `AttributeError` from terminal derivation.
+                    if not _valid_open_result(label):
+                        return Outcome(
+                            "internal-error",
+                            diagnostic=f"kernel returned a malformed result: "
+                                       f"{_safe_repr(label)}")
                     state["facts"] = label       # belt and suspenders
                     return Outcome(label)
                 finally:
