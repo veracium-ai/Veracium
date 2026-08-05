@@ -416,6 +416,54 @@ class _HostileStatus:
         raise RuntimeError("hostile __ne__")
 
 
+# --- round 19: durable proof over receipts; prior records preserved ----------
+
+def _terminal_deletes_attempted():
+    """Publish the terminal event but DELETE the attempted event (round 19,
+    correction A: prior records must be preserved through terminalization)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        rec = real(operation_id, event, payload)
+        st = m._AUDIT._state
+        evs = dict(st.events)
+        evs.pop((operation_id, "migration_attempted"), None)
+        m._AUDIT._state = st._replace(events=m._readonly(evs))
+        return rec
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
+def _terminal_mutates_row():
+    """Publish the terminal event but rewrite the operation row's store_path and
+    add an extra field (round 19, correction A)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        rec = real(operation_id, event, payload)
+        st = m._AUDIT._state
+        ops = dict(st.ops)
+        ops[operation_id] = {**dict(ops[operation_id]),
+                             "store_path": "/wrong/store.db", "extra": 1}
+        m._AUDIT._state = st._replace(ops=m._readonly(ops))
+        return rec
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
+def _activate_drops_event_index():
+    """Publish the real activation but empty the `event_ids` index, so the
+    attempted event's id is not indexed (round 19, correction C)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        r = real(a, output_digest)
+        m._AUDIT._state = m._AUDIT._state._replace(event_ids=frozenset())
+        return r
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -435,10 +483,23 @@ _INJECTIONS = [
     ("on_committed-false-current-then-real-migrated",
      _on_committed_false_then_real,
      _outcome_is("internal-error")),
-    # A recorded receipt claiming the audit did not commit (round 18 corr A).
+    # A recorded receipt claiming the audit did not commit (round 18 corr A) —
+    # AND round 19 finding 1: the exception's audit fact follows the durable
+    # transition (which committed), not the lying receipt, so it is True.
     ("record_terminal-recorded-but-not-committed",
      lambda: _terminal_receipt(audit_committed=False),
+     _write_error(True)),
+    # round 19, correction A: the terminal sink must preserve prior records.
+    ("record_terminal-deletes-attempted-event",
+     _terminal_deletes_attempted,
      _write_error_any),
+    ("record_terminal-rewrites-operation-row",
+     _terminal_mutates_row,
+     _write_error_any),
+    # round 19, correction C: the attempted id must be in the event index.
+    ("activate-drops-attempted-id-from-index",
+     _activate_drops_event_index,
+     _outcome_is("internal-error")),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),
@@ -594,6 +655,10 @@ def _success_durable_problems(auth, res):
         if row.get(f) != getattr(auth, f):
             probs.append(f"row {f}={row.get(f)!r} != authority "
                          f"{getattr(auth, f)!r}")
+    # round 19, correction C: the row field set is exactly the schema (no extra
+    # fields), and the row is `terminal` for a completed success.
+    if set(row) != set(m._AUDIT_OPERATION_FIELDS):
+        probs.append(f"row fields {sorted(row)} are not the exact schema")
     if row.get("state") != "terminal":
         probs.append(f"row state={row.get('state')!r} != 'terminal'")
     att = events.get((auth.operation_id, "migration_attempted"))
@@ -608,6 +673,9 @@ def _success_durable_problems(auth, res):
             probs.append("attempted event is not bound to this operation")
         if att.get("occurred_at") != row.get("attempted_at"):
             probs.append("attempted occurred_at != row attempted_at")
+        # round 19, correction C: the attempted id is in the reference index.
+        if att.get("event_id") not in m._AUDIT._state.event_ids:
+            probs.append("attempted event_id is absent from the event index")
     terminals = [(k, v) for k, v in events.items()
                  if k[0] == auth.operation_id and k[1] in _TERMINAL_KINDS]
     if len(terminals) != 1:

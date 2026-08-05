@@ -5,34 +5,32 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v21)** — round 18: *architecture standing; v19 deferred on five
-> load-bearing gaps in the audit reference plus four corrections*. **v21 amends
-> v20 for round 19 with no code change — it raises `M-Q4` (§10), a formal
-> disposition question the reviewer is asked to RULE on: what constitutes
-> acceptance of `0013` on the draft audit reference, and which residual
-> reference-vs-production correctness defers to `0008`'s real sink.** All taken;
-> concrete migration, evidence-selection key, release identity, source
-> binding, one-snapshot reader, TEMP confinement and ordinary planner states
-> untouched, and the evidence artifact reproduces byte-for-byte. The theme —
-> verify the COMPLETE record, both atomic parts: **the activation binds the
-> complete attempted EVENT**, not just the row, so a malformed attempted event
-> under the right key is `internal-error` (finding 1); **the terminal write
-> verifies the `attempted → terminal` state transition** — operation now
-> `terminal`, one terminal event, a unique non-reused `event_id` — not only the
-> payload (finding 2); **`on_committed` distinguishes a proven commit from a
-> no-commit position**, so a false `current`/(F,F) never suppresses a real
-> `migrated`/(T,T) (finding 3); **the whole post-consumption sequence is total**
-> — timestamp, receipt equality and the exception constructor included (finding
-> 4); and **a derivation fallback changes the PUBLIC outcome too**, so caller
-> and audit never disagree (finding 5). A `recorded` receipt must be
-> `audit_committed=True`; duplicates bind the authority; the pre-send gates now
-> assert the COMPLETE durable state (your correction C); the operation-id
-> wording is reconciled to the enforced UUID4 grammar (your correction D).
+> **in review (v22)** — round 19: **M-Q4 RULED — the acceptance boundary is
+> frozen (§8a).** `0013` is acceptable on six finite, mechanically-gated
+> properties of the abstract migration design and audit protocol; ten production
+> obligations (real DDL/constraints, transactional atomicity, multiprocess
+> durability, response-loss handling, the `current`-with-repair commit contract,
+> crash injection) move to `0008` as explicit blocking gates. *v22 deferred on
+> two load-bearing semantic gaps plus four reference-scope corrections*, all
+> closed: **`MigrationAuditWriteError.audit_committed` now follows durable proof**
+> — once the complete transition is observed the audit provably committed, so a
+> contradictory `False` receipt cannot override it (finding 1); **a validated
+> no-op-`current` destination position survives a later internal defect** —
+> `internal-error`/`False`/`False`/`destination`/v2, not fabricated `unknown`
+> (finding 2); **terminalisation verifies the operation row and attempted event
+> were PRESERVED**, not just the terminal delta (correction A); **a malformed
+> duplicate lifecycle is audit-integrity `internal-error`**, not a replay
+> (correction B); **activation readback checks the reference `event_ids` index
+> and exact row field set** (correction C); **receipt validators use `type(x) is
+> str`**, total over a hostile `str` subclass (correction D). Concrete migration,
+> evidence key, release identity, source binding, one-snapshot reader, TEMP
+> confinement and ordinary planner states untouched; the evidence artifact
+> reproduces byte-for-byte.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v21 |
+| **Version** | v22 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -879,6 +877,10 @@ tests at implementation.
 | **M83** the terminal write verifies the full `attempted → terminal` transition — operation `terminal`, one terminal event, a unique non-reused `event_id` — not only the payload | `test_terminal_write_requires_the_state_transition` · `test_terminal_write_rejects_a_reused_event_id` — **measured today** (round 18, finding 2) |
 | **M84** a false `current`/(F,F) never suppresses a real `migrated`/(T,T); the durable record retains the strongest proven state | `test_a_false_uncommitted_publication_never_suppresses_a_real_commit` — **measured today** (round 18, finding 3) |
 | **M85** the whole post-consumption sequence is total (hostile receipt equality, a non-bool audit flag) and a derivation fallback changes the PUBLIC outcome; a `recorded` receipt must be `audit_committed=True` | `test_a_hostile_receipt_equality_never_escapes` · `test_an_uncommittable_audit_flag_never_leaks_a_type_error` · `test_a_derivation_fallback_agrees_public_and_durable_outcome` · `test_a_recorded_receipt_must_be_audit_committed` — **measured today** (round 18, findings 4 & 5 + correction A) |
+| **M86** `MigrationAuditWriteError.audit_committed` follows the STRONGEST durable evidence — an observed complete transition proves `True`, never a contradictory `False` receipt; a validated no-op-`current` destination position survives a later internal defect | `test_the_write_error_audit_committed_follows_durable_proof` · `test_a_noop_current_position_survives_a_post_callback_defect` — **measured today** (round 19, findings 1 & 2) |
+| **M87** terminalisation verifies the operation row and attempted event were PRESERVED (only the state changed `attempted → terminal`), not just the terminal delta | `test_terminalization_requires_the_prior_records_preserved` (delete-attempted, mutate-row) — **measured today** (round 19, correction A) |
+| **M88** a malformed duplicate lifecycle is audit-integrity `internal-error`, not a replay; activation readback checks the reference `event_ids` index and exact row field set | `test_a_malformed_duplicate_lifecycle_is_audit_integrity` · `test_activation_readback_requires_the_event_id_in_the_index` — **measured today** (round 19, corrections B & C) |
+| **M89** receipt validators are TOTAL over hostile `str` subclasses (`type(x) is str` before comparison) | `test_receipt_validators_are_total_over_str_subclasses` — **measured today** (round 19, correction D) |
 
 ---
 
@@ -922,84 +924,127 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ---
 
+## 8a. Acceptance boundary — M-Q4 RULED (round 19)
+
+Round 19 ruled M-Q4 and **froze a finite acceptance boundary**: `0013` reviews
+the *abstract migration design and audit protocol*; the *production audit sink*
+is reviewed with `0008`. Arbitrary mutation of the in-process reference's private
+immutable state can always expose one more defensive readback, so proving every
+possible backend correct is **not** a finite acceptance criterion for `0013`.
+
+**`0013` is acceptable when these finite properties are frozen in normative text
+and mechanically demonstrated** (they are — see the invariants table and the two
+pre-send gates):
+
+1. **Concrete migration correctness** — the reviewed v1→v2 declaration preserves
+   source data, reaches the exact v2 constructor manifestation, and stamps only
+   after evidence-authorised validation (§5, M1–M12).
+2. **Planner and evidence architecture** — one shared planner, one evidence
+   snapshot, exact path-record selection, runtime qualification, source/release/
+   declaration binding, no migration through ordinary opening (§5b–§5c).
+3. **Closed public semantics** — every expected failure maps to the frozen
+   outcome vocabulary; the two named exceptions and the `TerminalFacts` truth
+   table are internally consistent (§5d, gate 1).
+4. **Abstract audit protocol** — activation is one atomic compare-and-set
+   creating the operation + attempted event; terminal publication is one atomic
+   `attempted → terminal` transition; the duplicate, unavailable, unknown-commit,
+   committed-response-loss and terminal-write-failure states are distinguished
+   (§5e).
+5. **Adapter conformance surface** — typed receipts and typed failures have total
+   validators; public outcomes, terminal facts, and known store/audit commit
+   facts cannot contradict one another (§5e, M81–M89).
+6. **Independent mechanical gates** — the normative outcome/fact table and each
+   named adapter return/failure class are covered without importing the
+   implementation's own expected-answer tables (`tests/test_0013_presend_gates.py`).
+
+Acceptance does **not** require the wrapper to stay correct after arbitrary direct
+replacement of the reference's private immutable state, nor after an adapter
+violates the frozen atomicity contract while returning a success receipt. Those
+are **backend-conformance tests for `0008`'s adapter.**
+
+**These land with `0008`'s production audit sink as explicit blocking
+implementation obligations** (not residual risks silently accepted here):
+
+- real two-table DDL with primary, foreign, uniqueness, enum and field
+  constraints;
+- one DB transaction for activation and one compare-and-set transaction for
+  terminalisation;
+- multiprocess operation-ID consumption;
+- commit-status handling when the DB commits but the response is lost;
+- readback from a transactionally consistent snapshot;
+- preservation and immutability of the attempted record during terminalisation;
+- restart-safe attempted-only reconciliation and durable lookup by operation id;
+- detection of malformed or contradictory existing audit rows;
+- **the actual `current`-with-repair `transaction_committed=True` contract** (the
+  one item the draft can demonstrate but not freeze — carried since round 8);
+- crash injection before commit, after commit, and during response delivery.
+
+The draft `DraftAuditStore` remains an **executable protocol model**, not proof
+that any future database adapter implements the protocol.
+
+---
+
 ## 9. Brief for the external reviewer
 
-**Round 19 of this spec. All five round-18 blockers and all four additional
-corrections taken; every probe reproduced first** — each was a receipt that
-verified ONE of the two atomic records, or a boundary with one more step outside
-it: activation bound the operation ROW but verified the attempted EVENT only by
-key existence; the terminal write bound the payload but not the `attempted →
-terminal` state transition; `on_committed` conflated a genuine commit with a
-no-commit position; timestamp/receipt/exception construction sat outside the
-total boundary; and a derivation fallback changed the durable outcome but not the
-public one. Per your v19 bar the concrete migration, evidence-selection key,
-release identity, source binding, one-snapshot reader, TEMP confinement and
-ordinary planner states are untouched; the evidence artifact reproduces
-byte-for-byte.
+**Round 20 of this spec. Thank you for ruling M-Q4 — the acceptance boundary is
+now written into the spec (§8a) as six finite gated properties plus ten explicit
+`0008` obligations, and I am building to it, not past it.** All two round-19
+blockers and all four reference-scope corrections are closed; every probe was
+reproduced first. Concrete migration, evidence-selection key, release identity,
+source binding, one-snapshot reader, TEMP confinement and ordinary planner states
+are untouched; the evidence artifact reproduces byte-for-byte.
 
-The theme of your round is taken directly: **verify the COMPLETE record — both
-atomic parts and the whole resulting state — not one part of it.**
+The two load-bearing semantic gaps — both inside the acceptance boundary — were
+that a verified fact could be overridden by a weaker one:
 
-1. **Activation binds the COMPLETE attempted event** (finding 1): the wrapper
-   verifies BOTH atomic records — the operation row (as before) AND the attempted
-   event: exact field set, valid unique `event_id`, `operation_id`/`event`
-   matching, and `occurred_at == row.attempted_at`. A malformed attempted event
-   under the right key is `internal-error`, store untouched.
-2. **The terminal write verifies the state transition** (finding 2): after
-   publication the wrapper verifies the operation row is now `terminal`, exactly
-   one terminal event exists, its `event_id` is valid, unique and DISTINCT from
-   the attempted event's, it carries the exact field set, and its payload equals
-   the request. A valid payload with the operation still `attempted`, or a reused
-   `event_id`, raises `MigrationAuditWriteError`.
-3. **`on_committed` distinguishes a proven commit from a position** (finding 3):
-   the kernel fires the sink after its COMMIT even for a no-op `current` that
-   changed nothing, so a single (F,F) is only the store's resolved position while
-   (T,T) is a genuine commit. The sink fires at most once; a second, DIFFERENT
-   publication is a defect, and a false `current`/(F,F) never suppresses a real
-   `migrated`/(T,T) — the durable record retains the strongest proven state.
-4. **The WHOLE post-consumption sequence is total** (finding 4): timestamp
-   generation, a hostile receipt equality (`status.__ne__` that raises),
-   audit-commit sanitization (an `audit_committed=1` the exception constructor
-   rejects) and `MigrationAuditWriteError` construction itself are all inside the
-   boundary. Receipt validators exact-type before comparing; a non-bool audit
-   flag becomes `None`. No raw third exception escapes after commit.
-5. **A derivation fallback changes the PUBLIC outcome** (finding 5): the terminal
-   write returns the effective outcome, so when derivation falls back to
-   `internal-error` the caller sees `internal-error` too — the public return and
-   the durable event never disagree.
+1. **`MigrationAuditWriteError.audit_committed` follows durable proof** (finding
+   1): once the wrapper has itself OBSERVED the complete durable transition, the
+   audit write provably committed, so the exception carries `audit_committed=True`
+   — a contradictory `False` receipt can explain why success cannot be returned
+   but cannot override stronger durable evidence. `False` now arises only on the
+   sink-RAISED path from a typed sink that says definitely-not-written; all other
+   cases are `None`.
+2. **A validated no-op-`current` destination position survives a later defect**
+   (finding 2): a valid `current`/(F,F) callback proves the store IS a v2
+   destination even though nothing committed. I now track two independent facts —
+   `position_established` and `write_commit_established` — so a subsequent
+   `sqlite3.DatabaseError` terminalises `internal-error` / `False` / `False` /
+   `destination` / v2, preserving the proven physical position instead of
+   discarding it to `unknown`.
 
-**Additional corrections**: (A) a `recorded` receipt must be
-`audit_committed=True` — `False` is contradictory, `None` is the failure path.
-(B) a `duplicate` is bound to the presented authority (a different-store row is a
-collision, not a replay), and its `terminal_present` must agree with durable
-state. (C) **your critique of the gates is again taken** — the content gate now
-asserts the COMPLETE durable state for a success (every authority-row field, the
-attempted-event contents, the full transition, `event_id` integrity), and seven
-new content-mismatch seams are added; reverting any round-18 fix fails a gate.
-(D) the operation-id row is reconciled to the enforced UUID4 grammar (the old
-"shape, not version/variant" wording is withdrawn).
+**Reference-scope corrections** (closed in the draft — each is a finite property
+of the acceptance surface, not an open-ended hostile-storage emulation):
 
-**A note on the recurring pattern, stated plainly:** for FOUR rounds running your
-findings have been "the verification checks X but not the stronger X′"
-(nested→recursive, existence→completeness, completeness→content,
-part→whole-record). Each round we close the layer and extend the mechanical gates
-to it, and each round they hold — but this is now clearly a draft REFERENCE being
-hardened one adversarial layer at a time, not a design defect (the architecture
-has stood for twelve rounds). Per M-Q1 the residual implementation-correctness of
-this in-process reference lands with `0008`'s real audit sink. **I have raised
-this as a formal open question — `M-Q4` in §10 — for you to RULE on, not merely
-note:** what would constitute acceptance of `0013` on this draft reference, and
-which residual reference-vs-production correctness should be carried as a stated
-`0008` implementation obligation rather than closed against the draft? I will not
-claim the layers are exhausted; this is the decision I would most value your
-ruling on this round.
+- **(A)** terminalisation now verifies the operation row and attempted event were
+  PRESERVED byte-for-byte (only the state changes `attempted → terminal`),
+  snapshotting them at activation — a sink that deletes the attempted event or
+  rewrites the row raises. The immutability premise is also frozen in §5e text.
+- **(B)** a malformed/contradictory duplicate lifecycle (a `bogus` operation
+  state, a malformed terminal event) is audit-integrity `internal-error` for
+  investigation, distinct from a valid completed or attempted-only replay.
+- **(C)** the reference readback checks the surrogate `event_ids` index (the
+  production `event_id` PRIMARY KEY) and the exact operation-row field set; the
+  pre-send gate asserts them too. Where these are draft-surrogate properties, §8a
+  names the production equivalent (real PK/schema constraints) as a `0008` gate.
+- **(D)** receipt validators use `type(x) is str`, so a `str` subclass whose
+  equality raises is classified, not executed — the totality claim is now true.
 
-**Where I am least confident:** the same one carried since round 8 — the
-`current`-with-repair `committed=True` cell rests on the kernel reporting
-`OpenResult.transaction_committed` truthfully, which a production planner
-that repairs in a separate transaction must uphold (§5e implementation
-obligation). Every other terminal fact is now validated against the exact
-cell contract; this is the one the draft can only demonstrate.
+**On the boundary you drew.** Your ruling matches how I will treat future
+findings: a defect *inside* the six gated properties (a verified fact overridden
+by a weaker one; a public/durable contradiction) is a `0013` blocker; a defect
+reachable only by arbitrary direct corruption of the reference's private state,
+or by an adapter that violates atomicity while returning a success receipt, is an
+`0008` adapter-conformance obligation (§8a) — I will scope it there explicitly
+rather than grow the draft into a universal hostile-storage emulator. If you see
+a gap in the *six properties* themselves, that is squarely a `0013` blocker and I
+want it.
+
+**Where I am least confident:** the `current`-with-repair `committed=True` cell —
+now item (b)/obligation of §8a, carried since round 8. It rests on the kernel
+reporting `OpenResult.transaction_committed` truthfully, which a production
+planner that repairs in a separate transaction must uphold; the draft
+demonstrates it and §8a records it as a blocking `0008` gate rather than closing
+it against the draft.
 
 ## 10. Open questions
 
@@ -1008,7 +1053,7 @@ cell contract; this is the one the draft can only demonstrate.
 | ~~M-Q1~~ | **RULED by round 9, 2026-08-03: wait.** `0013` must not reach `accepted` before it is reviewed **against an actual migration** — that is the principle that justified the `0007` scope cut, and it applies equally to the replacement. **The first case is `0008`'s `confirmations` table**: accepted, simple, additive, already blocked on `0013`, and independent of `0006`'s unresolved source-identity design. **`0013` may generalise only what that real migration demonstrates.** | resolved | external | — |
 | ~~M-Q2~~ | **RULED (round 1) adopt-with-conditions; condition RESOLVED (round 2) by the offline boundary; boundary APPROVED (round 3) at the library level** with the narrowed claim (§5b: ordinary opening cannot initiate migration; the trusted deployment authority owns quiescence, fencing and backup validity) and the authority binding conditions (exact types, bound to store/migration/operation; release-identity binding at implementation). | resolved | external | — |
 | ~~M-Q3~~ | **RULED by round 9: yes, it belongs here.** The capability comparison exists to decide whether a *migration result* satisfies its destination despite differing DDL, so it is `0013`'s. `0007` retains exact manifestation identity, digest comparison, rebuildable drift and candidate resolution — and `capability_problems()` has been removed from its kernel. | resolved | external | — |
-| **M-Q4** | **OPEN — asked round 19.** The draft in-process audit reference (`DraftAuditStore` + the wrapper's receipt/transition verification) has now absorbed **four consecutive rounds** of "the check covers X but not the stronger X′" implementation-correctness findings (nested→recursive, existence→completeness, completeness→content, part→whole-record), on an **architecture the reviewer has held standing for twelve rounds** and a concrete migration that is untouched. Each round closes the named layer and extends the two mechanical pre-send gates to it, and each round the gates hold — but I do not claim the layers are exhausted, and the class of finding is generic to hardening a *reference* rather than a defect in the *design*. Per M-Q1, `0013` is reviewed against the real `0008` `confirmations` migration and may generalise only what it demonstrates; the production audit sink lands with `0008`'s implementation, not here. **The question for the reviewer to RULE, not merely note: (a) what would constitute acceptance of `0013` on this draft reference — i.e. which properties, once mechanically gated, are sufficient — and (b) which residual reference-vs-production correctness (e.g. the round-8 `current`-with-repair `committed=True` kernel-contract cell) should be carried as a stated `0008` implementation obligation rather than closed against the draft?** This is a disposition question, not a new capability. | **open** | external | round 19 |
+| ~~M-Q4~~ | **RULED by round 19: the acceptance boundary is frozen (§8a).** `0013` reviews the abstract migration design and audit *protocol* against six finite, mechanically-gated properties (concrete migration correctness; planner/evidence architecture; closed public semantics; abstract atomic audit protocol; adapter conformance surface; independent gates). It does **not** require the in-process reference to defend against arbitrary direct corruption of its private immutable state, nor an adapter that violates atomicity while returning a success receipt — those are **`0008` adapter-conformance tests**. Ten production obligations (real DDL/constraints, one activation + one compare-and-set transaction, multiprocess consumption, response-loss handling, consistent-snapshot readback, attempted-record immutability, restart-safe reconciliation, malformed-row detection, the `current`-with-repair `committed=True` contract, crash injection) become explicit blocking `0008` gates. The draft is an executable protocol model, not proof that a backend implements the protocol. | resolved | external | — |
 
 ---
 
@@ -1408,3 +1453,29 @@ throughout.
 | B | a duplicate receipt was not bound to the authority, and `terminal_present` was unvalidated | duplicates bind the authority (a different-store row is a collision); `terminal_present` must agree with durable state (M82) |
 | C | the content gate verified a subset of the durable state | the gate now asserts the COMPLETE state for a success — all authority-row fields, attempted-event contents, the transition, `event_id` integrity — with seven new content-mismatch seams; reverting any round-18 fix fails a gate (M82–M85) |
 | D | the operation-id prose contradicted the enforced UUID4 grammar | the row is reconciled — `op-<uuid4>` with version-4/variant bits; the earlier "shape, not version/variant" wording is withdrawn (M77) |
+
+---
+
+## 29. Round 19 review disposition
+
+**Verdict: M-Q4 RULED — the acceptance boundary is frozen (§8a). `0013` is
+acceptable on six finite, mechanically-gated properties of the abstract migration
+design and audit protocol; ten production obligations move to `0008` as explicit
+blocking gates. Architecture standing; v22 deferred on two load-bearing semantic
+gaps plus four reference-scope corrections — all closed.** The reviewer ruled
+that arbitrary corruption of the reference's private immutable state is not a
+finite acceptance criterion, and that production transactionality, multiprocess
+durability, response-loss reconciliation, historical-row integrity and the
+`current`-with-repair commit fact are `0008` adapter obligations. The two
+semantic gaps were both a *verified fact overridden by a weaker one*. The bounded
+adjacent-migration claim and resolution/refusal split remain approved.
+
+| # | finding | closed by |
+|---|---|---|
+| M-Q4 | where does review of the abstract design end and `0008` implementation review begin? | **RULED — §8a**: six finite acceptance properties are gated in the draft; ten production obligations are explicit `0008` blocking gates; the draft is an executable protocol model, not proof a backend implements it |
+| 1 | a rejected terminal receipt could still set `MigrationAuditWriteError.audit_committed=False` after the wrapper's own readback proved the write committed | **the audit fact follows the STRONGEST durable evidence** — an observed complete transition is `True`; `False` arises only from a typed sink that says definitely-not-written with no durable transition; all else `None` (M86) |
+| 2 | a valid no-op `current`/(F,F) callback followed by an internal `sqlite3` defect lost its proven destination position and recorded `unknown` | **`position_established` is tracked separately from `write_commit_established`** — a proven destination survives a later defect: `internal-error`/`False`/`False`/`destination`/v2 (M86) |
+| A | terminalisation verified the terminal delta but not that the operation row and attempted event were preserved | **the row and attempted event are snapshotted at activation and verified immutable** (only the state changes); the premise is frozen in §5e text and enforced in `0008` (M87) |
+| B | a malformed duplicate lifecycle was treated as an ordinary consumed replay | **a malformed/contradictory lifecycle is audit-integrity `internal-error`**, distinct from a valid completed or attempted-only replay (M88) |
+| C | activation readback omitted the reference `event_ids` index and exact row field-set checks | **both are checked** in the readback and the pre-send gate; §8a names the production PK/schema constraints as the `0008` equivalent (M88) |
+| D | receipt validators used `isinstance(x, str)`, not total over a hostile `str` subclass | **`type(x) is str` before comparison** — a subclass whose equality raises is classified, not executed (M89) |

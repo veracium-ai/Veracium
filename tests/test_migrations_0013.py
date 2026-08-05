@@ -3517,3 +3517,128 @@ def test_an_uncommittable_audit_flag_never_leaks_a_type_error(monkeypatch):
     monkeypatch.setattr(m13._AUDIT, "record_terminal", bad_flag)
     with pytest.raises(m13.MigrationAuditWriteError):
         m13.migrate_store(p, auth)
+
+
+# --- round 19: durable proof over receipts; preserved records; totality -------
+
+def test_the_write_error_audit_committed_follows_durable_proof(monkeypatch):
+    """Round 19, finding 1: once the wrapper has independently verified the
+    complete durable transition, the audit write PROVABLY committed — a
+    contradictory receipt (`audit_committed=False`) must not override that
+    stronger evidence in the exception the caller uses to recover."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def lying(operation_id, event, payload):
+        real(operation_id, event, payload)           # the transition IS durable
+        return m13.TerminalReceipt("recorded", operation_id, event,
+                                   audit_committed=False)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", lying)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is True          # durable proof, not the lie
+
+
+def test_a_noop_current_position_survives_a_post_callback_defect(monkeypatch):
+    """Round 19, finding 2: a valid `current`/(F,F) callback proves the store IS
+    a v2 destination even though nothing committed. A later internal defect must
+    preserve that proven position, not record `unknown`."""
+    p = _v1_store()
+    a1, auth = m13.make_authority(p), m13.make_authority(p)  # both minted at v1
+    m13.migrate_store(p, a1)                            # -> v2
+    real = m13.sv.open_versioned                        # `auth` now sees no-op current
+
+    def boom_after_position(*a, **k):
+        real(*a, **k)                                  # fires on_committed(current/F/F)
+        raise sqlite3.DatabaseError("defect after the destination was proven")
+    monkeypatch.setattr(m13.sv, "open_versioned", boom_after_position)
+    out = m13.migrate_store(p, auth)
+    assert out == "internal-error"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["resulting_state"] == "destination"      # position preserved
+    assert ev["resulting_version"] == 2
+    assert ev["store_changed"] is False                # no commit — but known
+    assert ev["transaction_committed"] is False
+
+
+@pytest.mark.parametrize("corrupt", ["delete-attempted", "mutate-row"])
+def test_terminalization_requires_the_prior_records_preserved(monkeypatch,
+                                                              corrupt):
+    """Round 19, correction A: a conforming terminal sink changes only the
+    operation state `attempted → terminal`; the authority row and attempted
+    event are immutable. A sink that deletes the attempted event or rewrites the
+    row must raise, not report `migrated`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def tamper(operation_id, event, payload):
+        rec = real(operation_id, event, payload)
+        st = m13._AUDIT._state
+        if corrupt == "delete-attempted":
+            evs = dict(st.events)
+            evs.pop((operation_id, m13._ATTEMPTED_EVENT), None)
+            m13._AUDIT._state = st._replace(events=m13._readonly(evs))
+        else:
+            ops = dict(st.ops)
+            ops[operation_id] = {**dict(ops[operation_id]),
+                                 "store_path": "/wrong/store.db", "extra": 1}
+            m13._AUDIT._state = st._replace(ops=m13._readonly(ops))
+        return rec
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", tamper)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+def test_a_malformed_duplicate_lifecycle_is_audit_integrity():
+    """Round 19, correction B: a duplicate whose durable lifecycle is neither a
+    valid completed operation nor a valid attempted-only one (a `bogus` state) is
+    an audit-integrity defect — `internal-error`, for investigation — not an
+    ordinary quiescence replay."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"    # consume -> terminal
+    st = m13._AUDIT._state                             # corrupt the lifecycle
+    ops = dict(st.ops)
+    ops[auth.operation_id] = {**dict(ops[auth.operation_id]), "state": "bogus"}
+    m13._AUDIT._state = st._replace(ops=m13._readonly(ops))
+    assert m13.migrate_store(p, auth) == "internal-error"
+
+
+def test_activation_readback_requires_the_event_id_in_the_index(monkeypatch):
+    """Round 19, correction C: the reference readback checks the surrogate
+    `event_ids` index (the production `event_id` PRIMARY KEY) and the exact row
+    field set — an attempted id missing from the index is `internal-error`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def drop_index(a, od):
+        r = real(a, od)
+        st = m13._AUDIT._state
+        m13._AUDIT._state = st._replace(event_ids=frozenset())
+        return r
+    monkeypatch.setattr(m13._AUDIT, "activate", drop_index)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1      # store untouched
+
+
+def test_receipt_validators_are_total_over_str_subclasses():
+    """Round 19, correction D: `isinstance(x, str)` admits a `str` subclass whose
+    equality raises; the validators use `type(x) is str`, so they classify a
+    hostile subclass without invoking its equality method."""
+    class BadStr(str):
+        def __eq__(self, o):
+            raise RuntimeError("hostile __eq__")
+
+        def __ne__(self, o):
+            raise RuntimeError("hostile __ne__")
+        __hash__ = str.__hash__
+
+    ar = m13.ActivationReceipt(BadStr("activated"), _OP_ID, True, False)
+    assert ar.problems(_OP_ID)                         # rejected, not raised
+    tr = m13.TerminalReceipt(BadStr("recorded"), _OP_ID,
+                             "migration_completed", True)
+    assert tr.problems(_OP_ID, "migration_completed")  # rejected, not raised

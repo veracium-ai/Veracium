@@ -494,6 +494,11 @@ def _make_on_committed(state, to_v):
         if prior is None:
             state["facts"] = r
             state["committed_established"] = committed
+            # Round 19, finding 2: a valid success result establishes the store's
+            # DESTINATION POSITION (the kernel ran `_validated_current`/migrated),
+            # independent of whether a write commit occurred — a no-op `current`
+            # (F,F) proves the store IS at the destination without a commit.
+            state["position_established"] = True
             return
         if (prior.store_changed, prior.transaction_committed,
                 prior.resulting_version, str(prior)) == \
@@ -722,16 +727,17 @@ class ActivationReceipt(NamedTuple):
     terminal_present: bool    # (duplicate) a terminal event already exists
 
     def problems(self, expected_operation_id: str) -> list:
-        # Round 18, finding 4: this validator runs on a foreign receipt whose
-        # scalar fields may be hostile objects (an `__eq__`/`__ne__` that
-        # raises), so it EXACT-TYPES every field with `isinstance`/`type` BEFORE
-        # any comparison — it never invokes an arbitrary equality method.
+        # Round 18, finding 4 + round 19, correction D: this validator runs on a
+        # foreign receipt whose scalar fields may be hostile — including a `str`
+        # SUBCLASS whose `__eq__`/`__ne__` raises, which `isinstance(x, str)`
+        # admits. It EXACT-TYPES every field with `type(x) is str` BEFORE any
+        # comparison, so it never invokes an arbitrary equality method.
         p = []
-        if not isinstance(self.status, str) or \
+        if type(self.status) is not str or \
                 self.status not in ("activated", "duplicate"):
             p.append(f"status {_safe_repr(self.status)} is not "
                      f"activated|duplicate")
-        if not (isinstance(self.operation_id, str)
+        if not (type(self.operation_id) is str
                 and self.operation_id == expected_operation_id):
             p.append(f"operation_id {_safe_repr(self.operation_id)} != "
                      f"{expected_operation_id!r}")
@@ -741,7 +747,7 @@ class ActivationReceipt(NamedTuple):
             p.append("terminal_present must be an exact bool")
         # cross-field: an `activated` receipt is freshly written (durable) with
         # no terminal event yet (round 17, correction B).
-        if isinstance(self.status, str) and self.status == "activated":
+        if type(self.status) is str and self.status == "activated":
             if self.audit_committed is not True:
                 p.append("an activated receipt must be audit_committed=True")
             if self.terminal_present is not False:
@@ -760,16 +766,18 @@ class TerminalReceipt(NamedTuple):
     audit_committed: bool
 
     def problems(self, expected_operation_id: str, expected_event: str) -> list:
-        # Round 18, finding 4: EXACT-TYPE before comparison — a hostile
-        # `status`/`event` whose `__ne__` raises must not break the boundary.
+        # Round 18, finding 4 + round 19, correction D: EXACT-TYPE with
+        # `type(x) is str` before comparison — a hostile `status`/`event`,
+        # INCLUDING a `str` subclass whose `__ne__` raises (which `isinstance`
+        # admits), must not break the boundary.
         p = []
-        if not isinstance(self.status, str) or self.status != "recorded":
+        if type(self.status) is not str or self.status != "recorded":
             p.append(f"status {_safe_repr(self.status)} is not 'recorded'")
-        if not isinstance(self.operation_id, str) or \
+        if type(self.operation_id) is not str or \
                 self.operation_id != expected_operation_id:
             p.append(f"operation_id {_safe_repr(self.operation_id)} != "
                      f"{expected_operation_id!r}")
-        if not isinstance(self.event, str) or self.event != expected_event:
+        if type(self.event) is not str or self.event != expected_event:
             p.append(f"event {_safe_repr(self.event)} != {expected_event!r}")
         if type(self.audit_committed) is not bool:
             p.append("audit_committed must be an exact bool")
@@ -1562,6 +1570,11 @@ def _row_binds_authority_fields(a, output_digest):
     row = _AUDIT._ops.get(a.operation_id)
     if not isinstance(row, (dict, types.MappingProxyType)):
         return None, False, "no durable operation row"
+    # Round 19, correction C: the row's field SET is exact — no extra fields
+    # (the operation-row schema is closed). Value binding follows.
+    if set(row) != _AUDIT_OPERATION_FIELDS:
+        return row, False, (f"row fields {sorted(row)} are not the exact "
+                            f"schema {sorted(_AUDIT_OPERATION_FIELDS)}")
     expected = {"operation_id": a.operation_id, "release_ref": a.release_ref,
                 "backup_ref": a.backup_ref, "store_path": a.store_path,
                 "from_version": a.from_version, "to_version": a.to_version,
@@ -1592,6 +1605,10 @@ def _attempted_event_binds(operation_id, attempted_at):
         return False, f"attempted event_id {_safe_repr(eid)} is not ev-<uuid4>"
     if _event_id_count(eid) != 1:
         return False, f"attempted event_id {eid!r} is not unique"
+    # Round 19, correction C: the id must be in the reference's `event_ids` index
+    # (the surrogate for the production `event_id` PRIMARY KEY).
+    if eid not in _AUDIT._state.event_ids:
+        return False, f"attempted event_id {eid!r} is absent from the event index"
     if ev.get("operation_id") != operation_id:
         return False, (f"attempted event operation_id "
                        f"{_safe_repr(ev.get('operation_id'))} != {operation_id!r}")
@@ -1625,12 +1642,18 @@ def _durable_row_binds_authority(a, output_digest):
     return True, ""
 
 
-def _terminal_transition_complete(operation_id, event, payload):
+def _terminal_transition_complete(operation_id, event, payload, state=None):
     """Whether the durable state after a terminal write is a COMPLETE
     attempted→terminal transition (round 18, finding 2: v19 compared the
     requested payload but not the resulting operation state, terminal
     exclusivity, or event-ID integrity — a hostile sink returned a valid receipt
     with the operation still `attempted`, or reused the attempted event's id).
+    Round 19, correction A: a conforming terminal sink atomically appends the
+    terminal event and changes ONLY the operation state `attempted → terminal`;
+    every authority field and the attempted event are IMMUTABLE. When the
+    activation snapshot is available (`state`), that preservation is verified —
+    v21 checked the terminal DELTA but not that the prior records survived, so a
+    sink could delete the attempted event or rewrite the row's `store_path`.
     Returns (ok, why)."""
     row = _AUDIT._ops.get(operation_id)
     if not isinstance(row, (dict, types.MappingProxyType)):
@@ -1638,6 +1661,22 @@ def _terminal_transition_complete(operation_id, event, payload):
     if row.get("state") != "terminal":
         return False, (f"operation state {_safe_repr(row.get('state'))} != "
                        f"'terminal' — the compare-and-set transition did not land")
+    # Round 19, correction A: the operation row is immutable except for the state
+    # transition, and the attempted event is preserved byte-for-byte.
+    if state is not None:
+        prior_row = state.get("activated_row")
+        if prior_row is not None:
+            expected_row = {**prior_row, "state": "terminal"}
+            if dict(row) != expected_row:
+                return False, ("the operation row was mutated beyond the "
+                               "attempted→terminal state change")
+        prior_att = state.get("attempted_event")
+        if prior_att is not None:
+            cur_att = _AUDIT._events.get((operation_id, _ATTEMPTED_EVENT))
+            if not isinstance(cur_att, (dict, types.MappingProxyType)) \
+                    or dict(cur_att) != prior_att:
+                return False, ("the attempted event was not preserved during "
+                               "terminalization")
     terminals = sorted((oid, ev) for (oid, ev) in _AUDIT._events
                        if oid == operation_id and ev in _TERMINAL_EVENTS)
     if terminals != [(operation_id, event)]:
@@ -1662,6 +1701,44 @@ def _terminal_transition_complete(operation_id, event, payload):
         return False, "terminal event_id reuses the attempted event's id"
     if not _durable_event_matches(durable, operation_id, event, payload):
         return False, "terminal event payload does not equal the request"
+    return True, ""
+
+
+def _terminal_event_wellformed(operation_id):
+    """A HISTORICAL terminal event is structurally sound (round 19, correction
+    B): exactly one, the exact field set, a valid unique in-index `event_id`
+    distinct from the attempted event's, and a valid `TerminalFacts` payload.
+    Unlike `_terminal_transition_complete` it compares NO requested payload — it
+    classifies a DUPLICATE's durable lifecycle, not a fresh write. Returns
+    (ok, why)."""
+    terminals = sorted((oid, ev) for (oid, ev) in _AUDIT._events
+                       if oid == operation_id and ev in _TERMINAL_EVENTS)
+    if len(terminals) != 1:
+        return False, f"{len(terminals)} terminal events"
+    durable = _AUDIT._events.get(terminals[0])
+    if not isinstance(durable, (dict, types.MappingProxyType)):
+        return False, "terminal event missing"
+    if set(durable) != _DURABLE_TERMINAL_FIELDS:
+        return False, f"terminal event fields {sorted(durable)} incomplete"
+    eid = durable.get("event_id")
+    if not (isinstance(eid, str) and _EVENT_ID_RE.fullmatch(eid)):
+        return False, f"terminal event_id {_safe_repr(eid)} invalid"
+    if _event_id_count(eid) != 1 or eid not in _AUDIT._state.event_ids:
+        return False, "terminal event_id not unique/indexed"
+    att = _AUDIT._events.get((operation_id, _ATTEMPTED_EVENT))
+    if isinstance(att, (dict, types.MappingProxyType)) \
+            and att.get("event_id") == eid:
+        return False, "terminal event_id reuses the attempted event's id"
+    row = _AUDIT._ops.get(operation_id)
+    if not isinstance(row, (dict, types.MappingProxyType)):
+        return False, "no operation row"
+    tf = TerminalFacts(durable.get("outcome"), row.get("from_version"),
+                       row.get("to_version"), durable.get("store_changed"),
+                       durable.get("transaction_committed"),
+                       durable.get("resulting_state"),
+                       durable.get("resulting_version"))
+    if tf.problems():
+        return False, "terminal event payload is not a valid TerminalFacts"
     return True, ""
 
 
@@ -1759,11 +1836,35 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
             raise _ActivationResultError(
                 f"duplicate receipt terminal_present={result.terminal_present} "
                 f"disagrees with durable state ({durable_terminal})")
-        detail = ("it is already complete (a terminal event exists)"
-                  if durable_terminal else
-                  "it is attempted-only — reconcile via the durable "
-                  "operation_id (in progress, crashed, or a lost terminal "
-                  "response) before minting a replacement")
+        # Round 19, correction B: the durable lifecycle must be EITHER a valid
+        # completed operation OR a valid attempted-only one. A malformed or
+        # contradictory historical state (a `bogus` operation state, a malformed
+        # terminal event) is an AUDIT-INTEGRITY defect — `internal-error`, for
+        # operator investigation — NOT an ordinary consumed replay (v21 trusted
+        # the mere existence of a terminal key and reported quiescence).
+        att_ok, awhy = _attempted_event_binds(a.operation_id,
+                                              row.get("attempted_at"))
+        if not att_ok:
+            raise _ActivationResultError(
+                f"duplicate {a.operation_id!r}: the durable attempted record is "
+                f"malformed ({awhy}) — audit integrity, not a normal replay")
+        if durable_terminal:
+            ok, twhy = _terminal_event_wellformed(a.operation_id)
+            if row.get("state") != "terminal" or not ok:
+                raise _ActivationResultError(
+                    f"duplicate {a.operation_id!r}: malformed completed "
+                    f"lifecycle (state={_safe_repr(row.get('state'))}: {twhy}) "
+                    f"— audit integrity, not a normal replay")
+            detail = "it is already complete (a terminal event exists)"
+        else:
+            if row.get("state") != "attempted":
+                raise _ActivationResultError(
+                    f"duplicate {a.operation_id!r}: state "
+                    f"{_safe_repr(row.get('state'))} is neither a valid "
+                    f"completed nor attempted-only lifecycle — audit integrity")
+            detail = ("it is attempted-only — reconcile via the durable "
+                      "operation_id (in progress, crashed, or a lost terminal "
+                      "response) before minting a replacement")
         raise MigrationRefused(
             "migration-quiescence-required",
             f"authority operation {a.operation_id!r} was already consumed; "
@@ -1773,6 +1874,13 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
         raise _ActivationResultError(
             f"activation reported 'activated' but the durable operation row "
             f"does not bind the authority: {why}")
+    # Round 19, correction A: snapshot the immutable activation records, so the
+    # terminal write can prove the sink preserved them (only the operation state
+    # may change `attempted → terminal`; every authority field and the attempted
+    # event are immutable).
+    state["activated_row"] = dict(_AUDIT._ops[a.operation_id])
+    state["attempted_event"] = dict(
+        _AUDIT._events[(a.operation_id, _ATTEMPTED_EVENT)])
 
 
 # --------------------------------------------------------------------------
@@ -2813,22 +2921,30 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
             # status is read only for a recognized type, under guard.
             _fail(exc,
                   _read_sink_committed(exc, authority.operation_id, terminal))
-        # Round 16 f2 + round 17 f2 + round 18 f2: the receipt is VALIDATED
-        # (every scalar) AND the durable state is a COMPLETE attempted→terminal
-        # transition binding the REQUESTED payload — operation now `terminal`,
-        # exactly one terminal event, unique non-reused event id.
+        # Round 16 f2 + round 17 f2 + round 18 f2 + round 19 corr A: the receipt
+        # is VALIDATED (every scalar) AND the durable state is a COMPLETE
+        # attempted→terminal transition binding the REQUESTED payload — operation
+        # now `terminal`, exactly one terminal event, unique non-reused event id,
+        # AND the operation row + attempted event PRESERVED (only the state
+        # changed).
         rprob = (receipt.problems(authority.operation_id, terminal)
                  if type(receipt) is TerminalReceipt else
                  ["not a TerminalReceipt"])
         tok, twhy = _terminal_transition_complete(
-            authority.operation_id, terminal, payload)
+            authority.operation_id, terminal, payload, state)
         if rprob or not tok:
+            # Round 19, finding 1: the audit-commit fact comes from the STRONGEST
+            # durable evidence, never a contradictory receipt — once we have
+            # OBSERVED the complete durable transition (`tok`), the audit write
+            # provably committed, so `audit_committed=True`; otherwise the write
+            # did not provably land and the fact is genuinely unknown (`None`).
+            # (`False` — proven-not-written — arises only on the sink-RAISED path
+            # above, from a typed sink, never from a returned lying receipt.)
             _fail(RuntimeError(
                 f"terminal receipt/transition does not bind the request: "
                 f"receipt={_safe_repr(receipt)}; problems={rprob}; "
                 f"transition={twhy}"),
-                audit_committed=(receipt.audit_committed
-                                 if type(receipt) is TerminalReceipt else None))
+                audit_committed=(True if tok else None))
     except MigrationAuditWriteError:
         raise
     except Exception as exc:
@@ -2861,7 +2977,9 @@ def _run(path, busy_timeout_ms: int, migrating: bool,
     is the one escape NOT terminalized — it IS the terminal-write failure."""
     state = {"consumed": False, "facts": None, "observed_version": None,
              "rolled_back": None, "source_absent": False, "opened": False,
-             "committed_established": False, "callback_defect": None}
+             "committed_established": False, "callback_defect": None,
+             "position_established": False, "activated_row": None,
+             "attempted_event": None}
     try:
         out = _run_inner(path, busy_timeout_ms, migrating, authority, state)
     except MigrationAuditWriteError:
@@ -3053,11 +3171,16 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                         # `invalid-store` is ONLY the kernel reading bad bytes
                         # (round 14 f4; round 15 f3). A read defect AFTER a
                         # PROVEN commit (round 17 f4: `committed_established`, not
-                        # merely `facts is not None`) is our defect, not bytes.
+                        # merely `facts is not None`) OR after a validated
+                        # DESTINATION POSITION was frozen (round 19, finding 2: a
+                        # no-op `current`/(F,F) proves the store IS a valid v2
+                        # destination — a later defect is ours, not bad bytes, and
+                        # must not discard that proven position) is our defect.
                         if state.get("callback_defect") \
-                                or state.get("committed_established"):
+                                or state.get("committed_established") \
+                                or state.get("position_established"):
                             return Outcome("internal-error",
-                                           diagnostic=f"post-commit read defect: "
+                                           diagnostic=f"post-position read defect: "
                                                       f"{_safe_repr(exc)}")
                         return Outcome("invalid-store",
                                        diagnostic=_safe_repr(exc))
