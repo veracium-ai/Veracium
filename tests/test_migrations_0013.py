@@ -3738,3 +3738,85 @@ def test_a_duplicate_receipt_must_be_audit_committed():
     exists durably, so its audit write committed — `audit_committed=False` is
     contradictory and rejects as `internal-error`."""
     assert m13.ActivationReceipt("duplicate", _OP_ID, False, True).problems(_OP_ID)
+
+
+# --- round 21: durable precedence for EVERY carrier; untrusted exceptions -----
+
+@pytest.mark.parametrize("carrier", ["wrong-type-return", "unrecognized-exception"])
+def test_durable_activation_consumed_for_every_carrier_class(monkeypatch, carrier):
+    """Round 21, finding 1: durable readback precedes classifying EVERY carrier —
+    a wrong-type return or an unrecognized post-publication exception after a
+    durable activation is `internal-error` WITH a terminal event, never left
+    attempted-only."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def liar(a, output_digest):
+        real(a, output_digest)                         # durable publication
+        if carrier == "wrong-type-return":
+            return None
+        raise RuntimeError("unrecognized post-publication defect")
+    monkeypatch.setattr(m13._AUDIT, "activate", liar)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert any(oid == auth.operation_id and ev in m13._TERMINAL_EVENTS
+               for (oid, ev) in m13._AUDIT._events)   # terminalized
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_a_sink_supplied_write_error_is_an_untrusted_carrier(monkeypatch):
+    """Round 21, finding 2: an adapter-supplied `MigrationAuditWriteError` cannot
+    override durable proof or substitute the operation identity — the wrapper
+    re-derives `audit_committed` and owns the identity, keeping the adapter's
+    only as the cause."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def sink(operation_id, event, payload):
+        real(operation_id, event, payload)             # complete durable transition
+        raise m13.MigrationAuditWriteError(
+            operation_id="op-11111111-1111-4111-8111-111111111111",
+            store_path="/tmp/other-store.db",
+            facts=m13.TerminalFacts("migrated", 1, 2, True, True,
+                                    "destination", 2),
+            audit_committed=False)                     # both lies
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", sink)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is True            # durable proof, not the lie
+    assert exc.value.operation_id == auth.operation_id  # our identity, not foreign
+    assert exc.value.store_path == auth.store_path
+    assert isinstance(exc.value.__cause__, m13.MigrationAuditWriteError)
+
+
+def test_committed_true_without_a_transition_is_not_proven_durable(monkeypatch):
+    """Round 21, finding 3: a typed `committed=True` with NO observable terminal
+    transition is contradictory adapter evidence — it degrades to `None`, never
+    reported as proven audit durability."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def sink(operation_id, event, payload):
+        raise m13.AuditStorageUnavailable("nothing written", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", sink)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None
+
+
+def test_timestamp_validation_is_total_over_hostile_str_subclasses():
+    """Round 21, correction A: `_timestamp_problems` uses `type(x) is str`, so a
+    `str` subclass whose `__len__` raises is classified, not executed — an invalid
+    authority stays a closed refusal, never a library defect."""
+    class LenBoom(str):
+        def __len__(self):
+            raise RuntimeError("len boom")
+
+    assert m13._timestamp_problems(
+        LenBoom("2026-01-01T00:00:00.000000+00:00"), "issued_at")
+    p = _v1_store()
+    auth = m13.make_authority(p)._replace(
+        issued_at=LenBoom("2026-01-01T00:00:00.000000+00:00"))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"

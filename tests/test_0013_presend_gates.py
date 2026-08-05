@@ -314,6 +314,20 @@ def _write_error_any(res, exc):
             else f"want MigrationAuditWriteError, got res={res!r} exc={exc!r}")
 
 
+def _write_error_owned_true(res, exc):
+    """A write error whose audit_committed is True (durable proof) AND whose
+    identity is the wrapper's own, not a foreign one the sink tried to inject
+    (round 21, finding 2)."""
+    base = _write_error(True)(res, exc)
+    if base:
+        return base
+    if exc.operation_id == "op-11111111-1111-4111-8111-111111111111":
+        return "write error carries the FOREIGN operation id"
+    if exc.store_path == "/tmp/other-store.db":
+        return "write error carries the FOREIGN store path"
+    return None
+
+
 # --- round 18: verify the COMPLETE record, both atomic parts ----------------
 
 def _activate_corrupt_attempted():
@@ -505,6 +519,60 @@ def _terminal_publishes_then_raises_false():
     return lambda: setattr(m._AUDIT, "record_terminal", real)
 
 
+# --- round 21: durable precedence for every carrier; untrusted exceptions ----
+
+def _activate_publishes_then_wrong_type():
+    """Publish the complete activation, then return a wrong type (round 21, f1)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        real(a, output_digest)
+        return None
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
+def _activate_publishes_then_unrecognized_exc():
+    """Publish the complete activation, then raise an unrecognized exception
+    (round 21, finding 1)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        real(a, output_digest)
+        raise RuntimeError("unrecognized post-publication defect")
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
+def _terminal_raises_sink_supplied_write_error():
+    """Publish the complete transition, then raise a sink-supplied
+    `MigrationAuditWriteError` bound to a FOREIGN operation with a false audit
+    fact (round 21, finding 2)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        real(operation_id, event, payload)
+        raise m.MigrationAuditWriteError(
+            operation_id="op-11111111-1111-4111-8111-111111111111",
+            store_path="/tmp/other-store.db",
+            facts=m.TerminalFacts("migrated", 1, 2, True, True,
+                                  "destination", 2),
+            audit_committed=False)
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
+def _terminal_committed_true_no_transition():
+    """Write nothing and raise `committed=True` — no terminal transition (round
+    21, finding 3)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        raise m.AuditStorageUnavailable("nothing written", committed=True)
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -554,6 +622,24 @@ _INJECTIONS = [
     ("record_terminal-publishes-then-raises-committed-false",
      _terminal_publishes_then_raises_false,
      _write_error(True)),
+    # round 21, finding 1: durable precedence covers a wrong-type return and an
+    # unrecognized exception too (internal-error, never left attempted-only).
+    ("activate-publishes-then-wrong-type-return",
+     _activate_publishes_then_wrong_type,
+     _outcome_is("internal-error")),
+    ("activate-publishes-then-unrecognized-exception",
+     _activate_publishes_then_unrecognized_exc,
+     _outcome_is("internal-error")),
+    # round 21, finding 2: a sink-supplied MigrationAuditWriteError is untrusted —
+    # audit_committed re-derived from durable proof (True here), identity ours.
+    ("record_terminal-raises-sink-supplied-write-error",
+     _terminal_raises_sink_supplied_write_error,
+     _write_error_owned_true),
+    # round 21, finding 3: committed=True with no terminal transition is not
+    # proven durability — audit_committed is None.
+    ("record_terminal-committed-true-no-transition",
+     _terminal_committed_true_no_transition,
+     _write_error(None)),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),

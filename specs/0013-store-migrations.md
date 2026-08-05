@@ -5,21 +5,21 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v23)** — round 20: *M-Q4 boundary respected; architecture
-> standing; v23 deferred on three load-bearing semantic gaps plus two
-> corrections* — all closed. The theme: **strongest DURABLE evidence must govern
-> every decision, on every path.** **Consumption follows the durable row, not the
-> carrier** — a complete durable activation is consumed despite an invalid
-> `activated` receipt or a contradictory `committed=False` exception:
-> `internal-error` WITH a terminal event, never left attempted-only, never a
-> false "safe retry" (finding 1). **A terminal-sink EXCEPTION cannot override a
-> durably-observed commit** — `audit_committed` follows the transition on the
-> raise path too, not only the return path (finding 2). **The terminal fallback
-> preserves EVERY established physical state** — a proven no-op destination or
-> proven-missing source survives a derivation defect, not only a committed
-> destination (finding 3). The shared `TerminalFacts.problems()` is total over a
-> hostile `str` subclass (correction A), and a `duplicate` receipt must be
-> `audit_committed=True` (correction B). No finding relied on arbitrary
+> **in review (v24)** — round 21: *M-Q4 boundary respected; architecture
+> standing; v24 deferred on three load-bearing semantic gaps plus two
+> corrections* — all closed. Same principle as round 20, extended to the paths it
+> had not yet reached: **strongest DURABLE evidence, and validator totality, on
+> EVERY carrier.** **Durable readback now precedes classifying every activation
+> carrier** — a wrong-type return or an unrecognized post-publication exception
+> after a durable activation is `internal-error` WITH a terminal event, never
+> left attempted-only (finding 1). **An adapter-supplied `MigrationAuditWriteError`
+> is an untrusted carrier** — the wrapper re-derives `audit_committed` and owns
+> the identity, so a sink cannot override durable proof or substitute a foreign
+> operation id / store path (finding 2). **A typed `committed=True` with no
+> observable transition degrades to `None`**, never reported as proven durability
+> (finding 3). Timestamp/token/digest/path validators use `type(x) is str`, total
+> over a hostile `str` subclass (correction A); the pre-send seam gate covers the
+> new carrier combinations (correction B). No finding relied on arbitrary
 > private-state corruption or reopened a `0008` obligation; the M-Q4 boundary
 > (§8a) held. Concrete migration, evidence key, release identity, source binding,
 > one-snapshot reader, TEMP confinement and ordinary planner states untouched;
@@ -28,7 +28,7 @@ Spec-Requires: 0007
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v23 |
+| **Version** | v24 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -884,6 +884,10 @@ tests at implementation.
 | **M92** the terminal-derivation fallback preserves EVERY established physical state (proven no-op destination, proven-missing source), not only a committed destination | `test_terminal_fallback_preserves_every_established_state` (noop-destination, missing-source) — **measured today** (round 20, finding 3) |
 | **M93** the shared `TerminalFacts.problems()` is TOTAL over hostile `str` subclasses (`type(x) is str` before hashing) | `test_terminal_facts_problems_total_over_hostile_str_subclass` — **measured today** (round 20, correction A) |
 | **M94** a `duplicate` activation receipt must be `audit_committed=True` (the row exists durably) | `test_a_duplicate_receipt_must_be_audit_committed` — **measured today** (round 20, correction B) |
+| **M95** durable readback precedes classifying EVERY activation carrier — a wrong-type return or an unrecognized post-publication exception after a durable activation is `internal-error` WITH a terminal event, never left attempted-only | `test_durable_activation_consumed_for_every_carrier_class` (wrong-type-return, unrecognized-exception) — **measured today** (round 21, finding 1) |
+| **M96** an adapter-supplied `MigrationAuditWriteError` is an UNTRUSTED carrier — the wrapper re-derives `audit_committed` and owns the identity (operation id, store path), keeping the adapter's exception only as the cause | `test_a_sink_supplied_write_error_is_an_untrusted_carrier` — **measured today** (round 21, finding 2) |
+| **M97** a typed `committed=True` with no observable terminal transition is contradictory — `audit_committed` degrades to `None`, never proven `True` | `test_committed_true_without_a_transition_is_not_proven_durable` — **measured today** (round 21, finding 3) |
+| **M98** timestamp/token/digest/path validators are TOTAL over hostile `str` subclasses (`type(x) is str` before length/regex/parse) — an invalid authority stays a closed refusal, never a library defect | `test_timestamp_validation_is_total_over_hostile_str_subclasses` — **measured today** (round 21, correction A) |
 
 ---
 
@@ -989,50 +993,46 @@ that any future database adapter implements the protocol.
 
 ## 9. Brief for the external reviewer
 
-**Round 21 of this spec. All three round-20 blockers and both corrections are
-closed; every probe reproduced first. The M-Q4 boundary (§8a) held — no fix
-grows the draft into a hostile-storage emulator.** The theme was one principle
-you have been driving throughout, now applied on *every* path: **the strongest
-DURABLE evidence governs the decision — a weaker carrier never overrides it.**
-Concrete migration, evidence-selection key, release identity, source binding,
-one-snapshot reader, TEMP confinement and ordinary planner states are untouched;
-the evidence artifact reproduces byte-for-byte.
+**Round 22 of this spec. All three round-21 blockers and both corrections are
+closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** This round
+completed the same principle on the paths it had not yet reached: **strongest
+durable evidence, and validator totality, on EVERY carrier — not just the
+recognized ones.** Concrete migration, evidence-selection key, release identity,
+source binding, one-snapshot reader, TEMP confinement and ordinary planner states
+are untouched; the evidence artifact reproduces byte-for-byte.
 
-1. **Consumption follows the durable row, not the carrier** (finding 1): I now
-   apply the same strongest-evidence precedence to activation that v22 applied to
-   terminalisation. When a complete durable activation exists for the authority,
-   the operation IS consumed — an invalid `activated` receipt or a contradictory
-   `committed=False` exception is `internal-error` **with a terminal event
-   written** (never left attempted-only), and never a false `migration-audit-
-   unavailable` "safe retry". An HONEST lost response (`committed=True`) stays
-   `migration-quiescence-required`; only a genuinely absent row with typed
-   `committed=False`/`None` is `unavailable`/`state-unknown`.
-2. **A terminal-sink EXCEPTION cannot override a durably-observed commit**
-   (finding 2): v22 applied the durable-transition check only when a receipt was
-   RETURNED. It now runs on the RAISE path too — a sink that publishes the
-   complete transition and then raises `committed=False` yields
-   `audit_committed=True`. One helper (`_audit_commit_fact`) governs both paths.
-3. **The terminal fallback preserves EVERY established physical state** (finding
-   3): the fallback reconstructs facts via the *same* canonical
-   `_store_facts_from_state` (no divergent copy), so a proven no-op destination
-   (`F/F/destination/v2`) and a proven-missing source (`F/F/missing/NULL`) survive
-   a derivation defect — not only a committed destination. `internal-error` now
-   permits the full physical-state set (a defect can occur after any state was
-   established), updated in both the validator and the independent gate oracle.
+1. **Durable readback now precedes classifying every activation carrier**
+   (finding 1): v23 established consumption only inside the `activated` and
+   `AuditStorageUnavailable` branches, so a wrong-type return or an unrecognized
+   post-publication exception left the consumed operation attempted-only. Now the
+   durable row is read FIRST; a `duplicate` receipt is the only carrier that means
+   "someone else consumed it", and every other carrier over a durable-bound row
+   is `internal-error` **with a terminal event written**.
+2. **An adapter-supplied `MigrationAuditWriteError` is an untrusted carrier**
+   (finding 2): v23 re-raised it unchanged, letting a sink override durable proof
+   and even substitute a foreign operation id / store path. It is now caught with
+   every other exception; the wrapper re-derives `audit_committed` from durable
+   evidence, owns the identity (`operation_id`, `store_path`, facts), and keeps
+   the adapter's exception only as the `cause` — never re-raised unchanged.
+3. **A typed `committed=True` with no observable transition degrades to `None`**
+   (finding 3): `_audit_commit_fact` now implements its documented three-way
+   precedence exactly — an observed complete transition is `True`; a
+   definitely-not-written `committed=False` with no transition is `False`; a
+   `committed=True` claim with no transition is contradictory adapter evidence and
+   is reported `None`, never proven `True`.
 
-**Corrections**: **(A)** the shared `TerminalFacts.problems()` now uses `type(x)
-is str` before hashing — total over a `str` subclass whose `__hash__` raises (the
-same class you had me fix in the receipts; its totality is a finite acceptance
-property). **(B)** a `duplicate` activation receipt must be `audit_committed=True`
-(the row necessarily exists durably); `False` rejects.
+**Corrections**: **(A)** the timestamp/token/digest/path validators now use
+`type(x) is str` before length/regex/parse — total over a `str` subclass whose
+`__len__` raises, so an invalid authority stays a closed
+`migration-quiescence-required`, never a library defect. **(B)** the independent
+seam gate now covers the new carrier combinations (wrong-type return,
+unrecognized exception, sink-supplied write error, `committed=True`-no-transition).
 
-**On the boundary.** Every finding this round was *inside* the six §8a
-properties — a verified fact overridden by a weaker carrier, or a fallback that
-lost proven state — and I treated it as a `0013` blocker. None required defending
-the reference's private state against arbitrary corruption; that remains a `0008`
-adapter-conformance obligation. If you find another gap in the six properties, I
-want it; if the next probe is only reachable by direct private-state corruption,
-§8a already assigns it to `0008`.
+**On the boundary.** Every finding was *inside* the six §8a properties — a
+verified fact overridden by a weaker carrier, or a validator that was total for
+the recognized carriers but not the unrecognized ones — and I treated each as a
+`0013` blocker. None required defending the reference's private state against
+arbitrary corruption; that remains a `0008` adapter-conformance obligation.
 
 **Where I am least confident:** unchanged — the `current`-with-repair
 `committed=True` cell (§8a `0008` obligation, carried since round 8): the draft
@@ -1492,3 +1492,24 @@ M-Q4 acceptance framework remain approved.
 | 3 | terminal-derivation fallback discarded established non-commit states, recording `unknown` for a proven current-v2 destination or a proven-missing source | **the fallback reconstructs via the canonical `_store_facts_from_state`** (no divergent copy) and preserves every established physical state; `internal-error` permits the full state set (M92) |
 | A | the shared `TerminalFacts.problems()` was non-total over a hostile `str` subclass (`__hash__` raises) | **`type(x) is str` before hashing/membership** (M93) |
 | B | a `duplicate` activation receipt could claim `audit_committed=False`, contradicting the durable row | **a `duplicate` must be `audit_committed=True`** — `False` rejects as `internal-error` (M94) |
+
+---
+
+## 31. Round 21 review disposition
+
+**Verdict: M-Q4 boundary respected and applied as ruled; architecture standing;
+v24 deferred on three load-bearing semantic gaps plus two corrections — all
+closed.** No finding relied on private-state corruption or reopened a `0008`
+obligation. Each gap was the round-20 principle not yet applied to *every*
+carrier: strongest durable evidence, and validator totality, held for the
+recognized carriers but not the unrecognized ones. The bounded adjacent-migration
+claim, resolution/refusal split, and finite M-Q4 acceptance framework remain
+approved.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | a complete durable activation was left attempted-only when the adapter returned a non-receipt or raised an unrecognized post-publication exception (consumption was established only inside selected carrier branches) | **durable readback precedes classifying EVERY carrier** — a `duplicate` alone means "someone else consumed it"; every other carrier over a durable row is `internal-error` WITH a terminal event (M95) |
+| 2 | an adapter-supplied `MigrationAuditWriteError` was re-raised unchanged, letting it override durable proof and substitute a foreign operation id / store path | **it is an untrusted carrier** — the wrapper re-derives `audit_committed`, owns the identity, and keeps the adapter's exception only as the cause (M96) |
+| 3 | a typed terminal `committed=True` with no observable transition was reported as proven audit durability | **`_audit_commit_fact` implements its exact three-way precedence** — `committed=True` with no transition degrades to `None` (M97) |
+| A | timestamp validation was non-total over a hostile `str` subclass (`__len__` raises), misclassifying an invalid authority as `internal-error` | **`type(x) is str` before length/regex/parse** across the timestamp/token/digest/path validators; an invalid authority stays a closed refusal (M98) |
+| B | the pre-send seam gate omitted the new carrier combinations | **added** — wrong-type return, unrecognized exception, sink-supplied write error, `committed=True`-no-transition (M95–M97) |
