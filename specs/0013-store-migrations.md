@@ -5,8 +5,12 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v20)** — round 18: *architecture standing; v19 deferred on five
-> load-bearing gaps in the audit reference plus four corrections*. All taken;
+> **in review (v21)** — round 18: *architecture standing; v19 deferred on five
+> load-bearing gaps in the audit reference plus four corrections*. **v21 amends
+> v20 for round 19 with no code change — it raises `M-Q4` (§10), a formal
+> disposition question the reviewer is asked to RULE on: what constitutes
+> acceptance of `0013` on the draft audit reference, and which residual
+> reference-vs-production correctness defers to `0008`'s real sink.** All taken;
 > concrete migration, evidence-selection key, release identity, source
 > binding, one-snapshot reader, TEMP confinement and ordinary planner states
 > untouched, and the evidence artifact reproduces byte-for-byte. The theme —
@@ -28,7 +32,7 @@ Spec-Requires: 0007
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v20 |
+| **Version** | v21 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -982,10 +986,13 @@ part→whole-record). Each round we close the layer and extend the mechanical ga
 to it, and each round they hold — but this is now clearly a draft REFERENCE being
 hardened one adversarial layer at a time, not a design defect (the architecture
 has stood for twelve rounds). Per M-Q1 the residual implementation-correctness of
-this in-process reference lands with `0008`'s real audit sink; I flag, for your
-disposition, the standing question of whether to keep hardening the draft or to
-freeze it here and carry the remaining reference-vs-production obligations into
-that implementation. I will not claim the layers are exhausted.
+this in-process reference lands with `0008`'s real audit sink. **I have raised
+this as a formal open question — `M-Q4` in §10 — for you to RULE on, not merely
+note:** what would constitute acceptance of `0013` on this draft reference, and
+which residual reference-vs-production correctness should be carried as a stated
+`0008` implementation obligation rather than closed against the draft? I will not
+claim the layers are exhausted; this is the decision I would most value your
+ruling on this round.
 
 **Where I am least confident:** the same one carried since round 8 — the
 `current`-with-repair `committed=True` cell rests on the kernel reporting
@@ -1001,6 +1008,7 @@ cell contract; this is the one the draft can only demonstrate.
 | ~~M-Q1~~ | **RULED by round 9, 2026-08-03: wait.** `0013` must not reach `accepted` before it is reviewed **against an actual migration** — that is the principle that justified the `0007` scope cut, and it applies equally to the replacement. **The first case is `0008`'s `confirmations` table**: accepted, simple, additive, already blocked on `0013`, and independent of `0006`'s unresolved source-identity design. **`0013` may generalise only what that real migration demonstrates.** | resolved | external | — |
 | ~~M-Q2~~ | **RULED (round 1) adopt-with-conditions; condition RESOLVED (round 2) by the offline boundary; boundary APPROVED (round 3) at the library level** with the narrowed claim (§5b: ordinary opening cannot initiate migration; the trusted deployment authority owns quiescence, fencing and backup validity) and the authority binding conditions (exact types, bound to store/migration/operation; release-identity binding at implementation). | resolved | external | — |
 | ~~M-Q3~~ | **RULED by round 9: yes, it belongs here.** The capability comparison exists to decide whether a *migration result* satisfies its destination despite differing DDL, so it is `0013`'s. `0007` retains exact manifestation identity, digest comparison, rebuildable drift and candidate resolution — and `capability_problems()` has been removed from its kernel. | resolved | external | — |
+| **M-Q4** | **OPEN — asked round 19.** The draft in-process audit reference (`DraftAuditStore` + the wrapper's receipt/transition verification) has now absorbed **four consecutive rounds** of "the check covers X but not the stronger X′" implementation-correctness findings (nested→recursive, existence→completeness, completeness→content, part→whole-record), on an **architecture the reviewer has held standing for twelve rounds** and a concrete migration that is untouched. Each round closes the named layer and extends the two mechanical pre-send gates to it, and each round the gates hold — but I do not claim the layers are exhausted, and the class of finding is generic to hardening a *reference* rather than a defect in the *design*. Per M-Q1, `0013` is reviewed against the real `0008` `confirmations` migration and may generalise only what it demonstrates; the production audit sink lands with `0008`'s implementation, not here. **The question for the reviewer to RULE, not merely note: (a) what would constitute acceptance of `0013` on this draft reference — i.e. which properties, once mechanically gated, are sufficient — and (b) which residual reference-vs-production correctness (e.g. the round-8 `current`-with-repair `committed=True` kernel-contract cell) should be carried as a stated `0008` implementation obligation rather than closed against the draft?** This is a disposition question, not a new capability. | **open** | external | round 19 |
 
 ---
 
