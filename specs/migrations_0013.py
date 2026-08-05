@@ -686,7 +686,13 @@ _OUTCOME_TERMINAL_STATES = {
     "migration-result-mismatch": frozenset({"source", "unknown"}),
     "migration-evidence-missing": frozenset({"source", "unknown"}),
     "migration-quiescence-required": frozenset({"source", "unknown"}),
-    "internal-error": frozenset({"destination", "source", "unknown"}),
+    # Round 20, finding 3: an internal defect can occur AFTER any physical
+    # state was already established (a proven no-op destination, a proven-missing
+    # or unaccepted path), and the terminal fallback preserves whichever was
+    # frozen — so `internal-error` permits the FULL physical-state set, not only
+    # the three v22 allowed.
+    "internal-error": frozenset({"destination", "source", "missing",
+                                 "unaccepted", "unknown"}),
     # Round 14, finding 5: a package inconsistency can be discovered before a
     # transaction (unknown), after a confirmed rollback (source), or AFTER a
     # commit (destination) — the terminal record must preserve whichever facts
@@ -752,6 +758,12 @@ class ActivationReceipt(NamedTuple):
                 p.append("an activated receipt must be audit_committed=True")
             if self.terminal_present is not False:
                 p.append("an activated receipt cannot already be terminal")
+        # Round 20, correction B: a `duplicate` necessarily means the operation
+        # row already exists durably, so its audit write committed — `False` is
+        # contradictory.
+        if type(self.status) is str and self.status == "duplicate" \
+                and self.audit_committed is not True:
+            p.append("a duplicate receipt must be audit_committed=True")
         return p
 
 
@@ -817,8 +829,12 @@ class TerminalFacts(NamedTuple):
         `resulting_state={}` raised a raw `TypeError` at set membership before
         the type check)."""
         p = []
-        # --- types FIRST, before any hashing / set membership (correction A) --
-        if not isinstance(self.outcome, str):
+        # --- types FIRST, before any hashing / set membership --------------
+        # Round 14 correction A + round 20 correction A: use `type(x) is str`,
+        # NOT `isinstance` — a `str` SUBCLASS whose `__hash__`/`__eq__` raises
+        # would explode at the set membership below (this shared validator's
+        # totality is one of the finite acceptance properties).
+        if type(self.outcome) is not str:
             p.append(f"outcome must be a string, is {type(self.outcome).__name__}")
         elif self.outcome not in OUTCOMES and \
                 self.outcome not in _AUDIT_ONLY_OUTCOMES:
@@ -842,7 +858,7 @@ class TerminalFacts(NamedTuple):
         v = self.resulting_version
         if not (v is None or type(v) is int):
             p.append("resulting_version must be int | None")
-        if not isinstance(self.resulting_state, str):
+        if type(self.resulting_state) is not str:
             p.append(f"resulting_state must be a string, is "
                      f"{type(self.resulting_state).__name__}")
             return p
@@ -1759,66 +1775,112 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
     consumed, so the wrapper must still write its terminal event — v15 marked
     consumed only on the normal return path, leaving a spent authority with
     only an attempted record)."""
+    # Round 20, finding 1: apply STRONGEST-DURABLE-EVIDENCE precedence to
+    # activation, exactly as to terminalization. First run the sink; capture its
+    # result OR its typed exception WITHOUT acting on the carrier yet — the
+    # DURABLE row is the ground truth for whether the authority was consumed.
     try:
         result = _AUDIT.activate(a, output_digest)
+        activate_exc = None
     except AuditStorageUnavailable as exc:
-        # The retryable storage failure — but its `committed` flag says what is
-        # PROVEN (round 11, correction A: v12 always said "not consumed", so a
-        # response lost AFTER a durable activation wrongly invited a retry that
-        # then saw `duplicate`).
-        if exc.committed is True:
-            # The row WAS written; the authority is consumed. Mark it consumed
-            # so the wrapper writes a terminal event, then report quiescence.
-            state["consumed"] = True
+        result, activate_exc = None, exc
+    # Any OTHER exception — a validation/programming defect — propagates to the
+    # boundary and becomes `internal-error`, never a retry instruction.
+
+    # Round 17 finding 1 + round 20 finding 1: a complete durable activation for
+    # THIS authority (row binds store_path/refs/endpoints/digests/window, state
+    # `attempted`, its complete attempted event, no terminal). Its meaning
+    # depends on WHO published it — the RECEIPT/exception says: `activated` /
+    # raised = THIS call published; `duplicate` = someone else did.
+    bound, why = _durable_row_binds_authority(a, output_digest)
+
+    def _snapshot():
+        # Round 19, correction A: freeze the immutable activation records so the
+        # terminal write can prove the sink preserved them.
+        state["activated_row"] = dict(_AUDIT._ops[a.operation_id])
+        state["attempted_event"] = dict(
+            _AUDIT._events[(a.operation_id, _ATTEMPTED_EVENT)])
+
+    # CASE A — the sink RAISED. THIS call attempted to publish; the durable row
+    # decides whether it landed (round 20, finding 1: v22 trusted the flag over
+    # the row, so a `committed=False` after a durable write falsely advertised a
+    # safe retry and left the operation attempted-only).
+    if activate_exc is not None:
+        c = _read_sink_committed(activate_exc, a.operation_id, _ATTEMPTED_EVENT)
+        if bound:
+            state["consumed"] = True           # published, then lost/lied
+            _snapshot()
+            if c is True:
+                # An HONEST lost response (round 14, finding 2): consumed, mint
+                # a fresh one.
+                raise MigrationRefused(
+                    "migration-quiescence-required",
+                    f"the activation is durable and the sink reported "
+                    f"committed=True but the response was lost; the authority IS "
+                    f"consumed — mint a fresh one: {_safe_repr(activate_exc)}"
+                ) from activate_exc
+            # A CONTRADICTORY carrier over a durable row (round 20, finding 1) is
+            # an audit-integrity defect → `internal-error`; `consumed` is set, so
+            # the wrapper still writes the terminal event.
+            raise _ActivationResultError(
+                f"a durable activation exists but the sink raised a "
+                f"contradictory {_safe_repr(activate_exc)} (committed={c!r} "
+                f"against a durable row) — audit integrity")
+        # No durable row: trust the typed flag only to tell proven-not-written
+        # from not-observable (round 11 corr A; round 12 finding 3).
+        if c is False:
             raise MigrationRefused(
-                "migration-quiescence-required",
-                f"the attempted record was written but the response was lost; "
-                f"the authority IS consumed — mint a fresh one: "
-                f"{_safe_repr(exc)}") from exc
-        if exc.committed is None:
-            # Round 12, finding 3: genuinely UNKNOWN — the row may or may not
-            # have been written, so a blind retry could see `duplicate`. This
-            # is a structurally distinct closed outcome from the proven-not-
-            # written case: the host must query the durable operation_id before
-            # retrying. v13 collapsed it into the retryable outcome.
-            raise MigrationRefused(
-                "migration-audit-state-unknown",
-                f"the attempted record was neither confirmed nor disproved "
-                f"(committed=None); the authority MAY be consumed — query "
-                f"operation {a.operation_id!r} in the durable audit before "
-                f"retrying: {_safe_repr(exc)}") from exc
-        # committed is False: PROVEN not written, so nothing is consumed and a
-        # retry may safely re-present the authority.
+                "migration-audit-unavailable",
+                f"the attempted record is proven not written (committed=False) "
+                f"and no durable row exists; the authority was NOT consumed and "
+                f"a retry may re-present it: {_safe_repr(activate_exc)}"
+            ) from activate_exc
         raise MigrationRefused(
-            "migration-audit-unavailable",
-            f"the attempted record is proven not written "
-            f"(committed=False); the authority was NOT consumed and a retry "
-            f"may re-present it: {_safe_repr(exc)}") from exc
-    # Any other exception — a validation or programming defect — propagates to
-    # the boundary and becomes `internal-error`, never a retry instruction.
-    #
-    # Round 16 f1 + round 17 corr B: the result is the EXACT typed
-    # `ActivationReceipt` for THIS operation, and every scalar is validated
-    # (an equality-spoof cannot pass; `activated`+`audit_committed=False` cannot).
+            "migration-audit-state-unknown",
+            f"the attempted record is not observable and was not disproved "
+            f"(committed={c!r}); the authority MAY be consumed — query operation "
+            f"{a.operation_id!r} in the durable audit before retrying: "
+            f"{_safe_repr(activate_exc)}") from activate_exc
+
+    # CASE B — the sink RETURNED. It must be the EXACT typed receipt for THIS
+    # operation (round 16 f1 + round 17 corr B: an equality-spoof cannot pass).
     if type(result) is not ActivationReceipt:
         raise _ActivationResultError(
             f"audit activate() returned {_safe_repr(result)}, not an "
             f"ActivationReceipt for operation {a.operation_id!r}")
     rp = result.problems(a.operation_id)
+    status = result.status if type(result.status) is str else None
+
+    # CASE B1 — `activated`: THIS call published. Durable-first (round 20, f1a):
+    # a durable row with an INVALID receipt is `internal-error`, but `consumed`
+    # is set so the terminal event is still written — not left attempted-only.
+    if status == "activated":
+        if bound:
+            state["consumed"] = True
+            _snapshot()
+            if rp:
+                raise _ActivationResultError(
+                    "a durable activation exists but the `activated` receipt is "
+                    "invalid: " + "; ".join(rp))
+            return                          # activated, valid, durable-bound
+        if rp:
+            raise _ActivationResultError("activation receipt invalid: "
+                                         + "; ".join(rp))
+        raise _ActivationResultError(
+            f"activation reported 'activated' but the durable operation row "
+            f"does not bind the authority: {why}")
+
+    # CASE B2 — `duplicate` (or any non-`activated` status): SOMEONE ELSE
+    # consumed it (a concurrent race, a retry, a prior run); THIS call did not,
+    # so it never writes a terminal. A malformed receipt (`duplicate`+
+    # audit_committed=False, round 20 corr B) rejects here.
     if rp:
         raise _ActivationResultError("activation receipt invalid: "
                                      + "; ".join(rp))
-    # Round 17 finding 1 + correction A: a receipt is not proof — the DURABLE
-    # operation row must EXIST and BIND the exact authority (store_path,
-    # release/backup refs, endpoints, all digests, the window), with its
-    # attempted event, and `terminal_present` must be DERIVED from durable state,
-    # not trusted. v18 checked only that some row existed under the id, so a sink
-    # could bind a DIFFERENT store, or claim `duplicate` without any row.
-    bound, why = _durable_row_binds_authority(a, output_digest)
     durable_terminal = any(
         ev in _TERMINAL_EVENTS
         for (oid, ev) in _AUDIT._events if oid == a.operation_id)
-    if result.status == "duplicate":
+    if status == "duplicate":
         # Round 18, correction B: a duplicate must bind THIS authority too — a
         # row whose authority fields differ is an operation-ID collision or
         # audit inconsistency, NOT an ordinary replay (v19 checked only that
@@ -1869,18 +1931,10 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
             "migration-quiescence-required",
             f"authority operation {a.operation_id!r} was already consumed; "
             f"{detail}")
-    # activated: the durable row must bind THIS authority exactly.
-    if not bound:
-        raise _ActivationResultError(
-            f"activation reported 'activated' but the durable operation row "
-            f"does not bind the authority: {why}")
-    # Round 19, correction A: snapshot the immutable activation records, so the
-    # terminal write can prove the sink preserved them (only the operation state
-    # may change `attempted → terminal`; every authority field and the attempted
-    # event are immutable).
-    state["activated_row"] = dict(_AUDIT._ops[a.operation_id])
-    state["attempted_event"] = dict(
-        _AUDIT._events[(a.operation_id, _ATTEMPTED_EVENT)])
+    # Unreachable: `problems()` restricts status to activated|duplicate, both
+    # handled above. A defensive close keeps the function total.
+    raise _ActivationResultError(
+        f"unexpected activation status {status!r} for {a.operation_id!r}")
 
 
 # --------------------------------------------------------------------------
@@ -2731,7 +2785,7 @@ def _migration_uri(canonical: str) -> str:
     return ("file:" + urllib.parse.quote(os.fsencode(canonical)) + "?mode=rw")
 
 
-def _terminal_facts(out, state) -> dict:
+def _store_facts_from_state(out, state) -> dict:
     """Derive the terminal payload's store facts HONESTLY (round 11 findings 1
     & 3; round 12 findings 1 & 2). Preference order:
 
@@ -2805,6 +2859,16 @@ def _terminal_facts(out, state) -> dict:
             "resulting_version": None, "resulting_state": "unknown"}
 
 
+def _terminal_facts(out, state) -> dict:
+    """Thin indirection over `_store_facts_from_state` — the single seam a
+    terminal-derivation defect is injected at (round 20, finding 3). The
+    fallback reconstructs the SAME store facts from frozen state via
+    `_store_facts_from_state`, so it preserves EVERY established physical state
+    (a proven no-op destination, a proven-missing/unaccepted path, a rolled-back
+    source), not only a committed destination — with no divergent logic."""
+    return _store_facts_from_state(out, state)
+
+
 class _ConnectionCleanupError(Exception):
     """Internal: `conn.close()` raised after the operation's outcome was
     decided (round 13, finding 2). Mapped to `internal-error`, never
@@ -2830,19 +2894,26 @@ def _read_sink_committed(exc, operation_id, terminal):
     return True if (operation_id, terminal) in _AUDIT._events else False
 
 
-def _fallback_terminal_facts(state, authority) -> "TerminalFacts":
+def _fallback_terminal_facts(out, state, authority) -> "TerminalFacts":
     """Best-known terminal facts built ONLY from previously-frozen immutable
     state (round 17, finding 5: a fallback must NEVER re-run the failing
-    derivation). If a commit was ESTABLISHED, the destination; else `unknown`
-    with `None` change/commit (a defect leaves the commit state uncertain)."""
-    if state.get("committed_established") and _valid_open_result(state["facts"]):
-        f = state["facts"]
-        return TerminalFacts("internal-error", authority.from_version,
-                             authority.to_version, f.store_changed,
-                             f.transaction_committed, "destination",
-                             f.resulting_version)
-    return TerminalFacts("internal-error", authority.from_version,
-                         authority.to_version, None, None, "unknown", None)
+    derivation). TOTAL over the complete established-state hierarchy (round 20,
+    finding 3: v22 preserved only a committed destination, discarding a proven
+    no-op destination or a proven-missing/unaccepted path to `unknown`). It
+    reconstructs the SAME store facts via `_store_facts_from_state` — the
+    canonical logic, not a divergent copy — under `internal-error`; any defect in
+    that reconstruction (or an invalid tuple) degrades to genuine `unknown`."""
+    frm, to = authority.from_version, authority.to_version
+    try:
+        s = _store_facts_from_state(out, state)
+        f = TerminalFacts("internal-error", frm, to, s["store_changed"],
+                          s["transaction_committed"], s["resulting_state"],
+                          s["resulting_version"])
+        if not f.problems():
+            return f
+    except Exception:
+        pass
+    return TerminalFacts("internal-error", frm, to, None, None, "unknown", None)
 
 
 def _durable_event_matches(durable, operation_id, event, payload) -> bool:
@@ -2864,6 +2935,34 @@ def _sane_committed(v):
     return v if (v is None or type(v) is bool) else None
 
 
+def _audit_commit_fact(operation_id, terminal, payload, state, sink_exc):
+    """The AUDIT-write commit fact for `MigrationAuditWriteError`, from the
+    STRONGEST durable evidence — on BOTH the return AND the exception path (round
+    19, finding 1 + round 20, finding 2: v22 applied durable precedence only when
+    a receipt was returned, so a sink that published the complete transition and
+    then RAISED `committed=False` still produced `audit_committed=False` despite
+    the observable durable commit). Precedence:
+
+        complete requested transition observed  → True
+        typed sink says definitely-not-written,
+          and no such transition                → False
+        otherwise                                → None (genuinely unknown)
+
+    A weaker carrier (a lying receipt, a contradictory typed exception) never
+    overrides an observed durable transition."""
+    ok, _ = _terminal_transition_complete(operation_id, terminal, payload, state)
+    if ok:
+        return True
+    # No complete transition observed. On the sink-RAISED path, defer to the
+    # guarded sink read — definitive in the draft (readback works: no durable
+    # event → proven-not-written `False`) and honest for production (a typed
+    # `committed`, else `None`). On the returned-receipt path (no exception),
+    # the fact is genuinely unknown.
+    if sink_exc is not None:
+        return _read_sink_committed(sink_exc, operation_id, terminal)
+    return None
+
+
 def _write_terminal(out, outcome, state, authority) -> "Outcome":
     """Write the consumed operation's one terminal event and RETURN the
     effective public outcome. TOTAL after consumption (round 17 finding 5; round
@@ -2877,7 +2976,7 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
     v19 recorded `internal-error` durably but still returned `migrated`, leaving
     the caller and the audit contradicting each other)."""
     fell_back = False
-    facts = _fallback_terminal_facts(state, authority)   # always-valid default
+    facts = _fallback_terminal_facts(out, state, authority)  # always-valid default
 
     def _fail(exc, audit_committed):
         raise MigrationAuditWriteError(
@@ -2899,7 +2998,7 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
                 raise ValueError("derived terminal facts are invalid")
             facts = derived
         except Exception:
-            facts = _fallback_terminal_facts(state, authority)
+            facts = _fallback_terminal_facts(out, state, authority)
             outcome = str(facts.outcome)
             fell_back = True
             store = {"store_changed": facts.store_changed,
@@ -2917,10 +3016,12 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
         except MigrationAuditWriteError:
             raise
         except Exception as exc:
-            # Round 15 corr A + round 16 finding 4: the sink exception's commit
-            # status is read only for a recognized type, under guard.
-            _fail(exc,
-                  _read_sink_committed(exc, authority.operation_id, terminal))
+            # Round 16 f4 + round 20 finding 2: the audit-commit fact follows the
+            # STRONGEST durable evidence even when the sink RAISES — a complete
+            # observed transition proves `True` regardless of a contradictory
+            # typed `committed=False`.
+            _fail(exc, _audit_commit_fact(authority.operation_id, terminal,
+                                          payload, state, exc))
         # Round 16 f2 + round 17 f2 + round 18 f2 + round 19 corr A: the receipt
         # is VALIDATED (every scalar) AND the durable state is a COMPLETE
         # attempted→terminal transition binding the REQUESTED payload — operation
@@ -2933,18 +3034,15 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
         tok, twhy = _terminal_transition_complete(
             authority.operation_id, terminal, payload, state)
         if rprob or not tok:
-            # Round 19, finding 1: the audit-commit fact comes from the STRONGEST
-            # durable evidence, never a contradictory receipt — once we have
-            # OBSERVED the complete durable transition (`tok`), the audit write
-            # provably committed, so `audit_committed=True`; otherwise the write
-            # did not provably land and the fact is genuinely unknown (`None`).
-            # (`False` — proven-not-written — arises only on the sink-RAISED path
-            # above, from a typed sink, never from a returned lying receipt.)
+            # Round 19 finding 1 + round 20 finding 2: the audit-commit fact is
+            # the STRONGEST durable evidence — an observed complete transition is
+            # `True`, never a contradictory returned receipt.
             _fail(RuntimeError(
                 f"terminal receipt/transition does not bind the request: "
                 f"receipt={_safe_repr(receipt)}; problems={rprob}; "
                 f"transition={twhy}"),
-                audit_committed=(True if tok else None))
+                audit_committed=_audit_commit_fact(
+                    authority.operation_id, terminal, payload, state, None))
     except MigrationAuditWriteError:
         raise
     except Exception as exc:
@@ -2952,7 +3050,7 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
         # sequence — timestamp generation, a hostile receipt equality, the
         # exception constructor — is still the audit-write failure, surfaced
         # loudly from best frozen facts, never a raw third exception.
-        facts = _fallback_terminal_facts(state, authority)
+        facts = _fallback_terminal_facts(out, state, authority)
         raise MigrationAuditWriteError(
             operation_id=authority.operation_id,
             store_path=authority.store_path, facts=facts,

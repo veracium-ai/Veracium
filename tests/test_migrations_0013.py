@@ -3642,3 +3642,99 @@ def test_receipt_validators_are_total_over_str_subclasses():
     tr = m13.TerminalReceipt(BadStr("recorded"), _OP_ID,
                              "migration_completed", True)
     assert tr.problems(_OP_ID, "migration_completed")  # rejected, not raised
+
+
+# --- round 20: strongest durable evidence on the activation path too ---------
+
+def _has_terminal(auth):
+    return any(oid == auth.operation_id and ev in m13._TERMINAL_EVENTS
+              for (oid, ev) in m13._AUDIT._events)
+
+
+@pytest.mark.parametrize("carrier", ["invalid-receipt", "committed-false"])
+def test_a_durable_activation_is_consumed_despite_a_lying_carrier(monkeypatch,
+                                                                 carrier):
+    """Round 20, finding 1: a complete durable activation means the authority IS
+    consumed, whatever the carrier says. An invalid `activated` receipt or a
+    contradictory `committed=False` exception AFTER a durable write is
+    `internal-error` WITH a terminal event — never left attempted-only, never
+    advertised as a safe retry."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def liar(a, output_digest):
+        real(a, output_digest)                         # publish the real activation
+        if carrier == "invalid-receipt":
+            return m13.ActivationReceipt("activated", a.operation_id, False, False)
+        raise m13.AuditStorageUnavailable("lost", committed=False)
+    monkeypatch.setattr(m13._AUDIT, "activate", liar)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert _has_terminal(auth)                          # NOT left attempted-only
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1       # store untouched
+    # the authority is durably consumed — a retry sees the durable row.
+
+
+def test_a_terminal_sink_exception_cannot_override_durable_commit(monkeypatch):
+    """Round 20, finding 2: a terminal sink that publishes the complete
+    transition and then RAISES `committed=False` must not produce
+    `audit_committed=False` — durable proof outranks the carrier on the exception
+    path too."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def publish_then_raise(operation_id, event, payload):
+        real(operation_id, event, payload)             # the transition IS durable
+        raise m13.AuditStorageUnavailable("response lost", committed=False)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", publish_then_raise)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is True
+
+
+@pytest.mark.parametrize("cell", ["noop-destination", "missing-source"])
+def test_terminal_fallback_preserves_every_established_state(monkeypatch, cell):
+    """Round 20, finding 3: the terminal-derivation fallback preserves EVERY
+    established physical state, not only a committed destination — a proven no-op
+    v2 destination and a proven-missing source survive a derivation defect."""
+    if cell == "noop-destination":
+        p = _v1_store()
+        a1, auth = m13.make_authority(p), m13.make_authority(p)
+        m13.migrate_store(p, a1)                        # -> v2; `auth` sees no-op
+        want = (False, False, "destination", 2)
+    else:
+        p = _v1_store()
+        auth = m13.make_authority(p)
+        os.remove(p)                                   # proven-missing source
+        want = (False, False, "missing", None)
+    monkeypatch.setattr(m13, "_terminal_facts",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("terminal derivation exploded")))
+    m13.migrate_store(p, auth)
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["outcome"] == "internal-error"
+    assert (ev["store_changed"], ev["transaction_committed"],
+            ev["resulting_state"], ev["resulting_version"]) == want
+
+
+def test_terminal_facts_problems_total_over_hostile_str_subclass():
+    """Round 20, correction A: the SHARED `TerminalFacts.problems()` uses
+    `type(x) is str`, so a `str` subclass whose `__hash__` raises is classified,
+    not executed (its totality is a finite acceptance property)."""
+    class HashBoom(str):
+        def __hash__(self):
+            raise RuntimeError("hash boom")
+
+    assert m13.TerminalFacts(HashBoom("migrated"), 1, 2, True, True,
+                             "destination", 2).problems()
+    assert m13.TerminalFacts("migrated", 1, 2, True, True,
+                             HashBoom("destination"), 2).problems()
+
+
+def test_a_duplicate_receipt_must_be_audit_committed():
+    """Round 20, correction B: a `duplicate` necessarily means the operation row
+    exists durably, so its audit write committed — `audit_committed=False` is
+    contradictory and rejects as `internal-error`."""
+    assert m13.ActivationReceipt("duplicate", _OP_ID, False, True).problems(_OP_ID)

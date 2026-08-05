@@ -69,7 +69,10 @@ _ORACLE_OUTCOME_STATES = {
     "migration-result-mismatch": {"source", "unknown"},
     "migration-evidence-missing": {"source", "unknown"},
     "migration-quiescence-required": {"source", "unknown"},
-    "internal-error": {"destination", "source", "unknown"},
+    # Round 20, finding 3: an internal defect can occur after ANY physical state
+    # was established, and the terminal fallback preserves whichever was frozen.
+    "internal-error": {"destination", "source", "missing", "unaccepted",
+                       "unknown"},
     "package-inconsistent": {"destination", "source", "unknown"},
     "foreign-shape": {"unaccepted", "unknown"},
     "newer": {"unaccepted", "unknown"},
@@ -464,6 +467,44 @@ def _activate_drops_event_index():
     return lambda: setattr(m._AUDIT, "activate", real)
 
 
+# --- round 20: strongest durable evidence on the activation path -------------
+
+def _activate_publishes_then_lies():
+    """Publish the complete activation, then return an INVALID `activated`
+    receipt (round 20, finding 1a)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        real(a, output_digest)
+        return m.ActivationReceipt("activated", a.operation_id, False, False)
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
+def _activate_publishes_then_raises_false():
+    """Publish the complete activation, then raise a contradictory
+    `committed=False` (round 20, finding 1b: v22 advertised a safe retry)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        real(a, output_digest)
+        raise m.AuditStorageUnavailable("response lost", committed=False)
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
+def _terminal_publishes_then_raises_false():
+    """Publish the complete terminal transition, then raise a contradictory
+    `committed=False` (round 20, finding 2)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        real(operation_id, event, payload)
+        raise m.AuditStorageUnavailable("response lost", committed=False)
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -500,6 +541,19 @@ _INJECTIONS = [
     ("activate-drops-attempted-id-from-index",
      _activate_drops_event_index,
      _outcome_is("internal-error")),
+    # round 20, finding 1: a durable activation with a lying carrier is consumed
+    # (internal-error with a terminal event), never left attempted-only.
+    ("activate-publishes-then-invalid-receipt",
+     _activate_publishes_then_lies,
+     _outcome_is("internal-error")),
+    ("activate-publishes-then-raises-committed-false",
+     _activate_publishes_then_raises_false,
+     _outcome_is("internal-error")),
+    # round 20, finding 2: a terminal sink exception cannot override a durable
+    # commit — the write error carries audit_committed=True.
+    ("record_terminal-publishes-then-raises-committed-false",
+     _terminal_publishes_then_raises_false,
+     _write_error(True)),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),
@@ -737,6 +791,11 @@ def test_every_fault_seam_preserves_the_invariants(name, install, expect):
                      if oid == auth.operation_id and ev in _TERMINAL_KINDS)
     if n_terminal > 1:
         errors.append(f"{n_terminal} terminal events for one operation")
+    # (The "never left attempted-only" property — a durable activation consumed
+    # despite a lying carrier still writes its terminal event — is verified by
+    # the dedicated instrument regressions, round 20 finding 1: a published-but-
+    # corrupted row here is NOT a valid activation, so it is honestly refused
+    # without a terminal, which a blanket sweep invariant cannot distinguish.)
     # CONTENT BINDING for a SUCCESS (round 17 corr C; round 18 corr C): the
     # COMPLETE durable state — every authority-row field, the attempted-event
     # contents, the terminal transition, event-ID integrity, the outcome at the
