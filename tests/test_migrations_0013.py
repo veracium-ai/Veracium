@@ -1776,17 +1776,17 @@ def test_the_terminal_validator_rejects_contradictions():
     with pytest.raises(ValueError, match="cannot carry the success"):
         m13._AUDIT.record_terminal(op, "migration_failed",
                                    _terminal_payload(outcome="migrated"))
-    # store_changed and transaction_committed must agree
-    with pytest.raises(ValueError, match="must agree"):
+    # store_changed and transaction_committed must be the same tri-state value
+    with pytest.raises(ValueError, match="same tri-state value"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(store_changed=True,
                                                      transaction_committed=False))
-    # a destination state with a version that is not the destination
-    with pytest.raises(ValueError, match="destination requires version 2"):
+    # a committed change that is not at the destination version
+    with pytest.raises(ValueError, match="committed change is at version 2"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(resulting_version=999))
     # a migrated outcome must resolve to the destination version
-    with pytest.raises(ValueError, match="destination requires version 2"):
+    with pytest.raises(ValueError, match="committed change is at version 2"):
         m13._AUDIT.record_terminal(op, "migration_completed",
                                    _terminal_payload(outcome="migrated",
                                                      resulting_version=1))
@@ -2200,8 +2200,14 @@ def test_a_lost_activation_response_is_mapped_by_its_commit_flag(
     operation_id first — v13 collapsed None into the retryable outcome)."""
     p = _v1_store()
     auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
 
     def flaky(a, output_digest):
+        # committed=True MEANS the row is durably written, so a faithful mock
+        # publishes it before the lost response (round 14, finding 2: the
+        # wrapper then writes a terminal for the consumed authority).
+        if committed is True:
+            real(a, output_digest)
         raise m13.AuditStorageUnavailable("response lost", committed=committed)
     monkeypatch.setattr(m13._AUDIT, "activate", flaky)
     assert m13.migrate_store(p, auth) == reason
@@ -2561,11 +2567,15 @@ def test_a_post_commit_cleanup_failure_is_internal_error_not_invalid_store(
 
 # --- round 13, finding 3: lexists() is not proof of absence -----------------
 
+@pytest.mark.skipif(hasattr(os, "geteuid") and os.geteuid() == 0,
+                    reason="root traverses any directory, so EACCES cannot be "
+                           "provoked by chmod (round 14, correction C)")
 def test_an_unsearchable_existing_store_is_not_proven_missing():
     """Round 13, finding 3: `os.path.lexists` returns False for a path the
     process cannot SEARCH to (EACCES on a parent), which v14 treated as a
     proven-absent `missing`. An unobservable path is now `store-unopenable`,
-    never `missing` — the store never vanished."""
+    never `missing` — the store never vanished. Round 14, correction C: skipped
+    under root, which can traverse a `chmod 0` directory."""
     import stat as _stat
     d = tempfile.mkdtemp()
     sp = os.path.join(d, "store.db")
@@ -2625,8 +2635,8 @@ def test_the_write_error_enforces_the_full_terminal_relationship():
     with pytest.raises(ValueError):
         m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
             facts=m13.TerminalFacts("migrated", 1, 2, 1, 1, "destination", 2))
-    # a destination that does not carry the destination version
-    with pytest.raises(ValueError, match="destination requires version"):
+    # a committed change that does not carry the destination version
+    with pytest.raises(ValueError, match="committed change is at version"):
         m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
             facts=m13.TerminalFacts("migrated", 1, 2, True, True,
                                     "destination", 999))
@@ -2662,3 +2672,188 @@ def test_the_operation_row_rejects_embedded_nul_paths(badpath):
     store = m13.DraftAuditStore()
     with pytest.raises(ValueError, match="NUL"):
         store._operation_row(auth._replace(store_path=badpath), "d" * 64)
+
+
+# ==========================================================================
+# Round 14 regressions
+# ==========================================================================
+
+# --- round 14, finding 1: TerminalFacts encodes the complete tuples ---------
+
+@pytest.mark.parametrize("outcome,ch,co,state,ver,ok", [
+    # the impossible facts v15 accepted
+    ("migrated", False, False, "destination", 2, False),   # migrated must change
+    ("current", None, None, "destination", 2, False),      # (None,None)→unknown
+    ("migration-failed", None, None, "source", 1, False),  # (None,None)→unknown
+    ("internal-error", None, True, "destination", 2, False),  # partial pair
+    ("migrated", True, None, "destination", 2, False),     # partial pair
+    # the complete valid tuples
+    ("migrated", True, True, "destination", 2, True),
+    ("current", False, False, "destination", 2, True),
+    ("current", True, True, "destination", 2, True),
+    ("migration-failed", False, False, "source", 1, True),
+    ("migration-failed", None, None, "unknown", None, True),
+    ("migration-quiescence-required", False, False, "unknown", None, True),
+    ("migration-source-missing", False, False, "missing", None, True),
+    ("migration-source-missing", False, False, "unaccepted", None, True),
+])
+def test_terminal_facts_encodes_the_complete_tuple(outcome, ch, co, state, ver,
+                                                   ok):
+    """Round 14, finding 1: `TerminalFacts.problems()` — shared by BOTH carriers
+    — encodes the complete permitted tuples. A partial `None` pair, a
+    disagreement, an `(None,None)` non-unknown cell, and a no-change `migrated`
+    all reject; the seven valid shapes accept."""
+    problems = m13.TerminalFacts(outcome, 1, 2, ch, co, state, ver).problems()
+    assert (not problems) == ok, problems
+
+
+def test_the_migrated_rule_lives_inside_terminal_facts():
+    """The `migrated → changed+committed` rule is now INSIDE `TerminalFacts`, so
+    the exception carrier (which only sees `TerminalFacts`) enforces it too —
+    v15 held it in the record validator alone (finding 1)."""
+    bad = m13.TerminalFacts("migrated", 1, 2, False, False, "destination", 2)
+    assert any("changed and committed" in p for p in bad.problems())
+    with pytest.raises(ValueError):
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path="/s",
+                                     facts=bad)
+
+
+# --- round 14, finding 2: a committed activation-loss still terminalizes -----
+
+def test_a_committed_activation_loss_still_writes_a_terminal(monkeypatch):
+    """Round 14, finding 2: a `committed=True` activation whose response was
+    lost is DURABLY consumed, so the wrapper must still write a terminal event
+    — v15 left a spent authority with only an attempted record."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def act_lose(a, output_digest):
+        real(a, output_digest)                 # the row IS durably written
+        raise m13.AuditStorageUnavailable("response lost after activation",
+                                          committed=True)
+    monkeypatch.setattr(m13._AUDIT, "activate", act_lose)
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+    assert ev is not None                      # NOT left with only 'attempted'
+    assert ev["outcome"] == "migration-quiescence-required"
+    assert ev["resulting_state"] == "unknown"
+    assert ev["resulting_version"] is None
+
+
+# --- round 14, finding 3: terminal-audit response loss is representable ------
+
+def test_a_lost_terminal_response_reports_audit_committed(monkeypatch):
+    """Round 14, finding 3: a terminal write that atomically committed then lost
+    its response leaves a DURABLE record; `MigrationAuditWriteError.audit_committed`
+    distinguishes that from a write that never landed."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def rt_lose(operation_id, event, payload):
+        real(operation_id, event, payload)     # publishes durably
+        raise OSError("response lost after durable terminal commit")
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", rt_lose)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is True   # the record IS durable
+    # and a genuine not-written failure reports False
+    p2 = _v1_store()
+    auth2 = m13.make_authority(p2)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda *a: (_ for _ in ()).throw(OSError("never wrote")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc2:
+        m13.migrate_store(p2, auth2)
+    assert exc2.value.audit_committed is False
+
+
+# --- round 14, finding 4: SQLite errors are classified by PHASE -------------
+
+def test_a_runtime_probe_defect_is_internal_error_not_invalid_store(monkeypatch):
+    """Round 14, finding 4: a `sqlite3.DatabaseError` from the runtime gate —
+    BEFORE the store is connected or read — is a library defect, not corrupted
+    store bytes. v15 tested 'commit facts exist', not the phase, and mislabeled
+    it `invalid-store`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def boom():
+        raise sqlite3.DatabaseError("runtime probe library defect")
+    monkeypatch.setattr(m13.sv, "runtime_supported", boom)
+    out = m13.migrate_store(p, auth)
+    assert out == "internal-error"             # NOT invalid-store
+    assert sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_invalid_store_is_only_the_planner_reading_bad_bytes(monkeypatch):
+    """The dual: a `DatabaseError` raised WHILE `open_versioned` reads the store
+    remains `invalid-store`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13.sv.open_versioned
+
+    def boom(*a, **k):
+        raise sqlite3.DatabaseError("malformed database image")
+    monkeypatch.setattr(m13.sv, "open_versioned", boom)
+    assert m13.migrate_store(p, auth) == "invalid-store"
+
+
+# --- round 14, finding 5: package-inconsistent at every phase ---------------
+
+@pytest.mark.parametrize("phase,state", [
+    ("after-commit", "destination"),
+    ("after-rollback", "source"),
+    ("before-observe", "unknown"),
+])
+def test_a_package_inconsistency_terminalizes_at_every_phase(phase, state,
+                                                             monkeypatch):
+    """Round 14, finding 5: a `PackageConsistencyError` discovered after a commit
+    carries destination facts, which v15's `package-inconsistent`-permits-only-
+    unknown map rejected — producing a raw `ValueError` that lost the named
+    escape. It is now terminalized with whichever facts are proven, at any
+    phase, and the original exception re-raised."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13.sv.open_versioned
+
+    def hook(*a, **k):
+        if phase == "before-observe":
+            raise sv.PackageConsistencyError("before any transaction")
+        r = real(*a, **k)                      # migrates + commits
+        raise sv.PackageConsistencyError(f"discovered {phase}")
+    monkeypatch.setattr(m13.sv, "open_versioned", hook)
+    with pytest.raises(sv.PackageConsistencyError):   # the ORIGINAL, re-raised
+        m13.migrate_store(p, auth)
+    ev = m13._AUDIT._events.get((auth.operation_id, "migration_failed"))
+    assert ev is not None and ev["outcome"] == "package-inconsistent"
+    if phase == "after-commit":
+        assert ev["resulting_state"] == "destination"
+
+
+# --- round 14, corrections A & B --------------------------------------------
+
+@pytest.mark.parametrize("outcome,state", [
+    ([], "destination"), ("migrated", []), ("migrated", {}),
+])
+def test_terminal_facts_problems_is_total(outcome, state):
+    """Round 14, correction A: `TerminalFacts.problems()` type-checks `outcome`
+    and `resulting_state` BEFORE using them as hash keys — v15 raised a raw
+    `TypeError` on `outcome=[]` / `resulting_state={}`."""
+    out = m13.TerminalFacts(outcome, 1, 2, True, True, state, 2).problems()
+    assert isinstance(out, list) and out       # reports, never raises
+
+
+@pytest.mark.parametrize("store_path,from_v,to_v", [
+    ("relative.db", 1, 2),                     # not absolute
+    ("bad\x00path", 1, 2),                     # embedded NUL
+    ("/ok", 2, 1),                             # reversed endpoints
+])
+def test_the_write_error_validates_its_context(store_path, from_v, to_v):
+    """Round 14, correction B: the exception is a frozen public contract, so it
+    validates path canonicality/NUL/cap and adjacent ordered endpoints — v15
+    accepted a relative path, a NUL path, and reversed endpoints."""
+    with pytest.raises(ValueError):
+        m13.MigrationAuditWriteError(operation_id=_OP_ID, store_path=store_path,
+            facts=m13.TerminalFacts("migrated", from_v, to_v, True, True,
+                                    "destination", to_v))
