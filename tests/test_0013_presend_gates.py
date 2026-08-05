@@ -25,6 +25,7 @@ from __future__ import annotations
 import sqlite3
 import sys
 import tempfile
+import types
 from pathlib import Path
 
 import pytest
@@ -310,8 +311,142 @@ def _write_error_any(res, exc):
             else f"want MigrationAuditWriteError, got res={res!r} exc={exc!r}")
 
 
+# --- round 18: verify the COMPLETE record, both atomic parts ----------------
+
+def _activate_corrupt_attempted():
+    """Publish the real activation, then corrupt the attempted EVENT while
+    keeping its (operation_id, migration_attempted) key (round 18, finding 1:
+    v19 verified the attempted event only by key existence)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        r = real(a, output_digest)
+        st = m._AUDIT._state
+        evs = dict(st.events)
+        evs[(a.operation_id, "migration_attempted")] = m._freeze({
+            "event_id": "ev-00000000-0000-4000-8000-ffffffffffff",
+            "operation_id": "op-00000000-0000-4000-8000-ffffffffffff",
+            "event": "wrong", "occurred_at": "not-a-time"})
+        m._AUDIT._state = st._replace(events=m._readonly(evs))
+        return r
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
+def _terminal_leaves_attempted():
+    """Publish the terminal event but leave the operation row `attempted` — a
+    valid payload with no state transition (round 18, finding 2)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        rec = real(operation_id, event, payload)
+        st = m._AUDIT._state
+        ops = dict(st.ops)
+        ops[operation_id] = {**dict(ops[operation_id]), "state": "attempted"}
+        m._AUDIT._state = st._replace(ops=m._readonly(ops))
+        return rec
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
+def _terminal_reuses_event_id():
+    """Publish a terminal event that reuses the attempted event's `event_id` —
+    a primary-key collision (round 18, finding 2)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        st = m._AUDIT._state
+        att = st.events[(operation_id, "migration_attempted")]
+        evs = dict(st.events)
+        evs[(operation_id, event)] = {
+            "event_id": att["event_id"], "operation_id": operation_id,
+            "event": event, **payload}
+        ops = dict(st.ops)
+        ops[operation_id] = {**dict(ops[operation_id]), "state": "terminal"}
+        m._AUDIT._state = st._replace(ops=m._readonly(ops),
+                                      events=m._readonly(evs), seq=st.seq + 1)
+        return m.TerminalReceipt("recorded", operation_id, event,
+                                 audit_committed=True)
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
+def _on_committed_false_then_real():
+    """Fire a false `current`/(F,F) publication before the genuine
+    `migrated`/(T,T) (round 18, finding 3)."""
+    real = m._make_on_committed
+
+    def double(state, to_v):
+        sink = real(state, to_v)
+        fired = []
+
+        def wrap(r):
+            if not fired:
+                fired.append(1)
+                sink(sv.OpenResult("current", store_changed=False,
+                                   transaction_committed=False,
+                                   resulting_version=to_v))
+            return sink(r)
+        return wrap
+    m._make_on_committed = double
+    return lambda: setattr(m, "_make_on_committed", real)
+
+
+def _terminal_receipt(**over):
+    """Publish the real terminal event, then return a receipt overriding chosen
+    fields (round 18, finding 4 / correction A)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        real(operation_id, event, payload)
+        base = dict(status="recorded", operation_id=operation_id, event=event,
+                    audit_committed=True)
+        base.update(over)
+        return m.TerminalReceipt(base["status"], base["operation_id"],
+                                 base["event"], base["audit_committed"])
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
+class _HostileStatus:
+    def __eq__(self, o):
+        raise RuntimeError("hostile __eq__")
+
+    def __ne__(self, o):
+        raise RuntimeError("hostile __ne__")
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
+    # --- round 18: the COMPLETE record, both atomic parts, full state ------
+    # A malformed attempted EVENT under the right key (round 18 f1).
+    ("activate-corrupts-attempted-event",
+     _activate_corrupt_attempted,
+     _outcome_is("internal-error")),
+    # A terminal event with no state transition (round 18 f2).
+    ("record_terminal-leaves-state-attempted",
+     _terminal_leaves_attempted,
+     _write_error_any),
+    # A terminal event reusing the attempted event_id (round 18 f2).
+    ("record_terminal-reuses-attempted-event-id",
+     _terminal_reuses_event_id,
+     _write_error_any),
+    # A false uncommitted publication suppressing a real commit (round 18 f3).
+    ("on_committed-false-current-then-real-migrated",
+     _on_committed_false_then_real,
+     _outcome_is("internal-error")),
+    # A recorded receipt claiming the audit did not commit (round 18 corr A).
+    ("record_terminal-recorded-but-not-committed",
+     lambda: _terminal_receipt(audit_committed=False),
+     _write_error_any),
+    # An un-committable audit flag that the exception constructor rejects (f4).
+    ("record_terminal-audit_committed-non-bool",
+     lambda: _terminal_receipt(audit_committed=1),
+     _write_error_any),
+    # A receipt whose status equality raises (round 18 f4).
+    ("record_terminal-hostile-status-equality",
+     lambda: _terminal_receipt(status=_HostileStatus()),
+     _write_error_any),
     # --- round 17: content binding, not just existence ---------------------
     # A row published for a DIFFERENT store than the authority (round 17 f1).
     ("activate-binds-wrong-store",
@@ -414,6 +549,94 @@ def _terminal_facts_problems(auth):
     return problems
 
 
+# Round 18, correction C: the content gate verified a SUBSET (store_path, the
+# terminal outcome, counts). It now verifies the COMPLETE durable state — every
+# authority-row field, the attempted-event contents, the operation-row
+# terminal transition, and event-ID uniqueness — written FLAT here, NOT through
+# the instrument's own binding helpers, so a bug in those helpers cannot hide.
+
+_AUTHORITY_ROW_FIELDS = ("release_ref", "backup_ref", "store_path",
+                         "from_version", "to_version", "source_digest",
+                         "migration_digest", "evidence_digest",
+                         "issued_at", "expires_at")
+_ATTEMPTED_FIELDS = {"event_id", "operation_id", "event", "occurred_at"}
+_TERMINAL_EVENT_FIELDS = {"event_id", "operation_id", "event", "outcome",
+                          "store_changed", "transaction_committed",
+                          "resulting_version", "resulting_state", "occurred_at"}
+
+
+def _is_mapping(x):
+    return isinstance(x, (dict, types.MappingProxyType))
+
+
+def _success_durable_problems(auth, res):
+    """A SUCCESS outcome (`migrated`/`current`) must leave a COMPLETE, correct
+    durable audit — the whole state, not a subset (round 18, correction C).
+    Asserted ONLY for a success: the injected-corruption seams deliberately
+    leave bad durable state and the instrument correctly REFUSES (a non-success
+    outcome), so integrity is a claim about what a success proves, not about the
+    store after a hostile sink ran. Verified here FLAT, not through the
+    instrument's binding helpers:
+
+      * the operation row binds EVERY authority field and is `terminal`;
+      * the attempted event is complete, bound, and its `occurred_at` matches
+        the row (round 18, finding 1);
+      * exactly one terminal event, a completed `attempted → terminal`
+        transition, with a valid, UNIQUE, non-reused `event_id` (round 18,
+        finding 2), the complete field set, and the outcome at the destination.
+    """
+    events = m._AUDIT._events
+    row = m._AUDIT._ops.get(auth.operation_id)
+    if not _is_mapping(row):
+        return [f"success {res!r} but no operation row"]
+    probs = []
+    for f in _AUTHORITY_ROW_FIELDS:
+        if row.get(f) != getattr(auth, f):
+            probs.append(f"row {f}={row.get(f)!r} != authority "
+                         f"{getattr(auth, f)!r}")
+    if row.get("state") != "terminal":
+        probs.append(f"row state={row.get('state')!r} != 'terminal'")
+    att = events.get((auth.operation_id, "migration_attempted"))
+    if not _is_mapping(att):
+        probs.append("no attempted event")
+        att = {}
+    else:
+        if set(att) != _ATTEMPTED_FIELDS:
+            probs.append(f"attempted event fields {sorted(att)} incomplete")
+        if att.get("operation_id") != auth.operation_id \
+                or att.get("event") != "migration_attempted":
+            probs.append("attempted event is not bound to this operation")
+        if att.get("occurred_at") != row.get("attempted_at"):
+            probs.append("attempted occurred_at != row attempted_at")
+    terminals = [(k, v) for k, v in events.items()
+                 if k[0] == auth.operation_id and k[1] in _TERMINAL_KINDS]
+    if len(terminals) != 1:
+        probs.append(f"success {res!r} has {len(terminals)} terminal events "
+                     f"(must be exactly one)")
+    term = events.get((auth.operation_id, "migration_completed"))
+    if not _is_mapping(term):
+        probs.append(f"success {res!r} but no completed event")
+    else:
+        if set(term) != _TERMINAL_EVENT_FIELDS:
+            probs.append(f"completed event fields {sorted(term)} incomplete")
+        eid = term.get("event_id")
+        if not (isinstance(eid, str) and m._EVENT_ID_RE.fullmatch(eid)):
+            probs.append(f"completed event_id {eid!r} is not the grammar")
+        if eid == att.get("event_id"):
+            probs.append("completed event_id reuses the attempted event_id")
+        # event_id uniqueness across THIS operation's events.
+        op_ids = [v.get("event_id") for (k, v) in events.items()
+                  if k[0] == auth.operation_id and _is_mapping(v)]
+        if len(op_ids) != len(set(op_ids)):
+            probs.append("event_id collision within the operation")
+        if term.get("outcome") != res or term.get("resulting_state") != \
+                "destination":
+            probs.append(f"completed event {term.get('outcome')!r}/"
+                         f"{term.get('resulting_state')!r} does not match the "
+                         f"{res!r} success at the destination")
+    return probs
+
+
 @pytest.mark.parametrize("name,install,expect",
                          _INJECTIONS, ids=[i[0] for i in _INJECTIONS])
 def test_every_fault_seam_preserves_the_invariants(name, install, expect):
@@ -440,35 +663,19 @@ def test_every_fault_seam_preserves_the_invariants(name, install, expect):
     tp = _terminal_facts_problems(auth)
     if tp:
         errors.append("invalid terminal facts: " + "; ".join(tp))
-    # RECORD-COMPLETENESS invariants (round 16, correction B: the sweep must
-    # assert audit completeness UNIVERSALLY, or a false success / silent no-op
-    # slips through). An operation never has more than one terminal event, and a
-    # SUCCESS outcome must leave a durable operation row AND exactly one.
+    # RECORD COMPLETENESS: an operation never has more than one terminal event
+    # (round 16, correction B) — universal, op-scoped.
     n_terminal = sum(1 for (oid, ev) in m._AUDIT._events
                      if oid == auth.operation_id and ev in _TERMINAL_KINDS)
     if n_terminal > 1:
         errors.append(f"{n_terminal} terminal events for one operation")
+    # CONTENT BINDING for a SUCCESS (round 17 corr C; round 18 corr C): the
+    # COMPLETE durable state — every authority-row field, the attempted-event
+    # contents, the terminal transition, event-ID integrity, the outcome at the
+    # destination — not a subset. Asserted only for a success, since the
+    # corrupting seams deliberately leave bad state and the instrument REFUSES.
     if res in ("migrated", "current"):
-        row = m._AUDIT._ops.get(auth.operation_id)
-        if row is None:
-            errors.append(f"success outcome {res!r} but NO operation row")
-        # CONTENT BINDING (round 17, correction C): the durable row must bind the
-        # exact authority store, and the terminal event must carry the requested
-        # outcome at the destination — existence and counts are not enough.
-        elif row.get("store_path") != auth.store_path:
-            errors.append(f"success row binds {row.get('store_path')!r}, not "
-                          f"the authority store {auth.store_path!r}")
-        if n_terminal != 1:
-            errors.append(f"success outcome {res!r} but {n_terminal} terminal "
-                          f"events (must be exactly one)")
-        term = m._AUDIT._events.get((auth.operation_id, "migration_completed"))
-        if term is None:
-            errors.append(f"success outcome {res!r} but no completed event")
-        elif term.get("outcome") != res or term.get("resulting_state") != \
-                "destination":
-            errors.append(f"terminal event outcome/state "
-                          f"{term.get('outcome')!r}/{term.get('resulting_state')!r} "
-                          f"does not match the {res!r} success at the destination")
+        errors += _success_durable_problems(auth, res)
     spec = expect(res, exc)
     if spec:
         errors.append(spec)

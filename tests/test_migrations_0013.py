@@ -3317,3 +3317,203 @@ def test_receipt_problems_validate_every_scalar(receipt, args):
         assert r.problems(_OP_ID)
     else:
         assert r.problems(_OP_ID, "migration_completed")
+
+
+# --- round 18: verify the COMPLETE record, not one of its two parts ----------
+
+def _corrupt_events(operation_id, key, value):
+    """Replace one durable event under `key` with `value`, in place — the seam a
+    hostile audit sink exploits."""
+    st = m13._AUDIT._state
+    evs = dict(st.events)
+    evs[key] = m13._freeze(value)
+    m13._AUDIT._state = st._replace(events=m13._readonly(evs))
+
+
+def test_activation_binds_the_complete_attempted_event(monkeypatch):
+    """Round 18, finding 1: v19 bound the operation ROW field-for-field but
+    verified the attempted EVENT only by key existence, so a malformed attempted
+    event under the right key let the irreversible operation proceed. The
+    complete attempted event must bind the operation."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def corrupt(a, od):
+        r = real(a, od)
+        _corrupt_events(a.operation_id,
+                        (a.operation_id, m13._ATTEMPTED_EVENT),
+                        {"event_id": "ev-00000000-0000-4000-8000-ffffffffffff",
+                         "operation_id": "op-00000000-0000-4000-8000-ffffffffffff",
+                         "event": "wrong", "occurred_at": "not-a-time"})
+        return r
+    monkeypatch.setattr(m13._AUDIT, "activate", corrupt)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1          # store untouched
+
+
+def test_terminal_write_requires_the_state_transition(monkeypatch):
+    """Round 18, finding 2: a terminal event whose payload matches but whose
+    operation row is left `attempted` is not a valid `attempted → terminal`
+    transition — it must raise, not report `migrated`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def stuck(operation_id, event, payload):
+        receipt = real(operation_id, event, payload)
+        st = m13._AUDIT._state
+        ops = dict(st.ops)
+        ops[operation_id] = {**dict(ops[operation_id]), "state": "attempted"}
+        m13._AUDIT._state = st._replace(ops=m13._readonly(ops))
+        return receipt
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", stuck)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+def test_terminal_write_rejects_a_reused_event_id(monkeypatch):
+    """Round 18, finding 2: a terminal event that reuses the attempted event's
+    `event_id` violates the `event_id` primary key — it must raise."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def reuse(operation_id, event, payload):
+        st = m13._AUDIT._state
+        att = st.events[(operation_id, m13._ATTEMPTED_EVENT)]
+        evs = dict(st.events)
+        evs[(operation_id, event)] = {
+            "event_id": att["event_id"], "operation_id": operation_id,
+            "event": event, **payload}
+        ops = dict(st.ops)
+        ops[operation_id] = {**dict(ops[operation_id]), "state": "terminal"}
+        m13._AUDIT._state = st._replace(ops=m13._readonly(ops),
+                                        events=m13._readonly(evs),
+                                        seq=st.seq + 1)
+        return m13.TerminalReceipt("recorded", operation_id, event,
+                                   audit_committed=True)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", reuse)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+def test_a_false_uncommitted_publication_never_suppresses_a_real_commit(
+        monkeypatch):
+    """Round 18, finding 3: a false `current`/(F,F) `on_committed` publication
+    before the genuine `migrated`/(T,T) must NOT make the audit claim the store
+    was unchanged. The conflict is a defect (`internal-error`), and the durable
+    record retains the STRONGEST proven state — the real commit."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._make_on_committed
+
+    def double(state, to_v):
+        sink = real(state, to_v)
+        fired = []
+
+        def wrap(r):
+            if not fired:
+                fired.append(1)
+                sink(sv.OpenResult("current", store_changed=False,
+                                   transaction_committed=False,
+                                   resulting_version=to_v))
+            return sink(r)
+        return wrap
+    monkeypatch.setattr(m13, "_make_on_committed", double)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 2          # the migration ran
+    # the conflict is a defect (`internal-error` → `migration_failed`), but the
+    # durable facts retain the STRONGEST proven state — the real commit.
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["outcome"] == "internal-error"
+    assert ev["store_changed"] is True                     # the real commit kept
+    assert ev["transaction_committed"] is True
+    assert ev["resulting_state"] == "destination"
+
+
+def test_a_derivation_fallback_agrees_public_and_durable_outcome(monkeypatch):
+    """Round 18, finding 5: when terminal-fact derivation falls back to
+    `internal-error`, the PUBLIC return must change with it — v19 recorded
+    `internal-error` durably yet still returned `migrated`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_terminal_facts",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("derivation boom")))
+    out = m13.migrate_store(p, auth)
+    assert out == "internal-error"                         # NOT the pre-fallback
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["outcome"] == "internal-error"               # public == durable
+
+
+def test_a_recorded_receipt_must_be_audit_committed(monkeypatch):
+    """Round 18, correction A: a durably-verified `recorded` receipt necessarily
+    committed the audit write — `audit_committed=False` is contradictory."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def false_committed(operation_id, event, payload):
+        real(operation_id, event, payload)
+        return m13.TerminalReceipt("recorded", operation_id, event,
+                                   audit_committed=False)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", false_committed)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+def test_a_duplicate_row_must_bind_the_authority(monkeypatch):
+    """Round 18, correction B: a duplicate whose durable row belongs to a
+    DIFFERENT store is an operation-ID collision, not an ordinary replay — it is
+    `internal-error`, not a quiescence refusal."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"        # consume once
+    st = m13._AUDIT._state                                 # corrupt the store_path
+    ops = dict(st.ops)
+    ops[auth.operation_id] = {**dict(ops[auth.operation_id]),
+                              "store_path": "/other/store.db"}
+    m13._AUDIT._state = st._replace(ops=m13._readonly(ops))
+    assert m13.migrate_store(p, auth) == "internal-error"
+
+
+def test_a_hostile_receipt_equality_never_escapes(monkeypatch):
+    """Round 18, finding 4: a `TerminalReceipt` whose `status.__ne__` raises must
+    not break the post-consumption boundary — it surfaces as the documented
+    write error, never a raw exception."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    class Hostile:
+        def __eq__(self, o):
+            raise RuntimeError("hostile __eq__")
+        def __ne__(self, o):
+            raise RuntimeError("hostile __ne__")
+
+    def hostile(operation_id, event, payload):
+        real(operation_id, event, payload)
+        return m13.TerminalReceipt(Hostile(), operation_id, event,
+                                   audit_committed=True)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", hostile)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+def test_an_uncommittable_audit_flag_never_leaks_a_type_error(monkeypatch):
+    """Round 18, finding 4: an `audit_committed=1` must be sanitized before it
+    reaches `MigrationAuditWriteError`, whose constructor rejects a non-bool —
+    the operation surfaces the write error, never a raw `TypeError`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def bad_flag(operation_id, event, payload):
+        real(operation_id, event, payload)
+        return m13.TerminalReceipt("recorded", operation_id, event,
+                                   audit_committed=1)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", bad_flag)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)

@@ -101,6 +101,8 @@ REVIEWS = [
          verdict="architecture standing; deferred; verified ActivationReceipt/TerminalReceipt, mode-aware OpenResult validation, guarded sink metadata, check-to-open race classification; duplicate reconciliation, independent gate oracle + record-completeness sweep, UUID4 bit enforcement, MigrationRefused raise", findings=5),
     dict(spec="0013", round=17, kind="external", date="2026-08-05",
          verdict="architecture standing; deferred; verify content not existence — activation receipt binds authority row, terminal receipt binds requested payload, returned branch equals committed branch, validating on_committed, total terminal-derivation boundary; duplicate durable verification, total receipt validators, request-to-record gate invariants", findings=5),
+    dict(spec="0013", round=18, kind="external", date="2026-08-05",
+         verdict="architecture standing; deferred; verify the complete record — activation binds the complete attempted event, terminal write verifies the attempted->terminal transition + event_id integrity, on_committed distinguishes a proven commit from a no-commit position, total post-consumption boundary, derivation fallback changes the public outcome; recorded receipt must be audit_committed, duplicate binds the authority, complete-durable-state gate, operation-id UUID4 wording reconciled", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),
