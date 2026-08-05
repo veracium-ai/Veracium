@@ -364,7 +364,10 @@ class MigrationRefused(Exception):
     to an `Outcome` at the entry points, never shown to callers raw."""
 
     def __init__(self, reason: str, diagnostic: str | None = None):
-        assert reason in MIGRATION_FAILURES, reason
+        # raise, not assert (round 16, correction D): a load-bearing closed-
+        # vocabulary check must survive `python -O`, like the operation-row guard.
+        if reason not in MIGRATION_FAILURES:
+            raise ValueError(f"{reason!r} is not a closed migration failure")
         self.reason, self.diagnostic = reason, diagnostic
         super().__init__(f"{reason}: {diagnostic or ''}")
 
@@ -450,17 +453,50 @@ _MISSING = object()   # sentinel: an exception carries no `.committed` attribute
 
 
 def _valid_open_result(label) -> bool:
-    """Whether the kernel returned a well-formed `OpenResult` — the shared
-    contract, validated before the wrapper trusts it (round 15, finding 2: a
-    kernel returning the bare string `"migrated"` made terminal derivation raise
-    `AttributeError` outside the closed boundary). Type, closed branch, exact
-    Boolean facts and an integer resulting version."""
+    """Backwards-compatible shape check (round 15, finding 2): a well-typed
+    `OpenResult`. The COMPLETE, mode-aware SEMANTIC contract is
+    `_open_result_problems` (round 16, finding 3)."""
     return (isinstance(label, sv.OpenResult)
             and str(label) in _SUCCESS_OUTCOMES
             and type(label.store_changed) is bool
             and type(label.transaction_committed) is bool
             and type(label.resulting_version) is int
             and label.resulting_version >= 0)
+
+
+def _open_result_problems(label, migrating, to_v, committed_facts) -> list:
+    """The COMPLETE, mode-aware `OpenResult` contract (round 16, finding 3: v17
+    checked SHAPE only, so `migrated`/¬changed/v1, a `created`/`adopted` in
+    migrate mode, and `migrated`/v999 all passed and were then misreported as
+    audit-storage failures). In migrate mode: `migrated` → changed+committed at
+    `to_v`; `current` → (¬changed,¬committed) or (changed,committed) at `to_v`;
+    `created`/`adopted` are FORBIDDEN. The result must also be consistent with
+    any facts already delivered through `on_committed`."""
+    if not _valid_open_result(label):
+        return [f"malformed OpenResult: {_safe_repr(label)}"]
+    branch = str(label)
+    ch, co, ver = (label.store_changed, label.transaction_committed,
+                   label.resulting_version)
+    p = []
+    if migrating:
+        if branch in ("created", "adopted"):
+            p.append(f"a dedicated migration must never {branch!r} a store")
+        elif branch == "migrated":
+            if not (ch is True and co is True and ver == to_v):
+                p.append(f"migrated must be changed+committed at v{to_v}, "
+                         f"got changed={ch} committed={co} v{ver}")
+        elif branch == "current":
+            if (ch, co) not in ((False, False), (True, True)) or ver != to_v:
+                p.append(f"current must be (F,F) or (T,T) at v{to_v}, got "
+                         f"changed={ch} committed={co} v{ver}")
+    # Consistency with the facts on_committed already delivered (a defective
+    # kernel that returns something other than what it committed).
+    if committed_facts is not None and committed_facts is not label \
+            and _valid_open_result(committed_facts) and (
+                committed_facts.store_changed, committed_facts.transaction_committed,
+                committed_facts.resulting_version) != (ch, co, ver):
+        p.append("the returned result contradicts the on_committed facts")
+    return p
 
 
 def _store_path_problems(sp) -> list:
@@ -609,6 +645,29 @@ source (round 15, finding 4). Distinct from the never-read outcomes (`locked`,
 `store-unopenable`, `unsupported-sqlite`, `invalid-store` bytes) → `unknown`."""
 
 
+class ActivationReceipt(NamedTuple):
+    """The audit store's typed CONFIRMATION of an activation (round 16, finding
+    1: v17 returned a bare string, so an `__eq__`-spoofing object or a mock
+    returning the exact string `"activated"` without publishing a row passed the
+    equality check and migrated with no attempted audit record). The wrapper
+    requires the exact type and identity AND verifies the row/event exist."""
+    status: str              # "activated" | "duplicate"
+    operation_id: str
+    audit_committed: bool     # the operation row is durably written
+    terminal_present: bool    # (duplicate) a terminal event already exists
+
+
+class TerminalReceipt(NamedTuple):
+    """The audit store's typed CONFIRMATION of a terminal write (round 16,
+    finding 2: v17's `record_terminal` returned `None`, so a no-op sink reported
+    migration SUCCESS with no terminal event). The wrapper requires the exact
+    type, identity, event and commit status, and verifies the event exists."""
+    status: str              # "recorded"
+    operation_id: str
+    event: str
+    audit_committed: bool
+
+
 class TerminalFacts(NamedTuple):
     """One validated, immutable terminal-facts value, shared by the terminal
     record AND `MigrationAuditWriteError` (round 13, finding 5: v14's exception
@@ -721,11 +780,13 @@ class TerminalFacts(NamedTuple):
         return p
 
 
-_EVENT_ID_RE = re.compile(r"^ev-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
-                          r"[0-9a-f]{4}-[0-9a-f]{12}$")
-"""`event_id` grammar (round 10, correction 2): `ev-<uuid4>`, so an audit
-event id is a globally unique opaque token, restart-safe (no counter to
-resume), not a prose channel — same discipline as `operation_id`."""
+_EVENT_ID_RE = re.compile(r"^ev-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-"
+                          r"[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+"""`event_id` grammar (round 10, correction 2; round 16, correction C: the
+version-4 and RFC-variant bits are now enforced — v17 accepted the all-zeros
+UUID `ev-00000000-...`, which is not a v4). `ev-<uuid4>`: a globally unique
+opaque token, restart-safe, not a prose channel — same discipline as
+`operation_id`."""
 
 
 class AuditStorageUnavailable(Exception):
@@ -893,11 +954,16 @@ class DraftAuditStore:
         self._state = AuditState(_readonly(ops), _readonly(events),
                                  event_ids, seq)
 
-    def activate(self, a, output_digest: str) -> str:
+    def activate(self, a, output_digest: str) -> "ActivationReceipt":
         with self._lock:
             st = self._state
             if a.operation_id in st.ops:
-                return "duplicate"
+                terminal = any(
+                    ev in _TERMINAL_EVENTS
+                    for (oid, ev) in st.events if oid == a.operation_id)
+                return ActivationReceipt("duplicate", a.operation_id,
+                                         audit_committed=True,
+                                         terminal_present=terminal)
             row = self._operation_row(a, output_digest)
             event_id = f"ev-{uuid.uuid4()}"
             if not _EVENT_ID_RE.fullmatch(event_id):      # round 12, corr. B:
@@ -914,7 +980,8 @@ class DraftAuditStore:
                 {**dict(st.ops), a.operation_id: row},
                 {**dict(st.events), (a.operation_id, _ATTEMPTED_EVENT): attempted},
                 st.event_ids | {event_id}, st.seq + 1)
-            return "activated"
+            return ActivationReceipt("activated", a.operation_id,
+                                     audit_committed=True, terminal_present=False)
 
     def _terminal_problems(self, op: dict, event: str, payload: dict) -> list:
         """Schema, types AND the EXACT per-cell contract (rounds 10–11). The
@@ -972,7 +1039,7 @@ class DraftAuditStore:
         return problems
 
     def record_terminal(self, operation_id: str, event: str,
-                        payload: dict) -> None:
+                        payload: dict) -> "TerminalReceipt":
         with self._lock:
             st = self._state
             op = st.ops.get(operation_id)
@@ -995,6 +1062,10 @@ class DraftAuditStore:
                     "event_id": event_id, "operation_id": operation_id,
                     "event": event, **payload}},
                 st.event_ids | {event_id}, st.seq + 1)
+            # Round 16, finding 2: a typed receipt is the ONLY proof of a durable
+            # terminal write — a `None` return let a no-op sink report success.
+            return TerminalReceipt("recorded", operation_id, event,
+                                   audit_committed=True)
 
 
 _AUDIT = DraftAuditStore()
@@ -1005,8 +1076,8 @@ MAX_AUTHORITY_LIFETIME = timedelta(hours=1)
 operation re-mint; an unbounded window is an unbounded replay surface."""
 
 _TOKEN_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+:/-]{0,127}$")
-_OPERATION_RE = re.compile(
-    r"^op-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_OPERATION_RE = re.compile(          # op-<uuid4>, v4 + RFC-variant bits enforced
+    r"^op-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 
 _TIMESTAMP_RE = re.compile(
@@ -1414,21 +1485,39 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
             f"may re-present it: {_safe_repr(exc)}") from exc
     # Any other exception — a validation or programming defect — propagates to
     # the boundary and becomes `internal-error`, never a retry instruction.
-    if result == "duplicate":
+    #
+    # Round 16, finding 1: the activation result must be the EXACT typed
+    # `ActivationReceipt` for THIS operation — an equality-spoofing object or a
+    # bare string can no longer pass. `is`/`type()` identity, not `==`.
+    if type(result) is not ActivationReceipt \
+            or result.operation_id != a.operation_id \
+            or result.status not in ("activated", "duplicate"):
+        raise _ActivationResultError(
+            f"audit activate() returned {_safe_repr(result)}, not an "
+            f"ActivationReceipt for operation {a.operation_id!r}")
+    if result.status == "duplicate":
+        # Round 16, correction A: distinguish an already-COMPLETE operation from
+        # an attempted-only one whose liveness is unknown (a live process, a
+        # crash, or a lost terminal response). Both refuse — authorities are
+        # single-use — but the diagnostic names the reconciliation action.
+        detail = ("it is already complete (a terminal event exists)"
+                  if result.terminal_present else
+                  "it is attempted-only — reconcile via the durable "
+                  "operation_id (in progress, crashed, or a lost terminal "
+                  "response) before minting a replacement")
         raise MigrationRefused(
             "migration-quiescence-required",
             f"authority operation {a.operation_id!r} was already consumed; "
-            f"authorities are single-use — mint a fresh one for a fresh "
-            f"operation")
-    # Round 15, finding 1: the activation result is a CLOSED vocabulary; ONLY
-    # `activated` may proceed to store access. Any other value — `None`, a wrong
-    # type, an unknown string — is a library-contract defect that must become
-    # `internal-error` BEFORE the database is opened, never a silent success
-    # that migrates with no attempted audit record.
-    if result != "activated":
+            f"{detail}")
+    # Round 16, finding 1: a receipt claiming `activated` is NOT proof — the
+    # reference store must actually hold the operation row AND its attempted
+    # event. A mock that returns the token without publishing is caught here,
+    # BEFORE any store access, and becomes `internal-error`.
+    if a.operation_id not in _AUDIT._ops or \
+            (a.operation_id, _ATTEMPTED_EVENT) not in _AUDIT._events:
         raise _ActivationResultError(
-            f"audit activate() returned {_safe_repr(result)}, not a closed "
-            f"activation result ('activated' | 'duplicate')")
+            f"activation reported 'activated' but no durable operation row / "
+            f"attempted event exists for {a.operation_id!r}")
 
 
 # --------------------------------------------------------------------------
@@ -2339,6 +2428,25 @@ class _ConnectionCleanupError(Exception):
     `invalid-store` — a close defect is not invalid store bytes."""
 
 
+def _read_sink_committed(exc, operation_id, terminal):
+    """Read the AUDIT-write commit status from a terminal-sink failure, treating
+    the exception's metadata as an UNTRUSTED seam (round 16, finding 4: v17 did
+    `getattr(exc, "committed", ...)` on any exception, so a `committed` property
+    that itself RAISED leaked a third raw exception after the store committed).
+    Only a RECOGNIZED typed exception carries commit status, and the access is
+    guarded — a missing, malformed, or exploding accessor is `None` (unknown)."""
+    if isinstance(exc, AuditStorageUnavailable):
+        try:
+            v = exc.committed
+        except BaseException:                  # a hostile/defective accessor
+            return None
+        return v if (v is None or type(v) is bool) else None
+    # An unrecognized exception (a raw OSError from the in-process draft) carries
+    # no protocol commit status: the draft reads its own state; a production
+    # sink that cannot tell reports None.
+    return True if (operation_id, terminal) in _AUDIT._events else False
+
+
 def _write_terminal(out, outcome, state, authority) -> None:
     """Write the consumed operation's one terminal event. On a write failure
     raise `MigrationAuditWriteError` carrying the same validated `TerminalFacts`
@@ -2360,29 +2468,41 @@ def _write_terminal(out, outcome, state, authority) -> None:
         None, None, "unknown", None)
     terminal = ("migration_completed" if outcome in ("migrated", "current")
                 else "migration_failed")
+
+    def _fail(exc, audit_committed):
+        raise MigrationAuditWriteError(
+            operation_id=authority.operation_id,
+            store_path=authority.store_path, facts=safe_facts,
+            audit_committed=audit_committed, cause=exc) from exc
+
     try:
-        _AUDIT.record_terminal(
+        receipt = _AUDIT.record_terminal(
             authority.operation_id, terminal,
             {"outcome": outcome, "occurred_at":
              canonical_timestamp(datetime.now(timezone.utc)), **store})
     except MigrationAuditWriteError:
         raise
     except Exception as exc:
-        # Round 15, correction A: PRESERVE the sink's own commit status when it
-        # carries one (a typed terminal-storage exception's `.committed`) —
-        # never infer over it. Only when the exception carries nothing (a raw
-        # OSError from the in-process draft) does the draft read its own state;
-        # a production sink that cannot tell reports None.
-        supplied = getattr(exc, "committed", _MISSING)
-        if supplied is None or type(supplied) is bool:
-            audit_committed = supplied
-        else:
-            landed = (authority.operation_id, terminal) in _AUDIT._events
-            audit_committed = True if landed else False
-        raise MigrationAuditWriteError(
-            operation_id=authority.operation_id,
-            store_path=authority.store_path, facts=safe_facts,
-            audit_committed=audit_committed, cause=exc) from exc
+        # Round 15 corr A + round 16 finding 4: preserve the sink's own commit
+        # status when a RECOGNIZED typed exception carries it — but any metadata
+        # access is an UNTRUSTED seam, so read it under protection; an accessor
+        # that itself raises must never replace the write failure.
+        audit_committed = _read_sink_committed(exc, authority.operation_id,
+                                               terminal)
+        _fail(exc, audit_committed)
+        return
+    # Round 16, finding 2: a `None`/malformed/contradictory receipt — or a
+    # terminal event that did not actually land — is a silent-no-op sink, and
+    # MUST raise, never return migration success.
+    if type(receipt) is not TerminalReceipt \
+            or receipt.operation_id != authority.operation_id \
+            or receipt.event != terminal or receipt.status != "recorded" \
+            or (authority.operation_id, terminal) not in _AUDIT._events:
+        _fail(RuntimeError(
+            f"terminal sink returned {_safe_repr(receipt)}, not a matching "
+            f"TerminalReceipt with a published event"),
+            audit_committed=getattr(receipt, "audit_committed", None)
+            if type(receipt) is TerminalReceipt else None)
 
 
 def _run(path, busy_timeout_ms: int, migrating: bool,
@@ -2532,6 +2652,23 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                         conn = sqlite3.connect(canonical,
                                                timeout=busy_timeout_ms / 1000)
                 except sqlite3.Error as exc:
+                    # Round 16, finding 5: the pre-consumption `lstat` can go
+                    # STALE (the source deleted between the presence check and
+                    # this mode=rw open). Re-check with a FRESH exception-bearing
+                    # stat — a confirmed absence is a vanished source
+                    # (`migration-source-missing` / `missing`), not an
+                    # unopenable path. `mode=rw` still never re-creates it.
+                    if migrating:
+                        try:
+                            os.lstat(canonical)
+                        except FileNotFoundError:
+                            state["source_absent"] = True
+                            return Outcome(
+                                "migration-source-missing",
+                                f"the source at {canonical!r} vanished between "
+                                f"the presence check and the open")
+                        except OSError:
+                            pass       # unobservable → store-unopenable/unknown
                     return Outcome("store-unopenable",
                                    diagnostic=_safe_repr(exc))
                 state["opened"] = True           # the store opened successfully
@@ -2569,15 +2706,21 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                                                       f"{_safe_repr(exc)}")
                         return Outcome("invalid-store",
                                        diagnostic=_safe_repr(exc))
-                    # Round 15, finding 2: the kernel result is a library
-                    # contract — validate it before trusting it, so a malformed
-                    # return terminalizes as `internal-error` rather than
-                    # escaping as an `AttributeError` from terminal derivation.
-                    if not _valid_open_result(label):
+                    # Round 15 f2 + round 16 f3: the kernel result is a
+                    # library contract — validate it COMPLETELY and mode-aware
+                    # before trusting it. A semantically contradictory but
+                    # well-typed result (`migrated`/¬changed, `created` in
+                    # migrate mode, `migrated`/v999) terminalizes as
+                    # `internal-error`, never escapes and never calls the audit
+                    # store with an invalid payload masquerading as an outage.
+                    rp = _open_result_problems(
+                        label, migrating,
+                        authority.to_version if migrating else sv.SCHEMA_VERSION,
+                        state.get("facts"))
+                    if rp:
                         return Outcome(
                             "internal-error",
-                            diagnostic=f"kernel returned a malformed result: "
-                                       f"{_safe_repr(label)}")
+                            diagnostic="kernel result invalid: " + "; ".join(rp))
                     state["facts"] = label       # belt and suspenders
                     return Outcome(label)
                 finally:

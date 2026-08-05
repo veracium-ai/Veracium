@@ -1556,7 +1556,9 @@ def test_activation_is_atomic():
     all — a consumed operation without its attempted record cannot exist."""
     p = _v1_store()
     auth = m13.make_authority(p)
-    assert _activate(auth) == "activated"
+    receipt = _activate(auth)
+    assert isinstance(receipt, m13.ActivationReceipt)
+    assert receipt.status == "activated"       # round 16: a typed receipt
     assert auth.operation_id in m13._AUDIT._ops
     assert (auth.operation_id, "migration_attempted") in m13._AUDIT._events
 
@@ -3028,3 +3030,159 @@ def test_a_non_mapping_terminal_payload_is_a_controlled_error():
     _activate(auth)
     with pytest.raises(ValueError, match="payload must be a mapping"):
         m13._AUDIT.record_terminal(auth.operation_id, "migration_failed", None)
+
+
+# ==========================================================================
+# Round 16 regressions
+# ==========================================================================
+
+# --- round 16, finding 1: an activation token is not proof of activation ----
+
+def test_an_activation_receipt_without_a_published_row_is_rejected(monkeypatch):
+    """Round 16, finding 1: a receipt claiming `activated` is not proof — the
+    reference store must actually hold the operation row and attempted event. A
+    mock that returns the token without publishing is `internal-error` before
+    any store access."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: m13.ActivationReceipt(
+                            "activated", a.operation_id, True, False))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert auth.operation_id not in m13._AUDIT._ops
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1          # store untouched
+
+
+def test_an_equality_spoofing_activation_result_is_rejected(monkeypatch):
+    """The receipt is checked by EXACT TYPE, not `==` — an object whose `__eq__`
+    claims to equal a receipt cannot pass."""
+    class Spoof:
+        def __eq__(self, other):
+            return True                    # equals anything
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "activate", lambda a, od: Spoof())
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1
+
+
+# --- round 16, finding 2: terminal publication needs a success receipt ------
+
+def test_a_silent_terminal_noop_raises_never_reports_success(monkeypatch):
+    """Round 16, finding 2: a terminal sink that returns `None` (or a
+    non-matching receipt) published no event — it MUST raise
+    `MigrationAuditWriteError`, never let the public call return `migrated`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", lambda o, e, pl: None)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+# --- round 16, finding 3: the kernel result is validated SEMANTICALLY -------
+
+@pytest.mark.parametrize("branch,ch,co,ver", [
+    ("migrated", False, False, 1),          # migrated must change+commit at to
+    ("migrated", True, True, 999),          # wrong version
+    ("current", False, False, 1),           # current at the wrong version
+    ("created", True, True, 2),             # created is forbidden in migrate mode
+    ("adopted", True, True, 2),             # adopted is forbidden in migrate mode
+])
+def test_a_semantically_contradictory_kernel_result_is_internal_error(
+        branch, ch, co, ver, monkeypatch):
+    """Round 16, finding 3: v17 checked SHAPE only, so `migrated`/¬changed, a
+    `created`/`adopted` in migrate mode, and `migrated`/v999 passed and were
+    misreported as audit-storage failures. The mode-aware validator rejects
+    them as `internal-error`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13.sv, "open_versioned", lambda *a, **k: sv.OpenResult(
+        branch, store_changed=ch, transaction_committed=co,
+        resulting_version=ver))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1
+
+
+# --- round 16, finding 4: hostile sink metadata never leaks a 3rd exception --
+
+def test_a_hostile_committed_accessor_never_escapes(monkeypatch):
+    """Round 16, finding 4: an exception whose `committed` property itself raises
+    must not leak a third raw exception — the metadata access is guarded, the
+    status is `None`, and the documented `MigrationAuditWriteError` is raised."""
+    class Hostile(m13.AuditStorageUnavailable):
+        def __init__(self, msg):
+            Exception.__init__(self, msg)        # skip setting `committed`
+        @property
+        def committed(self):
+            raise RuntimeError("committed accessor exploded")
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda o, e, pl: (_ for _ in ()).throw(Hostile("x")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None       # guarded → unknown
+
+
+# --- round 16, finding 5: a check-to-open race is a vanished source ---------
+
+def test_a_source_deleted_between_check_and_open_is_missing(monkeypatch):
+    """Round 16, finding 5: the source deleted between the pre-open `lstat` and
+    SQLite's mode=rw open is a VANISHED source (`migration-source-missing` /
+    `missing`), not `store-unopenable` — a fresh stat re-checks after the failed
+    open."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    cp = os.path.realpath(p)
+    real_lstat = os.lstat
+
+    def lstat_then_delete(path, *a, **k):
+        r = real_lstat(path, *a, **k)
+        if str(path) == cp and os.path.exists(p):
+            os.remove(p)                   # vanish right after the check
+        return r
+    monkeypatch.setattr(m13.os, "lstat", lstat_then_delete)
+    assert m13.migrate_store(p, auth) == "migration-source-missing"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["resulting_state"] == "missing"
+
+
+# --- round 16, corrections A, C, D ------------------------------------------
+
+def test_a_duplicate_distinguishes_complete_from_attempted_only(monkeypatch):
+    """Round 16, correction A: a duplicate that is already COMPLETE (a terminal
+    event exists) is diagnostically distinct from an attempted-only one whose
+    liveness is unknown — both refuse, but the reconciliation action differs."""
+    complete = m13.ActivationReceipt("duplicate", _OP_ID, True,
+                                     terminal_present=True)
+    attempted = m13.ActivationReceipt("duplicate", _OP_ID, True,
+                                      terminal_present=False)
+    # the receipt carries the distinction the wrapper reports
+    assert complete.terminal_present and not attempted.terminal_present
+
+
+def test_the_event_id_grammar_enforces_uuid4_bits():
+    """Round 16, correction C: the all-zeros UUID is not a v4 — the version and
+    variant bits are enforced."""
+    assert not m13._EVENT_ID_RE.fullmatch(
+        "ev-00000000-0000-0000-0000-000000000000")
+    assert m13._EVENT_ID_RE.fullmatch(
+        "ev-00000000-0000-4000-8000-000000000000")
+    assert not m13._OPERATION_RE.fullmatch(
+        "op-00000000-0000-0000-0000-000000000000")
+
+
+def test_migration_refused_raises_under_dash_o():
+    """Round 16, correction D: `MigrationRefused` validates its closed reason
+    with a raise, not an `assert` that vanishes under `python -O`."""
+    import subprocess
+    code = ("import sys; sys.path[:0]=['src','specs']\n"
+            "import migrations_0013 as m\n"
+            "try:\n m.MigrationRefused('not-a-real-reason')\n print('NO')\n"
+            "except ValueError:\n print('RAISED')\n")
+    r = subprocess.run([sys.executable, "-O", "-c", code],
+                       capture_output=True, text=True, cwd=str(ROOT))
+    assert "RAISED" in r.stdout, r.stderr

@@ -55,6 +55,27 @@ _FROM, _TO = 1, 2
 _KNOWN = set(m.OUTCOMES) | set(m._AUDIT_ONLY_OUTCOMES)
 _STATES = set(m._RESULTING_STATES)
 
+# INDEPENDENT copy of the outcome→state map (round 16, correction B: the oracle
+# must NOT read `m._OUTCOME_TERMINAL_STATES`, or a wrong map appears identically
+# in validator and oracle and cannot disagree). This is a separate, hand-written
+# specification; when the contract changes, update BOTH and let the exhaustive
+# diff confirm they still agree. A wrong implementation map now DISAGREES here.
+_ORACLE_OUTCOME_STATES = {
+    "migrated": {"destination"},
+    "current": {"destination"},
+    "migration-source-missing": {"missing", "unaccepted"},
+    "migration-failed": {"source", "unknown"},
+    "migration-result-mismatch": {"source", "unknown"},
+    "migration-evidence-missing": {"source", "unknown"},
+    "migration-quiescence-required": {"source", "unknown"},
+    "internal-error": {"destination", "source", "unknown"},
+    "package-inconsistent": {"destination", "source", "unknown"},
+    "foreign-shape": {"unaccepted", "unknown"},
+    "newer": {"unaccepted", "unknown"},
+    "invalid-version": {"unaccepted", "unknown"},
+    "stamped-shape-mismatch": {"source", "unaccepted", "unknown"},
+}
+
 
 def _oracle(outcome, ch, co, state, ver):
     """Independent specification of a LEGAL terminal-facts tuple — flat rules,
@@ -83,8 +104,7 @@ def _oracle(outcome, ch, co, state, ver):
                 return False
     if outcome == "migrated" and not (ch is True and co is True):
         return False
-    if state not in m._OUTCOME_TERMINAL_STATES.get(outcome,
-                                                   frozenset({"unknown"})):
+    if state not in _ORACLE_OUTCOME_STATES.get(outcome, {"unknown"}):
         return False
     return True
 
@@ -260,8 +280,24 @@ def _returns(obj, name, value):
     return lambda: _install_attr(obj, name, lambda *a, **k: value)
 
 
+def _write_error_any(res, exc):
+    return (None if isinstance(exc, m.MigrationAuditWriteError)
+            else f"want MigrationAuditWriteError, got res={res!r} exc={exc!r}")
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
+    # --- round 16: a lying receipt / a silent no-op sink --------------------
+    # A receipt claiming 'activated' without publishing the row (round 16 f1).
+    ("activate-lies-without-publishing",
+     lambda: _install_attr(m._AUDIT, "activate",
+                           lambda a, od: m.ActivationReceipt(
+                               "activated", a.operation_id, True, False)),
+     _outcome_is("internal-error")),
+    # A terminal sink that returns None (no receipt, no event) (round 16 f2).
+    ("record_terminal-silent-noop",
+     _returns(m._AUDIT, "record_terminal", None),
+     _write_error_any),
     # --- round 15: bad RETURN values (not just raises) ----------------------
     ("activate-returns-None",
      _returns(m._AUDIT, "activate", None),
@@ -370,10 +406,27 @@ def test_every_fault_seam_preserves_the_invariants(name, install, expect):
     tp = _terminal_facts_problems(auth)
     if tp:
         errors.append("invalid terminal facts: " + "; ".join(tp))
+    # RECORD-COMPLETENESS invariants (round 16, correction B: the sweep must
+    # assert audit completeness UNIVERSALLY, or a false success / silent no-op
+    # slips through). An operation never has more than one terminal event, and a
+    # SUCCESS outcome must leave a durable operation row AND exactly one.
+    n_terminal = sum(1 for (oid, ev) in m._AUDIT._events
+                     if oid == auth.operation_id and ev in _TERMINAL_KINDS)
+    if n_terminal > 1:
+        errors.append(f"{n_terminal} terminal events for one operation")
+    if res in ("migrated", "current"):
+        if auth.operation_id not in m._AUDIT._ops:
+            errors.append(f"success outcome {res!r} but NO operation row")
+        if n_terminal != 1:
+            errors.append(f"success outcome {res!r} but {n_terminal} terminal "
+                          f"events (must be exactly one)")
     spec = expect(res, exc)
     if spec:
         errors.append(spec)
     assert not errors, f"[{name}] " + " | ".join(errors)
+
+
+_TERMINAL_KINDS = ("migration_completed", "migration_failed")
 
 
 class _CountsCloses:
