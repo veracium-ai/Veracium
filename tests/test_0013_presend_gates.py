@@ -280,6 +280,31 @@ def _returns(obj, name, value):
     return lambda: _install_attr(obj, name, lambda *a, **k: value)
 
 
+def _activate_wrong_binding():
+    """Publish a valid row bound to a DIFFERENT store, then return a normal
+    receipt (round 17, finding 1)."""
+    real = m._AUDIT.activate
+
+    def wrong(a, output_digest):
+        return real(a._replace(store_path="/tmp/wrong-binding.db"), output_digest)
+    m._AUDIT.activate = wrong
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
+def _terminal_wrong_payload():
+    """Publish an individually-valid but DIFFERENT terminal payload than the one
+    requested, then return a normal receipt (round 17, finding 2)."""
+    real = m._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        bad = dict(payload)
+        bad.update(outcome="current", store_changed=False,
+                   transaction_committed=False)
+        return real(operation_id, event, bad)
+    m._AUDIT.record_terminal = wrong
+    return lambda: setattr(m._AUDIT, "record_terminal", real)
+
+
 def _write_error_any(res, exc):
     return (None if isinstance(exc, m.MigrationAuditWriteError)
             else f"want MigrationAuditWriteError, got res={res!r} exc={exc!r}")
@@ -287,6 +312,15 @@ def _write_error_any(res, exc):
 
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
+    # --- round 17: content binding, not just existence ---------------------
+    # A row published for a DIFFERENT store than the authority (round 17 f1).
+    ("activate-binds-wrong-store",
+     _activate_wrong_binding,
+     _outcome_is("internal-error")),
+    # A terminal event with a DIFFERENT payload than requested (round 17 f2).
+    ("record_terminal-wrong-payload",
+     _terminal_wrong_payload,
+     _write_error_any),
     # --- round 16: a lying receipt / a silent no-op sink --------------------
     # A receipt claiming 'activated' without publishing the row (round 16 f1).
     ("activate-lies-without-publishing",
@@ -415,11 +449,26 @@ def test_every_fault_seam_preserves_the_invariants(name, install, expect):
     if n_terminal > 1:
         errors.append(f"{n_terminal} terminal events for one operation")
     if res in ("migrated", "current"):
-        if auth.operation_id not in m._AUDIT._ops:
+        row = m._AUDIT._ops.get(auth.operation_id)
+        if row is None:
             errors.append(f"success outcome {res!r} but NO operation row")
+        # CONTENT BINDING (round 17, correction C): the durable row must bind the
+        # exact authority store, and the terminal event must carry the requested
+        # outcome at the destination — existence and counts are not enough.
+        elif row.get("store_path") != auth.store_path:
+            errors.append(f"success row binds {row.get('store_path')!r}, not "
+                          f"the authority store {auth.store_path!r}")
         if n_terminal != 1:
             errors.append(f"success outcome {res!r} but {n_terminal} terminal "
                           f"events (must be exactly one)")
+        term = m._AUDIT._events.get((auth.operation_id, "migration_completed"))
+        if term is None:
+            errors.append(f"success outcome {res!r} but no completed event")
+        elif term.get("outcome") != res or term.get("resulting_state") != \
+                "destination":
+            errors.append(f"terminal event outcome/state "
+                          f"{term.get('outcome')!r}/{term.get('resulting_state')!r} "
+                          f"does not match the {res!r} success at the destination")
     spec = expect(res, exc)
     if spec:
         errors.append(spec)

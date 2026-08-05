@@ -5,28 +5,27 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v18)** — round 16: *architecture standing; v17 deferred on five
-> load-bearing gaps in the audit reference plus four corrections*. All taken;
+> **in review (v19)** — round 17: *architecture standing; v18 deferred on five
+> load-bearing gaps in the audit reference plus three corrections*. All taken;
 > concrete migration, evidence-selection key, release identity, source
 > binding, one-snapshot reader, TEMP confinement and ordinary planner states
-> untouched, and the evidence artifact reproduces byte-for-byte: **activation
-> returns a VERIFIED typed receipt** — exact type + identity + the durable row
-> checked, so a token from a sink that published nothing is `internal-error`
-> before any store access (finding 1); **terminal publication returns a VERIFIED
-> receipt** — a silent no-op raises, never returns `migrated` (finding 2); **the
-> kernel result is validated COMPLETELY and mode-aware** — `migrated`/¬changed,
-> `created` in migrate mode and wrong-version reject (finding 3); **hostile sink
-> metadata never leaks a third exception** — the `committed` accessor is read
-> under guard (finding 4); and **a check-to-open source race is a vanished
-> source**, re-checked fresh after a failed open (finding 5). The pre-send gate
-> oracle is now genuinely independent and the seam sweep asserts record
-> completeness (your correction B); UUID-4 bits and an `-O`-safe raise are
-> enforced.
+> untouched, and the evidence artifact reproduces byte-for-byte. The theme —
+> verify CONTENT, not existence: **the activation receipt BINDS the exact
+> authority row** field-for-field, so a row for a different store is
+> `internal-error` (finding 1); **the terminal receipt BINDS the requested
+> payload**, so a different valid payload raises (finding 2); **the returned
+> branch must equal the committed branch** — `migrated`-returned-as-`current`
+> rejects (finding 3); **a malformed `on_committed` never erases a proven
+> commit** and leaves the commit state UNKNOWN, never a fabricated `False`
+> (finding 4); and **terminal derivation is inside a TOTAL boundary** — a defect
+> terminalizes `internal-error` from frozen facts, never a raw escape (finding
+> 5). Receipt scalars are fully validated; the pre-send gates now assert
+> request-to-record CONTENT binding (your correction C).
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v18 |
+| **Version** | v19 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -526,9 +525,22 @@ only, so `migrated`/¬changed, a `created`/`adopted` in migrate mode and
 `migrated` at the wrong version passed and were misreported as audit outages) —
 in migrate mode `migrated` must be changed+committed at `to_version`, `current`
 must be `(¬changed,¬committed)` or `(changed,committed)` at `to_version`,
-`created`/`adopted` are forbidden, and the result must agree with any
-`on_committed` facts. **The connection's cleanup scope begins the INSTANT it is
-opened** (round 15, finding 5) — every opened connection is closed exactly once.
+`created`/`adopted` are forbidden, and the result must agree with the
+`on_committed` facts INCLUDING THE BRANCH LABEL (round 17, finding 3: v18
+compared only the change/commit/version tuple, so a committed `migrated`
+returned as `current` passed — the branches are not interchangeable). **The
+`on_committed` sink itself VALIDATES and freezes** (round 17, finding 4: v18
+stored any object, so a malformed publication that suppressed the real one
+erased a proven commit; only a valid destination `OpenResult` now establishes
+committed facts, a defect is recorded separately and never asserts the store
+unchanged). **Terminal-fact derivation, receipt validation and publication after
+consumption are themselves a TOTAL boundary** (round 17, finding 5: v18 called
+`_write_terminal` after the protected region, so a derivation defect escaped raw
+and stranded a committed operation) — a defect terminalizes `internal-error`
+from previously-FROZEN facts, a write failure is `MigrationAuditWriteError`, no
+other class escapes, and a proven commit survives. **The connection's cleanup
+scope begins the INSTANT it is opened** (round 15, finding 5) — every opened
+connection is closed exactly once.
 Round 5 measured the v6 boundary starting too late — an embedded-NUL path
 escaped as `ValueError` from `lstat` and a mistyped `busy_timeout_ms` as
 `TypeError` from division, both BEFORE any mapping ran; a public entry point
@@ -643,8 +655,8 @@ table's `event_id` PRIMARY KEY would. The rules:
 |---|---|
 | duplicate operation id on activation | the authority IS consumed — `migration-quiescence-required` (round 7 split this from the outage case v8 conflated) |
 | audit storage unavailable before activation (the typed `AuditStorageUnavailable` ONLY) | its `committed` flag maps to THREE structurally distinct outcomes (round 11, correction A + round 12, finding 3: v13 collapsed `False` and `None` into one retryable outcome, and DEFAULTED `committed` to `False` so an omitted fact was fabricated as proven-not-written). `committed=False` (PROVEN not written) → **`migration-audit-unavailable`**, nothing consumed, a retry may safely re-present the authority. `committed=None` (UNKNOWN — the default; an omitted fact is never a fabricated `False`) → **`migration-audit-state-unknown`**, the authority MAY be consumed, so the host must query the durable `operation_id` before retrying. `committed=True` (the row WAS written, response lost) → the authority IS consumed → **`migration-quiescence-required`**, mint a fresh one, **AND the wrapper still writes a terminal event** (round 14, finding 2: v15 marked the operation consumed only on the normal return path, leaving a durably-consumed authority with just an attempted record). **A library/validation defect during activation is NONE of these** — it is `internal-error` (round 10, finding 4: v11 mislabelled an `AssertionError` as retryable) |
-| the activation result is not a valid typed RECEIPT | **`internal-error` BEFORE any store access** (round 15 f1 + round 16 f1: v17's equality check accepted an `__eq__`-spoofing object and — worse — accepted the exact token from a sink that published NO row). Activation returns a typed **`ActivationReceipt(status, operation_id, audit_committed, terminal_present)`**; the wrapper requires the EXACT type and matching `operation_id` (`is`/`type()`, not `==`) AND verifies the operation row and attempted event actually exist before proceeding. Only `status="activated"` proceeds; `duplicate` is `migration-quiescence-required`, its diagnostic distinguishing an already-COMPLETE operation (`terminal_present`) from an attempted-only one to reconcile via the durable `operation_id` (round 16, correction A) |
-| the terminal write returns no valid RECEIPT | **`MigrationAuditWriteError`** (round 16, finding 2: v17's `record_terminal` returned `None`, so a no-op sink let the public call report `migrated` with no terminal event). Terminal publication returns a typed **`TerminalReceipt(status, operation_id, event, audit_committed)`**; the wrapper requires the exact type, identity and event AND verifies the event landed. A missing, malformed or contradictory receipt raises, never returns success |
+| the activation result is not a valid receipt BOUND to the authority row | **`internal-error` BEFORE any store access**. Activation returns a typed **`ActivationReceipt`** whose `problems()` validates every scalar (round 17 corr B: an `activated`+`audit_committed=False` is impossible), and the wrapper VERIFIES the durable operation row BINDS the exact authority — `store_path`, release/backup refs, endpoints, ALL digests, the window, `state=attempted`, no terminal event (round 17, finding 1: v18 verified only that some row existed under the id, so a sink could bind a DIFFERENT store). `duplicate` is verified against the durable row and its `terminal_present` DERIVED from durable state, not trusted (round 17, correction A: a false `duplicate` left the authority usable) |
+| the terminal write returns no receipt BOUND to the requested payload | **`MigrationAuditWriteError`**. Terminal publication returns a typed **`TerminalReceipt`** (`problems()` total, round 17 corr B), and the wrapper VERIFIES the durable event EQUALS the requested payload field-for-field (round 17, finding 2: v18 checked only that SOME event existed under the key, so a sink could publish a different individually-valid payload and the public call still reported `migrated`). A missing, malformed, contradictory, or content-mismatched receipt raises, never returns success |
 | terminal write fails (any consumed ending) | **`MigrationAuditWriteError(operation_id, store_path, facts, audit_committed)`** carrying the SAME validated `TerminalFacts` the record would have held (round 13, finding 5). `facts.transaction_committed` (tri-state) is the STORE's commit; **`audit_committed` is the AUDIT WRITE's own commit** — `True`/`False`/`None` (round 14, finding 3). When a RECOGNIZED typed terminal-sink exception carries its own `.committed`, the wrapper PRESERVES it (round 15, correction A) — but the metadata is an UNTRUSTED seam, read under protection, so an accessor that itself raises yields `None` and NEVER leaks a third exception (round 16, finding 4: v17's bare `getattr` let a hostile `committed` property escape a raw `RuntimeError` after the store committed). `facts.resulting_state` says which of `destination`/`source`/`missing`/`unaccepted`/`unknown` the store is — `False`/`None` do NOT prove it unchanged. The exception validates its OWN context — an absolute NUL-free capped `store_path` and ADJACENT endpoints (`to == from + 1`), and `audit_committed` is exact-`bool`-or-`None`, never `1` (round 14 corr B + round 15 corr B). A terminal-write failure is ALWAYS this exception, never a raw `ValueError` (round 14, finding 5); a non-mapping payload is a controlled schema error, never a raw `TypeError` (round 15, correction C) |
 | `current` with no repair | terminal record written (outcome `current`); a terminal-write failure is `committed=False` — nothing changed |
 | `current` with a committed rebuildable repair | the repair transaction committed: a terminal-write failure is `committed=True`, resulting version unchanged. The kernel's `OpenResult.transaction_committed` carries this fact (round 8) — the draft demonstrates it; **the production planner must report the same fact if it repairs in a separate transaction** (§5e implementation obligation) |
@@ -841,6 +853,10 @@ tests at implementation.
 | **M75** the kernel result is validated COMPLETELY and mode-aware | `test_a_semantically_contradictory_kernel_result_is_internal_error` (5 cells) — **measured today**; `migrated`/¬changed, `created`/`adopted` in migrate mode, `migrated`/wrong-version reject (round 16, finding 3) |
 | **M76** hostile terminal-sink metadata never leaks a third exception; a check-to-open race is a vanished source | `test_a_hostile_committed_accessor_never_escapes` · `test_a_source_deleted_between_check_and_open_is_missing` — **measured today** (round 16, findings 4 & 5) |
 | **M77** the `event_id`/`operation_id` grammar enforces UUID-4 bits; `MigrationRefused` raises under `python -O` | `test_the_event_id_grammar_enforces_uuid4_bits` · `test_migration_refused_raises_under_dash_o` — **measured today** (round 16, corrections C & D) |
+| **M78** the activation receipt is BOUND to the exact authority row; a false duplicate leaves the authority usable | `test_activation_binds_the_exact_authority_row` · `test_a_false_duplicate_receipt_leaves_the_authority_usable` — **measured today** (round 17, finding 1 + correction A) |
+| **M79** the terminal receipt is BOUND to the requested payload; the returned branch must equal the committed branch | `test_the_terminal_receipt_binds_the_requested_payload` · `test_the_returned_branch_must_equal_the_committed_branch` — **measured today** (round 17, findings 2 & 3) |
+| **M80** a malformed `on_committed` never asserts no-change and never erases a proven commit; a terminal-derivation defect never escapes raw | `test_a_malformed_on_committed_publication_never_asserts_no_change` · `test_a_terminal_derivation_defect_never_escapes_raw` — **measured today** (round 17, findings 4 & 5) |
+| **M81** both receipts have TOTAL scalar `problems()` validators; the pre-send gates assert request-to-record CONTENT binding | `test_receipt_problems_validate_every_scalar` · `tests/test_0013_presend_gates.py` (the oracle is hand-written; the sweep asserts the row binds the authority store and the terminal event carries the requested outcome) — **measured today** (round 17, corrections B & C) |
 
 ---
 
@@ -886,47 +902,54 @@ mandatory requirement the first two-step spec must demonstrate.
 
 ## 9. Brief for the external reviewer
 
-**Round 17 of this spec. All five round-16 blockers and all four additional
-corrections taken; every probe reproduced first** — an activation success TOKEN
-(not proof) permitting migration with no row, terminal publication silently
-no-opping while the caller got `migrated`, a semantically contradictory but
-well-typed `OpenResult` misreported as an audit outage, a hostile
-`committed` accessor leaking a third exception, and a check-to-open source race.
-Per your v17 bar the concrete migration, evidence-selection key, release
-identity, source binding, one-snapshot reader, TEMP confinement and ordinary
-planner states are untouched; the evidence artifact reproduces byte-for-byte.
+**Round 18 of this spec. All five round-17 blockers and all three additional
+corrections taken; every probe reproduced first** — the receipts verified only
+that records EXISTED, not that they contained the requested facts: an activation
+row bound to a DIFFERENT store, a terminal event with a DIFFERENT payload, a
+returned branch contradicting the committed one, a malformed `on_committed`
+erasing a proven commit, and terminal derivation still outside the total
+boundary. Per your v18 bar the concrete migration, evidence-selection key,
+release identity, source binding, one-snapshot reader, TEMP confinement and
+ordinary planner states are untouched; the evidence artifact reproduces
+byte-for-byte.
 
-1. **Activation returns a verified typed RECEIPT** (finding 1): `activate()`
-   returns an `ActivationReceipt`; the wrapper requires the exact type and
-   matching `operation_id` (`type()`, not `==`, so an `__eq__` spoof fails) AND
-   verifies the operation row and attempted event actually exist. A token
-   without a published row is `internal-error` before any store access.
-2. **Terminal publication returns a verified RECEIPT** (finding 2):
-   `record_terminal()` returns a `TerminalReceipt`; the wrapper requires the
-   exact type/identity/event AND verifies the event landed. A silent no-op
-   raises `MigrationAuditWriteError`, never returns `migrated`.
-3. **The kernel result is validated COMPLETELY and mode-aware** (finding 3): in
-   migrate mode `migrated` → changed+committed at `to`, `current` → `(F,F)` or
-   `(T,T)` at `to`, `created`/`adopted` forbidden, and the result must agree
-   with `on_committed`. A contradiction is `internal-error`, never a call to the
-   audit store with an invalid payload reported as an outage.
-4. **Hostile sink metadata never leaks a third exception** (finding 4): the
-   exception's `.committed` is read only for a RECOGNIZED type, under guard — an
-   accessor that raises yields `None`, and the documented
-   `MigrationAuditWriteError` is always what escapes.
-5. **A check-to-open race is a vanished source** (finding 5): on a mode=rw open
-   failure the presence check re-runs FRESH — a confirmed ENOENT is
-   `migration-source-missing`/`missing`, not `store-unopenable`/`unknown`.
+The theme of your round is taken directly: **verify CONTENT, not existence.**
 
-**Additional corrections**: (A) an attempted-only duplicate is diagnostically
-distinguished from an already-complete one (`terminal_present`) for
-reconciliation. (B) **your critique of the gates is taken** — the truth-table
-oracle no longer reads `_OUTCOME_TERMINAL_STATES` (it is hand-written, so a
-wrong map now disagrees), and the seam sweep asserts RECORD COMPLETENESS (a
-success outcome leaves a row and exactly one terminal event) — which is what now
-catches the false-success and silent-no-op. (C) the UUID grammar enforces the
-version-4 and variant bits (the all-zeros UUID rejects). (D) `MigrationRefused`
-raises instead of `assert` (survives `python -O`).
+1. **The activation receipt BINDS the exact authority row** (finding 1): before
+   store access the wrapper verifies the durable row matches the authority
+   field-for-field — `store_path`, release/backup refs, endpoints, all digests,
+   the window, `state=attempted`, no terminal event. A row for a different store
+   is `internal-error`. A false `duplicate` is verified against the durable row,
+   and `terminal_present` is DERIVED from durable state (correction A).
+2. **The terminal receipt BINDS the requested payload** (finding 2): the wrapper
+   verifies the durable event equals the requested payload field-for-field. A
+   different but individually-valid payload raises `MigrationAuditWriteError`.
+3. **The returned branch must equal the committed branch** (finding 3): the
+   `OpenResult` comparison with `on_committed` now includes the LABEL, so a
+   committed `migrated` returned as `current` is `internal-error`.
+4. **A malformed `on_committed` never erases a proven commit** (finding 4): the
+   sink VALIDATES and freezes; only a valid destination result establishes
+   committed facts, a malformed publication is a recorded defect that leaves the
+   commit state UNKNOWN (`None`), never a fabricated `False`.
+5. **Terminal derivation is inside a TOTAL boundary** (finding 5): a derivation
+   or validation defect after consumption terminalizes `internal-error` from
+   previously-frozen facts; a write failure is `MigrationAuditWriteError`; no
+   other class escapes; a proven commit survives.
+
+**Additional corrections**: (B) both receipts have total scalar `problems()`
+validators (an `activated`+`audit_committed=False` and an `audit_committed=1`
+reject). (C) **your critique of the gates is again taken** — the seam sweep now
+asserts request-to-record CONTENT binding (the durable row binds the authority
+store; the terminal event carries the requested outcome at the destination), not
+just counts, and two content-mismatch seams are added — which is what now catches
+the wrong-store row and wrong-payload event.
+
+**A note on the recurring pattern:** for three rounds running your findings have
+been "the verification checks X but not the stronger X′" (nested→recursive,
+existence→completeness, completeness→content). Each round we close the layer and
+extend the mechanical gates to it. I flag this honestly: the draft audit
+reference is being hardened one adversarial layer at a time, and the gates now
+assert content equality — but I will not claim the layers are exhausted.
 
 **Where I am least confident:** the same one carried since round 8 — the
 `current`-with-repair `committed=True` cell rests on the kernel reporting
@@ -1291,3 +1314,27 @@ evidence artifact reproduces byte-for-byte.
 | B | the "independent" gate oracle read the implementation map, and the seam sweep did not assert record completeness | the oracle is hand-written (a wrong map disagrees); the sweep asserts a success outcome leaves a row and exactly one terminal event — now catches f1/f2 (M72) |
 | C | the UUID4 grammar accepted non-v4 values | version-4 and RFC-variant bits enforced on `event_id` and `operation_id` (M77) |
 | D | `MigrationRefused` relied on an `assert` that vanishes under `-O` | replaced with an explicit raise (M77) |
+
+---
+
+## 27. Round 17 review disposition
+
+**Verdict: architecture standing — the concrete v1→v2 migration, shared
+planner, evidence-selection key, release identity, source binding, one-snapshot
+reader, TEMP-confinement qualification and canonical timestamp contract remain
+approved; v19 deferred on five load-bearing gaps plus three corrections.** The
+resolution/refusal split and the bounded adjacent-migration claim remain
+approved. All taken; concrete migration and approved elements untouched; the
+evidence artifact reproduces byte-for-byte. The unifying theme — verify CONTENT,
+not existence — is adopted throughout.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | the activation receipt proved only that some row existed under the id — a sink could bind a DIFFERENT store | **the durable row is verified to BIND the exact authority** field-for-field before store access (M78) |
+| 2 | the terminal receipt proved only that some event existed under the key — a different valid payload passed | **the durable event is verified to EQUAL the requested payload** field-for-field (M79) |
+| 3 | the returned `OpenResult` could change the committed branch (`migrated`→`current`) when the fact tuple was equal | **the branch LABEL is part of the `on_committed` agreement** (M79) |
+| 4 | a malformed `on_committed` value erased a proven commit and was still treated as non-null commit evidence | **the sink validates and freezes**; a defect leaves the commit state UNKNOWN, never a fabricated `False`, and never erases a valid receipt (M80) |
+| 5 | terminal-fact derivation was outside the total boundary — a defect stranded a committed operation with a raw exception | **derivation/validation/publication after consumption is a total boundary** — `internal-error` from frozen facts or `MigrationAuditWriteError`, nothing else (M80) |
+| A | a false `duplicate` receipt was trusted without durable proof, leaving the authority usable | duplicates are verified against the durable row; `terminal_present` is derived from durable state (M78) |
+| B | receipt scalar fields were not fully validated and could leak a raw `TypeError` | both receipts have total `problems()` validators with exact typing and cross-field consistency (M81) |
+| C | the mechanical gates asserted counts/local validity, not request-to-record binding | the seam sweep asserts the row binds the authority store and the terminal event carries the requested outcome; two content-mismatch seams added (M81) |

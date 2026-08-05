@@ -2066,7 +2066,11 @@ def test_the_operation_row_schema_check_survives_dash_o():
 
 def _facts_state(**over):
     base = {"facts": None, "observed_version": None, "rolled_back": None,
-            "source_absent": False}
+            "source_absent": False, "committed_established": False,
+            "callback_defect": None, "opened": False}
+    # round 17: committed facts are only trusted when established at publication
+    if over.get("facts") is not None and "committed_established" not in over:
+        base["committed_established"] = True
     base.update(over)
     return base
 
@@ -3186,3 +3190,130 @@ def test_migration_refused_raises_under_dash_o():
     r = subprocess.run([sys.executable, "-O", "-c", code],
                        capture_output=True, text=True, cwd=str(ROOT))
     assert "RAISED" in r.stdout, r.stderr
+
+
+# ==========================================================================
+# Round 17 regressions — verify CONTENT, not just existence
+# ==========================================================================
+
+def test_activation_binds_the_exact_authority_row(monkeypatch):
+    """Round 17, finding 1: a receipt is not proof — the durable operation row
+    must BIND the exact authority. A row published for a different store is
+    `internal-error` before any store access."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: real(a._replace(
+                            store_path="/tmp/wrong-store.db"), od))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1          # store untouched
+
+
+def test_a_false_duplicate_receipt_leaves_the_authority_usable(monkeypatch):
+    """Round 17, correction A: a `duplicate` receipt with NO durable row is not
+    trusted — it is `internal-error`, and the same authority still works."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: m13.ActivationReceipt(
+                            "duplicate", a.operation_id, True, False))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    monkeypatch.setattr(m13._AUDIT, "activate", real)
+    assert m13.migrate_store(p, auth) == "migrated"        # never really consumed
+
+
+def test_the_terminal_receipt_binds_the_requested_payload(monkeypatch):
+    """Round 17, finding 2: a terminal event with a different (individually
+    valid) payload than requested must raise — the receipt attests exact
+    content, not merely existence under the key."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def wrong(operation_id, event, payload):
+        bad = dict(payload)
+        bad.update(outcome="current", store_changed=False,
+                   transaction_committed=False)
+        return real(operation_id, event, bad)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", wrong)
+    with pytest.raises(m13.MigrationAuditWriteError):
+        m13.migrate_store(p, auth)
+
+
+def test_the_returned_branch_must_equal_the_committed_branch(monkeypatch):
+    """Round 17, finding 3: a committed `migrated` returned as `current` (same
+    Boolean/version facts) is `internal-error` — the branch label is part of the
+    agreement with `on_committed`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13.sv.open_versioned
+
+    def relabel(*a, **k):
+        r = real(*a, **k)                      # commits migrated, fires callback
+        return sv.OpenResult("current", store_changed=r.store_changed,
+                             transaction_committed=r.transaction_committed,
+                             resulting_version=r.resulting_version)
+    monkeypatch.setattr(m13.sv, "open_versioned", relabel)
+    assert m13.migrate_store(p, auth) == "internal-error"
+
+
+def test_a_malformed_on_committed_publication_never_asserts_no_change(
+        monkeypatch):
+    """Round 17, finding 4: a malformed `on_committed` value (suppressing the
+    real one) is a defect — `internal-error` — and must NOT assert the store was
+    unchanged. The commit state is UNKNOWN (`None`), never a fabricated `False`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13.sv.open_versioned
+
+    def bad_callback(conn, path, **k):
+        rest = dict(k)
+        real_cb = rest.pop("on_committed")
+        return real(conn, path,
+                    on_committed=lambda r: real_cb("garbage-not-an-OpenResult"),
+                    **rest)
+    monkeypatch.setattr(m13.sv, "open_versioned", bad_callback)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["store_changed"] is None         # uncertain, NOT a fabricated False
+    assert ev["transaction_committed"] is None
+
+
+def test_a_terminal_derivation_defect_never_escapes_raw(monkeypatch):
+    """Round 17, finding 5: a defect in terminal-fact derivation after a
+    committed migration must not escape as a raw exception and strand the
+    operation — it terminalizes (or raises the documented write error)."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_terminal_facts",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("terminal derivation exploded")))
+    try:
+        m13.migrate_store(p, auth)
+    except m13.MigrationAuditWriteError:
+        pass                                   # a named escape is acceptable
+    except (AttributeError, TypeError, ValueError, RuntimeError) as exc:
+        pytest.fail(f"raw exception escaped: {type(exc).__name__}: {exc}")
+    # a terminal event was written from the frozen facts
+    assert any((auth.operation_id, e) in m13._AUDIT._events
+               for e in ("migration_completed", "migration_failed"))
+
+
+@pytest.mark.parametrize("receipt,args", [
+    (lambda: m13.ActivationReceipt("activated", _OP_ID, False, True),
+     ("activation",)),
+    (lambda: m13.TerminalReceipt("recorded", _OP_ID, "migration_completed", 1),
+     ("terminal",)),
+])
+def test_receipt_problems_validate_every_scalar(receipt, args):
+    """Round 17, correction B: both receipts have total `problems()` validators
+    with exact scalar typing and cross-field consistency (`activated` cannot be
+    `audit_committed=False`/`terminal_present=True`; `audit_committed=1` rejects)."""
+    r = receipt()
+    if args[0] == "activation":
+        assert r.problems(_OP_ID)
+    else:
+        assert r.problems(_OP_ID, "migration_completed")

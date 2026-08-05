@@ -99,6 +99,8 @@ REVIEWS = [
          verdict="architecture standing; deferred; closed activation-result vocab, kernel-result validation + total terminal wrapper, hook SQLite -> migration-failed, read-rejected -> unaccepted, connection cleanup scope; preserve supplied commit status, adjacency + exact audit_committed typing, total payload validation, real after-rollback regression", findings=5),
     dict(spec="0013", round=16, kind="external", date="2026-08-05",
          verdict="architecture standing; deferred; verified ActivationReceipt/TerminalReceipt, mode-aware OpenResult validation, guarded sink metadata, check-to-open race classification; duplicate reconciliation, independent gate oracle + record-completeness sweep, UUID4 bit enforcement, MigrationRefused raise", findings=5),
+    dict(spec="0013", round=17, kind="external", date="2026-08-05",
+         verdict="architecture standing; deferred; verify content not existence — activation receipt binds authority row, terminal receipt binds requested payload, returned branch equals committed branch, validating on_committed, total terminal-derivation boundary; duplicate durable verification, total receipt validators, request-to-record gate invariants", findings=5),
 
     # --- 0003 -------------------------------------------------------------
     dict(spec="0003", round=1, kind="internal", date="2026-08-01", verdict="adopted", findings=None),
