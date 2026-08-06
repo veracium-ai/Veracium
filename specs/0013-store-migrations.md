@@ -5,30 +5,33 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v25)** — round 22: *M-Q4 boundary respected; architecture
-> standing; v25 deferred on three load-bearing semantic gaps plus two
-> corrections* — all closed. **The COMPLETE durable lifecycle is classified before
-> every activation carrier** — an already-`terminal` operation retried with
-> `committed=False` is a consumed replay (`migration-quiescence-required`), never
-> a false "safe retry" (finding 1). **`on_committed` freezes a wrapper-owned
-> immutable copy and reads the branch from the exact underlying value** — a live
-> mutation after publication cannot change the facts, and an `OpenResult`
-> subclass cannot spoof its branch to make an untouched v1 store appear migrated
-> (finding 2). **`MigrationAuditWriteError` requires an exact `TerminalFacts` and
-> calls the base validator** — a subclass cannot replace the shared truth-table
-> validator on one of the two named public exceptions (finding 3). The top-level
-> authority validator exact-types every field before `.strip()`/regex
-> (correction A); the independent gate covers the new cases (correction B). No
-> finding relied on arbitrary private-state corruption or reopened a `0008`
-> obligation; the M-Q4 boundary (§8a) held. Concrete migration, evidence key,
-> release identity, source binding, one-snapshot reader, TEMP confinement and
-> ordinary planner states untouched; the evidence artifact reproduces
-> byte-for-byte.
+> **in review (v26)** — round 23: *M-Q4 boundary respected; architecture
+> standing; v26 deferred on three load-bearing semantic gaps plus two
+> corrections* — all closed. This round tightened the **`on_committed` PROTOCOL
+> contract** and the **exact authority carrier type**. **A successful migrate
+> result requires its mandatory `on_committed` publication** (equal
+> field-for-field) — a kernel returning `migrated` without the callback and
+> without touching the store is `internal-error`, never retroactively
+> establishing commit/position (finding 1). **`on_committed` validates the
+> mode-aware SEMANTIC cell before freezing** — a structurally valid but
+> impossible `migrated`/(F,F) publication is a defect, not a destination position
+> (finding 2), via one shared validator used by both the callback and the
+> returned result. **The authority carrier must be the EXACT `MigrationAuthority`
+> type before any field access** — a subclass (which can intercept attribute
+> reads to pass validation then raise after the real commit) is a closed refusal,
+> never a raw escape that strands the operation attempted-only (finding 3 +
+> correction A). The initial terminal fallback is moved inside the total
+> post-consumption boundary; the independent gate covers the new cases
+> (correction B). No finding relied on arbitrary private-state corruption or
+> reopened a `0008` obligation; the M-Q4 boundary (§8a) held. Concrete migration,
+> evidence key, release identity, source binding, one-snapshot reader, TEMP
+> confinement and ordinary planner states untouched; the evidence artifact
+> reproduces byte-for-byte.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v25 |
+| **Version** | v26 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -892,6 +895,9 @@ tests at implementation.
 | **M100** `on_committed` FREEZES a wrapper-owned immutable copy and reads the branch from the exact underlying value — a live mutation after publication cannot change the facts, and an `OpenResult` subclass cannot spoof its branch | `test_on_committed_facts_are_frozen_against_mutation` · `test_an_open_result_subclass_cannot_spoof_the_branch` · gate `open_versioned-subclass-spoofs-branch` — **measured today** (round 22, finding 2) |
 | **M101** `MigrationAuditWriteError` requires `type(facts) is TerminalFacts` and calls the BASE validator, and `type(operation_id) is str` — a subclass cannot replace the shared truth-table validator | `test_the_write_error_requires_exact_carrier_types` (facts-subclass, operation-id-subclass) — **measured today** (round 22, finding 3) |
 | **M102** the TOP-LEVEL authority validator exact-types every token/digest/path/timestamp field before `.strip()`/regex — a hostile `str` subclass stays a closed refusal | `test_authority_validation_is_total_over_hostile_str_subclasses` · gate `test_gate_authority_str_subclass_is_a_closed_refusal` — **measured today** (round 22, correction A) |
+| **M103** a successful migrate result REQUIRES its mandatory `on_committed` publication (equal field-for-field) — a kernel returning `migrated` without the callback is `internal-error`, store untouched, never retroactively establishing commit/position | `test_a_success_requires_an_on_committed_publication` · gate `open_versioned-success-without-callback` — **measured today** (round 23, finding 1) |
+| **M104** `on_committed` validates the mode-aware SEMANTIC cell (one shared `_cell_problems`, used by the callback and the returned-result check) BEFORE freezing — a `migrated`/(F,F) publication is a defect, not a destination position | `test_on_committed_validates_the_semantic_cell_before_freezing` · gate `open_versioned-impossible-callback-cell` — **measured today** (round 23, finding 2) |
+| **M105** the authority carrier must be the EXACT `MigrationAuthority` type before any field access (a subclass can intercept it) — a subclass is a closed refusal, never `internal-error` or a raw escape after commit; the initial terminal fallback is inside the total boundary | `test_a_migration_authority_subclass_is_a_closed_refusal` · `test_a_late_authority_getter_never_strands_a_committed_operation` · gates — **measured today** (round 23, finding 3 + correction A) |
 
 ---
 
@@ -997,48 +1003,45 @@ that any future database adapter implements the protocol.
 
 ## 9. Brief for the external reviewer
 
-**Round 23 of this spec. All three round-22 blockers and both corrections are
+**Round 24 of this spec. All three round-23 blockers and both corrections are
 closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The theme
-was *exact-typing and completeness at the boundaries where a carrier or a value
-had been trusted by shape rather than by exact identity.* Concrete migration,
-evidence-selection key, release identity, source binding, one-snapshot reader,
-TEMP confinement and ordinary planner states are untouched; the evidence artifact
-reproduces byte-for-byte.
+was the **`on_committed` protocol contract** and the **exact authority carrier
+type**. Concrete migration, evidence-selection key, release identity, source
+binding, one-snapshot reader, TEMP confinement and ordinary planner states are
+untouched; the evidence artifact reproduces byte-for-byte.
 
-1. **The complete durable LIFECYCLE is classified before every carrier**
-   (finding 1): the readback predicate recognised only a fresh `attempted`
-   activation, so an already-`terminal` operation looked like "no durable row"
-   and a `committed=False` carrier falsely advertised a safe retry. A new
-   `_durable_lifecycle` classifier (`none`/`attempted`/`terminal`/`malformed`)
-   runs before any carrier interpretation: a valid terminal or attempted-only
-   lifecycle is a consumed replay (`migration-quiescence-required`), a malformed
-   one is `internal-error`, and only a genuinely absent row may be
-   `migration-audit-unavailable`.
-2. **`on_committed` FREEZES a wrapper-owned copy, exact-typed** (finding 2): it
-   stored the live `OpenResult` (whose fields are mutable) and read the branch
-   from the overridable `str()`. It now builds a `_FrozenResult` — `type(r) is
-   OpenResult`, branch from the underlying value (`str.__str__`), fields copied —
-   so a post-publication mutation cannot change the facts and a subclass cannot
-   spoof its branch. The returned kernel result is exact-typed the same way and
-   compared field-for-field against the frozen copy with NO same-object identity
-   shortcut. An untouched v1 store can no longer be published as a committed v2
-   destination.
-3. **`MigrationAuditWriteError` requires an exact `TerminalFacts`** (finding 3):
-   it used `isinstance` and the overridable instance `problems()`, so a subclass
-   returning `[]` smuggled impossible caller-decision facts (`migrated` with no
-   commit at the source). It now requires `type(facts) is TerminalFacts`, calls
-   `TerminalFacts.problems(facts)` (the base validator), and requires
-   `type(operation_id) is str`.
+1. **A successful migrate result requires its mandatory `on_committed`
+   publication** (finding 1): the callback is the protocol proof a branch
+   resolved, and v25 compared against it only when it existed. A fake kernel that
+   returned a valid `migrated` WITHOUT publishing the callback (and without
+   touching the store) was accepted. Now every successful migrate result requires
+   exactly one valid publication equal to it field-for-field; its absence is
+   `internal-error` from independently-established facts, and the returned result
+   does not retroactively establish commit or position.
+2. **`on_committed` validates the mode-aware semantic cell BEFORE freezing**
+   (finding 2): `_frozen_from_open_result` exact-typed and copied but validated
+   only structure, so a `migrated`/(F,F) publication established a destination
+   position for a store still at v1 (the returned-result validator would reject
+   it, but the kernel raised before returning). One shared `_cell_problems` now
+   validates the migrate-mode cell (`migrated`→T/T, `current`→(F,F)|(T,T),
+   `created`/`adopted` forbidden) at BOTH the callback and the returned result, so
+   a value can never be accepted at one and rejected at the other.
+3. **The authority carrier must be the EXACT `MigrationAuthority` type** (finding
+   3 + correction A): `authority_static_problems` used `isinstance`, so a
+   `MigrationAuthority` subclass could intercept attribute access — pass
+   validation, then raise from a field getter AFTER the real commit, escaping the
+   initial `_fallback_terminal_facts` call (which was outside the terminal `try`)
+   and stranding the operation attempted-only; a simpler subclass was
+   misclassified `internal-error`. It now requires `type(a) is MigrationAuthority`
+   before any field access (a subclass is a closed `migration-quiescence-required`
+   refusal), and the initial fallback is moved inside the total post-consumption
+   boundary so the structure reflects the normative totality claim.
 
-**Corrections**: **(A)** the TOP-LEVEL `authority_static_problems` now exact-types
-every token/digest/path/timestamp field before `.strip()`/regex — v24 fixed the
-low-level row helpers but this gate still called `.strip()` first, so a hostile
-`str` subclass produced `internal-error` instead of a closed refusal. **(B)** the
-independent gate covers all five new cases.
+**Correction B**: the independent gate covers the three new cases
+(success-without-callback, impossible-callback-cell, authority subclass).
 
-**On the boundary.** Every finding was *inside* the six §8a properties — a value
-or carrier trusted by shape (`isinstance`, overridable `str()`/`problems()`, a
-live mutable object, a partial lifecycle predicate) rather than by exact identity
+**On the boundary.** Every finding was *inside* the six §8a properties — the
+protocol contract that the callback establishes facts, and the exact carrier type
 — and I treated each as a `0013` blocker. None required defending the reference's
 private state against arbitrary corruption; that remains a `0008` obligation.
 
@@ -1541,3 +1544,24 @@ resolution/refusal split, and finite M-Q4 acceptance framework remain approved.
 | 3 | `MigrationAuditWriteError` accepted a `TerminalFacts` subclass and invoked its overridable `problems()`, admitting impossible caller-decision facts | **`type(facts) is TerminalFacts` + `TerminalFacts.problems(facts)` (base) + `type(operation_id) is str`** (M101) |
 | A | the top-level authority validator called `.strip()`/regex before exact-type rejection, so a hostile `str` subclass was `internal-error` | **exact-type every token/digest/path/timestamp field first** — a closed refusal, never a library defect (M102) |
 | B | the independent gate omitted the five new cases | **added** — completed-lifecycle retry, on_committed mutation, OpenResult-subclass spoof, TerminalFacts subclass, authority `str` subclass (M99–M102) |
+
+---
+
+## 33. Round 23 review disposition
+
+**Verdict: M-Q4 boundary respected and applied as ruled; architecture standing;
+v26 deferred on three load-bearing semantic gaps plus two corrections — all
+closed.** No finding relied on private-state corruption or reopened a `0008`
+obligation. The gaps concerned the `on_committed` protocol contract (a success
+trusted without its mandatory publication; a publication frozen before its cell
+was validated) and the exact authority carrier type (a subclass that could
+intercept attribute access). The bounded adjacent-migration claim, resolution/
+refusal split, and finite M-Q4 acceptance framework remain approved.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | a semantically valid `OpenResult` was accepted without any `on_committed` publication, letting an untouched v1 store be reported migrated at v2 | **a successful migrate result requires exactly one valid publication equal to it**; its absence is `internal-error` from independently-established facts (M103) |
+| 2 | the callback freezer exact-typed and copied but did not apply the migrate-mode semantic table before establishing position — a `migrated`/(F,F) callback followed by a kernel error recorded a false destination-v2 state | **one shared `_cell_problems` validates the mode-aware cell at BOTH the callback and the returned result, before any fact is established** (M104) |
+| 3 | the top-level authority gate accepted `MigrationAuthority` subclasses; one could begin raising after the real commit and escape from the initial fallback outside the terminal `try`, stranding the operation attempted-only | **`type(a) is MigrationAuthority` before any field access** (a subclass is a closed refusal); **the initial fallback moved inside the total boundary** (M105) |
+| A | a simpler hostile authority subclass was misclassified `internal-error` before consumption | closed by the same exact-carrier-type check — a malformed authority is `migration-quiescence-required` (M105) |
+| B | the independent gate omitted the three fresh cases | **added** — success-without-callback, impossible-callback-cell, authority subclass (M103–M105) |

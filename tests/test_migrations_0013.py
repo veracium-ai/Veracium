@@ -3412,8 +3412,8 @@ def test_a_false_uncommitted_publication_never_suppresses_a_real_commit(
     auth = m13.make_authority(p)
     real = m13._make_on_committed
 
-    def double(state, to_v):
-        sink = real(state, to_v)
+    def double(state, to_v, migrating):
+        sink = real(state, to_v, migrating)
         fired = []
 
         def wrap(r):
@@ -3852,8 +3852,8 @@ def test_on_committed_facts_are_frozen_against_mutation(monkeypatch):
     m13.migrate_store(p, a1)                            # -> v2; a2 sees no-op current
     real = m13._make_on_committed
 
-    def mutating(state, to_v):
-        sink = real(state, to_v)
+    def mutating(state, to_v, migrating):
+        sink = real(state, to_v, migrating)
 
         def wrap(r):
             sink(r)                                     # publish current/F/F
@@ -3928,3 +3928,82 @@ def test_authority_validation_is_total_over_hostile_str_subclasses():
     p = _v1_store()
     auth = m13.make_authority(p)._replace(backup_ref=StripBoom("backup-ref-1"))
     assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+# --- round 23: the on_committed protocol contract; exact authority carrier ----
+
+def test_a_success_requires_an_on_committed_publication(monkeypatch):
+    """Round 23, finding 1: `on_committed` is the protocol proof a successful
+    branch resolved. A kernel that returns a valid `migrated` WITHOUT publishing
+    the callback (and without touching the store) must not be trusted — it is
+    `internal-error`, and the store is untouched."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13.sv, "open_versioned",
+                        lambda conn, path, **k: sv.OpenResult(
+                            "migrated", store_changed=True,
+                            transaction_committed=True, resulting_version=2))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_on_committed_validates_the_semantic_cell_before_freezing(monkeypatch):
+    """Round 23, finding 2: a structurally valid but semantically IMPOSSIBLE
+    `migrated`/(F,F) publication must be a defect, not a frozen destination
+    position — a later kernel error then records `unknown`, never a false
+    destination-v2 state for a store still at v1."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def bad_cell(conn, path, **k):
+        if k.get("on_committed"):
+            k["on_committed"](sv.OpenResult("migrated", store_changed=False,
+                                            transaction_committed=False,
+                                            resulting_version=2))
+        raise sqlite3.DatabaseError("boom after impossible callback")
+    monkeypatch.setattr(m13.sv, "open_versioned", bad_cell)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert ev["resulting_state"] == "unknown"          # NOT destination
+    assert ev["resulting_version"] is None
+    assert ev["store_changed"] is None
+
+
+def test_a_migration_authority_subclass_is_a_closed_refusal():
+    """Round 23, correction A + finding 3: a `MigrationAuthority` SUBCLASS (which
+    can intercept attribute access) is refused as a malformed authority —
+    `migration-quiescence-required`, never `internal-error`, before any field is
+    read."""
+    p = _v1_store()
+    base = m13.make_authority(p)
+
+    class Hostile(m13.MigrationAuthority):
+        def __getattribute__(self, name):
+            if name == "backup_ref":
+                raise RuntimeError("hostile getter boom")
+            return object.__getattribute__(self, name)
+    assert m13.migrate_store(p, Hostile(*base)) == "migration-quiescence-required"
+
+
+def test_a_late_authority_getter_never_strands_a_committed_operation():
+    """Round 23, finding 3: a `MigrationAuthority` subclass whose getter begins
+    raising AFTER the real commit must not escape raw and leave the operation
+    attempted-only — exact-typing rejects it before consumption, so the store is
+    never touched."""
+    p = _v1_store()
+    base = m13.make_authority(p)
+    armed = [False]
+
+    class HostileLate(m13.MigrationAuthority):
+        def __getattribute__(self, name):
+            if name == "from_version" and armed[0]:
+                raise RuntimeError("late authority getter boom")
+            return object.__getattribute__(self, name)
+    try:
+        out = m13.migrate_store(p, HostileLate(*base))
+    except Exception as exc:                            # noqa: BLE001
+        pytest.fail(f"raw escape: {type(exc).__name__}: {exc}")
+    assert out == "migration-quiescence-required"       # rejected pre-consumption
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1        # store untouched

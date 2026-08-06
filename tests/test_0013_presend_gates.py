@@ -393,8 +393,8 @@ def _on_committed_false_then_real():
     `migrated`/(T,T) (round 18, finding 3)."""
     real = m._make_on_committed
 
-    def double(state, to_v):
-        sink = real(state, to_v)
+    def double(state, to_v, migrating):
+        sink = real(state, to_v, migrating)
         fired = []
 
         def wrap(r):
@@ -597,6 +597,35 @@ def _open_versioned_subclass_spoof():
     return lambda: setattr(m.sv, "open_versioned", real)
 
 
+# --- round 23: the on_committed protocol contract ---------------------------
+
+def _open_versioned_no_callback():
+    """Return a valid `migrated` result WITHOUT publishing `on_committed` and
+    without touching the store (round 23, finding 1)."""
+    real = m.sv.open_versioned
+
+    def wrong(conn, path, **k):
+        return sv.OpenResult("migrated", store_changed=True,
+                             transaction_committed=True, resulting_version=2)
+    m.sv.open_versioned = wrong
+    return lambda: setattr(m.sv, "open_versioned", real)
+
+
+def _open_versioned_impossible_cell():
+    """Publish a semantically impossible `migrated`/(F,F) callback, then raise
+    (round 23, finding 2)."""
+    real = m.sv.open_versioned
+
+    def wrong(conn, path, **k):
+        if k.get("on_committed"):
+            k["on_committed"](sv.OpenResult("migrated", store_changed=False,
+                                            transaction_committed=False,
+                                            resulting_version=2))
+        raise sqlite3.DatabaseError("boom after impossible callback")
+    m.sv.open_versioned = wrong
+    return lambda: setattr(m.sv, "open_versioned", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -667,6 +696,14 @@ _INJECTIONS = [
     # round 22, finding 2: an OpenResult subclass cannot spoof the branch.
     ("open_versioned-subclass-spoofs-branch",
      _open_versioned_subclass_spoof,
+     _outcome_is("internal-error")),
+    # round 23, finding 1: a success without an on_committed publication.
+    ("open_versioned-success-without-callback",
+     _open_versioned_no_callback,
+     _outcome_is("internal-error")),
+    # round 23, finding 2: an impossible on_committed cell followed by an error.
+    ("open_versioned-impossible-callback-cell",
+     _open_versioned_impossible_cell,
      _outcome_is("internal-error")),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
@@ -1013,8 +1050,8 @@ def test_gate_on_committed_mutation_does_not_leak(monkeypatch):
     m.migrate_store(p, a1)
     real = m._make_on_committed
 
-    def mutating(state, to_v):
-        sink = real(state, to_v)
+    def mutating(state, to_v, migrating):
+        sink = real(state, to_v, migrating)
 
         def wrap(r):
             sink(r)
@@ -1107,3 +1144,42 @@ def test_receipt_and_facts_validators_are_total_over_a_hostile_subclass():
     assert m.TerminalReceipt(h, _OP, "migration_completed", True).problems(
         _OP, "migration_completed")
     assert m.TerminalFacts(h, 1, 2, True, True, h, 2).problems()
+
+
+# --- round 23, correction B: the on_committed / authority-carrier cases ------
+
+def test_gate_authority_subclass_is_a_closed_refusal():
+    """A `MigrationAuthority` subclass (which can intercept attribute access) is
+    a closed `migration-quiescence-required` refusal, never `internal-error` or a
+    raw escape — rejected before any field is read."""
+    p = _v1_store()
+    base = m.make_authority(p)
+
+    class Hostile(m.MigrationAuthority):
+        def __getattribute__(self, name):
+            if name == "backup_ref":
+                raise RuntimeError("hostile getter boom")
+            return object.__getattribute__(self, name)
+    assert m.migrate_store(p, Hostile(*base)) == "migration-quiescence-required"
+
+
+def test_gate_late_authority_getter_never_strands_the_operation():
+    """A `MigrationAuthority` subclass whose getter arms after commit must not
+    escape raw or leave the operation attempted-only — exact-typing rejects it
+    before consumption."""
+    p = _v1_store()
+    base = m.make_authority(p)
+    armed = [False]
+
+    class HostileLate(m.MigrationAuthority):
+        def __getattribute__(self, name):
+            if name == "from_version" and armed[0]:
+                raise RuntimeError("late getter boom")
+            return object.__getattribute__(self, name)
+    try:
+        out = m.migrate_store(p, HostileLate(*base))
+    except Exception as exc:                            # noqa: BLE001
+        pytest.fail(f"raw escape: {type(exc).__name__}: {exc}")
+    assert out == "migration-quiescence-required"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1

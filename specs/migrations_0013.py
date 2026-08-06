@@ -492,7 +492,31 @@ def _frozen_from_open_result(r):
                          r.resulting_version)
 
 
-def _make_on_committed(state, to_v):
+def _cell_problems(fr, migrating, to_v):
+    """The ONE mode-aware SEMANTIC-cell contract for a frozen success result
+    (round 23, finding 2: `on_committed` froze a STRUCTURALLY valid result before
+    checking its cell, so a `migrated`/(F,F) publication established a false
+    destination position). Shared by `on_committed` (freeze-time) AND the
+    returned-result validator so a value can never be accepted at one and
+    rejected at the other. Returns a reason string, or `None` if the cell is a
+    permitted destination outcome."""
+    branch, ch, co, ver = (fr.branch, fr.store_changed,
+                           fr.transaction_committed, fr.resulting_version)
+    if ver != to_v:
+        return f"resulting_version {ver} is not the destination v{to_v}"
+    if migrating:
+        if branch in ("created", "adopted"):
+            return f"a dedicated migration must never {branch!r} a store"
+        if branch == "migrated" and not (ch is True and co is True):
+            return (f"migrated must be changed+committed, got "
+                    f"changed={ch} committed={co}")
+        if branch == "current" and (ch, co) not in ((False, False), (True, True)):
+            return (f"current must be (F,F) or (T,T), got "
+                    f"changed={ch} committed={co}")
+    return None
+
+
+def _make_on_committed(state, to_v, migrating):
     """A VALIDATING commit sink (round 17, finding 4; round 18, finding 3). It
     accepts ONLY a valid success `OpenResult` at the destination and separates
     two facts the kernel conflates by always firing this sink after its COMMIT:
@@ -516,7 +540,11 @@ def _make_on_committed(state, to_v):
         # underlying value, fields exact-typed. A later mutation of `r` cannot
         # change what we stored, and a subclass spoofing its branch is refused.
         fr = _frozen_from_open_result(r)
-        if fr is None or fr.resulting_version != to_v:
+        # Round 23, finding 2: validate the mode-aware SEMANTIC cell BEFORE
+        # establishing any facts — a structurally valid but semantically
+        # impossible publication (`migrated`/(F,F)) must be a defect, not a
+        # frozen destination position.
+        if fr is None or _cell_problems(fr, migrating, to_v) is not None:
             state["callback_defect"] = (
                 state.get("callback_defect")
                 or f"on_committed given a malformed result: {_safe_repr(r)}")
@@ -561,28 +589,32 @@ def _open_result_problems(label, migrating, to_v, committed_facts) -> list:
     if fl is None:
         return [f"malformed OpenResult (not an exact valid OpenResult): "
                 f"{_safe_repr(label)}"]
-    branch, ch, co, ver = (fl.branch, fl.store_changed,
-                           fl.transaction_committed, fl.resulting_version)
     p = []
+    cell = _cell_problems(fl, migrating, to_v)   # the SHARED mode-aware contract
+    if cell is not None:
+        p.append(cell)
     if migrating:
-        if branch in ("created", "adopted"):
-            p.append(f"a dedicated migration must never {branch!r} a store")
-        elif branch == "migrated":
-            if not (ch is True and co is True and ver == to_v):
-                p.append(f"migrated must be changed+committed at v{to_v}, "
-                         f"got changed={ch} committed={co} v{ver}")
-        elif branch == "current":
-            if (ch, co) not in ((False, False), (True, True)) or ver != to_v:
-                p.append(f"current must be (F,F) or (T,T) at v{to_v}, got "
-                         f"changed={ch} committed={co} v{ver}")
-    # Consistency with the FROZEN facts on_committed already delivered, INCLUDING
-    # the branch (round 16 f3 + round 17 f3). Round 22, finding 2: the comparison
-    # is field-for-field against the immutable copy with NO same-object identity
-    # shortcut — a spoof returned to BOTH `on_committed` and the caller (the same
-    # object) is caught, and the frozen copy cannot have been mutated since.
-    if isinstance(committed_facts, _FrozenResult) and committed_facts != fl:
-        p.append(f"the returned result {branch!r}/{ch}/{co}/v{ver} contradicts "
-                 f"the on_committed branch {committed_facts.branch!r}")
+        # Round 23, finding 1: the kernel MUST publish `on_committed` on every
+        # successful branch — it is the protocol proof the branch resolved. Its
+        # ABSENCE is rejected (a fake kernel returned a valid `migrated` without
+        # ever committing or calling back). A present publication must EQUAL the
+        # returned result field-for-field (round 16 f3 + round 17 f3), compared
+        # against the immutable frozen copy with NO same-object identity shortcut.
+        if not isinstance(committed_facts, _FrozenResult):
+            p.append("a successful migrate result requires an on_committed "
+                     "publication; none was received — the result does not "
+                     "retroactively establish commit or position")
+        elif committed_facts != fl:
+            p.append(f"the returned result {fl.branch!r}/{fl.store_changed}/"
+                     f"{fl.transaction_committed}/v{fl.resulting_version} "
+                     f"contradicts the on_committed publication "
+                     f"{committed_facts.branch!r}/{committed_facts.store_changed}/"
+                     f"{committed_facts.transaction_committed}/"
+                     f"v{committed_facts.resulting_version}")
+    elif isinstance(committed_facts, _FrozenResult) and committed_facts != fl:
+        # non-migrate mode: agreement only when a publication exists.
+        p.append(f"the returned result contradicts the on_committed branch "
+                 f"{committed_facts.branch!r}")
     return p
 
 
@@ -1459,8 +1491,15 @@ def authority_static_problems(a, canonical: str, snapshot=None) -> list:
     no-op `current` branch was valid for one exact evidenced source. This is
     the acceptance gate: an authority passing it is CONSUMED before anything
     else happens (round 5). Total over any input."""
-    if not isinstance(a, MigrationAuthority):
-        return [f"authority is {type(a).__name__}, not a MigrationAuthority"]
+    # Round 23, finding 3 + correction A: require the EXACT carrier type BEFORE
+    # reading any field — a `MigrationAuthority` SUBCLASS can override
+    # `__getattribute__` to pass validation and then raise from a field getter
+    # AFTER the real commit (stranding the operation attempted-only), or raise
+    # immediately (misclassified `internal-error`). A subclass is a malformed
+    # authority → a closed `migration-quiescence-required` refusal.
+    if type(a) is not MigrationAuthority:
+        return [f"authority is {type(a).__name__}, not exactly a "
+                f"MigrationAuthority (subclasses can intercept field access)"]
     problems = []
     if type(a.quiesced) is not bool:
         problems.append(f"quiesced must be bool, is {type(a.quiesced).__name__}")
@@ -3091,15 +3130,23 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
     v19 recorded `internal-error` durably but still returned `migrated`, leaving
     the caller and the audit contradicting each other)."""
     fell_back = False
-    facts = _fallback_terminal_facts(out, state, authority)  # always-valid default
+    facts = None                               # set INSIDE the boundary below
 
     def _fail(exc, audit_committed):
         raise MigrationAuditWriteError(
             operation_id=authority.operation_id,
-            store_path=authority.store_path, facts=facts,
+            store_path=authority.store_path,
+            facts=(facts if facts is not None
+                   else _fallback_terminal_facts(out, state, authority)),
             audit_committed=_sane_committed(audit_committed), cause=exc) from exc
 
     try:
+        # Round 23, finding 3: the initial fallback construction is INSIDE the
+        # protected boundary — v25 built the always-valid default BEFORE the
+        # `try`, so a defect there (a hostile authority getter, a future helper
+        # bug) escaped raw and stranded a committed operation attempted-only. The
+        # normative claim is that the ENTIRE post-consumption sequence is total.
+        facts = _fallback_terminal_facts(out, state, authority)
         # Round 17, finding 5: derivation is inside the boundary — a raising
         # `_terminal_facts` or an invalid `TerminalFacts` falls back to
         # `internal-error` from FROZEN facts, never re-running the failing path.
@@ -3384,7 +3431,8 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                             # Round 17, finding 4: a VALIDATING commit sink —
                             # only a valid destination `OpenResult` establishes
                             # committed facts; a malformed publication is a defect.
-                            on_committed=_make_on_committed(state, to_v),
+                            on_committed=_make_on_committed(state, to_v,
+                                                            migrating),
                             on_rolled_back=lambda s:
                                 state.__setitem__("rolled_back", s))
                     except sqlite3.DatabaseError as exc:
