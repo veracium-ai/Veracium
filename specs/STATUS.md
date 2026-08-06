@@ -4,7 +4,7 @@
 
 # Spec status
 
-**13 specs · 2 accepted · 58 external review
+**13 specs · 2 accepted · 59 external review
 rounds · 4 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -25,7 +25,7 @@ is the number that decides what can be built.
 | **0010** | crash-safe consolidation | `draft` | 2026-08-03 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 | **0012** | who may renew a fact's currency | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
-| **0013** | on-disk store migrations | `in review` | 2026-08-06 | 0 | 25 | 0 | 0 | 0 | — |
+| **0013** | on-disk store migrations | `in review` | 2026-08-06 | 0 | 26 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

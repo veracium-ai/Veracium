@@ -4061,13 +4061,15 @@ def test_the_returned_result_is_frozen_once_no_reread(monkeypatch):
 
 def test_a_fallback_helper_defect_never_escapes_after_commit(monkeypatch):
     """Round 24, finding 3: the terminal rescue must not re-run a helper that has
-    already failed. Even if `_fallback_terminal_facts` raises consistently after
-    a real commit, no raw exception escapes and the operation is terminalized."""
+    already failed. Even if the shared `_store_facts_from_state` derivation helper
+    raises consistently after a real commit, no raw exception escapes and the
+    operation is terminalized (round 26: the rescue is fully inline, independent
+    of that helper family)."""
     p = _v1_store()
     auth = m13.make_authority(p)
-    monkeypatch.setattr(m13, "_fallback_terminal_facts",
+    monkeypatch.setattr(m13, "_store_facts_from_state",
                         lambda *a, **k: (_ for _ in ()).throw(
-                            RuntimeError("fallback boom")))
+                            RuntimeError("derivation boom")))
     try:
         m13.migrate_store(p, auth)
     except m13.MigrationAuditWriteError:
@@ -4176,3 +4178,109 @@ def test_static_resolution_exact_types_its_fields():
     art = [json.loads(m13.EVIDENCE_FILE.read_text()), "x" * 64]
     auth = base._replace(source_digest=EqBoom(base.source_digest))
     assert m13._static_resolution_problems(auth, art)   # no raise
+
+
+# --- round 26: verifier FALSE-NEGATIVES; response-loss; full fallback table ----
+
+def test_an_activation_verifier_false_negative_still_terminalizes(monkeypatch):
+    """Round 26, finding 1a: a valid `activated` receipt whose durable row EXISTS,
+    with a binding verifier that returns a clean FALSE-NEGATIVE (not raising),
+    must terminalize the consumed operation — not reclassify it as a prior
+    attempted-only replay."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_durable_row_binds_authority",
+                        lambda *a, **k: (False, "forced false-negative"))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert any(oid == auth.operation_id and ev in m13._TERMINAL_EVENTS
+               for (oid, ev) in m13._AUDIT._events)
+
+
+def test_a_terminal_verifier_false_negative_preserves_audit_commit(monkeypatch):
+    """Round 26, finding 1b: a valid `TerminalReceipt` with a transition verifier
+    that returns a clean FALSE-NEGATIVE preserves `audit_committed=True` and the
+    requested `migrated` facts."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_terminal_transition_complete",
+                        lambda *a, **k: (False, "forced false-negative"))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.facts.outcome == "migrated"
+    assert exc.value.audit_committed is True
+
+
+def test_committed_true_response_loss_survives_a_verifier_defect(monkeypatch):
+    """Round 26, finding 2: a recognized `committed=True` response-loss carrier
+    combined with a RAISING transition verifier preserves the requested `migrated`
+    facts and `audit_committed=True` — a raising verifier has not proved absence,
+    so the typed carrier is trusted."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def publish_then_raise(operation_id, event, payload):
+        real(operation_id, event, payload)
+        raise m13.AuditStorageUnavailable("response lost", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", publish_then_raise)
+    monkeypatch.setattr(m13, "_terminal_transition_complete",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("verifier boom")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.facts.outcome == "migrated"
+    assert exc.value.audit_committed is True
+
+
+def test_committed_true_with_a_clean_missing_transition_stays_none(monkeypatch):
+    """Round 26 boundary (round 21 finding 3 preserved): a `committed=True` carrier
+    with a CLEANLY-observed missing transition is contradictory — `None`, not
+    trusted `True`. Only a RAISING verifier trusts the carrier."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda *a: (_ for _ in ()).throw(
+                            m13.AuditStorageUnavailable("nothing written",
+                                                        committed=True)))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None
+
+
+def test_the_fallback_preserves_known_unchanged(monkeypatch):
+    """Round 26, finding 3: a defect before the store is opened, plus a derivation
+    helper failure, records `False/False/unknown` (KNOWN unchanged — no transaction
+    entered), not the `None/None` uncertainty cell."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_store_facts_from_state",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("derivation boom")))
+    monkeypatch.setattr(m13.sv, "runtime_supported",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            sqlite3.DatabaseError("gate boom")))
+    m13.migrate_store(p, auth)
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert (ev["store_changed"], ev["transaction_committed"],
+            ev["resulting_state"], ev["resulting_version"]) == \
+        (False, False, "unknown", None)
+
+
+def test_the_fallback_preserves_read_rejected_unaccepted(monkeypatch):
+    """Round 26, finding 3: a store the planner opened and READ but rejected as
+    not an accepted source, plus a derivation helper failure, records
+    `False/False/unaccepted` — not `unknown`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    c = sqlite3.connect(p)                              # corrupt the shape post-mint
+    c.execute("CREATE TABLE intruder (x)")
+    c.commit()
+    c.close()
+    monkeypatch.setattr(m13, "_store_facts_from_state",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("derivation boom")))
+    m13.migrate_store(p, auth)
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert (ev["store_changed"], ev["transaction_committed"],
+            ev["resulting_state"], ev["resulting_version"]) == \
+        (False, False, "unaccepted", None)

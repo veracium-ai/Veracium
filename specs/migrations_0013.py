@@ -2004,6 +2004,19 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
                 f"problems={rp})")
         return                                 # activated, valid, durable-bound
 
+    # Round 26, finding 1a: THIS call published a valid `activated` receipt whose
+    # durable row EXISTS, but the binding VERIFIER returned a clean FALSE-NEGATIVE
+    # (`bound` is False, not raised). Trust the receipt (M-Q4): the authority IS
+    # consumed → terminalize; do NOT reclassify it as a prior attempted-only
+    # replay. (A valid `activated` receipt with NO durable row is the round-16
+    # lie: not consumed, handled below.)
+    if receipt_says_activated and a.operation_id in _AUDIT._ops:
+        state["consumed"] = True
+        _snapshot()
+        raise _ActivationResultError(
+            f"activation binding verifier false-negative after a valid activated "
+            f"receipt whose durable row exists (authority IS consumed): {why}")
+
     # No FRESH activation by this call (nothing durable, or a `duplicate`, or a
     # completed/leftover row from a prior run). Round 22, finding 1: if a durable
     # row EXISTS for this operation and this call did not just publish it, its
@@ -3073,28 +3086,6 @@ def _read_sink_committed(exc, operation_id, terminal):
     return True if (operation_id, terminal) in _AUDIT._events else False
 
 
-def _fallback_terminal_facts(out, state, authority) -> "TerminalFacts":
-    """Best-known terminal facts built ONLY from previously-frozen immutable
-    state (round 17, finding 5: a fallback must NEVER re-run the failing
-    derivation). TOTAL over the complete established-state hierarchy (round 20,
-    finding 3: v22 preserved only a committed destination, discarding a proven
-    no-op destination or a proven-missing/unaccepted path to `unknown`). It
-    reconstructs the SAME store facts via `_store_facts_from_state` — the
-    canonical logic, not a divergent copy — under `internal-error`; any defect in
-    that reconstruction (or an invalid tuple) degrades to genuine `unknown`."""
-    frm, to = authority.from_version, authority.to_version
-    try:
-        s = _store_facts_from_state(out, state)
-        f = TerminalFacts("internal-error", frm, to, s["store_changed"],
-                          s["transaction_committed"], s["resulting_state"],
-                          s["resulting_version"])
-        if not f.problems():
-            return f
-    except Exception:
-        pass
-    return TerminalFacts("internal-error", frm, to, None, None, "unknown", None)
-
-
 def _safe_endpoints(authority):
     """Guarded (never-raising) adjacent endpoints for a rescue `TerminalFacts`."""
     try:
@@ -3107,14 +3098,15 @@ def _safe_endpoints(authority):
 
 
 def _safe_fallback_facts(out, state, authority) -> "TerminalFacts":
-    """A `TerminalFacts` that NEVER raises AND never erases a stronger proven fact
-    (round 24 finding 3 + round 25 finding 2). It reconstructs the strongest
-    KNOWN store state INLINE from the frozen `state` signals — deliberately
-    INDEPENDENT of the `_store_facts_from_state`/`_fallback_terminal_facts` helper
-    family, so a DEFECT in that family cannot erase a proven commit (v27's
-    `_safe_fallback_facts` re-derived through that family and degraded a proven
-    committed destination to `unknown`). This is the wrapper-owned best-known
-    baseline the total post-consumption boundary relies on."""
+    """A `TerminalFacts` that NEVER raises AND never erases an established fact
+    (round 24 finding 3; round 25 finding 2; round 26 finding 3). It reconstructs
+    the COMPLETE terminal truth table INLINE from the frozen `state` signals —
+    deliberately INDEPENDENT of the `_store_facts_from_state` derivation helper,
+    so a DEFECT in that helper cannot degrade ANY already-established cell. Covers
+    the whole table, not only the positive destination/source/missing proofs
+    (v28's rescue delegated the remaining cells back to the failing helper and
+    degraded a known never-entered transaction and a proven read-rejected store to
+    `(None, None, unknown)`)."""
     frm, to = _safe_endpoints(authority)
 
     def _tf(ch, co, st, ver):
@@ -3122,8 +3114,8 @@ def _safe_fallback_facts(out, state, authority) -> "TerminalFacts":
         return f if not f.problems() else None
 
     fr = state.get("facts")
-    # a PROVEN commit (T,T) or a validated no-op destination position — the store
-    # IS at the destination; this survives even a derivation-helper defect.
+    # 1. a PROVEN commit (T,T) or a validated no-op destination position (F,F) —
+    #    the store IS at the destination.
     if isinstance(fr, _FrozenResult) and (
             state.get("committed_established")
             or (state.get("position_established")
@@ -3132,28 +3124,37 @@ def _safe_fallback_facts(out, state, authority) -> "TerminalFacts":
                 fr.resulting_version)
         if f is not None:
             return f
-    if state.get("source_absent"):             # a path proven absent
+    # 2. a path proven ABSENT.
+    if state.get("source_absent"):
         f = _tf(False, False, "missing", None)
         if f is not None:
             return f
+    # 3. a source observed under the lock AND a CONFIRMED rollback.
     if state.get("observed_version") is not None \
             and state.get("rolled_back") == "rolled-back" \
-            and not state.get("callback_defect"):   # confirmed rolled-back source
+            and not state.get("callback_defect"):
         f = _tf(False, False, "source", state["observed_version"])
         if f is not None:
             return f
-    # Nothing stronger is INDEPENDENTLY provable here; try the richer helper for
-    # the remaining cells (`unaccepted` needs `out`), but a defect degrades to
-    # honest `unknown` — a rollback-failed/callback-defect leaves change UNKNOWN.
-    try:
-        return _fallback_terminal_facts(out, state, authority)
-    except Exception:
-        pass
+    # 4. a store OPENED and READ but not an accepted source (round 26, finding 3).
+    if state.get("opened") and out in _READ_REJECTED \
+            and not state.get("callback_defect"):
+        f = _tf(False, False, "unaccepted", None)
+        if f is not None:
+            return f
+    # 5. genuine UNCERTAINTY — a rollback that FAILED, or an `on_committed` defect
+    #    that may have masked a commit — leaves change/commit `None` (round 13 f1;
+    #    round 17 f4).
     if state.get("rolled_back") == "rollback-failed" \
             or state.get("callback_defect"):
         return TerminalFacts("internal-error", frm, to, None, None,
                              "unknown", None)
-    return TerminalFacts("internal-error", frm, to, None, None, "unknown", None)
+    # 6. otherwise — no transaction was entered (never opened, or opened with no
+    #    branch published) — the store is KNOWN unchanged: (F,F)/unknown, NOT the
+    #    `(None,None)` uncertainty cell (round 26, finding 3).
+    f = _tf(False, False, "unknown", None)
+    return f if f is not None else TerminalFacts(
+        "internal-error", frm, to, None, None, "unknown", None)
 
 
 def _durable_event_matches(durable, operation_id, event, payload) -> bool:
@@ -3183,24 +3184,33 @@ def _audit_commit_fact(operation_id, terminal, payload, state, sink_exc):
     then RAISED `committed=False` still produced `audit_committed=False` despite
     the observable durable commit). Precedence:
 
-        complete requested transition observed  → True
+        complete requested transition observed   → True
+        verifier RAISES + typed committed=True    → True  (round 26, finding 2)
         typed sink says definitely-not-written,
-          and no such transition                → False
-        otherwise                                → None (genuinely unknown)
+          and no such transition                  → False
+        otherwise                                 → None (genuinely unknown)
 
-    A weaker carrier (a lying receipt, a contradictory typed exception) never
-    overrides an observed durable transition."""
-    ok, _ = _terminal_transition_complete(operation_id, terminal, payload, state)
+    A weaker carrier never overrides an OBSERVED durable transition; but when the
+    wrapper's OWN verifier is DEFECTIVE (raises) and cannot observe, a recognized
+    typed `committed=True` response-loss carrier IS trusted (M-Q4)."""
+    try:
+        ok, _ = _terminal_transition_complete(operation_id, terminal, payload,
+                                              state)
+    except Exception:
+        ok = None                              # our verifier is defective (round 26 f2)
     if ok:
         return True
-    # No complete transition observed. It can be proven `False` only by a
-    # definitely-not-written signal (round 21, finding 3: a typed `committed=True`
-    # with NO transition is CONTRADICTORY adapter evidence — it can never be
-    # reported as proven `True`; it degrades to `None`). The guarded sink read is
-    # definitive in the draft (no durable event → `False`) and honest for
-    # production (a typed `committed=False`, else `None`).
-    if sink_exc is not None \
-            and _read_sink_committed(sink_exc, operation_id, terminal) is False:
+    c = (_read_sink_committed(sink_exc, operation_id, terminal)
+         if sink_exc is not None else None)
+    # Round 26, finding 2: the verifier could NOT observe (it raised) but a
+    # recognized typed carrier says `committed=True` — trust it. (A CLEANLY
+    # observed missing transition with `committed=True` stays CONTRADICTORY →
+    # `None`, round 21 finding 3: there `ok` is False, not None.)
+    if ok is None and isinstance(sink_exc, AuditStorageUnavailable) and c is True:
+        return True
+    # proven-not-written: a typed `committed=False`, or (in the draft) a raw
+    # exception with no durable event.
+    if c is False:
         return False
     return None
 
@@ -3231,11 +3241,11 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
             audit_committed=_sane_committed(audit_committed), cause=exc) from exc
 
     try:
-        # Round 23 finding 3 + round 24 finding 3: the initial fallback is INSIDE
-        # the protected boundary AND uses `_safe_fallback_facts`, which never
-        # raises — v26 re-ran `_fallback_terminal_facts` in the rescue handler, so
-        # a defect in THAT helper escaped raw and stranded a committed operation
-        # attempted-only. The ENTIRE post-consumption sequence is total.
+        # Round 23 finding 3 + round 24/26 finding 3: the initial fallback is
+        # INSIDE the protected boundary AND uses `_safe_fallback_facts`, which
+        # never raises and reconstructs the COMPLETE truth table inline — a defect
+        # in the derivation-helper family cannot strand or degrade it. The ENTIRE
+        # post-consumption sequence is total.
         facts = _safe_fallback_facts(out, state, authority)
         # Round 17, finding 5: derivation is inside the boundary — a raising
         # `_terminal_facts` or an invalid `TerminalFacts` falls back to
@@ -3298,15 +3308,20 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
         tok, twhy = _terminal_transition_complete(
             authority.operation_id, terminal, payload, state)
         if rprob or not tok:
-            # Round 19 finding 1 + round 20 finding 2: the audit-commit fact is
-            # the STRONGEST durable evidence — an observed complete transition is
-            # `True`, never a contradictory returned receipt.
+            # Round 26, finding 1: a VALID success receipt with a verifier
+            # FALSE-NEGATIVE (`tok` False, `rprob` empty) is trusted (M-Q4) — the
+            # sink reported a durable write, so `audit_committed=True` even though
+            # our own verifier returned a negative; the raise still surfaces the
+            # inconsistency loudly. Only an INVALID receipt falls back to the
+            # strongest-durable-evidence fact (round 19 f1 + round 20 f2).
             _fail(RuntimeError(
                 f"terminal receipt/transition does not bind the request: "
                 f"receipt={_safe_repr(receipt)}; problems={rprob}; "
                 f"transition={twhy}"),
-                audit_committed=_audit_commit_fact(
-                    authority.operation_id, terminal, payload, state, None))
+                audit_committed=(True if receipt_valid
+                                 else _audit_commit_fact(
+                                     authority.operation_id, terminal, payload,
+                                     state, None)))
     except MigrationAuditWriteError:
         raise
     except Exception as exc:

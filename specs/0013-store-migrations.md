@@ -5,33 +5,38 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v28)** — round 25: *M-Q4 boundary respected; architecture
-> standing; v28 deferred on three load-bearing semantic gaps plus two
-> corrections* — all closed. The theme: **already-proven facts survive a defect
-> in the wrapper's OWN verification helpers.** **A post-publication verifier
-> defect preserves the durable terminal result** — if the sink returned a valid
-> receipt, the write error carries the exact requested facts and
-> `audit_committed=True`, never rewriting a durable `migrated` into public
-> `internal-error` (finding 1). **The safe fallback never erases a proven
-> commit** — it reconstructs the strongest proven store state INDEPENDENTLY of
-> the derivation-helper family, so a defect in that family cannot degrade a
-> committed destination to `unknown` (finding 2). **A valid `activated` receipt
-> establishes provisional consumption**, so a defect in the activation binding
-> verifier still terminalizes the durably-consumed operation rather than
-> stranding it attempted-only — while a clean readback rejection (a receipt lie,
-> no row) stays not-consumed (finding 3). `_static_resolution_problems`
-> exact-types its digest fields (correction A); the independent gate covers the
-> new cases (correction B). Each rests on M-Q4's explicit allowance that a
-> conforming adapter's success receipt is a permitted assumption. No finding
-> relied on arbitrary private-state corruption or reopened a `0008` obligation;
-> the M-Q4 boundary (§8a) held. Concrete migration, evidence key, release
-> identity, source binding, one-snapshot reader, TEMP confinement and ordinary
-> planner states untouched; the evidence artifact reproduces byte-for-byte.
+> **in review (v29)** — round 26: *M-Q4 boundary respected; architecture
+> standing; v29 deferred on three load-bearing semantic gaps plus three
+> corrections* — all closed, this time over the FULL matrix. The theme: **a
+> verifier defect is symmetric — the wrapper trusts a valid receipt whether its
+> OWN verifier RAISES or returns a clean FALSE-negative.** **An activation-binding
+> verifier false-negative still consumes** — a valid `activated` receipt whose
+> durable row exists provisionally consumes even when the verifier returns
+> `(False, …)` (not only when it raises), so the operation terminalizes rather
+> than replaying attempted-only; a clean rejection with no row stays not-consumed
+> (finding 1a). **A terminal-transition verifier false-negative preserves
+> `audit_committed=True`** on a valid receipt (finding 1b). **A `committed=True`
+> response-loss survives a raising verifier** — when the verifier cannot observe,
+> a recognized typed `committed=True` carrier is trusted, while a cleanly-observed
+> missing transition with `committed=True` stays contradictory → `None` (finding
+> 2). **The safe fallback covers its full truth table INLINE** — it now reaches
+> `False/False/unaccepted` for a read-then-rejected store and `False/False/unknown`
+> for a known-unchanged store, independent of the derivation-helper family
+> (finding 3). Corrections: §5d prose now states ANY second publication — even
+> value-identical — is a defect (M106, correction A); the displayed
+> `internal-error` state set adds `missing`/`unaccepted` (correction B); the
+> independent gate covers the three fresh verifier-false-negative seams
+> (correction C). Each rests on M-Q4's explicit allowance that a conforming
+> adapter's success receipt is a permitted assumption. No finding relied on
+> arbitrary private-state corruption or reopened a `0008` obligation; the M-Q4
+> boundary (§8a) held. Concrete migration, evidence key, release identity, source
+> binding, one-snapshot reader, TEMP confinement and ordinary planner states
+> untouched; the evidence artifact reproduces byte-for-byte.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v28 |
+| **Version** | v29 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -540,9 +545,9 @@ commit from a no-commit position** (round 17, finding 4; round 18, finding 3:
 the kernel fires `on_committed` after its COMMIT even for a no-op `current` that
 changed nothing, so (T,T) is a genuine commit that must survive a later
 post-commit read error while a single (F,F) is only the store's resolved
-position — the kernel fires the sink at most once, so a second, DIFFERENT
-publication is a defect and a false `current`/(F,F) must never suppress a real
-`migrated`/(T,T); v19 kept whichever fired first). **Terminal-fact derivation,
+position — the kernel fires the sink at most once, so ANY second publication —
+even value-identical — is a defect (M106, round 24), and a false `current`/(F,F)
+must never suppress a real `migrated`/(T,T); v19 kept whichever fired first). **Terminal-fact derivation,
 receipt validation and the ENTIRE post-consumption sequence are a TOTAL
 boundary** (round 17, finding 5; round 18, finding 4: v19 left timestamp
 generation, a hostile receipt equality, and `MigrationAuditWriteError`
@@ -741,7 +746,10 @@ migrated / current              → destination
 migration-source-missing        → missing | unaccepted
 migration-failed / -result-mismatch / -evidence-missing / -quiescence-required
                                 → source | unknown
-internal-error                  → destination | source | unknown
+internal-error                  → destination | source | missing | unaccepted | unknown
+                                  (round 26, finding 3: the safe fallback reaches
+                                   `missing` for a proven-absent source and
+                                   `unaccepted` for a read-then-rejected store)
 package-inconsistent            → destination | source | unknown   (round 14, finding 5)
 foreign-shape / newer / invalid-version   → unaccepted | unknown   (round 15, finding 4)
 stamped-shape-mismatch          → source | unaccepted | unknown
@@ -899,9 +907,11 @@ tests at implementation.
 | **M104** `on_committed` validates the mode-aware SEMANTIC cell (one shared `_cell_problems`, used by the callback and the returned-result check) BEFORE freezing — a `migrated`/(F,F) publication is a defect, not a destination position | `test_on_committed_validates_the_semantic_cell_before_freezing` · gate `open_versioned-impossible-callback-cell` — **measured today** (round 23, finding 2) |
 | **M105** the authority carrier must be the EXACT `MigrationAuthority` type before any field access (a subclass can intercept it) — a subclass is a closed refusal, never `internal-error` or a raw escape after commit; the initial terminal fallback is inside the total boundary | `test_a_migration_authority_subclass_is_a_closed_refusal` · `test_a_late_authority_getter_never_strands_a_committed_operation` · gates — **measured today** (round 23, finding 3 + correction A) |
 | **M106** `on_committed` fires EXACTLY ONCE — ANY second publication, even value-identical, is a defect (`internal-error`), not an idempotent repeat; and the returned result is frozen EXACTLY ONCE (no re-read of the live label after validation) | `test_a_second_identical_on_committed_publication_is_a_defect` · `test_the_returned_result_is_frozen_once_no_reread` · gates `open_versioned-double-identical-callback` · `open_versioned-mutate-returned-after-callback` — **measured today** (round 24, findings 1 & 2) |
-| **M107** the terminal rescue NEVER re-runs a helper that has already failed — `_safe_fallback_facts` degrades a fallback defect to a minimal valid value, so a fallback-helper defect after commit is a wrapper-owned write error, never a raw escape; `_static_resolution_problems` exact-types its carrier | `test_a_fallback_helper_defect_never_escapes_after_commit` · `test_static_resolution_problems_is_total_over_an_authority_subclass` · gate `fallback-terminal-facts-defect` — **measured today** (round 24, finding 3 + correction A) |
+| **M107** the terminal rescue NEVER re-runs a helper that has already failed — `_safe_fallback_facts` degrades a fallback defect to a minimal valid value, so a fallback-helper defect after commit is a wrapper-owned write error, never a raw escape; `_static_resolution_problems` exact-types its carrier | `test_a_fallback_helper_defect_never_escapes_after_commit` · `test_static_resolution_problems_is_total_over_an_authority_subclass` · gate `store-fact-derivation-defect` — **measured today** (round 24, finding 3 + correction A) |
 | **M108** a defect in the wrapper's OWN post-publication verification preserves the exact requested/durable terminal facts and `audit_committed=True` (a proven commit survives a wrapper-verifier defect; M-Q4 permits trusting a valid success receipt); the safe fallback reconstructs the strongest proven store state INDEPENDENTLY of the derivation-helper family, never erasing a proven commit | `test_a_verifier_defect_preserves_the_durable_terminal_result` · `test_the_safe_fallback_never_erases_a_proven_commit` · gates `terminal-transition-verifier-defect` · `store-fact-derivation-defect` — **measured today** (round 25, findings 1 & 2) |
 | **M109** a valid `activated` receipt establishes PROVISIONAL consumption, so a defect in the activation binding VERIFIER still terminalizes the durably-consumed operation (never attempted-only); a clean readback rejection (a receipt lie, no durable row) stays not-consumed; `_static_resolution_problems` exact-types its digest fields | `test_an_activation_readback_defect_still_terminalizes` · `test_an_activated_receipt_lie_without_a_row_stays_not_consumed` · `test_static_resolution_exact_types_its_fields` · gate `activation-readback-verifier-defect` — **measured today** (round 25, finding 3 + correction A) |
+| **M110** a wrapper verifier defect is handled SYMMETRICALLY — a valid receipt is trusted whether the verifier RAISES or returns a clean FALSE-negative: an activation-binding false-negative over an existing durable row still consumes and terminalizes (never attempted-only); a terminal-transition false-negative on a valid receipt still reports `audit_committed=True`; and a `committed=True` response-loss under a verifier that cannot observe is trusted, while a CLEANLY-observed missing transition with `committed=True` stays contradictory → `None` | `test_an_activation_verifier_false_negative_still_terminalizes` · `test_a_terminal_verifier_false_negative_preserves_audit_commit` · `test_committed_true_response_loss_survives_a_verifier_defect` · `test_committed_true_with_a_clean_missing_transition_stays_none` · gates `activation-verifier-false-negative` · `terminal-verifier-false-negative` · `committed-true-loss-plus-verifier-raise` — **measured today** (round 26, findings 1 & 2) |
+| **M111** `_safe_fallback_facts` computes its FULL truth table INLINE from the frozen `state` signals — independent of the derivation-helper family — including the previously-implicit cells: a read-then-rejected store yields `False/False/unaccepted/None`, and a known-unchanged store yields `False/False/unknown/None`; the displayed `internal-error` state set therefore includes `missing` and `unaccepted` | `test_the_fallback_preserves_read_rejected_unaccepted` · `test_the_fallback_preserves_known_unchanged` — **measured today** (round 26, finding 3 + correction B) |
 
 ---
 
@@ -1007,43 +1017,44 @@ that any future database adapter implements the protocol.
 
 ## 9. Brief for the external reviewer
 
-**Round 26 of this spec. All three round-25 blockers and both corrections are
-closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The theme
-was **already-proven facts surviving a defect in the wrapper's OWN verification
-helpers** — resting on M-Q4's explicit allowance that a conforming adapter's
-success receipt is a permitted assumption. Concrete migration, evidence-selection
-key, release identity, source binding, one-snapshot reader, TEMP confinement and
-ordinary planner states are untouched; the evidence artifact reproduces
-byte-for-byte.
+**Round 27 of this spec. All three round-26 blockers and all three corrections
+are closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The
+theme was **the SYMMETRY of a verifier defect** — round 25 hardened the case where
+the wrapper's OWN verifier RAISES, and round 26 found the sibling cells where it
+returns a clean FALSE-negative (or where a `committed=True` carrier accompanies a
+raising verifier). Each rests on M-Q4's explicit allowance that a conforming
+adapter's success receipt is a permitted assumption. Concrete migration,
+evidence-selection key, release identity, source binding, one-snapshot reader,
+TEMP confinement and ordinary planner states are untouched; the evidence artifact
+reproduces byte-for-byte.
 
-1. **A post-publication verifier defect preserves the durable terminal result**
-   (finding 1): the outer catch-all unconditionally replaced the facts with
-   `internal-error` and `audit_committed=None`, even after the sink had returned
-   a valid receipt and published the exact `migrated`/(T,T) transition. It now
-   tracks the requested facts and whether a valid receipt was returned; a defect
-   in the wrapper's OWN verifier after a valid receipt raises
-   `MigrationAuditWriteError(facts=requested, audit_committed=True,
-   cause=defect)` — the defect stays loud, but a durable record and proven audit
-   commit are not erased.
-2. **The safe fallback never erases a proven commit** (finding 2):
-   `_safe_fallback_facts` re-derived through the same `_store_facts_from_state`
-   family whose defect triggered the fallback, degrading a proven committed
-   destination to `unknown`. It now reconstructs the strongest KNOWN store state
-   INLINE from the frozen `state` signals — deliberately independent of that
-   helper family — so a committed destination (or a proven no-op destination,
-   source, or missing path) survives a derivation-helper defect.
-3. **A valid `activated` receipt establishes provisional consumption** (finding
-   3): a defect in the activation binding VERIFIER (`_durable_row_binds_authority`
-   raising) left the durably-consumed operation attempted-only, because
-   `consumed` was set only after the readback. Now a valid `activated` receipt
-   provisionally consumes BEFORE the readback, so a verifier defect still
-   terminalizes; a clean readback rejection (a receipt lie with no durable row)
-   stays not-consumed and `internal-error`.
+1. **A verifier false-negative is trusted like a verifier raise** (finding 1):
+   **(1a)** an activation-binding verifier that returns `(False, …)` over an
+   EXISTING durable row after a valid `activated` receipt now provisionally
+   consumes and terminalizes (round 25 handled only the raising verifier); a valid
+   `activated` receipt with NO durable row still stays not-consumed. **(1b)** a
+   terminal-transition verifier returning a clean FALSE-negative on a VALID receipt
+   now preserves `audit_committed=True` (round 25's outer catch-all covered the
+   raise; this closes the `if rprob or not tok` return path).
+2. **A `committed=True` response-loss survives a raising verifier** (finding 2):
+   when `_terminal_transition_complete` RAISES (cannot observe) and the typed
+   carrier says `committed=True`, `_audit_commit_fact` now trusts it and returns
+   `True`; a CLEANLY-observed missing transition with `committed=True` still stays
+   contradictory → `None` (round 21 finding 3 preserved — there the verifier
+   returns `False`, not raises).
+3. **The safe fallback covers its full truth table INLINE** (finding 3):
+   `_safe_fallback_facts` now enumerates the previously-implicit cells directly —
+   a read-then-rejected store yields `False/False/unaccepted/None` and a
+   known-unchanged store yields `False/False/unknown/None` — independent of the
+   derivation-helper family.
 
-**Corrections**: **(A)** `_static_resolution_problems` now exact-types its digest
-fields too (an exact `MigrationAuthority` can still carry a hostile `str`
-subclass), so its "total over any input" claim holds. **(B)** the independent
-gate covers the three new wrapper-verifier-defect seams.
+**Corrections**: **(A)** §5d prose now states ANY second `on_committed`
+publication — even value-identical — is a defect (aligning the prose with M106).
+**(B)** the displayed `internal-error` state set adds `missing` and `unaccepted`
+(the two fresh fallback cells). **(C)** the independent gate covers the three new
+verifier-false-negative seams (`activation-verifier-false-negative`,
+`terminal-verifier-false-negative`, `committed-true-loss-plus-verifier-raise`),
+each proven non-vacuous by neutering its fix.
 
 **On the boundary.** Every finding was *inside* the six §8a properties — the
 noncontradictory-facts guarantee, the total post-consumption boundary, and the
@@ -1615,3 +1626,27 @@ approved.
 | 3 | a defect in the activation binding verifier after a real activation left the durably-consumed operation attempted-only | **a valid `activated` receipt provisionally consumes BEFORE the readback**, so a verifier defect terminalizes; a clean rejection (no row) stays not-consumed (M109) |
 | A | `_static_resolution_problems` claimed totality while an exact `MigrationAuthority` could carry a hostile `str`-subclass digest | **exact-type the digest fields** (M109) |
 | B | the independent gate omitted the three fresh cases | **added** — terminal-transition-verifier defect, store-fact-derivation defect, activation-readback-verifier defect (M108–M109) |
+
+---
+
+## 36. Round 26 review disposition
+
+**Verdict: M-Q4 boundary respected; architecture standing; v29 deferred on three
+load-bearing semantic gaps plus three corrections — all closed.** No finding
+relied on private-state corruption or reopened a `0008` obligation. The theme was
+the **symmetry** of a verifier defect: round 25 hardened the case where the
+wrapper's OWN verifier RAISES, and round 26 found the sibling cells where it
+returns a clean FALSE-negative — the recurring "checks X but not X′" shape, this
+round applied to my own round-25 fixes. Each closure covers the full truth-table
+matrix so the sibling cell stops leaking. The bounded adjacent-migration claim,
+resolution/refusal split, and finite M-Q4 acceptance framework remain approved.
+
+| # | finding | closed by |
+|---|---|---|
+| 1a | an activation-binding verifier returning a clean `(False, …)` over an existing durable row after a valid `activated` receipt stranded the operation attempted-only (round 25 handled only the RAISE) | **provisional consumption on a valid `activated` receipt with an existing durable row** covers the returns-False case too; a valid receipt with NO row stays not-consumed (M110) |
+| 1b | a terminal-transition verifier returning a clean FALSE-negative on a VALID receipt reported `audit_committed=None` on the `if rprob or not tok` path | **a valid receipt sets `audit_committed=True`** regardless of a false-negative verifier (M110) |
+| 2 | a `committed=True` response-loss accompanied by a RAISING transition verifier produced `audit_committed=None` (the verifier could not observe, and the typed carrier was ignored) | **`_audit_commit_fact` guards the verifier and trusts a typed `committed=True` when `ok is None`**; a cleanly-observed missing transition (`ok` False) stays contradictory → `None` (M110) |
+| 3 | `_safe_fallback_facts` omitted its `False/False/unaccepted` (read-then-rejected) and `False/False/unknown` (known-unchanged) cells | **the full truth table is computed INLINE** from the frozen `state` signals (M111) |
+| A | §5d prose said only a "second, DIFFERENT" publication is a defect, contradicting M106 | **prose aligned** — ANY second publication, even value-identical, is a defect |
+| B | the displayed `internal-error` state set omitted `missing`/`unaccepted`, now reachable via the fallback | **added** to the state table (M111) |
+| C | the independent gate omitted the three fresh verifier-false-negative seams | **added** — `activation-verifier-false-negative`, `terminal-verifier-false-negative`, `committed-true-loss-plus-verifier-raise`, each proven non-vacuous |

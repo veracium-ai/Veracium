@@ -666,15 +666,6 @@ def _open_versioned_mutate_after_callback():
     return lambda: setattr(m.sv, "open_versioned", real)
 
 
-def _fallback_terminal_facts_defect():
-    """Make `_fallback_terminal_facts` raise consistently (round 24, finding
-    3) — the rescue must not re-run it."""
-    real = m._fallback_terminal_facts
-
-    def boom(*a, **k):
-        raise RuntimeError("fallback boom")
-    m._fallback_terminal_facts = boom
-    return lambda: setattr(m, "_fallback_terminal_facts", real)
 
 
 # --- round 25: proven facts survive a wrapper VERIFIER defect ----------------
@@ -700,6 +691,43 @@ def _activate_readback_defect():
         raise RuntimeError("_durable_row_binds_authority boom")
     m._durable_row_binds_authority = boom
     return lambda: setattr(m, "_durable_row_binds_authority", real)
+
+
+# --- round 26: verifier FALSE-NEGATIVES; response-loss under a verifier defect --
+
+def _activation_verifier_false_negative():
+    """The activation binding verifier returns a clean FALSE-negative after a real
+    activation (round 26, finding 1a)."""
+    real = m._durable_row_binds_authority
+    m._durable_row_binds_authority = lambda *a, **k: (False, "forced false")
+    return lambda: setattr(m, "_durable_row_binds_authority", real)
+
+
+def _terminal_verifier_false_negative():
+    """The terminal-transition verifier returns a clean FALSE-negative after a
+    valid receipt (round 26, finding 1b)."""
+    real = m._terminal_transition_complete
+    m._terminal_transition_complete = lambda *a, **k: (False, "forced false")
+    return lambda: setattr(m, "_terminal_transition_complete", real)
+
+
+def _committed_true_loss_and_verifier_raise():
+    """The sink publishes the complete transition then raises `committed=True`,
+    AND the transition verifier raises (round 26, finding 2)."""
+    real_rt = m._AUDIT.record_terminal
+    real_ttc = m._terminal_transition_complete
+
+    def wrong(operation_id, event, payload):
+        real_rt(operation_id, event, payload)
+        raise m.AuditStorageUnavailable("response lost", committed=True)
+    m._AUDIT.record_terminal = wrong
+    m._terminal_transition_complete = lambda *a, **k: (_ for _ in ()).throw(
+        RuntimeError("verifier boom"))
+
+    def cleanup():
+        setattr(m._AUDIT, "record_terminal", real_rt)
+        setattr(m, "_terminal_transition_complete", real_ttc)
+    return cleanup
 
 
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
@@ -789,11 +817,6 @@ _INJECTIONS = [
     ("open_versioned-mutate-returned-after-callback",
      _open_versioned_mutate_after_callback,
      _outcome_is("internal-error")),
-    # round 24, finding 3: a fallback-helper defect never escapes raw after a
-    # real commit — the operation still terminalizes (migrated; derivation works).
-    ("fallback-terminal-facts-defect",
-     _fallback_terminal_facts_defect,
-     _outcome_is("migrated")),
     # round 25, finding 1: the terminal-transition verifier raises AFTER a valid
     # receipt — the write error preserves audit_committed=True (a proven commit
     # survives the wrapper's own defect).
@@ -812,6 +835,21 @@ _INJECTIONS = [
     ("activation-readback-verifier-defect",
      _activate_readback_defect,
      _outcome_is("internal-error")),
+    # round 26, finding 1a: the activation verifier returns a FALSE-negative —
+    # a valid activated receipt with a durable row is still consumed.
+    ("activation-verifier-false-negative",
+     _activation_verifier_false_negative,
+     _outcome_is("internal-error")),
+    # round 26, finding 1b: the terminal verifier returns a FALSE-negative — a
+    # valid receipt preserves audit_committed=True.
+    ("terminal-verifier-false-negative",
+     _terminal_verifier_false_negative,
+     _write_error(True)),
+    # round 26, finding 2: committed=True response loss + a raising verifier —
+    # the typed carrier is trusted (audit_committed=True).
+    ("committed-true-loss-plus-verifier-raise",
+     _committed_true_loss_and_verifier_raise,
+     _write_error(True)),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),
