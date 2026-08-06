@@ -1049,3 +1049,61 @@ def test_gate_authority_str_subclass_is_a_closed_refusal():
     p = _v1_store()
     auth = m.make_authority(p)._replace(backup_ref=StripBoom("backup-ref-1"))
     assert m.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+# ==========================================================================
+# Standing gate: TOTALITY over hostile `str` subclasses at EVERY public carrier
+# ==========================================================================
+# Rounds 18-22 each surfaced ONE "trusted by shape, not exact identity" site
+# (isinstance/overridable dunders) one at a time. This sweep mechanises the whole
+# CLASS: a `str` subclass whose EVERY relevant dunder (`__eq__`/`__ne__`/
+# `__hash__`/`__len__`/`.strip()`) raises, fed into every public carrier field,
+# must yield a CLOSED outcome or a total validator — never a raw escape or a
+# misclassified library defect. Extend this (not example tests) when a new public
+# carrier is added.
+
+class _TotallyHostileStr(str):
+    def __eq__(self, o):
+        raise RuntimeError("hostile __eq__")
+
+    def __ne__(self, o):
+        raise RuntimeError("hostile __ne__")
+
+    def __hash__(self):
+        raise RuntimeError("hostile __hash__")
+
+    def __len__(self):
+        raise RuntimeError("hostile __len__")
+
+    def strip(self, *a):
+        raise RuntimeError("hostile strip")
+
+
+_AUTHORITY_STR_FIELDS = ("backup_ref", "store_path", "source_digest",
+                         "migration_digest", "release_ref", "operation_id",
+                         "issued_at", "expires_at", "evidence_digest")
+
+
+@pytest.mark.parametrize("field", _AUTHORITY_STR_FIELDS)
+def test_every_authority_str_field_is_total_over_a_hostile_subclass(field):
+    """Every string-typed authority field, replaced with a fully-hostile `str`
+    subclass, yields a CLOSED outcome (no raw escape, no `internal-error`
+    misclassification) — the authority is invalid, so a closed refusal."""
+    p = _v1_store()
+    auth = m.make_authority(p)._replace(**{field: _TotallyHostileStr("x")})
+    out = m.migrate_store(p, auth)
+    assert out in m.OUTCOMES, f"{field}: non-closed outcome {out!r}"
+    # an invalid authority is a refusal, never a library defect.
+    assert out != "internal-error", f"{field}: misclassified as internal-error"
+
+
+def test_receipt_and_facts_validators_are_total_over_a_hostile_subclass():
+    """Both typed receipts and the shared `TerminalFacts` validate a fully-hostile
+    `str` subclass in every string field WITHOUT invoking its dunders — they
+    return a problem list, never raise."""
+    h = _TotallyHostileStr("x")
+    _OP = "op-00000000-0000-4000-8000-000000000000"
+    assert m.ActivationReceipt(h, _OP, True, False).problems(_OP)
+    assert m.TerminalReceipt(h, _OP, "migration_completed", True).problems(
+        _OP, "migration_completed")
+    assert m.TerminalFacts(h, 1, 2, True, True, h, 2).problems()

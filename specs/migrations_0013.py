@@ -3620,7 +3620,12 @@ def _registry():
     """Registry-only patch (no evidence install) — for generation and
     verification, which measure the runtime rather than consult the file."""
     with _DRAFT_LOCK:
-        assert _DRAFT["depth"] == 0, "generation inside an open draft context"
+        # Round 16, correction D discipline: an explicit raise, not an `assert`
+        # (which `python -O` strips) — entering the registry patch while a draft
+        # context is open would corrupt the globally-patched `sv.SCHEMAS`.
+        if _DRAFT["depth"] != 0:
+            raise RuntimeError("registry patch entered inside an open draft "
+                               "context — would corrupt sv.SCHEMAS")
         saved = sv.SCHEMAS, sv.SCHEMA_VERSION
         sv.SCHEMAS = dict(SCHEMAS_DRAFT)
         sv.SCHEMA_VERSION = DRAFT_SCHEMA_VERSION
