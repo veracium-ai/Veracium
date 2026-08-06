@@ -5,28 +5,27 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v29)** — round 26: *M-Q4 boundary respected; architecture
-> standing; v29 deferred on three load-bearing semantic gaps plus three
-> corrections* — all closed, this time over the FULL matrix. The theme: **a
-> verifier defect is symmetric — the wrapper trusts a valid receipt whether its
-> OWN verifier RAISES or returns a clean FALSE-negative.** **An activation-binding
-> verifier false-negative still consumes** — a valid `activated` receipt whose
-> durable row exists provisionally consumes even when the verifier returns
-> `(False, …)` (not only when it raises), so the operation terminalizes rather
-> than replaying attempted-only; a clean rejection with no row stays not-consumed
-> (finding 1a). **A terminal-transition verifier false-negative preserves
-> `audit_committed=True`** on a valid receipt (finding 1b). **A `committed=True`
-> response-loss survives a raising verifier** — when the verifier cannot observe,
-> a recognized typed `committed=True` carrier is trusted, while a cleanly-observed
-> missing transition with `committed=True` stays contradictory → `None` (finding
-> 2). **The safe fallback covers its full truth table INLINE** — it now reaches
-> `False/False/unaccepted` for a read-then-rejected store and `False/False/unknown`
-> for a known-unchanged store, independent of the derivation-helper family
-> (finding 3). Corrections: §5d prose now states ANY second publication — even
-> value-identical — is a defect (M106, correction A); the displayed
-> `internal-error` state set adds `missing`/`unaccepted` (correction B); the
-> independent gate covers the three fresh verifier-false-negative seams
-> (correction C). Each rests on M-Q4's explicit allowance that a conforming
+> **in review (v30)** — round 27: *M-Q4 boundary respected; architecture
+> standing; v30 deferred on three load-bearing semantic gaps plus two corrections*
+> — all closed. The theme extends round 26's verifier-defect symmetry to the
+> **`committed=True` response-loss carrier when the verifier CANNOT confirm**, and
+> hardens carrier trust to the EXACT protocol type. **An exact
+> `AuditStorageUnavailable(committed=True)` activation carrier is itself proof of
+> the durable write** — the authority IS consumed, so the operation terminalizes
+> as a `migration-quiescence-required` even when the readback verifier raises OR
+> returns a clean FALSE-negative (v29 stranded it attempted-only, or reported
+> `migration-audit-state-unknown`); a clean rejection with no such carrier stays
+> not-consumed (finding 1). **A `committed=True` terminal carrier plus a verifier
+> FALSE-negative over a real lifecycle preserves `audit_committed=True`** — the
+> INDEPENDENT durable presence of a well-formed terminal event is checked FIRST,
+> above the verifier boolean, so a false-negative cannot erase a real commit, and
+> a genuinely-absent transition stays contradictory → `None` (finding 2). **Only
+> the EXACT `AuditStorageUnavailable` type contributes trusted commit metadata** —
+> a subclass could override `committed`; it can no longer fabricate
+> `audit_committed=True` when no durable write occurred (finding 3). Corrections:
+> the "full matrix" claim is narrowed to the carrier matrix actually gated
+> (correction A); the independent gate adds the four missing carrier combinations
+> (correction B). Each rests on M-Q4's explicit allowance that a conforming
 > adapter's success receipt is a permitted assumption. No finding relied on
 > arbitrary private-state corruption or reopened a `0008` obligation; the M-Q4
 > boundary (§8a) held. Concrete migration, evidence key, release identity, source
@@ -36,7 +35,7 @@ Spec-Requires: 0007
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v29 |
+| **Version** | v30 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -912,6 +911,8 @@ tests at implementation.
 | **M109** a valid `activated` receipt establishes PROVISIONAL consumption, so a defect in the activation binding VERIFIER still terminalizes the durably-consumed operation (never attempted-only); a clean readback rejection (a receipt lie, no durable row) stays not-consumed; `_static_resolution_problems` exact-types its digest fields | `test_an_activation_readback_defect_still_terminalizes` · `test_an_activated_receipt_lie_without_a_row_stays_not_consumed` · `test_static_resolution_exact_types_its_fields` · gate `activation-readback-verifier-defect` — **measured today** (round 25, finding 3 + correction A) |
 | **M110** a wrapper verifier defect is handled SYMMETRICALLY — a valid receipt is trusted whether the verifier RAISES or returns a clean FALSE-negative: an activation-binding false-negative over an existing durable row still consumes and terminalizes (never attempted-only); a terminal-transition false-negative on a valid receipt still reports `audit_committed=True`; and a `committed=True` response-loss under a verifier that cannot observe is trusted, while a CLEANLY-observed missing transition with `committed=True` stays contradictory → `None` | `test_an_activation_verifier_false_negative_still_terminalizes` · `test_a_terminal_verifier_false_negative_preserves_audit_commit` · `test_committed_true_response_loss_survives_a_verifier_defect` · `test_committed_true_with_a_clean_missing_transition_stays_none` · gates `activation-verifier-false-negative` · `terminal-verifier-false-negative` · `committed-true-loss-plus-verifier-raise` — **measured today** (round 26, findings 1 & 2) |
 | **M111** `_safe_fallback_facts` computes its FULL truth table INLINE from the frozen `state` signals — independent of the derivation-helper family — including the previously-implicit cells: a read-then-rejected store yields `False/False/unaccepted/None`, and a known-unchanged store yields `False/False/unknown/None`; the displayed `internal-error` state set therefore includes `missing` and `unaccepted` | `test_the_fallback_preserves_read_rejected_unaccepted` · `test_the_fallback_preserves_known_unchanged` — **measured today** (round 26, finding 3 + correction B) |
+| **M112** an EXACT `AuditStorageUnavailable(committed=True)` activation carrier is ITSELF proof of the durable write (§5b): the authority IS consumed, so the operation terminalizes as `migration-quiescence-required` INDEPENDENT of the readback verifier — whether it raises OR returns a clean FALSE-negative — never stranded attempted-only and never collapsed into `migration-audit-state-unknown`; a subclass carrier is not the protocol type and does not consume | `test_activation_committed_true_consumes_when_the_verifier_raises` · `test_activation_committed_true_consumes_on_a_verifier_false_negative` · `test_an_activation_committed_true_subclass_does_not_consume` · gates `activation-committed-true-verifier-raises` · `activation-committed-true-verifier-false-negative` · `activation-committed-true-subclass` — **measured today** (round 27, finding 1) |
+| **M113** the AUDIT-write commit fact takes the INDEPENDENT durable presence of a well-formed terminal event as its STRONGEST evidence, checked FIRST — so a verifier FALSE-negative over a real lifecycle preserves `audit_committed=True` (round 27, finding 2) — and only the EXACT `AuditStorageUnavailable` type contributes trusted commit metadata, so a subclass cannot FABRICATE `audit_committed=True` when no durable write occurred (finding 3); a genuinely-absent transition with committed=True stays contradictory → `None` (round 21, finding 3 preserved) | `test_terminal_committed_true_false_negative_over_a_real_lifecycle` · `test_a_committed_true_subclass_never_fabricates_a_commit` · `test_a_committed_true_subclass_with_a_clean_missing_transition_is_none` · `test_a_raw_exception_with_no_write_still_reports_committed_false` · gates `terminal-committed-true-verifier-false-negative` · `terminal-committed-true-subclass-verifier-raises` — **measured today** (round 27, findings 2 & 3) |
 
 ---
 
@@ -1017,44 +1018,48 @@ that any future database adapter implements the protocol.
 
 ## 9. Brief for the external reviewer
 
-**Round 27 of this spec. All three round-26 blockers and all three corrections
-are closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The
-theme was **the SYMMETRY of a verifier defect** — round 25 hardened the case where
-the wrapper's OWN verifier RAISES, and round 26 found the sibling cells where it
-returns a clean FALSE-negative (or where a `committed=True` carrier accompanies a
-raising verifier). Each rests on M-Q4's explicit allowance that a conforming
-adapter's success receipt is a permitted assumption. Concrete migration,
-evidence-selection key, release identity, source binding, one-snapshot reader,
-TEMP confinement and ordinary planner states are untouched; the evidence artifact
-reproduces byte-for-byte.
+**Round 28 of this spec. All three round-27 blockers and both corrections are
+closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The theme
+extends round 26's verifier-defect symmetry to the **`committed=True` response-loss
+carrier when the verifier CANNOT confirm**, and hardens carrier trust to the EXACT
+protocol type. Each rests on M-Q4's explicit allowance that a conforming adapter's
+success receipt is a permitted assumption. Concrete migration, evidence-selection
+key, release identity, source binding, one-snapshot reader, TEMP confinement and
+ordinary planner states are untouched; the evidence artifact reproduces
+byte-for-byte.
 
-1. **A verifier false-negative is trusted like a verifier raise** (finding 1):
-   **(1a)** an activation-binding verifier that returns `(False, …)` over an
-   EXISTING durable row after a valid `activated` receipt now provisionally
-   consumes and terminalizes (round 25 handled only the raising verifier); a valid
-   `activated` receipt with NO durable row still stays not-consumed. **(1b)** a
-   terminal-transition verifier returning a clean FALSE-negative on a VALID receipt
-   now preserves `audit_committed=True` (round 25's outer catch-all covered the
-   raise; this closes the `if rprob or not tok` return path).
-2. **A `committed=True` response-loss survives a raising verifier** (finding 2):
-   when `_terminal_transition_complete` RAISES (cannot observe) and the typed
-   carrier says `committed=True`, `_audit_commit_fact` now trusts it and returns
-   `True`; a CLEANLY-observed missing transition with `committed=True` still stays
-   contradictory → `None` (round 21 finding 3 preserved — there the verifier
-   returns `False`, not raises).
-3. **The safe fallback covers its full truth table INLINE** (finding 3):
-   `_safe_fallback_facts` now enumerates the previously-implicit cells directly —
-   a read-then-rejected store yields `False/False/unaccepted/None` and a
-   known-unchanged store yields `False/False/unknown/None` — independent of the
-   derivation-helper family.
+1. **An exact `committed=True` activation carrier consumes independent of the
+   verifier** (finding 1): §5b already specifies `committed=True` ⟹ the row WAS
+   written ⟹ the authority IS consumed ⟹ `migration-quiescence-required` + a
+   terminal event. v29 established that only when the readback verifier CONFIRMED
+   the row; when the verifier RAISED it re-raised without consuming (stranded
+   attempted-only), and when the carrier arrived with no confirmable row it
+   collapsed `committed=True` into `migration-audit-state-unknown` (v29 read
+   committed=True as merely not-False). The carrier is now trusted as proof of
+   consumption BEFORE the readback, so a raising OR false-negative verifier still
+   terminalizes; a subclass carrier is not the protocol type and does not consume.
+2. **The independent durable presence of a terminal event is the strongest commit
+   evidence** (finding 2): `_audit_commit_fact` now checks a well-formed terminal
+   event FIRST, above the verifier boolean, so a verifier FALSE-negative over a
+   real complete lifecycle preserves `audit_committed=True`. A genuinely-absent
+   transition with `committed=True` still stays contradictory → `None` (round 21
+   finding 3 preserved).
+3. **Only the EXACT `AuditStorageUnavailable` type contributes trusted commit
+   metadata** (finding 3): v29 recognised the carrier by `isinstance`, so a
+   subclass could override `committed` and FABRICATE `audit_committed=True` with no
+   durable write. `_trusted_carrier_committed` now requires
+   `type(exc) is AuditStorageUnavailable`; a subclass carries no trusted metadata
+   → the fact is genuinely `None`, never fabricated `True`. A non-family raw
+   exception with a durably-absent event stays proven-not-written → `False` (round
+   20 finding 2 preserved).
 
-**Corrections**: **(A)** §5d prose now states ANY second `on_committed`
-publication — even value-identical — is a defect (aligning the prose with M106).
-**(B)** the displayed `internal-error` state set adds `missing` and `unaccepted`
-(the two fresh fallback cells). **(C)** the independent gate covers the three new
-verifier-false-negative seams (`activation-verifier-false-negative`,
-`terminal-verifier-false-negative`, `committed-true-loss-plus-verifier-raise`),
-each proven non-vacuous by neutering its fix.
+**Corrections**: **(A)** the round-26 "full matrix" claim is narrowed to the
+carrier matrix actually gated — the mechanically-covered cross-product, not a
+broader implication. **(B)** the independent gate adds the four missing carrier
+combinations (activation committed=True under a raising and a false-negative
+verifier; a terminal committed=True false-negative; and the typed-failure subclass
+case at both the activation and terminal seams), each proven non-vacuous by
+neutering its fix.
 
 **On the boundary.** Every finding was *inside* the six §8a properties — the
 noncontradictory-facts guarantee, the total post-consumption boundary, and the
@@ -1650,3 +1655,28 @@ resolution/refusal split, and finite M-Q4 acceptance framework remain approved.
 | A | §5d prose said only a "second, DIFFERENT" publication is a defect, contradicting M106 | **prose aligned** — ANY second publication, even value-identical, is a defect |
 | B | the displayed `internal-error` state set omitted `missing`/`unaccepted`, now reachable via the fallback | **added** to the state table (M111) |
 | C | the independent gate omitted the three fresh verifier-false-negative seams | **added** — `activation-verifier-false-negative`, `terminal-verifier-false-negative`, `committed-true-loss-plus-verifier-raise`, each proven non-vacuous |
+
+---
+
+## 37. Round 27 review disposition
+
+**Verdict: M-Q4 boundary respected; architecture standing; v30 deferred on three
+load-bearing semantic gaps plus two corrections — all closed.** No finding relied
+on private-state corruption or reopened a `0008` obligation. The theme extended
+round 26's verifier-defect symmetry to the **`committed=True` response-loss carrier
+when the verifier cannot confirm** — the recurring "handles X but not X′" shape,
+here the sibling of round 26's fixes: round 26 trusted a valid *receipt* under a
+verifier defect, and round 27 does the same for the *`committed=True` carrier*.
+Findings 2 and 3 (the durable-presence precedence and exact-typed carrier trust)
+are protocol-semantic and transfer directly to `0008`'s response-loss handling;
+finding 1 aligns the code to the already-specified §5b outcome. The bounded
+adjacent-migration claim, resolution/refusal split, and finite M-Q4 acceptance
+framework remain approved.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | an exact `AuditStorageUnavailable(committed=True)` activation carrier did not consume when the readback verifier raised or false-negatived — stranding the durably-consumed operation attempted-only, or collapsing `committed=True` into `migration-audit-state-unknown` | **the carrier is trusted as proof of the durable write BEFORE the readback** (§5b): committed=True → consumed → `migration-quiescence-required` + terminal event, whatever the verifier does; a subclass does not consume (M112) |
+| 2 | a `committed=True` terminal carrier + a verifier FALSE-negative over a real complete lifecycle reported `audit_committed=None` | **the independent durable presence of a well-formed terminal event is checked FIRST** — above the verifier boolean — so a false-negative cannot erase a real commit; a genuinely-absent transition stays contradictory → `None` (M113) |
+| 3 | `AuditStorageUnavailable` was recognised by `isinstance`, so a subclass overriding `committed` could FABRICATE `audit_committed=True` with no durable write | **`_trusted_carrier_committed` requires `type(exc) is AuditStorageUnavailable`** — only the exact protocol carrier is trusted; a subclass → `None`, never fabricated `True` (M113) |
+| A | the round-26 "full matrix" wording was broader than the carrier matrix actually gated | **narrowed** to the mechanically-covered cross-product |
+| B | the independent gate omitted the four fresh carrier combinations | **added** — activation committed=True under a raising and a false-negative verifier, a terminal committed=True false-negative, and the typed-failure subclass at both seams, each proven non-vacuous |

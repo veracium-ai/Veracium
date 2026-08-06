@@ -730,6 +730,98 @@ def _committed_true_loss_and_verifier_raise():
     return cleanup
 
 
+# --- round 27: committed=True response-loss when the verifier CANNOT confirm; ---
+# --- exact-typed carrier trust (a subclass must not fabricate a commit) ---------
+
+class _CommittedTrueSubclass(m.AuditStorageUnavailable):
+    """A real subclass an adapter might define, claiming committed=True — NOT the
+    exact protocol carrier (round 27, finding 3)."""
+    def __init__(self, msg):
+        Exception.__init__(self, msg)
+        self.committed = True
+
+
+def _activation_committed_true_verifier_raises():
+    """The activation sink publishes the row then raises committed=True, AND the
+    binding verifier RAISES (round 27, finding 1)."""
+    real = m._AUDIT.activate
+    real_bind = m._durable_row_binds_authority
+
+    def commit_then_raise(a, od):
+        real(a, od)
+        raise m.AuditStorageUnavailable("activation response lost", committed=True)
+    m._AUDIT.activate = commit_then_raise
+    m._durable_row_binds_authority = lambda *a, **k: (_ for _ in ()).throw(
+        RuntimeError("verifier boom"))
+
+    def cleanup():
+        setattr(m._AUDIT, "activate", real)
+        setattr(m, "_durable_row_binds_authority", real_bind)
+    return cleanup
+
+
+def _activation_committed_true_verifier_false_negative():
+    """The same, but the binding verifier returns a clean FALSE-negative (round 27,
+    finding 1 symmetry)."""
+    real = m._AUDIT.activate
+    real_bind = m._durable_row_binds_authority
+
+    def commit_then_raise(a, od):
+        real(a, od)
+        raise m.AuditStorageUnavailable("activation response lost", committed=True)
+    m._AUDIT.activate = commit_then_raise
+    m._durable_row_binds_authority = lambda *a, **k: (False, "forced false-negative")
+
+    def cleanup():
+        setattr(m._AUDIT, "activate", real)
+        setattr(m, "_durable_row_binds_authority", real_bind)
+    return cleanup
+
+
+def _terminal_committed_true_verifier_false_negative():
+    """The sink publishes the complete transition then raises committed=True, AND
+    the transition verifier returns a clean FALSE-negative (round 27, finding 2)."""
+    real_rt = m._AUDIT.record_terminal
+    real_ttc = m._terminal_transition_complete
+
+    def publish_then_raise(operation_id, event, payload):
+        real_rt(operation_id, event, payload)
+        raise m.AuditStorageUnavailable("response lost", committed=True)
+    m._AUDIT.record_terminal = publish_then_raise
+    m._terminal_transition_complete = lambda *a, **k: (False, "forced false-negative")
+
+    def cleanup():
+        setattr(m._AUDIT, "record_terminal", real_rt)
+        setattr(m, "_terminal_transition_complete", real_ttc)
+    return cleanup
+
+
+def _terminal_committed_true_subclass_verifier_raises():
+    """A SUBCLASS claiming committed=True with NO durable write, and the verifier
+    raises — must not fabricate a commit (round 27, finding 3)."""
+    real_rt = m._AUDIT.record_terminal
+    real_ttc = m._terminal_transition_complete
+    m._AUDIT.record_terminal = lambda o, e, pl: (_ for _ in ()).throw(
+        _CommittedTrueSubclass("lie"))
+    m._terminal_transition_complete = lambda *a, **k: (_ for _ in ()).throw(
+        RuntimeError("verifier boom"))
+
+    def cleanup():
+        setattr(m._AUDIT, "record_terminal", real_rt)
+        setattr(m, "_terminal_transition_complete", real_ttc)
+    return cleanup
+
+
+def _activation_committed_true_subclass():
+    """A SUBCLASS claiming committed=True at activation with no durable write — not
+    the protocol carrier, so an unrecognized defect → internal-error (round 27,
+    finding 3)."""
+    real = m._AUDIT.activate
+    m._AUDIT.activate = lambda a, od: (_ for _ in ()).throw(
+        _CommittedTrueSubclass("lie"))
+    return lambda: setattr(m._AUDIT, "activate", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -850,6 +942,30 @@ _INJECTIONS = [
     ("committed-true-loss-plus-verifier-raise",
      _committed_true_loss_and_verifier_raise,
      _write_error(True)),
+    # round 27, finding 1: an EXACT committed=True activation carrier consumes and
+    # terminalizes even when the readback verifier RAISES ...
+    ("activation-committed-true-verifier-raises",
+     _activation_committed_true_verifier_raises,
+     _outcome_is("migration-quiescence-required")),
+    # ... or returns a clean FALSE-negative (the symmetry).
+    ("activation-committed-true-verifier-false-negative",
+     _activation_committed_true_verifier_false_negative,
+     _outcome_is("migration-quiescence-required")),
+    # round 27, finding 2: committed=True terminal carrier + a verifier
+    # FALSE-negative over a real lifecycle preserves audit_committed=True.
+    ("terminal-committed-true-verifier-false-negative",
+     _terminal_committed_true_verifier_false_negative,
+     _write_error(True)),
+    # round 27, finding 3: a SUBCLASS claiming committed=True is not the protocol
+    # carrier — at the terminal it must not fabricate a commit (audit_committed
+    # None) ...
+    ("terminal-committed-true-subclass-verifier-raises",
+     _terminal_committed_true_subclass_verifier_raises,
+     _write_error(None)),
+    # ... and at activation it is an unrecognized defect → internal-error.
+    ("activation-committed-true-subclass",
+     _activation_committed_true_subclass,
+     _outcome_is("internal-error")),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),

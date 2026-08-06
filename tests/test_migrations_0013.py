@@ -4284,3 +4284,133 @@ def test_the_fallback_preserves_read_rejected_unaccepted(monkeypatch):
     assert (ev["store_changed"], ev["transaction_committed"],
             ev["resulting_state"], ev["resulting_version"]) == \
         (False, False, "unaccepted", None)
+
+
+# ==========================================================================
+# Round 27 regressions — the SYMMETRY of a committed=True response-loss carrier
+# under a verifier that cannot confirm, and exact-typed carrier trust
+# ==========================================================================
+
+def test_activation_committed_true_consumes_when_the_verifier_raises(monkeypatch):
+    """Round 27, finding 1: an EXACT `AuditStorageUnavailable(committed=True)`
+    activation carrier is proof the row was written (the authority IS consumed).
+    Even when the readback VERIFIER raises, the operation terminalizes as a
+    consumed quiescence — never stranded attempted-only."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def commit_then_raise(a, od):
+        real(a, od)                                    # the durable write DID happen
+        raise m13.AuditStorageUnavailable("response lost", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "activate", commit_then_raise)
+    monkeypatch.setattr(m13, "_durable_row_binds_authority",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("verifier boom")))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    assert _has_terminal(auth)            # consumed → terminalized
+
+
+def test_activation_committed_true_consumes_on_a_verifier_false_negative(monkeypatch):
+    """Round 27, finding 1 (symmetry): the same, when the verifier returns a clean
+    FALSE-negative instead of raising."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def commit_then_raise(a, od):
+        real(a, od)
+        raise m13.AuditStorageUnavailable("response lost", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "activate", commit_then_raise)
+    monkeypatch.setattr(m13, "_durable_row_binds_authority",
+                        lambda *a, **k: (False, "forced false-negative"))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    assert _has_terminal(auth)
+
+
+def test_an_activation_committed_true_subclass_does_not_consume(monkeypatch):
+    """Round 27, finding 3 (activation symmetry): a SUBCLASS claiming
+    committed=True is NOT the protocol carrier — it must not establish consumption.
+    With no durable row it is an unrecognized defect → `internal-error`, never a
+    fabricated `migration-quiescence-required`."""
+    class Evil(m13.AuditStorageUnavailable):
+        def __init__(self, msg):
+            Exception.__init__(self, msg)
+            self.committed = True
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: (_ for _ in ()).throw(Evil("lie")))
+    assert m13.migrate_store(p, auth) == "internal-error"
+
+
+def test_terminal_committed_true_false_negative_over_a_real_lifecycle(monkeypatch):
+    """Round 27, finding 2: a `committed=True` terminal carrier plus a verifier
+    FALSE-negative (returns False, not raising) over an EXISTING complete terminal
+    lifecycle preserves `audit_committed=True` — the independent durable presence
+    of a well-formed terminal event overrides the verifier boolean."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def publish_then_raise(operation_id, event, payload):
+        real(operation_id, event, payload)             # the lifecycle IS complete
+        raise m13.AuditStorageUnavailable("response lost", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", publish_then_raise)
+    monkeypatch.setattr(m13, "_terminal_transition_complete",
+                        lambda *a, **k: (False, "forced false-negative"))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is True
+
+
+def test_a_committed_true_subclass_never_fabricates_a_commit(monkeypatch):
+    """Round 27, finding 3: a SUBCLASS claiming committed=True, raised with NO
+    durable write and the verifier defeated, must NOT fabricate
+    `audit_committed=True` — only the EXACT protocol carrier is trusted, so the
+    fact is genuinely `None`."""
+    class Evil(m13.AuditStorageUnavailable):
+        def __init__(self, msg):
+            Exception.__init__(self, msg)
+            self.committed = True
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda o, e, pl: (_ for _ in ()).throw(Evil("lie")))
+    monkeypatch.setattr(m13, "_terminal_transition_complete",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("verifier boom")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None
+
+
+def test_a_committed_true_subclass_with_a_clean_missing_transition_is_none(monkeypatch):
+    """Round 27, finding 3 boundary: even when the verifier CLEANLY observes the
+    transition missing, a subclass committed=True is untrusted → `None`, never a
+    fabricated `True` and never an inferred `False`."""
+    class Evil(m13.AuditStorageUnavailable):
+        def __init__(self, msg):
+            Exception.__init__(self, msg)
+            self.committed = True
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda o, e, pl: (_ for _ in ()).throw(Evil("lie")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None
+
+
+def test_a_raw_exception_with_no_write_still_reports_committed_false(monkeypatch):
+    """Round 27 boundary (round 20 f2 preserved): a NON-family raw exception with
+    no durable event is proven-not-written by the draft's own state → `False`;
+    exact-typing the carrier must not degrade this to `None`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda o, e, pl: (_ for _ in ()).throw(
+                            OSError("terminal write response lost")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is False

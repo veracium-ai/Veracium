@@ -457,8 +457,6 @@ def _safe_repr(x) -> str:
         return f"<unrepresentable {type(x).__name__}>"
 
 
-_MISSING = object()   # sentinel: an exception carries no `.committed` attribute
-
 
 class _FrozenResult(NamedTuple):
     """A wrapper-owned IMMUTABLE copy of a kernel `OpenResult` (round 22, finding
@@ -1948,6 +1946,24 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
         and not result.problems(a.operation_id)
         and type(result.status) is str and result.status == "activated")
 
+    # Round 27, finding 1: an EXACT `AuditStorageUnavailable(committed=True)`
+    # activation carrier is ITSELF proof of the durable write (§5b: committed=True
+    # ⟹ the row WAS written, the authority IS consumed). That proof is INDEPENDENT
+    # of the readback verifier, which may raise or return a clean FALSE-negative —
+    # so establish consumption HERE, before the readback, rather than collapsing
+    # committed=True into the "unknown/query" bucket (v29 read committed=True as
+    # merely not-False) or stranding the durably-consumed operation attempted-only
+    # when the verifier cannot confirm. Exact-typed (finding 3): a subclass whose
+    # `committed` is overridden is NOT the protocol carrier and does not consume.
+    if _trusted_carrier_committed(activate_exc) is True and not is_duplicate:
+        state["consumed"] = True
+        _snapshot()
+        raise MigrationRefused(
+            "migration-quiescence-required",
+            f"the activation sink reported committed=True (the row WAS written, "
+            f"response lost); the authority IS consumed — mint a fresh one: "
+            f"{_safe_repr(activate_exc)}") from activate_exc
+
     # The durable readback is the ground truth (round 20/21). Round 25, finding 3:
     # if the readback VERIFIER itself RAISES (a wrapper defect) AND the sink
     # returned a VALID `activated` receipt, M-Q4 permits trusting that receipt —
@@ -1971,21 +1987,13 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
         state["consumed"] = True
         _snapshot()
         if activate_exc is not None:
-            if isinstance(activate_exc, AuditStorageUnavailable) \
-                    and _read_sink_committed(activate_exc, a.operation_id,
-                                             _ATTEMPTED_EVENT) is True:
-                # An HONEST lost response after a durable write (round 14, f2):
-                # consumed, mint a fresh one.
-                raise MigrationRefused(
-                    "migration-quiescence-required",
-                    f"the activation is durable and the sink reported "
-                    f"committed=True but the response was lost; the authority IS "
-                    f"consumed — mint a fresh one: {_safe_repr(activate_exc)}"
-                ) from activate_exc
-            # ANY other post-publication exception (a contradictory typed flag —
-            # round 20 f1b — or an unrecognized error — round 21 f1) over a
-            # durable row is an audit-integrity defect → `internal-error`;
-            # `consumed` is set, so the wrapper still writes the terminal event.
+            # An honest committed=True lost response is already handled above
+            # (round 27, finding 1). ANY other post-publication exception over a
+            # durable row — a contradictory typed flag (round 20 f1b), a
+            # committed=None/False that disagrees with the durable row, or an
+            # unrecognized error (round 21 f1) — is an audit-integrity defect →
+            # `internal-error`; `consumed` is set, so the wrapper still writes the
+            # terminal event.
             raise _ActivationResultError(
                 f"a durable activation exists but the sink then raised "
                 f"{_safe_repr(activate_exc)} — audit integrity")
@@ -2028,12 +2036,15 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
         _refuse_existing_lifecycle(a, output_digest)     # raises
 
     if activate_exc is not None:
-        # No durable row at all: only a RECOGNIZED typed failure carries retry
-        # metadata; an unrecognized exception is a programming/validation defect →
-        # propagate to the boundary as `internal-error` (round 21, finding 1).
-        if not isinstance(activate_exc, AuditStorageUnavailable):
+        # No durable row at all: only the EXACT `AuditStorageUnavailable` type
+        # carries retry metadata (round 27, finding 3: a subclass could override
+        # `committed`, so it is NOT the protocol carrier). An unrecognized
+        # exception — including a subclass — is a programming/validation defect →
+        # propagate to the boundary as `internal-error` (round 21, finding 1;
+        # round 27, finding 3). committed=True was already consumed above.
+        if type(activate_exc) is not AuditStorageUnavailable:
             raise activate_exc
-        c = _read_sink_committed(activate_exc, a.operation_id, _ATTEMPTED_EVENT)
+        c = _trusted_carrier_committed(activate_exc)
         if c is False:
             raise MigrationRefused(
                 "migration-audit-unavailable",
@@ -3067,23 +3078,24 @@ class _ConnectionCleanupError(Exception):
     `invalid-store` — a close defect is not invalid store bytes."""
 
 
-def _read_sink_committed(exc, operation_id, terminal):
-    """Read the AUDIT-write commit status from a terminal-sink failure, treating
-    the exception's metadata as an UNTRUSTED seam (round 16, finding 4: v17 did
-    `getattr(exc, "committed", ...)` on any exception, so a `committed` property
-    that itself RAISED leaked a third raw exception after the store committed).
-    Only a RECOGNIZED typed exception carries commit status, and the access is
-    guarded — a missing, malformed, or exploding accessor is `None` (unknown)."""
-    if isinstance(exc, AuditStorageUnavailable):
-        try:
-            v = exc.committed
-        except BaseException:                  # a hostile/defective accessor
-            return None
-        return v if (v is None or type(v) is bool) else None
-    # An unrecognized exception (a raw OSError from the in-process draft) carries
-    # no protocol commit status: the draft reads its own state; a production
-    # sink that cannot tell reports None.
-    return True if (operation_id, terminal) in _AUDIT._events else False
+def _trusted_carrier_committed(exc):
+    """The AUDIT-write commit status carried by a sink failure, trusted ONLY for
+    the EXACT `AuditStorageUnavailable` protocol type (round 27, finding 3: v29
+    recognised it by `isinstance`, so a SUBCLASS could override `committed` — or
+    inherit the trusted path — and FABRICATE a commit when no durable write
+    occurred; only the exact protocol carrier contributes trusted metadata). The
+    metadata is still an UNTRUSTED seam (round 16, finding 4: a `committed`
+    accessor that itself RAISES must not leak): the access is guarded — a missing,
+    malformed, or exploding accessor is `None`. A non-exact or unrecognized
+    exception (a subclass, a raw `OSError`) carries NO protocol commit status →
+    `None`; the caller derives the truth from the durable audit state instead."""
+    if type(exc) is not AuditStorageUnavailable:
+        return None
+    try:
+        v = exc.committed
+    except BaseException:                       # a hostile/defective accessor
+        return None
+    return v if (v is None or type(v) is bool) else None
 
 
 def _safe_endpoints(authority):
@@ -3184,35 +3196,61 @@ def _audit_commit_fact(operation_id, terminal, payload, state, sink_exc):
     then RAISED `committed=False` still produced `audit_committed=False` despite
     the observable durable commit). Precedence:
 
-        complete requested transition observed   → True
-        verifier RAISES + typed committed=True    → True  (round 26, finding 2)
-        typed sink says definitely-not-written,
-          and no such transition                  → False
-        otherwise                                 → None (genuinely unknown)
+        a well-formed terminal event durably PRESENT  → True  (round 27, finding 2)
+        verifier confirms the requested transition    → True
+        verifier CANNOT observe (raises) + EXACT typed
+          committed=True                              → True  (round 26, finding 2)
+        EXACT typed sink says definitely-not-written  → False
+        otherwise                                     → None (genuinely unknown)
 
-    A weaker carrier never overrides an OBSERVED durable transition; but when the
-    wrapper's OWN verifier is DEFECTIVE (raises) and cannot observe, a recognized
-    typed `committed=True` response-loss carrier IS trusted (M-Q4)."""
+    Round 27, finding 2: the INDEPENDENT durable presence of a well-formed terminal
+    event is the STRONGEST evidence and is checked FIRST — so a verifier
+    FALSE-negative (it returns False despite a complete lifecycle) cannot erase a
+    real commit, and (finding 3) no carrier can fabricate one: a hostile subclass
+    is not the exact protocol type, so its overridden `committed` contributes
+    nothing. A CLEANLY-observed MISSING transition (`ok` False, nothing durable)
+    with committed=True stays CONTRADICTORY → `None` (round 21, finding 3)."""
+    # 1. Independent durable ground truth (round 27, finding 2): a well-formed
+    #    terminal event PROVES the audit write committed, above any verifier boolean.
+    #    Guarded — this runs on the failure path, so a defect in the ground-truth
+    #    reader is treated as "could not observe" (it never fabricates a commit).
+    try:
+        present, _ = _terminal_event_wellformed(operation_id)
+    except Exception:
+        present = False
+    if present:
+        return True
+    # 2. the verifier (guarded — a defect is "could not observe", round 26 f2).
     try:
         ok, _ = _terminal_transition_complete(operation_id, terminal, payload,
                                               state)
     except Exception:
-        ok = None                              # our verifier is defective (round 26 f2)
+        ok = None
     if ok:
         return True
-    c = (_read_sink_committed(sink_exc, operation_id, terminal)
-         if sink_exc is not None else None)
-    # Round 26, finding 2: the verifier could NOT observe (it raised) but a
-    # recognized typed carrier says `committed=True` — trust it. (A CLEANLY
-    # observed missing transition with `committed=True` stays CONTRADICTORY →
-    # `None`, round 21 finding 3: there `ok` is False, not None.)
-    if ok is None and isinstance(sink_exc, AuditStorageUnavailable) and c is True:
-        return True
-    # proven-not-written: a typed `committed=False`, or (in the draft) a raw
-    # exception with no durable event.
+    c = _trusted_carrier_committed(sink_exc) if sink_exc is not None else None
+    # 3. The verifier CANNOT observe (it raised → `ok` None). The EXACT protocol
+    #    carrier's committed=True is trusted (round 26, finding 2); a subclass or
+    #    raw exception carries no trusted metadata, so the fact is genuinely UNKNOWN
+    #    — it cannot fabricate a commit (round 27, finding 3).
+    if ok is None:
+        return True if c is True else None
+    # 4. The verifier CLEANLY observed the transition is NOT present (`ok` False)
+    #    and nothing is durably present. An EXACT committed=True carrier is then
+    #    CONTRADICTORY → `None` (round 21, finding 3); an EXACT committed=False is
+    #    proven-not-written → False. Otherwise the fact is `None` unless the draft's
+    #    OWN state proves it: a member of the `AuditStorageUnavailable` FAMILY whose
+    #    value we do not trust (an exact committed=None, or a subclass — round 27,
+    #    finding 3; round 16, finding 4) carries UNKNOWN → `None`, never a fabricated
+    #    or inferred fact; only a NON-family raw exception (a bare `OSError`) lets
+    #    the draft's durable state prove not-written → False (round 20, finding 2).
+    if c is True:
+        return None
     if c is False:
         return False
-    return None
+    if isinstance(sink_exc, AuditStorageUnavailable):
+        return None                            # family carrier we cannot trust: unknown
+    return False if sink_exc is not None else None
 
 
 def _write_terminal(out, outcome, state, authority) -> "Outcome":
