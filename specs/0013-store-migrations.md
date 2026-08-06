@@ -5,30 +5,30 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v24)** — round 21: *M-Q4 boundary respected; architecture
-> standing; v24 deferred on three load-bearing semantic gaps plus two
-> corrections* — all closed. Same principle as round 20, extended to the paths it
-> had not yet reached: **strongest DURABLE evidence, and validator totality, on
-> EVERY carrier.** **Durable readback now precedes classifying every activation
-> carrier** — a wrong-type return or an unrecognized post-publication exception
-> after a durable activation is `internal-error` WITH a terminal event, never
-> left attempted-only (finding 1). **An adapter-supplied `MigrationAuditWriteError`
-> is an untrusted carrier** — the wrapper re-derives `audit_committed` and owns
-> the identity, so a sink cannot override durable proof or substitute a foreign
-> operation id / store path (finding 2). **A typed `committed=True` with no
-> observable transition degrades to `None`**, never reported as proven durability
-> (finding 3). Timestamp/token/digest/path validators use `type(x) is str`, total
-> over a hostile `str` subclass (correction A); the pre-send seam gate covers the
-> new carrier combinations (correction B). No finding relied on arbitrary
-> private-state corruption or reopened a `0008` obligation; the M-Q4 boundary
-> (§8a) held. Concrete migration, evidence key, release identity, source binding,
-> one-snapshot reader, TEMP confinement and ordinary planner states untouched;
-> the evidence artifact reproduces byte-for-byte.
+> **in review (v25)** — round 22: *M-Q4 boundary respected; architecture
+> standing; v25 deferred on three load-bearing semantic gaps plus two
+> corrections* — all closed. **The COMPLETE durable lifecycle is classified before
+> every activation carrier** — an already-`terminal` operation retried with
+> `committed=False` is a consumed replay (`migration-quiescence-required`), never
+> a false "safe retry" (finding 1). **`on_committed` freezes a wrapper-owned
+> immutable copy and reads the branch from the exact underlying value** — a live
+> mutation after publication cannot change the facts, and an `OpenResult`
+> subclass cannot spoof its branch to make an untouched v1 store appear migrated
+> (finding 2). **`MigrationAuditWriteError` requires an exact `TerminalFacts` and
+> calls the base validator** — a subclass cannot replace the shared truth-table
+> validator on one of the two named public exceptions (finding 3). The top-level
+> authority validator exact-types every field before `.strip()`/regex
+> (correction A); the independent gate covers the new cases (correction B). No
+> finding relied on arbitrary private-state corruption or reopened a `0008`
+> obligation; the M-Q4 boundary (§8a) held. Concrete migration, evidence key,
+> release identity, source binding, one-snapshot reader, TEMP confinement and
+> ordinary planner states untouched; the evidence artifact reproduces
+> byte-for-byte.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v24 |
+| **Version** | v25 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -888,6 +888,10 @@ tests at implementation.
 | **M96** an adapter-supplied `MigrationAuditWriteError` is an UNTRUSTED carrier — the wrapper re-derives `audit_committed` and owns the identity (operation id, store path), keeping the adapter's exception only as the cause | `test_a_sink_supplied_write_error_is_an_untrusted_carrier` — **measured today** (round 21, finding 2) |
 | **M97** a typed `committed=True` with no observable terminal transition is contradictory — `audit_committed` degrades to `None`, never proven `True` | `test_committed_true_without_a_transition_is_not_proven_durable` — **measured today** (round 21, finding 3) |
 | **M98** timestamp/token/digest/path validators are TOTAL over hostile `str` subclasses (`type(x) is str` before length/regex/parse) — an invalid authority stays a closed refusal, never a library defect | `test_timestamp_validation_is_total_over_hostile_str_subclasses` — **measured today** (round 21, correction A) |
+| **M99** the COMPLETE durable lifecycle is classified before every activation carrier — an already-`terminal` operation + `committed=False` is a consumed replay (`migration-quiescence-required`), never a false `migration-audit-unavailable` | `test_a_completed_lifecycle_is_quiescence_not_retryable` · gate `test_gate_completed_lifecycle_committed_false_is_quiescence` — **measured today** (round 22, finding 1) |
+| **M100** `on_committed` FREEZES a wrapper-owned immutable copy and reads the branch from the exact underlying value — a live mutation after publication cannot change the facts, and an `OpenResult` subclass cannot spoof its branch | `test_on_committed_facts_are_frozen_against_mutation` · `test_an_open_result_subclass_cannot_spoof_the_branch` · gate `open_versioned-subclass-spoofs-branch` — **measured today** (round 22, finding 2) |
+| **M101** `MigrationAuditWriteError` requires `type(facts) is TerminalFacts` and calls the BASE validator, and `type(operation_id) is str` — a subclass cannot replace the shared truth-table validator | `test_the_write_error_requires_exact_carrier_types` (facts-subclass, operation-id-subclass) — **measured today** (round 22, finding 3) |
+| **M102** the TOP-LEVEL authority validator exact-types every token/digest/path/timestamp field before `.strip()`/regex — a hostile `str` subclass stays a closed refusal | `test_authority_validation_is_total_over_hostile_str_subclasses` · gate `test_gate_authority_str_subclass_is_a_closed_refusal` — **measured today** (round 22, correction A) |
 
 ---
 
@@ -993,46 +997,50 @@ that any future database adapter implements the protocol.
 
 ## 9. Brief for the external reviewer
 
-**Round 22 of this spec. All three round-21 blockers and both corrections are
-closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** This round
-completed the same principle on the paths it had not yet reached: **strongest
-durable evidence, and validator totality, on EVERY carrier — not just the
-recognized ones.** Concrete migration, evidence-selection key, release identity,
-source binding, one-snapshot reader, TEMP confinement and ordinary planner states
-are untouched; the evidence artifact reproduces byte-for-byte.
+**Round 23 of this spec. All three round-22 blockers and both corrections are
+closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The theme
+was *exact-typing and completeness at the boundaries where a carrier or a value
+had been trusted by shape rather than by exact identity.* Concrete migration,
+evidence-selection key, release identity, source binding, one-snapshot reader,
+TEMP confinement and ordinary planner states are untouched; the evidence artifact
+reproduces byte-for-byte.
 
-1. **Durable readback now precedes classifying every activation carrier**
-   (finding 1): v23 established consumption only inside the `activated` and
-   `AuditStorageUnavailable` branches, so a wrong-type return or an unrecognized
-   post-publication exception left the consumed operation attempted-only. Now the
-   durable row is read FIRST; a `duplicate` receipt is the only carrier that means
-   "someone else consumed it", and every other carrier over a durable-bound row
-   is `internal-error` **with a terminal event written**.
-2. **An adapter-supplied `MigrationAuditWriteError` is an untrusted carrier**
-   (finding 2): v23 re-raised it unchanged, letting a sink override durable proof
-   and even substitute a foreign operation id / store path. It is now caught with
-   every other exception; the wrapper re-derives `audit_committed` from durable
-   evidence, owns the identity (`operation_id`, `store_path`, facts), and keeps
-   the adapter's exception only as the `cause` — never re-raised unchanged.
-3. **A typed `committed=True` with no observable transition degrades to `None`**
-   (finding 3): `_audit_commit_fact` now implements its documented three-way
-   precedence exactly — an observed complete transition is `True`; a
-   definitely-not-written `committed=False` with no transition is `False`; a
-   `committed=True` claim with no transition is contradictory adapter evidence and
-   is reported `None`, never proven `True`.
+1. **The complete durable LIFECYCLE is classified before every carrier**
+   (finding 1): the readback predicate recognised only a fresh `attempted`
+   activation, so an already-`terminal` operation looked like "no durable row"
+   and a `committed=False` carrier falsely advertised a safe retry. A new
+   `_durable_lifecycle` classifier (`none`/`attempted`/`terminal`/`malformed`)
+   runs before any carrier interpretation: a valid terminal or attempted-only
+   lifecycle is a consumed replay (`migration-quiescence-required`), a malformed
+   one is `internal-error`, and only a genuinely absent row may be
+   `migration-audit-unavailable`.
+2. **`on_committed` FREEZES a wrapper-owned copy, exact-typed** (finding 2): it
+   stored the live `OpenResult` (whose fields are mutable) and read the branch
+   from the overridable `str()`. It now builds a `_FrozenResult` — `type(r) is
+   OpenResult`, branch from the underlying value (`str.__str__`), fields copied —
+   so a post-publication mutation cannot change the facts and a subclass cannot
+   spoof its branch. The returned kernel result is exact-typed the same way and
+   compared field-for-field against the frozen copy with NO same-object identity
+   shortcut. An untouched v1 store can no longer be published as a committed v2
+   destination.
+3. **`MigrationAuditWriteError` requires an exact `TerminalFacts`** (finding 3):
+   it used `isinstance` and the overridable instance `problems()`, so a subclass
+   returning `[]` smuggled impossible caller-decision facts (`migrated` with no
+   commit at the source). It now requires `type(facts) is TerminalFacts`, calls
+   `TerminalFacts.problems(facts)` (the base validator), and requires
+   `type(operation_id) is str`.
 
-**Corrections**: **(A)** the timestamp/token/digest/path validators now use
-`type(x) is str` before length/regex/parse — total over a `str` subclass whose
-`__len__` raises, so an invalid authority stays a closed
-`migration-quiescence-required`, never a library defect. **(B)** the independent
-seam gate now covers the new carrier combinations (wrong-type return,
-unrecognized exception, sink-supplied write error, `committed=True`-no-transition).
+**Corrections**: **(A)** the TOP-LEVEL `authority_static_problems` now exact-types
+every token/digest/path/timestamp field before `.strip()`/regex — v24 fixed the
+low-level row helpers but this gate still called `.strip()` first, so a hostile
+`str` subclass produced `internal-error` instead of a closed refusal. **(B)** the
+independent gate covers all five new cases.
 
-**On the boundary.** Every finding was *inside* the six §8a properties — a
-verified fact overridden by a weaker carrier, or a validator that was total for
-the recognized carriers but not the unrecognized ones — and I treated each as a
-`0013` blocker. None required defending the reference's private state against
-arbitrary corruption; that remains a `0008` adapter-conformance obligation.
+**On the boundary.** Every finding was *inside* the six §8a properties — a value
+or carrier trusted by shape (`isinstance`, overridable `str()`/`problems()`, a
+live mutable object, a partial lifecycle predicate) rather than by exact identity
+— and I treated each as a `0013` blocker. None required defending the reference's
+private state against arbitrary corruption; that remains a `0008` obligation.
 
 **Where I am least confident:** unchanged — the `current`-with-repair
 `committed=True` cell (§8a `0008` obligation, carried since round 8): the draft
@@ -1513,3 +1521,23 @@ approved.
 | 3 | a typed terminal `committed=True` with no observable transition was reported as proven audit durability | **`_audit_commit_fact` implements its exact three-way precedence** — `committed=True` with no transition degrades to `None` (M97) |
 | A | timestamp validation was non-total over a hostile `str` subclass (`__len__` raises), misclassifying an invalid authority as `internal-error` | **`type(x) is str` before length/regex/parse** across the timestamp/token/digest/path validators; an invalid authority stays a closed refusal (M98) |
 | B | the pre-send seam gate omitted the new carrier combinations | **added** — wrong-type return, unrecognized exception, sink-supplied write error, `committed=True`-no-transition (M95–M97) |
+
+---
+
+## 32. Round 22 review disposition
+
+**Verdict: M-Q4 boundary respected and applied as ruled; architecture standing;
+v25 deferred on three load-bearing semantic gaps plus two corrections — all
+closed.** No finding relied on private-state corruption or reopened a `0008`
+obligation. Each gap was a value or carrier trusted by SHAPE (`isinstance`, an
+overridable `str()`/`problems()`, a live mutable object, a partial lifecycle
+predicate) rather than by EXACT identity. The bounded adjacent-migration claim,
+resolution/refusal split, and finite M-Q4 acceptance framework remain approved.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | a completed (`terminal`) operation + `AuditStorageUnavailable(committed=False)` was falsely reported `migration-audit-unavailable` (safe retry) because readback recognised only a fresh `attempted` activation | **`_durable_lifecycle` classifies the complete lifecycle before every carrier** — terminal/attempted → consumed replay (`quiescence`); malformed → `internal-error`; only a genuinely absent row → `unavailable` (M99) |
+| 2 | `on_committed` stored a live mutable `OpenResult` and read the branch from overridable `str()`, so a post-publication mutation or a branch-spoofing subclass made an untouched v1 store appear committed at v2 | **`_FrozenResult`** — exact `type(r) is OpenResult`, branch from the underlying value, fields copied; returned result exact-typed and compared field-for-field with no identity shortcut (M100) |
+| 3 | `MigrationAuditWriteError` accepted a `TerminalFacts` subclass and invoked its overridable `problems()`, admitting impossible caller-decision facts | **`type(facts) is TerminalFacts` + `TerminalFacts.problems(facts)` (base) + `type(operation_id) is str`** (M101) |
+| A | the top-level authority validator called `.strip()`/regex before exact-type rejection, so a hostile `str` subclass was `internal-error` | **exact-type every token/digest/path/timestamp field first** — a closed refusal, never a library defect (M102) |
+| B | the independent gate omitted the five new cases | **added** — completed-lifecycle retry, on_committed mutation, OpenResult-subclass spoof, TerminalFacts subclass, authority `str` subclass (M99–M102) |

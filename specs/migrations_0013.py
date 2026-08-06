@@ -392,15 +392,23 @@ class MigrationAuditWriteError(RuntimeError):
     def __init__(self, operation_id: str, store_path: str,
                  facts: "TerminalFacts", *, audit_committed=None,
                  cause: BaseException | None = None):
-        if not isinstance(facts, TerminalFacts):
-            raise TypeError("facts must be a TerminalFacts")
-        problems = facts.problems()
+        # Round 22, finding 3: EXACT type, and call the BASE validator — a
+        # `TerminalFacts` SUBCLASS whose `problems()` returns `[]` must not
+        # replace the truth-table validator that one of the two named public
+        # exceptions shares with the durable record (v24 used `isinstance` and
+        # the overridable instance method, so `migrated`/no-commit/`source`
+        # passed as a caller decision input).
+        if type(facts) is not TerminalFacts:
+            raise TypeError("facts must be exactly a TerminalFacts, not a "
+                            f"subclass ({type(facts).__name__})")
+        problems = TerminalFacts.problems(facts)
         if problems:
             raise ValueError("MigrationAuditWriteError given invalid terminal "
                              "facts: " + "; ".join(problems))
-        if not (isinstance(operation_id, str)
+        if not (type(operation_id) is str
                 and _OPERATION_RE.fullmatch(operation_id)):
-            raise ValueError(f"operation_id {operation_id!r} is not op-<uuid4>")
+            raise ValueError(f"operation_id {operation_id!r} is not op-<uuid4> "
+                             f"(exact str)")
         # Round 14, correction B: the exception is a frozen public contract and
         # a caller decision input, so it validates its own context, not just
         # `facts` — a store_path must be a canonical absolute filesystem path
@@ -452,16 +460,36 @@ def _safe_repr(x) -> str:
 _MISSING = object()   # sentinel: an exception carries no `.committed` attribute
 
 
-def _valid_open_result(label) -> bool:
-    """Backwards-compatible shape check (round 15, finding 2): a well-typed
-    `OpenResult`. The COMPLETE, mode-aware SEMANTIC contract is
-    `_open_result_problems` (round 16, finding 3)."""
-    return (isinstance(label, sv.OpenResult)
-            and str(label) in _SUCCESS_OUTCOMES
-            and type(label.store_changed) is bool
-            and type(label.transaction_committed) is bool
-            and type(label.resulting_version) is int
-            and label.resulting_version >= 0)
+class _FrozenResult(NamedTuple):
+    """A wrapper-owned IMMUTABLE copy of a kernel `OpenResult` (round 22, finding
+    2: `on_committed` stored the LIVE object, whose structured attributes are
+    mutable, so a caller could mutate it after publication; and the branch was
+    read from the OVERRIDABLE `str()`, so a subclass could expose two branch
+    identities). `branch` is the EXACT underlying `str` value; the tuple is frozen
+    so no later mutation of the caller's object changes the published facts."""
+    branch: str
+    store_changed: bool
+    transaction_committed: bool
+    resulting_version: int
+
+
+def _frozen_from_open_result(r):
+    """EXACT-type, validate, and FREEZE a kernel `OpenResult` (round 22, finding
+    2): `type(r) is OpenResult` — a SUBCLASS (which can override `__str__` to
+    spoof the branch) is refused; the branch is `str.__str__(r)`, the underlying
+    value, not the override; the fields are exact-typed and copied. Returns a
+    `_FrozenResult`, or `None` if `r` is not an exact valid success result."""
+    if type(r) is not sv.OpenResult:
+        return None
+    if type(r.store_changed) is not bool \
+            or type(r.transaction_committed) is not bool \
+            or type(r.resulting_version) is not int or r.resulting_version < 0:
+        return None
+    branch = str.__str__(r)                    # the exact underlying value
+    if branch not in _SUCCESS_OUTCOMES:
+        return None
+    return _FrozenResult(branch, r.store_changed, r.transaction_committed,
+                         r.resulting_version)
 
 
 def _make_on_committed(state, to_v):
@@ -483,16 +511,20 @@ def _make_on_committed(state, to_v):
     conflict it flags a defect AND keeps the STRONGEST proven state — a genuine
     commit always outranks a no-commit position."""
     def sink(r):
-        if not _valid_open_result(r) or str(r) not in _SUCCESS_OUTCOMES \
-                or r.resulting_version != to_v:
+        # Round 22, finding 2: FREEZE at entry into a wrapper-owned immutable
+        # copy — an exact `OpenResult` (no subclass), the branch from the
+        # underlying value, fields exact-typed. A later mutation of `r` cannot
+        # change what we stored, and a subclass spoofing its branch is refused.
+        fr = _frozen_from_open_result(r)
+        if fr is None or fr.resulting_version != to_v:
             state["callback_defect"] = (
                 state.get("callback_defect")
                 or f"on_committed given a malformed result: {_safe_repr(r)}")
             return                          # do NOT touch a prior valid receipt
-        committed = r.store_changed is True and r.transaction_committed is True
+        committed = fr.store_changed is True and fr.transaction_committed is True
         prior = state["facts"]
         if prior is None:
-            state["facts"] = r
+            state["facts"] = fr
             state["committed_established"] = committed
             # Round 19, finding 2: a valid success result establishes the store's
             # DESTINATION POSITION (the kernel ran `_validated_current`/migrated),
@@ -500,10 +532,7 @@ def _make_on_committed(state, to_v):
             # (F,F) proves the store IS at the destination without a commit.
             state["position_established"] = True
             return
-        if (prior.store_changed, prior.transaction_committed,
-                prior.resulting_version, str(prior)) == \
-                (r.store_changed, r.transaction_committed,
-                 r.resulting_version, str(r)):
+        if prior == fr:                     # frozen tuples compare by value
             return                          # idempotent for an identical repeat
         # A second, DIFFERENT publication — the kernel fires this once, so this
         # is a defect. Retain the strongest proven state: a genuine commit
@@ -512,7 +541,7 @@ def _make_on_committed(state, to_v):
         prior_committed = (prior.store_changed is True
                            and prior.transaction_committed is True)
         if committed and not prior_committed:
-            state["facts"] = r
+            state["facts"] = fr
             state["committed_established"] = True
     return sink
 
@@ -525,11 +554,15 @@ def _open_result_problems(label, migrating, to_v, committed_facts) -> list:
     `to_v`; `current` → (¬changed,¬committed) or (changed,committed) at `to_v`;
     `created`/`adopted` are FORBIDDEN. The result must also be consistent with
     any facts already delivered through `on_committed`."""
-    if not _valid_open_result(label):
-        return [f"malformed OpenResult: {_safe_repr(label)}"]
-    branch = str(label)
-    ch, co, ver = (label.store_changed, label.transaction_committed,
-                   label.resulting_version)
+    # Round 22, finding 2: EXACT-type the returned label (a subclass with an
+    # overridden `__str__` cannot spoof the branch) and read the branch from the
+    # underlying value.
+    fl = _frozen_from_open_result(label)
+    if fl is None:
+        return [f"malformed OpenResult (not an exact valid OpenResult): "
+                f"{_safe_repr(label)}"]
+    branch, ch, co, ver = (fl.branch, fl.store_changed,
+                           fl.transaction_committed, fl.resulting_version)
     p = []
     if migrating:
         if branch in ("created", "adopted"):
@@ -542,18 +575,14 @@ def _open_result_problems(label, migrating, to_v, committed_facts) -> list:
             if (ch, co) not in ((False, False), (True, True)) or ver != to_v:
                 p.append(f"current must be (F,F) or (T,T) at v{to_v}, got "
                          f"changed={ch} committed={co} v{ver}")
-    # Consistency with the facts on_committed already delivered, INCLUDING the
-    # branch LABEL (round 16 f3 + round 17 f3: v18 compared only the change/
-    # commit/version tuple, so a committed `migrated` returned as `current`
-    # passed and the audit described a current-store repair — `migrated` and
-    # `current-with-repair` are NOT interchangeable though their facts coincide).
-    if committed_facts is not None and committed_facts is not label \
-            and _valid_open_result(committed_facts) and (
-                str(committed_facts), committed_facts.store_changed,
-                committed_facts.transaction_committed,
-                committed_facts.resulting_version) != (branch, ch, co, ver):
+    # Consistency with the FROZEN facts on_committed already delivered, INCLUDING
+    # the branch (round 16 f3 + round 17 f3). Round 22, finding 2: the comparison
+    # is field-for-field against the immutable copy with NO same-object identity
+    # shortcut — a spoof returned to BOTH `on_committed` and the caller (the same
+    # object) is caught, and the frozen copy cannot have been mutated since.
+    if isinstance(committed_facts, _FrozenResult) and committed_facts != fl:
         p.append(f"the returned result {branch!r}/{ch}/{co}/v{ver} contradicts "
-                 f"the on_committed branch {str(committed_facts)!r}")
+                 f"the on_committed branch {committed_facts.branch!r}")
     return p
 
 
@@ -1437,20 +1466,25 @@ def authority_static_problems(a, canonical: str, snapshot=None) -> list:
         problems.append(f"quiesced must be bool, is {type(a.quiesced).__name__}")
     elif a.quiesced is not True:
         problems.append("the host has not attested quiescence")
+    # Round 22, correction A: `type(x) is str` at the TOP-LEVEL authority gate —
+    # NOT `isinstance` — BEFORE `.strip()`/regex/equality, so a hostile `str`
+    # subclass (whose `.strip()` raises) is a closed `migration-quiescence-
+    # required` refusal, never a library defect (v24 fixed the low-level row
+    # helpers but this top-level validator still called `.strip()` first).
     for field in ("backup_ref", "store_path", "source_digest",
                   "migration_digest", "release_ref", "operation_id",
                   "issued_at", "expires_at", "evidence_digest"):
         v = getattr(a, field)
-        if not isinstance(v, str) or not v.strip():
-            problems.append(f"{field} must be a nonempty string, is "
+        if type(v) is not str or not v.strip():
+            problems.append(f"{field} must be a nonempty exact string, is "
                             f"{type(v).__name__}")
     for field in ("backup_ref", "release_ref"):
         v = getattr(a, field)
-        if isinstance(v, str) and not _TOKEN_RE.fullmatch(v):
+        if type(v) is str and not _TOKEN_RE.fullmatch(v):
             problems.append(f"{field} does not match the frozen token "
                             f"grammar — audit token fields are not prose "
                             f"channels")
-    if isinstance(a.operation_id, str) and \
+    if type(a.operation_id) is str and \
             not _OPERATION_RE.fullmatch(a.operation_id):
         problems.append("operation_id does not match the frozen op-<uuid4> "
                         "grammar")
@@ -1463,27 +1497,27 @@ def authority_static_problems(a, canonical: str, snapshot=None) -> list:
         problems.append(f"authority attests step "
                         f"{a.from_version}->{a.to_version}, which is not a "
                         f"registered adjacent step")
-    elif isinstance(a.migration_digest, str) and \
+    elif type(a.migration_digest) is str and \
             a.migration_digest != migration_declaration_digest(step):
         problems.append("authority attests a different migration declaration "
                         "than the one registered for this step")
-    if isinstance(a.store_path, str) and a.store_path != canonical:
+    if type(a.store_path) is str and a.store_path != canonical:
         problems.append(f"authority covers store {a.store_path!r}, "
                         f"not {canonical!r} (paths are canonical; a "
                         f"retargeted symlink is a different store)")
     for field in ("source_digest", "migration_digest", "evidence_digest"):
         v = getattr(a, field)
-        if isinstance(v, str) and v.strip() and not _HEX64_RE.fullmatch(v):
+        if type(v) is str and v.strip() and not _HEX64_RE.fullmatch(v):
             problems.append(f"{field} must be exactly 64 lowercase hex "
                             f"characters")
     if snapshot is not None:
-        if isinstance(a.evidence_digest, str) and \
+        if type(a.evidence_digest) is str and \
                 _HEX64_RE.fullmatch(a.evidence_digest) and \
                 a.evidence_digest != snapshot[1]:
             problems.append("the authority binds a different evidence "
                             "artifact than this operation's snapshot; "
                             "re-mint against the current artifact")
-    if isinstance(a.release_ref, str) and a.release_ref.strip() and \
+    if type(a.release_ref) is str and a.release_ref.strip() and \
             a.release_ref != _release_identity():
         problems.append(f"authority was minted by {a.release_ref!r}; this "
                         f"process is {_release_identity()!r} — release "
@@ -1765,6 +1799,59 @@ def _terminal_event_wellformed(operation_id):
     return True, ""
 
 
+def _durable_lifecycle(a, output_digest):
+    """Classify the COMPLETE durable lifecycle for this operation, independent of
+    the activation carrier (round 22, finding 1: `_durable_row_binds_authority`
+    recognises ONLY a fresh `attempted` activation, so an already-`terminal`
+    operation looked like "no durable row" and a `committed=False` carrier
+    falsely advertised a safe retry). Returns one of `none` / `attempted` /
+    `terminal` / `malformed`, plus a reason."""
+    if a.operation_id not in _AUDIT._ops:
+        return "none", "no durable operation row"
+    _, fields_ok, fwhy = _row_binds_authority_fields(a, output_digest)
+    if not fields_ok:
+        return "malformed", fwhy
+    row = _AUDIT._ops.get(a.operation_id)
+    att_ok, awhy = _attempted_event_binds(a.operation_id, row.get("attempted_at"))
+    if not att_ok:
+        return "malformed", awhy
+    durable_terminal = any(
+        ev in _TERMINAL_EVENTS
+        for (oid, ev) in _AUDIT._events if oid == a.operation_id)
+    if durable_terminal:
+        ok, twhy = _terminal_event_wellformed(a.operation_id)
+        if row.get("state") != "terminal" or not ok:
+            return "malformed", (f"state={_safe_repr(row.get('state'))}: {twhy}")
+        return "terminal", ""
+    if row.get("state") != "attempted":
+        return "malformed", f"state={_safe_repr(row.get('state'))}"
+    return "attempted", ""
+
+
+def _refuse_existing_lifecycle(a, output_digest):
+    """A durable operation row EXISTS for this authority (a prior run or a
+    concurrent one) that THIS call did not freshly publish. Classify it and
+    refuse (round 22, finding 1): a valid terminal or attempted-only lifecycle is
+    a consumed replay (`migration-quiescence-required`); a malformed one is an
+    audit-integrity `internal-error`. NEVER falls through to a "safe retry"."""
+    kind, why = _durable_lifecycle(a, output_digest)
+    if kind == "terminal":
+        raise MigrationRefused(
+            "migration-quiescence-required",
+            f"authority operation {a.operation_id!r} was already consumed; it is "
+            f"already complete (a terminal event exists)")
+    if kind == "attempted":
+        raise MigrationRefused(
+            "migration-quiescence-required",
+            f"authority operation {a.operation_id!r} was already consumed; it is "
+            f"attempted-only — reconcile via the durable operation_id (in "
+            f"progress, crashed, or a lost terminal response) before minting a "
+            f"replacement")
+    raise _ActivationResultError(
+        f"operation {a.operation_id!r} has a malformed durable lifecycle "
+        f"({why}) — audit integrity, not a normal replay")
+
+
 def _consume_authority(a: MigrationAuthority, output_digest: str,
                        state: dict) -> None:
     """Single-use consumption covering the COMPLETE dedicated operation
@@ -1851,13 +1938,20 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
                 f"problems={rp})")
         return                                 # activated, valid, durable-bound
 
-    # No durable activation THIS call published (nothing durable, or a
-    # `duplicate` — someone else has it).
+    # No FRESH activation by this call (nothing durable, or a `duplicate`, or a
+    # completed/leftover row from a prior run). Round 22, finding 1: if a durable
+    # row EXISTS for this operation and this call did not just publish it, its
+    # COMPLETE lifecycle decides the outcome BEFORE any carrier is interpreted — a
+    # `committed=False` exception must NOT advertise a safe retry for a consumed
+    # (terminal or attempted-only) operation. The `duplicate` receipt path keeps
+    # its own classification below (it also validates `terminal_present`).
+    if not is_duplicate and a.operation_id in _AUDIT._ops:
+        _refuse_existing_lifecycle(a, output_digest)     # raises
+
     if activate_exc is not None:
-        # Only a RECOGNIZED typed failure carries retry metadata; an unrecognized
-        # exception with no durable row is a programming/validation defect →
-        # propagate to the boundary as `internal-error`, never a retry
-        # instruction (round 21, finding 1).
+        # No durable row at all: only a RECOGNIZED typed failure carries retry
+        # metadata; an unrecognized exception is a programming/validation defect →
+        # propagate to the boundary as `internal-error` (round 21, finding 1).
         if not isinstance(activate_exc, AuditStorageUnavailable):
             raise activate_exc
         c = _read_sink_committed(activate_exc, a.operation_id, _ATTEMPTED_EVENT)
@@ -2829,9 +2923,9 @@ def _store_facts_from_state(out, state) -> dict:
     # (round 17, finding 4: `committed_established`, not merely a non-null value).
     # A PROVEN commit (T,T) survives even a callback defect (round 18, finding 3:
     # a real `migrated` must not be lost to a suppressing false `current`).
-    facts = state["facts"]
-    if state.get("committed_established") and facts is not None \
-            and _valid_open_result(facts):
+    facts = state["facts"]                     # a wrapper-owned _FrozenResult
+    if state.get("committed_established") \
+            and isinstance(facts, _FrozenResult):
         return {"store_changed": facts.store_changed,
                 "transaction_committed": facts.transaction_committed,
                 "resulting_version": facts.resulting_version,
@@ -2841,8 +2935,7 @@ def _store_facts_from_state(out, state) -> dict:
     # 3). The store IS at the destination — the kernel ran `_validated_current` —
     # so the position is trusted; a callback defect (a masked/conflicting commit)
     # forbids this branch and forces the honest `unknown` below.
-    if not state.get("callback_defect") and facts is not None \
-            and _valid_open_result(facts) and str(facts) in _SUCCESS_OUTCOMES:
+    if not state.get("callback_defect") and isinstance(facts, _FrozenResult):
         return {"store_changed": facts.store_changed,
                 "transaction_committed": facts.transaction_committed,
                 "resulting_version": facts.resulting_version,
@@ -3327,8 +3420,13 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                         return Outcome(
                             "internal-error",
                             diagnostic="kernel result invalid: " + "; ".join(rp))
-                    state["facts"] = label       # belt and suspenders
-                    return Outcome(label)
+                    # Round 22, finding 2: keep a FROZEN copy (validated equal to
+                    # the on_committed facts above), never the live label. The
+                    # branch of the returned Outcome is the exact underlying value.
+                    frozen = _frozen_from_open_result(label)
+                    if frozen is not None:
+                        state["facts"] = frozen
+                    return Outcome(frozen.branch if frozen else str(label))
                 finally:
                     # Round 13, finding 2: closing the connection is CLEANUP,
                     # not a read of the store. A close defect must not

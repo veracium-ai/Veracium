@@ -2072,6 +2072,10 @@ def _facts_state(**over):
     if over.get("facts") is not None and "committed_established" not in over:
         base["committed_established"] = True
     base.update(over)
+    # round 22, finding 2: production stores a wrapper-owned FROZEN result, never
+    # a live OpenResult — mirror that so the derivation sees what it really gets.
+    if isinstance(base.get("facts"), sv.OpenResult):
+        base["facts"] = m13._frozen_from_open_result(base["facts"])
     return base
 
 
@@ -3819,4 +3823,108 @@ def test_timestamp_validation_is_total_over_hostile_str_subclasses():
     p = _v1_store()
     auth = m13.make_authority(p)._replace(
         issued_at=LenBoom("2026-01-01T00:00:00.000000+00:00"))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+# --- round 22: complete-lifecycle classification; frozen/exact-typed facts ----
+
+def test_a_completed_lifecycle_is_quiescence_not_retryable(monkeypatch):
+    """Round 22, finding 1: a completed (`terminal`) operation retried while
+    `activate()` raises `committed=False` must be `migration-quiescence-required`
+    — it is durably consumed and complete — never a false
+    `migration-audit-unavailable` "safe retry"."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"     # now terminal
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: (_ for _ in ()).throw(
+                            m13.AuditStorageUnavailable("x", committed=False)))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_on_committed_facts_are_frozen_against_mutation(monkeypatch):
+    """Round 22, finding 2: `on_committed` freezes a wrapper-owned copy, so a
+    caller that MUTATES the live `OpenResult` after publication cannot change the
+    published facts — the durable record keeps the frozen `(F,F)` position, never
+    the mutated `(T,T)`."""
+    p = _v1_store()
+    a1, a2 = m13.make_authority(p), m13.make_authority(p)
+    m13.migrate_store(p, a1)                            # -> v2; a2 sees no-op current
+    real = m13._make_on_committed
+
+    def mutating(state, to_v):
+        sink = real(state, to_v)
+
+        def wrap(r):
+            sink(r)                                     # publish current/F/F
+            r.store_changed = True                      # mutate the live object
+            r.transaction_committed = True
+        return wrap
+    monkeypatch.setattr(m13, "_make_on_committed", mutating)
+    m13.migrate_store(p, a2)
+    ev = (m13._AUDIT._events.get((a2.operation_id, "migration_completed"))
+          or m13._AUDIT._events.get((a2.operation_id, "migration_failed")))
+    assert ev["store_changed"] is False                 # frozen, not the mutation
+    assert ev["transaction_committed"] is False
+
+
+def test_an_open_result_subclass_cannot_spoof_the_branch(monkeypatch):
+    """Round 22, finding 2: `_frozen_from_open_result` requires `type(r) is
+    OpenResult` and reads the branch from the underlying value, so a subclass
+    whose `__str__` lies (`current` underneath, `migrated` on top) is refused —
+    an untouched store is never reported `migrated`."""
+    p = _v1_store()
+    a1, a3 = m13.make_authority(p), m13.make_authority(p)
+    m13.migrate_store(p, a1)                            # -> v2; a3 sees no-op current
+    real = m13.sv.open_versioned
+
+    class Spoof(sv.OpenResult):
+        def __str__(self):
+            return "migrated"
+
+    def spoofing(conn, path, **k):
+        s = Spoof("current", store_changed=True, transaction_committed=True,
+                  resulting_version=2)
+        if k.get("on_committed"):
+            k["on_committed"](s)
+        return s
+    monkeypatch.setattr(m13.sv, "open_versioned", spoofing)
+    assert m13.migrate_store(p, a3) == "internal-error"
+
+
+@pytest.mark.parametrize("bad", ["facts-subclass", "operation-id-subclass"])
+def test_the_write_error_requires_exact_carrier_types(bad):
+    """Round 22, finding 3: `MigrationAuditWriteError` requires `type(facts) is
+    TerminalFacts` and calls the BASE validator, and `type(operation_id) is str`
+    — a `TerminalFacts` subclass overriding `problems()` cannot smuggle impossible
+    caller-decision facts, and a `str` subclass id is refused."""
+    class FakeTF(m13.TerminalFacts):
+        def problems(self):
+            return []
+
+    class OpSub(str):
+        pass
+    if bad == "facts-subclass":
+        with pytest.raises((ValueError, TypeError)):
+            m13.MigrationAuditWriteError(
+                operation_id=_OP_ID, store_path="/s",
+                facts=FakeTF("migrated", 1, 2, False, False, "source", 1))
+    else:
+        with pytest.raises((ValueError, TypeError)):
+            m13.MigrationAuditWriteError(
+                operation_id=OpSub(_OP_ID), store_path="/s",
+                facts=m13.TerminalFacts("migrated", 1, 2, True, True,
+                                        "destination", 2))
+
+
+def test_authority_validation_is_total_over_hostile_str_subclasses():
+    """Round 22, correction A: the top-level `authority_static_problems` uses
+    `type(x) is str` before `.strip()`/regex, so a `backup_ref` subclass whose
+    `.strip()` raises is a closed `migration-quiescence-required` refusal, never a
+    library `internal-error`."""
+    class StripBoom(str):
+        def strip(self, *a):
+            raise RuntimeError("strip boom")
+    p = _v1_store()
+    auth = m13.make_authority(p)._replace(backup_ref=StripBoom("backup-ref-1"))
     assert m13.migrate_store(p, auth) == "migration-quiescence-required"

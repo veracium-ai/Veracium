@@ -573,6 +573,30 @@ def _terminal_committed_true_no_transition():
     return lambda: setattr(m._AUDIT, "record_terminal", real)
 
 
+# --- round 22: exact-typed / frozen kernel results --------------------------
+
+class _SpoofResult(sv.OpenResult):
+    def __str__(self):
+        return "migrated"
+
+
+def _open_versioned_subclass_spoof():
+    """Return an `OpenResult` SUBCLASS whose `__str__` lies (`current` underneath,
+    `migrated` on top), firing on_committed with the same object (round 22,
+    finding 2)."""
+    real = m.sv.open_versioned
+
+    def wrong(conn, path, **k):
+        real(conn, path, **k)                          # migrate for real
+        s = _SpoofResult("current", store_changed=True,
+                         transaction_committed=True, resulting_version=2)
+        if k.get("on_committed"):
+            k["on_committed"](s)
+        return s
+    m.sv.open_versioned = wrong
+    return lambda: setattr(m.sv, "open_versioned", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -640,6 +664,10 @@ _INJECTIONS = [
     ("record_terminal-committed-true-no-transition",
      _terminal_committed_true_no_transition,
      _write_error(None)),
+    # round 22, finding 2: an OpenResult subclass cannot spoof the branch.
+    ("open_versioned-subclass-spoofs-branch",
+     _open_versioned_subclass_spoof,
+     _outcome_is("internal-error")),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),
@@ -959,3 +987,65 @@ def test_non_adjacent_endpoints_reject_at_every_carrier():
             operation_id="op-00000000-0000-4000-8000-000000000000",
             store_path="/s",
             facts=m.TerminalFacts("migrated", 1, 3, True, True, "destination", 3))
+
+
+# --- round 22, correction B: the independent gate covers the five new cases --
+# (the sweep covers the OpenResult-subclass spoof; these cover the rest, which
+# need a prior migration, a mutation, or a unit-level carrier check.)
+
+def test_gate_completed_lifecycle_committed_false_is_quiescence(monkeypatch):
+    """A completed operation + `AuditStorageUnavailable(committed=False)` is
+    `migration-quiescence-required`, never `migration-audit-unavailable`."""
+    p = _v1_store()
+    auth = m.make_authority(p)
+    assert m.migrate_store(p, auth) == "migrated"
+    monkeypatch.setattr(m._AUDIT, "activate",
+                        lambda a, od: (_ for _ in ()).throw(
+                            m.AuditStorageUnavailable("x", committed=False)))
+    assert m.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_gate_on_committed_mutation_does_not_leak(monkeypatch):
+    """A live mutation of the exact `OpenResult` after `on_committed` cannot
+    change the frozen published facts."""
+    p = _v1_store()
+    a1, a2 = m.make_authority(p), m.make_authority(p)
+    m.migrate_store(p, a1)
+    real = m._make_on_committed
+
+    def mutating(state, to_v):
+        sink = real(state, to_v)
+
+        def wrap(r):
+            sink(r)
+            r.store_changed = True
+            r.transaction_committed = True
+        return wrap
+    monkeypatch.setattr(m, "_make_on_committed", mutating)
+    m.migrate_store(p, a2)
+    ev = (m._AUDIT._events.get((a2.operation_id, "migration_completed"))
+          or m._AUDIT._events.get((a2.operation_id, "migration_failed")))
+    assert ev["store_changed"] is False and ev["transaction_committed"] is False
+
+
+def test_gate_write_error_rejects_terminalfacts_subclass():
+    """`MigrationAuditWriteError` cannot invoke an overridden `problems()`."""
+    class FakeTF(m.TerminalFacts):
+        def problems(self):
+            return []
+    with pytest.raises((ValueError, TypeError)):
+        m.MigrationAuditWriteError(
+            operation_id="op-00000000-0000-4000-8000-000000000000",
+            store_path="/s",
+            facts=FakeTF("migrated", 1, 2, False, False, "source", 1))
+
+
+def test_gate_authority_str_subclass_is_a_closed_refusal():
+    """A `backup_ref` `str` subclass whose `.strip()` raises stays a closed
+    quiescence refusal at the top-level authority gate."""
+    class StripBoom(str):
+        def strip(self, *a):
+            raise RuntimeError("strip boom")
+    p = _v1_store()
+    auth = m.make_authority(p)._replace(backup_ref=StripBoom("backup-ref-1"))
+    assert m.migrate_store(p, auth) == "migration-quiescence-required"
