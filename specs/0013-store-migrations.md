@@ -5,30 +5,33 @@ Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v27)** — round 24: *M-Q4 boundary respected; architecture
-> standing; v27 deferred on three load-bearing semantic gaps plus two
-> corrections* — all closed. **`on_committed` fires EXACTLY ONCE** — any second
-> publication, even value-identical, is a defect (`internal-error`), not an
-> idempotent repeat (finding 1). **The returned result is frozen EXACTLY ONCE**
-> and that immutable value drives validation, callback equality, `state`, the
-> public branch and terminal derivation — no re-read of the live label after
-> validation (v26 froze twice, reopening a mutation window) (finding 2). **The
-> terminal rescue never re-runs a helper that has already failed** —
-> `_safe_fallback_facts` degrades a fallback defect to a minimal valid value, so a
-> fallback-helper failure after a real commit is a wrapper-owned write error,
-> never a raw escape that strands the operation attempted-only (finding 3). The
-> internal `_static_resolution_problems` exact-types its carrier so its totality
-> claim holds (correction A); the independent gate covers the new cases
-> (correction B). No finding relied on arbitrary private-state corruption or
-> reopened a `0008` obligation; the M-Q4 boundary (§8a) held. Concrete migration,
-> evidence key, release identity, source binding, one-snapshot reader, TEMP
-> confinement and ordinary planner states untouched; the evidence artifact
-> reproduces byte-for-byte.
+> **in review (v28)** — round 25: *M-Q4 boundary respected; architecture
+> standing; v28 deferred on three load-bearing semantic gaps plus two
+> corrections* — all closed. The theme: **already-proven facts survive a defect
+> in the wrapper's OWN verification helpers.** **A post-publication verifier
+> defect preserves the durable terminal result** — if the sink returned a valid
+> receipt, the write error carries the exact requested facts and
+> `audit_committed=True`, never rewriting a durable `migrated` into public
+> `internal-error` (finding 1). **The safe fallback never erases a proven
+> commit** — it reconstructs the strongest proven store state INDEPENDENTLY of
+> the derivation-helper family, so a defect in that family cannot degrade a
+> committed destination to `unknown` (finding 2). **A valid `activated` receipt
+> establishes provisional consumption**, so a defect in the activation binding
+> verifier still terminalizes the durably-consumed operation rather than
+> stranding it attempted-only — while a clean readback rejection (a receipt lie,
+> no row) stays not-consumed (finding 3). `_static_resolution_problems`
+> exact-types its digest fields (correction A); the independent gate covers the
+> new cases (correction B). Each rests on M-Q4's explicit allowance that a
+> conforming adapter's success receipt is a permitted assumption. No finding
+> relied on arbitrary private-state corruption or reopened a `0008` obligation;
+> the M-Q4 boundary (§8a) held. Concrete migration, evidence key, release
+> identity, source binding, one-snapshot reader, TEMP confinement and ordinary
+> planner states untouched; the evidence artifact reproduces byte-for-byte.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v27 |
+| **Version** | v28 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
@@ -897,6 +900,8 @@ tests at implementation.
 | **M105** the authority carrier must be the EXACT `MigrationAuthority` type before any field access (a subclass can intercept it) — a subclass is a closed refusal, never `internal-error` or a raw escape after commit; the initial terminal fallback is inside the total boundary | `test_a_migration_authority_subclass_is_a_closed_refusal` · `test_a_late_authority_getter_never_strands_a_committed_operation` · gates — **measured today** (round 23, finding 3 + correction A) |
 | **M106** `on_committed` fires EXACTLY ONCE — ANY second publication, even value-identical, is a defect (`internal-error`), not an idempotent repeat; and the returned result is frozen EXACTLY ONCE (no re-read of the live label after validation) | `test_a_second_identical_on_committed_publication_is_a_defect` · `test_the_returned_result_is_frozen_once_no_reread` · gates `open_versioned-double-identical-callback` · `open_versioned-mutate-returned-after-callback` — **measured today** (round 24, findings 1 & 2) |
 | **M107** the terminal rescue NEVER re-runs a helper that has already failed — `_safe_fallback_facts` degrades a fallback defect to a minimal valid value, so a fallback-helper defect after commit is a wrapper-owned write error, never a raw escape; `_static_resolution_problems` exact-types its carrier | `test_a_fallback_helper_defect_never_escapes_after_commit` · `test_static_resolution_problems_is_total_over_an_authority_subclass` · gate `fallback-terminal-facts-defect` — **measured today** (round 24, finding 3 + correction A) |
+| **M108** a defect in the wrapper's OWN post-publication verification preserves the exact requested/durable terminal facts and `audit_committed=True` (a proven commit survives a wrapper-verifier defect; M-Q4 permits trusting a valid success receipt); the safe fallback reconstructs the strongest proven store state INDEPENDENTLY of the derivation-helper family, never erasing a proven commit | `test_a_verifier_defect_preserves_the_durable_terminal_result` · `test_the_safe_fallback_never_erases_a_proven_commit` · gates `terminal-transition-verifier-defect` · `store-fact-derivation-defect` — **measured today** (round 25, findings 1 & 2) |
+| **M109** a valid `activated` receipt establishes PROVISIONAL consumption, so a defect in the activation binding VERIFIER still terminalizes the durably-consumed operation (never attempted-only); a clean readback rejection (a receipt lie, no durable row) stays not-consumed; `_static_resolution_problems` exact-types its digest fields | `test_an_activation_readback_defect_still_terminalizes` · `test_an_activated_receipt_lie_without_a_row_stays_not_consumed` · `test_static_resolution_exact_types_its_fields` · gate `activation-readback-verifier-defect` — **measured today** (round 25, finding 3 + correction A) |
 
 ---
 
@@ -1002,46 +1007,50 @@ that any future database adapter implements the protocol.
 
 ## 9. Brief for the external reviewer
 
-**Round 25 of this spec. All three round-24 blockers and both corrections are
+**Round 26 of this spec. All three round-25 blockers and both corrections are
 closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** The theme
-was **callback cardinality, a single freeze, and a rescue that never re-runs a
-failed helper.** Concrete migration, evidence-selection key, release identity,
-source binding, one-snapshot reader, TEMP confinement and ordinary planner states
-are untouched; the evidence artifact reproduces byte-for-byte.
+was **already-proven facts surviving a defect in the wrapper's OWN verification
+helpers** — resting on M-Q4's explicit allowance that a conforming adapter's
+success receipt is a permitted assumption. Concrete migration, evidence-selection
+key, release identity, source binding, one-snapshot reader, TEMP confinement and
+ordinary planner states are untouched; the evidence artifact reproduces
+byte-for-byte.
 
-1. **`on_committed` fires EXACTLY ONCE** (finding 1): v26 treated a value-
-   identical second publication as an idempotent repeat, but two invocations are
-   mechanically distinguishable from the required one. ANY second publication is
-   now a defect (`internal-error`); the strongest proven state is still preserved
-   for terminal recovery, but the public result is not a success.
-2. **The returned result is frozen EXACTLY ONCE** (finding 2): v26 froze the
-   label once for validation, then re-read the live object to write `state`,
-   reopening a post-validation mutation window (a `current`/(F,F) validated,
-   mutated to `(T,T)`, then terminalised as a committed destination). Now
-   `returned = _frozen_from_open_result(label)` is computed once and that same
-   immutable value drives validation, callback equality, `state["facts"]`, the
-   public branch and terminal derivation — no subsequent access to the live label.
-3. **The terminal rescue never re-runs a failed helper** (finding 3): v26 moved
-   the initial fallback inside the `try`, but the outer rescue handler called the
-   SAME `_fallback_terminal_facts` again, so a defect in that helper leaked a raw
-   exception after a real commit and stranded the operation attempted-only. A new
-   `_safe_fallback_facts` degrades a fallback defect to a minimal always-valid
-   value from guarded endpoints; it is used at every rescue site, so a
-   fallback-helper failure is a wrapper-owned `MigrationAuditWriteError`, never a
-   raw escape.
+1. **A post-publication verifier defect preserves the durable terminal result**
+   (finding 1): the outer catch-all unconditionally replaced the facts with
+   `internal-error` and `audit_committed=None`, even after the sink had returned
+   a valid receipt and published the exact `migrated`/(T,T) transition. It now
+   tracks the requested facts and whether a valid receipt was returned; a defect
+   in the wrapper's OWN verifier after a valid receipt raises
+   `MigrationAuditWriteError(facts=requested, audit_committed=True,
+   cause=defect)` — the defect stays loud, but a durable record and proven audit
+   commit are not erased.
+2. **The safe fallback never erases a proven commit** (finding 2):
+   `_safe_fallback_facts` re-derived through the same `_store_facts_from_state`
+   family whose defect triggered the fallback, degrading a proven committed
+   destination to `unknown`. It now reconstructs the strongest KNOWN store state
+   INLINE from the frozen `state` signals — deliberately independent of that
+   helper family — so a committed destination (or a proven no-op destination,
+   source, or missing path) survives a derivation-helper defect.
+3. **A valid `activated` receipt establishes provisional consumption** (finding
+   3): a defect in the activation binding VERIFIER (`_durable_row_binds_authority`
+   raising) left the durably-consumed operation attempted-only, because
+   `consumed` was set only after the readback. Now a valid `activated` receipt
+   provisionally consumes BEFORE the readback, so a verifier defect still
+   terminalizes; a clean readback rejection (a receipt lie with no durable row)
+   stays not-consumed and `internal-error`.
 
-**Corrections**: **(A)** `_static_resolution_problems` exact-types its carrier
-(`type(a) is MigrationAuthority`), so its "total over any input" claim holds even
-if reached directly — v26 fixed the public path but this private helper still
-admitted a hostile subclass. **(B)** the independent gate covers the three new
-cases (double-identical callback, returned-result mutation, fallback-helper
-defect).
+**Corrections**: **(A)** `_static_resolution_problems` now exact-types its digest
+fields too (an exact `MigrationAuthority` can still carry a hostile `str`
+subclass), so its "total over any input" claim holds. **(B)** the independent
+gate covers the three new wrapper-verifier-defect seams.
 
 **On the boundary.** Every finding was *inside* the six §8a properties — the
-callback protocol's cardinality, the single-freeze immutability guarantee, and
-the total post-consumption boundary — and I treated each as a `0013` blocker.
-None required defending the reference's private state against arbitrary
-corruption; that remains a `0008` obligation.
+noncontradictory-facts guarantee, the total post-consumption boundary, and the
+abstract lifecycle's "every consumed ending terminalizes" — and each rests on the
+M-Q4 allowance to trust a valid success receipt. None required defending the
+reference's private state against arbitrary corruption; that remains a `0008`
+obligation.
 
 **Where I am least confident:** unchanged — the `current`-with-repair
 `committed=True` cell (§8a `0008` obligation, carried since round 8): the draft
@@ -1584,3 +1593,25 @@ and finite M-Q4 acceptance framework remain approved.
 | 3 | failure of `_fallback_terminal_facts` was caught only to invoke the same failing helper again, leaking a raw exception after commit and stranding the operation attempted-only | **`_safe_fallback_facts` never re-runs a failed helper** — a fallback defect degrades to a minimal valid value, so the rescue is a wrapper-owned write error (M107) |
 | A | `_static_resolution_problems` claimed totality while admitting a hostile authority subclass | **`type(a) is MigrationAuthority`** inside the helper — the totality claim holds even reached directly (M107) |
 | B | the independent gate omitted the three fresh cases | **added** — double-identical callback, returned-result mutation, fallback-helper defect (M106–M107) |
+
+---
+
+## 35. Round 25 review disposition
+
+**Verdict: M-Q4 boundary respected and applied as ruled; architecture standing;
+v28 deferred on three load-bearing semantic gaps plus two corrections — all
+closed.** No finding relied on private-state corruption or reopened a `0008`
+obligation. Each gap was an already-proven fact (a durable record, a proven
+commit, a consumed authority) discarded by a defect in the wrapper's OWN
+verification helper — and each closure rests on M-Q4's explicit allowance to
+trust a conforming adapter's success receipt. The bounded adjacent-migration
+claim, resolution/refusal split, and finite M-Q4 acceptance framework remain
+approved.
+
+| # | finding | closed by |
+|---|---|---|
+| 1 | a verifier defect after the sink published the complete `migrated`/(T,T) transition replaced the exception's facts with `internal-error` and reported `audit_committed=None` | **track the requested facts + a valid receipt** — a wrapper-verifier defect after a valid receipt raises with the exact requested facts and `audit_committed=True` (M108) |
+| 2 | a defect in the shared `_store_facts_from_state` helper after a proven commit caused `_safe_fallback_facts` to erase it to `unknown` | **the safe fallback reconstructs the strongest proven state INLINE**, independent of the derivation-helper family (M108) |
+| 3 | a defect in the activation binding verifier after a real activation left the durably-consumed operation attempted-only | **a valid `activated` receipt provisionally consumes BEFORE the readback**, so a verifier defect terminalizes; a clean rejection (no row) stays not-consumed (M109) |
+| A | `_static_resolution_problems` claimed totality while an exact `MigrationAuthority` could carry a hostile `str`-subclass digest | **exact-type the digest fields** (M109) |
+| B | the independent gate omitted the three fresh cases | **added** — terminal-transition-verifier defect, store-fact-derivation defect, activation-readback-verifier defect (M108–M109) |

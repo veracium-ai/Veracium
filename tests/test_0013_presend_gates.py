@@ -677,6 +677,31 @@ def _fallback_terminal_facts_defect():
     return lambda: setattr(m, "_fallback_terminal_facts", real)
 
 
+# --- round 25: proven facts survive a wrapper VERIFIER defect ----------------
+
+def _make_helper_raise(name):
+    """Install a raising stand-in for a wrapper VERIFIER/derivation helper."""
+    def install():
+        real = getattr(m, name)
+
+        def boom(*a, **k):
+            raise RuntimeError(f"{name} boom")
+        setattr(m, name, boom)
+        return lambda: setattr(m, name, real)
+    return install
+
+
+def _activate_readback_defect():
+    """The activation binding verifier raises after a real atomic activation
+    (round 25, finding 3)."""
+    real = m._durable_row_binds_authority
+
+    def boom(*a, **k):
+        raise RuntimeError("_durable_row_binds_authority boom")
+    m._durable_row_binds_authority = boom
+    return lambda: setattr(m, "_durable_row_binds_authority", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -769,6 +794,24 @@ _INJECTIONS = [
     ("fallback-terminal-facts-defect",
      _fallback_terminal_facts_defect,
      _outcome_is("migrated")),
+    # round 25, finding 1: the terminal-transition verifier raises AFTER a valid
+    # receipt — the write error preserves audit_committed=True (a proven commit
+    # survives the wrapper's own defect).
+    ("terminal-transition-verifier-defect",
+     _make_helper_raise("_terminal_transition_complete"),
+     _write_error(True)),
+    # round 25, finding 2: the shared store-fact derivation helper raises after a
+    # real commit — the operation terminalizes internal-error, but the durable
+    # facts keep the proven committed destination (asserted by the sweep's
+    # terminal-facts validity + the dedicated instrument test).
+    ("store-fact-derivation-defect",
+     _make_helper_raise("_store_facts_from_state"),
+     _outcome_is("internal-error")),
+    # round 25, finding 3: the activation binding verifier raises after a real
+    # activation — the consumed operation terminalizes, never attempted-only.
+    ("activation-readback-verifier-defect",
+     _activate_readback_defect,
+     _outcome_is("internal-error")),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),

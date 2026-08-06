@@ -4093,3 +4093,86 @@ def test_static_resolution_problems_is_total_over_an_authority_subclass():
             return object.__getattribute__(self, name)
     art = [json.loads(m13.EVIDENCE_FILE.read_text()), "x" * 64]
     assert m13._static_resolution_problems(Hostile(*base), art)   # no raise
+
+
+# --- round 25: proven facts survive a wrapper VERIFIER defect -----------------
+
+def test_a_verifier_defect_preserves_the_durable_terminal_result(monkeypatch):
+    """Round 25, finding 1: a defect in the wrapper's OWN post-publication
+    verification (`_terminal_transition_complete` raising) after the sink has
+    already published the complete transition must NOT discard the durable record
+    — the exception carries the exact requested facts and `audit_committed=True`.
+    """
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_terminal_transition_complete",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("transition verifier boom")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.facts.outcome == "migrated"
+    assert exc.value.committed is True                  # store commit preserved
+    assert exc.value.resulting_state == "destination"
+    assert exc.value.audit_committed is True            # durable audit proven
+
+
+def test_the_safe_fallback_never_erases_a_proven_commit(monkeypatch):
+    """Round 25, finding 2: a defect in the shared `_store_facts_from_state`
+    derivation helper after a proven real commit must not erase it — the rescue
+    reconstructs the committed destination INDEPENDENTLY of that helper family."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_store_facts_from_state",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("derivation helper boom")))
+    out = m13.migrate_store(p, auth)
+    assert out == "internal-error"
+    ev = m13._AUDIT._events[(auth.operation_id, "migration_failed")]
+    assert (ev["store_changed"], ev["transaction_committed"],
+            ev["resulting_state"], ev["resulting_version"]) == \
+        (True, True, "destination", 2)
+
+
+def test_an_activation_readback_defect_still_terminalizes(monkeypatch):
+    """Round 25, finding 3: a defect in the activation binding VERIFIER after a
+    real atomic activation (valid `activated` receipt) must not strand the
+    durably-consumed operation attempted-only — it terminalizes."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_durable_row_binds_authority",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("readback verifier boom")))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert any(oid == auth.operation_id and ev in m13._TERMINAL_EVENTS
+               for (oid, ev) in m13._AUDIT._events)     # terminalized, not stranded
+
+
+def test_an_activated_receipt_lie_without_a_row_stays_not_consumed(monkeypatch):
+    """Round 25, finding 3 (boundary): a valid `activated` receipt with NO durable
+    row (a clean readback rejection, not a verifier defect) is `internal-error`
+    and NOT consumed — it must not become a terminal-write failure."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: m13.ActivationReceipt(
+                            "activated", a.operation_id, True, False))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    # never consumed: a retry with the real sink migrates.
+    monkeypatch.undo()
+    assert m13.migrate_store(p, auth) == "migrated"
+
+
+def test_static_resolution_exact_types_its_fields():
+    """Round 25, correction A: `_static_resolution_problems` exact-types the
+    digest fields, so an EXACT `MigrationAuthority` carrying a hostile `str`
+    subclass digest returns a problem, never raises."""
+    p = _v1_store()
+    base = m13.make_authority(p)
+
+    class EqBoom(str):
+        def __eq__(self, o):
+            raise RuntimeError("digest eq boom")
+        __hash__ = str.__hash__
+    art = [json.loads(m13.EVIDENCE_FILE.read_text()), "x" * 64]
+    auth = base._replace(source_digest=EqBoom(base.source_digest))
+    assert m13._static_resolution_problems(auth, art)   # no raise
