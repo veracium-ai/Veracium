@@ -626,6 +626,57 @@ def _open_versioned_impossible_cell():
     return lambda: setattr(m.sv, "open_versioned", real)
 
 
+# --- round 24: callback cardinality; single freeze; total rescue ------------
+
+def _open_versioned_double_publish():
+    """Fire an IDENTICAL `on_committed` publication twice with no DB work (round
+    24, finding 1)."""
+    real = m.sv.open_versioned
+
+    def wrong(conn, path, **k):
+        r = sv.OpenResult("migrated", store_changed=True,
+                          transaction_committed=True, resulting_version=2)
+        if k.get("on_committed"):
+            k["on_committed"](r)
+            k["on_committed"](r)
+        return r
+    m.sv.open_versioned = wrong
+    return lambda: setattr(m.sv, "open_versioned", real)
+
+
+def _open_versioned_mutate_after_callback():
+    """Publish `current`/(F,F), then mutate the returned object to `(T,T)` before
+    returning — a post-validation mutation the single freeze must catch (round
+    24, finding 2)."""
+    real = m.sv.open_versioned
+
+    def wrong(conn, path, **k):
+        r = sv.OpenResult("migrated", store_changed=True,
+                          transaction_committed=True, resulting_version=2)
+        # migrate for real so a durable operation exists, publishing T/T...
+        real(conn, path, **k)
+        if k.get("on_committed"):
+            k["on_committed"](sv.OpenResult("current", store_changed=False,
+                                            transaction_committed=False,
+                                            resulting_version=2))
+        r.store_changed = False                        # returned contradicts callback
+        r.transaction_committed = False
+        return r
+    m.sv.open_versioned = wrong
+    return lambda: setattr(m.sv, "open_versioned", real)
+
+
+def _fallback_terminal_facts_defect():
+    """Make `_fallback_terminal_facts` raise consistently (round 24, finding
+    3) — the rescue must not re-run it."""
+    real = m._fallback_terminal_facts
+
+    def boom(*a, **k):
+        raise RuntimeError("fallback boom")
+    m._fallback_terminal_facts = boom
+    return lambda: setattr(m, "_fallback_terminal_facts", real)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -705,6 +756,19 @@ _INJECTIONS = [
     ("open_versioned-impossible-callback-cell",
      _open_versioned_impossible_cell,
      _outcome_is("internal-error")),
+    # round 24, finding 1: a second identical on_committed publication.
+    ("open_versioned-double-identical-callback",
+     _open_versioned_double_publish,
+     _outcome_is("internal-error")),
+    # round 24, finding 2: a returned-result mutation the single freeze catches.
+    ("open_versioned-mutate-returned-after-callback",
+     _open_versioned_mutate_after_callback,
+     _outcome_is("internal-error")),
+    # round 24, finding 3: a fallback-helper defect never escapes raw after a
+    # real commit — the operation still terminalizes (migrated; derivation works).
+    ("fallback-terminal-facts-defect",
+     _fallback_terminal_facts_defect,
+     _outcome_is("migrated")),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),

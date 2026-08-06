@@ -560,12 +560,15 @@ def _make_on_committed(state, to_v, migrating):
             # (F,F) proves the store IS at the destination without a commit.
             state["position_established"] = True
             return
-        if prior == fr:                     # frozen tuples compare by value
-            return                          # idempotent for an identical repeat
-        # A second, DIFFERENT publication — the kernel fires this once, so this
-        # is a defect. Retain the strongest proven state: a genuine commit
-        # (T,T) must never be suppressed by a no-commit position (finding 3).
-        state["callback_defect"] = "contradictory second on_committed publication"
+        # Round 24, finding 1: the kernel fires this sink EXACTLY ONCE, so ANY
+        # second publication — even a value-IDENTICAL one — is a cardinality
+        # violation the wrapper can directly observe, not an idempotent repeat
+        # (v26 accepted an identical repeat, so two callbacks accompanied a false
+        # success). It is a defect; retain the strongest proven state for terminal
+        # recovery — a genuine commit (T,T) must never be suppressed by a
+        # no-commit position (round 18, finding 3).
+        state["callback_defect"] = ("a second on_committed publication (the "
+                                    "kernel fires it exactly once)")
         prior_committed = (prior.store_changed is True
                            and prior.transaction_committed is True)
         if committed and not prior_committed:
@@ -574,21 +577,14 @@ def _make_on_committed(state, to_v, migrating):
     return sink
 
 
-def _open_result_problems(label, migrating, to_v, committed_facts) -> list:
-    """The COMPLETE, mode-aware `OpenResult` contract (round 16, finding 3: v17
-    checked SHAPE only, so `migrated`/¬changed/v1, a `created`/`adopted` in
-    migrate mode, and `migrated`/v999 all passed and were then misreported as
-    audit-storage failures). In migrate mode: `migrated` → changed+committed at
-    `to_v`; `current` → (¬changed,¬committed) or (changed,committed) at `to_v`;
-    `created`/`adopted` are FORBIDDEN. The result must also be consistent with
-    any facts already delivered through `on_committed`."""
-    # Round 22, finding 2: EXACT-type the returned label (a subclass with an
-    # overridden `__str__` cannot spoof the branch) and read the branch from the
-    # underlying value.
-    fl = _frozen_from_open_result(label)
-    if fl is None:
-        return [f"malformed OpenResult (not an exact valid OpenResult): "
-                f"{_safe_repr(label)}"]
+def _frozen_result_problems(fl, migrating, to_v, committed_facts) -> list:
+    """The COMPLETE, mode-aware contract for an ALREADY-FROZEN returned result
+    (round 16, finding 3). Round 24, finding 2: this takes the `_FrozenResult`,
+    NOT the live `OpenResult` — the caller freezes the returned label EXACTLY
+    ONCE and drives validation, callback equality, `state["facts"]`, the public
+    branch AND terminal derivation from that same immutable value; v26 froze once
+    here for validation and then re-read the live label afterward, reopening a
+    post-validation mutation window."""
     p = []
     cell = _cell_problems(fl, migrating, to_v)   # the SHARED mode-aware contract
     if cell is not None:
@@ -1590,9 +1586,12 @@ def _static_resolution_problems(a, snapshot) -> list:
     before consumption, so even an operation that ends in the no-op
     `current` branch was valid for one exact evidenced source. A failure
     here is an ARTIFACT property, so it maps to `migration-evidence-missing`
-    rather than an authority refusal. Total over any input."""
-    if not isinstance(a, MigrationAuthority):
-        return ["no authority to resolve"]
+    rather than an authority refusal. Total over any input — round 24, correction
+    A: it exact-types the carrier ITSELF (`type(a) is MigrationAuthority`), so the
+    totality claim holds even if reached directly, not only behind
+    `authority_static_problems`; a subclass can intercept field access."""
+    if type(a) is not MigrationAuthority:
+        return ["no authority to resolve (not exactly a MigrationAuthority)"]
     art = snapshot[0] if snapshot is not None else None
     if not isinstance(art, dict):
         return ["no parseable evidence snapshot to resolve the authority "
@@ -3068,6 +3067,29 @@ def _fallback_terminal_facts(out, state, authority) -> "TerminalFacts":
     return TerminalFacts("internal-error", frm, to, None, None, "unknown", None)
 
 
+def _safe_fallback_facts(out, state, authority) -> "TerminalFacts":
+    """A `TerminalFacts` that NEVER raises (round 24, finding 3: the terminal
+    rescue must not re-run a helper that has already failed — v26's outer rescue
+    called `_fallback_terminal_facts` again, so a defect in THAT helper leaked a
+    raw exception after a real commit and stranded the operation attempted-only).
+    Try the richer frozen-state fallback; if it (or a hostile authority endpoint)
+    itself raises, degrade to a minimal always-valid `internal-error`/`unknown`
+    value from GUARDED endpoints. This is the wrapper-owned best-known-facts the
+    whole post-consumption boundary can rely on."""
+    try:
+        return _fallback_terminal_facts(out, state, authority)
+    except Exception:
+        pass
+    frm, to = 1, 2                             # a valid adjacent default
+    try:
+        f, t = authority.from_version, authority.to_version
+        if type(f) is int and type(t) is int and f >= 0 and t == f + 1:
+            frm, to = f, t
+    except Exception:
+        pass
+    return TerminalFacts("internal-error", frm, to, None, None, "unknown", None)
+
+
 def _durable_event_matches(durable, operation_id, event, payload) -> bool:
     """Whether the DURABLE terminal event equals the payload we REQUESTED (round
     17, finding 2: v18 checked only that SOME event existed under the key, so a
@@ -3137,16 +3159,16 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
             operation_id=authority.operation_id,
             store_path=authority.store_path,
             facts=(facts if facts is not None
-                   else _fallback_terminal_facts(out, state, authority)),
+                   else _safe_fallback_facts(out, state, authority)),
             audit_committed=_sane_committed(audit_committed), cause=exc) from exc
 
     try:
-        # Round 23, finding 3: the initial fallback construction is INSIDE the
-        # protected boundary — v25 built the always-valid default BEFORE the
-        # `try`, so a defect there (a hostile authority getter, a future helper
-        # bug) escaped raw and stranded a committed operation attempted-only. The
-        # normative claim is that the ENTIRE post-consumption sequence is total.
-        facts = _fallback_terminal_facts(out, state, authority)
+        # Round 23 finding 3 + round 24 finding 3: the initial fallback is INSIDE
+        # the protected boundary AND uses `_safe_fallback_facts`, which never
+        # raises — v26 re-ran `_fallback_terminal_facts` in the rescue handler, so
+        # a defect in THAT helper escaped raw and stranded a committed operation
+        # attempted-only. The ENTIRE post-consumption sequence is total.
+        facts = _safe_fallback_facts(out, state, authority)
         # Round 17, finding 5: derivation is inside the boundary — a raising
         # `_terminal_facts` or an invalid `TerminalFacts` falls back to
         # `internal-error` from FROZEN facts, never re-running the failing path.
@@ -3160,7 +3182,7 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
                 raise ValueError("derived terminal facts are invalid")
             facts = derived
         except Exception:
-            facts = _fallback_terminal_facts(out, state, authority)
+            facts = _safe_fallback_facts(out, state, authority)
             outcome = str(facts.outcome)
             fell_back = True
             store = {"store_changed": facts.store_changed,
@@ -3218,8 +3240,9 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
         # Round 18, finding 4: a defect ANYWHERE else in the post-consumption
         # sequence — timestamp generation, a hostile receipt equality, the
         # exception constructor — is still the audit-write failure, surfaced
-        # loudly from best frozen facts, never a raw third exception.
-        facts = _fallback_terminal_facts(out, state, authority)
+        # loudly from best frozen facts, never a raw third exception. Round 24,
+        # finding 3: `_safe_fallback_facts` never re-runs a failed helper.
+        facts = _safe_fallback_facts(out, state, authority)
         raise MigrationAuditWriteError(
             operation_id=authority.operation_id,
             store_path=authority.store_path, facts=facts,
@@ -3459,22 +3482,27 @@ def _run_inner(path, busy_timeout_ms: int, migrating: bool,
                             "internal-error",
                             diagnostic=f"on_committed defect: "
                                        f"{state['callback_defect']}")
-                    # Round 15 f2 + round 16 f3 + round 17 f3: the kernel result
-                    # is a library contract — validate it COMPLETELY, mode-aware,
-                    # and against the on_committed BRANCH, before trusting it.
-                    rp = _open_result_problems(label, migrating, to_v,
-                                               state.get("facts"))
+                    # Round 15 f2 + round 16 f3 + round 17 f3 + round 24 finding 2:
+                    # FREEZE the returned label EXACTLY ONCE, then validate that
+                    # SAME immutable value COMPLETELY (mode-aware + against the
+                    # on_committed facts) and use it for `state["facts"]` AND the
+                    # public branch — no second read of the caller-owned live
+                    # object (v26 froze once for validation, then re-read the live
+                    # label, reopening a post-validation mutation window).
+                    returned = _frozen_from_open_result(label)
+                    if returned is None:
+                        return Outcome(
+                            "internal-error",
+                            diagnostic=f"kernel result is not an exact valid "
+                                       f"OpenResult: {_safe_repr(label)}")
+                    rp = _frozen_result_problems(returned, migrating, to_v,
+                                                 state.get("facts"))
                     if rp:
                         return Outcome(
                             "internal-error",
                             diagnostic="kernel result invalid: " + "; ".join(rp))
-                    # Round 22, finding 2: keep a FROZEN copy (validated equal to
-                    # the on_committed facts above), never the live label. The
-                    # branch of the returned Outcome is the exact underlying value.
-                    frozen = _frozen_from_open_result(label)
-                    if frozen is not None:
-                        state["facts"] = frozen
-                    return Outcome(frozen.branch if frozen else str(label))
+                    state["facts"] = returned
+                    return Outcome(returned.branch)
                 finally:
                     # Round 13, finding 2: closing the connection is CLEANUP,
                     # not a read of the store. A close defect must not

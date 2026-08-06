@@ -4007,3 +4007,89 @@ def test_a_late_authority_getter_never_strands_a_committed_operation():
     assert out == "migration-quiescence-required"       # rejected pre-consumption
     assert sqlite3.connect(p).execute(
         "PRAGMA user_version").fetchone()[0] == 1        # store untouched
+
+
+# --- round 24: callback cardinality; single freeze; total rescue --------------
+
+def test_a_second_identical_on_committed_publication_is_a_defect(monkeypatch):
+    """Round 24, finding 1: the kernel fires `on_committed` exactly once, so ANY
+    second publication — even value-IDENTICAL — is a cardinality violation the
+    wrapper can observe. Two callbacks with no DB work is `internal-error`, store
+    untouched, never a false success."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+
+    def double_pub(conn, path, **k):
+        r = sv.OpenResult("migrated", store_changed=True,
+                          transaction_committed=True, resulting_version=2)
+        if k.get("on_committed"):
+            k["on_committed"](r)
+            k["on_committed"](r)                       # identical repeat
+        return r
+    monkeypatch.setattr(m13.sv, "open_versioned", double_pub)
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert sqlite3.connect(p).execute(
+        "PRAGMA user_version").fetchone()[0] == 1
+
+
+def test_the_returned_result_is_frozen_once_no_reread(monkeypatch):
+    """Round 24, finding 2: the returned label is frozen EXACTLY ONCE and that
+    immutable value drives everything. A kernel that publishes `current`/(F,F)
+    then mutates the returned object to `(T,T)` before returning is caught as a
+    contradiction (`internal-error`) — the mutation never becomes the durable
+    facts."""
+    p = _v1_store()
+    a1, a2 = m13.make_authority(p), m13.make_authority(p)
+    m13.migrate_store(p, a1)                            # -> v2; a2 sees no-op current
+    real = m13.sv.open_versioned
+
+    def mutate_after_callback(conn, path, **k):
+        r = sv.OpenResult("current", store_changed=False,
+                          transaction_committed=False, resulting_version=2)
+        if k.get("on_committed"):
+            k["on_committed"](r)                       # publish F/F
+        r.store_changed = True                          # then mutate the returned obj
+        r.transaction_committed = True
+        return r
+    monkeypatch.setattr(m13.sv, "open_versioned", mutate_after_callback)
+    out = m13.migrate_store(p, a2)
+    assert out == "internal-error"                     # contradiction caught
+    ev = (m13._AUDIT._events.get((a2.operation_id, "migration_completed"))
+          or m13._AUDIT._events.get((a2.operation_id, "migration_failed")))
+    assert ev["store_changed"] is not True             # the (T,T) mutation never leaked
+
+
+def test_a_fallback_helper_defect_never_escapes_after_commit(monkeypatch):
+    """Round 24, finding 3: the terminal rescue must not re-run a helper that has
+    already failed. Even if `_fallback_terminal_facts` raises consistently after
+    a real commit, no raw exception escapes and the operation is terminalized."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13, "_fallback_terminal_facts",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            RuntimeError("fallback boom")))
+    try:
+        m13.migrate_store(p, auth)
+    except m13.MigrationAuditWriteError:
+        pass                                           # a named escape is acceptable
+    except Exception as exc:                            # noqa: BLE001
+        pytest.fail(f"raw escape: {type(exc).__name__}: {exc}")
+    assert any(oid == auth.operation_id and ev in m13._TERMINAL_EVENTS
+               for (oid, ev) in m13._AUDIT._events)    # terminalized, not stranded
+
+
+def test_static_resolution_problems_is_total_over_an_authority_subclass():
+    """Round 24, correction A: `_static_resolution_problems` exact-types the
+    carrier, so its 'total over any input' claim holds even reached directly — a
+    `MigrationAuthority` subclass with a hostile getter returns a problem, never
+    raises."""
+    p = _v1_store()
+    base = m13.make_authority(p)
+
+    class Hostile(m13.MigrationAuthority):
+        def __getattribute__(self, name):
+            if name == "source_digest":
+                raise RuntimeError("resolution getter boom")
+            return object.__getattribute__(self, name)
+    art = [json.loads(m13.EVIDENCE_FILE.read_text()), "x" * 64]
+    assert m13._static_resolution_problems(Hostile(*base), art)   # no raise
