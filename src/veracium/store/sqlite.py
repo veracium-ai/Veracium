@@ -16,15 +16,18 @@ from typing import Optional
 
 from ..schema import Edge, Episode
 from .base import Store
-from .schema_version import (SCHEMA_V1, PostCommitAuditError,  # noqa: F401
+from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
+                             PostCommitAuditError,
                              StoreVersionError, open_versioned)
 
 # The schema is DERIVED from the versioning registry — one declaration, which
 # is 0007 §4a-vi's "honest end state": there is no second copy to drift, and
 # `registry_conformance` compares this module against the registry it is built
-# from. `IF NOT EXISTS` is gone with it: creation now happens exactly once, on
-# the §4 "new" path, inside the open transaction.
-_SCHEMA = ";\n".join(o.ddl for o in SCHEMA_V1) + ";\n"
+# from. It tracks the CURRENT `SCHEMA_VERSION` (v2 adds `specs/0008`'s
+# `confirmations` table), never a pinned v1. `IF NOT EXISTS` is gone with it:
+# creation now happens exactly once, on the §4 "new" path, inside the open
+# transaction.
+_SCHEMA = ";\n".join(o.ddl for o in SCHEMAS[SCHEMA_VERSION]) + ";\n"
 
 
 class SqliteStore(Store):

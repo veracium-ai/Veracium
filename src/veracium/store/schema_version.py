@@ -144,14 +144,33 @@ SCHEMA_V1 = (
 )""", REQUIRED),
 )
 
-SCHEMAS = {1: SCHEMA_V1}
+# v2 adds the `confirmations` audit table (`specs/0008` §6d) — the mandatory
+# record of every `confirm_edge` transition. The DDL is byte-identical to the
+# `specs/0013` v1→v2 migration that installs it: `correlation_id` is NOT NULL (an
+# omitted id is generated and persisted, else replay could not find the row);
+# `UNIQUE(user_id, correlation_id)` is tenant-scoped (§6c "not global"); the index
+# on `(user_id, edge_id)` accelerates `confirmations_for()` and is REBUILDABLE.
+SCHEMA_V2 = SCHEMA_V1 + (
+    SchemaObject("table", "confirmations", """CREATE TABLE confirmations (
+    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,
+    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,
+    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,
+    UNIQUE(user_id, correlation_id)
+)""", REQUIRED),
+    SchemaObject("index", "ix_confirmations_edge",
+                 "CREATE INDEX ix_confirmations_edge "
+                 "ON confirmations(user_id, edge_id)", REBUILDABLE),
+)
 
-SCHEMA_VERSION = 1
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2}
+
+SCHEMA_VERSION = 2
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
 which version received mutable treatment in the generated artifact (round 5,
-finding 5)."""
+finding 5). Bumped 1→2 for `specs/0008`'s `confirmations` table, installed by the
+`specs/0013` v1→v2 offline migration."""
 
 
 def rebuildable_keys(version: int = SCHEMA_VERSION) -> set:

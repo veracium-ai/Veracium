@@ -24,9 +24,9 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "specs"))
 
-from schema_model import (REBUILDABLE, REQUIRED, SCHEMA_V1, SCHEMAS,  # noqa: E402
-                          SchemaObject, create, declared_policies, digest, drift,
-                          identity, manifest, registry_conformance,
+from schema_model import (REBUILDABLE, REQUIRED, SCHEMA_V1, SCHEMA_VERSION,  # noqa: E402
+                          SCHEMAS, SchemaObject, create, declared_policies, digest,
+                          drift, identity, manifest, registry_conformance,
                           reviewed_policies, resolve)
 from veracium.store.sqlite import SqliteStore, _SCHEMA  # noqa: E402
 
@@ -169,10 +169,12 @@ def test_the_registry_reproduces_the_product_schema():
 
 
 def test_a_wrong_rebuildable_ddl_fails_conformance(monkeypatch):
-    """Round 4: v5 compared the acceptance digest, which excludes exactly these."""
+    """Round 4: v5 compared the acceptance digest, which excludes exactly these.
+    Patched against the CURRENT registry version (`_SCHEMA` tracks it), so a wrong
+    rebuildable DDL diverges from the product schema built at import."""
     bad = tuple(o._replace(ddl="CREATE UNIQUE INDEX ix_edges_subj_rel ON edges(user_id)")
-                if o.name == "ix_edges_subj_rel" else o for o in SCHEMA_V1)
-    monkeypatch.setitem(SCHEMAS, 1, bad)
+                if o.name == "ix_edges_subj_rel" else o for o in SCHEMAS[SCHEMA_VERSION])
+    monkeypatch.setitem(SCHEMAS, SCHEMA_VERSION, bad)
     assert len(registry_conformance()) == 1
 
 
@@ -181,8 +183,8 @@ def test_flipping_only_a_policy_fails_conformance(monkeypatch):
     passed. A policy decides digest exclusion, drift repair and candidate
     matching — it cannot be self-certifying."""
     flipped = tuple(o._replace(policy=REQUIRED) if o.name == "ix_edges_subj_rel" else o
-                    for o in SCHEMA_V1)
-    monkeypatch.setitem(SCHEMAS, 1, flipped)
+                    for o in SCHEMAS[SCHEMA_VERSION])
+    monkeypatch.setitem(SCHEMAS, SCHEMA_VERSION, flipped)
     problems = registry_conformance()
     assert any("policy" in p for p in problems), problems
 
@@ -653,12 +655,16 @@ def test_schema_version_must_match_the_registry():
     the deleted migrations module, and the round-6 disposition still claimed
     S53 enforced it."""
     from schema_model import validate_schema_registry
-    SCHEMAS[2] = SCHEMA_V1
+    # A registry whose max version exceeds the declared SCHEMA_VERSION. Uses a
+    # fresh version above the head (SCHEMA_VERSION is now 2, with a real v2 in the
+    # registry) and restores by deleting only what it added.
+    extra = SCHEMA_VERSION + 1
+    SCHEMAS[extra] = SCHEMA_V1
     try:
         problems = validate_schema_registry()
         assert any("SCHEMA_VERSION" in p for p in problems), problems
     finally:
-        del SCHEMAS[2]
+        del SCHEMAS[extra]
 
 
 def test_the_registry_versions_are_contiguous():

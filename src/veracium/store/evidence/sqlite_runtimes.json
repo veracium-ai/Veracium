@@ -10,9 +10,10 @@
         "xinfo_exposes_generated": true
       },
       "manifest_algorithm": 13,
-      "schema_version": 1,
+      "schema_version": 2,
       "constructor_digests": {
-        "1": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299"
+        "1": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
+        "2": "15f606bb73c5ef5cb5f1c7100b53a6e0536acb3498e477b799c549b631328d83"
       },
       "manifestations": {
         "constructor v1": {
@@ -30,6 +31,263 @@
             "type": "index",
             "table": "episodes",
             "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)"
+          },
+          "table:edges": {
+            "type": "table",
+            "table": "edges",
+            "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "subject",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "relation",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "object",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "active",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "quarantined",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "json",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:episodes": {
+            "type": "table",
+            "table": "episodes",
+            "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "date",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "json",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:wiki": {
+            "type": "table",
+            "table": "wiki",
+            "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+            "columns": [
+              [
+                "user_id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "text",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "store_version",
+                "INTEGER",
+                0,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:write_counter": {
+            "type": "table",
+            "table": "write_counter",
+            "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+            "columns": [
+              [
+                "user_id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "n",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "constructor v2": {
+          "index:ix_confirmations_edge": {
+            "type": "index",
+            "table": "confirmations",
+            "sql": "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)"
+          },
+          "index:ix_edges_subj_rel": {
+            "type": "index",
+            "table": "edges",
+            "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)"
+          },
+          "index:ix_edges_user_active": {
+            "type": "index",
+            "table": "edges",
+            "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)"
+          },
+          "index:ix_episodes_user": {
+            "type": "index",
+            "table": "episodes",
+            "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)"
+          },
+          "table:confirmations": {
+            "type": "table",
+            "table": "confirmations",
+            "sql": "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "edge_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "confirmed_at",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "actor",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "call_path",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "correlation_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "request_digest",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
           },
           "table:edges": {
             "type": "table",
