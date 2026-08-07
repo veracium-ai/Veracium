@@ -176,7 +176,7 @@ other than new evidence from a party entitled to supply it?**
 | `proactive.assemble()` | ✅ clean | `if not e.assertable: continue` |
 | `confirm()` | ✅ **fixed 0.4.5** — `M2` | first-known vs liveness |
 | T1 reinforcement | 🟡 **fixed, unreleased** — `M3` | clears `needs_confirmation` |
-| `record_outcome()` upgrade-in-place | 🟠 **unimplemented** — `M4` | overwrites `author_of_evidence` |
+| `record_outcome()` upgrade-in-place | 🟡 **fixed, unreleased** — `M4` | overwrites `author_of_evidence` |
 | T1 `confidence = max(...)` | 🟠 **unimplemented** — `M5` | a new edge arrived |
 | `import_memory()` | 🔴 **open** — `N9t-transfer` | trust fields reconstructed from a file |
 <!-- /GENERATED:matrix -->
@@ -951,9 +951,9 @@ better hand-check rather than a different mechanism. **So the summaries are now
 derived and nothing below is restated by hand.**
 
 <!-- GENERATED:summary -->
-**18 findings · 8 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8) · 8 unimplemented · 7 still open · **1 fixed but unreleased**.**
+**18 findings · 8 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8) · 7 unimplemented · 7 still open · **2 fixed but unreleased**.**
 
-**Unimplemented:** `M4`, `N9b-lineage`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`, `X-crash`. **Open:** `N9b-lineage`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`, `X-crash`.
+**Unimplemented:** `N9b-lineage`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`, `X-crash`. **Open:** `N9b-lineage`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`, `X-crash`.
 
 *Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes that do not hold.*
 <!-- /GENERATED:summary -->
@@ -967,7 +967,7 @@ derived and nothing below is restated by hand.**
 | **M2″** offset-bearing dates relabelled UTC instead of converted | `.replace(tzinfo=utc)` discarded the offset — 12h of skew bypass measured | — | this spec | **yes** — 0.4.7 | `test_an_offset_bearing_timestamp_is_converted_not_relabelled` |
 | **M2‴** malformed dates silently became *now* | an invented observation time the caller never supplied | — | this spec | **yes** — 0.4.7 | `test_a_malformed_event_date_is_rejected_not_silently_now` |
 | **M3** staleness cleared on same-author-class evidence | 0.4.5 closed cross-class clearing and left same-class open | — | **`specs/0008`** | **code yes, None** — users do not have it | `test_no_provenance_value_clears_staleness · test_same_author_restatement_does_not_clear_staleness` |
-| **M4** `record_outcome` overwrites authorship | 0.4.5 appends a note to a summary rebuilt on every upgrade | the trail survives exactly one hop; the field is still overwritten | **`specs/0009`** | **no** | `0009 H1–H7` |
+| **M4** `record_outcome` overwrites authorship | 0.4.5 appends a note to a summary rebuilt on every upgrade | CLOSED on branch (unreleased): record_outcome now APPENDS via the CAS append_outcome_if_head — a prior judgment's author is never overwritten (accepted specs/0009) | **`specs/0009`** | **code yes, None** — users do not have it | `0009 H1 test_outcome_authorship_is_never_overwritten` |
 | **M5** merge-time `confidence = max(...)` | T1 retains `max`, which is earned | — | this spec | n/a | `constrains the unwritten T2 design` |
 | **N9b-floor** consolidation manufactured confidence, disclosure and currency | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | — | this spec | **yes** — 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | **N9b-lineage** consolidation retains no record of the absorbed set | inputs deleted, no lineage | 🔴 mixed-currency spread unretained, so N9b's premise and N10 are unmet | **`specs/0010`** | **no** | `0010 X6, X8` |
@@ -1006,7 +1006,7 @@ as §11, so it cannot become another independently-maintained summary.
 | `M2″` | `0002` | resolved | shipped 0.4.7 | `test_an_offset_bearing_timestamp_is_converted_not_relabelled` |
 | `M2‴` | `0002` | resolved | shipped 0.4.7 | `test_a_malformed_event_date_is_rejected_not_silently_now` |
 | `M3` | `0008` | resolved | **committed, unreleased** | `test_no_provenance_value_clears_staleness · test_same_author_restatement_does_not_clear_staleness` |
-| `M4` | `0009` | resolved | **not implemented** | `0009 H1–H7` |
+| `M4` | `0009` | resolved | **committed, unreleased** | `0009 H1 test_outcome_authorship_is_never_overwritten` |
 | `M5` | `0002` | resolved | n/a | `constrains the unwritten T2 design` |
 | `N9b-floor` | `0002` | resolved | shipped 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | `N9b-lineage` | `0010` | open | **not implemented** | `0010 X6, X8` |

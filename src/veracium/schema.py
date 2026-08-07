@@ -327,3 +327,21 @@ class Episode(BaseModel):
     lineage: Optional[list[str]] = None
     date_start: Optional[str] = None
     date_end: Optional[str] = None
+
+
+class OutcomeJudgmentDraft(BaseModel):
+    """The caller-owned payload of one outcome judgment (specs/0009 §4a, H9).
+
+    STRUCTURALLY excludes every store-owned field — no `id`, `seq`,
+    `supersedes_episode`, `source_type`: the Store's `append_outcome_if_head`
+    mints identity, allocates the per-chain `seq`, and DERIVES `source_type`
+    from `author` (USER→STATED, SYSTEM→INFERRED). Making "store-assigned" a
+    property of the type is what stops a caller-supplied `seq`/`id` turning an
+    append into a replace. `summary` is built by `Memory.record_outcome` before
+    the Store boundary (it carries corrected-value text); `context_ref` is
+    inherit-on-omit for a non-root append."""
+    author: EvidenceAuthor
+    event_timestamp: str
+    outcome: Outcome
+    summary: str
+    context_ref: Optional[str] = None

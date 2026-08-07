@@ -133,21 +133,36 @@ def test_same_author_restatement_does_not_clear_staleness():
 # --- N5: authorship is never erased ----------------------------------------
 
 def test_outcome_upgrade_retains_prior_authorship():
-    """M4. supersession-never-erasure applies to provenance too."""
+    """M4, under specs/0009: supersession-never-erasure applies to provenance
+    too — but now the prior authorship survives as its OWN untouched chain link,
+    not merely as a note grafted onto a rewritten one. Revising a system judgment
+    to a human one APPENDS: the root (system) link is preserved byte-for-byte and
+    the head (user) link records that the prior judgment was system-authored."""
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d)
         mem.store.add_edge(_edge("e1"))
         # the API pins actor to outcome type (CONCURRED/CHALLENGED are system
         # judgments; CONFIRMED/CORRECTED are human ones), so an authorship
         # change only happens across those families — same evidence_ref, which
-        # is what selects the upgrade-in-place path
+        # is what selects the append-a-new-chain-link path
         mem.record_outcome("u", "e1", outcome=Outcome.CONCURRED, actor="system",
                            evidence_ref="ctx-1")
         mem.record_outcome("u", "e1", outcome=Outcome.CONFIRMED, actor="user",
                            evidence_ref="ctx-1")
-        eps = [e for e in mem.store.episodes("u") if e.kind == "outcome"]
-        assert len(eps) == 1, "this exercises the upgrade-in-place path"
-        assert "prior judgment was system-authored" in eps[0].summary, \
+        eps = sorted((e for e in mem.store.episodes("u") if e.kind == "outcome"),
+                     key=lambda e: e.seq)
+        assert len(eps) == 2, "the append-only chain retains BOTH judgments"
+        root, head = eps
+        assert root.seq == 1 and head.seq == 2
+        # the original system judgment is preserved untouched — not overwritten
+        assert root.provenance.author_of_evidence is EvidenceAuthor.SYSTEM
+        assert root.outcome is Outcome.CONCURRED
+        assert "prior judgment" not in root.summary
+        # the head is the new human judgment, and it records what it revised
+        assert head.provenance.author_of_evidence is EvidenceAuthor.USER
+        assert head.outcome is Outcome.CONFIRMED
+        assert head.supersedes_episode == root.id
+        assert "prior judgment was system-authored" in head.summary, \
             "prior authorship was erased"
         mem.close()
 

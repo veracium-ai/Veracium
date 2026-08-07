@@ -64,9 +64,55 @@ def test_record_outcome_is_edge_blind_never_supersedes():
         assert e.active and e.assertable            # fact untouched
         assert e.object == "sends promotional mail"  # value untouched
         assert e.outcome_counts["corrected"] == 1
-        # the decision's true value lives in the outcome episode record
-        ev = next(ep for ep in mem.store.episodes("triage") if ep.kind == "outcome")
-        assert "spam" in ev.summary and ev.outcome == Outcome.CORRECTED
+        # the decision's true value lives in the HEAD of the outcome chain (the
+        # root use is preserved untouched under specs/0009's append-only history)
+        outs = [ep for ep in mem.store.episodes("triage") if ep.kind == "outcome"]
+        head = max(outs, key=lambda ep: ep.seq)
+        assert "spam" in head.summary and head.outcome == Outcome.CORRECTED
+        mem.close()
+
+
+def test_outcome_authorship_is_never_overwritten():
+    """specs/0009 H1 (closes M4). Every judgment is an append-only chain link:
+    a later judgment on the same use NEVER mutates any prior link — not its
+    author, not its outcome, not its summary, not its id. Adversarial: snapshot
+    the full serialized state of every outcome episode before each revising
+    append and assert every previously-written link is byte-identical after."""
+    with tempfile.TemporaryDirectory() as d:
+        mem, edge = _mem(d)
+
+        def outcome_snapshot():
+            return {ep.id: ep.model_dump_json()
+                    for ep in mem.store.episodes("triage") if ep.kind == "outcome"}
+
+        # a use, then a system judgment, then a human revision — three links on
+        # ONE chain, crossing the author boundary (system → user)
+        mem.record_outcome("triage", edge.id, outcome="unreviewed",
+                           evidence_ref="run-1", date="2026-07-02")
+        before = outcome_snapshot()
+        mem.record_outcome("triage", edge.id, outcome="challenged", actor="system",
+                           evidence_ref="run-1", date="2026-07-03")
+        # every link that existed before the append is untouched, byte-for-byte
+        after = outcome_snapshot()
+        for eid, blob in before.items():
+            assert after.get(eid) == blob, f"prior link {eid} was overwritten"
+
+        before = after
+        mem.record_outcome("triage", edge.id, outcome="corrected", actor="user",
+                           corrected_value="spam", evidence_ref="run-1",
+                           date="2026-07-04")
+        after = outcome_snapshot()
+        for eid, blob in before.items():
+            assert after.get(eid) == blob, f"prior link {eid} was overwritten"
+
+        # the chain is a contiguous, superseding, author-preserving history
+        chain = sorted((ep for ep in mem.store.episodes("triage")
+                        if ep.kind == "outcome"), key=lambda ep: ep.seq)
+        assert [ep.seq for ep in chain] == [1, 2, 3]
+        assert [ep.provenance.author_of_evidence for ep in chain] == [
+            EvidenceAuthor.SYSTEM, EvidenceAuthor.SYSTEM, EvidenceAuthor.USER]
+        assert chain[1].supersedes_episode == chain[0].id
+        assert chain[2].supersedes_episode == chain[1].id
         mem.close()
 
 

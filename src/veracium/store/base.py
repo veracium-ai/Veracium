@@ -14,7 +14,20 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from ..schema import (Confirmation, ConfirmationActor, ConfirmationCallPath,
-                      Edge, Episode)
+                      Edge, Episode, OutcomeJudgmentDraft)
+
+
+class HeadMoved:
+    """Sentinel result of `append_outcome_if_head` when the chain head moved
+    between the caller's read and the atomic append (specs/0009 §4a). The caller
+    re-reads the head and retries; it is never a durable state."""
+    __slots__ = ()
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostic only
+        return "HeadMoved"
+
+
+HEAD_MOVED = HeadMoved()
 
 
 def store_mutator(fn):
@@ -85,6 +98,29 @@ class Store(ABC):
     @store_mutator
     @abstractmethod
     def delete_episode(self, episode_id: str) -> None: ...
+
+    @store_mutator
+    def append_outcome_if_head(self, user_id: str, edge_id: str,
+                               evidence_ref: str, expected_head_id: Optional[str],
+                               draft: OutcomeJudgmentDraft):
+        """Atomically append one outcome judgment to the append-only chain for
+        `(user_id, edge_id, evidence_ref)` — the specs/0009 §4a CAS primitive, the
+        ONLY sanctioned way to create a `kind="outcome"` chain link (H3/H14).
+
+        In one atomic operation the store: (1) resolves the chain; (2) verifies
+        `expected_head_id` is still its head (else returns `HEAD_MOVED`); (3) for a
+        non-root append resolves `context_ref` (omitted → inherit the chain's;
+        non-None must equal it); (4) allocates the next per-chain `seq` (root == 1,
+        contiguous) and mints a fresh episode id; (5) INSERTs — never replaces — with
+        `supersedes_episode = expected_head_id`, `judgment_time_known = True`, and
+        `source_type` DERIVED from `draft.author` (USER→STATED, SYSTEM→INFERRED);
+        (6) advances the user's `store_version` (H10). Returns the appended `Episode`
+        on success or `HEAD_MOVED` (the caller retries against the new head).
+
+        Not abstract so pre-existing `Store` implementations keep working; they get
+        this behaviour only once they implement it."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement append_outcome_if_head")
 
     # -- host/admin queries ---------------------------------------------------
     def list_users(self) -> list[dict]:

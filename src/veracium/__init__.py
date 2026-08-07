@@ -38,8 +38,9 @@ from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
 from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
                      ConfirmationCallPath, Edge, Episode, EvidenceAuthor,
-                     Provenance, SourceType, utcnow, validate_correlation_id)
-from .store.base import Store
+                     OutcomeJudgmentDraft, Provenance, SourceType, utcnow,
+                     validate_correlation_id)
+from .store.base import HEAD_MOVED, Store
 from .store.sqlite import SqliteStore
 
 __all__ = ["Memory", "MemoryConfig", "Recall", "Store", "SqliteStore",
@@ -563,55 +564,77 @@ class Memory:
             raise ValueError(f"{outcome.value} is a system judgment (actor='system')")
         edge = self._find_edge(user_id, edge_id)
         from datetime import date as _date
-        date = date or _date.today().isoformat()
+        date = _event_dt(date or _date.today().isoformat()).date().isoformat()
 
-        prior = next((ep for ep in self.store.episodes(user_id)
-                      if ep.kind == "outcome" and ep.edge_id == edge_id
-                      and ep.provenance.evidence_ref == evidence_ref), None)
+        # specs/0009: NEVER mutate a prior judgment — append a new chain link.
+        # The head is the max-`seq` outcome episode for (edge_id, evidence_ref);
+        # `append_outcome_if_head` CAS-appends and retries if the head moved. The
+        # `[prior judgment was …]` note is rebuilt against the WINNING head, and
+        # `upgraded` reflects the successful attempt (H11, round-5 Correction A).
         val = f" (true value: {corrected_value})" if corrected_value else ""
-        summary = (f"({actor}) {outcome.value}: use of "
-                   f"'{edge.relation}: {edge.object}'{val}")
-        upgraded = False
-        if prior is not None:
-            # upgrade in place: same use, new judgment — times_used unchanged
-            old = prior.outcome.value if prior.outcome else Outcome.UNREVIEWED.value
-            edge.outcome_counts[old] = max(0, edge.outcome_counts.get(old, 1) - 1)
-            prior.outcome = outcome
-            # M4 (0.4.5): this used to be
-            # `prior.provenance.author_of_evidence = author`, silently erasing
-            # who made the earlier judgment — in a system whose stated principle
-            # is supersession-never-erasure. The host controls `actor` in both
-            # directions, so this was provenance destruction rather than
-            # escalation, but destruction is the part that was wrong. Keep the
-            # trail; the summary already names the current actor.
-            was = prior.provenance.author_of_evidence
-            if was != author:
-                summary += f" [prior judgment was {was.value}-authored]"
-            prior.provenance.author_of_evidence = author
-            prior.summary = summary
-            self.store.add_episode(prior)
-            upgraded = True
-        else:
-            edge.times_used += 1
-            self.store.add_episode(Episode(
-                id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
-                summary=summary, kind="outcome", edge_id=edge_id,
-                outcome=outcome, context_ref=context_ref,
-                provenance=Provenance(
-                    source_type=SourceType.STATED if actor == "user" else SourceType.INFERRED,
-                    author_of_evidence=author, evidence_ref=evidence_ref)))
-        edge.outcome_counts[outcome.value] = edge.outcome_counts.get(outcome.value, 0) + 1
+        while True:
+            head = self._outcome_head(user_id, edge_id, evidence_ref)
+            summary = (f"({actor}) {outcome.value}: use of "
+                       f"'{edge.relation}: {edge.object}'{val}")
+            if head is not None:
+                was = head.provenance.author_of_evidence
+                if was != author:
+                    summary += f" [prior judgment was {was.value}-authored]"
+            draft = OutcomeJudgmentDraft(
+                author=author, event_timestamp=date, outcome=outcome,
+                summary=summary, context_ref=context_ref)
+            appended = self.store.append_outcome_if_head(
+                user_id, edge_id, evidence_ref,
+                head.id if head is not None else None, draft)
+            if appended is not HEAD_MOVED:
+                break                                    # committed
+        upgraded = head is not None                      # revised an existing chain
+
+        # Counters are DERIVED from chain heads (H6), recomputed rather than
+        # mutated in place — the denormalisation the M4 defect was.
+        times_used, counts = self._edge_outcome_aggregates(user_id, edge_id)
+        edge.times_used = times_used
+        edge.outcome_counts = counts
+        # last_outcome / last_outcome_at are DEPRECATED (Option A) — best-effort,
+        # no cross-chain guarantee.
         edge.last_outcome = outcome
-        _oc_when = _event_dt(date)
-        date = _oc_when.date().isoformat()      # normalise once, as confirm()
-        edge.last_outcome_at = _oc_when
+        edge.last_outcome_at = _event_dt(date)
         if outcome is Outcome.CHALLENGED:
             edge.needs_confirmation = True   # "confirm before relying" — existing surface
         self.store.add_edge(edge)
         self._record("outcome", {"new": 0 if upgraded else 1,
                                  "upgraded": 1 if upgraded else 0}, user_id)
         return {"edge_id": edge_id, "outcome": outcome.value, "upgraded": upgraded,
-                "times_used": edge.times_used}
+                "times_used": times_used}
+
+    def _outcome_head(self, user_id: str, edge_id: str, evidence_ref: str):
+        """The head (max-`seq`) of the `(edge_id, evidence_ref)` outcome chain, or
+        None — derived, never materialised (specs/0009 H-Q2)."""
+        head = None
+        for ep in self.store.episodes(user_id):
+            if (ep.kind == "outcome" and ep.edge_id == edge_id
+                    and ep.provenance.evidence_ref == evidence_ref):
+                if head is None or (ep.seq or 0) > (head.seq or 0):
+                    head = ep
+        return head
+
+    def _edge_outcome_aggregates(self, user_id: str, edge_id: str):
+        """`(times_used, outcome_counts)` for an edge, DERIVED from chain heads
+        (specs/0009 H6): one chain per `(edge_id, evidence_ref)` use, its head the
+        max-`seq` link. `times_used` = distinct chains; `outcome_counts` = the head
+        outcome of each chain. A five-judgment chain about one use is still one use."""
+        heads: dict = {}
+        for ep in self.store.episodes(user_id):
+            if ep.kind == "outcome" and ep.edge_id == edge_id:
+                key = ep.provenance.evidence_ref
+                cur = heads.get(key)
+                if cur is None or (ep.seq or 0) > (cur.seq or 0):
+                    heads[key] = ep
+        counts: dict = {}
+        for ep in heads.values():
+            if ep.outcome is not None:
+                counts[ep.outcome.value] = counts.get(ep.outcome.value, 0) + 1
+        return len(heads), counts
 
     def correct(self, user_id: str, edge_id: str, corrected_value: str, *,
                 actor: str = "user", evidence_ref: Optional[str] = None,

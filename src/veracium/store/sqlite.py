@@ -17,8 +17,9 @@ from pathlib import Path
 from typing import Optional
 
 from ..schema import (Confirmation, ConfirmationActor, ConfirmationCallPath,
-                      Edge, Episode, EvidenceAuthor, Provenance, SourceType)
-from .base import Store
+                      Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
+                      Provenance, SourceType)
+from .base import HEAD_MOVED, Store
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              PostCommitAuditError,
                              StoreVersionError, open_versioned)
@@ -248,6 +249,64 @@ class SqliteStore(Store):
             if row:
                 self._bump(row[0])
             self._conn.commit()
+
+    # -- outcome-authorship chain (specs/0009) ----------------------------------
+    _AUTHOR_SOURCE = {EvidenceAuthor.USER: SourceType.STATED,
+                      EvidenceAuthor.SYSTEM: SourceType.INFERRED}
+
+    def _chain_head(self, user_id: str, edge_id: str, evidence_ref: str):
+        """The head (max-`seq` episode) of the `(edge_id, evidence_ref)` outcome
+        chain, or None. Derived — there is no materialised head pointer (H-Q2)."""
+        head = None
+        for r in self._conn.execute(
+                "SELECT json FROM episodes WHERE user_id=?", (user_id,)):
+            ep = Episode.model_validate_json(r[0])
+            if (ep.kind == "outcome" and ep.edge_id == edge_id
+                    and ep.provenance.evidence_ref == evidence_ref):
+                if head is None or (ep.seq or 0) > (head.seq or 0):
+                    head = ep
+        return head
+
+    def append_outcome_if_head(self, user_id, edge_id, evidence_ref,
+                               expected_head_id, draft: OutcomeJudgmentDraft):
+        """specs/0009 §4a. Atomic under `_lock` (which serialises every store
+        mutation on the single connection), so the read-then-INSERT is a genuine
+        compare-and-set: two concurrent callers cannot both extend one head (H3).
+        INSERTs through its OWN statement, not `add_episode`, so it is a sanctioned
+        outcome-chain writer even once the generic mutators refuse outcome rows (H14)."""
+        with self._lock:
+            head = self._chain_head(user_id, edge_id, evidence_ref)
+            head_id = head.id if head is not None else None
+            if head_id != expected_head_id:
+                return HEAD_MOVED                       # CAS failed — caller retries
+            if head is None:                            # a new chain: root
+                seq, context_ref = 1, draft.context_ref
+            else:
+                seq = (head.seq or 0) + 1               # contiguous per-chain seq
+                # context_ref: omitted → inherit; non-None must equal the chain's
+                if draft.context_ref is None:
+                    context_ref = head.context_ref
+                elif draft.context_ref != head.context_ref:
+                    raise ValueError(
+                        "context_ref may not change within an outcome chain "
+                        f"({draft.context_ref!r} != {head.context_ref!r})")
+                else:
+                    context_ref = draft.context_ref
+            ep = Episode(
+                id=f"ep-{uuid.uuid4().hex[:12]}", user_id=user_id,
+                date=draft.event_timestamp, summary=draft.summary, kind="outcome",
+                edge_id=edge_id, outcome=draft.outcome, context_ref=context_ref,
+                seq=seq, supersedes_episode=expected_head_id,
+                judgment_time_known=True,
+                provenance=Provenance(
+                    source_type=self._AUTHOR_SOURCE[draft.author],
+                    author_of_evidence=draft.author, evidence_ref=evidence_ref))
+            self._conn.execute(
+                "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
+                (ep.id, ep.user_id, ep.date, ep.model_dump_json()))
+            self._bump(user_id)                          # H10
+            self._conn.commit()
+            return ep
 
     # -- host/admin queries ---------------------------------------------------
     def list_users(self) -> list[dict]:
