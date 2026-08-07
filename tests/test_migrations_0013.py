@@ -4414,3 +4414,124 @@ def test_a_raw_exception_with_no_write_still_reports_committed_false(monkeypatch
     with pytest.raises(m13.MigrationAuditWriteError) as exc:
         m13.migrate_store(p, auth)
     assert exc.value.audit_committed is False
+
+
+# ==========================================================================
+# Round 28 regressions — durable evidence TOTAL over every carrier when the
+# activation verifier is defeated; request-BOUND terminal commit proof
+# ==========================================================================
+
+def _has_terminal_event(op):
+    return any(oid == op and ev in m13._TERMINAL_EVENTS
+              for (oid, ev) in m13._AUDIT._events)
+
+
+@pytest.mark.parametrize("carrier", ["committed-false", "committed-none",
+                                     "raw-exception", "wrong-return",
+                                     "invalid-receipt"])
+@pytest.mark.parametrize("vmode", ["raises", "false-negative"])
+def test_a_complete_durable_activation_terminalizes_for_every_carrier(
+        monkeypatch, carrier, vmode):
+    """Round 28, finding 1 (M90/M95 made TOTAL): a COMPLETE durable activation
+    (the row + attempted event really published) is CONSUMED whatever the carrier
+    and whatever the readback verifier does — `internal-error` WITH a terminal
+    event, never left attempted-only. v30 special-cased only a valid `activated`
+    receipt and exact committed=True; every other carrier leaked."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def seam(a, od):
+        real(a, od)                                    # REAL atomic publish
+        if carrier == "committed-false":
+            raise m13.AuditStorageUnavailable("x", committed=False)
+        if carrier == "committed-none":
+            raise m13.AuditStorageUnavailable("x", committed=None)
+        if carrier == "raw-exception":
+            raise OSError("raw")
+        if carrier == "wrong-return":
+            return None
+        if carrier == "invalid-receipt":
+            return m13.ActivationReceipt("activated", a.operation_id, False, False)
+    monkeypatch.setattr(m13._AUDIT, "activate", seam)
+    if vmode == "raises":
+        monkeypatch.setattr(m13, "_durable_row_binds_authority",
+                            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    else:
+        monkeypatch.setattr(m13, "_durable_row_binds_authority",
+                            lambda *a, **k: (False, "forced false-negative"))
+    assert m13.migrate_store(p, auth) == "internal-error"
+    assert m13._AUDIT._ops[auth.operation_id]["state"] == "terminal"
+    assert _has_terminal_event(auth.operation_id)
+
+
+def test_a_prior_complete_run_stays_quiescence_not_reconsumed(monkeypatch):
+    """Round 28, finding 1 boundary (round 22 f1 preserved): a PRIOR complete
+    (terminal) run retried while `activate()` raises committed=False is a consumed
+    replay → `migration-quiescence-required`, NOT reclassified as a fresh
+    this-call consumption."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"     # now terminal
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: (_ for _ in ()).throw(
+                            m13.AuditStorageUnavailable("x", committed=False)))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_a_genuinely_absent_activation_keeps_the_retry_distinction(monkeypatch):
+    """Round 28, finding 1 boundary: a genuinely ABSENT lifecycle (no publish)
+    keeps the typed retry distinction — committed=False is the retryable
+    `migration-audit-unavailable`, committed=None is `migration-audit-state-unknown`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: (_ for _ in ()).throw(
+                            m13.AuditStorageUnavailable("x", committed=False)))
+    assert m13.migrate_store(p, auth) == "migration-audit-unavailable"
+
+
+def test_an_exact_transition_survives_an_invalid_return_plus_raising_verifier(monkeypatch):
+    """Round 28, finding 2 (M86/M108 not limited to a valid receipt): the exact
+    requested transition is durable, but the sink returns an INVALID carrier AND
+    the transition verifier raises. The outer catch must consult request-bound
+    durable evidence — preserve the requested `migrated` facts and
+    `audit_committed=True`, not overwrite with fallback `internal-error`/`None`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def publish_then_bad_return(op, ev, pl):
+        real(op, ev, pl)                               # exact requested transition durable
+        return None                                    # invalid carrier
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", publish_then_bad_return)
+    monkeypatch.setattr(m13, "_terminal_transition_complete",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is True
+    assert exc.value.facts.outcome == "migrated"
+
+
+def test_a_different_well_formed_event_never_proves_the_requested_commit(monkeypatch):
+    """Round 28, finding 3 (M113 made REQUEST-BOUND): a durable, individually valid
+    `current` terminal event does NOT prove that the requested `migrated` audit
+    write committed. The independent proof is bound to the exact requested payload,
+    not merely any well-formed event, so `audit_committed` is NOT `True`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def write_current_then_raise(op, ev, pl):
+        current = {"outcome": "current", "occurred_at": pl["occurred_at"],
+                   "store_changed": True, "transaction_committed": True,
+                   "resulting_state": "destination", "resulting_version": 2}
+        real(op, ev, current)                          # a DIFFERENT well-formed record
+        raise m13.AuditStorageUnavailable("lost", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", write_current_then_raise)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is not True       # must NOT fabricate a commit
+    durable = [d["outcome"] for (o, k), d in m13._AUDIT._events.items()
+               if o == auth.operation_id and k in m13._TERMINAL_EVENTS]
+    assert durable == ["current"]                      # the durable record disagrees

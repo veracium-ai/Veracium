@@ -822,6 +822,70 @@ def _activation_committed_true_subclass():
     return lambda: setattr(m._AUDIT, "activate", real)
 
 
+# --- round 28: a COMPLETE durable activation + a nontrusted carrier + a defeated
+# --- verifier must terminalize (M90/M95); request-bound terminal commit proof ---
+
+def _durable_activation_then(carrier, vmode):
+    """The REAL atomic activation publishes, then the seam presents `carrier`, and
+    the readback verifier is defeated by `vmode` (round 28, finding 1)."""
+    real = m._AUDIT.activate
+    real_bind = m._durable_row_binds_authority
+
+    def seam(a, od):
+        real(a, od)                                    # REAL atomic publish
+        if carrier == "committed-false":
+            raise m.AuditStorageUnavailable("x", committed=False)
+        if carrier == "raw-exception":
+            raise OSError("raw")
+        if carrier == "wrong-return":
+            return None
+    m._AUDIT.activate = seam
+    if vmode == "raises":
+        m._durable_row_binds_authority = lambda *a, **k: (_ for _ in ()).throw(
+            RuntimeError("verifier boom"))
+    else:
+        m._durable_row_binds_authority = lambda *a, **k: (False, "false-neg")
+
+    def cleanup():
+        setattr(m._AUDIT, "activate", real)
+        setattr(m, "_durable_row_binds_authority", real_bind)
+    return cleanup
+
+
+def _exact_transition_invalid_return_verifier_raises():
+    """The sink publishes the exact requested transition then returns an INVALID
+    carrier, and the transition verifier raises (round 28, finding 2)."""
+    real_rt = m._AUDIT.record_terminal
+    real_ttc = m._terminal_transition_complete
+
+    def publish_then_bad_return(op, ev, pl):
+        real_rt(op, ev, pl)
+        return None
+    m._AUDIT.record_terminal = publish_then_bad_return
+    m._terminal_transition_complete = lambda *a, **k: (_ for _ in ()).throw(
+        RuntimeError("verifier boom"))
+
+    def cleanup():
+        setattr(m._AUDIT, "record_terminal", real_rt)
+        setattr(m, "_terminal_transition_complete", real_ttc)
+    return cleanup
+
+
+def _committed_true_with_a_different_payload():
+    """The sink writes a DIFFERENT well-formed terminal event (`current`) than the
+    requested `migrated`, then raises committed=True (round 28, finding 3)."""
+    real_rt = m._AUDIT.record_terminal
+
+    def write_current_then_raise(op, ev, pl):
+        current = {"outcome": "current", "occurred_at": pl["occurred_at"],
+                   "store_changed": True, "transaction_committed": True,
+                   "resulting_state": "destination", "resulting_version": 2}
+        real_rt(op, ev, current)
+        raise m.AuditStorageUnavailable("lost", committed=True)
+    m._AUDIT.record_terminal = write_current_then_raise
+    return lambda: setattr(m._AUDIT, "record_terminal", real_rt)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -966,6 +1030,37 @@ _INJECTIONS = [
     ("activation-committed-true-subclass",
      _activation_committed_true_subclass,
      _outcome_is("internal-error")),
+    # round 28, finding 1: a COMPLETE durable activation + a nontrusted carrier +
+    # a defeated verifier terminalizes for EVERY carrier/verifier-mode cell
+    # (M90/M95 made total) — internal-error WITH a terminal event.
+    ("durable-activation-committed-false-verifier-raises",
+     lambda: _durable_activation_then("committed-false", "raises"),
+     _outcome_is("internal-error")),
+    ("durable-activation-committed-false-verifier-false-negative",
+     lambda: _durable_activation_then("committed-false", "false-neg"),
+     _outcome_is("internal-error")),
+    ("durable-activation-raw-exception-verifier-raises",
+     lambda: _durable_activation_then("raw-exception", "raises"),
+     _outcome_is("internal-error")),
+    ("durable-activation-raw-exception-verifier-false-negative",
+     lambda: _durable_activation_then("raw-exception", "false-neg"),
+     _outcome_is("internal-error")),
+    ("durable-activation-wrong-return-verifier-raises",
+     lambda: _durable_activation_then("wrong-return", "raises"),
+     _outcome_is("internal-error")),
+    ("durable-activation-wrong-return-verifier-false-negative",
+     lambda: _durable_activation_then("wrong-return", "false-neg"),
+     _outcome_is("internal-error")),
+    # round 28, finding 2: the exact requested transition + an invalid return +
+    # a raising verifier preserves audit_committed=True.
+    ("exact-transition-invalid-return-verifier-raises",
+     _exact_transition_invalid_return_verifier_raises,
+     _write_error(True)),
+    # round 28, finding 3: a DIFFERENT well-formed terminal payload (`current`)
+    # never proves the requested `migrated` commit — audit_committed is not True.
+    ("committed-true-with-a-different-payload",
+     _committed_true_with_a_different_payload,
+     _write_error(None)),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",
      lambda: _terminal_receipt(audit_committed=1),

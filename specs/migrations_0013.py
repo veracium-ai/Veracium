@@ -1740,7 +1740,7 @@ def _durable_row_binds_authority(a, output_digest):
     return True, ""
 
 
-def _terminal_transition_complete(operation_id, event, payload, state=None):
+def _requested_transition_durable(operation_id, event, payload, state=None):
     """Whether the durable state after a terminal write is a COMPLETE
     attempted→terminal transition (round 18, finding 2: v19 compared the
     requested payload but not the resulting operation state, terminal
@@ -1800,6 +1800,16 @@ def _terminal_transition_complete(operation_id, event, payload, state=None):
     if not _durable_event_matches(durable, operation_id, event, payload):
         return False, "terminal event payload does not equal the request"
     return True, ""
+
+
+def _terminal_transition_complete(operation_id, event, payload, state=None):
+    """The request-bound terminal-transition verifier used on the write path — a
+    thin, MONKEYPATCHABLE seam over the primitive `_requested_transition_durable`
+    (round 28, findings 2 & 3). Keeping the seam distinct from the primitive lets
+    the audit-commit fact consult the primitive DIRECTLY, so a defect injected at
+    this seam (or a real one) cannot suppress the independent durable evidence
+    (M108) — a verifier false-negative here never erases a proven commit."""
+    return _requested_transition_durable(operation_id, event, payload, state)
 
 
 def _terminal_event_wellformed(operation_id):
@@ -1964,66 +1974,49 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
             f"response lost); the authority IS consumed — mint a fresh one: "
             f"{_safe_repr(activate_exc)}") from activate_exc
 
-    # The durable readback is the ground truth (round 20/21). Round 25, finding 3:
-    # if the readback VERIFIER itself RAISES (a wrapper defect) AND the sink
-    # returned a VALID `activated` receipt, M-Q4 permits trusting that receipt —
-    # the authority IS consumed, so terminalize rather than strand it
-    # attempted-only. A clean readback that REJECTS (a receipt lie, no durable
-    # row) is NOT consumed and stays `internal-error`.
+    # Round 28, finding 1: the durable ground truth for CONSUMPTION is the
+    # INDEPENDENT, request-bound lifecycle classifier — NOT the
+    # `_durable_row_binds_authority` verifier, whose defect (a raise, round 25 f3,
+    # OR a clean FALSE-negative, round 26 f1a) must not suppress it. v30 special-
+    # cased only a valid `activated` receipt and an exact committed=True carrier,
+    # so EVERY other carrier (committed=False, committed=None, a raw exception, a
+    # wrong-type return) was left attempted-only with no terminal event when the
+    # verifier failed — reopening M90/M95 (a complete durable activation OUTRANKS
+    # any contradictory carrier: `internal-error` WITH a terminal event). The
+    # verifier still runs, but only to confirm the healthy happy path and to
+    # surface its own defect as the cause.
+    lifecycle, lwhy = _durable_lifecycle(a, output_digest)
     try:
         bound, why = _durable_row_binds_authority(a, output_digest)
+        verifier_exc = None
     except Exception as exc:
-        if receipt_says_activated:
-            state["consumed"] = True
-            _snapshot()
-            raise _ActivationResultError(
-                f"activation readback verifier defect after a valid activated "
-                f"receipt (authority IS consumed): {_safe_repr(exc)}") from exc
-        raise                                  # no valid receipt → not consumed
+        bound, why, verifier_exc = False, lwhy, exc
 
-    if bound and not is_duplicate:
-        # THIS call published a complete durable activation → CONSUMED, whatever
-        # the carrier. Freeze the records; a terminal event is guaranteed.
+    # THIS call published a COMPLETE fresh activation iff the independent lifecycle
+    # is a bound `attempted` record and the carrier is NOT a genuine `duplicate`
+    # (round 21, finding 1: a duplicate is the ONLY carrier that says someone ELSE
+    # consumed it — a prior/concurrent consumer's row makes the sink return
+    # `duplicate` — so a non-duplicate, authority-bound `attempted` lifecycle can
+    # ONLY be this call's fresh publication).
+    if lifecycle == "attempted" and not is_duplicate:
+        # CONSUMED, whatever the carrier or the verifier's health; a terminal event
+        # is guaranteed. An honest committed=True lost response was handled above.
         state["consumed"] = True
         _snapshot()
-        if activate_exc is not None:
-            # An honest committed=True lost response is already handled above
-            # (round 27, finding 1). ANY other post-publication exception over a
-            # durable row — a contradictory typed flag (round 20 f1b), a
-            # committed=None/False that disagrees with the durable row, or an
-            # unrecognized error (round 21 f1) — is an audit-integrity defect →
-            # `internal-error`; `consumed` is set, so the wrapper still writes the
-            # terminal event.
-            raise _ActivationResultError(
-                f"a durable activation exists but the sink then raised "
-                f"{_safe_repr(activate_exc)} — audit integrity")
-        # The sink RETURNED. A valid `activated` receipt proceeds; a wrong type or
-        # a contradictory receipt (round 20 f1a / round 21 f1) is `internal-error`
-        # — still terminalized, never left attempted-only.
-        if type(result) is not ActivationReceipt:
-            raise _ActivationResultError(
-                f"a durable activation exists but activate() returned "
-                f"{_safe_repr(result)}, not an ActivationReceipt")
-        rp = result.problems(a.operation_id)
-        if rp or result.status != "activated":
-            raise _ActivationResultError(
-                f"a durable activation exists but the receipt is contradictory "
-                f"(status={_safe_repr(getattr(result, 'status', None))}; "
-                f"problems={rp})")
-        return                                 # activated, valid, durable-bound
-
-    # Round 26, finding 1a: THIS call published a valid `activated` receipt whose
-    # durable row EXISTS, but the binding VERIFIER returned a clean FALSE-NEGATIVE
-    # (`bound` is False, not raised). Trust the receipt (M-Q4): the authority IS
-    # consumed → terminalize; do NOT reclassify it as a prior attempted-only
-    # replay. (A valid `activated` receipt with NO durable row is the round-16
-    # lie: not consumed, handled below.)
-    if receipt_says_activated and a.operation_id in _AUDIT._ops:
-        state["consumed"] = True
-        _snapshot()
+        if (activate_exc is None and verifier_exc is None and bound
+                and receipt_says_activated):
+            return                             # activated, valid, durable-bound
+        # A carrier OR verifier contradiction over a complete durable activation →
+        # `internal-error`, but TERMINALIZED — never left attempted-only (M90/M95).
+        detail = (f"the readback verifier is defective ({_safe_repr(verifier_exc)})"
+                  if verifier_exc is not None else
+                  f"the sink raised {_safe_repr(activate_exc)}"
+                  if activate_exc is not None else
+                  f"the receipt/binding is contradictory "
+                  f"(receipt={_safe_repr(result)}; bound={bound}: {why})")
         raise _ActivationResultError(
-            f"activation binding verifier false-negative after a valid activated "
-            f"receipt whose durable row exists (authority IS consumed): {why}")
+            f"a complete durable activation exists for {a.operation_id!r} "
+            f"(authority IS consumed) but {detail} — audit integrity")
 
     # No FRESH activation by this call (nothing durable, or a `duplicate`, or a
     # completed/leftover row from a prior run). Round 22, finding 1: if a durable
@@ -3196,58 +3189,43 @@ def _audit_commit_fact(operation_id, terminal, payload, state, sink_exc):
     then RAISED `committed=False` still produced `audit_committed=False` despite
     the observable durable commit). Precedence:
 
-        a well-formed terminal event durably PRESENT  → True  (round 27, finding 2)
-        verifier confirms the requested transition    → True
-        verifier CANNOT observe (raises) + EXACT typed
-          committed=True                              → True  (round 26, finding 2)
-        EXACT typed sink says definitely-not-written  → False
-        otherwise                                     → None (genuinely unknown)
+        the exact REQUESTED transition durably complete  → True
+        EXACT typed committed=True, transition absent     → None (CONTRADICTION)
+        EXACT typed committed=False                       → False
+        a family carrier we cannot trust                  → None (unknown)
+        a non-family raw exception, transition absent      → False
+        otherwise                                         → None (genuinely unknown)
 
-    Round 27, finding 2: the INDEPENDENT durable presence of a well-formed terminal
-    event is the STRONGEST evidence and is checked FIRST — so a verifier
-    FALSE-negative (it returns False despite a complete lifecycle) cannot erase a
-    real commit, and (finding 3) no carrier can fabricate one: a hostile subclass
-    is not the exact protocol type, so its overridden `committed` contributes
-    nothing. A CLEANLY-observed MISSING transition (`ok` False, nothing durable)
-    with committed=True stays CONTRADICTORY → `None` (round 21, finding 3)."""
-    # 1. Independent durable ground truth (round 27, finding 2): a well-formed
-    #    terminal event PROVES the audit write committed, above any verifier boolean.
-    #    Guarded — this runs on the failure path, so a defect in the ground-truth
-    #    reader is treated as "could not observe" (it never fabricates a commit).
+    Round 28, findings 2 & 3: the ground truth is the INDEPENDENT presence of the
+    exact REQUESTED transition — checked FIRST, via the low-level primitive
+    `_requested_transition_durable` (NOT the monkeypatchable
+    `_terminal_transition_complete` seam), so a verifier defect cannot suppress a
+    real commit (M108, round 27 f2), AND it is REQUEST-BOUND, so a DIFFERENT
+    well-formed event (e.g. a `current` record where `migrated` was requested) does
+    NOT prove the requested audit write committed (round 28, finding 3 — v30's
+    `_terminal_event_wellformed` check compared no payload). When the requested
+    transition is not independently durable, only the EXACT `AuditStorageUnavailable`
+    carrier contributes trusted metadata; committed=True beside no durable requested
+    transition is CONTRADICTORY → `None` (round 21, finding 3); a subclass or a
+    hostile accessor cannot fabricate a commit (round 27 f3, round 16 f4); a bare
+    raw exception lets the draft's own state prove not-written → False (round 20 f2)."""
+    # 1. Independent, REQUEST-BOUND durable ground truth. Guarded — this runs on the
+    #    failure path, so a defect in the primitive is "could not observe", never a
+    #    fabricated commit.
     try:
-        present, _ = _terminal_event_wellformed(operation_id)
+        present, _ = _requested_transition_durable(operation_id, terminal, payload,
+                                                   state)
     except Exception:
         present = False
     if present:
         return True
-    # 2. the verifier (guarded — a defect is "could not observe", round 26 f2).
-    try:
-        ok, _ = _terminal_transition_complete(operation_id, terminal, payload,
-                                              state)
-    except Exception:
-        ok = None
-    if ok:
-        return True
+    # 2. The requested transition is not independently durable. Trust only the EXACT
+    #    protocol carrier's metadata.
     c = _trusted_carrier_committed(sink_exc) if sink_exc is not None else None
-    # 3. The verifier CANNOT observe (it raised → `ok` None). The EXACT protocol
-    #    carrier's committed=True is trusted (round 26, finding 2); a subclass or
-    #    raw exception carries no trusted metadata, so the fact is genuinely UNKNOWN
-    #    — it cannot fabricate a commit (round 27, finding 3).
-    if ok is None:
-        return True if c is True else None
-    # 4. The verifier CLEANLY observed the transition is NOT present (`ok` False)
-    #    and nothing is durably present. An EXACT committed=True carrier is then
-    #    CONTRADICTORY → `None` (round 21, finding 3); an EXACT committed=False is
-    #    proven-not-written → False. Otherwise the fact is `None` unless the draft's
-    #    OWN state proves it: a member of the `AuditStorageUnavailable` FAMILY whose
-    #    value we do not trust (an exact committed=None, or a subclass — round 27,
-    #    finding 3; round 16, finding 4) carries UNKNOWN → `None`, never a fabricated
-    #    or inferred fact; only a NON-family raw exception (a bare `OSError`) lets
-    #    the draft's durable state prove not-written → False (round 20, finding 2).
     if c is True:
-        return None
+        return None                            # committed=True but absent → CONTRADICTION
     if c is False:
-        return False
+        return False                           # EXACT proven-not-written
     if isinstance(sink_exc, AuditStorageUnavailable):
         return None                            # family carrier we cannot trust: unknown
     return False if sink_exc is not None else None
@@ -3363,20 +3341,26 @@ def _write_terminal(out, outcome, state, authority) -> "Outcome":
     except MigrationAuditWriteError:
         raise
     except Exception as exc:
-        # Round 25, finding 1: a defect in the wrapper's OWN post-publication
-        # verification must NOT discard a record the sink already wrote. If a
-        # VALID success receipt was returned, M-Q4 permits trusting it: preserve
-        # the exact REQUESTED facts (== the durable record) and report
-        # `audit_committed=True`, with the verification defect as the cause. A
-        # proven commit survives a later wrapper defect (the total-boundary rule).
-        if receipt_valid and requested is not None:
-            raise MigrationAuditWriteError(
-                operation_id=authority.operation_id,
-                store_path=authority.store_path, facts=requested,
-                audit_committed=True, cause=exc) from exc
-        # Round 18, finding 4: any OTHER post-consumption defect (no valid receipt
-        # yet) is the audit-write failure, from best frozen facts, never a raw
-        # third exception. Round 24, finding 3: `_safe_fallback_facts` never
+        # Round 25, finding 1 + round 28, finding 2: a defect in the wrapper's OWN
+        # post-publication verification must NOT discard a record the sink already
+        # wrote. The exact REQUESTED transition is preserved as `migrated` facts +
+        # `audit_committed=True` when EITHER a valid success receipt was returned
+        # (M-Q4 permits trusting it) OR the request-bound durable evidence proves it
+        # committed — even if the RETURNED carrier was invalid and the verifier then
+        # raised (round 28, finding 2: v30's outer catch consulted neither for an
+        # invalid return, discarding a durable `migrated` transition to
+        # `internal-error`/`None`). M86/M108 are not limited to a valid receipt.
+        if requested is not None:
+            proven = receipt_valid or _audit_commit_fact(
+                authority.operation_id, terminal, payload, state, None) is True
+            if proven:
+                raise MigrationAuditWriteError(
+                    operation_id=authority.operation_id,
+                    store_path=authority.store_path, facts=requested,
+                    audit_committed=True, cause=exc) from exc
+        # Round 18, finding 4: any OTHER post-consumption defect (no proven durable
+        # transition) is the audit-write failure, from best frozen facts, never a
+        # raw third exception. Round 24, finding 3: `_safe_fallback_facts` never
         # re-runs a failed helper.
         facts = _safe_fallback_facts(out, state, authority)
         raise MigrationAuditWriteError(
