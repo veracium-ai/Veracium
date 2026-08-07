@@ -4,8 +4,10 @@ Spec-Status: in review
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v6)** — submitted 2026-08-02 17:58 UTC. **All seven fifth-review findings
-> closed.** The duplicated sections are gone and a structural check now catches
+> **in review (v7)** — re-issued 2026-08-07 for round 6. **v7 corrects v6's
+> review-history bookkeeping (the header round count and §12); there is NO design
+> change.** v6 (submitted 2026-08-02 17:58 UTC) **closed all seven fifth-review findings:**
+> The duplicated sections are gone and a structural check now catches
 > them; `ladder.py` derives from the **shipped** enum and imports production
 > disclosure, giving 144/44/8 — your independent numbers. **§4e freezes what a
 > contention group is and states plainly that it reorders pre-existing
@@ -19,10 +21,10 @@ Spec-Status: in review
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v6** — *re-read before editing; quote the version you approve.* Narrow design approved at rounds 3, 4 and 5. |
+| **Version** | **v7** — *re-read before editing; quote the version you approve.* Narrow design approved at rounds 3 and 4; round 5 deferred on cleanup only, now closed. **v7 is v6 with review-history bookkeeping corrected — no design change.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
-| **External review** | required — **four rounds complete**; the narrow design was approved at r3 and r4. Counts are generated into `specs/STATUS.md` from `specs/reviews.py`. |
+| **External review** | required — the narrow design was approved at r3 and r4 and affirmed at r5 (deferred on cleanup only). Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -729,7 +731,9 @@ lower-authority party is routinely the correct one.
 | v2 | deferred — direction approved, blockers architectural | 12 | `proposals/0003-review-2.md` |
 | v3 | narrowed to the reported defect; breadth → `specs/0011` | — | `proposals/0003-review-3.md` |
 | v4 | narrow design approved; deferred for retrieval fix + deletion pass | 5 | `proposals/0003-review-4.md` |
-| **v5** | **retrieval rule corrected; broad text deleted** | — | this document |
+| v5 | narrow design affirmed; deferred — duplicated sections, `ladder.py` not runtime-grounded | 7 | dispositioned in this document |
+| **v6** | all seven fifth-round findings closed — sections de-duplicated + a structural check, `ladder.py` runtime-grounded (144/44/8) | — | this document |
+| **v7** | review-history bookkeeping corrected (this table + the header round count); **no design change** — the round-6 submission | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
