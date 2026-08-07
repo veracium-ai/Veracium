@@ -1,47 +1,43 @@
 # Feature spec: on-disk store migrations
 
-Spec-Status: in review
+Spec-Status: accepted
 Spec-Requires: 0007
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v31)** — round 28: *M-Q4 boundary respected; architecture
-> standing; v31 deferred on three load-bearing semantic gaps plus two corrections*
-> — all closed at the ROOT. This round the reviewer showed v30's own fixes were
-> incomplete/unsound against FROZEN invariants; v31 makes the rules TOTAL rather
-> than special-casing again. **Consumption is now decided by the INDEPENDENT,
-> request-bound `_durable_lifecycle` classifier, not the readback verifier** — so a
-> complete durable activation THIS call published is consumed and terminalizes
-> (`internal-error` WITH a terminal event) for EVERY nontrusted carrier
-> (committed-false, committed-none, a raw exception, a wrong-type return, an
-> invalid receipt) under a verifier that raises OR false-negatives, closing the
-> M90/M95 gap v30 left for all carriers but two (finding 1). **The audit-write
-> commit proof is now REQUEST-BOUND**, checked via the low-level primitive
-> `_requested_transition_durable`: a DIFFERENT well-formed event (a durable
-> `current` record where `migrated` was requested) no longer proves the requested
-> commit — v30's `_terminal_event_wellformed` check compared no payload, an
-> unsoundness this closes (finding 3). **Request-bound durable evidence survives an
-> INVALID return too** — the outer post-consumption catch preserves the exact
-> requested `migrated` facts + `audit_committed=True` when the transition is
-> independently durable, even if the returned carrier was invalid and the verifier
-> then raised (finding 2). Corrections: the carrier-matrix claim is narrowed until
-> M90/M95/M86/M108/M112–M115 coexist over the same matrix (A); the independent gate
-> adds the missing carrier × verifier-mode cells (B). The `committed=True`
-> failure-carrier's authority is the frozen typed-failure contract of §5e, not the
-> success-receipt allowance. No finding relied on arbitrary private-state
-> corruption or reopened a `0008` obligation; the M-Q4 boundary (§8a) held.
-> Concrete migration, evidence key, release identity, source binding, one-snapshot
-> reader, TEMP confinement and ordinary planner states untouched; the evidence
-> artifact reproduces byte-for-byte.
+> **ACCEPTED (v32)** — set `accepted` 2026-08-07 by dev on the finite M-Q4
+> acceptance boundary (§8a): the six gated properties are frozen in normative text
+> and mechanically demonstrated (the invariants table + the two pre-send gates, all
+> green). Ten external rounds (18–28, post-M-Q4-ruling) each affirmed the
+> architecture and the M-Q4 boundary; the concrete v1→v2 migration, planner/evidence
+> architecture, offline authority model, closed public semantics and the abstract
+> audit protocol are approved. **The acceptance criterion is "the six §8a properties
+> are met" (they are) — NOT "the external review stops finding draft edge cells,"
+> which has no natural terminal on an executable reference model** (the reviewer's
+> "next adjacent cell" method can always expose one more defensive readback, as
+> M-Q4 anticipated). Round 29's findings 2 & 3 (an already-terminal lifecycle must
+> beat the trusted committed=True carrier — M99/M116; and a durable but
+> request-mismatched terminal write is `audit_committed=None`, not `False` — M113
+> corrected) are **closed** in v32. Round 29's finding 1 — a prior attempted-only
+> lifecycle needs INVOCATION-provenance to tell it from this call's fresh
+> publication — is **deferred to `0008` as an explicit production obligation**
+> (§8a): it requires an activation-attempt token the in-process draft cannot bind
+> without racing another process, which is exactly the multiprocess/reconciliation
+> machinery M-Q4 assigned to the production sink. See **`## Review closure`**. What
+> `accepted` authorises: implementation of THIS spec's design. It does NOT let code
+> land yet — `Spec-Requires: 0007` (still `draft`) is gate-enforced. Concrete
+> migration, evidence key, release identity, source binding, one-snapshot reader,
+> TEMP confinement and ordinary planner states untouched; the evidence artifact
+> reproduces byte-for-byte.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v31 |
+| **Version** | v32 |
 | **Status** | *see `Spec-Status:` — canonical.* **Prerequisite of every schema-changing spec:** `0006`, `0008`, `0009`, `0010`. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — a bad migration makes stores unopenable |
-| **Decision + date** | — |
+| **Decision + date** | **accepted 2026-08-07** (dev, on the finite M-Q4 §8a boundary; see `## Review closure`) |
 | **Path** | full |
 
 ---
@@ -914,9 +910,10 @@ tests at implementation.
 | **M110** a wrapper verifier defect is handled SYMMETRICALLY — a valid receipt is trusted whether the verifier RAISES or returns a clean FALSE-negative: an activation-binding false-negative over an existing durable row still consumes and terminalizes (never attempted-only); a terminal-transition false-negative on a valid receipt still reports `audit_committed=True`; and a `committed=True` response-loss under a verifier that cannot observe is trusted, while a CLEANLY-observed missing transition with `committed=True` stays contradictory → `None` | `test_an_activation_verifier_false_negative_still_terminalizes` · `test_a_terminal_verifier_false_negative_preserves_audit_commit` · `test_committed_true_response_loss_survives_a_verifier_defect` · `test_committed_true_with_a_clean_missing_transition_stays_none` · gates `activation-verifier-false-negative` · `terminal-verifier-false-negative` · `committed-true-loss-plus-verifier-raise` — **measured today** (round 26, findings 1 & 2) |
 | **M111** `_safe_fallback_facts` computes its FULL truth table INLINE from the frozen `state` signals — independent of the derivation-helper family — including the previously-implicit cells: a read-then-rejected store yields `False/False/unaccepted/None`, and a known-unchanged store yields `False/False/unknown/None`; the displayed `internal-error` state set therefore includes `missing` and `unaccepted` | `test_the_fallback_preserves_read_rejected_unaccepted` · `test_the_fallback_preserves_known_unchanged` — **measured today** (round 26, finding 3 + correction B) |
 | **M112** an EXACT `AuditStorageUnavailable(committed=True)` activation carrier is ITSELF proof of the durable write (§5b): the authority IS consumed, so the operation terminalizes as `migration-quiescence-required` INDEPENDENT of the readback verifier — whether it raises OR returns a clean FALSE-negative — never stranded attempted-only and never collapsed into `migration-audit-state-unknown`; a subclass carrier is not the protocol type and does not consume | `test_activation_committed_true_consumes_when_the_verifier_raises` · `test_activation_committed_true_consumes_on_a_verifier_false_negative` · `test_an_activation_committed_true_subclass_does_not_consume` · gates `activation-committed-true-verifier-raises` · `activation-committed-true-verifier-false-negative` · `activation-committed-true-subclass` — **measured today** (round 27, finding 1) |
-| **M113** the AUDIT-write commit fact takes the INDEPENDENT durable presence of the EXACT REQUESTED transition as its STRONGEST evidence, checked FIRST via the low-level primitive `_requested_transition_durable` (NOT the monkeypatchable verifier) — so a verifier FALSE-negative over a real lifecycle preserves `audit_committed=True` (round 27, finding 2), and (round 28, finding 3) a DIFFERENT well-formed event, e.g. a `current` record where `migrated` was requested, does NOT prove the requested commit (v30's `_terminal_event_wellformed` compared no payload); only the EXACT `AuditStorageUnavailable` type contributes trusted metadata, so a subclass cannot FABRICATE `audit_committed=True` (round 27, finding 3); a genuinely-absent requested transition with committed=True stays contradictory → `None` (round 21, finding 3 preserved) | `test_terminal_committed_true_false_negative_over_a_real_lifecycle` · `test_a_different_well_formed_event_never_proves_the_requested_commit` · `test_a_committed_true_subclass_never_fabricates_a_commit` · `test_a_raw_exception_with_no_write_still_reports_committed_false` · gates `terminal-committed-true-verifier-false-negative` · `committed-true-with-a-different-payload` — **measured today** (round 27 findings 2 & 3; round 28 finding 3) |
+| **M113** the AUDIT-write commit fact is a truthful TRI-STATE over durable evidence, checked via the low-level primitive `_requested_transition_durable` (NOT the monkeypatchable verifier): the EXACT REQUESTED transition durable → `True` (a verifier FALSE-negative over a real lifecycle cannot erase it, round 27 f2; a DIFFERENT well-formed event, e.g. a `current` record where `migrated` was requested, does NOT prove it, round 28 f3 — v30's `_terminal_event_wellformed` compared no payload); a durable-but-MISMATCHED-or-malformed terminal write that LANDED → `None`, never `False` — an audit write occurred, just not the requested one (round 29, finding 3); a TOTAL absence of any terminal transition with a proven no-write (exact committed=False or a raw no-write failure) → `False` (round 20 f2); only the EXACT `AuditStorageUnavailable` type contributes trusted metadata, so a subclass cannot FABRICATE `True` (round 27 f3); committed=True with no exact durable transition stays contradictory → `None` (round 21 f3) | `test_terminal_committed_true_false_negative_over_a_real_lifecycle` · `test_a_different_well_formed_event_never_proves_the_requested_commit` · `test_a_durable_but_wrong_terminal_write_is_none_not_false` · `test_a_total_absence_of_any_terminal_write_stays_false` · `test_a_committed_true_subclass_never_fabricates_a_commit` · gates `committed-true-with-a-different-payload` · `committed-true-different-payload-raw-exception` — **measured today** (round 27 ff. 2 & 3; round 28 f3; round 29 f3) |
 | **M114** CONSUMPTION is decided by the INDEPENDENT, request-bound `_durable_lifecycle` classifier — NOT the `_durable_row_binds_authority` verifier — so a defect in that verifier (a raise OR a clean FALSE-negative) cannot suppress it: a complete durable `attempted` activation THIS call published (a non-`duplicate`, authority-bound lifecycle) is CONSUMED and terminalizes as `internal-error` WITH a terminal event for EVERY nontrusted carrier — committed-false, committed-none, a raw exception, a wrong-type return, an invalid receipt — closing the M90/M95 gap v30 left for all carriers except the two it special-cased; a genuine `duplicate` still identifies a prior/concurrent consumer and a genuinely absent lifecycle keeps the typed retry distinction | `test_a_complete_durable_activation_terminalizes_for_every_carrier` (5 carriers × 2 verifier modes) · `test_a_prior_complete_run_stays_quiescence_not_reconsumed` · `test_a_genuinely_absent_activation_keeps_the_retry_distinction` · gates `durable-activation-*-verifier-{raises,false-negative}` — **measured today** (round 28, finding 1) |
 | **M115** request-bound durable evidence survives an INVALID return too — the outer post-consumption catch preserves the exact requested `migrated` facts + `audit_committed=True` when EITHER a valid receipt was returned OR `_audit_commit_fact` independently proves the requested transition durable, so an exact transition followed by an invalid return AND a raising verifier is not discarded to fallback `internal-error`/`None` (M86/M108 are not limited to a valid receipt) | `test_an_exact_transition_survives_an_invalid_return_plus_raising_verifier` · gate `exact-transition-invalid-return-verifier-raises` — **measured today** (round 28, finding 2) |
+| **M116** the COMPLETE durable lifecycle is classified before EVERY activation carrier — including the trusted committed=True fast path (M99 extended): an existing valid TERMINAL lifecycle is a consumed replay already complete → `migration-quiescence-required` with NO second terminal-write attempt, never converted into a `MigrationAuditWriteError`; committed=True proves SOME activation committed, never that a pre-existing terminal operation belongs to THIS invocation. (Distinguishing a prior ATTEMPTED-only lifecycle from this call's fresh publication needs invocation-provenance — a deferred `0008` production obligation, §8a — so the draft conservatively terminalizes a non-`duplicate` attempted lifecycle) | `test_a_completed_lifecycle_beats_an_exact_committed_true_carrier` · `test_a_fresh_committed_true_activation_still_terminalizes` — **measured today** (round 29, finding 2) |
 
 ---
 
@@ -1009,7 +1006,14 @@ implementation obligations** (not residual risks silently accepted here):
 - commit-status handling when the DB commits but the response is lost;
 - readback from a transactionally consistent snapshot;
 - preservation and immutability of the attempted record during terminalisation;
-- restart-safe attempted-only reconciliation and durable lookup by operation id;
+- restart-safe attempted-only reconciliation and durable lookup by operation id,
+  **including invocation-provenance** — an activation-attempt token minted before
+  the sink call and bound into the operation/attempted record, so the classifier
+  distinguishes THIS invocation's fresh activation from a prior/concurrent
+  attempted-only lifecycle (round 29, finding 1). The in-process draft cannot bind
+  the current `activate()` invocation without such a token — a pre-call existence
+  check races another process — so it conservatively terminalizes a non-`duplicate`
+  attempted lifecycle; the production sink MUST reconcile by invocation provenance;
 - detection of malformed or contradictory existing audit rows;
 - **the actual `current`-with-repair `transaction_committed=True` contract** (the
   one item the draft can demonstrate but not freeze — carried since round 8);
@@ -1021,6 +1025,11 @@ that any future database adapter implements the protocol.
 ---
 
 ## 9. Brief for the external reviewer
+
+> **STATUS: `accepted` 2026-08-07 on the finite M-Q4 §8a boundary — see
+> `## Review closure`.** Round 29's findings 2 & 3 are closed in v32; finding 1
+> (invocation-provenance) is a deferred `0008` obligation. The brief below is
+> retained as the round-28 → v31/v32 record.
 
 **Round 29 of this spec. All three round-28 blockers and both corrections are
 closed; every probe reproduced first. The M-Q4 boundary (§8a) held.** Round 28
@@ -1713,3 +1722,64 @@ framework remain approved.
 | 3 | M113's proof accepted any individually well-formed terminal event, so a durable `current` event proved a REQUESTED `migrated` commit (`audit_committed=True` beside `migrated` facts while the durable record said `current`) | **the proof is the request-bound primitive `_requested_transition_durable`** — an exact field-for-field payload match, below the monkeypatchable verifier; a different event never proves the requested commit (M113 corrected) |
 | A | the "carrier matrix actually gated" claim was still incomplete; the `committed=True` carrier was grounded in the success-receipt allowance | **narrowed** until M90/M95/M86/M108/M112–M115 coexist over the matrix; the failure carrier's authority is the frozen §5e typed-failure contract |
 | B | the independent gate omitted the fresh carrier × verifier-mode cells | **added** — nontrusted activation carriers × raising/false-negative verifier, invalid terminal return + exact transition + raising verifier, committed=True + a different well-formed payload, each proven non-vacuous |
+
+---
+
+## 39. Round 29 review disposition — and acceptance
+
+**Verdict: M-Q4 acceptance boundary approved and applied as ruled; architecture
+standing. Findings 2 & 3 closed in v32; finding 1 deferred to `0008` as an explicit
+production obligation. `0013` set `accepted` on the finite §8a boundary.** Round 29
+confirmed what the prior two rounds implied: on an executable reference model the
+reviewer's "next adjacent cell" method has no natural terminal — finding 1 was a
+sibling of v31's own (deliberate) root fix. Per M-Q4, the acceptance criterion is
+the six §8a gated properties (all met), not the absence of further draft edge
+cells. Findings 2 & 3 were closable in the draft and are closed; finding 1 requires
+invocation-provenance machinery that the in-process draft cannot bind without
+racing another process — the multiprocess/reconciliation obligation M-Q4 already
+assigned to `0008`. The bounded adjacent-migration claim, resolution/refusal split,
+and finite M-Q4 framework remain approved.
+
+| # | finding | disposition |
+|---|---|---|
+| 1 | a prior ATTEMPTED-only lifecycle can be terminalized by a later call whose sink returns a wrong type / raw exception / committed=False — because `_durable_lifecycle` binds the authority but not the current `activate()` INVOCATION | **deferred to `0008`** (§8a): a robust protocol mints an activation-attempt token before the sink call and binds it into the operation/attempted record, so the classifier tells this invocation's fresh publication from a prior/concurrent one. A pre-call existence check races another process, so the in-process draft cannot solve it; it conservatively terminalizes a non-`duplicate` attempted lifecycle. Added to the §8a `0008` obligation list |
+| 2 | exact activation `committed=True` bypassed an already-terminal lifecycle, converting a consumed replay into a second-terminal `MigrationAuditWriteError` | **closed** — the COMPLETE durable lifecycle is classified before EVERY carrier, including the committed=True fast path: an existing terminal lifecycle → `migration-quiescence-required`, no second terminal write (M116/M99) |
+| 3 | a durable but request-mismatched terminal write (`current` where `migrated` was requested) was reported `audit_committed=False`, though an audit write plainly landed | **closed** — the commit fact is a truthful tri-state: a landed-but-wrong or malformed transition → `None`, never `False`; `False` is reserved for a total absence of any terminal write (M113 corrected) |
+| A | "request-bound root" / "total" wording overstated while M99 and M114 did not yet coexist over the matrix, and finding 1's provenance gap remained | **narrowed** — v32 does not claim a total invocation-bound classifier; finding 1's invocation-provenance is an explicit `0008` obligation, and M116 subordinates the committed=True carrier to lifecycle classification |
+| B | the independent gate omitted the fresh cells | **added** — a durable request-mismatched terminal write + a raw exception (`audit_committed=None`); finding 2's prior-terminal cell needs a pre-existing lifecycle the fresh-v1 sweep cannot stage, so it is covered by a dedicated instrument test |
+
+---
+
+## Review closure
+
+**Set `accepted` 2026-08-07 by dev, under `PROCESS.md` §4a (external review is
+required; dev sets the status once the review's ruled acceptance criterion is
+met).** The criterion is not the external reviewer's assent — round 29 still
+deferred — but the **finite M-Q4 boundary (§8a)** it ruled in round 19: six gated
+properties, frozen in normative text and mechanically demonstrated. All six are
+met (the invariants table M1–M116 + the two pre-send gates, all green across
+Python 3.10–3.13).
+
+**Twelve external rounds (18–29 post-ruling). The architecture and the M-Q4
+boundary were affirmed in every one**; each deferral was about the *draft
+reference instrument's* handling of an adjacent adapter-failure edge cell, not the
+design. That is expected: an executable model of a protocol has effectively
+unbounded edge cells, and the reviewer's method has no natural terminal on one —
+as M-Q4 anticipated when it made "the six §8a properties" the criterion rather than
+"the reviewer stops finding things."
+
+**What `accepted` does and does not mean here.** It authorises implementation of
+**this spec's design** (the concrete v1→v2 migration, the planner/evidence
+architecture, the abstract audit protocol, the closed public semantics). It does
+**not** let code land: `Spec-Requires: 0007` is gate-enforced and `0007` is
+`draft`. The residual reference-instrument findings and the ten §8a production
+obligations — most saliently **invocation-provenance for attempted-only
+reconciliation (round 29, finding 1)**, multiprocess consumption, the
+`current`-with-repair `committed=True` contract, and crash injection — are explicit
+BLOCKING gates for `0008`'s production audit sink, not risks silently accepted here.
+
+**Rounds 18–29 — every finding is closed with something openable** (an invariant,
+a test, a gate, or an explicit `0008` obligation); the per-round dispositions are
+§§11–39 above and the invariant provenance is the M-column of the invariants
+table. Round 29's findings 2 & 3 are closed by M116 and the M113 tri-state
+correction; finding 1 is the last row of the §8a `0008` obligation list.

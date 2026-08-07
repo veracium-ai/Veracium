@@ -886,6 +886,25 @@ def _committed_true_with_a_different_payload():
     return lambda: setattr(m._AUDIT, "record_terminal", real_rt)
 
 
+# --- round 29: lifecycle precedes the committed=True carrier (M99); a durable but
+# --- request-mismatched terminal write is audit_committed=None, never False -----
+
+def _committed_true_with_a_different_payload_raw():
+    """The sink writes a DIFFERENT well-formed terminal event (`current`) than the
+    requested `migrated`, then raises a RAW exception (round 29, finding 3) — a
+    write LANDED, so the requested commit fact is None, not False."""
+    real_rt = m._AUDIT.record_terminal
+
+    def write_current_then_raise(op, ev, pl):
+        current = {"outcome": "current", "occurred_at": pl["occurred_at"],
+                   "store_changed": True, "transaction_committed": True,
+                   "resulting_state": "destination", "resulting_version": 2}
+        real_rt(op, ev, current)
+        raise OSError("raw no-write signal")
+    m._AUDIT.record_terminal = write_current_then_raise
+    return lambda: setattr(m._AUDIT, "record_terminal", real_rt)
+
+
 # (id, install -> cleanup, expect(res, exc) -> error message or None)
 _INJECTIONS = [
     # --- round 18: the COMPLETE record, both atomic parts, full state ------
@@ -1060,6 +1079,14 @@ _INJECTIONS = [
     # never proves the requested `migrated` commit — audit_committed is not True.
     ("committed-true-with-a-different-payload",
      _committed_true_with_a_different_payload,
+     _write_error(None)),
+    # round 29, finding 3: a durable but request-mismatched terminal write + a RAW
+    # exception is audit_committed=None (a write landed), NEVER False. (Finding 2 —
+    # a prior terminal lifecycle beating committed=True — needs a pre-existing
+    # lifecycle the fresh-v1 sweep cannot stage, so it is covered by the dedicated
+    # instrument test `test_a_completed_lifecycle_beats_an_exact_committed_true_carrier`.)
+    ("committed-true-different-payload-raw-exception",
+     _committed_true_with_a_different_payload_raw,
      _write_error(None)),
     # An un-committable audit flag that the exception constructor rejects (f4).
     ("record_terminal-audit_committed-non-bool",

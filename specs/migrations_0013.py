@@ -1956,6 +1956,21 @@ def _consume_authority(a: MigrationAuthority, output_digest: str,
         and not result.problems(a.operation_id)
         and type(result.status) is str and result.status == "activated")
 
+    # Round 29, finding 2 (M99: the COMPLETE durable lifecycle is classified before
+    # EVERY activation carrier — including the trusted committed=True fast path). An
+    # existing valid TERMINAL lifecycle is a consumed replay that is ALREADY complete
+    # → `migration-quiescence-required` with NO new terminal write; committed=True
+    # proves that SOME activation committed, never that a pre-existing terminal
+    # operation belongs to THIS invocation. (An existing attempted-only lifecycle
+    # that this call did not create requires invocation-provenance reconciliation —
+    # a `0008` production obligation, §8a; the draft cannot bind the current
+    # `activate()` invocation without an activation-attempt token.)
+    if not is_duplicate and _durable_lifecycle(a, output_digest)[0] == "terminal":
+        raise MigrationRefused(
+            "migration-quiescence-required",
+            f"authority operation {a.operation_id!r} is already complete (a terminal "
+            f"event exists) — a consumed replay, not a new activation")
+
     # Round 27, finding 1: an EXACT `AuditStorageUnavailable(committed=True)`
     # activation carrier is ITSELF proof of the durable write (§5b: committed=True
     # ⟹ the row WAS written, the authority IS consumed). That proof is INDEPENDENT
@@ -3219,13 +3234,24 @@ def _audit_commit_fact(operation_id, terminal, payload, state, sink_exc):
         present = False
     if present:
         return True
-    # 2. The requested transition is not independently durable. Trust only the EXACT
-    #    protocol carrier's metadata.
+    # 2. The exact requested transition is NOT durable. Round 29, finding 3: but if
+    #    ANY terminal transition landed for this operation — a malformed, conflicting,
+    #    or request-MISMATCHED event (e.g. a durable `current` where `migrated` was
+    #    requested) — then an audit write DEFINITELY occurred, just not the requested
+    #    one. That is NOT proven-not-written: `False` would tell a caller no audit
+    #    write landed for an already-terminalized operation. The requested commit
+    #    fact is genuinely UNKNOWN → `None`. `False` is reserved for the TOTAL
+    #    absence of any terminal transition with a proven no-write.
+    mismatched_present = any(
+        ev in _TERMINAL_EVENTS
+        for (oid, ev) in _AUDIT._events if oid == operation_id)
     c = _trusted_carrier_committed(sink_exc) if sink_exc is not None else None
     if c is True:
-        return None                            # committed=True but absent → CONTRADICTION
+        return None                            # committed=True but not the exact one → CONTRADICTION
+    if mismatched_present:
+        return None                            # a wrong/malformed write LANDED → unknown, never False
     if c is False:
-        return False                           # EXACT proven-not-written
+        return False                           # EXACT proven-not-written, nothing durable
     if isinstance(sink_exc, AuditStorageUnavailable):
         return None                            # family carrier we cannot trust: unknown
     return False if sink_exc is not None else None

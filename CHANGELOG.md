@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **On-disk store migrations** (`specs/0013`, accepted 2026-08-07 after 12 external
+  review rounds post-M-Q4-ruling) — the abstract migration design and audit
+  *protocol* for evolving a stamped store across schema versions, reviewed against
+  the concrete v1→v2 `confirmations`-table migration. Accepted on the finite M-Q4
+  acceptance boundary (spec §8a): the six gated properties are frozen and
+  mechanically demonstrated (concrete migration correctness; planner/evidence
+  architecture; closed public semantics; the abstract atomic audit protocol;
+  the adapter-conformance surface; independent mechanical gates). The design is a
+  prerequisite of `0006`/`0008`/`0009`/`0010`. **No production behaviour ships
+  yet**: `Spec-Requires: 0007` (still `draft`) is gate-enforced, and the
+  production audit sink — with its explicit blocking obligations (real two-table
+  DDL, multiprocess consumption, invocation-provenance reconciliation, the
+  `current`-with-repair `committed=True` contract, crash injection) — lands with
+  `0008`. The in-process reference instrument (`specs/migrations_0013.py`) is a
+  draft measuring model, not shipped code.
 - **On-disk store schema versioning** (`specs/0007`, accepted after 14 external
   review rounds). A store now carries `PRAGMA user_version`; on open the store
   is recognised exactly or refused loudly, replacing the previous unconditional

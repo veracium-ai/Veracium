@@ -4535,3 +4535,79 @@ def test_a_different_well_formed_event_never_proves_the_requested_commit(monkeyp
     durable = [d["outcome"] for (o, k), d in m13._AUDIT._events.items()
                if o == auth.operation_id and k in m13._TERMINAL_EVENTS]
     assert durable == ["current"]                      # the durable record disagrees
+
+
+# ==========================================================================
+# Round 29 regressions — lifecycle precedes the committed=True carrier (M99);
+# a durable-but-wrong terminal write is audit_committed=None, never False.
+# (Finding 1 — invocation-provenance for a prior attempted-only lifecycle — is a
+# deferred 0008 production obligation, §8a; not distinguishable in-draft without an
+# activation-attempt token.)
+# ==========================================================================
+
+def test_a_completed_lifecycle_beats_an_exact_committed_true_carrier(monkeypatch):
+    """Round 29, finding 2 (M99): an already-TERMINAL lifecycle is a consumed replay
+    → `migration-quiescence-required`, classified BEFORE the trusted committed=True
+    fast path — never a second terminal-write `MigrationAuditWriteError`."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    assert m13.migrate_store(p, auth) == "migrated"     # now terminal
+    monkeypatch.setattr(m13._AUDIT, "activate",
+                        lambda a, od: (_ for _ in ()).throw(
+                            m13.AuditStorageUnavailable("x", committed=True)))
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+
+
+def test_a_fresh_committed_true_activation_still_terminalizes(monkeypatch):
+    """Round 29, finding 2 boundary: the committed=True fast path still holds for a
+    FRESH activation (no prior terminal) — the row was written, response lost →
+    `migration-quiescence-required` with a terminal event."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.activate
+
+    def commit_then_raise(a, od):
+        real(a, od)
+        raise m13.AuditStorageUnavailable("lost", committed=True)
+    monkeypatch.setattr(m13._AUDIT, "activate", commit_then_raise)
+    assert m13.migrate_store(p, auth) == "migration-quiescence-required"
+    assert any(oid == auth.operation_id and ev in m13._TERMINAL_EVENTS
+               for (oid, ev) in m13._AUDIT._events)
+
+
+@pytest.mark.parametrize("carrier", ["raw-exception", "committed-false"])
+def test_a_durable_but_wrong_terminal_write_is_none_not_false(monkeypatch, carrier):
+    """Round 29, finding 3: a durable but request-MISMATCHED terminal event (a valid
+    `current` where `migrated` was requested) means an audit write LANDED — so the
+    requested commit fact is `None` (unknown), never `False` (proven not written)."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    real = m13._AUDIT.record_terminal
+
+    def write_current_then_fail(op, ev, pl):
+        current = {"outcome": "current", "occurred_at": pl["occurred_at"],
+                   "store_changed": True, "transaction_committed": True,
+                   "resulting_state": "destination", "resulting_version": 2}
+        real(op, ev, current)                          # a DIFFERENT valid event lands
+        if carrier == "raw-exception":
+            raise OSError("raw no-write signal")
+        raise m13.AuditStorageUnavailable("x", committed=False)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal", write_current_then_fail)
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is None           # a write landed → not False
+    durable = [d["outcome"] for (o, k), d in m13._AUDIT._events.items()
+               if o == auth.operation_id and k in m13._TERMINAL_EVENTS]
+    assert durable == ["current"]
+
+
+def test_a_total_absence_of_any_terminal_write_stays_false(monkeypatch):
+    """Round 29, finding 3 boundary: with NO terminal transition at all, a raw
+    no-write failure is still proven-not-written → `False` (round 20 f2 preserved)."""
+    p = _v1_store()
+    auth = m13.make_authority(p)
+    monkeypatch.setattr(m13._AUDIT, "record_terminal",
+                        lambda o, e, pl: (_ for _ in ()).throw(OSError("no write")))
+    with pytest.raises(m13.MigrationAuditWriteError) as exc:
+        m13.migrate_store(p, auth)
+    assert exc.value.audit_committed is False
