@@ -95,14 +95,46 @@ DISPOSITIONS = {
     "🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** [N4-decay]"),
  ("src/veracium/lifecycle.py", "expire", "add_edge", "1d9541b12c69"):
    (M, "`needs_confirmation = True`", "none", "clean — narrows; flags, never clears", "`test_expiry_lapse_confirm_and_reinforcement`"),
- ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "5bed480ae733"):
-   (M, "**destroys episodes**", "none",
-    "🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e",
-    "➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery [X-crash]"),
- ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"):
-   (M, "`author_of_evidence`, `derived_from`, `confidence`, `disclosure`, `observed_at`, `source_type`, `evidence_ref`", "none",
-    "**M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust",
-    "`test_consolidation_preserves_and_compresses`"),
+ # specs/0010 (ACCEPTED) — consolidate() rewritten onto the crash-safe state machine:
+ # write-before-delete (X1), all-or-nothing claim (X4), roll-forward recovery (X2), the
+ # trust floor now DERIVED in the store (X23). The former total-loss delete-before-write
+ # (review item 9) and the M1 whole-set-minimum trust are both CLOSED.
+ ("src/veracium/lifecycle.py", "consolidate", "create_or_takeover_consolidation", "2cd7f2e21d07"):
+   (M, "claims the whole cold batch (`claimed_by`/`operation_id` on each input)", "act",
+    "clean — specs/0010 X4/X11: the batch is claimed atomically or not at all; a contended/stale set skips the pass, mutating nothing",
+    "`test_concurrent_consolidation_claims_all_or_nothing` · `test_partial_claim_is_impossible`"),
+ ("src/veracium/lifecycle.py", "consolidate", "write_consolidation_output_if_current", "76c4ec1e9bdf"):
+   (M, "writes each provisional output; store BINDS lineage=claimed set and DERIVES the trust floor (X23)", "act",
+    "clean — specs/0010 X1/X8/X12/X23: outputs are durable BEFORE any delete, carry the whole batch as lineage, and take the whole-set-minimum trust (the old M1/0.4.4 logic, moved to the fenced write)",
+    "`test_output_trust_is_the_whole_set_minimum` · `test_lineage_is_the_whole_batch`"),
+ ("src/veracium/lifecycle.py", "consolidate", "transition_consolidation_if_current", "00b059deffa3"):
+   (M, "advances state (CLAIMED→GENERATING)", "act",
+    "clean — specs/0010 §4b-ii: owner+live-lease guarded",
+    "`test_every_read_sees_exactly_one_representation`"),
+ ("src/veracium/lifecycle.py", "consolidate", "transition_consolidation_if_current", "d64d0ee80464"):
+   (M, "the visibility cutover (GENERATING→OUTPUTS_DURABLE)", "act",
+    "clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return",
+    "`test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output`"),
+ ("src/veracium/lifecycle.py", "consolidate", "delete_claimed_inputs_if_current", "8565cc3059e5"):
+   (M, "deletes the claimed inputs AFTER outputs are durable", "act",
+    "clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover",
+    "`test_every_read_sees_exactly_one_representation`"),
+ ("src/veracium/lifecycle.py", "consolidate", "transition_consolidation_if_current", "f6c9281664ba"):
+   (M, "finalizes (OUTPUTS_DURABLE→FINALIZED)", "act",
+    "clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs",
+    "`test_finalize_refuses_before_inputs_deleted`"),
+ ("src/veracium/lifecycle.py", "_recover", "transition_consolidation_if_current", "6e0ea1c3cdf2"):
+   (M, "recovery roll-forward finalize", "act",
+    "clean — specs/0010 X2/X13: an OUTPUTS_DURABLE op recovered by idempotent re-delete + finalize, never a re-consolidation",
+    "`test_recovery_finalises_after_committed_delete`"),
+ ("src/veracium/lifecycle.py", "_recover", "delete_claimed_inputs_if_current", "49d3539863c9"):
+   (M, "recovery idempotent re-delete", "act",
+    "clean — specs/0010 X2: there is no durable 'some inputs deleted' state; the re-delete is idempotent",
+    "`test_recovery_finalises_after_committed_delete`"),
+ ("src/veracium/lifecycle.py", "_recover", "abandon_consolidation_if_current", "3796d339c301"):
+   (M, "recovery cleanup of an expired pre-cutover op", "act",
+    "clean — specs/0010 X7/X15: abandons only an EXPIRED-lease op (never a live peer), cleanup-complete before any new fence",
+    "`test_takeover_of_expired_generating_cleans_first` · `test_a_live_lease_is_not_preempted`"),
 
  # -- portability ------------------------------------------------------------
  ("src/veracium/portability.py", "_preflight_and_commit", "commit_outcome_import_plan", "83f7d603598f"):
@@ -146,7 +178,14 @@ STATES = {
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
   ("src/veracium/lifecycle.py", "expire", "add_edge", "79eaf6e63a9c"): "open",
   ("src/veracium/lifecycle.py", "expire", "add_edge", "1d9541b12c69"): "clean",
-  ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "5bed480ae733"): "open_moved",
-  ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"): "fixed",
+  ("src/veracium/lifecycle.py", "consolidate", "create_or_takeover_consolidation", "2cd7f2e21d07"): "clean",
+  ("src/veracium/lifecycle.py", "consolidate", "write_consolidation_output_if_current", "76c4ec1e9bdf"): "clean",
+  ("src/veracium/lifecycle.py", "consolidate", "transition_consolidation_if_current", "00b059deffa3"): "clean",
+  ("src/veracium/lifecycle.py", "consolidate", "transition_consolidation_if_current", "d64d0ee80464"): "clean",
+  ("src/veracium/lifecycle.py", "consolidate", "delete_claimed_inputs_if_current", "8565cc3059e5"): "clean",
+  ("src/veracium/lifecycle.py", "consolidate", "transition_consolidation_if_current", "f6c9281664ba"): "clean",
+  ("src/veracium/lifecycle.py", "_recover", "transition_consolidation_if_current", "6e0ea1c3cdf2"): "clean",
+  ("src/veracium/lifecycle.py", "_recover", "delete_claimed_inputs_if_current", "49d3539863c9"): "clean",
+  ("src/veracium/lifecycle.py", "_recover", "abandon_consolidation_if_current", "3796d339c301"): "clean",
   ("src/veracium/portability.py", "_preflight_and_commit", "commit_outcome_import_plan", "83f7d603598f"): "open_moved",
 }

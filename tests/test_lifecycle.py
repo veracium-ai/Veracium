@@ -114,9 +114,10 @@ def test_consolidation_preserves_and_compresses():
 
         now = datetime(2026, 6, 1, tzinfo=timezone.utc)
         rep = lifecycle.consolidate(mem.store, mem.llm, "u", mem.config, now=now)
-        assert rep == {"consolidated": 10, "into": 3}
+        assert rep == {"consolidated": 10, "into": 3, "recovered": 0}
         eps = mem.store.episodes("u")
         assert len(eps) == 3
+        assert all(e.lineage for e in eps)          # specs/0010: outputs carry lineage
         assert any("first occurrence" in e.summary for e in eps)  # guard held
         mem.close()
 
@@ -324,7 +325,9 @@ def test_consolidated_provenance_is_internally_consistent():
         assert p.source_type == SourceType.INFERRED, "a summary is not STATED"
         assert not p.evidence_ref.startswith("event-"), \
             "evidence_ref still points at one arbitrary input"
-        assert p.evidence_ref.startswith("consolidate:")
+        # specs/0010 X23: the store binds evidence_ref to the consolidation OPERATION
+        # (its operation_id), computed at the fenced write boundary — not an input event.
+        assert p.evidence_ref.startswith("op-")
 
 
 def test_an_offset_timestamp_survives_every_public_entry_point():

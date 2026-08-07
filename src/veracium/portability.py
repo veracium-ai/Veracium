@@ -31,8 +31,8 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from .schema import Edge, Episode
-from .store.base import DESTINATION_CHANGED
+from .schema import Edge, Episode, is_historical_id, to_historical_id
+from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 
 FORMAT_VERSION = 3
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
@@ -41,8 +41,16 @@ _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persisten
 def export_memory(store, user_id: str, path) -> dict:
     """Write `user_id`'s complete memory (all edges incl. superseded and
     quarantined, all episodes) to `path` as JSONL. Returns counts."""
+    # specs/0010 §4f/X17: export is a READ-ONLY quiescent snapshot. The quiescence
+    # check and the episode snapshot are ONE atomic, linearizable observation — a
+    # claim starting mid-export yields NON_QUIESCENT, never a dangling `claimed_by`.
+    # Export never mutates; the caller runs consolidate()/maintain() first and retries.
+    episodes = store.quiescent_episode_snapshot(user_id)
+    if episodes is NON_QUIESCENT:
+        raise ValueError(
+            f"export refuses: a consolidation is in flight for {user_id!r} — run "
+            f"consolidate()/maintain() to settle it, then retry (specs/0010 §4f)")
     edges = store.edges(user_id, active_only=False, include_quarantined=True)
-    episodes = store.episodes(user_id)
     path = Path(path)
     with path.open("w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": FORMAT_VERSION,
@@ -215,6 +223,27 @@ def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
                     f"judgment_time_known=False but is not a root (seq="
                     f"{r.get('seq')!r}, supersedes_episode="
                     f"{r.get('supersedes_episode')!r}) — refuse (specs/0009)")
+
+    # (3b) specs/0010 X18/X19: consolidation shapes cross the boundary honestly.
+    for r in ep_recs:
+        if r.get("claimed_by") is not None:
+            raise ValueError(
+                f"{path}: episode {r.get('id')!r} is a CLAIMED input whose "
+                f"consolidation op is non-portable — refuse rather than orphan it "
+                f"(specs/0010 X18)")
+        if r.get("lineage"):                      # a consolidation OUTPUT
+            lin = r["lineage"]
+            if not (isinstance(lin, list)
+                    and all(isinstance(x, str) and is_historical_id(x) for x in lin)):
+                raise ValueError(
+                    f"{path}: episode {r.get('id')!r} has a malformed lineage shape — "
+                    f"every lineage id must be historical (specs/0010 X18)")
+            # X19: a finalized output's operation_id becomes a destination-local
+            # HISTORICAL reference (deterministic, retry-stable — no persisted map) that
+            # no LIVE local op id can inhabit, so it can never collide on import or after
+            # a later local finalization. lineage ids are already historical.
+            if r.get("operation_id") is not None:
+                r["operation_id"] = to_historical_id(r["operation_id"])
 
     edges = [Edge.model_validate(r) for r in edge_recs]
     eps = [Episode.model_validate(r) for r in ep_recs]

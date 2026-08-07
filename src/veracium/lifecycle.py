@@ -75,78 +75,92 @@ Return ONLY JSON:
 Fewer records than the input. Keep dates and specifics exact."""
 
 
+def _recover(store, user_id: str) -> int:
+    """specs/0010 X2/X13 — roll each recovery-pending op to a safe terminal state and
+    return the count actually resolved this pass. `OUTPUTS_DURABLE` rolls FORWARD
+    (idempotent delete-then-finalize, never a re-consolidation); an EXPIRED pre-cutover
+    op is cleanly `ABANDONED`. A LIVE pre-cutover op (a peer heartbeating) is left
+    pending — `abandon` refuses a live lease (X7), so it is not counted as recovered."""
+    from .schema import ConsolidationState as _S
+    resolved = 0
+    for op in store.pending_consolidations(user_id):
+        if op.state is _S.OUTPUTS_DURABLE:
+            store.delete_claimed_inputs_if_current(op.operation_id, op.fence)
+            if store.transition_consolidation_if_current(
+                    op.operation_id, op.fence, None, _S.FINALIZED):
+                resolved += 1
+        elif store.abandon_consolidation_if_current(op.operation_id, op.fence):
+            resolved += 1
+    return resolved
+
+
 def consolidate(store, llm: Complete, user_id: str, config, *,
                 now: Optional[datetime] = None) -> dict:
-    """Compact cold episodes (older than `consolidate_after_days`) for `user_id`.
-    No-op unless at least `consolidate_min_batch` cold episodes exist."""
+    """Compact cold episodes (older than `consolidate_after_days`) for `user_id`,
+    crash-safely (specs/0010). Runs recovery FIRST (X13), then claims a whole batch
+    atomically (X4), generates, writes every output BEFORE deleting any input (X1),
+    and finalizes only once inputs are gone (X20). No-op unless at least
+    `consolidate_min_batch` cold candidates exist."""
+    from .schema import (ConsolidationOutputDraft, ConsolidationState,
+                         to_historical_id)  # noqa: F401
+    import uuid
     now = now or utcnow()
+    recovered = _recover(store, user_id)               # X13: recovery at its own start
     cutoff = (now.date() - _timedelta_days(config.consolidate_after_days))
     episodes = store.episodes(user_id)
-    # outcome episodes are structured records (source of truth for edge
-    # counters), not prose history — the LLM compactor never sees them.
-    # TODO(v4): count-summary compaction for cold unreviewed/concurred events;
-    # confirmed/corrected keep first occurrences per the compaction-loss guard.
-    cold = [e for e in episodes if e.kind != "outcome"
+    # Candidates exclude: outcome episodes (structured records the compactor never
+    # sees), consolidation OUTPUTS (non-empty lineage — X16, never a candidate), and
+    # already-claimed inputs (a concurrent op holds them — X4).
+    cold = [e for e in episodes if e.kind != "outcome" and not e.lineage
+            and e.claimed_by is None
             and _safe_date(e.date) and _safe_date(e.date) < cutoff]
     if len(cold) < config.consolidate_min_batch:
-        return {"consolidated": 0, "into": 0}
+        return {"consolidated": 0, "into": 0, "recovered": recovered}
     listing = "\n".join(f"[{e.date}] {e.summary}" for e in cold)
     data = extract_json(llm(CONSOLIDATE_PROMPT.format(episodes=listing),
                             system=CONSOLIDATE_SYSTEM, role="compile"))
     new = [r for r in data.get("records", [])
            if isinstance(r, dict) and r.get("date") and r.get("summary")]
     if not new or len(new) >= len(cold):
-        return {"consolidated": 0, "into": 0}  # no compression achieved
-    # Provenance of a consolidated episode is a property of the WHOLE SET, not
-    # of whichever member happens to sort first.
-    #
-    # This previously read `cold[0].provenance.author_of_evidence` — which both
-    # contradicted the comment above it ("a system-authored derivation") and
-    # dropped every other member's third-party influence. A batch whose first
-    # episode was user-authored collapsed to author=USER, derived_from=None, so
-    # `third_party_influenced` was False and received-email text moved out of
-    # the UNVERIFIED block into the GROUNDED one. That is precisely the attack
-    # gate.partition_parts documents ("a system-authored summary quoting a
-    # received email launders attacker text into its episode — route by
-    # influence, never by authorship alone"), and consolidation was defeating
-    # the defence its own module describes. Security fix, 0.4.4.
-    import uuid
-    influenced = any(e.provenance.third_party_influenced for e in cold)
-    # N9b (spec 0002): a summary is no stronger than its weakest input, across
-    # EVERY trust-bearing field. `confidence` used to be a flat 0.9 here, so a
-    # batch containing a 0.2 episode produced a summary at 0.9 -- confidence
-    # manufactured from recognition, which is the same defect M5 forbids at T2.
-    _DISCLOSURE_RANK = {Disclosure.QUARANTINED: 0, Disclosure.USE_ONLY: 1,
-                        Disclosure.MENTIONABLE: 2}
-    weakest = min(cold, key=lambda e: _DISCLOSURE_RANK[e.provenance.disclosure])
-    # `source_type` and `evidence_ref` were inherited from cold[0] -- so a
-    # SYSTEM-authored summary reported `source_type=STATED` and pointed at the
-    # FIRST input's event. Internally false provenance, and M1's cold[0]
-    # inheritance surviving on two fields the 0.4.7 test never inspected. A
-    # summary is INFERRED by construction, and its evidence is the consolidation
-    # itself, not any one member.
-    op_ref = f"consolidate:{uuid.uuid4().hex[:12]}"
-    prov = cold[0].provenance.model_copy(update={
-        "source_type": SourceType.INFERRED,
-        "evidence_ref": op_ref,
-        # say what it is, rather than inheriting an author we did not choose
-        "author_of_evidence": EvidenceAuthor.SYSTEM,
-        # min-trust across the set: a summary of third-party-influenced material
-        # is third-party-influenced, whoever wrote the first line of it
-        "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced
-                         else cold[0].provenance.derived_from),
-        "disclosure": weakest.provenance.disclosure,
-        "confidence": min(e.provenance.confidence for e in cold),
-        # recognition is not observation: currency may not exceed the newest
-        # input, and must never be "now"
-        "observed_at": max(e.provenance.observed_at for e in cold)})
-    for e in cold:
-        store.delete_episode(e.id)
+        return {"consolidated": 0, "into": 0, "recovered": recovered}  # no compression
+    # Claim the whole set atomically (X4). A contended set → None; a stale candidate
+    # (concurrently finalized out from under us) → ValueError. Either way, skip this
+    # pass having mutated nothing.
+    owner = f"consolidate:{uuid.uuid4().hex[:12]}"
+    lease = getattr(config, "consolidate_lease_seconds", 300)
+    try:
+        op = store.create_or_takeover_consolidation(
+            user_id, [e.id for e in cold], owner, lease)
+    except ValueError:
+        return {"consolidated": 0, "into": 0, "recovered": recovered}
+    if op is None:
+        return {"consolidated": 0, "into": 0, "recovered": recovered}
+    # GENERATING → write every output (the store BINDS lineage=whole claimed set and
+    # DERIVES the trust floor + date range from it, X8/X12/X23 — the whole-set-minimum
+    # provenance logic now lives in the store) → cutover (X1: write-before-delete) →
+    # delete inputs (X2) → finalize (X20).
+    store.transition_consolidation_if_current(
+        op.operation_id, op.fence, owner, ConsolidationState.GENERATING)
     for r in new:
-        store.add_episode(Episode(id=f"epc-{uuid.uuid4().hex[:12]}", user_id=user_id,
-                                  date=str(r["date"]), summary=str(r["summary"]),
-                                  provenance=prov))
-    return {"consolidated": len(cold), "into": len(new)}
+        store.write_consolidation_output_if_current(
+            op.operation_id, op.fence, owner,
+            ConsolidationOutputDraft(summary=str(r["summary"]),
+                                     date_start=str(r["date"]), date_end=str(r["date"])))
+    if not store.transition_consolidation_if_current(
+            op.operation_id, op.fence, owner, ConsolidationState.OUTPUTS_DURABLE):
+        return {"consolidated": 0, "into": 0, "recovered": recovered}
+    store.delete_claimed_inputs_if_current(op.operation_id, op.fence)
+    store.transition_consolidation_if_current(
+        op.operation_id, op.fence, owner, ConsolidationState.FINALIZED)
+    return {"consolidated": len(cold), "into": len(new), "recovered": recovered}
+
+
+# NOTE: the whole-set-minimum-trust provenance logic that used to live here (N9b /
+# 0.4.4 security fix — INFERRED author, min confidence, weakest disclosure, retained
+# third-party influence, currency capped at the newest input) now lives in the STORE's
+# `write_consolidation_output_if_current._derive_output_metadata`, because specs/0010
+# X23 requires those derived fields be computed at the fenced write boundary from the
+# claimed set, not by the caller. See src/veracium/store/sqlite.py.
 
 
 def _timedelta_days(n: int):

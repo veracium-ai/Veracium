@@ -66,6 +66,10 @@ def report(store, user_id: str, *, mode: str = "summary") -> dict:
         "retired": dict(sorted(retired.items())),  # superseded history, disputes, absorbed dups
         "episodes": {"interaction": sum(1 for ep in episodes if ep.kind != "outcome"),
                      "outcome": sum(1 for ep in episodes if ep.kind == "outcome")},
+        # specs/0010 X13: the recovery-pending consolidation ops observed now
+        # ({CLAIMED, GENERATING, OUTPUTS_DURABLE}). Distinct from consolidate()'s
+        # per-pass `recovered` count — a live op is pending, never recovered.
+        "consolidation_pending": len(store.pending_consolidations(user_id)),
         "first_known": min(firsts).isoformat() if firsts else None,
         "last_recorded": max(lasts).isoformat() if lasts else None,
     }
