@@ -4,7 +4,7 @@
 
 # Review archives
 
-**58 archives, 41992 KB.** Each is the exact package sent for one
+**59 archives, 42713 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -50,6 +50,7 @@ existed rather than a way to check it.
 | `0008-v3-20260802T1822Z.tar.gz` | 0008 | v3 | 2026-08-02 18:22Z | 189 | 746 KB | `f1b316ed6fd0b54f…` |
 | `0008-v4-20260802T1904Z.tar.gz` | 0008 | v4 | 2026-08-02 19:04Z | 189 | 748 KB | `c5ff4878d1e50ba2…` |
 | `0009-v1-20260807T1411Z.tar.gz` | 0009 | v1 | 2026-08-07 14:11Z | 186 | 707 KB | `34e3f371b729bc0b…` |
+| `0009-v2-20260807T1545Z.tar.gz` | 0009 | v2 | 2026-08-07 15:45Z | 186 | 721 KB | `dc92eeca3849433f…` |
 | `0010-v1-20260807T1405Z.tar.gz` | 0010 | v1 | 2026-08-07 14:05Z | 186 | 708 KB | `8c711e38374a3dea…` |
 | `0010-v2-20260807T1451Z.tar.gz` | 0010 | v2 | 2026-08-07 14:51Z | 186 | 712 KB | `d1208d1d20e1f8d4…` |
 | `0010-v3-20260807T1534Z.tar.gz` | 0010 | v3 | 2026-08-07 15:34Z | 186 | 717 KB | `f941dd96fe88618b…` |
