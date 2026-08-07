@@ -5,30 +5,28 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3)** — rounds 1 and 2 both **approved the append-only-history
-> architecture**. Round 1: 4 gaps + 3 corrections (closed v2, §11). Round 2: 4 gaps +
-> 2 corrections (closed v3, §12). **The headline v3 change: Option B is withdrawn for
-> Option A** — the cross-chain scalar `last_outcome`/`last_outcome_at` are **deprecated
-> (no cross-chain recency contract)** and the store-wide `committed_seq` is **removed**;
-> round 1's "recall-surfaced" rationale for B was factually wrong (`compile.py` renders
-> no edge outcome field), and A dissolves the ordering/import/migration machinery B
-> needed (§4b). Also v3: the v2→v3 legacy migration policy (§4f), import validates the
-> **combined** destination graph + Edge existence (§4c), `append_outcome_if_head`
-> advances `store_version` atomically (H10), the `challenged→needs_confirmation` +
-> actor/outcome behaviour is preserved (H11), and a store-owned-field-excluding
-> `OutcomeJudgmentDraft` input type (§4a). Split from `0002` M4. **Open questions ruled**
-> (H-Q1/H-Q2/H-Q3); **both `Spec-Requires:` prerequisites (`0007`, `0013`) accepted AND
+> **in review (v4)** — rounds 1–3 all **approved the append-only-history architecture**;
+> round 3 also **approved Option A** (deprecate the scalars in place) and the
+> deprecate-not-remove product call. Round 3 deferred on 4 compatibility/import gaps +
+> 3 corrections (closed v4, §13): `OutcomeJudgmentDraft` now carries the **complete**
+> caller payload incl. `corrected_value`, and omitted `context_ref` **inherits** (§4a);
+> the v2→v3 migration **refuses duplicate chain identities** rather than making two roots
+> (§4f); the same honest conversion covers **legacy portable imports** (§4f-ii, H13);
+> import is a **whole-file preflight** so H5's no-partial-write holds (§4c); plus
+> `judgment_time_known` in both version rows, the stale "scalars derive from heads" line
+> removed, and the §2c-ii coordinates corrected. Split from `0002` M4. **Open questions
+> ruled**; **both `Spec-Requires:` prerequisites (`0007`, `0013`) accepted AND
 > implemented** (§9).
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v3 |
+| **Version** | v4 |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M4/§7a. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `__init__.py` is guarded; **`0002`'s second review required head/concurrency semantics before acceptance** |
-| **Decision + date** | **rounds 1 & 2 returned 2026-08-07: architecture approved both; v2 closed round 1 (§11), v3 closes round 2 (§12) — 4 gaps + 2 corrections, incl. Option B→A** |
-| **⚠ product call for Quentin** | v3 **deprecates** `Edge.last_outcome`/`last_outcome_at` (Option A). Safe per this snapshot (not recall-rendered). **If an external consumer relies on either as a cross-chain scalar, say so and I'll restore a properly-contracted Option B.** |
+| **Decision + date** | **rounds 1–3 returned 2026-08-07: architecture approved all three; v2/v3/v4 closed them (§11/§12/§13); round 3 = 4 gaps + 3 corrections** |
+| **⚠ product call for Quentin** | v4 **deprecates** `Edge.last_outcome`/`last_outcome_at` in place (Option A). **The round-3 reviewer endorsed deprecate-not-remove** as the better migration path. Still open only: **if an external consumer relies on either as a cross-chain scalar**, say so and I'll restore a properly-contracted Option B — otherwise Option A stands. |
 | **Path** | full |
 | **Prerequisite** | **`specs/0007`** + **`specs/0013`** — both accepted + implemented, see §9 |
 
@@ -39,7 +37,7 @@ Spec-Requires: 0007, 0013
 **`record_outcome` still erases the authorship it was fixed to preserve.**
 
 0.4.5 shipped M4 as *"outcome authorship is no longer overwritten"*. What it
-actually does (`__init__.py:568-573`) is append a phrase to the episode summary
+actually does (`__init__.py:587-591`) is append a phrase to the episode summary
 and then **overwrite the structured field anyway**:
 
 ```python
@@ -96,8 +94,8 @@ and should not now.
 | **`Episode.judgment_time_known`** | **NEW**, optional, migration-compat | `True` (or unset) on any outcome episode written on/after v3 — its `date` is the real judgment time (H1). **`False` on a legacy root** migrated from a pre-v3 in-place record, whose `date` is the original use date, not the judgment time (§4f, H12). Never fabricate a judgment time; label it unknown instead |
 | `Edge.outcome_counts` / `times_used` | unchanged in meaning | derived from the **head** of each chain; `times_used` counts distinct `(edge_id, evidence_ref)` chains. Neither needs a cross-chain order (a set of heads suffices) |
 | `Edge.last_outcome` / `last_outcome_at` | **DEPRECATED (Option A, round 2)** | **No cross-chain recency contract.** A single scalar "the most recent judgment across all uses" would need a store-wide order the per-chain `seq` deliberately withholds; round 1's Option B built one (`committed_seq`) to preserve these fields, but they are **not recall-rendered** (`compile.py` emits no edge outcome field), so B's machinery is dropped. The fields remain on `Edge` for wire back-compat but are **not authoritative** and carry no cross-chain guarantee; a real cross-chain "latest judgment" is a separate future spec that must first freeze a proper store-commit order. See §4b + the ⚠ product call. |
-| **`SCHEMA_VERSION`** (on-disk) | **current → next** | on-disk store shape (`PRAGMA user_version`) — the new `Episode` fields (`seq`, `supersedes_episode`) land here. **This is what `0013` migrates** (§4f policy, §9a) |
-| **`FORMAT_VERSION`** (export wire) | **2 → 3** | portable JSONL representation — exports gain `seq`/`supersedes_episode` (no `committed_seq` — Option A). **`0007` §8: a namespace independent of `SCHEMA_VERSION`** (both `2` today by coincidence). §9a |
+| **`SCHEMA_VERSION`** (on-disk) | **current → next** | on-disk store shape (`PRAGMA user_version`) — the new `Episode` fields (`seq`, `supersedes_episode`, **`judgment_time_known`**) land here. **This is what `0013` migrates** (§4f policy, §9a) |
+| **`FORMAT_VERSION`** (export wire) | **2 → 3** | portable JSONL representation — exports gain `seq`/`supersedes_episode`/**`judgment_time_known`** (no `committed_seq` — Option A). **A migrated legacy root MUST export `judgment_time_known = False`**, or re-import would again mistake its use `date` for a known judgment time (§4f-ii). **`0007` §8: a namespace independent of `SCHEMA_VERSION`** (both `2` today by coincidence). §9a |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
@@ -117,10 +115,10 @@ and should not now.
 
 | assertion | command | result |
 |---|---|---|
-| the note is rebuilt each upgrade | read `__init__.py:554,573` | `summary = f"..."` then `prior.summary = summary` |
-| the structured field is overwritten | `__init__.py:572` | `prior.provenance.author_of_evidence = author` |
+| the note is rebuilt each upgrade | read `__init__.py:572,591` | `summary = f"..."` then `prior.summary = summary` |
+| the structured field is overwritten | `__init__.py:590` | `prior.provenance.author_of_evidence = author` |
 | `record_outcome` is not an MCP tool | `grep -n "@server.tool" src/veracium/mcp_server.py` | absent — host API |
-| episodes tolerate unknown fields | `Episode.model_config["extra"]` | **`ignore`** — see §9 |
+| episodes tolerate unknown fields | `Episode.model_config.get("extra")` | **`None`** (no explicit policy) → Pydantic **default is `ignore`**, so unknown `seq`/`supersedes_episode` are dropped — see §9 |
 
 ---
 
@@ -145,8 +143,11 @@ preserved only `user` authorship would pass a naive test.
 > The original outcome episode is **never mutated**. A judgment writes a **new**
 > episode carrying its own `author_of_evidence`, event timestamp and outcome,
 > with `supersedes_episode` set to the episode it revises. The **head** of a
-> chain is the episode with the **highest store-assigned per-chain `seq`**;
-> `outcome_counts` and the scalar `last_outcome`/`last_outcome_at` derive from heads.
+> chain is the episode with the **highest store-assigned per-chain `seq`**.
+> `outcome_counts` and `times_used` derive from chain heads; `last_outcome` and
+> `last_outcome_at` are **deprecated compatibility fields, not authoritative** and with
+> no cross-chain guarantee (Option A, §4b — this replaces the stale Option-B line that
+> said the scalars "derive from heads").
 
 **The head is DERIVED, never materialised (H-Q2).** There is no head pointer on
 the edge; the aggregates are computed from the max-`seq` episode of each chain at
@@ -178,19 +179,32 @@ second writer can interleave between the read and the insert and branch the chai
 >     draft: OutcomeJudgmentDraft,
 > ) -> AppendedEpisode | HeadMoved
 > ```
-> **`OutcomeJudgmentDraft` structurally excludes every store-owned field (Correction
-> B, round 2).** It carries only what the caller may set — `author`, event timestamp,
-> `outcome`, and the use payload (`context_ref`) — and has **no** `seq`,
-> **no** `supersedes_episode`, and **no caller-controlled episode `id`**. Making
-> "store-assigned" a property of the *type* (not a convention the implementation must
-> remember to overwrite) is what stops a caller-supplied `seq`/`id` from turning an
-> append into a replace.
+> **`OutcomeJudgmentDraft` structurally excludes every store-owned field (round-2
+> Correction B), and carries the COMPLETE caller payload (round-3 finding 1).** It
+> excludes `seq`, `supersedes_episode`, and any caller-controlled episode `id` — making
+> "store-assigned" a property of the *type*, so a caller-supplied `seq`/`id` cannot turn
+> an append into a replace. But it must also carry everything `record_outcome` persists
+> today, or the Store path silently drops shipped data:
+> ```
+> OutcomeJudgmentDraft:
+>     author
+>     event_timestamp
+>     outcome
+>     summary        # built by Memory.record_outcome BEFORE the Store boundary,
+>                    #   INCLUDING corrected_value → "(true value: …)" (today
+>                    #   __init__.py:571) — v2's draft dropped this, a data loss
+>     context_ref    # inherit-on-omit, see below
+> ```
+> `corrected_value` is not store-owned; `Memory.record_outcome(corrected_value=…)`
+> composes the summary and passes it in the draft. The store still owns `seq`/`id`.
 >
 > The **store**, in ONE atomic operation: (1) resolves the exact
 > `(user_id, edge_id, evidence_ref)` chain; (2) verifies `expected_head_id` is
-> still its head (else returns `HeadMoved`); (3) for a **non-root** append, verifies
-> the draft's `context_ref` **matches the chain's** (a judgment revises an outcome, not
-> which use it was — §4d); a mismatch is rejected, not silently accepted;
+> still its head (else returns `HeadMoved`); (3) for a **non-root** append, resolves
+> `context_ref`: **omitted (`None`) → inherit the chain's** (the public API reads
+> omission as "leave the use metadata unchanged" — round-3 finding 1); a **non-`None`**
+> value must **equal the chain's**, else reject (a judgment revises an outcome, not which
+> use it was — §4d; clearing is never a valid chain op);
 > (4) assigns the next per-chain `seq` **and mints a fresh episode `id`**;
 > (5) **INSERTs** the new episode — never replaces; (6) sets
 > `supersedes_episode = expected_head_id`; (7) **advances the user's `store_version` in
@@ -274,14 +288,25 @@ leaves the durable graph still branched at `root`; a genuine "repair" would have
 fabricates supposedly append-only history. A cycle is less repairable still. Because
 the head is derived (H-Q2), there is no materialised head pointer to "fix."
 
-> **Frozen: validate-or-refuse, preflight before persist.** A "chain" here is the set
-> of **outcome** episodes (`kind == "outcome"`) sharing one `(user_id, edge_id,
-> evidence_ref)`; non-outcome episodes carry no `seq`/`supersedes_episode` (§4d, H8)
-> and are not part of any chain. Import runs a full topology check on each incoming
-> chain **before writing any of its records** (the current importer writes
-> sequentially, so a bad later record could otherwise commit after earlier ones). A
-> chain is accepted only if **all** hold; any failure **refuses the whole chain,
-> writing nothing:**
+> **Frozen: validate-or-refuse, WHOLE-IMPORT preflight before the first write (round 3,
+> finding 4).** H5 promises "no partial write," which per-chain preflight does not give:
+> a file with a valid chain A and a malformed chain B could write A, then reject B,
+> leaving A persisted. So the **entire import plan** is parsed, remapped and validated
+> **before any persistent write** — Edges too (an imported Edge could otherwise land
+> before a later chain fails):
+> ```
+> 1. parse all Edge and Episode records
+> 2. construct remapped ids (cross-user, § B below)
+> 3. convert legacy FORMAT_VERSION-2 outcome records (§4f-ii)
+> 4. validate all referenced Edges exist and belong to the target user
+> 5. validate every incoming chain's topology (below)
+> 6. validate every COMBINED destination chain (below)
+> 7. ONLY THEN begin writing
+> ```
+> A "chain" is the set of **outcome** episodes (`kind == "outcome"`) sharing one
+> `(user_id, edge_id, evidence_ref)`; non-outcome episodes carry no
+> `seq`/`supersedes_episode` (§4d, H8). Per-chain topology — all must hold, else the
+> **whole import refuses, writing nothing:**
 > ```
 > every episode in the chain has kind == "outcome"
 > every non-root supersedes_episode exists
@@ -293,7 +318,9 @@ the head is derived (H-Q2), there is no materialised head pointer to "fix."
 > the max-seq record is the unique leaf
 > ```
 > A valid chain is **preserved exactly** and its head/counters **recomputed** —
-> recomputing a derived value from valid source is not "repair."
+> recomputing a derived value from valid source is not "repair." (This satisfies H5's
+> no-partial-write without a cross-backend transaction API — it is a preflight, not a
+> rollback.)
 
 > **Validate the COMBINED destination graph, not just the incoming chain (round 2,
 > finding 3).** A v2 preflight that checks only the incoming topology can still branch
@@ -373,22 +400,51 @@ mutates `prior.outcome`/`author`/`summary` but **not `prior.date`**
 alongside the **latest** outcome/author, and earlier chains' judgment times are simply
 gone.
 
-> **Frozen: migration policy.**
-> - **Every existing outcome episode becomes a one-link chain root:** `seq = 1`,
->   `supersedes_episode = None`.
+> **Frozen: migration policy (on-disk `SCHEMA_VERSION`).**
+> - **Group every existing outcome by `(user_id, edge_id, evidence_ref)` FIRST
+>   (round-3 finding 2).** The pre-v3 store does **not** enforce one outcome per chain
+>   identity — the importer dedups by episode `id` only (`portability.py:77,127`), so a
+>   legal old store can hold two outcome episodes with the same `(edge_id,
+>   evidence_ref)`. Rooting each at `seq=1` would create **two roots / two heads** — the
+>   exact H3 violation the runtime forbids. So per group:
+>   ```
+>   exactly one outcome  → seq = 1, supersedes_episode = None, judgment_time_known = False
+>   more than one        → REFUSE the migration — there is no trustworthy information to
+>                          reconstruct which duplicate superseded which; do not invent an
+>                          order or silently branch
+>   ```
+>   A refusal **aborts the migration and leaves the store at its prior version** (`0013`'s
+>   migration-failure contract — nothing is partially converted); the operator resolves
+>   the duplicate identities before retrying. Refusing is honest; branching is not.
 > - **`date` is NOT reinterpreted as the judgment time.** A migrated legacy episode's
->   `date` is the original use date, which the old path never updated — so it is
->   carried forward unchanged and marked **`judgment_time_known = False`** (a legacy
->   compatibility flag). v3 must not silently present the use date as though it were the
->   known judgment timestamp; H1's "this episode carries **this judgment's** event
->   timestamp" holds for records written **on or after** v3, and legacy roots are
->   honestly labelled as unknown-judgment-time.
+>   `date` is the original use date, which the old path never updated — so it is carried
+>   forward unchanged and marked **`judgment_time_known = False`**. v3 must not present
+>   the use date as though it were the known judgment timestamp; H1's "this episode
+>   carries **this judgment's** event timestamp" holds for records written **on or
+>   after** v3, and legacy roots are honestly labelled unknown-judgment-time.
 > - **No synthetic ordering is fabricated.** Under Option A there is no `committed_seq`
->   to backfill (a concrete simplification the B→A switch buys — B would have had to
->   invent a historical store-commit order the data never recorded, and could not have
->   done so honestly).
+>   to backfill — a concrete simplification the B→A switch buys.
 > This is the feature-specific transformation `0013` provides machinery for but cannot
 > invent on `0009`'s behalf. Invariant **H12**.
+
+### 4f-ii. The SAME honest conversion for legacy FORMAT_VERSION-2 portable imports (round 3, finding 3)
+
+§4f is the on-disk `SCHEMA_VERSION` transformation; **portable import is a different
+namespace** (§9a). The existing importer accepts older `FORMAT_VERSION`s, and a
+`FORMAT_VERSION-2` outcome record carries none of `seq` / `supersedes_episode` /
+`judgment_time_known`. v3 bumped the format but never said how such a record converts
+on import — leaving incompatible choices (reject all v2 exports? `seq=None`? `seq=1`
+with a *known* date?), only one of which is consistent with H8/H12.
+
+> **Frozen.** A legacy (`FORMAT_VERSION-2`) outcome record imported into a v3 store gets
+> the **same honest conversion** as the on-disk migration:
+> ```
+> seq = 1 · supersedes_episode = None · judgment_time_known = False
+> ```
+> and is subject to the **same duplicate-chain-identity refusal** (§4f): a v2 export can
+> contain two outcome records for one `(edge_id, evidence_ref)`, and that import refuses
+> rather than branching. **This needs its own portability test** — the `SCHEMA_VERSION`
+> migration tests never exercise the import path. Invariant **H13**.
 
 ---
 
@@ -400,14 +456,15 @@ gone.
 | **H2** `seq` decides the head; a host `date` cannot reorder | `test_a_backdated_judgment_does_not_become_the_head` | CI |
 | **H3** exactly one head per `(edge_id, evidence_ref)` — enforced **at the Store primitive** | `test_append_outcome_if_head_is_atomic` — **N concurrent callers of `append_outcome_if_head`** (not the Python loop) branch nothing; losers get `HeadMoved` and retry (finding 1) | CI |
 | **H4** a valid chain imports preserved, head re-derived; a cross-user import remaps `supersedes_episode`; import validates the **combined** destination graph and the referenced `Edge` exists | `test_import_preserves_the_outcome_chain` + `test_cross_user_import_remaps_supersedes_episode` + `test_two_valid_chains_same_identity_refuses` (a valid incoming chain merged onto an existing destination chain refuses, not branches — round-2 finding 3) + `test_import_refuses_missing_or_foreign_edge` | CI |
-| **H5** malformed imported topology **refuses before persisting anything** | `test_malformed_import_refuses_atomically` — parametrised over **branch, cycle, missing parent, cross-chain link, duplicate `seq`, non-increasing `seq`, no root, two leaves, competing-destination-root, divergent-suffix**; asserts **no partial write** | CI |
+| **H5** malformed import **refuses before persisting anything** — WHOLE-import preflight (all Edges + all chains + combined + legacy conversions validated before the first write) | `test_malformed_import_refuses_atomically` — parametrised over **branch, cycle, missing parent, cross-chain link, duplicate `seq`, non-increasing `seq`, no root, two leaves, competing-destination-root, divergent-suffix**; **`test_valid_chain_A_not_written_when_later_chain_B_is_malformed`** (no partial write across chains — round-3 finding 4) | CI |
 | **H6** the authoritative aggregates follow heads | `test_edge_aggregates_follow_heads` — `times_used` + `outcome_counts` recomputed from chain heads (no cross-chain order needed). `last_outcome`/`last_outcome_at` are deprecated (Option A) and out of scope | CI |
 | **H7** history is **structurally queryable**, not prose | `test_prior_authorship_is_queryable_without_parsing_a_summary` — asserts against fields; **a passing prose note must fail this** | CI |
 | **H8** `seq`/`supersedes_episode` are **outcome-only** | `test_non_outcome_episode_has_no_seq` — a plain episode round-trips with both `None`; a root outcome is `seq == 1`, `supersedes_episode is None` (round-1 correction A) | CI |
-| **H9** the CAS draft **structurally excludes** store-owned fields | `test_outcome_draft_has_no_store_owned_fields` — `OutcomeJudgmentDraft` has no `seq`/`supersedes_episode`/`id`, so a caller cannot pre-set order or force a replace (round-2 correction B) | CI |
+| **H9** the CAS draft **excludes store-owned fields but carries the complete caller payload** | `test_outcome_draft_has_no_store_owned_fields` (no `seq`/`supersedes_episode`/`id`) + `test_corrected_value_survives_the_store_boundary` — a `corrected_value` reaches the durable summary via the draft (round-2 correction B + round-3 finding 1) | CI |
 | **H10** `append_outcome_if_head` **advances `store_version`** in the same atomic transaction | `test_append_outcome_bumps_store_version` — a cached wiki compiled before the append must not read fresh after it (round-2 finding 4; `@store_mutator` alone does not bump) | CI |
-| **H11** the rewrite preserves the existing side effects | `test_challenged_sets_needs_confirmation` (in the same txn as the challenged judgment) + `test_actor_outcome_pairing_still_raises` (`confirmed`/`corrected`→user, `challenged`/`concurred`→system) (round-2 correction A) | CI |
-| **H12** the v2→v3 migration is honest about legacy time | `test_legacy_outcome_becomes_root_with_unknown_judgment_time` — a migrated legacy episode is `seq==1`, `supersedes_episode is None`, `judgment_time_known == False`; its `date` is not relabelled as the judgment time (round-2 finding 2) | CI |
+| **H11** the rewrite preserves the existing side effects incl. `corrected_value` and omitted-`context_ref` inheritance | `test_challenged_sets_needs_confirmation` (same txn) + `test_actor_outcome_pairing_still_raises` + `test_corrected_value_persisted` + `test_omitted_context_ref_inherits_not_rejects` — a non-root append with `context_ref=None` inherits the chain's, not a mismatch (round-2 correction A + round-3 finding 1) | CI |
+| **H12** the v2→v3 migration is honest about legacy time AND refuses duplicate identities | `test_legacy_outcome_becomes_root_with_unknown_judgment_time` (`seq==1`, `supersedes_episode is None`, `judgment_time_known == False`, `date` not relabelled) + `test_migration_refuses_duplicate_chain_identity` — two pre-v3 outcomes for one `(edge_id, evidence_ref)` **refuse**, never become two roots (round-2 finding 2 + round-3 finding 2) | CI |
+| **H13** legacy `FORMAT_VERSION-2` portable imports get the same honest conversion + duplicate refusal | `test_legacy_portable_outcome_import` — a v2 export outcome record imports as `seq==1`/`supersedes_episode==None`/`judgment_time_known==False`; a v2 export with a duplicate chain identity refuses (round-3 finding 3; a distinct path from the `SCHEMA_VERSION` migration) | CI |
 
 **H7 is written to fail the shipped fix.** `0002`'s N5 said *"retains the prior
 value"*, which the note technically satisfies — the second review flagged that
@@ -453,9 +510,9 @@ outcome, visible and correctable — against today's **silent loss of authorship
 
 ```
 >>> Episode.model_config.get("extra")
-'ignore'          # pydantic default
+None              # no explicit policy set → Pydantic's DEFAULT applies, which is "ignore"
 >>> Episode.model_validate({... , "seq": 7, "supersedes_episode": "ep-1"})
-parses fine, both fields silently dropped
+parses fine, both unknown fields silently dropped   # measured, not assumed
 ```
 
 **So an older build opening a store written by this change does not fail — it
@@ -588,3 +645,36 @@ no-branching, linearize-not-reconcile, structural H7, cross-user `supersedes_epi
 remap, the same-chain payload, and the `SCHEMA_VERSION`/`FORMAT_VERSION` split. The
 reviewer's v3 acceptance bar is items 1–7; all are closed here (with Option A as the
 recommended resolution of item 1).
+
+---
+
+## 13. Review closure — round 3 (2026-08-07)
+
+Round-3 external review: **"append-only-history architecture and Option A remain
+approved; v4 deferred on four compatibility/import gaps plus three contract
+corrections."** The reviewer **endorsed the deprecate-in-place product call** (keep
+`last_outcome`/`last_outcome_at` for a compatibility cycle, remove only in a later
+API-breaking release) — that design question is settled; only the "external consumer?"
+fact remains Quentin's. Each finding was reproduced against source or spec text first.
+
+### Blocking findings
+
+| # | finding | root fix in v4 |
+|---|---|---|
+| **F1** | `OutcomeJudgmentDraft` dropped shipped payload: it carried no `summary`/`corrected_value` (today `record_outcome` persists `corrected_value` into the summary, `__init__.py:571`), and it turned an **omitted** `context_ref` on a non-root upgrade into a *mismatch* refusal | §4a: the draft carries `summary` (built by `Memory.record_outcome`, incl. `corrected_value`, before the Store boundary) while still excluding `seq`/`supersedes_episode`/`id`; a non-root `context_ref=None` **inherits** the chain's, non-`None` must equal it. H9/H11 extended. |
+| **F2** | the migration rooted **every** legacy outcome at `seq=1`, but the pre-v3 store does not enforce one outcome per `(edge_id, evidence_ref)` (the importer dedups by episode `id` only, `portability.py:77,127`) — so duplicates become **two roots**, an H3 violation | §4f: group legacy outcomes by `(user_id, edge_id, evidence_ref)` first; exactly one → root; **more than one → REFUSE** (no trustworthy order to reconstruct). H12 extended. |
+| **F3** | the honest legacy conversion existed only for the on-disk `SCHEMA_VERSION` migration, not for **`FORMAT_VERSION-2` portable imports** (a different namespace) — an old-format outcome record has no `seq`/`supersedes_episode`/`judgment_time_known` and v3 didn't say how it converts | §4f-ii: the **same** conversion (`seq=1`, `supersedes_episode=None`, `judgment_time_known=False`) + the same duplicate-identity refusal, with its **own** portability test. Invariant **H13**. |
+| **F4** | H5 promised "no partial write," but §4c preflighted **one chain at a time**, so a valid chain A could persist before a malformed chain B was rejected | §4c: the **whole import plan** (all Edges + all chains + combined graphs + legacy conversions) is parsed/remapped/validated **before the first persistent write**. H5 extended. |
+
+### Contract corrections
+
+| # | correction | v4 |
+|---|---|---|
+| **A** | `judgment_time_known` (new persisted field) was missing from the §2 `SCHEMA_VERSION` **and** `FORMAT_VERSION` rows — and a legacy root exported without it would re-import as a *known* judgment time, the exact H12 falsehood | Added to both §2 rows, with the export-must-carry-it note. |
+| **B** | the §4 intro still said the deprecated scalars "derive from heads" (stale Option-B text) | Rewritten: `outcome_counts`/`times_used` derive from heads; `last_outcome`/`last_outcome_at` are deprecated, non-authoritative. |
+| **C** | §2c-ii cited drifted coordinates (`:554,573`/`:572`) and claimed `model_config["extra"] == "ignore"`, but the measured value is `None` (Pydantic *default* is `ignore`) | Corrected to `:572,591`/`:590` and `model_config.get("extra") → None` (default `ignore` drops unknown fields); §9 block fixed too. |
+
+**Not changed:** the immutable chain, per-chain `seq`, derived head, CAS append,
+linearize-not-reconcile, and Option A (`committed_seq` stays removed). The reviewer's v4
+acceptance bar is items 1–9 (incl. keep-Option-A, keep-deprecate-in-place); all are
+closed here.
