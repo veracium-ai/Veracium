@@ -5,12 +5,31 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft — §3 IS FALSIFIED AND MUST BE REWRITTEN.** Opened on research's R2
-> ruling; **R3 (2026-08-01 23:17 UTC) overturns its central mechanism.** The §3 matrix
-> below lets `source_id` **clear staleness**, and R3 rules that it must never
-> grant anything. Left visible rather than silently edited — see §0.
+> **draft — R3 APPLIED; diagnostic-only; the one open blocker is research's Q2
+> (2026-08-07).** Opened on research's R2 ruling; **R3 (2026-08-01 23:17 UTC)
+> overturned its central mechanism** — `source_id` may GROUP, never GRANT. The §3
+> matrix now reflects R3 (every cell is *"flag stays"*; the falsified relaxation is
+> struck through and left visible rather than silently edited — house style, see
+> §0), and §4/§6/§8 are consistent with the diagnostic-only reading: `source_id`
+> and `evidence_basis` answer *"did these come from the same place?"* and improve
+> grouping/dedup/inspection; a lying host degrades grouping quality, it does not
+> cross a trust boundary (I5). **Prerequisites `0007`+`0013` are now accepted AND
+> implemented (§0b), so the added column lands through the accepted migration path.
+> Q1 is resolved and Q3's dev half is ruled (§10); the remaining blocker is Q2 —
+> research-owned: `evidence_basis`'s default.** Not dev's to rule alone.
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
+
+> **UPDATE 2026-08-07: the migration contract now EXISTS and is implemented.**
+> `0013` is `accepted` (2026-08-07) and its offline v→v+1 migration operation is
+> in production (`0008` was its first user — the `confirmations` table). So the
+> `source_id`/`evidence_basis` column this spec adds lands through the same
+> accepted, tested migration path — a `SchemaObject` added to a new `SCHEMA_Vn`
+> installed by `migrate_store`, not a naked `ALTER`. `0007` (`PRAGMA user_version`)
+> is `accepted` + implemented, so an older build refuses a store carrying the new
+> column instead of silently misreading it. **Both `Spec-Requires:` deps are met;
+> this spec is unblocked on infrastructure — the only remaining gate is design
+> question Q2 (§10).**
 
 **`0006` changes the on-disk shape (it adds a column), so it cannot land without
 a migration contract.** That contract is **`specs/0013`**, not this spec.
@@ -219,5 +238,5 @@ repetition.
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~**Q1**~~ | **RULED 0006-Q1 (research, 2026-08-02 00:08): yes — `0007` lands first.** Cheap precisely because R3 means `source_id` does **not** lift the staleness restriction, so nothing urgent queues behind it. `FORMAT_VERSION` guards exports; nothing guards an on-disk store opened by a different build. | resolved | research | — |
-| **Q2** | Should `evidence_basis` default to `restated` (least favourable, as specified) or be strictly required when `source_id` is present? Required is safer and is a harder ask of hosts. | `pre-release` | research | before implementation |
-| **Q3** | Does `0003`'s ladder consume `source_id` in v1, or is that a follow-up? Keeping it out keeps this spec small; putting it in avoids a second migration. | `pre-release` | dev + research | before implementation |
+| **Q2** | Should `evidence_basis` default to `restated` (least favourable, as specified) or be strictly required when `source_id` is present? Required is safer and is a harder ask of hosts. **DEV PERSPECTIVE (2026-08-07, not a ruling — research owns this):** the fail-closed default (`restated`) is both safer AND the easier ask — a host that omits it gets the CONSERVATIVE behaviour (repetition, not renewed observation), and absence-is-least-favourable is the invariant I3 already enforces everywhere else in this spec. "Required when `source_id` is present" couples two independent fields and adds a rejection path for hosts that have the identity but not the basis. So dev would lean **default `restated`, not required** — but this is research's call, and it is **the one remaining blocker to `in review`.** | `pre-release` — **the last open item** | research | before implementation |
+| **Q3** | Does `0003`'s ladder consume `source_id` in v1, or is that a follow-up? Keeping it out keeps this spec small; putting it in avoids a second migration. **DEV RULING 2026-08-07 (dev half — research to confirm): KEEP IT OUT of v1.** The "avoids a second migration" argument is now void: `0006`'s migration adds the `source_id`/`evidence_basis` COLUMNS; `0003` later consuming them is a pure CODE change (the ladder reads an existing column), **not a schema change** — so there is no second migration either way. Keeping it out keeps `0006` small and diagnostic-only, consistent with §8 (*"this does not close `0003`; the ladder's own rules are that spec's business"*). `0006` ships the column; `0003` may consume it whenever `0003` rules to, with no migration. | dev half ruled; research to confirm | dev + research | before implementation |

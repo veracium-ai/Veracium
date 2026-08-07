@@ -18,11 +18,11 @@ is the number that decides what can be built.
 | **0003** | supersession authority | `in review` | 2026-08-02 | 1 | 5 | 1 | 0 | 1 | 0/1 |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
-| **0006** | source identity and evidence basis | `draft` | 2026-08-03 | 0 | 0 | 2 | 0 | 0 | — |
+| **0006** | source identity and evidence basis | `draft` | 2026-08-07 | 0 | 0 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-03 | 0 | 4 | 0 | 0 | 1 | 1/1 |
-| **0009** | outcome authorship is append-only history | `draft` | 2026-08-03 | 0 | 0 | 1 | 0 | 1 | 0/1 |
-| **0010** | crash-safe consolidation | `draft` | 2026-08-03 | 0 | 0 | 1 | 0 | 2 | 0/2 |
+| **0009** | outcome authorship is append-only history | `draft` | 2026-08-07 | 0 | 0 | 0 | 0 | 1 | 0/1 |
+| **0010** | crash-safe consolidation | `draft` | 2026-08-07 | 0 | 0 | 0 | 0 | 2 | 0/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 | **0012** | who may renew a fact's currency | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |

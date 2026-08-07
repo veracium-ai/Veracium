@@ -5,11 +5,17 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft** — split out of `0002` §7e on 2026-08-02. **`0002` froze the
-> acceptance contract and deliberately left two implementation strategies open.
-> The third external review's point stands: acceptance authorises
-> implementation, so "atomic or a state machine" would authorise two materially
-> different designs without specifying either.** This spec picks one.
+> **draft — design complete, ready for external review (2026-08-07).** Split out
+> of `0002` §7e on 2026-08-02. **`0002` froze the acceptance contract and
+> deliberately left two implementation strategies open. The third external review's
+> point stands: acceptance authorises implementation, so "atomic or a state
+> machine" would authorise two materially different designs without specifying
+> either.** This spec picks one — the fenced operation record + all-or-nothing
+> batch-claim primitives + the full transition table (§4). **Both open questions
+> are ruled** (X-Q1 inputs stay visible until outputs are durable; X-Q2 recovery
+> invalidates the cached wiki via the existing `store_version` mechanism), and
+> **both `Spec-Requires:` prerequisites (`0007`, `0013`) are now accepted AND
+> implemented** (§9).
 
 | | |
 |---|---|
@@ -324,6 +330,16 @@ build reading a consolidating store **silently drops `consolidated_into` and
 `lineage`** — it would see claimed-but-undeleted inputs as ordinary episodes and
 would never run recovery. **Silent misinterpretation, not failure.**
 
+> **UPDATE 2026-08-07: the prerequisite is SATISFIED.** `0007` is `accepted`
+> (2026-08-03) **and implemented** — the store carries `PRAGMA user_version`, so an
+> older build opening a store written by this change refuses (`newer`) instead of
+> silently dropping the operation record and skipping recovery. `0013` (migrations)
+> is `accepted` (2026-08-07) **and implemented** (via `0008`), so the new `Episode`
+> fields + the `ConsolidationOp` record land through the accepted offline v→v+1
+> migration — and this spec SHARES the `FORMAT_VERSION 2→3` / schema bump with
+> `0009` (§2), so if both land together it is one migration, not two. Both
+> `Spec-Requires:` deps are met.
+
 ---
 
 ## 10. Open questions
@@ -331,4 +347,4 @@ would never run recovery. **Silent misinterpretation, not failure.**
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~X-Q1~~ | **ANSWERED, and v5's answer was wrong.** v5 said hiding claimed inputs made recovery timing a non-issue; the sixth review showed that leaves a window where a read sees **neither** inputs nor outputs. §4c now keeps inputs **visible** until outputs are durable, so **recovery timing is a liveness question, not a correctness one** — run it at the start of each `consolidate()` and surface the count in `introspect()`. | resolved | dev | — |
-| **X-Q2** | Should the wiki drop when recovery fires (`0004`)? A recovered store's episode set changed underneath a cached view. **Dev leans yes** — same argument as `0004` W1. | `pre-release` | dev | before release |
+| ~~X-Q2~~ | **RULED 2026-08-07 (dev): YES — recovery invalidates the cached wiki**, same principle as `0004` W1 (a derived view must not outlive a change to its inputs). Recovery changes the episode set — it completes a delete, or removes a preempted worker's partial outputs — so a wiki compiled from the pre-recovery set is stale. **The mechanism already exists and requires no special drop:** every recovery mutation goes through the fenced `@store_mutator` primitives (`write_consolidation_output_if_current`, `delete_claimed_inputs_if_current`, …), which bump the per-user `store_version` write counter like any mutation; recall reads `store_version` to detect a stale cached wiki and recompiles. So the requirement is simply that **recovery's writes and deletes are ordinary counter-bumping mutations** (they are, being `@store_mutator`), and the invalidation falls out. `0004` owns the general derived-view-invalidation contract; this spec only asserts recovery is a change its inputs, not an exception to it. | resolved | dev | — |

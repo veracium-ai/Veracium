@@ -5,10 +5,14 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft** — split out of `0002` M4 on 2026-08-01. **The fix that shipped in
-> 0.4.5 does not hold**, demonstrated below. The second external review of
-> `0002` accepted the append-only direction and required the ordering semantics
-> this spec adds.
+> **draft — design complete, ready for external review (2026-08-07).** Split out
+> of `0002` M4 on 2026-08-01. **The fix that shipped in 0.4.5 does not hold**,
+> demonstrated below. The second external review of `0002` accepted the
+> append-only direction and required the ordering semantics this spec adds. **All
+> open questions are ruled** (H-Q1 per-chain `seq`; H-Q2 the head is DERIVED, not
+> materialised; H-Q3 no release note), and **both `Spec-Requires:` prerequisites
+> (`0007`, `0013`) are now accepted AND implemented** (§9) — the design is settled
+> and the append-only chain lands through the accepted v→v+1 migration path.
 
 | | |
 |---|---|
@@ -134,6 +138,11 @@ preserved only `user` authorship would pass a naive test.
 > chain is the episode with the **highest store-assigned `seq`**; `outcome_counts`
 > and `last_outcome` derive from heads.
 
+**The head is DERIVED, never materialised (H-Q2).** There is no head pointer on
+the edge; `outcome_counts`/`last_outcome` are computed from the max-`seq` episode
+of each chain at read time. The chain is the single source of truth, so the head
+can never silently disagree with it — the failure this spec exists to prevent.
+
 **`seq` is per-chain — scoped to one `(edge_id, evidence_ref)`** — and **assigned by the store, never by the host.** The second external
 review's requirement, and it is the same rule as `0008`'s: *a host-controlled
 timestamp must not decide authority.* Two hosts with skewed clocks would
@@ -220,6 +229,16 @@ This is the second spec to need it — `0006` was the first — and it is a
 **stronger** argument than `0006`'s, because here the silent-misread path is
 demonstrated rather than hypothetical.
 
+> **UPDATE 2026-08-07: the prerequisite is SATISFIED.** `0007` is `accepted`
+> (2026-08-03) **and implemented** — a store carries `PRAGMA user_version`, so an
+> older build opening a newer store refuses (`newer`) instead of silently
+> misreading. `0013` (migrations) is `accepted` (2026-08-07) **and its offline
+> migration operation is implemented** (`0008` was its first production use), so
+> the `FORMAT_VERSION 2→3` / schema change this spec adds (`seq`,
+> `supersedes_episode`) lands through the same v→v+1 migration path, not a naked
+> `ALTER`. Both `Spec-Requires:` deps are met; this spec is no longer blocked on
+> them.
+
 ---
 
 ## 10. Open questions
@@ -227,5 +246,5 @@ demonstrated rather than hypothetical.
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~H-Q1~~ | **RULED 2026-08-01: per-chain.** *Global invites reuse as a general clock, which is how a field acquires an unintended contract* — and per-chain is **structurally un-repurposable**, since values from different chains are not comparable. A store-wide audit order, if ever needed, is a **separately named append log**, not a widened `seq`. **Live precedent:** `confidence` is a lifetime parameter that reads like a belief strength, and putting it in the scorer would retroactively change every merge rule. **A global `seq` is the same trap one field over.** | resolved | research | — |
-| **H-Q2** | Should the **head be materialised** on the edge (a pointer) or derived by query? Materialised is faster and adds a second place for truth to live. **Dev leans derived.** | `pre-release` | dev | before implementation |
+| ~~H-Q2~~ | **RULED 2026-08-07 (dev): DERIVED.** The head is the episode with the highest `seq` in a chain, computed by query — there is NO materialised head pointer. A pointer would be a SECOND place the head-truth lives, and reconciling two sources of truth is exactly the denormalisation class of bug this spec exists to close: the shipped M4 defect was a counter mutated *in place* precisely because the value was stored where it was read instead of derived. Deriving keeps ONE truth — the chain — so the head cannot silently disagree with it. The cost is negligible at veracium's scale (per-user stores ~120 edges; per-`(edge_id, evidence_ref)` chains are a handful of judgments), and the head query is bounded by chain length, not store size. **If profiling ever shows the head lookup is hot, a materialised pointer is a later optimisation that MUST carry an explicit reconcile-or-refuse obligation (the pointer and the max-`seq` must be proven equal on every read that trusts the pointer) — it is not the default and is not needed now.** | resolved | dev | — |
 | ~~H-Q3~~ | **RULED 2026-08-01 (Quentin): no release-note correction**, answered once for both specs. The gap is recorded here and in `0002` §11; the fix ships as this spec. **Not blocking.** | resolved | Quentin | — |
