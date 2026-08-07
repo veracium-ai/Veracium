@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **`confirm()` is the only thing that clears the "possibly stale" flag**
+  (`specs/0008`, implemented). Reinforcement — a re-statement of a fact already
+  known — no longer clears `needs_confirmation`; it refreshes liveness only. The
+  0.4.5 behaviour cleared the flag whenever a re-statement's author *class* matched
+  (USER and SYSTEM share a disclosure class), so a system-authored restatement
+  silently answered a "confirm before relying on this" question meant for the user.
+  Now only an explicit `Memory.confirm()` clears it, atomically: the flag, liveness,
+  confidence, the confirmation episode, and a **mandatory confirmation record** all
+  commit together — if the record cannot be written the confirmation fails and the
+  flag stays set. `confirm()` gains closed-enum `actor`/`call_path` (audit metadata,
+  granting nothing) and an optional `correlation_id` for replay-safe retries; it
+  returns `{confirmed, valid_from, confirmed_at, correlation_id, replayed}`.
+  `Store` gains an atomic `confirm_edge` mutator and a `confirmations_for()` audit
+  read; `add_edge` now refuses to clear the flag or change an edge's owner through
+  the upsert path. A cross-user `import(..., user_id=…)` now mints fresh ids (a copy,
+  never an ownership transfer). **The store schema advances to v2** (the
+  `confirmations` table) via the offline `specs/0013` migration:
+  `veracium.store.migration.migrate_store(path)` — a store below the head version
+  refuses ordinary open (`migration-required`) and is brought forward by this
+  explicit, deployment-authority-owned operation, per `0013` §5b.
+
 - **On-disk store migrations** (`specs/0013`, accepted 2026-08-07 after 12 external
   review rounds post-M-Q4-ruling) — the abstract migration design and audit
   *protocol* for evolving a stamped store across schema versions, reviewed against
