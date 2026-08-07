@@ -5,28 +5,30 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v7)** — rounds 1–6 all **approved the fenced-state-machine architecture,
-> Design A, one-level consolidation, and read-only export**. Round 6 deferred on 3 gaps +
-> 3 corr (v7, §16): the fence now guards **existing** operational rows against generic
-> `add_episode`/`delete_episode` (X21 — the round-1 "every write CAS on fence" claim was
-> only true of the fenced primitives), every provisional output is **structurally bound**
-> to its op via `ConsolidationOutputDraft` and the cutover **refuses with zero bound
-> outputs** (X22), and the historical-id remap is made **retry-stable and extended to
-> `lineage` ids** (X19); plus §8 reconciled with the multi-phase claim method, X11 scoped
-> to the claim step, and the portability exact-round-trip claim retired. The design: a
-> fenced operation record + all-or-nothing batch-claim primitives + recovery-discovery +
-> quiescent-snapshot reads + the full transition table (§4), under **Design A**. Split
-> from `0002` §7e. **Open questions ruled**; **both `Spec-Requires:` prerequisites
-> (`0007`, `0013`) accepted AND implemented** (§9).
+> **in review (v8)** — rounds 1–7 all **approved the fenced-state-machine architecture,
+> Design A, one-level consolidation, read-only export, and the X21 per-call guard**. Round
+> 7 deferred on 3 identity-boundary gaps + 3 corr (v8, §17): X21 is now **ID-reservation
+> based** (a `claimed_id` stays reserved through the delete→`FINALIZED` interval, X21),
+> the `ConsolidationOutputDraft` carries **no Episode id/op fields** — the store mints a
+> fresh id and INSERTs, never replaces (X22), and historical `lineage` ids live in a
+> **permanently disjoint `HistoricalEpisodeId` namespace** so a live episode can never
+> reuse one, local finalization included (X19); plus the §11-F3 `store_version` rule
+> scoped to recall-relevant content (a claim doesn't bump), the whole-set trust/date
+> derivations put on the executable surface (X23), and the historical-id map fixed as a
+> deterministic function (no new table). The design: a fenced operation record +
+> all-or-nothing batch-claim primitives + recovery-discovery + quiescent-snapshot reads +
+> the full transition table (§4), under **Design A**. Split from `0002` §7e. **Open
+> questions ruled**; **both `Spec-Requires:` prerequisites (`0007`, `0013`) accepted AND
+> implemented** (§9).
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v7 |
+| **Version** | v8 |
 | **Status** | *see `Spec-Status:` — canonical.* Owns the contract stated in `0002` §7e. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `lifecycle.py` is guarded and this changes durability semantics |
-| **Decision + date** | **rounds 1–6 returned 2026-08-07: architecture + Design A + one-level + read-only export approved all six; v2–v7 closed them (§11–§16); round 6 = 3 gaps + 3 corrections (two are unfenced-door / point-of-no-return safety gaps)** |
+| **Decision + date** | **rounds 1–7 returned 2026-08-07: architecture + Design A + one-level + read-only export + X21 strategy approved all seven; v2–v8 closed them (§11–§17); round 7 = 3 identity-boundary gaps + 3 corrections** |
 | **Path** | full |
 
 ---
@@ -260,7 +262,7 @@ count — **a partial claim, the exact state the design called impossible.**
 > ```
 > create_or_takeover_consolidation(user_id, ids, owner, lease_duration) -> Op | None
 > renew_consolidation_lease(operation_id, fence, owner)              -> bool
-> write_consolidation_output_if_current(op_id, fence, owner, draft)  -> bool   # owner-only; draft is a ConsolidationOutputDraft, store BINDS its op fields (X22, round 6)
+> write_consolidation_output_if_current(op_id, fence, owner, draft)  -> bool   # owner-only; draft = ConsolidationOutputDraft (no id/op fields); store mints a fresh id, binds op fields, INSERT-only (X22, round 6/7)
 > transition_consolidation_if_current(op_id, fence, owner, to_state) -> bool   # owner pre-cutover; →OUTPUTS_DURABLE REFUSES with zero bound outputs (X22); →FINALIZED ownerless, REFUSES unless every claimed input is deleted (X20)
 > delete_claimed_inputs_if_current(op_id, fence)                    -> bool   # post-cutover: recovery-safe, ownerless
 > abandon_consolidation_if_current(op_id, fence)                     -> bool   # expired-lease only (§4a-ii)
@@ -374,17 +376,29 @@ guarantee, against this spec's "cannot be got wrong by accident" ethos.)
 > `inputs=gone, outputs=none, FINALIZED`, losing every input with no replacement (the
 > spec's top-level claim + X1, violated). This needs no expected-output plan — only a
 > small **positive** proof:
-> - **`write_consolidation_output_if_current` takes a `ConsolidationOutputDraft`** whose
->   operational fields the worker CANNOT supply; the store BINDS the stored row to the
->   fenced op: `user_id == op.user_id`, `operation_id == op_id`, `claimed_by` absent,
->   **`lineage == op.claimed_ids` (the whole claimed set, §4d)**, valid output shape
->   (X18). A misbound write (`episode.operation_id = "op-X"`) is thus impossible — so
->   abandonment/visibility can never clean or resolve the wrong rows.
+> - **`write_consolidation_output_if_current` takes a `ConsolidationOutputDraft`** that
+>   carries only worker-owned CONTENT and **no persisted Episode `id`, no `user_id`, no
+>   `operation_id`, no `claimed_by`, no `lineage`** (round 7, finding 2 — the exact shape
+>   `0009`'s `OutcomeJudgmentDraft` uses):
+>   ```
+>   ConsolidationOutputDraft:
+>       summary / text          # the LLM's consolidation
+>       date_start · date_end   # min/max of the claimed set (Store-validated, §4d-ii)
+>       (NO id · NO user_id · NO operation_id · NO claimed_by · NO lineage)
+>   ```
+>   The store **mints a fresh Episode `id`**, BINDS the operational fields to the fenced
+>   op (`user_id == op.user_id`, `operation_id == op_id`, `claimed_by` absent,
+>   **`lineage == op.claimed_ids`**, valid output shape X18), and **INSERTs a new row —
+>   never replaces**; a collision on the minted id is a store error, not a replace. So a
+>   misbound write (`operation_id = "op-X"`) is structurally impossible, **and** a
+>   caller-forged `id = "ep-existing"` can no longer overwrite unrelated history through
+>   a primary-key collision (the round-6 fix removed forged *operational fields*; this
+>   removes the forged *row identity* one field over).
 > - **`GENERATING → OUTPUTS_DURABLE` REFUSES unless ≥1 correctly-bound provisional
 >   output exists** for the operation. The transition still proves only "generation is
 >   complete"; it can no longer assert "the replacement is durable" when none exists.
-> Invariant **X22**. (This is the consolidation analogue of `0009`'s `OutcomeJudgmentDraft`
-> — store-owned fields are structural, not a convention the worker must remember.)
+> Invariant **X22**. (Consolidation analogue of `0009`'s `OutcomeJudgmentDraft` — store
+> owns identity and operational fields, structurally, not by convention.)
 
 **Takeover creates a new fence on the same `operation_id`**, so outputs written
 by the preempted worker are identifiable and removable. **The lease clock is the
@@ -593,13 +607,24 @@ lineage, so an implementer can satisfy it and still fail X3 here.
 > plain `add_episode(Episode(id="ep-A", plain-shape))` **strips its claim fields**
 > without the fence — splitting the state machine's two representations. X18 caught
 > *creating* operational state, not mutating/deleting an *already-operational* row.
-> Frozen: **while an episode participates in a non-quiescent consolidation
-> (`{CLAIMED, GENERATING, OUTPUTS_DURABLE}`), generic `add_episode(same_id)` and
-> `delete_episode(id)` REFUSE; only the fenced consolidation primitives may mutate or
-> delete it.** `forget_user()` remains the deliberate exception — it atomically erases
-> the whole user's state machine. This is not general multi-process coordination; it is
-> the exact fence §4a already claims every operational write/delete obeys, now enforced
-> on the whole store surface, not just the consolidation methods. Invariant **X21**.
+> Frozen: **X21 is ID-RESERVATION based, not existing-row based (round 7, finding 1).**
+> While an operation is in `{CLAIMED, GENERATING, OUTPUTS_DURABLE}`, **every id in
+> `op.claimed_ids` is RESERVED** — and the reservation **survives the physical deletion**
+> of the row (the `OUTPUTS_DURABLE → delete inputs → FINALIZED` interval, where the input
+> row no longer exists but the op still reserves the id):
+> ```
+> generic add_episode(id ∈ reserved_ids)     → REFUSE
+> generic delete_episode(id ∈ reserved_ids)  → REFUSE (except the fenced batch-delete)
+> ```
+> The reservation lifts only when the operation reaches `FINALIZED` or clean `ABANDONED`.
+> (An existing-row-only check would miss the seam: after the fenced delete removes `ep-A`
+> but before `FINALIZED`, a generic `add_episode(Episode(id="ep-A", plain))` has no live
+> row to inspect, yet `ep-A` is still one of the exact inputs whose deletion defines the
+> roll-forward state — resurrecting it perturbs a live operation.) `forget_user()` remains
+> the deliberate exception (it atomically erases the whole user's state machine). This is
+> not general multi-process coordination; it is the exact fence §4a already claims every
+> operational write/delete obeys, now enforced on the whole store surface as a small
+> indexed reservation check. Invariant **X21**.
 
 > **A finalized output's `operation_id` is historical provenance, not a live reference
 > (round 4, finding 4).** A consolidated output requires `operation_id` (X18), but
@@ -636,22 +661,29 @@ lineage, so an implementer can satisfy it and still fail X3 here.
 > - **3a — stable across retries/partial imports.** If the remap mints a new id per
 >   invocation, a partial-then-retried import (O1 already present, O2 not) splits one
 >   source operation into two producer groups (`O1→hist-A`, `O2→hist-B`), breaking the
->   grouping X19 promises. So the **source→destination historical mapping is
->   deterministic and recovered from already-imported siblings** — either a
->   destination-qualified deterministic function of the source id, or a persisted import
->   mapping. "Fresh" means *not colliding with a live local op*, **not** "new random
->   value each run."
-> - **3b — `lineage` member ids need the same namespace.** `lineage` is the whole
->   claimed set (N9b's provenance record); after finalization those input rows are
->   deleted and do not travel, so an imported `lineage` member like `"ep-123"` is a
->   **historical** id, not a resolvable local `Episode` — yet the destination may hold an
->   unrelated live `ep-123`. Frozen: **imported historical `lineage` ids are remapped
->   through the same stable historical namespace** as producer ids, so a provenance id
->   never silently resolves against an unrelated live destination episode. (No eligibility
->   decision dereferences `lineage` today — non-empty suffices — so this is provenance
->   *integrity*, not a live correctness break; it keeps the N9b record honest across
->   round-trips.) Equality/grouping is preserved across multiple outputs in one import,
->   partial/retried imports, cross-user imports, and later re-export/re-import.
+>   grouping X19 promises. So the **source→destination historical mapping is a
+>   DETERMINISTIC destination-qualified function of the source id** (round-7 Correction C
+>   — this is the frozen choice, so **no persisted map table is introduced**; a
+>   persisted-map implementation would be additional user-scoped durable state that would
+>   then have to be declared in the §2 on-disk schema and erased by `forget_user`, which
+>   the deterministic function avoids entirely). "Fresh" means *not colliding with a live
+>   local id*, **not** "new random value each run."
+> - **3b — historical episode/`lineage` ids live in a PERMANENTLY DISJOINT namespace
+>   (round 7, finding 3).** `lineage` is the whole claimed set (N9b's provenance record);
+>   at finalization those input rows are **deleted** and their ids become historical. v6
+>   protected these only *at import*, but the collision recurs **after local
+>   finalization**: `output.lineage = ["ep-A", …]`, `ep-A` is deleted, then an ordinary
+>   `add_episode(id="ep-A")` creates an unrelated live episode, and the provenance string
+>   "this summary absorbed ep-A" now resolves to a different row. Frozen (design **A** —
+>   structural, preferred over a tombstone set): **a `lineage` value is a
+>   `HistoricalEpisodeId` in an encoding an ordinary live Episode id can NEVER inhabit.**
+>   A deleted live id is **converted to a `HistoricalEpisodeId`** as part of output
+>   creation (local finalization) **and** import; the live Episode-id allocator only ever
+>   produces live-domain ids, so it can never collide with a historical one. This covers
+>   locally-produced lineage, imported lineage, future ordinary Episode creation, later
+>   import, and re-export/re-import. (Still provenance *integrity*, not a live eligibility
+>   break — nothing dereferences `lineage` for a decision — but it keeps the N9b record
+>   honest for the life of the store, not just at the mint instant.)
 
 ### 4f. Export is a read-only quiescent snapshot (round 2, finding 4; read-only round 4, finding 3)
 
@@ -716,16 +748,17 @@ with a stated contract**, which is a smaller ask than "implement transactions".
 | **X1** an input is never deleted before its summary is durable | `test_consolidation_writes_before_deleting` — a store wrapper that raises after the write | CI |
 | **X2** the batch-delete is all-or-nothing; a crash **after** it commits but before `FINALIZED` is recovered by an **idempotent re-delete + finalise**, never a re-consolidation | `test_recovery_finalises_after_committed_delete` — there is no durable "some inputs deleted" state to complete | CI |
 | **X13** recovery is **discoverable**: `pending_consolidations(user_id)` returns exactly the recovery-pending ops `{CLAIMED, GENERATING, OUTPUTS_DURABLE}` — **not `FINALIZED`, not quiescent `ABANDONED`**; `introspect()` reports `consolidation_pending` vs `consolidation_recovered` distinctly (Correction A) | `test_pending_returns_only_recovery_pending` — an `OUTPUTS_DURABLE` op is discovered; a quiescent `ABANDONED` op is **not**; a live op counts as pending, never recovered (round-3 finding 2 + round-4 Correction A) | CI |
-| **X14** the `GENERATING → OUTPUTS_DURABLE` visibility cutover **advances `store_version`** in the same atomic mutation, though it changes no episode row | `test_visibility_cutover_bumps_store_version` — a cached wiki compiled from the still-visible inputs must not read fresh after the cutover (finding 3) | CI |
+| **X14** the `GENERATING → OUTPUTS_DURABLE` visibility cutover **advances `store_version`** (a content/representation change); a **claim does NOT** (it changes only operational metadata compile/recall never reads — §11-F3 scoped, round-7 Correction A) | `test_visibility_cutover_bumps_store_version` + `test_claim_does_not_bump_store_version` — a cached wiki must invalidate on the cutover but not on every in-flight claim (round-1 finding 3 + round-7 Correction A) | CI |
 | **X3** retry is idempotent — **no summary-of-summary**, including after a response-lost `FINALIZED` | `test_consolidation_retry_is_idempotent` + `test_finalized_outputs_are_not_reconsolidated` — a re-run over a finalized generation's own visible outputs finds no candidates (§4e) | CI |
 | **X15** `ABANDONED` is cleanup-complete, and a new fence issues **only** from clean `ABANDONED` — takeover of an **expired `GENERATING`** op abandons (cleans) it *first* | `test_takeover_requires_clean_abandoned` + `test_takeover_of_expired_generating_cleans_first` — an expired op holding a provisional row is abandoned before any new fence, so old/new-generation rows never coexist (round-2 finding 2 + round-4 finding 2 bug-fix) | CI |
 | **X16** an episode with non-empty `lineage` (an output) is never a consolidation candidate; a *released input* (claim cleared) **is** eligible again | `test_consolidated_output_is_not_a_candidate` — 16→8 finalized, re-run selects none of the 8; `test_released_input_is_a_candidate_again` — an abandoned op's inputs re-consolidate (keying on `operation_id` would strand them) | CI |
 | **X17** export is **read-only** via the atomic Store read `quiescent_episode_snapshot(user_id)`: it exports iff every op is quiescent, else **refuses mutating nothing**; the quiescence check + episode snapshot are **one linearizable observation** (against `create_or_takeover`); export never bumps `store_version`; `forget_user()` erases operation state | `test_quiescent_snapshot_is_linearizable_vs_a_new_claim` (the Store primitive directly — a claim starting mid-snapshot yields `NonQuiescent`, never a dangling `claimed_by`) + `test_export_refuses_nonquiescent_without_mutating` + `test_forget_user_erases_consolidation_ops` (round-4 finding 3 + round-5 finding 2) | CI |
 | **X18** every stored/imported episode matches exactly one frozen shape; **import refuses a claimed-input shape** (its op is non-portable) and generic `add_episode` cannot fabricate claimed/provisional state | `test_malformed_lineage_shape_is_refused` + `test_import_refuses_claimed_input_shape` (a shape-valid claimed input with no op → refuse, not orphan) + `test_add_episode_cannot_create_operational_state` (round-3 Correction B + round-5 finding 3) | CI |
-| **X19** a finalized output's `operation_id` is **historical provenance**; imported historical `operation_id` **and `lineage`** ids are remapped through a **deterministic, retry-stable** destination-local namespace (grouping preserved; live-op allocation never reuses one) | `test_imported_operation_id_cannot_collide_with_a_live_local_op` + `test_partial_then_retried_import_keeps_one_producer_group` (3a) + `test_imported_lineage_ids_do_not_resolve_local_episodes` (3b) — round-4/5/6 finding 4/3 | CI |
+| **X19** a finalized output's `operation_id` is **historical**; the `operation_id` remap is a **deterministic** destination-local function (retry-stable, no persisted-map table); **`lineage` ids are `HistoricalEpisodeId`s in a namespace no live Episode id can inhabit**, so they never collide with a live episode — on import **or** after local finalization | `test_partial_then_retried_import_keeps_one_producer_group` (3a) + `test_live_add_episode_cannot_take_a_historical_lineage_id_after_finalization` (3b — local, not just import) + `test_imported_operation_id_cannot_collide_with_a_live_local_op` (round-4/5/6/7) | CI |
 | **X20** `FINALIZED` is unreachable until every claimed input is deleted — `transition(…, FINALIZED)` refuses otherwise | `test_finalize_refuses_before_inputs_deleted` — a direct `OUTPUTS_DURABLE → FINALIZED` with inputs still present returns `False`, so no terminal op strands hidden inputs (round-5 finding 1) | CI |
-| **X21** ordinary `add_episode`/`delete_episode` **cannot mutate or delete a row participating in a non-quiescent consolidation** — only the fenced primitives may (`forget_user` excepted) | `test_generic_delete_of_a_claimed_input_is_refused` + `test_generic_replace_of_a_claimed_input_is_refused` — the two bypass paths that would violate X1 through an unfenced door (round-6 finding 1) | CI |
-| **X22** every provisional output is **structurally bound** to its op (`user_id`/`operation_id`/whole-set `lineage`/output shape, via `ConsolidationOutputDraft`), and `GENERATING → OUTPUTS_DURABLE` **refuses with zero bound outputs** | `test_output_is_bound_to_the_fenced_operation` + `test_cutover_refuses_with_no_bound_output` — the point of no return can't prove "replacement durable" when none exists (round-6 finding 2) | CI |
+| **X21** every id in a non-quiescent op's `claimed_ids` is **RESERVED**; generic `add_episode`/`delete_episode` on a reserved id **REFUSE** — the reservation **survives physical deletion** until `FINALIZED`/clean `ABANDONED` (`forget_user` + the fenced batch-delete excepted) | `test_generic_delete_of_a_claimed_input_is_refused` + `test_generic_replace_of_a_claimed_input_is_refused` + `test_generic_add_of_a_deleted_reserved_id_before_finalized_is_refused` (the OUTPUTS_DURABLE→FINALIZED seam — round-6 finding 1 + round-7 finding 1) | CI |
+| **X22** the output write takes a `ConsolidationOutputDraft` with **no id/user_id/operation_id/claimed_by/lineage**; the store **mints a fresh id**, binds the op fields (`lineage == op.claimed_ids`), and **INSERTs — never replaces**; `GENERATING → OUTPUTS_DURABLE` **refuses with zero bound outputs** | `test_output_is_bound_to_the_fenced_operation` + `test_cutover_refuses_with_no_bound_output` + `test_output_write_cannot_replace_an_existing_episode` (a forged id can't overwrite unrelated history — round-6 finding 2 + round-7 finding 2) | CI |
+| **X23** the output's derived fields are **Store-computed from `op.claimed_ids`, not taken from the draft/LLM**: minimum trust across the whole set (confidence/disclosure/third-party floor, N9b) and `date_start = min`, `date_end = max`, `date = date_start` | `test_output_trust_is_the_whole_set_minimum` + `test_output_date_range_is_store_derived_not_llm` — the new draft/write boundary must not move a derived-field guarantee from "computed from inputs" to "whatever the draft supplied" (round-7 Correction B) | CI |
 | **X4** the claim is **atomic over the whole set** | `test_concurrent_consolidation_claims_all_or_nothing` — two workers, overlapping candidate sets; exactly one wins | CI |
 | **X7** a claim is preemptible only on an **expired store-clock lease**, never on fence order alone; a live-lease op is not preempted. **Owner is COOPERATIVE identity** (§4a-ii) — a *well-behaved* worker passing its own identity cannot act on a peer's op; not an anti-forgery capability (out of threat model) | `test_a_live_lease_is_not_preempted` (heartbeating worker keeps its claim) + `test_a_worker_passing_its_own_identity_is_rejected_on_a_peer_op` (round-3 finding 1; scoped round-4 finding 1b) | CI |
 | **X10** a worker that has lost its fence **or (cooperatively) passes an owner ≠ the recorded owner under a live lease** cannot write, flip visibility, or delete | `test_a_preempted_worker_cannot_write_or_delete` — the fence + cooperative-owner + lease check that makes preemption safe | CI |
@@ -865,12 +898,19 @@ was reproduced against the source or spec text first.
 | **F2** | recovery prose required a **persisted expected-output set** that neither the operation record nor any primitive could represent — an unresolved Design A/B "or" of exactly the kind `0010` exists to forbid | Chose **Design A**: the atomic transition is the sole completeness proof; all pre-transition outputs are provisional/invisible and deleted wholesale on crash. Deleted the persisted-output-set claim; the operation record carries no output plan (§4a, §4b-ii). Design B recorded as considered-and-rejected. |
 | **F3** | X-Q2 attributed `store_version` advancement to `@store_mutator`, but the decorator is only an audit marker (`__store_mutator__ = True`); `_bump()` is explicit, and `set_wiki` is a mutator that deliberately does not bump. The `GENERATING→OUTPUTS_DURABLE` cutover changes no episode row, so the cached wiki could read falsely fresh | Froze the real invariant (**F3 invariant**, below); corrected X-Q2 to rely on it, not the decorator. New invariant **X14**. |
 
-> **F3 frozen invariant.** *Any atomic mutation that can change the result of an
-> ordinary `episodes(user_id)` read MUST advance that user's `store_version` in the
-> same atomic mutation.* This unambiguously includes the `GENERATING →
-> OUTPUTS_DURABLE` visibility cutover (which changes no episode row but changes what
-> `episodes()` returns) and every recovery/abandonment transition that changes the
-> visible representation. `@store_mutator` remains an audit-manifest marker only.
+> **F3 frozen invariant (scoped to recall-relevant content, round 7 Correction A).**
+> *Any atomic mutation that can change the **cache/recall-relevant visible memory
+> content** returned by an ordinary `episodes(user_id)` read MUST advance that user's
+> `store_version` in the same atomic mutation.* This includes the `GENERATING →
+> OUTPUTS_DURABLE` visibility cutover (which changes **which representation** —
+> inputs vs outputs — `episodes()` returns; X14) and every recovery/abandonment
+> transition that changes the visible representation. **It explicitly EXCLUDES the
+> operational metadata `claimed_by`/`operation_id`**: a successful claim sets those on
+> still-visible inputs, but compile/recall never reads them, so a claim need not (and
+> does not) bump `store_version` — avoiding a needless cache invalidation on every
+> in-flight claim. (v6's literal wording — "any change to the `episodes()` result" —
+> would have forced a bump on claim, which X14 never tested; this scoping reconciles the
+> rule with the X14 surface.) `@store_mutator` remains an audit-manifest marker only.
 
 ### Contract corrections
 
@@ -1055,3 +1095,36 @@ against the source or spec text first.
 **Not changed:** the fenced/leased architecture, Design A, X9, one-level consolidation,
 cooperative ownership, read-only export, and the purpose-built semantic reads. The
 reviewer's v7 acceptance bar is F1–F3 + A–C; all six are closed here.
+
+---
+
+## 17. Review closure — round 7 (2026-08-07)
+
+Round-7 external review: **"architecture, Design A, one-level consolidation, read-only
+export, and the X21 per-call guard strategy remain approved; v8 deferred on three
+identity/store-surface gaps plus three contract corrections."** The reviewer **approved
+the per-call participation check over splitting operational Episodes into a second row
+space** (which would only move the hard questions onto `episodes()`/X9/migration/export).
+The v8 findings are identity-boundary seams *around* the v7 fixes. Each was reproduced
+against the spec text first.
+
+### Blocking findings
+
+| # | finding | root fix in v8 |
+|---|---|---|
+| **F1** | X21 protected an *existing* claimed row, but after the fenced delete removes an input (the `OUTPUTS_DURABLE → delete → FINALIZED` interval) the op still reserves the id — and a generic `add_episode(old_id)` has no live row to inspect, so it could resurrect the input | §4e: X21 is now **ID-reservation based** — every `claimed_id` is reserved while the op is non-quiescent and the reservation **survives physical deletion** until `FINALIZED`/clean `ABANDONED`. Test added for the delete→`FINALIZED` seam. |
+| **F2** | `ConsolidationOutputDraft` bound the operational *fields* but never froze the output Episode **id** ownership or insert-not-replace, so a draft carrying `id="ep-existing"` could overwrite unrelated history through a primary-key collision (`add_episode` is `INSERT OR REPLACE`) | §4b-ii: the draft carries **no id/user_id/operation_id/claimed_by/lineage**; the store **mints a fresh id** and **INSERTs — never replaces**. X22 extended (`test_output_write_cannot_replace_an_existing_episode`). Mirrors `0009`'s `OutcomeJudgmentDraft`. |
+| **F3** | historical `lineage` ids were protected at import, but the collision recurs **after local finalization**: `output.lineage=["ep-A"]`, `ep-A` deleted, then a later `add_episode(id="ep-A")` makes the provenance string resolve to an unrelated live row | §4e (design A): `lineage` values are **`HistoricalEpisodeId`s in a namespace no live Episode id can inhabit**; deleted ids are converted to historical refs at output creation **and** import, and the live-id allocator can never produce one. X19 extended (covers local finalization, not just import). |
+
+### Contract corrections
+
+| # | correction | v8 |
+|---|---|---|
+| **A** | the literal §11-F3 rule ("any change to the `episodes()` result bumps `store_version`") also covers a claim's `claimed_by` change on still-visible inputs, but X14 only tested the cutover | §11-F3 **scoped to recall-relevant content** — operational metadata (`claimed_by`/`operation_id`) excluded, so a claim doesn't bump (compile/recall never reads it), avoiding needless invalidation. X14 updated. |
+| **B** | the whole-set **minimum-trust** and `date_start`/`date_end` output derivations were normative prose but absent from X1–X22 — exactly the guarantee a new draft/write boundary can accidentally move from "computed from inputs" to "whatever the draft supplied" | New invariant **X23**: the store computes trust-floor + date range from `op.claimed_ids`, not the draft/LLM. |
+| **C** | v7 allowed the historical-id map to be a deterministic function **or** a persisted table — but a persisted table is undeclared user-scoped durable state | Fixed as the **deterministic destination-qualified function** (no new table; a persisted map would have needed §2 schema + `forget_user` declaration, now avoided). |
+
+**Not changed:** the fenced/leased architecture, Design A, X9, one-level consolidation,
+cooperative ownership, read-only export, purpose-built reads, and the single-Episode-space
++ per-call reservation strategy (reviewer-approved). The reviewer's v8 acceptance bar is
+F1–F3 + A–C; all six are closed here.
