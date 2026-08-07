@@ -89,7 +89,9 @@ def test_less_specific_arrival_reinforces_fuller_prior():
     assert e.valid_from == _dt(1)  # first-known is immutable
     assert e.provenance.observed_at == _dt(6)  # liveness refreshed instead
     assert e.provenance.confidence == 0.95
-    assert e.needs_confirmation is False  # write-time evidence clears the flag
+    assert e.needs_confirmation is True  # specs/0008: reinforcement no longer
+    # clears the flag — only confirm() does (write-time evidence is not proof of
+    # an entitled reaffirmation; author class is not the same source)
 
 
 def test_reinforcement_never_rewinds_validity():

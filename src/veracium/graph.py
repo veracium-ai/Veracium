@@ -108,17 +108,18 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
                                                edge.provenance.observed_at)
             prior.provenance.confidence = max(prior.provenance.confidence,
                                               edge.provenance.confidence)
-            # M3 (0.4.5): needs_confirmation renders as "confirm before relying
-            # on it" — a question addressed to the party who stated the fact.
-            # The 0.4.1 guard above compares DISCLOSURE class, and USER and
-            # SYSTEM share MENTIONABLE, so a system-authored restatement used to
-            # answer a question meant for the user. Same speaker/witness
-            # confusion that deferred spec 0001, one layer down. Only evidence
-            # from the same author class clears it; confirm() remains the
-            # explicit path.
-            if (prior.provenance.author_of_evidence
-                    == edge.provenance.author_of_evidence):
-                prior.needs_confirmation = False
+            # `0008`: reinforcement refreshes LIVENESS (observed_at) and retains
+            # confidence, but it does NOT clear `needs_confirmation`. The flag
+            # renders as "confirm before relying on it" — a question addressed to
+            # whoever is entitled to reaffirm the fact, which only `confirm()`
+            # establishes. v1 (0.4.5) cleared it whenever the restatement's
+            # `author_of_evidence` matched the prior's, but the same author CLASS
+            # is not the same source (USER and SYSTEM share MENTIONABLE), so a
+            # system-authored restatement silently answered a question meant for
+            # the user. Same author-class ≠ same-source confusion that deferred
+            # `0001`. The flag now stays set until `confirm()` clears it (§4).
+            # (Whether reinforcement should refresh liveness at all is `0012`'s
+            # subject, neither endorsed nor altered here.)
             store.add_edge(prior)
             return
     for prior in priors:

@@ -68,9 +68,9 @@ DISPOSITIONS = {
 
  # -- the write path ---------------------------------------------------------
  ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"):
-   (W, "**`needs_confirmation` cleared**, `observed_at`, `confidence`", "observation",
-    "🔴 **M3 — OPEN.** Same-author-class is not source identity; external review item 3, ruled R2. Fail-closed rule specified in §7b",
-    "➡️ **`specs/0008` C1–C6** — `test_no_author_value_clears_staleness`; **none passes today**"),
+   (W, "`observed_at`, `confidence` (liveness refresh); `needs_confirmation` **NO LONGER cleared** (`specs/0008`)", "observation",
+    "✅ **M3 — CLOSED by `specs/0008` (accepted 2026-08-07, implemented).** Same-author-class is not source identity; reinforcement now refreshes liveness only and `needs_confirmation` clears solely through `confirm()`",
+    "`test_no_provenance_value_clears_staleness` · `test_same_author_restatement_does_not_clear_staleness` · `test_cross_author_restatement_does_not_clear`"),
  ("src/veracium/graph.py", "apply_supersession", "add_edge", "98cd90a70fb3"):
    (W, "`note` on the absorbed prior", "observation", "clean — annotates, never widens", "`test_absorbed_edges_never_render_as_history`"),
  ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "a7a961c78cbd"):
@@ -143,7 +143,7 @@ STATES = {
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"): "open_moved",
-  ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"): "open_moved",
+  ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"): "clean",
   ("src/veracium/graph.py", "apply_supersession", "add_edge", "98cd90a70fb3"): "clean",
   ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "a7a961c78cbd"): "clean",
   ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "cda8875a699c"): "open_moved",

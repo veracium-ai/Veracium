@@ -108,21 +108,12 @@ def test_cross_author_cannot_clear_staleness():
         mem.close()
 
 
-def test_same_author_evidence_does_clear_staleness():
-    """HISTORICAL REPRODUCER — asserts 0.4.5 behaviour that specs/0008 FORBIDS.
-
-    R3 ruled that only an explicit `confirm()` clears `needs_confirmation`: no
-    value of any provenance field does, because `author` rides on `remember`,
-    which the model can call. This test asserts the opposite, and it is green.
-
-    A suite that asserts withdrawn behaviour cannot verify the new invariant,
-    so it is marked here rather than left looking like a requirement. It flips
-    to a prohibition when 0008 is implemented — the fix is deleting one
-    conditional at graph.py:119, and this test is its reproducer.
-    """
-    import pytest
-    pytest.xfail("specs/0008: only confirm() may clear staleness; "
-                 "this asserts the 0.4.5 behaviour that rule withdraws")
+def test_same_author_restatement_does_not_clear_staleness():
+    """specs/0008 §4 (C1/C6): a same-author restatement does NOT clear
+    `needs_confirmation`. This is the flipped 0.4.5 reproducer — it used to assert
+    the withdrawn behaviour under `xfail`; now it proves the prohibition. Only an
+    explicit `confirm()` clears the flag, because `author` rides on `remember()`,
+    which the model can call, so no provenance value may authorise clearing."""
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d)
         mem.store.add_edge(_edge("e-user", author=EvidenceAuthor.USER, needs=True))
@@ -131,7 +122,11 @@ def test_same_author_evidence_does_clear_staleness():
         apply_supersession(mem.store, again, mem.config.relations)
         flagged = next(e for e in mem.store.edges("u", active_only=False)
                        if e.id == "e-user")
-        assert flagged.needs_confirmation is False
+        assert flagged.needs_confirmation is True, \
+            "a same-author restatement cleared the flag — only confirm() may"
+        # reinforcement still refreshes LIVENESS (observed_at) — C3, unchanged.
+        assert flagged.provenance.observed_at == MAR, \
+            "reinforcement must still advance observed_at (liveness)"
         mem.close()
 
 
