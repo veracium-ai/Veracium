@@ -1,11 +1,11 @@
 # Feature spec: outcome authorship is append-only history
 
-Spec-Status: draft
+Spec-Status: in review
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft — design complete, ready for external review (2026-08-07).** Split out
+> **in review (v1)** — submitted for external review 2026-08-07. Split out
 > of `0002` M4 on 2026-08-01. **The fix that shipped in 0.4.5 does not hold**,
 > demonstrated below. The second external review of `0002` accepted the
 > append-only direction and required the ordering semantics this spec adds. **All
@@ -21,9 +21,9 @@ Spec-Requires: 0007, 0013
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M4/§7a. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `__init__.py` is guarded; **`0002`'s second review required head/concurrency semantics before acceptance** |
-| **Decision + date** | — |
+| **Decision + date** | **submitted for external review 2026-08-07** (round 1) |
 | **Path** | full |
-| **Prerequisite** | **`specs/0007`** — see §9 |
+| **Prerequisite** | **`specs/0007`** + **`specs/0013`** — both accepted + implemented, see §9 |
 
 ---
 
