@@ -13,8 +13,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..schema import (Confirmation, ConfirmationActor, ConfirmationCallPath,
-                      Edge, Episode, OutcomeJudgmentDraft)
+from ..schema import (ConsolidationOp, ConsolidationOutputDraft, Confirmation,
+                      ConfirmationActor, ConfirmationCallPath, Edge, Episode,
+                      OutcomeJudgmentDraft)
+
+# specs/0010 §4a-ii: the one library bound on a lease's duration (seconds). A
+# renewal re-adds exactly `lease_duration`; `0 < lease_duration <= LEASE_MAX`.
+LEASE_MAX = 3600
 
 
 class HeadMoved:
@@ -44,6 +49,20 @@ class DestinationChanged:
 
 
 DESTINATION_CHANGED = DestinationChanged()
+
+
+class NonQuiescent:
+    """Sentinel result of `quiescent_episode_snapshot` when the user has a
+    non-quiescent consolidation op (CLAIMED/GENERATING/OUTPUTS_DURABLE) at the read's
+    linearization point (specs/0010 §4f, X17). Export refuses, mutating nothing; the
+    caller runs recovery (`consolidate()`/`maintain()`) and retries."""
+    __slots__ = ()
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostic only
+        return "NonQuiescent"
+
+
+NON_QUIESCENT = NonQuiescent()
 
 
 def store_mutator(fn):
@@ -165,6 +184,96 @@ class Store(ABC):
         pre-existing `Store` implementations keep working."""
         raise NotImplementedError(
             f"{type(self).__name__} does not implement commit_outcome_import_plan")
+
+    # -- crash-safe consolidation (specs/0010) --------------------------------
+    @store_mutator
+    def create_or_takeover_consolidation(self, user_id: str, ids: list,
+                                         owner: str, lease_duration: int):
+        """Atomically claim `ids` for a new consolidation, or take over a clean
+        `ABANDONED` op covering exactly them — the specs/0010 §4a-ii/§4b claim
+        primitive. Returns the `ConsolidationOp` (state CLAIMED) or None if any id is
+        contended (belongs to a LIVE-lease op). MULTI-PHASE (§4a-ii Correction C): an
+        EXPIRED pre-cutover op intersecting the request is ABANDONED (cleaned) first,
+        then the claim is re-evaluated; a new fence issues ONLY from cleanup-complete
+        `ABANDONED` (X15). The store mints the fence (monotonic) and sets
+        `lease_expires_at = store_now + lease_duration` (0 < lease_duration <= LEASE_MAX).
+        The claim step is all-or-nothing (X4/X11)."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement create_or_takeover_consolidation")
+
+    @store_mutator
+    def renew_consolidation_lease(self, operation_id: str, fence: int,
+                                  owner: str) -> bool:
+        """Extend the lease to `store_now + lease_duration` (the op's PERSISTED
+        duration) — specs/0010 §4a-ii. Succeeds only for the exact current
+        `(fence, owner)` under an UNEXPIRED lease; it cannot resurrect an expired lease
+        (that path is takeover). Returns True on success."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement renew_consolidation_lease")
+
+    @store_mutator
+    def write_consolidation_output_if_current(self, operation_id: str, fence: int,
+                                              owner: str,
+                                              draft: ConsolidationOutputDraft) -> bool:
+        """Write ONE provisional (hidden) output for a GENERATING op — specs/0010 §4b-ii,
+        X22/X23. Owner-only under a live lease + current fence. The store MINTS a fresh
+        id, BINDS the op fields (`user_id==op.user_id`, `operation_id`, `lineage ==
+        op.claimed_ids`), DERIVES the trust floor + `date_start/end/date` from
+        `op.claimed_ids` (not the draft, X23), and INSERTs — never replaces (a minted-id
+        collision is a store error). Returns True on success, False if not current."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement write_consolidation_output_if_current")
+
+    @store_mutator
+    def transition_consolidation_if_current(self, operation_id: str, fence: int,
+                                            owner, to_state) -> bool:
+        """Advance the op's state under `(operation_id, fence)` — specs/0010 §4b-ii.
+        Pre-cutover transitions (`CLAIMED→GENERATING`, `GENERATING→OUTPUTS_DURABLE`) are
+        owner-only under a live lease; `→OUTPUTS_DURABLE` REFUSES with zero bound outputs
+        (X22) and advances `store_version` (the visibility cutover, X14).
+        `OUTPUTS_DURABLE→FINALIZED` is ownerless/recovery-safe and REFUSES unless every
+        claimed input is already deleted (X20). Returns True on success."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement transition_consolidation_if_current")
+
+    @store_mutator
+    def delete_claimed_inputs_if_current(self, operation_id: str, fence: int) -> bool:
+        """Delete the op's claimed input rows as ONE all-or-nothing batch — specs/0010
+        §4b, X2. Post-cutover, ownerless/recovery-safe, validated by `(operation_id,
+        fence)` + `OUTPUTS_DURABLE`. Idempotent re-delete. The reservation (X21) survives
+        this physical delete until FINALIZED. Returns True on success."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement delete_claimed_inputs_if_current")
+
+    @store_mutator
+    def abandon_consolidation_if_current(self, operation_id: str, fence: int) -> bool:
+        """Clean up an EXPIRED-lease pre-cutover op and mark it `ABANDONED` — specs/0010
+        §4b-iii, X15. ONE atomic primitive: deletes every provisional output row for the
+        op AND clears `claimed_by`/`operation_id` on its claimed inputs (Design A —
+        never 'all rows'; inputs carry `operation_id` too), THEN the op is observably
+        `ABANDONED`. Succeeds ONLY on an expired lease (won't roll back a live peer, X7).
+        Returns True on success."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement abandon_consolidation_if_current")
+
+    def pending_consolidations(self, user_id: str) -> list:
+        """READ — the recovery-pending ops for `user_id`: exactly
+        `{CLAIMED, GENERATING, OUTPUTS_DURABLE}`, NOT `FINALIZED` and NOT quiescent
+        `ABANDONED` (specs/0010 §4b, X13). Recovery reads this, applies the transition
+        table to each, and counts them. Not abstract for backend compatibility."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement pending_consolidations")
+
+    def quiescent_episode_snapshot(self, user_id: str):
+        """READ — an ATOMIC per-user observation (specs/0010 §4f, X17) that either
+        returns the user's episode list (iff every op is quiescent — FINALIZED or clean
+        ABANDONED) or `NON_QUIESCENT`. The quiescence check and the episode snapshot are
+        ONE linearizable observation against `create_or_takeover_consolidation`, so a
+        claim starting mid-snapshot yields `NON_QUIESCENT`, never a dangling
+        `claimed_by`. Read-only; never bumps `store_version`. Not abstract for
+        backend compatibility."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement quiescent_episode_snapshot")
 
     # -- host/admin queries ---------------------------------------------------
     def list_users(self) -> list[dict]:

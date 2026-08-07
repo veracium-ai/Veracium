@@ -12,14 +12,17 @@ import json
 import sqlite3
 import threading
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
-from ..schema import (Confirmation, ConfirmationActor, ConfirmationCallPath,
-                      Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
-                      Provenance, SourceType)
-from .base import DESTINATION_CHANGED, HEAD_MOVED, Store
+from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
+                      Confirmation, ConfirmationActor, ConfirmationCallPath,
+                      Disclosure, Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
+                      Provenance, RECOVERY_PENDING_STATES, SourceType,
+                      to_historical_id)
+from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
+                   Store)
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              PostCommitAuditError,
                              StoreVersionError, open_versioned)
@@ -37,8 +40,12 @@ _SCHEMA = ";\n".join(o.ddl for o in SCHEMAS[SCHEMA_VERSION]) + ";\n"
 class SqliteStore(Store):
     def __init__(self, path: str | Path = "veracium.db", *,
                  allow_adopt: bool = True, audit_sink=None,
-                 busy_timeout_ms: int = 5000):
+                 busy_timeout_ms: int = 5000, clock=None):
         self._path = str(path)
+        # specs/0010 §4b-ii: the lease clock is the STORE's, not any worker's —
+        # worker clocks disagree and a lease decided by the holder is not a lease.
+        # Injectable so tests can drive lease expiry/renewal deterministically.
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
         # 0007 §4e: audit strings are validated against a 4096-byte cap, never
         # truncated — and the path is checked before connecting, so the limit
         # is ours rather than whatever the OS happens to raise.
@@ -381,6 +388,279 @@ class SqliteStore(Store):
             self._conn.commit()
             return {"edges": len(edges), "episodes": len(episodes)}
 
+    # -- crash-safe consolidation (specs/0010) --------------------------------
+    _OP_COLS = ("operation_id", "user_id", "fence", "state", "owner",
+                "lease_duration", "lease_expires_at", "claimed_ids")
+
+    def _now(self) -> datetime:
+        return self._clock()
+
+    def _op_from_row(self, row) -> ConsolidationOp:
+        return ConsolidationOp(
+            operation_id=row[0], user_id=row[1], fence=row[2],
+            state=ConsolidationState(row[3]), owner=row[4], lease_duration=row[5],
+            lease_expires_at=row[6], claimed_ids=json.loads(row[7]))
+
+    def _load_op(self, operation_id: str) -> Optional[ConsolidationOp]:
+        row = self._conn.execute(
+            f"SELECT {', '.join(self._OP_COLS)} FROM consolidation_ops "
+            f"WHERE operation_id=?", (operation_id,)).fetchone()
+        return self._op_from_row(row) if row is not None else None
+
+    def _ops_for_user(self, user_id: str) -> list:
+        return [self._op_from_row(r) for r in self._conn.execute(
+            f"SELECT {', '.join(self._OP_COLS)} FROM consolidation_ops "
+            f"WHERE user_id=?", (user_id,)).fetchall()]
+
+    def _next_fence(self) -> int:
+        return self._conn.execute(
+            "SELECT COALESCE(MAX(fence), 0) + 1 FROM consolidation_ops").fetchone()[0]
+
+    def _lease_live(self, op: ConsolidationOp) -> bool:
+        return self._now() < datetime.fromisoformat(op.lease_expires_at)
+
+    def _write_op(self, op: ConsolidationOp) -> None:
+        self._conn.execute(
+            f"INSERT OR REPLACE INTO consolidation_ops({', '.join(self._OP_COLS)}) "
+            f"VALUES(?,?,?,?,?,?,?,?)",
+            (op.operation_id, op.user_id, op.fence, op.state.value, op.owner,
+             op.lease_duration, op.lease_expires_at, json.dumps(op.claimed_ids)))
+
+    def _episodes_for_operation(self, user_id: str, operation_id: str) -> list:
+        """(episode_id, Episode) for every row physically tagged `operation_id` — both
+        claimed INPUTS (claimed_by set, no lineage) and provisional OUTPUTS (lineage
+        set). Parsed from the json blob, since operation_id is not a column."""
+        out = []
+        for eid, blob in self._conn.execute(
+                "SELECT id, json FROM episodes WHERE user_id=?", (user_id,)):
+            ep = Episode.model_validate_json(blob)
+            if ep.operation_id == operation_id:
+                out.append((eid, ep))
+        return out
+
+    def _claim_inputs(self, op: ConsolidationOp) -> None:
+        """Tag each claimed input with `claimed_by`/`operation_id` (X4, atomic under the
+        caller's lock+transaction). Every id must exist and belong to the op's user."""
+        for eid in op.claimed_ids:
+            row = self._conn.execute(
+                "SELECT json FROM episodes WHERE id=? AND user_id=?",
+                (eid, op.user_id)).fetchone()
+            if row is None:
+                raise ValueError(f"cannot claim {eid!r}: not an episode of "
+                                 f"{op.user_id!r} (specs/0010 §4a)")
+            ep = Episode.model_validate_json(row[0])
+            bound = ep.model_copy(update={"claimed_by": op.operation_id,
+                                          "operation_id": op.operation_id})
+            self._conn.execute("UPDATE episodes SET json=? WHERE id=?",
+                               (bound.model_dump_json(), eid))
+
+    def _abandon(self, op: ConsolidationOp) -> None:
+        """§4b-iii cleanup, under the caller's lock+transaction: delete every
+        provisional OUTPUT row for the op, CLEAR the claim fields on every claimed INPUT
+        row (never 'all rows' — inputs carry operation_id too), then mark ABANDONED."""
+        for eid, ep in self._episodes_for_operation(op.user_id, op.operation_id):
+            if ep.lineage:                                   # a provisional output
+                self._conn.execute("DELETE FROM episodes WHERE id=?", (eid,))
+            else:                                            # a claimed input
+                clean = ep.model_copy(update={"claimed_by": None, "operation_id": None})
+                self._conn.execute("UPDATE episodes SET json=? WHERE id=?",
+                                   (clean.model_dump_json(), eid))
+        self._write_op(op.model_copy(update={"state": ConsolidationState.ABANDONED}))
+
+    def create_or_takeover_consolidation(self, user_id, ids, owner, lease_duration):
+        if not (0 < lease_duration <= LEASE_MAX):
+            raise ValueError(f"lease_duration must be in (0, {LEASE_MAX}], "
+                             f"not {lease_duration} (specs/0010 §4a-ii)")
+        req = list(dict.fromkeys(ids))          # de-dup, preserve order
+        req_set = set(req)
+        with self._lock:
+            # Recovery race rule (§4a-ii): abandon any EXPIRED pre-cutover op that
+            # intersects the request BEFORE claiming, so a new fence issues only from a
+            # clean ABANDONED state (X15). Re-evaluate until no expired intersection.
+            while True:
+                ops = self._ops_for_user(user_id)
+                intersecting = [op for op in ops
+                                if op.state in RECOVERY_PENDING_STATES
+                                and req_set & set(op.claimed_ids)]
+                live = [op for op in intersecting
+                        if op.state == ConsolidationState.OUTPUTS_DURABLE
+                        or self._lease_live(op)]
+                if live:
+                    return None                  # contended (X7/X11 — no partial claim)
+                if intersecting:                 # all expired pre-cutover → clean first
+                    for op in intersecting:
+                        self._abandon(op)
+                    continue
+                break
+            # A CLEAN ABANDONED op covering EXACTLY these ids is revived under a NEW
+            # fence; otherwise a fresh operation is created (X15).
+            revivable = next(
+                (op for op in ops if op.state == ConsolidationState.ABANDONED
+                 and set(op.claimed_ids) == req_set), None)
+            fence = self._next_fence()
+            expires = (self._now() + timedelta(seconds=lease_duration)).isoformat()
+            op = ConsolidationOp(
+                operation_id=(revivable.operation_id if revivable
+                              else f"op-{uuid.uuid4().hex[:12]}"),
+                user_id=user_id, fence=fence, state=ConsolidationState.CLAIMED,
+                owner=owner, lease_duration=lease_duration,
+                lease_expires_at=expires, claimed_ids=req)
+            self._claim_inputs(op)               # all-or-nothing under this transaction
+            self._write_op(op)
+            self._conn.commit()
+            return op
+
+    def renew_consolidation_lease(self, operation_id, fence, owner) -> bool:
+        with self._lock:
+            op = self._load_op(operation_id)
+            if (op is None or op.fence != fence or op.owner != owner
+                    or op.state not in (ConsolidationState.CLAIMED,
+                                        ConsolidationState.GENERATING)
+                    or not self._lease_live(op)):        # cannot resurrect an expired lease
+                return False
+            expires = (self._now() + timedelta(seconds=op.lease_duration)).isoformat()
+            self._write_op(op.model_copy(update={"lease_expires_at": expires}))
+            self._conn.commit()
+            return True
+
+    def write_consolidation_output_if_current(self, operation_id, fence, owner,
+                                              draft: ConsolidationOutputDraft) -> bool:
+        with self._lock:
+            op = self._load_op(operation_id)
+            if (op is None or op.fence != fence or op.owner != owner
+                    or op.state != ConsolidationState.GENERATING
+                    or not self._lease_live(op)):
+                return False
+            inputs = []
+            for eid in op.claimed_ids:
+                row = self._conn.execute(
+                    "SELECT json FROM episodes WHERE id=? AND user_id=?",
+                    (eid, op.user_id)).fetchone()
+                if row is not None:
+                    inputs.append(Episode.model_validate_json(row[0]))
+            # X23: every derived field is STORE-computed from the claimed set, not the
+            # draft/LLM — min trust across the whole set (N9b) and the true date range.
+            prov, date_start, date_end = self._derive_output_metadata(inputs, operation_id)
+            ep = Episode(
+                id=f"epc-{uuid.uuid4().hex[:12]}", user_id=op.user_id,
+                date=date_start, summary=draft.summary, date_start=date_start,
+                date_end=date_end, operation_id=operation_id,
+                lineage=[to_historical_id(i) for i in op.claimed_ids],
+                provenance=prov)
+            # INSERT — never replace (X22): a minted-id collision is a store error.
+            self._conn.execute(
+                "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
+                (ep.id, ep.user_id, ep.date, ep.model_dump_json()))
+            self._conn.commit()                  # provisional + hidden until cutover
+            return True
+
+    def _derive_output_metadata(self, inputs, operation_id):
+        """(Provenance, date_start, date_end) for a consolidation output, computed from
+        the claimed inputs (specs/0010 §4d/§4d-ii/X23 — mirrors lifecycle's whole-set
+        minimum-trust rule). Empty inputs cannot occur on the write path (a GENERATING
+        op holds visible inputs), but guard defensively."""
+        _RANK = {Disclosure.QUARANTINED: 0, Disclosure.USE_ONLY: 1,
+                 Disclosure.MENTIONABLE: 2}
+        base = inputs[0].provenance if inputs else Provenance(
+            source_type=SourceType.INFERRED, author_of_evidence=EvidenceAuthor.SYSTEM,
+            evidence_ref=operation_id)
+        influenced = any(e.provenance.third_party_influenced for e in inputs)
+        weakest = (min(inputs, key=lambda e: _RANK[e.provenance.disclosure])
+                   .provenance.disclosure if inputs else base.disclosure)
+        prov = base.model_copy(update={
+            "source_type": SourceType.INFERRED,
+            "author_of_evidence": EvidenceAuthor.SYSTEM,
+            "evidence_ref": operation_id,
+            "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced
+                             else base.derived_from),
+            "disclosure": weakest,
+            "confidence": (min(e.provenance.confidence for e in inputs)
+                           if inputs else base.confidence),
+            "observed_at": (max(e.provenance.observed_at for e in inputs)
+                            if inputs else base.observed_at)})
+        dates = sorted(e.date for e in inputs) if inputs else [""]
+        return prov, dates[0], dates[-1]
+
+    def transition_consolidation_if_current(self, operation_id, fence, owner,
+                                            to_state) -> bool:
+        to_state = ConsolidationState(to_state)
+        with self._lock:
+            op = self._load_op(operation_id)
+            if op is None or op.fence != fence:
+                return False
+            S = ConsolidationState
+            if to_state is S.GENERATING:
+                if (op.state is not S.CLAIMED or op.owner != owner
+                        or not self._lease_live(op)):
+                    return False
+                self._write_op(op.model_copy(update={"state": S.GENERATING}))
+            elif to_state is S.OUTPUTS_DURABLE:
+                if (op.state is not S.GENERATING or op.owner != owner
+                        or not self._lease_live(op)):
+                    return False
+                # X22: refuse the cutover unless ≥1 correctly-bound output exists
+                bound = [ep for _, ep in
+                         self._episodes_for_operation(op.user_id, operation_id)
+                         if ep.lineage]
+                if not bound:
+                    return False
+                self._write_op(op.model_copy(update={"state": S.OUTPUTS_DURABLE}))
+                self._bump(op.user_id)           # X14: the visibility cutover bumps
+            elif to_state is S.FINALIZED:
+                if op.state is not S.OUTPUTS_DURABLE:     # ownerless, recovery-safe
+                    return False
+                # X20: unreachable until every claimed input is deleted
+                remaining = self._conn.execute(
+                    "SELECT COUNT(*) FROM episodes WHERE user_id=? AND id IN ({})".format(
+                        ",".join("?" * len(op.claimed_ids))),
+                    (op.user_id, *op.claimed_ids)).fetchone()[0] if op.claimed_ids else 0
+                if remaining > 0:
+                    return False
+                self._write_op(op.model_copy(update={"state": S.FINALIZED}))
+            else:
+                return False
+            self._conn.commit()
+            return True
+
+    def delete_claimed_inputs_if_current(self, operation_id, fence) -> bool:
+        with self._lock:
+            op = self._load_op(operation_id)
+            if (op is None or op.fence != fence
+                    or op.state is not ConsolidationState.OUTPUTS_DURABLE):
+                return False
+            for eid in op.claimed_ids:           # idempotent all-or-nothing re-delete
+                self._conn.execute(
+                    "DELETE FROM episodes WHERE id=? AND user_id=?", (eid, op.user_id))
+            self._conn.commit()
+            return True
+
+    def abandon_consolidation_if_current(self, operation_id, fence) -> bool:
+        with self._lock:
+            op = self._load_op(operation_id)
+            if (op is None or op.fence != fence
+                    or op.state not in (ConsolidationState.CLAIMED,
+                                        ConsolidationState.GENERATING)
+                    or self._lease_live(op)):    # expired-lease only (X7)
+                return False
+            self._abandon(op)
+            self._conn.commit()
+            return True
+
+    def pending_consolidations(self, user_id) -> list:
+        with self._lock:
+            return [op for op in self._ops_for_user(user_id)
+                    if op.state in RECOVERY_PENDING_STATES]
+
+    def quiescent_episode_snapshot(self, user_id):
+        # X17: ONE atomic observation — the quiescence check and the episode snapshot
+        # under the same lock, linearizable against create_or_takeover_consolidation.
+        with self._lock:
+            if any(op.state in RECOVERY_PENDING_STATES
+                   for op in self._ops_for_user(user_id)):
+                return NON_QUIESCENT
+            return [Episode.model_validate_json(r[0]) for r in self._conn.execute(
+                "SELECT json FROM episodes WHERE user_id=? ORDER BY date", (user_id,))]
+
     # -- host/admin queries ---------------------------------------------------
     def list_users(self) -> list[dict]:
         rows = self._conn.execute(
@@ -404,8 +684,10 @@ class SqliteStore(Store):
             n_conf = self._conn.execute(
                 "SELECT COUNT(*) FROM confirmations WHERE user_id=?",
                 (user_id,)).fetchone()[0]
+            # specs/0010 X17: consolidation operation state is per-user erasable data —
+            # forget_user removes it atomically with the rest of the user's memory.
             for table in ("edges", "episodes", "wiki", "write_counter",
-                          "confirmations"):
+                          "confirmations", "consolidation_ops"):
                 self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
             self._conn.commit()
         return {"edges": n_edges, "episodes": n_eps, "confirmations": n_conf}

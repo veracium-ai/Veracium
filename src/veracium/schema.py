@@ -345,3 +345,71 @@ class OutcomeJudgmentDraft(BaseModel):
     outcome: Outcome
     summary: str
     context_ref: Optional[str] = None
+
+
+# --- specs/0010 crash-safe consolidation ------------------------------------
+
+# A consolidation output's `lineage` ids live in a namespace NO live Episode id can
+# inhabit (X19): once a generation finalizes, its absorbed inputs are gone and their
+# ids become HISTORICAL references — so `add_episode`/import may never mint or accept
+# a live episode whose id is in this namespace, and the two can never collide.
+HISTORICAL_PREFIX = "hist:"
+
+
+def to_historical_id(episode_id: str) -> str:
+    """The deterministic (retry-stable, no persisted map) HistoricalEpisodeId for a
+    now-absorbed input — X19. Idempotent: already-historical ids pass through."""
+    return episode_id if episode_id.startswith(HISTORICAL_PREFIX) \
+        else f"{HISTORICAL_PREFIX}{episode_id}"
+
+
+def is_historical_id(episode_id: str) -> bool:
+    return episode_id.startswith(HISTORICAL_PREFIX)
+
+
+class ConsolidationState(str, Enum):
+    """The durable state machine of one crash-safe consolidation (specs/0010 §4b-ii).
+    CLAIMED→GENERATING→OUTPUTS_DURABLE→FINALIZED is the happy path; ABANDONED is the
+    cleanup-complete state a new fence may revive. OUTPUTS_DURABLE is the point of no
+    return — before it nothing counts, after it everything does."""
+    CLAIMED = "claimed"
+    GENERATING = "generating"
+    OUTPUTS_DURABLE = "outputs_durable"
+    FINALIZED = "finalized"
+    ABANDONED = "abandoned"
+
+
+# Ops in these states are recovery-pending (pending_consolidations, X13) — NOT
+# FINALIZED (done) and NOT ABANDONED (quiescent, revived only by takeover).
+RECOVERY_PENDING_STATES = (ConsolidationState.CLAIMED, ConsolidationState.GENERATING,
+                           ConsolidationState.OUTPUTS_DURABLE)
+
+
+class ConsolidationOp(BaseModel):
+    """The persistent operation record (specs/0010 §4a) — a fence alone orders but does
+    not prove liveness, so the whole record is durable. `owner` is COOPERATIVE identity
+    (§4a-ii), not an auth capability. `lease_duration` is a persisted bounded duration
+    (seconds); the STORE sets `lease_expires_at = store_now + lease_duration`, so
+    renewal has one durable source that survives restart. Every `claimed_id` belongs to
+    `user_id`, and `forget_user()` erases the record with the rest of that user."""
+    user_id: str
+    operation_id: str
+    fence: int
+    state: ConsolidationState
+    owner: str
+    lease_duration: int              # seconds; 0 < lease_duration <= LEASE_MAX
+    lease_expires_at: str            # RFC3339 UTC, store-clock-derived
+    claimed_ids: list[str]
+
+
+class ConsolidationOutputDraft(BaseModel):
+    """The worker-owned payload of ONE consolidation output (specs/0010 §4b-ii, X22) —
+    the exact store-assigned-identity shape `OutcomeJudgmentDraft` uses. STRUCTURALLY
+    excludes every store-owned field — no `id`, `user_id`, `operation_id`, `claimed_by`,
+    `lineage`: the store mints a fresh id, BINDS the operational fields to the fenced op
+    (`lineage == op.claimed_ids`), INSERTs (never replaces), and DERIVES the trust floor
+    + date range from `op.claimed_ids`, not from this draft (X23). `date_start`/`date_end`
+    are the LLM's proposal; the store validates them against the claimed set (§4d-ii)."""
+    summary: str
+    date_start: str
+    date_end: str
