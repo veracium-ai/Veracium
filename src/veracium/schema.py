@@ -48,6 +48,63 @@ class Disclosure(str, Enum):
     QUARANTINED = "quarantined"  # unverified third-party claim; never asserted
 
 
+# --------------------------------------------------------------------------- #
+# Confirmation — specs/0008. `confirm()` is the ONLY path that clears
+# `needs_confirmation`, so its metadata is a CLOSED, validated surface: a
+# free-form string would quietly turn the audit record into a content store
+# (§6b/§6c). Both fields are audit metadata and grant NOTHING — authority comes
+# from the protected `confirm()` call path, not from any label (§6a, C2a).
+# --------------------------------------------------------------------------- #
+class ConfirmationCallPath(str, Enum):
+    """Which entry point invoked the confirmation. `0008` has one — the host
+    API, never model-reachable (§2c-ii). A closed enum so an unknown value is
+    rejected rather than stored as free text; recording *which* privileged path
+    was used, and gating it, is evidence-basis's concern and on no roadmap (§4)."""
+    HOST_API = "host_api"
+
+
+class ConfirmationActor(str, Enum):
+    """Who the host attributes the confirmation to — audit metadata, embedded in
+    the confirmation episode's summary. Closed (§6b, finding 7): `actor` used to
+    be a free-form string embedded in a content-bearing episode, so a host could
+    smuggle prose past the constraints on the other fields."""
+    USER = "user"   # the default: the user affirmed the fact
+    HOST = "host"   # the host application affirmed on the user's behalf
+
+
+# The confirmation RULE's identity. It enters the idempotency digest (§6c) so a
+# request replayed after the rule changed does not collide with the old digest.
+# Tied to the spec that defines the rule; bump if the clearing rule changes.
+CONFIRMATION_RULE_VERSION = "0008"
+
+_CORRELATION_ID_RE = __import__("re").compile(r"[A-Za-z0-9._:-]{1,64}")
+
+
+def validate_correlation_id(value: str) -> str:
+    """`correlation_id` is opaque, ≤64 chars, `[A-Za-z0-9._:-]` (§6c). Validated
+    BEFORE any mutation (C9). Raises `ValueError` on anything else."""
+    if not (isinstance(value, str) and _CORRELATION_ID_RE.fullmatch(value)):
+        raise ValueError(
+            f"correlation_id must be ≤64 chars of [A-Za-z0-9._:-], not "
+            f"{value!r} — it is an opaque idempotency key, not a content field")
+    return value
+
+
+class Confirmation(BaseModel):
+    """The mandatory audit record of one confirmation (§6b) — the store writes it
+    in the SAME transaction as the flag transition; if it cannot commit, the
+    confirmation fails and the flag stays set (C7). `request_digest` is the
+    canonical-request identity used to tell a true replay from a collision (§6c)."""
+    id: str
+    user_id: str
+    edge_id: str
+    confirmed_at: datetime
+    actor: ConfirmationActor
+    call_path: ConfirmationCallPath
+    correlation_id: str
+    request_digest: str
+
+
 class Provenance(BaseModel):
     source_type: SourceType
     author_of_evidence: EvidenceAuthor
