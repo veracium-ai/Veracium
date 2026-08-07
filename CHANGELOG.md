@@ -2,6 +2,49 @@
 
 ## Unreleased
 
+## 0.5.0 — 2026-08-07
+
+- **Outcome-authorship history is append-only** (`specs/0009`, implemented).
+  `record_outcome` no longer overwrites a prior judgment: every use-and-judgment of a
+  fact — keyed by `(edge_id, evidence_ref)` — becomes a new link in an append-only
+  chain, so **who judged what, and when, is never destroyed** (the previous behaviour
+  kept only the latest judgment, silently losing the earlier author). The edge's
+  `times_used`/`outcome_counts` are now **derived from the chain heads**, not mutated
+  in place. `Store` gains an atomic compare-and-set writer `append_outcome_if_head`
+  (the only sanctioned way to extend a chain) and a whole-file
+  `commit_outcome_import_plan`; the generic `add_episode`/`delete_episode` refuse
+  outcome-chain rows. Portable import validates-or-refuses an incoming chain (never
+  repairs), remaps cross-user references, and is idempotent on record equality; the
+  offline migration converts each legacy outcome episode into an honest chain root,
+  marked **`judgment_time_known = False`** (its stored date is the original use date,
+  not a fabricated judgment time), and refuses rather than branching on a duplicate
+  identity. `Episode` gains `seq` / `supersedes_episode` / `judgment_time_known`.
+
+- **Crash-safe consolidation** (`specs/0010`, implemented). Memory consolidation is now
+  a **fenced, leased, crash-recoverable** operation. Inputs are claimed atomically over
+  the whole batch; the consolidated summary is written and made durable **before any
+  input is deleted**; and a crash at *any* point is recovered on the next
+  `consolidate()` — rolled forward (idempotent re-delete + finalize) or cleanly
+  abandoned — so **no episode is ever lost without a replacement** (the previous path
+  deleted every input before writing any summary, a total-loss window on a mid-operation
+  crash). Every ordinary read sees **exactly one** complete representation — all inputs
+  or all outputs, never both and never neither. A consolidated output carries its
+  **whole** input set as lineage and the **minimum trust across that set** (a summary of
+  third-party-influenced material stays third-party-influenced), and renders a date
+  **range** rather than a single misleading date. `Store` gains the consolidation
+  operation record and its fenced primitives; a claimed input is **reserved** (the
+  generic mutators refuse it) until the operation finalizes. `export_memory` is now a
+  **read-only quiescent snapshot** that refuses to export mid-consolidation (mutating
+  nothing) rather than emitting a claimed input whose operation cannot travel with it.
+  `Episode` gains `claimed_by` / `operation_id` / `lineage` / `date_start` / `date_end`.
+
+- **The on-disk store schema advances to v3.** The new `Episode` fields (`0009` + `0010`)
+  ride the existing episode JSON blob and `0010`'s operation record lands as a new
+  `consolidation_ops` table — a purely additive change. A store below the head (an
+  unstamped v1 store from any released veracium, **or** a v2 store) is brought forward in
+  **one** offline `veracium.store.migration.migrate_store(path)` call (`specs/0013`); an
+  older build opening a v3 store refuses loudly rather than silently misreading it.
+
 - **`confirm()` is the only thing that clears the "possibly stale" flag**
   (`specs/0008`, implemented). Reinforcement — a re-statement of a fact already
   known — no longer clears `needs_confirmation`; it refreshes liveness only. The
