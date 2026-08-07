@@ -898,7 +898,7 @@ on the reviewer running out of adjacent seams.**
 commits citing `Spec: specs/0009-...` are now permitted, since `Spec-Requires: 0007, 0013`
 are both `accepted`.
 
-### 16a. Review-closure ledger (PROCESS.md §4a)
+### Review closure ledger — §16a (PROCESS.md §4a)
 
 Per §4a, one row per external-review round with **openable evidence** — the spec §§ that
 freeze the requirement, the executable **invariant(s)** that will demonstrate it (a
