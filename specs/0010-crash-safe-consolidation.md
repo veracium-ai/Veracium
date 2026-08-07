@@ -91,7 +91,7 @@ rather than leaving the section empty.
 | **crash after the batch-delete commits, before `FINALIZED`** | inputs gone, output present, op not finalised | **X2** — the delete is one **all-or-nothing** primitive (§4b), so there is no durable "some inputs gone"; recovery re-issues the idempotent delete and finalises |
 | **crash before any write** | nothing changed | no-op, by construction |
 | **concurrent `maintain()`** | two consolidations of one set | **X4** — `Episode.claimed_by` (the operation) claims an input; a second run skips claimed inputs |
-| **response lost after `FINALIZED`** | outputs visible, op excluded from `pending_consolidations`, outputs' compat `date` still old → re-eligible as cold candidates | **X3** — **a consolidated output (any episode carrying `lineage`/`operation_id`) is never itself a consolidation candidate** (§4e), so a re-run cannot reconsolidate its own outputs into a summary-of-summary |
+| **response lost after `FINALIZED`** | outputs visible, op excluded from `pending_consolidations`, outputs' compat `date` still old → re-eligible as cold candidates | **X3** — **a consolidated output (an episode with non-empty `lineage`) is never itself a consolidation candidate** (§4e), so a re-run cannot reconsolidate its own outputs into a summary-of-summary; a *released input* stays eligible |
 
 ## 2c-ii. Assertions about reach
 
@@ -258,11 +258,12 @@ is **provably gone** before the new one starts.
 
 > **Frozen.** `abandon_consolidation_if_current(op_id, fence)` is **one atomic
 > primitive** whose success means, together: **every provisional output row tagged
-> `operation_id` is deleted, every input claim is released, and only then is the
-> operation observably `ABANDONED`.** Therefore:
+> `operation_id` is deleted, every input claim is released — clearing that input's
+> `claimed_by` AND `operation_id` so it is clean, eligible history again (§4e) — and
+> only then is the operation observably `ABANDONED`.** Therefore:
 > ```
 > ABANDONED  ⇒  no provisional output row for that operation remains
->            ⇒  no input remains claimed by it
+>            ⇒  no input remains claimed by it (claimed_by / operation_id cleared)
 > ```
 > **`create_or_takeover_consolidation` may advance the fence ONLY from that clean
 > `ABANDONED` state** — never from a live `CLAIMED`/`GENERATING` op, and never
@@ -374,11 +375,23 @@ compat `date` is `date_start` (still old), and `consolidate_min_batch` is 8 — 
 summary-of-summary. The transition table keys idempotency on `operation_id`, not
 lineage, so an implementer can satisfy it and still fail X3 here.
 
-> **Frozen (candidate eligibility).** **An episode that carries consolidation
-> provenance — a non-empty `lineage` or an `operation_id` naming a consolidation —
-> is NEVER selected as a consolidation candidate.** A finalized generation's own
-> outputs are therefore permanently ineligible for reconsolidation, so a
-> response-lost retry finds no cold candidates and is a no-op. Invariant **X3'/X16**.
+> **Frozen (candidate eligibility).** **An episode with a non-empty `lineage` — i.e.
+> a consolidation OUTPUT — is NEVER selected as a consolidation candidate.** A
+> finalized generation's own outputs are therefore permanently ineligible for
+> reconsolidation, so a response-lost retry finds no cold candidates and is a no-op.
+> Invariant **X3'/X16**.
+>
+> **The discriminator is `lineage`, NOT `operation_id`.** An *input* carries
+> `claimed_by` and `operation_id` while it is claimed (§2 — `operation_id` is set on a
+> record the consolidation "produced **or claimed**"), and F2 returns a released input
+> to eligibility. Keying exclusion on `operation_id` would strand every released input
+> as a permanent non-candidate — the exact data-lifecycle failure this spec exists to
+> prevent. Only a genuine output carries `lineage`, so `lineage` is the one honest mark
+> of "this is a summary, not raw history." **Correspondingly, releasing a claim
+> (abandonment §4b-iii, or ordinary release after `FINALIZED`) clears the input's
+> `claimed_by` and `operation_id`**, so a released input is clean history again and no
+> episode is left pointing at an operation that no longer exists (this is also what
+> makes F4's "no dangling `claimed_by`" hold).
 
 > **Limit made explicit.** This **forbids recursive compaction** (summarising
 > summaries) in v1 — a deliberate trade for mechanical retry-idempotency without a
@@ -426,7 +439,7 @@ with a stated contract**, which is a smaller ask than "implement transactions".
 | **X14** the `GENERATING → OUTPUTS_DURABLE` visibility cutover **advances `store_version`** in the same atomic mutation, though it changes no episode row | `test_visibility_cutover_bumps_store_version` — a cached wiki compiled from the still-visible inputs must not read fresh after the cutover (finding 3) | CI |
 | **X3** retry is idempotent — **no summary-of-summary**, including after a response-lost `FINALIZED` | `test_consolidation_retry_is_idempotent` + `test_finalized_outputs_are_not_reconsolidated` — a re-run over a finalized generation's own visible outputs finds no candidates (§4e) | CI |
 | **X15** `ABANDONED` is cleanup-complete: no provisional output row and no claim survive it, and a new fence can only advance from that clean state | `test_takeover_requires_clean_abandoned` — a stale provisional row tagged `operation_id` cannot coexist with a new fence's rows (finding 2) | CI |
-| **X16** an episode carrying `lineage`/`operation_id` is never a consolidation candidate | `test_consolidated_output_is_not_a_candidate` — 16→8 finalized, re-run selects none of the 8 (finding 3) | CI |
+| **X16** an episode with non-empty `lineage` (an output) is never a consolidation candidate; a *released input* (claim cleared) **is** eligible again | `test_consolidated_output_is_not_a_candidate` — 16→8 finalized, re-run selects none of the 8; `test_released_input_is_a_candidate_again` — an abandoned op's inputs re-consolidate (keying on `operation_id` would strand them) | CI |
 | **X17** export is a quiescent snapshot: a live claim is settled or export refuses; no exported episode carries a dangling `claimed_by`; `forget_user()` erases operation state | `test_export_refuses_or_settles_live_consolidation` + `test_forget_user_erases_consolidation_ops` (findings 4 + Correction B) | CI |
 | **X4** the claim is **atomic over the whole set** | `test_concurrent_consolidation_claims_all_or_nothing` — two workers, overlapping candidate sets; exactly one wins | CI |
 | **X7** a claim is preemptible only on an **expired lease**, never on fence order alone | `test_a_live_lease_is_not_preempted` — a heartbeating worker mid-LLM-call keeps its claim | CI |
@@ -603,7 +616,7 @@ Each was reproduced against source or spec text first.
 |---|---|---|
 | **F1** | the spec used **`FORMAT_VERSION 2→3`** for what is really an on-disk shape change — but `0007` §8 holds `FORMAT_VERSION` (export wire) and `SCHEMA_VERSION` (`PRAGMA user_version`) are independent namespaces, and `0013` migrates the latter. `0010` changes **both** (new columns *and* new export fields) | §9a splits them: a table mapping each counter to its source and migrator; `0013` prose refers to `SCHEMA_VERSION`; the conditional-`0009`-share rule now applies **per-namespace**; §2 lists both bumps. Verified: `schema_version.py:167 SCHEMA_VERSION=2`, `portability.py:36 FORMAT_VERSION=2`. |
 | **F2** | takeover could admit a **new fence before the old generation was proven clean** — provisional rows carry only `operation_id` (no per-row fence), so old- and new-generation rows tagged `op-1` are indistinguishable to a delete-by-`operation_id` | §4b-iii freezes `abandon_consolidation_if_current` as one atomic primitive whose success **means cleanup-complete** (no provisional row, no claim survives), and `create_or_takeover_consolidation` may advance the fence **only from that clean `ABANDONED` state**. Preserves Design A minimalism (no output-generation field). Invariant X15. |
-| **F3** | X3 promised idempotency-by-lineage but no **post-`FINALIZED`** rule existed: a response-lost finalized generation's own visible outputs (compat `date == date_start`, still old) are immediately re-eligible cold candidates → summary-of-summary | §4e freezes: **an episode carrying `lineage`/`operation_id` is never a consolidation candidate**, so finalized outputs are permanently ineligible and a replay is a no-op. Recursive compaction explicitly out of scope (with the full list of what it *would* have to freeze). Invariants X3'/X16. |
+| **F3** | X3 promised idempotency-by-lineage but no **post-`FINALIZED`** rule existed: a response-lost finalized generation's own visible outputs (compat `date == date_start`, still old) are immediately re-eligible cold candidates → summary-of-summary | §4e freezes: **an episode with non-empty `lineage` (an output) is never a consolidation candidate**, so finalized outputs are permanently ineligible and a replay is a no-op. **Keyed on `lineage`, not `operation_id`** — an input carries `operation_id` while claimed, and abandonment clears `claimed_by`/`operation_id` to return it to eligibility (§4b-iii), so keying on `operation_id` would strand released inputs. Recursive compaction explicitly out of scope. Invariants X3'/X16. |
 | **F4** | portable **export can orphan a live claim**: `export_memory` serializes visible `CLAIMED`/`GENERATING` inputs (carrying `claimed_by`) but **not** `ConsolidationOp` records, so import yields an episode claimed by a non-existent operation — X4 then makes it ineligible forever | §4f freezes export as a **logical quiescent snapshot**: a live consolidation is settled (finalized/abandoned) or export **refuses**; no exported episode carries a dangling `claimed_by`. The `FORMAT_VERSION` acceptance test covers export/import from every state. Invariant X17. |
 
 ### Contract corrections
