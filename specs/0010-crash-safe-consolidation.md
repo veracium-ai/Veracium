@@ -1,11 +1,11 @@
 # Feature spec: crash-safe consolidation
 
-Spec-Status: draft
+Spec-Status: in review
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft — design complete, ready for external review (2026-08-07).** Split out
+> **in review (v1)** — submitted for external review 2026-08-07. Split out
 > of `0002` §7e on 2026-08-02. **`0002` froze the acceptance contract and
 > deliberately left two implementation strategies open. The third external review's
 > point stands: acceptance authorises implementation, so "atomic or a state
@@ -24,7 +24,7 @@ Spec-Requires: 0007, 0013
 | **Status** | *see `Spec-Status:` — canonical.* Owns the contract stated in `0002` §7e. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `lifecycle.py` is guarded and this changes durability semantics |
-| **Decision + date** | — |
+| **Decision + date** | **submitted for external review 2026-08-07** (round 1) |
 | **Path** | full |
 
 ---
