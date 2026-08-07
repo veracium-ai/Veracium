@@ -22,6 +22,8 @@ sys.path.insert(0, str(ROOT / "specs"))
 from veracium.store import schema_version as sv  # noqa: E402
 from veracium.store.schema_version import (  # noqa: E402
     AdoptionAuditEvent, PostCommitAuditError, StoreVersionError)
+from veracium.store.migration import (  # noqa: E402
+    MigrationAuditEvent, migrate_store)
 from veracium.store.sqlite import _SCHEMA, SqliteStore  # noqa: E402
 
 
@@ -37,15 +39,33 @@ def _user_version(path: str) -> int:
         c.close()
 
 
+_SCHEMA_V1 = ";\n".join(o.ddl for o in sv.SCHEMA_V1) + ";\n"
+
+
 def _legacy_store(rows: int = 3) -> str:
-    """A store as every pre-0007 release wrote it: full schema, no stamp."""
+    """A store as every pre-0007 release wrote it: the v1 shape, no stamp. Built
+    from SCHEMA_V1 explicitly — `_SCHEMA` now tracks the CURRENT version (v2, with
+    the confirmations table), which no release ever wrote. A v1 store below the
+    head version is migrated by `migrate_store`, not adopted on open (0013 §5b)."""
     p = _tmp()
     c = sqlite3.connect(p)
-    c.executescript(_SCHEMA)
+    c.executescript(_SCHEMA_V1)
     for i in range(rows):
         c.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,"
                   "quarantined,json) VALUES(?,?,?,?,?,1,0,'{}')",
                   (f"e{i}", "u", f"s{i}", "r", "o"))
+    c.commit()
+    c.close()
+    return p
+
+
+def _unstamped_current_store() -> str:
+    """An UNSTAMPED store already at the CURRENT shape (`_SCHEMA` = v2). This is the
+    only shape the §4 adoption path fires for now that the head is v2 — a below-head
+    v1 store takes the migration path instead."""
+    p = _tmp()
+    c = sqlite3.connect(p)
+    c.executescript(_SCHEMA)
     c.commit()
     c.close()
     return p
@@ -63,9 +83,9 @@ def test_s27_an_in_memory_store_works_end_to_end():
     """Round 2's finding: ':memory:' reopened by path is a different database,
     so everything must run on the live connection."""
     store = SqliteStore(":memory:")
-    assert store._conn.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert store._conn.execute("PRAGMA user_version").fetchone()[0] == sv.SCHEMA_VERSION
     objs = sv.manifest(store._conn)
-    assert sv.digest(objs) in sv.accepted_digests(1) and not sv.drift(objs)
+    assert sv.digest(objs) in sv.accepted_digests(sv.SCHEMA_VERSION) and not sv.drift(objs)
 
 
 # --- S2, S14, S16, S3/S8/S17: refusals -----------------------------------
@@ -150,20 +170,33 @@ def test_the_runtime_gate_runs_before_any_shape_decision(monkeypatch):
 
 # --- S6, adoption ---------------------------------------------------------
 
-def test_s6_a_legacy_store_is_adopted_losslessly():
+def test_s6_a_legacy_store_is_migrated_losslessly():
+    """0013 §5b: a below-head legacy store is not adopted on ordinary open — it
+    REFUSES (migration-required) and is brought forward by the offline
+    `migrate_store`, which touches no existing row (the v1→v2 change is additive)."""
     p = _legacy_store(rows=5)
     assert _user_version(p) == 0
     before = sqlite3.connect(p).execute(
         "SELECT id, json FROM edges ORDER BY id").fetchall()
-    SqliteStore(p)
+    with pytest.raises(StoreVersionError) as e:
+        SqliteStore(p)                         # ordinary open refuses
+    assert e.value.reason == "migration-required"
+    assert migrate_store(p) == "migrated"      # the offline operation
     assert _user_version(p) == sv.SCHEMA_VERSION
     after = sqlite3.connect(p).execute(
         "SELECT id, json FROM edges ORDER BY id").fetchall()
     assert after == before
+    SqliteStore(p)                             # ordinary open now succeeds
 
 
-def test_allow_adopt_false_refuses_an_unstamped_store():
-    p = _legacy_store()
+def test_allow_adopt_false_refuses_an_unstamped_store(monkeypatch):
+    """`allow_adopt=False` refuses the ADOPTION path (an unstamped store already at
+    the head shape). The only evidenced unstamped base is v1, below the head, so a
+    real unstamped store now takes the migration path; here we make the head shape
+    adoptable to exercise the flag's semantics directly."""
+    monkeypatch.setattr(sv, "legacy_base_versions",
+                        lambda: frozenset({sv.SCHEMA_VERSION}))
+    p = _unstamped_current_store()
     with pytest.raises(StoreVersionError) as e:
         SqliteStore(p, allow_adopt=False)
     assert e.value.reason == "adoption-refused"
@@ -197,13 +230,15 @@ def test_s12_a_wrong_same_named_index_is_repaired_on_a_stamped_store():
     assert "UNIQUE" not in ddl
 
 
-def test_a_missing_acceleration_index_is_repaired_on_adoption():
+def test_a_missing_acceleration_index_is_repaired_on_migration():
+    """A rebuildable index missing from a legacy store is repaired during migration
+    — the migration path shares `_validated_current`'s drift repair (S33)."""
     p = _legacy_store()
     c = sqlite3.connect(p)
     c.execute("DROP INDEX ix_episodes_user")
     c.commit()
     c.close()
-    SqliteStore(p)
+    assert migrate_store(p) == "migrated"
     c = sqlite3.connect(p)
     assert c.execute("SELECT sql FROM sqlite_master WHERE name='ix_episodes_user'"
                      ).fetchone()
@@ -281,46 +316,47 @@ def test_locked_is_refused_loudly_not_hung():
 
 # --- S9, S35, S49: the adoption audit -------------------------------------
 
-def test_s49_adoption_emits_the_typed_event_pair():
+def test_s49_migration_emits_the_typed_event_pair():
     events = []
     p = _legacy_store()
-    SqliteStore(p, audit_sink=events.append)
-    assert [e.event for e in events] == ["adoption_attempted", "adoption_committed"]
+    migrate_store(p, audit_sink=events.append)
+    assert [e.event for e in events] == ["migration_attempted", "migration_committed"]
     a, c = events
-    assert isinstance(a, AdoptionAuditEvent)
-    assert a.adoption_id == c.adoption_id     # §4e: one opaque id pairs them
-    assert (a.from_version, a.to_version) == (0, sv.SCHEMA_VERSION)
-    assert a.matched_provenance == "constructor v1"
+    assert isinstance(a, MigrationAuditEvent)
+    assert a.migration_id == c.migration_id   # one opaque id pairs them
+    assert (a.from_version, a.to_version) == (1, sv.SCHEMA_VERSION)
     # committed repeats every field except event and occurred_at
     assert a._replace(event="", occurred_at="") == c._replace(event="", occurred_at="")
 
 
-def test_s9_a_sink_that_raises_on_attempted_aborts_the_adoption():
+def test_s9_a_sink_that_raises_on_attempted_aborts_the_migration():
     p = _legacy_store()
 
     def sink(event):
         raise RuntimeError("audit store down")
 
     with pytest.raises(RuntimeError, match="audit store down"):
-        SqliteStore(p, audit_sink=sink)
-    assert _user_version(p) == 0              # not stamped: no unrecorded adoption
+        migrate_store(p, audit_sink=sink)
+    assert _user_version(p) == 0              # not stamped: no unrecorded migration
+    assert not sqlite3.connect(p).execute(     # confirmations was NOT left behind
+        "SELECT name FROM sqlite_master WHERE name='confirmations'").fetchone()
 
 
-def test_s35_a_sink_that_raises_on_committed_leaves_the_store_adopted():
-    """§4e: the honest outcome. Not a StoreVersionError — a retry sees a
-    current store and correctly does not re-adopt."""
+def test_s35_a_sink_that_raises_on_committed_leaves_the_store_migrated():
+    """The honest outcome. Not a StoreVersionError — a retry sees a current store
+    and correctly does not re-migrate (re-open returns `current`)."""
     p = _legacy_store()
 
     def sink(event):
-        if event.event == "adoption_committed":
+        if event.event == "migration_committed":
             raise RuntimeError("post-commit sink failure")
 
     with pytest.raises(PostCommitAuditError) as e:
-        SqliteStore(p, audit_sink=sink)
+        migrate_store(p, audit_sink=sink)
     assert not isinstance(e.value, StoreVersionError)
     assert e.value.committed is True
     assert _user_version(p) == sv.SCHEMA_VERSION
-    SqliteStore(p)                            # the supported recovery: retry
+    SqliteStore(p)                            # the supported recovery: retry opens
 
 
 def test_a_creation_does_not_emit_adoption_events():

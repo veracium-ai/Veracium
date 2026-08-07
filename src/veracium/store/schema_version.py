@@ -972,10 +972,13 @@ def accepted_provenance(objs: dict, version: int) -> str | None:
 
 REASONS = frozenset({"invalid-version", "newer", "foreign-shape",
                      "stamped-shape-mismatch", "adoption-refused", "locked",
-                     "unsupported-sqlite"})
+                     "unsupported-sqlite", "migration-required",
+                     "unsupported-migration"})
 """The closed reason set. Hosts branch on these; free-form strings are the
-failure mode `0008`'s round 3 was deferred over. The three `migration-*`
-reasons belong to `specs/0013`."""
+failure mode `0008`'s round 3 was deferred over. The `migration-*` reasons are
+`specs/0013`'s: `migration-required` is raised when ordinary opening meets a store
+below the head version (migration is OFFLINE, §5b — the host runs `migrate_store`);
+`unsupported-migration` when no migration path from the resolved base is defined."""
 
 _AUDIT_STRING_CAP = 4096
 
@@ -1311,10 +1314,11 @@ def open_versioned(conn: sqlite3.Connection, path: str, *,
                 # base below 1 exists.
                 if older is None:
                     raise StoreVersionError(
-                        spath, found, SCHEMA_VERSION, "foreign-shape",
-                        diff=f"store resolves to base version {base}; "
-                             f"migrating it forward is specs/0013's contract "
-                             f"and is not implemented")
+                        spath, found, SCHEMA_VERSION, "migration-required",
+                        diff=f"store resolves to base version {base}, below the "
+                             f"head version {SCHEMA_VERSION}; migration is OFFLINE "
+                             f"(specs/0013 §5b) — quiesce access and run "
+                             f"veracium.store.migration.migrate_store(path)")
                 older(conn, spath, found, objs, base)
                 _validated_current(conn, spath, found)
                 result = OpenResult("migrated", store_changed=True,
