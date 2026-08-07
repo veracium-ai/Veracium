@@ -178,6 +178,12 @@ class SqliteStore(Store):
                         f"correlation_id {correlation_id!r} conflict (specs/0008 §6c)")
                 return self._confirmation_from_row(other).model_copy(
                     update={"replayed": True})
+            except BaseException:
+                # C7: all-or-nothing — a failure anywhere (e.g. the mandatory record
+                # cannot commit) rolls back EVERY edge field and the episode, so the
+                # flag stays set and no partial confirmation is left on the wire.
+                self._conn.rollback()
+                raise
             return Confirmation(
                 id=cid, user_id=user_id, edge_id=edge_id, confirmed_at=confirmed_at,
                 actor=ConfirmationActor(actor), call_path=ConfirmationCallPath(call_path),
