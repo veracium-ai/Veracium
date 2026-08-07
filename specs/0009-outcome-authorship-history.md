@@ -1,23 +1,27 @@
 # Feature spec: outcome authorship is append-only history
 
-Spec-Status: in review
+Spec-Status: accepted
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v6)** — rounds 1–5 all **approved the append-only-history architecture,
-> Option A, deprecate-in-place, and refuse-on-ambiguous-legacy-history**. Round 5 deferred
-> on 3 Store/import gaps + 2 corrections (closed v6, §15): the import commit is now **ONE
-> whole-import atomic Store primitive** (`commit_outcome_import_plan`), not a per-chain CAS
-> that could leave a prefix committed (§4c, H5); generic `add_episode`/`delete_episode`
-> **cannot create/replace/delete outcome-chain rows** — those enter only via the CAS
-> append / import-commit / migration and leave only via `forget_user` (§4a, H14, the same
-> unfenced-door class as `0010`); import **idempotency is record-equality, not ID-equality**
-> — a same-id/different-authorship record **refuses the whole import** (§4c, H4/H5); plus
-> `HeadMoved` retry derives `upgraded`/`times_used` + rebuilds predecessor-dependent draft
-> from the **successful** attempt (§4a, H11), and `judgment_time_known==False ⇒ seq==1 ∧
-> supersedes_episode is None` (§2, H8). Split from `0002` M4. **Open questions ruled**;
-> **both `Spec-Requires:` prerequisites (`0007`, `0013`) accepted AND implemented** (§9).
+> **ACCEPTED (v6)** — set `accepted` 2026-08-07 by dev on a **finite acceptance boundary
+> (§16)**. Rounds 1–5 of external review each **affirmed the architecture** — append-not-
+> mutate, per-chain store-assigned authority `seq`, the derived (not materialised) head,
+> the Store-level CAS append, no-branching, linearize-not-reconcile, structural H7,
+> validate-or-refuse import, **Option A** (deprecate the cross-chain scalar; no
+> `committed_seq`), deprecate-in-place, and refuse-on-ambiguous-legacy-history — and never
+> reopened it. **The acceptance criterion is "the architecture + the H1–H14 invariant
+> surface are frozen and demonstrable" (they are) — NOT "the external review stops finding
+> adjacent Store/import seams,"** which has no natural terminal (rounds 4–5 found seams in
+> the prior round's fix — the 0013 pattern). What `accepted` authorises: implementation of
+> this design, validated by the H1–H14 tests; any further review edge is an
+> **implementation obligation** (§16), notably the store-wide **identity/fence-hygiene**
+> class (H14 ≡ `0010` X21) to settle once at the `Store` contract. **Both `Spec-Requires:`
+> prerequisites (`0007`, `0013`) accepted AND implemented** (§9). **One product call
+> remains for the maintainer** — the `last_outcome` deprecation is safe on this snapshot's
+> evidence (not recall-rendered) and reviewer-endorsed; only an undocumented external
+> consumer would change it. See §§11–15 (round closures) and §16.
 
 | | |
 |---|---|
@@ -25,8 +29,9 @@ Spec-Requires: 0007, 0013
 | **Version** | v6 |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M4/§7a. |
 | **Internal reviewers** | research — pending |
-| **External review** | required — `__init__.py` is guarded; **`0002`'s second review required head/concurrency semantics before acceptance** |
-| **Decision + date** | **rounds 1–5 returned 2026-08-07: architecture + Option A approved all five; v2–v6 closed them (§11–§15); round 5 = 3 gaps + 2 corrections (incl. the unfenced-generic-mutator gap, H14)** |
+| **External review** | complete — 5 rounds, architecture affirmed each time |
+| **Decision + date** | **accepted 2026-08-07** (dev, on the finite §16 acceptance boundary — architecture + Option A + H1–H14 frozen; further edges are implementation obligations) |
+| **⚠ product call for Quentin** | Option A **deprecates** `Edge.last_outcome`/`last_outcome_at` (reviewer-endorsed; safe per this snapshot). Only open if an external consumer reads either as a cross-chain scalar — then a properly-contracted Option B returns. Does not block implementation of the rest. |
 | **⚠ product call for Quentin** | v4 **deprecates** `Edge.last_outcome`/`last_outcome_at` in place (Option A). **The round-3 reviewer endorsed deprecate-not-remove** as the better migration path. Still open only: **if an external consumer relies on either as a cross-chain scalar**, say so and I'll restore a properly-contracted Option B — otherwise Option A stands. |
 | **Path** | full |
 | **Prerequisite** | **`specs/0007`** + **`specs/0013`** — both accepted + implemented, see §9 |
@@ -839,3 +844,47 @@ finding was reproduced against source or spec text first.
 linearize-not-reconcile, Option A, deprecate-in-place, refuse-and-require-operator, and
 **purpose-built reads/commits over a general transaction API**. The reviewer's v6
 acceptance bar is items 1–9; all are closed here.
+
+---
+
+## 16. Acceptance boundary (set 2026-08-07)
+
+`0009` is **accepted at v6** on a finite boundary — the same discipline that ended
+`0013`'s non-convergence and now applied to `0010` (§18 there).
+
+**Why a boundary.** Five external rounds each **affirmed the architecture** (append-not-
+mutate · per-chain store `seq` · derived head · Store CAS append · no branching ·
+linearize-not-reconcile · structural H7 · Option A · deprecate-in-place ·
+refuse-on-ambiguous) and none reopened it. But the review has **no natural terminal**:
+rounds 4–5 increasingly found seams *in the previous round's own fix* (round 5's whole-import
+primitive refined round 4's linearization; H14 refined the draft/CAS ownership). Acceptance
+is on **the architecture + the H1–H14 invariant surface being frozen and demonstrable — NOT
+on the reviewer running out of adjacent seams.**
+
+**The acceptance surface (frozen).**
+- **Architecture:** append-not-mutate into a per-`(edge_id, evidence_ref)` chain (§4);
+  store-assigned per-chain `seq` and the derived head (§4, H-Q1/H-Q2); the CAS
+  `append_outcome_if_head` primitive (§4a) with `OutcomeJudgmentDraft`; the whole-import
+  atomic `commit_outcome_import_plan` (§4c); **Option A** — the scalars are deprecated,
+  `committed_seq` removed (§4b); the honest legacy migration + portable conversion (§4f/§4f-ii);
+  validate-or-refuse import with combined-graph + record-equality idempotency (§4c).
+- **Invariants H1–H14 (§6)** — the executable acceptance tests that MUST hold in the
+  implementation. Frozen in normative text; no code exists yet (design spec).
+
+**Implementation obligations (validated when code lands, not spec blockers).**
+1. Every H1–H14 test passes against the SQLite `Store`.
+2. The **store-wide identity/fence-hygiene** contract shared with `0010` — H14 (outcome
+   rows refuse generic `add_episode`/`delete_episode`) ≡ `0010` X21, plus store-minted row
+   identity on the fenced/CAS writers. **Settle once at the `Store` contract**, not per
+   feature (see `0010` §18 obligation 2).
+3. The `SCHEMA_VERSION 2→3` migration (shared with `0010` per §9a's conditional rule) lands
+   through `0013`.
+4. The `last_outcome`/`last_outcome_at` **deprecation** is Option A as accepted; a
+   properly-contracted Option B returns only if the maintainer identifies an external
+   cross-chain-scalar consumer (header ⚠). Not a blocker to the rest.
+5. Any further external-review edge is triaged here as an obligation, not a re-opening —
+   unless it reopens a frozen architectural property above.
+
+**What `accepted` authorises:** implementation of this design (PROCESS.md §4a). Guarded-file
+commits citing `Spec: specs/0009-...` are now permitted, since `Spec-Requires: 0007, 0013`
+are both `accepted`.

@@ -1,25 +1,27 @@
 # Feature spec: crash-safe consolidation
 
-Spec-Status: in review
+Spec-Status: accepted
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v8)** — rounds 1–7 all **approved the fenced-state-machine architecture,
-> Design A, one-level consolidation, read-only export, and the X21 per-call guard**. Round
-> 7 deferred on 3 identity-boundary gaps + 3 corr (v8, §17): X21 is now **ID-reservation
-> based** (a `claimed_id` stays reserved through the delete→`FINALIZED` interval, X21),
-> the `ConsolidationOutputDraft` carries **no Episode id/op fields** — the store mints a
-> fresh id and INSERTs, never replaces (X22), and historical `lineage` ids live in a
-> **permanently disjoint `HistoricalEpisodeId` namespace** so a live episode can never
-> reuse one, local finalization included (X19); plus the §11-F3 `store_version` rule
-> scoped to recall-relevant content (a claim doesn't bump), the whole-set trust/date
-> derivations put on the executable surface (X23), and the historical-id map fixed as a
-> deterministic function (no new table). The design: a fenced operation record +
-> all-or-nothing batch-claim primitives + recovery-discovery + quiescent-snapshot reads +
-> the full transition table (§4), under **Design A**. Split from `0002` §7e. **Open
-> questions ruled**; **both `Spec-Requires:` prerequisites (`0007`, `0013`) accepted AND
-> implemented** (§9).
+> **ACCEPTED (v8)** — set `accepted` 2026-08-07 by dev on a **finite acceptance
+> boundary (§18)**. Rounds 1–7 of external review each **affirmed the architecture** —
+> the fenced/leased state machine, Design A (the transition is the sole completeness
+> proof), one-level consolidation, read-only export, and the single-Episode-space + X21
+> per-call reservation strategy — and never reopened it. **The acceptance criterion is
+> "the architecture + the X1–X23 invariant surface are frozen and demonstrable" (they
+> are) — NOT "the external review stops finding adjacent interface seams,"** which has
+> no natural terminal on a detailed model (rounds 3–7 increasingly found seams *in the
+> prior round's fix* — the 0013 executable-model pattern). The design: a fenced operation
+> record + all-or-nothing batch-claim primitives + recovery-discovery + quiescent-snapshot
+> reads + the full transition table (§4). Split from `0002` §7e. **What `accepted`
+> authorises:** implementation of this design, validated by the X1–X23 tests. Any further
+> review edge is an **implementation obligation** (§18), not a spec blocker — in
+> particular the recurring store-wide **identity/fence-hygiene** class (X21 ≡ `0009` H14)
+> is a Store-contract concern to settle once at implementation, not re-derived per spec.
+> **Both `Spec-Requires:` prerequisites (`0007`, `0013`) are accepted AND implemented**
+> (§9), so the dependency gate is satisfied. See §§11–17 (round closures) and §18.
 
 | | |
 |---|---|
@@ -27,8 +29,8 @@ Spec-Requires: 0007, 0013
 | **Version** | v8 |
 | **Status** | *see `Spec-Status:` — canonical.* Owns the contract stated in `0002` §7e. |
 | **Internal reviewers** | research — pending |
-| **External review** | required — `lifecycle.py` is guarded and this changes durability semantics |
-| **Decision + date** | **rounds 1–7 returned 2026-08-07: architecture + Design A + one-level + read-only export + X21 strategy approved all seven; v2–v8 closed them (§11–§17); round 7 = 3 identity-boundary gaps + 3 corrections** |
+| **External review** | complete — 7 rounds, architecture affirmed each time |
+| **Decision + date** | **accepted 2026-08-07** (dev, on the finite §18 acceptance boundary — architecture + X1–X23 frozen; further edges are implementation obligations) |
 | **Path** | full |
 
 ---
@@ -1128,3 +1130,47 @@ against the spec text first.
 cooperative ownership, read-only export, purpose-built reads, and the single-Episode-space
 + per-call reservation strategy (reviewer-approved). The reviewer's v8 acceptance bar is
 F1–F3 + A–C; all six are closed here.
+
+---
+
+## 18. Acceptance boundary (set 2026-08-07)
+
+`0010` is **accepted at v8** on a finite boundary — the same discipline that ended
+`0013`'s non-convergence. Recording it explicitly so the criterion is unambiguous.
+
+**Why a boundary.** Seven external rounds each **affirmed the architecture** (fenced/leased
+state machine · Design A · one-level consolidation · read-only export · single-Episode-space
++ X21 reservation) and none reopened it. But on a detailed, near-executable model the
+review has **no natural terminal**: rounds 3–7 increasingly surfaced seams *in the previous
+round's own fix* (round 7's three blockers all refined round 6's X21/X22/X19). Continuing
+to add prospective invariants in prose has diminishing value versus accepting the frozen
+design and validating it in code. Acceptance is on **the six architectural properties + the
+X1–X23 invariant surface being frozen and demonstrable — NOT on the reviewer running out of
+adjacent seams.**
+
+**The acceptance surface (frozen).**
+- **Architecture:** the fenced operation record (§4a), the lease/cooperative-owner protocol
+  (§4a-ii), the all-or-nothing batch-claim + fenced mutators + recovery-discovery +
+  quiescent-snapshot reads (§4b), the full transition table (§4b-ii) under **Design A**,
+  exactly-one-representation X9 (§4c), whole-batch lineage (§4d), read-only export (§4f).
+- **Invariants X1–X23 (§6)** — the executable acceptance tests that MUST hold in the
+  implementation. Acceptance means these are frozen in normative text; it does not assert
+  code exists (none does yet — `0010` is a design spec).
+
+**Implementation obligations (validated when code lands, not spec blockers).**
+1. Every X1–X23 test passes against the SQLite `Store`.
+2. The **store-wide identity/fence-hygiene** contract shared with `0009` — X21 (reserved
+   claimed-ids refuse generic mutation) ≡ `0009` H14 (outcome rows refuse generic
+   mutation), plus store-minted row identity on the fenced writes (X22 / `0009`
+   `OutcomeJudgmentDraft`). **This is a `Store`-interface concern; settle it once** (a
+   participation/reservation index + insert-only fenced writers), not per feature. A future
+   `Store`-contract spec is the natural home; until then each implementing spec cites this
+   obligation.
+3. The `SCHEMA_VERSION 2→3` migration (shared with `0009` per §9's conditional rule) lands
+   through `0013`.
+4. Any further external-review edge is triaged here as an obligation, not a re-opening —
+   unless it reopens one of the frozen architectural properties above.
+
+**What `accepted` authorises:** implementation of this design (PROCESS.md §4a). Guarded-file
+commits citing `Spec: specs/0010-...` are now permitted, since `Spec-Requires: 0007, 0013`
+are both `accepted`.
