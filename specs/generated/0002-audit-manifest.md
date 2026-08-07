@@ -5,9 +5,9 @@
 
 # specs/0002 — store-mutator call-site manifest
 
-**28 call sites** across **6 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
+**27 call sites** across **7 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
 
-**16 clean · 2 fixed · 1 open · 0 moved · 9 open and moved** — 18 of 28 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
+**16 clean · 1 fixed · 1 open · 0 moved · 9 open and moved** — 17 of 27 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
 
 **Identity is `(file, scope, mutator, fingerprint)`.** The fingerprint is a hash of the call's normalised expression and its enclosing control-flow context — **what the call is, not where it sits**. Moving a call keeps its verdict; swapping two different calls invalidates both. **Line numbers are informational.**
 
@@ -17,17 +17,16 @@
 
 | call site | in | mutator | fp | state | class | trust fields touched | evidence | verdict | test / owning spec |
 |---|---|---|---|---|---|---|---|---|---|
-| `src/veracium/__init__.py:462` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
-| `src/veracium/__init__.py:464` | `Memory.dispute()` | `add_episode` | `4e11253939a4` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
-| `src/veracium/__init__.py:510` | `Memory.confirm()` | `add_edge` | `5b46e2531803` | `fixed` | write-time | `observed_at`, `needs_confirmation`, `confidence` | act | **M2 — fixed 0.4.5**; return-value sibling **fixed 0.4.6** (`533092c`) | `test_confirm_returns_the_real_valid_from_not_the_confirmation_date` |
-| `src/veracium/__init__.py:511` | `Memory.confirm()` | `add_episode` | `bdd949deaa6a` | `clean` | write-time | episode provenance | act | clean | `test_expiry_lapse_confirm_and_reinforcement` |
-| `src/veracium/__init__.py:588` | `Memory.record_outcome()` | `add_episode` | `62926dc1caf5` | `open_moved` | write-time | **`author_of_evidence` (overwritten)** | act | 🔴 **M4 — OPEN.** The shipped note survives exactly one upgrade; the structured field is still overwritten. Frozen behaviour specified in **`specs/0009`** §4. | ➡️ **`specs/0009` H1–H7** — `test_outcome_authorship_is_never_overwritten`; **none passes today** |
-| `src/veracium/__init__.py:592` | `Memory.record_outcome()` | `add_episode` | `dd94666c34de` | `clean` | write-time | episode provenance (new outcome) | act | clean — new event, own provenance | `test_record_outcome_is_edge_blind_never_supersedes` |
-| `src/veracium/__init__.py:606` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
-| `src/veracium/__init__.py:629` | `Memory.correct()` | `invalidate_edge` | `c81beaca32cb` | `open_moved` | write-time | `active`, `invalidation_reason=corrected` | act | ➡️ **MOVED to `0003` §1b** — this is a supersession path | tracked as 0003 I9/I10 [M7-correct] |
-| `src/veracium/__init__.py:638` | `Memory.correct()` | `add_edge` | `72b03718535b` | `open_moved` | write-time | **`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes` | act | ➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class | tracked as 0003 I10 [M7-correct] |
-| `src/veracium/__init__.py:639` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `open_moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 [M7-correct] |
-| `src/veracium/__init__.py:660` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
+| `src/veracium/__init__.py:464` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
+| `src/veracium/__init__.py:466` | `Memory.dispute()` | `add_episode` | `4e11253939a4` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
+| `src/veracium/__init__.py:516` | `Memory.confirm()` | `confirm_edge` | `0f81d39ca11c` | `clean` | write-time | `needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation | act | clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7) | `test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known` |
+| `src/veracium/__init__.py:592` | `Memory.record_outcome()` | `add_episode` | `62926dc1caf5` | `open_moved` | write-time | **`author_of_evidence` (overwritten)** | act | 🔴 **M4 — OPEN.** The shipped note survives exactly one upgrade; the structured field is still overwritten. Frozen behaviour specified in **`specs/0009`** §4. | ➡️ **`specs/0009` H1–H7** — `test_outcome_authorship_is_never_overwritten`; **none passes today** |
+| `src/veracium/__init__.py:596` | `Memory.record_outcome()` | `add_episode` | `dd94666c34de` | `clean` | write-time | episode provenance (new outcome) | act | clean — new event, own provenance | `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:610` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:633` | `Memory.correct()` | `invalidate_edge` | `c81beaca32cb` | `open_moved` | write-time | `active`, `invalidation_reason=corrected` | act | ➡️ **MOVED to `0003` §1b** — this is a supersession path | tracked as 0003 I9/I10 [M7-correct] |
+| `src/veracium/__init__.py:642` | `Memory.correct()` | `add_edge` | `72b03718535b` | `open_moved` | write-time | **`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes` | act | ➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class | tracked as 0003 I10 [M7-correct] |
+| `src/veracium/__init__.py:643` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `open_moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 [M7-correct] |
+| `src/veracium/__init__.py:664` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
 | `src/veracium/cli.py:238` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
 | `src/veracium/compile.py:83` | `compile_wiki()` | `set_wiki` | `8add728df9b1` | `open_moved` | maintain-time | none directly — **caches a trust decision** | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation | tracked as 0004 W1–W4 [M8-wiki] |
 | `src/veracium/graph.py:123` | `apply_supersession()` | `add_edge` | `3a4052969394` | `clean` | write-time | `observed_at`, `confidence` (liveness refresh); `needs_confirmation` **NO LONGER cleared** (`specs/0008`) | observation | ✅ **M3 — CLOSED by `specs/0008` (accepted 2026-08-07, implemented).** Same-author-class is not source identity; reinforcement now refreshes liveness only and `needs_confirmation` clears solely through `confirm()` | `test_no_provenance_value_clears_staleness` · `test_same_author_restatement_does_not_clear_staleness` · `test_cross_author_restatement_does_not_clear` |
@@ -43,8 +42,8 @@
 | `src/veracium/lifecycle.py:56` | `expire()` | `add_edge` | `1d9541b12c69` | `clean` | maintain-time | `needs_confirmation = True` | none | clean — narrows; flags, never clears | `test_expiry_lapse_confirm_and_reinforcement` |
 | `src/veracium/lifecycle.py:144` | `consolidate()` | `delete_episode` | `5bed480ae733` | `open_moved` | maintain-time | **destroys episodes** | none | 🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e | ➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery [X-crash] |
 | `src/veracium/lifecycle.py:146` | `consolidate()` | `add_episode` | `78d73ee79000` | `fixed` | maintain-time | `author_of_evidence`, `derived_from`, `confidence`, `disclosure`, `observed_at`, `source_type`, `evidence_ref` | none | **M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust | `test_consolidation_preserves_and_compresses` |
-| `src/veracium/portability.py:91` | `import_memory()` | `add_edge` | `b1f56bc283b7` | `open_moved` | write-time | **every trust field, reconstructed from a file** | transfer | ➡️ **MOVED to `0005`.** No capping on the `user_id` remap | tracked as 0005 P1–P4 [M6-import] |
-| `src/veracium/portability.py:98` | `import_memory()` | `add_episode` | `bab7d192c8f8` | `open_moved` | write-time | episode provenance from a file | transfer | ➡️ moved with M6 | tracked as 0005 P1–P4 [M6-import] |
+| `src/veracium/portability.py:121` | `import_memory()` | `add_edge` | `1b0c15265a4e` | `open_moved` | write-time | **every trust field, reconstructed from a file**; a cross-user remap now mints fresh ids so it COPIES, never transfers ownership (`specs/0008` §6d) | transfer | ➡️ **MOVED to `0005`.** No capping on the `user_id` remap | tracked as 0005 P1–P4 [M6-import] |
+| `src/veracium/portability.py:130` | `import_memory()` | `add_episode` | `0c90065fe4bc` | `open_moved` | write-time | episode provenance from a file (id/edge_id remapped on a cross-user copy) | transfer | ➡️ moved with M6 | tracked as 0005 P1–P4 [M6-import] |
 
 ## Canonical context
 
@@ -52,77 +51,70 @@
 
 ```
 3bbd6e160bb1
-  file:    src/veracium/__init__.py:462
+  file:    src/veracium/__init__.py:464
   scope:   Memory.dispute()
   mutator: invalidate_edge
   call:    self.store.invalidate_edge(edge_id, utcnow(), 'disputed')
   context: -
 
 4e11253939a4
-  file:    src/veracium/__init__.py:464
+  file:    src/veracium/__init__.py:466
   scope:   Memory.dispute()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=today, summary=f"({actor}) disputed the remembered fact '{edge.relation}: {edge.object}'{note}", provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER, evidence_ref=f'dispute:{edge_id}')))
   context: -
 
-5b46e2531803
-  file:    src/veracium/__init__.py:510
+0f81d39ca11c
+  file:    src/veracium/__init__.py:516
   scope:   Memory.confirm()
-  mutator: add_edge
-  call:    self.store.add_edge(edge)
-  context: -
-
-bdd949deaa6a
-  file:    src/veracium/__init__.py:511
-  scope:   Memory.confirm()
-  mutator: add_episode
-  call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=date, summary=f"({actor}) confirmed '{edge.relation}: {edge.object}' still holds", provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER, evidence_ref=f'confirm:{edge_id}')))
+  mutator: confirm_edge
+  call:    self.store.confirm_edge(user_id, edge_id, actor=actor, call_path=call_path, correlation_id=correlation_id, request_digest=request_digest, confirmed_at=when)
   context: -
 
 62926dc1caf5
-  file:    src/veracium/__init__.py:588
+  file:    src/veracium/__init__.py:592
   scope:   Memory.record_outcome()
   mutator: add_episode
   call:    self.store.add_episode(prior)
   context: if(prior is not None)
 
 dd94666c34de
-  file:    src/veracium/__init__.py:592
+  file:    src/veracium/__init__.py:596
   scope:   Memory.record_outcome()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=date, summary=summary, kind='outcome', edge_id=edge_id, outcome=outcome, context_ref=context_ref, provenance=Provenance(source_type=SourceType.STATED if actor == 'user' else SourceType.INFERRED, author_of_evidence=author, evidence_ref=evidence_ref)))
   context: else-of-if(prior is not None)
 
 5b46e2531803
-  file:    src/veracium/__init__.py:606
+  file:    src/veracium/__init__.py:610
   scope:   Memory.record_outcome()
   mutator: add_edge
   call:    self.store.add_edge(edge)
   context: -
 
 c81beaca32cb
-  file:    src/veracium/__init__.py:629
+  file:    src/veracium/__init__.py:633
   scope:   Memory.correct()
   mutator: invalidate_edge
   call:    self.store.invalidate_edge(edge_id, when, 'corrected')
   context: -
 
 72b03718535b
-  file:    src/veracium/__init__.py:638
+  file:    src/veracium/__init__.py:642
   scope:   Memory.correct()
   mutator: add_edge
   call:    self.store.add_edge(new)
   context: -
 
 23255a7f3c3f
-  file:    src/veracium/__init__.py:639
+  file:    src/veracium/__init__.py:643
   scope:   Memory.correct()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=date, summary=f"({actor}) corrected '{edge.relation}: {edge.object}' to '{corrected_value}'", provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER, evidence_ref=evidence_ref or f'correct:{edge_id}', observed_at=when)))
   context: -
 
 c5d9e9e2da39
-  file:    src/veracium/__init__.py:660
+  file:    src/veracium/__init__.py:664
   scope:   Memory.forget()
   mutator: forget_user
   call:    self.store.forget_user(user_id)
@@ -233,17 +225,17 @@ b832f3d50c54
   call:    store.add_episode(Episode(id=f'epc-{uuid.uuid4().hex[:12]}', user_id=user_id, date=str(r['date']), summary=str(r['summary']), provenance=prov))
   context: for(r in new)
 
-b1f56bc283b7
-  file:    src/veracium/portability.py:91
+1b0c15265a4e
+  file:    src/veracium/portability.py:121
   scope:   import_memory()
   mutator: add_edge
   call:    store.add_edge(edge)
-  context: for(ln in lines[1:])>if(kind == 'edge')
+  context: for((kind, rec) in parsed)>if(kind == 'edge')
 
-bab7d192c8f8
-  file:    src/veracium/portability.py:98
+0c90065fe4bc
+  file:    src/veracium/portability.py:130
   scope:   import_memory()
   mutator: add_episode
   call:    store.add_episode(ep)
-  context: for(ln in lines[1:])>else-of-if(kind == 'edge')>if(kind == 'episode')
+  context: for((kind, rec) in parsed)>else-of-if(kind == 'edge')
 ```

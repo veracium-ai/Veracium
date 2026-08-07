@@ -33,12 +33,10 @@ DISPOSITIONS = {
    (W, "`active`, `invalidation_reason`", "act", "clean — narrows only", "`test_dispute_removes_from_assertable_but_keeps_history`"),
  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "4e11253939a4"):
    (W, "episode provenance", "act", "clean", "`test_dispute_removes_from_assertable_but_keeps_history`"),
- ("src/veracium/__init__.py", "Memory.confirm", "add_edge", "5b46e2531803"):
-   (W, "`observed_at`, `needs_confirmation`, `confidence`", "act",
-    "**M2 — fixed 0.4.5**; return-value sibling **fixed 0.4.6** (`533092c`)",
-    "`test_confirm_returns_the_real_valid_from_not_the_confirmation_date`"),
- ("src/veracium/__init__.py", "Memory.confirm", "add_episode", "bdd949deaa6a"):
-   (W, "episode provenance", "act", "clean", "`test_expiry_lapse_confirm_and_reinforcement`"),
+ ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"):
+   (W, "`needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation", "act",
+    "clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7)",
+    "`test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known`"),
  ("src/veracium/__init__.py", "Memory.record_outcome", "add_episode", "62926dc1caf5"):
    (W, "**`author_of_evidence` (overwritten)**", "act",
     "🔴 **M4 — OPEN.** The shipped note survives exactly one upgrade; the structured field is still overwritten. Frozen behaviour specified in **`specs/0009`** §4.",
@@ -109,11 +107,11 @@ DISPOSITIONS = {
     "`test_consolidation_preserves_and_compresses`"),
 
  # -- portability ------------------------------------------------------------
- ("src/veracium/portability.py", "import_memory", "add_edge", "b1f56bc283b7"):
-   (W, "**every trust field, reconstructed from a file**", "transfer",
+ ("src/veracium/portability.py", "import_memory", "add_edge", "1b0c15265a4e"):
+   (W, "**every trust field, reconstructed from a file**; a cross-user remap now mints fresh ids so it COPIES, never transfers ownership (`specs/0008` §6d)", "transfer",
     "➡️ **MOVED to `0005`.** No capping on the `user_id` remap", "tracked as 0005 P1–P4 [M6-import]"),
- ("src/veracium/portability.py", "import_memory", "add_episode", "bab7d192c8f8"):
-   (W, "episode provenance from a file", "transfer", "➡️ moved with M6", "tracked as 0005 P1–P4 [M6-import]"),
+ ("src/veracium/portability.py", "import_memory", "add_episode", "0c90065fe4bc"):
+   (W, "episode provenance from a file (id/edge_id remapped on a cross-user copy)", "transfer", "➡️ moved with M6", "tracked as 0005 P1–P4 [M6-import]"),
 }
 
 
@@ -132,8 +130,7 @@ DISPOSITIONS = {
 STATES = {
   ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"): "clean",
   ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "4e11253939a4"): "clean",
-  ("src/veracium/__init__.py", "Memory.confirm", "add_edge", "5b46e2531803"): "fixed",
-  ("src/veracium/__init__.py", "Memory.confirm", "add_episode", "bdd949deaa6a"): "clean",
+  ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_episode", "62926dc1caf5"): "open_moved",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_episode", "dd94666c34de"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "5b46e2531803"): "clean",
@@ -156,6 +153,6 @@ STATES = {
   ("src/veracium/lifecycle.py", "expire", "add_edge", "1d9541b12c69"): "clean",
   ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "5bed480ae733"): "open_moved",
   ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"): "fixed",
-  ("src/veracium/portability.py", "import_memory", "add_edge", "b1f56bc283b7"): "open_moved",
-  ("src/veracium/portability.py", "import_memory", "add_episode", "bab7d192c8f8"): "open_moved",
+  ("src/veracium/portability.py", "import_memory", "add_edge", "1b0c15265a4e"): "open_moved",
+  ("src/veracium/portability.py", "import_memory", "add_episode", "0c90065fe4bc"): "open_moved",
 }

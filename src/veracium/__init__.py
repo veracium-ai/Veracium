@@ -36,7 +36,9 @@ from .gate import ABSTAINED as _ABSTAINED  # noqa: E402
 from .graph import subgraph_for_query
 from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
-from .schema import Edge, Episode, EvidenceAuthor, Provenance, SourceType, utcnow
+from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
+                     ConfirmationCallPath, Edge, Episode, EvidenceAuthor,
+                     Provenance, SourceType, utcnow, validate_correlation_id)
 from .store.base import Store
 from .store.sqlite import SqliteStore
 
@@ -471,60 +473,62 @@ class Memory:
         self._record("feedback", {"disputed": 1, "confirmed": 0}, user_id)
         return {"disputed": edge_id, "relation": edge.relation}
 
-    def confirm(self, user_id: str, edge_id: str, *, actor: str = "user",
-                date: Optional[str] = None) -> dict:
-        """The user explicitly validates a remembered fact: refreshes its
-        validity (so it won't lapse or sit flagged possibly-stale) and records
-        the confirmation as an episode with the actor. Equivalent to the
-        reinforcement a re-statement triggers, minus the extraction round-trip.
+    def confirm(self, user_id: str, edge_id: str, *,
+                date: Optional[str] = None,
+                actor: ConfirmationActor = ConfirmationActor.USER,
+                call_path: ConfirmationCallPath = ConfirmationCallPath.HOST_API,
+                correlation_id: Optional[str] = None) -> dict:
+        """The user explicitly validates a remembered fact (specs/0008). This is the
+        ONLY path that clears `needs_confirmation`; reinforcement no longer does. In
+        one atomic store operation it clears the flag, advances liveness
+        (`observed_at`) and confidence, writes the confirmation episode, and records
+        the mandatory confirmation.
 
-        Only assertable facts can be confirmed: elevating a quarantined claim
-        or third-party inference by 'confirmation' would be a laundering
-        vector — if the user affirms a claim, that affirmation is new
-        user-authored evidence and belongs in `remember()`."""
-        edge = self._find_edge(user_id, edge_id)
-        if not edge.assertable:
-            raise ValueError(
-                f"edge {edge_id!r} is not assertable (quarantined/use_only/"
-                f"inactive) — a user affirming a claim is new evidence: "
-                f"ingest it via remember(author=USER) instead")
+        Only assertable facts can be confirmed: elevating a quarantined claim or a
+        third-party inference by 'confirmation' would be a laundering vector — if
+        the user affirms a claim, that affirmation is new user-authored evidence and
+        belongs in `remember()`.
+
+        `actor` and `call_path` are closed enums (audit metadata; they grant
+        nothing — authority is the protected call path, not the label). `confirm()`
+        is HOST API only, never model-reachable. `correlation_id` (opaque, ≤64
+        chars) gives replay protection across an unknown commit outcome; omitted, one
+        is generated and there is none to retry against. The return is a mapping:
+        `{confirmed, valid_from, confirmed_at, correlation_id, replayed}`."""
+        # Closed-enum + charset validation BEFORE any mutation (§6c/C9). A string is
+        # accepted only if it names an enum member — a free-form label is rejected,
+        # not stored (C2a).
+        actor = ConfirmationActor(actor)
+        call_path = ConfirmationCallPath(call_path)
+        correlation_id = (validate_correlation_id(correlation_id)
+                          if correlation_id is not None
+                          else f"auto-{uuid4().hex}")
+        self._find_edge(user_id, edge_id)              # ValueError if absent
+        # The canonical request identity is the CALLER's inputs — never the derived
+        # instant — so two date-less retries are the SAME request (§6c). `OMITTED`
+        # is a value; `rule_version` guards against a rule change colliding digests.
+        caller_date = date if date is not None else "OMITTED"
+        request_digest = hashlib.sha256("\x1f".join(
+            [user_id, edge_id, call_path.value, actor.value,
+             CONFIRMATION_RULE_VERSION, caller_date]).encode()).hexdigest()
         from datetime import date as _date
-        date = date or _date.today().isoformat()
-        # M2 (0.4.5): valid_from is FIRST-KNOWN and immutable. This used to be
-        # `edge.valid_from = _event_dt(date)`, which is exactly the defect C′
-        # shipped in 0.4.3 to remove from the reinforcement path — the fix
-        # missed this sibling. render_edges emits "(since <valid_from>)" into
-        # answer context, so moving it put a FALSE STATEMENT in front of the
-        # model: a preference stated in January and confirmed in March read
-        # "(since March)". A confirmation is new evidence about LIVENESS, so it
-        # advances observed_at — the same resolution C′ applied to reinforcement.
-        # Normalise once. This stored the CALLER's string in the episode and
-        # returned it as `confirmed_at`, so an offset-bearing input produced an
-        # episode date later consumers (`date.fromisoformat`) could not parse,
-        # and a response that did not name the instant actually accepted.
-        when = _event_dt(date)
-        date = when.date().isoformat()
-        edge.provenance.observed_at = max(edge.provenance.observed_at, when)
-        edge.needs_confirmation = False
-        edge.provenance.confidence = max(edge.provenance.confidence, 0.9)
-        self.store.add_edge(edge)
-        self.store.add_episode(Episode(
-            id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
-            summary=f"({actor}) confirmed '{edge.relation}: {edge.object}' still holds",
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
-                                  evidence_ref=f"confirm:{edge_id}")))
-        self._record("feedback", {"disputed": 0, "confirmed": 1}, user_id)
-        # M2 (0.4.5) removed the false date from the MODEL's context and left it
-        # here, in the contract a host UI reads: this returned
-        # `"valid_from": date` — the CONFIRMATION date — while leaving
-        # `edge.valid_from` untouched. A host rendering "known since" from the
-        # return value printed exactly the sentence M2 was written to delete.
-        # The same defect, one surface over, shipped inside its own fix.
-        # Both fields are returned now, each meaning what it says.
+        when = _event_dt(date or _date.today().isoformat())
+        conf = self.store.confirm_edge(
+            user_id, edge_id, actor=actor, call_path=call_path,
+            correlation_id=correlation_id, request_digest=request_digest,
+            confirmed_at=when)
+        if not conf.replayed:
+            self._record("feedback", {"disputed": 0, "confirmed": 1}, user_id)
+        # `valid_from` is first-known and immutable, so reading it back is stable on
+        # replay; `confirmed_at` comes from the RECORD (the stored instant on replay,
+        # never a fresh one). M2 (0.4.5): the return names the confirmation instant
+        # and the edge's first-known separately, each meaning what it says.
+        edge = self._find_edge(user_id, edge_id)
         return {"confirmed": edge_id,
                 "valid_from": edge.valid_from.date().isoformat(),
-                "confirmed_at": date}
+                "confirmed_at": conf.confirmed_at.date().isoformat(),
+                "correlation_id": conf.correlation_id,
+                "replayed": conf.replayed}
 
     # -- outcome tracking (engine-written; never MCP) ------------------------
     _OUTCOME_ACTORS = {"user": EvidenceAuthor.USER, "system": EvidenceAuthor.SYSTEM}

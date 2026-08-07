@@ -103,6 +103,8 @@ class Confirmation(BaseModel):
     call_path: ConfirmationCallPath
     correlation_id: str
     request_digest: str
+    replayed: bool = False        # runtime only: True when returned for a replay,
+    #                               not a persisted column (§6c)
 
 
 class Provenance(BaseModel):

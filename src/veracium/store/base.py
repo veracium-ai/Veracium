@@ -13,7 +13,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from ..schema import Edge, Episode
+from ..schema import (Confirmation, ConfirmationActor, ConfirmationCallPath,
+                      Edge, Episode)
 
 
 def store_mutator(fn):
@@ -42,6 +43,31 @@ class Store(ABC):
     @store_mutator
     @abstractmethod
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None: ...
+
+    @store_mutator
+    def confirm_edge(self, user_id: str, edge_id: str, *,
+                     actor: ConfirmationActor, call_path: ConfirmationCallPath,
+                     correlation_id: str, request_digest: str,
+                     confirmed_at) -> Confirmation:
+        """The ONLY path that clears `needs_confirmation` (specs/0008 §6b). In ONE
+        transaction: verify ownership + assertability, clear the flag, advance
+        `observed_at`/`confidence`, write the confirmation episode, and persist the
+        mandatory `confirmations` record — if the record cannot commit, the whole
+        confirmation fails and the flag stays set (C7). Idempotent on
+        `(user_id, correlation_id)`: a replay of the SAME canonical request
+        (matching `request_digest`) returns the ORIGINAL success reconstructed from
+        the stored record (`replayed=True`); a DIFFERENT request under the same id
+        is an integrity conflict; concurrent duplicates commit exactly once (C8). A
+        backend that cannot do this atomically MUST raise, not degrade (§6d, C10).
+        Not abstract so pre-existing Store implementations keep working."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement confirm_edge")
+
+    def confirmations_for(self, user_id: str, edge_id: str) -> list[Confirmation]:
+        """Read-only audit inspection (specs/0008 §6d): the confirmations recorded
+        for one edge, newest first. Not abstract for backend compatibility."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement confirmations_for")
 
     @abstractmethod
     def edges(self, user_id: str, *, active_only: bool = True,

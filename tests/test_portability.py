@@ -122,7 +122,7 @@ def test_forget_erases_everything_and_only_that_user():
         # the other user is untouched
         assert len(mem2.store.edges("other", active_only=False)) == 1
         # idempotent on an already-forgotten user
-        assert mem.forget("u") == {"edges": 0, "episodes": 0}
+        assert mem.forget("u") == {"edges": 0, "episodes": 0, "confirmations": 0}
         mem.close(); mem2.close()
 
 

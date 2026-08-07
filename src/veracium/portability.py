@@ -29,6 +29,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+from uuid import uuid4
 
 from .schema import Edge, Episode
 
@@ -75,28 +76,57 @@ def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
                                                 include_quarantined=True)}
     existing_eps = {ep.id for ep in store.episodes(target_uid)}
 
-    imported = {"edges": 0, "episodes": 0}
-    skipped = 0
+    parsed = []
     for ln in lines[1:]:
         rec = json.loads(ln)
         kind = rec.pop("record", None)
         if kind is None and rec.get("kind") in ("edge", "episode"):
             kind = rec.pop("kind")   # format v1: the marker was named "kind"
+        if kind not in ("edge", "episode"):
+            raise ValueError(f"{path}: unknown record kind {kind!r}")
         rec["user_id"] = target_uid
+        parsed.append((kind, rec))
+
+    # A cross-user remap is a COPY, not a move. Edge ids are global primary keys, so
+    # importing another user's ids as this user would either collide with or
+    # OVERWRITE their edges — and `add_edge` refuses a `user_id` change on an
+    # existing id (specs/0008 §6d). So when the target user differs from the export's
+    # source, mint fresh ids and remap every reference (episode→edge, supersedes)
+    # consistently. Importing as the SAME user keeps ids, so re-import stays
+    # idempotent (existing ids are skipped).
+    remapping = user_id is not None and user_id != header.get("user_id")
+    id_map: dict = {}
+    if remapping:
+        for kind, rec in parsed:
+            old = rec.get("id")
+            if old is not None:
+                pfx = "imp-ep" if kind == "episode" else "imp-e"
+                id_map[old] = f"{pfx}-{uuid4().hex[:12]}"
+
+    def _remap(v):
+        return id_map.get(v, v) if remapping else v
+
+    imported = {"edges": 0, "episodes": 0}
+    skipped = 0
+    for kind, rec in parsed:
+        if remapping and rec.get("id") in id_map:
+            rec["id"] = id_map[rec["id"]]
         if kind == "edge":
+            if rec.get("supersedes") is not None:
+                rec["supersedes"] = _remap(rec["supersedes"])
             edge = Edge.model_validate(rec)
             if edge.id in existing_edges:
                 skipped += 1
                 continue
             store.add_edge(edge)
             imported["edges"] += 1
-        elif kind == "episode":
+        else:  # episode
+            if rec.get("edge_id") is not None:
+                rec["edge_id"] = _remap(rec["edge_id"])
             ep = Episode.model_validate(rec)
             if ep.id in existing_eps:
                 skipped += 1
                 continue
             store.add_episode(ep)
             imported["episodes"] += 1
-        else:
-            raise ValueError(f"{path}: unknown record kind {kind!r}")
     return {**imported, "skipped": skipped, "user_id": target_uid}

@@ -84,7 +84,7 @@ def test_confirm_refreshes_liveness_not_first_known_and_blocks_claim_elevation()
         mem.store.add_edge(fact)
         first_known = fact.valid_from
 
-        r = mem.confirm("u", fact.id, date="2026-07-16", actor="user:u")
+        r = mem.confirm("u", fact.id, date="2026-07-16", actor="user")
         assert r["confirmed"] == fact.id
         refreshed = next(e for e in mem.store.edges("u") if e.id == fact.id)
         assert not refreshed.needs_confirmation
