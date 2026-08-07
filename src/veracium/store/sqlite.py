@@ -19,7 +19,7 @@ from typing import Optional
 from ..schema import (Confirmation, ConfirmationActor, ConfirmationCallPath,
                       Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
                       Provenance, SourceType)
-from .base import HEAD_MOVED, Store
+from .base import DESTINATION_CHANGED, HEAD_MOVED, Store
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              PostCommitAuditError,
                              StoreVersionError, open_versioned)
@@ -228,6 +228,17 @@ class SqliteStore(Store):
 
     # -- episodes ----------------------------------------------------------
     def add_episode(self, episode: Episode) -> None:
+        # specs/0009 H14: outcome-chain rows carry append-only trust state (seq,
+        # supersedes_episode, authorship) and may enter ONLY through the sanctioned
+        # writers — `append_outcome_if_head` (runtime) or `commit_outcome_import_plan`
+        # (import) — never the generic, replace-capable mutator. This refusal is the
+        # fence: it closes caller-minted seqs, head-siblings, AND an INSERT-OR-REPLACE
+        # of an existing outcome id (the unfenced-door class, cf. 0010 X21).
+        if episode.kind == "outcome":
+            raise ValueError(
+                f"add_episode refuses kind=='outcome' episode {episode.id!r} — "
+                f"outcome-chain links enter only via append_outcome_if_head or "
+                f"commit_outcome_import_plan (specs/0009 H14)")
         with self._lock:
             self._conn.execute(
                 "INSERT OR REPLACE INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
@@ -244,7 +255,17 @@ class SqliteStore(Store):
 
     def delete_episode(self, episode_id) -> None:
         with self._lock:
-            row = self._conn.execute("SELECT user_id FROM episodes WHERE id=?", (episode_id,)).fetchone()
+            row = self._conn.execute(
+                "SELECT user_id, json FROM episodes WHERE id=?",
+                (episode_id,)).fetchone()
+            # specs/0009 H14: an outcome-chain link leaves ONLY via forget_user
+            # (wholesale erasure) — never a targeted delete, which would punch a
+            # gap in append-only history or orphan a superseding child.
+            if row is not None and Episode.model_validate_json(row[1]).kind == "outcome":
+                raise ValueError(
+                    f"delete_episode refuses outcome-chain link {episode_id!r} — "
+                    f"outcome history is append-only and leaves only via forget_user "
+                    f"(specs/0009 H14)")
             self._conn.execute("DELETE FROM episodes WHERE id=?", (episode_id,))
             if row:
                 self._bump(row[0])
@@ -307,6 +328,58 @@ class SqliteStore(Store):
             self._bump(user_id)                          # H10
             self._conn.commit()
             return ep
+
+    def commit_outcome_import_plan(self, user_id, plan: dict,
+                                   expected_destination_state: dict):
+        """specs/0009 §4c. Atomic under `_lock` — the same single-connection
+        serialisation that makes `append_outcome_if_head` a genuine CAS makes this
+        whole-import commit LINEARIZE against concurrent appends: a head that moved
+        between the caller's preflight and here is caught by the `chain_heads`
+        re-check and the WHOLE import refuses (`DESTINATION_CHANGED`), never after a
+        prefix. Installs outcome links through its OWN INSERT — a sanctioned writer
+        even though the generic mutators now refuse outcome rows (H14)."""
+        edges = plan.get("edges", [])
+        episodes = plan.get("episodes", [])
+        with self._lock:
+            # (1) Revalidate EVERY destination assumption the preflight reasoned
+            # about (round-6 Correction B) — atomically, before any write.
+            for eid, expect_present in expected_destination_state.get(
+                    "edge_ids", {}).items():
+                row = self._conn.execute(
+                    "SELECT user_id FROM edges WHERE id=?", (eid,)).fetchone()
+                present = row is not None
+                if present != expect_present:
+                    return DESTINATION_CHANGED       # created/removed under us
+                if present and row[0] != user_id:
+                    return DESTINATION_CHANGED       # ownership changed under us
+            for ep_id, expect_json in expected_destination_state.get(
+                    "episode_records", {}).items():
+                row = self._conn.execute(
+                    "SELECT json FROM episodes WHERE id=?", (ep_id,)).fetchone()
+                current = row[0] if row is not None else None
+                if current != expect_json:           # RECORD equality, not id
+                    return DESTINATION_CHANGED
+            for (edge_id, evidence_ref), expect_head in \
+                    expected_destination_state.get("chain_heads", {}).items():
+                head = self._chain_head(user_id, edge_id, evidence_ref)
+                head_id = head.id if head is not None else None
+                if head_id != expect_head:           # linearize vs append_outcome_if_head
+                    return DESTINATION_CHANGED
+            # (2) Install ALL records as one logical commit (edges before episodes so
+            # an outcome link's edge_id always resolves).
+            for edge in edges:
+                self._conn.execute(
+                    "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
+                    "VALUES(?,?,?,?,?,?,?,?)",
+                    (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
+                     int(edge.active), int(edge.quarantined), edge.model_dump_json()))
+            for ep in episodes:
+                self._conn.execute(
+                    "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
+                    (ep.id, ep.user_id, ep.date, ep.model_dump_json()))
+            self._bump(user_id)
+            self._conn.commit()
+            return {"edges": len(edges), "episodes": len(episodes)}
 
     # -- host/admin queries ---------------------------------------------------
     def list_users(self) -> list[dict]:

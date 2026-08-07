@@ -513,4 +513,8 @@ def test_on_rolled_back_reports_the_rollback_outcome():
 
 def test_s7_export_format_version_is_independent():
     from veracium.portability import FORMAT_VERSION
-    assert FORMAT_VERSION == 2                # untouched by versioning
+    # A separate namespace from the on-disk SCHEMA_VERSION (specs/0007 §8): it moves
+    # only when the WIRE format changes. specs/0009 bumped it 2→3 for its own reason
+    # (exports gained seq/supersedes_episode/judgment_time_known). Both happen to read
+    # 3 today, by coincidence, not because one drives the other.
+    assert FORMAT_VERSION == 3

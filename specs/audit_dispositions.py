@@ -105,11 +105,9 @@ DISPOSITIONS = {
     "`test_consolidation_preserves_and_compresses`"),
 
  # -- portability ------------------------------------------------------------
- ("src/veracium/portability.py", "import_memory", "add_edge", "1b0c15265a4e"):
-   (W, "**every trust field, reconstructed from a file**; a cross-user remap now mints fresh ids so it COPIES, never transfers ownership (`specs/0008` §6d)", "transfer",
-    "➡️ **MOVED to `0005`.** No capping on the `user_id` remap", "tracked as 0005 P1–P4 [M6-import]"),
- ("src/veracium/portability.py", "import_memory", "add_episode", "0c90065fe4bc"):
-   (W, "episode provenance from a file (id/edge_id remapped on a cross-user copy)", "transfer", "➡️ moved with M6", "tracked as 0005 P1–P4 [M6-import]"),
+ ("src/veracium/portability.py", "_preflight_and_commit", "commit_outcome_import_plan", "83f7d603598f"):
+   (W, "**every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B)", "transfer",
+    "specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **Residual: the cross-user import-cap concern (M6 — capping the `user_id` remap) remains OPEN, tracked to `0005`.**", "tracked as 0005 P1–P4 [M6-import]"),
 }
 
 
@@ -150,6 +148,5 @@ STATES = {
   ("src/veracium/lifecycle.py", "expire", "add_edge", "1d9541b12c69"): "clean",
   ("src/veracium/lifecycle.py", "consolidate", "delete_episode", "5bed480ae733"): "open_moved",
   ("src/veracium/lifecycle.py", "consolidate", "add_episode", "78d73ee79000"): "fixed",
-  ("src/veracium/portability.py", "import_memory", "add_edge", "1b0c15265a4e"): "open_moved",
-  ("src/veracium/portability.py", "import_memory", "add_episode", "0c90065fe4bc"): "open_moved",
+  ("src/veracium/portability.py", "_preflight_and_commit", "commit_outcome_import_plan", "83f7d603598f"): "open_moved",
 }

@@ -5,9 +5,9 @@
 
 # specs/0002 — store-mutator call-site manifest
 
-**26 call sites** across **8 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
+**25 call sites** across **9 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
 
-**16 clean · 1 fixed · 1 open · 0 moved · 8 open and moved** — 17 of 26 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
+**16 clean · 1 fixed · 1 open · 0 moved · 7 open and moved** — 17 of 25 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
 
 **Identity is `(file, scope, mutator, fingerprint)`.** The fingerprint is a hash of the call's normalised expression and its enclosing control-flow context — **what the call is, not where it sits**. Moving a call keeps its verdict; swapping two different calls invalidates both. **Line numbers are informational.**
 
@@ -41,8 +41,7 @@
 | `src/veracium/lifecycle.py:56` | `expire()` | `add_edge` | `1d9541b12c69` | `clean` | maintain-time | `needs_confirmation = True` | none | clean — narrows; flags, never clears | `test_expiry_lapse_confirm_and_reinforcement` |
 | `src/veracium/lifecycle.py:144` | `consolidate()` | `delete_episode` | `5bed480ae733` | `open_moved` | maintain-time | **destroys episodes** | none | 🔴 **OPEN — external review item 9.** Deletes ALL members *before* writing any replacement, so a crash between the loops is total loss. §7e | ➡️ **`specs/0010` X1–X6** — `test_no_crash_point_loses_data`; write-before-delete with lineage recovery [X-crash] |
 | `src/veracium/lifecycle.py:146` | `consolidate()` | `add_episode` | `78d73ee79000` | `fixed` | maintain-time | `author_of_evidence`, `derived_from`, `confidence`, `disclosure`, `observed_at`, `source_type`, `evidence_ref` | none | **M1 — fixed 0.4.4** + advisory GHSA-hcj3-8jqc-wqrp. Whole-set minimum trust | `test_consolidation_preserves_and_compresses` |
-| `src/veracium/portability.py:121` | `import_memory()` | `add_edge` | `1b0c15265a4e` | `open_moved` | write-time | **every trust field, reconstructed from a file**; a cross-user remap now mints fresh ids so it COPIES, never transfers ownership (`specs/0008` §6d) | transfer | ➡️ **MOVED to `0005`.** No capping on the `user_id` remap | tracked as 0005 P1–P4 [M6-import] |
-| `src/veracium/portability.py:130` | `import_memory()` | `add_episode` | `0c90065fe4bc` | `open_moved` | write-time | episode provenance from a file (id/edge_id remapped on a cross-user copy) | transfer | ➡️ moved with M6 | tracked as 0005 P1–P4 [M6-import] |
+| `src/veracium/portability.py:328` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `open_moved` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **Residual: the cross-user import-cap concern (M6 — capping the `user_id` remap) remains OPEN, tracked to `0005`.** | tracked as 0005 P1–P4 [M6-import] |
 
 ## Canonical context
 
@@ -217,17 +216,10 @@ b832f3d50c54
   call:    store.add_episode(Episode(id=f'epc-{uuid.uuid4().hex[:12]}', user_id=user_id, date=str(r['date']), summary=str(r['summary']), provenance=prov))
   context: for(r in new)
 
-1b0c15265a4e
-  file:    src/veracium/portability.py:121
-  scope:   import_memory()
-  mutator: add_edge
-  call:    store.add_edge(edge)
-  context: for((kind, rec) in parsed)>if(kind == 'edge')
-
-0c90065fe4bc
-  file:    src/veracium/portability.py:130
-  scope:   import_memory()
-  mutator: add_episode
-  call:    store.add_episode(ep)
-  context: for((kind, rec) in parsed)>else-of-if(kind == 'edge')
+83f7d603598f
+  file:    src/veracium/portability.py:328
+  scope:   _preflight_and_commit()
+  mutator: commit_outcome_import_plan
+  call:    store.commit_outcome_import_plan(target_uid, plan, expected)
+  context: -
 ```

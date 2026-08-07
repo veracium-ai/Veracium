@@ -30,6 +30,22 @@ class HeadMoved:
 HEAD_MOVED = HeadMoved()
 
 
+class DestinationChanged:
+    """Sentinel result of `commit_outcome_import_plan` when the destination store
+    changed between the whole-import preflight and the atomic commit (specs/0009
+    §4c) — a concurrent `append_outcome_if_head`, import, or edit moved a chain
+    head, altered a record the plan reasoned about, or changed an edge's presence
+    or ownership. NOTHING was written; the caller re-preflights the WHOLE import
+    and retries, or refuses. Like `HeadMoved`, it is never a durable state."""
+    __slots__ = ()
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostic only
+        return "DestinationChanged"
+
+
+DESTINATION_CHANGED = DestinationChanged()
+
+
 def store_mutator(fn):
     """Marks a Store method that writes persistent state.
 
@@ -121,6 +137,34 @@ class Store(ABC):
         this behaviour only once they implement it."""
         raise NotImplementedError(
             f"{type(self).__name__} does not implement append_outcome_if_head")
+
+    @store_mutator
+    def commit_outcome_import_plan(self, user_id: str, plan: dict,
+                                   expected_destination_state: dict):
+        """Atomically install a whole validated import plan — the specs/0009 §4c
+        commit primitive. `plan` is `{"edges": [Edge...], "episodes": [Episode...]}`,
+        already cross-user remapped, legacy-converted (§4f-ii) and topology-validated
+        by the caller's WHOLE-import preflight; it contains ONLY the records to write
+        (idempotent-equal records were skipped, differing ones already refused).
+
+        `expected_destination_state` carries EVERY destination assumption the preflight
+        reasoned about (round-6 Correction B — not just chain heads): the presence and
+        ownership of referenced edges, the current persisted form of every incoming
+        episode id (so a concurrent edit is caught), and the head of every outcome
+        chain identity the plan touches. In ONE atomic operation the store: (1)
+        revalidates ALL of that against the live store — any drift returns
+        `DESTINATION_CHANGED`, writing nothing; (2) installs every plan Edge and
+        Episode (outcome links included) as ONE logical commit, linearized against
+        `append_outcome_if_head`. A lost destination race refuses the WHOLE import;
+        NOTHING is written after a prefix. Returns `{"edges": n, "episodes": n}` on
+        success or `DESTINATION_CHANGED`.
+
+        This is a purpose-built primitive that encodes ONE invariant at the interface
+        boundary — "install this validated plan iff these destination assumptions still
+        hold" — NOT a general Store transaction API (specs/0009 §4c). Not abstract so
+        pre-existing `Store` implementations keep working."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement commit_outcome_import_plan")
 
     # -- host/admin queries ---------------------------------------------------
     def list_users(self) -> list[dict]:

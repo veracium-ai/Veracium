@@ -21,11 +21,52 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable, NamedTuple, Optional
 
+from ..schema import Episode
 from .schema_version import (SCHEMA_VERSION, SCHEMAS, OpenResult,
                              PostCommitAuditError, StoreVersionError,
                              _AUDIT_STRING_CAP, open_versioned)
 
 log = logging.getLogger(__name__)
+
+
+class DuplicateOutcomeChainError(Exception):
+    """specs/0009 §4f: the v2→v3 migration found more than one legacy outcome
+    episode for one `(user_id, edge_id, evidence_ref)` identity. The pre-v3 store
+    never enforced one outcome per chain, and there is no trustworthy information to
+    reconstruct which superseded which — so the migration REFUSES rather than
+    fabricating an order or branching the chain (two roots / two heads, H3 false).
+    Raised inside the write transaction, so nothing is partially converted; the
+    operator resolves the duplicate identities and retries."""
+
+
+def _migrate_outcome_chains(conn: sqlite3.Connection) -> None:
+    """specs/0009 §4f — convert every legacy outcome episode into an honest chain
+    ROOT: `seq=1`, `supersedes_episode=None`, `judgment_time_known=False`. Its `date`
+    is the original USE date (the old in-place upgrade path never updated it), NOT a
+    known judgment time, so it is carried forward unchanged and honestly labelled
+    unknown. Group by identity FIRST: >1 legacy outcome for one chain → REFUSE
+    (`DuplicateOutcomeChainError`), never two roots. Runs INSIDE the migration
+    transaction, so a refusal rolls the whole migration back (`0013` failure contract)."""
+    groups: dict = {}
+    outcome_rows: list = []
+    for eid, blob in conn.execute("SELECT id, json FROM episodes").fetchall():
+        ep = Episode.model_validate_json(blob)
+        if ep.kind != "outcome":
+            continue
+        outcome_rows.append((eid, ep))
+        groups.setdefault(
+            (ep.user_id, ep.edge_id, ep.provenance.evidence_ref), []).append(eid)
+    for gk, ids in groups.items():
+        if len(ids) > 1:
+            raise DuplicateOutcomeChainError(
+                f"v2→v3 migration: {len(ids)} legacy outcome episodes for chain {gk} "
+                f"({', '.join(ids)}) — refuse rather than branch; resolve the "
+                f"duplicate identities and retry (specs/0009 §4f)")
+    for eid, ep in outcome_rows:
+        converted = ep.model_copy(update={"seq": 1, "supersedes_episode": None,
+                                          "judgment_time_known": False})
+        conn.execute("UPDATE episodes SET json=? WHERE id=?",
+                     (converted.model_dump_json(), eid))
 
 
 class MigrationAuditEvent(NamedTuple):
@@ -71,6 +112,11 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
     for o in SCHEMAS[SCHEMA_VERSION]:
         if o.key not in base_keys:                     # only what the head ADDS over base
             conn.execute(o.ddl)
+    # specs/0009 §4f: crossing INTO v3 from below also transforms legacy outcome
+    # episodes into honest chain roots (a DATA migration the additive DDL cannot do).
+    # Guarded to base<3<=head so a future v3→v4 bump never re-roots valid v3 chains.
+    if base < 3 <= SCHEMA_VERSION:
+        _migrate_outcome_chains(conn)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 

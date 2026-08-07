@@ -66,22 +66,31 @@ def test_new_episode_fields_round_trip_through_json(tmp_path):
     """0009's seq/supersedes_episode/judgment_time_known and 0010's
     claimed_by/operation_id/lineage/date_start/date_end serialise into the
     episode JSON blob and read back — no schema column needed."""
+    from veracium.schema import Outcome, OutcomeJudgmentDraft
     p = str(tmp_path / "rt.db")
     s = SqliteStore(p)
-    ep = Episode(
-        id="ep-1", user_id="u", date="2026-01-01", summary="s",
+    # 0009 outcome fields: minted by the sanctioned writer (H14 forbids add_episode
+    # for kind=="outcome"), then read back through the JSON blob.
+    ep = s.append_outcome_if_head(
+        "u", "e1", "run-1", None,
+        OutcomeJudgmentDraft(author=EvidenceAuthor.USER, event_timestamp="2026-01-01",
+                             outcome=Outcome.CONFIRMED, summary="s"))
+    got = {e.id: e for e in s.episodes("u")}[ep.id]
+    assert got.seq == 1 and got.judgment_time_known is True
+    assert got.supersedes_episode is None and got.kind == "outcome"
+    # 0010 consolidation fields ride the same blob on an ordinary (non-outcome) episode
+    cep = Episode(
+        id="ep-c", user_id="u", date="2026-01-01", summary="c",
         provenance=Provenance(source_type=SourceType.STATED,
                               author_of_evidence=EvidenceAuthor.USER,
                               evidence_ref="run-1"),
-        kind="outcome", edge_id="e1", seq=1, supersedes_episode=None,
-        judgment_time_known=True, claimed_by=None, operation_id=None,
+        claimed_by=None, operation_id=None,
         lineage=["hist:ep-a", "hist:ep-b"], date_start="2026-01-01",
         date_end="2026-01-02")
-    s.add_episode(ep)
-    got = {e.id: e for e in s.episodes("u")}["ep-1"]
-    assert got.seq == 1 and got.judgment_time_known is True
-    assert got.lineage == ["hist:ep-a", "hist:ep-b"]
-    assert got.date_start == "2026-01-01" and got.date_end == "2026-01-02"
+    s.add_episode(cep)
+    got2 = {e.id: e for e in s.episodes("u")}["ep-c"]
+    assert got2.lineage == ["hist:ep-a", "hist:ep-b"]
+    assert got2.date_start == "2026-01-01" and got2.date_end == "2026-01-02"
 
 
 def test_a_below_head_store_refuses_ordinary_open(tmp_path):
