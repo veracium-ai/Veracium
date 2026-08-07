@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Callable, NamedTuple, Optional
 
-from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS, OpenResult,
+from .schema_version import (SCHEMA_VERSION, SCHEMAS, OpenResult,
                              PostCommitAuditError, StoreVersionError,
                              _AUDIT_STRING_CAP, open_versioned)
 
@@ -53,18 +53,23 @@ def _mig_event(kind: str, mid: str, path: str, from_v: int,
 
 def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
     """Bring a `base`-version store to the current version, INSIDE the open write
-    transaction. v1→v2 is purely ADDITIVE — the `confirmations` table and its index
-    (`specs/0008` §6d) — so it is a forward-only DDL apply that touches no existing
-    row, then stamps the store. `open_versioned` revalidates the result against the
-    current-version validator before committing, so a wrong DDL cannot land."""
-    if base != 1 or SCHEMA_VERSION != 2:
+    transaction. Every migration so far is purely ADDITIVE — new whole objects, never
+    an ALTER of an existing row/table: v1→v2 adds the `confirmations` table
+    (`specs/0008` §6d); v2→v3 adds the `consolidation_ops` table (`specs/0010` §4a) and
+    carries `specs/0009`'s new Episode fields in the existing `episodes.json` blob. So a
+    below-head store is brought forward by applying exactly the objects the head schema
+    has and `base` lacks (keyed by typed key), then stamping. A store two versions back
+    (v1→v3) gets BOTH deltas in one apply, because the object set is diffed against the
+    actual base, not a fixed step. `open_versioned` revalidates the result against the
+    head validator before committing, so a wrong DDL cannot land."""
+    if base not in SCHEMAS or base >= SCHEMA_VERSION:
         raise StoreVersionError(
             "", base, SCHEMA_VERSION, "unsupported-migration",
             diff=f"no migration path from base {base} to head {SCHEMA_VERSION} "
                  f"is defined")
-    base_keys = {o.key for o in SCHEMA_V1}
+    base_keys = {o.key for o in SCHEMAS[base]}
     for o in SCHEMAS[SCHEMA_VERSION]:
-        if o.key not in base_keys:                     # only what v2 ADDS over v1
+        if o.key not in base_keys:                     # only what the head ADDS over base
             conn.execute(o.ddl)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 

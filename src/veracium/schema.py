@@ -303,3 +303,27 @@ class Episode(BaseModel):
     edge_id: Optional[str] = None       # outcome episodes: the edge judged
     outcome: Optional[Outcome] = None   # outcome episodes: current status
     context_ref: Optional[str] = None   # optional comparability key (e.g. rubric hash)
+
+    # --- specs/0009 outcome-authorship chain (append-only history) --------------
+    # Store-assigned, OUTCOME-ONLY (None on any non-outcome episode). Never
+    # host-supplied: `append_outcome_if_head` mints them. `seq` is the per-chain
+    # authority order (root == 1, contiguous); `supersedes_episode` links to the
+    # in-chain predecessor (None at the root). `judgment_time_known` is REQUIRED
+    # True/False on every v3 outcome record: True when `date` is the real judgment
+    # time, False on a legacy-converted root whose `date` is the original use date
+    # (H1/H8/H12). `judgment_time_known == False ⇒ seq == 1 ∧ supersedes_episode is None`.
+    seq: Optional[int] = None
+    supersedes_episode: Optional[str] = None
+    judgment_time_known: Optional[bool] = None
+
+    # --- specs/0010 crash-safe consolidation ------------------------------------
+    # `claimed_by`/`operation_id`: on a claimed INPUT while an operation holds it
+    # (cleared on release). `lineage`: on a consolidated OUTPUT, the whole claimed
+    # set it absorbed (HistoricalEpisodeId strings — a namespace no live id inhabits,
+    # X19); non-empty lineage is the sole "this is an output" discriminator (X16/X18).
+    # `date_start`/`date_end`: the min/max input dates on an output; `date := date_start`.
+    claimed_by: Optional[str] = None
+    operation_id: Optional[str] = None
+    lineage: Optional[list[str]] = None
+    date_start: Optional[str] = None
+    date_end: Optional[str] = None

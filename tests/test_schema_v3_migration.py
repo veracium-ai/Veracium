@@ -1,0 +1,96 @@
+"""SCHEMA_VERSION 2→3 migration — the shared foundation for specs/0009 + 0010.
+
+v3 is a purely additive migration: it adds the `consolidation_ops` table
+(specs/0010 §4a) and carries specs/0009's new Episode fields in the existing
+`episodes.json` blob (no episode-table ALTER). A v1 OR v2 store migrates forward
+in one `migrate_store()` call; an older build opening a v3 store REFUSES (0007).
+Co-implemented under one bump per 0009 §9a / 0010 §9.
+"""
+import sqlite3
+
+import pytest
+
+from veracium.schema import Episode, Provenance, SourceType, EvidenceAuthor
+from veracium.store.migration import migrate_store
+from veracium.store.schema_version import (SCHEMA_V1, SCHEMA_V2, SCHEMA_VERSION,
+                                           PackageConsistencyError,
+                                           StoreVersionError)
+from veracium.store.sqlite import SqliteStore
+
+
+def _build_at(path, schema_objs):
+    """Create a store at an older schema shape (unstamped, user_version 0), the
+    way a legacy store on disk looks before migration."""
+    c = sqlite3.connect(path)
+    for o in schema_objs:
+        c.execute(o.ddl)
+    c.commit()
+    c.close()
+
+
+def test_fresh_store_is_v3_with_consolidation_ops(tmp_path):
+    p = str(tmp_path / "fresh.db")
+    SqliteStore(p)
+    with sqlite3.connect(p) as c:
+        assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 3
+        tables = {r[0] for r in c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "consolidation_ops" in tables
+
+
+@pytest.mark.parametrize("base_objs,base,stamp", [(SCHEMA_V1, 1, 0), (SCHEMA_V2, 2, 2)])
+def test_migrate_forward_to_v3_is_additive(tmp_path, base_objs, base, stamp):
+    """A v1 (unstamped legacy) or v2 (stamped below-head) store migrates to v3 in
+    one call; the migration only ADDS `consolidation_ops` (and, for a v1 base,
+    `confirmations`) — it stamps user_version=3 and touches no existing row."""
+    p = str(tmp_path / f"legacy_v{base}.db")
+    _build_at(p, base_objs)
+    if stamp:
+        with sqlite3.connect(p) as c:
+            c.execute(f"PRAGMA user_version = {stamp}"); c.commit()
+    result = migrate_store(p)
+    assert str(result) == "migrated"
+    with sqlite3.connect(p) as c:
+        assert c.execute("PRAGMA user_version").fetchone()[0] == 3
+        tables = {r[0] for r in c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+    assert "consolidation_ops" in tables
+    assert "confirmations" in tables   # v1→v3 also picks up v2's table
+    # A second migrate is a no-op (already current), not a re-migration.
+    assert str(migrate_store(p)) == "current"
+    # And it opens cleanly through the ordinary Store path now.
+    SqliteStore(p)
+
+
+def test_new_episode_fields_round_trip_through_json(tmp_path):
+    """0009's seq/supersedes_episode/judgment_time_known and 0010's
+    claimed_by/operation_id/lineage/date_start/date_end serialise into the
+    episode JSON blob and read back — no schema column needed."""
+    p = str(tmp_path / "rt.db")
+    s = SqliteStore(p)
+    ep = Episode(
+        id="ep-1", user_id="u", date="2026-01-01", summary="s",
+        provenance=Provenance(source_type=SourceType.STATED,
+                              author_of_evidence=EvidenceAuthor.USER,
+                              evidence_ref="run-1"),
+        kind="outcome", edge_id="e1", seq=1, supersedes_episode=None,
+        judgment_time_known=True, claimed_by=None, operation_id=None,
+        lineage=["hist:ep-a", "hist:ep-b"], date_start="2026-01-01",
+        date_end="2026-01-02")
+    s.add_episode(ep)
+    got = {e.id: e for e in s.episodes("u")}["ep-1"]
+    assert got.seq == 1 and got.judgment_time_known is True
+    assert got.lineage == ["hist:ep-a", "hist:ep-b"]
+    assert got.date_start == "2026-01-01" and got.date_end == "2026-01-02"
+
+
+def test_a_below_head_store_refuses_ordinary_open(tmp_path):
+    """0007/0013 §5b: ordinary opening of a stamped below-head store REFUSES
+    (migration is offline and explicit — `migrate_store`, not ordinary open)."""
+    p = str(tmp_path / "v2only.db")
+    _build_at(p, SCHEMA_V2)
+    with sqlite3.connect(p) as c:
+        c.execute("PRAGMA user_version = 2")
+        c.commit()
+    with pytest.raises((StoreVersionError, PackageConsistencyError)):
+        SqliteStore(p)

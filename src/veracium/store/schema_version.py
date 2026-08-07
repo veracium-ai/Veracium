@@ -162,9 +162,30 @@ SCHEMA_V2 = SCHEMA_V1 + (
                  "ON confirmations(user_id, edge_id)", REBUILDABLE),
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2}
+# v3 adds the `consolidation_ops` table — the `specs/0010` fenced operation record
+# (§4a): `user_id · operation_id · fence · state · owner · lease_duration ·
+# lease_expires_at · claimed_ids`. It is the durable state machine for crash-safe
+# consolidation; `pending_consolidations`/takeover query it by `(user_id, state)`.
+# `specs/0009`'s new Episode fields (`seq`, `supersedes_episode`, `judgment_time_known`,
+# and `specs/0010`'s `claimed_by`/`operation_id`/`lineage`/`date_start`/`date_end`)
+# serialise into the existing `episodes.json` blob — no episode-table ALTER, so v2→v3
+# stays a byte-identical additive-table migration (co-implemented: one v2→v3 bump
+# carries both specs, per `0009` §9a / `0010` §9).
+SCHEMA_V3 = SCHEMA_V2 + (
+    SchemaObject("table", "consolidation_ops", """CREATE TABLE consolidation_ops (
+    operation_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,
+    fence INTEGER NOT NULL, state TEXT NOT NULL, owner TEXT NOT NULL,
+    lease_duration INTEGER NOT NULL, lease_expires_at TEXT NOT NULL,
+    claimed_ids TEXT NOT NULL
+)""", REQUIRED),
+    SchemaObject("index", "ix_consolidation_ops_user_state",
+                 "CREATE INDEX ix_consolidation_ops_user_state "
+                 "ON consolidation_ops(user_id, state)", REBUILDABLE),
+)
 
-SCHEMA_VERSION = 2
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3}
+
+SCHEMA_VERSION = 3
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

@@ -669,11 +669,18 @@ def test_schema_version_must_match_the_registry():
 
 def test_the_registry_versions_are_contiguous():
     from schema_model import validate_schema_registry
-    SCHEMAS[3] = SCHEMA_V1
+    # Add a version ABOVE head with a GAP (SCHEMA_VERSION+2 leaves +1 missing), so
+    # the registry is non-contiguous and `validate` must object. Uses a
+    # never-real version and restores it in `finally` — an earlier revision hard-set
+    # `SCHEMAS[3]` when 3 did not exist, which now clobbers and then DELETES the real
+    # head schema out of the shared dict, polluting every later test.
+    gap = SCHEMA_VERSION + 2
+    assert gap not in SCHEMAS
+    SCHEMAS[gap] = SCHEMA_V1
     try:
         assert validate_schema_registry()
     finally:
-        del SCHEMAS[3]
+        del SCHEMAS[gap]
 
 
 def test_a_missing_versions_artifact_fails_the_gate(monkeypatch, tmp_path):

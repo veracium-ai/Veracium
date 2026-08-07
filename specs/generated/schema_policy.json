@@ -18,5 +18,18 @@
     "table:write_counter": "required",
     "table:confirmations": "required",
     "index:ix_confirmations_edge": "rebuildable"
+  },
+  "3": {
+    "table:edges": "required",
+    "index:ix_edges_user_active": "rebuildable",
+    "index:ix_edges_subj_rel": "rebuildable",
+    "table:episodes": "required",
+    "index:ix_episodes_user": "rebuildable",
+    "table:wiki": "required",
+    "table:write_counter": "required",
+    "table:confirmations": "required",
+    "index:ix_confirmations_edge": "rebuildable",
+    "table:consolidation_ops": "required",
+    "index:ix_consolidation_ops_user_state": "rebuildable"
   }
 }
