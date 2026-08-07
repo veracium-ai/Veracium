@@ -20,7 +20,7 @@ from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationSt
                       Confirmation, ConfirmationActor, ConfirmationCallPath,
                       Disclosure, Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
                       Provenance, RECOVERY_PENDING_STATES, SourceType,
-                      to_historical_id)
+                      is_historical_id, to_historical_id)
 from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
                    Store)
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
@@ -246,7 +246,28 @@ class SqliteStore(Store):
                 f"add_episode refuses kind=='outcome' episode {episode.id!r} — "
                 f"outcome-chain links enter only via append_outcome_if_head or "
                 f"commit_outcome_import_plan (specs/0009 H14)")
+        # specs/0010 X18: the generic mutator cannot FABRICATE claimed/provisional/output
+        # state — those fields are store-minted by the fenced consolidation primitives.
+        if (episode.claimed_by is not None or episode.operation_id is not None
+                or episode.lineage):
+            raise ValueError(
+                f"add_episode refuses episode {episode.id!r} carrying consolidation "
+                f"state (claimed_by/operation_id/lineage) — that state is minted only "
+                f"by the fenced consolidation primitives (specs/0010 X18)")
+        # specs/0010 X19: a LIVE episode id can never inhabit the historical namespace
+        # that finalized lineage ids live in, so the two can never collide.
+        if is_historical_id(episode.id):
+            raise ValueError(
+                f"add_episode refuses id {episode.id!r} — the '{episode.id[:5]}' "
+                f"namespace is reserved for historical lineage ids (specs/0010 X19)")
         with self._lock:
+            # specs/0010 X21: an id RESERVED by a non-quiescent op is refused — the
+            # reservation survives the input's physical deletion until the op finalizes
+            # or cleanly abandons (so a deleted-but-reserved id cannot be recreated).
+            if episode.id in self._reserved_ids(episode.user_id):
+                raise ValueError(
+                    f"add_episode refuses reserved id {episode.id!r} — it is claimed by "
+                    f"an in-flight consolidation (specs/0010 X21)")
             self._conn.execute(
                 "INSERT OR REPLACE INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
                 (episode.id, episode.user_id, episode.date, episode.model_dump_json()))
@@ -254,11 +275,37 @@ class SqliteStore(Store):
             self._conn.commit()
 
     def episodes(self, user_id, *, limit=None) -> list[Episode]:
-        q = "SELECT json FROM episodes WHERE user_id=? ORDER BY date"
-        if limit:
-            q += f" LIMIT {int(limit)}"
-        return [Episode.model_validate_json(r[0])
-                for r in self._conn.execute(q, (user_id,)).fetchall()]
+        # specs/0010 X9: every ordinary read sees EXACTLY ONE complete representation —
+        # all relevant inputs, or all committed outputs, never both and never neither.
+        # The episode rows and the op states are read in ONE snapshot (under the lock),
+        # and provisional/hidden rows are filtered by the observed op state.
+        with self._lock:
+            op_state = {op.operation_id: op.state
+                        for op in self._ops_for_user(user_id)}
+            rows = self._conn.execute(
+                "SELECT json FROM episodes WHERE user_id=? ORDER BY date",
+                (user_id,)).fetchall()
+        out = []
+        for (blob,) in rows:
+            ep = Episode.model_validate_json(blob)
+            if self._ordinary_read_visible(ep, op_state):
+                out.append(ep)
+                if limit and len(out) >= limit:
+                    break
+        return out
+
+    @staticmethod
+    def _ordinary_read_visible(ep: Episode, op_state: dict) -> bool:
+        """specs/0010 §4c/X9. A provisional OUTPUT is hidden while its LOCAL op is
+        pre-cutover (CLAIMED/GENERATING); a finalized/absent-op output is visible (X19).
+        A claimed INPUT is hidden once its op reaches OUTPUTS_DURABLE (the cutover flips
+        visibility); it is visible while CLAIMED/GENERATING. Everything else is visible."""
+        S = ConsolidationState
+        if ep.lineage:                                   # a consolidation OUTPUT
+            return op_state.get(ep.operation_id) not in (S.CLAIMED, S.GENERATING)
+        if ep.operation_id is not None:                  # a claimed INPUT
+            return op_state.get(ep.operation_id) is not S.OUTPUTS_DURABLE
+        return True
 
     def delete_episode(self, episode_id) -> None:
         with self._lock:
@@ -273,6 +320,13 @@ class SqliteStore(Store):
                     f"delete_episode refuses outcome-chain link {episode_id!r} — "
                     f"outcome history is append-only and leaves only via forget_user "
                     f"(specs/0009 H14)")
+            # specs/0010 X21: a reserved (claimed) input leaves only via the fenced
+            # batch-delete or forget_user — never a targeted generic delete.
+            if row is not None and episode_id in self._reserved_ids(row[0]):
+                raise ValueError(
+                    f"delete_episode refuses reserved id {episode_id!r} — it is claimed "
+                    f"by an in-flight consolidation; it is removed only by the fenced "
+                    f"batch-delete or forget_user (specs/0010 X21)")
             self._conn.execute("DELETE FROM episodes WHERE id=?", (episode_id,))
             if row:
                 self._bump(row[0])
@@ -418,6 +472,16 @@ class SqliteStore(Store):
 
     def _lease_live(self, op: ConsolidationOp) -> bool:
         return self._now() < datetime.fromisoformat(op.lease_expires_at)
+
+    def _reserved_ids(self, user_id: str) -> set:
+        """Every id claimed by a NON-QUIESCENT op (specs/0010 X21). Derived from
+        `claimed_ids`, not physical presence, so the reservation survives the fenced
+        batch-delete until the op reaches FINALIZED or clean ABANDONED."""
+        reserved: set = set()
+        for op in self._ops_for_user(user_id):
+            if op.state in RECOVERY_PENDING_STATES:
+                reserved.update(op.claimed_ids)
+        return reserved
 
     def _write_op(self, op: ConsolidationOp) -> None:
         self._conn.execute(

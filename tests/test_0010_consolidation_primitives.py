@@ -58,6 +58,14 @@ def _draft(summary="merged", ds="2026-01-01", de="2026-01-03"):
     return ConsolidationOutputDraft(summary=summary, date_start=ds, date_end=de)
 
 
+def _physical(store, uid="u"):
+    """Physical rows, bypassing X9 ordinary-read visibility — a provisional output is
+    hidden from episodes() while GENERATING but physically present (spec distinguishes
+    the two). Tests that assert on provisional rows must look physically."""
+    return [Episode.model_validate_json(r[0]) for r in
+            store._conn.execute("SELECT json FROM episodes WHERE user_id=?", (uid,))]
+
+
 def _to_durable(store, op, owner="w1"):
     """Drive op CLAIMED→GENERATING→(write output)→OUTPUTS_DURABLE."""
     assert store.transition_consolidation_if_current(op.operation_id, op.fence, owner, "generating")
@@ -169,12 +177,12 @@ def test_takeover_of_expired_generating_cleans_first(store):
     store.transition_consolidation_if_current(op.operation_id, op.fence, "w1", "generating")
     store.write_consolidation_output_if_current(op.operation_id, op.fence, "w1", _draft())
     # a provisional (hidden) output row physically exists now
-    assert any(e.lineage for e in store.episodes("u"))
+    assert any(e.lineage for e in _physical(store))
     store._clk.advance(120)            # lease expires while GENERATING
     op2 = store.create_or_takeover_consolidation("u", ["e1", "e2"], "w2", 60)
     assert op2 is not None and op2.fence > op.fence
     # the expired op was abandoned FIRST — its provisional row is gone, no coexistence
-    assert not any(e.lineage for e in store.episodes("u")), \
+    assert not any(e.lineage for e in _physical(store)), \
         "old-generation provisional rows must not survive into the new fence"
 
 
@@ -215,7 +223,7 @@ def test_output_is_bound_to_the_fenced_operation(store):
     op = store.create_or_takeover_consolidation("u", ["e1", "e2"], "w1", 60)
     store.transition_consolidation_if_current(op.operation_id, op.fence, "w1", "generating")
     store.write_consolidation_output_if_current(op.operation_id, op.fence, "w1", _draft())
-    out = next(e for e in store.episodes("u") if e.lineage)
+    out = next(e for e in _physical(store) if e.lineage)
     assert out.operation_id == op.operation_id
     assert out.lineage == ["hist:e1", "hist:e2"]        # the whole claimed set
     assert out.claimed_by is None
@@ -234,9 +242,9 @@ def test_output_write_cannot_replace_an_existing_episode(store):
     assert "id" not in ConsolidationOutputDraft.model_fields
     op = store.create_or_takeover_consolidation("u", ["e1", "e2"], "w1", 60)
     store.transition_consolidation_if_current(op.operation_id, op.fence, "w1", "generating")
-    before = {e.id: e.model_dump() for e in store.episodes("u")}
+    before = {e.id: e.model_dump() for e in _physical(store)}
     store.write_consolidation_output_if_current(op.operation_id, op.fence, "w1", _draft())
-    after = {e.id: e for e in store.episodes("u")}
+    after = {e.id: e for e in _physical(store)}
     for eid, blob in before.items():                    # no existing row was replaced
         assert after[eid].model_dump() == blob
     assert len(after) == len(before) + 1                # exactly one new row inserted
@@ -252,7 +260,7 @@ def test_output_trust_is_the_whole_set_minimum(store):
     op = store.create_or_takeover_consolidation("u", ["e1", "e2"], "w1", 60)
     store.transition_consolidation_if_current(op.operation_id, op.fence, "w1", "generating")
     store.write_consolidation_output_if_current(op.operation_id, op.fence, "w1", _draft())
-    out = next(e for e in store.episodes("u") if e.lineage)
+    out = next(e for e in _physical(store) if e.lineage)
     assert out.provenance.confidence == 0.2                  # min across the set
     assert out.provenance.disclosure is Disclosure.USE_ONLY  # weakest
     assert out.provenance.third_party_influenced             # influence retained (N9b)
@@ -268,6 +276,6 @@ def test_output_date_range_is_store_derived_not_llm(store):
     store.write_consolidation_output_if_current(
         op.operation_id, op.fence, "w1",
         _draft(ds="1999-01-01", de="2099-12-31"))
-    out = next(e for e in store.episodes("u") if e.lineage)
+    out = next(e for e in _physical(store) if e.lineage)
     assert out.date_start == "2026-01-01" and out.date_end == "2026-01-03"
     assert out.date == out.date_start                        # compat sort key
