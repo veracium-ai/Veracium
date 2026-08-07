@@ -1174,3 +1174,27 @@ adjacent seams.**
 **What `accepted` authorises:** implementation of this design (PROCESS.md §4a). Guarded-file
 commits citing `Spec: specs/0010-...` are now permitted, since `Spec-Requires: 0007, 0013`
 are both `accepted`.
+
+### 18a. Review-closure ledger (PROCESS.md §4a)
+
+Per §4a, one row per external-review round with **openable evidence** — the spec §§ that
+freeze the requirement, the executable **invariant(s)** (a design spec: the X-test is the
+mechanical freeze; it runs when code lands), and the **commit** that introduced the fix.
+Per-finding detail is in the round closures §§11–17; this ledger is the openable index.
+**Not prose: each § opens and each `X#` names a test.** *(This §4a ledger was added
+2026-08-07 in the same acceptance-hygiene pass that added `0009`'s §16a, after the
+`0009` round-6 reviewer correctly flagged that "root fix" prose is not §4a closure.)*
+
+| review round | findings closed | invariants (executable freeze) | spec §§ | evidence commit |
+|---|---|---|---|---|
+| **1** (§11) | recovery-discovery read · Design A (no output plan) · `store_version`≠`@store_mutator` · date fields · conditional-share · naming · X1-Design-A | X13 X14 X1 | §4b §4b-ii §9 §11-F3 | `33253dd` |
+| **2** (§12) | SCHEMA/FORMAT split · cleanup-complete abandonment · outputs-not-candidates · quiescent export · `user_id` on op · date written→rendered | X15 X16 X17 | §4a §4b-iii §4e §4f §9a | `e0fddf2` (+ pre-send `dcce389`) |
+| **3** (§13) | lease protocol + cooperative owner · pending-set excludes ABANDONED · deterministic export · delete-provisional-not-all-rows · `lineage` shapes · post-creation mutator | X13 X15 X17 X18 | §4a-ii §4b §4e §4f | `7729650` |
+| **4** (§14) | `lease_duration` carrier · takeover-abandons-expired bug · read-only export · finalized `operation_id` historical · pending/recovered · ABANDONED quiescent | X13 X15 X17 X19 | §4a §4a-ii §4f §4e | `7ac4d1c` |
+| **5** (§15) | `FINALIZED`-after-delete · `quiescent_episode_snapshot` read · import refuses claimed-input · historical-id remap · lease in §2 · multi-phase seam | X17 X18 X19 X20 | §4a §4b §4e §4f | `1c86cbd` |
+| **6** (§16) | generic mutators fenced (unfenced-door) · output binding + ≥1-output cutover · retry-stable + `lineage` remap · §8 atomicity · X11 scope · portability wording | X21 X22 X19 | §4e §4b-ii §8 | `6437df7` |
+| **7** (§17) | X21 ID-reservation (delete→FINALIZED seam) · output-draft identity + INSERT-only · `HistoricalEpisodeId` namespace · F3 `store_version` scope · trust/date derivation · deterministic map | X19 X21 X22 X23 | §4a-ii §4b-ii §4e §11-F3 | `446f0fc` |
+| **accept** (§18) | finite acceptance boundary set; X1–X23 frozen; this §4a ledger | X1–X23 | §18 | `e531839` + *this commit* |
+
+Seven external rounds each affirmed the architecture; acceptance is on the frozen surface,
+not on the review terminating (§18).

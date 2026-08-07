@@ -266,14 +266,18 @@ under Option A, §4b — not part of the authoritative derived set.)
 > supersedes_episode="existing-head", …))` — bypassing store-assigned `seq`, the head
 > CAS, fresh-id minting, and H3's no-branch rule (or insert a second child of one head) —
 > or `delete_episode(outcome_id)` to erase a root/link/head of supposedly append-only
-> history. Frozen: **generic `add_episode` MUST refuse a `kind == "outcome"` chain
-> record, and generic `delete_episode` MUST refuse a `kind == "outcome"` history row.**
-> Outcome-chain rows enter **only** through `append_outcome_if_head`, the validated
+> history. Frozen: **generic `add_episode` MUST refuse when `incoming.kind == "outcome"`
+> OR an existing row with that `id` is outcome history** (round-6 Correction A — the
+> `OR` closes a replace-capable backend re-typing an existing outcome row to a non-outcome
+> `kind`; a naïve "inspect only the incoming record" reading would miss it), and **generic
+> `delete_episode` MUST refuse deleting a `kind == "outcome"` history row.** Outcome-chain
+> rows enter **only** through `append_outcome_if_head`, the validated
 > `commit_outcome_import_plan` (§4c), or a schema migration (§4f), and disappear **only**
 > through whole-user `forget_user()` erasure. Without this, H2/H3/H9 are conventions on
-> one method, not invariants of the Store. Invariant **H14**. (The consolidation lifecycle
-> deliberately excludes `kind == "outcome"` from consolidation, so no ordinary path needs
-> this escape hatch.)
+> one method, not invariants of the Store. Invariant **H14** (its
+> `test_insert_or_replace_of_an_existing_outcome_id_is_refused` fixture already exercises
+> the existing-row case). (The consolidation lifecycle deliberately excludes `kind ==
+> "outcome"` from consolidation, so no ordinary path needs this escape hatch.)
 
 ### 4b. Cross-chain recency: Option A — deprecate the scalar (round 2, finding 1)
 
@@ -423,14 +427,19 @@ the head is derived (H-Q2), there is no materialised head pointer to "fix."
 > atomically. So option (b) is withdrawn. The commit is a **named, purpose-built Store
 > primitive**:
 > ```
-> commit_outcome_import_plan(user_id, validated_plan, expected_destination_heads)
+> commit_outcome_import_plan(user_id, validated_plan, expected_destination_state)
 >     -> committed | DestinationChanged
 > ```
-> which atomically (1) **revalidates all destination assumptions** from the whole-file
-> preflight, (2) installs **all** imported Edge/Episode records as **one** logical import
-> commit, (3) **linearizes against `append_outcome_if_head`**, and (4) commits everything
-> or nothing when destination state changed. A lost destination race retries/refuses the
-> **whole** import, never after a prefix committed. **This is a purpose-built primitive,
+> where **`expected_destination_state` carries ALL the destination-comparison material
+> the whole-file preflight reasoned about — not just chain heads** (round-6 Correction B —
+> the earlier name `expected_destination_heads` sounded narrower than "all destination
+> assumptions"): existing-record equality (§4c record-equality idempotency), existing
+> Edges, non-outcome records, chain identity, and destination ownership. The primitive
+> atomically (1) **revalidates all of that**, (2) installs **all** imported Edge/Episode
+> records as **one** logical import commit, (3) **linearizes against
+> `append_outcome_if_head`**, and (4) commits everything or nothing when any of that
+> destination state changed. A lost destination race retries/refuses the **whole** import,
+> never after a prefix committed. **This is a purpose-built primitive,
 > NOT a general Store transaction API** (reviewer-endorsed, round 5): like
 > `append_outcome_if_head` it encodes one invariant at the interface boundary — "install
 > this validated plan iff these destination heads still hold" — rather than pushing
@@ -557,7 +566,7 @@ with a *known* date?), only one of which is consistent with H8/H12.
 | **H1** no episode's `author_of_evidence` is ever overwritten | `test_outcome_authorship_is_never_overwritten` — the measured `system → user → system` case becomes the fixture | CI |
 | **H2** `seq` decides the head; a host `date` cannot reorder | `test_a_backdated_judgment_does_not_become_the_head` | CI |
 | **H3** exactly one head per `(edge_id, evidence_ref)` — enforced **at the Store primitive** | `test_append_outcome_if_head_is_atomic` — **N concurrent callers of `append_outcome_if_head`** (not the Python loop) branch nothing; losers get `HeadMoved` and retry (finding 1) | CI |
-| **H4** a valid chain imports preserved (cross-user remap; combined-graph + `Edge` checked); **the whole import commits atomically via `commit_outcome_import_plan`** (not per-chain), linearized against `append_outcome_if_head`; **existing-id idempotency is RECORD equality** | `test_import_preserves_the_outcome_chain` + `test_cross_user_import_remaps_supersedes_episode` + `test_two_valid_chains_same_identity_refuses` + `test_import_refuses_missing_or_foreign_edge` + `test_import_racing_a_concurrent_append_never_branches` + **`test_same_id_different_author_refuses_whole_import`** + `test_same_id_different_outcome_refuses` (round-4 finding 1 + round-5 findings 1/3) | CI |
+| **H4** a valid chain imports preserved (cross-user remap; combined-graph + `Edge` checked); **the whole import commits atomically via `commit_outcome_import_plan(…, expected_destination_state)`** (not per-chain), linearized against `append_outcome_if_head`; **existing-id idempotency is RECORD equality** | `test_import_preserves_the_outcome_chain` + `test_cross_user_import_remaps_supersedes_episode` + `test_two_valid_chains_same_identity_refuses` + `test_import_refuses_missing_or_foreign_edge` + `test_import_racing_a_concurrent_append_never_branches` + **`test_same_id_different_author_refuses_whole_import`** + `test_same_id_different_outcome_refuses` (round-4 finding 1 + round-5 findings 1/3) | CI |
 | **H5** malformed OR raced import **refuses, persisting NOTHING — no partial import** (whole-plan atomic commit, not per-chain); imported `seq` is **`1`-rooted and contiguous** | `test_malformed_import_refuses_atomically` — parametrised over **branch, cycle, missing parent, cross-chain link, duplicate/non-increasing `seq`, no root, two leaves, competing-destination-root, divergent-suffix, non-1-root, seq-gap**; **`test_lost_race_on_chain_B_does_not_leave_chain_A_persisted`** (round-5 finding 1) | CI |
 | **H6** the authoritative aggregates follow heads | `test_edge_aggregates_follow_heads` — `times_used` + `outcome_counts` recomputed from chain heads (no cross-chain order needed). `last_outcome`/`last_outcome_at` are deprecated (Option A) and out of scope | CI |
 | **H7** history is **structurally queryable**, not prose | `test_prior_authorship_is_queryable_without_parsing_a_summary` — asserts against fields; **a passing prose note must fail this** | CI |
@@ -888,3 +897,27 @@ on the reviewer running out of adjacent seams.**
 **What `accepted` authorises:** implementation of this design (PROCESS.md §4a). Guarded-file
 commits citing `Spec: specs/0009-...` are now permitted, since `Spec-Requires: 0007, 0013`
 are both `accepted`.
+
+### 16a. Review-closure ledger (PROCESS.md §4a)
+
+Per §4a, one row per external-review round with **openable evidence** — the spec §§ that
+freeze the requirement, the executable **invariant(s)** that will demonstrate it (a
+design spec: the H-test is the mechanical freeze; it runs when code lands), and the
+**commit** that introduced the fix. Per-finding detail lives in the round closures
+§§11–15; this ledger is the openable index. **Not prose ("fixed"): each row's § opens and
+each `H#` names a test.**
+
+| review round | findings closed | invariants (executable freeze) | spec §§ | evidence commit |
+|---|---|---|---|---|
+| **1** (§11) | CAS append primitive · store `seq` order · validate-or-refuse import · SCHEMA/FORMAT split · seq-outcome-only · cross-user remap · same-chain payload | H1–H9 | §4a §4c §4d §9a | `33427fa` |
+| **2** (§12) | Option B→A (`committed_seq` removed; scalar deprecated) · migration policy · combined-graph import · `store_version` bump | H6 H10 H12 | §4b §4c §4f §9a | `cb27537` |
+| **3** (§13) | complete draft payload (`corrected_value`) · omitted-`context_ref` inherit · dup-identity migration refuse · legacy portable conversion · whole-import preflight · `judgment_time_known` in both namespaces · §2c-ii coords | H9 H11 H12 H13 H5 H8 | §2 §4a §4c §4f-ii | `54be2ba` |
+| **4** (§14) | import linearized vs concurrent append · `seq` 1-rooted+contiguous · explicit `judgment_time_known` · derived `source_type` · full `record_outcome` return | H4 H5 H8 H9 H11 | §2 §4a §4c | `3596766` |
+| **5** (§15) | ONE whole-import atomic primitive · generic-mutator guard (H14) · record-equality idempotency · `HeadMoved` successful-attempt · `judgment_time_known=False`⇒root | H4 H5 H8 H11 H14 | §4a §4c | `a88219c` |
+| **6** (this §16) | **design + H1–H14 RATIFIED** (no architectural blocker); acceptance-artifact corrected: H14 existing-row prose (Corr A) · `expected_destination_state` carrier (Corr B) · this §4a ledger · guide/status/hash made consistent | H14 (prose↔fixture) | §4a §4c §16 | *this commit* |
+
+**Round 6 is the ratifying review:** it approved the v6 design and the H1–H14 surface, and
+deferred only on acceptance-record integrity (a stale `accepted` file not matching the
+reviewed `in review` archive, a §16 reference, the §4a evidence form, guide status). Those
+are corrected here and the acceptance package is rebuilt so **archive == standalone ==
+repository spec**, all `accepted`, one hash.
