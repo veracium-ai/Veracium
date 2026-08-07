@@ -5,28 +5,28 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3)** — rounds 1 and 2 both **approved the fenced-state-machine
-> architecture**. Round 1 deferred on 3 gaps + 5 corrections (all closed in v2, §11);
-> round 2 deferred on 4 more gaps + 3 corrections (all closed in v3, §12): the
-> `SCHEMA_VERSION`/`FORMAT_VERSION` namespace split (§9a), abandonment as
-> cleanup-complete before takeover (§4b-iii), the post-`FINALIZED` retry rule —
-> consolidated outputs are never candidates (§4e), quiescent-snapshot export (§4f),
-> plus `user_id` on the operation record + `forget_user()` erasure, the date
-> written-vs-rendered fix, and X1 realigned to Design A. The design: a fenced
-> operation record + all-or-nothing batch-claim primitives + a recovery-discovery
-> read + the full transition table (§4), under **Design A** (the transition is the
-> sole completeness proof). Split out of `0002` §7e on 2026-08-02. **Both open
-> questions ruled** (X-Q1/X-Q2); **both `Spec-Requires:` prerequisites (`0007`,
-> `0013`) accepted AND implemented** (§9).
+> **in review (v4)** — rounds 1, 2, and 3 all **approved the fenced-state-machine
+> architecture and Design A**. Round 1: 3 gaps + 5 corrections (closed v2, §11);
+> round 2: 4 gaps + 3 corrections (closed v3, §12); round 3: 3 gaps + 3 corrections
+> (closed v4, §13): the lease protocol + owner-enforced mutators (§4a-ii), the
+> `pending_consolidations` set excluding clean `ABANDONED` (§4b), the one deterministic
+> export algorithm (§4f), the "delete provisional outputs, clear input claims" wording
+> everywhere (never "all rows"), the frozen `lineage` record shapes (§4e/X18), and the
+> "post-creation fenced mutator" wording. The design: a fenced operation record +
+> all-or-nothing batch-claim primitives + a recovery-discovery read + the full
+> transition table (§4), under **Design A** (the transition is the sole completeness
+> proof). Split out of `0002` §7e on 2026-08-02. **Both open questions ruled**
+> (X-Q1/X-Q2); **both `Spec-Requires:` prerequisites (`0007`, `0013`) accepted AND
+> implemented** (§9).
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v3 |
+| **Version** | v4 |
 | **Status** | *see `Spec-Status:` — canonical.* Owns the contract stated in `0002` §7e. |
 | **Internal reviewers** | research — pending |
 | **External review** | required — `lifecycle.py` is guarded and this changes durability semantics |
-| **Decision + date** | **rounds 1 & 2 returned 2026-08-07: architecture approved both times; v2 closed round 1 (§11), v3 closes round 2 (§12) — 4 gaps + 3 corrections** |
+| **Decision + date** | **rounds 1–3 returned 2026-08-07: architecture + Design A approved all three; v2/v3/v4 closed them (§11/§12/§13); round 3 = 3 gaps + 3 corrections** |
 | **Path** | full |
 
 ---
@@ -87,7 +87,7 @@ rather than leaving the section empty.
 
 | uncontrolled input | failure | invariant |
 |---|---|---|
-| **crash while `GENERATING`, before the visibility transition** | provisional (hidden) output rows exist; inputs still visible | **X1** — under Design A the transition is the sole completeness proof: recovery deletes **every** row tagged `operation_id` and the inputs (never hidden pre-transition) simply remain; there is no visible coexistence to reconcile, and no blind delete of inputs |
+| **crash while `GENERATING`, before the visibility transition** | provisional (hidden) output rows exist; inputs still visible | **X1** — under Design A the transition is the sole completeness proof: recovery deletes **every provisional OUTPUT row for `operation_id`** and **clears the claim fields on the INPUT rows** (never "all rows" — inputs carry `operation_id` too; §4b-ii/Correction A); the inputs simply remain visible, so there is no coexistence to reconcile and no blind delete of inputs |
 | **crash after the batch-delete commits, before `FINALIZED`** | inputs gone, output present, op not finalised | **X2** — the delete is one **all-or-nothing** primitive (§4b), so there is no durable "some inputs gone"; recovery re-issues the idempotent delete and finalises |
 | **crash before any write** | nothing changed | no-op, by construction |
 | **concurrent `maintain()`** | two consolidations of one set | **X4** — `Episode.claimed_by` (the operation) claims an input; a second run skips claimed inputs |
@@ -160,36 +160,91 @@ deletes the operation and its claim/provisional-output state atomically with the
 rest of that user's memory** — the store's existing "erase everything for the user"
 contract now explicitly covers consolidation state.
 
+### 4a-ii. The lease is a store-clock duration, and owner-only means owner-enforced (round 3, finding 1)
+
+The transition table says `CLAIMED`/`GENERATING` may be acted on **only by the owner
+with a live lease** — but `(operation_id, fence)` is **not a secret**:
+`pending_consolidations` hands the current fence to every recovery worker, so a
+non-owner who reads it could otherwise call `write_consolidation_output_if_current(op,
+fence, …)` and win. Owner-only must therefore be **mechanically enforced**, and the
+lease semantics must be frozen (v3 left `lease` an unspecified token — absolute
+deadline vs duration — which contradicts "the store's clock owns expiry").
+
+> **Frozen: lease protocol.**
+> - **`lease_duration` is an exact bounded duration**, never an absolute
+>   worker-computed deadline. On creation/takeover the **store** sets
+>   `lease_expires_at = store_now + lease_duration` (store clock, §4a). Bounds:
+>   `0 < lease_duration <= LEASE_MAX` (a store constant); a request outside them is
+>   rejected.
+> - **`renew_consolidation_lease(op_id, fence, owner)`** succeeds only for the exact
+>   current `(fence, owner)` under an **unexpired** lease, and sets
+>   `lease_expires_at = store_now + lease_duration`. It cannot resurrect an expired
+>   lease (that path is takeover).
+>
+> **Enforcement is by phase — before vs after the `OUTPUTS_DURABLE` cutover** (this is
+> what makes "recovery may act without the dead owner" and "no one may preempt a live
+> worker" both true):
+> - **Pre-cutover owner actions** — `write_consolidation_output_if_current` and the
+>   owner-driven `transition…` (`CLAIMED→GENERATING`, `GENERATING→OUTPUTS_DURABLE`) —
+>   succeed **only when the caller matches the recorded `owner` AND the lease is
+>   unexpired.** A lost fence, wrong owner, or expired lease returns `False`. (The
+>   `owner` argument is what makes this mechanically enforceable; `(op_id, fence)` alone
+>   is not secret.)
+> - **`abandon_consolidation_if_current(op_id, fence)` is ownerless but succeeds ONLY
+>   on an EXPIRED lease** (→ clean `ABANDONED`, §4b-iii). It returns `False` while the
+>   lease is live — so a non-owner holding the discoverable fence **cannot** abandon a
+>   live worker's op (X7). This is the sole pre-cutover recovery action (a roll-back).
+> - **Post-cutover roll-forward is recovery-safe and ownerless.** Once an op is
+>   `OUTPUTS_DURABLE`, the outputs are committed and correct, so **any** worker may
+>   `transition…(→FINALIZED)` and `delete_claimed_inputs…` — validated by `(op_id,
+>   fence)` + current state, **not** owner (the dead owner may never come back). These
+>   are the same calls the happy path makes; there is no separate recovery API.
+
+> **Takeover selection (round 3, Correction C).** `create_or_takeover_consolidation`
+> takes no `operation_id`; it identifies its target **by the claim set for that user**.
+> Atomically: if any requested id is claimed by an operation with an **unexpired**
+> lease → return `None` (contended, do not steal — X7). Else if a **clean `ABANDONED`**
+> or **expired-lease** operation covers exactly these `ids` → **revive it under a new
+> fence** (same `operation_id`, §4b-iii guarantees it is already clean). Else → **create
+> a new operation**. This is how a terminal `ABANDONED` op is found without
+> `pending_consolidations` returning it.
+
 ### 4b. An explicit atomic batch-claim primitive
 
 **Finding 9: "one conditional update" does not give all-or-nothing.** An
 ordinary `UPDATE ... WHERE` claims the eligible subset and reports a smaller row
 count — **a partial claim, the exact state the design called impossible.**
 
-> **New `Store` methods.** The six mutators are marked `@store_mutator`;
+> **New `Store` methods.** The mutators are marked `@store_mutator`;
 > `pending_consolidations` is a **read** and is not:
 > ```
-> create_or_takeover_consolidation(user_id, ids, owner, lease) -> Op | None
-> renew_consolidation_lease(operation_id, fence, owner)        -> bool
-> write_consolidation_output_if_current(op_id, fence, episode) -> bool
-> transition_consolidation_if_current(op_id, fence, to_state)  -> bool
-> delete_claimed_inputs_if_current(op_id, fence)               -> bool
-> abandon_consolidation_if_current(op_id, fence)               -> bool
+> create_or_takeover_consolidation(user_id, ids, owner, lease_duration) -> Op | None
+> renew_consolidation_lease(operation_id, fence, owner)              -> bool
+> write_consolidation_output_if_current(op_id, fence, owner, episode)-> bool   # owner-only (pre-cutover)
+> transition_consolidation_if_current(op_id, fence, owner, to_state) -> bool   # owner for pre-cutover; owner ignored for →FINALIZED (recovery-safe)
+> delete_claimed_inputs_if_current(op_id, fence)                    -> bool   # post-cutover: recovery-safe, ownerless
+> abandon_consolidation_if_current(op_id, fence)                     -> bool   # expired-lease only (§4a-ii)
 > pending_consolidations(user_id) -> list[Op]     # READ — recovery-discovery
 > ```
-> **Every mutator takes `(operation_id, fence)` and returns `False` if the caller no
-> longer owns it.** Each backend implements the atomicity; the interface states
-> the contract.
+> **Every *post-creation* fenced mutator takes `(operation_id, fence)`** (Correction C
+> fixes the earlier "every mutator" — creation cannot take a not-yet-minted id/fence).
+> Enforcement is **by phase** (§4a-ii): pre-cutover owner actions additionally require
+> the recorded `owner` under an unexpired lease; `abandon` succeeds only on an expired
+> lease; post-cutover roll-forward is recovery-safe and ownerless. Each backend
+> implements the atomicity; the interface states the contract.
 
-**Recovery-discovery is a first-class Store read (finding 1, round 1).** X-Q1
-requires `consolidate()` to run recovery at its own start and surface the count in
-`introspect()` — but the fenced mutators above cannot *find* the operations to
-recover. After a `GENERATING → OUTPUTS_DURABLE` crash the inputs are hidden from
-ordinary reads, so a cold-candidate `create_or_takeover_consolidation` can never
-stumble onto them. `pending_consolidations(user_id)` returns every operation not in
-`{FINALIZED}` — the interface through which the normative recovery pass is
-implementable **without backend-private access.** Recovery reads it, applies the
-§4b-ii transition table to each, and counts them for `introspect()`.
+**Recovery-discovery is a first-class Store read (finding 1, round 1; set corrected
+round 3).** X-Q1 requires `consolidate()` to run recovery at its own start and surface
+the count in `introspect()` — but the fenced mutators above cannot *find* the
+operations to recover. After a `GENERATING → OUTPUTS_DURABLE` crash the inputs are
+hidden from ordinary reads, so a cold-candidate `create_or_takeover_consolidation` can
+never stumble onto them. **`pending_consolidations(user_id)` returns exactly the
+non-terminal operations — `{CLAIMED, GENERATING, OUTPUTS_DURABLE}`, NOT `FINALIZED`
+and NOT `ABANDONED`** (round-3 finding 2: `ABANDONED` is cleanup-complete and terminal,
+so returning it would leave already-recovered work perpetually "pending" and never let
+`introspect()`'s count fall to zero). Recovery reads it, applies the §4b-ii transition
+table to each, and counts them. `ABANDONED` remains durable history and is found by
+**takeover** through its own internal lookup (§4a-ii), not by this recovery read.
 
 *(The claim primitive has exactly one name across this spec —
 `create_or_takeover_consolidation` — and the input-claim field has exactly one
@@ -221,7 +276,7 @@ transition into `OUTPUTS_DURABLE` flips visibility (Correction D).
 | state | who may act | inputs (visible) | outputs (physical rows / ordinary-read) | permitted next | recovery | idempotency key |
 |---|---|---|---|---|---|---|
 | `CLAIMED` | owner with live lease | **visible** | none / hidden | `GENERATING` · `ABANDONED` | lease expired → `ABANDONED` | `operation_id` |
-| `GENERATING` | owner with live lease | **visible** | **zero or more provisional rows** / hidden | `OUTPUTS_DURABLE` · `ABANDONED` | lease expired → `ABANDONED`; **delete ALL rows tagged `operation_id`** (Design A), release claims | `operation_id` |
+| `GENERATING` | owner with live lease | **visible** | **zero or more provisional rows** / hidden | `OUTPUTS_DURABLE` · `ABANDONED` | lease expired → `ABANDONED`; **delete the provisional OUTPUT rows for `operation_id`, and CLEAR `claimed_by`/`operation_id` on the claimed INPUT rows** (Design A; never "all rows" — inputs carry `operation_id` too, §4b-iii/Correction A) | `operation_id` |
 | `OUTPUTS_DURABLE` | owner, or recovery | hidden | present / **visible** | `FINALIZED` | **roll forward, never back** — the transition committed, so outputs are complete and correct | `operation_id` |
 | `FINALIZED` | — | deleted | present / **visible** | — | none needed | — |
 | `ABANDONED` | any worker may take over | **visible** | **none remain** / hidden | `CLAIMED` (new fence) | already clean — `ABANDONED` is only observable *after* cleanup (§4b-iii) | `operation_id` |
@@ -230,11 +285,14 @@ transition into `OUTPUTS_DURABLE` flips visibility (Correction D).
 transition itself the sole completeness proof (finding 2).** All output rows
 written while `GENERATING` are **provisional and invisible**. If the process
 crashes at any point before the atomic `GENERATING → OUTPUTS_DURABLE` transition,
-recovery deletes **every** row tagged `operation_id` — *even if all intended
-outputs happened to be written* — and re-exposes the inputs (which never stopped
-being visible). Recovery therefore never has to distinguish "complete but not
-transitioned" from "partial": before the transition, nothing counts; after it,
-everything does. **No expected-output set is persisted** — the operation record
+recovery deletes **every provisional OUTPUT row for `operation_id`** — *even if all
+intended outputs happened to be written* — and **clears `claimed_by`/`operation_id`
+on the claimed INPUT rows** (the inputs are never deleted here; they carry
+`operation_id` too, so "delete all rows tagged `operation_id`" would destroy them —
+Correction A, round 3). The inputs, which never stopped being visible, simply become
+clean cold candidates again. Recovery therefore never has to distinguish "complete
+but not transitioned" from "partial": before the transition, nothing counts; after
+it, everything does. **No expected-output set is persisted** — the operation record
 carries none (§4a), and there is no primitive to establish one, because Design A
 needs neither. (Design B — recognising a complete pre-transition generation from a
 persisted output plan — was considered and rejected in round 1: it adds
@@ -403,6 +461,23 @@ lineage, so an implementer can satisfy it and still fail X3 here.
 > duplicate-independent) so the absorbed-set identity is stable. None of that is in
 > v1; the flat "outputs are not candidates" rule is.
 
+> **Because `lineage` now permanently controls eligibility, its record shape is
+> frozen (round 3, Correction B).** The consolidation fields are not independently
+> optional — an imported or inserted episode must match **exactly one** of three
+> mutually exclusive shapes, validated on store insert **and** on import (§4f), else it
+> is refused (a malformed `lineage = [...]` with everything else `None` must not be
+> able to acquire the permanent "never consolidate" status):
+> ```
+> plain episode      : lineage absent · claimed_by absent · operation_id absent
+>                      · date_start/date_end absent
+> claimed input      : lineage absent · claimed_by == operation_id (the claiming op)
+>                      · date_start/date_end absent
+> consolidated output: lineage NON-EMPTY · claimed_by absent · operation_id present
+>                      · date_start present · date_end present · date == date_start
+> ```
+> Invariant **X18**. This adds no recursive-compaction semantics; it only makes the v3
+> discriminator structurally trustworthy.
+
 ### 4f. Export is a logical quiescent snapshot (round 2, finding 4)
 
 Because v2 changes the export `FORMAT_VERSION`, the portable path is now
@@ -413,16 +488,27 @@ episode with `claimed_by = op-1` and no `op-1` in the export; on import into a f
 store there is **no operation to recover**, yet X4 makes the claimed episode
 ineligible for a new claim — a **durable orphan** created purely by the portable path.
 
-> **Frozen.** Export is a **logical quiescent snapshot**: before it serializes,
-> every live consolidation for that user MUST be driven to a settled state —
-> **recovered forward (`FINALIZED`) or abandoned (clean)** — **or the export refuses.**
-> **Transient claim metadata is never exported without the durable operation state
-> that gives it meaning:** an exported episode never carries a dangling `claimed_by`.
-> (Exporting the live state machine itself is rejected — `owner`/`lease` semantics do
-> not transfer to another store.) The `FORMAT_VERSION` acceptance test exercises
-> export/import from **every** consolidation state, not just finalized outputs.
-> Invariant **X17**. (`0005` owns import's trust cap; this is the orthogonal
-> *completeness* rule — a claim without its operation is not importable state.)
+> **Frozen: ONE deterministic export algorithm (round 3, finding 3).** v2/v3 said
+> "settle **or** refuse" — but that is exactly the unresolved "or" `0010` exists to
+> eliminate, authorising two observably different `export_memory()` contracts. The
+> state machine already determines the outcome per state, so it is frozen per state:
+> ```
+> FINALIZED                          → export
+> ABANDONED                          → export (already clean)
+> OUTPUTS_DURABLE                    → recovery rolls forward to FINALIZED, then export
+> CLAIMED / GENERATING, lease EXPIRED → recovery atomically abandons (§4b-iii), then export
+> CLAIMED / GENERATING, lease LIVE    → REFUSE (X7: never preempt a live worker for a snapshot)
+> ```
+> Only the last cell refuses; the rest settle deterministically. **Transient claim
+> metadata is never exported without the durable operation state that gives it
+> meaning:** after this algorithm no exported episode carries a dangling `claimed_by`
+> (every non-finalized op has been rolled forward or abandoned-clean). Exporting the
+> live state machine itself is rejected — `owner`/`lease` do not transfer to another
+> store. **Any visibility-changing recovery mutation this algorithm runs is still
+> subject to the §11-F3 `store_version`-advancement invariant.** The `FORMAT_VERSION`
+> acceptance test exercises export/import from **every** state. Invariant **X17**.
+> (`0005` owns import's trust cap; this is the orthogonal *completeness* rule — a claim
+> without its operation is not importable state.)
 
 `Store` is an interface with a Postgres implementation contemplated. Requiring
 cross-backend atomic multi-statement transactions pushes a durability guarantee
@@ -435,15 +521,16 @@ with a stated contract**, which is a smaller ask than "implement transactions".
 |---|---|---|
 | **X1** an input is never deleted before its summary is durable | `test_consolidation_writes_before_deleting` — a store wrapper that raises after the write | CI |
 | **X2** the batch-delete is all-or-nothing; a crash **after** it commits but before `FINALIZED` is recovered by an **idempotent re-delete + finalise**, never a re-consolidation | `test_recovery_finalises_after_committed_delete` — there is no durable "some inputs deleted" state to complete | CI |
-| **X13** recovery is **discoverable**: `pending_consolidations(user_id)` returns every non-`FINALIZED` operation, including one stranded in `OUTPUTS_DURABLE` whose inputs are hidden | `test_recovery_discovers_a_stranded_durable_operation` — a cold-candidate claim could never find it (finding 1) | CI |
+| **X13** recovery is **discoverable**: `pending_consolidations(user_id)` returns exactly the non-terminal ops `{CLAIMED, GENERATING, OUTPUTS_DURABLE}` — **not `FINALIZED`, not clean `ABANDONED`** | `test_pending_returns_only_nonterminal` — an `OUTPUTS_DURABLE` op is discovered; a clean `ABANDONED` op is **not** returned, so `introspect()`'s recovery count falls back to zero (findings 1 + round-3 finding 2) | CI |
 | **X14** the `GENERATING → OUTPUTS_DURABLE` visibility cutover **advances `store_version`** in the same atomic mutation, though it changes no episode row | `test_visibility_cutover_bumps_store_version` — a cached wiki compiled from the still-visible inputs must not read fresh after the cutover (finding 3) | CI |
 | **X3** retry is idempotent — **no summary-of-summary**, including after a response-lost `FINALIZED` | `test_consolidation_retry_is_idempotent` + `test_finalized_outputs_are_not_reconsolidated` — a re-run over a finalized generation's own visible outputs finds no candidates (§4e) | CI |
 | **X15** `ABANDONED` is cleanup-complete: no provisional output row and no claim survive it, and a new fence can only advance from that clean state | `test_takeover_requires_clean_abandoned` — a stale provisional row tagged `operation_id` cannot coexist with a new fence's rows (finding 2) | CI |
 | **X16** an episode with non-empty `lineage` (an output) is never a consolidation candidate; a *released input* (claim cleared) **is** eligible again | `test_consolidated_output_is_not_a_candidate` — 16→8 finalized, re-run selects none of the 8; `test_released_input_is_a_candidate_again` — an abandoned op's inputs re-consolidate (keying on `operation_id` would strand them) | CI |
-| **X17** export is a quiescent snapshot: a live claim is settled or export refuses; no exported episode carries a dangling `claimed_by`; `forget_user()` erases operation state | `test_export_refuses_or_settles_live_consolidation` + `test_forget_user_erases_consolidation_ops` (findings 4 + Correction B) | CI |
+| **X17** export runs **one deterministic per-state algorithm** (§4f): FINALIZED/ABANDONED export as-is, OUTPUTS_DURABLE rolls forward, expired-lease CLAIMED/GENERATING abandons, **only live-lease CLAIMED/GENERATING refuses**; no exported episode carries a dangling `claimed_by`; `forget_user()` erases operation state | `test_export_settles_each_state_deterministically` (one behaviour per state, not settle-*or*-refuse) + `test_forget_user_erases_consolidation_ops` (finding 4 + round-3 finding 3) | CI |
+| **X18** every stored/imported episode matches exactly one frozen shape — plain, claimed-input, or consolidated-output — else it is refused | `test_malformed_lineage_shape_is_refused` — `lineage=[...]` with no `operation_id`/`date_start`/`date_end` cannot acquire "never consolidate" status (round-3 Correction B) | CI |
 | **X4** the claim is **atomic over the whole set** | `test_concurrent_consolidation_claims_all_or_nothing` — two workers, overlapping candidate sets; exactly one wins | CI |
-| **X7** a claim is preemptible only on an **expired lease**, never on fence order alone | `test_a_live_lease_is_not_preempted` — a heartbeating worker mid-LLM-call keeps its claim | CI |
-| **X10** a worker that has lost its fence **cannot write, flip visibility, or delete** | `test_a_preempted_worker_cannot_write_or_delete` — the invariant that makes preemption safe | CI |
+| **X7** a claim is preemptible only on an **expired store-clock lease**, never on fence order alone; a live-lease op is not preempted and its **owner is mechanically enforced** | `test_a_live_lease_is_not_preempted` (heartbeating worker keeps its claim) + `test_non_owner_cannot_mutate_a_live_op` — a non-owner holding the discoverable fence is rejected (round-3 finding 1) | CI |
+| **X10** a worker that has lost its fence **or is not the owner under a live lease** cannot write, flip visibility, or delete | `test_a_preempted_worker_cannot_write_or_delete` — the owner+fence+lease check that makes preemption safe | CI |
 | **X11** `create_or_takeover_consolidation` is all-or-nothing | `test_partial_claim_is_impossible` — contend for an overlapping set; the loser changes nothing | CI |
 | **X12** every output's lineage is the **whole claimed set** | `test_lineage_is_the_whole_batch` — **a post-hoc date partition would under-attribute third-party influence** | CI |
 | **X8** every output carries the **whole** claimed set as lineage | `test_lineage_is_the_whole_batch` — **there is no input→output partition**; v5's exact-partition rule contradicted whole-batch lineage | CI |
@@ -490,9 +577,10 @@ replacement.
   (§4e), so summaries are never re-summarised in v1. This is the price of mechanical
   retry-idempotency without a caller idempotency token; recursive compaction would
   need its own spec (§4e states what it would have to freeze).
-- **Not export of a live consolidation.** Export is a quiescent snapshot (§4f): a
-  live operation is settled or export refuses. The running state machine is not
-  itself portable — `owner`/`lease` do not transfer to another store.
+- **Not export of a live consolidation.** Export is a quiescent snapshot: §4f's
+  deterministic algorithm settles every state (finalize/roll-forward/abandon) and
+  refuses **only** a live-lease operation. The running state machine is not itself
+  portable — `owner`/`lease` do not transfer to another store.
 
 ---
 
@@ -630,3 +718,39 @@ Each was reproduced against source or spec text first.
 **Not changed:** the approved fenced/leased state-machine direction and Design A both
 carry forward. The reviewer's own acceptance bar for v3 is items F1–F4 + A–C above;
 all seven are closed here.
+
+---
+
+## 13. Review closure — round 3 (2026-08-07)
+
+Round-3 external review: **"fenced-state-machine architecture and Design A remain
+approved; v4 deferred on three load-bearing design gaps plus three contract
+corrections."** The reviewer confirmed all seven round-2 closures hold and approved the
+v1 non-recursive-compaction decision. The new findings are protocol edges *exposed by*
+those closures — none reopens the architecture, Design A, or the flat candidate rule.
+**Correction A is a carrier the round-2 pre-send pass missed:** the `operation_id`
+over-broad-delete fix reached §4e but the identical "delete ALL rows tagged
+`operation_id`" wording survived in the transition table and Design-A prose. Each
+finding was reproduced against the spec text first.
+
+### Blocking findings
+
+| # | finding | root fix in v4 |
+|---|---|---|
+| **F1** | "owner with a live lease" was unenforceable: the fenced mutators took `(op_id, fence)` but no `owner`, and `(op_id, fence)` is **not secret** (`pending_consolidations` hands the fence to every recovery worker); lease duration/renewal semantics were also unspecified | §4a-ii freezes the lease protocol (bounded store-clock **duration**, not an absolute deadline; renewal requires exact owner+fence+unexpired) and adds `owner` to the owner-only mutators, enforced as owner+fence+unexpired-lease; recovery mutators are deliberately ownerless once the lease expires. X7/X10 updated. |
+| **F2** | a clean `ABANDONED` op stayed "pending" forever — `pending_consolidations` returned "every non-`FINALIZED`", so `introspect()`'s recovery count never fell to zero and X13 broke | §4b redefines the read as exactly `{CLAIMED, GENERATING, OUTPUTS_DURABLE}`; `ABANDONED` is terminal history, found only by takeover's own claim-set lookup (§4a-ii). X13 updated. |
+| **F3** | X17 authorised "settle **or** refuse" — two observably different export contracts, the exact "or" `0010` exists to eliminate | §4f freezes **one deterministic per-state algorithm** (FINALIZED/ABANDONED export as-is; OUTPUTS_DURABLE rolls forward; expired-lease claims abandon; only live-lease claims refuse). X17 rewritten; recovery mutations it runs still obey the §11-F3 `store_version` invariant. |
+
+### Contract corrections
+
+| # | correction | v4 |
+|---|---|---|
+| **A** | "delete every/ALL row tagged `operation_id`" (transition table + Design-A prose) would delete the **inputs** too, since a claimed input also carries `operation_id` — recreating the data-loss class | Made uniform everywhere: **delete the provisional OUTPUT rows for `operation_id`; CLEAR `claimed_by`/`operation_id` on the claimed INPUT rows** (§4b-ii table + prose match §4b-iii/§4e). Never "all rows." |
+| **B** | `lineage` is now the permanent eligibility discriminator, but the fields were independently optional — a malformed `lineage=[...]` with everything else `None` could acquire "never consolidate" status | §4e freezes three mutually-exclusive record shapes (plain / claimed-input / consolidated-output), validated on store insert **and** import. Invariant X18. |
+| **C** | "every mutator takes `(operation_id, fence)`" is false for `create_or_takeover_consolidation` (creation has no id/fence yet) | Reworded to "every **post-creation** *owner* mutator"; §4a-ii freezes how takeover identifies the abandoned op it revives — by the **claim set**, not an `operation_id`. |
+
+**Not changed:** the fenced/leased architecture, Design A, X9 as one conformance rule,
+and the v1 non-recursive-compaction limit (reviewer-approved; the maintenance docs will
+state "one-level consolidation, not recursive compaction" so operators infer no
+storage-bounding property). The reviewer's v4 acceptance bar is F1–F3 + A–C; all six are
+closed here.
