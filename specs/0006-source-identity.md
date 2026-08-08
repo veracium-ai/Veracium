@@ -1,12 +1,12 @@
 # Feature spec: source identity and evidence basis
 
-Spec-Status: draft
+Spec-Status: in review
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft — R3 APPLIED; diagnostic-only; ALL open questions resolved (Q2 RULED
-> 2026-08-08) → review-ready.** Opened on research's R2 ruling; **R3 (2026-08-01 23:17 UTC)
+> **in review (2026-08-08) — R3 APPLIED; diagnostic-only; ALL open questions resolved
+> (Q2 RULED 2026-08-08); awaiting external review.** Opened on research's R2 ruling; **R3 (2026-08-01 23:17 UTC)
 > overturned its central mechanism** — `source_id` may GROUP, never GRANT. The §3
 > matrix now reflects R3 (every cell is *"flag stays"*; the falsified relaxation is
 > struck through and left visible rather than silently edited — house style, see
@@ -17,8 +17,8 @@ Spec-Requires: 0007, 0013
 > implemented (§0b), so the added column lands through the accepted migration path.
 > Q1 is resolved, Q3's dev half is ruled, and **Q2 is now RULED (research, 2026-08-08 —
 > default `restated` as interpretation-only; storage stays absent; enforced by new I8).
-> No open questions remain — this spec is review-ready; the next step is `draft → in review`,
-> then external review.** (§10)
+> No open questions remain — this spec is now `in review`; the remaining step is external
+> review (the reviewer-safe package is the deployment authority's to send).** (§10)
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
 
