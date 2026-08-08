@@ -115,12 +115,27 @@ cause rather than each symptom:**
   retire it)
 - **`0002` M3** — *class ≠ identity*
 
-Each was found separately and each was patched separately. **Three consumers
-justify the schema change that dissolves all three.**
+Each was found separately and each was patched separately. **Those three are the
+ORIGIN of the finding — but be precise about v1: after R3, none of them READS
+`source_id` in v1.** R3 made the ruling diagnostic-only (`source_id` may GROUP,
+never GRANT — §0), so M3 stays fail-closed, and Q3 (§10) defers `0003`'s ladder
+to a later pure-code change; neither consumes the column in v1, and evidence-basis
+is the separate `evidence_basis` field, not `source_id`.
 
-**If we do nothing:** M3 stays permanently fail-closed — which is correct today
-and blocks a real requirement, same-source reinforcement — and `0003`'s ladder
-stays coarser than it needs to be.
+**The concrete v1 consumer is `0014` (maintenance attribution).** It keys its
+content-free contribution ledger on `source_id` (`Spec-Requires: 0006`) — precisely
+because this spec defines an opaque, host-supplied identifier that is *already the
+revocation key*. So v1 ships the identity as **diagnostic + a stable, revocable
+ledger key**; the three trust consumers that motivated it are **deferred** (M3
+relaxation and the `0003` ladder both wait on provenance-of-the-*call*, §0, which is
+on no roadmap). This spec earns its schema change in v1 on `0014` — a §1→§3 reader
+should not have to infer that.
+
+**If we do nothing:** M3 stays permanently fail-closed — correct today, but it
+blocks same-source reinforcement — `0003`'s ladder stays coarser than it needs to
+be, and **`0014` has no opaque, revocable key to attribute maintenance to**, so the
+attribution ledger cannot name a source and the recurring maintenance-provenance-loss
+class stays open.
 
 ---
 
@@ -131,7 +146,7 @@ stays coarser than it needs to be.
 | **`Provenance.source_id`** | **NEW**, optional | An opaque, stable identifier for *the source that produced this evidence* — a mailbox, a connector instance, a device, a named subsystem. Never a person's identity, never a display name. |
 | **`Provenance.evidence_basis`** | **NEW**, optional enum | `observed` (the source witnessed this) · `restated` (the source is repeating something it did not witness) · `derived` (produced by inference over other records). |
 | `Provenance.evidence_ref` | unchanged | Already identifies the *event*. `source_id` identifies **who produces such events**; `evidence_ref` identifies **one**. Neither replaces the other. |
-| `FORMAT_VERSION` | **2 → 3** | Export/import must round-trip both new fields. |
+| `FORMAT_VERSION` | **3 → 4** | Export/import must round-trip both new fields. **`portability.py:37` is already `3`** (a prior release bumped it), so this spec bumps **3 → 4**, not 2 → 3. (The store `SCHEMA_VERSION` is a separate counter — currently 4 — do not conflate.) |
 
 **Both fields are optional and absent means unknown**, which must behave as the
 **least** favourable value — see I3.
@@ -145,7 +160,7 @@ stays coarser than it needs to be.
 | **`source_id`** | absent → treated as unknown → **no relaxation** | rejected | — | **the model names a `source_id` to impersonate a trusted source**, or reuses the user's | **I1 — host-supplied only; never model-supplied, never extractor-derived** |
 | **`evidence_basis`** | absent → *interpreted as* `restated` (least favourable) but **stored absent, never materialised — I8** | rejected | rejected | model declares `observed` to manufacture freshness | **I2 — host-supplied only; same rule as `source_id`** |
 | **older-store data** | both absent | — | — | — | **I3 — absence never relaxes a rule.** Also the `PRAGMA user_version` gap, see Q1 |
-| **imported export** | — | version-checked | v3 file into a v2 build rejected | trust fields hand-written | `0005`'s cap applies **first**; this adds no exemption |
+| **imported export** | — | version-checked | v4 file into a v3 build rejected | trust fields hand-written | `0005`'s cap applies **first**; this adds no exemption |
 
 ## 2c-ii. Assertions about reach
 
@@ -207,7 +222,7 @@ we genuinely do not know.
 | **I3** absence never relaxes a rule | `test_missing_source_id_keeps_the_flag` — over the §3 matrix, both-absent and one-absent | CI |
 | **I4** the §3 matrix holds exactly | `test_staleness_clearing_matrix` — table-driven, all six rows | CI |
 | **I5** `source_id` never widens disclosure or authority | `test_source_id_does_not_affect_disclosure_or_the_ladder` — it gates **one** rule and nothing else | CI |
-| **I6** export/import round-trips both fields | `test_v3_export_roundtrip` · `test_v3_file_into_v2_build_is_rejected` | CI |
+| **I6** export/import round-trips both fields | `test_v4_export_roundtrip` · `test_v4_file_into_v3_build_is_rejected` | CI |
 | **I7** `0005`'s import cap applies before any of this | `test_imported_source_id_does_not_bypass_the_remap_cap` | CI |
 | **I8** the `restated` default is **never materialised** — absence is interpreted as `restated` at every decision point but stored ABSENT (research's Q2 ruling, 2026-08-08) | `test_absent_evidence_basis_stays_absent` — ingest with no `evidence_basis`, read the row back and assert it is **stored absent**; then assert the §3 matrix outcome is IDENTICAL to an explicitly-`restated` record. The second half is the point: it pins behavioural equivalence alongside representational distinctness, so a future "optimisation" cannot write the default in | CI |
 
@@ -239,6 +254,17 @@ repetition.
   `revoke_source`) may count an absent row as a `restated` observation. The two are
   distinct facts — absence = nobody attested; `restated` = the host affirmatively
   attested repetition — and the store keeps them distinct (I8).
+- **`source_id` "opaque" is a CONTRACT, not a mechanism (internal round, F3).**
+  §2c/§4 call it opaque, but the store keeps it host-supplied and **stores it raw** —
+  nothing prevents a host writing content into it (`"email:alice@…/subject:Divorce
+  papers"`). §8's reuse limit and §2c's forgery rule do not cover *content*. This
+  spec therefore does **not** guarantee `source_id` is content-free; it guarantees
+  only that it is host-supplied and never model-set (I1). **A consumer that stores or
+  keys on `source_id` and needs a content-free surface MUST digest it** — and
+  `0014`, which keys its content-free ledger on `source_id`, does exactly that
+  (`0014` §2/§4: `source_id` is the join key, but any surface that must be
+  content-free digests it, the same treatment `0014` gives `evidence_ref`). Hosts
+  that need the raw value content-free should hash it before supplying it.
 
 ---
 
