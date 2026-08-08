@@ -1,4 +1,11 @@
-"""specs/0014 (draft) — the maintenance-attribution regression, pinning finding M9.
+"""specs/0014 + 0012 — the maintenance-attribution regressions.
+
+Site ownership (research ruling 2026-08-08): the two REINFORCEMENT tests below pin finding M9,
+now owned by `specs/0012` (Design 1 persists the reinforcing edge — the edge is the attribution).
+The CONSOLIDATION and ABSORPTION tests pin `specs/0014` (the contribution ledger). All four are
+xfail until their owning spec lands; kept in one file because they share the reproduction harness.
+
+Original note — the maintenance-attribution regression, pinning finding M9.
 
 This test documents an OPEN defect executably. Reinforcement transfers a contributor's
 liveness (`observed_at`) and confidence into the survivor and then discards the incoming
@@ -60,10 +67,10 @@ def _contributor_is_recoverable(store, user_id, survivor_id, contributor_ref) ->
 
 
 @pytest.mark.xfail(strict=True, reason=(
-    "specs/0014 / finding M9: reinforcement does not yet attribute the contributing source. "
-    "The incoming edge is never persisted (insert_incoming=False) and no contribution record "
-    "is written, so the source that moved the survivor's liveness and confidence leaves no "
-    "trace. Remove this marker when 0014's contribution ledger lands."))
+    "finding M9 (repointed 0002->0012, 2026-08-08): reinforcement does not yet attribute the "
+    "contributing source — the incoming edge is never persisted (insert_incoming=False). CLOSED "
+    "BY specs/0012 Design 1 (reinforcement persists the incoming edge with its own provenance — "
+    "the edge IS the attribution), NOT by 0014's ledger. Remove this marker when 0012 lands."))
 def test_reinforcement_attributes_the_contributing_source(tmp_path):
     s = SqliteStore(str(tmp_path / "s.db"))
     # the user states the fact in January, at low confidence
@@ -91,11 +98,10 @@ def test_reinforcement_attributes_the_contributing_source(tmp_path):
 
 
 @pytest.mark.xfail(strict=True, reason=(
-    "specs/0014 A1a (research's consult-and-discard sharpening): a contributor that moves no "
-    "max() — older AND weaker — leaves the survivor unchanged, but is STILL consumed and STILL "
-    "vanishes. A transfer-keyed rule would miss it; the invariant is owed to the consumption. "
-    "This is the attack path: an adversary contributes invisibly by ensuring no value moves. "
-    "Remove this marker when 0014's contribution ledger records empty-payload consumptions."))
+    "the empty-payload reinforcement case (older AND weaker contributor moves no max(), survivor "
+    "unchanged, contributor still vanishes). CLOSED BY specs/0012 Design 1 (persist the incoming "
+    "edge regardless of whether any max() moves — the persisted edge is the attribution). Reinforcement "
+    "moved from 0014 to 0012 (research ruling, 2026-08-08). Remove this marker when 0012 lands."))
 def test_reinforcement_records_the_contributor_even_when_no_value_moves(tmp_path):
     s = SqliteStore(str(tmp_path / "s.db"))
     # the prior is newer AND stronger than the contributor, so max() keeps it on both fields

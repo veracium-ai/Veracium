@@ -36,6 +36,29 @@ REVIEWS = [
     dict(spec="0008", round=3, kind="external", date="2026-08-02", verdict="clearing rule approved; deferred on the storage and API contract", findings=8),
     dict(spec="0008", round=4, kind="external", date="2026-08-02", verdict="clearing rule approved; deferred on episode inputs, idempotency and 0007", findings=9),
 
+    # --- 0009 (5 external rounds; per-round dispositions in the spec's Review-closure
+    #          ledger §11–§15; accepted 2026-08-07 on a finite boundary. These entries
+    #          restore the count STATUS.md was undercounting — findings=None because the
+    #          per-round counts were recorded in the closure ledger, not here) ------------
+    dict(spec="0009", round=1, kind="external", date="2026-08-07", verdict="append-only design approved; deferred (Review closure §11)", findings=None),
+    dict(spec="0009", round=2, kind="external", date="2026-08-07", verdict="deferred (Review closure §12)", findings=None),
+    dict(spec="0009", round=3, kind="external", date="2026-08-07", verdict="deferred (Review closure §13)", findings=None),
+    dict(spec="0009", round=4, kind="external", date="2026-08-07", verdict="deferred (Review closure §14)", findings=None),
+    dict(spec="0009", round=5, kind="external", date="2026-08-07", verdict="ACCEPTED on a finite boundary (Review closure §15)", findings=None),
+
+    # --- 0010 (7 external rounds; per-round dispositions in the spec's Review-closure
+    #          ledger §11–§17; accepted 2026-08-07 on a finite boundary) -----------------
+    dict(spec="0010", round=1, kind="external", date="2026-08-07", verdict="crash-safe design approved; deferred (Review closure §11)", findings=None),
+    dict(spec="0010", round=2, kind="external", date="2026-08-07", verdict="deferred (Review closure §12)", findings=None),
+    dict(spec="0010", round=3, kind="external", date="2026-08-07", verdict="deferred (Review closure §13)", findings=None),
+    dict(spec="0010", round=4, kind="external", date="2026-08-07", verdict="deferred (Review closure §14)", findings=None),
+    dict(spec="0010", round=5, kind="external", date="2026-08-07", verdict="deferred (Review closure §15)", findings=None),
+    dict(spec="0010", round=6, kind="external", date="2026-08-07", verdict="deferred (Review closure §16)", findings=None),
+    dict(spec="0010", round=7, kind="external", date="2026-08-07", verdict="ACCEPTED on a finite boundary (Review closure §17)", findings=None),
+
+    # --- 0012 -------------------------------------------------------------
+    dict(spec="0012", round=1, kind="internal", date="2026-08-08", verdict="O-Q1/O-Q2/O-Q3 RULED (research) — Design 1: reinforcement transfers NOTHING (incl. confidence); expire() stays per-edge (invariant); render both. Design 3 rejected, Design 2 successor. Design 1 closes 0014 §3.1 + M9. No open question blocks the spec", findings=3),
+
     # --- 0007 -------------------------------------------------------------
     dict(spec="0007", round=1, kind="external", date="2026-08-02",
          verdict="design direction approved; deferred on the shape comparison", findings=12),
