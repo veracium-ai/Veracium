@@ -137,4 +137,5 @@ REVIEWS = [
     dict(spec="0003", round=6, kind="external", date="2026-08-08", verdict="direction re-approved; deferred — 3 design blockers (default-wiki path, schema-versioned refusal table, atomic supersession plan) + 4 corrections", findings=7),
     dict(spec="0003", round=7, kind="external", date="2026-08-08", verdict="direction re-approved; deferred — 3 found-in-fix gaps (wiki exclusion violates I6a, cache/migration/registry, reinforcement plan variant) + 3 corrections", findings=6),
     dict(spec="0003", round=8, kind="external", date="2026-08-08", verdict="direction re-approved; deferred — 3 found-in-fix gaps (contention surface vs grounded/unverified partition, budget/proactive contract, plan not CAS-linearized) + 3 corrections", findings=6),
+    dict(spec="0003", round=9, kind="external", date="2026-08-08", verdict="finite-boundary concept approved in principle; deferred — 3 architectural seams (challenger reach, refusal-scoped derived-view invalidation, durable operation receipt) + 3 corrections (acceptance-artifact order, structured Recall carrier, expected_state completeness)", findings=6),
 ]

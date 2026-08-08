@@ -5,15 +5,27 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v11)** — round-8 response + an **acceptance-boundary proposal (§11)**,
-> 2026-08-08. v11's content is v10's plus §11; **no design change**. §11 asks the reviewer
-> to gate acceptance on the frozen, checkable **I1–I9** invariant surface — the remaining
-> round-6/7/8 items are all *implementation* contracts, each named with an executable
-> check, and are best settled by building and running them (the `0013`/`0009`/`0010`
-> finite-boundary precedent) rather than by further rounds of prose about unbuilt machinery.
-> **The narrowed ladder / refusal / permutation direction stays approved; v10 closed round
-> 8's three found-in-fix gaps + three corrections — all about how the new contention surface
-> and plan primitive meet Veracium's EXISTING recall-safety, budget and concurrency contracts.**
+> **in review (v12)** — round-9 response, 2026-08-08. **Round 9 approved the finite-boundary
+> concept in principle and deferred v11 on three architectural seams + three corrections; v12
+> closes all six and adds the acceptance artifact.** The narrowed ladder/refusal/permutation
+> direction stays approved.
+> - **B1 (reach) — partition-preserving ≠ reach-preserving.** The deterministic preservation
+>   surface now carries only the higher-authority GROUNDED prior; the fenced lower-trust
+>   challenger keeps NO query-independent reach (stays relevance-gated), so a hostile
+>   lower-authority source can't manufacture a contradiction for broad prompt inclusion (§4c-ii).
+> - **B2 (scope/invalidation) — Option B, refusal-scoped derived view.** The wiki exclusion +
+>   preservation surface apply ONLY where a live refusal exists, so `apply_supersession_plan`
+>   is the coherent invalidation trigger and `import`/`correct()`/lifecycle need not drop the
+>   cache; the broad authority permutation stays in query detail (§4c-ii).
+> - **B3 (durable idempotency) — a `supersession_operations` receipt** (a 2nd v4 table) with a
+>   frozen processing order (receipt-check before CAS; a stale recompute is a new attempt of
+>   the same logical op), so a lost-response reinforcement replays after restart (§4f).
+> - **Corrections:** A — the acceptance-artifact wording is fixed to the real order (design
+>   acceptance on the frozen I1–I9 surface + the new **§11a Review-closure ledger**, THEN
+>   implement, THEN tests green — `PROCESS.md`: only accepted authorises implementation);
+>   B — the structured **`Recall.contested`** carrier + de-duplicated `edges`; C —
+>   `expected_state` must change on ANY plan-relevant field edit (I9). **No ladder/refusal/
+>   permutation change.**
 > - **B1 — the deterministic surface is now partition-preserving and proactive-safe.**
 >   36 of 44 refused states are cross-partition; v9's single "both values" block would
 >   either launder a fenced value into grounded or demote the user fact. §4c-ii keeps each
@@ -39,7 +51,7 @@ Spec-Requires: 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v11** — *re-read before editing; quote the version you approve.* v10's content + the §11 acceptance-boundary proposal; no design change. Narrow design approved at rounds 3–5 and re-approved at rounds 6–8. **§11 asks acceptance be gated on the frozen I1–I9 invariant surface + its executable checks** (the `0013`/`0009`/`0010` precedent). **No change to the ladder, the refusal direction, or the permutation.** |
+| **Version** | **v12** — *re-read before editing; quote the version you approve.* Closes round 9's three architectural seams (reach, refusal-scoped derived view, durable operation receipt) + three corrections (governance wording, structured `Recall.contested`, complete `expected_state`), and adds the **§11a Review-closure ledger** — the acceptance artifact. Narrow design approved at rounds 3–5, re-approved 6–9. **No change to the ladder, the refusal direction, or the permutation.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | required — the narrow design was approved at r3 and r4 and affirmed at r5 (deferred on cleanup only). Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
@@ -345,13 +357,14 @@ re-exported from `veracium`, so this is a **public signature change**, albeit
 additive with a default (omitted → `DEFAULT_RELATIONS`; a host with a custom
 relation registry MUST pass it — §4e).
 
-**Schema:** **yes — a new refusal table, introduced as the next on-disk store
-version.** No existing table or field changes, and no stored edge or episode is
-rewritten — but the table is NOT created opportunistically on open. It advances
-`SCHEMA_VERSION` **v3 → v4** (`Spec-Requires: 0007, 0013`): the table + its index
-enter the schema registry, a fresh store is created at v4, and a below-head store
-is brought forward by an adjacent **offline `0013` migration**. A fresh-constructor
-v4 store and a migrated v3→v4 store agree in shape.
+**Schema:** **yes — TWO new tables, introduced as the next on-disk store version:** the
+**refusal** inventory (§4b) and the **`supersession_operations` receipt** (§4f, round-9
+blocker 3 — the durable carrier for whole-plan idempotency). No existing table or field
+changes, and no stored edge or episode is rewritten — but neither table is created
+opportunistically on open. They advance `SCHEMA_VERSION` **v3 → v4** (`Spec-Requires: 0007,
+0013`): both tables + their indexes enter the schema registry, a fresh store is created at
+v4, and a below-head store is brought forward by an adjacent **offline `0013` migration**. A
+fresh-constructor v4 store and a migrated v3→v4 store agree in shape.
 
 **Migration:** a v3 store is migrated to v4 by the deployment-authority-owned
 `migrate_store()` (`0013` §5b); until then it refuses ordinary open
@@ -493,7 +506,12 @@ LLM told to pick one. `compile.py` was not in §7a and I6/I6a did not cover it.
 >   contention section *within that partition*; a cross-partition contention leaves the
 >   assertable member in **grounded** and the `use_only`/`quarantined` member in the
 >   **fenced unverified** section, a structural group id linking the two **without moving
->   either across the gate**. `Memory.answer()` still asserts only grounded.
+>   either across the gate**. `Memory.answer()` still asserts only grounded. **The
+>   deterministic preservation surface carries ONLY the higher-authority grounded prior;
+>   the fenced lower-trust challenger is NOT given query-independent reach — it stays in the
+>   ordinary relevance-gated unverified retrieval path (round-9 blocker 1: partition-preserving
+>   ≠ reach-preserving — a refusal must preserve the PRIOR, not hand a hostile lower-authority
+>   source broad prompt inclusion across unrelated queries via a manufactured contradiction).**
 > - **Budgeted, not unbounded (round-8 blocker 2).** v9's "no relevance/budget gating,
 >   every recall" broke `Memory.recall`'s `token_budget` cap and made refused material a
 >   permanent, unbounded prompt surface across accumulating contentions. **Frozen: the
@@ -516,18 +534,50 @@ LLM told to pick one. `compile.py` was not in §7a and I6/I6a did not cover it.
 > Design B (teach the compiler to represent the contention) stays rejected — a
 > deterministic renderer is not an LLM prompt and cannot be got wrong by accident.
 
-**The always-on surface applies to PRE-EXISTING contentions too — stated, not smuggled
-(round-8 blocker 2).** §4e's group definition covers legacy/import/host-created
-contentions, so the deterministic surface renders those as well. It is the read-side
-complement of §4e's already-approved *reordering* of the same groups: it moves nothing
-across the gate and adds nothing unbudgeted. **If the product wants the surface scoped to
-refusal-created contentions only, that is a deliberate narrowing** — v10 freezes the broad
-rule and flags the scope choice for Quentin rather than letting it arrive by accident.
+> **Frozen (round-9 blocker 2, and the pre-existing-scope ruling): the derived-view
+> treatment — wiki EXCLUSION and the deterministic PRESERVATION surface — is scoped to
+> REFUSAL-created contentions (Option B).** v10 applied it to *every* functional contention
+> (legacy/import/host), which created two problems the reviewer named: (1) a broad
+> definition with a narrow invalidation trigger is incoherent — `apply_supersession_plan`
+> and the migration invalidate the wiki, but `import`, `correct()` and lifecycle can also
+> form or resolve a contention while only bumping `store_version` by 1 (below the default-8
+> threshold), leaving a stale wiki; and (2) it hands unrelated historical contentions a new
+> query-independent surface they never had. **Frozen instead:**
+> - The **authority PERMUTATION in query detail (§4e) remains broad** — over all active
+>   functional contentions — because it is a relevance-gated read-time reorder that grants
+>   no new reach and caches nothing.
+> - The **wiki exclusion + deterministic preservation surface apply ONLY where a live
+>   refusal record exists** for the `(subject, relation)` group. That is exactly the set the
+>   refusal-preservation invariant (I6a) must protect, and it is exactly the set
+>   `apply_supersession_plan` creates — so **the invalidation trigger now matches the
+>   derived-view scope**: the plan drops the wiki cache in the same commit, and no
+>   `import`/`correct()`/lifecycle path needs to, because those do not create refusals. A
+>   pre-existing non-refusal contention keeps existing wiki behaviour (the compiler may state
+>   one value); this feature only guarantees that a REFUSAL does not reduce the prior's
+>   visibility, not that every pre-existing contention gains a new surface.
+> The compiler learns which groups are refusal-scoped by reading the refusal inventory at
+> compile time (it already receives the relation registry, §4c-ii); `forget_user`/migration
+> cache drops still apply as transition guarantees.
 
 **Why this loses nothing the gate would have shown.** A contested functional group has no
 unique current value (§4c), so it is exactly what a one-current-value wiki cannot state
 honestly; it moves from a channel that would collapse it to a deterministic one that keeps
 each member where the gate already put it.
+
+> **The structured `Recall` carrier is frozen, not only the rendered string (round-9
+> correction B).** `Recall` exposes structured `edges`/`episodes`, not just `context`;
+> because the preservation surface is query-independent it can include edges
+> `subgraph_for_query` did not select, and if those existed only in the rendered string a
+> consumer would see `Recall.context` carrying a fact while `Recall.edges` said it was never
+> retrieved (and telemetry would drift). **Frozen: a new structured field
+> `Recall.contested` — the deterministic preservation groups as structured records (each
+> member's edge, its gate partition, effective-authority order)** — and `Recall.edges`
+> becomes the **de-duplicated union** of query-selected edges and the preservation surface's
+> grounded members. The structured units are **budget-independent** for the higher-authority
+> preserved member (its inclusion is the I6a guarantee) while rendered truncation still
+> reports in `Recall.truncated`; partition metadata travels with each member; counts/telemetry
+> are defined over the structured result. **I6c asserts over `Recall.contested`, not only the
+> final string.**
 
 > **Cache invalidation is IMMEDIATE, not batched (round 7, blocker 2).** v8 said a
 > refusal advances `store_version` so `ensure_wiki` recompiles — but the cache contract
@@ -746,6 +796,16 @@ cases: two same-author differing updates never branch; concurrent cross-authorit
 resolve to one legal serial refusal/retirement; a stale reinforcement cannot overwrite a
 newer current state.
 
+**`expected_state` must be COMPLETE (round-9 correction C).** A plan reads more than edge
+ids and active flags — it reads each candidate's value/`_value_key`, `author_of_evidence`,
+`derived_from`, effective authority and validity. **Frozen as an INVARIANT, not a carrier:
+`expected_state` must change whenever ANY persisted fact used to decide reinforcement,
+absorption, retirement or refusal changes** — an in-place edit to a same-id row that a
+coarse active-set token would miss must still yield `PlanStale`. Acceptable implementations:
+a canonical fingerprint of the relevant records, or a Store-maintained scoped version that
+increments on every mutation of them. **I9 includes: same edge id, a relevant field changed
+between the plan's read and commit → `PlanStale`.**
+
 **"Whole ingest" is narrowed to one supersession operation (round-8 correction A).** The
 primitive covers ONE `incoming_edge`, but `ingest_event` persists the episode and then
 loops `apply_supersession` **per extracted triple** — so an event can commit its episode and
@@ -755,13 +815,35 @@ edge* — no incoming edge, no prior mutations, no refusal records, no derived-c
 from that plan — **not** the episode or sibling triples. Event-level atomic ingestion is a
 larger Store/ingest design and is explicitly out of `0003`'s scope.
 
-**Whole-plan idempotency, not only refusal-row (round-8 correction C).** The
-`(prior_edge_id, incoming_edge_id, rule_version)` key below is the *refusal-record* key; it
-says nothing about retrying a whole plan that has no refusal rows (an ordinary insert, a
-reinforcement). **Frozen: the plan carries an `operation_id`; a retry of the SAME
-`operation_id` with the same plan content replays to the original success (no-op),** and the
-same `operation_id` with **different** content is an integrity conflict — so a client that
-loses the result after commit can retry safely.
+**Whole-plan idempotency needs a DURABLE receipt (round-8 correction C, corrected round-9
+blocker 3).** The `(prior_edge_id, incoming_edge_id, rule_version)` key is the *refusal-row*
+key; it says nothing about a plan with no refusal rows. And v10's bare `operation_id` promise
+had no durable carrier: a reinforcement commits with **no incoming edge inserted and no
+refusal row**, so after a lost response and restart the Store has nowhere to learn `OP1`
+already committed — an in-memory cache cannot make a *crash-safe* idempotency claim.
+
+> **Frozen: a durable operation receipt (a second `SCHEMA_VERSION` v4 object).**
+> ```
+> supersession_operations( user_id, operation_id, logical_request_digest, status )
+>     UNIQUE(user_id, operation_id)          # tenant-scoped
+> ```
+> and a frozen **processing order** inside `apply_supersession_plan`:
+> ```
+> 1. receipt for (user_id, operation_id) exists?
+>       same logical_request_digest → REPLAY the original Applied (no-op)
+>       different digest             → integrity conflict
+> 2. new logical operation → validate expected_state
+> 3. expected_state stale → return PlanStale; do NOT consume the receipt
+>       (the caller re-reads, recomputes, and retries under a NEW attempt identity
+>        for the SAME logical operation — so "same operation_id, different content"
+>        does not fire on a legitimate CAS recompute)
+> 4. success → the plan effects AND the receipt commit atomically
+> ```
+> This resolves both round-9 ambiguities: the **receipt check precedes the CAS check** (a
+> committed op replays instead of tripping `PlanStale` on its own now-stale `expected_state`),
+> and a legitimate `PlanStale` recompute is a new *attempt* of the same *logical* operation,
+> not a conflicting reuse of the id. The receipt is **user-linked Store-local metadata:
+> `forget_user` erases it; export/import exclude it** (like the refusal inventory).
 
 **`rule_version` has a durable contract (round-7 correction A).** The refusal inventory
 exists so later policy (`0011`) can re-evaluate historical refusals, so the field that
@@ -780,7 +862,7 @@ value.** `0011` treats a refusal stamped with an unknown or older `rule_version`
 | concurrency | **CAS-guarded on `expected_state`** — a plan commits only if the `(user, subject, relation)` state it assumed still holds, else `PlanStale`; two concurrent equal-authority updates cannot branch to two current values (round-8 blocker 3) |
 | `store_version` | Store **advances it in the same commit** (a recall-bearing edge changed), so a cached wiki cannot read falsely fresh — Store-owned, not a caller field (round-6 C / round-8 C) |
 | schema | the refusal table is `SCHEMA_VERSION` **v3→v4** via `0013` (§7a), NOT created opportunistically on open (round-6 blocker 2) |
-| idempotency | **whole-plan** on `operation_id` (replay → no-op; different content → conflict — round-8 C); the refusal *row* is additionally keyed `(prior_edge_id, incoming_edge_id, rule_version)` |
+| idempotency | **whole-plan, DURABLE** — a `supersession_operations` receipt (a 2nd v4 table) keyed `UNIQUE(user_id, operation_id)`; receipt-check **precedes** the CAS check (replay a committed op; a stale recompute retries under a new attempt id for the same logical op — round-9 blocker 3); the refusal *row* keeps `(prior_edge_id, incoming_edge_id, rule_version)` |
 | `forget_user()` | **deletes the user's refusals** — user-linked metadata, so erasure covers them |
 | export / import | **excluded.** A refusal is a fact about *this store's* history, not the memory; importing one would assert a contention that never happened here — so **no `FORMAT_VERSION` change** |
 | retention | kept while **either** edge exists; dropped when both are gone |
@@ -823,8 +905,8 @@ before** — it only creates fewer.
 | **I6** **every** same-partition contention state renders **every distinct contested value** (n-way, §4c-ii correction B), higher authority first | `test_contention_matrix` — **parameterised from `specs/ladder.py`** over the shipped enum's product, so a new enum member extends the test rather than leaving a fixture green | CI |
 | **I6a** **a refusal must not reduce the prior's recall visibility**, at the **same finite `token_budget`**, holding query/config/store fixed and adding **only** the refused edge — the higher-authority member never drops below where it stood before the refusal (round-8 blocker 2: the achievable finite-budget form, not "always present regardless of budget") | `test_refusal_does_not_evict_the_prior` — over the product, **all three selection stages**, **both wiki-disabled and the wiki-enabled default**, and **a finite `token_budget` with many accumulated contentions** (the contested surface is high-priority and budgeted, not unbounded) | CI |
 | **I6b** unrelated edges keep their positions | `test_unrelated_edges_keep_their_positions` — the property that makes §4e a permutation rather than a global re-sort | CI |
-| **I6c** the **default compiled-wiki** path obeys the contention contract (§4c-ii): a contested group is excluded from the LLM wiki AND surfaced **partition-preserving** (each member stays on its gate side — `Memory.answer` still asserts only grounded), **budgeted** (high priority, deterministic truncation), **proactive-safe** (`query=None` never volunteers `use_only`/`quarantined` material), and **n-way** (by distinct `_value_key`); contention formation invalidates the wiki IMMEDIATELY; the v3→v4 migration invalidates pre-v8 caches; the compiler sees the host relation registry | `test_cross_partition_contention_keeps_the_fenced_member_unverified` (round-8 blocker 1) · `test_proactive_recall_never_volunteers_a_fenced_contested_value` (round-8 blocker 1) · `test_contested_surface_is_budgeted_not_unbounded` (round-8 blocker 2) · `test_n_way_contention_renders_every_distinct_value` (round-8 correction B) · `test_contested_prior_survives_an_unrelated_query` · `test_a_single_refusal_recompiles_the_wiki_immediately` · `test_v3_to_v4_migration_invalidates_pre_v8_wikis`. **Run under BOTH the default and a custom registry** | CI |
-| **I9** `apply_supersession_plan` is atomic, **CAS-linearized**, whole-plan idempotent, and reinforcement inserts nothing (§4f) | `test_concurrent_equal_authority_plans_do_not_branch` — two same-author differing updates from one snapshot yield ONE current value, the loser gets `PlanStale` and retries (round-8 blocker 3) · `test_a_stale_plan_is_refused_not_applied` · `test_replaying_an_operation_id_is_a_no_op` (round-8 correction C) · `test_reinforcement_plan_inserts_no_duplicate` · `test_a_failed_plan_leaves_no_partial_state_and_does_not_touch_sibling_triples` (round-8 correction A) | CI |
+| **I6c** the **default compiled-wiki** path obeys the contention contract (§4c-ii): the derived-view treatment (wiki exclusion + deterministic preservation surface) is **refusal-scoped** (Option B); it is **partition-preserving** (each member stays on its gate side, `Memory.answer` asserts only grounded) and the fenced challenger keeps **no query-independent reach** (round-9 B1); **budgeted**, **proactive-safe**, **n-way**; exposed through the structured **`Recall.contested`** carrier + de-duplicated `edges` (round-9 B); contention formation invalidates the wiki IMMEDIATELY; migration invalidates pre-v8 caches; the compiler sees the host relation registry | `test_a_refused_challenger_gains_no_query_independent_reach` (round-9 B1) · `test_pre_existing_non_refusal_contention_is_not_given_the_derived_view` (round-9 B2) · `test_recall_contested_is_the_structured_carrier_and_edges_dedup` (round-9 B) · `test_cross_partition_contention_keeps_the_fenced_member_unverified` · `test_proactive_recall_never_volunteers_a_fenced_contested_value` · `test_contested_surface_is_budgeted_not_unbounded` · `test_n_way_contention_renders_every_distinct_value` · `test_a_single_refusal_recompiles_the_wiki_immediately`. **Both default and custom registry** | CI |
+| **I9** `apply_supersession_plan` is atomic, **CAS-linearized on a COMPLETE `expected_state`**, whole-plan idempotent via a **durable receipt**, and reinforcement inserts nothing (§4f) | `test_concurrent_equal_authority_plans_do_not_branch` (round-8 B3) · `test_expected_state_catches_an_in_place_field_edit` — a same-id row whose value/author/`derived_from` changed since the plan's read → `PlanStale` (round-9 C) · `test_a_lost_reinforcement_response_replays_via_the_durable_receipt` — a reinforcement with no incoming edge and no refusal row still replays after restart (round-9 B3) · `test_receipt_check_precedes_cas_so_a_committed_op_replays_not_planstale` (round-9 B3) · `test_reinforcement_plan_inserts_no_duplicate` · `test_a_failed_plan_leaves_no_partial_state_and_does_not_touch_sibling_triples` | CI |
 | **I7** the MCP surface refuses `system` and fails closed on unknown | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
 
@@ -945,13 +1027,12 @@ they are recorded as resolved rather than asked again.**
 | *Is visible superseded history a read-cost regression?* | **Moot here** — this change creates fewer superseded edges, not more. The history design is `0011` E6. |
 
 **The one governance ask (see §11).** The architecture has been re-approved at rounds 3–8
-and never reopened; the remaining round-6/7/8 items are all implementation contracts, each
-frozen as an I1–I9 invariant with a named executable check. **We propose acceptance be
-gated on that checkable invariant surface — the `0013`/`0009`/`0010` finite-boundary
-precedent — with the checks passing in CI on the qualified `0007` runtime as the acceptance
-artifact, rather than a ninth round of prose about machinery that only running code can
-finally verify.** Genuine architecture findings remain in scope; underspecified
-implementation detail moves to implementation.
+and never reopened. **We propose the design be accepted on the frozen I1–I9 invariant
+surface plus the `## Review closure` ledger (§11a) — the `0013`/`0009`/`0010` precedent —
+after which the named checks become mandatory implementation/release gates** (not before:
+`PROCESS.md` says only `accepted` authorises implementation, so tests cannot be pre-passed).
+Genuine architecture findings remain in scope; underspecified implementation detail moves to
+implementation once the design is accepted.
 
 **What we are least sure of now, and it is one thing.**
 
@@ -1017,27 +1098,63 @@ ever-more-precise prose about unbuilt machinery have a failure mode the corpus h
 lived on `0002`, `0007` and `0013`: each answer specifies more surface for the next round
 to probe.
 
-> **Proposed finite acceptance criterion — the `0013` / `0009` / `0010` precedent.** Accept
-> `0003` when **the architecture and the I1–I9 invariant surface are frozen and each
-> invariant names a concrete executable check** — which is now true. **Further edges then
-> become implementation obligations, discharged by those checks against real code at
-> implementation time, not by further rounds of spec prose.** This is exactly how `0013`
-> (M-Q4 boundary), `0009` (§16, H1–H14) and `0010` (§18, X1–X23) were accepted — on "the
-> invariant surface is demonstrable," not "the reviewer has run out of adjacent seams." And
-> because `0007`'s runtime gate stops the reviewer executing these checks in their own
-> environment (`unsupported-sqlite` on 3.46.1, every round), the honest acceptance artifact
-> is **the checks passing in CI on the qualified runtime**, not prose the reviewer
-> re-derives by hand.
+> **Proposed finite acceptance criterion — the `0013` / `0009` / `0010` precedent, stated
+> in the RIGHT order (round-9 correction A).** `PROCESS.md` §4a: **only `accepted` authorises
+> implementation** — so an unbuilt design cannot be required to have green implementation
+> tests *before* it is accepted; that gets the order backwards. The precedent is:
+> **(1) DESIGN ACCEPTANCE** — the architecture is frozen, the **I1–I9 invariant surface** is
+> frozen, and every external finding is closed in a **`## Review closure`** ledger tying it
+> to the exact normative section/invariant and the commit that closed it (openable evidence,
+> per `PROCESS.md` §4a); **(2) IMPLEMENTATION** — code lands, and the I1–I9 checks become
+> real executable tests; **(3) RELEASE** — those tests pass on the qualified `0007` runtime,
+> and any counterexample is an implementation defect. `0009` (§16, H1–H14) and `0010` (§18,
+> X1–X23) were accepted exactly this way — as *designs*, while acknowledging the code did not
+> yet exist. **So the acceptance artifact is the frozen I1–I9 surface + the Review-closure
+> ledger (§11a), NOT tests passing in CI**; the named checks are **prospective mechanical
+> freezes** that become **mandatory implementation/release gates** when the accepted design
+> is built. (`0007`'s runtime gate stopping the reviewer from executing them locally is why
+> they are *prospective*, not why they should be pre-passed.)
 
 **What this does NOT ask.** Not to stop finding real defects, not to weaken any invariant,
-not to accept an unbuilt design sight-unseen. It asks that acceptance be gated on the
-**frozen, checkable invariant surface (I1–I9)** with the checks as the acceptance artifact —
+not to accept an unbuilt design sight-unseen. It asks that DESIGN acceptance be gated on the
+**frozen invariant surface (I1–I9) + the `## Review closure` ledger (§11a)**, with the named
+checks becoming mandatory *implementation/release* gates once the accepted design is built —
 so the remaining implementation contracts are settled *by building and running them* rather
-than by a ninth and tenth round of prose. **If the reviewer holds that a specific invariant
-is architecturally wrong** (not merely implementation-underspecified), that stays in scope
-and this boundary does not cover it — the boundary is about *where* the remaining questions
-are answered (executable checks vs. prose), not about closing the door on genuine
-architecture findings.
+than by further rounds of prose. **If the reviewer holds that a specific invariant is
+architecturally wrong** (not merely implementation-underspecified), that stays in scope and
+this boundary does not cover it — the boundary is about *where* the remaining questions are
+answered (built code vs. prose), not about closing the door on genuine architecture findings.
+
+---
+
+## 11a. Review closure (PROCESS.md §4a) — the acceptance ledger
+
+*One row per external finding that shaped the current design, tied to the normative section /
+invariant that closes it and the revision that carried the closure. Rounds 1–5 (narrowing to
+the reported defect; breadth → `0011`) are dispositioned in §12 and `proposals/0003-review-{1..4}.md`.
+This ledger is the acceptance artifact §11 names; the I1–I9 checks are prospective and become
+mandatory when the accepted design is implemented.*
+
+| round | finding | closed by | rev |
+|---|---|---|---|
+| r6 B1 | default compiled-wiki collapses a preserved contention | §4c-ii (exclude from LLM wiki) · I6c | v8 `1ec7f3e` |
+| r6 B2 | refusal table created on open, bypassing 0007/0013 | §7a schema v3→v4 + `Spec-Requires: 0007, 0013` | v8 `1ec7f3e` |
+| r6 B3 | `(edge, refusals)` too narrow for "whole ingest" | §4f `apply_supersession_plan` | v8 `1ec7f3e` |
+| r6 A–D | withdrawn §4a; ladder heading order; `store_version`/`relations`/binding; Q2a `watch` | §4a, `render_ladder`, §4e/§4f, `render_index` | v8 `1ec7f3e` |
+| r7 B1 | wiki exclusion erases the prior on an unrelated query | §4c-ii deterministic surface · I6c | v9 `b96f755` |
+| r7 B2 | cache not invalidated under the recompile threshold; migration; registry | §4c-ii immediate drop + migration + registry · I6c | v9 `b96f755` |
+| r7 B3 | plan inserts a duplicate on reinforcement | §4f `insert_incoming` · I9 | v9 `b96f755` |
+| r7 A–C | `rule_version` undefined; I6c not in release order; README archive check | §4f, §6, package README | v9 `b96f755` |
+| r8 B1 | surface has no place in the grounded/unverified contract; proactive | §4c-ii partition-preserving + proactive-safe · I6c | v10 `3c726c7` |
+| r8 B2 | "no budget gating" breaks `token_budget` | §4c-ii budgeted + I6a finite-budget form | v10 `3c726c7` |
+| r8 B3 | plan atomic but not linearizable | §4f `expected_state → PlanStale` · I9 | v10 `3c726c7` |
+| r8 A–C | "whole ingest" scope; n-way; whole-plan idempotency intent | §4f one-edge scope; §4c-ii/I6 n-way; §4f `operation_id` | v10 `3c726c7` |
+| r9 B1 | partition-preserving ≠ reach-preserving; pre-existing scope | §4c-ii challenger stays relevance-gated; derived view refusal-scoped (Option B) · I6c | v12 (this rev) |
+| r9 B2 | broad contention def + narrow invalidation trigger incoherent | §4c-ii Option B — derived view + invalidation both refusal-scoped · I6c | v12 (this rev) |
+| r9 B3 | whole-plan idempotency has no durable carrier; CAS/replay order | §4f `supersession_operations` receipt + frozen processing order · I9 | v12 (this rev) |
+| r9 A | acceptance-artifact wording backwards | §11/§9 rewritten (design acceptance → this ledger → implement → tests) | v12 (this rev) |
+| r9 B | structured `Recall` contention carrier undefined | §4c-ii `Recall.contested` + dedup `edges` · I6c | v12 (this rev) |
+| r9 C | `expected_state` completeness | §4f completeness invariant · I9 | v12 (this rev) |
 
 ---
 
@@ -1055,7 +1172,8 @@ architecture findings.
 | v8 | round-6 response (B1 wiki contract, B2 schema-versioned table, B3 atomic plan, corrections A–D); **direction re-approved** at round 7, deferred — 3 found-in-fix gaps + 3 corrections, all in the new wiki/plan machinery | 6 | dispositioned in this document |
 | v9 | round-7 response (B1 deterministic surface, B2 immediate/migration/registry cache, B3 `insert_incoming`, corrections A–C); **direction re-approved** at round 8, deferred — 3 found-in-fix gaps + 3 corrections, all about fitting the new surface/plan to existing recall-safety/budget/concurrency contracts | 6 | dispositioned in this document |
 | v10 | round-8 response — B1 partition-preserving + proactive-safe surface (36/44 cross-partition; §4c-ii); B2 budgeted contested surface (I6a finite-budget form); B3 CAS-linearized plan (`expected_state → PlanStale`; I9); corrections A (one-edge failure scope), B (n-way by distinct value), C (whole-plan `operation_id` idempotency + Store-owned effects). **No ladder/refusal/permutation change.** | — | this document |
-| **v11** | v10 + **§11 acceptance-boundary proposal**: gate acceptance on the frozen I1–I9 invariant surface + executable checks (the `0013`/`0009`/`0010` precedent); remaining round-6/7/8 items are implementation contracts settled by building/running the checks, not further prose. **No design change.** | — | this document |
+| v11 | v10 + §11 acceptance-boundary proposal; **the boundary concept was approved in principle** at round 9, but v11 deferred — 3 architectural seams + 3 corrections (incl. the acceptance-artifact wording, backwards) | 6 | dispositioned in this document |
+| **v12** | round-9 response — B1 reach (challenger relevance-gated), B2 refusal-scoped derived view (Option B), B3 durable `supersession_operations` receipt; corrections A (design-acceptance order + §11a ledger), B (`Recall.contested` structured carrier), C (complete `expected_state`). Adds the **§11a Review-closure ledger** — the acceptance artifact. **No ladder/refusal/permutation change.** | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
