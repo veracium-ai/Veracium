@@ -12,8 +12,9 @@ Two mechanisms, both grounded in findings:
   question addressed to the user). The pre-0.4.5 "clears the flag" wording this
   docstring used to carry described behaviour `0008` removed.
   (`specs/0012` ruled 2026-08-08, Design 1: reinforcement will transfer NOTHING —
-  not `observed_at`, not `confidence` — persisting the incoming edge instead, so the
-  fact stays live through the new edge. NOT YET IMPLEMENTED: today the code still
+  not `observed_at`, not `confidence`, not `valid_from` — persisting the incoming
+  edge instead, so the fact stays live through the new edge. NOT YET IMPLEMENTED:
+  today the code still
   refreshes `observed_at`; this note tracks the ruled change so the docstring and
   `0012` do not silently diverge.)
 - **Consolidation (finding 11 / compaction-loss guard).** Cold episodes are
