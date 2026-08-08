@@ -478,3 +478,29 @@ class SupersessionResult(BaseModel):
     invalidated: int
     refused: int
     replayed: bool = False
+
+
+class ContestedLinkage(BaseModel):
+    """Content-free linkage for an UNSEEN FENCED cross-partition challenger in a live
+    refusal contention (specs/0003 §4c-ii, round-10 correction A). It carries only the
+    member's position — edge id, gate partition, effective-authority — and NO memory
+    content (no object/value/provenance), so a fenced lower-trust source gains no
+    query-independent reach through the structured API, the same guarantee the model-
+    context surface already has."""
+    edge_id: str
+    partition: str            # "unverified" — the fenced side of the gate
+    authority: int            # effective-authority position within the contention
+
+
+class ContestedGroup(BaseModel):
+    """One live refusal contention as it reaches `Recall.contested` (§4c-ii). `exposed`
+    carries a FULL `Edge` for every member the reach contract already exposes — the
+    preserved higher-authority grounded prior, every member the deterministic same-partition
+    surface renders (incl. a grounded challenger the query did not select — round-11), and
+    any relevance-selected member. `linkage` carries content-free entries for the unseen
+    fenced cross-partition challenger. I6's rendered surface and this structured carrier
+    agree: a value rendered in `context` is a full member here, never content-free."""
+    subject: str
+    relation: str
+    exposed: list[Edge] = Field(default_factory=list)
+    linkage: list[ContestedLinkage] = Field(default_factory=list)

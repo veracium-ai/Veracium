@@ -20,7 +20,7 @@ import hashlib
 import re
 import time
 from uuid import uuid4
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from . import compile as _compile
@@ -36,10 +36,12 @@ from .gate import ABSTAINED as _ABSTAINED  # noqa: E402
 from .graph import subgraph_for_query
 from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
+from .authority import edge_effective as _edge_effective
+from .graph import _value_key as _value_key
 from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
-                     ConfirmationCallPath, Edge, Episode, EvidenceAuthor,
-                     OutcomeJudgmentDraft, Provenance, SourceType, utcnow,
-                     validate_correlation_id)
+                     ConfirmationCallPath, ContestedGroup, ContestedLinkage, Edge,
+                     Episode, EvidenceAuthor, OutcomeJudgmentDraft, Provenance,
+                     SourceType, utcnow, validate_correlation_id)
 from .store.base import HEAD_MOVED, Store
 from .store.sqlite import SqliteStore
 
@@ -67,6 +69,12 @@ class Recall:
     episodes: list[Episode]
     tokens_estimated: int = 0
     truncated: bool = False
+    # specs/0003 §4c-ii: the structured contested-facts surface. One entry per LIVE refusal
+    # contention, carrying full Edges for exposed members and content-free linkage for the
+    # unseen fenced cross-partition challenger. Appended, defaulted — no existing constructor
+    # call breaks. `edges` becomes the de-duplicated union of query-selected edges and the
+    # exposed preservation members.
+    contested: list["ContestedGroup"] = field(default_factory=list)
 
 
 class Memory:
@@ -241,13 +249,68 @@ class Memory:
         if unverified:
             context += ("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n"
                         + unverified)
+        # specs/0003 §4c-ii: the structured contested surface + the de-duplicated
+        # Recall.edges union. The exposed higher-authority grounded prior is included
+        # even if the query did not select it (the I6a guarantee, budget-independent).
+        contested, exposed_extra = self._build_contested(user_id, edges)
+        seen = {e.id for e in edges}
+        for e in exposed_extra:
+            if e.id not in seen:
+                edges.append(e)
+                seen.add(e.id)
+
         self._record("recall", {"wiki_used": bool(wiki), "subgraph_edges": len(edges),
                                 "grounded_items": sum(1 for e in edges if not e.quarantined),
                                 "unverified_items": sum(1 for e in edges if e.quarantined),
                                 "trimmed": 1 if truncated else 0}, user_id)
         return Recall(context=context, grounded=grounded, unverified=unverified,
                       edges=edges, episodes=episodes,
-                      tokens_estimated=self._est_tokens(context), truncated=truncated)
+                      tokens_estimated=self._est_tokens(context), truncated=truncated,
+                      contested=contested)
+
+    def _build_contested(self, user_id: str, query_edges: list):
+        """Build the structured contested surface for the LIVE refusal contentions of a
+        user (specs/0003 §4c-ii). Returns (contested_groups, exposed_edges). A member is
+        EXPOSED (full Edge) iff it is grounded/assertable — the preserved higher-authority
+        prior AND every same-partition grounded member I6 deterministically renders, even
+        one the query did not select (round-11) — OR the query already selected it. The
+        unseen fenced CROSS-partition challenger (use_only/quarantined, not selected) is
+        content-free linkage only: no query-independent reach on any surface (round-10 A)."""
+        try:
+            refusals = self.store.refusals(user_id)
+        except NotImplementedError:
+            return [], []
+        if not refusals:
+            return [], []
+        relations = self.config.relations
+        active = {e.id: e for e in self.store.edges(user_id, active_only=True,
+                                                    include_quarantined=True)}
+        selected = {e.id for e in query_edges}
+        groups: dict = {}
+        for r in refusals:
+            prior, inc = active.get(r.prior_edge_id), active.get(r.incoming_edge_id)
+            rel = relations.get(r.relation)
+            if (prior is not None and inc is not None and rel and rel.functional
+                    and _value_key(prior.object) != _value_key(inc.object)):
+                groups.setdefault((prior.subject, r.relation), set()).update(
+                    [prior.id, inc.id])
+        result, exposed_all = [], []
+        for (subject, relation), member_ids in sorted(groups.items()):
+            members = [active[mid] for mid in member_ids]
+            exposed, linkage = [], []
+            for m in members:
+                if m.assertable or m.id in selected:
+                    exposed.append(m)
+                else:
+                    linkage.append(ContestedLinkage(
+                        edge_id=m.id, partition="unverified",
+                        authority=_edge_effective(m)))
+            exposed.sort(key=lambda e: (-_edge_effective(e), e.id))
+            linkage.sort(key=lambda x: (-x.authority, x.edge_id))
+            result.append(ContestedGroup(subject=subject, relation=relation,
+                                         exposed=exposed, linkage=linkage))
+            exposed_all.extend(exposed)
+        return result, exposed_all
 
     def _fit_to_budget(self, wiki: Optional[str], edges, episodes,
                        budget: int) -> tuple[Optional[str], str, str, bool]:
