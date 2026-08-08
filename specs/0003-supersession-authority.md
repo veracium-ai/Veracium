@@ -5,10 +5,15 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v10)** — round-8 response, 2026-08-08. **The narrowed
-> ladder / refusal / permutation direction stays approved; v10 closes round 8's three
-> found-in-fix gaps + three corrections — all about how the new contention surface and
-> plan primitive meet Veracium's EXISTING recall-safety, budget and concurrency contracts.**
+> **in review (v11)** — round-8 response + an **acceptance-boundary proposal (§11)**,
+> 2026-08-08. v11's content is v10's plus §11; **no design change**. §11 asks the reviewer
+> to gate acceptance on the frozen, checkable **I1–I9** invariant surface — the remaining
+> round-6/7/8 items are all *implementation* contracts, each named with an executable
+> check, and are best settled by building and running them (the `0013`/`0009`/`0010`
+> finite-boundary precedent) rather than by further rounds of prose about unbuilt machinery.
+> **The narrowed ladder / refusal / permutation direction stays approved; v10 closed round
+> 8's three found-in-fix gaps + three corrections — all about how the new contention surface
+> and plan primitive meet Veracium's EXISTING recall-safety, budget and concurrency contracts.**
 > - **B1 — the deterministic surface is now partition-preserving and proactive-safe.**
 >   36 of 44 refused states are cross-partition; v9's single "both values" block would
 >   either launder a fenced value into grounded or demote the user fact. §4c-ii keeps each
@@ -34,7 +39,7 @@ Spec-Requires: 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v10** — *re-read before editing; quote the version you approve.* Narrow design approved at rounds 3–5 and re-approved at rounds 6–8; v10 closes round 8's three found-in-fix gaps + three corrections. **No change to the ladder, the refusal direction, or the permutation.** |
+| **Version** | **v11** — *re-read before editing; quote the version you approve.* v10's content + the §11 acceptance-boundary proposal; no design change. Narrow design approved at rounds 3–5 and re-approved at rounds 6–8. **§11 asks acceptance be gated on the frozen I1–I9 invariant surface + its executable checks** (the `0013`/`0009`/`0010` precedent). **No change to the ladder, the refusal direction, or the permutation.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | required — the narrow design was approved at r3 and r4 and affirmed at r5 (deferred on cleanup only). Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
@@ -939,6 +944,15 @@ they are recorded as resolved rather than asked again.**
 | *Is `SYSTEM` at rung 2 defensible?* | **Only where a trusted call path establishes system origin.** I7 removed the model-facing route; the rest is `0011` E4. |
 | *Is visible superseded history a read-cost regression?* | **Moot here** — this change creates fewer superseded edges, not more. The history design is `0011` E6. |
 
+**The one governance ask (see §11).** The architecture has been re-approved at rounds 3–8
+and never reopened; the remaining round-6/7/8 items are all implementation contracts, each
+frozen as an I1–I9 invariant with a named executable check. **We propose acceptance be
+gated on that checkable invariant surface — the `0013`/`0009`/`0010` finite-boundary
+precedent — with the checks passing in CI on the qualified `0007` runtime as the acceptance
+artifact, rather than a ninth round of prose about machinery that only running code can
+finally verify.** Genuine architecture findings remain in scope; underspecified
+implementation detail moves to implementation.
+
 **What we are least sure of now, and it is one thing.**
 
 **Whether refusing a legitimate cross-authority update will hurt real hosts.** We
@@ -971,6 +985,62 @@ lower-authority party is routinely the correct one.
 
 ---
 
+## 11. Acceptance boundary — proposed to the external reviewer (v11)
+
+**The architecture is settled; what remains is implementation contract.** The narrowed
+design — the capped `min(author, derived_from)` ladder, refuse-and-preserve-both,
+authority permutation scoped to functional contentions, durable content-free refusal
+telemetry, entitlement/history deferred to `0011` — was **approved at round 3, affirmed at
+4 and 5, and RE-approved at 6, 7 and 8**, and each round has explicitly declined to reopen
+it.
+
+**Every round-6/7/8 finding was a real gap in the *machinery* the previous round added,
+never the model** — and each is now frozen as a named invariant with a named executable
+check:
+
+| remaining implementation contract | invariant · executable check |
+|---|---|
+| partition-preserving contested surface (each member stays on its gate side) | **I6c** · `test_cross_partition_contention_keeps_the_fenced_member_unverified` |
+| proactive recall never volunteers fenced material | **I6c** · `test_proactive_recall_never_volunteers_a_fenced_contested_value` |
+| the surface is budgeted, not unbounded | **I6a/I6c** · `test_contested_surface_is_budgeted_not_unbounded` |
+| n-way contention by distinct value | **I6c** · `test_n_way_contention_renders_every_distinct_value` |
+| the plan is CAS-linearized — no concurrent branch | **I9** · `test_concurrent_equal_authority_plans_do_not_branch` |
+| whole-plan idempotency; one-edge failure scope | **I9** · `test_replaying_an_operation_id_is_a_no_op` · `test_a_failed_plan_leaves_no_partial_state_and_does_not_touch_sibling_triples` |
+| immediate cache invalidation · migration · registry | **I6c** · `test_a_single_refusal_recompiles_the_wiki_immediately` · `test_v3_to_v4_migration_invalidates_pre_v8_wikis` |
+
+**Prose cannot finally verify these — only running code can.** Whether the partition
+placement is exactly right, whether the budget priority actually preserves the prior at a
+finite cap, whether the `expected_state` token actually linearizes two racing writers —
+each is a property of an *implementation*, provable by its executable check and refutable
+by a counterexample test, not settled by another paragraph. Successive rounds of
+ever-more-precise prose about unbuilt machinery have a failure mode the corpus has already
+lived on `0002`, `0007` and `0013`: each answer specifies more surface for the next round
+to probe.
+
+> **Proposed finite acceptance criterion — the `0013` / `0009` / `0010` precedent.** Accept
+> `0003` when **the architecture and the I1–I9 invariant surface are frozen and each
+> invariant names a concrete executable check** — which is now true. **Further edges then
+> become implementation obligations, discharged by those checks against real code at
+> implementation time, not by further rounds of spec prose.** This is exactly how `0013`
+> (M-Q4 boundary), `0009` (§16, H1–H14) and `0010` (§18, X1–X23) were accepted — on "the
+> invariant surface is demonstrable," not "the reviewer has run out of adjacent seams." And
+> because `0007`'s runtime gate stops the reviewer executing these checks in their own
+> environment (`unsupported-sqlite` on 3.46.1, every round), the honest acceptance artifact
+> is **the checks passing in CI on the qualified runtime**, not prose the reviewer
+> re-derives by hand.
+
+**What this does NOT ask.** Not to stop finding real defects, not to weaken any invariant,
+not to accept an unbuilt design sight-unseen. It asks that acceptance be gated on the
+**frozen, checkable invariant surface (I1–I9)** with the checks as the acceptance artifact —
+so the remaining implementation contracts are settled *by building and running them* rather
+than by a ninth and tenth round of prose. **If the reviewer holds that a specific invariant
+is architecturally wrong** (not merely implementation-underspecified), that stays in scope
+and this boundary does not cover it — the boundary is about *where* the remaining questions
+are answered (executable checks vs. prose), not about closing the door on genuine
+architecture findings.
+
+---
+
 ## 12. Review history
 
 | version | verdict | findings | full disposition |
@@ -984,7 +1054,8 @@ lower-authority party is routinely the correct one.
 | v7 | review-history bookkeeping corrected; **direction re-approved** at round 6, deferred — 3 design blockers (default-wiki path, schema-versioned refusal table, atomic supersession plan) + 4 corrections | 7 | dispositioned in this document |
 | v8 | round-6 response (B1 wiki contract, B2 schema-versioned table, B3 atomic plan, corrections A–D); **direction re-approved** at round 7, deferred — 3 found-in-fix gaps + 3 corrections, all in the new wiki/plan machinery | 6 | dispositioned in this document |
 | v9 | round-7 response (B1 deterministic surface, B2 immediate/migration/registry cache, B3 `insert_incoming`, corrections A–C); **direction re-approved** at round 8, deferred — 3 found-in-fix gaps + 3 corrections, all about fitting the new surface/plan to existing recall-safety/budget/concurrency contracts | 6 | dispositioned in this document |
-| **v10** | round-8 response — B1 partition-preserving + proactive-safe surface (36/44 cross-partition; §4c-ii); B2 budgeted contested surface (I6a finite-budget form); B3 CAS-linearized plan (`expected_state → PlanStale`; I9); corrections A (one-edge failure scope), B (n-way by distinct value), C (whole-plan `operation_id` idempotency + Store-owned effects). **No ladder/refusal/permutation change.** | — | this document |
+| v10 | round-8 response — B1 partition-preserving + proactive-safe surface (36/44 cross-partition; §4c-ii); B2 budgeted contested surface (I6a finite-budget form); B3 CAS-linearized plan (`expected_state → PlanStale`; I9); corrections A (one-edge failure scope), B (n-way by distinct value), C (whole-plan `operation_id` idempotency + Store-owned effects). **No ladder/refusal/permutation change.** | — | this document |
+| **v11** | v10 + **§11 acceptance-boundary proposal**: gate acceptance on the frozen I1–I9 invariant surface + executable checks (the `0013`/`0009`/`0010` precedent); remaining round-6/7/8 items are implementation contracts settled by building/running the checks, not further prose. **No design change.** | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
