@@ -5,8 +5,8 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft — R3 APPLIED; diagnostic-only; the one open blocker is research's Q2
-> (2026-08-07).** Opened on research's R2 ruling; **R3 (2026-08-01 23:17 UTC)
+> **draft — R3 APPLIED; diagnostic-only; ALL open questions resolved (Q2 RULED
+> 2026-08-08) → review-ready.** Opened on research's R2 ruling; **R3 (2026-08-01 23:17 UTC)
 > overturned its central mechanism** — `source_id` may GROUP, never GRANT. The §3
 > matrix now reflects R3 (every cell is *"flag stays"*; the falsified relaxation is
 > struck through and left visible rather than silently edited — house style, see
@@ -15,8 +15,10 @@ Spec-Requires: 0007, 0013
 > grouping/dedup/inspection; a lying host degrades grouping quality, it does not
 > cross a trust boundary (I5). **Prerequisites `0007`+`0013` are now accepted AND
 > implemented (§0b), so the added column lands through the accepted migration path.
-> Q1 is resolved and Q3's dev half is ruled (§10); the remaining blocker is Q2 —
-> research-owned: `evidence_basis`'s default.** Not dev's to rule alone.
+> Q1 is resolved, Q3's dev half is ruled, and **Q2 is now RULED (research, 2026-08-08 —
+> default `restated` as interpretation-only; storage stays absent; enforced by new I8).
+> No open questions remain — this spec is review-ready; the next step is `draft → in review`,
+> then external review.** (§10)
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
 
@@ -28,8 +30,8 @@ Spec-Requires: 0007, 0013
 > installed by `migrate_store`, not a naked `ALTER`. `0007` (`PRAGMA user_version`)
 > is `accepted` + implemented, so an older build refuses a store carrying the new
 > column instead of silently misreading it. **Both `Spec-Requires:` deps are met;
-> this spec is unblocked on infrastructure — the only remaining gate is design
-> question Q2 (§10).**
+> this spec is unblocked on infrastructure, and the last design gate (Q2) is now
+> ruled (§10) — review-ready.**
 
 **`0006` changes the on-disk shape (it adds a column), so it cannot land without
 a migration contract.** That contract is **`specs/0013`**, not this spec.
@@ -141,7 +143,7 @@ stays coarser than it needs to be.
 | uncontrolled input | empty | malformed | unrecognised | adversarial | invariant |
 |---|---|---|---|---|---|
 | **`source_id`** | absent → treated as unknown → **no relaxation** | rejected | — | **the model names a `source_id` to impersonate a trusted source**, or reuses the user's | **I1 — host-supplied only; never model-supplied, never extractor-derived** |
-| **`evidence_basis`** | absent → `restated` (least favourable) | rejected | rejected | model declares `observed` to manufacture freshness | **I2 — host-supplied only; same rule as `source_id`** |
+| **`evidence_basis`** | absent → *interpreted as* `restated` (least favourable) but **stored absent, never materialised — I8** | rejected | rejected | model declares `observed` to manufacture freshness | **I2 — host-supplied only; same rule as `source_id`** |
 | **older-store data** | both absent | — | — | — | **I3 — absence never relaxes a rule.** Also the `PRAGMA user_version` gap, see Q1 |
 | **imported export** | — | version-checked | v3 file into a v2 build rejected | trust fields hand-written | `0005`'s cap applies **first**; this adds no exemption |
 
@@ -207,6 +209,7 @@ we genuinely do not know.
 | **I5** `source_id` never widens disclosure or authority | `test_source_id_does_not_affect_disclosure_or_the_ladder` — it gates **one** rule and nothing else | CI |
 | **I6** export/import round-trips both fields | `test_v3_export_roundtrip` · `test_v3_file_into_v2_build_is_rejected` | CI |
 | **I7** `0005`'s import cap applies before any of this | `test_imported_source_id_does_not_bypass_the_remap_cap` | CI |
+| **I8** the `restated` default is **never materialised** — absence is interpreted as `restated` at every decision point but stored ABSENT (research's Q2 ruling, 2026-08-08) | `test_absent_evidence_basis_stays_absent` — ingest with no `evidence_basis`, read the row back and assert it is **stored absent**; then assert the §3 matrix outcome is IDENTICAL to an explicitly-`restated` record. The second half is the point: it pins behavioural equivalence alongside representational distinctness, so a future "optimisation" cannot write the default in | CI |
 
 **I5 is the one to watch.** The temptation once identity exists is to let a
 "known good" `source_id` raise trust. **It must not.** Capping-only is the rule
@@ -230,6 +233,12 @@ repetition.
   adds no new trust assumption, but it adds no verification either.
 - **This does not close `0003`.** Identity sharpens the ladder's input; the
   ladder's own rules are that spec's business.
+- **`absent` means unknown — it is NOT evidence that a source restated anything**
+  (Q2 ruling). `restated` is only how absence is *interpreted* at a decision point;
+  no downstream analysis (`introspect()`, an auditor, an importer, a future
+  `revoke_source`) may count an absent row as a `restated` observation. The two are
+  distinct facts — absence = nobody attested; `restated` = the host affirmatively
+  attested repetition — and the store keeps them distinct (I8).
 
 ---
 
@@ -238,5 +247,5 @@ repetition.
 | # | question | class | who | by when |
 |---|---|---|---|---|
 | ~~**Q1**~~ | **RULED 0006-Q1 (research, 2026-08-02 00:08): yes — `0007` lands first.** Cheap precisely because R3 means `source_id` does **not** lift the staleness restriction, so nothing urgent queues behind it. `FORMAT_VERSION` guards exports; nothing guards an on-disk store opened by a different build. | resolved | research | — |
-| **Q2** | Should `evidence_basis` default to `restated` (least favourable, as specified) or be strictly required when `source_id` is present? Required is safer and is a harder ask of hosts. **DEV PERSPECTIVE (2026-08-07, not a ruling — research owns this):** the fail-closed default (`restated`) is both safer AND the easier ask — a host that omits it gets the CONSERVATIVE behaviour (repetition, not renewed observation), and absence-is-least-favourable is the invariant I3 already enforces everywhere else in this spec. "Required when `source_id` is present" couples two independent fields and adds a rejection path for hosts that have the identity but not the basis. So dev would lean **default `restated`, not required** — but this is research's call, and it is **the one remaining blocker to `in review`.** | `pre-release` — **the last open item** | research | before implementation |
+| ~~**Q2**~~ | **RULED 0006-Q2 (research, 2026-08-08; `proposals/0006-Q2-ruling.md`): default `restated`, but as INTERPRETATION ONLY — the stored value stays ABSENT when the host supplies nothing; the default is never materialised into the row.** Dev's reasoning is adopted in full (fail-closed, the easier host ask, consistent with I3, and "required when `source_id` present" couples two independent fields + adds a rejection path). **The binding qualification neither option as posed stated:** `absent` and `restated` are DIFFERENT facts — absent = nobody attested anything; `restated` = the host affirmatively attested that this source repeats something it did not witness. Materialising the default destroys that distinction permanently (no later reader can tell an attestation from a fill-in) — **the `SourceType` failure one axis over (`A1`); we must not re-create it in the field contract meant to replace it.** Safety is fully preserved: absence already behaves as least-favourable under I3, and §3's matrix row is reached identically whether the value is absent or stored. And a host that names a `source_id` often genuinely cannot know the basis — requiring it manufactures a guessed `observed`, which is *worse* than absent because `observed` is the value that relaxes. **Enforced by new invariant I8 (§6).** | **resolved** | research | — |
 | **Q3** | Does `0003`'s ladder consume `source_id` in v1, or is that a follow-up? Keeping it out keeps this spec small; putting it in avoids a second migration. **DEV RULING 2026-08-07 (dev half — research to confirm): KEEP IT OUT of v1.** The "avoids a second migration" argument is now void: `0006`'s migration adds the `source_id`/`evidence_basis` COLUMNS; `0003` later consuming them is a pure CODE change (the ladder reads an existing column), **not a schema change** — so there is no second migration either way. Keeping it out keeps `0006` small and diagnostic-only, consistent with §8 (*"this does not close `0003`; the ladder's own rules are that spec's business"*). `0006` ships the column; `0003` may consume it whenever `0003` rules to, with no migration. | dev half ruled; research to confirm | dev + research | before implementation |
