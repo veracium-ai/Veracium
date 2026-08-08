@@ -29,6 +29,7 @@ from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, Evide
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"
+DEC = datetime(2025, 12, 1, tzinfo=timezone.utc)   # OLDER than the prior
 JAN = datetime(2026, 1, 1, tzinfo=timezone.utc)
 AUG = datetime(2026, 8, 1, tzinfo=timezone.utc)
 
@@ -87,6 +88,35 @@ def test_reinforcement_attributes_the_contributing_source(tmp_path):
     assert _contributor_is_recoverable(s, U, survivor.id, "badfeed-aug"), (
         "the source 'badfeed-aug' moved the survivor's observed_at and confidence but left "
         "no attribution — its contribution cannot be audited or reversed (finding M9)")
+
+
+@pytest.mark.xfail(strict=True, reason=(
+    "specs/0014 A1a (research's consult-and-discard sharpening): a contributor that moves no "
+    "max() — older AND weaker — leaves the survivor unchanged, but is STILL consumed and STILL "
+    "vanishes. A transfer-keyed rule would miss it; the invariant is owed to the consumption. "
+    "This is the attack path: an adversary contributes invisibly by ensuring no value moves. "
+    "Remove this marker when 0014's contribution ledger records empty-payload consumptions."))
+def test_reinforcement_records_the_contributor_even_when_no_value_moves(tmp_path):
+    s = SqliteStore(str(tmp_path / "s.db"))
+    # the prior is newer AND stronger than the contributor, so max() keeps it on both fields
+    s.add_edge(_edge("e1", EvidenceAuthor.USER, "user-chat-jan", 0.5, JAN))
+    apply_supersession(s, _edge("e2", EvidenceAuthor.SYSTEM, "badfeed-dec", 0.3, DEC),
+                       DEFAULT_RELATIONS)
+
+    survivors = s.edges(U, active_only=True)
+    assert len(survivors) == 1
+    survivor = survivors[0]
+
+    # the payload is EMPTY — nothing transferred, the survivor is byte-for-byte unchanged
+    # (true today): DEC < JAN and 0.3 < 0.5, so both max() keep the prior.
+    assert survivor.provenance.observed_at == JAN      # unchanged
+    assert survivor.provenance.confidence == 0.5       # unchanged
+
+    # ...yet the contributor was consulted and discarded, and left no trace — so
+    # "which sources support this fact?" omits it and a blast radius under-reports (0014 A1a).
+    assert _contributor_is_recoverable(s, U, survivor.id, "badfeed-dec"), (
+        "an older/weaker contributor moved no value but was still consumed and still vanished "
+        "— a transfer-keyed invariant misses it; the record is owed to the consumption (0014 A1a)")
 
 
 # =============================================================================

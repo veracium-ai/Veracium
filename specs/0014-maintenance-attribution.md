@@ -1,24 +1,29 @@
-# Feature spec: maintenance attribution — a state transfer must leave a recoverable record
+# Feature spec: maintenance attribution — a consumed contributor must leave a recoverable record
 
 Spec-Status: draft
-Spec-Requires: 0007, 0013
+Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v1)** — dev stub, 2026-08-08. Written from research's `A3-source-revocation-design.md`
-> §2 finding (2026-08-07) at dev's recommendation to **decouple the finding from the
-> `revoke_source()` feature it was written to enable**. This spec establishes the RECOVERABLE
-> ATTRIBUTION RECORD only; the revocation set-computation (`A3`) and the derived-view reach
-> (`0004`) consume it. Offered for research/dev reaction, not yet designed to acceptance.
+> **draft (v2)** — dev stub, 2026-08-08. Written from research's `A3-source-revocation-design.md`
+> §2 finding at dev's recommendation to **decouple the record from the `revoke_source()` feature**.
+> This spec establishes the RECOVERABLE ATTRIBUTION RECORD only; the revocation set-computation
+> (`A3`) and the derived-view reach (`0004`) consume it. **v2 folds research's response
+> (`proposals/0014-research-response.md`, 2026-08-08): Q5 CONFIRMED, and the invariant is
+> re-keyed from "state transfer" to CONSULT-AND-DISCARD** — research measured that an older/weaker
+> contributor leaves every survivor value unchanged (`max()` never moves) yet still vanishes, so a
+> transfer-keyed rule would miss it, and that omission is an attack path (stale-but-corroborating
+> input becomes the unlogged channel). Q1–Q4 resolved (§10); a `0014 → 0006` dependency is named
+> (key the ledger on `0006`'s opaque `source_id`, digest the one unsafe field `evidence_ref`).
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`), from research's A3 finding |
-| **Version** | **v1 (stub)** — *re-read before editing; quote the version you approve.* Problem + finding + direction are concrete; the mechanical contract (§4, §6, §7a) is deliberately a sketch pending review of the direction. |
+| **Version** | **v2 (stub)** — *re-read before editing; quote the version you approve.* Problem + finding + the CONSULT-AND-DISCARD invariant (§4) are concrete and research-confirmed; the mechanical contract (§6, §7a) is still a sketch pending design lock. |
 | **Status** | *canonical state is the `Spec-Status:` line at the top; this row states none of it.* |
-| **Internal reviewers** | dev · research (finding owner) — **research has not yet reviewed this framing** |
+| **Internal reviewers** | dev · **research (finding owner) — reviewed 2026-08-08, decoupling CONFIRMED, invariant sharpened** (`proposals/0014-research-response.md`) |
 | **External review** | required (full — it will touch guarded files: `graph.py`, `lifecycle.py`, `store/sqlite.py`). Not yet sent. |
 | **Decision + date** | — (draft) |
 | **Path** | full |
@@ -76,19 +81,27 @@ $ grep -rn "add_edge\|invalidate_edge\|delete_episode\|apply_supersession_plan" 
 
 Provisional: `Provenance.observed_at`, `Provenance.confidence`, `Edge.valid_from`,
 `Provenance.disclosure`, `Provenance.derived_from` — each is *read from a contributor and written
-onto a survivor* by at least one maintenance op. The new record must reference contributors and
-survivors by opaque id + a provenance digest, never by raw memory content (the 0003 refusal-record
-discipline). **Open tension (§10 Q1): reversibility may require the contributor's PRIOR scalar
-values, which are metadata, not content — to be confirmed.**
+onto a survivor* by at least one maintenance op (the payload).
+
+> **`0014 → 0006` dependency (research, Q1).** The ledger is keyed on **`0006`'s `source_id`** —
+> opaque by contract and already the revocation key — so the contributor identity is safe to store
+> and directly joinable by `A3`/`revoke_source`. This makes `0006` (source identity, review-ready
+> as of its 2026-08-08 Q2 ruling) a prerequisite — hence `Spec-Requires: 0006, 0007, 0013`. The one
+> host-supplied free-form field, `evidence_ref`, is the only unsafe one; it is **digested**, never
+> stored raw. The scalar payload (`observed_at`/`confidence`/`valid_from`/`disclosure`/
+> `derived_from` + their prior values) is timestamps/floats/closed enums — store-clear, so
+> **content-free and reversible do not conflict** (Q1 resolved).
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
 *Draft.* The contributor whose attribution we record may itself be adversarial (a compromised feed
 is the motivating case). The record must therefore be **fail-closed and content-free**: it records
-*that* a transfer happened and *what state* moved, keyed on opaque ids and a provenance identity,
-so a malicious contributor cannot smuggle memory content into a durable audit surface, and a
-missing/absent record is treated as "attribution unknown → the survivor's transferred state is
-suspect", never "clean".
+*that* a contributor was consumed and *what state, if any,* moved, keyed on `0006`'s opaque
+`source_id` and a digested `evidence_ref`, so a malicious contributor cannot smuggle memory content
+into a durable audit surface, and a missing/absent record is treated as "attribution unknown → the
+survivor is suspect", never "clean". **The adversary's cheapest evasion is the empty payload** — a
+stale-but-corroborating input that moves no `max()` — which is exactly why the record is owed to the
+consumption, not the transfer (§4).
 
 ---
 
@@ -99,10 +112,10 @@ provenance-chain demo (a3_provenance_chain_demo.py, `veracium-research`). Status
 0.6.0** (0010 partially moved §3.2 after
 A3 was written):
 
-| # | site | contributor recoverable today? | state transferred |
+| # | site (a maintenance op that consults a contributor then discards/merges/invalidates it) | contributor recoverable today? | payload (state it may transfer) |
 |---|---|---|---|
-| **3.1** | **reinforcement** — `graph._build_supersession_plan` reinforcement branch (`insert_incoming=False`; the incoming edge is never persisted, the prior absorbs `max(observed_at)`/`max(confidence)`) | **No** — nothing is written for the contributor | `observed_at`, `confidence` |
-| **3.2** | **consolidation** — `lifecycle.consolidate` deletes each input episode (`store.delete_episode`); the summary carries `lineage` (0010) = the input ids in the historical namespace | **Partial (improved by 0010).** `lineage` links a summary to its input IDs, but the inputs are deleted, so **id→source is not recoverable** without an independent index | disclosure, confidence, `derived_from`, `observed_at` |
+| **3.1** | **reinforcement** — `graph._build_supersession_plan` reinforcement branch (`insert_incoming=False`; the incoming edge is never persisted, the prior absorbs `max(observed_at)`/`max(confidence)`) | **No** — nothing is written for the contributor. **Also when the payload is EMPTY:** an older/weaker contributor moves no `max()`, so the survivor is unchanged, and the consumption is *still* unrecorded (the case a transfer-keyed rule would miss; research measured it) | `observed_at`, `confidence` — or **none** |
+| **3.2** | **consolidation** — `lifecycle.consolidate` deletes each claimed input; the summary carries `lineage` (0010) = the whole claimed set in the historical namespace | **Partial (improved by 0010) — VERIFIED 2026-08-08.** `lineage == the whole claimed input set == exactly the deleted inputs` (`lifecycle.py:142–156`), so every deleted contributor's ID is recorded; what is lost is **id→source** (the deleted episode's provenance). Not worse than "partial" | disclosure, confidence, `derived_from`, `observed_at` |
 | **3.3** | **absorption** — `graph._build_supersession_plan` absorption branch retains the absorbed prior and links it by a free-text `note = "absorbed_by:<id>"` | **Partial** — retained + linked, but as a **string in a free-text field, not a queryable relation**, and inherited `min(valid_from)`/`max(observed_at)`/`max(confidence)` cannot be un-inherited | `valid_from`, `observed_at`, `confidence` |
 
 **`specs/0003` did NOT close 3.1.** Its Slice-B rewrite preserved reinforcement semantics
@@ -114,27 +127,38 @@ repointed to `0014`.**
 **What is NOT wrong (do not "fix" it):** reinforcement, consolidation and absorption are the
 INTENDED mechanisms, and the cross-class guard (`graph.py`, "identity merges never cross trust
 classes") and the 0002/N9b trust-envelope inheritance (min-disclosure, min-confidence,
-third-party influence) are all correct. **The defect is only that the transfer is unattributed,
-so it cannot be audited or reversed.** This spec adds a record; it changes no maintenance decision.
+third-party influence) are all correct. **The defect is only that consuming a contributor is
+unattributed, so it cannot be audited or reversed.** This spec adds a record; it changes no
+maintenance decision.
 
 ---
 
-## 4. Behaviour — proposed direction (SKETCH, pending review)
+## 4. Behaviour — proposed direction (SKETCH, pending design lock)
 
-> **The invariant (a sibling of `0002`'s maintenance-provenance-invariant).** *Every maintenance-
-> time transfer of state from a contributor into a survivor leaves a durable, queryable
-> **contribution record** that names (i) the survivor, (ii) the contributor's provenance identity
-> (source/`evidence_ref`/`author_of_evidence`/`derived_from`), (iii) the fields transferred, and
-> (iv) enough to reverse the transfer.* Maintenance may transfer state; it may not transfer it
-> **silently**.
+> **The invariant (a sibling of `0002`'s maintenance-provenance-invariant), CONSULT-AND-DISCARD
+> keyed — research's sharpening, 2026-08-08.** *Every maintenance operation that **consults** a
+> contributor record and then **discards, merges or invalidates** it MUST leave a durable,
+> queryable **contribution record** naming (i) the survivor, (ii) the contributor's opaque source
+> identity, and (iii) a **payload** — the fields it transferred and their prior survivor values,
+> **which may legitimately be empty** — **whether or not any of the survivor's values changed.***
+>
+> **Why keyed on the operation, not the transfer (measured).** Run reinforcement with the
+> contributor OLDER and WEAKER: `max()` moves nothing, the survivor's `observed_at`/`confidence`
+> are unchanged — and the contributor still vanishes. A *transfer*-keyed rule need not record that,
+> yet "which sources support this fact?" omits it and any blast radius under-reports. It is not
+> tidiness: an attacker contributes **invisibly** simply by ensuring no `max()` moves, so
+> stale-but-corroborating input becomes the unlogged path. The record is owed to the **act of
+> consuming a contributor**, and the value change is only its payload.
 
-Sketch of the mechanism (all deliberately provisional — the point of this stub is to agree the
-*direction* before specifying the contract):
+Sketch of the mechanism (provisional — the direction is agreed with research; the contract is not):
 
-- **A durable contribution ledger**, one append-only record per transfer:
-  `(survivor_id, contributor_provenance_digest, contributor_ref, transferred_fields,
-  prior_survivor_values, at)` — content-free by the 0003 discipline (ids + digests, never raw
-  `object`/`note`/`summary`). A new `SCHEMA_VERSION` object (v4→v5), so `Spec-Requires: 0007, 0013`.
+- **A durable contribution ledger**, one append-only record per consumed contributor:
+  `(survivor_id, source_id, transferred_fields, prior_survivor_values, at)` — content-free by the
+  0003 discipline. **Keyed on `0006`'s opaque `source_id`** (already the revocation key, opaque by
+  contract — see the `0014 → 0006` dependency, §2); the one host-supplied free-form field,
+  `evidence_ref`, is **digested**, never stored raw (Q1). `transferred_fields`/`prior_survivor_values`
+  are the payload and **may be empty** (a no-op-`max()` reinforcement still records the consumption).
+  A new `SCHEMA_VERSION` object (v4→v5), so `Spec-Requires: 0006, 0007, 0013`.
 - **3.1 reinforcement** → write a contribution record instead of silently dropping the incoming
   edge. Keep `insert_incoming=False` (no dedup regression); the ledger, not a duplicate edge,
   carries the attribution.
@@ -163,15 +187,17 @@ is accepted only once these exist and pass at release, not before).*
 
 | | invariant | check (to author) |
 |---|---|---|
-| **A1** | reinforcement leaves a contribution record naming the incoming source | `test_reinforcement_attributes_the_contributing_source` (the M9 test) |
-| **A2** | a consolidated summary's contributors are recoverable from its `lineage` after input deletion | `test_consolidation_contributors_survive_input_deletion` |
+| **A1** | reinforcement leaves a contribution record naming the consumed source | `test_reinforcement_attributes_the_contributing_source` (the M9 test) |
+| **A1a** | **it records the consumption EVEN WHEN THE PAYLOAD IS EMPTY** — an older/weaker contributor that moves no `max()` is still recorded (the consult-and-discard key; closes the attack path) | `test_reinforcement_records_the_contributor_even_when_no_value_moves` |
+| **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) | `test_consolidation_contributors_survive_input_deletion` |
 | **A3** | absorption's contributor link is queryable, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` |
-| **A4** | for any survivor, `contributions(survivor_id)` enumerates every state transfer into it | `test_every_maintenance_transfer_is_enumerable` (adversarial: inject at each of the 3 sites) |
-| **A5** | the ledger is content-free — no `object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
+| **A4** | for any survivor, `contributions(survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not), across all three sites | `test_every_consumed_contributor_is_enumerable` (adversarial: inject at each site, including a no-payload consumption) |
+| **A5** | the ledger is content-free — `source_id` opaque, `evidence_ref` digested, no `object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
 | **A6** | `forget_user` erases the ledger; export/import exclude it (Store-local, like 0003 refusals) | `test_forget_user_erases_the_contribution_ledger` |
 
 **A4 is the one that decides whether the class is closed** — an exhaustive check over all three
-sites, so a fourth transfer site added later must extend it rather than reintroduce the finding.
+sites *keyed on consumption, not value change*, so neither a fourth site nor an empty-payload
+consumption (A1a) can reintroduce the finding.
 
 ## 7. Failure modes and reversibility
 
@@ -184,7 +210,7 @@ sites, so a fourth transfer site added later must extend it rather than reintrod
   `apply_supersession_plan` commit (§0003 §4f already gives us the atomic carrier).
 - `src/veracium/lifecycle.py` — `consolidate` (3.2): record input source attribution before deletion.
 - `src/veracium/store/base.py` / `store/sqlite.py` — the ledger table, its reads, its erasure; the
-  `SCHEMA_VERSION` v4→v5 migration that introduces it (`Spec-Requires: 0007, 0013`).
+  `SCHEMA_VERSION` v4→v5 migration that introduces it (`Spec-Requires: 0006, 0007, 0013`).
 - `src/veracium/store/schema_version.py`, `store/migration.py` — the additive v5 object + migration.
 
 **Schema:** likely **yes — one new content-free, user-linked table**, `SCHEMA_VERSION` v4→v5, the
@@ -196,9 +222,10 @@ revocation consumer (`A3`/`0004`) is committed.
 
 ## 8. Claims and limits
 
-**Claims:** every maintenance-time state transfer becomes auditable and (with a consumer)
-reversible; the recurring maintenance-provenance-loss pattern is closed by one invariant rather
-than three point fixes.
+**Claims:** every maintenance-time *consumption of a contributor* — value change or not — becomes
+auditable and (with a consumer) reversible; the recurring maintenance-provenance-loss pattern is
+closed by one consult-and-discard invariant rather than three point fixes, and the empty-payload
+evasion is closed with it.
 
 **Does NOT claim:** it does not revoke a source, compute a blast radius, or make a revocation reach
 recall (`A3`/`0004`); it does not change any maintenance *decision* (reinforcement still reinforces,
@@ -211,21 +238,29 @@ unrecoverable, an honest limit to state loudly).
 
 ## 10. Open questions
 
-- **Q1 — reversibility vs content-freeness.** Reversing a transfer needs the survivor's PRIOR
-  scalar values (`observed_at`, `confidence`, `valid_from`) — metadata, not memory content — but
-  the contributor's `evidence_ref` may be sensitive. Can the ledger be both reversible AND
-  content-free, or does reversal require a controlled non-content-free field? (Leaning: scalars +
-  opaque refs are safe; resolve before design lock.)
-- **Q2 — scope of reversal.** Confirm this spec stops at the *record* and defers all reversal to
-  `A3`/`0004` (dev's recommendation), vs. including a minimal reverse primitive here.
-- **Q3 — is a new store version justified by attribution alone?** Or should `0014` land only when a
-  revocation consumer (`A3`/`0004`) is committed, to amortise the v5 bump? (Counter: the audit
-  value — "why is this fact live?" — stands alone, and the schema cost is paid once regardless.)
-- **Q4 — interaction with `0012` (observation-renewal).** `0012` asks whether reinforcement should
-  refresh liveness *at all*; if it should not, 3.1's transfer partly disappears and the ledger's
-  reinforcement record changes shape. Sequence `0014` against `0012`'s ruling.
-- **Q5 — ownership.** These findings live in research-owned `A3`; this stub is dev's framing.
-  Research to confirm the decoupling and the invariant before this leaves `draft`.
+*All five resolved by research 2026-08-08 (`proposals/0014-research-response.md`); kept here with
+their rulings so the reasoning survives into design lock.*
+
+- **Q1 — reversibility vs content-freeness — RESOLVED: no conflict.** The scalar payload
+  (`observed_at`/`confidence`/`valid_from`/`disclosure`/`derived_from` + prior values) is
+  timestamps/floats/closed enums — store-clear. The one unsafe field, host-supplied `evidence_ref`,
+  is **digested**. Key the ledger on `0006`'s opaque `source_id` (already the revocation key) →
+  names the `0014 → 0006` dependency (§2).
+- **Q2 — scope — RESOLVED: stop at the record.** All reversal / blast-radius / reach defers to
+  `A3` / `0004`.
+- **Q3 — new store version justified by attribution alone? — RESOLVED: yes, land now.** Deferring
+  does NOT save the v5 bump — the ledger only attributes consumptions that happen *after* it exists,
+  so waiting **permanently loses the interval** (and §1 already establishes history is not
+  reconstructible). The audit value stands alone.
+- **Q4 — interaction with `0012` — RESOLVED: do NOT block on it.** Under the consult-and-discard
+  wording the invariant is *independent* of `0012`'s outcome — `0012` changes only the *payload*
+  (whether reinforcement transfers liveness), not *whether a contributor was consumed*. (A
+  transfer-keyed invariant WOULD have made `0014` `0012`-dependent — a concrete cost of the original
+  wording, now avoided.)
+- **Q5 — ownership / framing — RESOLVED: decoupling CONFIRMED**, and research judged dev's
+  recurrence + standalone-audit arguments stronger than A3's original bundling. The one change —
+  re-key to consult-and-discard — is folded into §4/§6. Remaining before `draft` → `in review`: a
+  full mechanical contract (§6 tests real, §7a locked) and the `0006` acceptance it now depends on.
 
 ---
 
@@ -233,4 +268,5 @@ unrecoverable, an honest limit to state loudly).
 
 | version | verdict | findings | full disposition |
 |---|---|---|---|
-| v1 (stub) | draft — not yet reviewed | — | this document; from research `A3` §2 |
+| v1 (stub) | draft — dev framing from research `A3` §2 | — | this document |
+| **v2 (stub)** | **research reviewed: decoupling CONFIRMED; invariant re-keyed to consult-and-discard; Q1–Q5 resolved; `0014 → 0006` named** | 1 (the transfer-vs-consume sharpening) | `proposals/0014-research-response.md`; this document |
