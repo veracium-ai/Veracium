@@ -4,7 +4,7 @@
 
 # Spec status
 
-**13 specs · 5 accepted · 62 external review
+**13 specs · 5 accepted · 63 external review
 rounds · 4 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -15,7 +15,7 @@ is the number that decides what can be built.
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `deferred` | 2026-08-02 | 1 | 2 | 3 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-07 | 2 | 8 | 0 | 0 | 10 | 8/10 |
-| **0003** | supersession authority | `in review` | 2026-08-07 | 1 | 5 | 1 | 0 | 1 | 0/1 |
+| **0003** | supersession authority | `in review` | 2026-08-08 | 1 | 6 | 0 | 0 | 1 | 0/1 |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
 | **0006** | source identity and evidence basis | `draft` | 2026-08-07 | 0 | 0 | 1 | 0 | 0 | — |
@@ -34,7 +34,7 @@ archive — are indexed in `specs/archives/INDEX.md`.
 uncommitted changes, since the commit that would carry that date does not exist
 while this runs. Never a typed date. *int*/*ext*
 are review rounds from `specs/reviews.py`. *open Q* counts question-table rows
-not struck, resolved, moved or ruled. *findings* is how many entries in
+not struck, resolved, moved, ruled or watch-only. *findings* is how many entries in
 `specs/findings.py` this spec owns; *code* is how many of those are shipped or
 committed.
 

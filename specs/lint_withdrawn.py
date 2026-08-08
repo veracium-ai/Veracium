@@ -24,9 +24,17 @@ MARKERS = ("WITHDRAWN", "OBSOLETE")
 
 
 def _normalise(text: str) -> str:
-    """Markdown is presentation. `**same author**` and `same author` are the
-    same claim, and a lint that misses one because of emphasis is theatre."""
-    return re.sub(r"\s+", " ", re.sub(r"[*`_~]", "", text))
+    """Markdown emphasis and CLAUSE punctuation are presentation. `**same author**`,
+    `same author` and `same, author` are the same claim, and a lint that misses one
+    on emphasis or a comma is theatre — round 6 caught `One guard, in one loop`
+    slipping past the withdrawn `one guard in one loop` on exactly that comma. Strip
+    emphasis and fold clause punctuation (`,;:` — the separators that break a phrase
+    without being part of a word) to a space. Hyphens and periods are left intact:
+    they live INSIDE tokens (`same-author-class`, `0.4.5`), and folding them would
+    manufacture matches, not reveal them."""
+    text = re.sub(r"[*`_~]", "", text)
+    text = re.sub(r"[,;:]", " ", text)
+    return re.sub(r"\s+", " ", text)
 
 
 def _targets() -> list:

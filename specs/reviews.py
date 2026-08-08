@@ -134,4 +134,5 @@ REVIEWS = [
     dict(spec="0003", round=3, kind="external", date="2026-08-02", verdict="narrow design approved; deferred for cleanup", findings=5),
     dict(spec="0003", round=4, kind="external", date="2026-08-02", verdict="narrow design approved; deferred for retrieval fix", findings=5),
     dict(spec="0003", round=5, kind="external", date="2026-08-02", verdict="narrow design approved; deferred — duplicated sections, ladder not runtime-grounded", findings=7),
+    dict(spec="0003", round=6, kind="external", date="2026-08-08", verdict="direction re-approved; deferred — 3 design blockers (default-wiki path, schema-versioned refusal table, atomic supersession plan) + 4 corrections", findings=7),
 ]

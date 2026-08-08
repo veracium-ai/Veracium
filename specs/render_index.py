@@ -75,7 +75,11 @@ def _questions(body: str):
     open_q = blocking = 0
     for struck, _qid, rest in QROW.findall(body):
         low = rest.lower()
-        if struck or "resolved" in low or "moved" in low or "ruled" in low:
+        # A `watch` row is a recorded trigger for a FUTURE condition, not an open
+        # question blocking acceptance (round-6 contract D: 0003 Q2a was counted as
+        # the sole open Q though the spec calls it "not an open question").
+        if (struck or "resolved" in low or "moved" in low or "ruled" in low
+                or "watch" in low):
             continue
         open_q += 1
         if "blocking" in low:
@@ -134,7 +138,7 @@ archive — are indexed in `specs/archives/INDEX.md`.
 uncommitted changes, since the commit that would carry that date does not exist
 while this runs. Never a typed date. *int*/*ext*
 are review rounds from `specs/reviews.py`. *open Q* counts question-table rows
-not struck, resolved, moved or ruled. *findings* is how many entries in
+not struck, resolved, moved, ruled or watch-only. *findings* is how many entries in
 `specs/findings.py` this spec owns; *code* is how many of those are shipped or
 committed.
 

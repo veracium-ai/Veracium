@@ -507,6 +507,63 @@ def test_the_authority_tables_are_generated_from_the_ladder():
     assert r.returncode == 0, r.stdout + r.stderr
 
 
+def test_the_generated_authority_heading_is_authority_sorted():
+    """Round-6 contract B: render_ladder generated the ladder heading in
+    `EvidenceAuthor` DECLARATION order — `USER 3 > THIRD_PARTY 0 > SYSTEM 2`, a false
+    inequality — while `--check` stayed green because the generator never sorted by
+    authority. The heading must be strictly descending; the matrix rows below it were
+    always right, so a green generator check was not enough."""
+    import re, sys, pathlib, importlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import render_ladder
+    importlib.reload(render_ladder)
+    heading = re.search(r"`((?:[A-Z_]+ \d+ > )+[A-Z_]+ \d+)`",
+                        render_ladder._regions()["matrix"])
+    assert heading, "no authority heading in the generated matrix region"
+    nums = [int(n) for n in re.findall(r"\d+", heading.group(1))]
+    assert nums == sorted(nums, reverse=True) and len(set(nums)) == len(nums), \
+        f"authority heading is not strictly descending: {heading.group(1)}"
+
+
+def test_the_withdrawn_lint_is_punctuation_insensitive():
+    """Round-6 contract A: §4a stated the WITHDRAWN `one guard in one loop` as
+    `One guard, in one loop`, and the lint's normaliser folded emphasis but not the
+    comma, so the exact spec it protects sailed through green. Clause punctuation must
+    fold to a space. (This block quotes the WITHDRAWN phrase as test data, so it is
+    marked WITHDRAWN to exempt itself from the very lint it exercises.)"""
+    import re, sys, pathlib, importlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import lint_withdrawn
+    importlib.reload(lint_withdrawn)
+    normed = lint_withdrawn._normalise("One guard, in one loop")
+    assert re.search(r"one guard in one loop", normed, re.I), \
+        f"clause punctuation not folded: {normed!r}"
+    # hyphens/periods are intra-token and must be LEFT intact, or `0.4.5` and
+    # `same-author-class` would manufacture spurious matches (0002 regressed on this)
+    assert lint_withdrawn._normalise("0.4.5") == "0.4.5"
+    assert lint_withdrawn._normalise("same-author-class") == "same-author-class"
+
+
+def test_watch_rows_are_not_counted_as_open_questions():
+    """Round-6 contract D: 0003 Q2a is a `watch` — a recorded trigger for a future
+    condition, which the spec calls 'not an open question' — yet the status generator
+    counted it as the sole open Q. A `watch` row is not open."""
+    import sys, pathlib, importlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import render_index
+    importlib.reload(render_index)
+    body = ("## 10. Open questions\n\n"
+            "| # | question | class | who | by when |\n"
+            "|---|---|---|---|---|\n"
+            "| **Q9** | a genuinely open question | design | dev | soon |\n"
+            "| **Q2a** | a recorded trigger | `watch` | dev | on some condition |\n")
+    open_q, blocking = render_index._questions(body)
+    assert open_q == 1, f"a watch row was counted as open: open_q={open_q}"
+
+
 def test_the_rule_gives_the_right_assistant_answers_when_assistant_exists():
     """The four cases v1 inverted, asserted against the RULE rather than the
     shipped enum — `ASSISTANT` arrives with specs/0001, which is deferred.

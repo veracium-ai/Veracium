@@ -20,7 +20,16 @@ sys.path.insert(0, str(ROOT / "specs"))
 def _regions() -> dict[str, str]:
     from ladder import AUTH, CLASSES, author_matrix, divergent, effective_matrix
 
-    order = " > ".join(f"{c.upper()} {AUTH[c]}" for c in CLASSES)
+    # Round-6 contract correction B: order the displayed ladder by DESCENDING
+    # authority, not `EvidenceAuthor` declaration order — a normative heading that
+    # reads `USER 3 > THIRD_PARTY 0 > SYSTEM 2` is a false inequality even though the
+    # matrix rows below it are correct. Assert the rendered inequalities are monotone.
+    ranked = sorted(CLASSES, key=lambda c: AUTH[c], reverse=True)
+    ranked_auth = [AUTH[c] for c in ranked]
+    assert ranked_auth == sorted(ranked_auth, reverse=True) and \
+        len(set(ranked_auth)) == len(ranked_auth), \
+        f"authority heading is not strictly descending: {list(zip(ranked, ranked_auth))}"
+    order = " > ".join(f"{c.upper()} {AUTH[c]}" for c in ranked)
     rows = []
     for p, i, ok in author_matrix():
         note = "same class" if p == i else ""

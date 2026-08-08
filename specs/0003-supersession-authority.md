@@ -1,27 +1,43 @@
 # Feature spec: supersession authority
 
 Spec-Status: in review
+Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v7)** — re-issued 2026-08-07 for round 6. **v7 corrects v6's
-> review-history bookkeeping (the header round count and §12); there is NO design
-> change.** v6 (submitted 2026-08-02 17:58 UTC) **closed all seven fifth-review findings:**
-> The duplicated sections are gone and a structural check now catches
-> them; `ladder.py` derives from the **shipped** enum and imports production
-> disclosure, giving 144/44/8 — your independent numbers. **§4e freezes what a
-> contention group is and states plainly that it reorders pre-existing
-> contentions**; **§4f makes the refusal log one atomic store operation** with
-> erasure, retention and import semantics; **§7a lists the real surfaces** and
-> withdraws the WITHDRAWN "one guard in one loop" framing. I6/I6a are parameterised over the product
-> and cover all three selection stages.
+> **in review (v8)** — round-6 response, 2026-08-08. **The narrowed
+> ladder / refusal / contention direction stays approved; v8 closes the three
+> round-6 design blockers and four corrections.**
+> - **B1 — the default compiled-wiki path is now inside the contention contract
+>   (§4c-ii).** A contested functional group never enters the wiki, so the
+>   compiler's "one current value per changing fact" prompt only ever sees
+>   uncontested facts; the contested pair reaches the model through the
+>   authority-ordered query-detail path (§4d/§4e). `compile.py` is in §7a and a
+>   new **I6c** tests a fresh compile **and** cached-wiki invalidation after a refusal.
+> - **B2 — the durable refusal table is now a real Store schema version.**
+>   `Spec-Requires: 0007, 0013`; the table/index enters the schema registry, an
+>   adjacent offline `0013` migration carries `SCHEMA_VERSION` forward, an older
+>   build **refuses** the newer store, `forget_user()` erases it, and there is **no
+>   `FORMAT_VERSION` change** (refusal records deliberately do not export). §4f/§7a.
+> - **B3 — the Store write is one atomic supersession-PLAN primitive (§4f).**
+>   `apply_supersession_plan` commits the incoming edge, **every** permitted
+>   retirement/absorption/reinforcement, the refusal records and the `store_version`
+>   advance in one transaction — so "failure rejects the whole ingest" holds even
+>   when one ingest both retires a lower-authority prior and refuses a higher one.
+> - **Corrections:** the withdrawn one-guard §4a framing is gone and
+>   its linter false-negative fixed (comma-folding); the generated authority heading
+>   is now authority-sorted (`USER 3 > SYSTEM 2 > THIRD_PARTY 0`) with a monotone
+>   assertion; `store_version` / `relations`-default / refusal-record binding are
+>   frozen (§4e/§4f); Q2a is a `watch`, and the status generator no longer counts it
+>   as open. **No design change to the ladder, the refusal direction, or the
+>   permutation** — the v6 architecture the reviewer re-approved is untouched.
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v7** — *re-read before editing; quote the version you approve.* Narrow design approved at rounds 3 and 4; round 5 deferred on cleanup only, now closed. **v7 is v6 with review-history bookkeeping corrected — no design change.** |
+| **Version** | **v8** — *re-read before editing; quote the version you approve.* Narrow design approved at rounds 3–5 (cleanup deferrals) and re-approved at round 6; v8 closes round 6's three design blockers + four corrections. **No change to the ladder, the refusal direction, or the permutation.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | required — the narrow design was approved at r3 and r4 and affirmed at r5 (deferred on cleanup only). Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
@@ -172,7 +188,7 @@ provenance, never raised by it** · supersession by an equal-or-better-entitled
 party, never a lesser one.
 
 <!-- GENERATED:matrix -->
-`USER 3 > THIRD_PARTY 0 > SYSTEM 2`
+`USER 3 > SYSTEM 2 > THIRD_PARTY 0`
 
 | prior | incoming | result | |
 |---|---|---|---|
@@ -305,26 +321,40 @@ whose read and persistence dependencies were treated as invisible.**
 | # | change | layer | where |
 |---|---|---|---|
 | 1 | refuse a retirement by lower recorded effective authority | **write** | `graph.apply_supersession` |
-| 2 | permute contention groups by authority | **read** | `graph.subgraph_for_query` (+ `relations`), `Memory.recall` |
-| 3 | durable, atomic refusal records | **storage** | `Store.add_edge_with_refusals`, SQLite, `forget_user` |
+| 2 | permute contention groups by authority; **keep contested functional groups out of the compiled wiki** | **read** | `graph.subgraph_for_query` (+ `relations`), `Memory.recall`, **`compile.py`** (§4c-ii) |
+| 3 | one atomic supersession plan (edge + permitted retirements/absorptions + refusal records + `store_version`); refusal table **behind a new store schema version** | **storage** | `Store.apply_supersession_plan`, the refusal table as `SCHEMA_VERSION` v3→v4 (`Spec-Requires: 0007, 0013`), `forget_user` |
 
 ## 7a. Surfaces touched — the honest list
 
 - `src/veracium/graph.py` — `apply_supersession`, `subgraph_for_query`
 - `src/veracium/__init__.py` — `Memory.recall` passes the relation registry
-- `src/veracium/store/base.py` — one new `@store_mutator` method
-- `src/veracium/store/sqlite.py` — a refusal table, its erasure, its atomicity
+- `src/veracium/compile.py` — the compiler excludes contested functional groups
+  from the wiki (§4c-ii), so the default recall path obeys the contention contract
+- `src/veracium/store/base.py` — one new `@store_mutator`, `apply_supersession_plan`
+- `src/veracium/store/sqlite.py` — the refusal table, its erasure, its atomicity, and
+  the `SCHEMA_VERSION` v3→v4 migration that introduces it
+- `src/veracium/store/schema_version.py` — the refusal table/index enter the registry
+- `src/veracium/store/migration.py` — the adjacent offline `0013` migration
 
 **Interfaces:** `subgraph_for_query` gains a keyword parameter. It is
 re-exported from `veracium`, so this is a **public signature change**, albeit
-additive with a default.
+additive with a default (omitted → `DEFAULT_RELATIONS`; a host with a custom
+relation registry MUST pass it — §4e).
 
-**Schema:** **yes** — a new refusal table. No existing table or field changes,
-and no stored edge or episode is migrated.
+**Schema:** **yes — a new refusal table, introduced as the next on-disk store
+version.** No existing table or field changes, and no stored edge or episode is
+rewritten — but the table is NOT created opportunistically on open. It advances
+`SCHEMA_VERSION` **v3 → v4** (`Spec-Requires: 0007, 0013`): the table + its index
+enter the schema registry, a fresh store is created at v4, and a below-head store
+is brought forward by an adjacent **offline `0013` migration**. A fresh-constructor
+v4 store and a migrated v3→v4 store agree in shape.
 
-**Migration:** the table is created on open like the rest of `_SCHEMA`. **An
-older build opening a newer store ignores it and loses the inventory silently**
-— the `0007` problem again, and the fourth spec to meet it.
+**Migration:** a v3 store is migrated to v4 by the deployment-authority-owned
+`migrate_store()` (`0013` §5b); until then it refuses ordinary open
+(`migration-required`), and **an older build opening a v4 store refuses
+(`newer`) rather than silently losing the refusal inventory** — the `0007`
+guarantee, now used rather than re-broken. **No `FORMAT_VERSION` change:** refusal
+records deliberately do not export (§4f), so the portable wire format is unaffected.
 
 **Not changed:** `correct()`, absorption, ingest labelling, disclosure routing,
 history visibility, and the MCP author narrowing — which shipped in 0.4.5 and is
@@ -334,8 +364,10 @@ listed here only because v2 wrongly claimed it as an effect of this change.
 
 ## 4a. The change, in full
 
-**One guard, in one loop.** `apply_supersession`'s functional branch currently
-retires every prior with a differing value, unconditionally:
+**The write-layer change is one guarded branch** — but it is only the write layer;
+the read (§4c-ii, §4e) and storage (§4f) layers change too, and §4/§7a enumerate all
+three. `apply_supersession`'s functional branch currently retires every prior with a
+differing value, unconditionally:
 
 ```python
 for prior in store.edges(user_id, subject=..., relation=...):
@@ -351,9 +383,11 @@ for prior in store.edges(user_id, subject=..., relation=...):
 from `specs/ladder.py` — **the same module the tables are generated from**, so
 the rule the code runs and the rule the document states are one object.
 
-**Nothing else changes.** No new field, no schema change, no store signature,
-no enum value, no API narrowing. `correct()`, absorption, ingest labelling and
-recall are untouched.
+**What genuinely does NOT change** (the read/storage layers above DO — §4c-ii,
+§4e, §4f): no new *edge* field, no `EvidenceAuthor` value, and no MCP author
+narrowing beyond what shipped in 0.4.5. `correct()`, absorption, ingest labelling
+and disclosure routing are untouched. This is the *write* layer only; recall and
+the store are changed deliberately and are specified in their own sections.
 
 ---
 
@@ -414,6 +448,44 @@ contradiction is visible. *Surface the tension, never reconcile it.*
 **Stated as a limit, not solved:** a functional relation with two active values
 has no unique current value, and a consumer that assumes one will take the
 first. **Contested-relation semantics are `0011` E3.**
+
+## 4c-ii. The compiled wiki must obey the contention contract (round 6, blocker 1)
+
+**The refusal and the read-permutation are useless if the DEFAULT recall path can
+still collapse the preserved pair.** `Memory.recall()` compiles a wiki
+(`compile.py` via `ensure_wiki`) before it renders query detail, and the compiler:
+
+- reads **every active grounded edge** (`_grounded_inputs`, `active_only=True`), and
+- is prompted to *"keep one current value per changing fact"*.
+
+So a `USER`/`SYSTEM` contention that §4c preserves and §4e authority-orders in
+`subgraph_for_query` is independently handed to an LLM that is told to pick one
+current value — reconstructing the erasure at the summary layer. This is the exact
+shape of the v5 defect the fifth review corrected: a correct local guard while
+another read surface stays outside the invariant. `compile.py` was not in §7a and
+I6/I6a did not cover it.
+
+> **Frozen: a contested functional group never enters the wiki (design A).** The
+> compiler's grounded input **excludes every active edge that is a member of a
+> contested functional-contention group** — a functional `(subject, relation)` key
+> holding more than one active value (§4e). The wiki keeps its honest "one current
+> value per changing fact" contract, because it only ever sees facts that HAVE one.
+> The contested pair is **not** dropped from recall: it reaches the model through the
+> authority-ordered **query-detail** path (§4d/§4e), which recall always includes.
+> Design B — teach the compiler to represent the contention and forbid it to collapse
+> — was considered and rejected: it pushes a contention-preservation obligation into
+> an LLM prompt, exactly the "can be got wrong by accident" this spec avoids.
+
+**Why this loses nothing.** A contested functional group has no unique current value
+(§4c), so it is precisely the material a one-current-value wiki cannot state
+honestly. Excluding it removes nothing the wiki could have rendered truthfully, and
+query detail still surfaces both values, higher authority first.
+
+**Cache invalidation.** A refusal advances `store_version` (§4f), so `ensure_wiki`
+recompiles on the next recall and the fresh wiki excludes the now-contested group. A
+wiki **cached before** the refusal must not survive it. **I6c** pins both halves.
+
+---
 
 ## 4d. Keeping the edge is not keeping the fact
 
@@ -511,34 +583,64 @@ whether a relation is functional. It gains a `relations` parameter, supplied by
 already uses. **An internal signature change on a function re-exported from
 `veracium`**, which §7a now names.
 
+> **Frozen default (round-6 correction C).** The parameter is additive, and its
+> omission has one defined meaning: **`relations` omitted → `DEFAULT_RELATIONS`.** A
+> host that has customised its relation registry (`MemoryConfig.relations` is
+> host-extensible) **MUST pass that registry**, exactly as it already must to
+> `ingest`; otherwise a relation that host made functional is treated as ordinary
+> and its contention is not authority-ordered. I6/I6a run with **both** the default
+> registry and a custom-registry configuration, so the default is not left as
+> whatever the caller happened to pass.
+
 ---
 
 ## 4f. The refusal record is a store operation
 
 **Fifth review, finding 5: v5 said "Schema: none" and then introduced a durable
-per-store record.** That was false, and the record as described could not do the
-job §3a claims for it.
+per-store record.** That was false. **Round-6 blocker 3 then showed the v7 primitive
+too narrow to keep its own "rejects the whole ingest" promise, and blocker 2 that the
+table bypassed the store's accepted schema-version protocol.** Both are closed here.
 
-> **New `Store` method, `@store_mutator`:**
+> **New `Store` method, `@store_mutator` — the WHOLE supersession outcome, atomically:**
 > ```
-> add_edge_with_refusals(edge, refusals) -> None     # ONE commit
+> apply_supersession_plan(plan) -> None        # ONE commit
+>   plan = { incoming edge,
+>            permitted prior updates  (retirements / absorptions / reinforcements),
+>            refusal records,
+>            store_version advance }
 > ```
-> The incoming edge and every refusal it produced are written **atomically**.
+> `apply_supersession` computes the plan and hands the Store **one** object; the
+> Store applies **all of it or none of it**.
 
-**Why atomicity is not optional here.** The store commits per call today, so
-two calls give two failure modes: **a refusal recorded for an edge that was
-never written** (a ghost), or **an edge written with its refusal lost** (an
-unobservable refusal). **An inventory with either is not an inventory**, and
-`0011`'s reconciliation is exactly the thing that would trust it.
+**Why one plan, not `(edge, refusals)` (round-6 blocker 3).** One ingest is not only
+an edge insert plus refusals. The same incoming edge may, on one functional relation,
+**retire a lower-authority prior** *and* **refuse a higher-authority one** — an
+incoming `SYSTEM` fact against an existing `USER` (refuse, `2 < 3`) and an existing
+`THIRD_PARTY` (retire, `2 >= 0`) — and may also absorb or reinforce. Those are
+separate Store mutations today, so a `(edge + refusals)` primitive leaves the
+permitted retirement *outside* the transaction: if the retirement commits and the
+primitive then fails, an old edge is retired with no incoming edge and no refusal — a
+partial ingest the frozen rule forbids; the reverse order strands the opposite partial
+state. The plan primitive puts **every** persistent effect of one supersession in one
+commit, so there is no partial state to define or recover.
+
+**Store-owned binding (round-6 correction C).** The refusal carrier is not a
+loosely-formed record whose fields can disagree with the edge being inserted. The
+Store **binds or validates** each refusal's `user_id`, its `incoming_edge_id` (== the
+plan's incoming edge), its `prior_edge_id` (an existing edge of that same user), and a
+Store-minted `refusal_id` + `timestamp` — a caller cannot submit a refusal that
+references an edge this commit does not write, or another user's edge.
 
 **Frozen semantics:**
 
 | question | answer |
 |---|---|
-| failure | **rejects the whole ingest** — the edge is not written either |
+| failure | **rejects the WHOLE ingest** — not the incoming edge, not any permitted retirement/absorption/reinforcement, not any refusal record; there is no durable partial state (round-6 blocker 3) |
+| `store_version` | the plan **advances `store_version` in the same commit** (it writes a recall-bearing edge), so a cached wiki cannot read falsely fresh (round-6 correction C) |
+| schema | the refusal table is `SCHEMA_VERSION` **v3→v4** via `0013` (§7a), NOT created opportunistically on open (round-6 blocker 2) |
 | idempotency | keyed on `(prior_edge_id, incoming_edge_id, rule_version)`; a repeat is a no-op |
-| `forget_user()` | **deletes the user's refusals** — they are user-linked metadata, so erasure covers them |
-| export / import | **excluded.** A refusal is a fact about *this store's* history, not about the memory; importing one would assert a contention that never happened here |
+| `forget_user()` | **deletes the user's refusals** — user-linked metadata, so erasure covers them |
+| export / import | **excluded.** A refusal is a fact about *this store's* history, not the memory; importing one would assert a contention that never happened here — so **no `FORMAT_VERSION` change** |
 | retention | kept while **either** edge exists; dropped when both are gone |
 | the counter | **derived** from the records, never stored — a second copy of a count is the drift this project has spent a week removing |
 
@@ -577,8 +679,9 @@ before** — it only creates fewer.
 | **I4** the permitted directions still work | `test_user_authored_ingest_can_supersede_third_party` · `test_same_author_update_still_supersedes` — **the permissions, not only the prohibitions.** A guard drawn too broadly passes every prohibition test | CI |
 | **I5** a refusal is recorded | `test_a_refused_supersession_is_counted_and_logged` — content-free | CI |
 | **I6** **every** same-partition contention state renders both values, higher authority first | `test_contention_matrix` — **parameterised from `specs/ladder.py`** over the shipped enum's product, so a new enum member extends the test rather than leaving a fixture green | CI |
-| **I6a** **a refusal must not reduce the prior's recall visibility**, holding query, configuration, budgets and pre-existing store fixed and adding **only** the refused edge and its record | `test_refusal_does_not_evict_the_prior` — parameterised over the same product, and over **all three selection stages**: plain top-k, `_cover`'s temporal reserve, and `Memory._fit_to_budget`'s token truncation | CI |
+| **I6a** **a refusal must not reduce the prior's recall visibility**, holding query, configuration, budgets and pre-existing store fixed and adding **only** the refused edge and its record | `test_refusal_does_not_evict_the_prior` — parameterised over the same product, over **all three selection stages** (plain top-k, `_cover`'s temporal reserve, `Memory._fit_to_budget`'s token truncation), and over **both wiki-disabled and the wiki-enabled default** recall (round-6 blocker 1 — the default path compiles a wiki, §4c-ii) | CI |
 | **I6b** unrelated edges keep their positions | `test_unrelated_edges_keep_their_positions` — the property that makes §4e a permutation rather than a global re-sort | CI |
+| **I6c** the **default compiled-wiki** path obeys the contention contract: a contested functional group never enters the wiki, and a refusal invalidates a cached one (§4c-ii) | `test_contested_group_is_excluded_from_the_wiki` — a fresh compile omits the pair while query detail renders both, higher authority first · `test_a_refusal_invalidates_the_cached_wiki` — a wiki cached before the refusal does not survive it (`store_version` advanced). **Run with the wiki-enabled default configuration** (round-6 blocker 1) | CI |
 | **I7** the MCP surface refuses `system` and fails closed on unknown | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
 
@@ -733,7 +836,8 @@ lower-authority party is routinely the correct one.
 | v4 | narrow design approved; deferred for retrieval fix + deletion pass | 5 | `proposals/0003-review-4.md` |
 | v5 | narrow design affirmed; deferred — duplicated sections, `ladder.py` not runtime-grounded | 7 | dispositioned in this document |
 | **v6** | all seven fifth-round findings closed — sections de-duplicated + a structural check, `ladder.py` runtime-grounded (144/44/8) | — | this document |
-| **v7** | review-history bookkeeping corrected (this table + the header round count); **no design change** — the round-6 submission | — | this document |
+| v7 | review-history bookkeeping corrected; **direction re-approved** at round 6, deferred — 3 design blockers (default-wiki path, schema-versioned refusal table, atomic supersession plan) + 4 corrections | 7 | dispositioned in this document |
+| **v8** | round-6 response — B1 the compiled-wiki contract (§4c-ii, I6c); B2 the refusal table as `SCHEMA_VERSION` v3→v4 + `Spec-Requires: 0007, 0013`; B3 the atomic `apply_supersession_plan`; corrections A–D closed (withdrawn §4a framing + lint, authority-sorted heading, `store_version`/`relations`/binding, Q2a as `watch`). **No ladder/refusal/permutation change.** | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
