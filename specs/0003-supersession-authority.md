@@ -1,21 +1,30 @@
 # Feature spec: supersession authority
 
-Spec-Status: in review
+Spec-Status: accepted
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v14)** — round-11 response, 2026-08-08. **Round 11 APPROVED the architecture
-> ("end broad architecture review here") and deferred canonical `accepted` on two
-> contract/process-only corrections: (C1) a same-partition grounded member I6 renders must be a
-> FULL exposed member on `Recall.contested`/`edges` — the content-free rule is scoped to the unseen
-> fenced CROSS-partition challenger only; (L) §11a made literally one-row-per-finding.** v14 makes
-> exactly those two changes and NOTHING else — no architecture, ladder, refusal, or permutation
-> change. (C1) §4c-ii now names three exposed-member cases and scopes no-reach to the unseen fenced
-> cross-partition challenger; I6c gains two distinguishing tests. (L) §11a itemizes round 5 to its 7
-> findings, gives rounds 3/4 an explicit evidence-loss ruling (verdict-only reviews; texts never
-> preserved) + their revision commits, and gives every round-1/2/5 row commit evidence (`→ 0011`
-> rows cite the narrowing commit `8c876da`).
+> **ACCEPTED (v15)** — 2026-08-08. **Round 12: APPROVED FOR ACCEPTANCE.** The reviewer approved
+> the design and required one same-commit deletion-pass correction: remove a stale round-9 sentence
+> ("no `import`/`correct()`/lifecycle path needs to [invalidate], because those do not create
+> refusals") that contradicted the round-10 symmetric resolution rule (`correct()`/lifecycle MUST
+> invalidate when they transition an existing `live_refusal_contention` OUT of the live state). v15
+> makes exactly that deletion — no behaviour change, the round-10 rule was already the approved
+> architecture — and sets `Spec-Status: accepted` in the same commit, per the reviewer's
+> instruction. It also fixes the §11a heading to the canonical `## Review closure` form so the
+> accepted spec actually authorises its own implementation (the `check_spec_reference` closure gate
+> matches `^##+\s*Review closure`). **Broad external architecture review is CLOSED.** Implementation
+> proceeds against the frozen I1–I9 surface; the §6 prospective checks become mandatory
+> implementation/release gates, and future counterexamples are implementation defects unless they
+> reveal an actual contradiction in a frozen invariant.
+>
+> _Round-11 response (v14, closed) — for history:_ round 11 APPROVED the architecture and deferred
+> `accepted` on two contract/process-only corrections: (C1) a same-partition grounded member I6
+> renders is a FULL exposed member on `Recall.contested`/`edges` (no-reach scoped to the unseen
+> fenced CROSS-partition challenger only; §4c-ii + two I6c tests); (L) §11a made literally
+> one-row-per-finding (round 5 itemized; rounds 3/4 given an evidence-loss ruling; every early row
+> given commit evidence). No architecture/ladder/refusal/permutation change.
 >
 > _Round-10 response (v13, closed) — for history:_
 > **Round 10 said: fix two derived-view/cache gaps, two public-contract corrections, and the
@@ -79,11 +88,11 @@ Spec-Requires: 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v14** — *re-read before editing; quote the version you approve.* Contract/process-only response to round 11 (architecture APPROVED): (C1) `Recall.contested`/`edges` — a deterministically-rendered same-partition grounded member is a FULL exposed member; content-free linkage is scoped to the unseen fenced CROSS-partition challenger only (§4c-ii · I6c). (L) §11a made literally one-row-per-finding — round 5 itemized, rounds 3/4 given an evidence-loss ruling, every early row given commit evidence. Narrow design approved 3–5, re-approved 6–10, architecture approved 11. **No change to the ladder, the refusal direction, or the permutation — and no other architecture change.** |
+| **Version** | **v15 (ACCEPTED)** — *re-read before editing; quote the version you approve.* Round-12 acceptance: one same-commit deletion-pass correction (removed the stale round-9 "`correct()`/lifecycle need not invalidate" sentence that contradicted the round-10 symmetric resolution rule) + §11a heading fixed to the canonical `## Review closure` form + `Spec-Status: accepted`. No behaviour change. Narrow design approved 3–5, re-approved 6–10, architecture approved 11, **accepted 12; broad external architecture review CLOSED.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
-| **External review** | required — the narrow design was approved at r3 and r4 and affirmed at r5 (deferred on cleanup only). Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
-| **Decision + date** | — |
+| **External review** | complete — narrow design approved r3–r5, direction re-approved r6–r10, architecture approved r11, **APPROVED FOR ACCEPTANCE at r12 (broad review closed)**. Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
+| **Decision + date** | **ACCEPTED 2026-08-08** (round 12, external). Implementation proceeds against the frozen I1–I9 surface (§6); the prospective checks become mandatory implementation/release gates. |
 | **Path** | full |
 
 > **Advisory disposition is not made here.** v2 argued exploitation *"is not
@@ -586,8 +595,15 @@ LLM told to pick one. `compile.py` was not in §7a and I6/I6a did not cover it.
 >   refusal record exists** for the `(subject, relation)` group. That is exactly the set the
 >   refusal-preservation invariant (I6a) must protect, and it is exactly the set
 >   `apply_supersession_plan` creates — so **the invalidation trigger now matches the
->   derived-view scope**: the plan drops the wiki cache in the same commit, and no
->   `import`/`correct()`/lifecycle path needs to, because those do not create refusals. A
+>   derived-view scope**: the plan drops the wiki cache in the same commit that FORMS a live
+>   refusal contention, and non-refusal contention formation (`import`/legacy/host) does not
+>   enter this derived view. **But forming is not the only invalidation event.** Any path —
+>   INCLUDING `correct()` or lifecycle mutation — that later transitions an existing
+>   `live_refusal_contention` OUT of the live state invalidates the wiki in that same mutation,
+>   under the symmetric transition rule below (round-10 blocker 1). (Superseded round-9 wording
+>   said such paths "need not" invalidate because they create no refusal; that is true only of
+>   contention FORMATION — RESOLUTION of an existing live refusal contention is exactly where
+>   `correct()`/lifecycle must invalidate.) A
 >   pre-existing non-refusal contention keeps existing wiki behaviour (the compiler may state
 >   one value); this feature only guarantees that a REFUSAL does not reduce the prior's
 >   visibility, not that every pre-existing contention gains a new surface.
@@ -1210,12 +1226,12 @@ answered (built code vs. prose), not about closing the door on genuine architect
 
 ---
 
-## 11a. Review closure (PROCESS.md §4a) — the acceptance ledger
+## Review closure (PROCESS.md §4a) — §11a, the acceptance ledger
 
 *One row per external finding **wherever the finding texts were preserved**, tied to the
 normative section/invariant that closes it and openable evidence (a commit, a generator/lint,
-a spec section, or an in-package review file). The round 1–5 and round-11 reviews are carried
-in-package at `specs/reviews/0003/round-{1..5,11}.md` (rounds 6–10 are dispositioned in this
+a spec section, or an in-package review file). The round 1–5, 11 and 12 reviews are carried
+in-package at `specs/reviews/0003/round-{1..5,11,12}.md` (rounds 6–10 are dispositioned in this
 document with their commits), so the acceptance package is self-contained. The I1–I9
 checks are prospective (the design is unbuilt) and become mandatory implementation/release gates
 once the design is `accepted`.*
@@ -1319,7 +1335,9 @@ once the design is `accepted`.*
 | r10-ledger | §11a not PROCESS §4a-compliant | this ledger (per-finding; `specs/reviews/0003/` in-package; actual commits) | `c52f8df` |
 | # | round-11 finding (architecture approved; contract/process-only) | closed by | commit |
 | r11-C1 | I6 renders every distinct same-partition grounded value, but the `Recall.contested` carrier exposed only the preserved prior + relevance-selected members → a grounded same-partition challenger I6 renders would drift (rendered but structurally content-free) | §4c-ii — a deterministically-rendered same-partition grounded member is a **full exposed member** on every surface; the content-free rule is scoped to the unseen fenced CROSS-partition challenger · I6c (two new distinguishing tests) | v14 (this revision — sha in the package README) |
-| r11-L | §11a did not literally satisfy PROCESS §4a: rounds 3/4/5 collapsed to one row each, several early closures were prose not commit/test | round 5 itemized to its 7 findings; rounds 3/4 given an explicit **evidence-loss ruling** (verdict-only, texts never preserved) + their revision commits; every round-1/2/5 row given commit evidence; `→ 0011` rows cite the narrowing commit `8c876da` | v14 (this revision — sha in the package README) |
+| r11-L | §11a did not literally satisfy PROCESS §4a: rounds 3/4/5 collapsed to one row each, several early closures were prose not commit/test | round 5 itemized to its 7 findings; rounds 3/4 given an explicit **evidence-loss ruling** (verdict-only, texts never preserved) + their revision commits; every round-1/2/5 row given commit evidence; `→ 0011` rows cite the narrowing commit `8c876da` | `40fa9de` |
+| # | round-12 finding (APPROVED FOR ACCEPTANCE; one same-commit deletion) | closed by | commit |
+| r12-D | a stale round-9 sentence ("no `import`/`correct()`/lifecycle path needs to invalidate, because those do not create refusals") contradicted the round-10 symmetric rule that `correct()`/lifecycle MUST invalidate when they resolve an existing `live_refusal_contention` | §4c-ii — the sentence rewritten to distinguish FORMATION (refusal-scoped) from RESOLUTION (any path, incl. `correct()`/lifecycle, invalidates OUT of the live state); no behaviour change; **`Spec-Status: accepted` set in the same commit** | v15 (this revision — sha in the package README) |
 
 ---
 
@@ -1340,7 +1358,8 @@ once the design is `accepted`.*
 | v11 | v10 + §11 acceptance-boundary proposal; **the boundary concept was approved in principle** at round 9, but v11 deferred — 3 architectural seams + 3 corrections (incl. the acceptance-artifact wording, backwards) | 6 | dispositioned in this document |
 | v12 | round-9 response — B1 reach, B2 refusal-scoped derived view, B3 durable receipt; corrections A (governance order + §11a), B (`Recall.contested`), C (complete `expected_state`). **Finite-boundary concept approved in principle at round 10; deferred — 2 derived-view/cache gaps + 2 public-contract corrections + the acceptance ledger** | 6 | dispositioned in this document |
 | v13 | round-10 (convergence) response — B1 resolution invalidation (`live_refusal_contention`, symmetric); B2 cache binds `compiler_policy_digest`; corrections A (`Recall.contested` gives the challenger no structured reach), B (§7a lists the `Recall` API). **Architecture APPROVED at round 11 — "end broad architecture review here"; deferred canonical `accepted` on 2 contract/process-only corrections** (same-partition carrier drift, §11a not literally one-row-per-finding) | 2 | dispositioned in this document |
-| **v14** | round-11 response (contract/process only, **no architecture change**) — C1: a deterministically-rendered same-partition grounded member is a FULL exposed member on `Recall.contested`/`edges` (the content-free rule is scoped to the unseen fenced CROSS-partition challenger only); §4c-ii + I6c gain two distinguishing tests. L: §11a made literally PROCESS §4a — round 5 itemized to its 7 findings, rounds 3/4 given an explicit evidence-loss ruling (verdict-only; texts never preserved) + revision commits, every round-1/2/5 row given commit evidence, `→ 0011` rows cite `8c876da`. **Reviewer: set `accepted` after this.** | — | this document |
+| v14 | round-11 response (contract/process only, **no architecture change**) — C1: a deterministically-rendered same-partition grounded member is a FULL exposed member on `Recall.contested`/`edges` (the content-free rule is scoped to the unseen fenced CROSS-partition challenger only); §4c-ii + I6c gain two distinguishing tests. L: §11a made literally PROCESS §4a — round 5 itemized to its 7 findings, rounds 3/4 given an explicit evidence-loss ruling (verdict-only; texts never preserved) + revision commits, every round-1/2/5 row given commit evidence, `→ 0011` rows cite `8c876da`. **APPROVED FOR ACCEPTANCE at round 12** — one same-commit deletion-pass correction required | 1 | dispositioned in this document |
+| **v15** | round-12 acceptance response (deletion-pass only, **no behaviour change**) — removed the stale round-9 sentence that said `import`/`correct()`/lifecycle "need not" invalidate (it contradicted the round-10 symmetric resolution rule: RESOLUTION of an existing `live_refusal_contention` via `correct()`/lifecycle MUST invalidate); §11a heading fixed to the canonical `## Review closure` form so the accepted spec authorises its own implementation; **`Spec-Status: accepted`**. Broad external architecture review CLOSED; implementation proceeds against I1–I9. | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
