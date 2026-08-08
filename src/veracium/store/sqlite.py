@@ -8,6 +8,7 @@ Postgres `Store` can replace this for very large multi-tenant deployments.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import threading
@@ -16,13 +17,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
+from ..authority import RULE_VERSION, scope_fingerprint
 from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
                       Confirmation, ConfirmationActor, ConfirmationCallPath,
                       Disclosure, Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
                       Provenance, RECOVERY_PENDING_STATES, SourceType,
+                      SupersessionPlan, SupersessionRefusal, SupersessionResult,
                       is_historical_id, to_historical_id)
 from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
-                   Store)
+                   PLAN_STALE, Store, SupersessionIntegrityError)
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              PostCommitAuditError,
                              StoreVersionError, open_versioned)
@@ -77,33 +80,38 @@ class SqliteStore(Store):
             "ON CONFLICT(user_id) DO UPDATE SET n = n + 1", (user_id,))
 
     # -- edges -------------------------------------------------------------
+    def _upsert_edge_row(self, edge: Edge) -> None:
+        """INSERT OR REPLACE one edge with the specs/0008 §6d guards, WITHOUT taking the
+        lock, bumping the write counter, or committing — the caller owns the transaction.
+        `add_edge` and `apply_supersession_plan` (specs/0003 §4f) both use it, so the
+        ownership + needs_confirmation guards hold on every persistence path, not only
+        the single-edge one."""
+        # specs/0008 §6d: may NOT clear `needs_confirmation` (True→False) when replacing
+        # an edge of the same id — only `confirm_edge` may — and may NOT change an edge's
+        # `user_id`. Compared against the PERSISTED prior state, so a reconstructed edge
+        # cannot slip the transition past the write path (C1, C10).
+        prior = self._conn.execute(
+            "SELECT user_id, json FROM edges WHERE id=?", (edge.id,)).fetchone()
+        if prior is not None:
+            if prior[0] != edge.user_id:
+                raise ValueError(
+                    f"cannot change edge {edge.id!r}'s user_id "
+                    f"({prior[0]!r} → {edge.user_id!r}) — ownership is not "
+                    f"transferable through the upsert path (specs/0008 §6d)")
+            if (Edge.model_validate_json(prior[1]).needs_confirmation
+                    and not edge.needs_confirmation):
+                raise ValueError(
+                    f"cannot clear needs_confirmation (True→False) on "
+                    f"edge {edge.id!r} — only confirm_edge may (specs/0008 §6d, C1)")
+        self._conn.execute(
+            "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
+            "VALUES(?,?,?,?,?,?,?,?)",
+            (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
+             int(edge.active), int(edge.quarantined), edge.model_dump_json()))
+
     def add_edge(self, edge: Edge) -> None:
         with self._lock:
-            # specs/0008 §6d: `add_edge` may NOT clear `needs_confirmation`
-            # (True→False) when replacing an edge of the same id — only
-            # `confirm_edge` may — and may NOT change an edge's `user_id`
-            # (ownership is not transferable through the upsert path). Compared
-            # against the PERSISTED prior state, so a reconstructed edge cannot
-            # slip the transition past the write path (C1, C10).
-            prior = self._conn.execute(
-                "SELECT user_id, json FROM edges WHERE id=?", (edge.id,)).fetchone()
-            if prior is not None:
-                if prior[0] != edge.user_id:
-                    raise ValueError(
-                        f"add_edge cannot change edge {edge.id!r}'s user_id "
-                        f"({prior[0]!r} → {edge.user_id!r}) — ownership is not "
-                        f"transferable through the upsert path (specs/0008 §6d)")
-                if (Edge.model_validate_json(prior[1]).needs_confirmation
-                        and not edge.needs_confirmation):
-                    raise ValueError(
-                        f"add_edge cannot clear needs_confirmation (True→False) on "
-                        f"edge {edge.id!r} — only confirm_edge may (specs/0008 §6d, "
-                        f"C1)")
-            self._conn.execute(
-                "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
-                "VALUES(?,?,?,?,?,?,?,?)",
-                (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
-                 int(edge.active), int(edge.quarantined), edge.model_dump_json()))
+            self._upsert_edge_row(edge)
             self._bump(edge.user_id)
             self._conn.commit()
 
@@ -205,17 +213,40 @@ class SqliteStore(Store):
             f"ORDER BY confirmed_at DESC", (user_id, edge_id)).fetchall()
         return [self._confirmation_from_row(r) for r in rows]
 
+    def _invalidate_edge_row(self, edge_id: str, at, reason: str) -> Optional[str]:
+        """Retire one edge WITHOUT lock/bump/commit; returns its user_id, or None if the
+        edge does not exist. Shared by `invalidate_edge` and `apply_supersession_plan`."""
+        row = self._conn.execute("SELECT json, user_id FROM edges WHERE id=?", (edge_id,)).fetchone()
+        if not row:
+            return None
+        edge = Edge.model_validate_json(row[0])
+        edge.invalidated_at = at
+        edge.invalidation_reason = reason
+        self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
+                           (edge.model_dump_json(), edge_id))
+        return row[1]
+
+    def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:
+        """True if `edge_id` participates (as prior or incoming) in any refusal record —
+        i.e. it may be a member of a live refusal contention (specs/0003 §4c-ii)."""
+        return self._conn.execute(
+            "SELECT 1 FROM supersession_refusals WHERE user_id=? AND "
+            "(prior_edge_id=? OR incoming_edge_id=?) LIMIT 1",
+            (user_id, edge_id, edge_id)).fetchone() is not None
+
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None:
         with self._lock:
-            row = self._conn.execute("SELECT json, user_id FROM edges WHERE id=?", (edge_id,)).fetchone()
-            if not row:
+            uid = self._invalidate_edge_row(edge_id, at, reason)
+            if uid is None:
                 return
-            edge = Edge.model_validate_json(row[0])
-            edge.invalidated_at = at
-            edge.invalidation_reason = reason
-            self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
-                               (edge.model_dump_json(), edge_id))
-            self._bump(row[1])
+            self._bump(uid)
+            # specs/0003 §4c-ii (round-10 blocker 1): deactivating an edge that
+            # participates in a refusal contention is a derived-view RESOLUTION event —
+            # `correct()`/`dispute`/lifecycle can end a `live_refusal_contention` while
+            # the durable refusal is retained. Drop the wiki in the SAME mutation so the
+            # invalidation rule is symmetric (formation AND resolution both recompile).
+            if self._edge_in_refusal(uid, edge_id):
+                self._conn.execute("DELETE FROM wiki WHERE user_id=?", (uid,))
             self._conn.commit()
 
     def edges(self, user_id, *, active_only=True, subject=None, relation=None,
@@ -232,6 +263,122 @@ class SqliteStore(Store):
             q += " AND quarantined=0"
         rows = self._conn.execute(q, args).fetchall()
         return [Edge.model_validate_json(r[0]) for r in rows]
+
+    # -- supersession (specs/0003) ----------------------------------------
+    @staticmethod
+    def _logical_request_digest(plan: SupersessionPlan) -> str:
+        """A fingerprint of the plan's LOGICAL intent — what it does, NOT the
+        `expected_state` it assumed (which changes on a CAS recompute). The same logical
+        operation replayed produces the same digest (→ replay a committed receipt); a
+        genuinely different operation that reuses an `operation_id` produces a different
+        digest (→ integrity conflict). §4f processing order step 1."""
+        inc = plan.incoming_edge
+        payload = {
+            "incoming": [inc.id, inc.object,
+                         inc.provenance.author_of_evidence.value,
+                         inc.provenance.derived_from.value if inc.provenance.derived_from else None],
+            "insert_incoming": plan.insert_incoming,
+            "upserts": sorted(e.id for e in plan.prior_upserts),
+            "invalidations": sorted([eid, reason] for eid, _at, reason in plan.prior_invalidations),
+            "refusals": sorted([r.prior_edge_id, r.incoming_edge_id] for r in plan.refusals),
+        }
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+    def apply_supersession_plan(self, plan: SupersessionPlan):
+        inc = plan.incoming_edge
+        user_id = inc.user_id
+        digest = self._logical_request_digest(plan)
+        with self._lock:
+            # 1. receipt check — PRECEDES the CAS check, so a committed op REPLAYS rather
+            #    than tripping PlanStale on its own now-stale expected_state (§4f, r9 B3).
+            row = self._conn.execute(
+                "SELECT logical_request_digest FROM supersession_operations "
+                "WHERE user_id=? AND operation_id=?", (user_id, plan.operation_id)).fetchone()
+            if row is not None:
+                if row[0] != digest:
+                    raise SupersessionIntegrityError(
+                        f"operation_id {plan.operation_id!r} already committed a DIFFERENT "
+                        f"logical operation for user {user_id!r} — a reused id is a caller "
+                        f"integrity bug, not a race (specs/0003 §4f)")
+                refused = self._conn.execute(
+                    "SELECT COUNT(*) FROM supersession_refusals "
+                    "WHERE user_id=? AND incoming_edge_id=?", (user_id, inc.id)).fetchone()[0]
+                return SupersessionResult(
+                    inserted_incoming=plan.insert_incoming,
+                    invalidated=len(plan.prior_invalidations), refused=refused, replayed=True)
+            # 2/3. CAS: revalidate the COMPLETE scope fingerprint inside the txn; stale →
+            #      PlanStale, no write, receipt NOT consumed (the caller retries).
+            scope = self.edges(user_id, subject=inc.subject, relation=inc.relation,
+                               active_only=True, include_quarantined=True)
+            if scope_fingerprint(scope) != plan.expected_state:
+                return PLAN_STALE
+            # 4. apply all-or-nothing (one transaction). ANY failure mid-apply rolls the
+            #    WHOLE plan back — no incoming edge, no prior mutations, no refusal rows,
+            #    no receipt — so there is never a durable partial state (§4f failure rule).
+            try:
+                for e in plan.prior_upserts:
+                    self._upsert_edge_row(e)
+                for eid, at, reason in plan.prior_invalidations:
+                    self._invalidate_edge_row(eid, at, reason)
+                if plan.insert_incoming:
+                    self._upsert_edge_row(inc)
+                now = self._now().isoformat()
+                for d in plan.refusals:
+                    # BIND the refusal: it may only reference the plan's incoming edge and
+                    # an existing edge of THIS user (round-6 correction C) — a caller cannot
+                    # forge a refusal against an edge this commit does not write or another
+                    # tenant's.
+                    if d.incoming_edge_id != inc.id:
+                        raise ValueError(
+                            "refusal.incoming_edge_id must equal the plan's incoming edge id")
+                    prow = self._conn.execute(
+                        "SELECT user_id FROM edges WHERE id=?", (d.prior_edge_id,)).fetchone()
+                    if prow is None or prow[0] != user_id:
+                        raise ValueError(
+                            "refusal.prior_edge_id must be an existing edge of this user")
+                    self._conn.execute(
+                        "INSERT INTO supersession_refusals(refusal_id,user_id,prior_edge_id,"
+                        "incoming_edge_id,relation,prior_effective,incoming_effective,"
+                        "rule_version,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                        (f"ref-{uuid.uuid4().hex[:12]}", user_id, d.prior_edge_id, inc.id,
+                         d.relation, d.prior_effective, d.incoming_effective, RULE_VERSION, now))
+                # the durable receipt commits atomically with the effects (§4f idempotency)
+                self._conn.execute(
+                    "INSERT INTO supersession_operations(user_id,operation_id,"
+                    "logical_request_digest,status) VALUES(?,?,?,?)",
+                    (user_id, plan.operation_id, digest, "applied"))
+                self._bump(user_id)                   # a recall-bearing edge changed
+                # A live_refusal_contention transition — INTO it (this plan records a
+                # refusal) OR OUT of it (this plan retires an edge that a refusal row
+                # references) — is a derived-view invalidation event, symmetric per
+                # round-10 blocker 1. Drop the wiki cache in the SAME commit (§4c-ii,
+                # immediate not batched). The refusal rows still reference a retired
+                # member (retention is "while either edge exists"), so the resolution
+                # check reads them post-invalidation.
+                touches_contention = bool(plan.refusals) or any(
+                    self._edge_in_refusal(user_id, eid)
+                    for eid, _at, _reason in plan.prior_invalidations)
+                if touches_contention:
+                    self._conn.execute("DELETE FROM wiki WHERE user_id=?", (user_id,))
+                self._conn.commit()
+            except Exception:
+                self._conn.rollback()
+                raise
+            return SupersessionResult(
+                inserted_incoming=plan.insert_incoming,
+                invalidated=len(plan.prior_invalidations), refused=len(plan.refusals))
+
+    def refusals(self, user_id: str) -> list[SupersessionRefusal]:
+        rows = self._conn.execute(
+            "SELECT refusal_id,user_id,prior_edge_id,incoming_edge_id,relation,"
+            "prior_effective,incoming_effective,rule_version,created_at "
+            "FROM supersession_refusals WHERE user_id=? "
+            "ORDER BY created_at DESC, refusal_id DESC", (user_id,)).fetchall()
+        return [SupersessionRefusal(
+            refusal_id=r[0], user_id=r[1], prior_edge_id=r[2], incoming_edge_id=r[3],
+            relation=r[4], prior_effective=r[5], incoming_effective=r[6],
+            rule_version=r[7], created_at=r[8]) for r in rows]
 
     # -- episodes ----------------------------------------------------------
     def add_episode(self, episode: Episode) -> None:
@@ -750,8 +897,11 @@ class SqliteStore(Store):
                 (user_id,)).fetchone()[0]
             # specs/0010 X17: consolidation operation state is per-user erasable data —
             # forget_user removes it atomically with the rest of the user's memory.
+            # specs/0003 §4f: the refusal inventory and the operation receipts are
+            # user-linked Store-local metadata, so erasure covers them too.
             for table in ("edges", "episodes", "wiki", "write_counter",
-                          "confirmations", "consolidation_ops"):
+                          "confirmations", "consolidation_ops",
+                          "supersession_refusals", "supersession_operations"):
                 self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
             self._conn.commit()
         return {"edges": n_edges, "episodes": n_eps, "confirmations": n_conf}

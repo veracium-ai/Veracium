@@ -413,3 +413,68 @@ class ConsolidationOutputDraft(BaseModel):
     summary: str
     date_start: str
     date_end: str
+
+
+# --- supersession authority (specs/0003) ---------------------------------------
+# The write-time supersession outcome is applied as ONE atomic, CAS-linearized plan
+# (§4f). These are the plan the write layer computes, the durable refusal record the
+# store keeps, and the result the store returns. Content-free by construction: a refusal
+# carries opaque edge ids, the relation and two authority levels — never subject/object/
+# note (§4b). RULE_VERSION and effective-authority live in `veracium.authority`.
+
+class SupersessionRefusalDraft(BaseModel):
+    """One refused retirement, as the write layer proposes it. The store BINDS the
+    identity fields (mints `refusal_id`/`created_at`, stamps `rule_version`, validates
+    `incoming_edge_id` == the plan's incoming edge and `prior_edge_id` belongs to the
+    user) so a malformed caller cannot forge a refusal against an edge this commit does
+    not write or another user's edge (§4f, round-6 correction C)."""
+    prior_edge_id: str
+    incoming_edge_id: str
+    relation: str
+    prior_effective: int
+    incoming_effective: int
+
+
+class SupersessionPlan(BaseModel):
+    """The WHOLE persistent outcome of one supersession, computed from a store read and
+    applied all-or-nothing conditional on `expected_state` (§4f, I9).
+
+    `insert_incoming` is EXPLICIT because the plan type decides what is representable:
+    reinforcement refreshes an existing prior and inserts NOTHING (`False`); absorption
+    and ordinary supersession insert the incoming edge (`True`). `prior_upserts` are
+    in-place refreshes (reinforcement liveness, absorption notes); `prior_invalidations`
+    are `(edge_id, at, reason)` retirements/absorptions. `expected_state` is the complete
+    scope fingerprint (`authority.scope_fingerprint`) the plan assumed; `operation_id` is
+    the whole-plan idempotency key. `rule_version`/`store_version`/cache effects are
+    Store-owned, not carried here."""
+    incoming_edge: Edge
+    insert_incoming: bool
+    operation_id: str
+    expected_state: str
+    prior_upserts: list[Edge] = Field(default_factory=list)
+    prior_invalidations: list[tuple[str, datetime, str]] = Field(default_factory=list)
+    refusals: list[SupersessionRefusalDraft] = Field(default_factory=list)
+
+
+class SupersessionRefusal(BaseModel):
+    """A durable, content-free refusal record as read back from the store (§4b). The
+    inventory `specs/0011` re-evaluates: `rule_version` stamps which policy refused."""
+    refusal_id: str
+    user_id: str
+    prior_edge_id: str
+    incoming_edge_id: str
+    relation: str
+    prior_effective: int
+    incoming_effective: int
+    rule_version: str
+    created_at: datetime
+
+
+class SupersessionResult(BaseModel):
+    """What `apply_supersession_plan` returns on success (an `Applied`). `replayed` is
+    True when a durable receipt for `operation_id` already existed and the store replayed
+    it as a no-op rather than re-applying (§4f idempotency)."""
+    inserted_incoming: bool
+    invalidated: int
+    refused: int
+    replayed: bool = False

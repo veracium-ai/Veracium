@@ -32,23 +32,28 @@ except ImportError as exc:                        # pragma: no cover
         f"It derives the authority classes from EvidenceAuthor and imports the "
         f"production disclosure rule, so it cannot be checked without them.") from None
 
-# Rungs for every class that could exist. Only the shipped ones are enumerated.
-_RUNGS = {"user": 3, "system": 2, "assistant": 1, "third_party": 0}
+# The rungs AND the rule now live in the RUNTIME module `veracium.authority`, and
+# are imported here so the code the store runs and the tables this file generates
+# are one object (specs/0003 §4a). v1 hand-wrote the ASSISTANT row from the same
+# arithmetic and inverted two of four cases; a shared implementation cannot diverge.
+# The string-typed wrappers below keep this file's table generators unchanged while
+# delegating every authority decision to the runtime rule.
+from veracium.authority import _RUNGS  # noqa: E402  (import after the enum-grounding guard)
+from veracium.authority import effective as _effective
+from veracium.authority import permitted as _permitted
+
 AUTH = {c: _RUNGS[c] for c in CLASSES}
 
 
 def effective(author: str, derived_from: str | None) -> int:
-    """Capped authority: provenance may lower it, never raise it.
-
-    `min` is the whole reason SYSTEM can keep rung 2 without splitting the enum
-    -- a system summary of an attacker's email scores 0, host state scores 2.
-    """
-    return min(AUTH[author], AUTH[derived_from or author])
+    """Capped authority — delegates to the runtime rule (`veracium.authority`)."""
+    return _effective(_E(author), _E(derived_from) if derived_from else None)
 
 
 def permitted(prior_author, prior_from, inc_author, inc_from) -> bool:
     """A retirement is permitted only by an equal-or-better-entitled party."""
-    return effective(inc_author, inc_from) >= effective(prior_author, prior_from)
+    return _permitted(_E(prior_author), _E(prior_from) if prior_from else None,
+                      _E(inc_author), _E(inc_from) if inc_from else None)
 
 
 def author_matrix() -> list[tuple[str, str, bool]]:

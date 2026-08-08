@@ -183,9 +183,38 @@ SCHEMA_V3 = SCHEMA_V2 + (
                  "ON consolidation_ops(user_id, state)", REBUILDABLE),
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3}
+# v4 adds the two `specs/0003` supersession tables. Both are content-free and
+# user-linked (opaque edge ids, relation, authority levels — never subject/object/
+# note), so `forget_user` erases them and export/import exclude them (§4f). Neither is
+# created opportunistically on open (round-6 blocker 2): they advance the on-disk store
+# version v3→v4, a fresh store is built at v4, and a below-head store is brought forward
+# by the offline `0013` migration (`Spec-Requires: 0007, 0013`).
+#   - `supersession_refusals`: the durable, content-free refusal inventory (§4b). Carries
+#     BOTH edge ids so `0011` can enumerate exactly which edges contended (v4 recorded only
+#     the relation + authority pair and could not — fifth-round finding).
+#   - `supersession_operations`: the durable whole-plan idempotency receipt (§4f, round-9
+#     blocker 3). `UNIQUE(user_id, operation_id)` is tenant-scoped; a committed op REPLAYs
+#     rather than re-applying after a lost response + restart.
+SCHEMA_V4 = SCHEMA_V3 + (
+    SchemaObject("table", "supersession_refusals", """CREATE TABLE supersession_refusals (
+    refusal_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,
+    prior_edge_id TEXT NOT NULL, incoming_edge_id TEXT NOT NULL, relation TEXT NOT NULL,
+    prior_effective INTEGER NOT NULL, incoming_effective INTEGER NOT NULL,
+    rule_version TEXT NOT NULL, created_at TEXT NOT NULL
+)""", REQUIRED),
+    SchemaObject("index", "ix_supersession_refusals_user",
+                 "CREATE INDEX ix_supersession_refusals_user "
+                 "ON supersession_refusals(user_id)", REBUILDABLE),
+    SchemaObject("table", "supersession_operations", """CREATE TABLE supersession_operations (
+    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,
+    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,
+    PRIMARY KEY (user_id, operation_id)
+)""", REQUIRED),
+)
 
-SCHEMA_VERSION = 3
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4}
+
+SCHEMA_VERSION = 4
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

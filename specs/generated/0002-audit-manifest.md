@@ -5,7 +5,7 @@
 
 # specs/0002 — store-mutator call-site manifest
 
-**32 call sites** across **15 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
+**32 call sites** across **16 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
 
 **25 clean · 0 fixed · 1 open · 0 moved · 6 open and moved** — 25 of 32 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
 

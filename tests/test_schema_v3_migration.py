@@ -28,11 +28,14 @@ def _build_at(path, schema_objs):
     c.close()
 
 
-def test_fresh_store_is_v3_with_consolidation_ops(tmp_path):
+def test_fresh_store_is_head_with_consolidation_ops(tmp_path):
+    # A fresh store is built at HEAD (>= 3, since v3 added consolidation_ops); the
+    # exact head advances as later specs add versions (0003 took it to v4), so this
+    # asserts head-relative rather than pinning a number.
     p = str(tmp_path / "fresh.db")
     SqliteStore(p)
     with sqlite3.connect(p) as c:
-        assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 3
+        assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION >= 3
         tables = {r[0] for r in c.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")}
     assert "consolidation_ops" in tables
@@ -51,11 +54,15 @@ def test_migrate_forward_to_v3_is_additive(tmp_path, base_objs, base, stamp):
     result = migrate_store(p)
     assert str(result) == "migrated"
     with sqlite3.connect(p) as c:
-        assert c.execute("PRAGMA user_version").fetchone()[0] == 3
+        # migrate_store brings a below-head store all the way to HEAD in one call, so
+        # a v1/v2 base now crosses v3 AND v4; assert head-relative and confirm every
+        # additive table along the way landed.
+        assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         tables = {r[0] for r in c.execute(
             "SELECT name FROM sqlite_master WHERE type='table'")}
     assert "consolidation_ops" in tables
-    assert "confirmations" in tables   # v1→v3 also picks up v2's table
+    assert "confirmations" in tables   # v1→head also picks up v2's table
+    assert "supersession_refusals" in tables and "supersession_operations" in tables
     # A second migrate is a no-op (already current), not a re-migration.
     assert str(migrate_store(p)) == "current"
     # And it opens cleanly through the ordinary Store path now.

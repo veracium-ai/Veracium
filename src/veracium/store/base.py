@@ -15,7 +15,8 @@ from typing import Optional
 
 from ..schema import (ConsolidationOp, ConsolidationOutputDraft, Confirmation,
                       ConfirmationActor, ConfirmationCallPath, Edge, Episode,
-                      OutcomeJudgmentDraft)
+                      OutcomeJudgmentDraft, SupersessionPlan, SupersessionRefusal,
+                      SupersessionResult)
 
 # specs/0010 §4a-ii: the one library bound on a lease's duration (seconds). A
 # renewal re-adds exactly `lease_duration`; `0 < lease_duration <= LEASE_MAX`.
@@ -65,6 +66,28 @@ class NonQuiescent:
 NON_QUIESCENT = NonQuiescent()
 
 
+class PlanStale:
+    """Sentinel result of `apply_supersession_plan` when the `(user, subject, relation)`
+    state the plan was computed from changed between the caller's read and the atomic
+    commit (specs/0003 §4f, I9). NOTHING was written and the durable receipt was NOT
+    consumed; the caller re-reads, recomputes and retries the SAME logical operation. The
+    same compare-and-set shape as `HEAD_MOVED` / `DESTINATION_CHANGED`; never durable."""
+    __slots__ = ()
+
+    def __repr__(self) -> str:  # pragma: no cover - diagnostic only
+        return "PlanStale"
+
+
+PLAN_STALE = PlanStale()
+
+
+class SupersessionIntegrityError(Exception):
+    """A durable receipt for `(user_id, operation_id)` exists but the incoming plan's
+    logical request digest DIFFERS from the committed one (specs/0003 §4f, processing
+    order step 1). Reusing one operation id for two different logical operations is a
+    caller integrity bug, not a race — so it raises rather than replaying or retrying."""
+
+
 def store_mutator(fn):
     """Marks a Store method that writes persistent state.
 
@@ -91,6 +114,40 @@ class Store(ABC):
     @store_mutator
     @abstractmethod
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None: ...
+
+    @store_mutator
+    def apply_supersession_plan(self, plan: SupersessionPlan):
+        """Apply the WHOLE outcome of one supersession atomically and conditionally
+        (specs/0003 §4f, I9). Returns a `SupersessionResult` (Applied), the `PLAN_STALE`
+        sentinel, or raises `SupersessionIntegrityError`.
+
+        Processing order (frozen, §4f):
+          1. receipt for `(user_id, operation_id)` exists?
+               same `logical_request_digest` → REPLAY the original Applied (no-op)
+               different digest              → raise `SupersessionIntegrityError`
+          2. new logical operation → revalidate `expected_state` (the complete scope
+             fingerprint) INSIDE the transaction
+          3. `expected_state` stale → return `PLAN_STALE`; do NOT consume the receipt
+          4. success → prior upserts + retirements + the incoming edge (iff
+             `insert_incoming`) + store-bound refusal rows + the receipt all commit in
+             ONE transaction; the store advances `store_version` and drops the user's
+             wiki cache when the plan forms a contention (refusals present).
+
+        Not abstract so pre-existing Store implementations keep working; a backend that
+        cannot do this atomically MUST raise, not degrade."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement apply_supersession_plan")
+
+    def refusals(self, user_id: str) -> list[SupersessionRefusal]:
+        """The durable, content-free refusal inventory for a user (specs/0003 §4b),
+        newest first. Read-only; the source `specs/0011` re-evaluates. Not abstract."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement refusals")
+
+    def supersessions_refused(self, user_id: str) -> int:
+        """The count of refused retirements for a user — DERIVED from the refusal
+        records, never stored separately (§4f: a second copy of a count is drift)."""
+        return len(self.refusals(user_id))
 
     @store_mutator
     def confirm_edge(self, user_id: str, edge_id: str, *,

@@ -69,6 +69,15 @@ def _migrate_outcome_chains(conn: sqlite3.Connection) -> None:
                      (converted.model_dump_json(), eid))
 
 
+def _drop_wiki_cache(conn: sqlite3.Connection) -> None:
+    """specs/0003 §7a — the v3→v4 migration invalidates every wiki cache. Deleting the
+    rows (rather than an ALTER) keeps the migration additive at the schema level while
+    still expiring caches compiled under pre-0003 read semantics. `ensure_wiki` treats a
+    missing cache as "recompile", so the next recall rebuilds under the contention
+    contract. Runs INSIDE the migration transaction, so a rollback restores the caches."""
+    conn.execute("DELETE FROM wiki")
+
+
 class MigrationAuditEvent(NamedTuple):
     """The audit payload of one offline migration. `migration_committed` repeats
     `migration_attempted` bar `event`/`occurred_at`, so a sink can process either
@@ -117,6 +126,15 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
     # Guarded to base<3<=head so a future v3→v4 bump never re-roots valid v3 chains.
     if base < 3 <= SCHEMA_VERSION:
         _migrate_outcome_chains(conn)
+    # specs/0003 §4c-ii / §7a: crossing INTO v4 must invalidate every wiki cache. A v3
+    # store may hold a wiki compiled under pre-0003 "one current value" semantics over a
+    # pair that is now a contention (§4e reorders PRE-EXISTING contentions), and the
+    # additive-table migration would leave that cache judged fresh. Dropping the cached
+    # rows forces recompilation on the first recall after migration, not eight writes
+    # later. A DATA step the additive DDL cannot express — the same shape as the outcome
+    # re-rooting above. Guarded base<4<=head so it fires exactly once, on the v3→v4 cross.
+    if base < 4 <= SCHEMA_VERSION:
+        _drop_wiki_cache(conn)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
