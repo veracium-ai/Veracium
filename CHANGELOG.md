@@ -2,6 +2,44 @@
 
 ## Unreleased
 
+## 0.6.0 — 2026-08-08
+
+- **Supersession authority — third-party content can no longer retire your facts**
+  (`specs/0003`, implemented). Until now the functional-supersession loop retired *any*
+  differing value for a fact regardless of who reported it, so an incoming email extracted
+  as `works_as: unemployed` could silently retire your own `works_as: CFO` and erase it from
+  recall. Retirement is now governed by an **authority ladder** capped by provenance (who the
+  evidence is from, and what it was derived from): `USER > SYSTEM > ASSISTANT > THIRD_PARTY`,
+  with `effective = min(author, derived_from)` — so a `SYSTEM` summary of an attacker's email
+  scores as third-party and retires nothing. A differing value supersedes the prior **only**
+  when its effective authority is greater than or equal to the prior's; otherwise the
+  retirement is **refused**: both values stay active and visible, and a durable, **content-free**
+  refusal record (opaque edge ids, the relation, two authority levels — never your memory
+  content) is kept so the guard's behaviour is observable and later policy can re-evaluate it.
+  `Memory.supersessions_refused(user_id)` and `Memory` recall now expose this.
+
+- **A refused update no longer disappears from recall.** Keeping both edges in the store is
+  not enough if retrieval then drops the older one, so recall was hardened to match: within a
+  contested functional group, recorded authority is ordered ahead of relevance and recency
+  (a permutation — unrelated facts keep their place); the contested pair is kept **out of the
+  one-value curated wiki** so it can't be collapsed there; and the higher-authority value is
+  surfaced in a deterministic **CONTESTED FUNCTIONAL FACTS** block that gets first claim on the
+  recall token budget. `Recall` gains a structured `contested` field; a lower-trust challenger
+  that ordinary retrieval didn't surface appears only as content-free linkage, never as
+  assertable content. The abstention gate still asserts only grounded memory.
+
+- **On-disk store schema is now v4.** Two new content-free, per-user tables (the refusal
+  inventory and a crash-safe operation receipt) are added additively. v1/v2/v3 stores migrate
+  via one `migrate_store()` call, which also drops any wiki cache compiled under the old
+  "one current value" semantics. ⚠️ **Consumers:** as with the v3 bump, a bare dependency-pin
+  bump will not open an un-migrated older store — run the deployment-authority migration first;
+  an older build opening a v4 store refuses rather than losing the refusal inventory.
+  `apply_supersession` is applied as one atomic, compare-and-set-linearized plan, so concurrent
+  updates to the same fact cannot branch it into two current values.
+
+- **`correct()` is unchanged and remains out of scope** (tracked in `specs/0011`): it is a
+  separate replacement path and is not governed by the authority ladder in this release.
+
 ## 0.5.0 — 2026-08-07
 
 - **Outcome-authorship history is append-only** (`specs/0009`, implemented).
