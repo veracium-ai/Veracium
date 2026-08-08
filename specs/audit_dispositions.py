@@ -63,21 +63,16 @@ DISPOSITIONS = {
     "➡️ **MOVED to `0004`.** Output outlives the inputs' revocation", "tracked as 0004 W1–W4 [M8-wiki]"),
 
  # -- the write path ---------------------------------------------------------
- ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"):
-   (W, "`observed_at`, `confidence` (liveness refresh); `needs_confirmation` **NO LONGER cleared** (`specs/0008`)", "observation",
-    "✅ **M3 — CLOSED by `specs/0008` (accepted 2026-08-07, implemented).** Same-author-class is not source identity; reinforcement now refreshes liveness only and `needs_confirmation` clears solely through `confirm()`",
-    "`test_no_provenance_value_clears_staleness` · `test_same_author_restatement_does_not_clear_staleness` · `test_cross_author_restatement_does_not_clear`"),
- ("src/veracium/graph.py", "apply_supersession", "add_edge", "98cd90a70fb3"):
-   (W, "`note` on the absorbed prior", "observation", "clean — annotates, never widens", "`test_absorbed_edges_never_render_as_history`"),
- ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "a7a961c78cbd"):
-   (W, "`active`, reason `absorbed_duplicate`", "observation", "clean — narrows", "`test_more_specific_arrival_absorbs_prior`"),
- ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "cda8875a699c"):
-   (W, "`active`, reason `superseded`", "observation",
-    "➡️ **`0003`** — cross-class supersession; unfiltered today", "tracked as 0003 I1/I2 [M7-correct]"),
- ("src/veracium/graph.py", "apply_supersession", "add_edge", "1e539a527213"):
-   (W, "**`valid_from = min`** on the incoming edge, `observed_at`, `confidence`", "observation",
-    "🟡 **R1 — the edge is unpersisted here, so N1 holds narrowly.** Under immutable-identity this becomes construction, not mutation. §7c",
-    "`test_valid_from_immutable_across_every_mutation_site`"),
+ # specs/0003 (accepted 2026-08-08) folded the whole supersession outcome into ONE
+ # atomic, CAS-linearized store primitive: apply_supersession no longer calls add_edge /
+ # invalidate_edge directly (reinforcement refresh, absorption note/retire, the guarded
+ # retirement, the incoming insert, and the refusal inventory are all in the plan). The
+ # five former direct-mutation sites here are subsumed by this one call site. The
+ # authority guard closes what was tracked as 0003 I1/I2 [M7-correct].
+ ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"):
+   (W, "the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement `observed_at`/`confidence`, `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here", "observation",
+    "✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5).",
+    "`test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged`"),
  ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"):
    (W, "episode provenance (unparseable placeholder)", "observation",
     "clean — never retains raw event text", "`test_unparseable_extraction_degrades_gracefully`"),
@@ -167,11 +162,7 @@ STATES = {
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"): "open_moved",
-  ("src/veracium/graph.py", "apply_supersession", "add_edge", "3a4052969394"): "clean",
-  ("src/veracium/graph.py", "apply_supersession", "add_edge", "98cd90a70fb3"): "clean",
-  ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "a7a961c78cbd"): "clean",
-  ("src/veracium/graph.py", "apply_supersession", "invalidate_edge", "cda8875a699c"): "open_moved",
-  ("src/veracium/graph.py", "apply_supersession", "add_edge", "1e539a527213"): "clean",
+  ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "17d36f4cb482"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",

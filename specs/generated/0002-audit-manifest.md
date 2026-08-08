@@ -5,9 +5,9 @@
 
 # specs/0002 — store-mutator call-site manifest
 
-**32 call sites** across **16 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
+**28 call sites** across **16 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
 
-**25 clean · 0 fixed · 1 open · 0 moved · 6 open and moved** — 25 of 32 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
+**22 clean · 0 fixed · 1 open · 0 moved · 5 open and moved** — 22 of 28 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
 
 **Identity is `(file, scope, mutator, fingerprint)`.** The fingerprint is a hash of the call's normalised expression and its enclosing control-flow context — **what the call is, not where it sits**. Moving a call keeps its verdict; swapping two different calls invalidates both. **Line numbers are informational.**
 
@@ -28,11 +28,7 @@
 | `src/veracium/__init__.py:687` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
 | `src/veracium/cli.py:238` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
 | `src/veracium/compile.py:83` | `compile_wiki()` | `set_wiki` | `8add728df9b1` | `open_moved` | maintain-time | none directly — **caches a trust decision** | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation | tracked as 0004 W1–W4 [M8-wiki] |
-| `src/veracium/graph.py:123` | `apply_supersession()` | `add_edge` | `3a4052969394` | `clean` | write-time | `observed_at`, `confidence` (liveness refresh); `needs_confirmation` **NO LONGER cleared** (`specs/0008`) | observation | ✅ **M3 — CLOSED by `specs/0008` (accepted 2026-08-07, implemented).** Same-author-class is not source identity; reinforcement now refreshes liveness only and `needs_confirmation` clears solely through `confirm()` | `test_no_provenance_value_clears_staleness` · `test_same_author_restatement_does_not_clear_staleness` · `test_cross_author_restatement_does_not_clear` |
-| `src/veracium/graph.py:136` | `apply_supersession()` | `add_edge` | `98cd90a70fb3` | `clean` | write-time | `note` on the absorbed prior | observation | clean — annotates, never widens | `test_absorbed_edges_never_render_as_history` |
-| `src/veracium/graph.py:137` | `apply_supersession()` | `invalidate_edge` | `a7a961c78cbd` | `clean` | write-time | `active`, reason `absorbed_duplicate` | observation | clean — narrows | `test_more_specific_arrival_absorbs_prior` |
-| `src/veracium/graph.py:142` | `apply_supersession()` | `invalidate_edge` | `cda8875a699c` | `open_moved` | write-time | `active`, reason `superseded` | observation | ➡️ **`0003`** — cross-class supersession; unfiltered today | tracked as 0003 I1/I2 [M7-correct] |
-| `src/veracium/graph.py:144` | `apply_supersession()` | `add_edge` | `1e539a527213` | `clean` | write-time | **`valid_from = min`** on the incoming edge, `observed_at`, `confidence` | observation | 🟡 **R1 — the edge is unpersisted here, so N1 holds narrowly.** Under immutable-identity this becomes construction, not mutation. §7c | `test_valid_from_immutable_across_every_mutation_site` |
+| `src/veracium/graph.py:100` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement `observed_at`/`confidence`, `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
 | `src/veracium/ingest.py:158` | `ingest_event()` | `add_episode` | `4af6ecf2af8b` | `clean` | write-time | episode provenance (unparseable placeholder) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
 | `src/veracium/ingest.py:169` | `ingest_event()` | `add_episode` | `17d36f4cb482` | `clean` | write-time | episode provenance | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
 | `src/veracium/lifecycle.py:50` | `expire()` | `invalidate_edge` | `52f316b93ba6` | `clean` | maintain-time | `active`, reason `lapsed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
@@ -132,40 +128,12 @@ c5d9e9e2da39
   call:    store.set_wiki(user_id, wiki, store.store_version(user_id))
   context: -
 
-3a4052969394
-  file:    src/veracium/graph.py:123
+e1ecd66351bd
+  file:    src/veracium/graph.py:100
   scope:   apply_supersession()
-  mutator: add_edge
-  call:    store.add_edge(prior)
-  context: for(prior in priors)>if(pk == same or _subsumes(pk, same))
-
-98cd90a70fb3
-  file:    src/veracium/graph.py:136
-  scope:   apply_supersession()
-  mutator: add_edge
-  call:    store.add_edge(prior)
-  context: for(prior in priors)>if(_subsumes(same, _value_key(prior.object)))
-
-a7a961c78cbd
-  file:    src/veracium/graph.py:137
-  scope:   apply_supersession()
-  mutator: invalidate_edge
-  call:    store.invalidate_edge(prior.id, edge.valid_from, 'absorbed_duplicate')
-  context: for(prior in priors)>if(_subsumes(same, _value_key(prior.object)))
-
-cda8875a699c
-  file:    src/veracium/graph.py:142
-  scope:   apply_supersession()
-  mutator: invalidate_edge
-  call:    store.invalidate_edge(prior.id, edge.valid_from, 'superseded')
-  context: if(rel and rel.functional)>for(prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation))>if(prior.id != edge.id and _value_key(prior.object) != same)
-
-1e539a527213
-  file:    src/veracium/graph.py:144
-  scope:   apply_supersession()
-  mutator: add_edge
-  call:    store.add_edge(edge)
-  context: -
+  mutator: apply_supersession_plan
+  call:    store.apply_supersession_plan(plan)
+  context: for(_ in range(_MAX_PLAN_ATTEMPTS))
 
 4af6ecf2af8b
   file:    src/veracium/ingest.py:158

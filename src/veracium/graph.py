@@ -12,7 +12,10 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from .schema import DEFAULT_RELATIONS, Edge, EvidenceAuthor, Relation
+from . import authority
+from .schema import (DEFAULT_RELATIONS, Edge, EvidenceAuthor, Relation,
+                     SupersessionPlan, SupersessionRefusalDraft)
+from .store.base import PLAN_STALE
 
 
 # Filler words that never change a value's meaning. Deliberately tiny: a false
@@ -87,61 +90,111 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
     unaffected: a changed value superseding across classes is correct — the
     old value is stale regardless of who reported the new one.)
     """
-    same = _value_key(edge.object)
-    priors = [p for p in store.edges(edge.user_id, subject=edge.subject,
-                                     relation=edge.relation)
-              if p.id != edge.id
-              and p.provenance.disclosure == edge.provenance.disclosure]
-    for prior in priors:
-        pk = _value_key(prior.object)
-        if pk == same or _subsumes(pk, same):  # reinforcement
-            # valid_from is FIRST-KNOWN and immutable: it is the field the
-            # codebase already documents as "when it became true", the field
-            # render_edges states to the model as "(since X)", and the field E1
-            # clusters on. Overwriting it with the latest restatement made that
-            # rendering a false statement in the answer context, not merely lost
-            # history. Liveness lives on observed_at, which already means
-            # "when veracium recorded this" and is what lifecycle now ages
-            # against — so a restatement still refreshes liveness (the lapse
-            # argument), it just refreshes the field that means liveness.
-            prior.provenance.observed_at = max(prior.provenance.observed_at,
-                                               edge.provenance.observed_at)
-            prior.provenance.confidence = max(prior.provenance.confidence,
-                                              edge.provenance.confidence)
-            # `0008`: reinforcement refreshes LIVENESS (observed_at) and retains
-            # confidence, but it does NOT clear `needs_confirmation`. The flag
-            # renders as "confirm before relying on it" — a question addressed to
-            # whoever is entitled to reaffirm the fact, which only `confirm()`
-            # establishes. v1 (0.4.5) cleared it whenever the restatement's
-            # `author_of_evidence` matched the prior's, but the same author CLASS
-            # is not the same source (USER and SYSTEM share MENTIONABLE), so a
-            # system-authored restatement silently answered a question meant for
-            # the user. Same author-class ≠ same-source confusion that deferred
-            # `0001`. The flag now stays set until `confirm()` clears it (§4).
-            # (Whether reinforcement should refresh liveness at all is `0012`'s
-            # subject, neither endorsed nor altered here.)
-            store.add_edge(prior)
+    # specs/0003 §4f: the WHOLE outcome is applied as one atomic, CAS-linearized plan.
+    # `apply_supersession` computes a plan from a store READ; the Store revalidates the
+    # scope `expected_state` inside the transaction and applies all-or-nothing, or returns
+    # PLAN_STALE (a concurrent write changed the state the plan assumed) and we recompute.
+    op_id = f"sup-{edge.id}"
+    for _ in range(_MAX_PLAN_ATTEMPTS):
+        plan = _build_supersession_plan(store, edge, relations, op_id)
+        result = store.apply_supersession_plan(plan)
+        if result is not PLAN_STALE:
             return
-    for prior in priors:
-        if _subsumes(same, _value_key(prior.object)):  # absorption
-            # the winner is the same fact restated more fully, so it inherits
-            # the EARLIEST point at which the fact was known — min, not max
-            edge.valid_from = min(edge.valid_from, prior.valid_from)
-            edge.provenance.observed_at = max(edge.provenance.observed_at,
-                                              prior.provenance.observed_at)
-            edge.provenance.confidence = max(edge.provenance.confidence,
-                                             prior.provenance.confidence)
-            prior.note = ((f"{prior.note}; " if prior.note else "")
-                          + f"absorbed_by:{edge.id} (restated as {edge.object!r})")
-            store.add_edge(prior)
-            store.invalidate_edge(prior.id, edge.valid_from, "absorbed_duplicate")
+    raise RuntimeError(
+        f"apply_supersession_plan kept returning PlanStale for edge {edge.id!r} after "
+        f"{_MAX_PLAN_ATTEMPTS} attempts — the (user, subject, relation) scope is being "
+        f"mutated faster than one supersession can commit (specs/0003 §4f)")
+
+
+_MAX_PLAN_ATTEMPTS = 16
+
+
+def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
+                             op_id: str) -> SupersessionPlan:
+    """Compute the plan for one incoming edge from a store read (specs/0003 §4f). Pure —
+    it reads and returns a plan, it does not mutate; the Store applies it atomically."""
+    same = _value_key(edge.object)
+    # The scope the plan reasons about and the CAS token it carries: ALL active edges of
+    # this (user, subject, relation), incl. quarantined — the same set the Store recomputes.
+    scope = store.edges(edge.user_id, subject=edge.subject, relation=edge.relation,
+                        active_only=True, include_quarantined=True)
+    expected = authority.scope_fingerprint(scope)
+    same_class = [p for p in scope
+                  if p.id != edge.id
+                  and p.provenance.disclosure == edge.provenance.disclosure]
+
+    # Reinforcement: an active same-class prior asserts the same-or-subsuming value —
+    # refresh its liveness/confidence and insert NOTHING (dedup by design, insert_incoming
+    # False). Identity merges never cross trust classes (same disclosure only); reinforcement
+    # refreshes observed_at + confidence but does NOT clear needs_confirmation (specs/0008 —
+    # only confirm() may; a same author-CLASS restatement is not the same source).
+    for prior in same_class:
+        pk = _value_key(prior.object)
+        if pk == same or _subsumes(pk, same):
+            refreshed = prior.model_copy(deep=True)
+            refreshed.provenance.observed_at = max(prior.provenance.observed_at,
+                                                   edge.provenance.observed_at)
+            refreshed.provenance.confidence = max(prior.provenance.confidence,
+                                                  edge.provenance.confidence)
+            return SupersessionPlan(incoming_edge=edge, insert_incoming=False,
+                                    operation_id=op_id, expected_state=expected,
+                                    prior_upserts=[refreshed])
+
+    incoming = edge.model_copy(deep=True)
+    upserts: list[Edge] = []
+    invalidations: list[tuple] = []
+    refusals: list[SupersessionRefusalDraft] = []
+    absorbed: set[str] = set()
+
+    # Absorption (T1): a MORE specific same-class form of a prior value wins — the shorter
+    # prior retires reversibly (absorbed_duplicate; note carries the winner's id), and the
+    # winner inherits the earliest valid_from / max observed_at+confidence. Identity, not
+    # change — no supersedes pointer.
+    for prior in same_class:
+        if _subsumes(same, _value_key(prior.object)):
+            incoming.valid_from = min(incoming.valid_from, prior.valid_from)
+            incoming.provenance.observed_at = max(incoming.provenance.observed_at,
+                                                  prior.provenance.observed_at)
+            incoming.provenance.confidence = max(incoming.provenance.confidence,
+                                                 prior.provenance.confidence)
+            noted = prior.model_copy(deep=True)
+            noted.note = ((f"{noted.note}; " if noted.note else "")
+                          + f"absorbed_by:{incoming.id} (restated as {incoming.object!r})")
+            upserts.append(noted)
+            invalidations.append((prior.id, incoming.valid_from, "absorbed_duplicate"))
+            absorbed.add(prior.id)
+
+    # Supersession (§4a): for a FUNCTIONAL relation, a differing value retires the prior —
+    # but ONLY when the incoming edge's recorded effective authority is >= the prior's
+    # (the reported defect was the unconditional retirement). Otherwise the retirement is
+    # REFUSED: the prior stays active, the incoming edge is stored, both are visible (§4b),
+    # and a durable content-free refusal is recorded. Reads ALL classes (a cross-class
+    # differing value is exactly the attack); a same-value prior of another class is left
+    # alone; an already-absorbed prior is skipped.
     rel = relations.get(edge.relation)
     if rel and rel.functional:
-        for prior in store.edges(edge.user_id, subject=edge.subject, relation=edge.relation):
-            if prior.id != edge.id and _value_key(prior.object) != same:
-                store.invalidate_edge(prior.id, edge.valid_from, "superseded")
-                edge.supersedes = prior.id
-    store.add_edge(edge)
+        for prior in scope:
+            if prior.id == edge.id or prior.id in absorbed:
+                continue
+            if _value_key(prior.object) == same:
+                continue
+            if authority.permitted(prior.provenance.author_of_evidence,
+                                    prior.provenance.derived_from,
+                                    incoming.provenance.author_of_evidence,
+                                    incoming.provenance.derived_from):
+                invalidations.append((prior.id, incoming.valid_from, "superseded"))
+                incoming.supersedes = prior.id
+            else:
+                refusals.append(SupersessionRefusalDraft(
+                    prior_edge_id=prior.id, incoming_edge_id=incoming.id,
+                    relation=edge.relation,
+                    prior_effective=authority.edge_effective(prior),
+                    incoming_effective=authority.edge_effective(incoming)))
+
+    return SupersessionPlan(incoming_edge=incoming, insert_incoming=True,
+                            operation_id=op_id, expected_state=expected,
+                            prior_upserts=upserts, prior_invalidations=invalidations,
+                            refusals=refusals)
 
 
 _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",
