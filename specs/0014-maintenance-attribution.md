@@ -14,8 +14,9 @@ Spec-Requires: 0006, 0007, 0013
 > contributor leaves every survivor value unchanged (`max()` never moves) yet still vanishes, so a
 > transfer-keyed rule would miss it, and that omission is an attack path (stale-but-corroborating
 > input becomes the unlogged channel). Q1–Q4 resolved (§10); a `0014 → 0006` dependency is named
-> (key the ledger on a **digest** of `0006`'s `source_id` — its opacity is a host-convention, not
-> enforced, `0006` F3 — and digest `evidence_ref` too).
+> (key the ledger on a **digest** of `0006`'s **`(origin, source_id)` pair** — `0006` v2, R5: identity
+> is the pair, `origin` store-minted so a revocation cannot reach another store's records; both
+> host-free-form components and `evidence_ref` are digested).
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
@@ -84,13 +85,16 @@ Provisional: `Provenance.observed_at`, `Provenance.confidence`, `Edge.valid_from
 `Provenance.disclosure`, `Provenance.derived_from` — each is *read from a contributor and written
 onto a survivor* by at least one maintenance op (the payload).
 
-> **`0014 → 0006` dependency (research, Q1; corrected per `0006` internal-round F3).** The ledger
-> is keyed on **`0006`'s `source_id`**, already the revocation key. But `0006`'s "opaque" is a
-> host-convention, **not** an enforced mechanism (`0006` §8, F3) — a host may put content in it — so
-> for a content-free surface the ledger stores a **deterministic digest of `source_id`**, never the
-> raw value. The digest stays joinable: `A3`/`revoke_source`, given a `source_id` to revoke, digests
-> it the same way to find the rows. `evidence_ref` is digested the same way. This makes `0006`
-> (source identity) a prerequisite — hence `Spec-Requires: 0006, 0007, 0013`. The scalar payload
+> **`0014 → 0006` dependency (research Q1/F3, and `0006` v2 R5).** The ledger is keyed on **`0006`'s
+> `(origin, source_id)` PAIR**, already the revocation key. `0006` v2 (R5) makes identity the pair —
+> `origin` is store-minted, so an imported source cannot collide with a local one and **a revocation
+> keyed on the pair is structurally incapable of reaching another store's records.** `0006`'s "opaque"
+> is a host-convention, not enforced (`0006` §8, F3), so for a content-free surface the ledger stores a
+> **deterministic digest of the pair**, never the raw value. The digest stays joinable:
+> `A3`/`revoke_source`, given a pair to revoke, digests it the same way. `evidence_ref` is digested the
+> same way. This makes `0006` (source identity) a prerequisite — hence `Spec-Requires: 0006, 0007,
+> 0013`, and `0014`'s table is the `SCHEMA_VERSION` AFTER `0006`'s (v6, `0006` is the no-DDL v5). The
+> scalar payload
 > (`observed_at`/`confidence`/`valid_from`/`disclosure`/`derived_from` + their prior values) is
 > timestamps/floats/closed enums — store-clear, so **content-free and reversible do not conflict**
 > (Q1 resolved).
@@ -100,8 +104,8 @@ onto a survivor* by at least one maintenance op (the payload).
 *Draft.* The contributor whose attribution we record may itself be adversarial (a compromised feed
 is the motivating case). The record must therefore be **fail-closed and content-free**: it records
 *that* a contributor was consumed and *what state, if any,* moved, keyed on a **digest** of
-`0006`'s `source_id` and a digested `evidence_ref` (both host-supplied free-form, so both digested —
-`0006` F3), so a malicious contributor cannot smuggle memory content
+`0006`'s `(origin, source_id)` pair and a digested `evidence_ref` (all host-supplied free-form, so all
+digested — `0006` F3/R5), so a malicious contributor cannot smuggle memory content
 into a durable audit surface, and a missing/absent record is treated as "attribution unknown → the
 survivor is suspect", never "clean". **The adversary's cheapest evasion is the empty payload** — a
 stale-but-corroborating input that moves no `max()` — which is exactly why the record is owed to the
@@ -157,13 +161,14 @@ maintenance decision.
 Sketch of the mechanism (provisional — the direction is agreed with research; the contract is not):
 
 - **A durable contribution ledger**, one append-only record per consumed contributor:
-  `(survivor_id, source_id_digest, transferred_fields, prior_survivor_values, at)` — content-free by
-  the 0003 discipline. **Keyed on a deterministic DIGEST of `0006`'s `source_id`** (already the
-  revocation key; its opacity is host-convention not a mechanism, `0006` F3, so it is digested — the
-  digest stays joinable, `revoke_source` digests the same way; see the `0014 → 0006` dependency, §2);
+  `(survivor_id, identity_digest, transferred_fields, prior_survivor_values, at)` — content-free by
+  the 0003 discipline. **`identity_digest` = a deterministic DIGEST of `0006`'s `(origin, source_id)`
+  pair** (already the revocation key; `origin` store-minted so cross-store revocation is structurally
+  impossible, `0006` v2 R5; opacity is host-convention not a mechanism, F3, so it is digested — the
+  digest stays joinable, `revoke_source` digests the same pair; see the `0014 → 0006` dependency, §2);
   `evidence_ref` is digested the same way, never stored raw (Q1). `transferred_fields`/
   `prior_survivor_values` are the payload and **may be empty** (a no-op-`max()` reinforcement still
-  records the consumption). A new `SCHEMA_VERSION` object (v4→v5), so `Spec-Requires: 0006, 0007, 0013`.
+  records the consumption). A new `SCHEMA_VERSION` object (v5→v6), so `Spec-Requires: 0006, 0007, 0013`.
 - **3.1 reinforcement** → write a contribution record instead of silently dropping the incoming
   edge. Keep `insert_incoming=False` (no dedup regression); the ledger, not a duplicate edge,
   carries the attribution.
@@ -197,7 +202,7 @@ is accepted only once these exist and pass at release, not before).*
 | **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) | `test_consolidation_contributors_survive_input_deletion` |
 | **A3** | absorption's contributor link is queryable, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` |
 | **A4** | for any survivor, `contributions(survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not), across all three sites | `test_every_consumed_contributor_is_enumerable` (adversarial: inject at each site, including a no-payload consumption) |
-| **A5** | the ledger is content-free — **`source_id` AND `evidence_ref` both digested** (both host-supplied free-form, `0006` F3), no raw `source_id`/`object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
+| **A5** | the ledger is content-free — **the `(origin, source_id)` pair AND `evidence_ref` are all digested** (host-supplied free-form, `0006` F3/R5), no raw identity/`object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
 | **A6** | `forget_user` erases the ledger; export/import exclude it (Store-local, like 0003 refusals) | `test_forget_user_erases_the_contribution_ledger` |
 
 **A4 is the one that decides whether the class is closed** — an exhaustive check over all three
@@ -215,10 +220,10 @@ consumption (A1a) can reintroduce the finding.
   `apply_supersession_plan` commit (§0003 §4f already gives us the atomic carrier).
 - `src/veracium/lifecycle.py` — `consolidate` (3.2): record input source attribution before deletion.
 - `src/veracium/store/base.py` / `store/sqlite.py` — the ledger table, its reads, its erasure; the
-  `SCHEMA_VERSION` v4→v5 migration that introduces it (`Spec-Requires: 0006, 0007, 0013`).
+  `SCHEMA_VERSION` v5→v6 migration that introduces it (`Spec-Requires: 0006, 0007, 0013`).
 - `src/veracium/store/schema_version.py`, `store/migration.py` — the additive v5 object + migration.
 
-**Schema:** likely **yes — one new content-free, user-linked table**, `SCHEMA_VERSION` v4→v5, the
+**Schema:** likely **yes — one new content-free, user-linked table**, `SCHEMA_VERSION` v5→v6, the
 same additive shape as 0003's refusal inventory. **This is a real cost** (another store version,
 another migration) and §10 Q3 asks whether it is justified by attribution alone or only once a
 revocation consumer (`A3`/`0004`) is committed.
@@ -248,10 +253,11 @@ their rulings so the reasoning survives into design lock.*
 
 - **Q1 — reversibility vs content-freeness — RESOLVED: no conflict.** The scalar payload
   (`observed_at`/`confidence`/`valid_from`/`disclosure`/`derived_from` + prior values) is
-  timestamps/floats/closed enums — store-clear. The host-supplied free-form fields, `evidence_ref`
-  AND `source_id`, are BOTH **digested** (`0006` internal-round F3: `source_id`'s opacity is a
-  convention, not a mechanism, so it cannot be stored raw on a content-free surface; the digest stays
-  joinable for `revoke_source`). Keying on `digest(source_id)` names the `0014 → 0006` dependency (§2).
+  timestamps/floats/closed enums — store-clear. The host-supplied free-form fields — `evidence_ref`
+  AND the `(origin, source_id)` pair — are ALL **digested** (`0006` F3: opacity is a convention, not a
+  mechanism, so identity cannot be stored raw on a content-free surface; `0006` v2 R5: identity is the
+  pair, `origin` store-minted; the digest stays joinable for `revoke_source`). Keying on
+  `digest(origin, source_id)` names the `0014 → 0006` dependency (§2).
 - **Q2 — scope — RESOLVED: stop at the record.** All reversal / blast-radius / reach defers to
   `A3` / `0004`.
 - **Q3 — new store version justified by attribution alone? — RESOLVED: yes, land now.** Deferring
