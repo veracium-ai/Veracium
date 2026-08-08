@@ -6,7 +6,11 @@ Two mechanisms, both grounded in findings:
   invalidated — "still sick?" three months later is irrelevant, not unknown);
   durable/slow facts are flagged CONFIRM (surfaced as possibly-stale, never
   silently dropped); DECAY lowers confidence until a floor. Reinforcement (a
-  re-stated fact) refreshes validity and clears the flag — handled at ingest.
+  re-stated fact) refreshes liveness (`observed_at`) — handled at ingest — but
+  does NOT clear the possibly-stale flag: since `specs/0008`, only `confirm()`
+  clears `needs_confirmation` (an author-class restatement must not answer a
+  question addressed to the user). The pre-0.4.5 "clears the flag" wording this
+  docstring used to carry described behaviour the spec removed.
 - **Consolidation (finding 11 / compaction-loss guard).** Cold episodes are
   compacted into compact summaries to bound read cost as history grows (finding
   22), but first occurrences of failures, their fixes, illnesses, and dated

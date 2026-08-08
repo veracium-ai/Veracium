@@ -951,9 +951,9 @@ better hand-check rather than a different mechanism. **So the summaries are now
 derived and nothing below is restated by hand.**
 
 <!-- GENERATED:summary -->
-**18 findings · 12 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8, 0.5.0) · 5 unimplemented · 5 still open · **0 fixed but unreleased**.**
+**19 findings · 12 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8, 0.5.0) · 6 unimplemented · 6 still open · **0 fixed but unreleased**.**
 
-**Unimplemented:** `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`. **Open:** `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`.
+**Unimplemented:** `M9`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`. **Open:** `M9`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`.
 
 *Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes that do not hold.*
 <!-- /GENERATED:summary -->
@@ -969,6 +969,7 @@ derived and nothing below is restated by hand.**
 | **M3** staleness cleared on same-author-class evidence | 0.4.5 closed cross-class clearing and left same-class open | — | **`specs/0008`** | **yes** — 0.5.0 | `test_no_provenance_value_clears_staleness · test_same_author_restatement_does_not_clear_staleness` |
 | **M4** `record_outcome` overwrites authorship | 0.4.5 appends a note to a summary rebuilt on every upgrade | — | **`specs/0009`** | **yes** — 0.5.0 | `0009 H1 test_outcome_authorship_is_never_overwritten` |
 | **M5** merge-time `confidence = max(...)` | T1 retains `max`, which is earned | — | this spec | n/a | `constrains the unwritten T2 design` |
+| **M9** reinforcement transfers `observed_at`/`confidence` unattributed | the reinforcement branch (`graph.py`) never persists the incoming edge; the prior absorbs `max(observed_at)`/`max(confidence)` and returns, leaving no record the contributing source existed | 🔴 a compromised/revoked source that reinforced a fact left no attribution, so its contribution to the survivor's currency and confidence cannot be found or undone — unattributed state transfer in a provenance product (research A3 §2.1, 2026-08-07) | this spec | **no** | `test_reinforcement_attributes_the_contributing_source` |
 | **N9b-floor** consolidation manufactured confidence, disclosure and currency | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | — | this spec | **yes** — 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | **N9b-lineage** consolidation retains no record of the absorbed set | inputs deleted, no lineage | — | **`specs/0010`** | **yes** — 0.5.0 | `0010 X6, X8 test_lineage_is_the_whole_batch` |
 | **N4-decay** `MemoryConfig` bounds are unvalidated, and declared field bounds are not enforced on assignment | `decay_factor=2.0`, `NaN`, `-1.0` all accepted; `validate_assignment` is False | 🔴 `expire()` can RAISE confidence, which makes N4 false as written | this spec | **no** | `0002 N4b–N4d` |
@@ -1008,6 +1009,7 @@ as §11, so it cannot become another independently-maintained summary.
 | `M3` | `0008` | resolved | shipped 0.5.0 | `test_no_provenance_value_clears_staleness · test_same_author_restatement_does_not_clear_staleness` |
 | `M4` | `0009` | resolved | shipped 0.5.0 | `0009 H1 test_outcome_authorship_is_never_overwritten` |
 | `M5` | `0002` | resolved | n/a | `constrains the unwritten T2 design` |
+| `M9` | `0002` | open | **not implemented** | `test_reinforcement_attributes_the_contributing_source` |
 | `N9b-floor` | `0002` | resolved | shipped 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | `N9b-lineage` | `0010` | resolved | shipped 0.5.0 | `0010 X6, X8 test_lineage_is_the_whole_batch` |
 | `N4-decay` | `0002` | open | **not implemented** | `0002 N4b–N4d` |

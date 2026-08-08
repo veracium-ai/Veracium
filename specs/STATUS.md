@@ -14,7 +14,7 @@ is the number that decides what can be built.
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `deferred` | 2026-08-02 | 1 | 2 | 3 | 0 | 0 | — |
-| **0002** | the maintenance provenance invariant | `deferred` | 2026-08-07 | 2 | 8 | 0 | 0 | 10 | 8/10 |
+| **0002** | the maintenance provenance invariant | `deferred` | 2026-08-08 | 2 | 8 | 0 | 0 | 11 | 8/11 |
 | **0003** | supersession authority | `in review` | 2026-08-08 | 1 | 6 | 0 | 0 | 1 | 0/1 |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
