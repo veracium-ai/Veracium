@@ -16,7 +16,9 @@ Spec-Requires: 0006, 0007, 0013
 > input becomes the unlogged channel). Q1–Q4 resolved (§10); a `0014 → 0006` dependency is named
 > (key the ledger on a **digest** of `0006`'s **`(origin, source_id)` pair** — `0006` v2, R5: identity
 > is the pair, `origin` store-minted so a revocation cannot reach another store's records; both
-> host-free-form components and `evidence_ref` are digested).
+> `source_id` (host free-form) and `evidence_ref` are digested; `origin` is store-minted but digested
+> too, as part of the one uniform key. `0014` digests the RESOLVED pair — `0006` §4.5 forbids
+> digesting a stored `origin`-absent pair directly).
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
@@ -104,8 +106,9 @@ onto a survivor* by at least one maintenance op (the payload).
 *Draft.* The contributor whose attribution we record may itself be adversarial (a compromised feed
 is the motivating case). The record must therefore be **fail-closed and content-free**: it records
 *that* a contributor was consumed and *what state, if any,* moved, keyed on a **digest** of
-`0006`'s `(origin, source_id)` pair and a digested `evidence_ref` (all host-supplied free-form, so all
-digested — `0006` F3/R5), so a malicious contributor cannot smuggle memory content
+`0006`'s **RESOLVED** `(origin, source_id)` pair and a digested `evidence_ref` (`source_id`/`evidence_ref`
+are host free-form; `origin` is store-minted but digested too as part of the one opaque key that need
+not appear in a durable surface — `0006` F3/R5/§4.5), so a malicious contributor cannot smuggle memory content
 into a durable audit surface, and a missing/absent record is treated as "attribution unknown → the
 survivor is suspect", never "clean". **The adversary's cheapest evasion is the empty payload** — a
 stale-but-corroborating input that moves no `max()` — which is exactly why the record is owed to the
@@ -202,7 +205,7 @@ is accepted only once these exist and pass at release, not before).*
 | **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) | `test_consolidation_contributors_survive_input_deletion` |
 | **A3** | absorption's contributor link is queryable, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` |
 | **A4** | for any survivor, `contributions(survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not), across all three sites | `test_every_consumed_contributor_is_enumerable` (adversarial: inject at each site, including a no-payload consumption) |
-| **A5** | the ledger is content-free — **the `(origin, source_id)` pair AND `evidence_ref` are all digested** (host-supplied free-form, `0006` F3/R5), no raw identity/`object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
+| **A5** | the ledger is content-free — **the RESOLVED `(origin, source_id)` pair AND `evidence_ref` are all digested** (`source_id`/`evidence_ref` host free-form; `origin` store-minted but digested as part of the one opaque key — `0006` F3/R5/§4.5), no raw identity/`object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
 | **A6** | `forget_user` erases the ledger; export/import exclude it (Store-local, like 0003 refusals) | `test_forget_user_erases_the_contribution_ledger` |
 
 **A4 is the one that decides whether the class is closed** — an exhaustive check over all three
@@ -253,11 +256,12 @@ their rulings so the reasoning survives into design lock.*
 
 - **Q1 — reversibility vs content-freeness — RESOLVED: no conflict.** The scalar payload
   (`observed_at`/`confidence`/`valid_from`/`disclosure`/`derived_from` + prior values) is
-  timestamps/floats/closed enums — store-clear. The host-supplied free-form fields — `evidence_ref`
-  AND the `(origin, source_id)` pair — are ALL **digested** (`0006` F3: opacity is a convention, not a
-  mechanism, so identity cannot be stored raw on a content-free surface; `0006` v2 R5: identity is the
-  pair, `origin` store-minted; the digest stays joinable for `revoke_source`). Keying on
-  `digest(origin, source_id)` names the `0014 → 0006` dependency (§2).
+  timestamps/floats/closed enums — store-clear. `evidence_ref` and `source_id` are host free-form and
+  are **digested**; `origin` is **store-minted** (`0006` §4.1) — not a content risk, but digested too
+  as part of the one opaque key so a single `digest` covers the whole identity (`0006` F3/R5). The
+  digest is over the **RESOLVED** pair — `0006` §4.5 forbids digesting a stored `origin`-absent pair —
+  and stays joinable for `revoke_source`. Keying on `digest(resolved (origin, source_id))` names the
+  `0014 → 0006` dependency (§2).
 - **Q2 — scope — RESOLVED: stop at the record.** All reversal / blast-radius / reach defers to
   `A3` / `0004`.
 - **Q3 — new store version justified by attribution alone? — RESOLVED: yes, land now.** Deferring

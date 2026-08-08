@@ -264,6 +264,17 @@ both call themselves `"mailbox:primary"` into one; today that silently degrades 
 4. **Comparison is EXACT equality on BOTH components, with NO normalisation** — normalising can merge
    genuinely distinct opaque ids (the same failure inverted). `source_id` is non-empty with a length
    bound; `origin` likewise.
+5. **🔴 All comparison, grouping and digest operations act on the RESOLVED pair.** `origin` absent
+   resolves to the local store's own origin **before any comparison, digest or export**; **no consumer
+   may compare or digest a STORED pair directly** (the joint `0006`↔`0014` interface lock, 2026-08-08).
+   Without this, points 2 and 4 contradict: a local source is `(absent, "mailbox:primary")` before
+   export and `(originA, "mailbox:primary")` after a round-trip, and exact equality reads those as two
+   sources when they are one — grouping would split on this spec's own round trip, `0014` would hold
+   two ledger keys for one source, and **`revoke_source` given the materialised pair would MISS every
+   local row that stored `origin` absent — a revocation that silently under-reports, the precise
+   failure `A3` exists to prevent.** Resolution is done at **ONE chokepoint** (this project's recurring
+   failure is a rule enforced in three places and missed in a fourth), so the absent form never reaches
+   a comparator. See I9 (round-trip) and §5 (the resolve-at-read vs stamp-at-write trade).
 
 **Migration.** No DDL (§0b) — both fields live in the JSON payload; the `SCHEMA_VERSION` v4→v5 bump
 only makes an older build refuse rather than silently drop them. `source_id`/`origin` are optional,
@@ -285,6 +296,14 @@ source we genuinely do not know.
   This is a **stable (on-by-default)** field, so that regime **blocks** — I8 is required, not optional.
 - **Thresholds/caps:** none — `source_id`/`origin` interact with no budget, cap or recompile threshold.
 - **Cold vs warm store:** identical — the field does not touch the wiki cache (diagnostic-only).
+- **Resolve-at-read vs stamp-at-write (the interface-lock trade, §4.5).** An absent `origin` means
+  *this store* and is **resolved to the local origin before any comparison, digest or export**
+  (resolve-at-read), at a single chokepoint. The alternative — **stamp `origin` at write time** so
+  absence never exists — is structurally safer (no path can forget to resolve), but it forces a
+  **backfill of every existing row** during the migration, turning R3's clean no-DDL version bump
+  into a data rewrite. **We chose resolve-at-read** to keep the migration story R3 just earned;
+  the cost is that resolution must be centralised, which I9's round-trip test pins. Recorded here so
+  the trade is visibly deliberate, per the joint interface lock.
 
 ---
 
@@ -300,6 +319,7 @@ source we genuinely do not know.
 | **I6** export/import round-trips `source_id` AND the materialised `origin` | `test_v4_export_roundtrip` · `test_v4_file_into_v3_build_is_rejected` | CI |
 | **I7** `0005`'s import cap applies before any of this | `test_imported_source_id_does_not_bypass_the_remap_cap` | CI |
 | **I8** (R5) an imported record KEEPS its origin — two origins' equal `source_id`s never collide | `test_imported_origin_is_preserved_not_localised` — import a record with `(A,"mailbox:primary")` into a store whose origin is B; assert it stays `(A,"mailbox:primary")` and does not group with a local `(B,"mailbox:primary")` | CI |
+| **I9** a source's identity survives export→import into the SAME store — the `origin`-absent form and the materialised form are one source (the interface-lock fix, §4.5) | `test_local_source_survives_a_round_trip` — write a record with `origin` absent; export; import into the **same** store; assert the two rows **group as one source** and **digest identically** (proving resolution happens before any compare/digest) | CI |
 
 **I5 is the one to watch.** The temptation once identity exists is to let a
 "known good" `source_id` raise trust. **It must not** — I5 makes that a tested
