@@ -239,8 +239,37 @@ def _tokens(text: str) -> set[str]:
             if w not in _STOP and len(w) > 2}
 
 
+def _permute_contention_groups(edges: list[Edge],
+                               relations: dict[str, Relation]) -> list[Edge]:
+    """specs/0003 §4e: within an active functional-contention group — the active edges
+    sharing a `(subject, relation)` key whose relation is functional and which hold >1
+    DISTINCT value — recorded effective authority dominates, ahead of relevance and
+    recency. It is a PERMUTATION, not a global sort: only the positions a group's members
+    already occupy are reordered; every unrelated edge keeps its position (I6b). Conservative
+    in the same direction as the guard — it can only prefer higher-authority evidence."""
+    from collections import defaultdict
+    groups: dict = defaultdict(list)
+    for i, e in enumerate(edges):
+        rel = relations.get(e.relation)
+        if e.active and rel and rel.functional:
+            groups[(e.subject, e.relation)].append((i, e))
+    out = list(edges)
+    for members in groups.values():
+        if len({_value_key(e.object) for _, e in members}) <= 1:
+            continue                                   # same value → not a contention
+        positions = [i for i, _ in members]            # the exact slots to permute within
+        # authority DESC, then original relevance (position) ASC, then recency DESC
+        ordered = sorted(members, key=lambda ie: (
+            -authority.edge_effective(ie[1]), ie[0],
+            -ie[1].provenance.observed_at.timestamp()))
+        for pos, (_orig, e) in zip(positions, ordered):
+            out[pos] = e
+    return out
+
+
 def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
-                       coverage_share: float = 0.25) -> list[Edge]:
+                       coverage_share: float = 0.25,
+                       relations: Optional[dict[str, Relation]] = None) -> list[Edge]:
     """Entity-matched neighborhood: every edge off the user node, plus edges whose
     tokens appear in the query, ranked by how well they match it. This is
     veracium's primary retrieval (the research found it beat similarity search on
@@ -258,6 +287,12 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     recency as the tiebreak, and `relation` counts as matchable text so "pet"
     can reach `has_pet`.
     """
+    # specs/0003 §4e: the relation registry decides which relations are functional (and so
+    # which groups are contentions). Additive with a defined default — a host that has
+    # customised `MemoryConfig.relations` MUST pass it (exactly as it must to `ingest`),
+    # else a relation it made functional is treated as ordinary and its contention is not
+    # authority-ordered (round-6 correction C).
+    relations = relations if relations is not None else DEFAULT_RELATIONS
     q = _tokens(query)
     scored: list[tuple[int, Edge]] = []
     for e in store.edges(user_id, active_only=False):
@@ -275,9 +310,10 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     # recency tiebreak reads observed_at: "most recently recorded", not
     # "became true earliest" — valid_from is the first-known axis
     scored.sort(key=lambda t: (-t[0], -t[1].provenance.observed_at.timestamp()))
-    if len(scored) <= max_edges:
-        return [e for _, e in scored]        # nothing to choose between
-    return _cover(scored, max_edges, coverage_share)
+    ordered = ([e for _, e in scored] if len(scored) <= max_edges
+               else _cover(scored, max_edges, coverage_share))
+    # authority permutation WITHIN functional-contention groups; unrelated order unchanged
+    return _permute_contention_groups(ordered, relations)
 
 
 def _cover(scored: list[tuple[int, Edge]], max_edges: int,

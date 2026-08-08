@@ -78,7 +78,7 @@ def test_grounded_inputs_excludes_use_only():
     from veracium import compile as _compile
     with tempfile.TemporaryDirectory() as d:
         mem, _ = _prime(d)
-        edges, _eps = _compile._grounded_inputs(mem.store, "u")
+        edges, _eps = _compile._grounded_inputs(mem.store, "u", mem.config.relations)
         objs = " ".join(e.object.lower() for e in edges)
         assert "vegetarian" in objs                    # a grounded user fact feeds the wiki
         assert "acme" not in objs                       # the use_only inference does NOT
@@ -163,7 +163,7 @@ def test_system_event_laundering_is_structurally_capped():
 
         # lock 3 — the wiki compile sees none of it (cf. the 0.1.6 fix)
         from veracium import compile as _compile
-        c_edges, c_eps = _compile._grounded_inputs(mem.store, "u")
+        c_edges, c_eps = _compile._grounded_inputs(mem.store, "u", mem.config.relations)
         assert c_edges == [] and c_eps == []
 
         # backward compat: a clean SYSTEM event (no derived_from) is unchanged —

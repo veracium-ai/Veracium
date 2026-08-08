@@ -206,11 +206,17 @@ class Memory:
 
     def _recall(self, user_id: str, query: str,
                 token_budget: Optional[int] = None) -> Recall:
+        # specs/0003 §4c-ii/§4e: the host relation registry flows to BOTH the compiler
+        # (so a contested functional group is excluded from the one-value wiki, and the
+        # cache binds the registry/policy digest) AND subgraph_for_query (so a functional
+        # contention is authority-ordered). A custom registry must reach both, not one.
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
-                                    self.config.wiki_recompile_after_writes)
+                                    self.config.wiki_recompile_after_writes,
+                                    self.config.relations)
         edges = subgraph_for_query(self.store, user_id, query,
                                    max_edges=self.config.max_subgraph_edges,
-                                   coverage_share=self.config.subgraph_coverage_share)
+                                   coverage_share=self.config.subgraph_coverage_share,
+                                   relations=self.config.relations)
         # outcome events are structured records, not narrative — they'd crowd
         # out interaction history for high-volume consumers; their signal
         # reaches recall as counters rendered on the edges themselves

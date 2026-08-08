@@ -58,9 +58,9 @@ DISPOSITIONS = {
    (W, "**all**", "act", "clean — same verb through the CLI", "`test_forget_cli_requires_confirmation`"),
 
  # -- derived views ----------------------------------------------------------
- ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"):
-   (M, "none directly — **caches a trust decision**", "none",
-    "➡️ **MOVED to `0004`.** Output outlives the inputs' revocation", "tracked as 0004 W1–W4 [M8-wiki]"),
+ ("src/veracium/compile.py", "compile_wiki", "set_wiki", "07f974d5bdaf"):
+   (M, "none directly — **caches a trust decision** (now carries the compiler-policy digest envelope, `0003` §4c-ii)", "none",
+    "➡️ **MOVED to `0004`.** Output outlives the inputs' revocation; `0003` drops the wiki on a refusal-contention transition, but the general trust-reducing-invalidation drop is 0004", "tracked as 0004 W1–W4 [M8-wiki]"),
 
  # -- the write path ---------------------------------------------------------
  # specs/0003 (accepted 2026-08-08) folded the whole supersession outcome into ONE
@@ -161,7 +161,7 @@ STATES = {
   ("src/veracium/__init__.py", "Memory.correct", "add_episode", "23255a7f3c3f"): "open_moved",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
-  ("src/veracium/compile.py", "compile_wiki", "set_wiki", "8add728df9b1"): "open_moved",
+  ("src/veracium/compile.py", "compile_wiki", "set_wiki", "07f974d5bdaf"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"): "clean",
   ("src/veracium/ingest.py", "ingest_event", "add_episode", "17d36f4cb482"): "clean",
