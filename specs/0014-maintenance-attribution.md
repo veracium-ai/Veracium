@@ -15,7 +15,8 @@ Spec-Requires: 0006, 0007, 0013
 > transfer-keyed rule would miss it, and that omission is an attack path (stale-but-corroborating
 > input becomes the unlogged channel). Q1–Q4 resolved (§10); a `0014 → 0006` dependency is named
 > (key the ledger on a **digest** of `0006`'s **`(origin, source_id)` pair** — `0006` v2, R5: identity
-> is the pair, `origin` store-minted so a revocation cannot reach another store's records; both
+> is the pair, `origin` store-minted so a revocation does not reach another HONEST store's records
+> (forged imports are `0005`/`0006` R7's boundary, not authenticated here); both
 > `source_id` (host free-form) and `evidence_ref` are digested; `origin` is store-minted but digested
 > too, as part of the one uniform key. `0014` digests the RESOLVED pair — `0006` §4.5 forbids
 > digesting a stored `origin`-absent pair directly).
@@ -87,10 +88,14 @@ Provisional: `Provenance.observed_at`, `Provenance.confidence`, `Edge.valid_from
 `Provenance.disclosure`, `Provenance.derived_from` — each is *read from a contributor and written
 onto a survivor* by at least one maintenance op (the payload).
 
-> **`0014 → 0006` dependency (research Q1/F3, and `0006` v2 R5).** The ledger is keyed on **`0006`'s
-> `(origin, source_id)` PAIR**, already the revocation key. `0006` v2 (R5) makes identity the pair —
-> `origin` is store-minted, so an imported source cannot collide with a local one and **a revocation
-> keyed on the pair is structurally incapable of reaching another store's records.** `0006`'s "opaque"
+> **`0014 → 0006` dependency (research Q1/F3, and `0006` v3 R5/R7).** The ledger is keyed on **`0006`'s
+> RESOLVED `(origin, source_id)` PAIR**, already the revocation key. `0006` (R5) makes identity the
+> pair — `origin` store-minted — so among **HONEST** exports an imported source cannot collide with a
+> local one and a revocation keyed on the pair does not reach another store's records. **NOT against
+> an adversarial import (`0006` R7): `origin` is namespacing, not authenticated — forged imports are
+> `0005`'s untrusted-import boundary, not a structural guarantee here.** ⚠️ `0014` is itself a stub
+> and this interface is AGREED but not frozen (`0006` R11); `0006` acceptance waits on `0014` reaching
+> mechanical completeness. `0006`'s "opaque"
 > is a host-convention, not enforced (`0006` §8, F3), so for a content-free surface the ledger stores a
 > **deterministic digest of the pair**, never the raw value. The digest stays joinable:
 > `A3`/`revoke_source`, given a pair to revoke, digests it the same way. `evidence_ref` is digested the

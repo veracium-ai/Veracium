@@ -5,9 +5,22 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v2, 2026-08-08) — RETURNED FROM EXTERNAL REVIEW for amendment** (6 findings,
-> all verified, none rejected; `proposals/0006-external-review-response.md`). v2 amends per
-> research's round-2 rulings (`proposals/0006-rulings-round2.md`). **Three shape changes:**
+> **in review (v3, 2026-08-08) — RETURNED AGAIN for amendment (round-2 external review, R7–R11).**
+> The round-2 reviewer returned v2 for one more amendment; v3 folds all five: **R7** — `origin` is
+> **collision-resistant NAMESPACING, not authenticated provenance** (it is materialised into exports
+> and `0005` treats imports as untrusted, so an adversarial import can forge it; the strong "structurally
+> incapable of reaching another store's records" reading holds only against HONEST exports — auth is
+> out of scope, §8, future option Q4). **R8** — the local `origin` needs **durable state**: a new
+> singleton `store_identity` row (minimal DDL, not the v2 "no DDL"), so absent-`origin` resolution has
+> a persistent value; existing rows need NO backfill (§0b/§4.2/§5). **R9** — the origin invariant split
+> into I2a (local caller can't set `origin`) and I2b (import PRESERVES foreign `origin`) — v2's single
+> combined rule contradicted itself. **R10** — a field newer than an import's declared `FORMAT_VERSION` is STRIPPED (I10), closing
+> the old-envelope-with-new-field capture. **R11** — the `0006`↔`0014` interface is AGREED but NOT
+> "fully locked": `0014` is still a `v2 (stub)` with sketch §5/§7, so **`0006` acceptance waits on
+> `0014` reaching mechanical completeness + external freeze** (the reviewer's path). Resolve-at-read
+> + I9 (the v2 interface-lock fix) stand.
+>
+> _v2 (superseded) — the three shape changes carried forward:_
 > **(1) `evidence_basis` is SPLIT OUT — `0006` v1 ships `source_id` ONLY.** The basis field had
 > no v1 consumer, its `observed` value collides with `SourceType.OBSERVED` (same word, near-opposite
 > meaning, same `Provenance` object), and its three-value contract (`derived`) was never reviewed —
@@ -26,20 +39,20 @@ Spec-Requires: 0007, 0013
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
 
-> **UPDATE 2026-08-07: the migration contract EXISTS and is implemented.** `0013` is `accepted`
+> **UPDATE 2026-08-07/08: the migration contract EXISTS and is implemented.** `0013` is `accepted`
 > and its offline v→v+1 migration is in production (`0008`/`confirmations` was the first user;
-> `0003` took the store to `SCHEMA_VERSION` 4). **But R3 (external review) corrected what the
-> migration is FOR here: there is NO DDL.** The `edges` row is `(id, user_id, subject, relation,
-> object, active, quarantined, json TEXT NOT NULL)` (`store/schema_version.py:125`) — the whole
-> `Edge`, `Provenance` included, lives in the `json` blob. Adding a `Provenance.source_id` field
-> changes the **JSON payload only** and requires **no `SchemaObject`, no column, no ALTER.**
-> **What the version bump is genuinely for (measured, R3):** `Provenance` is a Pydantic model with
-> `extra` defaulting to **`ignore`**, so an older build reading a newer store **silently DISCARDS**
-> `source_id` rather than failing. The bump exists to make that silent drop LOUD: it is a **no-DDL
-> `SCHEMA_VERSION` bump v4 → v5**, and `0007` (`PRAGMA user_version`, accepted+implemented) makes an
-> older build REFUSE a v5 store rather than round-trip it lossily. **`0014`'s contribution-ledger
-> table is therefore the NEXT version, v6** — the earlier `0006`-and-`0014`-both-claim-v5 conflict
-> the reviewer flagged is resolved this way.
+> `0003` took the store to `SCHEMA_VERSION` 4). **The `source_id`/`origin` provenance FIELDS need no
+> DDL** — the `edges` row stores the whole `Edge`/`Provenance` in a `json TEXT` blob
+> (`store/schema_version.py:125`), so they change the **JSON payload only**. The bump's purpose for
+> the fields (measured, R3): `Provenance` is `extra=ignore`, so an older build **silently discards**
+> them; `0007` makes an older build REFUSE a v5 store instead. **BUT v3-of-this-spec (R8) adds ONE
+> piece of durable DDL: a singleton `store_identity` row** holding the local store's persistent
+> `origin` (§4.2) — required because "absent `origin` = this store" must resolve to a value that
+> survives reopen/backup. **So the v4→v5 migration is: create the `store_identity` singleton with a
+> random origin (transactional), + the payload/version-gate for the fields. It is MINIMAL DDL — one
+> new singleton, NO per-record change and NO backfill** (existing rows keep `origin` absent and
+> resolve, §5). **`0014`'s contribution-ledger table is the NEXT version, v6** — resolving the
+> `0006`-and-`0014`-both-claim-v5 conflict the reviewer flagged.
 
 **`0006` changes the on-disk PAYLOAD (a new `Provenance` field in the `json` blob), NOT the DDL —
 but it still consumes a `SCHEMA_VERSION` so an older build refuses rather than silently drops it**
@@ -92,10 +105,10 @@ successor / `evidence-basis-design.md`), not a staleness rule's, and it is on no
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — *amended after external review returned it (6 findings). One field (`source_id`), a new `(origin, source_id)` identity contract, no-DDL version bump; `evidence_basis` split out. Archive as `0006-v2-<…>`.* |
+| **Version** | **v3** — *amended after the round-2 external review (R7–R11). `origin` is namespacing not authenticated (R7); a persistent `store_identity` singleton (R8, minimal DDL); the origin invariant split into I2a/I2b (R9); pre-v4-envelope field stripping (R10); interface agreed-not-locked pending `0014` (R11). Archive as `0006-v3-<…>`.* |
 | **Status** | *see `Spec-Status:` — canonical.* Opened from `0002` R2; **deliberately not folded into `0002`**, which is being split precisely because it kept absorbing work. |
 | **Internal reviewers** | research — **ruled that this is needed and that it needs its own spec** |
-| **External review** | required — touches stored provenance; a no-DDL `SCHEMA_VERSION` v4→v5 + `FORMAT_VERSION` 3→4 bump. **Round 1 returned for amendment (6 findings, all verified); v2 amends. Do not resend until the `0006`↔`0014` interface is locked jointly and the brief is corrected.** |
+| **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **Round 1 → return for amendment (6 findings); v2. Round 2 → return for amendment (R7–R11); v3. Acceptance now gated on `0014` reaching mechanical completeness (R11); resend v3 with a refreshed brief.** |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -150,20 +163,22 @@ recurring maintenance-provenance-loss class stays open.
 ## 2. Field contracts touched
 
 **`0006` v1 adds ONE identity, as a PAIR: `(origin, source_id)`.** (The `evidence_basis` field is
-split out to a successor spec — external-review R2.) No DDL: both live in the `Provenance` JSON
-payload; the version bump exists only to make an older build refuse rather than silently drop them
-(§0b, R3).
+split out to a successor spec — external-review R2.) The two provenance fields live in the JSON
+payload (no DDL for them); the durable local `origin` lives in ONE new singleton `store_identity`
+row (minimal DDL — R8, §0b).
 
 | field | change | contract |
 |---|---|---|
 | **`Provenance.source_id`** | **NEW**, optional | An opaque, stable identifier for *the source that produced this evidence* — a mailbox, a connector instance, a device, a named subsystem. Never a person's identity, never a display name. **Unique only WITHIN an `origin`** — on its own it is not an identity (R5). |
-| **`Provenance.origin`** | **NEW**, optional, **STORE-minted** | An opaque value minted by the store at creation — **never host-supplied** (a host cannot name another store's origin; same rule as every trust field: not settable by the party it describes). The identity is the **pair `(origin, source_id)`**. Absent origin means *this store*; it is **materialised on export** so the file is self-describing (§4). |
-| `Provenance.evidence_ref` | unchanged | Already identifies the *event*. `(origin, source_id)` identifies **who produces such events**; `evidence_ref` identifies **one**. Neither replaces the other. |
-| `SCHEMA_VERSION` | **v4 → v5, NO DDL** | The provenance JSON gains `source_id`/`origin`; no table/column changes. The bump makes an older build (which `extra=ignore`s the unknown fields) REFUSE the store rather than silently drop them (§0b, R3, `0007`). `0014`'s ledger table is v6. |
-| `FORMAT_VERSION` | **3 → 4** | Export/import must round-trip `source_id` AND the materialised `origin`. **`portability.py:37` is already `3`**, so this bumps **3 → 4**, not 2 → 3. (Distinct from `SCHEMA_VERSION` above — two counters.) |
+| **`Provenance.origin`** | **NEW**, optional, **STORE-minted** | An opaque, store-generated **collision namespace** (R7 — *not* an authenticated identity). A **local** caller and the model never supply it (I2a); on **import** a record keeps its foreign `origin`. Absent = *this store* → resolves to the `store_identity` singleton (§4). The identity is the **pair `(origin, source_id)`**; materialised on export. |
+| **`store_identity` (singleton row)** | **NEW table, one row** | Holds this store's **persistent** `origin` (§4.2, R8) — minted once with a random value at creation / v4→v5 migration; survives reopen/backup; the value an absent record-`origin` resolves to. The ONLY DDL this spec adds. |
+| `Provenance.evidence_ref` | unchanged | Already identifies the *event*. `(origin, source_id)` identifies **who produces such events**; `evidence_ref` identifies **one**. |
+| `SCHEMA_VERSION` | **v4 → v5, MINIMAL DDL** | Adds the `store_identity` singleton (R8); the provenance JSON gains `source_id`/`origin` (no column). No per-record change, no backfill. The bump also makes an older build (`extra=ignore`) REFUSE the store rather than silently drop the fields (§0b, `0007`). `0014`'s ledger table is v6. |
+| `FORMAT_VERSION` | **3 → 4** | Export/import must round-trip `source_id` AND the materialised (resolved) `origin`. **`portability.py:37` is already `3`**, so this bumps **3 → 4**, not 2 → 3. (Distinct from `SCHEMA_VERSION` — two counters.) |
 
-**Both fields are optional and absent means unknown** (`source_id` unknown → no grouping; `origin`
-absent → this store), which must behave as the **least** favourable value — see I3.
+**The provenance fields are optional and absent means unknown** (`source_id` unknown → no grouping;
+`origin` absent → this store, resolved to the singleton), which must behave as the **least**
+favourable value — see I3. The `store_identity` singleton, by contrast, is always present.
 
 ---
 
@@ -172,9 +187,11 @@ absent → this store), which must behave as the **least** favourable value — 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | invariant |
 |---|---|---|---|---|---|
 | **`source_id`** | absent → treated as unknown → **no grouping** | rejected | — | **the model names a `source_id` to impersonate a trusted source**, or reuses the user's | **I1 — host-supplied only; never model-supplied, never extractor-derived** |
-| **`origin`** | absent → *this store* | rejected | — | **a host supplies an `origin` to impersonate another store** and merge into its records | **I2 — STORE-minted only; never host-supplied, never extractor-derived. A host-supplied `origin` is ignored/rejected** |
+| **`origin` (LOCAL ingest/API)** | absent → resolves to the `store_identity` singleton | rejected | — | **a local caller supplies an `origin` to impersonate another store** | **I2a — a LOCAL caller/model can NEVER supply `origin`; the resolver uses the singleton** |
+| **`origin` (valid v4-format IMPORT)** | preserved as-is (foreign) | rejected | — | attacker hand-writes a file naming `origin=A` — **NOT prevented here (R7): `origin` is namespacing, not authenticated**; `0005`'s untrusted-import boundary governs it | **I2b — a current-format import PRESERVES the file's foreign `origin`** (does NOT localise it); trust of that foreign origin is `0005`'s, not this spec's |
 | **older-store data** | both absent | — | — | — | **I3 — absence never relaxes a rule.** Also the `PRAGMA user_version` gap, see Q1 |
-| **imported export** | — | version-checked | v4 file into a v3 build rejected | trust fields hand-written | **imported records KEEP their originating `origin` — they do NOT acquire the local one**, so `(A,"mailbox:primary") ≠ (B,"mailbox:primary")` and two hosts' ids cannot collide (R5). `0005`'s cap applies **first**; this adds no exemption |
+| **pre-v4-FORMAT import carrying the fields (R10)** | — | — | **a hand-written file labels itself an OLD `FORMAT_VERSION` but adds `source_id` and omits `origin`** | if accepted with "absent origin = this store", the attacker's source becomes `(local_origin, attacker_source_id)` — **the exact local-namespace capture `origin` exists to prevent** | **I10 — a field newer than the envelope's declared `FORMAT_VERSION` is STRIPPED/ignored on import** (its source identity is unknown), not trusted. "Reject newer versions" does not cover new fields in an OLD envelope |
+| **imported export (honest)** | — | version-checked | v4 file into a v3 build rejected | — | imported records KEEP their `origin` (I2b), so two **honest** exports' `(A,"mailbox:primary")` and `(B,"mailbox:primary")` cannot ACCIDENTALLY collide (R5). `0005`'s cap applies **first** |
 
 ## 2c-ii. Assertions about reach
 
@@ -227,7 +244,7 @@ property was what made it unsafe. Removed.)
   identity; `revoke_source` (`A3`/`0004`) is what acts on it, and a revocation keyed on the PAIR is
   *structurally incapable* of reaching another `origin`'s records.
 - **Does anything become visible to a principal who could not see it before?** No. A host cannot set
-  `origin` (I2), so it cannot name another store; a model cannot set `source_id` (I1).
+  `origin` (I2a), so it cannot name another store; a model cannot set `source_id` (I1).
 
 ---
 
@@ -248,39 +265,51 @@ rule finally has a mechanism instead of an aspiration.
 ### The `(origin, source_id)` contract (R5)
 
 `source_id` alone is not an identity — it is an identity *within an origin*. Without the origin,
-`import_memory` (which remaps the user but preserves provenance) merges two unrelated sources that
-both call themselves `"mailbox:primary"` into one; today that silently degrades grouping, but under
-`0014` they collide in the attribution ledger and a future `revoke_source` would revoke both —
-**one host's revocation reaching another host's data, a correctness failure.** So:
+`import_memory` (which remaps the user but preserves provenance) merges two unrelated **honest**
+exports that both call themselves `"mailbox:primary"` into one; today that silently degrades
+grouping, but under `0014` they collide in the attribution ledger and a future `revoke_source` would
+revoke both. So:
 
-1. **`origin` is minted by the STORE at creation, never supplied by the host.** A host cannot name
-   another store's origin — that is what makes the pair unforgeable where `source_id` alone is not
-   (the same rule that governs every other trust field here).
-2. **Local records need not store `origin`** — absent means *this store*. It is **materialised on
-   export** so the file is self-describing (`FORMAT_VERSION` 3→4).
-3. **On import, records KEEP their originating `origin`; they do NOT acquire the local one.** So
-   `(A, "mailbox:primary") ≠ (B, "mailbox:primary")`, and the collision cannot occur. `0005`'s
-   import cap applies **first**.
-4. **Comparison is EXACT equality on BOTH components, with NO normalisation** — normalising can merge
+1. **`origin` is a store-generated COLLISION NAMESPACE — not an authenticated identity (R7).** The
+   store mints it once at creation; a **local** caller (ingest/API) and the model can never supply it
+   (I2a). It prevents **accidental** collisions between honest exports. **It is NOT unforgeable:**
+   `origin` is materialised into exports (§2, so not secret), and `0005` treats an export file as
+   **untrusted input** — an attacker who has seen an export from store A can hand-write a file naming
+   `origin=A`, and nothing here (no signature, MAC, or store certificate) lets the importer tell that
+   from a genuine A record. **Authentication of foreign origins is explicitly out of scope for v1**
+   (§8); this is collision-resistant *namespacing*, and adversarial imports are the `0005`
+   import-trust boundary's concern, applied **first**.
+2. **The local store's own origin is DURABLE, persistent state (R8).** It lives in a **singleton
+   store-identity object** (a one-row `store_identity` table), minted once with a random value at
+   store creation / at the v4→v5 migration, and it survives close-reopen and backup-restore. This is
+   the value that "absent `origin` = this store" resolves to — so it must exist before any resolution.
+3. **Local records need not store `origin`** — absent resolves to the singleton (point 2). It is
+   **materialised on export** so the file is self-describing (`FORMAT_VERSION` 3→4).
+4. **On import, records KEEP their originating `origin`; they do NOT acquire the local one.** So
+   `(A, "mailbox:primary")` and a local `(B, "mailbox:primary")` stay distinct — an **accidental**
+   collision between honest exports cannot occur. (An *adversarial* forgery of `origin=B` is not
+   prevented here — that is R7 / `0005`, not this rule.)
+5. **Comparison is EXACT equality on BOTH components, with NO normalisation** — normalising can merge
    genuinely distinct opaque ids (the same failure inverted). `source_id` is non-empty with a length
    bound; `origin` likewise.
-5. **🔴 All comparison, grouping and digest operations act on the RESOLVED pair.** `origin` absent
-   resolves to the local store's own origin **before any comparison, digest or export**; **no consumer
-   may compare or digest a STORED pair directly** (the joint `0006`↔`0014` interface lock, 2026-08-08).
-   Without this, points 2 and 4 contradict: a local source is `(absent, "mailbox:primary")` before
-   export and `(originA, "mailbox:primary")` after a round-trip, and exact equality reads those as two
+6. **🔴 All comparison, grouping and digest operations act on the RESOLVED pair.** `origin` absent
+   resolves to the singleton (point 2) **before any comparison, digest or export**; **no consumer
+   may compare or digest a STORED pair directly** (the joint `0006`↔`0014` interface lock). Without
+   this, points 3 and 5 contradict: a local source is `(absent, "mailbox:primary")` before export and
+   `(local_origin, "mailbox:primary")` after a round-trip, and exact equality reads those as two
    sources when they are one — grouping would split on this spec's own round trip, `0014` would hold
    two ledger keys for one source, and **`revoke_source` given the materialised pair would MISS every
-   local row that stored `origin` absent — a revocation that silently under-reports, the precise
-   failure `A3` exists to prevent.** Resolution is done at **ONE chokepoint** (this project's recurring
-   failure is a rule enforced in three places and missed in a fourth), so the absent form never reaches
-   a comparator. See I9 (round-trip) and §5 (the resolve-at-read vs stamp-at-write trade).
+   local row that stored `origin` absent — a silent under-report, the precise failure `A3` exists to
+   prevent.** Resolution is at **ONE chokepoint** (this project's recurring failure is a rule enforced
+   in three places and missed in a fourth). See I9 (round-trip) and §5 (the trade).
 
-**Migration.** No DDL (§0b) — both fields live in the JSON payload; the `SCHEMA_VERSION` v4→v5 bump
-only makes an older build refuse rather than silently drop them. `source_id`/`origin` are optional,
-absent = unknown = least favourable; no backfill — an existing store keeps today's fail-closed
-behaviour until a host starts supplying identities, which is the correct default for data whose
-source we genuinely do not know.
+**Migration.** **Minimal DDL (R8, corrected from v2's "no DDL"):** the v4→v5 migration creates ONE
+new singleton `store_identity` row with a random `origin` (point 2), transactionally. **No per-record
+change and no backfill** — existing edge rows keep `origin` absent and resolve to the singleton
+(point 6), so R3's clean migration story survives without the record rewrite that stamp-at-write
+would force (§5). The `source_id`/`origin` provenance fields still live in the JSON payload; the
+`SCHEMA_VERSION` v4→v5 bump also makes an older build refuse rather than silently drop them. Fields
+optional, absent = unknown = least favourable.
 
 ---
 
@@ -296,14 +325,16 @@ source we genuinely do not know.
   This is a **stable (on-by-default)** field, so that regime **blocks** — I8 is required, not optional.
 - **Thresholds/caps:** none — `source_id`/`origin` interact with no budget, cap or recompile threshold.
 - **Cold vs warm store:** identical — the field does not touch the wiki cache (diagnostic-only).
-- **Resolve-at-read vs stamp-at-write (the interface-lock trade, §4.5).** An absent `origin` means
-  *this store* and is **resolved to the local origin before any comparison, digest or export**
-  (resolve-at-read), at a single chokepoint. The alternative — **stamp `origin` at write time** so
-  absence never exists — is structurally safer (no path can forget to resolve), but it forces a
-  **backfill of every existing row** during the migration, turning R3's clean no-DDL version bump
-  into a data rewrite. **We chose resolve-at-read** to keep the migration story R3 just earned;
-  the cost is that resolution must be centralised, which I9's round-trip test pins. Recorded here so
-  the trade is visibly deliberate, per the joint interface lock.
+- **Where the local origin lives — THREE options (R8 named the third; §4.2/§4.6).**
+  **(a) resolve-at-read from an in-memory value:** broken — reopening changes every local source's
+  identity. **(b) stamp `origin` at write time** so absence never exists: structurally safest (no path
+  can forget to resolve), but it forces a **backfill of every existing row** on migration, turning the
+  clean version bump into a full data rewrite. **(c) persistent singleton `store_identity` +
+  resolve-at-read** (CHOSEN): one durable store-level row minted once, existing records keep `origin`
+  absent and resolve to it at a single chokepoint — **no per-record backfill**, and the migration adds
+  only that one row (minimal DDL, §0b). The cost of (c) is that resolution must be centralised, which
+  I9's round-trip test pins. v2 posed this as an (a)-vs-(b) choice and missed (c) — the reviewer (R8)
+  supplied it; recorded here so the trade is visibly deliberate.
 
 ---
 
@@ -312,14 +343,17 @@ source we genuinely do not know.
 | invariant | executable check | where |
 |---|---|---|
 | **I1** `source_id` is never set from model output | `test_source_id_is_not_reachable_from_the_extractor` — drive `ingest_event` with an extractor returning `source_id` in every triple; assert it is ignored | CI |
-| **I2** `origin` is **STORE-minted, never host-supplied** | `test_origin_is_not_host_settable` — supply an `origin` through every ingest/import path; assert the store's own value is used, the host's ignored | CI |
+| **I2a** (R9) a LOCAL caller/model can NEVER supply `origin` — the resolver uses the `store_identity` singleton | `test_local_caller_cannot_supply_origin` — supply an `origin` through every LOCAL ingest/API path; assert the singleton's value is used, the caller's ignored | CI |
+| **I2b** (R9) a valid current-format IMPORT PRESERVES the file's foreign `origin`, does NOT localise it | `test_imported_origin_is_preserved_not_localised` — import `(A,"mailbox:primary")` into a store of origin B; assert it stays `(A,…)` and does not group with local `(B,…)`. (I2a and I2b differ by PATH — v2 combined the two into one rule that contradicted itself, R9.) | CI |
 | **I3** absence never relaxes a rule | `test_missing_source_id_keeps_the_flag` — over the §3 matrix, both-absent and one-absent | CI |
 | **I4** the §3 matrix holds exactly — **every cell "flag stays"** | `test_staleness_clearing_matrix` — table-driven, all rows | CI |
 | **I5** (affirmative, R1) `(origin, source_id)` affects **no** trust/authority/disclosure/staleness/supersession decision in v1 — it is only recorded, grouped, inspected | `test_source_id_affects_no_decision` — over the ladder, the gate, and staleness clearing, adding/changing `(origin, source_id)` changes no output | CI |
-| **I6** export/import round-trips `source_id` AND the materialised `origin` | `test_v4_export_roundtrip` · `test_v4_file_into_v3_build_is_rejected` | CI |
+| **I6** export/import round-trips `source_id` AND the resolved `origin` | `test_v4_export_roundtrip` · `test_v4_file_into_v3_build_is_rejected` | CI |
 | **I7** `0005`'s import cap applies before any of this | `test_imported_source_id_does_not_bypass_the_remap_cap` | CI |
-| **I8** (R5) an imported record KEEPS its origin — two origins' equal `source_id`s never collide | `test_imported_origin_is_preserved_not_localised` — import a record with `(A,"mailbox:primary")` into a store whose origin is B; assert it stays `(A,"mailbox:primary")` and does not group with a local `(B,"mailbox:primary")` | CI |
-| **I9** a source's identity survives export→import into the SAME store — the `origin`-absent form and the materialised form are one source (the interface-lock fix, §4.5) | `test_local_source_survives_a_round_trip` — write a record with `origin` absent; export; import into the **same** store; assert the two rows **group as one source** and **digest identically** (proving resolution happens before any compare/digest) | CI |
+| **I8** (R5, R7) two HONEST exports' equal `source_id`s under different origins do not ACCIDENTALLY collide — *accidental* only; an adversarial forged `origin` is out of scope (R7, §8) | `test_two_honest_origins_do_not_collide` | CI |
+| **I9** a source's identity survives export→import into the SAME store (the interface-lock fix, §4.6) | `test_local_source_survives_a_round_trip` — write a record with `origin` absent; export; import into the **same** store; assert the two rows **group as one source** and **digest identically** | CI |
+| **I10** (R10) a field newer than an import's declared `FORMAT_VERSION` is STRIPPED on import | `test_source_id_in_a_pre_v4_envelope_is_ignored` — hand-write a `FORMAT_VERSION`-3 file carrying `source_id`; assert it is ignored (identity unknown), NOT accepted as `(local_origin, source_id)` | CI |
+| **I11** (R8) the local `store_identity` origin is durable | `test_store_origin_survives_reopen` — create a store, note its origin, close, reopen; assert the same origin resolves | CI |
 
 **I5 is the one to watch.** The temptation once identity exists is to let a
 "known good" `source_id` raise trust. **It must not** — I5 makes that a tested
@@ -330,33 +364,48 @@ these specs, and identity is not entitlement.
 
 ## 7. Failure modes and reversibility
 
-- **Silent failure — the one this spec's version bump exists to prevent.** An older build reading a
-  v5 store `extra=ignore`s `source_id`/`origin` and silently drops them (R3). First symptom: a
-  round-trip through an old build returns records that have quietly lost their identity, undetectably.
-  **The no-DDL `SCHEMA_VERSION` v4→v5 bump makes it loud** — `0007` makes the old build REFUSE the
-  store instead. That is the whole justification for the bump (§0b).
-- **The R5 correctness failure, were the pair NOT adopted:** two origins' equal `source_id`s merge on
-  import → collide in `0014`'s ledger → `revoke_source` revokes both, one host's revocation reaching
-  another's data. Prevented structurally by `(origin, source_id)` + origin-preserving import (I8).
-- **Reversibility:** `source_id`/`origin` are additive, optional metadata written once at ingest;
-  there is no destructive maintenance operation on them, so there is nothing to reverse. (Attributing
-  and reversing the *consumption* of a source is `0014`/`A3`, not this spec.)
-- **Partial failure:** none introduced — writing the field is part of the ordinary edge/episode
-  insert, which is already atomic; there is no new multi-step operation.
-- **New attack surface:** the two adversarial inputs are (a) a **model** setting `source_id` to
-  impersonate a source — blocked by I1 (never model-reachable); (b) a **host** setting `origin` to
-  impersonate another store — blocked by I2 (store-minted only). Content smuggled into `source_id`
-  (F3) is diagnostic and never surfaced; content-free consumers digest the pair (§8).
+- **Silent failure — the one the version bump exists to prevent.** An older build reading a v5 store
+  `extra=ignore`s `source_id`/`origin` and silently drops them (R3). First symptom: a round-trip
+  through an old build returns records that quietly lost their identity, undetectably. **The
+  `SCHEMA_VERSION` v4→v5 bump makes it loud** — `0007` makes the old build REFUSE the store instead.
+- **🔴 Losing the `store_identity` singleton (R8).** If the singleton is missing (a broken restore, a
+  migration that failed to create it), every absent-`origin` record resolves against *nothing* —
+  grouping and digests become undefined, and `0014`'s keys shift. First visible symptom: I9's
+  round-trip test fails, or recall grouping fragments. **Mitigation: the v4→v5 migration creates the
+  singleton transactionally (all-or-nothing), and store open FAILS CLOSED if a v5 store has no
+  singleton** rather than silently minting a new one (which would re-identify every local source).
+- **The R5 correctness failure, were the pair NOT adopted:** two HONEST origins' equal `source_id`s
+  merge on import → collide in `0014`'s ledger → `revoke_source` revokes both. Prevented for honest
+  exports by origin-preserving import (I2b). (Adversarial forgery is R7, below — not prevented here.)
+- **Reversibility:** `source_id`/`origin` are additive metadata written once; nothing to reverse.
+- **Partial failure:** the field write is part of the ordinary atomic edge/episode insert; the only
+  new multi-step state is the migration's singleton creation, which is transactional (above).
+- **New attack surface:** (a) a **model** setting `source_id` — blocked by I1; (b) a **local caller**
+  setting `origin` — blocked by I2a; (c) **an attacker hand-writing an import that forges `origin=A`
+  or slips `source_id` into an old envelope** — R7/I10: NOT authenticated here, governed by `0005`'s
+  untrusted-import boundary (applied first). Content smuggled into `source_id` (F3) is diagnostic and
+  never surfaced; content-free consumers digest the resolved pair (§8).
 
 ---
 
 ## 8. Claims and limits
 
 **Claim:** distinct sources can be told apart — `(origin, source_id)` groups records by their
-producing source without ever granting trust, and without an imported source colliding with a local
-one.
+producing source without ever granting trust, and without two **honest** exports' sources
+accidentally colliding.
 
 **Limits:**
+
+- **🔴 `origin` is collision-resistant NAMESPACING, not authenticated provenance (R7).** It is
+  store-generated and prevents *accidental* collisions between honest exports. It is **NOT
+  unforgeable**: `origin` is materialised into exports (not secret), and `0005` treats an import file
+  as untrusted, so an attacker who has seen an export from store A can hand-write a file naming
+  `origin=A` — nothing here (no signature, MAC or store certificate) distinguishes that from a genuine
+  A record. **Authentication of foreign origins is explicitly OUT OF SCOPE for v1.** Consequently the
+  strong reading — *"a revocation keyed on the pair is structurally incapable of reaching another
+  store's records"* — holds only against **honest** exports, not an adversarial import; that boundary
+  is `0005`'s. Making it authenticated (signed exports, or import re-namespacing foreign origins under
+  a locally-controlled id) is a future option, recorded in §10.
 
 - **`source_id` is only as good as the host's discipline.** A host that reuses
   one id for everything gets today's behaviour with extra steps. We cannot
@@ -394,4 +443,6 @@ one.
 | ~~**Q2**~~ | **MOOT for `0006` v1 — `evidence_basis` is SPLIT OUT (external-review R2).** Q2 was the `evidence_basis` default; with the field deferred to a successor spec, the question moves with it. Research re-decided it on the real three-value enum (`proposals/0006-rulings-round2.md`, Ruling 1) — the three values are NOT a total order (`observed`/`restated` = directness; `derived` = mechanism), so "least favourable attested value" is undefined; **unknown is a fourth state, stored absent, the FLOOR: no decision treats it more favourably than ANY attested basis; constraints are defined per-decision by the spec that first consumes the field.** That ruling travels to the successor spec; `0006` v1 has no `evidence_basis`. | moved to the successor spec | research | — |
 | ~~**Q3**~~ | **RESOLVED (dev ruled 2026-08-07, research CONFIRMED 2026-08-08; `proposals/0006-rulings-round2.md` §2a): KEEP `source_id` OUT of `0003`'s ladder in v1.** `0006` is a no-DDL payload change; `0003` later consuming the field is a pure CODE change (the ladder reads an existing field), **not a schema change** — so "avoids a second migration" is void, there is no second migration either way. Keeping it out keeps `0006` small and diagnostic-only (§8). `0003` may consume it whenever `0003` rules to. | **resolved** | dev + research | — |
 
-**No open questions remain.**
+| **Q4** | **Authenticated foreign origins (R7) — a FUTURE option, deferred, not a v1 blocker.** v1 treats `origin` as collision-resistant namespacing, not authenticated provenance (§8), so the strong revocation-isolation reading holds only against honest exports. If a future consumer needs it to hold against adversarial imports, foreign origins must be authenticated — signed exports under a persistent store identity, OR import re-namespacing a foreign origin under a locally-controlled id. Recorded so the boundary is a deliberate v1 choice, revisitable when a consumer actually needs the stronger property. | deferred (future) | dev + research | when a consumer needs it |
+
+**No open question BLOCKS v1** (Q1/Q2/Q3 resolved); Q4 is a recorded future direction, not a gate.
