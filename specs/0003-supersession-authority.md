@@ -5,10 +5,26 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v12)** — round-9 response, 2026-08-08. **Round 9 approved the finite-boundary
-> concept in principle and deferred v11 on three architectural seams + three corrections; v12
-> closes all six and adds the acceptance artifact.** The narrowed ladder/refusal/permutation
-> direction stays approved.
+> **in review (v13)** — round-10 response, 2026-08-08. **Round 10 said: fix two derived-view/
+> cache gaps, two public-contract corrections, and the acceptance ledger — then set
+> `accepted`. v13 closes all five; this is the convergence revision.** The narrowed
+> ladder/refusal/permutation direction stays approved.
+> - **B1 (resolution) — invalidation now covers ENDING a contention, not only forming it.**
+>   `live_refusal_contention` = refusal exists AND both values active AND distinct AND
+>   functional; every transition INTO or OUT of it invalidates the wiki in the same mutation,
+>   so `dispute`/`correct`/lifecycle resolving a member recompiles immediately (§4c-ii).
+> - **B2 (cache identity) — the wiki cache binds a `compiler_policy_digest`** over the
+>   host relation-registry semantics + contention-policy version; a digest mismatch recompiles
+>   regardless of `store_version` (a reopen under a different registry can't serve a stale wiki).
+> - **A (reach) — `Recall.contested` no longer re-grants the challenger reach.** It carries a
+>   full `Edge` only for members the reach contract already exposes (the preserved grounded
+>   prior + already-selected members); the unseen fenced challenger is **content-free linkage
+>   only**. The no-reach guarantee is stated across `context`/`edges`/`contested`.
+> - **B (interfaces) — §7a now lists the `Recall` API change** (backward-compatible defaulted
+>   `contested` field; `edges` union), per its own "honest list."
+> - **Ledger — §11a is now PROCESS §4a-compliant:** one row per finding, the round 1–5 reviews
+>   are carried in-package at `specs/reviews/0003/`, and closures cite actual commits. **No
+>   ladder/refusal/permutation change** — the architecture re-approved at rounds 3–10 is untouched.
 > - **B1 (reach) — partition-preserving ≠ reach-preserving.** The deterministic preservation
 >   surface now carries only the higher-authority GROUNDED prior; the fenced lower-trust
 >   challenger keeps NO query-independent reach (stays relevance-gated), so a hostile
@@ -51,7 +67,7 @@ Spec-Requires: 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v12** — *re-read before editing; quote the version you approve.* Closes round 9's three architectural seams (reach, refusal-scoped derived view, durable operation receipt) + three corrections (governance wording, structured `Recall.contested`, complete `expected_state`), and adds the **§11a Review-closure ledger** — the acceptance artifact. Narrow design approved at rounds 3–5, re-approved 6–9. **No change to the ladder, the refusal direction, or the permutation.** |
+| **Version** | **v13** — *re-read before editing; quote the version you approve.* The convergence revision: closes round 10's two derived-view/cache gaps (resolution invalidation, cache-binds-registry-digest) + two public-contract corrections (`Recall.contested` reach, §7a `Recall` API) + the PROCESS §4a-compliant §11a ledger. Narrow design approved 3–5, re-approved 6–10. **No change to the ladder, the refusal direction, or the permutation.** |
 | **Status** | *see `Spec-Status:` at the top — canonical.* **Narrowed at v3; the narrow design was approved at external rounds 3 and 4.** Review counts, findings and open questions are generated into `specs/STATUS.md` — this row states none of them. |
 | **Internal reviewers** | research — ladder adopted; R3 and the M5/Q5 rulings applied |
 | **External review** | required — the narrow design was approved at r3 and r4 and affirmed at r5 (deferred on cleanup only). Round counts and findings are generated into `specs/STATUS.md` from `specs/reviews.py` — this row states none of them. |
@@ -352,10 +368,18 @@ whose read and persistence dependencies were treated as invisible.**
 - `src/veracium/store/schema_version.py` — the refusal table/index enter the registry
 - `src/veracium/store/migration.py` — the adjacent offline `0013` migration
 
-**Interfaces:** `subgraph_for_query` gains a keyword parameter. It is
-re-exported from `veracium`, so this is a **public signature change**, albeit
-additive with a default (omitted → `DEFAULT_RELATIONS`; a host with a custom
-relation registry MUST pass it — §4e).
+**Interfaces:** two public changes (round-10 correction B — the honest list must name
+both):
+- `subgraph_for_query` gains a keyword parameter. It is re-exported from `veracium`, so
+  this is a **public signature change**, albeit additive with a default (omitted →
+  `DEFAULT_RELATIONS`; a host with a custom relation registry MUST pass it — §4e).
+- The public **`Recall` dataclass** gains a field and a documented semantic change
+  (§4c-ii): a **new `contested: list[...] = field(default_factory=list)`** — added
+  optional/defaulted, AFTER the existing fields, so no existing constructor call breaks —
+  and **`Recall.edges` becomes the de-duplicated union** of query-selected edges and the
+  *exposed* preservation members. **Existing `Recall.edges` consumers will now observe
+  additional preservation edges** (the higher-authority preserved member); the unseen
+  fenced challenger is content-free linkage only, never a full `Edge` (correction A).
 
 **Schema:** **yes — TWO new tables, introduced as the next on-disk store version:** the
 **refusal** inventory (§4b) and the **`supersession_operations` receipt** (§4f, round-9
@@ -564,20 +588,26 @@ unique current value (§4c), so it is exactly what a one-current-value wiki cann
 honestly; it moves from a channel that would collapse it to a deterministic one that keeps
 each member where the gate already put it.
 
-> **The structured `Recall` carrier is frozen, not only the rendered string (round-9
-> correction B).** `Recall` exposes structured `edges`/`episodes`, not just `context`;
-> because the preservation surface is query-independent it can include edges
-> `subgraph_for_query` did not select, and if those existed only in the rendered string a
-> consumer would see `Recall.context` carrying a fact while `Recall.edges` said it was never
-> retrieved (and telemetry would drift). **Frozen: a new structured field
-> `Recall.contested` — the deterministic preservation groups as structured records (each
-> member's edge, its gate partition, effective-authority order)** — and `Recall.edges`
-> becomes the **de-duplicated union** of query-selected edges and the preservation surface's
-> grounded members. The structured units are **budget-independent** for the higher-authority
-> preserved member (its inclusion is the I6a guarantee) while rendered truncation still
-> reports in `Recall.truncated`; partition metadata travels with each member; counts/telemetry
-> are defined over the structured result. **I6c asserts over `Recall.contested`, not only the
-> final string.**
+> **The structured `Recall` carrier is frozen — and it does NOT re-grant the challenger
+> reach (round-9 correction B, corrected round-10 correction A).** `Recall` exposes structured
+> `edges`/`episodes`, not just `context`; if the preservation surface existed only in the
+> rendered string a consumer would see `Recall.context` carrying a fact while `Recall.edges`
+> said it was never retrieved (telemetry would drift). But v12's "each member's edge" would
+> have re-granted the fenced challenger a query-independent *structured-API* reach that
+> round-9 blocker 1 removed from the model-context surface — the same capability one field
+> over. **Frozen: `Recall.contested` carries the full `Edge` only for members the reach
+> contract already exposes** — the **preserved higher-authority grounded member**, plus any
+> member ordinary relevance-gated retrieval already selected — **and the unseen fenced
+> challenger appears only as content-free linkage metadata** (its edge id, gate partition, and
+> effective-authority position — no `object`/value/provenance text). `Recall.edges` becomes the
+> **de-duplicated union** of query-selected edges and the *exposed* preservation members (not
+> the unseen challenger). The exposed higher-authority member is **budget-independent** (its
+> inclusion is the I6a guarantee); rendered truncation still reports in `Recall.truncated`;
+> partition metadata travels with each entry; counts/telemetry are defined over the structured
+> result. So the reach guarantee is stated across **every public surface** — `Recall.context`,
+> `Recall.edges` AND `Recall.contested`: **the challenger gains no query-independent reach on
+> any of them.** I6c asserts over the structured result, and its name is scoped to the
+> surfaces it checks.
 
 > **Cache invalidation is IMMEDIATE, not batched (round 7, blocker 2).** v8 said a
 > refusal advances `store_version` so `ensure_wiki` recompiles — but the cache contract
@@ -606,9 +636,38 @@ each member where the gate already put it.
 > `ensure_wiki → compile_wiki → the grounded-input contention filter`** (omitted →
 > `DEFAULT_RELATIONS`, §4e). **I6c runs under both the default and a custom registry.**
 
+> **Invalidation covers RESOLUTION too, not only formation (round-10 blocker 1).** v12's
+> refusal-scoped trigger drops the cache when a refusal FORMS a contention, but a contention
+> also ENDS through ordinary paths — `dispute`/`correct`/lifecycle invalidating a member —
+> and the refusal record is retained while either edge exists (§4b), so the derived view would
+> keep excluding the prior after the group is no longer a live contention. **Frozen: the
+> derived-view state is `live_refusal_contention` = a refusal record exists AND both referenced
+> values are currently active AND still distinct AND the relation is functional — and EVERY
+> transition INTO or OUT of it invalidates the wiki in the SAME mutation.** The clean boundary
+> is Store-level: invalidating (or otherwise deactivating) an edge that participates in a live
+> refusal contention also drops/generation-bumps that user's wiki. The historical refusal
+> record keeps its longer "while either edge exists" retention (§4b); the derived-view trigger
+> keys on `live_refusal_contention`, not on retention. The rule is symmetric — `unique →
+> contested` and `contested → unique` both invalidate. I6c adds
+> `test_resolving_a_refusal_contention_invalidates_the_wiki_immediately` (ordinary invalidation,
+> lifecycle, and the explicit `correct()` path).
+
+> **The cache identity must bind the compiler-policy inputs, not just `store_version`
+> (round-10 blocker 2).** The relation registry now controls what the compiler excludes, but it
+> is host-supplied (`MemoryConfig.relations`) and lives OUTSIDE the store — so reopening the
+> same store under a registry that classifies a relation differently changes the required wiki
+> contents with NO `store_version` change, and the cache is judged fresh. **Frozen: the wiki
+> cache carries a `compiler_policy_digest`** over the functional-relation registry semantics
+> AND a contention-policy version; **a digest mismatch forces recompilation regardless of
+> `store_version`.** (A host may instead disable/rebuild the persistent cache under a custom
+> registry, but that must be explicit.) I6c adds
+> `test_cached_wiki_is_invalidated_when_relation_registry_semantics_change` — same store and
+> user, two registries, zero intervening writes.
+
 **I6c** pins all of it: the deterministic contested-facts surface preserves I6a on an
-unrelated query; a single refusal forces recompilation immediately; the migration
-invalidates a pre-v8 cache; and the custom-registry path is covered.
+unrelated query; forming AND resolving a refusal contention both recompile immediately; the
+cache binds the registry/policy digest; the migration invalidates a pre-v8 cache; and the
+custom-registry path is covered.
 
 ---
 
@@ -905,7 +964,7 @@ before** — it only creates fewer.
 | **I6** **every** same-partition contention state renders **every distinct contested value** (n-way, §4c-ii correction B), higher authority first | `test_contention_matrix` — **parameterised from `specs/ladder.py`** over the shipped enum's product, so a new enum member extends the test rather than leaving a fixture green | CI |
 | **I6a** **a refusal must not reduce the prior's recall visibility**, at the **same finite `token_budget`**, holding query/config/store fixed and adding **only** the refused edge — the higher-authority member never drops below where it stood before the refusal (round-8 blocker 2: the achievable finite-budget form, not "always present regardless of budget") | `test_refusal_does_not_evict_the_prior` — over the product, **all three selection stages**, **both wiki-disabled and the wiki-enabled default**, and **a finite `token_budget` with many accumulated contentions** (the contested surface is high-priority and budgeted, not unbounded) | CI |
 | **I6b** unrelated edges keep their positions | `test_unrelated_edges_keep_their_positions` — the property that makes §4e a permutation rather than a global re-sort | CI |
-| **I6c** the **default compiled-wiki** path obeys the contention contract (§4c-ii): the derived-view treatment (wiki exclusion + deterministic preservation surface) is **refusal-scoped** (Option B); it is **partition-preserving** (each member stays on its gate side, `Memory.answer` asserts only grounded) and the fenced challenger keeps **no query-independent reach** (round-9 B1); **budgeted**, **proactive-safe**, **n-way**; exposed through the structured **`Recall.contested`** carrier + de-duplicated `edges` (round-9 B); contention formation invalidates the wiki IMMEDIATELY; migration invalidates pre-v8 caches; the compiler sees the host relation registry | `test_a_refused_challenger_gains_no_query_independent_reach` (round-9 B1) · `test_pre_existing_non_refusal_contention_is_not_given_the_derived_view` (round-9 B2) · `test_recall_contested_is_the_structured_carrier_and_edges_dedup` (round-9 B) · `test_cross_partition_contention_keeps_the_fenced_member_unverified` · `test_proactive_recall_never_volunteers_a_fenced_contested_value` · `test_contested_surface_is_budgeted_not_unbounded` · `test_n_way_contention_renders_every_distinct_value` · `test_a_single_refusal_recompiles_the_wiki_immediately`. **Both default and custom registry** | CI |
+| **I6c** the **default compiled-wiki** path obeys the contention contract (§4c-ii): the derived-view treatment is **refusal-scoped** (Option B), **partition-preserving**, **budgeted**, **proactive-safe**, **n-way**; the fenced challenger keeps **no query-independent reach on ANY public surface** (`context`/`edges`/`contested`); forming AND resolving a live refusal contention both recompile IMMEDIATELY; the cache binds the **registry/policy digest**; migration invalidates pre-v8 caches | `test_the_challenger_gains_no_query_independent_reach_on_context_edges_or_contested` (round-9 B1 + round-10 A) · `test_resolving_a_refusal_contention_invalidates_the_wiki_immediately` (round-10 B1) · `test_cached_wiki_is_invalidated_when_relation_registry_semantics_change` (round-10 B2) · `test_pre_existing_non_refusal_contention_is_not_given_the_derived_view` · `test_recall_contested_carries_full_edge_only_for_exposed_members` (round-10 A) · `test_cross_partition_contention_keeps_the_fenced_member_unverified` · `test_proactive_recall_never_volunteers_a_fenced_contested_value` · `test_contested_surface_is_budgeted_not_unbounded` · `test_n_way_contention_renders_every_distinct_value` · `test_a_single_refusal_recompiles_the_wiki_immediately`. **Both default and custom registry** | CI |
 | **I9** `apply_supersession_plan` is atomic, **CAS-linearized on a COMPLETE `expected_state`**, whole-plan idempotent via a **durable receipt**, and reinforcement inserts nothing (§4f) | `test_concurrent_equal_authority_plans_do_not_branch` (round-8 B3) · `test_expected_state_catches_an_in_place_field_edit` — a same-id row whose value/author/`derived_from` changed since the plan's read → `PlanStale` (round-9 C) · `test_a_lost_reinforcement_response_replays_via_the_durable_receipt` — a reinforcement with no incoming edge and no refusal row still replays after restart (round-9 B3) · `test_receipt_check_precedes_cas_so_a_committed_op_replays_not_planstale` (round-9 B3) · `test_reinforcement_plan_inserts_no_duplicate` · `test_a_failed_plan_leaves_no_partial_state_and_does_not_touch_sibling_triples` | CI |
 | **I7** the MCP surface refuses `system` and fails closed on unknown | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
@@ -1129,32 +1188,86 @@ answered (built code vs. prose), not about closing the door on genuine architect
 
 ## 11a. Review closure (PROCESS.md §4a) — the acceptance ledger
 
-*One row per external finding that shaped the current design, tied to the normative section /
-invariant that closes it and the revision that carried the closure. Rounds 1–5 (narrowing to
-the reported defect; breadth → `0011`) are dispositioned in §12 and `proposals/0003-review-{1..4}.md`.
-This ledger is the acceptance artifact §11 names; the I1–I9 checks are prospective and become
-mandatory when the accepted design is implemented.*
+*One row per external finding, tied to the normative section/invariant that closes it and the
+openable evidence (an in-package review file, a spec section, a generator/lint, or a commit).
+The round 1–4 reviews are carried in-package at `specs/reviews/0003/round-{1..4}.md`, and round
+5 at `specs/reviews/0003/round-5.md`, so the acceptance package is self-contained. The I1–I9
+checks are prospective (the design is unbuilt) and become mandatory implementation/release
+gates once the design is `accepted`.*
 
-| round | finding | closed by | rev |
+**Rounds 1–5 — direction approved; the design NARROWED to the reported defect, breadth →
+`0011`.** Full text: `specs/reviews/0003/round-{1..5}.md`.
+
+| # | round-1 finding (`round-1.md`) | closed by |
+|---|---|---|
+| r1-F1 | ASSISTANT cases inverted (transcription) | tables GENERATED from `specs/ladder.py`, never hand-written — `specs/render_ladder.py --check` |
+| r1-F2 | the matrix tested a simpler rule than specified | I1 enumerates the full `min(author, derived_from)` product over the shipped enum (§6) |
+| r1-F3 | host provenance not pinned (`derived_from`) | recorded as a limit (§8); honesty of labels → `0011` E4 |
+| r1-F4 | absorption also retires, uncovered | absorption out of scope → `0011` E5 (§1b, §8) |
+| r1-F5 | `correct()` carries two conflicting fixes | `correct()` out of scope → `0011` E5 (§1b); Q5/Q6 resolved (§10) |
+| r1-F6 | a global ladder ignores the subject | narrowed to user-self; subject entitlement → `0011` E1/E2 (§8, §9) |
+| r1-F7 | I5 visibility routing under-specified | I5 became refusal telemetry; history visibility → `0011` E6 (§10) |
+| r1-F8 | I6 is a fixture, not a policy | I6 parameterised from `ladder.py` over the product (§6) |
+
+| # | round-2 finding (`round-2.md`) | closed by |
+|---|---|---|
+| r2-F1 | subject class cannot come from the relation | subject classifier removed; entitlement → `0011` (v3 narrowing) |
+| r2-F2 | the 400-row matrix no longer covers the policy | tables regenerated from the SHIPPED enum (144/44/8) — `render_ladder --check` |
+| r2-F3 | `derived_from=None` is still an escalation | "recorded" caveat (§8); positive-establishment → `0011` E4 |
+| r2-F4 | `corrected` bypasses the guard | `correct()` out of scope → `0011` E5 (§1b) |
+| r2-F5 | the authorisation result is unspecified | replaced by the durable refusal record + Store-bound `apply_supersession_plan` (§4f) |
+| r2-F6 | "grounded history" conflates history with assertability | partition-preserving contention surface (§4c/§4c-ii) — each member stays on its gate side |
+| r2-F7 | `use_only` row assumes provenance from disclosure | contention table derived from the production `_disclosure_for` (§4c) |
+| r2-F8 | external-world contention has no current-value semantics | stated as a limit (§4c); contested-relation model → `0011` E3 |
+| r2-F9 | "migration: none" is false | schema v3→v4 via `0013`, `Spec-Requires: 0007, 0013` (§7a) |
+| r2-F10 | the no-advisory rationale is unsound | §8 corrected — automatic/invoked belongs to `correct()`, not ingest |
+| r2-F11 | stale status/decision text | status GENERATED (`specs/STATUS.md`, §10) |
+| r2-F12 | I9's description contradicts the design | §6 rewritten; the withdrawn set-equality prose removed |
+
+| round | verdict / findings | closed by |
+|---|---|---|
+| r3 (`round-3.md`) | narrow design approved; deferred for focused revision (5 findings — focused-revision cleanup, verdict preserved; individual texts not retained beyond the verdict) | the v4/v5 focused revisions; verdict openable at `specs/reviews/0003/round-3.md` |
+| r4 (`round-4.md`) | narrow design approved; deferred for retrieval fix + deletion pass (5 findings, as above) | v5's retrieval-rule correction (§4d) + deletion pass; `specs/reviews/0003/round-4.md` |
+| r5 (`round-5.md`) | narrow design affirmed; deferred — **7 findings, enumerated in `round-5.md`** | all seven closed in v6 (de-dup + structural check; `ladder.py` runtime-grounded; §4e/§4f; §7a; I6/I6a) |
+
+**Rounds 6–10 — the current design (each finding reproduced against the code, fixed at root).**
+
+| # | round-6 finding | closed by | commit |
 |---|---|---|---|
-| r6 B1 | default compiled-wiki collapses a preserved contention | §4c-ii (exclude from LLM wiki) · I6c | v8 `1ec7f3e` |
-| r6 B2 | refusal table created on open, bypassing 0007/0013 | §7a schema v3→v4 + `Spec-Requires: 0007, 0013` | v8 `1ec7f3e` |
-| r6 B3 | `(edge, refusals)` too narrow for "whole ingest" | §4f `apply_supersession_plan` | v8 `1ec7f3e` |
-| r6 A–D | withdrawn §4a; ladder heading order; `store_version`/`relations`/binding; Q2a `watch` | §4a, `render_ladder`, §4e/§4f, `render_index` | v8 `1ec7f3e` |
-| r7 B1 | wiki exclusion erases the prior on an unrelated query | §4c-ii deterministic surface · I6c | v9 `b96f755` |
-| r7 B2 | cache not invalidated under the recompile threshold; migration; registry | §4c-ii immediate drop + migration + registry · I6c | v9 `b96f755` |
-| r7 B3 | plan inserts a duplicate on reinforcement | §4f `insert_incoming` · I9 | v9 `b96f755` |
-| r7 A–C | `rule_version` undefined; I6c not in release order; README archive check | §4f, §6, package README | v9 `b96f755` |
-| r8 B1 | surface has no place in the grounded/unverified contract; proactive | §4c-ii partition-preserving + proactive-safe · I6c | v10 `3c726c7` |
-| r8 B2 | "no budget gating" breaks `token_budget` | §4c-ii budgeted + I6a finite-budget form | v10 `3c726c7` |
-| r8 B3 | plan atomic but not linearizable | §4f `expected_state → PlanStale` · I9 | v10 `3c726c7` |
-| r8 A–C | "whole ingest" scope; n-way; whole-plan idempotency intent | §4f one-edge scope; §4c-ii/I6 n-way; §4f `operation_id` | v10 `3c726c7` |
-| r9 B1 | partition-preserving ≠ reach-preserving; pre-existing scope | §4c-ii challenger stays relevance-gated; derived view refusal-scoped (Option B) · I6c | v12 (this rev) |
-| r9 B2 | broad contention def + narrow invalidation trigger incoherent | §4c-ii Option B — derived view + invalidation both refusal-scoped · I6c | v12 (this rev) |
-| r9 B3 | whole-plan idempotency has no durable carrier; CAS/replay order | §4f `supersession_operations` receipt + frozen processing order · I9 | v12 (this rev) |
-| r9 A | acceptance-artifact wording backwards | §11/§9 rewritten (design acceptance → this ledger → implement → tests) | v12 (this rev) |
-| r9 B | structured `Recall` contention carrier undefined | §4c-ii `Recall.contested` + dedup `edges` · I6c | v12 (this rev) |
-| r9 C | `expected_state` completeness | §4f completeness invariant · I9 | v12 (this rev) |
+| r6-B1 | default compiled-wiki collapses a preserved contention | §4c-ii · I6c | `1ec7f3e` |
+| r6-B2 | refusal table created on open, bypassing 0007/0013 | §7a schema v3→v4 + `Spec-Requires` | `1ec7f3e` |
+| r6-B3 | `(edge, refusals)` too narrow | §4f `apply_supersession_plan` | `1ec7f3e` |
+| r6-A | withdrawn "§4a one guard" framing + lint false-negative | §4a rewrite; `lint_withdrawn` comma-fold + `test_the_withdrawn_lint_is_punctuation_insensitive` | `1ec7f3e` |
+| r6-B | ladder heading in enum order (false inequality) | `render_ladder` sort + `test_the_generated_authority_heading_is_authority_sorted` | `1ec7f3e` |
+| r6-C | `store_version`/`relations`-default/binding unstated | §4e/§4f | `1ec7f3e` |
+| r6-D | Q2a `watch` counted as open | `render_index` + `test_watch_rows_are_not_counted_as_open_questions` | `1ec7f3e` |
+| # | round-7 finding | closed by | commit |
+| r7-B1 | wiki exclusion erases the prior on an unrelated query | §4c-ii deterministic surface · I6c | `b96f755` |
+| r7-B2 | cache not invalidated under the threshold; migration; registry | §4c-ii immediate drop + migration + registry · I6c | `b96f755` |
+| r7-B3 | plan inserts a duplicate on reinforcement | §4f `insert_incoming` · I9 | `b96f755` |
+| r7-A | `rule_version` undefined | §4f `"supersession-authority-v1"` | `b96f755` |
+| r7-B | I6c not in release ordering | §6 read-stage gate | `b96f755` |
+| r7-C | README lists `render_index --check` as archive-verifiable | package README | `b96f755` |
+| # | round-8 finding | closed by | commit |
+| r8-B1 | surface has no place in the grounded/unverified contract; proactive | §4c-ii partition-preserving + proactive-safe · I6c | `3c726c7` |
+| r8-B2 | "no budget gating" breaks `token_budget` | §4c-ii budgeted + I6a finite-budget form | `3c726c7` |
+| r8-B3 | plan atomic but not linearizable | §4f `expected_state → PlanStale` · I9 | `3c726c7` |
+| r8-A | "whole ingest" scope overstated | §4f one-edge scope | `3c726c7` |
+| r8-B | contention assumed a pair | §4c-ii/I6 n-way by distinct `_value_key` | `3c726c7` |
+| r8-C | whole-plan idempotency intent only | §4f `operation_id` | `3c726c7` |
+| # | round-9 finding | closed by | commit |
+| r9-B1 | partition-preserving ≠ reach-preserving; pre-existing scope | §4c-ii challenger relevance-gated; refusal-scoped derived view (Option B) · I6c | `3400010` |
+| r9-B2 | broad contention def + narrow invalidation trigger | §4c-ii Option B — derived view + invalidation both refusal-scoped | `3400010` |
+| r9-B3 | whole-plan idempotency has no durable carrier | §4f `supersession_operations` receipt + processing order · I9 | `3400010` |
+| r9-A | acceptance-artifact wording backwards | §11/§9 rewritten (design acceptance → §11a → implement → tests) | `3400010` |
+| r9-B | structured `Recall` carrier undefined | §4c-ii `Recall.contested` · I6c | `3400010` |
+| r9-C | `expected_state` completeness | §4f completeness invariant · I9 | `3400010` |
+| # | round-10 finding | closed by | commit |
+| r10-B1 | invalidation handles formation but not resolution | §4c-ii `live_refusal_contention` (symmetric) · I6c | v13 (this revision — sha in the package README) |
+| r10-B2 | cache does not bind the relation registry | §4c-ii `compiler_policy_digest` · I6c | v13 (this revision — sha in the package README) |
+| r10-A | `Recall.contested` re-grants the challenger structured reach | §4c-ii full `Edge` only for exposed members; challenger = content-free linkage · I6c | v13 (this revision — sha in the package README) |
+| r10-B | §7a omits the new `Recall` API | §7a interfaces (backward-compatible `contested` field + `edges` union) | v13 (this revision — sha in the package README) |
+| r10-ledger | §11a not PROCESS §4a-compliant | this ledger (per-finding; `specs/reviews/0003/` in-package; actual commits) | v13 (this revision — sha in the package README) |
 
 ---
 
@@ -1173,7 +1286,8 @@ mandatory when the accepted design is implemented.*
 | v9 | round-7 response (B1 deterministic surface, B2 immediate/migration/registry cache, B3 `insert_incoming`, corrections A–C); **direction re-approved** at round 8, deferred — 3 found-in-fix gaps + 3 corrections, all about fitting the new surface/plan to existing recall-safety/budget/concurrency contracts | 6 | dispositioned in this document |
 | v10 | round-8 response — B1 partition-preserving + proactive-safe surface (36/44 cross-partition; §4c-ii); B2 budgeted contested surface (I6a finite-budget form); B3 CAS-linearized plan (`expected_state → PlanStale`; I9); corrections A (one-edge failure scope), B (n-way by distinct value), C (whole-plan `operation_id` idempotency + Store-owned effects). **No ladder/refusal/permutation change.** | — | this document |
 | v11 | v10 + §11 acceptance-boundary proposal; **the boundary concept was approved in principle** at round 9, but v11 deferred — 3 architectural seams + 3 corrections (incl. the acceptance-artifact wording, backwards) | 6 | dispositioned in this document |
-| **v12** | round-9 response — B1 reach (challenger relevance-gated), B2 refusal-scoped derived view (Option B), B3 durable `supersession_operations` receipt; corrections A (design-acceptance order + §11a ledger), B (`Recall.contested` structured carrier), C (complete `expected_state`). Adds the **§11a Review-closure ledger** — the acceptance artifact. **No ladder/refusal/permutation change.** | — | this document |
+| v12 | round-9 response — B1 reach, B2 refusal-scoped derived view, B3 durable receipt; corrections A (governance order + §11a), B (`Recall.contested`), C (complete `expected_state`). **Finite-boundary concept approved in principle at round 10; deferred — 2 derived-view/cache gaps + 2 public-contract corrections + the acceptance ledger** | 6 | dispositioned in this document |
+| **v13** | round-10 (convergence) response — B1 resolution invalidation (`live_refusal_contention`, symmetric); B2 cache binds `compiler_policy_digest`; corrections A (`Recall.contested` gives the challenger no structured reach), B (§7a lists the `Recall` API). **§11a made PROCESS §4a-compliant** (per-finding; round 1–5 reviews in-package at `specs/reviews/0003/`; actual commits). **Reviewer: set `accepted` after this.** **No ladder/refusal/permutation change.** | — | this document |
 
 **Why v3 is narrower rather than more complete.** v2 answered all eight of v1's
 findings and drew twelve more, because each answer specified more design. Two
