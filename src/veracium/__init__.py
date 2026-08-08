@@ -231,16 +231,45 @@ class Memory:
         episodes = [e for e in self.store.episodes(user_id)
                     if e.kind != "outcome"][-self.config.max_recent_episodes:]
 
+        # specs/0003 §4c-ii: the structured contested surface + the de-duplicated
+        # Recall.edges union, computed BEFORE rendering so the exposed members render in a
+        # deterministic HIGH-priority CONTESTED block rather than the ordinary detail. The
+        # exposed higher-authority grounded prior is present even if the query did not
+        # select it (the I6a guarantee).
+        contested, exposed_extra = self._build_contested(user_id, edges)
+        seen = {e.id for e in edges}
+        for e in exposed_extra:
+            if e.id not in seen:
+                edges.append(e)
+                seen.add(e.id)
+        # Only the GROUNDED (assertable) exposed members move into the grounded CONTESTED
+        # block. A fenced exposed member (e.g. a query-selected quarantined challenger — a
+        # full member in the STRUCTURED carrier) must stay on the unverified side of the
+        # gate, so it is left in detail_edges to route through the unverified channel
+        # (partition-preserving, §4c-ii).
+        contested_ids = {e.id for g in contested for e in g.exposed if e.assertable}
+        detail_edges = [e for e in edges if e.id not in contested_ids]
+
         truncated = False
         if token_budget is None:
-            detail_grounded, unverified = _gate.partition(edges, episodes)
+            contested_block, _spent, _ct = self._render_contested(contested)
+            detail_grounded, unverified = _gate.partition(detail_edges, episodes)
         else:
-            wiki, detail_grounded, unverified, truncated = self._fit_to_budget(
-                wiki, edges, episodes, token_budget)
+            # the contested surface gets FIRST claim on the budget — HIGH priority, ahead
+            # of ordinary query detail — so a refusal never demotes the prior below where it
+            # stood before it (the finite-budget form of I6a). It IS budget-gated, not an
+            # unbounded surface (round-8 blocker 2); truncation is deterministic and flagged.
+            contested_block, spent, c_trunc = self._render_contested(
+                contested, token_budget, self._est_tokens)
+            wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
+                wiki, detail_edges, episodes, max(0, token_budget - spent))
+            truncated = c_trunc or d_trunc
 
         grounded_parts = []
         if wiki:
             grounded_parts.append(wiki)
+        if contested_block:
+            grounded_parts.append(contested_block)
         if detail_grounded:
             grounded_parts.append("## RELEVANT DETAIL\n" + detail_grounded)
         grounded = "\n\n".join(grounded_parts).strip() or "(no memory yet for this user)"
@@ -249,16 +278,6 @@ class Memory:
         if unverified:
             context += ("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n"
                         + unverified)
-        # specs/0003 §4c-ii: the structured contested surface + the de-duplicated
-        # Recall.edges union. The exposed higher-authority grounded prior is included
-        # even if the query did not select it (the I6a guarantee, budget-independent).
-        contested, exposed_extra = self._build_contested(user_id, edges)
-        seen = {e.id for e in edges}
-        for e in exposed_extra:
-            if e.id not in seen:
-                edges.append(e)
-                seen.add(e.id)
-
         self._record("recall", {"wiki_used": bool(wiki), "subgraph_edges": len(edges),
                                 "grounded_items": sum(1 for e in edges if not e.quarantined),
                                 "unverified_items": sum(1 for e in edges if e.quarantined),
@@ -267,6 +286,48 @@ class Memory:
                       edges=edges, episodes=episodes,
                       tokens_estimated=self._est_tokens(context), truncated=truncated,
                       contested=contested)
+
+    @staticmethod
+    def _contested_line(g: "ContestedGroup") -> Optional[str]:
+        """One deterministic line for a contested group: every GROUNDED (assertable) exposed
+        value, higher authority first, each tagged with its author class. A fenced member is
+        NOT shown here — it stays in the unverified channel (partition-preserving, §4c-ii);
+        this grounded block only ever preserves what the gate would already assert. Returns
+        None if the group has no assertable member (nothing to preserve in grounded)."""
+        grounded = [e for e in g.exposed if e.assertable]
+        if not grounded:
+            return None
+        vals = " / ".join(f"{e.object} [{e.provenance.author_of_evidence.value}]"
+                          for e in grounded)
+        return f"- {g.subject} {g.relation}: {vals} — CONTESTED (no single current value)"
+
+    def _render_contested(self, contested, budget=None, est=None):
+        """Render the deterministic CONTESTED FUNCTIONAL FACTS block from the grounded
+        exposed members (specs/0003 §4c-ii). Returns (block, tokens_spent, truncated). With
+        a budget, group lines are admitted highest-priority-first with a best-effort minimum
+        (the first line is unconditional — the higher-authority prior is never dropped),
+        and the rest are budget-gated so the surface is bounded, not unbounded."""
+        if not contested:
+            return "", 0, False
+        heading = "## CONTESTED FUNCTIONAL FACTS (no single current value; do not assert one)"
+        lines = [ln for ln in (self._contested_line(g) for g in contested) if ln]
+        if not lines:
+            return "", 0, False
+        if budget is None or est is None:
+            return heading + "\n" + "\n".join(lines), 0, False
+        remaining = budget - est(heading + "\n")
+        sel, truncated = [], False
+        for line in lines:
+            cost = est(line)
+            if cost > remaining and sel:
+                truncated = True
+                break
+            sel.append(line)                      # first line best-effort unconditional
+            remaining -= cost
+        if not sel:
+            return "", 0, False
+        block = heading + "\n" + "\n".join(sel)
+        return block, est(block), truncated
 
     def _build_contested(self, user_id: str, query_edges: list):
         """Build the structured contested surface for the LIVE refusal contentions of a

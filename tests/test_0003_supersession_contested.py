@@ -102,6 +102,45 @@ def test_proactive_recall_never_volunteers_a_fenced_contested_value(tmp_path):
     assert r.contested == []                                       # proactive surfaces no contention
 
 
+def test_refusal_does_not_evict_the_prior_at_a_finite_budget(tmp_path):
+    """I6a (finite-budget form): holding query/config/store fixed and adding ONLY the
+    refused edge, the higher-authority prior never drops below where it stood before the
+    refusal. The CONTESTED block is rendered first (HIGH priority), so the prior survives a
+    tight budget both before and after the refusal."""
+    mem = _mem(tmp_path)
+    mem.store.add_edge(_edge("p", EvidenceAuthor.USER, "CFO at Acme"))
+    before = mem.recall(U, "works_as", token_budget=60)
+    assert "CFO at Acme" in before.context                          # prior visible pre-refusal
+    apply_supersession(mem.store, _edge("i", EvidenceAuthor.THIRD_PARTY, "unemployed",
+                                        disc=Disclosure.QUARANTINED), mem.config.relations)
+    after = mem.recall(U, "works_as", token_budget=60)
+    assert "CFO at Acme" in after.context                           # NOT evicted by the refusal
+    assert "unemployed" not in after.grounded                       # challenger stays out of grounded
+
+
+def test_contested_surface_is_budgeted_not_unbounded(tmp_path):
+    """round-8 blocker 2: the contested surface participates in token_budget — it is not an
+    unbounded prompt surface across accumulating contentions. Many contentions + a tiny
+    budget → deterministic truncation, flagged in Recall.truncated, and a bounded context."""
+    mem = _mem(tmp_path)
+    functional = ["works_as", "located_at", "prefers", "health_state", "deadline"]
+    for n, rel in enumerate(functional):
+        mem.store.add_edge(_edge(f"p{n}", EvidenceAuthor.USER, f"grounded value {n}").model_copy(
+            update={"relation": rel}))
+        inc = _edge(f"i{n}", EvidenceAuthor.THIRD_PARTY, f"challenge {n}",
+                    disc=Disclosure.QUARANTINED).model_copy(update={"relation": rel})
+        apply_supersession(mem.store, inc, mem.config.relations)
+    full = mem.recall(U, "value")                                   # unbudgeted: all groups render
+    assert full.context.count("CONTESTED") >= 1
+    assert len(full.contested) == 5
+    tight = mem.recall(U, "value", token_budget=40)                 # tiny budget
+    assert tight.truncated                                          # the surface was gated
+    assert len(tight.context) < len(full.context)                  # bounded, not unbounded
+    # the structured carrier still reports every contention (raw material is full; the
+    # RENDERED surface is what the budget bounds, cf. Recall.edges)
+    assert len(tight.contested) == 5
+
+
 def test_the_carrier_renders_every_distinct_grounded_value_not_a_pair(tmp_path):
     """The carrier is n-ary, not pair-assuming (round-8 corr B): it exposes every distinct
     active member of the group. (A guard-produced refusal contention collapses to a pair —
