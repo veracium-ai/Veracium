@@ -5,7 +5,15 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v2)** — dev stub, 2026-08-08. Written from research's `A3-source-revocation-design.md`
+> **draft (v3) — DESIGN-COMPLETE mechanical contract (2026-08-08).** Matured from the v2 stub so the
+> `0006`↔`0014` interface can be frozen: `0006` v3 R11 gates `0006` acceptance on `0014` reaching
+> mechanical completeness, and this is that. §4 now specifies the `contribution_ledger` table
+> (`SCHEMA_VERSION` v6), the `ContributionDraft` a site emits, the per-site ATOMIC write paths (riding
+> 0003's plan commit and 0010's fenced txn), the two reads, and erasure/portability; §5 (growth +
+> retention), §6 (A1–A10, incl. atomicity A7, append-only A8, the `revoke_source` join A9), §7
+> (failure modes) and §7a are concrete. Still `draft` — acceptance needs `0006` accepted first and an
+> external review of this contract; nothing implementable yet. Written from research's
+> `A3-source-revocation-design.md`
 > §2 finding at dev's recommendation to **decouple the record from the `revoke_source()` feature**.
 > This spec establishes the RECOVERABLE ATTRIBUTION RECORD only; the revocation set-computation
 > (`A3`) and the derived-view reach (`0004`) consume it. **v2 folds research's response
@@ -26,7 +34,7 @@ Spec-Requires: 0006, 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`), from research's A3 finding |
-| **Version** | **v2 (stub)** — *re-read before editing; quote the version you approve.* Problem + finding + the CONSULT-AND-DISCARD invariant (§4) are concrete and research-confirmed; the mechanical contract (§6, §7a) is still a sketch pending design lock. |
+| **Version** | **v3 (design-complete)** — *re-read before editing; quote the version you approve.* The CONSULT-AND-DISCARD invariant + the full mechanical contract (§4 ledger/primitives/reads, §5, §6 A1–A10, §7, §7a) are concrete. Ready for the interface freeze + external review; implementation waits on `0006` accepted. |
 | **Status** | *canonical state is the `Spec-Status:` line at the top; this row states none of it.* |
 | **Internal reviewers** | dev · **research (finding owner) — reviewed 2026-08-08, decoupling CONFIRMED, invariant sharpened** (`proposals/0014-research-response.md`) |
 | **External review** | required (full — it will touch guarded files: `graph.py`, `lifecycle.py`, `store/sqlite.py`). Not yet sent. |
@@ -76,17 +84,14 @@ revocation is ever built — an attribution record that survives maintenance.
 
 ## 2. Field contracts touched — REQUIRED, blocking
 
-*Draft — to be completed against the interface, not from recall (the method that missed three
-surfaces in `specs/0002`). Enumerate mechanically before design lock:*
-
-```
-$ grep -nE "def (add_|invalidate_|delete_|forget_|set_)" src/veracium/store/base.py
-$ grep -rn "add_edge\|invalidate_edge\|delete_episode\|apply_supersession_plan" src/veracium/ | grep -v test
-```
-
-Provisional: `Provenance.observed_at`, `Provenance.confidence`, `Edge.valid_from`,
-`Provenance.disclosure`, `Provenance.derived_from` — each is *read from a contributor and written
-onto a survivor* by at least one maintenance op (the payload).
+Enumerated mechanically from the interface (the method that missed three surfaces in `specs/0002`):
+the maintenance ops that consult-and-discard a contributor are `graph._build_supersession_plan`
+(reinforcement, absorption) and `lifecycle.consolidate` (via the 0010 fenced primitives) — see §3 for
+the three sites and §7a for the full surface list. The **payload** fields — those *read from a
+contributor and written onto a survivor* — are `Provenance.observed_at`, `Provenance.confidence`,
+`Edge.valid_from`, `Provenance.disclosure`, `Provenance.derived_from`; the ledger stores their prior
+and new values (all store-clear scalars, Q1) or nothing when no value moved (A1a). The identity is
+`0006`'s resolved `(origin, source_id)` pair, digested (below).
 
 > **`0014 → 0006` dependency (research Q1/F3, and `0006` v3 R5/R7).** The ledger is keyed on **`0006`'s
 > RESOLVED `(origin, source_id)` PAIR**, already the revocation key. `0006` (R5) makes identity the
@@ -108,7 +113,7 @@ onto a survivor* by at least one maintenance op (the payload).
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
-*Draft.* The contributor whose attribution we record may itself be adversarial (a compromised feed
+The contributor whose attribution we record may itself be adversarial (a compromised feed
 is the motivating case). The record must therefore be **fail-closed and content-free**: it records
 *that* a contributor was consumed and *what state, if any,* moved, keyed on a **digest** of
 `0006`'s **RESOLVED** `(origin, source_id)` pair and a digested `evidence_ref` (`source_id`/`evidence_ref`
@@ -149,7 +154,23 @@ maintenance decision.
 
 ---
 
-## 4. Behaviour — proposed direction (SKETCH, pending design lock)
+## 3b. Authorization and scope — *full specs only*
+
+- **Cross a user/tenant/scope boundary?** No. Every ledger row carries `user_id` and is tenant-scoped
+  by construction (the same isolation as edges/episodes); the two reads take `user_id`; there is no
+  cross-tenant query. A contribution to user A's survivor is invisible to user B.
+- **Who may see the affected state?** No principal that could not already. The ledger is **Store-local
+  metadata** — like the 0003 refusal inventory, it is **never surfaced to the model** (not in recall,
+  answer, or the wiki) and never exported (§4e). It is inspection/audit state for the host and
+  `revoke_source`, read only through `contributions()`/`contributors_of_source()`.
+- **Scope change (sharing, revocation, forget)?** `forget_user` erases the user's rows (A6);
+  survivor deletion drops its rows (A10). Revocation itself is `A3`/`0004`, out of scope.
+- **Does anything become visible to a principal who could not see it before?** No — identities are
+  digests (A5), and the surface is host-side audit, not model-facing.
+
+---
+
+## 4. Behaviour — the mechanical contract (v3, design-complete)
 
 > **The invariant (a sibling of `0002`'s maintenance-provenance-invariant), CONSULT-AND-DISCARD
 > keyed — research's sharpening, 2026-08-08.** *Every maintenance operation that **consults** a
@@ -166,75 +187,174 @@ maintenance decision.
 > stale-but-corroborating input becomes the unlogged path. The record is owed to the **act of
 > consuming a contributor**, and the value change is only its payload.
 
-Sketch of the mechanism (provisional — the direction is agreed with research; the contract is not):
+### 4a. The ledger — one `SCHEMA_VERSION` v6 table (additive, content-free, user-linked)
 
-- **A durable contribution ledger**, one append-only record per consumed contributor:
-  `(survivor_id, identity_digest, transferred_fields, prior_survivor_values, at)` — content-free by
-  the 0003 discipline. **`identity_digest` = a deterministic DIGEST of `0006`'s `(origin, source_id)`
-  pair** (already the revocation key; `origin` store-minted so cross-store revocation is structurally
-  impossible, `0006` v2 R5; opacity is host-convention not a mechanism, F3, so it is digested — the
-  digest stays joinable, `revoke_source` digests the same pair; see the `0014 → 0006` dependency, §2);
-  `evidence_ref` is digested the same way, never stored raw (Q1). `transferred_fields`/
-  `prior_survivor_values` are the payload and **may be empty** (a no-op-`max()` reinforcement still
-  records the consumption). A new `SCHEMA_VERSION` object (v5→v6), so `Spec-Requires: 0006, 0007, 0013`.
-- **3.1 reinforcement** → write a contribution record instead of silently dropping the incoming
-  edge. Keep `insert_incoming=False` (no dedup regression); the ledger, not a duplicate edge,
-  carries the attribution.
-- **3.2 consolidation** → before deleting inputs, record each input's source attribution against
-  the output's `lineage`, so `lineage`-id → source is recoverable after deletion.
-- **3.3 absorption** → promote the free-text `note` link to the same ledger record (retire the
-  string form as the queryable path).
-- **Reads:** `contributions(survivor_id)` and `contributors_of_source(source)` — the exact queries
-  `A3.revoke_source` and a host's "why is this fact live?" audit both need.
+```
+contribution_ledger(
+    id              TEXT PRIMARY KEY,     -- store-minted 'contrib-<uuid>'
+    user_id         TEXT NOT NULL,        -- tenant scope; forget_user deletes by this
+    survivor_id     TEXT NOT NULL,        -- the edge/episode that consumed the contributor
+    site            TEXT NOT NULL,        -- 'reinforcement' | 'absorption' | 'consolidation'
+    identity_digest TEXT NOT NULL,        -- digest of the contributor's RESOLVED (origin, source_id) pair
+    evidence_ref_digest TEXT,             -- digest of the contributor's evidence_ref (nullable)
+    payload         TEXT NOT NULL,        -- JSON: {transferred_fields:{field:new}, prior_survivor_values:{field:old}} — MAY be {}
+    created_at      TEXT NOT NULL
+)
+INDEX ix_contribution_ledger_survivor (user_id, survivor_id)   -- "why is this fact live?"
+INDEX ix_contribution_ledger_source   (user_id, identity_digest) -- revoke_source's blast-radius join
+```
 
-**Explicitly OUT of scope (the decoupling):** actually reversing a transfer, computing a
-source's blast radius, and making a revocation reach recall — those are `A3` / `0004`. This spec
-guarantees the *record exists and is queryable*; consuming it is theirs.
+**Append-only** — a row is INSERTed, never UPDATEd or REPLACEd. **Content-free** by the 0003
+discipline: the only identity fields are digests (§2/A5); `payload` carries scalar field names and
+their prior/new timestamp/float/enum values (store-clear, Q1), never `object`/`note`/`summary`.
+`identity_digest` is `digest(resolve(origin, source_id))` — the resolution `0006` §4.6 mandates
+happens before the digest, so `revoke_source` (which digests the same resolved pair) joins on
+`ix_contribution_ledger_source`. `payload` MAY be `{}` — an empty payload still records the
+consumption (A1a).
+
+### 4b. `ContributionDraft` — what a site emits
+
+A site hands the store a `ContributionDraft(survivor_id, site, contributor_identity, contributor_evidence_ref, payload)`; the **store** resolves+digests the identity, digests the evidence_ref, mints
+the id and `created_at`, and INSERTs — so a caller can never write a raw identity or a forged
+`survivor_id` (the 0003 store-binding discipline).
+
+### 4c. The write path — one commit with the maintenance op it attributes (atomic, per site)
+
+The record MUST commit in the SAME transaction as the maintenance op, or a crash leaves a
+consumption with no record (or a record for a consumption that rolled back). Each site already has an
+atomic carrier; the draft rides it:
+
+- **3.1 reinforcement / 3.3 absorption** → `SupersessionPlan` (specs/0003 §4f) gains a
+  `contributions: list[ContributionDraft]` field. `graph._build_supersession_plan` populates it (one
+  draft per consumed prior — the reinforced prior at 3.1, each absorbed prior at 3.3), and
+  `apply_supersession_plan` INSERTs the ledger rows inside its existing single-commit CAS transaction.
+  Reinforcement keeps `insert_incoming=False` (no dedup regression) — the ledger, not a duplicate
+  edge, carries the attribution. Absorption keeps its `note` for back-compat but the LEDGER is the
+  queryable path (A3).
+- **3.2 consolidation** → the fenced consolidation op (specs/0010) writes one draft per claimed input
+  BEFORE `delete_claimed_inputs_if_current`, in the same fenced transaction, so `lineage`-id → source
+  survives the deletion (the store reads each input's `(origin, source_id)`/`evidence_ref` while the
+  inputs still exist). `survivor_id` is the consolidation OUTPUT episode id.
+
+**Failure rule (mirrors 0003 §4f):** if the maintenance op rolls back, its ledger rows roll back with
+it — no partial state. A site that cannot emit atomically MUST NOT perform the consumption.
+
+### 4d. The reads (Store-local, the exact queries the consumers need)
+
+- `contributions(user_id, survivor_id) -> list[ContributionRecord]` — every contributor consumed into
+  a survivor, newest first. The "why is this fact live?" audit (§1) and A4.
+- `contributors_of_source(user_id, identity_digest) -> list[ContributionRecord]` — every survivor a
+  source contributed to. **`revoke_source`'s blast-radius join** (`A3`) — given a `(origin, source_id)`
+  to revoke, it resolves+digests and calls this. Read-only; `0014` computes no blast radius itself.
+
+### 4e. Erasure and portability (Store-local metadata, like the 0003 refusal inventory)
+
+`forget_user` deletes the user's ledger rows (A6). Export/import EXCLUDE it — a contribution is a
+fact about *this store's* maintenance history, not the memory; importing one would assert a
+consumption that never happened here. **No `FORMAT_VERSION` change** from the ledger itself.
+
+**Explicitly OUT of scope (the decoupling):** actually reversing a transfer, computing a source's
+blast radius, and making a revocation reach recall — those are `A3` / `0004`. `0014` guarantees the
+record exists, is atomic with the consumption, and is queryable by the two reads above; acting on it
+is theirs.
 
 ---
 
-## 5. Regime analysis
+## 5. Regime analysis — where does this behave differently?
 
-**n/a — draft stub.** The regime is ordinary maintenance (reinforcement one `remember()` apart,
-consolidation/absorption via `maintain()`); to be written with the invariant.
+- **Growth is the regime that matters.** The ledger gains one row per maintenance CONSUMPTION —
+  reinforcement fires ~one `remember()` apart, absorption likewise, consolidation once per `maintain()`
+  batch (one row per claimed input). Over a long-lived, high-write store this **accumulates without
+  bound** if never pruned. **Retention rule (frozen): a ledger row is kept while its `survivor_id`
+  exists; when the survivor is hard-deleted (`forget_user`, or a future hard-delete) its rows go**
+  — the same "kept while the thing it describes exists" rule as the 0003 refusal inventory. This
+  bounds the ledger to live survivors, not to all history. A row is never pruned merely for age: an
+  old contribution is exactly what a late `revoke_source` needs.
+- **Per-op cost is O(1)–O(batch).** Reinforcement/absorption add one INSERT to an already-atomic
+  supersession commit; consolidation adds one INSERT per claimed input to its already-atomic fenced
+  transaction. No new round-trip, no budget/cap/recompile-threshold interaction (the ledger is off the
+  recall and wiki paths entirely).
+- **The regime a single-op test misses — and MUST reach (A4):** the empty-payload consumption
+  (reinforcement where no `max()` moves, A1a) and the delete-then-recover case (consolidation, A2). A
+  test that only exercises a value-moving reinforcement would pass while the attack path (empty
+  payload) stayed open — so A4 injects at all three sites INCLUDING a no-payload consumption. This is a
+  **stable (on-by-default)** behaviour, so that regime blocks: A1a/A2/A4 are required, not optional.
+- **Cold vs warm store:** identical — the ledger does not touch the wiki cache or retrieval scoring.
+- **Concurrency:** the ledger inherits the atomicity of the carrier it rides (0003's CAS commit,
+  0010's fence) — two concurrent maintenance ops on the same survivor each write their own row under
+  their own commit; rows are append-only and never contend (§6 A8).
 
-## 6. Invariants and executable checks — REQUIRED, blocking (SKETCH)
+## 6. Invariants and executable checks — REQUIRED, blocking
 
-*Draft — names are provisional and MUST become real tests before acceptance (PROCESS §4a: a spec
-is accepted only once these exist and pass at release, not before).*
+*The invariant names are frozen (v3). Per PROCESS §4a they become mandatory implementation/release
+gates once the design is `accepted`; they are prospective here (unbuilt), like `0003`'s I1–I9 were.*
 
-| | invariant | check (to author) |
+| | invariant | executable check |
 |---|---|---|
-| **A1** | reinforcement leaves a contribution record naming the consumed source | `test_reinforcement_attributes_the_contributing_source` (the M9 test) |
-| **A1a** | **it records the consumption EVEN WHEN THE PAYLOAD IS EMPTY** — an older/weaker contributor that moves no `max()` is still recorded (the consult-and-discard key; closes the attack path) | `test_reinforcement_records_the_contributor_even_when_no_value_moves` |
-| **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) | `test_consolidation_contributors_survive_input_deletion` |
-| **A3** | absorption's contributor link is queryable, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` |
-| **A4** | for any survivor, `contributions(survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not), across all three sites | `test_every_consumed_contributor_is_enumerable` (adversarial: inject at each site, including a no-payload consumption) |
-| **A5** | the ledger is content-free — **the RESOLVED `(origin, source_id)` pair AND `evidence_ref` are all digested** (`source_id`/`evidence_ref` host free-form; `origin` store-minted but digested as part of the one opaque key — `0006` F3/R5/§4.5), no raw identity/`object`/`note`/`summary` ever recorded | `test_contribution_records_are_content_free` |
-| **A6** | `forget_user` erases the ledger; export/import exclude it (Store-local, like 0003 refusals) | `test_forget_user_erases_the_contribution_ledger` |
+| **A1** | reinforcement leaves a contribution record naming the consumed source | `test_reinforcement_attributes_the_contributing_source` (the M9 test, pinned today as `xfail`) |
+| **A1a** | it records the consumption **EVEN WHEN THE PAYLOAD IS EMPTY** — an older/weaker contributor that moves no `max()` is still recorded (the consult-and-discard key; closes the attack path) | `test_reinforcement_records_the_contributor_even_when_no_value_moves` (`xfail` today) |
+| **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) | `test_consolidation_contributors_survive_input_deletion` (`xfail` today) |
+| **A3** | absorption's contributor link is queryable via `contributions()`, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` (`xfail` today) |
+| **A4** | for any survivor, `contributions(user_id, survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not) across ALL THREE sites | `test_every_consumed_contributor_is_enumerable` — inject at each site, including a no-payload consumption |
+| **A5** | content-free — the RESOLVED `(origin, source_id)` pair AND `evidence_ref` are digested (§4a); `payload` holds only scalar field names + prior/new timestamp/float/enum values; no `object`/`note`/`summary` ever | `test_contribution_records_are_content_free` |
+| **A6** | `forget_user` erases the user's ledger rows; export/import EXCLUDE the ledger (§4e) | `test_forget_user_erases_the_contribution_ledger` · `test_export_excludes_the_contribution_ledger` |
+| **A7** | the record is ATOMIC with the maintenance op — if the op rolls back, its ledger rows roll back; no consumption without a record and no record without a consumption (§4c) | `test_a_rolled_back_maintenance_op_writes_no_ledger_row` — inject a failure after the op's writes but before commit at each site; assert neither the op nor its rows persist |
+| **A8** | the ledger is APPEND-ONLY — a row is never UPDATEd or REPLACEd; concurrent ops each write their own row | `test_ledger_rows_are_append_only` · `test_concurrent_consumptions_each_write_one_row` |
+| **A9** | `identity_digest` is over the RESOLVED pair and JOINS with `revoke_source` — a source digested for revocation finds exactly its contribution rows | `test_contributors_of_source_joins_a_revocation_pair` — write via a site, then look up by `digest(resolve(origin, source_id))`; assert the row is found |
+| **A10** | a ledger row is kept while its `survivor_id` exists and dropped when the survivor is (retention, §5) | `test_ledger_row_is_dropped_with_its_survivor` |
 
-**A4 is the one that decides whether the class is closed** — an exhaustive check over all three
-sites *keyed on consumption, not value change*, so neither a fourth site nor an empty-payload
-consumption (A1a) can reintroduce the finding.
+**A4 is the one that decides whether the class is closed** — exhaustive over all three sites *keyed on
+consumption, not value change*, so neither a fourth site nor an empty-payload consumption (A1a) can
+reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes it usable by
+`revoke_source`.**
 
 ## 7. Failure modes and reversibility
 
-**n/a — draft stub.**
+- **🔴 Silent failure — a NEW consumption site added later that does not emit.** This is the exact
+  failure this spec exists to close, one level up: if a fourth maintenance path that consults-and-
+  discards a contributor is added without emitting a draft, the finding returns and nothing complains.
+  **Mitigation: the set of consumption sites is DECLARED, not remembered** — mirror the 0002 audit
+  manifest, which enumerates every store mutator so a new one cannot hide. A4 iterates that declared
+  set; adding a consumption path without registering it fails A4. First visible symptom otherwise: a
+  survivor with a value that moved but `contributions()` empty.
+- **Partial failure — a consumption without a record, or a record without a consumption.** Prevented
+  by A7: the row commits in the SAME transaction as the op (0003's CAS commit / 0010's fenced txn), so
+  a crash mid-op rolls back both. A site that cannot write the row atomically MUST NOT perform the
+  consumption. (Permanent write errors must surface, never degrade to a silent success.)
+- **Reversibility.** The ledger record carries `prior_survivor_values` precisely so a transfer is
+  *reversible* — but reversal is `A3`/`0004`, not this spec (the decoupling). `0014` guarantees the
+  record contains enough to reverse (prior values + which fields moved), not that anything reverses it.
+- **New attack surface.** (a) A caller forging `survivor_id` or a foreign identity — blocked: the
+  store binds `survivor_id` to a record it is writing in the same commit, and resolves+digests the
+  identity itself (§4b). (b) Memory content smuggled into the ledger — blocked: identities are digests,
+  `payload` is scalar field names + timestamp/float/enum values (A5). (c) An attacker staying invisible
+  by ensuring no `max()` moves — closed by the consult-and-discard key (A1a). (d) Unbounded ledger
+  growth as resource exhaustion — bounded by survivor-existence retention (§5, A10); a consumption of a
+  survivor that is later deleted takes its rows with it.
 
-## 7a. Surfaces touched — the honest list (SKETCH)
+## 7a. Surfaces touched — the honest list
 
-- `src/veracium/graph.py` — `_build_supersession_plan` (reinforcement 3.1, absorption 3.3): emit a
-  contribution record in the plan; the store persists it in the SAME atomic
-  `apply_supersession_plan` commit (§0003 §4f already gives us the atomic carrier).
-- `src/veracium/lifecycle.py` — `consolidate` (3.2): record input source attribution before deletion.
-- `src/veracium/store/base.py` / `store/sqlite.py` — the ledger table, its reads, its erasure; the
-  `SCHEMA_VERSION` v5→v6 migration that introduces it (`Spec-Requires: 0006, 0007, 0013`).
-- `src/veracium/store/schema_version.py`, `store/migration.py` — the additive v5 object + migration.
+- `src/veracium/schema.py` — new `ContributionDraft` (a site emits) and `ContributionRecord` (read
+  back); `SupersessionPlan` gains a `contributions: list[ContributionDraft]` field (§4c).
+- `src/veracium/graph.py` — `_build_supersession_plan` populates `plan.contributions` for
+  reinforcement (3.1) and absorption (3.3) — one draft per consumed prior. No new mutator call site:
+  it rides the existing `apply_supersession_plan`.
+- `src/veracium/lifecycle.py` / the 0010 consolidation primitives — `consolidate` (3.2) writes one
+  draft per claimed input BEFORE `delete_claimed_inputs_if_current`, in the same fenced transaction.
+- `src/veracium/store/base.py` / `store/sqlite.py` — `apply_supersession_plan` extended to INSERT
+  `plan.contributions` in its existing commit; the consolidation primitive extended likewise; the two
+  reads `contributions()` / `contributors_of_source()`; `forget_user` erases the ledger;
+  `store_mutator` accounting for the new writes (0002 audit manifest).
+- `src/veracium/store/schema_version.py`, `store/migration.py` — the additive `contribution_ledger`
+  table + its two indexes as `SCHEMA_VERSION` **v5→v6** (`0006` takes v5; `Spec-Requires: 0006, 0007,
+  0013`), the v5→v6 migration, and evidence regeneration.
+- `src/veracium/portability.py` — export/import EXCLUDE the ledger (§4e); **no `FORMAT_VERSION`
+  change** from it.
 
-**Schema:** likely **yes — one new content-free, user-linked table**, `SCHEMA_VERSION` v5→v6, the
-same additive shape as 0003's refusal inventory. **This is a real cost** (another store version,
-another migration) and §10 Q3 asks whether it is justified by attribution alone or only once a
-revocation consumer (`A3`/`0004`) is committed.
+**Schema:** **yes — one new content-free, user-linked table + two indexes**, `SCHEMA_VERSION` v5→v6
+(after `0006`'s v5), the same additive shape as 0003's refusal inventory. The cost — another store
+version + migration — is accepted (§10 Q3): the ledger cannot attribute a consumption that happened
+before it existed, so deferring the schema **permanently loses the interval**, not just the work.
 
 ---
 
