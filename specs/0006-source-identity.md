@@ -5,7 +5,7 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v3, 2026-08-08) — RETURNED AGAIN for amendment (round-2 external review, R7–R11).**
+> **in review (v4, 2026-08-09) — reviewer interface-freeze disposition folded (F1, F2, §3b honest-export cleanup); frozen interface point 4 changed, so it needs research re-ratification + the reviewer's sign-off before the freeze is complete. v3 (2026-08-08) folded round-2 external review R7–R11.**
 > The round-2 reviewer returned v2 for one more amendment; v3 folds all five: **R7** — `origin` is
 > **collision-resistant NAMESPACING, not authenticated provenance** (it is materialised into exports
 > and `0005` treats imports as untrusted, so an adversarial import can forge it; the strong "structurally
@@ -105,7 +105,7 @@ successor / `evidence-basis-design.md`), not a staleness rule's, and it is on no
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — *amended after the round-2 external review (R7–R11). `origin` is namespacing not authenticated (R7); a persistent `store_identity` singleton (R8, minimal DDL); the origin invariant split into I2a/I2b (R9); pre-v4-envelope field stripping (R10); interface agreed-not-locked pending `0014` (R11). Archive as `0006-v3-<…>`.* |
+| **Version** | **v4** — *amended after the reviewer's interface-freeze disposition (2026-08-09). The reviewer confirmed 5 of 7 frozen points + point 2's design, and returned two blocking interface items now folded here: **F2** — the identity digest has ONE canonical, length-framed, domain-separated construction, a single shared `source_identity_digest` primitive (§4 rule 7, I12); **F1** — an absent `source_id` yields NO digest and `0014`'s `identity_digest` is NULLABLE, never a `(origin, NULL)` pseudo-source (§4 rule 8, I13). Plus §3b's honest-export qualification. **This changes frozen interface point 4 → needs research (co-owner) re-ratification, then the reviewer's sign-off.** Archive as `0006-v4-<…>`. — v3 folded R7–R11 (namespacing-not-auth; durable `store_identity` singleton; I2a/I2b split; pre-v4-envelope stripping).* |
 | **Status** | *see `Spec-Status:` — canonical.* Opened from `0002` R2; **deliberately not folded into `0002`**, which is being split precisely because it kept absorbing work. |
 | **Internal reviewers** | research — **ruled that this is needed and that it needs its own spec** |
 | **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **Round 1 → return for amendment (6 findings); v2. Round 2 → return for amendment (R7–R11); v3. Acceptance now gated on `0014` reaching mechanical completeness (R11); resend v3 with a refreshed brief.** |
@@ -242,10 +242,14 @@ property was what made it unsafe. Removed.)
   edge/episode they belong to, and inherit that record's tenant scope. They are **never surfaced to
   the model** (I5: they affect no recall/answer decision), so they add no read surface.
 - **Scope change (sharing, revocation, group join/leave)?** Out of scope for v1 — `0006` records the
-  identity; `revoke_source` (`A3`/`0004`) is what acts on it, and a revocation keyed on the PAIR is
-  *structurally incapable* of reaching another `origin`'s records.
-- **Does anything become visible to a principal who could not see it before?** No. A host cannot set
-  `origin` (I2a), so it cannot name another store; a model cannot set `source_id` (I1).
+  identity; `revoke_source` (`A3`/`0004`) is what acts on it, and a revocation keyed on the PAIR
+  cannot reach another `origin`'s records **among honest stores** — an adversarial import CAN forge a
+  foreign `origin` (R7/`0005`, §8), so this is a property of honest exports, not a structural guarantee
+  against a forging importer.
+- **Does anything become visible to a principal who could not see it before?** No. A **LOCAL** host
+  cannot set `origin` (I2a), so a local caller cannot name another store; a model cannot set
+  `source_id` (I1). (An adversarial IMPORT FILE can name a foreign `origin` — that is `0005`'s trust
+  boundary, not this rule; §8.)
 
 ---
 
@@ -303,6 +307,28 @@ revoke both. So:
    local row that stored `origin` absent — a silent under-report, the precise failure `A3` exists to
    prevent.** Resolution is at **ONE chokepoint** (this project's recurring failure is a rule enforced
    in three places and missed in a fourth). See I9 (round-trip) and §5 (the trade).
+7. **🔴 The identity digest has ONE canonical construction, shared by every consumer (reviewer F2).**
+   "Digest the resolved pair" is not mechanically complete — `digest(origin ‖ source_id)` by bare
+   concatenation lets `("ab","c")` and `("a","bc")` collide, and two independently-coded consumers can
+   pick different framing (tuple vs JSON vs separator) and silently stop joining, defeating the whole
+   point of the pair being a *shared* key. So the construction is frozen as a **single library
+   primitive** `source_identity_digest(origin, source_id)` = `SHA-256(` `b"veracium.source-id.v1"`
+   (domain separation) `‖ u32be(len(origin_bytes)) ‖ origin_bytes ‖ u32be(len(source_id_bytes)) ‖
+   source_id_bytes` `)`, components UTF-8, lengths fixed-width big-endian (length-framing, so no two
+   distinct pairs share an encoding). **`0014` and `revoke_source` MUST call this one primitive** — no
+   consumer may hand-roll a framing. Deterministic and **unsalted**, therefore enumerable for
+   predictable ids: claimed as **hygiene, never confidentiality** (I5 keeps it off every trust
+   decision). New invariant **I12**.
+8. **🔴 No `source_id` ⇒ no source identity ⇒ no digest (reviewer F1).** `source_id` is optional and
+   absent means UNKNOWN (§2, "no grouping"). Because identity is the PAIR, an absent `source_id` has no
+   groupable identity, so `source_identity_digest` is **defined only when `source_id` is present**.
+   A consumer that stores the digest (e.g. `0014`'s `identity_digest`) MUST make its column
+   **nullable** and write **NULL** for an unknown source — **never** a `(resolved_origin, NULL)`
+   digest, which would collapse every unknown-source record in a store into one false pseudo-source,
+   the exact grouping §2 forbids. `revoke_source` / a blast-radius join (§8, `0014` A9) matches only
+   **complete** identities; an unknown-source contribution is *recorded* but is **not revocable by
+   source** (its contributing EVENT may still be identifiable via `evidence_ref` where present). New
+   invariant **I13**.
 
 **Migration.** **Minimal DDL (R8, corrected from v2's "no DDL"):** the v4→v5 migration creates ONE
 new singleton `store_identity` row with a random `origin` (point 2), transactionally. **No per-record
@@ -355,6 +381,8 @@ optional, absent = unknown = least favourable.
 | **I9** a source's identity survives export→import into the SAME store (the interface-lock fix, §4.6) | `test_local_source_survives_a_round_trip` — write a record with `origin` absent; export; import into the **same** store; assert the two rows **group as one source** and **digest identically** | CI |
 | **I10** (R10) a field newer than an import's declared `FORMAT_VERSION` is STRIPPED on import | `test_source_id_in_a_pre_v4_envelope_is_ignored` — hand-write a `FORMAT_VERSION`-3 file carrying `source_id`; assert it is ignored (identity unknown), NOT accepted as `(local_origin, source_id)` | CI |
 | **I11** (R8) the local `store_identity` origin is durable | `test_store_origin_survives_reopen` — create a store, note its origin, close, reopen; assert the same origin resolves | CI |
+| **I12** (F2) the identity digest is the ONE shared canonical primitive (§4 rule 7) — length-framed and domain-separated, and every consumer re-derives it identically | `test_source_identity_digest_is_canonical_and_shared` — assert `source_identity_digest("ab","c") != source_identity_digest("a","bc")` (no concatenation collision), and that `0014`'s ledger write and `revoke_source`'s lookup produce the SAME digest for one pair | CI |
+| **I13** (F1) an absent `source_id` yields NO digest — never a `(resolved_origin, NULL)` pseudo-source; unknown-source records do not group and are not revocable-by-source (§4 rule 8) | `test_absent_source_id_produces_no_groupable_digest` — record two contributors with distinct evidence but no `source_id`; assert neither gets a digest, they do NOT group into one source, and a `revoke_source` on any pair matches neither | CI |
 
 **I5 is the one to watch.** The temptation once identity exists is to let a
 "known good" `source_id` raise trust. **It must not** — I5 makes that a tested

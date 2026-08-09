@@ -26,7 +26,7 @@ Spec-Requires: 0006, 0007, 0013
 > is the pair, `origin` store-minted so a revocation does not reach another HONEST store's records
 > (forged imports are `0005`/`0006` R7's boundary, not authenticated here); both
 > `source_id` (host free-form) and `evidence_ref` are digested; `origin` is store-minted but digested
-> too, as part of the one uniform key. `0014` digests the RESOLVED pair — `0006` §4.5 forbids
+> too, as part of the one uniform key. `0014` digests the RESOLVED pair — `0006` §4.6 forbids
 > digesting a stored `origin`-absent pair directly).
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
@@ -34,7 +34,7 @@ Spec-Requires: 0006, 0007, 0013
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`), from research's A3 finding |
-| **Version** | **v3 (design-complete)** — *re-read before editing; quote the version you approve.* The CONSULT-AND-DISCARD invariant + the full mechanical contract (§4 ledger/primitives/reads, §5, §6 A1–A10, §7, §7a) are concrete. Ready for the interface freeze + external review; implementation waits on `0006` accepted. |
+| **Version** | **v3 (design-complete), amended 2026-08-09 for the reviewer's interface-freeze disposition** — *re-read before editing; quote the version you approve.* The CONSULT-AND-DISCARD invariant + the full mechanical contract (§4 ledger/primitives/reads, §5, §6 A1–A10, §7, §7a) are concrete. Reviewer amendments folded: **F1** `identity_digest` is NULLABLE (NULL iff `source_id` absent — never a `(origin, NULL)` pseudo-source; A4/A5/A9 reconciled); **F2** the digest is `0006`'s one shared `source_identity_digest` primitive (`0006` §4 rule 7/I12); the three stale `0006 §4.5` citations corrected to §4.6; a multi-generation transitive-attribution case (§7) carried into the full review. Still `draft`; the freeze is of the INTERFACE. Implementation waits on `0006` accepted. |
 | **Status** | *canonical state is the `Spec-Status:` line at the top; this row states none of it.* |
 | **Internal reviewers** | dev · **research (finding owner) — reviewed 2026-08-08, decoupling CONFIRMED, invariant sharpened** (`proposals/0014-research-response.md`) |
 | **External review** | required (full — it will touch guarded files: `graph.py`, `lifecycle.py`, `store/sqlite.py`). Not yet sent. |
@@ -118,7 +118,7 @@ is the motivating case). The record must therefore be **fail-closed and content-
 *that* a contributor was consumed and *what state, if any,* moved, keyed on a **digest** of
 `0006`'s **RESOLVED** `(origin, source_id)` pair and a digested `evidence_ref` (`source_id`/`evidence_ref`
 are host free-form; `origin` is store-minted but digested too as part of the one opaque key that need
-not appear in a durable surface — `0006` F3/R5/§4.5), so a malicious contributor cannot smuggle memory content
+not appear in a durable surface — `0006` F3/R5/§4.6), so a malicious contributor cannot smuggle memory content
 into a durable audit surface, and a missing/absent record is treated as "attribution unknown → the
 survivor is suspect", never "clean". **The adversary's cheapest evasion is the empty payload** — a
 stale-but-corroborating input that moves no `max()` — which is exactly why the record is owed to the
@@ -198,7 +198,7 @@ contribution_ledger(
     user_id         TEXT NOT NULL,        -- tenant scope; forget_user deletes by this
     survivor_id     TEXT NOT NULL,        -- the edge/episode that consumed the contributor
     site            TEXT NOT NULL,        -- 'absorption' | 'consolidation' (reinforcement is NOT a site — 0012 Design 1)
-    identity_digest TEXT NOT NULL,        -- digest of the contributor's RESOLVED (origin, source_id) pair
+    identity_digest TEXT,                 -- 0006 source_identity_digest(resolve(origin, source_id)); NULL iff source_id absent (unknown source — 0006 §4 rule 8, F1)
     evidence_ref_digest TEXT,             -- digest of the contributor's evidence_ref (nullable)
     payload         TEXT NOT NULL,        -- JSON: {transferred_fields:{field:new}, prior_survivor_values:{field:old}} — MAY be {}
     created_at      TEXT NOT NULL
@@ -210,7 +210,11 @@ INDEX ix_contribution_ledger_source   (user_id, identity_digest) -- revoke_sourc
 **Append-only** — a row is INSERTed, never UPDATEd or REPLACEd. **Content-free** by the 0003
 discipline: the only identity fields are digests (§2/A5); `payload` carries scalar field names and
 their prior/new timestamp/float/enum values (store-clear, Q1), never `object`/`note`/`summary`.
-`identity_digest` is `digest(resolve(origin, source_id))` — the resolution `0006` §4.6 mandates
+`identity_digest` is `0006`'s shared `source_identity_digest(resolve(origin, source_id))` primitive
+(`0006` §4 rule 7 / I12 — ONE canonical, length-framed, domain-separated construction; `0014` and
+`revoke_source` call the SAME primitive so they re-derive an identical key). It is **NULL when the
+contributor has no `source_id`** (`0006` §4 rule 8 / I13 — unknown source, recorded but not
+groupable/revocable; never a `(origin, NULL)` pseudo-source). The resolution `0006` §4.6 mandates
 happens before the digest, so `revoke_source` (which digests the same resolved pair) joins on
 `ix_contribution_ledger_source`. `payload` MAY be `{}` — an empty payload still records the
 consumption (A1).
@@ -296,12 +300,12 @@ gates once the design is `accepted`; they are prospective here (unbuilt), like `
 | **A1** | a consumption is recorded **EVEN WHEN THE PAYLOAD IS EMPTY** — an older/weaker contributor that moves no `max()` is still recorded (the consult-and-discard key; closes the attack path). GENERAL over every `0014` site. *(Reinforcement's specific instance MOVED to `0012` — Design 1 persists the edge; its two `xfail`s are `0012`'s.)* | `test_absorption_records_the_contributor_even_when_no_value_moves` — an absorption whose absorbed prior is older/weaker moves no `max()` yet is recorded |
 | **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) | `test_consolidation_contributors_survive_input_deletion` (`xfail` today) |
 | **A3** | absorption's contributor link is queryable via `contributions()`, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` (`xfail` today) |
-| **A4** | for any survivor, `contributions(user_id, survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not) across every `0014` site (consolidation, absorption) — and the site set is DECLARED, so a future added site cannot hide (§7) | `test_every_consumed_contributor_is_enumerable` — inject at each declared site |
-| **A5** | content-free — the RESOLVED `(origin, source_id)` pair AND `evidence_ref` are digested (§4a); `payload` holds only scalar field names + prior/new timestamp/float/enum values; no `object`/`note`/`summary` ever | `test_contribution_records_are_content_free` |
+| **A4** | for any survivor, `contributions(user_id, survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not) across every `0014` site (consolidation, absorption) — and the site set is DECLARED, so a future added site cannot hide (§7). A contributor with **no `source_id`** is still enumerated here, with `identity_digest` NULL (recorded, but not revocable-by-source — F1/I13) | `test_every_consumed_contributor_is_enumerable` — inject at each declared site, INCLUDING one with an absent `source_id`; assert its row exists with a NULL digest |
+| **A5** | content-free — the RESOLVED `(origin, source_id)` pair AND `evidence_ref` are digested **when present** via the shared primitive (§4a; `identity_digest` NULL for an unknown source, F1/I13); `payload` holds only scalar field names + prior/new timestamp/float/enum values; no `object`/`note`/`summary` ever | `test_contribution_records_are_content_free` |
 | **A6** | `forget_user` erases the user's ledger rows; export/import EXCLUDE the ledger (§4e) | `test_forget_user_erases_the_contribution_ledger` · `test_export_excludes_the_contribution_ledger` |
 | **A7** | the record is ATOMIC with the maintenance op — if the op rolls back, its ledger rows roll back; no consumption without a record and no record without a consumption (§4c) | `test_a_rolled_back_maintenance_op_writes_no_ledger_row` — inject a failure after the op's writes but before commit at each site; assert neither the op nor its rows persist |
 | **A8** | the ledger is APPEND-ONLY — a row is never UPDATEd or REPLACEd; concurrent ops each write their own row | `test_ledger_rows_are_append_only` · `test_concurrent_consumptions_each_write_one_row` |
-| **A9** | `identity_digest` is over the RESOLVED pair and JOINS with `revoke_source` — a source digested for revocation finds exactly its contribution rows | `test_contributors_of_source_joins_a_revocation_pair` — write via a site, then look up by `digest(resolve(origin, source_id))`; assert the row is found |
+| **A9** | `identity_digest` is the shared `source_identity_digest` over the RESOLVED pair (F2/I12) and JOINS with `revoke_source` — a source digested for revocation finds exactly its contribution rows. Applies to **COMPLETE identities only**: a NULL-digest (unknown-source) row NEVER joins a revocation (F1/I13) | `test_contributors_of_source_joins_a_revocation_pair` — write via a site, then look up by `source_identity_digest(resolve(origin, source_id))`; assert the row is found, and that an unknown-source row is NOT returned by any revocation join |
 | **A10** | a ledger row is kept while its `survivor_id` exists and dropped when the survivor is (retention, §5) | `test_ledger_row_is_dropped_with_its_survivor` |
 
 **A4 is the one that decides whether the class is closed** — exhaustive over the declared sites *keyed on
@@ -325,6 +329,16 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
 - **Reversibility.** The ledger record carries `prior_survivor_values` precisely so a transfer is
   *reversible* — but reversal is `A3`/`0004`, not this spec (the decoupling). `0014` guarantees the
   record contains enough to reverse (prior values + which fields moved), not that anything reverses it.
+- **🟠 Transitive attribution across generations — carry into the FULL `0014` review (reviewer, NOT
+  an interface-freeze blocker).** Chain `source A → survivor B → consolidation into survivor C`: A
+  contributed to B, then B is itself consumed into C. Under survivor-existence retention (A10), hard-
+  deleting B takes B's ledger rows with it — so A's contribution can become undiscoverable from C, and
+  survivor-based retention silently erases *transitive* source attribution. This changes NONE of the
+  seven frozen interface points; the fix is internal — when a survivor that has ledger rows is itself
+  consumed, atomically propagate its inherited contribution identities onto the new survivor's rows so
+  the chain to A survives B's deletion. **A4/A9/A10 must gain a multi-generation case** (A→B→C, then
+  delete B, assert A still reachable from C) before `0014` is accepted. Recorded here so the full
+  review does not miss it; the interface freeze proceeds without it.
 - **New attack surface.** (a) A caller forging `survivor_id` or a foreign identity — blocked: the
   store binds `survivor_id` to a record it is writing in the same commit, and resolves+digests the
   identity itself (§4b). (b) Memory content smuggled into the ledger — blocked: identities are digests,
@@ -345,7 +359,9 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
 - `src/veracium/store/base.py` / `store/sqlite.py` — `apply_supersession_plan` extended to INSERT
   `plan.contributions` in its existing commit; the consolidation primitive extended likewise; the two
   reads `contributions()` / `contributors_of_source()`; `forget_user` erases the ledger;
-  `store_mutator` accounting for the new writes (0002 audit manifest).
+  `store_mutator` accounting for the new writes (0002 audit manifest). `identity_digest` is computed
+  via `0006`'s single shared `source_identity_digest` primitive (F2/I12) — the SAME one `revoke_source`
+  uses — and is NULL when the contributor has no `source_id` (F1/I13).
 - `src/veracium/store/schema_version.py`, `store/migration.py` — the additive `contribution_ledger`
   table + its two indexes as `SCHEMA_VERSION` **v5→v6** (`0006` takes v5; `Spec-Requires: 0006, 0007,
   0013`), the v5→v6 migration, and evidence regeneration.
@@ -385,7 +401,7 @@ their rulings so the reasoning survives into design lock.*
   timestamps/floats/closed enums — store-clear. `evidence_ref` and `source_id` are host free-form and
   are **digested**; `origin` is **store-minted** (`0006` §4.1) — not a content risk, but digested too
   as part of the one opaque key so a single `digest` covers the whole identity (`0006` F3/R5). The
-  digest is over the **RESOLVED** pair — `0006` §4.5 forbids digesting a stored `origin`-absent pair —
+  digest is over the **RESOLVED** pair — `0006` §4.6 forbids digesting a stored `origin`-absent pair —
   and stays joinable for `revoke_source`. Keying on `digest(resolved (origin, source_id))` names the
   `0014 → 0006` dependency (§2).
 - **Q2 — scope — RESOLVED: stop at the record.** All reversal / blast-radius / reach defers to
