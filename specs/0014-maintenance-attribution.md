@@ -329,16 +329,26 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
 - **Reversibility.** The ledger record carries `prior_survivor_values` precisely so a transfer is
   *reversible* — but reversal is `A3`/`0004`, not this spec (the decoupling). `0014` guarantees the
   record contains enough to reverse (prior values + which fields moved), not that anything reverses it.
-- **🟠 Transitive attribution across generations — carry into the FULL `0014` review (reviewer, NOT
-  an interface-freeze blocker).** Chain `source A → survivor B → consolidation into survivor C`: A
-  contributed to B, then B is itself consumed into C. Under survivor-existence retention (A10), hard-
-  deleting B takes B's ledger rows with it — so A's contribution can become undiscoverable from C, and
-  survivor-based retention silently erases *transitive* source attribution. This changes NONE of the
-  seven frozen interface points; the fix is internal — when a survivor that has ledger rows is itself
-  consumed, atomically propagate its inherited contribution identities onto the new survivor's rows so
-  the chain to A survives B's deletion. **A4/A9/A10 must gain a multi-generation case** (A→B→C, then
-  delete B, assert A still reachable from C) before `0014` is accepted. Recorded here so the full
-  review does not miss it; the interface freeze proceeds without it.
+- **🟠 Transitive attribution across generations — carry into the FULL `0014` review (reviewer +
+  research; NOT an interface-freeze blocker NOW).** Chain `source A → survivor B → consolidation into
+  survivor C`: A contributed to B, then B is itself consumed into C. Under survivor-existence retention
+  (A10), hard-deleting B takes B's ledger rows with it — so A's contribution can become undiscoverable
+  from C, and survivor-based retention silently erases *transitive* source attribution.
+  **⚠️ This touches FROZEN INTERFACE POINT 5, not an unfrozen internal detail (research, 2026-08-09).**
+  Point 5's *"retained only while its survivor exists"* is exactly what drops `(survivor=B,
+  contributor=A)` on B's deletion. The *rule* is unchanged today, so "not a freeze blocker" holds — but
+  **any resolution that alters the retention rule changes frozen point 5 and re-triggers the freeze
+  protocol (both owners + reviewer); it must NOT be treated as an internal `0014` tidy-up.** An earlier
+  draft of this note proposed *propagating inherited contribution identities onto the new survivor's
+  rows*; that is **dispreferred — it RETAINS MORE, and survivor-existence retention is precisely what
+  keeps the ledger from becoming an unbounded audit log.** **Leading candidate (research's early read):
+  make the gap VISIBLE rather than retain more** — a hard-deleted survivor that still has downstream
+  descendants leaves a **tombstone** recording that a link was severed, so a blast-radius / `revoke_source`
+  query returns *"incomplete: a link was deleted"* instead of a confidently short answer. A revocation
+  that knows it is incomplete is the `A3` argument; one that silently under-reports is the failure this
+  spec exists to prevent. **A4/A9/A10 must gain a multi-generation case** (A→B→C, delete B, assert A is
+  either still reachable from C OR the query honestly reports the gap) before `0014` is accepted.
+  Recorded here so the full review does not miss it; the interface freeze proceeds without it.
 - **New attack surface.** (a) A caller forging `survivor_id` or a foreign identity — blocked: the
   store binds `survivor_id` to a record it is writing in the same commit, and resolves+digests the
   identity itself (§4b). (b) Memory content smuggled into the ledger — blocked: identities are digests,
