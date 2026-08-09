@@ -4,32 +4,33 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v8, 2026-08-09) — round-5 external review closed R4-2/R4-3/R4-4 and affirmed the
-> budget architecture; returned on I10's mechanical completeness (R5-1…R5-3) + carrier drift
-> (R5-4). v8 makes I10 a complete mechanical contract.** The ruled Design 1 stands:
-> **reinforcement transfers NOTHING**; the incoming edge is persisted with its own provenance.
-> v8's amendments: **R5-1** budgets are in ESTIMATED TOKENS with spec'd defaults, never item
-> counts (`Edge.object`/`note` are unbounded — one 500K-char note passed a 40-edge budget as
-> ~125K tokens, reviewer-reproduced), plus a per-ITEM clamp with in-item elision and the
-> oversized-first-item seam closed (charge before emission; I10a); **R5-2** the signaling
-> carriers are enumerated and specified — a structured selection result carrying dropped
-> counts (a bare edge list can't signal), `Recall.truncated` set for EVERY cause,
-> contested-preservation edges counted INSIDE the global bound, `config.py` fields, docstring
-> corrections (§7a); **R5-3** safety-only overflow is a defined total order per surface
-> (composing with accepted `0003`'s contested first-claim, unmodified), marker cost reserved
-> off the top, deterministic to the last tie, dropped-safety counts reported distinctly
-> (I10b); **R5-4** the v6-era carriers stating superseded rules corrected (§2c, §7a). — v7
-> resolved the bound-vs-hide conflict with budgets (I10); v6 folded R3-1…R3-4; v5 folded
-> R2-1…R2-4; v4 folded round-1 F1–F6 (F4 fixed at root under `0003`). 🔗 Design 1 closes
-> `0014` §3.1 + `M9` (§11). Still `draft` — v8 is the round-6 resubmission.
+> **draft (v9, 2026-08-09) — round-6 external review substantially closed R5-1…R5-4 for
+> rendered text; returned on four cross-carrier gaps. v9 closes them.** The ruled Design 1
+> stands: **reinforcement transfers NOTHING**; the incoming edge is persisted with its own
+> provenance. v9's amendments: **R6-1** I10's scope is now EXPLICIT — it bounds the RENDERED
+> model-facing text surfaces; the structured carriers (`Recall.edges`/`contested`, host
+> queries, `introspect()`) deliberately carry complete records under accepted `0003`'s
+> contracts and are outside I10, stated as a §8 limit (a host forwarding them verbatim owns
+> their bounding); **R6-2** item rendering is bounded CONTENT inside NON-TRUNCATABLE safety
+> framing — labels like `[third-party-reported; unconfirmed]` render as suffixes, so a naive
+> prefix clamp would keep attacker text and delete its label; framing is charged first and
+> never severed (I10c, tested per disclosure class); **R6-3** the per-surface orders now cover
+> the COMPLETE item taxonomy — the cached wiki body (share-clamped), episodes, recent history,
+> and the gate's unverified/quarantined partition (placement unmodified) — with I10a/I10b
+> extended to oversized/overflowing episodes and wiki bodies; **R6-4** v7–v8's proactive
+> "contested-preservation first" tier is WITHDRAWN — it conflicted with accepted `0003`'s
+> no-new-reach rule; a contested grounded member enters proactive only via the ordinary
+> categories, and fenced members never (I10d). — v8 made I10 mechanical; v7 added budgets; v6
+> folded R3; v5 folded R2; v4 folded round 1 (F4 fixed at root under `0003`). 🔗 Design 1
+> closes `0014` §3.1 + `M9` (§11). Still `draft` — v9 is the round-7 resubmission.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v8** — *round-5 amendments folded: I10 made mechanical — token units + spec'd defaults, per-item clamp + oversized-first-item seam closed (I10a), per-surface total orders + defined safety-only overflow (I10b), signaling carriers enumerated (structured selection result, `Recall.truncated` for every cause, contested counted inside the bound, `config.py`); v6-era carrier drift corrected. v7 added budgets (I10); v6 folded R3-1…R3-4; v5 folded R2-1…R2-4; v4 folded round-1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
+| **Version** | **v9** — *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0008`'s deferred liveness scope. **`0008` does not depend on this.** |
 | **Internal reviewers** | research — the O-Q1/O-Q2/O-Q3 ruling round (2026-08-08, `proposals/0012-rulings.md`; recorded in `specs/reviews.py`) |
-| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5 (2026-08-09): R4-2/R4-3/R4-4 CLOSED, budget architecture affirmed; return on I10's mechanical completeness** (R5-1…R5-4) → v8. All dev-verified (ledger: `specs/reviews.py`) |
+| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5: R4-2/3/4 CLOSED, budget architecture affirmed; return on I10 mechanics** (R5-1…R5-4) → v8. **Round 6 (2026-08-09): R5-1…R5-4 substantially CLOSED for rendered text; return on 4 cross-carrier gaps** (R6-1…R6-4, incl. a v7-introduced conflict with accepted `0003`'s proactive no-new-reach rule — withdrawn) → v9. All dev-verified (ledger: `specs/reviews.py`) |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -288,33 +289,64 @@ member that carries information any consumer reads.** The v6 contract:
   (`note`/`volatility` are extractor-influenced; a variant flood evades suppression —
   reviewer-reproduced). The complete budget contract:
 
-  **(i) Units and defaults (R5-1).** Budgets are in **estimated tokens** (the existing
-  `chars/4` estimator), NOT item counts — an edge count is not a size bound when
+  **(i) Scope, units and defaults (R5-1 + R6-1).** **I10 governs the RENDERED, MODEL-FACING
+  TEXT surfaces** — the recall `context` string, the wiki compiler's prompt, and proactive
+  assembly's text. The STRUCTURED API carriers (`Recall.edges`, `Recall.contested`, host
+  queries, `introspect()`) are host-facing programmatic surfaces governed by accepted `0003`'s
+  identity/partition/reach contracts, and are **explicitly OUTSIDE I10's token bounds** — they
+  carry complete stored records by design (that is their purpose), and a host that forwards a
+  structured carrier to a model verbatim owns its bounding (§8 states this limit; `0003`'s
+  carriers are not modified here). Budgets are in **estimated tokens** (the existing `chars/4`
+  estimator), NOT item counts — an edge count is not a size bound when
   `Edge.object`/`Edge.note` are unbounded (one 500K-char note sailed through the 40-edge
   budget as ~125K tokens, reviewer-reproduced). Exact bounds, host-tunable via
   `MemoryConfig` with these spec'd defaults: query-recall context ≤ **4,000** est. tokens;
   wiki-compiler input ≤ **8,000** est. tokens total AND ≤ **4 variants** per collapse group;
   proactive assembly ≤ **1,200** est. tokens **by default when the caller sets no
   `token_budget`** (a caller-supplied value overrides).
-  **(ii) The per-ITEM clamp (R5-1).** A single item larger than a surface's per-item cap
-  (**512** est. tokens, config-tunable) is **CLAMPED at render with an explicit elision marker
-  inside the item** ("… [content truncated; full record via introspect()]") — never emitted
-  whole, never silently dropped. An item that exceeds the REMAINING budget: a safety item is
-  clamped to fit; a non-safety item is dropped and counted in the surface's truncation marker.
-  The oversized-FIRST-item seam (an item admitted before any budget check) is closed by
-  charging the estimator BEFORE emission, always.
+  **(ii) The per-ITEM clamp, with NON-TRUNCATABLE safety framing (R5-1 + R6-2).** An item's
+  rendering is **bounded CONTENT embedded inside immutable control FRAMING**: the trust and
+  state labels — `[possibly stale — …]`, `[third-party-reported; unconfirmed]`, `CONTESTED`
+  markers, due/overdue dates and confirmation instructions — are FRAMING, charged to the
+  budget FIRST and **never truncatable**; only the content inside them is clamped. This closes
+  the label-severing seam: several labels render as SUFFIXES after untrusted content, so a
+  naive prefix clamp would keep attacker-controlled text while deleting exactly the label that
+  tells the model how to treat it. A single item larger than the per-item cap (**512** est.
+  tokens for its CONTENT, config-tunable) is clamped with an explicit elision marker inside
+  the content ("… [content truncated; full record via introspect()]") — never emitted whole,
+  never silently dropped, never label-stripped. An item that exceeds the REMAINING budget: a
+  safety item is clamped to fit (framing intact); a non-safety item is dropped and counted in
+  the surface's truncation marker. The oversized-FIRST-item seam is closed by charging the
+  estimator BEFORE emission, always.
   **(iii) Marker reservation (R5-3).** The truncation marker's own cost is **reserved off the
   top** of every budget — the marker can never be the thing that doesn't fit.
-  **(iv) The per-surface TOTAL order (R5-3), deterministic to the last tie.** Composing with
-  accepted `0003` (whose contested surface holds FIRST claim on recall budget — that rule is
-  `0003`'s and is not modified here):
-  *query recall:* `0003` contested block → query-relevant flagged warnings → other flagged
-  warnings (most-overdue first: oldest `observed_at`) → dated commitments (nearest date
-  first) → relevance-ranked remainder → same-group variants last;
-  *proactive:* contested-preservation content → flagged warnings (most-overdue first) → dated
-  commitments (nearest first) → current transient context → variants last;
-  *wiki input:* one survivor per group first (all groups), then up to the per-group variant
-  cap, groups in deterministic `(subject, relation)` order.
+  **(iv) The per-surface TOTAL order over the COMPLETE item taxonomy (R5-3 + R6-3),
+  deterministic to the last tie.** v8's orders listed only edge classes while every surface
+  also carries other prompt-consuming item types (the cached wiki body, episodes, the
+  unverified/quarantined partition, recent history) — a bound over an incomplete taxonomy is
+  not a bound. The full taxonomies, composing with accepted `0003` (whose contested block
+  holds FIRST claim on recall budget — that rule is `0003`'s and is not modified here):
+  *query recall (the `context` string):* `0003` contested block → the cached WIKI BODY,
+  clamped to a configured share of the context budget (default ≤ 1/3; over-share → clamped
+  with the elision marker) → query-relevant flagged warnings → other flagged warnings
+  (most-overdue first: oldest `observed_at`) → dated commitments (nearest date first) →
+  relevance-ranked grounded edges → recent EPISODES (newest first, each clamped per (ii)) →
+  the unverified/quarantined partition, rendered exactly where the gate's partition contract
+  places it today (that placement is `0003`/gate-owned and unmodified; its items are clamped
+  and dropped-with-count like any class) → same-group variants last;
+  *proactive:* flagged warnings (most-overdue first) → dated commitments (nearest first) →
+  current transient context → recent history (newest first) → variants last. **The v7–v8
+  "contested-preservation first" tier is WITHDRAWN (R6-4)** — it conflicted with accepted
+  `0003`, which freezes that proactive recall gives contested material NO NEW REACH: fenced
+  members are never volunteered, and a grounded contested member participates only exactly as
+  the corresponding non-contested fact would. Under v9, a contested grounded member enters
+  proactive ONLY through the ordinary categories above (it is itself flagged, due, transient,
+  or recent) — an otherwise-ineligible contested fact does NOT appear, and no
+  `use_only`/quarantined member ever does;
+  *wiki input:* one survivor per group first (all groups, deterministic `(subject, relation)`
+  order) → per-group variants up to the cap → the compactor's EPISODE inputs (newest first,
+  each clamped per (ii)), all within the total input bound, dropped counts recorded in the
+  compile record.
   Within every class the tie-break is `observed_at` DESC then lexicographic edge id — the
   bounded selection is **permutation-invariant end-to-end** (I8j's property, extended to the
   budget). **Safety-only overflow is defined, not assumed away (R5-3):** when safety items
@@ -402,8 +434,10 @@ implementation.*
 | **I8i** | **(R4-2)** all three anchored-by cells behave as specified — {0 → surfaces alone, 1 → collapses, ≥2 → surfaces alone}; a zero-anchor chain member is never silently suppressed and never merged upward past `_subsumes`' bound | `test_a_token_dropping_chain_surfaces_its_unanchored_members` — the 20→18→…→2 sequential chain: the maximal anchor collapses only its directly-subsumed member; every zero-anchor interior member surfaces (within I10's budget), none vanishes |
 | **I8j** | **(R4-4)** the surfaced set is DETERMINISTIC and store-order invariant: the survivor is chosen by the §4c total order (note-bearing → specificity → freshest → edge id) BEFORE suppression is evaluated | `test_surfaced_set_is_permutation_invariant` — insert one group's members in several store orders (incl. the asymmetric empty-note/nonempty-note pair both ways): identical surfaced set every time |
 | **I10** | **(R4-1, made mechanical in v8 per R5-1…R5-3)** every model-facing read surface carries a HARD budget in ESTIMATED TOKENS (never item counts) with the §4c(i) defaults, a per-ITEM clamp with in-item elision, marker cost reserved off the top, the §4c(iv) per-surface total order (composing with `0003`'s contested first-claim, unmodified), defined safety-only overflow, and truncation SIGNALED for every cause | `test_read_surfaces_are_hard_bounded_against_variant_floods` — 25 distinct-note variants: every surface within its token bound, warning + commitment retained, marker present and deterministic |
-| **I10a** | **(R5-1)** ONE oversized item cannot break a budget: a single 500K-char note/object is clamped at the per-item cap with the in-item elision marker; an oversized item never sails through an edge-count gate whole, never yields `truncated=False`, and an oversized SAFETY item is clamped-to-fit rather than dropped | `test_a_single_oversized_item_is_clamped_not_emitted` — one edge with a 500K-char note under each surface: rendered size ≤ the bound, elision marker present, `truncated` signal set; repeated as the FIRST item under a tiny `token_budget` (the oversized-first-item seam) |
-| **I10b** | **(R5-3)** safety-only overflow is ordered, deterministic, and NEVER silent: when flagged warnings + commitments + contested content alone exceed a bound, the §4c(iv) order decides (contested first per `0003`; warnings most-overdue-first; commitments nearest-first; `observed_at` DESC then edge-id ties), and the marker reports the dropped SAFETY count distinctly | `test_safety_overflow_is_ordered_and_reported` — more flagged groups + dated commitments + a contested pair than the bound admits: selection matches the total order exactly, is permutation-invariant, and the "+N warnings not shown" marker renders within budget |
+| **I10a** | **(R5-1, extended v9 per R6-3)** ONE oversized item cannot break a budget — for EVERY item type in the §4c(iv) taxonomy: a 500K-char edge note/object, an oversized EPISODE summary, and an oversized cached WIKI BODY are each clamped at their cap with the in-item elision marker; an oversized item never sails through whole, never yields `truncated=False`, and an oversized SAFETY item is clamped-to-fit rather than dropped | `test_a_single_oversized_item_is_clamped_not_emitted` — one 500K-char member of each item type (edge, episode, wiki body) under each surface: rendered size ≤ the bound, elision marker present, `truncated` set; repeated as the FIRST item under a tiny `token_budget` |
+| **I10b** | **(R5-3, extended v9 per R6-3)** overflow is ordered, deterministic, and NEVER silent across the FULL taxonomy: when safety items alone — or episodes/wiki body alongside them — exceed a bound, the §4c(iv) order decides (contested first per `0003`; wiki within its share; warnings most-overdue-first; commitments nearest-first; episodes newest-first; ties `observed_at` DESC then edge id), and markers report dropped counts per class, SAFETY distinctly | `test_safety_overflow_is_ordered_and_reported` — more flagged groups + commitments + a contested pair + episodes + a large wiki body than the bound admits: selection matches the total order exactly, is permutation-invariant, and the per-class markers render within budget |
+| **I10c** | **(R6-2)** trust/state labels are NON-TRUNCATABLE framing charged before content: clamping can never sever `[possibly stale — …]`, `[third-party-reported; unconfirmed]`, `CONTESTED` markers, or due/confirmation instructions from the content they govern — attacker-controlled text is never retained while its label is dropped | `test_clamping_never_severs_the_safety_label` — an oversized item of EACH class (mentionable, use_only, quarantined, stale-flagged, dated commitment, contested member): the label renders intact in every case, the content is clamped, and the label+clamped-content pair stays within the item cap |
+| **I10d** | **(R6-4)** proactive recall gives contested material NO NEW REACH — accepted `0003`'s rule, restated here because v7–v8 violated it with a contested-first tier (WITHDRAWN): a grounded contested member enters proactive only via the ordinary categories (flagged/due/transient/recent); an otherwise-ineligible contested member does NOT appear; a fenced (`use_only`/quarantined) member is NEVER volunteered | `test_proactive_grants_contested_no_new_reach` — a durable, unflagged, undated, non-transient contested grounded pair: absent from proactive output; the same fact when flagged appears via the WARNING tier (not a contested tier); a fenced challenger never appears |
 | **I9** | **(F6, extended v5 + v7)** the high-restatement regime is pinned, not assumed — over EXACT, SUBSUMED, **and adversarial-variant** repetitions (distinct notes, mixed volatilities, outcome-bearing members) | `test_the_high_restatement_regime_stays_correct_and_bounded` — 25 restatements MIXING exact, token-dropped, and distinct-note/volatility forms: every ingest applies cleanly (no contention artifacts, no PLAN_STALE exhaustion), the prior is untouched throughout, `expire()` still flags it, and every surface obeys I10's bound with the safety items retained |
 
 ## 7. Failure modes and reversibility
@@ -498,6 +532,11 @@ acceptance:
   fits (I8) — the collapse alone bounds nothing against adversarial variants (R4-1, stated
   plainly); the store and the CAS scope scan are unbounded — that trade is accepted with I9
   pinning the regime.
+- **Does NOT bound the STRUCTURED carriers (R6-1, stated as a limit).** `Recall.edges`,
+  `Recall.contested`, host queries and `introspect()` deliberately carry complete stored
+  records — that is their contract under accepted `0003` and it is untouched here. I10 bounds
+  RENDERED model-facing text only; a host that forwards a structured carrier to a model
+  verbatim owns its bounding.
 - **Does NOT touch absorption's within-class inheritance** — deliberate scope (§2); its
   attribution gap is `0014` §3.3's.
 - **Depends on nothing unaccepted.** The plan machinery it rides (`0003`) is accepted and
