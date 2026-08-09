@@ -5,7 +5,7 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v4, 2026-08-09) — reviewer interface-freeze disposition folded (F1, F2, §3b honest-export cleanup); frozen interface point 4 changed, then research RE-RATIFIED and the reviewer SIGNED (2026-08-09) → the `0006`↔`0014` interface is FROZEN (both owners + reviewer). v3 (2026-08-08) folded round-2 external review R7–R11. Next: this v4 package goes for `0006`'s acceptance review.**
+> **in review (v5, 2026-08-09) — the reviewer CONFIRMED the seven-point `0006`↔`0014` interface freeze (research had re-ratified point 4); the interface is FROZEN (both owners + reviewer). ⚠️ The interface-freeze sign-off is NOT the `0006` acceptance sign-off — `0006` ACCEPTANCE is held for one narrow amendment, F3 (a current-format `FORMAT_VERSION` ≥ 4 import with `origin` absent must be REJECTED, not localised — I14), now folded here with a 🟠 origin-generation tightening (CSPRNG-128/UUIDv4) and the store-lineage-identity limit. v4 folded F1/F2; v3 folded R7–R11. Next: this v5 package goes for `0006`'s acceptance review.**
 > The round-2 reviewer returned v2 for one more amendment; v3 folds all five: **R7** — `origin` is
 > **collision-resistant NAMESPACING, not authenticated provenance** (it is materialised into exports
 > and `0005` treats imports as untrusted, so an adversarial import can forge it; the strong "structurally
@@ -33,10 +33,11 @@ Spec-Requires: 0007, 0013
 > `source_id` may GROUP, never GRANT — §3 is diagnostic-only (every cell *"flag stays"*), and I5
 > states it affirmatively. **v1 consumer: `0014` (maintenance attribution), which keys its ledger on
 > the `(origin, source_id)` pair (digested); `0014`'s table is the NEXT `SCHEMA_VERSION` after this
-> one (v6).** All open questions resolved (Q1/Q2/Q3, §10). **✅ The `0006`↔`0014` interface is now
+> one (v6).** All open questions resolved (Q1/Q2/Q3, §10). **✅ The `0006`↔`0014` interface is
 > LOCKED — research re-ratified and the reviewer signed (2026-08-09); the `source_id` requirement is
-> settled at the digested resolved pair (raw → digest → pair, with F1/F2 folded). v4 is clear to
-> resend for `0006`'s acceptance review.**
+> settled at the digested resolved pair (raw → digest → pair, F1/F2 folded). The interface sign-off is
+> SEPARATE from `0006` acceptance — acceptance was held for F3 (v4-import absent-`origin`), folded in
+> v5. **v5** is the acceptance-review resubmission (not v4).**
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
 
@@ -106,7 +107,7 @@ successor / `evidence-basis-design.md`), not a staleness rule's, and it is on no
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — *amended after the reviewer's interface-freeze disposition (2026-08-09). The reviewer confirmed 5 of 7 frozen points + point 2's design, and returned two blocking interface items now folded here: **F2** — the identity digest has ONE canonical, length-framed, domain-separated construction, a single shared `source_identity_digest` primitive (§4 rule 7, I12); **F1** — an absent `source_id` yields NO digest and `0014`'s `identity_digest` is NULLABLE, never a `(origin, NULL)` pseudo-source (§4 rule 8, I13). Plus §3b's honest-export qualification. **This changed frozen interface point 4; research RE-RATIFIED and the reviewer SIGNED (2026-08-09) → the interface is FROZEN (both owners + reviewer). This v4 package is the resubmission for `0006`'s acceptance review.** Archive as `0006-v4-<…>`. — v3 folded R7–R11 (namespacing-not-auth; durable `store_identity` singleton; I2a/I2b split; pre-v4-envelope stripping).* |
+| **Version** | **v5** — *amended after the reviewer's acceptance-hold disposition (2026-08-09), which CONFIRMED the seven-point interface freeze (reviewer sign-off) and held `0006` acceptance for one narrow item: **F3** — a current-format (`FORMAT_VERSION` ≥ 4) import with `origin` absent must be REJECTED as malformed, never resolved to the local singleton (§4 rule 4, §2c matrix, new **I14**); plus a 🟠 origin-generation tightening (CSPRNG-128/UUIDv4, canonical encoding) and the honest store-lineage-identity limit (§8). F3 does NOT alter the frozen seven points — it constrains ingress before a record enters the "absent means local" regime. **The interface-freeze sign-off is NOT the acceptance sign-off; v5 is the acceptance-review resubmission.** Archive as `0006-v5-<…>`. — v4 folded F1/F2 (nullable digest, shared canonical primitive) + §3b cleanup; v3 folded R7–R11.* |
 | **Status** | *see `Spec-Status:` — canonical.* Opened from `0002` R2; **deliberately not folded into `0002`**, which is being split precisely because it kept absorbing work. |
 | **Internal reviewers** | research — **ruled that this is needed and that it needs its own spec** |
 | **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **Round 1 → return for amendment (6 findings); v2. Round 2 → return for amendment (R7–R11); v3. Acceptance now gated on `0014` reaching mechanical completeness (R11); resend v3 with a refreshed brief.** |
@@ -173,7 +174,7 @@ row (minimal DDL — R8, §0b).
 |---|---|---|
 | **`Provenance.source_id`** | **NEW**, optional | An opaque, stable identifier for *the source that produced this evidence* — a mailbox, a connector instance, a device, a named subsystem. Never a person's identity, never a display name. **Unique only WITHIN an `origin`** — on its own it is not an identity (R5). |
 | **`Provenance.origin`** | **NEW**, optional, **STORE-minted** | An opaque, store-generated **collision namespace** (R7 — *not* an authenticated identity). A **local** caller and the model never supply it (I2a); on **import** a record keeps its foreign `origin`. Absent = *this store* → resolves to the `store_identity` singleton (§4). The identity is the **pair `(origin, source_id)`**; materialised on export. |
-| **`store_identity` (singleton row)** | **NEW table, one row** | Holds this store's **persistent** `origin` (§4.2, R8) — minted once with a random value at creation / v4→v5 migration; survives reopen/backup; the value an absent record-`origin` resolves to. The ONLY DDL this spec adds. |
+| **`store_identity` (singleton row)** | **NEW table, one row** | Holds this store's **persistent** `origin` (§4.2, R8) — minted once at creation / v4→v5 migration as a **CSPRNG-generated 128-bit value (e.g. UUIDv4), one canonical textual encoding** (🟠 reviewer: freezes the collision-resistance claim rather than leaving strength to implementation taste); survives reopen/backup; the value an absent record-`origin` resolves to. The ONLY DDL this spec adds. |
 | `Provenance.evidence_ref` | unchanged | Already identifies the *event*. `(origin, source_id)` identifies **who produces such events**; `evidence_ref` identifies **one**. |
 | `SCHEMA_VERSION` | **v4 → v5, MINIMAL DDL** | Adds the `store_identity` singleton (R8); the provenance JSON gains `source_id`/`origin` (no column). No per-record change, no backfill. The bump also makes an older build (`extra=ignore`) REFUSE the store rather than silently drop the fields (§0b, `0007`). `0014`'s ledger table is v6. |
 | `FORMAT_VERSION` | **3 → 4** | Export/import must round-trip `source_id` AND the materialised (resolved) `origin`. **`portability.py:37` is already `3`**, so this bumps **3 → 4**, not 2 → 3. (Distinct from `SCHEMA_VERSION` — two counters.) |
@@ -190,7 +191,7 @@ favourable value — see I3. The `store_identity` singleton, by contrast, is alw
 |---|---|---|---|---|---|
 | **`source_id`** | absent → treated as unknown → **no grouping** | rejected | — | **the model names a `source_id` to impersonate a trusted source**, or reuses the user's | **I1 — host-supplied only; never model-supplied, never extractor-derived** |
 | **`origin` (LOCAL ingest/API)** | absent → resolves to the `store_identity` singleton | rejected | — | **a local caller supplies an `origin` to impersonate another store** | **I2a — a LOCAL caller/model can NEVER supply `origin`; the resolver uses the singleton** |
-| **`origin` (valid v4-format IMPORT)** | preserved as-is (foreign) | rejected | — | attacker hand-writes a file naming `origin=A` — **NOT prevented here (R7): `origin` is namespacing, not authenticated**; `0005`'s untrusted-import boundary governs it | **I2b — a current-format import PRESERVES the file's foreign `origin`** (does NOT localise it); trust of that foreign origin is `0005`'s, not this spec's |
+| **`origin` (valid v4-format IMPORT)** | **REJECTED as malformed (I14)** — a `FORMAT_VERSION` ≥ 4 record MUST carry `origin`; a missing one is NEVER resolved to the local singleton (that resolution is for LOCAL stored rows only, not interchange) | rejected | — | attacker hand-writes a file naming `origin=A` — **NOT prevented here (R7): `origin` is namespacing, not authenticated**; `0005`'s untrusted-import boundary governs it | **I2b — a current-format import with `origin` PRESENT preserves the foreign value** (does NOT localise it); **I14 — a current-format import with `origin` ABSENT is rejected** (never acquires the destination origin by omission); trust of a *present* foreign origin is `0005`'s, not this spec's |
 | **older-store data** | both absent | — | — | — | **I3 — absence never relaxes a rule.** Also the `PRAGMA user_version` gap, see Q1 |
 | **pre-v4-FORMAT import carrying the fields (R10)** | — | — | **a hand-written file labels itself an OLD `FORMAT_VERSION` but adds `source_id` and omits `origin`** | if accepted with "absent origin = this store", the attacker's source becomes `(local_origin, attacker_source_id)` — **the exact local-namespace capture `origin` exists to prevent** | **I10 — a field newer than the envelope's declared `FORMAT_VERSION` is STRIPPED/ignored on import** (its source identity is unknown), not trusted. "Reject newer versions" does not cover new fields in an OLD envelope |
 | **imported export (honest)** | — | version-checked | v4 file into a v3 build rejected | — | imported records KEEP their `origin` (I2b), so two **honest** exports' `(A,"mailbox:primary")` and `(B,"mailbox:primary")` cannot ACCIDENTALLY collide (R5). `0005`'s cap applies **first** |
@@ -286,15 +287,25 @@ revoke both. So:
    (§8); this is collision-resistant *namespacing*, and adversarial imports are the `0005`
    import-trust boundary's concern, applied **first**.
 2. **The local store's own origin is DURABLE, persistent state (R8).** It lives in a **singleton
-   store-identity object** (a one-row `store_identity` table), minted once with a random value at
-   store creation / at the v4→v5 migration, and it survives close-reopen and backup-restore. This is
+   store-identity object** (a one-row `store_identity` table), minted once at store creation / at the
+   v4→v5 migration as a **CSPRNG-generated 128-bit value (e.g. UUIDv4) with one canonical textual
+   encoding** — the collision-resistance the design claims is thereby mechanically earned, not left to
+   implementation taste (🟠 reviewer) — and it survives close-reopen and backup-restore. This is
    the value that "absent `origin` = this store" resolves to — so it must exist before any resolution.
 3. **Local records need not store `origin`** — absent resolves to the singleton (point 2). It is
    **materialised on export** so the file is self-describing (`FORMAT_VERSION` 3→4).
 4. **On import, records KEEP their originating `origin`; they do NOT acquire the local one.** So
    `(A, "mailbox:primary")` and a local `(B, "mailbox:primary")` stay distinct — an **accidental**
    collision between honest exports cannot occur. (An *adversarial* forgery of `origin=B` is not
-   prevented here — that is R7 / `0005`, not this rule.)
+   prevented here — that is R7 / `0005`, not this rule.) **🔴 A current-format (`FORMAT_VERSION` ≥ 4)
+   imported record MUST carry `origin` (reviewer F3).** A v4 record with `origin` absent is
+   **malformed and REJECTED — it is NEVER resolved to the destination singleton.** Rule 6's
+   "absent → this store" resolution is for **LOCAL stored rows only**; an interchange record may not be
+   origin-absent. Otherwise a hand-written `FORMAT_VERSION`-4 file that simply omits `origin` would
+   become `(local_origin, attacker_source_id)` — the exact local-namespace capture `origin` exists to
+   prevent, and the *current-format* sibling of the old-envelope case I10 already closes. This
+   constrains ingress **before** a record can enter the "absent means local" regime; it does NOT alter
+   the frozen seven-point interface. New invariant **I14**.
 5. **Comparison is EXACT equality on BOTH components, with NO normalisation** — normalising can merge
    genuinely distinct opaque ids (the same failure inverted). `source_id` is non-empty with a length
    bound; `origin` likewise.
@@ -384,6 +395,7 @@ optional, absent = unknown = least favourable.
 | **I11** (R8) the local `store_identity` origin is durable | `test_store_origin_survives_reopen` — create a store, note its origin, close, reopen; assert the same origin resolves | CI |
 | **I12** (F2) the identity digest is the ONE shared canonical primitive (§4 rule 7) — length-framed and domain-separated, and every consumer re-derives it identically | `test_source_identity_digest_is_canonical_and_shared` — assert `source_identity_digest("ab","c") != source_identity_digest("a","bc")` (no concatenation collision), and that `0014`'s ledger write and `revoke_source`'s lookup produce the SAME digest for one pair | CI |
 | **I13** (F1) an absent `source_id` yields NO digest — never a `(resolved_origin, NULL)` pseudo-source; unknown-source records do not group and are not revocable-by-source (§4 rule 8) | `test_absent_source_id_produces_no_groupable_digest` — record two contributors with distinct evidence but no `source_id`; assert neither gets a digest, they do NOT group into one source, and a `revoke_source` on any pair matches neither | CI |
+| **I14** (F3) a current-format imported record never acquires the destination `origin` by omission — a `FORMAT_VERSION` ≥ 4 record with `origin` absent is rejected as malformed (§4 rule 4), never resolved to the local singleton | `test_v4_import_missing_origin_is_rejected` — hand-write a `FORMAT_VERSION`-4 file with a record omitting `origin`; assert the import is REJECTED, and the record does NOT enter the store as `(local_origin, source_id)` | CI |
 
 **I5 is the one to watch.** The temptation once identity exists is to let a
 "known good" `source_id` raise trust. **It must not** — I5 makes that a tested
@@ -436,6 +448,14 @@ accidentally colliding.
   store's records"* — holds only against **honest** exports, not an adversarial import; that boundary
   is `0005`'s. Making it authenticated (signed exports, or import re-namespacing foreign origins under
   a locally-controlled id) is a future option, recorded in §10.
+- **`origin` is store-LINEAGE identity, not per-instance identity (🟠 reviewer).** Because the
+  singleton `origin` deliberately survives backup/restore, two clones of one backup **share an
+  `origin`** — they are effectively **one namespace**. If such clones are then operated
+  independently and diverge in what a given `source_id` means, equal ids can collide (the same
+  `(origin, source_id)` denoting two different sources). This is the honest consequence of durability:
+  the identity is of the store's *lineage*, not of a running instance. A future **"fork this copy into
+  a new independent store"** operation (re-mint the `origin` on divergence) is **out of scope for v1**,
+  recorded in §10.
 
 - **`source_id` is only as good as the host's discipline.** A host that reuses
   one id for everything gets today's behaviour with extra steps. We cannot
