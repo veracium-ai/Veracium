@@ -112,11 +112,20 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                  author: EvidenceAuthor, date: str, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
                  derived_from: Optional[EvidenceAuthor] = None,
+                 source_id: Optional[str] = None,
                  relations: dict[str, Relation] = DEFAULT_RELATIONS) -> dict:
     """Extract and persist memory from one event. Returns a small summary dict
     (counts + the episode) for logging/telemetry. `derived_from` declares that
     the event's content embeds material from a lower-trust source; disclosure
-    and episode routing are capped accordingly (see _disclosure_for)."""
+    and episode routing are capped accordingly (see _disclosure_for).
+
+    `source_id` (specs/0006) is an OPAQUE, HOST-supplied source identifier — a
+    mailbox, a connector instance, a device. It is set on the provenance of every
+    record this event produces and is NEVER read from the extractor output (I1):
+    the model does not see it and cannot name it, so it is settled by the host
+    entry point, not by content. `origin` is deliberately NOT a parameter — a
+    LOCAL caller can never supply it (I2a); it stays absent and resolves to the
+    store's `store_identity` singleton at read (§4 rule 6)."""
     evidence_ref = evidence_ref or _uid("ev")
     rel_names = "\n".join(
         f"- {name}: {rel.desc}" if rel.desc else f"- {name}"
@@ -159,7 +168,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             id=_uid("ep"), user_id=user_id, date=date, summary=summary,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  derived_from=derived_from, observed_at=when)))
+                                  derived_from=derived_from, source_id=source_id, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True}
 
     # episode — always recorded; carries author so the gate knows a third-party
@@ -170,7 +179,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
-                                  derived_from=derived_from, observed_at=when)))
+                                  derived_from=derived_from, source_id=source_id, observed_at=when)))
 
     n_facts = n_quarantined = 0
     for t in data.get("triples", []):
@@ -189,7 +198,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
                                   disclosure=disclosure, derived_from=derived_from,
-                                  observed_at=when),
+                                  source_id=source_id, observed_at=when),
             valid_from=when)
         apply_supersession(store, edge, relations)
         if edge.quarantined:

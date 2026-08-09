@@ -142,3 +142,97 @@ def test_provenance_carries_origin_and_source_id_through_the_json_blob(tmp_path)
     with pytest.raises(Exception):
         Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
                    evidence_ref="ev", source_id="")
+
+
+# ============================ Slice B: ingest + resolve-at-read =======================
+import json
+import tempfile
+
+from veracium import EvidenceAuthor as _EA, Memory, MemoryConfig
+
+
+class _FakeComplete:
+    """Returns the next scripted extraction JSON, ignoring the prompt."""
+    def __init__(self, scripts):
+        self._scripts = list(scripts); self.calls = 0
+
+    def __call__(self, prompt, *, system=None, role="compile", json_schema=None):
+        out = self._scripts[self.calls]; self.calls += 1
+        return json.dumps(out)
+
+
+def _mem(d, scripts):
+    return Memory(llm=_FakeComplete(scripts),
+                  config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
+
+
+def _active(mem, u, relation):
+    return [e for e in mem.store.edges(u, active_only=True) if e.relation == relation]
+
+
+def test_source_id_is_host_supplied_never_extractor_derived(tmp_path):
+    # I1: the extractor emits a `source_id` in its triple; the host supplies NONE.
+    # The stored provenance source_id is None — the model's value is ignored entirely.
+    scripts = [{"triples": [{"subject": "user", "relation": "works_as", "object": "chef",
+                             "source_id": "EXTRACTOR-EVIL"}],
+                "episode": "noted"}]
+    mem = _mem(str(tmp_path), scripts)
+    mem.remember("u", "USER: I'm a chef", date="2026-06-01")     # no source_id
+    e = _active(mem, "u", "works_as")[0]
+    assert e.provenance.source_id is None                        # extractor's value never used
+
+
+def test_host_source_id_threads_onto_every_record(tmp_path):
+    scripts = [{"triples": [{"subject": "user", "relation": "works_as", "object": "chef"}],
+                "episode": "User is a chef."}]
+    mem = _mem(str(tmp_path), scripts)
+    mem.remember("u", "USER: I'm a chef", date="2026-06-01", source_id="mailbox:primary")
+    e = _active(mem, "u", "works_as")[0]
+    assert e.provenance.source_id == "mailbox:primary"
+    eps = mem.store.episodes("u")
+    assert eps and all(ep.provenance.source_id == "mailbox:primary" for ep in eps)
+
+
+def test_local_records_never_carry_an_origin_and_resolve_to_the_singleton(tmp_path):
+    scripts = [{"triples": [{"subject": "user", "relation": "works_as", "object": "chef"}],
+                "episode": "noted"}]
+    mem = _mem(str(tmp_path), scripts)
+    mem.remember("u", "USER: I'm a chef", date="2026-06-01", source_id="mailbox")
+    e = _active(mem, "u", "works_as")[0]
+    assert e.provenance.origin is None                           # I2a: no local origin, ever
+    # it resolves to THIS store's singleton at the one chokepoint
+    assert resolve_origin(e.provenance.origin, mem.store.local_origin()) == mem.store.local_origin()
+
+
+def test_origin_is_not_a_local_entry_point_parameter(tmp_path):
+    # I2a structurally: there is no way for a local caller to name an origin
+    scripts = [{"triples": [], "episode": "noted"}]
+    mem = _mem(str(tmp_path), scripts)
+    with pytest.raises(TypeError):
+        mem.remember("u", "x", date="2026-06-01", origin="FORGE-ANOTHER-STORE")
+
+
+def test_source_id_changes_no_decision(tmp_path):
+    """I5/I4 — (origin, source_id) groups but never grants: differing source_ids do NOT
+    alter supersession, disclosure, or third-party routing, and never clear staleness."""
+    scripts = [
+        {"triples": [{"subject": "user", "relation": "prefers", "object": "concise", "volatility": "slow"}],
+         "episode": "prefers concise"},
+        {"triples": [{"subject": "user", "relation": "prefers", "object": "detailed", "volatility": "slow"}],
+         "episode": "prefers detailed"},
+        # a third-party email — disclosure/routing must be identical with or without source_id
+        {"triples": [{"subject": "org:x", "relation": "third_party_claim", "object": "you owe $9"}],
+         "episode": "billing claim"},
+    ]
+    mem = _mem(str(tmp_path), scripts)
+    mem.remember("u", "USER: concise please", date="2026-06-01", source_id="mailbox:A")
+    mem.remember("u", "USER: detailed now", date="2026-06-02", source_id="mailbox:B")
+    pref = _active(mem, "u", "prefers")
+    # functional supersession is unaffected by the differing source_id — exactly one active
+    assert len(pref) == 1 and pref[0].object == "detailed"
+    # third-party content stays quarantined/use-only regardless of source_id (routing ignores it)
+    mem.remember("u", "From X: you owe $9", date="2026-06-03",
+                 author=_EA.THIRD_PARTY, event_type="email", source_id="mailbox:C")
+    tp = [e for e in mem.store.edges("u", active_only=True) if e.subject == "org:x"]
+    assert tp and tp[0].provenance.third_party_influenced
+    assert tp[0].provenance.disclosure.value in ("quarantined", "use_only")

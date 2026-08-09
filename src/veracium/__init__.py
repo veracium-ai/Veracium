@@ -129,7 +129,8 @@ class Memory:
                  author: EvidenceAuthor = EvidenceAuthor.USER,
                  date: Optional[str] = None, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
-                 derived_from: Optional[EvidenceAuthor] = None) -> dict:
+                 derived_from: Optional[EvidenceAuthor] = None,
+                 source_id: Optional[str] = None) -> dict:
         """Ingest one interaction event into `user_id`'s memory.
 
         `author` is the trust-critical input: use EvidenceAuthor.THIRD_PARTY for
@@ -140,7 +141,13 @@ class Memory:
         received email's subject or body — declare it with `derived_from`
         (e.g. `author=SYSTEM, derived_from=THIRD_PARTY`). Trust is capped at
         the minimum of the two: nothing extracted from such an event is ever
-        assertable, closing the system-event laundering bypass."""
+        assertable, closing the system-event laundering bypass.
+
+        `source_id` (specs/0006) optionally records WHICH source produced this
+        event — an opaque, host-chosen id (a mailbox, a connector instance). It
+        is DIAGNOSTIC: it groups records for inspection/dedup/attribution but
+        grants no trust and changes no answer (I5). It is host-supplied only,
+        never model-derived (I1)."""
         from datetime import date as _date
         date = date or _date.today().isoformat()
         t0 = time.perf_counter()
@@ -148,7 +155,7 @@ class Memory:
             r = ingest_event(self.store, self.llm, user_id, event_text=event_text,
                              author=author, date=date, event_type=event_type,
                              evidence_ref=evidence_ref, derived_from=derived_from,
-                             relations=self.config.relations)
+                             source_id=source_id, relations=self.config.relations)
         except Exception as e:
             self._on_error("remember", e, user_id)
             raise

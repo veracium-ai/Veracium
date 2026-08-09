@@ -73,10 +73,10 @@ DISPOSITIONS = {
    (W, "the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement `observed_at`/`confidence`, `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here", "observation",
     "✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5).",
     "`test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"):
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "5d29e2f07e03"):
    (W, "episode provenance (unparseable placeholder)", "observation",
     "clean — never retains raw event text", "`test_unparseable_extraction_degrades_gracefully`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "17d36f4cb482"):
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "c1fb106f3b09"):
    (W, "episode provenance", "observation", "clean — the origin of trust", "`test_third_party_text_never_moves_into_the_grounded_block`"),
 
  # -- maintenance ------------------------------------------------------------
@@ -163,8 +163,8 @@ STATES = {
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "07f974d5bdaf"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "4af6ecf2af8b"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "17d36f4cb482"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "5d29e2f07e03"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "c1fb106f3b09"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
   ("src/veracium/lifecycle.py", "expire", "add_edge", "79eaf6e63a9c"): "open",
