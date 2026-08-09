@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+- **Source identity — record *which source* a fact came from** (`specs/0006`, accepted +
+  implemented). Provenance gains an optional `(origin, source_id)` pair: `source_id` is an opaque,
+  host-supplied identifier for the source that produced an event (a mailbox, a connector instance, a
+  device), passed via `Memory.remember(..., source_id="…")`; `origin` is a store-minted collision
+  namespace so two stores' identical `source_id`s never merge on import. It is **diagnostic only —
+  it groups records for dedup/inspection/attribution but grants no trust and changes no answer**, and
+  it is host-supplied only, never model-derived. Under the hood: a canonical, shared
+  `source_identity_digest` primitive (so future consumers re-derive one key), a durable per-store
+  `store_identity` singleton, and resolve-at-read so a local record and its own export round-trip
+  count as one source.
+  - ⚠️ **On-disk store schema advances to v5** (one new `store_identity` singleton; no per-record
+    change). A v1–v4 store migrates forward in one `migrate_store()` call; an older build refuses a
+    v5 store rather than misreading it.
+  - ⚠️ **Export/import `FORMAT_VERSION` advances to 4** — a v4 export is self-describing (each record
+    carries its resolved origin); a v4 import rejects a record with no origin and ignores
+    source-identity fields smuggled into an older-format file. Older builds refuse a v4 export.
+
 ## 0.6.0 — 2026-08-08
 
 - **Supersession authority — third-party content can no longer retire your facts**
