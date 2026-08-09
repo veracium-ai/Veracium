@@ -24,6 +24,16 @@ from adapter import Item, Session, Turn
 from manifest import ManifestError
 import run_longmemeval as R
 
+# Every test here drives a real run, and a run WRITES A MANIFEST whose git state must
+# resolve (resolving rather than remembering is the manifest's G14 integrity feature).
+# An extracted review archive is not a checkout, so the runs cannot execute there by
+# design — skip the module rather than fail it (the spec-gate git tests' convention).
+import subprocess as _subprocess
+pytestmark = pytest.mark.skipif(
+    _subprocess.run(["git", "rev-parse", "--git-dir"], capture_output=True,
+                    cwd=Path(__file__).parent).returncode != 0,
+    reason="not a git checkout; a run's manifest resolves git state by design")
+
 
 class FakeProvider:
     """Canned extraction JSON for distill, a canned sentence for the answer."""

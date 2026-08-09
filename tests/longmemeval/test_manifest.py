@@ -132,6 +132,14 @@ def test_a_clean_manifest_passes(tmp_path):
 
 
 def test_git_state_resolves_rather_than_remembers():
+    # An extracted review archive is not a checkout; git state is unresolvable there
+    # BY DESIGN (the manifest refuses to remember a commit it cannot resolve), so this
+    # test skips rather than fails — same convention as the spec-gate git tests.
+    import subprocess
+    if subprocess.run(["git", "rev-parse", "--git-dir"],
+                      capture_output=True, cwd=Path(__file__).parent).returncode != 0:
+        import pytest
+        pytest.skip("not a git checkout; git_state() resolves rather than remembers")
     st = git_state()
     assert st["commit"] != "unknown" and len(st["commit"]) == 40
     assert "dirty" in st and "dirty_fingerprint" in st
