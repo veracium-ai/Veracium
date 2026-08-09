@@ -4,11 +4,11 @@
 
 # Spec status
 
-**14 specs · 6 accepted · 85 external review
+**14 specs · 7 accepted · 86 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **6 of 14 are accepted**, which
+review is required to reach it. **7 of 14 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -18,7 +18,7 @@ is the number that decides what can be built.
 | **0003** | supersession authority | `accepted` | 2026-08-08 | 1 | 12 | 0 | 0 | 1 | 0/1 |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `draft` | 2026-08-01 | 0 | 0 | 1 | 0 | 2 | 0/2 |
-| **0006** | source identity — `(origin, source_id)` | `in review` | 2026-08-09 | 1 | 4 | 1 | 0 | 0 | — |
+| **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-09 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-08 | 0 | 4 | 0 | 0 | 1 | 1/1 |
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-08-07 | 0 | 5 | 0 | 0 | 1 | 1/1 |

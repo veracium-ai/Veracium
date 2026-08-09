@@ -1,11 +1,11 @@
 # Feature spec: source identity — `(origin, source_id)`
 
-Spec-Status: in review
+Spec-Status: accepted
 Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v5, 2026-08-09) — the reviewer CONFIRMED the seven-point `0006`↔`0014` interface freeze (research had re-ratified point 4); the interface is FROZEN (both owners + reviewer). ⚠️ The interface-freeze sign-off is NOT the `0006` acceptance sign-off — `0006` ACCEPTANCE is held for one narrow amendment, F3 (a current-format `FORMAT_VERSION` ≥ 4 import with `origin` absent must be REJECTED, not localised — I14), now folded here with a 🟠 origin-generation tightening (CSPRNG-128/UUIDv4) and the store-lineage-identity limit. v4 folded F1/F2; v3 folded R7–R11. Next: this v5 package goes for `0006`'s acceptance review.**
+> **✅ accepted (v6, 2026-08-09).** The external reviewer passed `0006`'s acceptance review (round 5); v6 folds the mechanical closure edits they required — **C1** (removed superseded "no-DDL" wording + refreshed the External-review row), **C2** (UUID entropy stated exactly — 122 random bits), and the **§11 Review closure** ledger — *no design change* from the reviewed v5. Earlier: the `0006`↔`0014` seven-point interface is FROZEN + reviewer-signed (independent of `0014`'s own acceptance); v5 folded F3 (v4-import absent-`origin` rejected, I14); v4 folded F1/F2; v3 folded R7–R11. **`Spec-Status: accepted` authorises implementation** (`Spec-Requires` 0007/0013 both accepted).
 > The round-2 reviewer returned v2 for one more amendment; v3 folds all five: **R7** — `origin` is
 > **collision-resistant NAMESPACING, not authenticated provenance** (it is materialised into exports
 > and `0005` treats imports as untrusted, so an adversarial import can forge it; the strong "structurally
@@ -15,10 +15,11 @@ Spec-Requires: 0007, 0013
 > a persistent value; existing rows need NO backfill (§0b/§4.2/§5). **R9** — the origin invariant split
 > into I2a (local caller can't set `origin`) and I2b (import PRESERVES foreign `origin`) — v2's single
 > combined rule contradicted itself. **R10** — a field newer than an import's declared `FORMAT_VERSION` is STRIPPED (I10), closing
-> the old-envelope-with-new-field capture. **R11** — the `0006`↔`0014` interface is AGREED but NOT
-> "fully locked": `0014` is still a `v2 (stub)` with sketch §5/§7, so **`0006` acceptance waits on
-> `0014` reaching mechanical completeness + external freeze** (the reviewer's path). Resolve-at-read
-> + I9 (the v2 interface-lock fix) stand.
+> the old-envelope-with-new-field capture. **R11** — the `0006`↔`0014` interface was AGREED but not
+> "fully locked": `0014` was a `v2 (stub)`, so `0006` acceptance waited on `0014` reaching mechanical
+> completeness + the interface freeze — **both SATISFIED 2026-08-09: `0014` is mechanically complete
+> and the interface is frozen + reviewer-signed, so `0006` is now ACCEPTED** (rounds 3–5). Resolve-at-
+> read + I9 (the v2 interface-lock fix) stand.
 >
 > _v2 (superseded) — the three shape changes carried forward:_
 > **(1) `evidence_basis` is SPLIT OUT — `0006` v1 ships `source_id` ONLY.** The basis field had
@@ -37,7 +38,7 @@ Spec-Requires: 0007, 0013
 > LOCKED — research re-ratified and the reviewer signed (2026-08-09); the `source_id` requirement is
 > settled at the digested resolved pair (raw → digest → pair, F1/F2 folded). The interface sign-off is
 > SEPARATE from `0006` acceptance — acceptance was held for F3 (v4-import absent-`origin`), folded in
-> v5. **v5** is the acceptance-review resubmission (not v4).**
+> v5, then PASSED at round 5 → **v6 `accepted`** (v6 = v5 + mechanical closure C1/C2/§11).**
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
 
@@ -56,7 +57,7 @@ Spec-Requires: 0007, 0013
 > resolve, §5). **`0014`'s contribution-ledger table is the NEXT version, v6** — resolving the
 > `0006`-and-`0014`-both-claim-v5 conflict the reviewer flagged.
 
-**`0006` changes the on-disk PAYLOAD (a new `Provenance` field in the `json` blob), NOT the DDL —
+**The provenance FIELDS require no per-record DDL (a new `Provenance` field in the `json` blob); the ONLY DDL `0006` adds is the one `store_identity` singleton (minimal DDL, R8) —
 but it still consumes a `SCHEMA_VERSION` so an older build refuses rather than silently drops it**
 (R3). The migration/versioning contract is **`specs/0013`**+**`0007`**, not this spec.
 
@@ -107,10 +108,10 @@ successor / `evidence-basis-design.md`), not a staleness rule's, and it is on no
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v5** — *amended after the reviewer's acceptance-hold disposition (2026-08-09), which CONFIRMED the seven-point interface freeze (reviewer sign-off) and held `0006` acceptance for one narrow item: **F3** — a current-format (`FORMAT_VERSION` ≥ 4) import with `origin` absent must be REJECTED as malformed, never resolved to the local singleton (§4 rule 4, §2c matrix, new **I14**); plus a 🟠 origin-generation tightening (CSPRNG-128/UUIDv4, canonical encoding) and the honest store-lineage-identity limit (§8). F3 does NOT alter the frozen seven points — it constrains ingress before a record enters the "absent means local" regime. **The interface-freeze sign-off is NOT the acceptance sign-off; v5 is the acceptance-review resubmission.** Archive as `0006-v5-<…>`. — v4 folded F1/F2 (nullable digest, shared canonical primitive) + §3b cleanup; v3 folded R7–R11.* |
+| **Version** | **v6 — ACCEPTED 2026-08-09** — *the reviewer passed `0006`'s acceptance review (round 5, no further design round). v6 = v5 + the mechanical closure edits required for the status transition, no design change: **C1** removed the superseded "no-DDL" claims (§0b/§1/Q3) and refreshed the stale External-review row; **C2** stated the origin entropy exactly (a canonical UUIDv4 from a CSPRNG, **122 random bits** — not 128, UUIDv4 fixes 6 bits); **§11 Review closure** ledger added (PROCESS.md §4a). v5 folded F3 (v4-import absent-`origin` rejected as malformed, I14) + the origin-generation/store-lineage-identity amendments; v4 folded F1/F2 (nullable digest, one shared canonical `source_identity_digest`); v3 folded R7–R11. The `0006`↔`0014` interface freeze was reviewer-signed at round 4 and is independent of `0014`'s own acceptance.* |
 | **Status** | *see `Spec-Status:` — canonical.* Opened from `0002` R2; **deliberately not folded into `0002`**, which is being split precisely because it kept absorbing work. |
 | **Internal reviewers** | research — **ruled that this is needed and that it needs its own spec** |
-| **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **Round 1 → return for amendment (6 findings); v2. Round 2 → return for amendment (R7–R11); v3. Acceptance now gated on `0014` reaching mechanical completeness (R11); resend v3 with a refreshed brief.** |
+| **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **5 external rounds → ACCEPTED 2026-08-09.** R1: return, 6 findings → v2. R2: return, R7–R11 → v3. R3: interface-freeze disposition, F1/F2 + 2 cleanups → v4 (point 4 re-ratified by research). R4: interface freeze reviewer-SIGNED, acceptance held for F3 → v5. R5: **acceptance PASS**, mechanical closure (C1 stale no-DDL wording, C2 UUID entropy, this Review closure) → v6 `accepted`. Full ledger: §11 + `specs/reviews.py`. |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -153,7 +154,7 @@ because this spec defines a **stable, revocable** source identity that is *alrea
 key* (stable and revocable is all the ledger needs; the identity is NOT unforgeable — §3b/I2a). So v1
 ships the identity as **diagnostic + a stable, revocable ledger key**; the trust consumers that
 motivated it are **deferred** (M3 relaxation and the `0003` ladder both wait on provenance-of-the-
-*call*, §0, on no roadmap). This spec earns its v1 no-DDL version bump on `0014` — a §1→§3 reader
+*call*, §0, on no roadmap). This spec earns its v1 `SCHEMA_VERSION` v4→v5 schema change (one `store_identity` singleton, minimal DDL) on `0014` — a §1→§3 reader
 should not have to infer that.
 
 **If we do nothing:** M3 stays permanently fail-closed — correct today, but it blocks same-source
@@ -174,7 +175,7 @@ row (minimal DDL — R8, §0b).
 |---|---|---|
 | **`Provenance.source_id`** | **NEW**, optional | An opaque, stable identifier for *the source that produced this evidence* — a mailbox, a connector instance, a device, a named subsystem. Never a person's identity, never a display name. **Unique only WITHIN an `origin`** — on its own it is not an identity (R5). |
 | **`Provenance.origin`** | **NEW**, optional, **STORE-minted** | An opaque, store-generated **collision namespace** (R7 — *not* an authenticated identity). A **local** caller and the model never supply it (I2a); on **import** a record keeps its foreign `origin`. Absent = *this store* → resolves to the `store_identity` singleton (§4). The identity is the **pair `(origin, source_id)`**; materialised on export. |
-| **`store_identity` (singleton row)** | **NEW table, one row** | Holds this store's **persistent** `origin` (§4.2, R8) — minted once at creation / v4→v5 migration as a **CSPRNG-generated 128-bit value (e.g. UUIDv4), one canonical textual encoding** (🟠 reviewer: freezes the collision-resistance claim rather than leaving strength to implementation taste); survives reopen/backup; the value an absent record-`origin` resolves to. The ONLY DDL this spec adds. |
+| **`store_identity` (singleton row)** | **NEW table, one row** | Holds this store's **persistent** `origin` (§4.2, R8) — minted once at creation / v4→v5 migration as a **canonical UUIDv4 generated by a CSPRNG (122 random bits), one canonical textual encoding** (freezes the collision-resistance claim rather than leaving strength to implementation taste; 122 not 128 — UUIDv4 fixes 6 version/variant bits); survives reopen/backup; the value an absent record-`origin` resolves to. The ONLY DDL this spec adds. |
 | `Provenance.evidence_ref` | unchanged | Already identifies the *event*. `(origin, source_id)` identifies **who produces such events**; `evidence_ref` identifies **one**. |
 | `SCHEMA_VERSION` | **v4 → v5, MINIMAL DDL** | Adds the `store_identity` singleton (R8); the provenance JSON gains `source_id`/`origin` (no column). No per-record change, no backfill. The bump also makes an older build (`extra=ignore`) REFUSE the store rather than silently drop the fields (§0b, `0007`). `0014`'s ledger table is v6. |
 | `FORMAT_VERSION` | **3 → 4** | Export/import must round-trip `source_id` AND the materialised (resolved) `origin`. **`portability.py:37` is already `3`**, so this bumps **3 → 4**, not 2 → 3. (Distinct from `SCHEMA_VERSION` — two counters.) |
@@ -288,9 +289,10 @@ revoke both. So:
    import-trust boundary's concern, applied **first**.
 2. **The local store's own origin is DURABLE, persistent state (R8).** It lives in a **singleton
    store-identity object** (a one-row `store_identity` table), minted once at store creation / at the
-   v4→v5 migration as a **CSPRNG-generated 128-bit value (e.g. UUIDv4) with one canonical textual
-   encoding** — the collision-resistance the design claims is thereby mechanically earned, not left to
-   implementation taste (🟠 reviewer) — and it survives close-reopen and backup-restore. This is
+   v4→v5 migration as a **canonical UUIDv4 generated by a CSPRNG (122 random bits) with one canonical
+   textual encoding** — the collision-resistance the design claims is thereby mechanically earned, not
+   left to implementation taste (122 not 128: UUIDv4 fixes 6 version/variant bits) — and it survives
+   close-reopen and backup-restore. This is
    the value that "absent `origin` = this store" resolves to — so it must exist before any resolution.
 3. **Local records need not store `origin`** — absent resolves to the singleton (point 2). It is
    **materialised on export** so the file is self-describing (`FORMAT_VERSION` 3→4).
@@ -491,8 +493,32 @@ accidentally colliding.
 |---|---|---|---|---|
 | ~~**Q1**~~ | **RULED 0006-Q1 (research, 2026-08-02 00:08): yes — `0007` lands first.** Cheap precisely because R3 means `source_id` does **not** lift the staleness restriction, so nothing urgent queues behind it. `FORMAT_VERSION` guards exports; nothing guards an on-disk store opened by a different build. | resolved | research | — |
 | ~~**Q2**~~ | **MOOT for `0006` v1 — `evidence_basis` is SPLIT OUT (external-review R2).** Q2 was the `evidence_basis` default; with the field deferred to a successor spec, the question moves with it. Research re-decided it on the real three-value enum (`proposals/0006-rulings-round2.md`, Ruling 1) — the three values are NOT a total order (`observed`/`restated` = directness; `derived` = mechanism), so "least favourable attested value" is undefined; **unknown is a fourth state, stored absent, the FLOOR: no decision treats it more favourably than ANY attested basis; constraints are defined per-decision by the spec that first consumes the field.** That ruling travels to the successor spec; `0006` v1 has no `evidence_basis`. | moved to the successor spec | research | — |
-| ~~**Q3**~~ | **RESOLVED (dev ruled 2026-08-07, research CONFIRMED 2026-08-08; `proposals/0006-rulings-round2.md` §2a): KEEP `source_id` OUT of `0003`'s ladder in v1.** `0006` is a no-DDL payload change; `0003` later consuming the field is a pure CODE change (the ladder reads an existing field), **not a schema change** — so "avoids a second migration" is void, there is no second migration either way. Keeping it out keeps `0006` small and diagnostic-only (§8). `0003` may consume it whenever `0003` rules to. | **resolved** | dev + research | — |
+| ~~**Q3**~~ | **RESOLVED (dev ruled 2026-08-07, research CONFIRMED 2026-08-08; `proposals/0006-rulings-round2.md` §2a): KEEP `source_id` OUT of `0003`'s ladder in v1.** `0006`'s provenance fields need no per-record DDL (the only DDL is the `store_identity` singleton); `0003` later consuming the already-present fields is a pure CODE change (the ladder reads an existing field), **not a further schema change** — so "avoids a second migration" is void, there is no second migration either way. Keeping it out keeps `0006` small and diagnostic-only (§8). `0003` may consume it whenever `0003` rules to. | **resolved** | dev + research | — |
 
 | **Q4** | **Authenticated foreign origins (R7) — a FUTURE option, deferred, not a v1 blocker.** v1 treats `origin` as collision-resistant namespacing, not authenticated provenance (§8), so the strong revocation-isolation reading holds only against honest exports. If a future consumer needs it to hold against adversarial imports, foreign origins must be authenticated — signed exports under a persistent store identity, OR import re-namespacing a foreign origin under a locally-controlled id. Recorded so the boundary is a deliberate v1 choice, revisitable when a consumer actually needs the stronger property. | deferred (future) | dev + research | when a consumer needs it |
 
 **No open question BLOCKS v1** (Q1/Q2/Q3 resolved); Q4 is a recorded future direction, not a gate.
+
+---
+
+## Review closure (PROCESS.md §4a) — §11, the `0006` acceptance ledger
+
+*Dev sets `Spec-Status: accepted` once the external review's comments are satisfied. This ledger
+records every round, its findings, the disposition, and openable evidence. The round-by-round
+source of truth is `specs/reviews.py`; each round's exact reviewed package (with a `sha256`) is in
+`specs/archives/INDEX.md`; every invariant below has an executable check (§6).*
+
+| round | date | disposition | findings | folded in | evidence |
+|---|---|---|---|---|---|
+| internal 1 | 2026-08-08 | review-ready held for 3 dev fixes | F1 §1 payoff · F2 `FORMAT_VERSION` stale · F3 `source_id` opacity | v2 | `proposals/0006-review-package.md`; archive `0006-v1-*` |
+| external 1 | 2026-08-08 | return for amendment | R1–R6 (all verified, none rejected) | v2 | archive `0006-v2-*` (INDEX `sha256`) |
+| external 2 | 2026-08-08 | return for amendment | R7–R11 (namespacing-not-auth; `store_identity` singleton; I2a/I2b split; pre-v4 stripping; interface-lock) | v3 | archive `0006-v3-*` |
+| external 3 | 2026-08-09 | interface-freeze disposition (reviewer half withheld) | F1 (absent `source_id` ⇒ nullable digest, I13) · F2 (one shared canonical `source_identity_digest`, I12) · 2 cleanups (§3b honest-export; `0014` §4.5→§4.6) | v4 | commit `75bca5f`; archive `0006-v4-*`; interface point 4 re-ratified by research (`proposals/0006-0014-point4-reratification.md`) |
+| external 4 | 2026-08-09 | interface freeze reviewer-**SIGNED**; acceptance held for F3 | F3 (v4-import absent-`origin` REJECTED, never localised — I14) + origin-generation/store-lineage tightening | v5 | commit `1c0880f`; archive `0006-v5-*`; `proposals/0006-0014-interface-freeze.md` |
+| external 5 | 2026-08-09 | **acceptance PASS** — no further design round | C1 (superseded no-DDL wording) · C2 (UUID entropy 122 bits) · Review closure required | v6 `accepted` (this revision — commit `sha` in `specs/archives/INDEX.md` / the package README) | this section + §0b/§1/Q3/External-review-row edits + the C2 edits |
+
+**Executable acceptance surface (§6, all CI):** I1 (`source_id` never model-set) · I2a/I2b (origin local-vs-import) · I3 (absence never relaxes) · I4 (the §3 matrix, all "flag stays") · I5 (never surfaced to the model) · I6 (v4 export round-trip) · I9 (local source survives round-trip — the interface-lock fix) · I10 (new field in an old envelope stripped) · I11 (durable `store_identity`) · **I12** (one shared canonical digest; no concat collision) · **I13** (absent `source_id` ⇒ no digest, no pseudo-source) · **I14** (current-format import with absent `origin` rejected). Every row of §3 and §2c is table-driven.
+
+**Interface-freeze note.** The seven-point `0006`↔`0014` interface was frozen by both owners (dev + research) and reviewer-signed at round 4; that sign-off is **independent of, and earlier than, this `0006` acceptance** (round 5) and of `0014`'s own eventual acceptance. The two `0014` full-review carry-forwards (multi-generation A→B→C attribution touching frozen point 5; the tombstone direction) are `0014`'s to close and do not gate `0006`.
+
+**Not re-reviewed by design.** Round 5's C1/C2/closure edits are mechanical closure, not a design amendment (the reviewer said so explicitly); they change no contract and needed no further external round.
