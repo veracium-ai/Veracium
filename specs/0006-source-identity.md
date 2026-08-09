@@ -5,7 +5,7 @@ Spec-Requires: 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **in review (v4, 2026-08-09) — reviewer interface-freeze disposition folded (F1, F2, §3b honest-export cleanup); frozen interface point 4 changed, so it needs research re-ratification + the reviewer's sign-off before the freeze is complete. v3 (2026-08-08) folded round-2 external review R7–R11.**
+> **in review (v4, 2026-08-09) — reviewer interface-freeze disposition folded (F1, F2, §3b honest-export cleanup); frozen interface point 4 changed, then research RE-RATIFIED and the reviewer SIGNED (2026-08-09) → the `0006`↔`0014` interface is FROZEN (both owners + reviewer). v3 (2026-08-08) folded round-2 external review R7–R11. Next: this v4 package goes for `0006`'s acceptance review.**
 > The round-2 reviewer returned v2 for one more amendment; v3 folds all five: **R7** — `origin` is
 > **collision-resistant NAMESPACING, not authenticated provenance** (it is materialised into exports
 > and `0005` treats imports as untrusted, so an adversarial import can forge it; the strong "structurally
@@ -33,9 +33,10 @@ Spec-Requires: 0007, 0013
 > `source_id` may GROUP, never GRANT — §3 is diagnostic-only (every cell *"flag stays"*), and I5
 > states it affirmatively. **v1 consumer: `0014` (maintenance attribution), which keys its ledger on
 > the `(origin, source_id)` pair (digested); `0014`'s table is the NEXT `SCHEMA_VERSION` after this
-> one (v6).** All open questions resolved (Q1/Q2/Q3, §10). **🔴 Do not resend until the `0006`↔`0014`
-> interface is locked jointly with research — the `source_id` requirement has moved twice (raw →
-> digest → pair) — and the brief is corrected.**
+> one (v6).** All open questions resolved (Q1/Q2/Q3, §10). **✅ The `0006`↔`0014` interface is now
+> LOCKED — research re-ratified and the reviewer signed (2026-08-09); the `source_id` requirement is
+> settled at the digested resolved pair (raw → digest → pair, with F1/F2 folded). v4 is clear to
+> resend for `0006`'s acceptance review.**
 
 ## 0b. 📥 Migrations are owned by `specs/0013`
 
@@ -105,7 +106,7 @@ successor / `evidence-basis-design.md`), not a staleness rule's, and it is on no
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — *amended after the reviewer's interface-freeze disposition (2026-08-09). The reviewer confirmed 5 of 7 frozen points + point 2's design, and returned two blocking interface items now folded here: **F2** — the identity digest has ONE canonical, length-framed, domain-separated construction, a single shared `source_identity_digest` primitive (§4 rule 7, I12); **F1** — an absent `source_id` yields NO digest and `0014`'s `identity_digest` is NULLABLE, never a `(origin, NULL)` pseudo-source (§4 rule 8, I13). Plus §3b's honest-export qualification. **This changes frozen interface point 4 → needs research (co-owner) re-ratification, then the reviewer's sign-off.** Archive as `0006-v4-<…>`. — v3 folded R7–R11 (namespacing-not-auth; durable `store_identity` singleton; I2a/I2b split; pre-v4-envelope stripping).* |
+| **Version** | **v4** — *amended after the reviewer's interface-freeze disposition (2026-08-09). The reviewer confirmed 5 of 7 frozen points + point 2's design, and returned two blocking interface items now folded here: **F2** — the identity digest has ONE canonical, length-framed, domain-separated construction, a single shared `source_identity_digest` primitive (§4 rule 7, I12); **F1** — an absent `source_id` yields NO digest and `0014`'s `identity_digest` is NULLABLE, never a `(origin, NULL)` pseudo-source (§4 rule 8, I13). Plus §3b's honest-export qualification. **This changed frozen interface point 4; research RE-RATIFIED and the reviewer SIGNED (2026-08-09) → the interface is FROZEN (both owners + reviewer). This v4 package is the resubmission for `0006`'s acceptance review.** Archive as `0006-v4-<…>`. — v3 folded R7–R11 (namespacing-not-auth; durable `store_identity` singleton; I2a/I2b split; pre-v4-envelope stripping).* |
 | **Status** | *see `Spec-Status:` — canonical.* Opened from `0002` R2; **deliberately not folded into `0002`**, which is being split precisely because it kept absorbing work. |
 | **Internal reviewers** | research — **ruled that this is needed and that it needs its own spec** |
 | **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **Round 1 → return for amendment (6 findings); v2. Round 2 → return for amendment (R7–R11); v3. Acceptance now gated on `0014` reaching mechanical completeness (R11); resend v3 with a refreshed brief.** |
