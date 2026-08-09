@@ -79,6 +79,20 @@ class SqliteStore(Store):
             "INSERT INTO write_counter(user_id, n) VALUES(?, 1) "
             "ON CONFLICT(user_id) DO UPDATE SET n = n + 1", (user_id,))
 
+    # -- source identity (specs/0006) --------------------------------------
+    def local_origin(self) -> str:
+        """specs/0006 §4.2 — this store's durable, minted `origin` (the `store_identity`
+        singleton). It is the value an absent local record-`origin` resolves to at read
+        (§4 rule 6, `source_identity.resolve_origin`). Minted once at create/migrate and
+        durable across reopen/backup (I11)."""
+        row = self._conn.execute(
+            "SELECT origin FROM store_identity WHERE id = 1").fetchone()
+        if row is None:
+            raise RuntimeError(
+                "store_identity singleton is missing — a v5 store mints it at "
+                "creation/migration (specs/0006 §4.2); this store did not")
+        return row[0]
+
     # -- edges -------------------------------------------------------------
     def _upsert_edge_row(self, edge: Edge) -> None:
         """INSERT OR REPLACE one edge with the specs/0008 §6d guards, WITHOUT taking the

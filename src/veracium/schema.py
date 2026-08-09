@@ -119,6 +119,16 @@ class Provenance(BaseModel):
     # subject). derived_from declares that: trust is capped at the minimum of
     # author and derived_from, closing the "system-event laundering" bypass.
     derived_from: Optional[EvidenceAuthor] = None
+    # specs/0006 — source identity, the pair (origin, source_id). DIAGNOSTIC ONLY
+    # (I5: it groups, never grants — affects no trust/authority/disclosure/staleness/
+    # supersession decision in v1). `source_id`: opaque, host-supplied, NEVER model- or
+    # extractor-derived (I1). `origin`: a STORE-minted collision namespace, never set by
+    # a local caller (I2a); ABSENT on a local record and resolved to the store_identity
+    # singleton at read (§4 rule 6) — a foreign/imported record keeps its own (I2b).
+    # Both optional; absent = unknown = least favourable (I3). Non-empty and length-
+    # bounded (§4 rule 5 — an empty string is not a valid opaque id).
+    source_id: Optional[str] = Field(default=None, min_length=1, max_length=512)
+    origin: Optional[str] = Field(default=None, min_length=1, max_length=512)
 
     @property
     def third_party_influenced(self) -> bool:

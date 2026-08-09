@@ -212,9 +212,24 @@ SCHEMA_V4 = SCHEMA_V3 + (
 )""", REQUIRED),
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4}
+# v5 adds the `specs/0006` `store_identity` singleton — the ONE piece of durable DDL
+# that spec adds (R8). It holds this store's persistent `origin` (a CSPRNG UUIDv4, 122
+# random bits, §4.2), the value an absent local record-`origin` resolves to at read
+# (§4 rule 6). `CHECK(id = 1)` makes it a true singleton — at most one row. The
+# `source_id`/`origin` PROVENANCE fields need no DDL (they serialise into `edges.json`);
+# this table exists only so the local origin survives close-reopen and backup-restore
+# (I11). The row is minted once — at store creation and at the offline v4→v5 migration
+# (`store/migration.py::_mint_store_identity`), transactionally — never opportunistically
+# per-record, and there is NO backfill (existing rows keep `origin` absent and resolve).
+SCHEMA_V5 = SCHEMA_V4 + (
+    SchemaObject("table", "store_identity", """CREATE TABLE store_identity (
+    id INTEGER PRIMARY KEY CHECK(id = 1), origin TEXT NOT NULL
+)""", REQUIRED),
+)
 
-SCHEMA_VERSION = 4
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5}
+
+SCHEMA_VERSION = 5
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
@@ -227,6 +242,21 @@ def rebuildable_keys(version: int = SCHEMA_VERSION) -> set:
     return {o.key for o in SCHEMAS[version] if o.policy == REBUILDABLE}
 
 
+def _mint_store_identity(conn: sqlite3.Connection) -> None:
+    """specs/0006 §4.2 — mint the store's durable `origin` singleton if absent.
+
+    A canonical UUIDv4 from the platform CSPRNG (`uuid.uuid4` draws from
+    `os.urandom`), 122 random bits, one canonical textual encoding. Idempotent:
+    `INSERT OR IGNORE` on the fixed `id = 1`, so a re-attempted migration or a
+    create-then-open never changes an existing origin — the value must survive
+    close-reopen and backup-restore (I11). Runs INSIDE the caller's open
+    transaction (create / migrate), never opportunistically per-record, and there
+    is NO backfill — existing edge rows keep `origin` absent and resolve to it."""
+    conn.execute(
+        "INSERT OR IGNORE INTO store_identity(id, origin) VALUES(1, ?)",
+        (str(uuid.uuid4()),))
+
+
 def create(conn: sqlite3.Connection, version: int = SCHEMA_VERSION) -> None:
     """Build a database from the registry, statement by statement.
 
@@ -235,6 +265,11 @@ def create(conn: sqlite3.Connection, version: int = SCHEMA_VERSION) -> None:
     confirmed by the reviewer)."""
     for o in SCHEMAS[version]:
         conn.execute(o.ddl)
+    # specs/0006 §4.2 — a fresh store gets its durable origin singleton at creation,
+    # before any resolution can occur. Row data, not shape, so the manifest/digest
+    # validation (shape-only) is unaffected.
+    if version >= 5:
+        _mint_store_identity(conn)
 
 
 def manifest(conn: sqlite3.Connection) -> dict:

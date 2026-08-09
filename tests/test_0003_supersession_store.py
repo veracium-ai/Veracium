@@ -266,12 +266,14 @@ def test_v3_to_v4_migration_adds_both_tables_and_is_additive(tmp_path):
         c.commit()
     assert str(migrate_store(p)) == "migrated"
     with sqlite3.connect(p) as c:
-        assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION == 4
+        # head-relative since the 0006 v4→v5 bump: migrate_store now brings v3 all the
+        # way to head; the 0003 tables still land as part of that path (this test's point).
+        assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
         tables = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert "supersession_refusals" in tables and "supersession_operations" in tables
         # the pre-0003 wiki cache was invalidated (§7a)
         assert c.execute("SELECT COUNT(*) FROM wiki").fetchone()[0] == 0
-    SqliteStore(p)                                             # opens cleanly at v4
+    SqliteStore(p)                                             # opens cleanly at head
     assert str(migrate_store(p)) == "current"                 # idempotent
 
 

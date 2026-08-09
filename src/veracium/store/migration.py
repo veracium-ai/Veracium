@@ -24,7 +24,7 @@ from typing import Callable, NamedTuple, Optional
 from ..schema import Episode
 from .schema_version import (SCHEMA_VERSION, SCHEMAS, OpenResult,
                              PostCommitAuditError, StoreVersionError,
-                             _AUDIT_STRING_CAP, open_versioned)
+                             _AUDIT_STRING_CAP, _mint_store_identity, open_versioned)
 
 log = logging.getLogger(__name__)
 
@@ -135,6 +135,14 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
     # re-rooting above. Guarded base<4<=head so it fires exactly once, on the v3→v4 cross.
     if base < 4 <= SCHEMA_VERSION:
         _drop_wiki_cache(conn)
+    # specs/0006 §4.2 / Migration: crossing INTO v5 mints the durable `store_identity`
+    # origin singleton, transactionally, in the SAME migration transaction. A DATA step
+    # the additive `store_identity` table DDL cannot express (the table is empty until
+    # its one row exists). No per-record change and NO backfill — existing edge rows keep
+    # `origin` absent and resolve to this singleton at read (§4 rule 6). Guarded
+    # base<5<=head so it fires exactly once, on the v4→v5 cross.
+    if base < 5 <= SCHEMA_VERSION:
+        _mint_store_identity(conn)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
