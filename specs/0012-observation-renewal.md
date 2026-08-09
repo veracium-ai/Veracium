@@ -4,33 +4,34 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v6, 2026-08-09) — round-3 external review closed R2-2 (history) and the proactive
-> carrier, and RETURNED v5 on four found-in-fix defects in the collapse contract; v6 hardens it
-> around one governing principle: SUPPRESS ONLY STRICT REDUNDANCY — never synthesize, never
-> guess, never hide information a consumer reads (§4c).** The ruled Design 1 stands:
+> **draft (v7, 2026-08-09) — round-4 external review RETURNED v6 on four findings; v7 resolves
+> the central design conflict the rounds converged on: the collapse suppresses only strict
+> redundancy (so it CANNOT bound the surfaces against adversarial variants), therefore
+> boundedness now comes from HARD PER-SURFACE BUDGETS with safety-first priority and signaled
+> truncation — the `0003` contested-budget pattern (I10).** The ruled Design 1 stands:
 > **reinforcement transfers NOTHING**; the incoming edge is persisted with its own provenance.
-> v6's four amendments: **R3-1** value grouping is UNIQUE-ANCHOR, never transitive closure
-> (equality-or-subsumption is not an equivalence relation — `cat Miso`/`dog Miso`/`Miso` would
-> have merged into one and lost a pet; an ambiguous short form now surfaces on its own, I8e);
-> **R3-2** the key carries the COMPLETE effective-authority envelope incl. `derived_from`
-> (`0003` is `min(author, derived_from)` — a direct-USER edge and a USER-derived-from-SYSTEM
-> edge are different trust facts and never collapse, I8f); **R3-3** a STRICT-REDUNDANCY
-> predicate — a member with a distinct `note`, `volatility`, or outcome metadata surfaces
-> (never a franken-representative; a dated commitment cannot vanish behind a fresher empty
-> duplicate), and query recall scores BEFORE collapsing (I8g); **R3-4** a flagged member IS
-> surfaced rather than its flag being synthesized onto an unflagged edge — so the warning has a
-> CONFIRMABLE OWNER and `confirm(surfaced.id)` clears it end-to-end (`0008` C2, I8h). — v5
-> folded R2-1…R2-4; v4 folded round-1 F1–F6 + the package blocker (F4's receipt digest fixed at
-> root under `0003`). 🔗 Design 1 closes `0014` §3.1 + `M9` (§11). Still `draft` — v6 is the
-> round-4 resubmission.
+> v7's amendments: **R4-1** `note`/`volatility` are extractor-influenced, so a variant flood
+> evades any honest collapse (25 distinct-note duplicates = 25 lines, reviewer-reproduced) —
+> every model-facing surface now carries a hard budget independent of collapse effectiveness
+> (recall's edge budget; wiki per-group + total input caps; a DEFAULT proactive budget), with
+> flagged warnings/dated commitments/contested content outranking variants and deterministic,
+> signaled truncation; §5/§8's boundedness claims corrected to "budgets bound, collapse
+> improves" (I10). **R4-2** the anchored-by count has THREE cells and v6 specified two — the
+> zero-anchor cell (a sequential token-dropping chain) now surfaces alone, budget-bounded
+> (I8i). **R4-3** N>1 flagged duplicates: exactly ONE confirmable owner surfaces per recall
+> (never N prompts), sequential clearing is the stated contract, surface pinned at one (I8h
+> extended). **R4-4** the survivor edge is chosen by a deterministic total order BEFORE
+> suppression, making the surfaced set store-order invariant (I8j). — v6 folded R3-1…R3-4; v5
+> folded R2-1…R2-4; v4 folded round-1 F1–F6 (F4's receipt digest fixed at root under `0003`).
+> 🔗 Design 1 closes `0014` §3.1 + `M9` (§11). Still `draft` — v7 is the round-5 resubmission.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v6** — *round-3 amendments folded: the collapse hardened to suppress-only-strict-redundancy (unique-anchor grouping · full authority envelope incl. `derived_from` · carrier-field predicate · flagged-member-as-owner; I8e–I8h added). v5 folded R2-1…R2-4; v4 folded round-1 F1–F6 + the package blocker; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
+| **Version** | **v7** — *round-4 amendments folded: HARD per-surface budgets with safety-first priority + signaled truncation (I10 — boundedness from budgets, collapse as quality); zero-anchor cell specified (I8i); N-flag sequential ownership (I8h ext.); deterministic survivor selection (I8j); I9 extended to adversarial variants. v6 folded R3-1…R3-4; v5 folded R2-1…R2-4; v4 folded round-1 F1–F6 + the package blocker; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0008`'s deferred liveness scope. **`0008` does not depend on this.** |
 | **Internal reviewers** | research — the O-Q1/O-Q2/O-Q3 ruling round (2026-08-08, `proposals/0012-rulings.md`; recorded in `specs/reviews.py`) |
-| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3 (2026-08-09): R2-2 + proactive carrier CLOSED; return on 4 found-in-fix defects in the collapse** (R3-1…R3-4) → v6. All dev-verified against the code (ledger: `specs/reviews.py`) |
+| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4 (2026-08-09): R3-2 CLOSED, R3-1/R3-3/R3-4's named cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets resolve the bound-vs-hide conflict). All dev-verified (ledger: `specs/reviews.py`) |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -228,40 +229,77 @@ member that carries information any consumer reads.** The v6 contract:
   different trust facts and NEVER collapse together (v5's key omitted `derived_from` and
   surfaced the lower-authority member — R3-2's reproducer). Bounded: ≤ |authors × derivations|
   representatives per value, in practice a handful.
-- **Value grouping: UNIQUE-ANCHOR, never transitive closure (R3-1).** Equality-or-subsumption
-  is not an equivalence relation, so its transitive closure bridges incomparable values: with
-  active `cat Miso`, `dog Miso`, and `Miso`, the bare `Miso` connects both and closure merges
-  ALL THREE — one genuine pet disappears. v6 construction: the group ANCHORS are the maximal
-  values (subsumed by no other active member of the key); a non-maximal value joins a group
-  **iff it is equal-or-subsumed by exactly ONE anchor**; a value subsumed by two or more
-  INCOMPARABLE anchors is AMBIGUOUS and **surfaces on its own** — the collapse never guesses
-  which fact a short form belongs to. (`cat Miso` and `dog Miso` anchor two groups; `Miso`
-  surfaces separately.)
+- **Value grouping: UNIQUE-ANCHOR, never transitive closure (R3-1), with ALL THREE anchor
+  cells specified (R4-2).** Equality-or-subsumption is not an equivalence relation, so its
+  transitive closure bridges incomparable values: with active `cat Miso`, `dog Miso`, and
+  `Miso`, the bare `Miso` connects both and closure merges ALL THREE — one genuine pet
+  disappears. Construction: the group ANCHORS are the maximal values (subsumed by no other
+  active member of the key). For every non-maximal value, the anchored-by count has exactly
+  three cells, and each is specified:
+  **anchored-by 1** → joins that anchor's group (the only collapsing cell);
+  **anchored-by ≥2 incomparable anchors** → AMBIGUOUS, surfaces on its own — the collapse never
+  guesses which fact a short form belongs to;
+  **anchored-by 0** (R4-2 — reachable via a sequential token-dropping chain 20→18→…→2, where
+  each member subsumes only its immediate successor and the sole maximal anchor directly
+  subsumes only the first drop) → **surfaces on its own**, same as ambiguous — "never hides"
+  outranks grouping, and the resulting extra surface items are bounded by the budget rule
+  below, not by the collapse. (v6 specified only the {1, ≥2} cells — the enumeration gap the
+  found-in-fix checklist names.)
+- **Survivor selection is DETERMINISTIC and precedes suppression (R4-4).** v6 evaluated
+  suppression "against the anchor's note/volatility/outcomes" without ever choosing WHICH
+  stored edge the anchor is when several share the maximal key — and because the note predicate
+  is asymmetric (empty may hide behind nonempty, never the reverse), store order could change
+  the surfaced set. v7: within a group, the SURVIVOR edge is chosen first by a total order —
+  **note-bearing over empty-note, then most specific value, then freshest `observed_at`, then
+  lexicographic edge id** — and the suppression predicate is evaluated relative to that one
+  stored edge. The surfaced set is **invariant under store order/permutation** (the same
+  determinism contract `0003` demanded of contested rendering). Flagged members are handled by
+  the flag rule below, outside this order.
 - **Suppression predicate: STRICT REDUNDANCY ONLY (R3-3).** A member may be suppressed behind
-  an anchor only when it adds NO carrier-visible information beyond it: `note` empty or
-  byte-equal to the anchor's; same `volatility`; no outcome metadata (`outcome_counts`,
+  the survivor only when it adds NO carrier-visible information beyond it: `note` empty or
+  byte-equal to the survivor's; same `volatility`; no outcome metadata (`outcome_counts`,
   `last_outcome`, `times_used` at their defaults or equal); not flagged (see below). A member
   differing in ANY of these SURFACES — a dated-commitment `note` is never lost behind a fresher
   empty-note duplicate, and a `durable` fact is never represented by its `transient`
   restatement. There is NO synthesized representative: every surfaced item is a real stored
-  edge, verbatim. The one presentation-level aggregate permitted: date labels ("since …") may
-  be rendered from the GROUP's earliest `valid_from` — a true statement about the group,
-  computed at render, mutating nothing.
+  edge, verbatim. The one presentation-level aggregate permitted: render-time labels computed
+  truthfully from the group (the earliest `valid_from` for "since …"; the flagged-member count
+  for "×N") — mutating nothing.
 - **Per-surface ordering (R3-3):** query recall SCORES every member first and collapses
   after (among scored members of one group, the query-matching member survives) — collapsing
   before scoring could erase the only query-matching `note`; collapsing after protects the edge
   budget at selection, which is where the budget is spent. Proactive assembly categorizes
   per-member (commitments, confirmations, context) and collapses within category.
-- **Flagged members are never hidden AND never synthesized onto others (R2-1 + R3-4).** v5 had
-  the representative "render the group's flag" — but a flag shown on an unflagged edge has no
-  confirmable owner: `confirm(surfaced.id)` would clear the already-clear fresh edge while the
-  hidden old edge stayed flagged, an unclearable warning (`0008` C2 violated). v6: **a flagged
-  member IS surfaced — the group's representative for the flag is the flagged edge itself**
-  (freshest flagged member first, if several). The model-facing warning therefore carries the
-  exact edge id whose `confirm()` clears it; after confirmation the group surfaces its
-  unflagged anchor normally. `0008`'s per-edge confirm contract is untouched.
+- **Flagged members: one confirmable owner at a time, surface size pinned (R2-1 + R3-4 +
+  R4-3).** A flag is never synthesized onto an unflagged edge (v5's defect — no confirmable
+  owner; `0008` C2). The group's warning carrier is a real flagged edge. **With N > 1 flagged
+  members in one group, exactly ONE surfaces per recall — the freshest flagged — regardless of
+  N** (25 flagged duplicates produce ONE confirmation prompt, not 25); the prompt MAY carry the
+  truthful render-time count ("×N restatements need confirmation"). `confirm(surfaced.id)`
+  clears exactly that edge (`0008`'s per-edge contract untouched); if other flagged members
+  remain, the next-freshest surfaces on the NEXT recall — **sequential clearing is the
+  specified contract**, stated rather than implied: N flagged edges take N confirmations, the
+  surface never shows more than one at a time, and after the last confirmation the group
+  surfaces its unflagged survivor normally. (A single-confirm-clears-group semantic would
+  modify accepted `0008`'s clearing rule and is deliberately NOT proposed.)
 - **Coverage: EVERY model-facing read path (R2-3)** — query recall's subgraph selection, the
   wiki compiler's input, AND `proactive.py`'s session-start assembly.
+- **🔴 HARD per-surface budgets with safety-first priority — boundedness comes from BUDGETS,
+  not from the collapse (R4-1).** The strict-redundancy predicate and the surface-everything
+  cells above mean the collapse alone CANNOT bound the surfaces: `note` and `volatility` are
+  extractor-influenced, so an adversary evades suppression by varying a qualifier (25
+  distinct-note duplicates = 25 surfaced items under v6 — reviewer-reproduced; `compile_wiki`
+  had no input cap and proactive without `token_budget` was unbounded). v7 resolves the
+  bound-vs-hide conflict explicitly, with the `0003` contested-budget pattern: **every
+  model-facing surface carries a hard bound that holds independent of collapse
+  effectiveness** — query recall's existing edge budget; a per-group variant cap AND total
+  input cap on the wiki compiler; a DEFAULT budget for proactive assembly even when the caller
+  omits `token_budget`. Within a bound, priority is SAFETY-FIRST: flagged warnings, dated
+  commitments, and contested/confirmation content outrank redundant same-value variants — a
+  variant flood can never displace them. Truncation is **deterministic and SIGNALED** (a
+  truthful render marker, e.g. *"+N more variants recorded"*, and the structured `truncated`
+  form where the surface has one) — never silent. What is truncated remains in the store,
+  visible to `introspect()`.
 - **Cross-class same-value still renders BOTH** — the O-Q2 ruling's own example (*"stated by
   you (Jan); also reported by a third party (Aug)"*): cross-class corroboration is informative;
   same-key repetition is not.
@@ -282,16 +320,18 @@ member that carries information any consumer reads.** The v6 contract:
   host supplies `source_id`** (§2c — the default MCP stream does not). If a real host hits the
   quadratic wall, the recorded successors are an attributed same-class merge (a
   `0014`-recorded consumption) or Design 2 (`reobserve()`).
-- **Read-path amplification exists and is MITIGATED by I8, not denied (F6; contract redesigned
-  in v5 per R2-1…R2-4).** Without I8, the wiki compiler renders every active grounded edge into
-  its prompt (token cost linear in N), query recall's bounded edge budget can be spent on N
-  copies of one fact, and proactive assembly repeats the fact per duplicate. With I8 (required),
-  all three read paths see at most one ACTIVE representative per `(subject, relation,
-  disclosure, author, derived_from)` unique-anchor value group (§4c — history exempt, strict
-  redundancy only, flagged members surfacing themselves); the
-  residual costs are the O(N) SQL row scan feeding the collapse and the storage itself. "Cold vs
-  warm identical" is therefore claimed only ABOVE I8's collapse — the raw row counts differ and
-  §6's I9 measures the collapsed surfaces, not the store.
+- **Read-path amplification is bounded by BUDGETS (I10), improved by the collapse (I8) —
+  claimed in that order (F6 → R4-1 corrected v6's over-claim).** The collapse alone cannot
+  bound the surfaces: its suppression predicate deliberately surfaces distinct-note /
+  distinct-volatility / outcome-bearing / ambiguous / zero-anchor members, and those fields are
+  extractor-influenced — so an adversarial variant flood defeats collapse by construction. The
+  HARD bound on every model-facing surface is its budget (§4c: recall's edge budget, the wiki
+  input caps, proactive's default budget), which holds at any N with safety-first priority and
+  a signaled truncation. The collapse determines what FITS WELL within the budget (strictly
+  redundant members never waste it); it is an optimization of surface quality, not the
+  boundedness mechanism. Residual costs: the O(N) SQL row scan feeding selection, and storage.
+  "Cold vs warm identical" is claimed only for the BUDGETED surfaces — raw row counts differ,
+  and §6's I9/I10 measure the surfaces, not the store.
 - **Concurrency.** The plan rides `0003`'s CAS (`expected_state` → PLAN_STALE → recompute). Two
   concurrent restatements each insert their own edge — no shared row to race on (today they race
   on the prior's `observed_at`/`confidence`; Design 1 removes that write). The CAS scope
@@ -327,8 +367,11 @@ implementation.*
 | **I8e** | **(R3-1)** grouping never bridges incomparable values: a value subsumed by TWO OR MORE incomparable anchors is AMBIGUOUS and surfaces on its own — no transitive closure, no guessing | `test_incomparable_anchors_are_never_merged` — active `cat Miso` + `dog Miso` + `Miso` (nonfunctional `has_pet`): BOTH specific pets surface, and `Miso` surfaces separately; nothing disappears |
 | **I8f** | **(R3-2)** the collapse key carries the COMPLETE effective-authority envelope: members differing in `derived_from` never collapse, systematically over `author × derived_from` | `test_collapse_respects_the_authority_envelope` — table-driven over the `0003` ladder: for every pair of `(author, derived_from)` combinations with different `effective()`, both members surface; equal-envelope pairs collapse |
 | **I8g** | **(R3-3)** no carrier-visible information is lost to suppression: a member with a distinct `note`, different `volatility`, or outcome metadata SURFACES; query scoring runs BEFORE collapse | `test_collapse_never_drops_carrier_fields` — older duplicate with `note="due 2026-08-10"`/durable + fresher empty-note/transient: the dated commitment still renders in proactive AND a query matching the note text still finds it |
-| **I8h** | **(R3-4)** a surfaced possibly-stale warning has a CONFIRMABLE OWNER: the flagged edge itself surfaces (never a synthesized flag on an unflagged edge), and confirming the surfaced id CLEARS the warning end-to-end | `test_confirming_the_surfaced_warning_clears_it` — old flagged + fresh unflagged duplicate: the FLAGGED edge surfaces; `confirm(surfaced.id)` → recall no longer shows the warning (`0008` C2 preserved) |
-| **I9** | **(F6, extended in v5)** the high-restatement regime is pinned, not assumed — over EXACT and SUBSUMED repetitions | `test_the_high_restatement_regime_stays_correct_and_bounded` — 25 restatements MIXING exact and token-dropped forms: every ingest applies cleanly (no contention artifacts, no PLAN_STALE exhaustion), the prior is untouched throughout, `expire()` still flags it, and the I8-collapsed recall/compiler/proactive surfaces are the same size as at N=1 |
+| **I8h** | **(R3-4 + R4-3)** a surfaced possibly-stale warning has a CONFIRMABLE OWNER, and the warning surface is PINNED AT ONE regardless of how many members flag: with N > 1 flagged duplicates, exactly one (freshest flagged) surfaces per recall; `confirm(surfaced.id)` clears that edge; the next-freshest surfaces on the next recall; after the Nth confirmation no warning remains | `test_confirming_the_surfaced_warning_clears_it` (1+1 case) · `test_n_flagged_duplicates_surface_one_owner_at_a_time` — 25 flagged duplicates: ONE prompt (optionally "×25"), never 25; confirm it → next owner surfaces; iterate to zero warnings; surface size 1 throughout |
+| **I8i** | **(R4-2)** all three anchored-by cells behave as specified — {0 → surfaces alone, 1 → collapses, ≥2 → surfaces alone}; a zero-anchor chain member is never silently suppressed and never merged upward past `_subsumes`' bound | `test_a_token_dropping_chain_surfaces_its_unanchored_members` — the 20→18→…→2 sequential chain: the maximal anchor collapses only its directly-subsumed member; every zero-anchor interior member surfaces (within I10's budget), none vanishes |
+| **I8j** | **(R4-4)** the surfaced set is DETERMINISTIC and store-order invariant: the survivor is chosen by the §4c total order (note-bearing → specificity → freshest → edge id) BEFORE suppression is evaluated | `test_surfaced_set_is_permutation_invariant` — insert one group's members in several store orders (incl. the asymmetric empty-note/nonempty-note pair both ways): identical surfaced set every time |
+| **I10** | **(R4-1)** every model-facing read surface carries a HARD budget that holds independent of collapse effectiveness — recall's edge budget, the wiki compiler's per-group and total input caps, proactive's DEFAULT budget when the caller sets none — with SAFETY-FIRST priority (flagged warnings, dated commitments, contested/confirmation content outrank redundant variants) and deterministic, SIGNALED truncation (never silent; truncated members stay visible to `introspect()`) | `test_read_surfaces_are_hard_bounded_against_variant_floods` — 25 exact-value edges with DISTINCT notes: every surface stays within its bound, the flagged warning and a dated commitment still render, the truncation marker is present and deterministic |
+| **I9** | **(F6, extended v5 + v7)** the high-restatement regime is pinned, not assumed — over EXACT, SUBSUMED, **and adversarial-variant** repetitions (distinct notes, mixed volatilities, outcome-bearing members) | `test_the_high_restatement_regime_stays_correct_and_bounded` — 25 restatements MIXING exact, token-dropped, and distinct-note/volatility forms: every ingest applies cleanly (no contention artifacts, no PLAN_STALE exhaustion), the prior is untouched throughout, `expire()` still flags it, and every surface obeys I10's bound with the safety items retained |
 
 ## 7. Failure modes and reversibility
 
@@ -378,11 +421,12 @@ acceptance:
 - `src/veracium/graph.py` — `_build_supersession_plan`'s reinforcement branch: action changes
   from *refresh-prior-and-drop-incoming* to *persist-incoming-untouched* (§4a); and the recall
   subgraph selection gains the I8 collapse (active-only, per-author, dominance-grouped — §4c).
-- `src/veracium/compile.py` — the wiki compiler's input applies the same I8 collapse (derived
-  view; its inputs are guarded upstream).
-- `src/veracium/proactive.py` — session-start assembly joins the I8 contract (R2-3; v4 wrongly
-  excluded it — it iterates active assertable edges deduplicating only by edge id, and under a
-  `token_budget` uncollapsed duplicates could displace unrelated commitments or confirmations).
+- `src/veracium/compile.py` — the wiki compiler's input applies the I8 collapse AND gains the
+  I10 per-group + total input caps (it previously had NO input bound — R4-1). Derived view; its
+  inputs are guarded upstream.
+- `src/veracium/proactive.py` — session-start assembly joins the I8 contract (R2-3) and gains
+  a DEFAULT I10 budget even when the caller omits `token_budget` (previously unbounded —
+  R4-1); safety-first priority so duplicates never displace commitments or confirmations.
 - `src/veracium/lifecycle.py` — docstring only (`expire()` code untouched; I3 pins the per-edge
   contract it already implements).
 - `src/veracium/schema.py` — the `SupersessionPlan` docstring carrier (§7b); no field change.
@@ -406,8 +450,10 @@ acceptance:
   Design 2's question (`reobserve()`, the recorded successor). Design 1 makes restatement honest
   — each observation stands on its own provenance — it does not verify anything.
 - **Does NOT deduplicate storage, and the write path pays O(N) per ingest under accumulation
-  (§5).** The READ paths are bounded by I8's required collapse; the store and the CAS scope scan
-  are not — that trade is accepted with I9 pinning the regime.
+  (§5).** The READ paths are bounded by their BUDGETS (I10), with the collapse improving what
+  fits (I8) — the collapse alone bounds nothing against adversarial variants (R4-1, stated
+  plainly); the store and the CAS scope scan are unbounded — that trade is accepted with I9
+  pinning the regime.
 - **Does NOT touch absorption's within-class inheritance** — deliberate scope (§2); its
   attribution gap is `0014` §3.3's.
 - **Depends on nothing unaccepted.** The plan machinery it rides (`0003`) is accepted and
