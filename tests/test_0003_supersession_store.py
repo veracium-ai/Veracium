@@ -291,3 +291,56 @@ def test_an_old_build_opening_a_v4_store_refuses_rather_than_losing_the_inventor
             SqliteStore(p)
     finally:
         sv.SCHEMA_VERSION = orig
+
+
+def test_a_differing_resubmission_conflicts_field_by_field(tmp_path):
+    """0012 round-1 external review, F4: the receipt digest bound only [id, object, author,
+    derived_from] + structural ids, so resubmitting the SAME operation_id with DIFFERENT
+    provenance (another source_id, an inflated confidence, a moved observed_at) digested
+    identically and REPLAYED silently — the store kept the first submission's provenance
+    while reporting success for the second, violating the digest's own stated contract
+    ('a genuinely different operation … produces a different digest → integrity conflict').
+    Exhaustive over the persisted fields the old digest omitted; an EXACT resubmission must
+    still replay."""
+    from datetime import timedelta
+    s = SqliteStore(str(tmp_path / "s.db"))
+    s.add_edge(_edge("p", EvidenceAuthor.USER, "CFO"))
+
+    # ONE incoming edge, deep-copied for the retry and for each mutation — the helper
+    # mints fresh default timestamps per construction, and a verbatim retry means the
+    # caller re-sends the SAME logical request, not a re-minted lookalike.
+    inc0 = _edge("i", EvidenceAuthor.USER, "CEO")
+    inc0.provenance.source_id = "mailbox:A"
+    inc0.provenance.confidence = 0.4
+
+    plan = SupersessionPlan(incoming_edge=inc0.model_copy(deep=True), insert_incoming=True,
+                            operation_id="op-f4", expected_state=_fp(s))
+    assert not s.apply_supersession_plan(plan).replayed
+    committed = [e for e in s.edges(U, active_only=True) if e.id == "i"][0]
+
+    # exact resubmission (byte-identical plan) → true replay, store untouched
+    exact = SupersessionPlan(incoming_edge=inc0.model_copy(deep=True), insert_incoming=True,
+                             operation_id="op-f4", expected_state=plan.expected_state)
+    assert s.apply_supersession_plan(exact).replayed
+
+    def mutate(field, apply):
+        e = inc0.model_copy(deep=True)
+        apply(e)
+        differing = SupersessionPlan(incoming_edge=e, insert_incoming=True,
+                                     operation_id="op-f4",
+                                     expected_state=plan.expected_state)
+        with pytest.raises(SupersessionIntegrityError):
+            s.apply_supersession_plan(differing)
+        kept = [x for x in s.edges(U, active_only=True) if x.id == "i"][0]
+        assert kept.model_dump() == committed.model_dump(), (
+            f"a rejected {field} resubmission must leave the committed edge untouched")
+
+    mutate("source_id", lambda e: setattr(e.provenance, "source_id", "mailbox:B"))
+    mutate("evidence_ref", lambda e: setattr(e.provenance, "evidence_ref", "ev-other"))
+    mutate("confidence", lambda e: setattr(e.provenance, "confidence", 0.99))
+    mutate("observed_at", lambda e: setattr(
+        e.provenance, "observed_at", e.provenance.observed_at + timedelta(days=200)))
+    mutate("disclosure", lambda e: setattr(e.provenance, "disclosure", Disclosure.USE_ONLY))
+    mutate("valid_from", lambda e: setattr(e, "valid_from", e.valid_from - timedelta(days=400)))
+    mutate("note", lambda e: setattr(e, "note", "smuggled"))
+    mutate("needs_confirmation", lambda e: setattr(e, "needs_confirmation", True))

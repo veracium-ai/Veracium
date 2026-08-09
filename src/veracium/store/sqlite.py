@@ -286,15 +286,28 @@ class SqliteStore(Store):
         operation replayed produces the same digest (→ replay a committed receipt); a
         genuinely different operation that reuses an `operation_id` produces a different
         digest (→ integrity conflict). §4f processing order step 1."""
-        inc = plan.incoming_edge
+        # The digest binds the COMPLETE logical persistent outcome — every field the plan
+        # would persist — not a hand-picked subset. The previous form bound only
+        # [id, object, author, derived_from] + structural ids, so a resubmission of the
+        # same operation_id with DIFFERENT provenance (another source_id, an inflated
+        # confidence, a moved observed_at) digested identically and REPLAYED silently,
+        # keeping the first submission's provenance while reporting success for the
+        # second — exactly the "genuinely different operation" this docstring promises
+        # an integrity conflict for (0012 round-1 external review, F4). Excluded, by the
+        # docstring's own rule: `expected_state` (changes on CAS recompute) and
+        # `operation_id` (it is the lookup key). A verbatim retry still replays: identical
+        # plan → identical serialization; the reinforcement recompute stays stable because
+        # max() is idempotent.
         payload = {
-            "incoming": [inc.id, inc.object,
-                         inc.provenance.author_of_evidence.value,
-                         inc.provenance.derived_from.value if inc.provenance.derived_from else None],
+            "incoming": json.loads(plan.incoming_edge.model_dump_json()),
             "insert_incoming": plan.insert_incoming,
-            "upserts": sorted(e.id for e in plan.prior_upserts),
-            "invalidations": sorted([eid, reason] for eid, _at, reason in plan.prior_invalidations),
-            "refusals": sorted([r.prior_edge_id, r.incoming_edge_id] for r in plan.refusals),
+            "upserts": sorted((json.loads(e.model_dump_json()) for e in plan.prior_upserts),
+                              key=lambda d: d["id"]),
+            "invalidations": sorted([eid, at.isoformat(), reason]
+                                    for eid, at, reason in plan.prior_invalidations),
+            "refusals": sorted(
+                (json.loads(r.model_dump_json()) for r in plan.refusals),
+                key=lambda d: (d["prior_edge_id"], d["incoming_edge_id"])),
         }
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
