@@ -147,14 +147,15 @@ defers `0003`'s ladder to a later pure-code change; neither consumes the field i
 
 **The concrete v1 consumer is `0014` (maintenance attribution).** It keys its content-free
 contribution ledger on the **`(origin, source_id)` pair** (`Spec-Requires: 0006`) — precisely
-because this spec defines an unforgeable source identity that is *already the revocation key*. So v1
+because this spec defines a **stable, revocable** source identity that is *already the revocation
+key* (stable and revocable is all the ledger needs; the identity is NOT unforgeable — §3b/I2a). So v1
 ships the identity as **diagnostic + a stable, revocable ledger key**; the trust consumers that
 motivated it are **deferred** (M3 relaxation and the `0003` ladder both wait on provenance-of-the-
 *call*, §0, on no roadmap). This spec earns its v1 no-DDL version bump on `0014` — a §1→§3 reader
 should not have to infer that.
 
 **If we do nothing:** M3 stays permanently fail-closed — correct today, but it blocks same-source
-reinforcement — `0003`'s ladder stays coarser than it needs to be, and **`0014` has no unforgeable,
+reinforcement — `0003`'s ladder stays coarser than it needs to be, and **`0014` has no stable,
 revocable key to attribute maintenance to**, so the attribution ledger cannot name a source and the
 recurring maintenance-provenance-loss class stays open.
 

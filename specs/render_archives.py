@@ -54,12 +54,41 @@ def _entries():
     return out, bad
 
 
+def _archived_specs_missing_external_reviews(entries):
+    """The invariant this file's own docstring asserts — "each archive is the
+    exact package sent for one external review round" — but never enforced: an
+    archived spec MUST have at least one external round recorded in reviews.py.
+
+    Its absence is exactly how `0009`/`0010` silently reported `ext=0` in
+    STATUS.md while 7 and 9 archives sat on disk (caught by a reader, 2026-08-08,
+    who nearly filed a process violation on two shipped specs). The naming was
+    machine-checked; the evidence was simply never compared to the ledger. This
+    closes that gap: the evidence on disk and the count in reviews.py can no
+    longer disagree by omission.
+
+    Deliberately a floor (>=1), not equality: several specs have more archives
+    than recorded rounds (a version re-packaged or re-sent within one round is
+    normal), so `archives == rounds` would false-positive. Zero rounds under >=1
+    archive is the only unambiguous defect, and it is the one that bit."""
+    from reviews import REVIEWS  # specs/ is sys.path[0] when run as a script
+    archived = {e["spec"] for e in entries}
+    reviewed = {r["spec"] for r in REVIEWS if r["kind"] == "external"}
+    return sorted(archived - reviewed)
+
+
 def render() -> str:
     entries, bad = _entries()
     if bad:
         raise SystemExit(
             "archive names do not match the convention "
             "`NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz`:\n  " + "\n  ".join(bad))
+    missing = _archived_specs_missing_external_reviews(entries)
+    if missing:
+        raise SystemExit(
+            "these specs have review archives on disk but NO external review "
+            "round recorded in specs/reviews.py, so STATUS.md would report "
+            f"ext=0 for them: {missing}. Add the rounds to reviews.py — the "
+            "archives are the evidence they happened.")
     rows = "\n".join(
         f"| `{e['name']}` | {e['spec']} | v{e['ver']} | "
         f"{e['ts'][:4]}-{e['ts'][4:6]}-{e['ts'][6:8]} {e['ts'][9:11]}:{e['ts'][11:13]}Z | "
