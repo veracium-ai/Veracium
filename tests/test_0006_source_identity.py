@@ -236,3 +236,119 @@ def test_source_id_changes_no_decision(tmp_path):
     tp = [e for e in mem.store.edges("u", active_only=True) if e.subject == "org:x"]
     assert tp and tp[0].provenance.third_party_influenced
     assert tp[0].provenance.disclosure.value in ("quarantined", "use_only")
+
+
+# ============================ Slice C: portability ===================================
+from veracium.portability import FORMAT_VERSION, export_memory, import_memory
+
+
+def _mem_at(db, scripts):
+    return Memory(llm=_FakeComplete(scripts),
+                  config=MemoryConfig(db_path=db, wiki_recompile_after_writes=0))
+
+
+def _lines(p):
+    return [json.loads(l) for l in open(p) if l.strip()]
+
+
+def _write_lines(p, header, recs):
+    with open(p, "w") as f:
+        f.write(json.dumps(header) + "\n")
+        for r in recs:
+            f.write(json.dumps(r) + "\n")
+
+
+_SCRIPT = [{"triples": [{"subject": "user", "relation": "works_as", "object": "chef"}],
+            "episode": "User is a chef."}]
+
+
+def test_export_materialises_and_import_roundtrips_source_id_and_origin(tmp_path):
+    # I6: export round-trips source_id AND the RESOLVED origin
+    src = _mem_at(str(tmp_path / "src.db"), _SCRIPT)
+    src.remember("u", "x", date="2026-01-01", source_id="mailbox:primary")
+    src_origin = src.store.local_origin()
+    exp = str(tmp_path / "e.jsonl")
+    export_memory(src.store, "u", exp)
+    # every exported record carries the materialised (resolved) origin
+    for rec in _lines(exp)[1:]:
+        assert rec["provenance"]["origin"] == src_origin
+    assert _lines(exp)[0]["version"] == FORMAT_VERSION == 4
+    dst = SqliteStore(str(tmp_path / "dst.db"))
+    import_memory(dst, exp)
+    e = [x for x in dst.edges("u", active_only=True) if x.relation == "works_as"][0]
+    assert e.provenance.source_id == "mailbox:primary"
+    assert e.provenance.origin == src_origin        # foreign to dst, preserved (I2b)
+
+
+def test_local_source_survives_a_roundtrip_into_the_same_store(tmp_path):
+    # I9: export→re-import into the SAME store groups as one and digests identically
+    src = _mem_at(str(tmp_path / "src.db"), _SCRIPT)
+    src.remember("u", "x", date="2026-01-01", source_id="mailbox")
+    e0 = [x for x in src.store.edges("u", active_only=True) if x.relation == "works_as"][0]
+    local = src.store.local_origin()
+    d0 = source_identity_digest(resolve_origin(e0.provenance.origin, local), "mailbox")
+    exp = str(tmp_path / "e.jsonl")
+    export_memory(src.store, "u", exp)
+    import_memory(src.store, exp)                    # re-import into itself — idempotent
+    works = [x for x in src.store.edges("u", active_only=True) if x.relation == "works_as"]
+    assert len(works) == 1                           # one source, not split by the round-trip
+    e1 = works[0]
+    assert e1.provenance.origin is None              # de-materialised: a local record came home
+    d1 = source_identity_digest(resolve_origin(e1.provenance.origin, local), "mailbox")
+    assert d1 == d0                                  # digests identically (I9)
+
+
+def test_a_v4_import_missing_origin_is_rejected(tmp_path):
+    # I14: a current-format record with no origin is malformed → reject, never localise
+    src = _mem_at(str(tmp_path / "src.db"), _SCRIPT)
+    src.remember("u", "x", date="2026-01-01", source_id="mailbox")
+    exp = str(tmp_path / "e.jsonl")
+    export_memory(src.store, "u", exp)
+    ls = _lines(exp)
+    for rec in ls[1:]:
+        rec["provenance"].pop("origin", None)        # hand-strip the materialised origin
+    _write_lines(exp, ls[0], ls[1:])
+    dst = SqliteStore(str(tmp_path / "dst.db"))
+    with pytest.raises(ValueError, match="origin"):
+        import_memory(dst, exp)
+
+
+def test_a_foreign_origin_is_preserved_not_localised(tmp_path):
+    # I2b: an imported foreign origin stays foreign, does NOT acquire the destination's
+    src = _mem_at(str(tmp_path / "src.db"), _SCRIPT)
+    src.remember("u", "x", date="2026-01-01", source_id="mailbox")
+    exp = str(tmp_path / "e.jsonl")
+    export_memory(src.store, "u", exp)
+    ls = _lines(exp)
+    for rec in ls[1:]:
+        rec["provenance"]["origin"] = "FOREIGN-STORE-A"   # pretend it came from store A
+    _write_lines(exp, ls[0], ls[1:])
+    dst = SqliteStore(str(tmp_path / "dst.db"))
+    import_memory(dst, exp)
+    e = [x for x in dst.edges("u", active_only=True) if x.relation == "works_as"][0]
+    assert e.provenance.origin == "FOREIGN-STORE-A"       # not dst's singleton
+    assert e.provenance.origin != dst.local_origin()
+
+
+def test_a_pre_v4_envelope_carrying_source_id_is_stripped(tmp_path):
+    # I10: a field NEWER than the declared FORMAT_VERSION is stripped, not trusted
+    src = _mem_at(str(tmp_path / "src.db"), _SCRIPT)
+    src.remember("u", "x", date="2026-01-01", source_id="mailbox")
+    exp = str(tmp_path / "e.jsonl")
+    export_memory(src.store, "u", exp)
+    ls = _lines(exp)
+    ls[0]["version"] = 3                                   # relabel as an OLD envelope
+    for rec in ls[1:]:
+        rec["provenance"]["source_id"] = "SMUGGLED"        # hand-add the new fields
+        rec["provenance"]["origin"] = "SMUGGLED-ORIGIN"
+    _write_lines(exp, ls[0], ls[1:])
+    dst = SqliteStore(str(tmp_path / "dst.db"))
+    import_memory(dst, exp)
+    e = [x for x in dst.edges("u", active_only=True) if x.relation == "works_as"][0]
+    assert e.provenance.source_id is None and e.provenance.origin is None   # both stripped
+
+
+def test_honest_exports_with_equal_source_ids_under_different_origins_do_not_collide():
+    # I8: same source_id, different origin ⇒ different identity (no accidental collision)
+    assert source_identity_digest("STORE-A", "mailbox:primary") != \
+        source_identity_digest("STORE-B", "mailbox:primary")

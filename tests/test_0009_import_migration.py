@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from veracium.portability import export_memory, import_memory
+from veracium.portability import FORMAT_VERSION, export_memory, import_memory
 from veracium.schema import (Edge, Episode, EvidenceAuthor, Outcome,
                              OutcomeJudgmentDraft, Provenance, SourceType)
 from veracium.store.base import DESTINATION_CHANGED
@@ -45,14 +45,18 @@ def _outcome(*, eid="e1", evref="run-1", seq=1, supersedes=None,
             author_of_evidence=author, evidence_ref=evref))
 
 
-def _write_export(path, records, *, uid="u", version=3):
+def _write_export(path, records, *, uid="u", version=3, origin=None):
+    # specs/0006: a v4 export materialises a resolved origin on every record; pass
+    # `origin` to stamp one (a v4 record with an absent origin is rejected on import, I14).
     with open(path, "w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": version,
                             "user_id": uid,
                             "exported_at": "2026-01-01T00:00:00+00:00"}) + "\n")
         for marker, model in records:
-            f.write(json.dumps({"record": marker,
-                                **json.loads(model.model_dump_json())}) + "\n")
+            rec = json.loads(model.model_dump_json())
+            if origin is not None and isinstance(rec.get("provenance"), dict):
+                rec["provenance"]["origin"] = origin
+            f.write(json.dumps({"record": marker, **rec}) + "\n")
 
 
 def _src_with_chain(path, *, evref="run-1", links=2):
@@ -88,12 +92,18 @@ def test_import_preserves_the_outcome_chain(tmp_path):
     src = _src_with_chain(str(tmp_path / "src.db"), links=3)
     exp = str(tmp_path / "e.jsonl")
     export_memory(src, "u", exp)
+    # specs/0006 I6: export MATERIALISES the source store's resolved origin onto every
+    # record, so the imported copy carries src's origin where src stored it absent. The
+    # chain is otherwise byte-for-byte preserved.
+    src_origin = src.local_origin()
     before = {ep.id: ep.model_dump() for ep in _outcomes(src)}
+    for d in before.values():
+        d["provenance"]["origin"] = src_origin
 
     dst = SqliteStore(str(tmp_path / "dst.db"))
     r = import_memory(dst, exp)
     after = {ep.id: ep.model_dump() for ep in _outcomes(dst)}
-    assert before == after, "the chain must import byte-for-byte preserved"
+    assert before == after, "the chain must import preserved (origin materialised to src)"
     # head re-derivable, contiguous, single leaf
     seqs = sorted(ep.seq for ep in _outcomes(dst))
     assert seqs == [1, 2, 3]
@@ -194,7 +204,9 @@ def _src_from_prefix(tmp_path, full_store, prefix):
     outs = sorted(_outcomes(full_store), key=lambda e: e.seq)[:prefix]
     recs = [("edge", _edge("e1"))] + [("episode", ep) for ep in outs]
     p = str(tmp_path / "pfx.jsonl")
-    _write_export(p, recs)
+    # seed with the SAME materialised origin the real v4 export of full_store carries, so
+    # the incoming suffix extends idempotently rather than looking like a different source
+    _write_export(p, recs, version=FORMAT_VERSION, origin=full_store.local_origin())
     dst = SqliteStore(str(tmp_path / "pfx.db"))
     import_memory(dst, p)
     return dst

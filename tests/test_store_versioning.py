@@ -513,8 +513,11 @@ def test_on_rolled_back_reports_the_rollback_outcome():
 
 def test_s7_export_format_version_is_independent():
     from veracium.portability import FORMAT_VERSION
+    from veracium.store.schema_version import SCHEMA_VERSION
     # A separate namespace from the on-disk SCHEMA_VERSION (specs/0007 §8): it moves
-    # only when the WIRE format changes. specs/0009 bumped it 2→3 for its own reason
-    # (exports gained seq/supersedes_episode/judgment_time_known). Both happen to read
-    # 3 today, by coincidence, not because one drives the other.
-    assert FORMAT_VERSION == 3
+    # only when the WIRE format changes. specs/0009 bumped it 2→3 (exports gained
+    # seq/supersedes_episode/judgment_time_known); specs/0006 bumped it 3→4 (exports gained
+    # the materialised source `(origin, source_id)`). It now reads 4 while SCHEMA_VERSION
+    # reads 5 — they are INDEPENDENT and no longer coincide, which is the point.
+    assert FORMAT_VERSION == 4
+    assert FORMAT_VERSION != SCHEMA_VERSION

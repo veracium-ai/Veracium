@@ -32,9 +32,10 @@ from typing import Optional
 from uuid import uuid4
 
 from .schema import Edge, Episode, is_historical_id, to_historical_id
+from .source_identity import resolve_origin
 from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 
-FORMAT_VERSION = 3
+FORMAT_VERSION = 4
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
 
 
@@ -51,6 +52,18 @@ def export_memory(store, user_id: str, path) -> dict:
             f"export refuses: a consolidation is in flight for {user_id!r} — run "
             f"consolidate()/maintain() to settle it, then retry (specs/0010 §4f)")
     edges = store.edges(user_id, active_only=False, include_quarantined=True)
+    # specs/0006 §4 rule 3/6 — MATERIALISE the resolved origin on export so the file is
+    # self-describing (I6). A local record (origin absent) is written with THIS store's
+    # singleton; a foreign/imported record keeps its own (resolve_origin). This is what
+    # lets a local source survive an export→import round-trip and group as one (I9).
+    local = store.local_origin()
+
+    def _materialise(rec: dict) -> dict:
+        prov = rec.get("provenance")
+        if isinstance(prov, dict):
+            prov["origin"] = resolve_origin(prov.get("origin"), local)
+        return rec
+
     path = Path(path)
     with path.open("w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": FORMAT_VERSION,
@@ -58,10 +71,10 @@ def export_memory(store, user_id: str, path) -> dict:
                             "exported_at": datetime.now(timezone.utc).isoformat()})
                 + "\n")
         for e in edges:
-            f.write(json.dumps({"record": "edge", **json.loads(e.model_dump_json())})
+            f.write(json.dumps({"record": "edge", **_materialise(json.loads(e.model_dump_json()))})
                     + "\n")
         for ep in episodes:
-            f.write(json.dumps({"record": "episode", **json.loads(ep.model_dump_json())})
+            f.write(json.dumps({"record": "episode", **_materialise(json.loads(ep.model_dump_json()))})
                     + "\n")
     return {"edges": len(edges), "episodes": len(episodes), "path": str(path)}
 
@@ -188,9 +201,41 @@ def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
         if rec.get("supersedes_episode") is not None:
             rec["supersedes_episode"] = _remap(rec["supersedes_episode"])
 
+    # (2b) specs/0006 — source-identity ingress gates, BEFORE any record enters the store.
+    #  - I10: a field NEWER than the declared FORMAT_VERSION is STRIPPED, never trusted — a
+    #    pre-v4 file that hand-adds source_id/origin has an UNKNOWN identity, so drop both.
+    #  - I14: a current-format (v4+) record MUST carry a non-null origin. An absent origin is
+    #    MALFORMED and REJECTED — it is NEVER resolved to this store's singleton (that
+    #    resolution is for LOCAL stored rows only, §4 rule 6). A PRESENT foreign origin is
+    #    preserved as-is (I2b), never localised; trust of it is 0005's boundary, applied first.
+    dest_origin = store.local_origin() if src_version >= 4 else None
+    for rec in edge_recs + ep_recs:
+        prov = rec.get("provenance")
+        if not isinstance(prov, dict):
+            continue
+        if src_version < 4:
+            prov.pop("source_id", None)          # I10 — newer field in an older envelope
+            prov.pop("origin", None)
+        elif prov.get("origin") is None:
+            raise ValueError(
+                f"{path}: v{src_version} record {rec.get('id')!r} carries provenance with "
+                f"no origin — a current-format import MUST carry origin; a missing one is "
+                f"malformed and is NEVER resolved to this store (specs/0006 I14)")
+        elif prov["origin"] == dest_origin:
+            # A LOCAL record coming home (its materialised origin IS this store's singleton):
+            # canonicalise back to absent so it resolves to us and stores byte-identically to
+            # the original local row — that is what makes an export→re-import idempotent and
+            # groups the two as ONE source (I9). A genuinely FOREIGN origin is left untouched
+            # (I2b) — trust of it is 0005's import boundary, applied first (I7).
+            prov["origin"] = None
+
     # (3) legacy-format outcome conversion (§4f-ii) OR v3 explicit-field check (H13).
+    # Pinned to the OUTCOME-field format version (3, specs/0009), NOT FORMAT_VERSION: the
+    # 0006 v3→v4 bump introduced source-identity fields, not outcome fields, so v3 AND v4
+    # both carry explicit outcome fields and must take the H13 branch. Keying this on
+    # FORMAT_VERSION would wrongly legacy-convert a v3 export after the bump.
     outcome_recs = [r for r in ep_recs if r.get("kind") == "outcome"]
-    if src_version < FORMAT_VERSION:
+    if src_version < 3:
         # group by identity first: a pre-v3 export can hold two outcome records for
         # one (edge_id, evidence_ref); rooting each would branch — REFUSE instead.
         groups: dict = {}
