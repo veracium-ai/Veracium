@@ -4,30 +4,33 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v5, 2026-08-09) — round-2 external review closed F1–F5 + the package blocker and
-> RETURNED v4 on F6: four blocking defects in v4's one-line I8 collapse, all verified by dev
-> against the code; v5 redesigns the collapse contract (§4c).** The ruled Design 1 stands:
+> **draft (v6, 2026-08-09) — round-3 external review closed R2-2 (history) and the proactive
+> carrier, and RETURNED v5 on four found-in-fix defects in the collapse contract; v6 hardens it
+> around one governing principle: SUPPRESS ONLY STRICT REDUNDANCY — never synthesize, never
+> guess, never hide information a consumer reads (§4c).** The ruled Design 1 stands:
 > **reinforcement transfers NOTHING**; the incoming edge is persisted with its own provenance.
-> v5's I8: **active-only scope** (history never collapsed — the `A → B → A` superseded interval
-> survives, R2-2), **per-author grouping** (a fresh `SYSTEM` duplicate can never hide a stale
-> `USER` edge inside `mentionable` — the write-time bypass cannot re-open at presentation,
-> R2-1), **the write branch's full equal-or-subsumed value domain** (token-dropped variants
-> share one group instead of minting one each, R2-4), **confirmation state survives** (`0008` C5
-> never suppressed by a fresher duplicate), and **proactive assembly is inside the contract**
-> (R2-3; v4 wrongly excluded it). New regressions I8a–I8d + I9 extended to mixed
-> exact/subsumed repetition. — v4 folded round-1 F1–F6 + the package blocker (F1 §1 re-measured
-> at the reachable same-disclosure doors; F2 the MCP `author` limitation stated; F3 §7b
-> cross-spec carriers; F4 the `0003` receipt digest fixed at root; F5 absent-`source_id`
-> honesty). 🔗 Design 1 closes `0014` §3.1 + `M9` (§11). Still `draft` — v5 is the round-3
-> resubmission.
+> v6's four amendments: **R3-1** value grouping is UNIQUE-ANCHOR, never transitive closure
+> (equality-or-subsumption is not an equivalence relation — `cat Miso`/`dog Miso`/`Miso` would
+> have merged into one and lost a pet; an ambiguous short form now surfaces on its own, I8e);
+> **R3-2** the key carries the COMPLETE effective-authority envelope incl. `derived_from`
+> (`0003` is `min(author, derived_from)` — a direct-USER edge and a USER-derived-from-SYSTEM
+> edge are different trust facts and never collapse, I8f); **R3-3** a STRICT-REDUNDANCY
+> predicate — a member with a distinct `note`, `volatility`, or outcome metadata surfaces
+> (never a franken-representative; a dated commitment cannot vanish behind a fresher empty
+> duplicate), and query recall scores BEFORE collapsing (I8g); **R3-4** a flagged member IS
+> surfaced rather than its flag being synthesized onto an unflagged edge — so the warning has a
+> CONFIRMABLE OWNER and `confirm(surfaced.id)` clears it end-to-end (`0008` C2, I8h). — v5
+> folded R2-1…R2-4; v4 folded round-1 F1–F6 + the package blocker (F4's receipt digest fixed at
+> root under `0003`). 🔗 Design 1 closes `0014` §3.1 + `M9` (§11). Still `draft` — v6 is the
+> round-4 resubmission.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v5** — *round-2 amendments folded: the I8 collapse redesigned (active-only · per-author · equal-or-subsumed domain · flags survive · proactive covered; I8a–I8d added, I9 extended). v4 folded round-1 F1–F6 + the package blocker; v3 matured the ruled design to a full mechanical contract; v2 folded the O-Q1/O-Q2/O-Q3 rulings; Design 1 (transfers nothing) frozen.* |
+| **Version** | **v6** — *round-3 amendments folded: the collapse hardened to suppress-only-strict-redundancy (unique-anchor grouping · full authority envelope incl. `derived_from` · carrier-field predicate · flagged-member-as-owner; I8e–I8h added). v5 folded R2-1…R2-4; v4 folded round-1 F1–F6 + the package blocker; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0008`'s deferred liveness scope. **`0008` does not depend on this.** |
 | **Internal reviewers** | research — the O-Q1/O-Q2/O-Q3 ruling round (2026-08-08, `proposals/0012-rulings.md`; recorded in `specs/reviews.py`) |
-| **External review** | required — **round 1 (2026-08-09): return**, 6 findings + a package blocker → v4. **Round 2 (2026-08-09): F1–F5 + blocker CLOSED; return on F6** — 4 defects in v4's I8 collapse (R2-1…R2-4) → v5. All dev-verified against the code (ledger: `specs/reviews.py`) |
+| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3 (2026-08-09): R2-2 + proactive carrier CLOSED; return on 4 found-in-fix defects in the collapse** (R3-1…R3-4) → v6. All dev-verified against the code (ledger: `specs/reviews.py`) |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -206,39 +209,62 @@ later changed value contending against *several* active same-value edges); `expi
 I3 — the fix is that reinforcement stops feeding it a refreshed `observed_at`); `confirm()`
 (`specs/0008` — still the only flag-clearing path).
 
-**4c. Rendering and the read paths (O-Q2, ruled; REQUIRED collapse added in v4, REDESIGNED in
-v5 — round-2 external R2-1…R2-4 found four defects in v4's one-line collapse).** Any collapsing
-of same-value edges happens at **render/selection time, never at write time** (the O-Q2 ruling's
-rule — I8 is an instance of exactly what it permits). The v5 collapse contract:
+**4c. Rendering and the read paths (O-Q2, ruled; collapse added v4, redesigned v5, HARDENED in
+v6 — round-3 external R3-1…R3-4 found four found-in-fix defects in v5's contract).** Any
+collapsing of same-value edges happens at **render/selection time, never at write time** (the
+O-Q2 ruling's rule — I8 is an instance of exactly what it permits). **The governing principle,
+stated after three rounds taught it: the collapse SUPPRESSES ONLY STRICT REDUNDANCY. It never
+synthesizes a representation, never guesses between incomparable values, and never hides a
+member that carries information any consumer reads.** The v6 contract:
 
-- **Scope: ACTIVE edges only (R2-2).** Invalidated/superseded edges are the historical record —
-  they are NEVER collapsed, not with an active edge and not with each other. An `Acme →
-  Beta → Acme` history keeps its superseded 2020–2022 `Acme` interval rendering beside the
-  current 2024 `Acme` (`0003`'s superseded rendering is untouched; recall deliberately reads
-  `active_only=False` and the collapse must not undo that).
-- **Group key: `(subject, relation, disclosure, author_of_evidence)` × value-EQUIVALENCE
-  (R2-1, R2-4).** v4's key had two holes. (a) It omitted the AUTHOR, so a fresh `SYSTEM`
-  duplicate would have HIDDEN a stale `USER` edge inside `mentionable` — a presentation-time
-  replay of the very bypass Design 1 closes at write time. Same-class-different-author
-  duplicates do NOT collapse; the surface carries at most one representative per author per
-  value group (bounded: ≤ |authors|). (b) It used exact `_value_key` equality while the WRITE
-  branch treats equal-or-`_subsumes` as one evidentiary event — so token-dropped variants of one
-  value would each mint their own group (210 groups from one 20-token value). The read-side
-  grouping uses the SAME domain: members related by key equality or subsumption (transitively)
-  share one group.
-- **Representative: the most SPECIFIC member (longest key), freshest on ties.** The
-  info-richest form of the value, at its newest observation.
-- **Confirmation state SURVIVES the collapse (R2-1).** If ANY member of a group carries
-  `needs_confirmation`, the surfaced representative renders the possibly-stale state — the
-  `0008` C5 signal is never suppressed by a fresher duplicate. (Per-edge ageing, I3, is what
-  puts the flag on the old member; the collapse must not un-ask the question.)
+- **Scope: ACTIVE edges only (R2-2, closed round 3).** Invalidated/superseded edges are the
+  historical record — never collapsed, with an active edge or with each other. The `Acme →
+  Beta → Acme` superseded interval renders beside the current value (recall deliberately reads
+  `active_only=False`; the collapse must not undo that).
+- **Group key: `(subject, relation, disclosure, author_of_evidence, derived_from)` ×
+  value-grouping (R2-1 + R3-2).** The key carries the COMPLETE effective-authority envelope —
+  `0003`'s rule is `min(author, derived_from)`, so author alone is not the trust identity: a
+  direct `USER` edge (effective 3) and a `USER`-derived-from-`SYSTEM` edge (effective 2) are
+  different trust facts and NEVER collapse together (v5's key omitted `derived_from` and
+  surfaced the lower-authority member — R3-2's reproducer). Bounded: ≤ |authors × derivations|
+  representatives per value, in practice a handful.
+- **Value grouping: UNIQUE-ANCHOR, never transitive closure (R3-1).** Equality-or-subsumption
+  is not an equivalence relation, so its transitive closure bridges incomparable values: with
+  active `cat Miso`, `dog Miso`, and `Miso`, the bare `Miso` connects both and closure merges
+  ALL THREE — one genuine pet disappears. v6 construction: the group ANCHORS are the maximal
+  values (subsumed by no other active member of the key); a non-maximal value joins a group
+  **iff it is equal-or-subsumed by exactly ONE anchor**; a value subsumed by two or more
+  INCOMPARABLE anchors is AMBIGUOUS and **surfaces on its own** — the collapse never guesses
+  which fact a short form belongs to. (`cat Miso` and `dog Miso` anchor two groups; `Miso`
+  surfaces separately.)
+- **Suppression predicate: STRICT REDUNDANCY ONLY (R3-3).** A member may be suppressed behind
+  an anchor only when it adds NO carrier-visible information beyond it: `note` empty or
+  byte-equal to the anchor's; same `volatility`; no outcome metadata (`outcome_counts`,
+  `last_outcome`, `times_used` at their defaults or equal); not flagged (see below). A member
+  differing in ANY of these SURFACES — a dated-commitment `note` is never lost behind a fresher
+  empty-note duplicate, and a `durable` fact is never represented by its `transient`
+  restatement. There is NO synthesized representative: every surfaced item is a real stored
+  edge, verbatim. The one presentation-level aggregate permitted: date labels ("since …") may
+  be rendered from the GROUP's earliest `valid_from` — a true statement about the group,
+  computed at render, mutating nothing.
+- **Per-surface ordering (R3-3):** query recall SCORES every member first and collapses
+  after (among scored members of one group, the query-matching member survives) — collapsing
+  before scoring could erase the only query-matching `note`; collapsing after protects the edge
+  budget at selection, which is where the budget is spent. Proactive assembly categorizes
+  per-member (commitments, confirmations, context) and collapses within category.
+- **Flagged members are never hidden AND never synthesized onto others (R2-1 + R3-4).** v5 had
+  the representative "render the group's flag" — but a flag shown on an unflagged edge has no
+  confirmable owner: `confirm(surfaced.id)` would clear the already-clear fresh edge while the
+  hidden old edge stayed flagged, an unclearable warning (`0008` C2 violated). v6: **a flagged
+  member IS surfaced — the group's representative for the flag is the flagged edge itself**
+  (freshest flagged member first, if several). The model-facing warning therefore carries the
+  exact edge id whose `confirm()` clears it; after confirmation the group surfaces its
+  unflagged anchor normally. `0008`'s per-edge confirm contract is untouched.
 - **Coverage: EVERY model-facing read path (R2-3)** — query recall's subgraph selection, the
-  wiki compiler's input, AND `proactive.py`'s session-start assembly (which iterates active
-  assertable edges and previously deduplicated only by edge id — with a `token_budget`,
-  uncollapsed duplicates could displace unrelated commitments or stale-confirmation prompts).
+  wiki compiler's input, AND `proactive.py`'s session-start assembly.
 - **Cross-class same-value still renders BOTH** — the O-Q2 ruling's own example (*"stated by
   you (Jan); also reported by a third party (Aug)"*): cross-class corroboration is informative;
-  same-class same-author repetition is not.
+  same-key repetition is not.
 
 ## 5. Regime analysis — where does this behave differently?
 
@@ -261,7 +287,8 @@ rule — I8 is an instance of exactly what it permits). The v5 collapse contract
   its prompt (token cost linear in N), query recall's bounded edge budget can be spent on N
   copies of one fact, and proactive assembly repeats the fact per duplicate. With I8 (required),
   all three read paths see at most one ACTIVE representative per `(subject, relation,
-  disclosure, author)` value-equivalence group (§4c — history exempt, flags surviving); the
+  disclosure, author, derived_from)` unique-anchor value group (§4c — history exempt, strict
+  redundancy only, flagged members surfacing themselves); the
   residual costs are the O(N) SQL row scan feeding the collapse and the storage itself. "Cold vs
   warm identical" is therefore claimed only ABOVE I8's collapse — the raw row counts differ and
   §6's I9 measures the collapsed surfaces, not the store.
@@ -292,11 +319,15 @@ implementation.*
 | **I5** | **the §1 bypass is closed, measured at the REACHABLE doors (re-scoped for round-1 external F1)** — a SAME-disclosure restatement (`SYSTEM`/`mentionable`, a `third_party`→`third_party` `use_only` pair, and the MCP `author="user"` impersonation route) no longer keeps a fact fresh OR raises its confidence; the cross-class case is pinned as ALREADY-closed so the 0.4.1 guard cannot silently regress | `test_restatements_no_longer_defeat_staleness` — the §1 sequence per door: prior byte-unchanged, `expire()` flags; plus `test_cross_class_restatement_still_touches_nothing` (the guard held BEFORE Design 1 and must hold after) |
 | **I6** | a same-or-subsumed value NEVER contends, absorbs, or supersedes — no refusal record, no `absorbed_duplicate`, no `supersedes` pointer, no invalidation from a reinforcement | `test_a_same_value_restatement_produces_no_contention_artifacts` — incl. the SUBSUMED form (`"Miso"` after `"cat Miso"`), the mis-routing seam §4a names |
 | **I7** | the persisted restatement IS the attribution — after reinforcement, the contributing source's edge is queryable with its own provenance (closes `M9`; `0014` §3.1) | `test_reinforcement_attributes_the_contributing_source` (today an `xfail` in `tests/test_0014_maintenance_attribution.py`; flips at implementation) |
-| **I8** | **(F6, redesigned in v5 after round-2 R2-1…R2-4)** every model-facing read path — query recall selection, the wiki compiler input, AND proactive assembly — collapses ACTIVE same-`(subject, relation, disclosure, author)` duplicates over the write branch's full equal-or-subsumed value domain, to the most-specific/freshest representative; historical (invalidated) edges are never collapsed; confirmation state survives; the store keeps every edge | `test_read_paths_collapse_same_class_duplicates` — N same-author restatements; the fact renders once per surface, cross-class and cross-author pairs still render both |
-| **I8a** | **(R2-1)** the collapse never hides a trust distinction or a staleness signal: a stale, flagged `USER`/`mentionable` edge is NOT hidden by a fresh `SYSTEM`/`mentionable` duplicate — both surface, the flag visible | `test_collapse_preserves_author_and_confirmation` — stale flagged USER + fresh SYSTEM same value: both rendered, the possibly-stale marker present; and within ONE author-group, a flagged member keeps the representative flagged |
+| **I8** | **(F6; v5 per R2-1…R2-4; HARDENED v6 per R3-1…R3-4)** every model-facing read path — query recall selection, the wiki compiler input, AND proactive assembly — suppresses ONLY strictly-redundant ACTIVE duplicates, per the §4c contract: full effective-authority key (incl. `derived_from`), unique-anchor value grouping, strict-redundancy predicate, flagged-member surfacing, per-surface ordering; no synthesized representative ever; the store keeps every edge | `test_read_paths_collapse_same_class_duplicates` — N strictly-redundant same-key restatements; the fact renders once per surface, cross-class/cross-author/cross-derivation pairs still render both |
+| **I8a** | **(R2-1)** the collapse never hides a trust distinction or a staleness signal: a stale, flagged `USER`/`mentionable` edge is NOT hidden by a fresh `SYSTEM`/`mentionable` duplicate — both surface, the flag visible | `test_collapse_preserves_author_and_confirmation` — stale flagged USER + fresh SYSTEM same value: both rendered, the possibly-stale marker present |
 | **I8b** | **(R2-2)** history survives the collapse: an `A → B → A` sequence keeps its superseded first-`A` interval rendering beside the current `A` | `test_history_survives_the_collapse` — supersede `Acme` (2020) with `Beta` (2022), then `Acme` (2024); recall renders BOTH `Acme` edges, the old one marked superseded with its interval |
 | **I8c** | **(R2-3)** proactive/session-start recall is inside the collapse contract: duplicates render once and never displace unrelated content under a `token_budget` | `test_proactive_collapses_duplicates_within_budget` — 4 duplicate transient edges → one line; a dated commitment and a stale-confirmation prompt still surface with the budget set |
-| **I8d** | **(R2-4)** subsumed variants cannot mint fresh groups: values related by `_subsumes` (transitively) share one collapse group, represented by the most specific | `test_subsumed_variants_share_one_group` — a 20-token value plus token-dropped variants: ONE representative (the full form), not one per variant |
+| **I8d** | **(R2-4)** exact-and-uniquely-subsumed variants cannot mint fresh groups: a token-dropped variant subsumed by exactly one anchor joins that anchor's group, most-specific representative | `test_subsumed_variants_share_one_group` — a 20-token value plus token-dropped variants each subsumed only by it: ONE representative (the full form), not one per variant |
+| **I8e** | **(R3-1)** grouping never bridges incomparable values: a value subsumed by TWO OR MORE incomparable anchors is AMBIGUOUS and surfaces on its own — no transitive closure, no guessing | `test_incomparable_anchors_are_never_merged` — active `cat Miso` + `dog Miso` + `Miso` (nonfunctional `has_pet`): BOTH specific pets surface, and `Miso` surfaces separately; nothing disappears |
+| **I8f** | **(R3-2)** the collapse key carries the COMPLETE effective-authority envelope: members differing in `derived_from` never collapse, systematically over `author × derived_from` | `test_collapse_respects_the_authority_envelope` — table-driven over the `0003` ladder: for every pair of `(author, derived_from)` combinations with different `effective()`, both members surface; equal-envelope pairs collapse |
+| **I8g** | **(R3-3)** no carrier-visible information is lost to suppression: a member with a distinct `note`, different `volatility`, or outcome metadata SURFACES; query scoring runs BEFORE collapse | `test_collapse_never_drops_carrier_fields` — older duplicate with `note="due 2026-08-10"`/durable + fresher empty-note/transient: the dated commitment still renders in proactive AND a query matching the note text still finds it |
+| **I8h** | **(R3-4)** a surfaced possibly-stale warning has a CONFIRMABLE OWNER: the flagged edge itself surfaces (never a synthesized flag on an unflagged edge), and confirming the surfaced id CLEARS the warning end-to-end | `test_confirming_the_surfaced_warning_clears_it` — old flagged + fresh unflagged duplicate: the FLAGGED edge surfaces; `confirm(surfaced.id)` → recall no longer shows the warning (`0008` C2 preserved) |
 | **I9** | **(F6, extended in v5)** the high-restatement regime is pinned, not assumed — over EXACT and SUBSUMED repetitions | `test_the_high_restatement_regime_stays_correct_and_bounded` — 25 restatements MIXING exact and token-dropped forms: every ingest applies cleanly (no contention artifacts, no PLAN_STALE exhaustion), the prior is untouched throughout, `expire()` still flags it, and the I8-collapsed recall/compiler/proactive surfaces are the same size as at N=1 |
 
 ## 7. Failure modes and reversibility
