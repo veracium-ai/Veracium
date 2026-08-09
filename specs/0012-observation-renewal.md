@@ -4,7 +4,19 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v14, 2026-08-09) — round-11 substantially closed R10-3/R10-4's direction and
+> **draft (v15, 2026-08-09) — 🎯 round 12 was the FIRST BOUNDARY ROUND: the reviewer ACCEPTED
+> the boundary proposal as the review protocol, classified four bin-(a) consistency defects
+> (all drift dev introduced across v13/v14's own amendments) and ONE bin-(b) implementation
+> obligation (recorded, non-blocking). v15 empties bin (a): the legacy/malformed parser split
+> aligned across the parser rule, I10j, and §8 (which also stops promising the dropped
+> hypotheticals) (R12-1); `group_heading_allowance` defined mechanically (48 est. tokens,
+> config-tunable), I10e carries the max(64, mandatory allowance) floor + the named K<2 and
+> oversized-subject/relation checks, and the §7b `0003` amendment carries the heading clamp +
+> floor construction (R12-2); the cache matrix PRESERVES accepted `0003`'s functional-relation
+> registry binding and the §7a `compile.py` entry says the matrix, not "every I10 value"
+> (R12-3); §7a gains `cli.py` and completes the `config.py` field list (R12-4). If round 13
+> finds bin (a) empty, acceptance follows per the accepted protocol. Earlier (v14):**
+> round-11 substantially closed R10-3/R10-4's direction and
 > returned five blockers, each a bin-(a) finding under the standing boundary proposal's own
 > terms (claim/carrier contradiction, undefined mechanism, an executed carrier conflict);
 > v14 closes all five: the `0003` cross-spec amendment now carries the COMPLETE packing
@@ -39,8 +51,9 @@ Spec-Status: draft
 > AUTHORITATIVE by construction — reserved sentinel, LLM-output sanitization, always-appended
 > incl. the zero case, with a forge-the-grammar regression (R9-3, I10j); and the v11
 > "introspect() recomputes full drop detail" claim is CORRECTED to what is honest — the
-> verbatim marker + labeled current-store hypotheticals; no per-compile snapshot is persisted
-> (R9-4, a §8 limit). Earlier (v11):** round-8 external review returned five gaps; v11 closed them:
+> verbatim marker + labeled current-store hypotheticals *(the hypothetical itself was later
+> DROPPED in v13, R10-4 — the cached marker is the whole contract)*; no per-compile snapshot
+> is persisted (R9-4, a §8 limit). Earlier (v11):** round-8 external review returned five gaps; v11 closed them:
 > per-surface ENVELOPE-DERIVED floors validated at every budget source (a global 64 cannot
 > contain the wiki's ~254-token scaffold) + bounded data-dependent framing deferring to
 > `0003`'s contested truncation (R8-1, I10e); the category precedence now MIRRORS the surface
@@ -81,15 +94,15 @@ Spec-Status: draft
 > no-new-reach rule; a contested grounded member enters proactive only via the ordinary
 > categories, and fenced members never (I10d). — v8 made I10 mechanical; v7 added budgets; v6
 > folded R3; v5 folded R2; v4 folded round 1 (F4 fixed at root under `0003`). 🔗 Design 1
-> closes `0014` §3.1 + `M9` (§11). Still `draft` — v14 is the round-12 resubmission, under the standing boundary proposal.
+> closes `0014` §3.1 + `M9` (§11). Still `draft` — v15 is the round-13 CLOSURE submission under the ACCEPTED boundary protocol.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v14** — *round-11 folded: the complete-packing 0003 amendment (R11-1), the mechanical allowance + framing-field classification + K validation (R11-2), the exact cache-effect matrix (R11-3, I10k), the provider-free stale-cache CLI path (R11-4, I10l), the frozen introspection schema (R11-5).* v13 — *round-10 folded: budget-aware contested packing (I10i), cache-identity binding via the bumped policy digest (I10k), the frozen marker grammar (I10j), introspect narrowed to cached-marker-only (§7a carriers).* v12 — *round-9 folded: the within-group contested bound as a `0003` §7b carrier (I10i), bounded-width counts + share classification (R9-2), the sentinel-authoritative marker (I10j), the introspect claim corrected to a §8 limit (R9-4).* v11 — *round-8 folded: envelope-derived per-surface floors (I10e), precedence↔order alignment + partition preservation (I10f), the marker serialization rule, the signature change WITHDRAWN, import-time network guard.* v10 — *round-7 amendments folded: budget floors + cap semantics (I10e), claim-flag priority restored (I10h), category precedence (I10f), envelope reservation (I10g), in-body wiki markers replacing the phantom compile record; §7b-ii behaviour-change carriers. v9:* *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
+| **Version** | **v15** — *round-12 (the first BOUNDARY round — protocol ACCEPTED) folded: the four bin-(a) consistency defects emptied (legacy/malformed alignment; the mechanical heading sub-cap + updated I10e/I10i + completed `0003` amendment; registry-preserving cache matrix; §7a completeness) + the bin-(b) obligation recorded.* v14 — *round-11 folded: the complete-packing 0003 amendment (R11-1), the mechanical allowance + framing-field classification + K validation (R11-2), the exact cache-effect matrix (R11-3, I10k), the provider-free stale-cache CLI path (R11-4, I10l), the frozen introspection schema (R11-5).* v13 — *round-10 folded: budget-aware contested packing (I10i), cache-identity binding via the bumped policy digest (I10k), the frozen marker grammar (I10j), introspect narrowed to cached-marker-only (§7a carriers).* v12 — *round-9 folded: the within-group contested bound as a `0003` §7b carrier (I10i), bounded-width counts + share classification (R9-2), the sentinel-authoritative marker (I10j), the introspect claim corrected to a §8 limit (R9-4).* v11 — *round-8 folded: envelope-derived per-surface floors (I10e), precedence↔order alignment + partition preservation (I10f), the marker serialization rule, the signature change WITHDRAWN, import-time network guard.* v10 — *round-7 amendments folded: budget floors + cap semantics (I10e), claim-flag priority restored (I10h), category precedence (I10f), envelope reservation (I10g), in-body wiki markers replacing the phantom compile record; §7b-ii behaviour-change carriers. v9:* *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0008`'s deferred liveness scope. **`0008` does not depend on this.** |
 | **Internal reviewers** | research — the O-Q1/O-Q2/O-Q3 ruling round (2026-08-08, `proposals/0012-rulings.md`; recorded in `specs/reviews.py`) |
-| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5: R4-2/3/4 CLOSED, budget architecture affirmed; return on I10 mechanics** (R5-1…R5-4) → v8. **Round 6: R5s substantially CLOSED; return on 4 cross-carrier gaps** (R6-1…R6-4) → v9. **Round 7: R6-1/R6-4 coherent; return on 5 I10-machinery gaps** (R7-1…R7-5) → v10. **Round 8: suite independently REPRODUCED (kill-switch armed); return on 5 gaps** (R8-1…R8-5) → v11. **Round 9: R8-2/4/5 CLOSED; return on 4 framing/marker gaps** (R9-1…R9-4) → v12. **Round 10: R9-2 CLOSED; return on 4 gaps** (R10-1…R10-4) → v13. **Round 11 (2026-08-09): R10-3 substantially closed, R10-4 direction confirmed; return on 5 blockers** (R11-1…R11-5, incl. a reviewer-EXECUTED CLI SystemExit) → v14. All dev-verified (ledger: `specs/reviews.py`) |
+| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5: R4-2/3/4 CLOSED, budget architecture affirmed; return on I10 mechanics** (R5-1…R5-4) → v8. **Round 6: R5s substantially CLOSED; return on 4 cross-carrier gaps** (R6-1…R6-4) → v9. **Round 7: R6-1/R6-4 coherent; return on 5 I10-machinery gaps** (R7-1…R7-5) → v10. **Round 8: suite independently REPRODUCED (kill-switch armed); return on 5 gaps** (R8-1…R8-5) → v11. **Round 9: R8-2/4/5 CLOSED; return on 4 framing/marker gaps** (R9-1…R9-4) → v12. **Round 10: R9-2 CLOSED; return on 4 gaps** (R10-1…R10-4) → v13. **Round 11: return on 5 blockers** (R11-1…R11-5) → v14. **Round 12 (2026-08-09): the BOUNDARY PROTOCOL ACCEPTED; 4 bin-(a) consistency defects + 1 recorded bin-(b) obligation** (R12-1…R12-4) → v15, the round-13 CLOSURE submission. All dev-verified (ledger: `specs/reviews.py`) |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -395,7 +408,7 @@ member that carries information any consumer reads.** The v6 contract:
   withheld count ("… +N more contending values withheld") reflects everything not emitted. A
   configuration whose budget cannot carry the mandatory set even content-clamped is BELOW
   FLOOR — the (i) floor derivation includes the mandatory-contested allowance, **defined
-  mechanically (R11-2): `mandatory_contested_allowance = group_heading_allowance +
+  mechanically (R11-2): `mandatory_contested_allowance = group_heading_allowance (48 est. tokens, config-tunable — the sub-cap under which the heading's clamped subject + relation + constant punctuation must render) +
   withheld_marker_reserve + 2 × (member_framing_cost + min_member_content (32))`, all under
   the frozen `chars/4` estimator — 2 being the MAXIMUM mandatory cardinality (the
   highest-effective-authority member and the grounded prior MAY ALIAS to one edge, which
@@ -501,11 +514,13 @@ member that carries information any consumer reads.** The v6 contract:
   rewrite: every occurrence of the literal prefix `[[veracium-wiki-compile:` in LLM output is
   rewritten to `[[veracium-wiki-compile-escaped:` (inert to the parser) BEFORE the
   authoritative line is appended — appended ALWAYS, including the zero case. PARSER rule: the
-  final line matching the exact grammar is the record; a cached body whose final line does
-  NOT match is a PRE-v12/legacy or malformed cache — reported as *"no compile record (legacy
-  cache)"* and identity-stale under the rule below, never guessed at. The grammar version
+  final line matching the exact grammar is the record; a body with NO sentinel line anywhere
+  is a PRE-v12 **legacy** cache; a body whose final sentinel-bearing line does not match the
+  grammar is **malformed** (R12-1 split — the two states are distinct in the R11-5 schema);
+  both are identity-stale under the rule below and reported by their own status, never
+  guessed at. The grammar version
   (`v1`) is bound into the cache identity. I10j tests forgery-neutralization, the
-  always-present zero case, and the legacy-cache parse.
+  always-present zero case, and the legacy/malformed parse split.
   **CACHE IDENTITY binds every selection/serialization input (R10-2 — accepted `0003`'s own
   rule, applied):** `0003` requires the wiki cache identity to bind compiler-policy inputs
   (its `compiler_policy_digest`); v12's markers and budgets changed the compiler's selection
@@ -515,9 +530,11 @@ member that carries information any consumer reads.** The v6 contract:
   policy version bumps (a §7b carrier on `compile.py`), and the digest binds **EXACTLY the
   inputs that change the cached artifact — an input→cache-effect MATRIX (R11-3 corrected
   v13's list, wrong in BOTH directions):**
-  **BINDS** (changes compiler selection/serialization): the wiki input budget · the per-group
-  VARIANT cap (v13 omitted it) · the per-item cap (it clamps compiled content) · the
-  contention-policy version · the marker-grammar version.
+  **BINDS** (changes compiler selection/serialization): **everything accepted `0003` already
+  binds — the functional-relation REGISTRY semantics and the contention-policy version — is
+  PRESERVED (R12-3: the matrix extends `0003`'s digest, it never sheds an accepted input)**,
+  plus the `0012` additions: the wiki input budget · the per-group VARIANT cap (v13 omitted
+  it) · the per-item cap (it clamps compiled content) · the marker-grammar version.
   **DOES NOT BIND** (render-time or other-surface knobs — binding them forces spurious
   recompiles): the query context budget · the proactive budget · the wiki RENDER share (a
   recall-time clamp of the cached body) · `contested_members_per_line` (contested rendering
@@ -532,7 +549,11 @@ member that carries information any consumer reads.** The v6 contract:
   **serves recall WITHOUT the wiki body**, emitting the deterministic notice line
   *"[wiki omitted: cache is stale; recompilation requires an LLM provider]"* — it never
   serves the stale body (the identity rule holds), never invokes the LLM, and never fails.
-  `src/veracium/cli.py` and its store-only test join §7b-ii; new I10l.
+  `src/veracium/cli.py` and its store-only test join §7b-ii; new I10l. **Recorded
+  implementation OBLIGATION (round-12 bin (b)):** the notice line is charged through the
+  ordinary I10 envelope machinery like any framing, with a just-above-floor regression
+  proving it cannot push CLI recall past its hard bound (the global I10/I10g contract
+  already requires this; recorded here so implementation cannot miss it).
   **What `introspect()` can honestly offer (R9-4 — v11 over-claimed "full drop detail"):** a
   cached wiki may outlive many later writes, and no compile-time candidate snapshot or
   dropped-ID set is persisted (durable state this spec does not take), so recomputation from
@@ -657,12 +678,12 @@ implementation.*
 | **I10b** | **(R5-3, extended v9 per R6-3)** overflow is ordered, deterministic, and NEVER silent across the FULL taxonomy: when safety items alone — or episodes/wiki body alongside them — exceed a bound, the §4c(iv) order decides (contested first per `0003`; wiki within its share; warnings most-overdue-first; commitments nearest-first; episodes newest-first; ties `observed_at` DESC then edge id), and markers report dropped counts per class, SAFETY distinctly | `test_safety_overflow_is_ordered_and_reported` — more flagged groups + commitments + a contested pair + episodes + a large wiki body than the bound admits: selection matches the total order exactly, is permutation-invariant, and the per-class markers render within budget |
 | **I10c** | **(R6-2)** trust/state labels are NON-TRUNCATABLE framing charged before content: clamping can never sever `[possibly stale — …]`, `[third-party-reported; unconfirmed]`, `CONTESTED` markers, or due/confirmation instructions from the content they govern — attacker-controlled text is never retained while its label is dropped | `test_clamping_never_severs_the_safety_label` — an oversized item of EACH class (mentionable, use_only, quarantined, stale-flagged, dated commitment, contested member): the label renders intact in every case, the content is clamped, and the label+clamped-content pair stays within the item cap |
 | **I10d** | **(R6-4)** proactive recall gives contested material NO NEW REACH — accepted `0003`'s rule, restated here because v7–v8 violated it with a contested-first tier (WITHDRAWN): a grounded contested member enters proactive only via the ordinary categories (flagged/due/transient/recent); an otherwise-ineligible contested member does NOT appear; a fenced (`use_only`/quarantined) member is NEVER volunteered | `test_proactive_grants_contested_no_new_reach` — a durable, unflagged, undated, non-transient contested grounded pair: absent from proactive output; the same fact when flagged appears via the WARNING tier (not a contested tier); a fenced challenger never appears |
-| **I10e** | **(R7-1 + R8-1)** budget floors are PER-SURFACE, ENVELOPE-DERIVED, and enforced loudly at EVERY source: `floor(surface) = measured envelope + 64-token item allowance + marker reserve`; a below-floor caller `token_budget` OR host-configured bound (query/wiki/proactive/item-cap) is REJECTED with a `ValueError` naming the surface, floor, and derivation; the per-item cap covers framing PLUS content; data-dependent framing must have a bounded rendering (the contested block at its `0003`-truncated size) | `test_below_floor_budgets_are_rejected_loudly` — `token_budget=1`, a 32-token item cap, AND a 64-token wiki-input config (below the wiki's ~254-token measured envelope) each raise with the derivation; a 300-value contention group under a 400-token budget renders BOUNDED (≤ K members + '+N withheld'), highest-authority member present, truncated=True (the R9-1 reproducer inverted); a just-above-floor budget renders one framed clamped item + marker within bound (the §7b-ii inversion of the old survival test) |
+| **I10e** | **(R7-1 + R8-1 + R11-2)** budget floors are PER-SURFACE, ENVELOPE-DERIVED, and enforced loudly at EVERY source: `floor(surface) = measured envelope + max(64-token item allowance, mandatory_contested_allowance) + marker reserve` (the allowance per §4c's mechanical definition, incl. the 48-token `group_heading_allowance`); a below-floor caller `token_budget` OR host-configured bound (query/wiki/proactive/item-cap/heading sub-cap) is REJECTED with a `ValueError` naming the surface, floor, and derivation; `contested_members_per_line < 2` is likewise rejected; the per-item cap covers framing PLUS content; data-dependent framing must have a bounded rendering (the §4c packing) | `test_below_floor_budgets_are_rejected_loudly` — `token_budget=1`, a 32-token item cap, AND a 64-token wiki-input config (below the wiki's ~254-token measured envelope) each raise with the derivation; a just-above-floor budget renders one framed clamped item + marker within bound (the §7b-ii inversion of the old survival test) · `test_k_below_two_is_rejected` — K=0 and K=1 configs each raise at config time · `test_oversized_subject_and_relation_are_heading_clamped` — a 10K-char subject and a 2K-char relation name render within the heading sub-cap with in-item elision |
 | **I10f** | **(R7-3 + R8-2)** category assignment is a PRECEDENCE that MIRRORS the surface order (contested > query-relevant flagged > query-matched claim flag > UNRELATED flagged > commitment > context/grounded > variant); VARIANCY NEVER DEMOTES; and classification never moves an item across the gate partition — class decides priority, the gate decides presentation | `test_overlapping_classifications_take_the_highest_class` — one edge stale-flagged + dated + a variant renders once in its warning tier; PLUS the R8-2 case: one UNRELATED flagged warning vs one query-matched quarantined claim under a one-item budget → the claim flag wins AND renders fenced |
 | **I10g** | **(R7-4)** the bound governs the COMPLETE serialized model-facing text — fixed scaffolding (`COMPILE_SYSTEM`, the fixed prompt portions, headings, fences, separators, markers) is reserved before item selection, so a full dynamic payload can never push the serialized prompt past its bound | `test_the_serialized_prompt_never_exceeds_its_bound` — fill each surface to saturation: `len(final_prompt)/4 ≤ bound` for the wiki compiler call, the recall context, and proactive output, measured on the actual serialized strings |
 | **I10h** | **(R7-2)** the query-matched unverified/quarantined claim-flag line KEEPS its existing priority over the wiki and episodes under overflow — the fenced "unverified claim exists" signal is safety-load-bearing and is never displaced by a tight budget | `test_query_matched_claim_flag_survives_overflow` — a query about a quarantined debt claim with overflowing grounded + wiki + episode material at a tight (≥-floor) budget: the fenced claim-flag line is present in the rendered context |
-| **I10i** | **(R9-1 + R10-1)** ONE contention group cannot break a budget, by budget-aware PACKING (not a bare member cap): heading + withheld marker reserved first; mandatory members (highest-effective-authority + grounded prior) emitted content-clamped; further members admitted only while they fit whole, count reducing dynamically below K; a config that cannot carry the mandatory set is below floor — a §7b cross-spec extension of accepted `0003`'s deterministic truncation | `test_one_oversized_contention_group_is_bounded` — (a) 300 short values under a 400-token budget AND (b) several INDIVIDUALLY-OVERSIZED members under a tight above-floor budget: rendered group ≤ bound, mandatory members present (clamped), emitted count < K, withheld count correct, `truncated=True` |
-| **I10j** | **(R9-3 + R10-3)** the compile-drop marker's serialization is FROZEN and mechanical: the final line matches exactly `[[veracium-wiki-compile:v1]] +<c> facts / +<c> episodes not compiled` (`<c>` = 1–3 digits or `999+`), newline-normalized; sanitization rewrites the literal prefix in LLM output to the `-escaped:` form before the ALWAYS-appended authoritative line (incl. the zero case); a non-matching final line = legacy cache, reported as such; the grammar version rides the cache identity | `test_the_marker_is_always_present_and_unforgeable` — zero-drop compile carries the exact `+0`/`+0` line; a body FORGING the exact grammar is byte-rewritten and the parser sees only the appended line; a 5,000-drop compile renders `999+` at fixed width; a marker-less legacy body parses to "no compile record (legacy cache)" |
+| **I10i** | **(R9-1 + R10-1)** ONE contention group cannot break a budget, by budget-aware PACKING (not a bare member cap): heading + withheld marker reserved first; mandatory members (highest-effective-authority + grounded prior) emitted content-clamped; further members admitted only while they fit whole, count reducing dynamically below K; a config that cannot carry the mandatory set is below floor — a §7b cross-spec extension of accepted `0003`'s deterministic truncation | `test_one_oversized_contention_group_is_bounded` — (a) 300 short values under a 400-token budget, (b) several INDIVIDUALLY-OVERSIZED members under a tight above-floor budget, and (c) an ALIASED mandatory pair (highest-authority member IS the grounded prior): rendered group ≤ bound, mandatory members present (clamped), emitted count < K, withheld count correct, `truncated=True` |
+| **I10j** | **(R9-3 + R10-3)** the compile-drop marker's serialization is FROZEN and mechanical: the final line matches exactly `[[veracium-wiki-compile:v1]] +<c> facts / +<c> episodes not compiled` (`<c>` = 1–3 digits or `999+`), newline-normalized; sanitization rewrites the literal prefix in LLM output to the `-escaped:` form before the ALWAYS-appended authoritative line (incl. the zero case); a body with NO sentinel = `legacy`, a grammar-invalid sentinel-bearing final line = `malformed` (distinct statuses, R12-1); the grammar version rides the cache identity | `test_the_marker_is_always_present_and_unforgeable` — zero-drop compile carries the exact `+0`/`+0` line; a body FORGING the exact grammar is byte-rewritten and the parser sees only the appended line; a 5,000-drop compile renders `999+` at fixed width; a marker-less body parses to status `legacy`; a corrupted sentinel line parses to status `malformed` |
 | **I10k** | **(R10-2 + R11-3)** the wiki cache identity binds EXACTLY the §4c(iv) input→cache-effect matrix: wiki input budget, per-group variant cap, per-item cap, contention-policy version, marker-grammar version — and does NOT bind render-time knobs (query/proactive budgets, wiki render share, `contested_members_per_line`); zero-write reuse of a stale-identity cache is forbidden, hot and cold (accepted `0003`'s cache-identity rule, applied) | `test_cache_identity_binds_the_selection_policy` — knob-by-knob: each BINDING knob changed alone forces recompile hot+cold and changes the digest; each NON-BINDING knob changed alone does NOT (no spurious recompiles); a synthesized pre-v12 cache is never served without a write |
 | **I10l** | **(R11-4)** provider-free CLI recall NEVER recompiles and never fails on a stale-identity cache: it serves recall WITHOUT the wiki body plus the deterministic notice line; the stale body is never served; the no-LLM sentinel never fires | `test_cli_recall_serves_without_wiki_on_a_stale_cache` — a synthesized pre-v12 cache under the store-only CLI verb: recall succeeds, no wiki body, the notice line present, no LLM invocation (the reviewer's SystemExit reproducer inverted) |
 | **I9** | **(F6, extended v5 + v7)** the high-restatement regime is pinned, not assumed — over EXACT, SUBSUMED, **and adversarial-variant** repetitions (distinct notes, mixed volatilities, outcome-bearing members) | `test_the_high_restatement_regime_stays_correct_and_bounded` — 25 restatements MIXING exact, token-dropped, and distinct-note/volatility forms: every ingest applies cleanly (no contention artifacts, no PLAN_STALE exhaustion), the prior is untouched throughout, `expire()` still flags it, and every surface obeys I10's bound with the safety items retained |
@@ -717,7 +738,7 @@ collide at implementation:
 | `recall()` docstring + the MCP `recall` tool description | document best-effort truncation at any budget | state the minimum render budget and the rejection |
 | proactive's classifier | classifies a DUE edge before checking its confirmation flag | inverts to flag-first per the §4c(iv) precedence |
 | `_fit_to_budget`'s query-matched claim-flag priority | claim flags outrank wiki + episodes | **PRESERVED** (R7-2 restored the v9 order to match it) — the carrier constrains the spec here, not the reverse |
-| **`0003` §4c-ii contested rendering + its finite-budget truncation form** | truncates BETWEEN contention groups; the first group line is admitted unconditionally (one 300-value group rendered ~1,579 tokens under a 400-token budget, reviewer-reproduced) | on `0012` acceptance, `0003` gains a marked amendment carrying the COMPLETE packing construction (R9-1 + R10-1 + R11-1): heading + withheld marker reserved first; the mandatory members (highest-effective-authority + grounded prior, which MAY alias) emitted content-clamped to remaining budget; further members admitted only while they fit whole, count reducing dynamically below `contested_members_per_line` (default 6, validated ≥ 2); withheld count in the framing; a config that cannot carry the mandatory set is below floor — recorded on both sides |
+| **`0003` §4c-ii contested rendering + its finite-budget truncation form** | truncates BETWEEN contention groups; the first group line is admitted unconditionally (one 300-value group rendered ~1,579 tokens under a 400-token budget, reviewer-reproduced) | on `0012` acceptance, `0003` gains a marked amendment carrying the COMPLETE packing construction (R9-1 + R10-1 + R11-1 + R11-2): heading + withheld marker reserved first, the heading's subject/relation CONTENT-CLAMPED under the 48-token `group_heading_allowance`; the mandatory members (highest-effective-authority + grounded prior, which MAY alias) emitted content-clamped to remaining budget; further members admitted only while they fit whole, count reducing dynamically below `contested_members_per_line` (default 6, validated ≥ 2); withheld count in the framing; the `mandatory_contested_allowance` floor construction (§4c's mechanical definition) governs configuration validity — recorded on both sides |
 | `src/veracium/cli.py` store-only recall + `test_cli_recall_and_introspect_are_store_only` | installs a no-LLM sentinel and a huge write threshold; digest staleness is checked BEFORE the threshold, so a pre-v12 cache would detonate the sentinel (reviewer-executed) | the stale-identity path serves without the wiki body + notice line (I10l); the test gains the stale-cache case |
 | CLI `introspect` human output + `--json` | a new dict field is auto-exposed only under `--json` | the human output prints the one-line `wiki_compile_record` summary; `--json` carries the frozen R11-5 schema |
 | `compile_wiki()` / `ensure_wiki()` return | both string-valued (`ensure_wiki` returns `compile_wiki()` directly; a cache hit returns the cached string) | **UNCHANGED — the v10 signature change is WITHDRAWN (R8-4)**: the pipeline stays string-valued end-to-end, hot/cold identical; the in-body markers (fixed grammar, appended by code post-LLM) are the machine-parseable drop signal |
@@ -735,8 +756,14 @@ collide at implementation:
   dropped counts (R5-2 — a bare edge list cannot signal truncation).
 - `src/veracium/compile.py` — the wiki compiler's input applies the I8 collapse AND gains the
   I10 per-group + total input caps (it previously had NO input bound — R4-1); the contention-
-  policy version bumps and the `compiler_policy_digest` binds every I10 config value + the
-  marker-grammar version (R10-2). Derived view; its inputs are guarded upstream.
+  policy version bumps and the `compiler_policy_digest` binds the §4c input→cache-effect
+  MATRIX — preserving `0003`'s registry binding, adding the compiler-relevant `0012` inputs,
+  and deliberately excluding render-time knobs (R10-2 + R11-3 + R12-3). Derived view; its inputs are guarded upstream.
+- `src/veracium/cli.py` — **(R11-4 + R11-5)** two behaviour changes: store-only recall serves
+  WITHOUT the wiki body on a stale-identity cache (the deterministic notice line; never the
+  stale body, never the LLM — I10l), and the human-readable introspect output prints the
+  one-line `wiki_compile_record` summary (`--json` carries the full field). Both also
+  dispositioned as behaviour changes in §7b-ii.
 - `src/veracium/introspect.py` — **(R10-4)** reads `get_wiki()` and surfaces the cached body's
   authoritative marker (parsed + verbatim) in the report, non-mutating; `Memory.introspect()`
   gains the field + docstring; test distinguishes the cached aggregate from later store state.
@@ -753,9 +780,10 @@ collide at implementation:
   `max_subgraph_edges` is not a global cap); `Recall.truncated` is set for EVERY truncation
   cause, and its docstring corrected (today it documents token_budget-only truncation);
   proactive gains its default budget wiring.
-- `src/veracium/config.py` — **(R5-2)** the I10 limits as host-tunable `MemoryConfig` fields
-  with the §4c spec'd defaults (context/wiki/proactive token bounds, per-item clamp, per-group
-  variant cap).
+- `src/veracium/config.py` — **(R5-2 + R12-4)** the I10 limits as host-tunable `MemoryConfig`
+  fields with the §4c spec'd defaults: the context/wiki/proactive token bounds, the per-item
+  clamp, the per-group variant cap, `contested_members_per_line`, the wiki render share, and
+  the `group_heading_allowance` sub-cap — each floor-validated per §4c(i).
 - `tests/` — the I1–I10 checks; the two `0012`-attributed `xfail`s in
   `tests/test_0014_maintenance_attribution.py` flip and migrate; the §7b inversions.
 - **NOT touched:** the store schema (no DDL, no `SCHEMA_VERSION` bump, no migration),
@@ -778,11 +806,11 @@ collide at implementation:
   fits (I8) — the collapse alone bounds nothing against adversarial variants (R4-1, stated
   plainly); the store and the CAS scope scan are unbounded — that trade is accepted with I9
   pinning the regime.
-- **Does NOT retain per-compile drop history (R9-4, stated as a limit).** Only the cached
-  body's bounded-width authoritative marker line records what a given compile dropped; the
-  candidate snapshot and dropped IDs are not persisted, so no API can reconstruct a past
-  compile's full detail — `introspect()` reports the marker verbatim and clearly-labeled
-  current-store hypotheticals only.
+- **Does NOT retain per-compile drop history (R9-4, R10-4, stated as a limit).** Only the
+  cached body's bounded-width authoritative marker line records what a given compile dropped;
+  the candidate snapshot and dropped IDs are not persisted, so no API can reconstruct a past
+  compile's full detail — `introspect()` reports the cached marker verbatim, and ONLY that
+  (the current-store hypothetical was dropped in v13, R10-4).
 - **Does NOT bound the STRUCTURED carriers (R6-1, stated as a limit).** `Recall.edges`,
   `Recall.contested`, host queries and `introspect()` deliberately carry complete stored
   records — that is their contract under accepted `0003` and it is untouched here. I10 bounds
