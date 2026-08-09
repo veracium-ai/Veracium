@@ -86,7 +86,8 @@ revocation is ever built — an attribution record that survives maintenance.
 
 Enumerated mechanically from the interface (the method that missed three surfaces in `specs/0002`):
 the maintenance ops that consult-and-discard a contributor are `graph._build_supersession_plan`
-(reinforcement, absorption) and `lifecycle.consolidate` (via the 0010 fenced primitives) — see §3 for the sites and §7a for the full surface list. The **payload** fields — those *read from a
+(absorption — reinforcement is no longer a site, `0012` Design 1) and `lifecycle.consolidate` (via
+the 0010 fenced primitives) — see §3 for the sites and §7a for the full surface list. The **payload** fields — those *read from a
 contributor and written onto a survivor* — are `Provenance.observed_at`, `Provenance.confidence`,
 `Edge.valid_from`, `Provenance.disclosure`, `Provenance.derived_from`; the ledger stores their prior
 and new values (all store-clear scalars, Q1) or nothing when no value moved (A1). The identity is
@@ -127,10 +128,11 @@ consumption, not the transfer (§4).
 
 ## 3. The finding, at its current sites — REQUIRED, blocking
 
-Three maintenance sites transfer contributor state into a survivor. Reproduce with research's A3
-provenance-chain demo (a3_provenance_chain_demo.py, `veracium-research`). Status is stated **as of
-0.6.0** (0010 partially moved §3.2 after
-A3 was written):
+Three maintenance sites were found to transfer contributor state into a survivor; **one
+(reinforcement, §3.1) is now closed by `0012` Design 1, leaving TWO for `0014` — consolidation
+(§3.2) and absorption (§3.3).** Reproduce with research's A3 provenance-chain demo
+(a3_provenance_chain_demo.py, `veracium-research`). Status is stated **as of 0.6.0** (0010 partially
+moved §3.2 after A3 was written):
 
 | # | site (a maintenance op that consults a contributor then discards/merges/invalidates it) | contributor recoverable today? | payload (state it may transfer) |
 |---|---|---|---|
@@ -180,7 +182,7 @@ maintenance decision.
 > identity, and (iii) a **payload** — the fields it transferred and their prior survivor values,
 > **which may legitimately be empty** — **whether or not any of the survivor's values changed.***
 >
-> **Why keyed on the operation, not the transfer (measured).** Run reinforcement with the
+> **Why keyed on the operation, not the transfer (measured).** Run an absorption with the
 > contributor OLDER and WEAKER: `max()` moves nothing, the survivor's `observed_at`/`confidence`
 > are unchanged — and the contributor still vanishes. A *transfer*-keyed rule need not record that,
 > yet "which sources support this fact?" omits it and any blast radius under-reports. It is not
@@ -195,7 +197,7 @@ contribution_ledger(
     id              TEXT PRIMARY KEY,     -- store-minted 'contrib-<uuid>'
     user_id         TEXT NOT NULL,        -- tenant scope; forget_user deletes by this
     survivor_id     TEXT NOT NULL,        -- the edge/episode that consumed the contributor
-    site            TEXT NOT NULL,        -- 'reinforcement' | 'absorption' | 'consolidation'
+    site            TEXT NOT NULL,        -- 'absorption' | 'consolidation' (reinforcement is NOT a site — 0012 Design 1)
     identity_digest TEXT NOT NULL,        -- digest of the contributor's RESOLVED (origin, source_id) pair
     evidence_ref_digest TEXT,             -- digest of the contributor's evidence_ref (nullable)
     payload         TEXT NOT NULL,        -- JSON: {transferred_fields:{field:new}, prior_survivor_values:{field:old}} — MAY be {}
@@ -263,20 +265,20 @@ is theirs.
 ## 5. Regime analysis — where does this behave differently?
 
 - **Growth is the regime that matters.** The ledger gains one row per maintenance CONSUMPTION —
-  reinforcement fires ~one `remember()` apart, absorption likewise, consolidation once per `maintain()`
-  batch (one row per claimed input). Over a long-lived, high-write store this **accumulates without
+  absorption fires ~one `remember()` apart, consolidation once per `maintain()` batch (one row per
+  claimed input). Over a long-lived, high-write store this **accumulates without
   bound** if never pruned. **Retention rule (frozen): a ledger row is kept while its `survivor_id`
   exists; when the survivor is hard-deleted (`forget_user`, or a future hard-delete) its rows go**
   — the same "kept while the thing it describes exists" rule as the 0003 refusal inventory. This
   bounds the ledger to live survivors, not to all history. A row is never pruned merely for age: an
   old contribution is exactly what a late `revoke_source` needs.
-- **Per-op cost is O(1)–O(batch).** Reinforcement/absorption add one INSERT to an already-atomic
+- **Per-op cost is O(1)–O(batch).** Absorption adds one INSERT to an already-atomic
   supersession commit; consolidation adds one INSERT per claimed input to its already-atomic fenced
   transaction. No new round-trip, no budget/cap/recompile-threshold interaction (the ledger is off the
   recall and wiki paths entirely).
 - **The regime a single-op test misses — and MUST reach (A4):** the empty-payload consumption
-  (reinforcement where no `max()` moves, A1) and the delete-then-recover case (consolidation, A2). A
-  test that only exercises a value-moving reinforcement would pass while the attack path (empty
+  (absorption where no `max()` moves, A1) and the delete-then-recover case (consolidation, A2). A
+  test that only exercises a value-moving absorption would pass while the attack path (empty
   payload) stayed open — so A4 injects at every declared site INCLUDING a no-payload consumption. This is a
   **stable (on-by-default)** behaviour, so that regime blocks: A1/A2/A4 are required, not optional.
 - **Cold vs warm store:** identical — the ledger does not touch the wiki cache or retrieval scoring.
@@ -336,8 +338,8 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
 - `src/veracium/schema.py` — new `ContributionDraft` (a site emits) and `ContributionRecord` (read
   back); `SupersessionPlan` gains a `contributions: list[ContributionDraft]` field (§4c).
 - `src/veracium/graph.py` — `_build_supersession_plan` populates `plan.contributions` for
-  reinforcement (3.1) and absorption (3.3) — one draft per consumed prior. No new mutator call site:
-  it rides the existing `apply_supersession_plan`.
+  absorption (3.3) — one draft per consumed prior. No new mutator call site: it rides the existing
+  `apply_supersession_plan`. (Reinforcement (3.1) is NOT a site — `0012` Design 1 persists the edge.)
 - `src/veracium/lifecycle.py` / the 0010 consolidation primitives — `consolidate` (3.2) writes one
   draft per claimed input BEFORE `delete_claimed_inputs_if_current`, in the same fenced transaction.
 - `src/veracium/store/base.py` / `store/sqlite.py` — `apply_supersession_plan` extended to INSERT
