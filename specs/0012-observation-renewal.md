@@ -366,7 +366,7 @@ member that carries information any consumer reads.** The v6 contract:
   the grounded prior, with the omitted count in the line's framing ("… +N more contending
   values withheld") — so a group line's size is bounded by `K × per-item cap + framing`,
   independent of group cardinality. **This extends the deterministic truncation of an
-  ACCEPTED spec's surface (`0003` §4c-ii / its I6a finite-budget form), so it is a cross-spec
+  ACCEPTED spec's surface (`0003` §4c-ii, its finite-budget truncation form), so it is a cross-spec
   carrier, not a quiet edit** — enumerated in §7b with the marked-amendment obligation on
   `0012`'s acceptance. Every `0012`-added framing (trust labels, elision and count markers)
   is bounded-width by construction (see the count rule in (iii)); a data-dependent framing
@@ -629,7 +629,7 @@ collide at implementation:
 | `recall()` docstring + the MCP `recall` tool description | document best-effort truncation at any budget | state the minimum render budget and the rejection |
 | proactive's classifier | classifies a DUE edge before checking its confirmation flag | inverts to flag-first per the §4c(iv) precedence |
 | `_fit_to_budget`'s query-matched claim-flag priority | claim flags outrank wiki + episodes | **PRESERVED** (R7-2 restored the v9 order to match it) — the carrier constrains the spec here, not the reverse |
-| **`0003` §4c-ii contested rendering + its finite-budget truncation (I6a form)** | truncates BETWEEN contention groups; the first group line is admitted unconditionally (one 300-value group rendered ~1,579 tokens under a 400-token budget, reviewer-reproduced) | on `0012` acceptance, `0003` gains a marked amendment extending its deterministic truncation WITHIN a group: ≤ `contested_members_per_line` members per rendered line (default 6), highest-effective-authority member + grounded prior always retained, omitted count in the line's framing — recorded on both sides (R9-1) |
+| **`0003` §4c-ii contested rendering + its finite-budget truncation form** | truncates BETWEEN contention groups; the first group line is admitted unconditionally (one 300-value group rendered ~1,579 tokens under a 400-token budget, reviewer-reproduced) | on `0012` acceptance, `0003` gains a marked amendment extending its deterministic truncation WITHIN a group: ≤ `contested_members_per_line` members per rendered line (default 6), highest-effective-authority member + grounded prior always retained, omitted count in the line's framing — recorded on both sides (R9-1) |
 | `compile_wiki()` / `ensure_wiki()` return | both string-valued (`ensure_wiki` returns `compile_wiki()` directly; a cache hit returns the cached string) | **UNCHANGED — the v10 signature change is WITHDRAWN (R8-4)**: the pipeline stays string-valued end-to-end, hot/cold identical; the in-body markers (fixed grammar, appended by code post-LLM) are the machine-parseable drop signal |
 
 **Enumeration rule:** at implementation, grep `insert_incoming` and `reinforc` across `src/` +
