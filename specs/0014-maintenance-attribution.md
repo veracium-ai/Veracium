@@ -1,6 +1,6 @@
 # Feature spec: maintenance attribution — a consumed contributor must leave a recoverable record
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
@@ -1275,3 +1275,51 @@ their rulings so the reasoning survives into design lock.*
 | **v17** | **round 13 EXTERNAL (2026-08-10): THREE bin-(a) folded, classified first, all found in prior folds' fixes; R12-2 closed (R13-1…R13-3 — the complete ALTER-path DDL literal + digest IN the spec, authored on the qualified runtime, authorized by the review itself; the two-set projection riding `0010`'s stable historical namespace after the invented lineage remap was retired; the generated skip inventory with the two-directional completeness gate)** | 3 | `specs/reviews.py`; this document |
 | **v18** | **round 14 EXTERNAL (2026-08-10): ONE bin-(a) folded (R14-1 — the inventory carrier bound at both ends: packaging-time byte-equality assertion + the in-package test that fails a stale COLLECTED in the reviewer's own extraction; the package-artifact skip site inventoried); R13-1/R13-2 closed, the delta reconciled exactly** | 1 | `specs/reviews.py`; this document |
 | **v19** | **round 15 EXTERNAL (2026-08-10): ONE bin-(a) folded (R15-1 — the strict shared carrier verifier: standalone-line markers, exactly-one pair, byte-exact block, no normalization; proven against the reviewer's two reproduced bypasses + the full required case list by an everywhere-running adversarial test)** | 1 | `specs/reviews.py`; this document |
+
+## Review closure (PROCESS.md §4a) — §12, the `0014` acceptance ledger
+
+*Dev sets `Spec-Status: accepted` per the round-16 disposition: "APPROVED FOR ACCEPTANCE —
+bin (a): empty" under the two-bin protocol accepted at round 1 (carried over from `0012`'s
+boundary proposal). The per-round source of truth is `specs/reviews.py`; every package the
+reviewer saw is hash-indexed in `specs/archives/INDEX.md`; every invariant has a named
+executable check (§6). Rounds 8+ ran the repo owner's CLASSIFY-BEFORE-FIXING protocol
+(every finding classed against the 7-class taxonomy, the miss diagnosed, and the CHECK
+that missed it fixed in the same commit as the spec fix).*
+
+| round | date | disposition | findings | folded in | evidence |
+|---|---|---|---|---|---|
+| external 1 | 2026-08-10 | protocol accepted; §4f ruled (frozen point 5, no tombstone); 9 findings | 9 | v5 `7289f4f` | archive `0014-v4-…` |
+| external 2 | 2026-08-10 | return — 8 found-in-fix cells (R2-1…R2-8) | 8 | v6 `9b39a1d` | archive `0014-v5-…` |
+| external 3 | 2026-08-10 | return — 7 (R3-1…R3-7) | 7 | v7 `c2a05f6` | archive `0014-v6-…` |
+| external 4 | 2026-08-10 | return — 6 (R4-1…R4-6); the explicit found-in-fix checklist instituted pre-send | 6 | v8 `b815ea0` | archive `0014-v7-…` |
+| external 5 | 2026-08-10 | return — 7 incl. an EXECUTED live replay defect (R5-1…R5-7) | 7 | v9 `9ad4bdc` | archive `0014-v8-…` |
+| external 6 | 2026-08-10 | return — 6 incl. R6-6: the claimed sweep was an uncommitted script (conceded); the retired-phrase gate made REAL | 6 | v10 `ba56cb9` | archive `0014-v9-…` |
+| external 7 | 2026-08-10 | return — 5 (R7-1…R7-5); the gate self-test added | 5 | v11 `4c9714c` + v11b `6f5120a` (four pre-send catches from the first classified-findings pass, disclosed) | archive `0014-v10-…` |
+| external 8 | 2026-08-10 | return — 5 (R8-1…R8-5), first classify-first fold; request-first phase 2 | 5 | v12 `c076fa5` | archive `0014-v11-…` |
+| external 9 | 2026-08-10 | return — 6 (R9-1…R9-6); the persisted response + projection-version discriminator | 6 | v13 `72c4477` | archive `0014-v12-…` |
+| external 10 | 2026-08-10 | return — 6 (R10-1…R10-6), four found-in-fix from v13 | 6 | v14 `78813e6` | archive `0014-v13-…` |
+| external 11 | 2026-08-10 | return — 4 (R11-1…R11-4); R10-1/2/4/6 closed | 4 | v15 `9a075f3` | archive `0014-v14-…` |
+| external 12 | 2026-08-10 | return — 4 (R12-1…R12-4); R11's manifest fix had moved the §4c circularity | 4 | v16 `9cdd57d` | archive `0014-v15-…` |
+| external 13 | 2026-08-10 | return — 3 (R13-1…R13-3); R12-2 closed; the ALTER-path literal demanded IN the candidate | 3 | v17 `9b085dc` | archive `0014-v16-…` |
+| external 14 | 2026-08-10 | return — 1 (R14-1); R13-1/R13-2 CLOSED, the suite delta reconciled exactly by name | 1 | v18 `e8a09c4` | archive `0014-v17-…` |
+| external 15 | 2026-08-10 | return — 1 (R15-1, two reproduced boundary bypasses in the carrier gate) | 1 | v19 `e14d82a` | archive `0014-v18-…` |
+| external 16 | 2026-08-10 | **APPROVED FOR ACCEPTANCE — "Bin (a): empty. R15-1 is closed."** Design frozen on §§4–8 and A1–A10, incl. the v6 schema/evidence authorization, indexed-output identity projection, cross-spec carriers, and reviewer-evidence controls | 0 | v20 `accepted` (this revision — its commit in `specs/archives/INDEX.md` / git) | archive `0014-v19-…` sha `309aed8a…` |
+
+**Preserved bin-(b) obligation (round 16, nonblocking — carried to implementation):**
+`Path.read_text()` normalizes CRLF, so the carrier verifier's "byte-exact" claim is
+TEXT-EXACT across line-ending conversion. The implementation either verifies RAW BYTES
+(read the carrier as bytes before decode) or the narrowed text-exact claim stands,
+stated as such. `skip_inventory.verify_collected`'s docstring carries the narrowed
+wording now; the raw-bytes upgrade is an implementation-time decision recorded here.
+
+**The executable acceptance surface (§6 A1–A10 + the named tests throughout §§4–7, all
+becoming implementation/release gates):** the consult-and-discard record (A1) · N×M
+consolidation completeness (A2/A7 set equality) · content-free rows (A5) · atomicity
+(A7) · append-only with verified op_key conflicts (A8) · revocation joins (A9) ·
+retention (A10) · the request-first two-phase replay with persisted effects and the
+projection-version discriminator · the snapshot field partition with the store-level
+per-field abort oracle · the frozen byte-exact request digest with vectors · the
+independently authored ALTER-path manifest (`MANIFESTS[6]`, `0013` §4e) · the two-set
+source-identity projection · destination-state import uniqueness · FORMAT v5 round-trips
+· and the process gates (withdrawn-phrase registry + self-tests, frozen-count patterns,
+the generated+gated skip inventory, the strict shared carrier verifier).

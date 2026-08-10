@@ -102,7 +102,11 @@ def verify_collected(text: str) -> None:
 
     Rules, exactly as the reviewer required: markers count only as COMPLETE
     STANDALONE LINES; exactly one opening and one closing marker; the enclosed
-    block is compared to render() with NO normalization. Raises ValueError with
+    block is compared to render() with NO normalization OF THE DECODED TEXT.
+    Narrowed claim (0014 round-16 bin-(b) obligation): callers typically read
+    the carrier via Path.read_text(), which normalizes CRLF — so the guarantee
+    is TEXT-EXACT across line-ending conversion; the implementation may upgrade
+    to raw-bytes verification per the acceptance ledger. Raises ValueError with
     a specific reason; returns None on success. Shared by the packaging step
     and tests/test_spec_gate.py — one verifier, no drift."""
     lines = text.split("\n")
