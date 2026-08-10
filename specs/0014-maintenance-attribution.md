@@ -5,7 +5,24 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v7, 2026-08-10) — round 3 folded (seven bin-(a)):** the absorption PRE-IMAGE exists
+> **draft (v8, 2026-08-10) — round 4 folded (six bin-(a)), and the fold ran the found-in-fix
+> checklist EXPLICITLY before packaging (which itself caught a v7 contradiction — see below):**
+> absorption payloads are per-contributor `{base, contributor}` and reversal is RE-COMPUTATION
+> (one incoming absorbing several priors broke the single-diff form — the 0.2-absorbs-0.8/0.9
+> case) (R4-1); the pre-image is SEMANTICALLY verified — the store recomputes the expected
+> post-image from pre-image + authoritative contributors and compares exactly (hashing a false
+> claim only made it stable) — and gains its own §2c matrix row (R4-2); the output-index carrier
+> is COMPLETE (the named `episodes.consolidation_output_index` column, the `Optional[int]`
+> signature with its return-consumers enumerated, finalization immutability, the
+> exported-with-episode portability split, and conflict comparison over DETERMINISTIC fields
+> only) (R4-3); the transitive-prerequisite gate is structurally testable (`SiteSpec` +
+> `transitive_contract` spec-anchor verification + the adversarial gate cases) (R4-4); the
+> per-site survivor rule reaches §2c and §7, §7a gains the pre-image/output-index/portability
+> rows, and §2's leftover narrow field list is gone (R4-5); the consolidation schema is EXACT —
+> no `valid_from` on Episodes, mandatory keys named, optionals OMITTED never null (R4-6). THE
+> CHECKLIST'S OWN CATCH: v7's `{}`-at-absorption was contradictory under the new total shape —
+> `{}` is now an integrity error EVERYWHERE, A1 carried by the total payload. v8 = the round-5
+> resubmission. Earlier (v7): round 3 folded (seven bin-(a)):** the absorption PRE-IMAGE exists
 > and binds — `_build_supersession_plan` snapshots the incoming edge's original scalars BEFORE
 > inheritance onto `absorption_pre_image`, the store derives `prior` from it, and it ENTERS the
 > receipt digest (the 0.1/0.2-into-0.9 byte-identical-plans reproduction closed at the root)
@@ -27,7 +44,7 @@ Spec-Requires: 0006, 0007, 0013
 > (R2-2); the N×M rows insert atomically at the OUTPUTS_DURABLE cutover transition — `0010` has
 > no op-wide transaction, and the cutover is the point of no return with inputs still present;
 > every crash seam is specified (R2-3); consolidation payloads gain `author_of_evidence` + `date`
-> and are TOTAL — `{}` is legal only at absorption's no-transfer case (R2-4); the evidence-ref
+> and are TOTAL — `{}` legal only at absorption's no-transfer case *(v8 retired `{}` entirely)*; the evidence-ref
 > digest is byte-exact (UTF-8, u32be framing) with `""` DEFINED as absent (R2-5); §2c is the
 > required input MATRIX (R2-6); the A2/A3 checks now bite — two outputs, N×M, the frozen digest
 > construction computed inline, `source_id` supplied (R2-7); and the round-1 dispositions are
@@ -145,7 +162,8 @@ the maintenance ops that consult-and-discard a contributor are `graph._build_sup
 the 0010 fenced primitives) — see §3 for the sites and §7a for the full surface list. The **payload** fields — those *read from a
 contributor and written onto a survivor* — are `Provenance.observed_at`, `Provenance.confidence`,
 `Edge.valid_from`, `Provenance.disclosure`, `Provenance.derived_from`; the ledger stores their prior
-and new values (all store-clear scalars, Q1) or nothing when no value moved (A1). The identity is
+and new values (the R2-4/R4-6 per-site closed sets — all store-clear scalars, Q1), or the
+no-transfer form at absorption only (A1). The identity is
 `0006`'s resolved `(origin, source_id)` pair, digested (below).
 
 > **`0014 → 0006` dependency (research Q1/F3, and `0006` v3 R5/R7).** The ledger is keyed on **`0006`'s
@@ -189,7 +207,8 @@ write; every REJECT aborts the WHOLE maintenance op (A7 — no consumption witho
 | input | empty/absent | malformed | unrecognised | adversarial | governs |
 |---|---|---|---|---|---|
 | `site` | REJECT | REJECT (non-string) | REJECT — not in the closed registry | a registered-but-wrong site cannot bind: the store verifies the draft arrived through that site's own carrier (plan / cutover transition) | A4 |
-| `survivor_type` / `survivor_id` | REJECT | REJECT (not 'edge'/'episode') | REJECT — no such row written THIS commit | a forged survivor not written this commit → REJECT (store-bound) | A7, R1-2 |
+| `survivor_type` / `survivor_id` | REJECT | REJECT (not 'edge'/'episode') | REJECT — fails the PER-SITE binding rule (absorption: no such row written THIS commit; consolidation: no provisional output bound to this operation/fence/lineage/identity — R3-2/R4-5) | a forged survivor fails the same per-site rule | A7, R1-2, R3-2 |
+| `absorption_pre_image` (plan field) | REJECT when the plan carries absorption contributions (a missing pre-image is underivable state) | REJECT — non-scalar values, wrong types, non-canonical key order | REJECT — unknown/missing closed-set keys | a schema-valid-but-FALSE pre-image is caught by the semantic recompute-compare (R4-2): the recomputed post-image mismatches the committed survivor → abort | A7, R3-1, R4-2 |
 | `contributor_type` / `contributor_id` | REJECT | REJECT | REJECT — dangling: no such row being consumed this txn | a FOREIGN-TENANT row reference → REJECT (tenant mismatch is an integrity error, never a silent cross-tenant read) | A7, R2-1 |
 | payload | n/a — the caller CANNOT supply one (R2-1); store-derived | a store-derivation producing non-finite floats (NaN/±Inf in `confidence`) → REJECT the op: the SOURCE row is corrupt and consuming it must not launder the corruption into a "clean" record | n/a | n/a — derivation reads only authoritative rows | A5, A7 |
 | `source_id` (read from the contributor row) | legal — `identity_digest` NULL (unknown source, recorded not revocable) | length-bounds are `0006`'s (its §4 rule 5 rejected it at WRITE time; a stored row is in-bounds by invariant) | n/a (opaque) | an adversarial value is inert: digested, never rendered; grouping is the only power it has (`0006` I5) | F1/I13, A5 |
@@ -308,20 +327,35 @@ input.
 (arbitrary JSON cannot carry A5's content-free guarantee). The store VALIDATES on write,
 fail-closed (an invalid payload aborts the whole maintenance transaction, A7):
 
-- *absorption:* `{"fields": {<name>: {"prior": <v>, "new": <v>}}}` where `<name>` ∈ the CLOSED set
-  {`observed_at`, `confidence`, `valid_from`, `disclosure`, `derived_from`} and `<v>` is the
-  field's own scalar type (ISO timestamp / float / closed enum). Unknown keys, nested objects,
-  strings outside the enums: REJECTED.
-- *consolidation:* `{"input": {<name>: <v>}, "output_index": <int>}` over the closed field set
-  **{`observed_at`, `confidence`, `valid_from`, `disclosure`, `derived_from`,
-  `author_of_evidence`, `date`}** — the consumed input's OWN values (R1-4), including
-  `author_of_evidence` (recomputing `third_party_influenced` requires it) and the episode
-  `date` (output date ranges derive from it) (R2-4). TOTAL — never `{}` here.
-- `{}` is legal ONLY where no state is consulted-and-transferred: absorption's no-transfer
-  case (the older/weaker contributor — A1's consult-and-discard record). At CONSOLIDATION the
-  payload is ALWAYS total (R2-4) — every input's values and `output_index` are required for
-  recomputation, and the store derives them, so an empty consolidation payload is an integrity
-  error, not a legal record.
+- *absorption (R4-1 — one incoming may absorb SEVERAL priors, so a single pre→post diff
+  cannot support arbitrary contributor removal; the reviewer's 0.2-absorbs-0.8-and-0.9 case):*
+  each per-contributor row carries `{"base": {<name>: <v>}, "contributor": {<name>: <v>}}` —
+  `base` = the plan's `absorption_pre_image` (the incoming's original values, identical across
+  the op's rows) and `contributor` = THAT absorbed prior's own values, read from its
+  authoritative row (which the store already reads for identity). REVERSAL IS RE-COMPUTATION
+  (the same model as consolidation): remove contributor X's row, re-apply the absorption
+  inheritance rules over `base` + the remaining contributors' recorded values (revoking the
+  0.9 contributor recomputes `max(0.2, 0.8) = 0.8`, never a false restoration to 0.2). Mandatory
+  keys per side: `observed_at`, `confidence`, `valid_from`, `disclosure`; `derived_from` is
+  OMITTED when its underlying value is None — never encoded as `null` (canonical form: sorted
+  keys, omitted-if-absent — this exact form feeds the receipt digest and the op-key conflict
+  comparison). **`{}` is legal NOWHERE under this shape (the checklist pass caught the v7
+  contradiction):** the A1 no-transfer case records base and contributor values like any
+  other — the recorded values themselves SHOW that nothing moved, which is strictly more
+  informative than an empty payload; A1's consult-and-discard principle is carried by the
+  TOTAL payload, not by emptiness.
+- *consolidation (R4-6 — the EXACT schema; an `Episode` HAS no `valid_from`):*
+  `{"input": {<name>: <v>}, "output_index": <int>}` with MANDATORY input keys
+  {`observed_at`, `confidence`, `disclosure`, `author_of_evidence`, `date`} and
+  `derived_from` OMITTED when None (never `null`); `valid_from` is NOT in the consolidation
+  set — it is an Edge field, and consolidation inputs are Episodes. TOTAL — never `{}` here.
+  Canonical form: sorted keys, omitted-if-absent — deterministic for digesting, validation,
+  recomputation, and conflict comparison alike.
+- **Payloads are TOTAL at BOTH sites; `{}` is an integrity error everywhere** (v8, via the
+  pre-send checklist): absorption records base+contributor always (the no-transfer case is
+  visible IN the values — R4-1's shape made emptiness redundant and contradictory);
+  consolidation records every input's values + `output_index` (R2-4). The store derives all of
+  it, so any empty payload signals a derivation failure and aborts (A7).
 
 **Append-only** — a row is INSERTed, never UPDATEd or REPLACEd. **Content-free** by the 0003
 discipline: the only identity fields are digests (§2/A5); `payload` carries scalar field names and
@@ -332,8 +366,9 @@ their prior/new timestamp/float/enum values (store-clear, Q1), never `object`/`n
 contributor has no `source_id`** (`0006` §4 rule 8 / I13 — unknown source, recorded but not
 groupable/revocable; never a `(origin, NULL)` pseudo-source). The resolution `0006` §4.6 mandates
 happens before the digest, so `revoke_source` (which digests the same resolved pair) joins on
-`ix_contribution_ledger_source`. `payload` MAY be `{}` — an empty payload still records the
-consumption (A1).
+`ix_contribution_ledger_source`. `payload` is TOTAL at every site (v8 — the base+contributor/input shapes always carry
+values; A1's no-transfer case is visible IN the recorded values, and `{}` aborts as a
+derivation failure).
 
 ### 4b. `ContributionDraft` — what a site emits
 
@@ -360,7 +395,14 @@ canonical key order). The store derives the absorption payload as `prior` = the 
 `new` = the incoming edge as written — both authoritative — and **the pre-image ENTERS `0003`'s
 `_logical_request_digest`** (closing the byte-identical-plans replay hole at its root; part of
 the same marked `0003` amendment). A plan carrying absorption contributions with a missing or
-field-incomplete pre-image is an integrity error: the op aborts (A7).
+field-incomplete pre-image is an integrity error: the op aborts (A7). **And the pre-image is
+SEMANTICALLY verified, not merely receipt-bound (R4-2 — hashing a false claim only makes it
+stable):** the store RECOMPUTES the expected post-image — the absorption inheritance rules
+applied to the pre-image plus the authoritative contributor rows it reads — and compares it
+EXACTLY to the survivor as committed; any mismatch (the reviewer's 0.95-pre/0.9-committed case,
+where `max()` must preserve 0.95) aborts the whole op. A pre-image that survives both the
+schema check and the recompute-compare is consistent with everything authoritative by
+construction.
 
 **Survivor binding is PER SITE (R3-2 — one rule cannot serve both):** at ABSORPTION the survivor
 must be a record the SAME commit writes (the CAS plan's incoming edge). At CONSOLIDATION the
@@ -406,12 +448,24 @@ atomic carrier; the draft rides it:
   abandonment touches no ledger state). Crash AFTER → the rows are durable AND `0010` X2/X13
   recovery rolls the op FORWARD to completion — rows and consumption stay consistent. The
   ledger-write failure aborts the transition itself (A7).
-  **The output identity is STORE-ASSIGNED and PERSISTED (R3-3 — a caller-supplied index was
-  fail-open):** `write_consolidation_output_if_current` ASSIGNS `output_index` itself — the count
-  of outputs already written for this operation, sequential from 0 — and PERSISTS it on the
-  output row's consolidation metadata (part of the marked `0010` amendment;
-  `ConsolidationOutputDraft` does NOT carry an index — duplicate/missing indexes are impossible
-  by construction; the primitive's return surfaces the assigned index).
+  **The output identity is STORE-ASSIGNED and PERSISTED — the COMPLETE carrier (R3-3 + R4-3):**
+  `write_consolidation_output_if_current` ASSIGNS `output_index` itself — the count of outputs
+  already written for this operation, sequential from 0 — and persists it in a NEW nullable
+  `episodes.consolidation_output_index INTEGER` column (part of the v6 migration, additive;
+  named here because the field is the carrier). The Store signature becomes
+  `write_consolidation_output_if_current(operation_id, fence, owner, draft) -> Optional[int]` —
+  the assigned index on success, `None` on fence loss (the current `bool` maps False→None);
+  `ConsolidationOutputDraft` does NOT carry an index. FINALIZATION leaves the column untouched
+  (immutable once written — settled outputs keep their index for the ledger join's lifetime).
+  PORTABILITY: the column EXPORTS with the episode (it is scalar output identity, content-free)
+  while the LEDGER stays excluded — a re-imported store keeps output identities; its ledger
+  starts empty (§4e's rule, unchanged; the op_key references a local operation_id, which is
+  consistent with a local-only ledger).
+  **Conflict comparison is over the DETERMINISTIC fields only (R4-3):** `(user_id,
+  survivor_type, survivor_id, site, identity_digest, evidence_ref_digest, canonical payload,
+  op_key)` — the store-minted `id` and `created_at` are EXCLUDED (a literal full-row comparison
+  would reject every true retry). A match on all deterministic fields = idempotent no-op;
+  any deterministic-field mismatch aborts.
   **The retry key is PERSISTED and uniquely constrained (R2-2), and a conflict VERIFIES, never
   ignores (R3-3):** the ledger gains a nullable `op_key TEXT` column — canonical
   `"<operation_id>:<output_index>:<contributor_type>:<contributor_id>"` for consolidation rows,
@@ -487,12 +541,16 @@ re-consolidation), which is a ground of the ruling.
 > records. The former "acceptance criteria" paragraph is WITHDRAWN with the candidate: no
 > multi-generation case gates v1 (there is no reachable multi-generation state to test).
 
-**The prerequisite, MECHANICAL (R3-5):** every `CONSUMPTION_SITES` registry entry carries a
-`consumes_survivors_with_contributors: bool` capability field — **`False` for both v1 sites** —
-and the registry gate (A4) asserts: no registered site has the capability `True` unless a
-transitive-handling contract (typed contributor-record links + a defined incomplete-query status,
-accepted by review) exists in the codebase. A future spec flipping the field without landing that
-contract fails the gate — the prerequisite is enforced by machinery, not memory.
+**The prerequisite, MECHANICALLY TESTABLE (R3-5 + R4-4):** the registry is
+`CONSUMPTION_SITES: dict[str, SiteSpec]` with
+`SiteSpec(consumes_survivors_with_contributors: bool, transitive_contract: Optional[str])` —
+both v1 entries `(False, None)`. The gate (named in A4's check column) asserts, structurally:
+for EVERY entry with the capability `True`, `transitive_contract` names a spec anchor
+`"NNNN-<name>.md#<section>"` such that the referenced file exists under `specs/`, carries
+`Spec-Status: accepted`, and contains the named section anchor — all machine-checkable, no
+judgement call. The gate's ADVERSARIAL case registers a synthetic `True` site with a missing /
+draft / anchor-less contract reference inside the test and asserts the gate FAILS each variant.
+A future spec flips the field only by landing an accepted contract the gate can see.
 
 ## 5. Regime analysis — where does this behave differently?
 
@@ -525,11 +583,11 @@ gates once the design is `accepted`; they are prospective here (unbuilt), like `
 
 | | invariant | executable check |
 |---|---|---|
-| **A1** | a consumption is recorded **EVEN WHEN NOTHING TRANSFERS** — an older/weaker contributor that moves no `max()` is still recorded (the consult-and-discard key; closes the attack path). The EMPTY payload is the record's legal form ONLY at absorption's no-transfer case (R2-4/R3-7 — consolidation payloads are TOTAL by construction: they record the input's own values, which always exist); the consult-and-discard PRINCIPLE is general, the empty-payload FORM is site-scoped. *(Reinforcement MOVED to `0012`.)* | `test_absorption_records_the_contributor_even_when_no_value_moves` — an older/weaker absorbed prior moves no `max()` yet is recorded with payload `{}` · the consolidation branch of the same principle is A2's N×M case (every input recorded, payload total) |
+| **A1** | a consumption is recorded **EVEN WHEN NOTHING TRANSFERS** — an older/weaker contributor that moves no `max()` is still recorded (the consult-and-discard key; closes the attack path). Payloads are TOTAL at both sites (v8): the no-transfer case is recorded with base+contributor values that themselves show nothing moved — strictly more informative than the retired empty-payload form; the consult-and-discard PRINCIPLE is general and the record always total. *(Reinforcement MOVED to `0012`.)* | `test_absorption_records_the_contributor_even_when_no_value_moves` — an older/weaker absorbed prior moves no `max()` yet is recorded, its base+contributor payload showing the no-op transfer · the consolidation branch is A2's N×M case |
 | **A2** | a consolidated summary's contributor SOURCES are recoverable after input deletion (not only the `lineage` ids) — over the FULL INPUT×OUTPUT relation (R1-1): with N claimed inputs and M outputs, EVERY output enumerates all N contributors (N×M rows) | `test_consolidation_contributors_survive_input_deletion` (`xfail` today; the flip asserts the cross product on a MULTI-output op — ≥ `consolidate_min_batch` inputs, 2 outputs, 2×N rows) |
 | **A3** | absorption's contributor link is queryable via `contributions()`, not only a `note` string | `test_absorption_link_is_a_queryable_contribution` (`xfail` today) |
 | **A4** | for any survivor, `contributions(user_id, survivor_type, survivor_id)` enumerates every CONSUMED CONTRIBUTOR (payload empty or not) across every `0014` site — and the site set is a MECHANICAL registry, not a remembered list (R1-9): a `CONSUMPTION_SITES` constant in code + a GENERATED consumption manifest (`specs/generated/0014-consumption-manifest.md`, the 0002 audit-manifest pattern) enumerating every code path that INSERTs a ledger row — incl. a branch inside an existing store mutator — with a gate test that fails when the code and the manifest disagree. A contributor with **no `source_id`** is still enumerated, `identity_digest` NULL (F1/I13) | `test_every_consumed_contributor_is_enumerable` — inject at each registered site incl. an absent-`source_id` contributor (NULL digest asserted) · `test_the_consumption_manifest_matches_the_code` — the generated-manifest gate: every ledger INSERT site is registered; an unregistered INSERT fails the gate |
-| **A5** | content-free — `identity_digest` via the shared `0006` primitive; `evidence_ref_digest` via the frozen §4a evidence-reference construction (its OWN domain, origin-scoped, NULL iff absent — R1-8); `payload` VALIDATES against the CLOSED per-site recursive schema (§4a) — unknown keys/types/nesting REJECTED, the whole op aborting (A7); no `object`/`note`/`summary` ever | `test_contribution_records_are_content_free` · `test_a_corrupt_derivation_seam_aborts_the_op` (R3-7 — callers cannot supply payloads, so the injection targets the REACHABLE seams): a contributor row with non-finite `confidence` (NaN/±Inf), a non-UTF-8-encodable `evidence_ref`, a store-derivation self-check failure at each site, and an out-of-scope empty payload (a `{}` consolidation record) — each aborts the whole op |
+| **A5** | content-free — `identity_digest` via the shared `0006` primitive; `evidence_ref_digest` via the frozen §4a evidence-reference construction (its OWN domain, origin-scoped, NULL iff absent — R1-8); `payload` VALIDATES against the CLOSED per-site recursive schema (§4a) — unknown keys/types/nesting REJECTED, the whole op aborting (A7); no `object`/`note`/`summary` ever | `test_contribution_records_are_content_free` · `test_a_corrupt_derivation_seam_aborts_the_op` (R3-7 — callers cannot supply payloads, so the injection targets the REACHABLE seams): a contributor row with non-finite `confidence` (NaN/±Inf), a non-UTF-8-encodable `evidence_ref`, a store-derivation self-check failure at each site, and ANY empty payload at either site (`{}` signals a derivation failure — v8) — each aborts the whole op |
 | **A6** | `forget_user` erases the user's ledger rows; export/import EXCLUDE the ledger (§4e) | `test_forget_user_erases_the_contribution_ledger` · `test_export_excludes_the_contribution_ledger` |
 | **A7** | the record is ATOMIC with the maintenance op — if the op rolls back, its ledger rows roll back; no consumption without a record and no record without a consumption (§4c) | `test_a_rolled_back_maintenance_op_writes_no_ledger_row` — inject a failure after the op's writes but before commit at each site; assert neither the op nor its rows persist |
 | **A8** | the ledger is APPEND-ONLY — a row is never UPDATEd or REPLACEd; concurrent ops each write their own row | `test_ledger_rows_are_append_only` · `test_concurrent_consumptions_each_write_one_row` |
@@ -569,9 +627,10 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
   severance-capable site** — recorded in §4f, §8, and the A4 site registry, so the gap cannot
   arrive silently. No multi-generation case gates v1 acceptance (there is no reachable
   multi-generation state to test); the prerequisite binds the future spec that creates one.
-- **New attack surface.** (a) A caller forging `survivor_id` or a foreign identity — blocked: the
-  store binds `survivor_id` to a record it is writing in the same commit, and resolves+digests the
-  identity itself (§4b). (b) Memory content smuggled into the ledger — blocked: identities are digests,
+- **New attack surface.** (a) A caller forging `survivor_id` or a foreign identity — blocked by
+  the PER-SITE binding rule (R3-2/R4-5): at absorption the survivor must be a record the same CAS
+  commit writes; at consolidation an existing provisional output verified bound to this
+  operation/fence/lineage/identity; the store resolves+digests every identity itself (§4b). (b) Memory content smuggled into the ledger — blocked: identities are digests,
   `payload` is scalar field names + timestamp/float/enum values (A5). (c) An attacker staying invisible
   by ensuring no `max()` moves — closed by the consult-and-discard key (A1). (d) Unbounded ledger
   growth as resource exhaustion — bounded by survivor-existence retention (§5, A10); a consumption of a
@@ -579,8 +638,10 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
 
 ## 7a. Surfaces touched — the honest list
 
-- `src/veracium/schema.py` — new `ContributionDraft` (a site emits) and `ContributionRecord` (read
-  back); `SupersessionPlan` gains a `contributions: list[ContributionDraft]` field (§4c).
+- `src/veracium/schema.py` — new `ContributionDraft` (references only) and `ContributionRecord`
+  (read back); `SupersessionPlan` gains `contributions: list[ContributionDraft]` AND
+  `absorption_pre_image: Optional[dict]` (the R3-1 snapshot — plan-transient, receipt-bound,
+  semantically verified per R4-2) (§4b/§4c).
 - `src/veracium/graph.py` — `_build_supersession_plan` populates `plan.contributions` for
   absorption (3.3) — one draft per consumed prior. No new mutator call site: it rides the existing
   `apply_supersession_plan`. (Reinforcement (3.1) is NOT a site — `0012` Design 1 persists the edge.)
@@ -597,7 +658,9 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
   table + its THREE indexes (survivor, source, and the partial unique op_key — R2-2/R3-6) as `SCHEMA_VERSION` **v5→v6** (`0006` takes v5; `Spec-Requires: 0006, 0007,
   0013`), the v5→v6 migration, and evidence regeneration.
 - `src/veracium/portability.py` — export/import EXCLUDE the ledger (§4e); **no `FORMAT_VERSION`
-  change** from it.
+  change** from it. The NEW `episodes.consolidation_output_index` column (R4-3) EXPORTS with the
+  episode (scalar output identity, content-free) — the settled-output-portable / ledger-local
+  split is deliberate and stated.
 
 **Schema:** **yes — one new content-free, user-linked table + THREE indexes** (survivor, source, partial-unique op_key), `SCHEMA_VERSION` v5→v6
 (after `0006`'s v5), the same additive shape as 0003's refusal inventory. The cost — another store
@@ -622,7 +685,7 @@ implementation commit as the behaviour it describes.*
 | `src/veracium/portability.py` + its tests | a v4 export's content set | export/import EXCLUDE the ledger — a test asserts the export byte-set is unchanged by ledger rows; **no `FORMAT_VERSION` change** |
 | `SupersessionPlan` docstring + `specs/0003` §4f plan-shape text | the plan carries incoming/upserts/invalidations/refusals | gains `contributions: list[ContributionDraft]` — BOTH carriers state it same-commit (a marked additive amendment on accepted `0003`; the store INSERTs it inside the existing CAS commit, A7) |
 | `0003`'s receipt digest (`_logical_request_digest`) + `test_a_differing_resubmission_conflicts_field_by_field` | binds the complete logical outcome, WITHOUT contribution drafts | **R1-3/R3-1: the contributions AND the absorption pre-image ENTER the digest** — site, survivor type+id, contributor type+id, the store-derived canonical payload (R2-1), and the plan's `absorption_pre_image` snapshot (R3-1 — the reviewer's byte-identical-plans reproduction is closed at the root) — a marked amendment on accepted `0003`; the store test gains a contribution-field mutation case (same final plan, different prior_survivor_values → SupersessionIntegrityError, never a silent replay) |
-| accepted `0010` `write_consolidation_output_if_current` + `transition_consolidation_if_current` + their X-invariant tests | the output primitive writes one provisional output + lineage; the transition moves state; no ledger, no output index | a marked ADDITIVE amendment (R1-1/R1-9/R2-3/R3-3): the OUTPUT primitive ASSIGNS and PERSISTS `output_index` (store-sequential; the return surfaces it); the CUTOVER transition (`OUTPUTS_DURABLE`) derives-and-INSERTs the N×M ledger rows atomically with the transition, verify-on-conflict under the persisted `op_key`; the X-suite gains the retry/takeover/verify-mismatch ledger cases |
+| accepted `0010` `write_consolidation_output_if_current` + `transition_consolidation_if_current` + their X-invariant tests | the output primitive writes one provisional output + lineage; the transition moves state; no ledger, no output index | a marked ADDITIVE amendment (R1-1/R1-9/R2-3/R3-3): the OUTPUT primitive ASSIGNS and PERSISTS `output_index` (store-sequential; the return surfaces it); the CUTOVER transition (`OUTPUTS_DURABLE`) derives-and-INSERTs the N×M ledger rows atomically with the transition, verify-on-conflict under the persisted `op_key`; the X-suite gains the retry/takeover/verify-mismatch ledger cases; the return-type change (`bool` → `Optional[int]`) touches `lifecycle.consolidate` (ignores the return today — updated to consume the index) and every `test_0010_visibility_reservation` call site (R4-3, the checklist's cross-module pass) |
 | the store deletion/retention paths (`forget_user`, `invalidate_edge`, hard-delete, consolidation input deletion) + their tests | delete records without touching any ledger | A10's retention rides them: survivor deletion drops the survivor's rows (type-keyed); the deletion tests gain the ledger assertions (R1-9) |
 | `CHANGELOG.md` + the release upgrade note | v5 store, one-call migration | the v6 note + the pending upgrade-recommendation release line (the platform point rides this) |
 
@@ -685,3 +748,4 @@ their rulings so the reasoning survives into design lock.*
 | **v5** | **round 1 EXTERNAL (2026-08-10): the two-bin protocol ACCEPTED; the §4f question RULED (frozen point 5 retained, no tombstone, transitive handling = prerequisite for future severance-capable sites); NINE bin-(a) findings returned and folded (R1-1…R1-9)** | 9 | `specs/reviews.py`; this document |
 | **v6** | **round 2 EXTERNAL (2026-08-10): EIGHT bin-(a) found-in-fix cells in v5's amendments, all folded (R2-1…R2-8 — store-derived payloads; persisted retry identity; cutover-atomic inserts; total consolidation payloads; byte-exact digest framing; the §2c matrix; biting N×M digest tests; the carrier sweep)** | 8 | `specs/reviews.py`; this document |
 | **v7** | **round 3 EXTERNAL (2026-08-10): SEVEN bin-(a) folded (R3-1…R3-7 — the absorption pre-image exists and binds; per-site survivor binding; store-assigned output identity + verify-on-conflict; the row-cardinality A2 test; inert §4f history + the mechanical capability gate; the carrier sweep; reachable-seam injections)** | 7 | `specs/reviews.py`; this document |
+| **v8** | **round 4 EXTERNAL (2026-08-10): SIX bin-(a) folded (R4-1…R4-6 — per-contributor absorption payloads + recomputation reversal; semantic pre-image verification; the complete output-index carrier; the structurally-testable capability gate; the sweep; the exact consolidation schema) + the EXPLICIT pre-send checklist pass, which caught the v7 `{}` contradiction and the return-type consumers** | 6 | `specs/reviews.py`; this document |
