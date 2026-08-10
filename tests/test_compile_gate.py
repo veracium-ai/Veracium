@@ -200,7 +200,7 @@ def test_recall_token_budget():
                                      Provenance as _P, SourceType as _S)
         for i in range(30):
             mem.store.add_edge(_E(
-                id=f"pad{i}", user_id="u", subject="user", relation="works_on",
+                id=f"pad{i}", user_id="u", subject="user", relation=f"topic_{i}",
                 object=f"long running diet and debts project workstream item {i} "
                        f"with an unusually verbose description to occupy budget",
                 provenance=_P(source_type=_S.STATED, author_of_evidence=_A.USER,

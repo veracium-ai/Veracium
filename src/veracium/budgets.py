@@ -19,7 +19,9 @@ def est_tokens(text: str) -> int:
 
 # --- floor derivation (0012 §4c(i), R11-2/R12-2) ------------------------------------ #
 MIN_ITEM_ALLOWANCE = 64          # one framed, clamped item
-MARKER_RESERVE = 16              # the non-truncatable truncation/wiki marker
+MARKER_RESERVE = 16              # the non-truncatable wiki compile-marker line
+REPORT_RESERVE = 32              # the per-surface truncation report (bounded-width
+#                                  counts keep its worst case ~100 chars ≈ 25 tokens)
 WITHHELD_MARKER_RESERVE = 16     # "… +N more contending values withheld"
 MEMBER_FRAMING_COST = 32         # a contested member's framing (author tag, punctuation)
 MIN_MEMBER_CONTENT = 32          # the minimum clamped content per mandatory member
@@ -62,10 +64,16 @@ def validate_budget(surface: str, value: int,
 
 
 # --- per-item clamp (framing PLUS content, in-item elision) ------------------------- #
+# The FROZEN recoverability-bearing elision marker (0012 §4c(ii)): truncation inside an
+# item names where the full record lives — a bare ellipsis tells the model nothing.
+ELISION_MARKER = "… [content truncated; full record via introspect()]"
+
+
 def clamp_item(line: str, cap_tokens: int) -> str:
     if est_tokens(line) <= cap_tokens:
         return line
-    return line[: max(1, cap_tokens * 4 - 2)] + "…"
+    keep = max(1, (cap_tokens - est_tokens(ELISION_MARKER)) * 4)
+    return line[:keep] + ELISION_MARKER
 
 
 # --- the compile-drop marker (0012 §4c(iv), FROZEN grammar R10-3/R12-1) ------------- #
@@ -134,12 +142,16 @@ def clamp_edge_line(edge, cap_tokens: int, render_fn) -> str:
     if not line or est_tokens(line) <= cap_tokens:
         return line
     e = edge.model_copy(deep=True)
+    orig_note, orig_obj = e.note, e.object
+    n_keep, o_keep = len(orig_note), len(orig_obj)
     for _ in range(64):
-        target = e.note if len(e.note) > len(e.object) else None
-        if target is not None:
-            e.note = e.note[: max(8, len(e.note) // 2)] + "…"
-        elif len(e.object) > 8:
-            e.object = e.object[: max(8, len(e.object) // 2)] + "…"
+        # cut fractions of the ORIGINAL fields (never re-cut a marker), longer first
+        if n_keep > o_keep and n_keep > 8:
+            n_keep = max(8, n_keep // 2)
+            e.note = orig_note[:n_keep] + ELISION_MARKER
+        elif o_keep > 8:
+            o_keep = max(8, o_keep // 2)
+            e.object = orig_obj[:o_keep] + ELISION_MARKER
         else:
             break
         line = render_fn([e])

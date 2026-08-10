@@ -164,36 +164,57 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     authoritative marker line appended BY CODE after sanitizing the LLM output. The marker
     is always present, including the +0/+0 case."""
     edges, episodes = _grounded_inputs(store, user_id, relations)
+    # I10g: the bound governs the COMPLETE serialized prompt — reserve the fixed
+    # scaffolding (COMPILE_SYSTEM + the prompt skeleton) BEFORE item selection, so a
+    # full dynamic payload can never push the serialized text past wiki_input_budget.
+    scaffold = (_budgets.est_tokens(COMPILE_PROMPT.format(budget=budget_tokens,
+                                                          facts="", episodes=""))
+                + _budgets.est_tokens(COMPILE_SYSTEM))
+    items_budget = max(0, wiki_input_budget - scaffold)
     facts_dropped = eps_dropped = 0
     spent = 0
+    # I10b/I10f (the frozen compiler total order): ONE survivor per (subject, relation)
+    # group FIRST — no group's sole representative is displaced by another group's
+    # variants — then variants up to the per-group cap, then episodes NEWEST first.
+    groups: dict[tuple, list] = {}
+    for e in edges:
+        groups.setdefault((e.subject, e.relation), []).append(e)
+    survivors = [members[0] for members in groups.values()]
+    variants = [e for members in groups.values() for e in members[1:]]
     fact_lines: list[str] = []
     per_group: dict[tuple, int] = {}
-    for e in edges:
-        g = (e.subject, e.relation)
-        if per_group.get(g, 0) >= variant_cap:            # the per-group variant cap
-            facts_dropped += 1
-            continue
-        line = _budgets.clamp_item(render_edges([e]), item_cap)
-        cost = _budgets.est_tokens(line)
-        if spent + cost > wiki_input_budget:              # the hard input budget
-            facts_dropped += 1
-            continue
-        per_group[g] = per_group.get(g, 0) + 1
-        spent += cost
-        fact_lines.append(line)
+    for tier in (survivors, variants):
+        for e in tier:
+            g = (e.subject, e.relation)
+            if per_group.get(g, 0) >= variant_cap:        # the per-group variant cap
+                facts_dropped += 1
+                continue
+            # I10c: content-first clamping — the stale/use_only labels render at the
+            # line END; a prefix clamp would keep attacker text and delete the label
+            line = _budgets.clamp_edge_line(e, item_cap, render_edges)
+            if not line:
+                continue
+            cost = _budgets.est_tokens(line) + 1          # +1: the join newline
+            if spent + cost > items_budget:               # the hard input budget
+                facts_dropped += 1
+                continue
+            per_group[g] = per_group.get(g, 0) + 1
+            spent += cost
+            fact_lines.append(line)
     ep_lines: list[str] = []
-    for e in episodes:
+    for e in reversed(episodes):                          # newest first under budget
         line = _budgets.clamp_item(f"[{e.date}] {e.summary}", item_cap)
-        cost = _budgets.est_tokens(line)
-        if spent + cost > wiki_input_budget:
+        cost = _budgets.est_tokens(line) + 1              # +1: the join newline
+        if spent + cost > items_budget:
             eps_dropped += 1
             continue
         spent += cost
         ep_lines.append(line)
+    ep_lines.reverse()                                    # render chronologically
     facts = "\n".join(fact_lines) or "(none)"
     hist = "\n".join(ep_lines) or "(none)"
-    raw = llm(COMPILE_PROMPT.format(budget=budget_tokens, facts=facts, episodes=hist),
-              system=COMPILE_SYSTEM, role="compile").strip()
+    prompt = COMPILE_PROMPT.format(budget=budget_tokens, facts=facts, episodes=hist)
+    raw = llm(prompt, system=COMPILE_SYSTEM, role="compile").strip()
     # sanitize FIRST (forged sentinels become inert), then append the code-owned marker
     wiki = _budgets.append_compile_marker(_budgets.sanitize_llm_body(raw),
                                           facts_dropped, eps_dropped)

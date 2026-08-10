@@ -38,15 +38,34 @@ def _mem(tmp_path, **cfg):
 
 # --- I10a: one oversized item cannot break a budget ------------------------------------
 def test_a_single_oversized_item_is_clamped_not_emitted(tmp_path):
+    """Every item type in the taxonomy: a 500K-char EDGE object, an oversized EPISODE
+    summary, and an oversized cached WIKI BODY — each clamped at its cap with the
+    recoverability-bearing elision marker, never emitted whole, truncated always set."""
+    from veracium.budgets import ELISION_MARKER
     mem = _mem(tmp_path)
-    mem.store.add_edge(_edge("big", "x" * 500_000))            # 500K-char object
-    r = mem.recall(U, "x", token_budget=400)
-    assert r.tokens_estimated <= 400                            # never sails through whole
+    mem.store.add_edge(_edge("big", "x" * 500_000))            # 500K-char edge object
+    mem.store.add_episode(__import__("veracium.schema", fromlist=["Episode"]).Episode(
+        id="bigep", user_id=U, date=NOW.date().isoformat(),
+        summary="e" * 200_000,                                  # oversized episode
+        provenance=Provenance(source_type=SourceType.STATED,
+                              author_of_evidence=EvidenceAuthor.USER,
+                              evidence_ref="bigep", observed_at=NOW)))
+    r = mem.recall(U, "x", token_budget=900)
+    assert r.tokens_estimated <= 900                            # never sails through whole
     assert r.truncated
-    assert "…" in r.context                                     # the elision marker
-    # oversized as the FIRST item under a tight budget: still clamped, still present
-    assert "x" in r.context
-    mem.close()
+    assert ELISION_MARKER in r.context                          # the frozen marker
+    assert "x" in r.context                                     # clamped, still present
+    # oversized WIKI BODY: an identity-fresh cache whose body dwarfs the render share
+    from veracium.compile import _ENVELOPE, _policy_digest
+    body = "w" * 100_000 + "\n[[veracium-wiki-compile:v1]] +0 facts / +0 episodes not compiled"
+    mem.store.set_wiki(U, f"{_ENVELOPE}{_policy_digest(mem.config.relations)}\n{body}",
+                       mem.store.store_version(U))
+    mem2 = _mem(tmp_path, wiki_recompile_after_writes=10 ** 9)
+    r2 = mem.recall(U, "x", token_budget=900)
+    assert r2.tokens_estimated <= 900                           # share-clamped body
+    assert "not compiled" in r2.context or "wiki" in r2.context.lower()  # framing kept
+    assert r2.truncated
+    mem.close(); mem2.close()
 
 
 # --- I10b: overflow is ordered, deterministic, and NEVER silent ------------------------
@@ -136,33 +155,68 @@ def test_overlapping_classifications_take_the_highest_class(tmp_path):
 
 # --- I10g: the serialized text never exceeds its bound ---------------------------------
 def test_the_serialized_prompt_never_exceeds_its_bound(tmp_path):
+    """I10g on the ACTUAL serialized strings of all three surfaces — including the
+    compiler call (system + prompt measured as sent, fixed scaffolding reserved)."""
     mem = _mem(tmp_path)
-    for i in range(40):                                         # saturate
+    for i in range(400):                                        # saturate
         mem.store.add_edge(_edge(f"s{i}", f"saturation fact {i} " + "detail " * 30,
-                                 rel="works_on", note=f"note {i}", flag=(i % 3 == 0)))
+                                 rel=f"topic_{i % 40}", note=f"note {i}",
+                                 flag=(i % 3 == 0)))
     for budget in (floor_for("recall"), 400, 900):
         r = mem.recall(U, "saturation detail", token_budget=budget)
         assert est_tokens(r.context) <= budget, f"recall overflow at {budget}"
     ctx, *_ = assemble(mem.store, U, mem.config, now=NOW,
                        token_budget=floor_for("proactive"))
     assert est_tokens(ctx) <= floor_for("proactive")
+    from veracium.compile import compile_wiki
+    cap = {}
+    def llm(prompt, *, system=None, role="compile", json_schema=None):
+        cap["t"] = est_tokens(prompt) + est_tokens(system or "")
+        return "wiki"
+    compile_wiki(mem.store, llm, U, mem.config.relations, wiki_input_budget=8000)
+    assert cap["t"] <= 8000, f"compiler serialized {cap['t']} > its 8000 bound"
+    compile_wiki(mem.store, llm, U, mem.config.relations,
+                 wiki_input_budget=floor_for("wiki"))
+    assert cap["t"] <= floor_for("wiki")            # at the floor, too
     mem.close()
 
 
 # --- I10i: one contention group cannot break a budget (packing) ------------------------
 def test_one_oversized_contention_group_is_bounded(tmp_path):
+    """I10i with GROUNDED members: SYSTEM/mentionable challengers against a USER prior
+    produce refusals whose exposed members are ALL assertable, so the group line packs
+    real grounded values — the mandatory member renders content-clamped, the emitted
+    count reduces below K, and the withheld count reports the remainder."""
     mem = _mem(tmp_path)
-    mem.store.add_edge(_edge("prior", "grounded value " + "verbose " * 40))
-    for i in range(20):                                         # a large n-way contention
+    mem.store.add_edge(_edge("prior", "grounded user value " + "verbose " * 40, days=9))
+    for i in range(20):                          # 20 grounded same-class challengers
         apply_supersession(mem.store,
                            _edge(f"ch{i}", f"challenger value {i} " + "verbose " * 40,
-                                 author=EvidenceAuthor.THIRD_PARTY,
-                                 disc=Disclosure.QUARANTINED),
+                                 author=EvidenceAuthor.SYSTEM,
+                                 disc=Disclosure.MENTIONABLE, days=8 - (i % 5)),
                            mem.config.relations)
-    r = mem.recall(U, "value", token_budget=400)
-    assert r.tokens_estimated <= 400                            # the group is PACKED
-    assert "grounded value" in r.context                        # the mandatory member renders
-    assert r.truncated
+    r = mem.recall(U, "challenger value verbose", token_budget=420)
+    assert r.tokens_estimated <= 420                            # the packed store case
+    assert "grounded user value" in r.context                   # the mandatory member
+    assert "CONTESTED" in r.context
+
+    # the DIRECT wide-group case (the reviewer's method — 0003 supersedes equal-authority
+    # challengers, so a wide GROUNDED group must be constructed at the renderer boundary):
+    # 300 grounded members through the packer under a tight line budget.
+    from veracium.schema import ContestedGroup
+    wide = ContestedGroup(subject="user", relation="works_as",
+                          exposed=[_edge(f"m{i}", f"member value {i} " + "pad " * 10,
+                                         author=EvidenceAuthor.USER, days=i % 30)
+                                   for i in range(300)],
+                          linkage=[])
+    block, spent, truncated = mem._render_contested([wide], 420, mem._est_tokens)
+    assert mem._est_tokens(block) <= 420                        # one group NEVER breaks it
+    import re as _re
+    m = _re.search(r"\(\+(\d+) more contending values withheld\)", block)
+    assert m and int(m.group(1)) >= 294                         # the withheld count
+    shown = block.count("member value")
+    assert 1 <= shown <= mem.config.contested_members_per_line  # dynamic, bounded by K
+    assert truncated                                            # withholding SIGNALS (I10i)
     mem.close()
 
 
@@ -184,4 +238,62 @@ def test_oversized_subject_and_relation_are_heading_clamped(tmp_path):
     r = mem.recall(U, "grounded challenger works", token_budget=600)
     assert r.tokens_estimated <= 600                            # the heading clamped (48)
     assert "CONTESTED" in r.context or "grounded" in r.context  # the group still renders
+    mem.close()
+
+
+# --- I10 (the headline check): hard-bounded against variant floods ---------------------
+def test_read_surfaces_are_hard_bounded_against_variant_floods(tmp_path):
+    """The accepted I10 check, verbatim: 25 distinct-note variants (suppression-evading
+    by construction) — every surface stays within its token bound, the warning and the
+    commitment are retained, and the report marker is present and deterministic."""
+    mem = _mem(tmp_path)
+    due = (NOW + timedelta(days=3)).date().isoformat()
+    mem.store.add_edge(_edge("commit", f"file the annual report by {due}",
+                             rel="deadline", days=2))
+    mem.store.add_edge(_edge("warn", "membership status uncertain", rel="member_of",
+                             flag=True, days=400))
+    for i in range(25):                                     # the flood: distinct notes
+        mem.store.add_edge(_edge(f"v{i}", "senior engineer acme", rel="works_as",
+                                 note=f"restated in meeting {i}", days=25 - i))
+    r1 = mem.recall(U, "engineer report membership", token_budget=400)
+    assert est_tokens(r1.context) <= 400                    # recall bounded
+    assert "file the annual report" in r1.context           # commitment retained
+    assert "possibly stale" in r1.context                   # warning retained
+    assert r1.truncated and "[budget:" in r1.context        # marker present
+    r2 = mem.recall(U, "engineer report membership", token_budget=400)
+    assert r2.context == r1.context                         # deterministic
+    ctx, *_ = assemble(mem.store, U, mem.config, now=NOW, token_budget=400)
+    assert est_tokens(ctx) <= 400                           # proactive bounded
+    from veracium.compile import compile_wiki
+    cap = {}
+    def llm(prompt, *, system=None, role="compile", json_schema=None):
+        cap["t"] = est_tokens(prompt) + est_tokens(system or "")
+        return "wiki"
+    compile_wiki(mem.store, llm, U, mem.config.relations,
+                 wiki_input_budget=mem.config.wiki_input_budget_tokens)
+    assert cap["t"] <= mem.config.wiki_input_budget_tokens  # compiler bounded (I10g)
+    mem.close()
+
+
+# --- I10h (the named check): the query-matched claim flag survives overflow ------------
+def test_query_matched_claim_flag_survives_overflow(tmp_path):
+    mem = _mem(tmp_path)
+    mem.store.add_edge(_edge("claim", "the user owes $2,400 to a collector",
+                             disc=Disclosure.QUARANTINED,
+                             author=EvidenceAuthor.THIRD_PARTY, rel="finance_claim"))
+    for i in range(30):                                     # overflow pressure
+        mem.store.add_edge(_edge(f"p{i}", f"project workstream {i} " + "detail " * 20,
+                                 rel=f"topic_{i}"))
+    for i in range(10):
+        mem.store.add_episode(__import__("veracium.schema", fromlist=["Episode"]).Episode(
+            id=f"ep{i}", user_id=U, date=(NOW - timedelta(days=i)).date().isoformat(),
+            summary=f"verbose episode {i} " + "history " * 20,
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=f"ep-{i}", observed_at=NOW)))
+    r = mem.recall(U, "owes collector money", token_budget=400)
+    assert "$2,400" in r.unverified                         # the fenced flag SURVIVES
+    assert "never assert" in r.context                      # fenced, not grounded
+    assert r.truncated                                      # under real overflow
+    assert est_tokens(r.context) <= 400
     mem.close()

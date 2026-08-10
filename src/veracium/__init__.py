@@ -176,12 +176,16 @@ class Memory:
         into grounded (assertable) and unverified (third-party claims/reports),
         so the host can apply the abstention gate via `answer()` or its own prompt.
 
-        `token_budget` caps the rendered context (heuristic: chars/4 — veracium
-        is tokenizer-agnostic, so treat it as approximate, not exact). Selection
-        priority when trimming: query-matched facts first, then unverified-claim
-        flags (a host reasoning near a claim should see it flagged), then the
-        wiki, then recent episodes. Best-effort minimum of one item; check
-        `Recall.truncated` / `Recall.tokens_estimated`.
+        `token_budget` caps the rendered context in ESTIMATED tokens (chars/4 —
+        veracium is tokenizer-agnostic; approximate, not exact). Omitted, the
+        validated config default applies (`query_context_budget_tokens`, 4,000)
+        — recall is never unbounded; a budget below the envelope-derived floor
+        raises `ValueError` (specs/0012 I10e — the old sub-floor best-effort
+        rendering is withdrawn). Selection under pressure follows the 0012 §4c
+        precedence: contested first, then query-relevant flagged warnings, then
+        query-matched claim flags, then unrelated warnings, commitments, and
+        context; the wiki within its render share; variants last. Truncation is
+        reported in-context and via `Recall.truncated`.
 
         **No query → proactive mode**: a session-start briefing ("what should
         I know before starting?") — dated commitments coming due or overdue,
@@ -204,6 +208,10 @@ class Memory:
 
     def _proactive(self, user_id: str, token_budget: Optional[int]) -> Recall:
         from . import proactive
+        # specs/0012 I10: proactive is ALWAYS budgeted — the config default (1,200)
+        # applies when the caller omits token_budget.
+        if token_budget is None:
+            token_budget = self.config.proactive_default_budget_tokens
         context, edges, episodes, truncated = proactive.assemble(
             self.store, user_id, self.config,
             token_budget=token_budget, est=self._est_tokens)
@@ -225,10 +233,13 @@ class Memory:
         # (so a contested functional group is excluded from the one-value wiki, and the
         # cache binds the registry/policy digest) AND subgraph_for_query (so a functional
         # contention is authority-ordered). A custom registry must reach both, not one.
-        if token_budget is not None:
-            from .budgets import validate_budget
-            validate_budget("recall", token_budget,
-                            self.config.group_heading_allowance_tokens)
+        # specs/0012 I10: query recall is ALWAYS budgeted — a caller that omits
+        # token_budget gets the validated config default (4,000), never unbounded.
+        if token_budget is None:
+            token_budget = self.config.query_context_budget_tokens
+        from .budgets import validate_budget
+        validate_budget("recall", token_budget,
+                        self.config.group_heading_allowance_tokens)
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
                                     self.config.wiki_recompile_after_writes,
                                     self.config.relations,
@@ -264,20 +275,17 @@ class Memory:
         contested_ids = {e.id for g in contested for e in g.exposed if e.assertable}
         detail_edges = [e for e in edges if e.id not in contested_ids]
 
-        truncated = False
-        if token_budget is None:
-            contested_block, _spent, _ct = self._render_contested(contested)
-            detail_grounded, unverified = _gate.partition(detail_edges, episodes)
-        else:
-            # the contested surface gets FIRST claim on the budget — HIGH priority, ahead
-            # of ordinary query detail — so a refusal never demotes the prior below where it
-            # stood before it (the finite-budget form of I6a). It IS budget-gated, not an
-            # unbounded surface (round-8 blocker 2); truncation is deterministic and flagged.
-            contested_block, spent, c_trunc = self._render_contested(
-                contested, token_budget, self._est_tokens)
-            wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
-                wiki, detail_edges, episodes, max(0, token_budget - spent), query)
-            truncated = c_trunc or d_trunc
+        # the contested surface gets FIRST claim on the budget — HIGH priority, ahead
+        # of ordinary query detail — so a refusal never demotes the prior below where it
+        # stood before it (the finite-budget form of I6a). It IS budget-gated, not an
+        # unbounded surface (round-8 blocker 2); truncation is deterministic and flagged.
+        # specs/0012 I10: recall is ALWAYS budgeted (the config default applies when the
+        # caller omits token_budget) — the old unbudgeted branch is gone.
+        contested_block, spent, c_trunc = self._render_contested(
+            contested, token_budget, self._est_tokens)
+        wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
+            wiki, detail_edges, episodes, max(0, token_budget - spent), query)
+        truncated = c_trunc or d_trunc
 
         grounded_parts = []
         if wiki:
@@ -302,7 +310,7 @@ class Memory:
                       contested=contested)
 
     def _contested_line(self, g: "ContestedGroup",
-                        line_budget: Optional[int] = None) -> Optional[str]:
+                        line_budget: Optional[int] = None):
         """One deterministic line for a contested group, budget-aware PACKED per
         specs/0012 §4c (I10i): the heading's subject/relation render CONTENT-CLAMPED
         under the group-heading allowance; the withheld marker is reserved FIRST; the
@@ -318,7 +326,7 @@ class Memory:
                               WITHHELD_MARKER_RESERVE, clamp_item, est_tokens)
         grounded = [e for e in g.exposed if e.assertable]
         if not grounded:
-            return None
+            return None, False
         k_cap = self.config.contested_members_per_line
         head = clamp_item(f"{g.subject} {g.relation}",
                           self.config.group_heading_allowance_tokens)
@@ -328,6 +336,7 @@ class Memory:
             return (f"{clamp_item(e.object, content_cap)} "
                     f"[{e.provenance.author_of_evidence.value}]")
 
+        squeezed = False
         if line_budget is None:
             members = [_member(e, self.config.item_cap_tokens) for e in grounded[:k_cap]]
             withheld = len(grounded) - len(members)
@@ -339,6 +348,7 @@ class Memory:
                             min(self.config.item_cap_tokens,
                                 remaining - MEMBER_FRAMING_COST))
             members = [_member(grounded[0], first_cap)]
+            squeezed = est_tokens(grounded[0].object) > first_cap   # mandatory clamped?
             remaining -= est_tokens(members[0])
             for e in grounded[1:]:
                 if len(members) >= k_cap:
@@ -349,9 +359,10 @@ class Memory:
                 members.append(cand)
                 remaining -= est_tokens(cand)
             withheld = len(grounded) - len(members)
+        squeezed = squeezed or withheld > 0                # I10i: EVERY cause signals
         vals = " / ".join(members)
         wh = f" (+{withheld} more contending values withheld)" if withheld > 0 else ""
-        return f"- {head}: {vals}{wh}{tail}"
+        return f"- {head}: {vals}{wh}{tail}", squeezed
 
     def _render_contested(self, contested, budget=None, est=None):
         """Render the deterministic CONTESTED FUNCTIONAL FACTS block from the grounded
@@ -363,19 +374,23 @@ class Memory:
             return "", 0, False
         heading = "## CONTESTED FUNCTIONAL FACTS (no single current value; do not assert one)"
         if budget is None or est is None:
-            lines = [ln for ln in (self._contested_line(g) for g in contested) if ln]
+            results = [self._contested_line(g) for g in contested]
+            lines = [ln for ln, _sq in results if ln]
             if not lines:
                 return "", 0, False
-            return heading + "\n" + "\n".join(lines), 0, False
+            # I10i: within-group withholding signals truncation even unbudgeted
+            any_sq = any(sq for ln, sq in results if ln)
+            return heading + "\n" + "\n".join(lines), 0, any_sq
         remaining = budget - est(heading + "\n")
         sel, truncated = [], False
         for g in contested:
             # I10i: each group line is PACKED within what remains — one group can
             # never break the budget (the first line is best-effort unconditional)
-            line = self._contested_line(g, line_budget=remaining if sel else
-                                        max(remaining, 1))
+            line, squeezed = self._contested_line(
+                g, line_budget=remaining if sel else max(remaining, 1))
             if line is None:
                 continue
+            truncated = truncated or squeezed             # EVERY cause signals (I10i)
             cost = est(line)
             if cost > remaining and sel:
                 truncated = True
@@ -449,7 +464,7 @@ class Memory:
         reports dropped counts per class, SAFETY distinctly (I10b); class decides
         priority, the gate decides presentation — classification never moves an
         item across the partition (I10f)."""
-        from .budgets import MARKER_RESERVE, clamp_item
+        from .budgets import REPORT_RESERVE, clamp_item
         est = self._est_tokens
         cap = self.config.item_cap_tokens
         qtok = set(re.findall(r"[a-z0-9]+", (query or "").lower()))
@@ -464,15 +479,36 @@ class Memory:
         flagged_rel.sort(key=lambda e: (e.provenance.observed_at, e.id))   # most overdue
         flagged_unrel = [e for e in assertable if e.needs_confirmation and not _rel(e)]
         flagged_unrel.sort(key=lambda e: (e.provenance.observed_at, e.id))
-        plain = [e for e in assertable if not e.needs_confirmation]        # relevance order
+        rest = [e for e in assertable if not e.needs_confirmation]         # relevance order
+        # I10f: the full taxonomy — COMMITMENTS (dated, nearest first) rank above plain
+        # context; VARIANTS (a further member of a (subject, relation) group already
+        # represented) rank LAST, below the wiki. Variancy never demotes the first
+        # representative.
+        _date_re = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+        commitments = [e for e in rest if _date_re.search(e.object + " " + e.note)]
+        commitments.sort(key=lambda e: (_date_re.search(e.object + " " + e.note).group(0),
+                                        e.id))                             # nearest first
+        commit_ids = {e.id for e in commitments}
+        plain, variants, _seen_groups = [], [], set()
+        for e in rest:
+            if e.id in commit_ids:
+                continue
+            g = (e.subject, e.relation)
+            (variants if g in _seen_groups else plain).append(e)
+            _seen_groups.add(g)
 
         from .budgets import clamp_edge_line
 
         claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]
+        # I10h protects the QUERY-MATCHED claim flag above the wiki; an unmatched claim
+        # renders fenced but admits after the wiki (it outranks only variants).
+        claims_matched = [e for e in claim_edges if _rel(e)]
+        claims_unmatched = [e for e in claim_edges if not _rel(e)]
         # claim lines carry their never-assert label at the FRONT; content still
         # clamps first so the label+content pair stays within the cap (I10c)
-        claim_lines = [ln for ln in
-                       (clamp_edge_line(e, cap, render_edges) for e in claim_edges) if ln]
+        def _claim_lines(es):
+            return [ln for ln in
+                    (clamp_edge_line(e, cap, render_edges) for e in es) if ln]
         ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
                     if not e.provenance.third_party_influenced]
         tp_ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
@@ -480,7 +516,7 @@ class Memory:
 
         headers = est("## RELEVANT DETAIL\n") \
             + est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
-        remaining = budget - headers - MARKER_RESERVE          # I10b: report reserved first
+        remaining = budget - headers - REPORT_RESERVE          # I10b: report reserved first
 
         n_clamped = 0
 
@@ -528,8 +564,9 @@ class Memory:
         sel_edges: list[str] = []
         d_flag_rel = _admit_edges(flagged_rel, sel_edges, best_effort_first=True)
         sel_unv: list[str] = []
-        d_safety = _admit(claim_lines + tp_ep_lines, sel_unv)
+        d_safety = _admit(_claim_lines(claims_matched) + tp_ep_lines, sel_unv)
         d_flag_unrel = _admit_edges(flagged_unrel, sel_edges)
+        d_commit = _admit_edges(commitments, sel_edges)
         d_plain = _admit_edges(plain, sel_edges, best_effort_first=not sel_edges)
 
         wiki_dropped = False
@@ -551,6 +588,8 @@ class Memory:
                 else:
                     wiki, wiki_dropped = None, True
 
+        d_safety += _admit(_claim_lines(claims_unmatched), sel_unv)   # after the wiki
+        d_variants = _admit_edges(variants, sel_edges)                # variants LAST
         sel_eps: list[str] = []
         d_eps = 0
         for line in reversed(ep_lines):                    # newest first under budget
@@ -562,7 +601,7 @@ class Memory:
             remaining -= cost
         sel_eps.reverse()                                  # render chronologically
 
-        d_detail = d_flag_rel + d_flag_unrel + d_plain
+        d_detail = d_flag_rel + d_flag_unrel + d_commit + d_plain + d_variants
         truncated = bool(d_detail or d_safety or wiki_dropped or d_eps or n_clamped)
         detail = "\n".join(sel_edges + sel_eps).strip()
         if truncated:                                      # the I10b report, per class

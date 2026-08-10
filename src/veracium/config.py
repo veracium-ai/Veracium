@@ -47,6 +47,7 @@ class MemoryConfig:
     # specs/0012 I10 — hard budgets on the RENDERED, MODEL-FACING text (estimated tokens,
     # chars/4). Floor-validated below AND at every surface build; below-floor is a loud
     # ValueError, never a silent clamp.
+    query_context_budget_tokens: int = 4000    # query recall's DEFAULT context bound
     wiki_input_budget_tokens: int = 8000       # the compiler INPUT (facts + episodes)
     proactive_default_budget_tokens: int = 1200
     item_cap_tokens: int = 512                 # per rendered item, framing PLUS content
@@ -57,6 +58,8 @@ class MemoryConfig:
 
     def __post_init__(self):
         from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
+        validate_budget("recall", self.query_context_budget_tokens,
+                        self.group_heading_allowance_tokens)
         validate_budget("wiki", self.wiki_input_budget_tokens,
                         self.group_heading_allowance_tokens)
         validate_budget("proactive", self.proactive_default_budget_tokens,
@@ -75,5 +78,15 @@ class MemoryConfig:
             raise ValueError("wiki_variant_cap must be >= 1")
         if not (0 < self.wiki_render_share <= 1):
             raise ValueError("wiki_render_share must be in (0, 1]")
+        from .budgets import MARKER_RESERVE
+        if int(self.query_context_budget_tokens * self.wiki_render_share) < \
+                MIN_ITEM_ALLOWANCE + MARKER_RESERVE:
+            raise ValueError(
+                f"wiki_render_share {self.wiki_render_share} of the query context budget "
+                f"{self.query_context_budget_tokens} leaves "
+                f"{int(self.query_context_budget_tokens * self.wiki_render_share)} tokens "
+                f"for the wiki slot — below one clamped item + the marker reserve "
+                f"({MIN_ITEM_ALLOWANCE + MARKER_RESERVE}); the share would render the "
+                f"cached-wiki framing unable to carry any content")
         if self.group_heading_allowance_tokens < 16:
             raise ValueError("group_heading_allowance_tokens must be >= 16")

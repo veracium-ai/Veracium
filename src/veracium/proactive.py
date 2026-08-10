@@ -146,29 +146,59 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         from .budgets import validate_budget
         validate_budget("proactive", token_budget,
                         getattr(config, "group_heading_allowance_tokens", 48))
-    remaining = token_budget if token_budget is not None else None
+    # specs/0012 I10b/I10f: ADMISSION runs in the precedence order (warnings above
+    # commitments above context above history), independent of the §4c DISPLAY order;
+    # the report marker is reserved off the top; the first admitted item is clamped
+    # TO FIT rather than admitted oversized; every drop/clamp is counted and reported.
+    from .budgets import REPORT_RESERVE, clamp_item as _ci, est_tokens as _et
     truncated = False
-    parts: list[str] = []
     sel_edges: list[Edge] = []
     sel_eps: list[Episode] = []
-    for header, items in sections:
-        if not items:
-            continue
-        kept: list[str] = []
-        header_cost = est(header)
-        for line, unit in items:
-            cost = est(line) + (header_cost if not kept else 0)
-            if remaining is not None and cost > remaining and (parts or kept):
-                truncated = True
-                break
-            kept.append(line)
-            if remaining is not None:
+    admitted: dict[str, list[str]] = {h: [] for h, _ in sections}
+    dropped: dict[str, int] = {h: 0 for h, _ in sections}
+    n_clamped = 0
+    if token_budget is None:
+        for header, items in sections:
+            for line, unit in items:
+                admitted[header].append(line)
+                (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+    else:
+        remaining = token_budget - REPORT_RESERVE
+        precedence = ["## CONFIRM WHEN NATURAL", "## DATED COMMITMENTS",
+                      "## CURRENT CONTEXT", "## RECENT HISTORY"]
+        by_header = dict(sections)
+        first_admitted = False
+        for header in precedence:
+            items = by_header.get(header, [])
+            if not items:
+                continue
+            header_cost = est(header) + 1
+            for line, unit in items:
+                cost = est(line) + 1 + (header_cost if not admitted[header] else 0)
+                if cost > remaining:
+                    if not first_admitted and remaining > header_cost + 16:
+                        line = _ci(line, remaining - header_cost - 1)   # clamp TO FIT
+                        cost = est(line) + 1 + header_cost
+                        n_clamped += 1
+                        if cost > remaining:
+                            dropped[header] += 1
+                            continue
+                    else:
+                        dropped[header] += 1
+                        continue
+                admitted[header].append(line)
                 remaining -= cost
-            (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
-        if kept:
-            parts.append(header + "\n" + "\n".join(kept))
-        if truncated:
-            break
+                first_admitted = True
+                (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+    n_dropped = sum(dropped.values())
+    truncated = bool(n_dropped or n_clamped)
 
+    parts = [header + "\n" + "\n".join(admitted[header])
+             for header, _ in sections if admitted[header]]
     context = "\n\n".join(parts).strip() or "(nothing needs attention)"
+    if truncated:
+        context += (f"\n[budget: dropped {dropped['## CONFIRM WHEN NATURAL']} warnings / "
+                    f"{dropped['## DATED COMMITMENTS']} commitments / "
+                    f"{dropped['## CURRENT CONTEXT']} context / "
+                    f"{dropped['## RECENT HISTORY']} history / {n_clamped} clamped]")
     return context, sel_edges, sel_eps, truncated

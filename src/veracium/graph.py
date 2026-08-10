@@ -80,9 +80,12 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
       prior active value (retained, reason 'superseded'), so history stays queryable.
     - Non-functional relations otherwise accumulate.
 
-    Reinforcement/absorption fire at write time — fresh evidence just arrived —
-    which is why they may refresh validity and clear needs_confirmation;
-    maintain-time bookkeeping never may.
+    Absorption fires at write time — fresh evidence just arrived — which is why
+    it may mutate the absorbed prior; maintain-time bookkeeping never may.
+    Reinforcement mutates NOTHING (accepted specs/0012 Design 1): it persists
+    the restatement and leaves the prior byte-untouched — it neither refreshes
+    validity nor touches needs_confirmation (only confirm() clears the flag,
+    specs/0008).
 
     Identity merges never cross trust classes: both loops consider only priors
     in the same disclosure class as the incoming edge. Otherwise a third-party
