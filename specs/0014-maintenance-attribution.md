@@ -5,7 +5,30 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v13, 2026-08-10) — round 9 folded (six bin-(a), classified before fixed):** the
+> **draft (v14, 2026-08-10) — round 10 folded (six bin-(a), classified before fixed; four
+> trace to v13's own fixes):** the receipt persists the EFFECT payload — `SupersessionResult`
+> minus the runtime `replayed` flag (`schema.py:106` marks it "runtime only") — and replay
+> constructs effects + `replayed=True`; the race test asserts effect equality + the flag
+> flip, never whole-object equality (R10-1, class D found-in-fix — the R9-1 fix's exact-copy
+> promise contradicted the shipped runtime contract); phase 1 has THREE branches — non-NULL
+> match replays, non-NULL mismatch conflicts, NULL (either legal form) means identity
+> UNAVAILABLE and proceeds to planning + version-selected phase 2, with public-retry tests
+> against both NULL receipt forms (R10-2, class D — a two-branch phase 1 made the promised
+> phase-2 comparison unreachable); the version-column DDL is frozen EXECUTABLE — `ADD COLUMN
+> outcome_digest_version INTEGER NOT NULL DEFAULT 1` (the reviewer reproduced SQLite
+> rejecting the bare NOT NULL on populated tables); the DEFAULT is the migration stamp, the
+> v6 constructor manifest carries the identical default, new writes stamp 2 explicitly, and
+> the nonempty-table migration test is named (R10-3, class A); the closed receipt-state
+> triple gains a TABLE-DRIVEN exhaustive test over every legal cell and the illegal
+> representatives incl. malformed/invalid-field responses (R10-4, class E); re-import
+> idempotency is SOURCE-IDENTICAL over normalized source identity — the shipped remap mints
+> fresh destination ids (`portability.py:173-180`), so raw record equality can never hold
+> and the v13 rule would reject every true remapped re-import; uniqueness is tenant-scoped
+> and the repeated `user_id=` import test is named (R10-5, class G — cited against shipped
+> code this time); and the §7a surfaces bullet carries all THREE receipt columns (R10-6,
+> class D — the FOURTH carrier-drift instance; the sweep now greps the COLUMN NAMES and
+> checks every hit lists the full set). v14 = the round-11 resubmission. Earlier (v13):
+> round 9 folded (six bin-(a), classified before fixed): the
 > replayed response is DURABLE — the receipts table gains `response` (the persisted
 > `SupersessionResult` json, written atomically; replay returns IT, never a reconstruction
 > from the discarded plan; the O1≠O2 race test is named) (R9-1, class A — v12's replay
@@ -323,7 +346,7 @@ write; every REJECT aborts the WHOLE maintenance op (A7 — no consumption witho
 | `origin` (resolved) | resolves to `store_identity` per `0006` §4.6 — never digested absent | a stored-absent pair reaching the digest UNRESOLVED → integrity error (`0006` §4.6) | n/a | store-minted; a forged import is `0005`'s boundary | A9 |
 | `evidence_ref` (read from the row) | `""` is DEFINED as absent → digest NULL (R2-5) | non-UTF-8-encodable → REJECT the op (corrupt source row) | n/a (opaque) | inert: digested under its own domain, never rendered | A5, R2-5 |
 | `SupersessionPlan.raw_request` (R7-1 — the authoritative raw-request carrier) | absent → phase-2 semantics only; the receipt's `request_digest` stays NULL but the receipt is NOT legacy-equivalent (R9-2): it stamps `outcome_digest_version` 2 and persists its `response`, so it verifies at the EXTENDED projection — only migrated pre-upgrade receipts carry version 1 | non-dict, missing closed-set fields, non-canonical encoding → the op aborts | a snapshot whose edge id/user/subject/relation differ from the plan's incoming → abort (plan-inconsistent) | a FORGED snapshot (valid shape, false values) fails the exact-equal/recomputed/forbidden field partition or the R4-2 semantic recompute (§4b, R8-2) → abort; concurrent preflight (two racing publics, same raw edge): one commits; the loser's phase-2 hit is REQUEST-FIRST (R8-1) — matching `raw_request` → REPLAYS the committed outcome, its own post-commit re-plan discarded, NEVER an outcome conflict; outcome-only comparison is reserved for receipts without request identity (legacy NULL / snapshot-less plans); never double-applies | A7, R4-2, R7-1, R8-1, R8-2 |
-| `Episode.consolidation_output_index` (R6-3/R7-3 — ownership + ROUND-TRIP: only `write_consolidation_output_if_current` may SET it) | absent = None. **The serializer rule is EXPLICIT (R7-3 — default `model_dump_json()` would emit `null`): the Episode export path serializes this field with exclude-none semantics — OMITTED when None, a stated exception to the default; an explicit JSON `null` on import = malformed → REJECT.** | Boolean, coerced string, negative, non-integer → REJECT (generic insert AND import) | caller-supplied on generic paths → REFUSED. **Round-trip (R7-3): a NATIVE v5 consolidation output ALWAYS carries its index (the exporter emits it; a v5 import of a lineage-bearing output WITHOUT an index is accepted as the LEGACY shape — absence = pre-v6 history, LESS identity, never forged identity — so v4→v5→v5 round-trips losslessly: absent stays absent, present stays present).** Contiguity 0…M−1 is a LOCAL-op invariant (asserted in the primitive + tests); it is NOT an import gate — imported history may be partial, and gaps there are indistinguishable from partial export, so the absence rule governs. **UNIQUENESS survives the relaxation (R8-3 — the v10 duplicate rule, reinstated: partial history explains GAPS, never DUPLICATES) and is defined against the DESTINATION, not the file (R9-5 — per-file uniqueness lets two sequential partial imports each be locally clean while the destination accumulates duplicates): the uniqueness domain is incoming ∪ existing destination state, keyed on the ORIGIN-NAMESPACED operation identity `(resolved origin, operation_id, index)` — `0006` materializes origin on export, so operations from different source stores never collide by raw id, and the same operation re-imported IS the same identity. An incoming lineage-bearing output whose key already exists in the destination is accepted IFF it is RECORD-IDENTICAL to the existing row (the established import-idempotency rule — a true re-import); ANY difference → REJECT. Named tests: `test_duplicate_output_index_within_an_imported_operation_is_rejected` · `test_duplicate_output_index_across_sequential_imports_is_rejected` (import A at (op,0), then a DIFFERENT output B at the same key from a second file: the second import rejects; re-importing A itself is idempotent-accepted).** | a host submitting a plain episode with index 0 → refused at the generic path; a v5 sender omitting an index yields the unprivileged legacy shape, not fabricated identity; two imported outputs sharing (operation_id, index) → rejected (R8-3) | R5-3, R6-3, R7-3, R8-3, A7 |
+| `Episode.consolidation_output_index` (R6-3/R7-3 — ownership + ROUND-TRIP: only `write_consolidation_output_if_current` may SET it) | absent = None. **The serializer rule is EXPLICIT (R7-3 — default `model_dump_json()` would emit `null`): the Episode export path serializes this field with exclude-none semantics — OMITTED when None, a stated exception to the default; an explicit JSON `null` on import = malformed → REJECT.** | Boolean, coerced string, negative, non-integer → REJECT (generic insert AND import) | caller-supplied on generic paths → REFUSED. **Round-trip (R7-3): a NATIVE v5 consolidation output ALWAYS carries its index (the exporter emits it; a v5 import of a lineage-bearing output WITHOUT an index is accepted as the LEGACY shape — absence = pre-v6 history, LESS identity, never forged identity — so v4→v5→v5 round-trips losslessly: absent stays absent, present stays present).** Contiguity 0…M−1 is a LOCAL-op invariant (asserted in the primitive + tests); it is NOT an import gate — imported history may be partial, and gaps there are indistinguishable from partial export, so the absence rule governs. **UNIQUENESS survives the relaxation (R8-3 — the v10 duplicate rule, reinstated: partial history explains GAPS, never DUPLICATES) and is defined against the DESTINATION, not the file (R9-5 — per-file uniqueness lets two sequential partial imports each be locally clean while the destination accumulates duplicates): the uniqueness domain is incoming ∪ existing destination state, keyed on the ORIGIN-NAMESPACED operation identity `(resolved origin, operation_id, index)` — `0006` materializes origin on export, so operations from different source stores never collide by raw id, and the same operation re-imported IS the same identity. An incoming lineage-bearing output whose key already exists in the destination is accepted IFF it is SOURCE-IDENTICAL — equality over the NORMALIZED SOURCE IDENTITY (R10-5: the shipped remap path MINTS FRESH destination ids on every `user_id=` invocation (`portability.py:173-180` — "mint fresh ids and remap EVERY reference"), so raw record equality can NEVER hold for a remapped re-import and the rule as first stated would reject every true re-import; the comparison therefore excludes destination-minted ids and the remapped user, and compares the source-file record — content, lineage, index, origin-namespaced operation, timestamps — after normalization). ANY source-identity difference → REJECT. Uniqueness is TENANT-SCOPED: the key is (destination user, resolved origin, operation_id, index) — two tenants importing the same source history never collide. Named tests: `test_duplicate_output_index_within_an_imported_operation_is_rejected` · `test_duplicate_output_index_across_sequential_imports_is_rejected` (import A at (op,0), then a DIFFERENT output B at the same key from a second file: the second import rejects) · `test_repeated_remapped_import_is_idempotent` (R10-5 — the SAME file imported twice with `user_id=`: the second import is accepted as a no-op despite fresh-minted destination ids).** | a host submitting a plain episode with index 0 → refused at the generic path; a v5 sender omitting an index yields the unprivileged legacy shape, not fabricated identity; two imported outputs sharing (operation_id, index) → rejected (R8-3) | R5-3, R6-3, R7-3, R8-3, A7 |
 | round-trip tests (R7-3, named) | — | — | `test_v5_export_round_trips_output_indexes` (present stays present, absent stays absent) · `test_a_v4_import_then_v5_export_reimports_cleanly` (the reviewer's 4-step case) · `test_a_plain_episode_round_trips_with_no_index` | — | R7-3 |
 
 ---
@@ -508,18 +531,29 @@ omitted, duplicated, and extra drafts are each a named A7 injection case.
 DIFFERENT layer (R5-2 + R6-1 — the two rules are compatible because they never see the same
 retry):** the construction, exactly:
 
-- **Phase 1 — PUBLIC pre-plan receipt lookup (`apply_supersession`).** BEFORE any planning,
-  the public entry point computes the **request digest** over the RAW submitted edge and looks
-  up the receipt by op_id. Receipt exists + request digest MATCHES → **REPLAY the recorded
-  response; NO re-planning occurs** — the post-commit re-plan (the reviewer's O2) is never
-  computed, so no outcome comparison can reject a legitimate lost-response retry. Receipt
-  exists + request digest DIFFERS → `SupersessionIntegrityError` (a truly different
-  resubmission reusing an op id). No receipt → plan and proceed.
+- **Phase 1 — PUBLIC pre-plan receipt lookup (`apply_supersession`), THREE branches
+  (R10-2 — a two-branch phase 1 made the promised phase-2 outcome comparison UNREACHABLE:
+  for both legal NULL receipt states the computed public digest trivially "differs" from
+  NULL, so every legacy or snapshot-less retry would conflict before planning).** BEFORE
+  any planning, the public entry point computes the **request digest** over the RAW
+  submitted edge and looks up the receipt by op_id:
+  1. receipt exists, stored `request_digest` NON-NULL and MATCHES → **REPLAY the recorded
+     response; NO re-planning occurs** — the post-commit re-plan (the reviewer's O2) is
+     never computed, so no outcome comparison can reject a legitimate lost-response retry;
+  2. receipt exists, stored `request_digest` NON-NULL and DIFFERS →
+     `SupersessionIntegrityError` (a truly different resubmission reusing an op id);
+  3. receipt exists, stored `request_digest` NULL (BOTH legal NULL forms — legacy
+     version-1 and new snapshot-less version-2) → **request identity UNAVAILABLE, never
+     "different": continue to planning and phase 2**, where the version-selected outcome
+     comparison governs (§ the receipt-state triple). No receipt → plan and proceed.
+  Named tests: a public retry against a LEGACY (NULL, 1, NULL) receipt reaches phase 2 and
+  replays/conflicts by the v1 outcome rule; a public retry against a NEW snapshot-less
+  (NULL, 2, json) receipt reaches phase 2 and verifies at the v2 projection.
 - **Phase 2 — STORE-LEVEL verification (`apply_supersession_plan`), REQUEST-FIRST where
   request identity exists (R8-1).** On a receipt hit, the store's FIRST comparison is by
   REQUEST whenever both sides carry request identity — the receipt's stored `request_digest`
   is non-NULL and the submitted plan carries `raw_request` (from which the store derives the
-  digest itself, §4b): **matching request → REPLAY the PERSISTED response, the submitted
+  digest itself, §4b): **matching request → REPLAY the persisted effects as `replayed=True` (R10-1), the submitted
   plan's re-planned outcome DISCARDED unconsulted** — this is where the concurrent-preflight
   loser lands (both racers pass phase 1 before either commits; the loser re-plans against
   post-commit state and its legitimately-different outcome O2 must not be compared, or the
@@ -531,16 +565,22 @@ retry):** the construction, exactly:
   the pre-split implementation reconstructs `SupersessionResult` fields — `inserted_incoming`,
   `invalidated`, `refused` — from the SUBMITTED plan, which request-first replay has just
   discarded; O1's `invalidated=1` is unrecoverable from O2's plan):** the receipts table
-  gains `response TEXT` — the canonical JSON of the committed op's `SupersessionResult`
-  (edge/episode ids and counts only; content-free), written ATOMICALLY with the receipt.
-  Request-first replay returns EXACTLY the deserialized persisted response. Legacy receipts
-  (`response` NULL after migration) never reach request-first replay (their
-  `request_digest` is also NULL); their outcome-match replay keeps the pre-split
+  gains `response TEXT` — the canonical JSON of the committed op's **EFFECT PAYLOAD: every
+  `SupersessionResult` field EXCEPT `replayed`** (edge/episode ids and counts only;
+  content-free), written ATOMICALLY with the receipt. **The runtime flag is EXCLUDED by
+  construction (R10-1 — the shipped model marks `replayed` "runtime only … not a persisted
+  column" (`schema.py:106`), and persisting the original's `replayed=False` while promising
+  to return it exactly would contradict the contract that a replayed result carries
+  `replayed=True`):** replay CONSTRUCTS its result as the persisted effect fields +
+  `replayed=True` — effect identity from the durable carrier, runtime provenance from the
+  call. Legacy receipts (`response` NULL after migration) never reach request-first replay
+  (their `request_digest` is also NULL); their outcome-match replay keeps the pre-split
   reconstruct-from-plan behaviour, which is SOUND there because a matching outcome digest
   proves the submitted plan IS the recorded plan. Named test:
   `test_replay_returns_the_persisted_result_not_a_reconstruction` — the O1/O2 race with
-  O1.invalidated=1, O2.invalidated=0: assert O1 and O2 differ field-by-field AND the
-  replay equals O1 exactly.
+  O1.invalidated=1, O2.invalidated=0: assert O1 and O2 differ in their EFFECT fields, the
+  replay's effect fields equal O1's exactly, AND the replay carries `replayed=True` where
+  O1 carried `False` (effect equality + the flag flip — never whole-object equality).
 
   **The outcome digest** (everything the pre-split digest
   bound + this spec's contributions and pre-image) governs ONLY receipts/plans WITHOUT
@@ -554,13 +594,32 @@ retry):** the construction, exactly:
   (contributions + pre-image); comparing the extended projection against a legacy receipt
   breaks legitimate legacy replay, and comparing the pre-split projection against a new
   receipt lets a caller mutate contribution fields undetected):** the receipts table gains
-  `outcome_digest_version INTEGER NOT NULL` — the migration stamps every existing row
-  `1` (the pre-split projection); every post-upgrade write stamps `2` (the extended
-  projection). Replay comparison selects the projection BY THE STORED VERSION, never by
-  NULL-ness of anything. The receipt-state space is CLOSED and enumerated — (request_digest,
+  the version column via the FROZEN EXECUTABLE DDL (R10-3 — bare `ADD COLUMN … NOT NULL`
+  is REJECTED by SQLite on a non-empty table, the reviewer reproduced the
+  `OperationalError`): **`ALTER TABLE supersession_operations ADD COLUMN
+  outcome_digest_version INTEGER NOT NULL DEFAULT 1`** — the DEFAULT 1 both makes the
+  ALTER executable on populated tables AND IS the migration stamp (every pre-upgrade row
+  = 1, the pre-split projection); the v6 CONSTRUCTOR manifest carries the IDENTICAL
+  `DEFAULT 1` (a fresh v6 store and a migrated v5 store are digest-identical per `0007`);
+  and every post-upgrade write stamps `2` EXPLICITLY (never relying on the default).
+  Named migration test (R10-3): `test_v5_to_v6_migrates_a_nonempty_receipt_table` — a v5
+  store with existing receipt rows migrates; every pre-existing row reads version 1 /
+  NULL response; a post-migration write reads version 2; the final schema matches the
+  regenerated evidence. Replay comparison selects the projection BY THE STORED VERSION,
+  never by NULL-ness of anything.
+
+  **The receipt-state space is CLOSED, enumerated, and EXHAUSTIVELY EXECUTABLE (R10-4 —
+  declaring three legal cells without a table-driven check leaves (digest,1,NULL),
+  (NULL,2,NULL), version 0/3, and malformed responses unexercised):** (request_digest,
   outcome_digest_version, response) ∈ {(NULL, 1, NULL) legacy; (NULL, 2, json) new
   snapshot-less; (digest, 2, json) new with snapshot} — any other combination is an
-  integrity error at write AND at read. Named tests: a legacy receipt with a MATCHING
+  integrity error at write AND at read. Named test:
+  `test_receipt_state_triple_is_closed` — TABLE-DRIVEN over every legal cell (write
+  accepted, read round-trips, response deserializes into valid effect fields) and the
+  illegal representatives: (digest, 1, NULL), (digest, 1, json), (NULL, 2, NULL),
+  (digest, 2, NULL), version 0 and 3, non-JSON `response`, and JSON with
+  missing/invalid effect fields — each REFUSED at write AND flagged at read. Plus the
+  digest-behaviour tests: a legacy receipt with a MATCHING
   pre-split-projection plan replays; a legacy receipt with a conflicting plan conflicts;
   a NEW snapshot-less receipt with a contribution-field mutation CONFLICTS (the v2
   projection sees it).
@@ -653,10 +712,13 @@ outcome (its own post-commit re-plan discarded, never compared), never conflicts
 double-applies. Outcome-only comparison at phase 2 is reserved for receipts WITHOUT request
 identity (legacy NULL / snapshot-less store-level plans).
 
-**Durable and upgrade carriers (R6-2, extended R9-1/R9-2):** the receipts table gains THREE
+**Durable and upgrade carriers (R6-2, extended R9-1/R9-2, DDL frozen R10-3):** the receipts
+table gains THREE
 columns — nullable `request_digest TEXT` (R6-2), nullable `response TEXT` (R9-1 — the
-persisted `SupersessionResult` json), and `outcome_digest_version INTEGER NOT NULL`
-(R9-2 — migration stamps existing rows 1, new writes stamp 2) — ALL part of the SAME v5→v6
+persisted EFFECT payload: `SupersessionResult` minus the runtime `replayed` flag, R10-1),
+and `outcome_digest_version INTEGER NOT NULL DEFAULT 1`
+(R9-2/R10-3 — the DEFAULT both makes the ALTER executable on populated tables and IS the
+migration stamp; new writes stamp 2 explicitly) — ALL part of the SAME v5→v6
 migration as the ledger table (the §7a schema summary lists every one; the ALTERs receive
 accepted `0013`'s first-ALTER treatment, explicitly named there); the stored request digest
 is ALWAYS store-computed from the raw-request
@@ -948,13 +1010,13 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
 - `src/veracium/store/base.py` / `store/sqlite.py` — `apply_supersession_plan` extended to INSERT
   `plan.contributions` in its existing commit; a NEW public receipt-lookup surface
   (`lookup_supersession_receipt(op_id, raw_edge)` — the store digests the raw edge itself,
-  R7-1) serving phase 1; the receipts table's `request_digest` column; the consolidation primitive extended likewise; the two
+  R7-1) serving phase 1; the receipts table's `request_digest`, `response`, and `outcome_digest_version` columns (R10-6 — all three, the same carrier set as the schema bullets); the consolidation primitive extended likewise; the two
   reads `contributions()` / `contributors_of_source()`; `forget_user` erases the ledger;
   `store_mutator` accounting for the new writes (0002 audit manifest). `identity_digest` is computed
   via `0006`'s single shared `source_identity_digest` primitive (F2/I12) — the SAME one `revoke_source`
   uses — and is NULL when the contributor has no `source_id` (F1/I13).
 - `src/veracium/store/schema_version.py`, `store/migration.py` — the additive `contribution_ledger`
-  table + its THREE indexes (survivor, source, and the partial unique op_key — R2-2/R3-6) AND the receipts table's THREE new columns — nullable `request_digest` (R6-2), nullable `response` (R9-1, the persisted replay result), `outcome_digest_version` NOT NULL default-stamped 1 on migration (R9-2) — additive ALTERs receiving accepted `0013`'s first-ALTER treatment: recorded in the migration evidence like any structural change) as `SCHEMA_VERSION` **v5→v6** (`0006` takes v5; `Spec-Requires: 0006, 0007,
+  table + its THREE indexes (survivor, source, and the partial unique op_key — R2-2/R3-6) AND the receipts table's THREE new columns — nullable `request_digest` (R6-2), nullable `response` (R9-1, the persisted replay result), `outcome_digest_version INTEGER NOT NULL DEFAULT 1` (R9-2/R10-3 — the DEFAULT makes the ALTER executable on populated tables AND is the migration stamp; new writes stamp 2 explicitly; the v6 constructor manifest carries the identical default) — additive ALTERs receiving accepted `0013`'s first-ALTER treatment: recorded in the migration evidence like any structural change) as `SCHEMA_VERSION` **v5→v6** (`0006` takes v5; `Spec-Requires: 0006, 0007,
   0013`), the v5→v6 migration, and evidence regeneration.
 - `src/veracium/portability.py` — export/import EXCLUDE the ledger (§4e). The NEW
   `Episode.consolidation_output_index` field EXPORTS with the episode — and per accepted
@@ -964,9 +1026,11 @@ reintroduce the finding. **A7 is what makes it crash-safe**; **A9 is what makes 
   the current build round-trips the field intact; a v4 import (no field) remains accepted;
   duplicate present indices within one imported operation are REJECTED (R8-3 — gaps are
   partial history, duplicates never are), and against the DESTINATION across sequential
-  imports over the origin-namespaced key, record-identical re-imports idempotent (R9-5).
+  imports over the tenant-scoped origin-namespaced key, SOURCE-IDENTICAL re-imports
+  idempotent (R9-5/R10-5 — normalized source identity, since the remap path mints fresh
+  destination ids; incl. the repeated `user_id=` import test).
 
-**Schema:** **yes — the one v5→v6 migration carries the ledger table AND the receipt ALTERs (R8-4/R9-1/R9-2 — a summary omitting any of them yields an implementation missing a durable carrier):** (1) the new content-free, user-linked `contribution_ledger` table + THREE indexes (survivor, source, partial-unique op_key); (2) `ALTER TABLE supersession_operations` adding `request_digest TEXT` nullable (the request-identity carrier, §4b), `response TEXT` nullable (the persisted replay result — R9-1), and `outcome_digest_version INTEGER NOT NULL` stamped 1 for migrated rows / 2 for new writes (the projection discriminator — R9-2) — each receiving accepted `0013`'s first-ALTER treatment with the ALTERs recorded in the migration evidence. `SCHEMA_VERSION` v5→v6
+**Schema:** **yes — the one v5→v6 migration carries the ledger table AND the receipt ALTERs (R8-4/R9-1/R9-2 — a summary omitting any of them yields an implementation missing a durable carrier):** (1) the new content-free, user-linked `contribution_ledger` table + THREE indexes (survivor, source, partial-unique op_key); (2) `ALTER TABLE supersession_operations` adding `request_digest TEXT` nullable (the request-identity carrier, §4b), `response TEXT` nullable (the persisted replay result — R9-1), and `outcome_digest_version INTEGER NOT NULL DEFAULT 1` (the DEFAULT is the migration stamp and makes the ALTER executable on populated tables — R10-3; new writes stamp 2 explicitly; the projection discriminator — R9-2) — each receiving accepted `0013`'s first-ALTER treatment with the ALTERs recorded in the migration evidence. `SCHEMA_VERSION` v5→v6
 (after `0006`'s v5). The TABLE is the same additive shape as 0003's refusal inventory; the ALTER is
 a column addition to an existing table and is NOT (R8-4) — which is why it carries `0013`'s
 first-ALTER treatment explicitly. The cost — another store
@@ -986,11 +1050,11 @@ implementation commit as the behaviour it describes.*
 |---|---|---|
 | `tests/test_0014_maintenance_attribution.py::test_consolidation_contributors_survive_input_deletion` | **strict xfail** — lineage ids resolve to nothing after input deletion (A2's finding, executably) | the marker comes OFF; the helper `_summary_contributor_sources` already prefers `store.contributions()` — the assertion flips to the recovered source set |
 | `::test_absorption_link_is_a_queryable_contribution` | **strict xfail** — the contributor link is only the free-text `note` back-pointer (A3's finding) | the marker comes OFF; `_absorption_contributor_queryable` already probes `contributions()` — flips to the queryable record. **The `note` back-pointer STAYS** (presentation; the render-history exclusion keys on it) — the ledger row is the QUERYABLE record beside it, not a replacement |
-| `src/veracium/store/schema_version.py` `SCHEMA_VERSION` + `accepted_digests` + the evidence files; every test pinning the head symbolically | head = v5 (`0006`) | v5→v6 with the additive `contribution_ledger` + THREE indexes (survivor, source, partial-unique op_key) AND the receipts table's THREE column ALTERs — `request_digest`, `response`, `outcome_digest_version` (R6-2/R7-2/R9-1/R9-2 — with accepted `0013`'s first-ALTER treatment); migration + regenerated evidence (the `0006` v4→v5 carrier path, plus the ALTER evidence) |
+| `src/veracium/store/schema_version.py` `SCHEMA_VERSION` + `accepted_digests` + the evidence files; every test pinning the head symbolically | head = v5 (`0006`) | v5→v6 with the additive `contribution_ledger` + THREE indexes (survivor, source, partial-unique op_key) AND the receipts table's THREE column ALTERs — `request_digest`, `response`, `outcome_digest_version NOT NULL DEFAULT 1` (R6-2/R7-2/R9-1/R9-2/R10-3 — with accepted `0013`'s first-ALTER treatment; the v6 constructor manifest carries the identical default); migration + regenerated evidence (the `0006` v4→v5 carrier path, plus the ALTER evidence) |
 | `specs/generated/0002-audit-manifest.md` + `specs/audit_dispositions.py` | no ledger INSERT sites exist | the extended `apply_supersession_plan` / consolidation-primitive writes get dispositions; the manifest regenerates (a NEW mutator cannot hide — the same declared-set discipline §7 requires of consumption sites) |
 | `src/veracium/portability.py` + its tests | a v4 export's content set; the v4 parser silently DROPS unknown Episode fields | export/import EXCLUDE the ledger (a test asserts the export byte-set is unchanged by ledger rows) — and `FORMAT_VERSION` bumps 4→5 for the exported `Episode.consolidation_output_index` field (R5-4): older-importer refusal + round-trip + v4-still-accepted tests |
 | `SupersessionPlan` docstring + `specs/0003` §4f plan-shape text | the plan carries incoming/upserts/invalidations/refusals | gains `contributions: list[ContributionDraft]`, `absorption_pre_image: Optional[dict]` (R3-1), AND `raw_request: Optional[dict]` (R7-1) — BOTH carriers state all three same-commit (the marked additive amendment on accepted `0003`; the store INSERTs the contributions inside the existing CAS commit, derives the payloads and the request digest, and verifies the pre-image/snapshot — A7/R4-2/R7-1) |
-| `0003` §4f (freezes `supersession_operations(... logical_request_digest, status)`, same-digest→replay / different→conflict, "no existing table or field changes"), `0003` I9 (tests only the single-digest plan-level receipt), + the public replay path | ONE outcome-bound digest; no pre-plan lookup API; no request/outcome distinction; a public lost-response absorption retry RAISES instead of replaying (the R5-2 live defect) | **the EXACT marked amendment, ready to land AT `0014` ACCEPTANCE (R7-2/R8-1/R9-1/R9-2 — the text `0003` §4f gains, verbatim):** *"AMENDED by `0014` (R5-2/R6-1/R7-1/R8-1/R9-1/R9-2): `supersession_operations` gains nullable `request_digest` (store-computed from the plan's `raw_request` snapshot), nullable `response` (the committed op's `SupersessionResult` as canonical JSON, written atomically with the receipt — replay returns THIS, never a reconstruction from the submitted plan), and `outcome_digest_version` NOT NULL (1 = the pre-amendment digest projection, stamped on migrated rows; 2 = the extended projection with contributions + `absorption_pre_image`, stamped on every new write; comparison selects the projection by the STORED version, never by NULL-ness) — v5→v6 ALTERs. Public `apply_supersession` performs a PRE-PLAN receipt lookup: op_id + matching request digest → replay the persisted response with no re-planning; different request digest → conflict. Store-level `apply_supersession_plan` is REQUEST-FIRST on a receipt hit when both the receipt's `request_digest` and the plan's `raw_request` exist: matching request → replay the persisted response (the submitted plan's outcome discarded — the concurrent-preflight loser replays, never conflicts); differing request → conflict. Outcome-digest verification governs only receipts/plans WITHOUT request identity, at the receipt's stored projection version. Legacy receipts (request_digest NULL, response NULL, version 1) keep the pre-amendment outcome-match rule with reconstruct-from-plan replay — sound there because a matching outcome digest proves the submitted plan is the recorded plan (heals forward)."* — **and I9's check column gains**: the public lost-response absorption replay test, the reused-op-id-different-request tests (new + legacy receipts), the concurrent-preflight loser-replays test (R8-1), the persisted-result-not-reconstruction race test (R9-1), the projection-version tests — legacy-matching, legacy-conflicting, new-snapshot-less contribution-mutation (R9-2) — and the forged/malformed-snapshot aborts. Both land in the SAME commit as the implementation; `0003`'s "no table changes" sentence is amended with them |
+| `0003` §4f (freezes `supersession_operations(... logical_request_digest, status)`, same-digest→replay / different→conflict, "no existing table or field changes"), `0003` I9 (tests only the single-digest plan-level receipt), + the public replay path | ONE outcome-bound digest; no pre-plan lookup API; no request/outcome distinction; a public lost-response absorption retry RAISES instead of replaying (the R5-2 live defect) | **the EXACT marked amendment, ready to land AT `0014` ACCEPTANCE (R7-2/R8-1/R9-1/R9-2/R10-1/R10-2/R10-3 — the text `0003` §4f gains, verbatim):** *"AMENDED by `0014` (R5-2/R6-1/R7-1/R8-1/R9-1/R9-2/R10-1/R10-2/R10-3): `supersession_operations` gains nullable `request_digest` (store-computed from the plan's `raw_request` snapshot), nullable `response` (the committed op's EFFECT payload — `SupersessionResult` minus the runtime `replayed` flag — as canonical JSON, written atomically with the receipt; replay returns these effects with `replayed=True`, never a reconstruction from the submitted plan), and `outcome_digest_version` NOT NULL DEFAULT 1 (the DEFAULT is the migration stamp — 1 = the pre-amendment digest projection; 2 = the extended projection with contributions + `absorption_pre_image`, stamped explicitly on every new write; comparison selects the projection by the STORED version, never by NULL-ness) — v5→v6 ALTERs. Public `apply_supersession` performs a PRE-PLAN receipt lookup with THREE branches: op_id + non-NULL matching request digest → replay the persisted effects (`replayed=True`) with no re-planning; non-NULL differing digest → conflict; NULL stored digest (either legal NULL form) → request identity unavailable, proceed to planning and phase-2 outcome comparison at the stored projection version. Store-level `apply_supersession_plan` is REQUEST-FIRST on a receipt hit when both the receipt's `request_digest` and the plan's `raw_request` exist: matching request → replay the persisted effects as `replayed=True` (the submitted plan's outcome discarded — the concurrent-preflight loser replays, never conflicts); differing request → conflict. Outcome-digest verification governs only receipts/plans WITHOUT request identity, at the receipt's stored projection version. Legacy receipts (request_digest NULL, response NULL, version 1) keep the pre-amendment outcome-match rule with reconstruct-from-plan replay — sound there because a matching outcome digest proves the submitted plan is the recorded plan (heals forward)."* — **and I9's check column gains**: the public lost-response absorption replay test, the reused-op-id-different-request tests (new + legacy receipts), the concurrent-preflight loser-replays test (R8-1), the persisted-result-not-reconstruction race test (R9-1), the projection-version tests — legacy-matching, legacy-conflicting, new-snapshot-less contribution-mutation (R9-2) — the NULL-identity phase-1 continuation tests (R10-2), the nonempty-table migration test (R10-3), the table-driven receipt-state test (R10-4), and the forged/malformed-snapshot aborts. Both land in the SAME commit as the implementation; `0003`'s "no table changes" sentence is amended with them |
 | accepted `0010` `write_consolidation_output_if_current` + `transition_consolidation_if_current` + their X-invariant tests | the output primitive writes one provisional output + lineage; the transition moves state; no ledger, no output index | a marked ADDITIVE amendment (R1-1/R1-9/R2-3/R3-3): the OUTPUT primitive ASSIGNS and PERSISTS `output_index` (store-sequential; the return surfaces it); the CUTOVER transition (`OUTPUTS_DURABLE`) derives-and-INSERTs the N×M ledger rows atomically with the transition, verify-on-conflict under the persisted `op_key`; the X-suite gains the retry/takeover/verify-mismatch ledger cases; **the return-type change (`bool` → `Optional[int]`) with INDEX 0 FALSEY (R5-5) sweeps EVERY consumer**: `lifecycle.consolidate`; `store/base.py`'s docstring (says `bool` today); accepted `0010`'s API carrier text (a marked amendment line); `tests/test_0010_consolidation_primitives.py` — which contains BOTH a truthiness `assert write_...(...)` AND an `... is False` fence-loss assertion, EACH failing under the new contract — and every `test_0010_visibility_reservation` call site. The rule everywhere: failure asserts `is None`; success asserts the EXACT sequential index (0, 1, …) through finalization |
 | the store deletion/retention paths (`forget_user`, `invalidate_edge`, hard-delete, consolidation input deletion) + their tests | delete records without touching any ledger | A10's retention rides them: survivor deletion drops the survivor's rows (type-keyed); the deletion tests gain the ledger assertions (R1-9) |
 | `CHANGELOG.md` + the release upgrade note | v5 store, one-call migration | the v6 note + the pending upgrade-recommendation release line (the platform point rides this) |
@@ -1065,3 +1129,4 @@ their rulings so the reasoning survives into design lock.*
 | **v11** | **round 7 EXTERNAL (2026-08-10): FIVE bin-(a) folded (R7-1…R7-5 — the store-derived raw-request carrier; the verbatim ready-to-land `0003` amendment + I9 extensions; the lossless round-trip construction; the gate-found contradictions fixed; the adversarial gate self-test in the suite)** | 5 | `specs/reviews.py`; this document |
 | **v12** | **round 8 EXTERNAL (2026-08-10): FIVE bin-(a) folded, each classified against the 7-class taxonomy before fixing, the missing check fixed WITH the finding (R8-1…R8-5 — request-first phase 2, the concurrent loser REPLAYS; the exhaustive snapshot field partition + byte-exact digest + mutation oracle + frozen vectors; duplicate imported indices rejected (the dropped v10 rule reinstated); the schema summary carries the ALTER; the gate registry gains stable rule ids with per-entry fixture proof + the inverse unproven-entry test)** | 5 | `specs/reviews.py`; this document |
 | **v13** | **round 9 EXTERNAL (2026-08-10): SIX bin-(a) folded, classified first (R9-1…R9-6 — the persisted replay `response` column (the promise was unimplementable against the receipt's columns); the `outcome_digest_version` discriminator + the closed receipt-state triple; the store-level per-field abort oracle (inclusion ≠ binding); `needs_confirmation` → EXACT-EQUAL per the shipped `graph.py:163-167` with every carrier swept; destination-state import uniqueness over the origin-namespaced key; the §4c DDL-scope carrier corrected + retired — the sweep now greps facts, not phrasings)** | 6 | `specs/reviews.py`; this document |
+| **v14** | **round 10 EXTERNAL (2026-08-10): SIX bin-(a) folded, classified first, four found-in-fix from v13 (R10-1…R10-6 — the persisted EFFECT payload + `replayed=True` construction; three-branch phase 1 (NULL = identity unavailable, never "different"); the executable `DEFAULT 1` DDL with the nonempty-table migration test; the table-driven closed-state test; SOURCE-IDENTICAL re-import over normalized identity, tenant-scoped, cited against the shipped remap; the §7a surfaces carrier — the sweep now greps column names)** | 6 | `specs/reviews.py`; this document |

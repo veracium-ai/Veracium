@@ -48,6 +48,11 @@ MOTIVATING_FORMS = [
     ("0014-loser-may-conflict", "one commits, the other replays or conflicts per its receipt"),
     # R9-6 — the DDL-scope claim that contradicted the receipts ALTERs
     ("0014-no-ddl-beyond-ledger", "ONE authoritative representation, no schema DDL beyond the ledger table"),
+    # R10-1 — exact-copy replay contradicting the runtime replayed contract
+    ("0014-replay-exact-persisted", "Request-first replay returns EXACTLY the deserialized persisted response."),
+    ("0014-replay-exact-persisted", "assert O1 and O2 differ field-by-field AND the replay equals O1 exactly"),
+    # R10-5 — record-identity that the shipped fresh-id remap can never satisfy
+    ("0014-record-identical-reimport", "is accepted IFF it is RECORD-IDENTICAL to the existing row"),
     # R9-4 — the misclassified recomputed-class membership
     ("0014-needs-confirmation-recomputed", "`needs_confirmation` (never cleared by absorption)"),
     ("0014-liveness-trust-transfers", "mutated by inheritance (`valid_from = min`, liveness/trust transfers)"),
