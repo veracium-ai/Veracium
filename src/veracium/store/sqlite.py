@@ -344,6 +344,24 @@ class SqliteStore(Store):
             #    WHOLE plan back — no incoming edge, no prior mutations, no refusal rows,
             #    no receipt — so there is never a durable partial state (§4f failure rule).
             try:
+                # specs/0014 §4b: EXACT SET EQUALITY between the plan's absorption
+                # drafts and its absorbed_duplicate invalidations (R5-1) — one draft
+                # per absorbed prior, no omissions, no duplicates, no extras. Checked
+                # and written BEFORE the contributor rows are invalidated, inside this
+                # same transaction (A7: rows atomic with the op).
+                absorbed_ids = [eid for eid, _at, r in plan.prior_invalidations
+                                if r == "absorbed_duplicate"]
+                draft_ids = [d.contributor_id for d in plan.contribution_drafts
+                             if d.site == "absorption"]
+                if (sorted(absorbed_ids) != sorted(set(absorbed_ids))
+                        or sorted(draft_ids) != sorted(set(draft_ids))
+                        or set(absorbed_ids) != set(draft_ids)):
+                    raise SupersessionIntegrityError(
+                        f"absorption drafts {sorted(draft_ids)} != absorbed priors "
+                        f"{sorted(absorbed_ids)} — the draft set must equal the "
+                        f"absorbed_duplicate set exactly (specs/0014 §4b, R5-1)")
+                for d in plan.contribution_drafts:
+                    self._write_contribution(user_id, d, plan)
                 for e in plan.prior_upserts:
                     self._upsert_edge_row(e)
                 for eid, at, reason in plan.prior_invalidations:
@@ -406,6 +424,173 @@ class SqliteStore(Store):
             refusal_id=r[0], user_id=r[1], prior_edge_id=r[2], incoming_edge_id=r[3],
             relation=r[4], prior_effective=r[5], incoming_effective=r[6],
             rule_version=r[7], created_at=r[8]) for r in rows]
+
+    # -- the contribution ledger (specs/0014 §4a/§4b/§4d) -------------------
+    def _write_contribution(self, user_id: str, draft, plan) -> None:
+        """Derive and INSERT one absorption ledger row from a reference-only
+        draft (R2-1), inside the consuming transaction, BEFORE the contributor
+        is invalidated. Everything is read from authoritative rows; the closed
+        §4a schema is validated as a self-check (a failure aborts the op, A7)."""
+        from ..contribution import (canonical_payload, evidence_ref_digest,
+                                    validate_payload)
+        from ..source_identity import resolve_origin, source_identity_digest
+        if draft.site != "absorption":
+            raise SupersessionIntegrityError(
+                f"site {draft.site!r} cannot appear on the supersession path — "
+                f"consolidation rows are store-derived at the cutover (0014 §4b)")
+        if plan.absorption_pre_image is None:
+            raise SupersessionIntegrityError(
+                "an absorption draft requires the plan's absorption_pre_image "
+                "(specs/0014 §4b R3-1)")
+        row = self._conn.execute(
+            "SELECT json FROM edges WHERE id=?", (draft.contributor_id,)).fetchone()
+        if row is None:
+            raise SupersessionIntegrityError(
+                f"draft contributor {draft.contributor_id!r} does not resolve to a "
+                f"row this transaction is consuming (0014 §4b)")
+        contributor = Edge.model_validate_json(row[0])
+        if contributor.user_id != user_id:
+            raise SupersessionIntegrityError(
+                "draft contributor belongs to another tenant (0014 §4b)")
+        local = self.local_origin()
+        ident = source_identity_digest(
+            resolve_origin(contributor.provenance.origin, local),
+            contributor.provenance.source_id)
+        ev = evidence_ref_digest(
+            resolve_origin(contributor.provenance.origin, local),
+            contributor.provenance.evidence_ref)
+        side = {
+            "observed_at": contributor.provenance.observed_at.isoformat(),
+            "confidence": contributor.provenance.confidence,
+            "valid_from": contributor.valid_from.isoformat(),
+            "disclosure": contributor.provenance.disclosure.value,
+        }
+        if contributor.provenance.derived_from is not None:
+            side["derived_from"] = contributor.provenance.derived_from.value
+        payload = {"base": dict(plan.absorption_pre_image), "contributor": side}
+        validate_payload("absorption", payload)
+        self._conn.execute(
+            "INSERT INTO contribution_ledger(id,user_id,survivor_type,survivor_id,"
+            "site,identity_digest,evidence_ref_digest,payload,op_key,created_at) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (f"contrib-{uuid.uuid4().hex[:12]}", user_id, draft.survivor_type,
+             draft.survivor_id, "absorption", ident, ev,
+             canonical_payload(payload), None, self._now().isoformat()))
+
+    def _write_consolidation_contributions(self, op) -> None:
+        """specs/0014 §4b/§4c: the N×M rows at the OUTPUTS_DURABLE cutover —
+        every claimed input × every written output, derived wholly by the store
+        (the claimed set and the bound outputs are both store-known, so the set
+        is exact by construction). Runs INSIDE the cutover transaction, while
+        the claimed inputs are still readable. Idempotent under recovery via the
+        persisted op_key (R2-2): a key hit VERIFIES field-for-field (R3-3) —
+        a true retry no-ops, any mismatch aborts."""
+        from ..contribution import (canonical_payload, consolidation_op_key,
+                                    evidence_ref_digest, validate_payload)
+        from ..source_identity import resolve_origin, source_identity_digest
+        bound = [ep for _, ep in
+                 self._episodes_for_operation(op.user_id, op.operation_id)
+                 if ep.lineage]
+        outputs = list(enumerate(bound))   # index over OUTPUTS only, write order
+        local = self.local_origin()
+        now = self._now().isoformat()
+        for out_index, out_ep in outputs:
+            idx = getattr(out_ep, "consolidation_output_index", None)
+            if idx is None:
+                idx = out_index
+            for eid in op.claimed_ids:
+                row = self._conn.execute(
+                    "SELECT json FROM episodes WHERE id=? AND user_id=?",
+                    (eid, op.user_id)).fetchone()
+                if row is None:
+                    raise SupersessionIntegrityError(
+                        f"claimed input {eid!r} vanished before the cutover — the "
+                        f"N×M contribution set cannot be complete (0014 §4b/A7)")
+                inp = Episode.model_validate_json(row[0])
+                ident = source_identity_digest(
+                    resolve_origin(inp.provenance.origin, local),
+                    inp.provenance.source_id)
+                ev = evidence_ref_digest(
+                    resolve_origin(inp.provenance.origin, local),
+                    inp.provenance.evidence_ref)
+                side = {
+                    "observed_at": inp.provenance.observed_at.isoformat(),
+                    "confidence": inp.provenance.confidence,
+                    "disclosure": inp.provenance.disclosure.value,
+                    "author_of_evidence": inp.provenance.author_of_evidence.value,
+                    "date": inp.date,
+                }
+                if inp.provenance.derived_from is not None:
+                    side["derived_from"] = inp.provenance.derived_from.value
+                payload = {"input": side, "output_index": idx}
+                validate_payload("consolidation", payload)
+                key = consolidation_op_key(op.operation_id, idx, "episode", eid)
+                canon = canonical_payload(payload)
+                existing = self._conn.execute(
+                    "SELECT user_id,survivor_type,survivor_id,site,identity_digest,"
+                    "evidence_ref_digest,payload FROM contribution_ledger "
+                    "WHERE op_key=?", (key,)).fetchone()
+                if existing is not None:
+                    # R3-3: a conflict VERIFIES, never ignores — append-only (A8)
+                    want = (op.user_id, "episode", out_ep.id, "consolidation",
+                            ident, ev, canon)
+                    if tuple(existing) != want:
+                        raise SupersessionIntegrityError(
+                            f"op_key {key!r} exists with DIFFERENT deterministic "
+                            f"fields — a mis-keyed second output would lose its "
+                            f"attribution invisibly (0014 §4a R3-3)")
+                    continue
+                self._conn.execute(
+                    "INSERT INTO contribution_ledger(id,user_id,survivor_type,"
+                    "survivor_id,site,identity_digest,evidence_ref_digest,payload,"
+                    "op_key,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    (f"contrib-{uuid.uuid4().hex[:12]}", op.user_id, "episode",
+                     out_ep.id, "consolidation", ident, ev, canon, key, now))
+
+    @staticmethod
+    def _contribution_record(r):
+        import json as _json
+        from ..schema import ContributionRecord
+        return ContributionRecord(
+            id=r[0], user_id=r[1], survivor_type=r[2], survivor_id=r[3],
+            site=r[4], identity_digest=r[5], evidence_ref_digest=r[6],
+            payload=_json.loads(r[7]), op_key=r[8], created_at=r[9])
+
+    _CONTRIB_COLS = ("id,user_id,survivor_type,survivor_id,site,identity_digest,"
+                     "evidence_ref_digest,payload,op_key,created_at")
+
+    def contributions(self, user_id: str, survivor_type: str,
+                      survivor_id: str) -> list:
+        """§4d: every contributor consumed into a survivor, newest first —
+        type-keyed (R1-5: an Edge and an Episode sharing a raw id never merge)."""
+        rows = self._conn.execute(
+            f"SELECT {self._CONTRIB_COLS} FROM contribution_ledger "
+            "WHERE user_id=? AND survivor_type=? AND survivor_id=? "
+            "ORDER BY created_at DESC, id DESC",
+            (user_id, survivor_type, survivor_id)).fetchall()
+        return [self._contribution_record(r) for r in rows]
+
+    def contributors_of_source(self, user_id: str, identity_digest: str) -> list:
+        """§4d: every survivor a source contributed to — revoke_source's
+        blast-radius join (A9). COMPLETE identities only: a NULL digest never
+        joins (F1/I13), enforced by the NOT-NULL bind here."""
+        if identity_digest is None:
+            return []
+        rows = self._conn.execute(
+            f"SELECT {self._CONTRIB_COLS} FROM contribution_ledger "
+            "WHERE user_id=? AND identity_digest=? "
+            "ORDER BY created_at DESC, id DESC",
+            (user_id, identity_digest)).fetchall()
+        return [self._contribution_record(r) for r in rows]
+
+    def _drop_contributions_for_survivor(self, user_id: str, survivor_type: str,
+                                         survivor_id: str) -> None:
+        """A10: a ledger row is kept while its survivor exists and dropped when
+        the survivor is — type-keyed, so a same-raw-id Edge/Episode pair deletes
+        independently (R1-5)."""
+        self._conn.execute(
+            "DELETE FROM contribution_ledger WHERE user_id=? AND survivor_type=? "
+            "AND survivor_id=?", (user_id, survivor_type, survivor_id))
 
     # -- episodes ----------------------------------------------------------
     def add_episode(self, episode: Episode) -> None:
@@ -503,6 +688,8 @@ class SqliteStore(Store):
                     f"batch-delete or forget_user (specs/0010 X21)")
             self._conn.execute("DELETE FROM episodes WHERE id=?", (episode_id,))
             if row:
+                # specs/0014 A10: rows live while their survivor does — type-keyed
+                self._drop_contributions_for_survivor(row[0], "episode", episode_id)
                 self._bump(row[0])
             self._conn.commit()
 
@@ -842,6 +1029,10 @@ class SqliteStore(Store):
                          if ep.lineage]
                 if not bound:
                     return False
+                # specs/0014 §4b/§4c: the N×M contribution rows are written AT
+                # the cutover, in this same transaction, while the claimed inputs
+                # are still readable (they are deleted only after OUTPUTS_DURABLE).
+                self._write_consolidation_contributions(op)
                 self._write_op(op.model_copy(update={"state": S.OUTPUTS_DURABLE}))
                 self._bump(op.user_id)           # X14: the visibility cutover bumps
             elif to_state is S.FINALIZED:
@@ -926,7 +1117,8 @@ class SqliteStore(Store):
             # forget_user removes it atomically with the rest of the user's memory.
             # specs/0003 §4f: the refusal inventory and the operation receipts are
             # user-linked Store-local metadata, so erasure covers them too.
-            for table in ("edges", "episodes", "wiki", "write_counter",
+            for table in ("contribution_ledger",
+                          "edges", "episodes", "wiki", "write_counter",
                           "confirmations", "consolidation_ops",
                           "supersession_refusals", "supersession_operations"):
                 self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))

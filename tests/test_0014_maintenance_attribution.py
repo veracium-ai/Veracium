@@ -60,8 +60,10 @@ def _contributor_is_recoverable(store, user_id, survivor_id, contributor_ref) ->
     contributions = getattr(store, "contributions", None)
     if contributions is not None:
         try:
-            return any(getattr(c, "contributor_ref", None) == contributor_ref
-                       for c in contributions(survivor_id))
+            expected = _evidence_ref_digest(store.local_origin(), contributor_ref)
+            if any(getattr(c, "evidence_ref_digest", None) == expected
+                   for c in contributions(user_id, "edge", survivor_id)):
+                return True
         except NotImplementedError:
             pass
     return any(e.provenance.evidence_ref == contributor_ref
@@ -163,11 +165,8 @@ def _summary_contributor_sources(store, user_id, summary) -> set:
             for lid in (summary.lineage or []) if lid in by_id}
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "specs/0014 §3.2 / A2: a consolidation summary's contributor SOURCES are not recoverable. "
-    "0010's lineage records the input IDs, but the inputs are hard-deleted, so lineage-id → "
-    "source cannot be resolved. Remove this marker when 0014 records input attribution before "
-    "deletion."))
+# specs/0014 IMPLEMENTED: the ledger records input attribution at the cutover,
+# before deletion — the xfail marker documenting the gap comes off with it.
 def test_consolidation_contributors_survive_input_deletion(tmp_path):
     mem, cfg = _cold_mem(tmp_path)
     _add_cold(mem, 0, EvidenceAuthor.USER, "user-onboarding", source_id="mailbox:me")
@@ -233,11 +232,8 @@ def _absorption_contributor_queryable(store, winner_id, contributor_ref) -> bool
     return False
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "specs/0014 §3.3 / A3: absorption's contributor link survives only as a free-text "
-    "`note = 'absorbed_by:<id>'` string, not a queryable relation, and the inherited "
-    "valid_from/observed_at/confidence cannot be un-inherited. Remove this marker when 0014 "
-    "promotes the link to a queryable contribution record."))
+# specs/0014 IMPLEMENTED: absorption writes a queryable ledger row in the same
+# transaction — the xfail marker comes off with the implementation.
 def test_absorption_link_is_a_queryable_contribution(tmp_path):
     s = SqliteStore(str(tmp_path / "a.db"))
     # a shorter prior from one source, then a MORE SPECIFIC restatement from another absorbs it

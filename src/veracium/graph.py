@@ -13,8 +13,8 @@ from datetime import datetime
 from typing import Optional
 
 from . import authority
-from .schema import (DEFAULT_RELATIONS, Edge, EvidenceAuthor, Relation,
-                     SupersessionPlan, SupersessionRefusalDraft)
+from .schema import (DEFAULT_RELATIONS, ContributionDraft, Edge, EvidenceAuthor,
+                     Relation, SupersessionPlan, SupersessionRefusalDraft)
 from .store.base import PLAN_STALE
 
 
@@ -153,6 +153,21 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     invalidations: list[tuple] = []
     refusals: list[SupersessionRefusalDraft] = []
     absorbed: set[str] = set()
+    contribution_drafts: list[ContributionDraft] = []
+    # specs/0014 §4b (R3-1): the absorption pre-image — the incoming's ORIGINAL
+    # values over the closed §4a field set, snapshotted BEFORE any inheritance
+    # mutation below. The survivor IS the incoming (a NEW row), so this snapshot
+    # is the only place its pre-state exists; it becomes the `base` side of every
+    # absorption payload and enters the v2 outcome digest. `derived_from` is
+    # OMITTED when None (never null) — the canonical §4a form.
+    pre_image = {
+        "observed_at": incoming.provenance.observed_at.isoformat(),
+        "confidence": incoming.provenance.confidence,
+        "valid_from": incoming.valid_from.isoformat(),
+        "disclosure": incoming.provenance.disclosure.value,
+    }
+    if incoming.provenance.derived_from is not None:
+        pre_image["derived_from"] = incoming.provenance.derived_from.value
 
     # Absorption (T1): a MORE specific same-class form of a prior value wins — the shorter
     # prior retires reversibly (absorbed_duplicate; note carries the winner's id), and the
@@ -171,6 +186,12 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
             upserts.append(noted)
             invalidations.append((prior.id, incoming.valid_from, "absorbed_duplicate"))
             absorbed.add(prior.id)
+            # specs/0014 §4b: one reference-only draft per absorbed prior — the
+            # store enforces EXACT SET EQUALITY with the absorbed_duplicate
+            # invalidations (R5-1) and derives the payload itself (R2-1).
+            contribution_drafts.append(ContributionDraft(
+                site="absorption", survivor_type="edge", survivor_id=incoming.id,
+                contributor_type="edge", contributor_id=prior.id))
 
     # Supersession (§4a): for a FUNCTIONAL relation, a differing value retires the prior —
     # but ONLY when the incoming edge's recorded effective authority is >= the prior's
@@ -202,7 +223,10 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     return SupersessionPlan(incoming_edge=incoming, insert_incoming=True,
                             operation_id=op_id, expected_state=expected,
                             prior_upserts=upserts, prior_invalidations=invalidations,
-                            refusals=refusals)
+                            refusals=refusals,
+                            contribution_drafts=contribution_drafts,
+                            absorption_pre_image=(pre_image if contribution_drafts
+                                                  else None))
 
 
 _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",

@@ -144,6 +144,21 @@ class Store(ABC):
         raise NotImplementedError(
             f"{type(self).__name__} does not implement refusals")
 
+    def contributions(self, user_id: str, survivor_type: str,
+                      survivor_id: str) -> list:
+        """specs/0014 §4d: every contributor consumed into a survivor, newest
+        first — type-keyed (R1-5). Read-only; the ledger is store-local metadata
+        like the 0003 refusal inventory. Not abstract."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement contributions")
+
+    def contributors_of_source(self, user_id: str, identity_digest: str) -> list:
+        """specs/0014 §4d/A9: every survivor a source contributed to —
+        `revoke_source`'s blast-radius join. Complete identities only: a NULL
+        digest never joins (F1/I13). Not abstract."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement contributors_of_source")
+
     def supersessions_refused(self, user_id: str) -> int:
         """The count of refused retirements for a user — DERIVED from the refusal
         records, never stored separately (§4f: a second copy of a count is drift)."""

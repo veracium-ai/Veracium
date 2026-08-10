@@ -432,6 +432,34 @@ class ConsolidationOutputDraft(BaseModel):
 # carries opaque edge ids, the relation and two authority levels — never subject/object/
 # note (§4b). RULE_VERSION and effective-authority live in `veracium.authority`.
 
+class ContributionDraft(BaseModel):
+    """specs/0014 §4b — what a consumption site emits: REFERENCES ONLY (R2-1).
+    The store derives identity digests and the payload from authoritative rows
+    inside the consuming transaction; there is no caller-supplied payload. A
+    draft that does not resolve to a row this transaction is consuming — or
+    resolves to another tenant's row — aborts the whole op (A7)."""
+    site: str                      # 'absorption' | 'consolidation' (closed set)
+    survivor_type: str             # 'edge' | 'episode' (R1-5: independent namespaces)
+    survivor_id: str
+    contributor_type: str
+    contributor_id: str
+
+
+class ContributionRecord(BaseModel):
+    """A ledger row as read back (specs/0014 §4a/§4d). Content-free: identity
+    is digests; `payload` carries scalar field names and values only."""
+    id: str
+    user_id: str
+    survivor_type: str
+    survivor_id: str
+    site: str
+    identity_digest: Optional[str]
+    evidence_ref_digest: Optional[str]
+    payload: dict
+    op_key: Optional[str]
+    created_at: datetime
+
+
 class SupersessionRefusalDraft(BaseModel):
     """One refused retirement, as the write layer proposes it. The store BINDS the
     identity fields (mints `refusal_id`/`created_at`, stamps `rule_version`, validates
@@ -465,6 +493,15 @@ class SupersessionPlan(BaseModel):
     prior_upserts: list[Edge] = Field(default_factory=list)
     prior_invalidations: list[tuple[str, datetime, str]] = Field(default_factory=list)
     refusals: list[SupersessionRefusalDraft] = Field(default_factory=list)
+    # specs/0014 (plan-transient — never persisted as such):
+    # `contribution_drafts` — reference-only drafts, one per absorbed prior (§4b);
+    # the store enforces EXACT SET EQUALITY with the plan's `absorbed_duplicate`
+    # invalidations (R5-1). `absorption_pre_image` — the incoming edge's ORIGINAL
+    # values over the closed §4a field set, snapshotted BEFORE the planner's
+    # inheritance mutation (R3-1; canonical key order); it is the `base` side of
+    # every absorption payload and enters the v2 outcome digest (R5-2/R9-2).
+    contribution_drafts: list[ContributionDraft] = Field(default_factory=list)
+    absorption_pre_image: Optional[dict] = None
 
 
 class SupersessionRefusal(BaseModel):
