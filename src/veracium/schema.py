@@ -515,3 +515,8 @@ class ContestedGroup(BaseModel):
     relation: str
     exposed: list[Edge] = Field(default_factory=list)
     linkage: list[ContestedLinkage] = Field(default_factory=list)
+    # specs/0012 §4c (impl round 3): the ids of the PRESERVED PRIOR edge(s) in this
+    # group — the carrier the contested packer needs to resolve the mandatory roles
+    # (highest-effective-authority member + grounded prior, which MAY ALIAS). Additive,
+    # defaulted; populated by _build_contested from the refusal records.
+    prior_edge_ids: list[str] = Field(default_factory=list)

@@ -65,7 +65,19 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     commitments: list[tuple[str, Edge]] = []
     confirms: list[tuple[str, Edge]] = []
     current: list[tuple[str, Edge]] = []
+    variants: list[tuple[str, Edge]] = []
     seen: set[str] = set()
+    _groups_seen: set = set()
+
+    def _is_variant(e):
+        # a further member of a (subject, relation, envelope) group already
+        # represented classifies LAST (the frozen proactive order, R-impl3-1)
+        k = (e.subject, e.relation, e.provenance.disclosure,
+             e.provenance.author_of_evidence, e.provenance.derived_from)
+        if k in _groups_seen:
+            return True
+        _groups_seen.add(k)
+        return False
 
     # specs/0012 I8: collapse strictly-redundant duplicates BEFORE categorization
     # (a suppressed member is category-identical to its survivor: distinct notes,
@@ -76,14 +88,20 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     from .budgets import clamp_item as _clamp, est_tokens as _est0
     _cap = getattr(config, "item_cap_tokens", 512)
     comp_clamped = [0]                         # composition-time clamps are truncation
-    #                                            EVENTS and must signal (R-impl2-1)
+    #                                            EVENTS and must signal (R-impl2-1);
+    #                                            counts are EXACT (R-impl3-4): _obj is
+    #                                            PURE — only _obj_counted increments,
+    #                                            exactly once per composed item.
 
     def _obj(e, content_cap=None):
         # content clamp BEFORE framing: the due/confirm instructions render after
         # the object, so a whole-line tail clamp would sever them (I10c)
         cap = content_cap if content_cap is not None else max(16, _cap - 48)
-        out = _clamp(e.object, cap)
-        if content_cap is None and out != e.object:
+        return _clamp(e.object, cap)
+
+    def _obj_counted(e):
+        out = _obj(e)
+        if out != e.object:
             comp_clamped[0] += 1
         return out
 
@@ -95,23 +113,27 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         # specs/0012 I10f: class assignment is a PRECEDENCE mirroring the surface
         # order — a flagged edge classifies into its WARNING tier even when it also
         # carries a due date (flagged > commitment); it renders ONCE.
+        variant = _is_variant(e)
         if e.needs_confirmation:
             xn = _c_info.get(e.id, {}).get("flagged_hidden", 0)
             tail = f" (×{xn + 1} restatements need confirmation)" if xn else ""
-            confirms.append((f"{e.relation}: {_obj(e)} — confirm when natural "
-                             f"(unrefreshed since {e.provenance.observed_at.date()}){tail}", e))
+            line = (f"{e.relation}: {_obj_counted(e)} — confirm when natural "
+                    f"(unrefreshed since {e.provenance.observed_at.date()}){tail}")
+            (variants if variant else confirms).append((line, e))
             seen.add(e.id)
             continue
         if due:
             d = min(due)
             flag = f" (OVERDUE — was due {d})" if d < today else f" (due {d})"
-            commitments.append((f"{e.relation}: {_obj(e)}{flag}", e))
+            (variants if variant else commitments).append(
+                (f"{e.relation}: {_obj_counted(e)}{flag}", e))
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
             since_dt = _c_info.get(e.id, {}).get("since", e.valid_from)
-            current.append((f"{e.relation}: {_obj(e)} "
-                            f"(since {since_dt.date()} — worth a follow-up)", e))
+            (variants if variant else current).append(
+                (f"{e.relation}: {_obj_counted(e)} "
+                 f"(since {since_dt.date()} — worth a follow-up)", e))
             seen.add(e.id)
 
     recents: list[tuple[str, Episode]] = []
@@ -135,7 +157,9 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     def _due_key(pair):
         text, e = pair
         ds = _dates_in(e.object + " " + e.note)
-        return (min(ds) if ds else today, e.provenance.observed_at, e.id)
+        # nearest due first; ties observed_at DESC then edge id (I10b, R-impl3-1)
+        return (min(ds) if ds else today,
+                -e.provenance.observed_at.timestamp(), e.id)
 
     commitments.sort(key=_due_key)
     confirms.sort(key=lambda pair: (pair[1].provenance.observed_at, pair[1].id))
@@ -146,15 +170,19 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     sections = [("## DATED COMMITMENTS", commitments),
                 ("## CONFIRM WHEN NATURAL", confirms),
                 ("## CURRENT CONTEXT", current),
-                ("## RECENT HISTORY", recents)]
+                ("## RECENT HISTORY", recents),
+                ("## RESTATED VARIANTS", variants)]
 
     # specs/0012 I10: proactive is ALWAYS budgeted — a direct caller that omits
     # token_budget gets the validated config default, never unbounded (R-impl2-1).
     if token_budget is None:
         token_budget = getattr(config, "proactive_default_budget_tokens", 1200)
-    from .budgets import validate_budget
+    from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
     validate_budget("proactive", token_budget,
                     getattr(config, "group_heading_allowance_tokens", 48))
+    if getattr(config, "item_cap_tokens", 512) < MIN_ITEM_ALLOWANCE:
+        raise ValueError(f"item_cap_tokens below the minimum item allowance "
+                         f"{MIN_ITEM_ALLOWANCE} (I10e, surface build)")
     # specs/0012 I10b/I10f: ADMISSION runs in the precedence order (warnings above
     # commitments above context above history), independent of the §4c DISPLAY order;
     # the report marker is reserved off the top; the first admitted item is clamped
@@ -174,7 +202,8 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     else:
         remaining = token_budget - REPORT_RESERVE
         precedence = ["## CONFIRM WHEN NATURAL", "## DATED COMMITMENTS",
-                      "## CURRENT CONTEXT", "## RECENT HISTORY"]
+                      "## CURRENT CONTEXT", "## RECENT HISTORY",
+                      "## RESTATED VARIANTS"]              # variants LAST (frozen)
         by_header = dict(sections)
         first_admitted = False
         for header in precedence:
@@ -182,7 +211,12 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             if not items:
                 continue
             if header == "## RECENT HISTORY":
-                items = list(reversed(items))              # NEWEST first under budget
+                # explicit NEWEST-first sort (ties observed_at DESC then id) —
+                # reversing store order is not an order (R-impl3-1)
+                items = sorted(
+                    items,
+                    key=lambda p: (p[1].date, p[1].provenance.observed_at, p[1].id),
+                    reverse=True)
             header_cost = est(header) + 1
             for line, unit in items:
                 cost = est(line) + 1 + (header_cost if not admitted[header] else 0)
@@ -209,7 +243,8 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 first_admitted = True
                 (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
         if admitted["## RECENT HISTORY"]:
-            admitted["## RECENT HISTORY"].reverse()        # render chronologically
+            admitted["## RECENT HISTORY"].sort()           # render chronologically
+            #                                                ([YYYY-MM-DD] prefix sorts)
     n_dropped = sum(dropped.values())
     truncated = bool(n_dropped or n_clamped or comp_clamped[0])
 
@@ -222,5 +257,6 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                     f"{_bc(dropped['## DATED COMMITMENTS'])} commitments / "
                     f"{_bc(dropped['## CURRENT CONTEXT'])} context / "
                     f"{_bc(dropped['## RECENT HISTORY'])} history / "
+                    f"{_bc(dropped.get('## RESTATED VARIANTS', 0))} variants / "
                     f"{_bc(n_clamped + comp_clamped[0])} clamped]")
     return context, sel_edges, sel_eps, truncated

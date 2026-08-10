@@ -347,10 +347,17 @@ class Memory:
             remaining = (line_budget - est_tokens(f"- {head}: {tail}")
                          - WITHHELD_MARKER_RESERVE)
             # the mandatory member, content-clamped to what remains (never dropped)
-            # BOTH mandatory members — the highest-effective-authority member AND the
-            # grounded prior (distinct here when the group has >= 2 grounded members;
-            # they may alias) — are emitted CONTENT-CLAMPED, never withheld (R-impl2-6).
-            mandatory = grounded[: min(2, len(grounded))]
+            # the mandatory ROLES (R-impl3-5): the highest-effective-authority member
+            # (grounded[0], authority-sorted) AND the preserved grounded PRIOR —
+            # resolved via the group's prior_edge_ids carrier. The roles MAY ALIAS
+            # (a USER prior against SYSTEM challengers): then the mandatory set is
+            # ONE member and every challenger is optional (fit-whole or withheld).
+            prior_ids = set(g.prior_edge_ids or ())
+            mandatory = [grounded[0]]
+            if prior_ids and grounded[0].id not in prior_ids:
+                prior_member = next((m for m in grounded[1:] if m.id in prior_ids), None)
+                if prior_member is not None:
+                    mandatory.append(prior_member)
             members = []
             for i, m in enumerate(mandatory):
                 share = max(1, len(mandatory) - i)
@@ -432,6 +439,7 @@ class Memory:
                                                     include_quarantined=True)}
         selected = {e.id for e in query_edges}
         groups: dict = {}
+        group_priors: dict = {}
         for r in refusals:
             prior, inc = active.get(r.prior_edge_id), active.get(r.incoming_edge_id)
             rel = relations.get(r.relation)
@@ -439,6 +447,7 @@ class Memory:
                     and _value_key(prior.object) != _value_key(inc.object)):
                 groups.setdefault((prior.subject, r.relation), set()).update(
                     [prior.id, inc.id])
+                group_priors.setdefault((prior.subject, r.relation), set()).add(prior.id)
         result, exposed_all = [], []
         for (subject, relation), member_ids in sorted(groups.items()):
             members = [active[mid] for mid in member_ids]
@@ -452,8 +461,9 @@ class Memory:
                         authority=_edge_effective(m)))
             exposed.sort(key=lambda e: (-_edge_effective(e), e.id))
             linkage.sort(key=lambda x: (-x.authority, x.edge_id))
-            result.append(ContestedGroup(subject=subject, relation=relation,
-                                         exposed=exposed, linkage=linkage))
+            result.append(ContestedGroup(
+                subject=subject, relation=relation, exposed=exposed, linkage=linkage,
+                prior_edge_ids=sorted(group_priors.get((subject, relation), ()))))
             exposed_all.extend(exposed)
         return result, exposed_all
 

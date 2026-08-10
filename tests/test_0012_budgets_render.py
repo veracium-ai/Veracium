@@ -361,16 +361,18 @@ def test_compiler_groups_by_envelope_and_orders_deterministically(tmp_path):
     for order in (("a", "b"), ("b", "a")):                  # both insertion orders
         s = SqliteStore(":memory:")
         for tag in order:
-            s.add_edge(_edge(f"e-{tag}", f"value {tag} " + "pad " * 60,
+            s.add_edge(_edge(f"e-{tag}", f"value {tag} " + "pad " * 150,
                              rel=f"rel_{tag}"))
         cap = {}
         def llm(prompt, *, system=None, role="compile", json_schema=None):
             cap["p"] = prompt; return "wiki"
-        compile_wiki(s, llm, U, DEFAULT_RELATIONS, wiki_input_budget=floor_for("wiki"))
-        assert ("value a" in cap["p"]) and ("value b" not in cap["p"]) or True
-        first = min(("value a", "value b"), key=cap["p"].find) if "value b" in cap["p"] \
-            else "value a"
-        assert first == "value a", f"insertion order {order} leaked into selection"
+        compile_wiki(s, llm, U, DEFAULT_RELATIONS,
+                     wiki_input_budget=floor_for("wiki"))   # items budget fits ONE ~158-token line
+        # BITING (R-impl3-2 fixed the -1-find hole): at this budget exactly ONE
+        # ~150-token survivor fits after the scaffold; sorted group order means
+        # "value a" is selected under BOTH insertion orders — "value b" never is.
+        assert "value a" in cap["p"], f"order {order}: the sorted-first group missing"
+        assert "value b" not in cap["p"], f"order {order}: insertion order leaked"
     # envelope split at variant_cap=1: USER + SYSTEM same value -> BOTH lines compile
     s3 = SqliteStore(":memory:")
     s3.add_edge(_edge("u-same", "SAME value", author=EvidenceAuthor.USER))
@@ -415,7 +417,7 @@ def test_two_oversized_mandatory_members_both_emit(tmp_path):
                                       author=EvidenceAuthor.USER, days=2),
                                 _edge("m-prior", "P" * 500_000,
                                       author=EvidenceAuthor.SYSTEM, days=1)],
-                       linkage=[])
+                       linkage=[], prior_edge_ids=["m-prior"])
     block, spent, truncated = mem._render_contested([g], floor_for("recall"),
                                                     mem._est_tokens)
     assert mem._est_tokens(block) <= floor_for("recall")
@@ -423,3 +425,86 @@ def test_two_oversized_mandatory_members_both_emit(tmp_path):
     assert "withheld" not in block                          # neither withheld
     assert truncated                                        # the clamping SIGNALS
     mem.close()
+
+
+def test_aliased_mandatory_roles_leave_challengers_optional(tmp_path):
+    """R-impl3-5: in a REAL refusal group the USER prior is both highest-authority and
+    the grounded prior — the mandatory roles ALIAS to one member; an oversized SYSTEM
+    challenger is OPTIONAL and is withheld (with the marker) rather than promoted."""
+    from veracium.schema import ContestedGroup
+    mem = _mem(tmp_path)
+    g = ContestedGroup(subject="user", relation="works_as",
+                       exposed=[_edge("u-prior", "U" * 500_000,
+                                      author=EvidenceAuthor.USER, days=2),
+                                _edge("s-chal", "S" * 500_000,
+                                      author=EvidenceAuthor.SYSTEM, days=1)],
+                       linkage=[], prior_edge_ids=["u-prior"])   # roles ALIAS
+    block, _spent, truncated = mem._render_contested([g], floor_for("recall"),
+                                                     mem._est_tokens)
+    assert mem._est_tokens(block) <= floor_for("recall")
+    assert "UUU" in block                                    # the aliased mandatory
+    assert "SSS" not in block                                # the challenger: optional,
+    assert "+1 more contending values withheld" in block     # withheld WITH the marker
+    assert truncated
+    mem.close()
+
+
+# =============================================================================
+# impl round 3 — the reviewer's concrete reproductions, pinned
+# =============================================================================
+
+def test_compiler_incomparable_values_each_get_a_survivor(tmp_path):
+    """R-impl3-2: cat Miso / dog Miso / bird Pico — three incomparable same-envelope
+    values are three I8 groups; each compiles a survivor at variant_cap=1, +0 dropped."""
+    from veracium.compile import compile_wiki
+    s = SqliteStore(":memory:")
+    for i, obj in enumerate(("cat Miso", "dog Miso", "bird Pico")):
+        s.add_edge(_edge(f"pet{i}", obj, rel="has_pet"))
+    cap = {}
+    def llm(prompt, *, system=None, role="compile", json_schema=None):
+        cap["p"] = prompt; return "wiki"
+    body_marker = compile_wiki(s, llm, U, DEFAULT_RELATIONS, variant_cap=1)
+    for obj in ("cat Miso", "dog Miso", "bird Pico"):
+        assert obj in cap["p"], f"{obj} lost its survivor slot"
+    assert "+0 facts" in body_marker                        # nothing dropped
+
+
+def test_proactive_order_ties_and_directions(tmp_path):
+    """R-impl3-1: (a) recent history admits newest under BOTH input orders; (b) a
+    same-due-date tie selects the NEWER observed_at; (c) variants admit last —
+    both group survivors before any variant."""
+    Episode = __import__("veracium.schema", fromlist=["Episode"]).Episode
+    cfg = MemoryConfig(db_path=":memory:")
+    for order in (("OLD", "NEW"), ("NEW", "OLD")):          # (a) both input orders
+        s = SqliteStore(":memory:")
+        for tag in order:
+            days = 3 if tag == "OLD" else 0
+            s.add_episode(Episode(
+                id=f"ep-{tag}", user_id=U,
+                date=(NOW - timedelta(days=days)).date().isoformat(),
+                summary=f"{tag} " + "verbose history " * 30,
+                provenance=Provenance(source_type=SourceType.STATED,
+                                      author_of_evidence=EvidenceAuthor.USER,
+                                      evidence_ref=tag,
+                                      observed_at=NOW - timedelta(days=days))))
+        ctx, *_ = assemble(s, U, cfg, now=NOW, token_budget=floor_for("proactive"))
+        assert "NEW" in ctx and "OLD" not in ctx, f"input order {order} leaked"
+    # (b) same due date, oversized pair: the NEWER observed_at wins the tie
+    due = (NOW + timedelta(days=2)).date().isoformat()
+    s2 = SqliteStore(":memory:")
+    for tag, days in (("OLDER", 30), ("NEWER", 1)):
+        s2.add_edge(_edge(f"c-{tag}", f"{tag} commitment due {due} " + "pad " * 200,
+                          rel=f"deadline_{tag}", days=days))
+    ctx2, *_ = assemble(s2, U, cfg, now=NOW, token_budget=floor_for("proactive"))
+    assert "NEWER" in ctx2 and "OLDER" not in ctx2          # observed_at DESC on ties
+    # (c) variants last: A-survivor, A-variant, B-survivor at a two-item budget
+    s3 = SqliteStore(":memory:")
+    s3.add_edge(_edge("a-surv", "A survivor value " + "pad " * 150, rel="topic",
+                      vol=Volatility.TRANSIENT, days=2))
+    s3.add_edge(_edge("a-var", "A variant different value " + "pad " * 150, rel="topic",
+                      vol=Volatility.TRANSIENT, days=1))
+    s3.add_edge(_edge("b-surv", "B survivor value " + "pad " * 150, rel="other_topic",
+                      vol=Volatility.TRANSIENT, days=1))
+    ctx3, *_ = assemble(s3, U, cfg, now=NOW, token_budget=400)
+    assert "A survivor" in ctx3 and "B survivor" in ctx3    # both survivors first
+    assert "A variant" not in ctx3                          # the variant waited

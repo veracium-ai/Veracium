@@ -465,6 +465,30 @@ def _strictly_redundant(m: Edge, survivor: Edge) -> bool:
             and (m.last_outcome is None or m.last_outcome == survivor.last_outcome))
 
 
+def value_groups(members: list[Edge]) -> dict:
+    """UNIQUE-ANCHOR value grouping over one authority-envelope bucket (0012 §4c /
+    I8d/I8e/I8i), shared by the render collapse AND the wiki compiler's group
+    construction (R-impl3-2): anchors are the maximal values; a non-maximal value
+    joins its anchor ONLY when exactly one anchor subsumes it; ambiguous (≥2) and
+    zero-anchor values form their own groups. Returns {group_value_key: [edges]}."""
+    by_vk: dict[tuple, list[Edge]] = {}
+    for e in members:
+        by_vk.setdefault(_value_key(e.object), []).append(e)
+    vks = list(by_vk)
+    anchors = [vk for vk in vks
+               if not any(o != vk and _subsumes(o, vk) for o in vks)]
+    groups: dict[tuple, list[Edge]] = {a: list(by_vk[a]) for a in anchors}
+    for vk in vks:
+        if vk in groups:
+            continue
+        holding = [a for a in anchors if _subsumes(a, vk)]
+        if len(holding) == 1:                        # the only collapsing cell
+            groups[holding[0]].extend(by_vk[vk])
+        else:                                        # 0 or ≥2 → its own group
+            groups[vk] = list(by_vk[vk])
+    return groups
+
+
 def collapse_for_render(edges: list[Edge]) -> tuple[list[Edge], dict]:
     """Collapse strictly-redundant ACTIVE duplicates for a model-facing surface
     (specs/0012 I8). Inactive/quarantined-history members pass through verbatim
@@ -498,22 +522,7 @@ def collapse_for_render(edges: list[Edge]) -> tuple[list[Edge], dict]:
     for members in by_key.values():
         if len(members) < 2:
             continue
-        # unique-anchor value grouping over the DISTINCT value keys
-        by_vk: dict[tuple, list[Edge]] = {}
-        for e in members:
-            by_vk.setdefault(_value_key(e.object), []).append(e)
-        vks = list(by_vk)
-        anchors = [vk for vk in vks
-                   if not any(o != vk and _subsumes(o, vk) for o in vks)]
-        groups: dict[tuple, list[Edge]] = {a: list(by_vk[a]) for a in anchors}
-        for vk in vks:
-            if vk in groups:
-                continue
-            holding = [a for a in anchors if _subsumes(a, vk)]
-            if len(holding) == 1:                    # the only collapsing cell
-                groups[holding[0]].extend(by_vk[vk])
-            else:                                    # 0 or ≥2 → surfaces alone
-                groups[vk] = list(by_vk[vk])
+        groups = value_groups(members)
 
         for group in groups.values():
             if len(group) < 2:

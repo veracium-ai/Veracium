@@ -54,17 +54,35 @@ def floor_for(surface: str, heading_allowance: int = GROUP_HEADING_ALLOWANCE) ->
 def validate_budget(surface: str, value: int,
                     heading_allowance: int = GROUP_HEADING_ALLOWANCE) -> int:
     """Reject a below-floor budget LOUDLY, naming the surface, floor and derivation
-    (0012 I10e). Applied at config construction AND at every surface build."""
+    (0012 I10e). Applied at config construction AND at every surface build. The
+    serialized derivation uses the surface's ACTUAL reserve (R-impl3-3)."""
     fl = floor_for(surface, heading_allowance)
     if value < fl:
+        reserve = MARKER_RESERVE if surface == "wiki" else REPORT_RESERVE
+        reserve_name = "marker reserve" if surface == "wiki" else "report reserve"
         raise ValueError(
             f"token budget {value} for the {surface!r} surface is below its floor {fl} "
             f"(= envelope {ENVELOPES[surface]} + max(item allowance {MIN_ITEM_ALLOWANCE}, "
             f"mandatory contested allowance "
-            f"{mandatory_contested_allowance(heading_allowance)}) + marker reserve "
-            f"{MARKER_RESERVE}); a budget below the floor cannot carry the envelope plus "
+            f"{mandatory_contested_allowance(heading_allowance)}) + {reserve_name} "
+            f"{reserve}); a budget below the floor cannot carry the envelope plus "
             f"one item and the safety framing — raise the budget or omit it")
     return value
+
+
+def validate_surface_params(surface: str, budget: int, *, item_cap: int = 512,
+                            variant_cap: int = 4,
+                            heading_allowance: int = GROUP_HEADING_ALLOWANCE) -> None:
+    """I10e at surface BUILD (R-impl3-3): every mutable bound a surface call accepts is
+    revalidated where it is used, not only at MemoryConfig construction — a direct
+    caller cannot smuggle a sub-floor cap past the config."""
+    validate_budget(surface, budget, heading_allowance)
+    if item_cap < MIN_ITEM_ALLOWANCE:
+        raise ValueError(
+            f"item_cap {item_cap} is below the minimum item allowance "
+            f"{MIN_ITEM_ALLOWANCE} — one framed clamped item must fit")
+    if variant_cap < 1:
+        raise ValueError("variant_cap must be >= 1")
 
 
 # --- per-item clamp (framing PLUS content, in-item elision) ------------------------- #

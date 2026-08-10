@@ -163,8 +163,8 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     input under `wiki_input_budget` est. tokens) and every drop is COUNTED into the
     authoritative marker line appended BY CODE after sanitizing the LLM output. The marker
     is always present, including the +0/+0 case."""
-    _budgets.validate_budget("wiki", wiki_input_budget)    # revalidated at surface
-    #                                                        build, not only config (I10e)
+    _budgets.validate_surface_params("wiki", wiki_input_budget,
+                                     item_cap=item_cap, variant_cap=variant_cap)
     edges, episodes = _grounded_inputs(store, user_id, relations)
     # I10g: the bound governs the COMPLETE serialized prompt — reserve the fixed
     # scaffolding (COMPILE_SYSTEM + the prompt skeleton) BEFORE item selection, so a
@@ -182,12 +182,19 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     # SYSTEM members of the same value are DISTINCT groups, each owed a survivor.
     # Group iteration is DETERMINISTIC ((subject, relation, disclosure, author,
     # derived_from) sort order), never dict/input order (R-impl2-3).
-    groups: dict[tuple, list] = {}
+    from .graph import value_groups as _value_groups
+    env_buckets: dict[tuple, list] = {}
     for e in edges:
         k = (e.subject, e.relation, e.provenance.disclosure.value,
              e.provenance.author_of_evidence.value,
              e.provenance.derived_from.value if e.provenance.derived_from else "")
-        groups.setdefault(k, []).append(e)
+        env_buckets.setdefault(k, []).append(e)
+    # I8's FULL group = the envelope × unique-anchor VALUE grouping (R-impl3-2):
+    # incomparable same-envelope values are DISTINCT groups, each owed a survivor.
+    groups: dict[tuple, list] = {}
+    for k in sorted(env_buckets):
+        for vk, members in sorted(_value_groups(env_buckets[k]).items()):
+            groups[k + (vk,)] = members
     ordered_keys = sorted(groups)
     survivors = [groups[k][0] for k in ordered_keys]
     variants = [e for k in ordered_keys for e in groups[k][1:]]
@@ -253,7 +260,8 @@ def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
     relations = relations if relations is not None else DEFAULT_RELATIONS
     if recompile_after <= 0:
         return None
-    _budgets.validate_budget("wiki", wiki_input_budget)    # I10e at every source
+    _budgets.validate_surface_params("wiki", wiki_input_budget,
+                                     item_cap=item_cap, variant_cap=variant_cap)
     kw = dict(wiki_input_budget=wiki_input_budget, variant_cap=variant_cap,
               item_cap=item_cap)
     if needs_recompile(store, user_id, recompile_after, relations, **kw):
