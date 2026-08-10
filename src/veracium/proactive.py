@@ -152,7 +152,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         # specs/0012 I10f: class assignment is a PRECEDENCE mirroring the surface
         # order — a flagged edge classifies into its WARNING tier even when it also
         # carries a due date (flagged > commitment); it renders ONCE.
-        variant = _is_variant(e)                   # registers the group either way
+        variant = _is_variant(e)
         if e.needs_confirmation:
             # I10f: VARIANCY NEVER DEMOTES a safety class — a flagged member is a
             # WARNING regardless of its group-mates (R-impl4-1).
@@ -164,10 +164,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             seen.add(e.id)
             continue
         if due:
+            # R-impl7-1: DATED classification dominates variancy exactly as flagged
+            # does — EVERY dated member stays in the commitment tier (where I10b's
+            # nearest-due order governs admission); only CONTEXT-class non-survivors
+            # demote to the variants tier.
             d = min(due)
             flag = f" (OVERDUE — was due {d})" if d < today else f" (due {d})"
-            (variants if variant else commitments).append(
-                (f"{e.relation}: {_obj_counted(e)}{flag}", e))
+            commitments.append((f"{e.relation}: {_obj_counted(e)}{flag}", e))
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):

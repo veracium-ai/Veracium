@@ -694,3 +694,31 @@ def test_clamp_registry_is_type_tagged(tmp_path):
     ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
                        token_budget=1200)
     assert "2 clamped]" in ctx                               # two ITEMS, exactly
+
+
+def test_a_dated_variant_stays_a_commitment_nearest_due_first(tmp_path):
+    """R-impl7-1: two same-value same-envelope dated members (distinct notes — one
+    full I8 group): BOTH are commitments; the NEARER due date admits first under a
+    tight budget; neither is ever a RESTATED VARIANT."""
+    s = SqliteStore(":memory:")
+    base = "submit the compliance filing"
+    near = (NOW + timedelta(days=1)).date().isoformat()
+    far = (NOW + timedelta(days=2)).date().isoformat()
+    bulk = base + " " + "pad " * 150                        # bulk in the OBJECT (the
+    s.add_edge(_edge("near-old", bulk, rel="works_on",      # commitment line renders it)
+                     note=f"due {near}", vol=Volatility.DURABLE, days=10))
+    s.add_edge(_edge("far-new", bulk, rel="works_on",
+                     note=f"due {far}", vol=Volatility.DURABLE, days=1))
+    ctx, edges, _eps, _tr = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                                     token_budget=floor_for("proactive"))
+    ids = {e.id for e in edges}
+    assert "near-old" in ids, "the nearest-due member must admit first (I10b)"
+    assert "far-new" not in ids                             # dropped by budget, as a
+    assert "RESTATED VARIANTS" not in ctx                   # COMMITMENT, never a variant
+    assert "1 commitments" in ctx                           # reported in its own class
+    # ample budget: BOTH render as commitments, nearest first
+    ctx2, edges2, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                                token_budget=2000)
+    assert {e.id for e in edges2} >= {"near-old", "far-new"}
+    assert "RESTATED VARIANTS" not in ctx2
+    assert ctx2.find(near) < ctx2.find(far)                 # nearest-due first
