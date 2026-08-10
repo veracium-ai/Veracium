@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+- **Fact-currency renewal — a restatement can no longer silently renew a fact's currency**
+  (`specs/0012`, accepted after 14 external review rounds + implemented). Reinforcement now
+  transfers NOTHING: a re-stated fact is persisted as its own edge with its own provenance, and
+  the prior is left byte-untouched — closing a measured bypass where same-class restatements
+  (e.g. a system feed re-asserting a user fact) kept a stale fact perpetually fresh and silently
+  raised its confidence, and closing finding M9 (the contributing source now leaves a recoverable
+  record: the edge itself). Each edge ages against its own `observed_at`; only `confirm()` clears
+  the possibly-stale flag.
+  - **Read-path collapse**: every model-facing surface (query recall, the wiki compiler input,
+    proactive assembly) suppresses only *strictly redundant* active duplicates — full
+    authority-envelope grouping, deterministic survivors, one confirmable stale-warning owner at
+    a time ("×N restatements need confirmation"), never a synthesized value, and the store keeps
+    every edge.
+  - **Hard token budgets** on all rendered surfaces: envelope-derived floors (a below-floor
+    `token_budget` now raises `ValueError` instead of best-effort rendering), per-item clamps
+    that shrink content but never sever safety labels, deterministic precedence under overflow
+    (safety and warnings before breadth), a truncation report line with per-class counts, and
+    budget-aware packing of contested groups.
+  - **The wiki compile-drop marker**: every compiled wiki ends with an authoritative, forge-proof
+    `[[veracium-wiki-compile:v1]] +N facts / +M episodes not compiled` line; `introspect()`
+    exposes it as `wiki_compile_record` (status ok/absent/legacy/malformed), and the CLI prints
+    a one-line summary.
+  - ⚠️ **The wiki cache identity now binds the compiler policy** (version `0012-v1` + budgets +
+    the marker grammar): an existing cache recompiles once on first use after upgrade. The
+    store-only CLI (`veracium recall`) never recompiles — with a stale cache it serves recall
+    without the wiki plus an explicit notice, instead of failing.
+  - ⚠️ `MemoryConfig` gains seven budget fields (all validated); `0003`'s reinforcement plan
+    action and `0008`'s C3 liveness-refresh are amended accordingly (marked in both specs).
+
 - **Source identity — record *which source* a fact came from** (`specs/0006`, accepted +
   implemented). Provenance gains an optional `(origin, source_id)` pair: `source_id` is an opaque,
   host-supplied identifier for the source that produced an event (a mailbox, a connector instance, a

@@ -173,3 +173,28 @@ def test_wiki_compile_record_schema(tmp_path):
     s.add_edge(_edge("e2", "baker"))
     rec2 = report(s, U)["wiki_compile_record"]
     assert rec2 == rec                                    # still the CACHED compile's record
+
+
+# --- the round-12 bin-(b) OBLIGATION: the stale-cache notice charges through the -------
+# --- ordinary I10 envelope; it can never push CLI recall past its hard bound -----------
+def test_stale_cache_notice_charges_through_the_envelope(tmp_path):
+    """Recorded implementation obligation (0012 §4c(iv)/§12): the deterministic notice
+    is budget-charged like any wiki value — a just-above-floor budget with a
+    stale-identity cache stays within its bound, notice included."""
+    db = str(tmp_path / "n.db")
+    s = SqliteStore(db)
+    s.add_edge(_edge("e1"))
+    s.set_wiki(U, "OLDDIGEST\npre-v12 cached body", s.store_version(U))
+    s.close()
+    import veracium
+    from veracium.budgets import est_tokens, floor_for
+    mem = veracium.Memory(llm=_fake_llm(), store=None,
+                          config=MemoryConfig(db_path=db))
+    # mark the provider as no-LLM so the stale path serves the notice
+    mem.llm._veracium_no_llm = True
+    tight = floor_for("recall") + 8
+    r = mem.recall(U, "chef", token_budget=tight)
+    assert budgets.STALE_WIKI_NOTICE in (r.grounded or r.context) or r.truncated
+    assert est_tokens(r.context) <= tight            # the notice never breaks the bound
+    assert "pre-v12 cached body" not in r.context
+    mem.close()

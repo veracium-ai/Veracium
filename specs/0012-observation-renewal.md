@@ -4,7 +4,7 @@ Spec-Status: accepted
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **✅ accepted (v17, 2026-08-10).** Round 14, under the boundary protocol the reviewer
+> **✅ accepted (v17, 2026-08-10) — ✅ IMPLEMENTED (2026-08-10, four slices: Design 1 core → I8 collapse → I10 budgets ×2; every §6 check green incl. the recorded bin-(b) obligation; the §7b/§7b-ii carriers landed same-commit with their slices).** Round 14, under the boundary protocol the reviewer
 > accepted in round 12: **"Approved for acceptance. Under the agreed boundary protocol, bin
 > (a) is empty."** v17 = the reviewed v16 + this status flip + the §12 Review closure ledger
 > (PROCESS §4a) — *no contract change*. The frozen surface: Design 1 (reinforcement transfers
