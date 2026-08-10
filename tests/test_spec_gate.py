@@ -882,14 +882,14 @@ def test_conditional_skip_inventory_is_complete():
 
 
 def test_collected_inventory_matches_the_generator():
-    """R14-1 (0014 round 14): the R13-3 gate proved module<->tests completeness
-    but never read COLLECTED.txt — a hand-edited or stale shipped inventory
-    passed green. This test binds the reviewer-facing carrier: in an extracted
-    review package (where COLLECTED.txt exists at the tree root) the marked
-    inventory section must equal skip_inventory.render() BYTE-FOR-BYTE. In a
-    git checkout and in the packaging run copy no COLLECTED.txt exists and the
-    test skips (inventoried). Packaging additionally runs this same comparison
-    standalone after writing COLLECTED, before sealing."""
+    """R14-1/R15-1 (0014 rounds 14-15): binds the reviewer-facing carrier. In an
+    extracted review package (COLLECTED.txt at the tree root) the marked
+    inventory section must satisfy skip_inventory.verify_collected — the STRICT
+    verifier (standalone-line markers, exactly one pair, byte-exact block, no
+    normalization) shared with the packaging step. The first verifier split on
+    the first marker pair and stripped boundary newlines; the reviewer
+    reproduced a duplicated block and a padded boundary passing — hence the
+    shared callable and the adversarial test below."""
     import pathlib
     import sys
 
@@ -900,13 +900,41 @@ def test_collected_inventory_matches_the_generator():
         pytest.skip("COLLECTED.txt not present (exists only in a sealed review package)")
 
     sys.path.insert(0, str(root / "specs"))
-    from skip_inventory import render
+    from skip_inventory import verify_collected
 
-    text = collected.read_text()
-    begin, end = "<!-- GENERATED:skip-inventory -->", "<!-- /GENERATED:skip-inventory -->"
-    assert begin in text and end in text, (
-        "COLLECTED.txt lacks the generated-inventory markers")
-    section = text.split(begin, 1)[1].split(end, 1)[0].strip("\n")
-    assert section == render(), (
-        "COLLECTED.txt's inventory section differs from skip_inventory.render() "
-        "(stale, hand-edited, or duplicated — regenerate at packaging)")
+    verify_collected(collected.read_text())
+
+
+def test_collected_verifier_rejects_the_adversarial_cases():
+    """R15-1: the verifier is proven against the reviewer's reproduced bypasses
+    and the required case list — valid, missing marker, stale content,
+    duplicated complete block, extra boundary newline, edited content, and a
+    mid-line (non-standalone) marker. Runs everywhere (pure function, no
+    COLLECTED.txt needed), so the carrier gate itself can never regress to a
+    happy-path check unnoticed."""
+    import pathlib
+    import sys
+
+    import pytest
+
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    from skip_inventory import BEGIN_MARKER, END_MARKER, render, verify_collected
+
+    body = render()
+    valid = f"head\n{BEGIN_MARKER}\n{body}\n{END_MARKER}\ntail"
+    verify_collected(valid)  # must not raise
+
+    bad = {
+        "missing end marker": f"head\n{BEGIN_MARKER}\n{body}\ntail",
+        "stale content": f"head\n{BEGIN_MARKER}\nwrong\n{END_MARKER}\ntail",
+        "duplicated complete block":
+            valid + f"\n{BEGIN_MARKER}\n{body}\n{END_MARKER}",
+        "extra boundary newline":
+            f"head\n{BEGIN_MARKER}\n\n{body}\n{END_MARKER}\ntail",
+        "edited content":
+            f"head\n{BEGIN_MARKER}\n{body.replace('mcp', 'mpc', 1)}\n{END_MARKER}\ntail",
+        "mid-line marker": f"head\nx {BEGIN_MARKER}\n{body}\n{END_MARKER}\ntail",
+    }
+    for name, text in bad.items():
+        with pytest.raises(ValueError):
+            verify_collected(text)

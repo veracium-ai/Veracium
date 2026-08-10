@@ -89,3 +89,36 @@ def render() -> str:
 
 if __name__ == "__main__":
     print(render())
+
+
+BEGIN_MARKER = "<!-- GENERATED:skip-inventory -->"
+END_MARKER = "<!-- /GENERATED:skip-inventory -->"
+
+
+def verify_collected(text: str) -> None:
+    """Byte-exact carrier verification (R15-1 — the first verifier split on the
+    first marker pair and stripped boundary newlines, so a duplicated complete
+    block and an extra blank line after the opening marker both passed).
+
+    Rules, exactly as the reviewer required: markers count only as COMPLETE
+    STANDALONE LINES; exactly one opening and one closing marker; the enclosed
+    block is compared to render() with NO normalization. Raises ValueError with
+    a specific reason; returns None on success. Shared by the packaging step
+    and tests/test_spec_gate.py — one verifier, no drift."""
+    lines = text.split("\n")
+    begins = [i for i, l in enumerate(lines) if l == BEGIN_MARKER]
+    ends = [i for i, l in enumerate(lines) if l == END_MARKER]
+    if len(begins) != 1 or len(ends) != 1:
+        raise ValueError(
+            f"expected exactly one standalone begin and end marker, found "
+            f"{len(begins)} begin / {len(ends)} end (a duplicated block or a "
+            f"missing/edited marker)")
+    b, e = begins[0], ends[0]
+    if e <= b:
+        raise ValueError("end marker precedes begin marker")
+    block = "\n".join(lines[b + 1:e])
+    expected = render()
+    if block != expected:
+        raise ValueError(
+            "the enclosed inventory block is not byte-identical to render() "
+            "(stale, hand-edited, or boundary-padded)")

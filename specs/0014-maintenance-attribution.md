@@ -5,7 +5,19 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v18, 2026-08-10) — round 14 folded (ONE bin-(a); R13-1 and R13-2 CLOSED, the
+> **draft (v19, 2026-08-10) — round 15 folded (ONE bin-(a); R14-1's carrier binding held
+> in content but not at its boundaries):** the carrier verifier is STRICT and SHARED
+> (R15-1, class E found in R14-1's fix — the first verifier split on the FIRST marker
+> pair and stripped boundary newlines; the reviewer reproduced a duplicated complete
+> block and a padded boundary both passing): `skip_inventory.verify_collected` recognizes
+> markers only as complete standalone lines, requires exactly one pair, and compares the
+> enclosed block to render() with NO normalization; the packaging step and the in-package
+> test both call THIS callable (one verifier, no drift); and
+> `test_collected_verifier_rejects_the_adversarial_cases` proves it everywhere — valid,
+> missing marker, stale, duplicated block, boundary newline, edited content, mid-line
+> marker — so the carrier gate itself cannot regress to a happy-path check unnoticed.
+> v19 = the round-16 resubmission. Earlier (v18): round 14 folded (ONE bin-(a); R13-1 and
+> R13-2 CLOSED, the
 > reviewer's suite delta reconciled exactly for the first time):** the generated skip
 > inventory is BOUND TO ITS CARRIER (R14-1, class E found in R13-3's fix — the gate bound
 > the module to the tests but never read COLLECTED.txt, so a hand-edited shipped inventory
@@ -1262,3 +1274,4 @@ their rulings so the reasoning survives into design lock.*
 | **v16** | **round 12 EXTERNAL (2026-08-10): FOUR bin-(a) folded, classified first, three found in v15's fixes (R12-1…R12-4 — the independently authored ALTER-path expectation (the migration byte-matches, never defines — `0013` §4c honoured at last); the frozen repeated-import fixture with corrected arithmetic (3 episodes total, split asserted); the three-set projection (excluded / normalized-and-compared / verbatim) with the three-sided oracle; the self-proving reviewer-guide gate + the named environment-conditional skip inventory in COLLECTED)** | 4 | `specs/reviews.py`; this document |
 | **v17** | **round 13 EXTERNAL (2026-08-10): THREE bin-(a) folded, classified first, all found in prior folds' fixes; R12-2 closed (R13-1…R13-3 — the complete ALTER-path DDL literal + digest IN the spec, authored on the qualified runtime, authorized by the review itself; the two-set projection riding `0010`'s stable historical namespace after the invented lineage remap was retired; the generated skip inventory with the two-directional completeness gate)** | 3 | `specs/reviews.py`; this document |
 | **v18** | **round 14 EXTERNAL (2026-08-10): ONE bin-(a) folded (R14-1 — the inventory carrier bound at both ends: packaging-time byte-equality assertion + the in-package test that fails a stale COLLECTED in the reviewer's own extraction; the package-artifact skip site inventoried); R13-1/R13-2 closed, the delta reconciled exactly** | 1 | `specs/reviews.py`; this document |
+| **v19** | **round 15 EXTERNAL (2026-08-10): ONE bin-(a) folded (R15-1 — the strict shared carrier verifier: standalone-line markers, exactly-one pair, byte-exact block, no normalization; proven against the reviewer's two reproduced bypasses + the full required case list by an everywhere-running adversarial test)** | 1 | `specs/reviews.py`; this document |
