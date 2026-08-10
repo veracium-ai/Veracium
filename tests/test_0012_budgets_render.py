@@ -499,20 +499,20 @@ def test_proactive_order_ties_and_directions(tmp_path):
     assert "NEWER" in ctx2 and "OLDER" not in ctx2          # observed_at DESC on ties
     # (c) variants last: A-survivor, A-variant, B-survivor at a two-item budget
     s3 = SqliteStore(":memory:")
-    # a GENUINE variant: the same value token-dropped within _subsumes' bound (one
-    # unique anchor), carrying a distinct note so the collapse surfaces it — the
-    # reviewer's correction: incomparable values are independent survivors, never
-    # variants (R-impl4-1).
+    # a GENUINE variant (R-impl5-1 corrected the fixture again): BOTH members carry
+    # distinct notes so neither is suppressed by the collapse; the I8j survivor is
+    # the FRESHER note-bearer; the older distinct-note member is the true variant.
     base = "A survivor value " + "pad " * 150
-    s3.add_edge(_edge("a-surv", base, rel="topic",
-                      vol=Volatility.TRANSIENT, days=2))
-    s3.add_edge(_edge("a-var", base.rsplit("pad", 2)[0].strip(), rel="topic",
-                      note="restated in standup", vol=Volatility.TRANSIENT, days=1))
+    s3.add_edge(_edge("a-old", base, rel="topic", note="noted earlier",
+                      vol=Volatility.TRANSIENT, days=5))
+    s3.add_edge(_edge("a-new", base, rel="topic", note="noted today",
+                      vol=Volatility.TRANSIENT, days=1))
     s3.add_edge(_edge("b-surv", "B survivor value " + "pad " * 150, rel="other_topic",
                       vol=Volatility.TRANSIENT, days=1))
-    ctx3, *_ = assemble(s3, U, cfg, now=NOW, token_budget=400)
-    assert "A survivor" in ctx3 and "B survivor" in ctx3    # both survivors first
-    assert "restated in standup" not in ctx3                # the true variant waited
+    ctx3, edges3, _e3, _t3 = assemble(s3, U, cfg, now=NOW, token_budget=400)
+    ids3 = {e.id for e in edges3}
+    assert "a-new" in ids3 and "b-surv" in ids3             # both group survivors first
+    assert "a-old" not in ids3                              # the true variant waited
 
 
 # =============================================================================
@@ -593,6 +593,10 @@ def test_public_recall_rejects_a_mutated_sub_floor_cap(tmp_path):
     mem.config.item_cap_tokens = 1                          # post-construction mutation
     with pytest.raises(ValueError, match="minimum"):
         mem.recall(U, "chef")
+    mem.config.item_cap_tokens = 512
+    mem.config.wiki_render_share = 0.001                    # R-impl5-2: the share floor
+    with pytest.raises(ValueError, match="wiki slot"):
+        mem.recall(U, "chef")
     mem.close()
 
 
@@ -605,3 +609,49 @@ def test_proactive_clamp_count_is_per_item(tmp_path):
     ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
                        token_budget=floor_for("proactive"))
     assert "1 clamped]" in ctx                              # exactly one ITEM
+
+
+def test_oversized_episode_signals_and_reports(tmp_path):
+    """R-impl5-3: a 500K-char recent EPISODE clamps within budget AND signals —
+    truncated=True with the report counting it (the full I10a item taxonomy)."""
+    Episode = __import__("veracium.schema", fromlist=["Episode"]).Episode
+    s = SqliteStore(":memory:")
+    s.add_episode(Episode(
+        id="bigep", user_id=U, date=NOW.date().isoformat(), summary="e" * 500_000,
+        provenance=Provenance(source_type=SourceType.STATED,
+                              author_of_evidence=EvidenceAuthor.USER,
+                              evidence_ref="bigep", observed_at=NOW)))
+    ctx, _edges2, _eps, truncated = assemble(s, U, MemoryConfig(db_path=":memory:"),
+                                             now=NOW, token_budget=1200)
+    assert truncated                                        # the clamp SIGNALS
+    assert "1 clamped]" in ctx                              # and is COUNTED, per item
+    assert est_tokens(ctx) <= 1200
+
+
+def test_proactive_survivor_is_order_invariant(tmp_path):
+    """R-impl5-1: same-value same-envelope transients with distinct notes — the I8j
+    survivor (fresher note-bearer) renders under BOTH insertion orders at the floor;
+    and an undated DURABLE member never claims a group's survivorship from its only
+    eligible transient member."""
+    for order in (("older", "newer"), ("newer", "older")):
+        s = SqliteStore(":memory:")
+        for tag in order:
+            days = 5 if tag == "older" else 1
+            s.add_edge(_edge(f"e-{tag}", "current status " + "pad " * 150,
+                             rel="health_state", note=f"{tag.upper()}-NOTE",
+                             vol=Volatility.TRANSIENT, days=days))
+        ctx, sel, _e5, _t5 = assemble(s, U, MemoryConfig(db_path=":memory:"),
+                                      now=NOW, token_budget=floor_for("proactive"))
+        ids = {e.id for e in sel}
+        assert "e-newer" in ids, f"order {order}: wrong survivor"
+        assert "e-older" not in ids, f"order {order}: input order leaked"
+    # the eligibility seam: an undated durable group-mate is not a survivor
+    s2 = SqliteStore(":memory:")
+    s2.add_edge(_edge("durable", "project state alpha", rel="works_on",
+                      vol=Volatility.DURABLE, days=1))       # ineligible for proactive
+    s2.add_edge(_edge("transient", "project state alpha", rel="works_on",
+                      note="active this week", vol=Volatility.TRANSIENT, days=2))
+    ctx2, *_ = assemble(s2, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                        token_budget=1200)
+    assert "project state alpha" in ctx2                     # renders as the survivor,
+    assert "RESTATED VARIANTS" not in ctx2                   # never as a variant

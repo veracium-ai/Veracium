@@ -252,6 +252,15 @@ class Memory:
                 f"item allowance {MIN_ITEM_ALLOWANCE} (I10e, recall surface build)")
         if not (0 < self.config.wiki_render_share <= 1):
             raise ValueError("wiki_render_share must be in (0, 1]")
+        from .budgets import MARKER_RESERVE
+        if int(token_budget * self.config.wiki_render_share) < \
+                MIN_ITEM_ALLOWANCE + MARKER_RESERVE:
+            raise ValueError(
+                f"wiki_render_share {self.config.wiki_render_share} of token budget "
+                f"{token_budget} leaves "
+                f"{int(token_budget * self.config.wiki_render_share)} tokens for the "
+                f"wiki slot — below one clamped item + the marker reserve "
+                f"({MIN_ITEM_ALLOWANCE + MARKER_RESERVE}) (I10e, recall surface build)")
         if self.config.contested_members_per_line < 2:
             raise ValueError("contested_members_per_line < 2 (I10e, surface build)")
         if self.config.group_heading_allowance_tokens < 16:

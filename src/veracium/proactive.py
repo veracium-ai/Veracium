@@ -67,16 +67,14 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     current: list[tuple[str, Edge]] = []
     variants: list[tuple[str, Edge]] = []
     seen: set[str] = set()
-    _groups_seen: set = set()
-
     def _is_variant(e):
         k = _full_group_of.get(e.id)
         if k is None:
             return False
-        if k in _groups_seen:
-            return True
-        _groups_seen.add(k)
-        return False
+        surv = _survivor_of.get(k)
+        # the group's I8j survivor is never a variant; everyone else in the
+        # group is (R-impl5-1 — first-seen registration was input-order)
+        return surv is not None and e.id != surv
 
     # specs/0012 I8: collapse strictly-redundant duplicates BEFORE categorization
     # (a suppressed member is category-identical to its survivor: distinct notes,
@@ -95,10 +93,30 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                  _e.provenance.author_of_evidence, _e.provenance.derived_from),
                 []).append(_e)
     _full_group_of: dict = {}
+    _survivor_of: dict = {}
+    from .graph import _collapse_survivor_order
+
+    def _eligible(_m):
+        # only members this surface can actually render may claim survivorship
+        # (R-impl5-1): flagged, dated-due, or transient/ephemeral — an undated
+        # durable member never displaces the group's only eligible member.
+        if _m.needs_confirmation:
+            return True
+        _ds = _dates_in(_m.object + " " + _m.note)
+        if any(_d <= window for _d in _ds):
+            return True
+        return _m.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL)
+
     for _bk, _members in _env_buckets.items():
         for _vk, _ms in _value_groups(_members).items():
+            _gk = _bk + (_vk,)
             for _m in _ms:
-                _full_group_of[_m.id] = _bk + (_vk,)
+                _full_group_of[_m.id] = _gk
+            _elig = [_m for _m in _ms if _eligible(_m)]
+            if _elig:
+                # the I8j total order picks the group's ONE proactive survivor
+                # (note-bearing → specificity → freshest → id), input-order free
+                _survivor_of[_gk] = min(_elig, key=_collapse_survivor_order).id
 
     # volunteering gate: active + assertable (mentionable) only
     from .budgets import clamp_item as _clamp, est_tokens as _est0
@@ -181,8 +199,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     confirms.sort(key=lambda pair: (pair[1].provenance.observed_at, pair[1].id))
     # commitments/confirms/current already content-clamped at composition (labels
     # at line end survive); recents are front-framed so a tail clamp is safe
-    recents = [(clamp_item(t, ep), e) for (t, e), ep in
-               ((pair, cap) for pair in recents)]
+    _reg_recents = []
+    for t, e in recents:
+        _ct = clamp_item(t, cap)
+        if _ct != t:
+            _clamped_ids.add(e.id)                 # an oversized EPISODE signals (I10a)
+        _reg_recents.append((_ct, e))
+    recents = _reg_recents
     sections = [("## DATED COMMITMENTS", commitments),
                 ("## CONFIRM WHEN NATURAL", confirms),
                 ("## CURRENT CONTEXT", current),
