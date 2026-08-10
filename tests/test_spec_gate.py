@@ -784,3 +784,20 @@ def test_no_spec_names_a_module_or_script_that_does_not_exist():
                 bad.append(f"{spec.name}: names `{ref}`, which does not exist "
                            f"anywhere in the tree")
     assert not bad, "\n".join(bad)
+
+
+def test_reviewer_guide_carries_no_frozen_suite_counts():
+    """R11-4 (0014 round 11): the guide's hardcoded 975/5/4 drifted three releases
+    behind the suite and contradicted the very package it shipped in. Counts live in
+    COLLECTED.txt where they are measured; the guide must state the reconciliation
+    RULE (+3 git-only skips in an extracted tree), never a frozen number."""
+    import pathlib
+    import re
+
+    guide = (pathlib.Path(__file__).resolve().parent.parent
+             / "specs" / "REVIEWER_GUIDE.md").read_text()
+    frozen = re.findall(
+        r"\b\d{3,4}\s*(?:passed|/)\s*\d{1,3}\s*(?:skipped|/)\s*\d{1,3}", guide)
+    assert not frozen, (
+        "REVIEWER_GUIDE.md carries frozen suite counts (they belong in COLLECTED.txt): "
+        f"{frozen}")

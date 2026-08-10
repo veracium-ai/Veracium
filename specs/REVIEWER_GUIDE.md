@@ -226,11 +226,17 @@ nested garbage, force the escape, make cleanup raise, exercise the *other* carri
 value moves* and asserts a record still exists.
 
 ### What "green" means, precisely
-- The suite is measured **in the extracted review package**, not the dev tree. Expect
-  **975 passed / 5 skipped / 4 xfailed** (the in-repo tree reads 2 skips — three gate tests need
-  a git checkout and skip outside one). Verify the package's `COLLECTED.txt` against your own run.
-- The **4 xfails are unbuilt-by-design** — the `0014`/`0012` maintenance-attribution regressions
-  that pin a not-yet-implemented behaviour. They are expected failures, not breakage.
+- **`COLLECTED.txt` is the authoritative expectation** — this guide carries NO frozen counts
+  (R11-4/0014: a hardcoded count triple here drifted three releases behind the suite and
+  contradicted the package it shipped in; counts live where they are measured). Each package's
+  `COLLECTED.txt` records the exact command, environment, and pass/skip/xfail line.
+- **Where it is measured:** in a SEPARATE pristine checkout of the source commit (never the
+  dev tree, never inside the shipped archive — so the archive carries zero cache artifacts).
+- **Reconciling your own run in the EXTRACTED archive:** expect the `COLLECTED.txt` counts
+  with **+3 skips** — exactly the three spec-gate tests that need a git checkout and skip in
+  an extracted tree. Any other delta is a finding.
+- **xfails are unbuilt-by-design** — regressions pinning not-yet-implemented behaviour of the
+  spec under review. Their count varies by round; `COLLECTED.txt`'s line is the truth.
 - `test_spec_gate.py` (~59 tests) is the process gate; it must be green before any package ships.
 
 ### Mechanical pre-send gates
@@ -371,7 +377,8 @@ stories are the best guide to where the bodies are buried.
 - [ ] Read `PROCESS.md` and the spec being reviewed end-to-end; note its `Spec-Status`,
       `Spec-Requires`, and whether prerequisites are accepted.
 - [ ] Verify the package: archived spec is **byte-identical** to what you were sent; re-run the
-      suite in the extracted tree and reconcile with `COLLECTED.txt` (expect 975/5/4xfail).
+      suite in the extracted tree and reconcile with `COLLECTED.txt` (expect its counts +3
+      git-only skips — see "What green means").
 
 **Specification**
 - [ ] Is §4 a **construction**, not a description? Every invariant executable, every §2c cell

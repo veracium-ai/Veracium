@@ -53,6 +53,9 @@ MOTIVATING_FORMS = [
     ("0014-replay-exact-persisted", "assert O1 and O2 differ field-by-field AND the replay equals O1 exactly"),
     # R10-5 — record-identity that the shipped fresh-id remap can never satisfy
     ("0014-record-identical-reimport", "is accepted IFF it is RECORD-IDENTICAL to the existing row"),
+    # R11-1/R11-2 — the digest-identity claim + the whole-file no-op overreach
+    ("0014-migrated-digest-identical", "(a fresh v6 store and a migrated v5 store are digest-identical per `0007`)"),
+    ("0014-migrated-digest-identical", "the SAME file imported twice with `user_id=`: the second import is accepted as a no-op"),
     # R9-4 — the misclassified recomputed-class membership
     ("0014-needs-confirmation-recomputed", "`needs_confirmation` (never cleared by absorption)"),
     ("0014-liveness-trust-transfers", "mutated by inheritance (`valid_from = min`, liveness/trust transfers)"),
