@@ -40,6 +40,19 @@ def _edge(eid, author, evidence_ref, confidence, observed_at, source_id=None):
                                       source_id=source_id))
 
 
+def _evidence_ref_digest(origin: str, evidence_ref: str):
+    """The FROZEN §4a construction (R2-5), implemented inline so these tests bite the
+    moment the ledger lands — byte-exact: UTF-8, u32be length prefixes, domain-separated,
+    origin-scoped; NULL (None) iff evidence_ref == "" (empty is DEFINED as absent)."""
+    import hashlib, struct
+    if evidence_ref == "":
+        return None
+    o, e = origin.encode("utf-8"), evidence_ref.encode("utf-8")
+    return hashlib.sha256(b"veracium.evidence-ref.v1"
+                          + struct.pack(">I", len(o)) + o
+                          + struct.pack(">I", len(e)) + e).hexdigest()
+
+
 def _contributor_is_recoverable(store, user_id, survivor_id, contributor_ref) -> bool:
     """Can the source that reinforced `survivor_id` be found after the fact? The property
     `0014` will establish. Prefers the future contribution ledger; falls back to the only
@@ -114,16 +127,21 @@ class _Compactor:
 
 def _cold_mem(tmp_path):
     cfg = MemoryConfig(db_path=str(tmp_path / "c.db"), wiki_recompile_after_writes=0)
-    mem = Memory(llm=_Compactor([{"date": "2020-01-01", "summary": "compacted"}]), config=cfg)
+    # TWO outputs (R2-7): the N×M input×output relation must be exercised, not the
+    # degenerate one-output case
+    mem = Memory(llm=_Compactor([{"date": "2020-01-01", "summary": "compacted A"},
+                                 {"date": "2020-06-01", "summary": "compacted B"}]),
+                 config=cfg)
     return mem, cfg
 
 
-def _add_cold(mem, i, author, evidence_ref):
+def _add_cold(mem, i, author, evidence_ref, source_id=None):
     old = (datetime.now(timezone.utc) - timedelta(days=400)).date().isoformat()
     mem.store.add_episode(Episode(
         id=f"ep{i}", user_id="u", date=old, summary=f"cold episode {i}",
         provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
                               evidence_ref=evidence_ref, disclosure=Disclosure.MENTIONABLE,
+                              source_id=source_id,
                               observed_at=datetime.now(timezone.utc))))
 
 
@@ -152,26 +170,26 @@ def _summary_contributor_sources(store, user_id, summary) -> set:
     "deletion."))
 def test_consolidation_contributors_survive_input_deletion(tmp_path):
     mem, cfg = _cold_mem(tmp_path)
-    _add_cold(mem, 0, EvidenceAuthor.USER, "user-onboarding")
+    _add_cold(mem, 0, EvidenceAuthor.USER, "user-onboarding", source_id="mailbox:me")
     for i in range(1, 9):                    # >= consolidate_min_batch (8) cold inputs
-        _add_cold(mem, i, EvidenceAuthor.THIRD_PARTY, "badfeed-ep")
+        _add_cold(mem, i, EvidenceAuthor.THIRD_PARTY, "badfeed-ep",
+                  source_id="feed:bad")     # source_id SUPPLIED (R2-7)
     result = consolidate(mem.store, _Compactor([{"date": "2020-01-01", "summary": "compacted"}]),
                          "u", cfg)
     assert result["consolidated"] > 0, f"consolidation did not run: {result}"
 
     outputs = [e for e in mem.store.episodes("u") if e.lineage]
-    assert outputs, "no consolidation output was written"
-    summary = outputs[0]
-    assert summary.lineage                                    # the input IDs ARE recorded (0010)
+    assert len(outputs) == 2, "the N×M case needs BOTH outputs (R2-7)"
 
-    # ...but the SOURCE behind those inputs is gone — a summary carrying badfeed's material
-    # cannot be identified as carrying it (0014 §3.2). Fails today.
-    sources = _summary_contributor_sources(mem.store, "u", summary)
-    # today (pre-ledger) the fallback yields raw refs and this XFAILS on the empty set;
-    # the 0014 flip updates this assertion to the evidence_ref_digest comparison in the
-    # same commit that lands the ledger (§7b — the digest function does not exist yet,
-    # so pretending to compare against it here would be a non-biting test).
-    assert "badfeed-ep" in sources, (
+    # the SOURCE behind the inputs must be recoverable from EVERY output (N×M, R1-1),
+    # compared by the FROZEN digest construction computed inline — content-free (R2-7).
+    # The store resolves origin per 0006 §4.6; read it back the same way for the expected
+    # digest. Fails today (no ledger): the recovered sets are empty.
+    origin = mem.store.local_origin()
+    expected = _evidence_ref_digest(origin, "badfeed-ep")
+    for summary in outputs:
+        sources = _summary_contributor_sources(mem.store, "u", summary)
+        assert expected in sources or "badfeed-ep" in sources, (
         "a consolidation summary cannot name the sources that fed it — its inputs were "
         "deleted and lineage ids resolve to nothing (finding, 0014 §3.2/A2)")
     mem.close()
@@ -196,10 +214,11 @@ def _absorption_contributor_queryable(store, winner_id, contributor_ref) -> bool
     contributions = getattr(store, "contributions", None)
     if contributions is not None:
         try:
-            rows = contributions("u", "edge", winner_id)      # the v5 typed read (R1-7)
-            return any(getattr(c, "evidence_ref_digest", None) is not None
-                       or getattr(c, "identity_digest", None) is not None
-                       or getattr(c, "site", None) == "absorption"
+            rows = contributions("u", "edge", winner_id)      # the typed read (R1-7)
+            expected = _evidence_ref_digest(store.local_origin(), contributor_ref)
+            # prove THE contributor: site + the frozen-construction digest match (R2-7)
+            return any(getattr(c, "site", None) == "absorption"
+                       and getattr(c, "evidence_ref_digest", None) == expected
                        for c in rows)
         except NotImplementedError:
             pass
