@@ -879,3 +879,34 @@ def test_conditional_skip_inventory_is_complete():
             dead.append(f"{f} [{kind}: {token!r}]")
     assert not dead, (
         f"inventory entries matching no live skip site (stale — remove): {dead}")
+
+
+def test_collected_inventory_matches_the_generator():
+    """R14-1 (0014 round 14): the R13-3 gate proved module<->tests completeness
+    but never read COLLECTED.txt — a hand-edited or stale shipped inventory
+    passed green. This test binds the reviewer-facing carrier: in an extracted
+    review package (where COLLECTED.txt exists at the tree root) the marked
+    inventory section must equal skip_inventory.render() BYTE-FOR-BYTE. In a
+    git checkout and in the packaging run copy no COLLECTED.txt exists and the
+    test skips (inventoried). Packaging additionally runs this same comparison
+    standalone after writing COLLECTED, before sealing."""
+    import pathlib
+    import sys
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    collected = root / "COLLECTED.txt"
+    if not collected.exists():
+        import pytest
+        pytest.skip("COLLECTED.txt not present (exists only in a sealed review package)")
+
+    sys.path.insert(0, str(root / "specs"))
+    from skip_inventory import render
+
+    text = collected.read_text()
+    begin, end = "<!-- GENERATED:skip-inventory -->", "<!-- /GENERATED:skip-inventory -->"
+    assert begin in text and end in text, (
+        "COLLECTED.txt lacks the generated-inventory markers")
+    section = text.split(begin, 1)[1].split(end, 1)[0].strip("\n")
+    assert section == render(), (
+        "COLLECTED.txt's inventory section differs from skip_inventory.render() "
+        "(stale, hand-edited, or duplicated — regenerate at packaging)")

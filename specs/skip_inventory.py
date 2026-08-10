@@ -19,12 +19,21 @@ multi-line messages). `condition_class` is one of:
   optional-dependency — skips when an optional package is absent
   host-conditional    — depends on host state (files present, runtime
                         identity, euid); the usual source of reviewer deltas
-COLLECTED.txt's inventory section is generated from this module — one source.
+  package-artifact    — runs only inside an extracted review package (R14-1)
+COLLECTED.txt's inventory section is generated from this module — one source,
+and BOUND at both ends (R14-1): packaging asserts the marked COLLECTED section
+equals render() before sealing, and
+tests/test_spec_gate.py::test_collected_inventory_matches_the_generator makes
+the same assertion inside the extracted package, so a stale or hand-edited
+shipped inventory fails in the reviewer's own run.
 """
 
 INVENTORY = [
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK is absent"),
+    ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
+     "package-artifact", "binds COLLECTED's inventory to render(); runs only in "
+                         "an extracted review package"),
     ("tests/test_eval.py", "skipif", "VERACIUM_EVAL",
      "env-flag", "live acceptance-eval tier"),
     ("tests/test_robustness.py", "skipif", "VERACIUM_ROBUSTNESS",
@@ -55,13 +64,17 @@ def render() -> str:
     classes = {}
     for f, kind, token, cls, reason in INVENTORY:
         classes.setdefault(cls, []).append(f"{f} ({kind}: {reason})")
-    order = ["git-checkout", "env-flag", "optional-dependency", "host-conditional"]
+    order = ["git-checkout", "env-flag", "optional-dependency", "package-artifact",
+             "host-conditional"]
     blurb = {
         "git-checkout": ("git-checkout-dependent (SKIPPED in the measured line — the "
                          "measuring copy has no .git — and in your extracted run):"),
         "env-flag": "env-flag tiers (SKIPPED unless the flag is set; part of the measured line):",
         "optional-dependency": ("optional-dependency (PASS where the package is installed, "
                                 "SKIP where absent):"),
+        "package-artifact": ("package-artifact (SKIPPED in the measured line and in git "
+                             "checkouts; RUNS in your extracted package, where "
+                             "COLLECTED.txt exists — so your run gains one PASS here):"),
         "host-conditional": ("host-conditional (may differ between the authoring host and "
                              "yours — the usual source of reviewer deltas):"),
     }

@@ -5,7 +5,19 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v17, 2026-08-10) — round 13 folded (three bin-(a), classified before fixed; all
+> **draft (v18, 2026-08-10) — round 14 folded (ONE bin-(a); R13-1 and R13-2 CLOSED, the
+> reviewer's suite delta reconciled exactly for the first time):** the generated skip
+> inventory is BOUND TO ITS CARRIER (R14-1, class E found in R13-3's fix — the gate bound
+> the module to the tests but never read COLLECTED.txt, so a hand-edited shipped inventory
+> passed green): COLLECTED's inventory section sits between explicit GENERATED markers;
+> packaging asserts section == skip_inventory.render() byte-for-byte after writing and
+> before sealing (standalone comparison, no cache); and
+> test_collected_inventory_matches_the_generator makes the SAME assertion inside the
+> extracted package — the reviewer's own run fails on a stale carrier. The new
+> package-artifact skip site is itself inventoried and counted by the completeness gate.
+> The durable check: a verification must bind the artifact THE CONSUMER READS, not an
+> internal proxy. v18 = the round-15 resubmission. Earlier (v17): round 13 folded (three
+> bin-(a), classified before fixed; all
 > three found in prior folds' fixes; R12-2 closed):** the complete ALTER-path
 > `sqlite_master.sql` LITERAL is in §4b — authored empirically on the qualified 3.45.1,
 > matching the reviewer's measured layout (columns appended before the table-level
@@ -1249,3 +1261,4 @@ their rulings so the reasoning survives into design lock.*
 | **v15** | **round 11 EXTERNAL (2026-08-10): FOUR bin-(a) folded, classified first, three found in v14's fixes (R11-1…R11-4 — `MANIFESTS[6]` as `0013` §4e's manifest SET, the deferred first-ALTER model NOT relied on and the digest-identity claim withdrawn; the re-import no-op scoped to the indexed output with shipped copy semantics for ordinary records; the mechanically closed source-identity projection with totality + mutation oracles; REVIEWER_GUIDE carries no frozen counts — COLLECTED.txt authoritative, the +3-git-skip reconciliation rule stated, a gate test forbidding count triples)** | 4 | `specs/reviews.py`; this document |
 | **v16** | **round 12 EXTERNAL (2026-08-10): FOUR bin-(a) folded, classified first, three found in v15's fixes (R12-1…R12-4 — the independently authored ALTER-path expectation (the migration byte-matches, never defines — `0013` §4c honoured at last); the frozen repeated-import fixture with corrected arithmetic (3 episodes total, split asserted); the three-set projection (excluded / normalized-and-compared / verbatim) with the three-sided oracle; the self-proving reviewer-guide gate + the named environment-conditional skip inventory in COLLECTED)** | 4 | `specs/reviews.py`; this document |
 | **v17** | **round 13 EXTERNAL (2026-08-10): THREE bin-(a) folded, classified first, all found in prior folds' fixes; R12-2 closed (R13-1…R13-3 — the complete ALTER-path DDL literal + digest IN the spec, authored on the qualified runtime, authorized by the review itself; the two-set projection riding `0010`'s stable historical namespace after the invented lineage remap was retired; the generated skip inventory with the two-directional completeness gate)** | 3 | `specs/reviews.py`; this document |
+| **v18** | **round 14 EXTERNAL (2026-08-10): ONE bin-(a) folded (R14-1 — the inventory carrier bound at both ends: packaging-time byte-equality assertion + the in-package test that fails a stale COLLECTED in the reviewer's own extraction; the package-artifact skip site inventoried); R13-1/R13-2 closed, the delta reconciled exactly** | 1 | `specs/reviews.py`; this document |
