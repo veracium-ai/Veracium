@@ -17,15 +17,15 @@
 
 | call site | in | mutator | fp | state | class | trust fields touched | evidence | verdict | test / owning spec |
 |---|---|---|---|---|---|---|---|---|---|
-| `src/veracium/__init__.py:613` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
-| `src/veracium/__init__.py:615` | `Memory.dispute()` | `add_episode` | `4e11253939a4` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
-| `src/veracium/__init__.py:665` | `Memory.confirm()` | `confirm_edge` | `0f81d39ca11c` | `clean` | write-time | `needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation | act | clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7) | `test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known` |
-| `src/veracium/__init__.py:734` | `Memory.record_outcome()` | `append_outcome_if_head` | `65802c446a27` | `clean` | write-time | episode provenance / `author_of_evidence` (new chain link — NEVER overwritten) | act | clean — **`specs/0009` (ACCEPTED): M4 CLOSED.** `record_outcome` now APPENDS a new chain link via the CAS `append_outcome_if_head` (never mutates a prior judgment's author, H1); the Store assigns `seq`/id and DERIVES `source_type`; counters are derived from chain heads (H6). | `test_outcome_authorship_is_never_overwritten` · `test_record_outcome_is_edge_blind_never_supersedes` |
-| `src/veracium/__init__.py:752` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
-| `src/veracium/__init__.py:804` | `Memory.correct()` | `invalidate_edge` | `c81beaca32cb` | `open_moved` | write-time | `active`, `invalidation_reason=corrected` | act | ➡️ **MOVED to `0003` §1b** — this is a supersession path | tracked as 0003 I9/I10 [M7-correct] |
-| `src/veracium/__init__.py:813` | `Memory.correct()` | `add_edge` | `72b03718535b` | `open_moved` | write-time | **`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes` | act | ➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class | tracked as 0003 I10 [M7-correct] |
-| `src/veracium/__init__.py:814` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `open_moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 [M7-correct] |
-| `src/veracium/__init__.py:835` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
+| `src/veracium/__init__.py:735` | `Memory.dispute()` | `invalidate_edge` | `3bbd6e160bb1` | `clean` | write-time | `active`, `invalidation_reason` | act | clean — narrows only | `test_dispute_removes_from_assertable_but_keeps_history` |
+| `src/veracium/__init__.py:737` | `Memory.dispute()` | `add_episode` | `4e11253939a4` | `clean` | write-time | episode provenance | act | clean | `test_dispute_removes_from_assertable_but_keeps_history` |
+| `src/veracium/__init__.py:787` | `Memory.confirm()` | `confirm_edge` | `0f81d39ca11c` | `clean` | write-time | `needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation | act | clean — `specs/0008`: `confirm()` is the ONLY path that clears `needs_confirmation`, through the atomic `confirm_edge` (M2 first-known immutability preserved; the record is mandatory, C7) | `test_confirm_clears_staleness` · `test_confirm_advances_liveness_not_first_known` |
+| `src/veracium/__init__.py:856` | `Memory.record_outcome()` | `append_outcome_if_head` | `65802c446a27` | `clean` | write-time | episode provenance / `author_of_evidence` (new chain link — NEVER overwritten) | act | clean — **`specs/0009` (ACCEPTED): M4 CLOSED.** `record_outcome` now APPENDS a new chain link via the CAS `append_outcome_if_head` (never mutates a prior judgment's author, H1); the Store assigns `seq`/id and DERIVES `source_type`; counters are derived from chain heads (H6). | `test_outcome_authorship_is_never_overwritten` · `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:874` | `Memory.record_outcome()` | `add_edge` | `5b46e2531803` | `clean` | write-time | `outcome_counts`, `last_outcome`, `needs_confirmation` | act | clean — counters are information, never gating | `test_record_outcome_is_edge_blind_never_supersedes` |
+| `src/veracium/__init__.py:926` | `Memory.correct()` | `invalidate_edge` | `c81beaca32cb` | `open_moved` | write-time | `active`, `invalidation_reason=corrected` | act | ➡️ **MOVED to `0003` §1b** — this is a supersession path | tracked as 0003 I9/I10 [M7-correct] |
+| `src/veracium/__init__.py:935` | `Memory.correct()` | `add_edge` | `72b03718535b` | `open_moved` | write-time | **`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes` | act | ➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class | tracked as 0003 I10 [M7-correct] |
+| `src/veracium/__init__.py:936` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `open_moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 [M7-correct] |
+| `src/veracium/__init__.py:957` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
 | `src/veracium/cli.py:249` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
 | `src/veracium/compile.py:202` | `compile_wiki()` | `set_wiki` | `888fd4a4d703` | `open_moved` | maintain-time | none directly — **caches a trust decision** (now carries the compiler-policy digest envelope, `0003` §4c-ii) | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation; `0003` drops the wiki on a refusal-contention transition, but the general trust-reducing-invalidation drop is 0004 | tracked as 0004 W1–W4 [M8-wiki] |
 | `src/veracium/graph.py:105` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
@@ -52,63 +52,63 @@
 
 ```
 3bbd6e160bb1
-  file:    src/veracium/__init__.py:613
+  file:    src/veracium/__init__.py:735
   scope:   Memory.dispute()
   mutator: invalidate_edge
   call:    self.store.invalidate_edge(edge_id, utcnow(), 'disputed')
   context: -
 
 4e11253939a4
-  file:    src/veracium/__init__.py:615
+  file:    src/veracium/__init__.py:737
   scope:   Memory.dispute()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=today, summary=f"({actor}) disputed the remembered fact '{edge.relation}: {edge.object}'{note}", provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER, evidence_ref=f'dispute:{edge_id}')))
   context: -
 
 0f81d39ca11c
-  file:    src/veracium/__init__.py:665
+  file:    src/veracium/__init__.py:787
   scope:   Memory.confirm()
   mutator: confirm_edge
   call:    self.store.confirm_edge(user_id, edge_id, actor=actor, call_path=call_path, correlation_id=correlation_id, request_digest=request_digest, confirmed_at=when)
   context: -
 
 65802c446a27
-  file:    src/veracium/__init__.py:734
+  file:    src/veracium/__init__.py:856
   scope:   Memory.record_outcome()
   mutator: append_outcome_if_head
   call:    self.store.append_outcome_if_head(user_id, edge_id, evidence_ref, head.id if head is not None else None, draft)
   context: while(True)
 
 5b46e2531803
-  file:    src/veracium/__init__.py:752
+  file:    src/veracium/__init__.py:874
   scope:   Memory.record_outcome()
   mutator: add_edge
   call:    self.store.add_edge(edge)
   context: -
 
 c81beaca32cb
-  file:    src/veracium/__init__.py:804
+  file:    src/veracium/__init__.py:926
   scope:   Memory.correct()
   mutator: invalidate_edge
   call:    self.store.invalidate_edge(edge_id, when, 'corrected')
   context: -
 
 72b03718535b
-  file:    src/veracium/__init__.py:813
+  file:    src/veracium/__init__.py:935
   scope:   Memory.correct()
   mutator: add_edge
   call:    self.store.add_edge(new)
   context: -
 
 23255a7f3c3f
-  file:    src/veracium/__init__.py:814
+  file:    src/veracium/__init__.py:936
   scope:   Memory.correct()
   mutator: add_episode
   call:    self.store.add_episode(Episode(id=f'ep-{uuid4().hex[:12]}', user_id=user_id, date=date, summary=f"({actor}) corrected '{edge.relation}: {edge.object}' to '{corrected_value}'", provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER, evidence_ref=evidence_ref or f'correct:{edge_id}', observed_at=when)))
   context: -
 
 c5d9e9e2da39
-  file:    src/veracium/__init__.py:835
+  file:    src/veracium/__init__.py:957
   scope:   Memory.forget()
   mutator: forget_user
   call:    self.store.forget_user(user_id)

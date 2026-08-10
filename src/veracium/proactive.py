@@ -73,27 +73,38 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # the truthful earliest-since and the ×N flagged count.
     surfaced, _c_info = collapse_for_render(list(store.edges(user_id)))
     # volunteering gate: active + assertable (mentionable) only
+    from .budgets import clamp_item as _clamp
+    _cap = getattr(config, "item_cap_tokens", 512)
+
+    def _obj(e):
+        # content clamp BEFORE framing: the due/confirm instructions render after
+        # the object, so a whole-line tail clamp would sever them (I10c)
+        return _clamp(e.object, max(16, _cap - 48))
+
     for e in surfaced:
         if not e.assertable:
             continue
         dates = _dates_in(e.object + " " + e.note)
         due = [d for d in dates if d <= window]
-        if due:
-            d = min(due)
-            flag = f" (OVERDUE — was due {d})" if d < today else f" (due {d})"
-            commitments.append((f"{e.relation}: {e.object}{flag}", e))
-            seen.add(e.id)
-            continue
+        # specs/0012 I10f: class assignment is a PRECEDENCE mirroring the surface
+        # order — a flagged edge classifies into its WARNING tier even when it also
+        # carries a due date (flagged > commitment); it renders ONCE.
         if e.needs_confirmation:
             xn = _c_info.get(e.id, {}).get("flagged_hidden", 0)
             tail = f" (×{xn + 1} restatements need confirmation)" if xn else ""
-            confirms.append((f"{e.relation}: {e.object} — confirm when natural "
+            confirms.append((f"{e.relation}: {_obj(e)} — confirm when natural "
                              f"(unrefreshed since {e.provenance.observed_at.date()}){tail}", e))
+            seen.add(e.id)
+            continue
+        if due:
+            d = min(due)
+            flag = f" (OVERDUE — was due {d})" if d < today else f" (due {d})"
+            commitments.append((f"{e.relation}: {_obj(e)}{flag}", e))
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
             since_dt = _c_info.get(e.id, {}).get("since", e.valid_from)
-            current.append((f"{e.relation}: {e.object} "
+            current.append((f"{e.relation}: {_obj(e)} "
                             f"(since {since_dt.date()} — worth a follow-up)", e))
             seen.add(e.id)
 
@@ -109,11 +120,32 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             recents.append((f"[{ep.date}] {ep.summary}", ep))
     recents = recents[-config.max_recent_episodes:]
 
+    # specs/0012 I10b: deterministic within-section order — commitments nearest-due
+    # first, warnings most-overdue first (ties: observed_at then id); items clamped at
+    # the cap (I10a) with framing intact (I10c).
+    from .budgets import clamp_item
+    cap = getattr(config, "item_cap_tokens", 512)
+
+    def _due_key(pair):
+        text, e = pair
+        ds = _dates_in(e.object + " " + e.note)
+        return (min(ds) if ds else today, e.provenance.observed_at, e.id)
+
+    commitments.sort(key=_due_key)
+    confirms.sort(key=lambda pair: (pair[1].provenance.observed_at, pair[1].id))
+    # commitments/confirms/current already content-clamped at composition (labels
+    # at line end survive); recents are front-framed so a tail clamp is safe
+    recents = [(clamp_item(t, ep), e) for (t, e), ep in
+               ((pair, cap) for pair in recents)]
     sections = [("## DATED COMMITMENTS", commitments),
                 ("## CONFIRM WHEN NATURAL", confirms),
                 ("## CURRENT CONTEXT", current),
                 ("## RECENT HISTORY", recents)]
 
+    if token_budget is not None:
+        from .budgets import validate_budget
+        validate_budget("proactive", token_budget,
+                        getattr(config, "group_heading_allowance_tokens", 48))
     remaining = token_budget if token_budget is not None else None
     truncated = False
     parts: list[str] = []

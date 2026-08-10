@@ -87,10 +87,27 @@ def test_recall_none_wires_proactive_and_respects_budget():
             assert r.unverified == ""                  # never volunteered
             assert r.grounded == r.context
 
-            tight = mem.recall("u", token_budget=30)   # commitments outrank history
+            # specs/0012 I10e: sub-floor budgets now raise; the priority intent
+            # (commitments outrank history) exercises at a just-above-floor budget
+            # with padded history that cannot fit.
+            from datetime import datetime, timezone as _tz
+            from veracium.schema import (Episode as _Ep, EvidenceAuthor as _A,
+                                         Provenance as _P, SourceType as _S)
+            for i in range(12):
+                mem.store.add_episode(_Ep(
+                    id=f"pad-ep{i}", user_id="u", date=NOW.date().isoformat(),
+                    summary=f"an intentionally verbose recent-history line {i} that "
+                            f"occupies a meaningful share of a tight token budget",
+                    provenance=_P(source_type=_S.STATED, author_of_evidence=_A.USER,
+                                  evidence_ref=f"pad-{i}",
+                                  observed_at=datetime.now(_tz.utc))))
+            import pytest as _pytest
+            with _pytest.raises(ValueError, match="below its floor"):
+                mem.recall("u", token_budget=30)
+            tight = mem.recall("u", token_budget=245)  # just above the proactive floor
             assert tight.truncated
             assert "OVERDUE" in tight.context or "due 2026-07-28" in tight.context
-            assert "RECENT HISTORY" not in tight.context
+            assert tight.context.count("verbose recent-history line") < 12
         finally:
             p.assemble = real
         mem.close()

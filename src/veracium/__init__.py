@@ -33,7 +33,7 @@ from .config import MemoryConfig
 # from gate rather than restated — the previous local copy was narrower than
 # selfcheck's and under-counted abstentions.
 from .gate import ABSTAINED as _ABSTAINED  # noqa: E402
-from .graph import subgraph_for_query
+from .graph import subgraph_for_query, render_edges
 from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
 from .authority import edge_effective as _edge_effective
@@ -276,7 +276,7 @@ class Memory:
             contested_block, spent, c_trunc = self._render_contested(
                 contested, token_budget, self._est_tokens)
             wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
-                wiki, detail_edges, episodes, max(0, token_budget - spent))
+                wiki, detail_edges, episodes, max(0, token_budget - spent), query)
             truncated = c_trunc or d_trunc
 
         grounded_parts = []
@@ -301,19 +301,57 @@ class Memory:
                       tokens_estimated=self._est_tokens(context), truncated=truncated,
                       contested=contested)
 
-    @staticmethod
-    def _contested_line(g: "ContestedGroup") -> Optional[str]:
-        """One deterministic line for a contested group: every GROUNDED (assertable) exposed
-        value, higher authority first, each tagged with its author class. A fenced member is
-        NOT shown here — it stays in the unverified channel (partition-preserving, §4c-ii);
-        this grounded block only ever preserves what the gate would already assert. Returns
-        None if the group has no assertable member (nothing to preserve in grounded)."""
+    def _contested_line(self, g: "ContestedGroup",
+                        line_budget: Optional[int] = None) -> Optional[str]:
+        """One deterministic line for a contested group, budget-aware PACKED per
+        specs/0012 §4c (I10i): the heading's subject/relation render CONTENT-CLAMPED
+        under the group-heading allowance; the withheld marker is reserved FIRST; the
+        MANDATORY member — the highest-effective-authority grounded member, which IS the
+        preserved grounded prior here (the roles may alias; `0003` orders exposed higher
+        authority first) — is emitted with content clamped to the remaining budget;
+        further members are admitted only while they fit WHOLE, the emitted count
+        reducing dynamically below `contested_members_per_line`; the withheld count
+        reflects everything not emitted. A fenced member is NOT shown here — it stays in
+        the unverified channel (partition-preserving, §4c-ii). Returns None if the group
+        has no assertable member."""
+        from .budgets import (MEMBER_FRAMING_COST, MIN_MEMBER_CONTENT,
+                              WITHHELD_MARKER_RESERVE, clamp_item, est_tokens)
         grounded = [e for e in g.exposed if e.assertable]
         if not grounded:
             return None
-        vals = " / ".join(f"{e.object} [{e.provenance.author_of_evidence.value}]"
-                          for e in grounded)
-        return f"- {g.subject} {g.relation}: {vals} — CONTESTED (no single current value)"
+        k_cap = self.config.contested_members_per_line
+        head = clamp_item(f"{g.subject} {g.relation}",
+                          self.config.group_heading_allowance_tokens)
+        tail = " — CONTESTED (no single current value)"
+
+        def _member(e, content_cap):
+            return (f"{clamp_item(e.object, content_cap)} "
+                    f"[{e.provenance.author_of_evidence.value}]")
+
+        if line_budget is None:
+            members = [_member(e, self.config.item_cap_tokens) for e in grounded[:k_cap]]
+            withheld = len(grounded) - len(members)
+        else:
+            remaining = (line_budget - est_tokens(f"- {head}: {tail}")
+                         - WITHHELD_MARKER_RESERVE)
+            # the mandatory member, content-clamped to what remains (never dropped)
+            first_cap = max(MIN_MEMBER_CONTENT,
+                            min(self.config.item_cap_tokens,
+                                remaining - MEMBER_FRAMING_COST))
+            members = [_member(grounded[0], first_cap)]
+            remaining -= est_tokens(members[0])
+            for e in grounded[1:]:
+                if len(members) >= k_cap:
+                    break
+                cand = _member(e, self.config.item_cap_tokens)
+                if est_tokens(cand) > remaining:           # admit only while it fits WHOLE
+                    continue
+                members.append(cand)
+                remaining -= est_tokens(cand)
+            withheld = len(grounded) - len(members)
+        vals = " / ".join(members)
+        wh = f" (+{withheld} more contending values withheld)" if withheld > 0 else ""
+        return f"- {head}: {vals}{wh}{tail}"
 
     def _render_contested(self, contested, budget=None, est=None):
         """Render the deterministic CONTESTED FUNCTIONAL FACTS block from the grounded
@@ -324,19 +362,25 @@ class Memory:
         if not contested:
             return "", 0, False
         heading = "## CONTESTED FUNCTIONAL FACTS (no single current value; do not assert one)"
-        lines = [ln for ln in (self._contested_line(g) for g in contested) if ln]
-        if not lines:
-            return "", 0, False
         if budget is None or est is None:
+            lines = [ln for ln in (self._contested_line(g) for g in contested) if ln]
+            if not lines:
+                return "", 0, False
             return heading + "\n" + "\n".join(lines), 0, False
         remaining = budget - est(heading + "\n")
         sel, truncated = [], False
-        for line in lines:
+        for g in contested:
+            # I10i: each group line is PACKED within what remains — one group can
+            # never break the budget (the first line is best-effort unconditional)
+            line = self._contested_line(g, line_budget=remaining if sel else
+                                        max(remaining, 1))
+            if line is None:
+                continue
             cost = est(line)
             if cost > remaining and sel:
                 truncated = True
                 break
-            sel.append(line)                      # first line best-effort unconditional
+            sel.append(line)
             remaining -= cost
         if not sel:
             return "", 0, False
@@ -388,67 +432,145 @@ class Memory:
         return result, exposed_all
 
     def _fit_to_budget(self, wiki: Optional[str], edges, episodes,
-                       budget: int) -> tuple[Optional[str], str, str, bool]:
-        """Greedy selection under the token budget, in priority order:
+                       budget: int, query: str = "") -> tuple[Optional[str], str, str, bool]:
+        """Greedy selection under the token budget in the specs/0012 I10f precedence
+        (mirroring the surface order; the contested block was already charged upstream):
 
-        1. query-matched assertable detail (edge lines, already relevance-sorted);
-        2. unverified-claim/report lines — safety context: if the host is about
-           to reason near a claim, the never-assert flag must survive trimming;
-        3. the wiki (curated breadth), all-or-nothing — it is pre-budgeted at
-           compile time and loses its meaning cut mid-sentence;
-        4. recent episodes, newest first (rendered chronologically).
+        1. query-RELEVANT flagged assertable detail (warnings, most-overdue first);
+        2. claim/inference flag lines — safety context, BEFORE the wiki (I10h);
+        3. remaining assertable detail (query-relevant first, then unrelated flagged,
+           then the rest in relevance order);
+        4. the wiki, under its render SHARE of the budget, body clamped with the
+           compile marker line kept intact (the framing is never severed);
+        5. grounded episodes, newest-first admission, rendered chronologically.
 
-        Sections stop at the first line that doesn't fit (lines are
-        relevance/recency-sorted — skipping a long important line to admit a
-        short unimportant one would invert the ranking). Best-effort minimum:
-        the single top item is always included even if it alone overflows."""
+        Every item is clamped at the item cap (framing + content, I10a); the
+        truncation report marker is charged from the reserve BEFORE selection and
+        reports dropped counts per class, SAFETY distinctly (I10b); class decides
+        priority, the gate decides presentation — classification never moves an
+        item across the partition (I10f)."""
+        from .budgets import MARKER_RESERVE, clamp_item
         est = self._est_tokens
-        edge_lines, ep_lines, claim_lines, tp_ep_lines = _gate.partition_parts(
-            edges, episodes)
-        unv_lines = claim_lines + tp_ep_lines
+        cap = self.config.item_cap_tokens
+        qtok = set(re.findall(r"[a-z0-9]+", (query or "").lower()))
+
+        def _rel(e) -> bool:
+            etok = set(re.findall(r"[a-z0-9]+",
+                                   f"{e.subject} {e.relation} {e.object} {e.note}".lower()))
+            return bool(qtok & etok)
+
+        assertable = [e for e in edges if e.assertable]
+        flagged_rel = [e for e in assertable if e.needs_confirmation and _rel(e)]
+        flagged_rel.sort(key=lambda e: (e.provenance.observed_at, e.id))   # most overdue
+        flagged_unrel = [e for e in assertable if e.needs_confirmation and not _rel(e)]
+        flagged_unrel.sort(key=lambda e: (e.provenance.observed_at, e.id))
+        plain = [e for e in assertable if not e.needs_confirmation]        # relevance order
+
+        from .budgets import clamp_edge_line
+
+        claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]
+        # claim lines carry their never-assert label at the FRONT; content still
+        # clamps first so the label+content pair stays within the cap (I10c)
+        claim_lines = [ln for ln in
+                       (clamp_edge_line(e, cap, render_edges) for e in claim_edges) if ln]
+        ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
+                    if not e.provenance.third_party_influenced]
+        tp_ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes
+                       if e.provenance.third_party_influenced]
+
         headers = est("## RELEVANT DETAIL\n") \
             + est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
-        remaining = budget - headers
-        truncated = False
+        remaining = budget - headers - MARKER_RESERVE          # I10b: report reserved first
+
+        n_clamped = 0
+
+        def _admit_edges(es, sel, best_effort_first=False):
+            # I10a: the best-effort FIRST item is clamped TO FIT the remaining budget
+            # (content-first, so its safety framing survives) — an oversized item is
+            # clamped, never emitted whole and never silently dropped; a clamp is a
+            # truncation EVENT and is counted, never silent
+            dropped = 0
+            nonlocal remaining, n_clamped
+            for k, e in enumerate(es):
+                raw = render_edges([e])
+                line = clamp_edge_line(e, cap, render_edges)
+                if not line:
+                    continue
+                if est(raw) > cap:
+                    n_clamped += 1
+                cost = est(line)
+                if cost > remaining:
+                    if best_effort_first and k == 0 and not sel and remaining >= 16:
+                        line = clamp_edge_line(e, remaining, render_edges)
+                        cost = est(line)
+                        if cost <= remaining:
+                            sel.append(line)
+                            remaining -= cost
+                            continue
+                    dropped += 1
+                    continue
+                sel.append(line)
+                remaining -= cost
+            return dropped
+
+        def _admit(lines, sel):
+            dropped = 0
+            nonlocal remaining
+            for line in lines:
+                cost = est(line)
+                if cost > remaining:
+                    dropped += 1
+                    continue
+                sel.append(line)
+                remaining -= cost
+            return dropped
 
         sel_edges: list[str] = []
-        for line in edge_lines:
-            cost = est(line)
-            if cost > remaining and sel_edges:
-                truncated = True
-                break
-            sel_edges.append(line)      # first item is best-effort unconditional
-            remaining -= cost
-
+        d_flag_rel = _admit_edges(flagged_rel, sel_edges, best_effort_first=True)
         sel_unv: list[str] = []
-        for line in unv_lines:
-            cost = est(line)
-            if cost > remaining:
-                truncated = True
-                break
-            sel_unv.append(line)
-            remaining -= cost
+        d_safety = _admit(claim_lines + tp_ep_lines, sel_unv)
+        d_flag_unrel = _admit_edges(flagged_unrel, sel_edges)
+        d_plain = _admit_edges(plain, sel_edges, best_effort_first=not sel_edges)
 
-        if wiki and est(wiki) <= remaining:
-            remaining -= est(wiki)
-        else:
-            truncated = truncated or bool(wiki)
-            wiki = None
+        wiki_dropped = False
+        if wiki:
+            share_cap = int(budget * self.config.wiki_render_share)
+            allowance = min(remaining, share_cap)
+            if est(wiki) <= allowance:
+                remaining -= est(wiki)
+            else:
+                marker_ln = wiki.splitlines()[-1] if wiki.splitlines() else ""
+                keep_marker = marker_ln.startswith("[[veracium-wiki-compile:")
+                body_allow = allowance - (est(marker_ln) if keep_marker else 0)
+                if body_allow >= 16:                       # clamp the BODY, keep the marker
+                    body = "\n".join(wiki.splitlines()[:-1]) if keep_marker else wiki
+                    clamped = clamp_item(body, body_allow)
+                    wiki = clamped + ("\n" + marker_ln if keep_marker else "")
+                    remaining -= est(wiki)
+                    wiki_dropped = True                    # counted as clamped in the report
+                else:
+                    wiki, wiki_dropped = None, True
 
         sel_eps: list[str] = []
-        n_grounded_eps = len(ep_lines)
-        for line in reversed(ep_lines):          # newest first under budget
+        d_eps = 0
+        for line in reversed(ep_lines):                    # newest first under budget
             cost = est(line)
             if cost > remaining:
-                truncated = True
-                break
+                d_eps += 1
+                continue
             sel_eps.append(line)
             remaining -= cost
-        sel_eps.reverse()                        # render chronologically
-        truncated = truncated or len(sel_eps) < n_grounded_eps \
-            or len(sel_edges) < len(edge_lines) or len(sel_unv) < len(unv_lines)
+        sel_eps.reverse()                                  # render chronologically
 
+        d_detail = d_flag_rel + d_flag_unrel + d_plain
+        truncated = bool(d_detail or d_safety or wiki_dropped or d_eps or n_clamped)
         detail = "\n".join(sel_edges + sel_eps).strip()
+        if truncated:                                      # the I10b report, per class
+            detail = (detail + ("\n" if detail else "")
+                      + f"[budget: dropped {d_detail} detail / {d_safety} SAFETY / "
+                        f"{n_clamped} clamped / "
+                        f"wiki {'clamped-or-dropped' if wiki_dropped else 'kept'} / "
+                        f"{d_eps} episodes]")
         unverified = "\n".join(sel_unv).strip()
         return wiki, detail, unverified, truncated
 

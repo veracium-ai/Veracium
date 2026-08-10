@@ -123,3 +123,26 @@ def parse_compile_marker(body: Optional[str]) -> dict:
 
 # --- the provider-free stale-cache notice (0012 I10l) ------------------------------- #
 STALE_WIKI_NOTICE = "[wiki omitted: cache is stale; recompilation requires an LLM provider]"
+
+
+def clamp_edge_line(edge, cap_tokens: int, render_fn) -> str:
+    """Clamp an EDGE line by shrinking its CONTENT (object, then note), never its
+    framing — the trust/state labels render at the line's END, so a tail clamp would
+    sever exactly the safety framing I10c protects. Deterministic: shrink the longer
+    content field first, halving, until the framed line fits."""
+    line = render_fn([edge])
+    if not line or est_tokens(line) <= cap_tokens:
+        return line
+    e = edge.model_copy(deep=True)
+    for _ in range(64):
+        target = e.note if len(e.note) > len(e.object) else None
+        if target is not None:
+            e.note = e.note[: max(8, len(e.note) // 2)] + "…"
+        elif len(e.object) > 8:
+            e.object = e.object[: max(8, len(e.object) // 2)] + "…"
+        else:
+            break
+        line = render_fn([e])
+        if est_tokens(line) <= cap_tokens:
+            return line
+    return line
