@@ -230,11 +230,16 @@ value moves* and asserts a record still exists.
   (R11-4/0014: a hardcoded count triple here drifted three releases behind the suite and
   contradicted the package it shipped in; counts live where they are measured). Each package's
   `COLLECTED.txt` records the exact command, environment, and pass/skip/xfail line.
-- **Where it is measured:** in a SEPARATE pristine checkout of the source commit (never the
-  dev tree, never inside the shipped archive — so the archive carries zero cache artifacts).
-- **Reconciling your own run in the EXTRACTED archive:** expect the `COLLECTED.txt` counts
-  with **+3 skips** — exactly the three spec-gate tests that need a git checkout and skip in
-  an extracted tree. Any other delta is a finding.
+- **Where it is measured:** in a SEPARATE extracted copy of the source commit's
+  `git archive` (never the dev tree, never inside the shipped archive itself — so the
+  archive carries zero cache artifacts). That copy has no `.git`, so the measured line
+  ALREADY reflects the extracted shape a reviewer runs.
+- **Reconciling your own run:** `COLLECTED.txt` records the measured line AND the
+  environment-conditional skip inventory — the named tests that skip or run depending on
+  the host (git checkout present, coordination files present, qualified SQLite runtime,
+  recorded runtime identity, root euid). Reconcile any delta between your run and the
+  measured line against that named inventory; a delta NOT explained by a named
+  conditional test is a finding. (R12-4: no frozen delta — the "+N" itself drifts.)
 - **xfails are unbuilt-by-design** — regressions pinning not-yet-implemented behaviour of the
   spec under review. Their count varies by round; `COLLECTED.txt`'s line is the truth.
 - `test_spec_gate.py` (~59 tests) is the process gate; it must be green before any package ships.
@@ -377,8 +382,8 @@ stories are the best guide to where the bodies are buried.
 - [ ] Read `PROCESS.md` and the spec being reviewed end-to-end; note its `Spec-Status`,
       `Spec-Requires`, and whether prerequisites are accepted.
 - [ ] Verify the package: archived spec is **byte-identical** to what you were sent; re-run the
-      suite in the extracted tree and reconcile with `COLLECTED.txt` (expect its counts +3
-      git-only skips — see "What green means").
+      suite in the extracted tree and reconcile with `COLLECTED.txt`'s measured line via its
+      environment-conditional skip inventory (see "What green means").
 
 **Specification**
 - [ ] Is §4 a **construction**, not a description? Every invariant executable, every §2c cell

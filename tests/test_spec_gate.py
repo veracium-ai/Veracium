@@ -786,18 +786,52 @@ def test_no_spec_names_a_module_or_script_that_does_not_exist():
     assert not bad, "\n".join(bad)
 
 
+# R11-4/R12-4 (0014 rounds 11-12): the guide's hardcoded counts drifted three
+# releases behind the suite; the FIRST gate written against that regression was
+# itself vacuous — its regex matched neither the original stale form nor the
+# natural comma form (class E: a check proving the adjacent property). So the
+# pattern is now proven against the motivating forms, the same mechanism as
+# tests/test_withdrawn_gate_bites.py.
+_FROZEN_COUNT_PATTERNS = [
+    # "975 passed / 5 skipped / 4 xfailed" and "1121 passed, 13 skipped, 2 xfailed"
+    r"\d+\s*passed\s*[,/]\s*\d+\s*skipped",
+    # bare triples: "975/5/4" (with or without an xfail suffix)
+    r"\b\d{2,4}/\d{1,3}/\d{1,3}",
+    # frozen deltas: "+3 skips", "+3 git-only skips" — the count is mutable too
+    r"\+\d+\s*(?:git[- ]only\s*)?skips",
+]
+
+# The verbatim forms this gate exists to catch — each must be caught by a pattern,
+# or the gate is dead coverage (the R12-4 failure mode, mechanically prevented).
+_FROZEN_COUNT_MOTIVATING_FORMS = [
+    "975 passed / 5 skipped / 4 xfailed",
+    "1121 passed, 13 skipped, 2 xfailed",
+    "expect 975/5/4xfail",
+    "the reconciliation RULE (+3 git-only skips in an extracted tree)",
+]
+
+
+def test_frozen_count_patterns_catch_their_motivating_forms():
+    """The gate proves itself against the original stale form and representative
+    variants — a pattern set that misses its own motivating text fails loudly."""
+    import re
+
+    missed = [f for f in _FROZEN_COUNT_MOTIVATING_FORMS
+              if not any(re.search(p, f) for p in _FROZEN_COUNT_PATTERNS)]
+    assert not missed, f"vacuous gate — forms not caught: {missed}"
+
+
 def test_reviewer_guide_carries_no_frozen_suite_counts():
-    """R11-4 (0014 round 11): the guide's hardcoded 975/5/4 drifted three releases
-    behind the suite and contradicted the very package it shipped in. Counts live in
-    COLLECTED.txt where they are measured; the guide must state the reconciliation
-    RULE (+3 git-only skips in an extracted tree), never a frozen number."""
+    """Counts and deltas live in COLLECTED.txt where they are measured (both the
+    checkout and extracted-shape lines, plus the environment-conditional skip
+    inventory); the guide must carry the rule, never a number."""
     import pathlib
     import re
 
     guide = (pathlib.Path(__file__).resolve().parent.parent
              / "specs" / "REVIEWER_GUIDE.md").read_text()
-    frozen = re.findall(
-        r"\b\d{3,4}\s*(?:passed|/)\s*\d{1,3}\s*(?:skipped|/)\s*\d{1,3}", guide)
-    assert not frozen, (
-        "REVIEWER_GUIDE.md carries frozen suite counts (they belong in COLLECTED.txt): "
-        f"{frozen}")
+    hits = [m.group(0) for p in _FROZEN_COUNT_PATTERNS
+            for m in re.finditer(p, guide)]
+    assert not hits, (
+        "REVIEWER_GUIDE.md carries frozen suite counts/deltas (they belong in "
+        f"COLLECTED.txt): {hits}")

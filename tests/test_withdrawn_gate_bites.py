@@ -53,6 +53,8 @@ MOTIVATING_FORMS = [
     ("0014-replay-exact-persisted", "assert O1 and O2 differ field-by-field AND the replay equals O1 exactly"),
     # R10-5 — record-identity that the shipped fresh-id remap can never satisfy
     ("0014-record-identical-reimport", "is accepted IFF it is RECORD-IDENTICAL to the existing row"),
+    # R12-3 — reference fields declared removed (they must normalize-and-compare)
+    ("0014-references-removed", "with the DESTINATION-MINTED / REMAPPED fields REMOVED — exactly `{id, user_id}` plus every remapped REFERENCE field (`lineage` member ids"),
     # R11-1/R11-2 — the digest-identity claim + the whole-file no-op overreach
     ("0014-migrated-digest-identical", "(a fresh v6 store and a migrated v5 store are digest-identical per `0007`)"),
     ("0014-migrated-digest-identical", "the SAME file imported twice with `user_id=`: the second import is accepted as a no-op"),
