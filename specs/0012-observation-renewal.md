@@ -929,6 +929,22 @@ provider-free stale-cache CLI path, no-new-reach for proactive contested).
 - the implementation follows the found-in-fix checklist and extends the mechanical pre-send
   gates; the reviewer retains standing against the implementation per the accepted protocol.
 
+**Implementation review (post-acceptance, under the same protocol).** The reviewer's
+standing against the implementation was exercised: EIGHT post-implementation rounds
+(2026-08-10, packages `0012-impl-v1`…`impl-v8`, hash-indexed in `specs/archives/INDEX.md`),
+findings narrowing 8→6→5→4→3→2→1→0, closed **ACCEPTED**: *"Both review bins are empty. The
+v8 implementation satisfies the frozen Design 1 surface: I1–I7, I8/I8a–I8j, I9,
+I10/I10a–I10l, §7b/§7b-ii, and §8."* Highlights of what the rounds forced: always-budgeted
+defaults; the FROZEN §4c(iv) total orders implemented exactly (incl. wiki-before-plain and
+class-precedence-first survivorship — dated and flagged members never demote to variants);
+the compiler's full I8 grouping (envelope × unique-anchor values) with I8j survivors;
+surface-build revalidation of every mutable bound; the frozen recoverability elision marker;
+per-item type-tagged clamp accounting; the aliasing-honest mandatory contested roles via the
+`ContestedGroup.prior_edge_ids` carrier; and one Quentin-authorized history correction
+(byte-identical trees) closing the Slice-A trailer defect. Four dev regression fixtures the
+reviewer diagnosed as non-biting were corrected. The release gate is OPEN per the protocol;
+the release itself remains held by the repo owner for the `0014` schema-v6 bundle.
+
 **Closure notes.** Rounds 1–4 changed the design (the reachability correction; a live shipped
 defect fixed at root; the history/authority-envelope repairs; the bound-vs-hide resolution
 that became I10). Rounds 5–13 made the read-path contract mechanically honest, at the cost the

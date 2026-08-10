@@ -3,7 +3,8 @@
 ## Unreleased
 
 - **Fact-currency renewal — a restatement can no longer silently renew a fact's currency**
-  (`specs/0012`, accepted after 14 external review rounds + implemented). Reinforcement now
+  (`specs/0012`, accepted after 14 external review rounds + implemented; the implementation
+  itself independently reviewed and ACCEPTED after 8 further rounds). Reinforcement now
   transfers NOTHING: a re-stated fact is persisted as its own edge with its own provenance, and
   the prior is left byte-untouched — closing a measured bypass where same-class restatements
   (e.g. a system feed re-asserting a user fact) kept a stale fact perpetually fresh and silently
