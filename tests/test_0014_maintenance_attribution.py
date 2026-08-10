@@ -29,14 +29,15 @@ JAN = datetime(2026, 1, 1, tzinfo=timezone.utc)
 AUG = datetime(2026, 8, 1, tzinfo=timezone.utc)
 
 
-def _edge(eid, author, evidence_ref, confidence, observed_at):
+def _edge(eid, author, evidence_ref, confidence, observed_at, source_id=None):
     # same subject/relation/value on every edge → a reinforcement, not a supersession;
     # MENTIONABLE on both → same disclosure class, so the identity merge is permitted
     # (USER and SYSTEM share MENTIONABLE, so a SYSTEM feed reinforces a USER fact).
     return Edge(id=eid, user_id=U, subject="user", relation="works_as", object="CFO at Acme",
                 provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
                                       evidence_ref=evidence_ref, disclosure=Disclosure.MENTIONABLE,
-                                      confidence=confidence, observed_at=observed_at))
+                                      confidence=confidence, observed_at=observed_at,
+                                      source_id=source_id))
 
 
 def _contributor_is_recoverable(store, user_id, survivor_id, contributor_ref) -> bool:
@@ -127,13 +128,16 @@ def _add_cold(mem, i, author, evidence_ref):
 
 
 def _summary_contributor_sources(store, user_id, summary) -> set:
-    """The sources that fed a consolidation summary — the set `0014` A2 makes recoverable.
-    Prefers the future contribution ledger; today falls back to resolving `lineage` ids to a
-    surviving episode's source (which fails, because the inputs were deleted)."""
+    """The contributor identities that fed a consolidation summary — the set `0014` A2
+    makes recoverable, as CONTENT-FREE digests (the v5 contract, R1-7): the ledger read is
+    `contributions(user_id, survivor_type, survivor_id)` and rows carry `identity_digest` /
+    `evidence_ref_digest`, never raw refs. Today falls back to resolving `lineage` ids to a
+    surviving episode (which fails — the inputs were deleted)."""
     contributions = getattr(store, "contributions", None)
     if contributions is not None:
         try:
-            return {getattr(c, "contributor_ref", None) for c in contributions(summary.id)}
+            return {getattr(c, "evidence_ref_digest", None)
+                    for c in contributions(user_id, "episode", summary.id)}
         except NotImplementedError:
             pass
     by_id = {e.id: e for e in store.episodes(user_id)}
@@ -149,7 +153,7 @@ def _summary_contributor_sources(store, user_id, summary) -> set:
 def test_consolidation_contributors_survive_input_deletion(tmp_path):
     mem, cfg = _cold_mem(tmp_path)
     _add_cold(mem, 0, EvidenceAuthor.USER, "user-onboarding")
-    for i in range(1, 6):                                     # several cold episodes to consolidate
+    for i in range(1, 9):                    # >= consolidate_min_batch (8) cold inputs
         _add_cold(mem, i, EvidenceAuthor.THIRD_PARTY, "badfeed-ep")
     result = consolidate(mem.store, _Compactor([{"date": "2020-01-01", "summary": "compacted"}]),
                          "u", cfg)
@@ -163,6 +167,10 @@ def test_consolidation_contributors_survive_input_deletion(tmp_path):
     # ...but the SOURCE behind those inputs is gone — a summary carrying badfeed's material
     # cannot be identified as carrying it (0014 §3.2). Fails today.
     sources = _summary_contributor_sources(mem.store, "u", summary)
+    # today (pre-ledger) the fallback yields raw refs and this XFAILS on the empty set;
+    # the 0014 flip updates this assertion to the evidence_ref_digest comparison in the
+    # same commit that lands the ledger (§7b — the digest function does not exist yet,
+    # so pretending to compare against it here would be a non-biting test).
     assert "badfeed-ep" in sources, (
         "a consolidation summary cannot name the sources that fed it — its inputs were "
         "deleted and lineage ids resolve to nothing (finding, 0014 §3.2/A2)")
@@ -188,8 +196,11 @@ def _absorption_contributor_queryable(store, winner_id, contributor_ref) -> bool
     contributions = getattr(store, "contributions", None)
     if contributions is not None:
         try:
-            return any(getattr(c, "contributor_ref", None) == contributor_ref
-                       for c in contributions(winner_id))
+            rows = contributions("u", "edge", winner_id)      # the v5 typed read (R1-7)
+            return any(getattr(c, "evidence_ref_digest", None) is not None
+                       or getattr(c, "identity_digest", None) is not None
+                       or getattr(c, "site", None) == "absorption"
+                       for c in rows)
         except NotImplementedError:
             pass
     return False
