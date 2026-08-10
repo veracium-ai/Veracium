@@ -126,21 +126,26 @@ def test_expected_state_catches_an_in_place_field_edit(tmp_path):
     assert s.apply_supersession_plan(plan) is PLAN_STALE
 
 
-def test_reinforcement_plan_inserts_no_duplicate(tmp_path):
-    """A reinforcement plan is `insert_incoming=False`: it refreshes the existing prior
-    and inserts NOTHING, so re-stating a fact does not duplicate it (§4f)."""
+def test_reinforcement_plan_persists_the_incoming(tmp_path):
+    """Inverted by accepted `specs/0012` Design 1 (the §7b carrier): the PLANNER now builds
+    reinforcement as `insert_incoming=True` with no prior upsert — the incoming persists,
+    the prior is untouched. The STORE still honours `insert_incoming=False` plans (the
+    store-level shape is 0003's and unchanged — see the durable-receipt replay test)."""
     s = SqliteStore(str(tmp_path / "s.db"))
     prior = _edge("p", EvidenceAuthor.USER, "CFO")
     s.add_edge(prior)
-    refreshed = prior.model_copy(deep=True)
-    refreshed.provenance.confidence = 0.99
-    plan = SupersessionPlan(incoming_edge=_edge("i", EvidenceAuthor.USER, "CFO"),
-                            insert_incoming=False, operation_id="op",
-                            expected_state=_fp(s), prior_upserts=[refreshed])
+    before = next(e for e in s.edges(U, active_only=True) if e.id == "p").model_dump()
+    from veracium.graph import _build_supersession_plan
+    from veracium.schema import DEFAULT_RELATIONS
+    plan = _build_supersession_plan(s, _edge("i", EvidenceAuthor.USER, "CFO"),
+                                    DEFAULT_RELATIONS, "op")
+    assert plan.insert_incoming is True and not plan.prior_upserts    # 0012 §4a
     res = s.apply_supersession_plan(plan)
-    assert not res.inserted_incoming
+    assert res.inserted_incoming
     ids = {e.id for e in s.edges(U, active_only=True)}
-    assert ids == {"p"}                                        # no "i" inserted
+    assert ids == {"p", "i"}                                   # both persist (I1)
+    after = next(e for e in s.edges(U, active_only=True) if e.id == "p").model_dump()
+    assert after == before                                     # prior untouched (I2)
 
 
 def test_a_lost_reinforcement_response_replays_via_the_durable_receipt(tmp_path):

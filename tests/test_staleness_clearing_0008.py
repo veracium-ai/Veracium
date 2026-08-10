@@ -77,12 +77,14 @@ def test_cross_author_restatement_does_not_clear():
         mem.close()
 
 
-# --- C3: reinforcement still refreshes LIVENESS (the permission, not the ban) -
+# --- C3, as amended by accepted 0012: reinforcement transfers NOTHING -----------
 
-def test_reinforcement_still_advances_observed_at():
-    """C3: deleting the flag-clearing conditional must NOT remove the liveness
-    refresh — reinforcement still advances `observed_at` (whether it should at all
-    is `0012`, neither endorsed nor altered here)."""
+def test_reinforcement_no_longer_advances_observed_at():
+    """The §7b-dispositioned inversion of the old C3 liveness test. 0008 C3 deferred
+    "whether reinforcement should refresh liveness at all" to `0012`; accepted `0012`
+    Design 1 ruled it transfers NOTHING — the prior is byte-untouched (its observed_at
+    does not move) and the restatement persists as its own edge. The flag rule this file
+    exists for is unchanged: only confirm() clears."""
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d)
         mem.store.add_edge(_edge("e", author=EvidenceAuthor.USER, needs=True))
@@ -91,8 +93,8 @@ def test_reinforcement_still_advances_observed_at():
         apply_supersession(mem.store, again, mem.config.relations)
         kept = next(e for e in mem.store.edges("u", active_only=False)
                     if e.id == "e")
-        assert kept.provenance.observed_at == MAR      # liveness advanced
-        assert kept.needs_confirmation is True         # flag untouched
+        assert kept.provenance.observed_at != MAR      # 0012: liveness does NOT transfer
+        assert kept.needs_confirmation is True         # flag untouched (0008, unchanged)
         mem.close()
 
 

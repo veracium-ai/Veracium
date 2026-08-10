@@ -41,7 +41,8 @@ def _event_dt(date_str: str) -> datetime:
 
       valid_from  → renders "(since 2099)" into answer context, a false
                     statement about the future.
-      observed_at → `confirm()` and reinforcement advance it with max(), which
+      observed_at → `confirm()` advances it with max() (reinforcement no longer
+                    touches the prior — accepted `specs/0012` Design 1), which
                     is what correctly defeats BACK-dating and is therefore
                     exactly what makes forward-dating permanent. One host date
                     removed an edge from lapse, decay and staleness flagging

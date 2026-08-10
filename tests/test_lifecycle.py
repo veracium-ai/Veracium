@@ -54,13 +54,16 @@ def test_reinforcement_refreshes_not_duplicates():
                   "episode": "still sick"}
         mem = _mem(d, [script, script])
         mem.remember("u", "sick", date="2026-01-01")
-        mem.remember("u", "still sick", date="2026-01-05")  # re-stated → refresh
-        active = mem.store.edges("u", relation="health_state")
-        assert len(active) == 1                              # not duplicated
-        # valid_from is FIRST-KNOWN and immutable; the restatement refreshes
-        # liveness on observed_at, which is the field lifecycle now ages against
+        mem.remember("u", "still sick", date="2026-01-05")  # re-stated → persisted (0012)
+        active = sorted(mem.store.edges("u", relation="health_state"),
+                        key=lambda e: e.provenance.observed_at)
+        # specs/0012 Design 1: the restatement is its own edge with its own provenance;
+        # the fact stays live THROUGH the new edge (each ages against its own observed_at),
+        # and the first edge's first-known date is byte-untouched.
+        assert len(active) == 2
         assert active[0].valid_from.date().isoformat() == "2026-01-01"
-        assert active[0].provenance.observed_at.date().isoformat() == "2026-01-05"
+        assert active[0].provenance.observed_at.date().isoformat() == "2026-01-01"
+        assert active[1].provenance.observed_at.date().isoformat() == "2026-01-05"
         mem.close()
 
 
@@ -73,11 +76,14 @@ def test_reinforcement_matches_paraphrased_values():
              "episode": "mentioned the dog again"},
         ])
         mem.remember("u", "I have a dog named Ollie.", date="2026-01-01")
-        mem.remember("u", "My dog Ollie is great.", date="2026-01-05")  # paraphrase → refresh
-        active = mem.store.edges("u", relation="has_pet")
-        assert len(active) == 1                              # reinforced, not duplicated
-        assert active[0].valid_from.date().isoformat() == "2026-01-01"   # first-known
-        assert active[0].provenance.observed_at.date().isoformat() == "2026-01-05"
+        mem.remember("u", "My dog Ollie is great.", date="2026-01-05")  # paraphrase matched
+        active = sorted(mem.store.edges("u", relation="has_pet"),
+                        key=lambda e: e.provenance.observed_at)
+        # the paraphrase is RECOGNISED as the same value (the reinforcement branch matched)
+        # and, per 0012 Design 1, persisted as its own edge — no absorption, no contention.
+        assert len(active) == 2
+        assert active[0].valid_from.date().isoformat() == "2026-01-01"   # first-known intact
+        assert all(e.invalidated_at is None for e in active)
         mem.close()
 
 

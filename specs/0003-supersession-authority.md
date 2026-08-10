@@ -864,20 +864,32 @@ plan's incoming edge), its `prior_edge_id` (an existing edge of that same user),
 Store-minted `refusal_id` + `timestamp` — a caller cannot submit a refusal that
 references an edge this commit does not write, or another user's edge.
 
-**Reinforcement is `insert_incoming = False` (round-7 blocker 3).** The plan's terminal
-action on the incoming edge is EXPLICIT, because the plan type decides what persistence
-outcomes are representable. Shipped reinforcement (`graph.apply_supersession`, the
-`pk == same`/subsumes branch) refreshes the existing edge and **returns before inserting
-the incoming one** — dedup by design; the regression suite asserts only the existing
-edge remains. A plan that *always* committed the incoming edge would insert a duplicate
-and silently regress that. Frozen:
+**⚠️ SUPERSEDED BY `specs/0012` (accepted 2026-08-10) — the marked cross-spec amendment
+`0012` §7b records.** The original round-7 rule below is retained as history; the plan TYPE
+and every other row stand unchanged.
 
-- **reinforcement** → `insert_incoming = False`; update the existing prior, insert nothing.
+> **WITHDRAWN (2026-08-10, by accepted `0012` Design 1):** ~~**Reinforcement is
+> `insert_incoming = False` (round-7 blocker 3).**~~ Shipped reinforcement refreshed the
+> existing edge (`observed_at`/`confidence` via `max()`) and returned before inserting the
+> incoming one — dedup by design, with the regression suite asserting only the existing edge
+> remained. `0012` §1 measured that this let a same-class restatement silently renew a fact's
+> currency and raise its confidence, and left the contributing source unrecorded (finding
+> `M9`). Under `0012` Design 1, **reinforcement transfers NOTHING**: the branch keeps its
+> guard predicate and position, and its action is `insert_incoming = True` with no prior
+> upsert — the restatement is persisted with its own provenance and the prior is
+> byte-untouched. The "reinforced, not duplicated" regression inverted accordingly
+> (`0012` I1/I2/I6).
+
+The frozen plan-action table, as amended:
+
+- **reinforcement** → `insert_incoming = True`; persist the incoming with its own provenance, touch nothing else (`0012` Design 1).
 - **absorption** → `insert_incoming = True`; insert the incoming, mutate/invalidate the absorbed prior(s).
 - **ordinary / supersession** → `insert_incoming = True`.
 
-A typed union — `ReinforcePlan | InsertPlan` — is the harder-to-misuse encoding; either
-way the acceptance surface includes the shipped **"reinforced, not duplicated"** case.
+The plan type remains EXPLICIT about the terminal action (that round-7 point stands);
+`insert_incoming = False` remains representable at the store layer (a valid store-level plan
+shape, exercised by the store's own tests) — `0012` changes what the PLANNER builds, not what
+the store can apply.
 
 **Atomic is not enough — the plan must LINEARIZE (round-8 blocker 3).** `apply_supersession`
 computes a plan from a *read* of the store, and the read-then-commit is not one operation.
@@ -1005,7 +1017,7 @@ before** — it only creates fewer.
 | **I6a** **a refusal must not reduce the prior's recall visibility**, at the **same finite `token_budget`**, holding query/config/store fixed and adding **only** the refused edge — the higher-authority member never drops below where it stood before the refusal (round-8 blocker 2: the achievable finite-budget form, not "always present regardless of budget") | `test_refusal_does_not_evict_the_prior` — over the product, **all three selection stages**, **both wiki-disabled and the wiki-enabled default**, and **a finite `token_budget` with many accumulated contentions** (the contested surface is high-priority and budgeted, not unbounded) | CI |
 | **I6b** unrelated edges keep their positions | `test_unrelated_edges_keep_their_positions` — the property that makes §4e a permutation rather than a global re-sort | CI |
 | **I6c** the **default compiled-wiki** path obeys the contention contract (§4c-ii): the derived-view treatment is **refusal-scoped** (Option B), **partition-preserving**, **budgeted**, **proactive-safe**, **n-way**; the fenced challenger keeps **no query-independent reach on ANY public surface** (`context`/`edges`/`contested`); a **deterministically-rendered same-partition grounded member is a FULL exposed member** on every surface (only the unseen fenced CROSS-partition challenger is content-free linkage — round-11 contract correction); forming AND resolving a live refusal contention both recompile IMMEDIATELY; the cache binds the **registry/policy digest**; migration invalidates pre-v8 caches | `test_the_challenger_gains_no_query_independent_reach_on_context_edges_or_contested` (round-9 B1 + round-10 A) · `test_resolving_a_refusal_contention_invalidates_the_wiki_immediately` (round-10 B1) · `test_cached_wiki_is_invalidated_when_relation_registry_semantics_change` (round-10 B2) · `test_pre_existing_non_refusal_contention_is_not_given_the_derived_view` · `test_recall_contested_carries_full_edge_only_for_exposed_members` (round-10 A) · `test_a_same_partition_grounded_member_i6_renders_is_a_full_exposed_member_even_if_unselected` (round-11: I6 rendering and the structured carrier agree) · `test_only_the_unseen_fenced_cross_partition_challenger_is_content_free_linkage` (round-11) · `test_cross_partition_contention_keeps_the_fenced_member_unverified` · `test_proactive_recall_never_volunteers_a_fenced_contested_value` · `test_contested_surface_is_budgeted_not_unbounded` · `test_n_way_contention_renders_every_distinct_value` · `test_a_single_refusal_recompiles_the_wiki_immediately`. **Both default and custom registry** | CI |
-| **I9** `apply_supersession_plan` is atomic, **CAS-linearized on a COMPLETE `expected_state`**, whole-plan idempotent via a **durable receipt**, and reinforcement inserts nothing (§4f) | `test_concurrent_equal_authority_plans_do_not_branch` (round-8 B3) · `test_expected_state_catches_an_in_place_field_edit` — a same-id row whose value/author/`derived_from` changed since the plan's read → `PlanStale` (round-9 C) · `test_a_lost_reinforcement_response_replays_via_the_durable_receipt` — a reinforcement with no incoming edge and no refusal row still replays after restart (round-9 B3) · `test_receipt_check_precedes_cas_so_a_committed_op_replays_not_planstale` (round-9 B3) · `test_reinforcement_plan_inserts_no_duplicate` · `test_a_failed_plan_leaves_no_partial_state_and_does_not_touch_sibling_triples` | CI |
+| **I9** `apply_supersession_plan` is atomic, **CAS-linearized on a COMPLETE `expected_state`**, whole-plan idempotent via a **durable receipt**, and the reinforcement plan action follows §4f as amended by accepted `0012` (persist the incoming, touch nothing else) | `test_concurrent_equal_authority_plans_do_not_branch` (round-8 B3) · `test_expected_state_catches_an_in_place_field_edit` — a same-id row whose value/author/`derived_from` changed since the plan's read → `PlanStale` (round-9 C) · `test_a_lost_reinforcement_response_replays_via_the_durable_receipt` — a reinforcement with no incoming edge and no refusal row still replays after restart (round-9 B3) · `test_receipt_check_precedes_cas_so_a_committed_op_replays_not_planstale` (round-9 B3) · `test_reinforcement_plan_persists_the_incoming` (inverted by `0012`) · `test_a_failed_plan_leaves_no_partial_state_and_does_not_touch_sibling_triples` | CI |
 | **I7** the MCP surface refuses `system` and fails closed on unknown | `test_the_mcp_surface_refuses_system_authorship` · `test_an_unrecognised_author_fails_closed_not_to_user` | CI ✅ **SHIPPED `362f474`** |
 | **I8** injection ladder + trust canaries unchanged | existing bench `--compare` | bench gate |
 

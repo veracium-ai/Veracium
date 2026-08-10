@@ -124,9 +124,10 @@ def test_same_author_restatement_does_not_clear_staleness():
                        if e.id == "e-user")
         assert flagged.needs_confirmation is True, \
             "a same-author restatement cleared the flag — only confirm() may"
-        # reinforcement still refreshes LIVENESS (observed_at) — C3, unchanged.
-        assert flagged.provenance.observed_at == MAR, \
-            "reinforcement must still advance observed_at (liveness)"
+        # specs/0012 Design 1 (accepted 2026-08-10): reinforcement transfers NOTHING —
+        # the prior's observed_at is untouched; the restatement persisted as its own edge.
+        assert flagged.provenance.observed_at != MAR, \
+            "reinforcement must no longer advance the prior's observed_at (0012 I2)"
         mem.close()
 
 

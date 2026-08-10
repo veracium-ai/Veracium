@@ -82,16 +82,18 @@ def test_less_specific_arrival_reinforces_fuller_prior():
     apply_supersession(store, _edge("e2", "Miso", day=6, confidence=0.95),
                        DEFAULT_RELATIONS)
 
-    edges = store.edges("u1", active_only=False)
-    assert [e.id for e in edges] == ["e1"]  # no new row at all
-    e = edges[0]
-    assert e.object == "cat Miso"  # fuller surface kept
-    assert e.valid_from == _dt(1)  # first-known is immutable
-    assert e.provenance.observed_at == _dt(6)  # liveness refreshed instead
-    assert e.provenance.confidence == 0.95
-    assert e.needs_confirmation is True  # specs/0008: reinforcement no longer
-    # clears the flag — only confirm() does (write-time evidence is not proof of
-    # an entitled reaffirmation; author class is not the same source)
+    # specs/0012 Design 1 (accepted 2026-08-10): the less-specific restatement is the same
+    # evidentiary event and takes the reinforcement branch — which now PERSISTS it with its
+    # own provenance and touches nothing else. Both rows survive; nothing transfers.
+    edges = {e.id: e for e in store.edges("u1", active_only=False)}
+    assert set(edges) == {"e1", "e2"}
+    e1 = edges["e1"]
+    assert e1.object == "cat Miso"                 # fuller surface kept, byte-untouched
+    assert e1.valid_from == _dt(1)                 # first-known is immutable
+    assert e1.provenance.observed_at == _dt(1)     # 0012: liveness NO LONGER transfers
+    assert e1.provenance.confidence != 0.95        # 0012: confidence NO LONGER transfers
+    assert e1.needs_confirmation is True           # specs/0008: only confirm() clears
+    assert e1.invalidated_at is None               # and no absorption fired (0012 I6)
 
 
 def test_reinforcement_never_rewinds_validity():
@@ -134,14 +136,21 @@ def test_functional_relation_subset_reinforces_instead_of_churning():
                                     relation="prefers", day=1), DEFAULT_RELATIONS)
     apply_supersession(store, _edge("e2", "concise answers",
                                     relation="prefers", day=4), DEFAULT_RELATIONS)
-    edges = store.edges("u1", active_only=False)
-    assert [e.id for e in edges] == ["e1"]  # reinforced, not superseded
-    assert edges[0].invalidation_reason is None
-    # a genuinely different value still supersedes
+    # specs/0012 Design 1: the subset restatement persists as its own edge; the NO-CHURN
+    # intent this test protects is preserved — no supersession, no invalidation (0012 I6).
+    edges = {e.id: e for e in store.edges("u1", active_only=False)}
+    assert set(edges) == {"e1", "e2"}
+    assert edges["e1"].invalidation_reason is None
+    assert edges["e2"].supersedes is None
+    # a genuinely different value still supersedes — BOTH same-value actives retire
     apply_supersession(store, _edge("e3", "detailed answers",
                                     relation="prefers", day=8), DEFAULT_RELATIONS)
-    assert store.edges("u1")[0].id == "e3"
-    assert store.edges("u1")[0].supersedes == "e1"
+    active = store.edges("u1")
+    assert [e.id for e in active] == ["e3"]
+    assert active[0].supersedes in {"e1", "e2"}
+    all_edges = {e.id: e for e in store.edges("u1", active_only=False)}
+    assert all_edges["e1"].invalidated_at is not None
+    assert all_edges["e2"].invalidated_at is not None
 
 
 def test_absorbed_edges_never_render_as_history():
@@ -378,10 +387,14 @@ def test_reinforcement_preserves_when_a_fact_first_became_true():
     for i, day in enumerate((1, 9, 20), start=1):
         apply_supersession(store, _edge(f"e{i}", "morning runs", day=day,
                                         relation="prefers"), DEFAULT_RELATIONS)
+    # specs/0012 Design 1: each restatement persists per-edge; the defect this test
+    # protects — the FIRST-known date surviving restatement and rendering truthfully —
+    # holds through e1, which is byte-untouched.
     edges = store.edges("u1", active_only=False)
-    assert len(edges) == 1
-    assert edges[0].valid_from == _dt(1), "first-known must survive restatement"
-    assert edges[0].provenance.observed_at == _dt(20), "liveness must refresh"
+    assert len(edges) == 3
+    first = next(e for e in edges if e.id == "e1")
+    assert first.valid_from == _dt(1), "first-known must survive restatement"
+    assert first.provenance.observed_at == _dt(1)   # 0012: liveness no longer transfers
     assert "since 2026-07-01" in render_edges(edges)
 
 

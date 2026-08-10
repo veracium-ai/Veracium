@@ -16,8 +16,11 @@ content-independent guarantees):
 
 Soft signals (proposal §6) include the Phase-2 checkers:
 
-  S4 reinforcement, not duplication — re-ingesting a turn that already yielded
-     facts should reinforce existing edges, not add rows. New rows are split:
+  S4 reinforcement rows — accepted `specs/0012` Design 1 (2026-08-10) changed the
+     write contract: a re-stated fact now PERSISTS as its own edge (the read paths
+     collapse duplicates; the row itself is the attribution). Same-value rows
+     alongside a still-active equivalent are therefore the contract working, not
+     accumulation — S4's split reads accordingly. New rows are split:
      `duplicated` (accumulated alongside a still-active equivalent — the bad
      case) vs `superseded_churn` (replaced a prior value; either a genuine
      restatement of an older value, or paraphrase drift on a functional

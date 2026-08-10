@@ -57,14 +57,19 @@ def _subsumes(longer: tuple[str, ...], shorter: tuple[str, ...]) -> bool:
 def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> None:
     """Persist a new edge with supersession, reinforcement, and absorption:
 
-    - Reinforcement: if an active edge already asserts the same
-      (subject, relation, object), refresh its validity instead of adding a
-      duplicate — so re-stating a fact keeps it alive (a re-mentioned transient
-      state won't lapse) and clears any stale-confirmation flag. "Same" is
-      normalized-token equality (see _value_key), so an extractor paraphrase of
-      an unchanged value reinforces rather than duplicates. A *less* specific
-      restatement of a value we already hold ("Miso" after "cat Miso") also
-      reinforces: it is the same evidentiary event, not a new fact.
+    - Reinforcement (specs/0012, Design 1): if an active same-class edge already
+      asserts the same (subject, relation, object), the incoming restatement is
+      PERSISTED as its own edge with its own provenance, and the prior is left
+      byte-untouched — reinforcement transfers NOTHING (not `observed_at`, not
+      `confidence`, not `valid_from`). The fact stays live *through the new
+      edge* (each edge ages against its own `observed_at`), the persisted edge
+      IS the attribution of the contributing source (closes finding M9), and a
+      restatement can no longer silently renew a fact's currency or raise its
+      confidence (the measured 0012 §1 bypass). "Same" is normalized-token
+      equality (see _value_key); a *less* specific restatement of a value we
+      already hold ("Miso" after "cat Miso") is the same evidentiary event and
+      takes this branch too — it must never fall through to absorption or
+      functional contention (0012 I6).
     - Absorption (T1): a *more* specific form of a prior value ("cat Miso"
       after "Miso", see _subsumes) wins — the shorter prior retires reversibly
       (reason 'absorbed_duplicate', note carries the winner's id). Identity,
@@ -123,22 +128,22 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                   if p.id != edge.id
                   and p.provenance.disclosure == edge.provenance.disclosure]
 
-    # Reinforcement: an active same-class prior asserts the same-or-subsuming value —
-    # refresh its liveness/confidence and insert NOTHING (dedup by design, insert_incoming
-    # False). Identity merges never cross trust classes (same disclosure only); reinforcement
-    # refreshes observed_at + confidence but does NOT clear needs_confirmation (specs/0008 —
-    # only confirm() may; a same author-CLASS restatement is not the same source).
+    # Reinforcement (specs/0012 §4a, Design 1): an active same-class prior asserts the
+    # same-or-subsuming value. The branch KEEPS its guard predicate and position (before
+    # absorption, before the functional branch — deleting it would mis-route a SUBSUMED
+    # value like "Miso" after "cat Miso" into functional contention, 0012 I6) but its
+    # ACTION is persist-incoming-untouched: the restatement is stored with byte-unchanged
+    # provenance (I1), the prior is not read-modified-written (I2 — the old max() transfers
+    # are deleted, not relocated; a restatement can no longer renew currency or raise
+    # confidence, 0012 §1/I5), and nothing else happens — no upsert, no invalidation, no
+    # refusal, no supersedes pointer (I6). needs_confirmation is untouched trivially
+    # (specs/0008 — only confirm() clears; the prior is not written at all, I4). The
+    # persisted edge is the attribution of the contributing source (M9, I7).
     for prior in same_class:
         pk = _value_key(prior.object)
         if pk == same or _subsumes(pk, same):
-            refreshed = prior.model_copy(deep=True)
-            refreshed.provenance.observed_at = max(prior.provenance.observed_at,
-                                                   edge.provenance.observed_at)
-            refreshed.provenance.confidence = max(prior.provenance.confidence,
-                                                  edge.provenance.confidence)
-            return SupersessionPlan(incoming_edge=edge, insert_incoming=False,
-                                    operation_id=op_id, expected_state=expected,
-                                    prior_upserts=[refreshed])
+            return SupersessionPlan(incoming_edge=edge, insert_incoming=True,
+                                    operation_id=op_id, expected_state=expected)
 
     incoming = edge.model_copy(deep=True)
     upserts: list[Edge] = []

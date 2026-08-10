@@ -450,9 +450,10 @@ class SupersessionPlan(BaseModel):
     applied all-or-nothing conditional on `expected_state` (§4f, I9).
 
     `insert_incoming` is EXPLICIT because the plan type decides what is representable:
-    reinforcement refreshes an existing prior and inserts NOTHING (`False`); absorption
+    reinforcement PERSISTS the incoming edge and touches nothing else (`True`, accepted
+    `0012` Design 1 — the pre-0012 refresh-and-discard form is withdrawn); absorption
     and ordinary supersession insert the incoming edge (`True`). `prior_upserts` are
-    in-place refreshes (reinforcement liveness, absorption notes); `prior_invalidations`
+    in-place refreshes (absorption notes; reinforcement no longer writes one — `0012`); `prior_invalidations`
     are `(edge_id, at, reason)` retirements/absorptions. `expected_state` is the complete
     scope fingerprint (`authority.scope_fingerprint`) the plan assumed; `operation_id` is
     the whole-plan idempotency key. `rule_version`/`store_version`/cache effects are

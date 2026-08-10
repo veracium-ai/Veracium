@@ -70,7 +70,7 @@ DISPOSITIONS = {
  # five former direct-mutation sites here are subsumed by this one call site. The
  # authority guard closes what was tracked as 0003 I1/I2 [M7-correct].
  ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"):
-   (W, "the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement `observed_at`/`confidence`, `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here", "observation",
+   (W, "the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here", "observation",
     "✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5).",
     "`test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged`"),
  ("src/veracium/ingest.py", "ingest_event", "add_episode", "5d29e2f07e03"):

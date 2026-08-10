@@ -6,17 +6,14 @@ Two mechanisms, both grounded in findings:
   invalidated — "still sick?" three months later is irrelevant, not unknown);
   durable/slow facts are flagged CONFIRM (surfaced as possibly-stale, never
   silently dropped); DECAY lowers confidence until a floor. Reinforcement (a
-  re-stated fact) refreshes liveness (`observed_at`) — handled at ingest — but
-  does NOT clear the possibly-stale flag: since `specs/0008`, only `confirm()`
-  clears `needs_confirmation` (an author-class restatement must not answer a
-  question addressed to the user). The pre-0.4.5 "clears the flag" wording this
-  docstring used to carry described behaviour `0008` removed.
-  (`specs/0012` ruled 2026-08-08, Design 1: reinforcement will transfer NOTHING —
-  not `observed_at`, not `confidence`, not `valid_from` — persisting the incoming
-  edge instead, so the fact stays live through the new edge. NOT YET IMPLEMENTED:
-  today the code still
-  refreshes `observed_at`; this note tracks the ruled change so the docstring and
-  `0012` do not silently diverge.)
+  re-stated fact) PERSISTS the restatement as its own edge and transfers NOTHING
+  onto the prior — not `observed_at`, not `confidence`, not `valid_from`
+  (accepted `specs/0012` Design 1, landed 2026-08-10): the fact stays live
+  through the new edge, and each edge ages against its OWN `observed_at`
+  (per-edge ageing is a frozen `0012` invariant — grouping expiry to the newest
+  same-value edge would reintroduce the bypass `0012` closes). Only `confirm()`
+  clears `needs_confirmation` (`specs/0008` — an author-class restatement must
+  not answer a question addressed to the user).
 - **Consolidation (finding 11 / compaction-loss guard).** Cold episodes are
   compacted into compact summaries to bound read cost as history grows (finding
   22), but first occurrences of failures, their fixes, illnesses, and dated

@@ -2,24 +2,12 @@
 
 Site ownership (research ruling 2026-08-08): the two REINFORCEMENT tests below pin finding M9,
 now owned by `specs/0012` (Design 1 persists the reinforcing edge — the edge is the attribution).
-The CONSOLIDATION and ABSORPTION tests pin `specs/0014` (the contribution ledger). All four are
-xfail until their owning spec lands; kept in one file because they share the reproduction harness.
-
-Original note — the maintenance-attribution regression, pinning finding M9.
-
-This test documents an OPEN defect executably. Reinforcement transfers a contributor's
-liveness (`observed_at`) and confidence into the survivor and then discards the incoming
-edge, so the contributing source leaves no trace — it cannot be audited ("why is this fact
-live?") or reversed (source revocation). See `specs/findings.py` M9 and
-`specs/0014-maintenance-attribution.md` §3.1 / invariant A1.
-
-It is marked `xfail(strict=True)` because `0014` is `draft` and unimplemented: the
-attribution record does not exist yet, so the property fails today. When `0014` lands the
-contribution ledger, this test XPASSes, the strict marker turns the suite red, and whoever
-implemented it updates the assertion to the real `contributions()` API and removes the
-marker — the same xfail→prohibition path `tests/test_maintenance_invariant.py` used. The
-"the transfer DID happen" assertions below are true TODAY, so the only thing that fails is
-the attribution — the finding, and nothing else.
+The two reinforcement tests FLIPPED to passing when accepted `0012` landed (2026-08-10); the
+consolidation/absorption pair stays xfail until `0014` lands.
+The CONSOLIDATION and ABSORPTION tests pin `specs/0014` (the contribution ledger) and stay
+xfail(strict) until `0014` lands; kept in one file because they share the reproduction
+harness. (The pre-0012 header text describing reinforcement's transfer-and-discard defect is
+superseded — that defect is CLOSED; see the two passing tests below and `0012` §12.)
 """
 import json
 import tempfile
@@ -66,63 +54,44 @@ def _contributor_is_recoverable(store, user_id, survivor_id, contributor_ref) ->
                for e in store.edges(user_id, active_only=False))
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "finding M9 (repointed 0002->0012, 2026-08-08): reinforcement does not yet attribute the "
-    "contributing source — the incoming edge is never persisted (insert_incoming=False). CLOSED "
-    "BY specs/0012 Design 1 (reinforcement persists the incoming edge with its own provenance — "
-    "the edge IS the attribution), NOT by 0014's ledger. Remove this marker when 0012 lands."))
 def test_reinforcement_attributes_the_contributing_source(tmp_path):
+    """0012 Design 1, LANDED (I7): the persisted incoming edge IS the M9 attribution.
+    Inverted from the strict xfail that documented the pre-0012 defect: the transfer no
+    longer happens (the prior is byte-untouched), BOTH edges survive, and the contributing
+    source is recoverable through the edge it persisted."""
     s = SqliteStore(str(tmp_path / "s.db"))
-    # the user states the fact in January, at low confidence
     s.add_edge(_edge("e1", EvidenceAuthor.USER, "user-chat-jan", 0.5, JAN))
-    # a DIFFERENT source (the one we might later want to revoke) restates the SAME value in
-    # August at high confidence — a same-class reinforcement of the user's fact
     apply_supersession(s, _edge("e2", EvidenceAuthor.SYSTEM, "badfeed-aug", 0.95, AUG),
                        DEFAULT_RELATIONS)
 
-    survivors = s.edges(U, active_only=True)
-    assert len(survivors) == 1
-    survivor = survivors[0]
+    survivors = {e.id: e for e in s.edges(U, active_only=True)}
+    assert set(survivors) == {"e1", "e2"}              # Design 1: both persist
+    prior = survivors["e1"]
+    assert prior.provenance.observed_at == JAN         # the transfer NO LONGER happens
+    assert prior.provenance.confidence == 0.5          # (currency + trust doors closed)
 
-    # the transfer DID happen (measured, true today): the contributor moved the survivor's
-    # liveness forward seven months and raised its confidence — lifecycle ages against
-    # observed_at, so a compromised feed can keep a stale fact alive invisibly.
-    assert survivor.provenance.observed_at == AUG      # was JAN
-    assert survivor.provenance.confidence == 0.95      # was 0.5
-
-    # ...but the contributing source left NO recoverable record (M9 / 0014 A1). This is the
-    # defect: state was transferred, the evidence it happened was not. Fails today.
-    assert _contributor_is_recoverable(s, U, survivor.id, "badfeed-aug"), (
-        "the source 'badfeed-aug' moved the survivor's observed_at and confidence but left "
-        "no attribution — its contribution cannot be audited or reversed (finding M9)")
+    # ...and the contributing source IS recoverable: the persisted edge is the attribution.
+    assert _contributor_is_recoverable(s, U, prior.id, "badfeed-aug")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "the empty-payload reinforcement case (older AND weaker contributor moves no max(), survivor "
-    "unchanged, contributor still vanishes). CLOSED BY specs/0012 Design 1 (persist the incoming "
-    "edge regardless of whether any max() moves — the persisted edge is the attribution). Reinforcement "
-    "moved from 0014 to 0012 (research ruling, 2026-08-08). Remove this marker when 0012 lands."))
 def test_reinforcement_records_the_contributor_even_when_no_value_moves(tmp_path):
+    """0012 Design 1, LANDED: the empty-payload case. An older AND weaker contributor
+    (DEC < JAN, 0.3 < 0.5 — under the old max() transfer nothing would have moved) is
+    still PERSISTED with its own provenance, so the consumption is recorded regardless of
+    whether any value moved — the record is owed to the act, not the payload."""
     s = SqliteStore(str(tmp_path / "s.db"))
-    # the prior is newer AND stronger than the contributor, so max() keeps it on both fields
     s.add_edge(_edge("e1", EvidenceAuthor.USER, "user-chat-jan", 0.5, JAN))
     apply_supersession(s, _edge("e2", EvidenceAuthor.SYSTEM, "badfeed-dec", 0.3, DEC),
                        DEFAULT_RELATIONS)
 
-    survivors = s.edges(U, active_only=True)
-    assert len(survivors) == 1
-    survivor = survivors[0]
+    survivors = {e.id: e for e in s.edges(U, active_only=True)}
+    assert set(survivors) == {"e1", "e2"}              # Design 1: the contributor persists
+    prior = survivors["e1"]
+    assert prior.provenance.observed_at == JAN         # byte-unchanged, as before
+    assert prior.provenance.confidence == 0.5
 
-    # the payload is EMPTY — nothing transferred, the survivor is byte-for-byte unchanged
-    # (true today): DEC < JAN and 0.3 < 0.5, so both max() keep the prior.
-    assert survivor.provenance.observed_at == JAN      # unchanged
-    assert survivor.provenance.confidence == 0.5       # unchanged
-
-    # ...yet the contributor was consulted and discarded, and left no trace — so
-    # "which sources support this fact?" omits it and a blast radius under-reports (0014 A1a).
-    assert _contributor_is_recoverable(s, U, survivor.id, "badfeed-dec"), (
-        "an older/weaker contributor moved no value but was still consumed and still vanished "
-        "— a transfer-keyed invariant misses it; the record is owed to the consumption (0014 A1a)")
+    # the older/weaker contributor no longer vanishes: its edge IS the record.
+    assert _contributor_is_recoverable(s, U, prior.id, "badfeed-dec")
 
 
 # =============================================================================
