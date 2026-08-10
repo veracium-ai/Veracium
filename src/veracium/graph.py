@@ -315,6 +315,12 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     # recency tiebreak reads observed_at: "most recently recorded", not
     # "became true earliest" — valid_from is the first-known axis
     scored.sort(key=lambda t: (-t[0], -t[1].provenance.observed_at.timestamp()))
+    # specs/0012 I8: collapse strictly-redundant ACTIVE duplicates AFTER scoring
+    # (a query-matching note-bearer already surfaces via the suppression predicate)
+    # and BEFORE truncation, so suppressed members never consume max_edges slots.
+    surfaced, _info = collapse_for_render([e for _, e in scored])
+    surfaced_ids = {e.id for e in surfaced}
+    scored = [(sc, e) for sc, e in scored if e.id in surfaced_ids]
     ordered = ([e for _, e in scored] if len(scored) <= max_edges
                else _cover(scored, max_edges, coverage_share))
     # authority permutation WITHIN functional-contention groups; unrelated order unchanged
@@ -430,10 +436,120 @@ def _origin_label(e: Edge) -> str:
     return label
 
 
-def render_edges(edges: list[Edge]) -> str:
+# --------------------------------------------------------------------------- #
+# specs/0012 I8 — the read-path collapse. Render/selection-time ONLY (the O-Q2
+# rule): the store keeps every edge; these functions choose what SURFACES.
+# The governing principle (0012 §4c): suppress ONLY STRICT REDUNDANCY — never
+# synthesize a representative, never guess between incomparable values, never
+# hide a member that carries information any consumer reads.
+# --------------------------------------------------------------------------- #
+
+def _collapse_survivor_order(e: Edge):
+    """The §4c total order: note-bearing → most specific value → freshest
+    `observed_at` → lexicographic edge id (I8j — store-order invariance)."""
+    return (0 if e.note else 1, -len(_value_key(e.object)),
+            -e.provenance.observed_at.timestamp(), e.id)
+
+
+def _strictly_redundant(m: Edge, survivor: Edge) -> bool:
+    """True iff `m` adds NO carrier-visible information beyond the survivor
+    (0012 §4c suppression predicate). The flag is handled by the caller's
+    one-warning-carrier rule, not here."""
+    return ((m.note == "" or m.note == survivor.note)
+            and m.volatility == survivor.volatility
+            and (m.times_used == 0 or m.times_used == survivor.times_used)
+            and (not m.outcome_counts or m.outcome_counts == survivor.outcome_counts)
+            and (m.last_outcome is None or m.last_outcome == survivor.last_outcome))
+
+
+def collapse_for_render(edges: list[Edge]) -> tuple[list[Edge], dict]:
+    """Collapse strictly-redundant ACTIVE duplicates for a model-facing surface
+    (specs/0012 I8). Inactive/quarantined-history members pass through verbatim
+    (I8b — history is never collapsed). Returns `(surfaced, info)`:
+
+    - `surfaced`: the input list minus suppressed members, INPUT ORDER PRESERVED
+      (the surfaced SET is store-order invariant, I8j; ordering is the caller's).
+    - `info`: survivor edge id → {"since": earliest group `valid_from`,
+      "hidden": suppressed count, "flagged_hidden": suppressed-flagged count} —
+      the ONE permitted presentation-level aggregate (truthful render-time
+      labels; nothing is mutated).
+
+    Grouping (0012 §4c): key = (subject, relation, disclosure, author,
+    derived_from) — the COMPLETE effective-authority envelope (I8f); within a
+    key, UNIQUE-ANCHOR value grouping over `_value_key`/`_subsumes` with all
+    three anchored-by cells {0 → alone, 1 → joins, ≥2 → alone} (I8d/I8e/I8i).
+    Warning carrier: the survivor if flagged, else the freshest flagged member —
+    exactly ONE per group per recall (I8h); other flagged-but-redundant members
+    are suppressed and counted.
+    """
+    actives = [e for e in edges if e.active]
+    suppressed: set[str] = set()
+    info: dict[str, dict] = {}
+
+    by_key: dict[tuple, list[Edge]] = {}
+    for e in actives:
+        k = (e.subject, e.relation, e.provenance.disclosure,
+             e.provenance.author_of_evidence, e.provenance.derived_from)
+        by_key.setdefault(k, []).append(e)
+
+    for members in by_key.values():
+        if len(members) < 2:
+            continue
+        # unique-anchor value grouping over the DISTINCT value keys
+        by_vk: dict[tuple, list[Edge]] = {}
+        for e in members:
+            by_vk.setdefault(_value_key(e.object), []).append(e)
+        vks = list(by_vk)
+        anchors = [vk for vk in vks
+                   if not any(o != vk and _subsumes(o, vk) for o in vks)]
+        groups: dict[tuple, list[Edge]] = {a: list(by_vk[a]) for a in anchors}
+        for vk in vks:
+            if vk in groups:
+                continue
+            holding = [a for a in anchors if _subsumes(a, vk)]
+            if len(holding) == 1:                    # the only collapsing cell
+                groups[holding[0]].extend(by_vk[vk])
+            else:                                    # 0 or ≥2 → surfaces alone
+                groups[vk] = list(by_vk[vk])
+
+        for group in groups.values():
+            if len(group) < 2:
+                continue
+            survivor = min(group, key=_collapse_survivor_order)
+            flagged = [m for m in group if m.needs_confirmation]
+            carrier = (survivor if survivor.needs_confirmation else
+                       (max(flagged, key=lambda m:
+                            (m.provenance.observed_at, m.id)) if flagged else None))
+            hidden = flagged_hidden = 0
+            for m in group:
+                if m is survivor or m is carrier:
+                    continue
+                if m.needs_confirmation:
+                    if _strictly_redundant(m, survivor):
+                        suppressed.add(m.id)         # the ×N pin (I8h)
+                        hidden += 1
+                        flagged_hidden += 1
+                    # a flagged member with distinct info surfaces (I8g)
+                elif _strictly_redundant(m, survivor):
+                    suppressed.add(m.id)
+                    hidden += 1
+            if hidden:
+                info[survivor.id] = {
+                    "since": min(m.valid_from for m in group),
+                    "hidden": hidden, "flagged_hidden": flagged_hidden}
+
+    if not suppressed:
+        return list(edges), info
+    return [e for e in edges if e.id not in suppressed], info
+
+
+def render_edges(edges: list[Edge], since: Optional[dict] = None) -> str:
     """Render edges as provenance-carrying lines for a prompt. Quarantined claims
     are fenced with an explicit never-assert marker; superseded edges show their
-    validity range so history is visible without polluting the current value."""
+    validity range so history is visible without polluting the current value.
+    `since` (specs/0012 I8): optional {edge_id: datetime} of collapse-group
+    earliest `valid_from`s — the truthful render-time label for a survivor whose
+    suppressed duplicates include an earlier first-known date; mutates nothing."""
     lines = []
     for e in edges:
         if e.invalidation_reason == "absorbed_duplicate":
@@ -452,6 +568,7 @@ def render_edges(edges: list[Edge]) -> str:
         else:
             stale = " [possibly stale — confirm before relying on it]" if e.needs_confirmation else ""
             tp = f" [{_origin_label(e)}; unconfirmed]" if e.use_only else ""
-            lines.append(f"{who}{e.relation}: {e.object}{note} (since {e.valid_from.date()})"
+            since_dt = (since or {}).get(e.id, e.valid_from)
+            lines.append(f"{who}{e.relation}: {e.object}{note} (since {since_dt.date()})"
                          f"{_outcome_note(e)}{tp}{stale}")
     return "\n".join(lines)

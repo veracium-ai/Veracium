@@ -16,7 +16,7 @@ import hashlib
 import json
 from typing import Optional
 
-from .graph import _value_key, render_edges
+from .graph import _value_key, collapse_for_render, render_edges
 from .llm.base import Complete
 from .schema import DEFAULT_RELATIONS, Relation
 
@@ -120,6 +120,9 @@ def _grounded_inputs(store, user_id: str, relations: dict[str, Relation]):
     contested = _live_refusal_contention_edge_ids(store, user_id, relations)
     edges = [e for e in store.edges(user_id, active_only=True, include_quarantined=False)
              if not e.use_only and e.id not in contested]
+    # specs/0012 I8: the compiler INPUT collapses strictly-redundant duplicates —
+    # N restatements feed the wiki once; the store keeps every edge.
+    edges, _since = collapse_for_render(edges)
     # Episodes are excluded by third-party *influence*, not authorship alone: a
     # system-authored episode derived from third-party content (derived_from)
     # carries that content verbatim and must not reach the assertable wiki.

@@ -27,7 +27,7 @@
 | `src/veracium/__init__.py:803` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `open_moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 [M7-correct] |
 | `src/veracium/__init__.py:824` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
 | `src/veracium/cli.py:238` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
-| `src/veracium/compile.py:151` | `compile_wiki()` | `set_wiki` | `07f974d5bdaf` | `open_moved` | maintain-time | none directly — **caches a trust decision** (now carries the compiler-policy digest envelope, `0003` §4c-ii) | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation; `0003` drops the wiki on a refusal-contention transition, but the general trust-reducing-invalidation drop is 0004 | tracked as 0004 W1–W4 [M8-wiki] |
+| `src/veracium/compile.py:154` | `compile_wiki()` | `set_wiki` | `07f974d5bdaf` | `open_moved` | maintain-time | none directly — **caches a trust decision** (now carries the compiler-policy digest envelope, `0003` §4c-ii) | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation; `0003` drops the wiki on a refusal-contention transition, but the general trust-reducing-invalidation drop is 0004 | tracked as 0004 W1–W4 [M8-wiki] |
 | `src/veracium/graph.py:105` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
 | `src/veracium/ingest.py:168` | `ingest_event()` | `add_episode` | `5d29e2f07e03` | `clean` | write-time | episode provenance (unparseable placeholder) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
 | `src/veracium/ingest.py:179` | `ingest_event()` | `add_episode` | `c1fb106f3b09` | `clean` | write-time | episode provenance | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
@@ -122,7 +122,7 @@ c5d9e9e2da39
   context: try
 
 07f974d5bdaf
-  file:    src/veracium/compile.py:151
+  file:    src/veracium/compile.py:154
   scope:   compile_wiki()
   mutator: set_wiki
   call:    store.set_wiki(user_id, f'{_ENVELOPE}{_policy_digest(relations)}\n{wiki}', store.store_version(user_id))

@@ -24,6 +24,7 @@ from datetime import date as _date
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
+from .graph import collapse_for_render
 from .schema import Edge, Episode, Volatility
 
 _ISO_DATE = re.compile(r"\b(20\d{2}-\d{2}-\d{2})\b")
@@ -66,8 +67,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     current: list[tuple[str, Edge]] = []
     seen: set[str] = set()
 
+    # specs/0012 I8: collapse strictly-redundant duplicates BEFORE categorization
+    # (a suppressed member is category-identical to its survivor: distinct notes,
+    # volatilities and flags all surface by the predicate). The info labels carry
+    # the truthful earliest-since and the ×N flagged count.
+    surfaced, _c_info = collapse_for_render(list(store.edges(user_id)))
     # volunteering gate: active + assertable (mentionable) only
-    for e in store.edges(user_id):
+    for e in surfaced:
         if not e.assertable:
             continue
         dates = _dates_in(e.object + " " + e.note)
@@ -79,13 +85,16 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             seen.add(e.id)
             continue
         if e.needs_confirmation:
+            xn = _c_info.get(e.id, {}).get("flagged_hidden", 0)
+            tail = f" (×{xn + 1} restatements need confirmation)" if xn else ""
             confirms.append((f"{e.relation}: {e.object} — confirm when natural "
-                             f"(unrefreshed since {e.provenance.observed_at.date()})", e))
+                             f"(unrefreshed since {e.provenance.observed_at.date()}){tail}", e))
             seen.add(e.id)
             continue
         if e.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
+            since_dt = _c_info.get(e.id, {}).get("since", e.valid_from)
             current.append((f"{e.relation}: {e.object} "
-                            f"(since {e.valid_from.date()} — worth a follow-up)", e))
+                            f"(since {since_dt.date()} — worth a follow-up)", e))
             seen.add(e.id)
 
     recents: list[tuple[str, Episode]] = []
