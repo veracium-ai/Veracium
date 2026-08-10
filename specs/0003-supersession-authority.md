@@ -415,7 +415,7 @@ fresh-constructor v4 store and a migrated v3→v4 store agree in shape.
 `migrate_store()` (`0013` §5b); until then it refuses ordinary open
 (`migration-required`), and **an older build opening a v4 store refuses
 (`newer`) rather than silently losing the refusal inventory** — the `0007`
-guarantee, now used rather than re-broken. **No `FORMAT_VERSION` change:** refusal
+guarantee, now used rather than re-broken. **Refusals force no `FORMAT_VERSION` bump (accepted `0014` later bumps 4→5 for its Episode field — an independent, later change):** refusal
 records deliberately do not export (§4f), so the portable wire format is unaffected.
 **The v3→v4 migration also invalidates every wiki cache** (or bumps a compiler-policy
 stamp), so a pre-v8 wiki compiled under "one current value" semantics over a now-contested
@@ -975,7 +975,7 @@ value.** `0011` treats a refusal stamped with an unknown or older `rule_version`
 | schema | the refusal table is `SCHEMA_VERSION` **v3→v4** via `0013` (§7a), NOT created opportunistically on open (round-6 blocker 2) |
 | idempotency | **whole-plan, DURABLE** — a `supersession_operations` receipt (a 2nd v4 table) keyed `UNIQUE(user_id, operation_id)`; receipt-check **precedes** the CAS check (replay a committed op; a stale recompute retries under a new attempt id for the same logical op — round-9 blocker 3); the refusal *row* keeps `(prior_edge_id, incoming_edge_id, rule_version)` |
 | `forget_user()` | **deletes the user's refusals** — user-linked metadata, so erasure covers them |
-| export / import | **excluded.** A refusal is a fact about *this store's* history, not the memory; importing one would assert a contention that never happened here — so **no `FORMAT_VERSION` change** |
+| export / import | **excluded.** A refusal is a fact about *this store's* history, not the memory; importing one would assert a contention that never happened here — so **refusals force no `FORMAT_VERSION` bump** (the later `0014` 4→5 bump is independent) |
 | retention | kept while **either** edge exists; dropped when both are gone |
 | the counter | **derived** from the records, never stored — a second copy of a count is the drift this project has spent a week removing |
 

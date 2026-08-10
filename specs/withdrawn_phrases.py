@@ -11,6 +11,38 @@ retracted, the reason, and where the current rule lives.
 """
 
 WITHDRAWN = [
+    # ---- 0014 (rounds 4-6): rules retired during the external review, restated
+    # affirmatively nowhere. Underscores are stripped by _normalise (emphasis
+    # folding), so identifiers are written normalised. Added at R6-6, which
+    # correctly found the previous 'mechanized sweep' was an uncommitted script:
+    # THIS list is the mechanism — committed, in the package, run by the suite.
+    (r"payload MAY be \{\}|\{\} (is|remains) (the )?legal",
+     "R4-1/v8-0014: payloads are TOTAL at every site; {} is an integrity error",
+     "specs/0014 §4a"),
+    (r"which may legitimately be empty",
+     "v8-0014: the total base+contributor/input shapes retired the empty payload",
+     "specs/0014 §4"),
+    (r"no.transfer form",
+     "v8-0014: the no-transfer case is visible IN the recorded values",
+     "specs/0014 §4a/A1"),
+    (r"direct restoration( material)?",
+     "R4-1/0014: multi-prior absorption killed direct restoration; reversal is recomputation",
+     "specs/0014 §7 Reversibility"),
+    (r"no FORMATVERSION change",
+     "R5-4/0014: the exported Episode field bumps FORMAT_VERSION 4->5 (0010 refuse-dont-drop)",
+     "specs/0014 §7a portability"),
+    (r"consolidationoutputindex INTEGER|episodes\.consolidationoutputindex",
+     "R5-3/0014: the SQL-column form is withdrawn; the index is an Episode model field in the json blob",
+     "specs/0014 §4c"),
+    (r"pre.image (ENTERS|enters) (the )?(receipt digest|logicalrequestdigest)",
+     "R5-2/0014: the receipt split; the pre-image enters the OUTCOME digest, replay identity is the REQUEST digest",
+     "specs/0014 §4b/§7b"),
+    (r"reinforcement (never persists|does not persist) (the |its )?incoming",
+     "0012 Design 1 LANDED: restatements persist as their own edges",
+     "specs/0012 §4a; specs/0014 §1 historical note"),
+    (r"validfrom\? (disclosure|derivedfrom)|validfrom is (in|part of) the consolidation",
+     "R4-6/0014: Episodes have no valid_from; the consolidation set excludes it",
+     "specs/0014 §4a"),
     # Narrowed deliberately. A first attempt matched any *description* of the
     # withdrawn rule -- "the generator added whatever a migration produced" --
     # which every review disposition and test docstring has to contain. A
