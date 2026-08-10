@@ -415,7 +415,7 @@ fresh-constructor v4 store and a migrated v3→v4 store agree in shape.
 `migrate_store()` (`0013` §5b); until then it refuses ordinary open
 (`migration-required`), and **an older build opening a v4 store refuses
 (`newer`) rather than silently losing the refusal inventory** — the `0007`
-guarantee, now used rather than re-broken. **Refusals force no `FORMAT_VERSION` bump (accepted `0014` later bumps 4→5 for its Episode field — an independent, later change):** refusal
+guarantee, now used rather than re-broken. **Refusals force no `FORMAT_VERSION` bump (`0014` (in external review) later bumps 4→5 for its Episode field — an independent, later change):** refusal
 records deliberately do not export (§4f), so the portable wire format is unaffected.
 **The v3→v4 migration also invalidates every wiki cache** (or bumps a compiler-policy
 stamp), so a pre-v8 wiki compiled under "one current value" semantics over a now-contested

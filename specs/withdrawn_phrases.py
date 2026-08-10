@@ -16,9 +16,12 @@ WITHDRAWN = [
     # folding), so identifiers are written normalised. Added at R6-6, which
     # correctly found the previous 'mechanized sweep' was an uncommitted script:
     # THIS list is the mechanism — committed, in the package, run by the suite.
-    (r"payload MAY be \{\}|\{\} (is|remains) (the )?legal",
+    (r"payload MAY be \{\}|\{\} (is|remains) (the )?legal|\{\} (only|remains .{0,20}legal) at|legal (form )?(ONLY )?at absorption.{0,3}s no.transfer",
      "R4-1/v8-0014: payloads are TOTAL at every site; {} is an integrity error",
      "specs/0014 §4a"),
+    (r"empty.payload consumption|no.payload consumption|payload empty or not|payload MAY be empty",
+     "v8-0014: the consult-and-discard record is TOTAL; emptiness was retired with the base+contributor shape",
+     "specs/0014 §4/A1/A7"),
     (r"which may legitimately be empty",
      "v8-0014: the total base+contributor/input shapes retired the empty payload",
      "specs/0014 §4"),
@@ -34,7 +37,7 @@ WITHDRAWN = [
     (r"consolidationoutputindex INTEGER|episodes\.consolidationoutputindex",
      "R5-3/0014: the SQL-column form is withdrawn; the index is an Episode model field in the json blob",
      "specs/0014 §4c"),
-    (r"pre.image (ENTERS|enters) (the )?(receipt digest|logicalrequestdigest)",
+    (r"(pre.image|drafts?|contributions?) (ENTERS?|enters?) .{0,25}logicalrequestdigest",
      "R5-2/0014: the receipt split; the pre-image enters the OUTCOME digest, replay identity is the REQUEST digest",
      "specs/0014 §4b/§7b"),
     (r"reinforcement (never persists|does not persist) (the |its )?incoming",
