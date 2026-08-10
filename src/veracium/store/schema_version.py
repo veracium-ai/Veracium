@@ -227,9 +227,80 @@ SCHEMA_V5 = SCHEMA_V4 + (
 )""", REQUIRED),
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5}
+# v6 (specs/0014) makes TWO structural changes in one migration: the additive
+# `contribution_ledger` table + its three indexes, and — the repo's FIRST ALTER of an
+# existing table — three new columns on `supersession_operations` (`request_digest`,
+# `response`, `outcome_digest_version NOT NULL DEFAULT 1`; the DEFAULT both makes the
+# ALTER executable on populated tables and IS the migration stamp — 0014 R10-3). The
+# op_key UNIQUE index is REQUIRED, not rebuildable: a UNIQUE index decides which writes
+# are accepted (0007 R1). Because a fresh constructor and the ALTER path legitimately
+# produce DIFFERENT stored DDL for the same table, `MANIFESTS[6]` is a SET per accepted
+# `0013` §4e: the constructor entry below is generated as usual, and the ALTER-path
+# entry is the REVIEWED CONSTANT `ALTER_PATH_V6_SQL` (0014 §4b — authored on the
+# qualified runtime, authorized by the 0014 acceptance review; the migration must
+# byte-match it, never define it — `0013` §4c).
+SCHEMA_V6 = tuple(
+    o if o.name != "supersession_operations" else
+    SchemaObject("table", "supersession_operations", """CREATE TABLE supersession_operations (
+    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,
+    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,
+    request_digest TEXT, response TEXT,
+    outcome_digest_version INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (user_id, operation_id)
+)""", REQUIRED)
+    for o in SCHEMA_V5
+) + (
+    SchemaObject("table", "contribution_ledger", """CREATE TABLE contribution_ledger (
+    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,
+    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,
+    site TEXT NOT NULL,
+    identity_digest TEXT, evidence_ref_digest TEXT,
+    payload TEXT NOT NULL, op_key TEXT,
+    created_at TEXT NOT NULL
+)""", REQUIRED),
+    SchemaObject("index", "ix_contribution_ledger_survivor",
+                 "CREATE INDEX ix_contribution_ledger_survivor "
+                 "ON contribution_ledger(user_id, survivor_type, survivor_id)", REBUILDABLE),
+    SchemaObject("index", "ix_contribution_ledger_source",
+                 "CREATE INDEX ix_contribution_ledger_source "
+                 "ON contribution_ledger(user_id, identity_digest)", REBUILDABLE),
+    SchemaObject("index", "ix_contribution_ledger_op_key",
+                 "CREATE UNIQUE INDEX ix_contribution_ledger_op_key "
+                 "ON contribution_ledger(op_key) WHERE op_key IS NOT NULL", REQUIRED),
+)
 
-SCHEMA_VERSION = 5
+# The REVIEWED ALTER-path stored DDL for `supersession_operations` (0014 §4b, verbatim —
+# columns appended in ALTER order at the end of the `status` line, BEFORE the table-level
+# PRIMARY KEY: the measured + reviewed SQLite 3.45.1 layout). The 0014 acceptance review
+# authorized THIS text as content; `specs/schema_evidence.py` emits it as the second
+# accepted v6 manifest (provenance `v5:constructor->v6`) after checking its sha256
+# against `ALTER_PATH_V6_SHA256` — the migration must produce a byte-match, and a
+# mismatch means the migration (or an unqualified runtime) is wrong, never the constant.
+ALTER_PATH_V6_SQL = (
+    "CREATE TABLE supersession_operations (\n"
+    "    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,\n"
+    "    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,"
+    " request_digest TEXT, response TEXT,"
+    " outcome_digest_version INTEGER NOT NULL DEFAULT 1,\n"
+    "    PRIMARY KEY (user_id, operation_id)\n"
+    ")"
+)
+ALTER_PATH_V6_SHA256 = \
+    "326ea1938cd8f623093b655c61c4c10a46087ccaee5a8687061d8ef2572c3dc0"
+
+# The three ALTER statements, in the frozen order (0014 §4b/§7a). Shared by the v5->v6
+# migration step; the resulting stored DDL must equal ALTER_PATH_V6_SQL byte-for-byte.
+ALTERS_V5_TO_V6 = (
+    "ALTER TABLE supersession_operations ADD COLUMN request_digest TEXT",
+    "ALTER TABLE supersession_operations ADD COLUMN response TEXT",
+    "ALTER TABLE supersession_operations ADD COLUMN "
+    "outcome_digest_version INTEGER NOT NULL DEFAULT 1",
+)
+
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
+           6: SCHEMA_V6}
+
+SCHEMA_VERSION = 6
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

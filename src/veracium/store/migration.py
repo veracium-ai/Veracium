@@ -143,6 +143,35 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
     # base<5<=head so it fires exactly once, on the v4→v5 cross.
     if base < 5 <= SCHEMA_VERSION:
         _mint_store_identity(conn)
+    # specs/0014 §4b/§7a: crossing INTO v6 ALTERs `supersession_operations` — the repo's
+    # FIRST ALTER of an existing table, which the additive diff-by-key above cannot
+    # express (the table's typed key exists in the base, so its CHANGED DDL is invisible
+    # to the object diff). The three ADD COLUMNs run in the frozen order; the DEFAULT 1
+    # on `outcome_digest_version` both makes the ALTER legal on a populated table and IS
+    # the migration stamp (every pre-upgrade receipt reads version 1 — the pre-split
+    # digest projection; post-upgrade writes stamp 2 explicitly). The resulting stored
+    # DDL must byte-match the REVIEWED constant `ALTER_PATH_V6_SQL` (0014 §4b): the
+    # expectation was authored independently and authorized by review — a mismatch here
+    # means this migration (or the runtime) is wrong, and `open_versioned`'s
+    # revalidation against `accepted_digests(6)` (which carries the reviewed ALTER-path
+    # manifest per `0013` §4e) refuses the result rather than adopting it.
+    # Guarded 4 <= base: `supersession_operations` entered the schema at v4, so only
+    # v4/v5 bases carry a table to ALTER — for bases 1-3 the additive diff above already
+    # created the table in its v6 CONSTRUCTOR form (columns inline), and those paths
+    # land on the CONSTRUCTOR manifest, which is equally accepted.
+    if 4 <= base < 6 <= SCHEMA_VERSION:
+        from .schema_version import ALTERS_V5_TO_V6, ALTER_PATH_V6_SQL
+        for stmt in ALTERS_V5_TO_V6:
+            conn.execute(stmt)
+        stored = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' "
+            "AND name='supersession_operations'").fetchone()[0]
+        if stored != ALTER_PATH_V6_SQL:
+            raise StoreVersionError(
+                "", base, SCHEMA_VERSION, "unsupported-migration",
+                diff="the v5->v6 ALTER produced DDL that does not byte-match the "
+                     "reviewed expectation (0014 §4b) — the migration or runtime is "
+                     "wrong; the expectation never moves")
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 

@@ -263,6 +263,27 @@ def build_version_artifact(strict: bool = True) -> dict:
         accepted.append({"provenance": f"constructor v{version}",
                          "digest": digest(manifest(c), version),
                          "objects": identity(manifest(c))})
+        # 0014 §4b / accepted 0013 §4e: v6 accepts a SECOND manifest — the v5->v6
+        # ALTER path, whose `supersession_operations` stored DDL legitimately differs
+        # from the constructor's. The entry is built from the REVIEWED CONSTANT
+        # (`ALTER_PATH_V6_SQL`, authorized by the 0014 acceptance review), never by
+        # running the migration here — `0013` §4c: a migration may not define its own
+        # destination. The sha self-check makes a drifted constant fail loudly.
+        if version == 6:
+            import copy
+            import hashlib as _h
+            if (_h.sha256(sv.ALTER_PATH_V6_SQL.encode()).hexdigest()
+                    != sv.ALTER_PATH_V6_SHA256):
+                raise SystemExit("ALTER_PATH_V6_SQL does not match its reviewed "
+                                 "sha256 (0014 §4b) — refusing to emit evidence")
+            alt = copy.deepcopy(identity(manifest(c)))
+            alt["table:supersession_operations"] = dict(
+                alt["table:supersession_operations"], sql=sv.ALTER_PATH_V6_SQL)
+            accepted.append({
+                "provenance": "v5:constructor->v6 (reviewed ALTER-path constant — "
+                              "specs/0014 §4b, sha 326ea193…)",
+                "digest": sv._digest_of_identity(alt, version),
+                "objects": alt})
         c.close()
         # *(Historical: round 7's union across qualified runtimes. `0007` now
         # supports exactly one active build identity; this loop survives so the
