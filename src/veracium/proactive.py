@@ -73,13 +73,19 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # the truthful earliest-since and the ×N flagged count.
     surfaced, _c_info = collapse_for_render(list(store.edges(user_id)))
     # volunteering gate: active + assertable (mentionable) only
-    from .budgets import clamp_item as _clamp
+    from .budgets import clamp_item as _clamp, est_tokens as _est0
     _cap = getattr(config, "item_cap_tokens", 512)
+    comp_clamped = [0]                         # composition-time clamps are truncation
+    #                                            EVENTS and must signal (R-impl2-1)
 
-    def _obj(e):
+    def _obj(e, content_cap=None):
         # content clamp BEFORE framing: the due/confirm instructions render after
         # the object, so a whole-line tail clamp would sever them (I10c)
-        return _clamp(e.object, max(16, _cap - 48))
+        cap = content_cap if content_cap is not None else max(16, _cap - 48)
+        out = _clamp(e.object, cap)
+        if content_cap is None and out != e.object:
+            comp_clamped[0] += 1
+        return out
 
     for e in surfaced:
         if not e.assertable:
@@ -142,10 +148,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 ("## CURRENT CONTEXT", current),
                 ("## RECENT HISTORY", recents)]
 
-    if token_budget is not None:
-        from .budgets import validate_budget
-        validate_budget("proactive", token_budget,
-                        getattr(config, "group_heading_allowance_tokens", 48))
+    # specs/0012 I10: proactive is ALWAYS budgeted — a direct caller that omits
+    # token_budget gets the validated config default, never unbounded (R-impl2-1).
+    if token_budget is None:
+        token_budget = getattr(config, "proactive_default_budget_tokens", 1200)
+    from .budgets import validate_budget
+    validate_budget("proactive", token_budget,
+                    getattr(config, "group_heading_allowance_tokens", 48))
     # specs/0012 I10b/I10f: ADMISSION runs in the precedence order (warnings above
     # commitments above context above history), independent of the §4c DISPLAY order;
     # the report marker is reserved off the top; the first admitted item is clamped
@@ -172,12 +181,21 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             items = by_header.get(header, [])
             if not items:
                 continue
+            if header == "## RECENT HISTORY":
+                items = list(reversed(items))              # NEWEST first under budget
             header_cost = est(header) + 1
             for line, unit in items:
                 cost = est(line) + 1 + (header_cost if not admitted[header] else 0)
                 if cost > remaining:
-                    if not first_admitted and remaining > header_cost + 16:
-                        line = _ci(line, remaining - header_cost - 1)   # clamp TO FIT
+                    if not first_admitted and remaining > header_cost + 24:
+                        if isinstance(unit, Edge):
+                            # RECOMPOSE with tighter content — a whole-line tail clamp
+                            # would sever the end-positioned due/confirm framing (I10c)
+                            tight = _obj(unit, max(8, remaining - header_cost - 32))
+                            line = line.replace(_obj(unit), tight, 1) \
+                                if _obj(unit) in line else _ci(line, remaining - header_cost - 1)
+                        else:
+                            line = _ci(line, remaining - header_cost - 1)
                         cost = est(line) + 1 + header_cost
                         n_clamped += 1
                         if cost > remaining:
@@ -190,15 +208,19 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 remaining -= cost
                 first_admitted = True
                 (sel_edges if isinstance(unit, Edge) else sel_eps).append(unit)
+        if admitted["## RECENT HISTORY"]:
+            admitted["## RECENT HISTORY"].reverse()        # render chronologically
     n_dropped = sum(dropped.values())
-    truncated = bool(n_dropped or n_clamped)
+    truncated = bool(n_dropped or n_clamped or comp_clamped[0])
 
     parts = [header + "\n" + "\n".join(admitted[header])
              for header, _ in sections if admitted[header]]
     context = "\n\n".join(parts).strip() or "(nothing needs attention)"
     if truncated:
-        context += (f"\n[budget: dropped {dropped['## CONFIRM WHEN NATURAL']} warnings / "
-                    f"{dropped['## DATED COMMITMENTS']} commitments / "
-                    f"{dropped['## CURRENT CONTEXT']} context / "
-                    f"{dropped['## RECENT HISTORY']} history / {n_clamped} clamped]")
+        from .budgets import bounded_count as _bc          # bounded-width (R9-2)
+        context += (f"\n[budget: dropped {_bc(dropped['## CONFIRM WHEN NATURAL'])} warnings / "
+                    f"{_bc(dropped['## DATED COMMITMENTS'])} commitments / "
+                    f"{_bc(dropped['## CURRENT CONTEXT'])} context / "
+                    f"{_bc(dropped['## RECENT HISTORY'])} history / "
+                    f"{_bc(n_clamped + comp_clamped[0])} clamped]")
     return context, sel_edges, sel_eps, truncated

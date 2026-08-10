@@ -181,11 +181,14 @@ class Memory:
         validated config default applies (`query_context_budget_tokens`, 4,000)
         — recall is never unbounded; a budget below the envelope-derived floor
         raises `ValueError` (specs/0012 I10e — the old sub-floor best-effort
-        rendering is withdrawn). Selection under pressure follows the 0012 §4c
-        precedence: contested first, then query-relevant flagged warnings, then
-        query-matched claim flags, then unrelated warnings, commitments, and
-        context; the wiki within its render share; variants last. Truncation is
-        reported in-context and via `Recall.truncated`.
+        rendering is withdrawn). Selection under pressure follows the FROZEN
+        0012 §4c(iv) order: contested first, then query-relevant flagged
+        warnings, query-matched claim flags, other flagged warnings
+        (most-overdue first), dated commitments (nearest first), the wiki
+        within its render share, relevance-ranked grounded edges, episodes
+        (newest first), the remaining unverified partition, and variants last.
+        Truncation is reported in-context (bounded-width counts) and via
+        `Recall.truncated`.
 
         **No query → proactive mode**: a session-start briefing ("what should
         I know before starting?") — dated commitments coming due or overdue,
@@ -344,13 +347,21 @@ class Memory:
             remaining = (line_budget - est_tokens(f"- {head}: {tail}")
                          - WITHHELD_MARKER_RESERVE)
             # the mandatory member, content-clamped to what remains (never dropped)
-            first_cap = max(MIN_MEMBER_CONTENT,
+            # BOTH mandatory members — the highest-effective-authority member AND the
+            # grounded prior (distinct here when the group has >= 2 grounded members;
+            # they may alias) — are emitted CONTENT-CLAMPED, never withheld (R-impl2-6).
+            mandatory = grounded[: min(2, len(grounded))]
+            members = []
+            for i, m in enumerate(mandatory):
+                share = max(1, len(mandatory) - i)
+                m_cap = max(MIN_MEMBER_CONTENT,
                             min(self.config.item_cap_tokens,
-                                remaining - MEMBER_FRAMING_COST))
-            members = [_member(grounded[0], first_cap)]
-            squeezed = est_tokens(grounded[0].object) > first_cap   # mandatory clamped?
-            remaining -= est_tokens(members[0])
-            for e in grounded[1:]:
+                                (remaining // share) - MEMBER_FRAMING_COST))
+                rendered = _member(m, m_cap)
+                squeezed = squeezed or est_tokens(m.object) > m_cap
+                members.append(rendered)
+                remaining -= est_tokens(rendered)
+            for e in grounded[len(mandatory):]:
                 if len(members) >= k_cap:
                     break
                 cand = _member(e, self.config.item_cap_tokens)
@@ -534,12 +545,13 @@ class Memory:
                     continue
                 if est(raw) > cap:
                     n_clamped += 1
-                cost = est(line)
+                cost = est(line) + 1                       # +1: the join newline
                 if cost > remaining:
                     if best_effort_first and k == 0 and not sel and remaining >= 16:
-                        line = clamp_edge_line(e, remaining, render_edges)
-                        cost = est(line)
+                        line = clamp_edge_line(e, remaining - 1, render_edges)
+                        cost = est(line) + 1
                         if cost <= remaining:
+                            n_clamped += 1                 # clamp-to-fit SIGNALS (I10a)
                             sel.append(line)
                             remaining -= cost
                             continue
@@ -553,7 +565,7 @@ class Memory:
             dropped = 0
             nonlocal remaining
             for line in lines:
-                cost = est(line)
+                cost = est(line) + 1                       # +1: the join newline
                 if cost > remaining:
                     dropped += 1
                     continue
@@ -561,13 +573,16 @@ class Memory:
                 remaining -= cost
             return dropped
 
+        # the FROZEN §4c(iv) recall order: contested (upstream) → query-relevant flagged
+        # → query-matched claim flags → other flagged → commitments → the WIKI within its
+        # share → relevance-ranked grounded edges → episodes (newest) → the remaining
+        # unverified partition → variants LAST.
         sel_edges: list[str] = []
         d_flag_rel = _admit_edges(flagged_rel, sel_edges, best_effort_first=True)
         sel_unv: list[str] = []
         d_safety = _admit(_claim_lines(claims_matched) + tp_ep_lines, sel_unv)
         d_flag_unrel = _admit_edges(flagged_unrel, sel_edges)
         d_commit = _admit_edges(commitments, sel_edges)
-        d_plain = _admit_edges(plain, sel_edges, best_effort_first=not sel_edges)
 
         wiki_dropped = False
         if wiki:
@@ -588,28 +603,31 @@ class Memory:
                 else:
                     wiki, wiki_dropped = None, True
 
-        d_safety += _admit(_claim_lines(claims_unmatched), sel_unv)   # after the wiki
-        d_variants = _admit_edges(variants, sel_edges)                # variants LAST
+        d_plain = _admit_edges(plain, sel_edges,           # grounded edges AFTER the wiki
+                               best_effort_first=not sel_edges)
         sel_eps: list[str] = []
         d_eps = 0
-        for line in reversed(ep_lines):                    # newest first under budget
-            cost = est(line)
+        for line in reversed(ep_lines):                    # episodes: newest first
+            cost = est(line) + 1                           # +1: the join newline
             if cost > remaining:
                 d_eps += 1
                 continue
             sel_eps.append(line)
             remaining -= cost
         sel_eps.reverse()                                  # render chronologically
+        d_safety += _admit(_claim_lines(claims_unmatched), sel_unv)   # remaining partition
+        d_variants = _admit_edges(variants, sel_edges)                # variants LAST
 
         d_detail = d_flag_rel + d_flag_unrel + d_commit + d_plain + d_variants
         truncated = bool(d_detail or d_safety or wiki_dropped or d_eps or n_clamped)
         detail = "\n".join(sel_edges + sel_eps).strip()
-        if truncated:                                      # the I10b report, per class
+        if truncated:                                      # the I10b report, per class,
+            from .budgets import bounded_count as _bc      # counts BOUNDED-WIDTH (R9-2)
             detail = (detail + ("\n" if detail else "")
-                      + f"[budget: dropped {d_detail} detail / {d_safety} SAFETY / "
-                        f"{n_clamped} clamped / "
+                      + f"[budget: dropped {_bc(d_detail)} detail / {_bc(d_safety)} SAFETY / "
+                        f"{_bc(n_clamped)} clamped / "
                         f"wiki {'clamped-or-dropped' if wiki_dropped else 'kept'} / "
-                        f"{d_eps} episodes]")
+                        f"{_bc(d_eps)} episodes]")
         unverified = "\n".join(sel_unv).strip()
         return wiki, detail, unverified, truncated
 

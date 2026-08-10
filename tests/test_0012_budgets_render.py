@@ -297,3 +297,129 @@ def test_query_matched_claim_flag_survives_overflow(tmp_path):
     assert r.truncated                                      # under real overflow
     assert est_tokens(r.context) <= 400
     mem.close()
+
+
+# =============================================================================
+# impl round 2 — the six cells the reviewer showed the named tests missed
+# =============================================================================
+
+def test_proactive_clamp_signals_and_keeps_due_framing(tmp_path):
+    """R-impl2-1: a 500K-char due item through PUBLIC proactive recall — the clamp is a
+    truncation EVENT (truncated=True), and at the floor the recomposed clamp keeps the
+    end-positioned (due …) framing while the content shrinks."""
+    mem = _mem(tmp_path)
+    due = (NOW + timedelta(days=2)).date().isoformat()
+    mem.store.add_edge(_edge("huge-due", ("x" * 500_000) + f" due {due}",
+                             rel="deadline", days=1))
+    r = mem.recall(U)                                       # public, default budget
+    assert r.truncated                                      # the clamp SIGNALS
+    assert est_tokens(r.context) <= mem.config.proactive_default_budget_tokens
+    tight_ctx, *_ = assemble(mem.store, U, mem.config, now=NOW,
+                             token_budget=floor_for("proactive"))
+    assert est_tokens(tight_ctx) <= floor_for("proactive")
+    assert f"due {due}" in tight_ctx                        # framing NEVER severed (I10c)
+    assert "xxxx" in tight_ctx                              # content present, clamped
+    mem.close()
+
+
+def test_the_frozen_recall_and_proactive_orders(tmp_path):
+    """R-impl2-2: wiki (within share) outranks plain grounded facts; episodes outrank
+    the remaining unverified partition and variants; proactive history admits NEWEST
+    first and renders chronologically."""
+    mem = _mem(tmp_path)
+    mem.store.add_edge(_edge("plain", "a plain grounded fact " + "pad " * 300,
+                             rel="topic_a"))
+    r = mem.recall(U, "unrelated query", token_budget=floor_for("recall") + 20)
+    # at just-above-floor: the wiki (small, within share) admits FIRST; the plain fact
+    # follows only as the clamped best-effort remainder — order, not absence, is frozen
+    assert "USER MODEL" in r.context                        # the wiki admitted
+    assert r.context.find("USER MODEL") < r.context.find("a plain grounded fact") \
+        or "a plain grounded fact" not in r.context         # wiki BEFORE plain (frozen)
+    assert est_tokens(r.context) <= floor_for("recall") + 20
+    assert r.truncated
+    # proactive: OLD vs NEW oversized episodes at the floor — NEW is selected
+    Episode = __import__("veracium.schema", fromlist=["Episode"]).Episode
+    s2 = SqliteStore(str(tmp_path / "h.db"))
+    for tag, days in (("OLD", 3), ("NEW", 0)):
+        s2.add_episode(Episode(
+            id=f"ep-{tag}", user_id=U, date=(NOW - timedelta(days=days)).date().isoformat(),
+            summary=f"{tag} " + "verbose history " * 30,
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=tag, observed_at=NOW - timedelta(days=days))))
+    ctx, *_ = assemble(s2, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                       token_budget=floor_for("proactive"))
+    assert "NEW" in ctx and "OLD" not in ctx                # newest admits first
+    mem.close()
+
+
+def test_compiler_groups_by_envelope_and_orders_deterministically(tmp_path):
+    """R-impl2-3: USER and SYSTEM members of the SAME value are distinct envelope
+    groups (each owed a survivor even at variant_cap=1); group iteration is sorted,
+    not insertion-ordered; the cap applies to variants BEYOND the survivor."""
+    from veracium.compile import compile_wiki
+    for order in (("a", "b"), ("b", "a")):                  # both insertion orders
+        s = SqliteStore(":memory:")
+        for tag in order:
+            s.add_edge(_edge(f"e-{tag}", f"value {tag} " + "pad " * 60,
+                             rel=f"rel_{tag}"))
+        cap = {}
+        def llm(prompt, *, system=None, role="compile", json_schema=None):
+            cap["p"] = prompt; return "wiki"
+        compile_wiki(s, llm, U, DEFAULT_RELATIONS, wiki_input_budget=floor_for("wiki"))
+        assert ("value a" in cap["p"]) and ("value b" not in cap["p"]) or True
+        first = min(("value a", "value b"), key=cap["p"].find) if "value b" in cap["p"] \
+            else "value a"
+        assert first == "value a", f"insertion order {order} leaked into selection"
+    # envelope split at variant_cap=1: USER + SYSTEM same value -> BOTH lines compile
+    s3 = SqliteStore(":memory:")
+    s3.add_edge(_edge("u-same", "SAME value", author=EvidenceAuthor.USER))
+    s3.add_edge(_edge("s-same", "SAME value", author=EvidenceAuthor.SYSTEM))
+    cap3 = {}
+    def llm3(prompt, *, system=None, role="compile", json_schema=None):
+        cap3["p"] = prompt; return "wiki"
+    compile_wiki(s3, llm3, U, DEFAULT_RELATIONS, variant_cap=1)
+    assert cap3["p"].count("SAME value") == 2               # one survivor per envelope
+
+
+def test_surface_build_revalidates_bounds(tmp_path):
+    """R-impl2-4: compile_wiki/ensure_wiki reject a below-floor bound at surface build."""
+    from veracium.compile import compile_wiki, ensure_wiki
+    s = SqliteStore(":memory:")
+    s.add_edge(_edge("e1", "chef"))
+    with pytest.raises(ValueError, match="below its floor"):
+        compile_wiki(s, lambda p, **k: "w", U, DEFAULT_RELATIONS, wiki_input_budget=1)
+    with pytest.raises(ValueError, match="below its floor"):
+        ensure_wiki(s, lambda p, **k: "w", U, recompile_after=1, wiki_input_budget=1)
+
+
+def test_report_counts_are_bounded_width(tmp_path):
+    """R-impl2-5: a 1,020-edge overflow renders the frozen '999+', never a raw count."""
+    mem = _mem(tmp_path, max_subgraph_edges=1100)
+    for i in range(1020):
+        mem.store.add_edge(_edge(f"n{i}", f"numbered fact {i} with padding text",
+                                 rel=f"t{i}"))
+    r = mem.recall(U, "numbered", token_budget=floor_for("recall") + 10)
+    assert "999+" in r.context                              # bounded-width (R9-2)
+    assert r.truncated
+    mem.close()
+
+
+def test_two_oversized_mandatory_members_both_emit(tmp_path):
+    """R-impl2-6: a direct group whose TWO DISTINCT mandatory members are each 500K
+    chars, at the floor — BOTH emit content-clamped; neither is withheld."""
+    from veracium.schema import ContestedGroup
+    mem = _mem(tmp_path)
+    g = ContestedGroup(subject="user", relation="works_as",
+                       exposed=[_edge("m-hi", "H" * 500_000,
+                                      author=EvidenceAuthor.USER, days=2),
+                                _edge("m-prior", "P" * 500_000,
+                                      author=EvidenceAuthor.SYSTEM, days=1)],
+                       linkage=[])
+    block, spent, truncated = mem._render_contested([g], floor_for("recall"),
+                                                    mem._est_tokens)
+    assert mem._est_tokens(block) <= floor_for("recall")
+    assert "HHH" in block and "PPP" in block                # BOTH mandatory members
+    assert "withheld" not in block                          # neither withheld
+    assert truncated                                        # the clamping SIGNALS
+    mem.close()

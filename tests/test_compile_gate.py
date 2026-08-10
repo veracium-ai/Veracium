@@ -227,10 +227,15 @@ def test_recall_token_budget():
         from veracium.budgets import floor_for
         assert budget >= floor_for("recall")          # the padded store keeps this legal
         tight = mem.recall("u", "diet and debts?", token_budget=budget)
-        assert tight.truncated                        # wiki + episodes didn't fit
-        assert "vegetarian" in tight.context          # query-matched facts kept
-        assert "2,400" in tight.unverified            # claim flag outranks the wiki
-        assert "USER MODEL" not in tight.context      # wiki dropped under pressure
+        assert tight.truncated                        # something didn't fit
+        # the FROZEN §4c(iv) order (0012, implemented at impl round 2): the
+        # query-matched claim flag outranks everything after the warnings; the WIKI
+        # (within its share) outranks plain grounded facts — so under pressure the
+        # claim survives, the wiki survives inside its share, and plain detail drops.
+        assert "2,400" in tight.unverified            # the claim flag survives (I10h)
+        assert "Vegetarian" in tight.context          # via the share-bounded wiki
+        assert "[budget:" in tight.context            # the drop is REPORTED (I10b)
+        assert tight.tokens_estimated <= budget       # the bound holds (I10g)
         assert len(tight.edges) == len(full.edges)    # raw units not budget-shaped
 
         # specs/0012 I10e (the §7b-ii inversion of the old survival test): a budget

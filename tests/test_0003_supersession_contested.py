@@ -7,6 +7,8 @@ is controlled) plus one end-to-end recall.
 """
 from veracium import Memory
 from veracium.config import MemoryConfig
+from veracium.budgets import floor_for as _ff
+_floor_recall = _ff("recall")
 from veracium.graph import apply_supersession
 from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance, SourceType)
 
@@ -111,11 +113,11 @@ def test_refusal_does_not_evict_the_prior_at_a_finite_budget(tmp_path):
     mem.store.add_edge(_edge("p", EvidenceAuthor.USER, "CFO at Acme"))
     # specs/0012 I10e: budgets below the envelope-derived floor (256) now raise; the
     # finite-budget intent survives at a just-above-floor value.
-    before = mem.recall(U, "works_as", token_budget=260)
+    before = mem.recall(U, "works_as", token_budget=_floor_recall + 4)
     assert "CFO at Acme" in before.context                          # prior visible pre-refusal
     apply_supersession(mem.store, _edge("i", EvidenceAuthor.THIRD_PARTY, "unemployed",
                                         disc=Disclosure.QUARANTINED), mem.config.relations)
-    after = mem.recall(U, "works_as", token_budget=260)
+    after = mem.recall(U, "works_as", token_budget=_floor_recall + 4)
     assert "CFO at Acme" in after.context                           # NOT evicted by the refusal
     assert "unemployed" not in after.grounded                       # challenger stays out of grounded
 
@@ -137,7 +139,7 @@ def test_contested_surface_is_budgeted_not_unbounded(tmp_path):
     full = mem.recall(U, "value")                                   # unbudgeted: all groups render
     assert full.context.count("CONTESTED") >= 1
     assert len(full.contested) == 5
-    tight = mem.recall(U, "value", token_budget=260)                # just above the floor
+    tight = mem.recall(U, "value", token_budget=_floor_recall + 4)                # just above the floor
     assert tight.truncated                                          # the surface was gated
     assert len(tight.context) < len(full.context)                  # bounded, not unbounded
     # the structured carrier still reports every contention (raw material is full; the

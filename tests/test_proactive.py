@@ -104,7 +104,8 @@ def test_recall_none_wires_proactive_and_respects_budget():
             import pytest as _pytest
             with _pytest.raises(ValueError, match="below its floor"):
                 mem.recall("u", token_budget=30)
-            tight = mem.recall("u", token_budget=245)  # just above the proactive floor
+            from veracium.budgets import floor_for as _ff
+            tight = mem.recall("u", token_budget=_ff("proactive") + 5)  # just above the floor
             assert tight.truncated
             assert "OVERDUE" in tight.context or "due 2026-07-28" in tight.context
             assert tight.context.count("verbose recent-history line") < 12

@@ -42,9 +42,13 @@ def mandatory_contested_allowance(heading_allowance: int = GROUP_HEADING_ALLOWAN
 
 
 def floor_for(surface: str, heading_allowance: int = GROUP_HEADING_ALLOWANCE) -> int:
+    # the reserve is PER-SURFACE and matches what the surface actually charges
+    # (R-impl2-4): recall/proactive reserve the 32-token truncation REPORT; the wiki
+    # reserves the 16-token compile-marker line.
+    reserve = MARKER_RESERVE if surface == "wiki" else REPORT_RESERVE
     return (ENVELOPES[surface]
             + max(MIN_ITEM_ALLOWANCE, mandatory_contested_allowance(heading_allowance))
-            + MARKER_RESERVE)
+            + reserve)
 
 
 def validate_budget(surface: str, value: int,

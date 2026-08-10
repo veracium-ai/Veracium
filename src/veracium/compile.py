@@ -163,6 +163,8 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     input under `wiki_input_budget` est. tokens) and every drop is COUNTED into the
     authoritative marker line appended BY CODE after sanitizing the LLM output. The marker
     is always present, including the +0/+0 case."""
+    _budgets.validate_budget("wiki", wiki_input_budget)    # revalidated at surface
+    #                                                        build, not only config (I10e)
     edges, episodes = _grounded_inputs(store, user_id, relations)
     # I10g: the bound governs the COMPLETE serialized prompt — reserve the fixed
     # scaffolding (COMPILE_SYSTEM + the prompt skeleton) BEFORE item selection, so a
@@ -176,17 +178,27 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
     # I10b/I10f (the frozen compiler total order): ONE survivor per (subject, relation)
     # group FIRST — no group's sole representative is displaced by another group's
     # variants — then variants up to the per-group cap, then episodes NEWEST first.
+    # I8f: the compiler group key carries the COMPLETE authority envelope — USER and
+    # SYSTEM members of the same value are DISTINCT groups, each owed a survivor.
+    # Group iteration is DETERMINISTIC ((subject, relation, disclosure, author,
+    # derived_from) sort order), never dict/input order (R-impl2-3).
     groups: dict[tuple, list] = {}
     for e in edges:
-        groups.setdefault((e.subject, e.relation), []).append(e)
-    survivors = [members[0] for members in groups.values()]
-    variants = [e for members in groups.values() for e in members[1:]]
+        k = (e.subject, e.relation, e.provenance.disclosure.value,
+             e.provenance.author_of_evidence.value,
+             e.provenance.derived_from.value if e.provenance.derived_from else "")
+        groups.setdefault(k, []).append(e)
+    ordered_keys = sorted(groups)
+    survivors = [groups[k][0] for k in ordered_keys]
+    variants = [e for k in ordered_keys for e in groups[k][1:]]
+    key_of = {e.id: k for k, members in groups.items() for e in members}
     fact_lines: list[str] = []
     per_group: dict[tuple, int] = {}
-    for tier in (survivors, variants):
+    for tier, is_variant in ((survivors, False), (variants, True)):
         for e in tier:
-            g = (e.subject, e.relation)
-            if per_group.get(g, 0) >= variant_cap:        # the per-group variant cap
+            g = key_of[e.id]
+            # the cap applies to VARIANTS BEYOND the survivor (R-impl2-3)
+            if is_variant and per_group.get(g, 0) >= 1 + variant_cap:
                 facts_dropped += 1
                 continue
             # I10c: content-first clamping — the stale/use_only labels render at the
@@ -241,6 +253,7 @@ def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
     relations = relations if relations is not None else DEFAULT_RELATIONS
     if recompile_after <= 0:
         return None
+    _budgets.validate_budget("wiki", wiki_input_budget)    # I10e at every source
     kw = dict(wiki_input_budget=wiki_input_budget, variant_cap=variant_cap,
               item_cap=item_cap)
     if needs_recompile(store, user_id, recompile_after, relations, **kw):
