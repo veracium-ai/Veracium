@@ -44,3 +44,36 @@ class MemoryConfig:
     confidence_floor: float = 0.3      # below this, a decayed fact is invalidated
     consolidate_after_days: int = 30   # episodes older than this are consolidation candidates
     consolidate_min_batch: int = 8     # don't consolidate fewer than this many cold episodes
+    # specs/0012 I10 — hard budgets on the RENDERED, MODEL-FACING text (estimated tokens,
+    # chars/4). Floor-validated below AND at every surface build; below-floor is a loud
+    # ValueError, never a silent clamp.
+    wiki_input_budget_tokens: int = 8000       # the compiler INPUT (facts + episodes)
+    proactive_default_budget_tokens: int = 1200
+    item_cap_tokens: int = 512                 # per rendered item, framing PLUS content
+    wiki_variant_cap: int = 4                  # per-group variant lines feeding the compiler
+    contested_members_per_line: int = 6        # the §4c packing K (validated >= 2)
+    wiki_render_share: float = 1 / 3           # recall-time clamp of the cached wiki body
+    group_heading_allowance_tokens: int = 48   # sub-cap for a heading's clamped fields
+
+    def __post_init__(self):
+        from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
+        validate_budget("wiki", self.wiki_input_budget_tokens,
+                        self.group_heading_allowance_tokens)
+        validate_budget("proactive", self.proactive_default_budget_tokens,
+                        self.group_heading_allowance_tokens)
+        if self.item_cap_tokens < MIN_ITEM_ALLOWANCE:
+            raise ValueError(
+                f"item_cap_tokens {self.item_cap_tokens} is below the minimum item "
+                f"allowance {MIN_ITEM_ALLOWANCE} — one framed clamped item must fit")
+        if self.contested_members_per_line < 2:
+            raise ValueError(
+                f"contested_members_per_line {self.contested_members_per_line} < 2: the "
+                f"packing must be able to render BOTH mandatory members (the highest-"
+                f"effective-authority member and the grounded prior) when they do not "
+                f"alias (specs/0012 §4c)")
+        if self.wiki_variant_cap < 1:
+            raise ValueError("wiki_variant_cap must be >= 1")
+        if not (0 < self.wiki_render_share <= 1):
+            raise ValueError("wiki_render_share must be in (0, 1]")
+        if self.group_heading_allowance_tokens < 16:
+            raise ValueError("group_heading_allowance_tokens must be >= 16")

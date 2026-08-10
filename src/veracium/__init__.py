@@ -225,9 +225,16 @@ class Memory:
         # (so a contested functional group is excluded from the one-value wiki, and the
         # cache binds the registry/policy digest) AND subgraph_for_query (so a functional
         # contention is authority-ordered). A custom registry must reach both, not one.
+        if token_budget is not None:
+            from .budgets import validate_budget
+            validate_budget("recall", token_budget,
+                            self.config.group_heading_allowance_tokens)
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
                                     self.config.wiki_recompile_after_writes,
-                                    self.config.relations)
+                                    self.config.relations,
+                                    wiki_input_budget=self.config.wiki_input_budget_tokens,
+                                    variant_cap=self.config.wiki_variant_cap,
+                                    item_cap=self.config.item_cap_tokens)
         edges = subgraph_for_query(self.store, user_id, query,
                                    max_edges=self.config.max_subgraph_edges,
                                    coverage_share=self.config.subgraph_coverage_share,
@@ -546,7 +553,11 @@ class Memory:
         """The formatted transparency view: "what do you know about me, and
         where did it come from?" — counts by relation / evidence author /
         disclosure tier, lifecycle state, retired history by reason, episode
-        counts; mode="categories" adds the facts themselves grouped by
+        counts, and `wiki_compile_record` (specs/0012: the cached wiki's
+        authoritative compile-drop marker, parsed + verbatim — status
+        ok/absent/legacy/malformed; counts int or "999+"; the cached record
+        only, never a current-store hypothetical);
+        mode="categories" adds the facts themselves grouped by
         relation, rendered with their provenance markers. LLM-free and
         store-only; the complete raw dump remains `export_memory()`, erasure
         remains `forget()`. CLI: `veracium introspect --user X`."""

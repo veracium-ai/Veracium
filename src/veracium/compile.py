@@ -16,6 +16,7 @@ import hashlib
 import json
 from typing import Optional
 
+from . import budgets as _budgets
 from .graph import _value_key, collapse_for_render, render_edges
 from .llm.base import Complete
 from .schema import DEFAULT_RELATIONS, Relation
@@ -24,7 +25,11 @@ from .schema import DEFAULT_RELATIONS, Relation
 # cached wiki must not survive (independently of the relation registry). It rides in the
 # compiler_policy_digest, so a stale-under-the-old-policy cache recompiles (specs/0003 §4c-ii,
 # round-10 blocker 2).
-_CONTENTION_POLICY_VERSION = "0003-v1"
+# specs/0012 §7b: the contention-policy version BUMPS on 0012's landing — the wiki cache
+# identity now binds the §4c input→cache-effect MATRIX (accepted 0003's registry binding
+# PRESERVED, plus the compiler-relevant 0012 inputs; render-time knobs deliberately
+# excluded — binding them would force spurious recompiles).
+_CONTENTION_POLICY_VERSION = "0012-v1"
 _ENVELOPE = "\x00policy:"      # cache-envelope marker: the digest precedes the wiki body
 
 COMPILE_SYSTEM = (
@@ -58,7 +63,8 @@ Rules:
 - Output only the document. No preamble, no commentary."""
 
 
-def _policy_digest(relations: dict[str, Relation]) -> str:
+def _policy_digest(relations: dict[str, Relation], *, wiki_input_budget: int = 8000,
+                   variant_cap: int = 4, item_cap: int = 512) -> str:
     """specs/0003 §4c-ii (round-10 blocker 2): the wiki's cache identity must bind the
     compiler-policy inputs, not just `store_version`. The functional-relation registry is
     host-supplied and lives OUTSIDE the store, so reopening the same store under a registry
@@ -66,7 +72,11 @@ def _policy_digest(relations: dict[str, Relation]) -> str:
     `store_version` change. This digest covers the functional-relation semantics AND the
     contention-policy version; a mismatch forces recompilation regardless of `store_version`."""
     functional = sorted(name for name, r in relations.items() if r.functional)
-    blob = json.dumps({"functional": functional, "policy": _CONTENTION_POLICY_VERSION},
+    blob = json.dumps({"functional": functional, "policy": _CONTENTION_POLICY_VERSION,
+                       # the 0012 additions (I10k): compiler selection/serialization inputs
+                       "wiki_input_budget": wiki_input_budget, "variant_cap": variant_cap,
+                       "item_cap": item_cap,
+                       "marker_grammar": _budgets.MARKER_GRAMMAR_VERSION},
                       sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
 
@@ -132,39 +142,88 @@ def _grounded_inputs(store, user_id: str, relations: dict[str, Relation]):
 
 
 def needs_recompile(store, user_id: str, recompile_after: int,
-                    relations: dict[str, Relation]) -> bool:
+                    relations: dict[str, Relation], *, wiki_input_budget: int = 8000,
+                    variant_cap: int = 4, item_cap: int = 512) -> bool:
     cached = store.get_wiki(user_id)
     if cached is None:
         return True
     stored_text, version_at_compile = cached
     digest, _ = _split_envelope(stored_text)
-    if digest != _policy_digest(relations):        # registry/policy changed → recompile
-        return True
+    if digest != _policy_digest(relations, wiki_input_budget=wiki_input_budget,
+                                variant_cap=variant_cap, item_cap=item_cap):
+        return True                                # identity-stale → recompile (I10k)
     return store.store_version(user_id) - version_at_compile >= recompile_after
 
 
 def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relation],
-                 *, budget_tokens: int = 900) -> str:
+                 *, budget_tokens: int = 900, wiki_input_budget: int = 8000,
+                 variant_cap: int = 4, item_cap: int = 512) -> str:
+    """specs/0012 I10a/I10j: the compiler INPUT is hard-budgeted (each item clamped to the
+    per-item cap; at most `variant_cap` value lines per (subject, relation) group; the whole
+    input under `wiki_input_budget` est. tokens) and every drop is COUNTED into the
+    authoritative marker line appended BY CODE after sanitizing the LLM output. The marker
+    is always present, including the +0/+0 case."""
     edges, episodes = _grounded_inputs(store, user_id, relations)
-    facts = render_edges(edges) or "(none)"
-    hist = "\n".join(f"[{e.date}] {e.summary}" for e in episodes) or "(none)"
-    wiki = llm(COMPILE_PROMPT.format(budget=budget_tokens, facts=facts, episodes=hist),
-               system=COMPILE_SYSTEM, role="compile").strip()
-    # store WITH the policy-digest envelope so the cache binds its compiler policy
-    store.set_wiki(user_id, f"{_ENVELOPE}{_policy_digest(relations)}\n{wiki}",
+    facts_dropped = eps_dropped = 0
+    spent = 0
+    fact_lines: list[str] = []
+    per_group: dict[tuple, int] = {}
+    for e in edges:
+        g = (e.subject, e.relation)
+        if per_group.get(g, 0) >= variant_cap:            # the per-group variant cap
+            facts_dropped += 1
+            continue
+        line = _budgets.clamp_item(render_edges([e]), item_cap)
+        cost = _budgets.est_tokens(line)
+        if spent + cost > wiki_input_budget:              # the hard input budget
+            facts_dropped += 1
+            continue
+        per_group[g] = per_group.get(g, 0) + 1
+        spent += cost
+        fact_lines.append(line)
+    ep_lines: list[str] = []
+    for e in episodes:
+        line = _budgets.clamp_item(f"[{e.date}] {e.summary}", item_cap)
+        cost = _budgets.est_tokens(line)
+        if spent + cost > wiki_input_budget:
+            eps_dropped += 1
+            continue
+        spent += cost
+        ep_lines.append(line)
+    facts = "\n".join(fact_lines) or "(none)"
+    hist = "\n".join(ep_lines) or "(none)"
+    raw = llm(COMPILE_PROMPT.format(budget=budget_tokens, facts=facts, episodes=hist),
+              system=COMPILE_SYSTEM, role="compile").strip()
+    # sanitize FIRST (forged sentinels become inert), then append the code-owned marker
+    wiki = _budgets.append_compile_marker(_budgets.sanitize_llm_body(raw),
+                                          facts_dropped, eps_dropped)
+    digest = _policy_digest(relations, wiki_input_budget=wiki_input_budget,
+                            variant_cap=variant_cap, item_cap=item_cap)
+    store.set_wiki(user_id, f"{_ENVELOPE}{digest}\n{wiki}",
                    store.store_version(user_id))
     return wiki
 
 
 def ensure_wiki(store, llm: Complete, user_id: str, recompile_after: int,
-                relations: Optional[dict[str, Relation]] = None) -> Optional[str]:
+                relations: Optional[dict[str, Relation]] = None, *,
+                wiki_input_budget: int = 8000, variant_cap: int = 4,
+                item_cap: int = 512) -> Optional[str]:
     """Return the current wiki BODY (envelope stripped), recompiling if stale. None disables
     the wiki layer. `relations` (the host registry) reaches the compiler so a custom
     functional relation is excluded from the wiki when contested (§4c-ii); omitted →
-    `DEFAULT_RELATIONS`."""
+    `DEFAULT_RELATIONS`.
+
+    specs/0012 I10l: a PROVIDER-FREE reader (the CLI's store-only verbs mark their stub
+    with `_veracium_no_llm`) with an identity-stale cache is served the deterministic
+    stale-notice INSTEAD of a recompile — never the stale body, never the LLM, never a
+    failure."""
     relations = relations if relations is not None else DEFAULT_RELATIONS
     if recompile_after <= 0:
         return None
-    if needs_recompile(store, user_id, recompile_after, relations):
-        return compile_wiki(store, llm, user_id, relations)
+    kw = dict(wiki_input_budget=wiki_input_budget, variant_cap=variant_cap,
+              item_cap=item_cap)
+    if needs_recompile(store, user_id, recompile_after, relations, **kw):
+        if getattr(llm, "_veracium_no_llm", False):       # I10l: provider-free reader
+            return _budgets.STALE_WIKI_NOTICE
+        return compile_wiki(store, llm, user_id, relations, **kw)
     return _split_envelope(store.get_wiki(user_id)[0])[1]

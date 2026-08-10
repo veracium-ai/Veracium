@@ -109,11 +109,13 @@ def test_refusal_does_not_evict_the_prior_at_a_finite_budget(tmp_path):
     tight budget both before and after the refusal."""
     mem = _mem(tmp_path)
     mem.store.add_edge(_edge("p", EvidenceAuthor.USER, "CFO at Acme"))
-    before = mem.recall(U, "works_as", token_budget=60)
+    # specs/0012 I10e: budgets below the envelope-derived floor (256) now raise; the
+    # finite-budget intent survives at a just-above-floor value.
+    before = mem.recall(U, "works_as", token_budget=260)
     assert "CFO at Acme" in before.context                          # prior visible pre-refusal
     apply_supersession(mem.store, _edge("i", EvidenceAuthor.THIRD_PARTY, "unemployed",
                                         disc=Disclosure.QUARANTINED), mem.config.relations)
-    after = mem.recall(U, "works_as", token_budget=60)
+    after = mem.recall(U, "works_as", token_budget=260)
     assert "CFO at Acme" in after.context                           # NOT evicted by the refusal
     assert "unemployed" not in after.grounded                       # challenger stays out of grounded
 
@@ -125,15 +127,17 @@ def test_contested_surface_is_budgeted_not_unbounded(tmp_path):
     mem = _mem(tmp_path)
     functional = ["works_as", "located_at", "prefers", "health_state", "deadline"]
     for n, rel in enumerate(functional):
-        mem.store.add_edge(_edge(f"p{n}", EvidenceAuthor.USER, f"grounded value {n}").model_copy(
+        long_tail = " with an intentionally verbose qualifier occupying budget" * 3
+        mem.store.add_edge(_edge(f"p{n}", EvidenceAuthor.USER,
+                                 f"grounded value {n}{long_tail}").model_copy(
             update={"relation": rel}))
-        inc = _edge(f"i{n}", EvidenceAuthor.THIRD_PARTY, f"challenge {n}",
+        inc = _edge(f"i{n}", EvidenceAuthor.THIRD_PARTY, f"challenge {n}{long_tail}",
                     disc=Disclosure.QUARANTINED).model_copy(update={"relation": rel})
         apply_supersession(mem.store, inc, mem.config.relations)
     full = mem.recall(U, "value")                                   # unbudgeted: all groups render
     assert full.context.count("CONTESTED") >= 1
     assert len(full.contested) == 5
-    tight = mem.recall(U, "value", token_budget=40)                 # tiny budget
+    tight = mem.recall(U, "value", token_budget=260)                # just above the floor
     assert tight.truncated                                          # the surface was gated
     assert len(tight.context) < len(full.context)                  # bounded, not unbounded
     # the structured carrier still reports every contention (raw material is full; the

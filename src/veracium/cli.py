@@ -72,11 +72,15 @@ def _build_llm(help_text: str = _PROVIDER_HELP):
 
 
 def _no_llm(prompt, *, system=None, role="compile", json_schema=None):
-    """Stub provider for store-only verbs; recall is wired so it can never
-    fire (proactive mode is LLM-free; query mode serves the cached wiki
-    without recompiling). Raising loudly beats silently degrading."""
+    """Stub provider for store-only verbs. `_veracium_no_llm` marks it so ensure_wiki
+    serves the deterministic stale-cache notice instead of recompiling when the cache is
+    identity-stale (specs/0012 I10l) — this stub can then never fire; raising loudly
+    beats silently degrading if a future path regresses that."""
     raise SystemExit("internal: this veracium verb should never invoke the LLM "
                      "— please report this at github.com/veracium-ai/Veracium/issues")
+
+
+_no_llm._veracium_no_llm = True
 
 
 def _selfcheck(args) -> int:
@@ -210,6 +214,13 @@ def _memory_verbs(args) -> int:
                   f"{out['unverified_claims']} unverified claims, "
                   f"{out['episodes']['interaction']} episodes "
                   f"({out['first_known'] or 'n/a'} → {out['last_recorded'] or 'n/a'})")
+            rec = out.get("wiki_compile_record") or {}
+            if rec.get("status") == "ok":
+                print(f"wiki compile: +{rec['facts_dropped']} facts / "
+                      f"+{rec['episodes_dropped']} episodes not compiled")
+            else:
+                print(f"wiki compile: no compile record "
+                      f"({rec.get('status', 'absent')} cache)")
             for section in ("by_relation", "by_author", "by_disclosure", "retired"):
                 if out[section]:
                     print(f"  {section.replace('_', ' ')}: "

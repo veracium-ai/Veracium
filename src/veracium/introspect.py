@@ -23,6 +23,17 @@ def _count(counter: dict, key: str) -> None:
     counter[key] = counter.get(key, 0) + 1
 
 
+def _wiki_compile_record(store, user_id: str) -> dict:
+    """specs/0012 §4c(iv): read `get_wiki()` (never recompile, never mutate) and parse
+    the frozen marker grammar. status: ok | absent | legacy | malformed."""
+    from .budgets import parse_compile_marker
+    from .compile import _split_envelope
+    cached = store.get_wiki(user_id)
+    if cached is None:
+        return parse_compile_marker(None)
+    return parse_compile_marker(_split_envelope(cached[0])[1])
+
+
 def report(store, user_id: str, *, mode: str = "summary") -> dict:
     """Aggregate one user's memory into a JSON-able transparency report."""
     if mode not in ("summary", "categories"):
@@ -58,6 +69,10 @@ def report(store, user_id: str, *, mode: str = "summary") -> dict:
         "user_id": user_id,
         "facts": len(facts),
         "unverified_claims": len(claims),
+        # specs/0012 R11-5 (frozen public schema): the cached wiki's authoritative
+        # compile-drop record, parsed from the marker — VERBATIM in marker_line, and
+        # ONLY the cached record (no current-store hypothetical; non-mutating).
+        "wiki_compile_record": _wiki_compile_record(store, user_id),
         "by_relation": dict(sorted(by_relation.items())),
         "by_author": dict(sorted(by_author.items())),
         "by_disclosure": dict(sorted(by_disclosure.items())),

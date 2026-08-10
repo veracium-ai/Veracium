@@ -193,6 +193,18 @@ def test_recall_token_budget():
     truncation is reported, never silent."""
     with tempfile.TemporaryDirectory() as d:
         mem, _ = _prime(d)
+        # specs/0012 I10e: budgets are floored at 256 est. tokens, so the tight scenario
+        # needs enough grounded detail that facts + claim flags alone sit ABOVE the floor
+        # while the wiki + episodes push past it — the original priority intent, legal.
+        from veracium.schema import (Disclosure as _D, Edge as _E, EvidenceAuthor as _A,
+                                     Provenance as _P, SourceType as _S)
+        for i in range(30):
+            mem.store.add_edge(_E(
+                id=f"pad{i}", user_id="u", subject="user", relation="works_on",
+                object=f"long running diet and debts project workstream item {i} "
+                       f"with an unusually verbose description to occupy budget",
+                provenance=_P(source_type=_S.STATED, author_of_evidence=_A.USER,
+                              evidence_ref=f"pad-{i}", disclosure=_D.MENTIONABLE)))
         full = mem.recall("u", "diet and debts?")
 
         ample = mem.recall("u", "diet and debts?", token_budget=100_000)
@@ -212,6 +224,8 @@ def test_recall_token_budget():
         headers = est("## RELEVANT DETAIL\n") + \
             est("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n")
         budget = headers + sum(map(est, e_lines)) + sum(map(est, c_lines + tp_lines))
+        from veracium.budgets import floor_for
+        assert budget >= floor_for("recall")          # the padded store keeps this legal
         tight = mem.recall("u", "diet and debts?", token_budget=budget)
         assert tight.truncated                        # wiki + episodes didn't fit
         assert "vegetarian" in tight.context          # query-matched facts kept
@@ -219,11 +233,12 @@ def test_recall_token_budget():
         assert "USER MODEL" not in tight.context      # wiki dropped under pressure
         assert len(tight.edges) == len(full.edges)    # raw units not budget-shaped
 
-        minimal = mem.recall("u", "diet and debts?", token_budget=1)
-        assert minimal.truncated
-        assert "vegetarian" in minimal.context        # best-effort minimum: one item
-
+        # specs/0012 I10e (the §7b-ii inversion of the old survival test): a budget
+        # below the envelope-derived floor is REJECTED loudly — the old "best-effort
+        # one item" at token_budget=1 could not carry the envelope + safety framing.
         import pytest
+        with pytest.raises(ValueError, match="below its floor"):
+            mem.recall("u", "diet and debts?", token_budget=1)
         with pytest.raises(ValueError):
             mem.recall("u", "q", token_budget=0)
         mem.close()
