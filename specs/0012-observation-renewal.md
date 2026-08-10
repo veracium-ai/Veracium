@@ -1,10 +1,21 @@
 # Feature spec: who may renew a fact's currency
 
-Spec-Status: draft
+Spec-Status: accepted
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v16, 2026-08-10) — round 13 (boundary): R12-1/2/4 CLOSED, the bin-(b) obligation
+> **✅ accepted (v17, 2026-08-10).** Round 14, under the boundary protocol the reviewer
+> accepted in round 12: **"Approved for acceptance. Under the agreed boundary protocol, bin
+> (a) is empty."** v17 = the reviewed v16 + this status flip + the §12 Review closure ledger
+> (PROCESS §4a) — *no contract change*. The frozen surface: Design 1 (reinforcement transfers
+> NOTHING; the incoming edge persisted with its own provenance; `expire()` per-edge) ·
+> I1–I7 · I8/I8a–I8j · I9 · I10/I10a–I10l · the §7b/§7b-ii cross-spec carriers · the §8
+> limits. The §5 obligations regime of the boundary proposal is preserved — including the
+> bin-(b) stale-cache notice budget regression — and every I-check + cross-spec carrier gates
+> implementation. **`Spec-Status: accepted` authorises implementation** (no `Spec-Requires`;
+> the specs this rides — `0003`, `0008` — are accepted and shipped). Fourteen external rounds
+> + one internal ruling; every package the reviewer saw is hash-indexed in
+> `specs/archives/INDEX.md`. Earlier (v16):** round 13 (boundary): R12-1/2/4 CLOSED, the bin-(b) obligation
 > confirmed recorded, R12-3 closed in the normative text — with ONE remaining bin-(a) item:
 > I10k's own exhaustive list still omitted the accepted-`0003` registry binding the §4 matrix
 > and §7a had gained (the exact carrier class again, in the one carrier the R12-3 fix
@@ -101,16 +112,16 @@ Spec-Status: draft
 > no-new-reach rule; a contested grounded member enters proactive only via the ordinary
 > categories, and fenced members never (I10d). — v8 made I10 mechanical; v7 added budgets; v6
 > folded R3; v5 folded R2; v4 folded round 1 (F4 fixed at root under `0003`). 🔗 Design 1
-> closes `0014` §3.1 + `M9` (§11). Still `draft` — v16 is the round-14 CLOSURE submission under the ACCEPTED boundary protocol.
+> closes `0014` §3.1 + `M9` (§11). **ACCEPTED at round 14** — see §12, the Review closure ledger.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v16** — *round-13 folded: the single bin-(a) item — I10k's list gains `0003`'s preserved registry + policy-version bindings, its test the custom-registry case (R13-1, carrier alignment only).* v15 — *round-12 (the first BOUNDARY round — protocol ACCEPTED) folded: the four bin-(a) consistency defects emptied (legacy/malformed alignment; the mechanical heading sub-cap + updated I10e/I10i + completed `0003` amendment; registry-preserving cache matrix; §7a completeness) + the bin-(b) obligation recorded.* v14 — *round-11 folded: the complete-packing 0003 amendment (R11-1), the mechanical allowance + framing-field classification + K validation (R11-2), the exact cache-effect matrix (R11-3, I10k), the provider-free stale-cache CLI path (R11-4, I10l), the frozen introspection schema (R11-5).* v13 — *round-10 folded: budget-aware contested packing (I10i), cache-identity binding via the bumped policy digest (I10k), the frozen marker grammar (I10j), introspect narrowed to cached-marker-only (§7a carriers).* v12 — *round-9 folded: the within-group contested bound as a `0003` §7b carrier (I10i), bounded-width counts + share classification (R9-2), the sentinel-authoritative marker (I10j), the introspect claim corrected to a §8 limit (R9-4).* v11 — *round-8 folded: envelope-derived per-surface floors (I10e), precedence↔order alignment + partition preservation (I10f), the marker serialization rule, the signature change WITHDRAWN, import-time network guard.* v10 — *round-7 amendments folded: budget floors + cap semantics (I10e), claim-flag priority restored (I10h), category precedence (I10f), envelope reservation (I10g), in-body wiki markers replacing the phantom compile record; §7b-ii behaviour-change carriers. v9:* *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
+| **Version** | **v17 — ACCEPTED 2026-08-10** — *round 14: "Approved for acceptance… bin (a) is empty." v17 = reviewed v16 + the §12 Review closure + the status flip, no contract change.* v16 — *round-13 folded: the single bin-(a) item — I10k's list gains `0003`'s preserved registry + policy-version bindings, its test the custom-registry case (R13-1, carrier alignment only).* v15 — *round-12 (the first BOUNDARY round — protocol ACCEPTED) folded: the four bin-(a) consistency defects emptied (legacy/malformed alignment; the mechanical heading sub-cap + updated I10e/I10i + completed `0003` amendment; registry-preserving cache matrix; §7a completeness) + the bin-(b) obligation recorded.* v14 — *round-11 folded: the complete-packing 0003 amendment (R11-1), the mechanical allowance + framing-field classification + K validation (R11-2), the exact cache-effect matrix (R11-3, I10k), the provider-free stale-cache CLI path (R11-4, I10l), the frozen introspection schema (R11-5).* v13 — *round-10 folded: budget-aware contested packing (I10i), cache-identity binding via the bumped policy digest (I10k), the frozen marker grammar (I10j), introspect narrowed to cached-marker-only (§7a carriers).* v12 — *round-9 folded: the within-group contested bound as a `0003` §7b carrier (I10i), bounded-width counts + share classification (R9-2), the sentinel-authoritative marker (I10j), the introspect claim corrected to a §8 limit (R9-4).* v11 — *round-8 folded: envelope-derived per-surface floors (I10e), precedence↔order alignment + partition preservation (I10f), the marker serialization rule, the signature change WITHDRAWN, import-time network guard.* v10 — *round-7 amendments folded: budget floors + cap semantics (I10e), claim-flag priority restored (I10h), category precedence (I10f), envelope reservation (I10g), in-body wiki markers replacing the phantom compile record; §7b-ii behaviour-change carriers. v9:* *round-6 amendments folded: I10 scoped to rendered model-facing text with the structured-carrier limit stated (R6-1); non-truncatable safety framing charged first (R6-2, I10c); the complete per-surface item taxonomy incl. wiki body, episodes, recent history, and the gate partition (R6-3; I10a/I10b extended); the proactive contested tier WITHDRAWN as conflicting with accepted `0003` no-new-reach (R6-4, I10d). v8 made I10 mechanical; v7 added budgets; v6 folded R3; v5 folded R2; v4 folded round 1; v3 matured the ruled design; v2 folded the rulings; Design 1 (transfers nothing) frozen.* |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0008`'s deferred liveness scope. **`0008` does not depend on this.** |
 | **Internal reviewers** | research — the O-Q1/O-Q2/O-Q3 ruling round (2026-08-08, `proposals/0012-rulings.md`; recorded in `specs/reviews.py`) |
-| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5: R4-2/3/4 CLOSED, budget architecture affirmed; return on I10 mechanics** (R5-1…R5-4) → v8. **Round 6: R5s substantially CLOSED; return on 4 cross-carrier gaps** (R6-1…R6-4) → v9. **Round 7: R6-1/R6-4 coherent; return on 5 I10-machinery gaps** (R7-1…R7-5) → v10. **Round 8: suite independently REPRODUCED (kill-switch armed); return on 5 gaps** (R8-1…R8-5) → v11. **Round 9: R8-2/4/5 CLOSED; return on 4 framing/marker gaps** (R9-1…R9-4) → v12. **Round 10: R9-2 CLOSED; return on 4 gaps** (R10-1…R10-4) → v13. **Round 11: return on 5 blockers** (R11-1…R11-5) → v14. **Round 12: the BOUNDARY PROTOCOL ACCEPTED; 4 bin-(a) + 1 bin-(b)** (R12-1…R12-4) → v15. **Round 13 (2026-08-09): R12s CLOSED; ONE bin-(a) remainder — I10k's list omitted the registry binding (R13-1, carrier alignment; "no other bin-(a) defects were found")** → v16, the round-14 closure submission. All dev-verified (ledger: `specs/reviews.py`) |
-| **Decision + date** | — |
+| **External review** | required — **round 1: return**, 6 findings + a package blocker → v4. **Round 2: F1–F5 + blocker CLOSED; return on F6** (R2-1…R2-4) → v5. **Round 3: R2-2 + proactive carrier CLOSED; return on 4 collapse defects** (R3-1…R3-4) → v6. **Round 4: R3-2 + named R3 cases CLOSED; return on the boundedness conflict + 3 cells** (R4-1…R4-4) → v7 (budgets). **Round 5: R4-2/3/4 CLOSED, budget architecture affirmed; return on I10 mechanics** (R5-1…R5-4) → v8. **Round 6: R5s substantially CLOSED; return on 4 cross-carrier gaps** (R6-1…R6-4) → v9. **Round 7: R6-1/R6-4 coherent; return on 5 I10-machinery gaps** (R7-1…R7-5) → v10. **Round 8: suite independently REPRODUCED (kill-switch armed); return on 5 gaps** (R8-1…R8-5) → v11. **Round 9: R8-2/4/5 CLOSED; return on 4 framing/marker gaps** (R9-1…R9-4) → v12. **Round 10: R9-2 CLOSED; return on 4 gaps** (R10-1…R10-4) → v13. **Round 11: return on 5 blockers** (R11-1…R11-5) → v14. **Round 12: the BOUNDARY PROTOCOL ACCEPTED; 4 bin-(a) + 1 bin-(b)** (R12-1…R12-4) → v15. **Round 13: ONE bin-(a) remainder** (R13-1) → v16. **Round 14 (2026-08-10): APPROVED FOR ACCEPTANCE — bin (a) empty.** All dev-verified (ledger: `specs/reviews.py`; full per-round table: §12) |
+| **Decision + date** | **ACCEPTED — 2026-08-10, external round 14, under the boundary protocol accepted at round 12** (`proposals/0012-boundary-proposal.md`) |
 | **Path** | full |
 
 ---
@@ -859,3 +870,67 @@ nothing" there is no payload to record either. **So `0012` Design 1 CLOSES `0014
 finding `M9`), leaving `0014` to cover consolidation + absorption only. `0014`'s consult-and-discard
 INVARIANT is unchanged — one of its three sites simply disappears. This argues for **landing `0012`
 before `0014`** (research, 2026-08-08).
+
+---
+
+## Review closure (PROCESS.md §4a) — §12, the `0012` acceptance ledger
+
+*Dev sets `Spec-Status: accepted` once the external review's comments are satisfied. Round 14
+approved acceptance under the boundary protocol the reviewer accepted at round 12
+(`proposals/0012-boundary-proposal.md`): bin (a) — contract-breaking defects in the frozen
+surface — was empty. The per-round source of truth is `specs/reviews.py`; every package the
+reviewer saw is hash-indexed in `specs/archives/INDEX.md`; every invariant below has a named
+executable check (§6).*
+
+| round | date | disposition | findings | folded in | evidence |
+|---|---|---|---|---|---|
+| internal 1 | 2026-08-08 | O-Q1/O-Q2/O-Q3 RULED (research): Design 1, transfers nothing; per-edge ageing frozen | 3 | v2 | `proposals/0012-rulings.md` |
+| external 1 | 2026-08-09 | return — the stated attack unreachable (F1); MCP `author` claim false (F2); carrier gaps (F3); a LIVE shipped receipt-digest defect (F4); absent-`source_id` (F5); costs understated (F6); + a package blocker | 7 | v4 `3859add` — F4 fixed at ROOT under `0003` (`71c3c5b`, test passing since); the git-dependent tests made skip-clean (`900c228`) | archive `0012-v3-…` |
+| external 2 | 2026-08-09 | F1–F5 + blocker CLOSED; return on F6's collapse (R2-1…R2-4) | 4 | v5 `8f013c5` | archive `0012-v4-…` |
+| external 3 | 2026-08-09 | return — 4 found-in-fix collapse defects (R3-1…R3-4) | 4 | v6 `201c330` | archive `0012-v5-…` |
+| external 4 | 2026-08-09 | return — the bound-vs-hide requirements conflict + 3 cells (R4-1…R4-4) | 4 | v7 `e40cd9c` — the hard-budget architecture (I10) | archive `0012-v6-…` |
+| external 5 | 2026-08-09 | budget architecture AFFIRMED ("the correct architectural direction"); return on I10 mechanics (R5-1…R5-4) | 4 | v8 `0a0f0a9` | archive `0012-v7-…` |
+| external 6 | 2026-08-09 | return — 4 cross-carrier gaps (R6-1…R6-4, incl. a v7 conflict with accepted `0003` no-new-reach, withdrawn) | 4 | v9 `ba512eb` | archive `0012-v8-…` |
+| external 7 | 2026-08-09 | return — 5 I10-machinery gaps (R7-1…R7-5) | 5 | v10 `016a1a5` | archive `0012-v9-…` |
+| external 8 | 2026-08-09 | the suite independently REPRODUCED (armed kill-switch); return on 5 gaps (R8-1…R8-5) | 5 | v11 `bd4f0c4` | archive `0012-v10-…` |
+| external 9 | 2026-08-09 | return — 4 framing/marker gaps (R9-1…R9-4) | 4 | v12 `c862854` + gate-fix `14f5481` (the red-gate incident, recorded honestly) | archive `0012-v11-…` |
+| external 10 | 2026-08-09 | return — 4 gaps in the v12 fixes (R10-1…R10-4) | 4 | v13 `c18cf6b` | archive `0012-v12-…` |
+| external 11 | 2026-08-09 | return — 5 blockers incl. a reviewer-EXECUTED CLI `SystemExit` (R11-1…R11-5) | 5 | v14 `b109a16` | archive `0012-v13-…` |
+| external 12 | 2026-08-09 | **the BOUNDARY PROTOCOL ACCEPTED**; 4 bin-(a) consistency defects + 1 bin-(b) obligation (R12-1…R12-4) | 5 | v15 `13744c6` | archive `0012-v14-…`; `proposals/0012-boundary-proposal.md` |
+| external 13 | 2026-08-09 | R12s CLOSED; ONE bin-(a) remainder — I10k registry alignment (R13-1); "no other bin-(a) defects were found" | 1 | v16 `6827a38` | archive `0012-v15-…` |
+| external 14 | 2026-08-10 | **APPROVED FOR ACCEPTANCE — "under the agreed boundary protocol, bin (a) is empty"** | 0 | v17 `accepted` (this revision — its commit in `specs/archives/INDEX.md` / git) | archive `0012-v16-…` sha `9bf7d61d…` |
+
+**The executable acceptance surface (§6, all become implementation/release gates):**
+I1 (incoming persisted byte-unchanged) · I2 (prior byte-identical) · I3 (per-edge ageing,
+frozen) · I4 (no clearing — `0008` preserved) · I5 (the measured bypass closed at its
+reachable doors; the cross-class guard pinned) · I6 (same-or-subsumed never contends/absorbs/
+supersedes) · I7 (the persisted edge IS the `M9` attribution) · I8 + I8a–I8j (the read-path
+collapse: active-only, full authority envelope, unique-anchor over all three cells,
+strict-redundancy suppression, deterministic survivor, flagged-member ownership, history and
+proactive coverage, permutation invariance) · I9 (the mixed high-restatement regime) ·
+I10 + I10a–I10l (the budget machinery: rendered-text scope, envelope-derived floors,
+framing-inclusive caps, non-truncatable safety framing, order-mirroring precedence,
+gate-partition preservation, envelope reservation, budget-aware contested packing, the frozen
+marker grammar, the exact cache-identity matrix incl. `0003`'s preserved registry binding, the
+provider-free stale-cache CLI path, no-new-reach for proactive contested).
+
+**Recorded implementation obligations (the boundary proposal's §5 regime, preserved):**
+- the round-12 bin-(b) item, verbatim in §4c(iv): the stale-cache notice charges through the
+  ordinary I10 envelope machinery, with a just-above-floor regression;
+- the §7b/§7b-ii cross-spec carriers land in the SAME implementation commit as the behaviour
+  they describe — the marked `0003` amendments (§4f reinforcement action; the within-group
+  contested packing; the cache-digest extension), `0008`'s inverting test, the
+  `SupersessionPlan` docstring, the `token_budget`-floor behaviour changes, the CLI paths;
+- any further I10-machinery edges surfaced at implementation are obligations, not review
+  reopenings; the possible extraction of the read-path budget/collapse subsystem into its own
+  spec is recorded if implementation shows it growing;
+- successors, deliberately out of scope: MCP `author` authentication (§3b); Design 2
+  (`reobserve()`) for source-continuity renewal;
+- the implementation follows the found-in-fix checklist and extends the mechanical pre-send
+  gates; the reviewer retains standing against the implementation per the accepted protocol.
+
+**Closure notes.** Rounds 1–4 changed the design (the reachability correction; a live shipped
+defect fixed at root; the history/authority-envelope repairs; the bound-vs-hide resolution
+that became I10). Rounds 5–13 made the read-path contract mechanically honest, at the cost the
+boundary proposal names — and the negotiated boundary, accepted at round 12, converged it in
+two closure rounds. Design 1 and I1–I7 were never reopened across all fourteen rounds.

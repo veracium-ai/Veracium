@@ -4,11 +4,11 @@
 
 # Spec status
 
-**14 specs · 7 accepted · 99 external review
+**14 specs · 8 accepted · 100 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **7 of 14 are accepted**, which
+review is required to reach it. **8 of 14 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -24,7 +24,7 @@ is the number that decides what can be built.
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-08-07 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
-| **0012** | who may renew a fact's currency | `draft` | 2026-08-10 | 1 | 13 | 0 | 0 | 1 | 0/1 |
+| **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 0/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `draft` | 2026-08-09 | 0 | 0 | 0 | 0 | 0 | — |
 
