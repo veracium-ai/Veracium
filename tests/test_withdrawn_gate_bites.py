@@ -46,6 +46,11 @@ MOTIVATING_FORMS = [
     # R8-1 — the concurrent-preflight loser must REPLAY, never conflict
     ("0014-loser-may-conflict", "one commits, the other replays-or-conflicts per its receipt"),
     ("0014-loser-may-conflict", "one commits, the other replays or conflicts per its receipt"),
+    # R9-6 — the DDL-scope claim that contradicted the receipts ALTERs
+    ("0014-no-ddl-beyond-ledger", "ONE authoritative representation, no schema DDL beyond the ledger table"),
+    # R9-4 — the misclassified recomputed-class membership
+    ("0014-needs-confirmation-recomputed", "`needs_confirmation` (never cleared by absorption)"),
+    ("0014-liveness-trust-transfers", "mutated by inheritance (`valid_from = min`, liveness/trust transfers)"),
     # R6-5/R7-4 — the digest split
     ("0014-preimage-into-request-digest", "the pre-image ENTERS `0003`'s `_logical_request_digest`"),
     ("0014-preimage-into-request-digest", "the drafts ENTER `0003`'s `_logical_request_digest`"),
