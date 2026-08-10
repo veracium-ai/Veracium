@@ -174,24 +174,32 @@ def test_consolidation_contributors_survive_input_deletion(tmp_path):
     for i in range(1, 9):                    # >= consolidate_min_batch (8) cold inputs
         _add_cold(mem, i, EvidenceAuthor.THIRD_PARTY, "badfeed-ep",
                   source_id="feed:bad")     # source_id SUPPLIED (R2-7)
-    result = consolidate(mem.store, _Compactor([{"date": "2020-01-01", "summary": "compacted"}]),
-                         "u", cfg)
-    assert result["consolidated"] > 0, f"consolidation did not run: {result}"
+    # the TWO-output compactor comes from _cold_mem's mem.llm (R3-4 — the previous
+    # revision passed a separate ONE-output compactor here, failing len(outputs)==2
+    # before ever reaching the ledger assertion)
+    n_inputs = 9
+    result = consolidate(mem.store, mem.llm, "u", cfg)
+    assert result["consolidated"] == n_inputs, f"consolidation did not run: {result}"
 
     outputs = [e for e in mem.store.episodes("u") if e.lineage]
-    assert len(outputs) == 2, "the N×M case needs BOTH outputs (R2-7)"
+    assert len(outputs) == 2, "the N×M case needs BOTH outputs"
 
-    # the SOURCE behind the inputs must be recoverable from EVERY output (N×M, R1-1),
-    # compared by the FROZEN digest construction computed inline — content-free (R2-7).
-    # The store resolves origin per 0006 §4.6; read it back the same way for the expected
-    # digest. Fails today (no ledger): the recovered sets are empty.
+    # N×M CARDINALITY is asserted on ROWS, not a collapsed set (R3-4): every output
+    # carries one row PER CLAIMED INPUT; identity is compared ONLY by the frozen
+    # digest construction computed inline — no raw-reference escape.
     origin = mem.store.local_origin()
-    expected = _evidence_ref_digest(origin, "badfeed-ep")
+    expected_bad = _evidence_ref_digest(origin, "badfeed-ep")
+    expected_user = _evidence_ref_digest(origin, "user-onboarding")
     for summary in outputs:
-        sources = _summary_contributor_sources(mem.store, "u", summary)
-        assert expected in sources or "badfeed-ep" in sources, (
-        "a consolidation summary cannot name the sources that fed it — its inputs were "
-        "deleted and lineage ids resolve to nothing (finding, 0014 §3.2/A2)")
+        rows = mem.store.contributions("u", "episode", summary.id)
+        assert len(rows) == n_inputs, (
+            f"output {summary.id}: expected N={n_inputs} contributor rows (the input×output "
+            f"relation), got {len(rows)} — the sources behind the deleted inputs are not "
+            f"recoverable (finding, 0014 §3.2/A2)")
+        digests = [getattr(r, "evidence_ref_digest", None) for r in rows]
+        assert digests.count(expected_bad) == 8 and digests.count(expected_user) == 1, (
+            "the recovered rows do not carry the frozen evidence-ref digests of the "
+            "consumed inputs (content-free identity, R2-7/R3-4)")
     mem.close()
 
 
