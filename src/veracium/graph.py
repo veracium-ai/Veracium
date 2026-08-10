@@ -15,7 +15,7 @@ from typing import Optional
 from . import authority
 from .schema import (DEFAULT_RELATIONS, ContributionDraft, Edge, EvidenceAuthor,
                      Relation, SupersessionPlan, SupersessionRefusalDraft)
-from .store.base import PLAN_STALE
+from .store.base import PLAN_STALE, SupersessionIntegrityError
 
 
 # Filler words that never change a value's meaning. Deliberately tiny: a false
@@ -103,8 +103,32 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
     # scope `expected_state` inside the transaction and applies all-or-nothing, or returns
     # PLAN_STALE (a concurrent write changed the state the plan assumed) and we recompute.
     op_id = f"sup-{edge.id}"
+    # specs/0014 §4b — PHASE 1, the PUBLIC pre-plan receipt lookup, THREE
+    # branches (R10-2). The snapshot is captured from the RAW submitted edge
+    # BEFORE any planning; the digest construction is the store's own frozen
+    # one (no caller assertion — R7-1).
+    from .contribution import raw_request_snapshot, request_digest
+    snapshot = raw_request_snapshot(edge)
+    receipt = store.supersession_receipt(edge.user_id, op_id)
+    if receipt is not None:
+        stored_rd = receipt.get("request_digest")
+        if stored_rd is not None:
+            if stored_rd == request_digest(snapshot):
+                # branch 1: REPLAY — the recorded response stands in for the
+                # committed op; NO re-planning occurs (the post-commit re-plan
+                # is never computed, so no outcome comparison can reject a
+                # legitimate lost-response retry — the R5-2 live defect closed).
+                return
+            # branch 2: a truly different resubmission reusing an op id
+            raise SupersessionIntegrityError(
+                f"operation_id {op_id!r} already committed a DIFFERENT request "
+                f"for user {edge.user_id!r} (specs/0014 §4b phase 1)")
+        # branch 3: NULL stored digest (either legal NULL form) — request
+        # identity UNAVAILABLE, never "different": continue to planning and
+        # phase 2, where the version-selected outcome comparison governs.
     for _ in range(_MAX_PLAN_ATTEMPTS):
         plan = _build_supersession_plan(store, edge, relations, op_id)
+        plan.raw_request = snapshot
         result = store.apply_supersession_plan(plan)
         if result is not PLAN_STALE:
             return
@@ -160,10 +184,11 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     # is the only place its pre-state exists; it becomes the `base` side of every
     # absorption payload and enters the v2 outcome digest. `derived_from` is
     # OMITTED when None (never null) — the canonical §4a form.
+    from .contribution import json_datetime
     pre_image = {
-        "observed_at": incoming.provenance.observed_at.isoformat(),
+        "observed_at": json_datetime(incoming.provenance.observed_at),
         "confidence": incoming.provenance.confidence,
-        "valid_from": incoming.valid_from.isoformat(),
+        "valid_from": json_datetime(incoming.valid_from),
         "disclosure": incoming.provenance.disclosure.value,
     }
     if incoming.provenance.derived_from is not None:

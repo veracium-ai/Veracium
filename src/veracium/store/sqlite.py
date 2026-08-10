@@ -312,22 +312,135 @@ class SqliteStore(Store):
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
+    def _outcome_digest_v2(self, plan: SupersessionPlan) -> str:
+        """specs/0014 R5-2/R6-1/R9-2: the EXTENDED outcome projection — everything
+        the pre-split digest bound PLUS the contribution drafts and the absorption
+        pre-image, so a store-level resubmission that mutates contribution fields
+        is detected (the mutation check, reachable by construction because
+        store-level callers submit plans). Version 2 in the receipt's
+        outcome_digest_version column; version-1 (migrated) receipts keep the
+        pre-split projection, selected by the STORED version, never by NULL-ness."""
+        payload = {
+            "v1": None,   # structural marker: v2 wraps the v1 projection
+            "pre_split": self._logical_request_digest(plan),
+            "contributions": sorted(
+                (json.loads(d.model_dump_json()) for d in plan.contribution_drafts),
+                key=lambda d: (d["site"], d["contributor_type"], d["contributor_id"])),
+            "absorption_pre_image": plan.absorption_pre_image,
+        }
+        return hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def validate_receipt_state(request_digest, version, response) -> None:
+        """specs/0014 R9-2/R10-4: the receipt-state triple is a CLOSED
+        enumerated set — (NULL, 1, NULL) legacy; (NULL, 2, json) new
+        snapshot-less; (digest, 2, json) new with snapshot. Any other
+        combination is an integrity error at write AND at read; the response,
+        when present, must deserialize into the exact effect fields."""
+        if version == 1:
+            if request_digest is not None or response is not None:
+                raise ValueError(
+                    f"illegal receipt state ({request_digest!r}, 1, "
+                    f"{'json' if response else None}) — version-1 rows are the "
+                    f"migrated legacy form (NULL, 1, NULL) only (0014 R10-4)")
+            return
+        if version == 2:
+            if response is None:
+                raise ValueError(
+                    "illegal receipt state (…, 2, NULL) — every version-2 "
+                    "receipt persists its effect payload (0014 R9-1/R10-4)")
+            try:
+                effects = json.loads(response)
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    f"receipt response is not valid JSON (0014 R10-4): {e}") from e
+            if (not isinstance(effects, dict)
+                    or set(effects) != {"inserted_incoming", "invalidated",
+                                        "refused"}):
+                raise ValueError(
+                    "receipt response does not carry exactly the effect fields "
+                    "{inserted_incoming, invalidated, refused} (0014 R10-1/R10-4)")
+            return
+        raise ValueError(
+            f"illegal outcome_digest_version {version!r} — the closed set is "
+            f"{{1, 2}} (0014 R9-2/R10-4)")
+
+    def supersession_receipt(self, user_id: str, operation_id: str):
+        """specs/0014 §4b: the phase-1 lookup surface — the receipt's request
+        identity, projection version, and persisted effects, or None."""
+        row = self._conn.execute(
+            "SELECT logical_request_digest, status, request_digest, response, "
+            "outcome_digest_version FROM supersession_operations "
+            "WHERE user_id=? AND operation_id=?",
+            (user_id, operation_id)).fetchone()
+        if row is None:
+            return None
+        self.validate_receipt_state(row[2], row[4], row[3])   # flagged at read
+        return {"logical_request_digest": row[0], "status": row[1],
+                "request_digest": row[2], "response": row[3],
+                "outcome_digest_version": row[4]}
+
+    @staticmethod
+    def _replay_from_effects(response_json: str):
+        """R10-1: replay CONSTRUCTS its result as the persisted effect fields +
+        replayed=True — effect identity from the durable carrier, runtime
+        provenance from the call. Never a reconstruction from the submitted
+        (and discarded) plan."""
+        effects = json.loads(response_json)
+        return SupersessionResult(**effects, replayed=True)
+
     def apply_supersession_plan(self, plan: SupersessionPlan):
+        from ..contribution import (effect_payload, request_digest,
+                                    verify_snapshot_against_plan)
         inc = plan.incoming_edge
         user_id = inc.user_id
-        digest = self._logical_request_digest(plan)
+        # specs/0014 §4b: a present snapshot is verified against the plan under
+        # the exhaustive field partition BEFORE any use (forged/malformed →
+        # abort); the store derives the request digest ITSELF (R7-1).
+        plan_rd = None
+        if plan.raw_request is not None:
+            try:
+                verify_snapshot_against_plan(plan.raw_request, plan)
+            except ValueError as e:
+                raise SupersessionIntegrityError(str(e)) from e
+            plan_rd = request_digest(plan.raw_request)
+        digest = self._outcome_digest_v2(plan)
         with self._lock:
             # 1. receipt check — PRECEDES the CAS check, so a committed op REPLAYS rather
             #    than tripping PlanStale on its own now-stale expected_state (§4f, r9 B3).
+            #    PHASE 2 is REQUEST-FIRST where request identity exists on both sides
+            #    (R8-1): matching raw_request → replay the PERSISTED effects, the
+            #    submitted plan's re-planned outcome DISCARDED unconsulted (the
+            #    concurrent-preflight loser lands here); differing → conflict. The
+            #    outcome digest governs ONLY receipts/plans WITHOUT request identity,
+            #    at the receipt's STORED projection version (R9-2 — never by NULL-ness).
             row = self._conn.execute(
-                "SELECT logical_request_digest FROM supersession_operations "
+                "SELECT logical_request_digest, request_digest, response, "
+                "outcome_digest_version FROM supersession_operations "
                 "WHERE user_id=? AND operation_id=?", (user_id, plan.operation_id)).fetchone()
             if row is not None:
-                if row[0] != digest:
+                stored_outcome, stored_rd, stored_resp, stored_ver = row
+                if stored_rd is not None and plan_rd is not None:
+                    if plan_rd == stored_rd:
+                        return self._replay_from_effects(stored_resp)
+                    raise SupersessionIntegrityError(
+                        f"operation_id {plan.operation_id!r} already committed a "
+                        f"DIFFERENT request for user {user_id!r} (specs/0014 §4b "
+                        f"phase 2, request-first)")
+                compare = (digest if stored_ver == 2
+                           else self._logical_request_digest(plan))
+                if stored_outcome != compare:
                     raise SupersessionIntegrityError(
                         f"operation_id {plan.operation_id!r} already committed a DIFFERENT "
                         f"logical operation for user {user_id!r} — a reused id is a caller "
-                        f"integrity bug, not a race (specs/0003 §4f)")
+                        f"integrity bug, not a race (specs/0003 §4f; projection "
+                        f"v{stored_ver})")
+                if stored_resp is not None:
+                    return self._replay_from_effects(stored_resp)
+                # legacy (NULL response, version 1): the pre-split
+                # reconstruct-from-plan replay — SOUND here because the matching
+                # outcome digest proves the submitted plan IS the recorded plan.
                 refused = self._conn.execute(
                     "SELECT COUNT(*) FROM supersession_refusals "
                     "WHERE user_id=? AND incoming_edge_id=?", (user_id, inc.id)).fetchone()[0]
@@ -388,11 +501,23 @@ class SqliteStore(Store):
                         "rule_version,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
                         (f"ref-{uuid.uuid4().hex[:12]}", user_id, d.prior_edge_id, inc.id,
                          d.relation, d.prior_effective, d.incoming_effective, RULE_VERSION, now))
-                # the durable receipt commits atomically with the effects (§4f idempotency)
+                # the durable receipt commits atomically with the effects (§4f
+                # idempotency; 0014 R9-1/R9-2/R10-1): the persisted EFFECT payload
+                # (result minus the runtime replayed flag), the store-computed
+                # request digest (NULL when no snapshot), and the projection
+                # version stamped 2 EXPLICITLY — never relying on the DEFAULT.
+                result = SupersessionResult(
+                    inserted_incoming=plan.insert_incoming,
+                    invalidated=len(plan.prior_invalidations),
+                    refused=len(plan.refusals))
+                resp_json = effect_payload(result)
+                self.validate_receipt_state(plan_rd, 2, resp_json)  # refused at write
                 self._conn.execute(
                     "INSERT INTO supersession_operations(user_id,operation_id,"
-                    "logical_request_digest,status) VALUES(?,?,?,?)",
-                    (user_id, plan.operation_id, digest, "applied"))
+                    "logical_request_digest,status,request_digest,response,"
+                    "outcome_digest_version) VALUES(?,?,?,?,?,?,?)",
+                    (user_id, plan.operation_id, digest, "applied",
+                     plan_rd, resp_json, 2))
                 self._bump(user_id)                   # a recall-bearing edge changed
                 # A live_refusal_contention transition — INTO it (this plan records a
                 # refusal) OR OUT of it (this plan retires an edge that a refusal row
@@ -410,9 +535,7 @@ class SqliteStore(Store):
             except Exception:
                 self._conn.rollback()
                 raise
-            return SupersessionResult(
-                inserted_incoming=plan.insert_incoming,
-                invalidated=len(plan.prior_invalidations), refused=len(plan.refusals))
+            return result
 
     def refusals(self, user_id: str) -> list[SupersessionRefusal]:
         rows = self._conn.execute(
@@ -459,10 +582,11 @@ class SqliteStore(Store):
         ev = evidence_ref_digest(
             resolve_origin(contributor.provenance.origin, local),
             contributor.provenance.evidence_ref)
+        from ..contribution import json_datetime
         side = {
-            "observed_at": contributor.provenance.observed_at.isoformat(),
+            "observed_at": json_datetime(contributor.provenance.observed_at),
             "confidence": contributor.provenance.confidence,
-            "valid_from": contributor.valid_from.isoformat(),
+            "valid_from": json_datetime(contributor.valid_from),
             "disclosure": contributor.provenance.disclosure.value,
         }
         if contributor.provenance.derived_from is not None:
@@ -513,8 +637,9 @@ class SqliteStore(Store):
                 ev = evidence_ref_digest(
                     resolve_origin(inp.provenance.origin, local),
                     inp.provenance.evidence_ref)
+                from ..contribution import json_datetime
                 side = {
-                    "observed_at": inp.provenance.observed_at.isoformat(),
+                    "observed_at": json_datetime(inp.provenance.observed_at),
                     "confidence": inp.provenance.confidence,
                     "disclosure": inp.provenance.disclosure.value,
                     "author_of_evidence": inp.provenance.author_of_evidence.value,

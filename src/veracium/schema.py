@@ -502,6 +502,13 @@ class SupersessionPlan(BaseModel):
     # every absorption payload and enters the v2 outcome digest (R5-2/R9-2).
     contribution_drafts: list[ContributionDraft] = Field(default_factory=list)
     absorption_pre_image: Optional[dict] = None
+    # `raw_request` (R7-1, plan-transient): the CANONICAL snapshot of the raw
+    # edge as submitted — the COMPLETE JSON-mode dump captured by the PUBLIC
+    # entry point BEFORE planning. The STORE verifies it against the plan under
+    # the exhaustive field partition and computes the request digest ITSELF;
+    # there is NO request_digest field on the plan (a caller-constructible
+    # digest was the R7-1 forgery). Absent → phase-2 semantics only.
+    raw_request: Optional[dict] = None
 
 
 class SupersessionRefusal(BaseModel):

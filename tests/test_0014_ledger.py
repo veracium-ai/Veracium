@@ -83,7 +83,8 @@ def test_the_base_side_is_the_pre_inheritance_snapshot(tmp_path):
     store = _store(tmp_path)
     prior, winner = _absorb(store)
     r = store.contributions("u1", "edge", winner.id)[0]
-    assert r.payload["base"]["valid_from"] == NOW.isoformat()          # original
+    from veracium.contribution import json_datetime
+    assert r.payload["base"]["valid_from"] == json_datetime(NOW)       # original
     stored = [e for e in store.edges("u1", active_only=True)
               if e.id == winner.id][0]
     assert stored.valid_from == NOW - timedelta(days=3)                # inherited

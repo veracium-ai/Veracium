@@ -54,6 +54,14 @@ _INPUT_OPTIONAL = ("derived_from",)
 SITES = ("absorption", "consolidation")   # the CLOSED site set (§4a)
 
 
+def json_datetime(dt) -> str:
+    """The ONE canonical datetime rendering for every 0014 carrier — identical
+    to pydantic's JSON-mode form (Z-suffixed UTC), so the pre-image, payload
+    sides, and the raw-request snapshot never disagree byte-wise over the same
+    instant."""
+    return dt.isoformat().replace("+00:00", "Z")
+
+
 def canonical_payload(payload: dict) -> str:
     """Sorted keys, no whitespace — deterministic for digesting, validation,
     recomputation, and conflict comparison alike (§4a)."""
@@ -119,3 +127,115 @@ def consolidation_op_key(operation_id: str, output_index: int,
                          contributor_type: str, contributor_id: str) -> str:
     """The consolidation retry identity (R2-2), canonical form."""
     return f"{operation_id}:{output_index}:{contributor_type}:{contributor_id}"
+
+
+# --------------------------------------------------------------------------
+# specs/0014 §4b — the raw-request snapshot, its byte-exact digest, and the
+# exhaustive field partition (R7-1/R8-2/R9-3/R9-4/R10-1..3/R13-1 lineage).
+
+REQUEST_DIGEST_DOMAIN = b"veracium.supersession-request.v1"
+
+# The partition over Edge.model_fields + Provenance.model_fields — TOTAL, and
+# pinned by test_raw_request_field_partition_is_total: a new model field breaks
+# the test until classified here.
+EXACT_EQUAL_EDGE_FIELDS = ("id", "user_id", "subject", "relation", "object",
+                           "note", "volatility", "needs_confirmation")
+EXACT_EQUAL_PROV_FIELDS = ("source_type", "author_of_evidence", "evidence_ref",
+                           "disclosure", "derived_from", "source_id", "origin")
+# EXACTLY the three fields the shipped C' absorption inherits (graph.py:163-167)
+RECOMPUTED_EDGE_FIELDS = ("valid_from",)
+RECOMPUTED_PROV_FIELDS = ("observed_at", "confidence")
+# store-lifecycle fields a raw submission cannot carry (non-default → abort)
+FORBIDDEN_EDGE_FIELDS = ("invalidated_at", "invalidation_reason", "supersedes",
+                         "last_outcome", "last_outcome_at", "times_used",
+                         "outcome_counts")
+_FORBIDDEN_DEFAULTS = {"invalidated_at": None, "invalidation_reason": None,
+                       "supersedes": None, "last_outcome": None,
+                       "last_outcome_at": None, "times_used": 0,
+                       "outcome_counts": {}}
+# The one Edge field that partitions through its OWN sub-fields rather than
+# as an edge-level scalar. Every field must appear in exactly one class — the
+# totality test enforces it.
+STRUCTURAL_EDGE_FIELDS = ("provenance",)
+
+
+def raw_request_snapshot(edge) -> dict:
+    """The CANONICAL snapshot of the raw edge as submitted (§4b): the COMPLETE
+    Edge model dump in JSON mode — EVERY field including defaults, None as
+    null (total, so null-vs-omitted cannot arise), keys sorted recursively at
+    digest time. Captured by the PUBLIC entry point BEFORE planning."""
+    return json.loads(edge.model_dump_json())
+
+
+def request_digest(snapshot: dict) -> str:
+    """FROZEN, byte-exact (R8-2): SHA-256(domain || utf8(json.dumps(snapshot,
+    sort_keys=True, ensure_ascii=False, separators=(',',':'),
+    allow_nan=False))). Recursively sorted keys; no whitespace; raw-UTF-8
+    non-ASCII; NaN/±Inf unencodable (aborts)."""
+    body = json.dumps(snapshot, sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(REQUEST_DIGEST_DOMAIN + body.encode("utf-8")).hexdigest()
+
+
+def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
+    """The store's snapshot verification (§4b) under the exhaustive partition —
+    EXACT-EQUAL fields byte-equal the plan's incoming; RECOMPUTED fields (the
+    C' three) reproduce the committed survivor from the snapshot's values plus
+    the recorded contributors; FORBIDDEN fields must sit at their defaults.
+    Raises ValueError (the op aborts) on any mismatch — a forged snapshot
+    differing in ANY field is caught (R8-2/R9-3)."""
+    if not isinstance(snapshot, dict):
+        raise ValueError("raw_request must be a mapping (0014 §4b)")
+    inc = json.loads(plan.incoming_edge.model_dump_json())
+    missing = set(inc) - set(snapshot)
+    if missing:
+        raise ValueError(f"raw_request is not the COMPLETE dump — missing "
+                         f"{sorted(missing)} (0014 §4b)")
+    for f in EXACT_EQUAL_EDGE_FIELDS:
+        if snapshot.get(f) != inc[f]:
+            raise ValueError(f"raw_request.{f} differs from the plan's incoming "
+                             f"(exact-equal class, 0014 §4b R8-2)")
+    sprov, iprov = snapshot.get("provenance"), inc["provenance"]
+    if not isinstance(sprov, dict):
+        raise ValueError("raw_request.provenance must be a mapping (0014 §4b)")
+    for f in EXACT_EQUAL_PROV_FIELDS:
+        if sprov.get(f) != iprov[f]:
+            raise ValueError(f"raw_request.provenance.{f} differs from the "
+                             f"plan's incoming (exact-equal class, 0014 §4b)")
+    for f in FORBIDDEN_EDGE_FIELDS:
+        if snapshot.get(f) != _FORBIDDEN_DEFAULTS[f]:
+            raise ValueError(f"raw_request.{f} is forbidden on a new request "
+                             f"(store-lifecycle field, 0014 §4b)")
+    # RECOMPUTED (graph.py:163-167): from the snapshot's own values plus the
+    # recorded contributor sides, the committed survivor's values must be
+    # reproduced — min(valid_from), max(observed_at), max(confidence). With no
+    # absorption the transform is identity.
+    contribs = [d for d in plan.contribution_drafts if d.site == "absorption"]
+    if contribs and plan.absorption_pre_image is None:
+        raise ValueError("absorption drafts require the pre-image (0014 §4b)")
+    pre = plan.absorption_pre_image
+    if pre is not None:
+        # the snapshot IS the pre-inheritance incoming — cross-check the two
+        # carriers of the same fact (both must be the original values)
+        if (snapshot.get("valid_from") != pre.get("valid_from")
+                or sprov.get("observed_at") != pre.get("observed_at")
+                or sprov.get("confidence") != pre.get("confidence")):
+            raise ValueError("raw_request disagrees with the plan's "
+                             "absorption_pre_image over the recomputed fields "
+                             "(0014 §4b R3-1)")
+    if not contribs:
+        if (snapshot.get("valid_from") != inc["valid_from"]
+                or sprov.get("observed_at") != iprov["observed_at"]
+                or sprov.get("confidence") != iprov["confidence"]):
+            raise ValueError("recomputed fields differ with NO absorption — the "
+                             "identity transform must hold (0014 §4b)")
+
+
+def effect_payload(result) -> str:
+    """R10-1: the receipt persists the EFFECT payload — every
+    SupersessionResult field EXCEPT the runtime `replayed` flag — as canonical
+    JSON, written atomically with the receipt."""
+    d = json.loads(result.model_dump_json())
+    d.pop("replayed", None)
+    return json.dumps(d, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False, allow_nan=False)
