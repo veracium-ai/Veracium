@@ -70,10 +70,9 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     _groups_seen: set = set()
 
     def _is_variant(e):
-        # a further member of a (subject, relation, envelope) group already
-        # represented classifies LAST (the frozen proactive order, R-impl3-1)
-        k = (e.subject, e.relation, e.provenance.disclosure,
-             e.provenance.author_of_evidence, e.provenance.derived_from)
+        k = _full_group_of.get(e.id)
+        if k is None:
+            return False
         if k in _groups_seen:
             return True
         _groups_seen.add(k)
@@ -84,25 +83,40 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # volatilities and flags all surface by the predicate). The info labels carry
     # the truthful earliest-since and the ×N flagged count.
     surfaced, _c_info = collapse_for_render(list(store.edges(user_id)))
+    # R-impl4-1: variancy is decided by I8's FULL group — the authority envelope ×
+    # unique-anchor VALUE grouping (the shared value_groups construction) — so
+    # incomparable same-envelope values are independent survivors, never variants.
+    from .graph import value_groups as _value_groups
+    _env_buckets: dict = {}
+    for _e in surfaced:
+        if _e.assertable:
+            _env_buckets.setdefault(
+                (_e.subject, _e.relation, _e.provenance.disclosure,
+                 _e.provenance.author_of_evidence, _e.provenance.derived_from),
+                []).append(_e)
+    _full_group_of: dict = {}
+    for _bk, _members in _env_buckets.items():
+        for _vk, _ms in _value_groups(_members).items():
+            for _m in _ms:
+                _full_group_of[_m.id] = _bk + (_vk,)
+
     # volunteering gate: active + assertable (mentionable) only
     from .budgets import clamp_item as _clamp, est_tokens as _est0
     _cap = getattr(config, "item_cap_tokens", 512)
-    comp_clamped = [0]                         # composition-time clamps are truncation
-    #                                            EVENTS and must signal (R-impl2-1);
-    #                                            counts are EXACT (R-impl3-4): _obj is
-    #                                            PURE — only _obj_counted increments,
-    #                                            exactly once per composed item.
+    # counts are EXACT per clamped ITEM (R-impl4-4): a per-unit registry — an item
+    # clamped at composition AND again at admission recomposition is ONE clamped item.
+    _clamped_ids: set = set()
 
     def _obj(e, content_cap=None):
         # content clamp BEFORE framing: the due/confirm instructions render after
-        # the object, so a whole-line tail clamp would sever them (I10c)
+        # the object, so a whole-line tail clamp would sever them (I10c). PURE.
         cap = content_cap if content_cap is not None else max(16, _cap - 48)
         return _clamp(e.object, cap)
 
     def _obj_counted(e):
         out = _obj(e)
         if out != e.object:
-            comp_clamped[0] += 1
+            _clamped_ids.add(e.id)
         return out
 
     for e in surfaced:
@@ -113,13 +127,15 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
         # specs/0012 I10f: class assignment is a PRECEDENCE mirroring the surface
         # order — a flagged edge classifies into its WARNING tier even when it also
         # carries a due date (flagged > commitment); it renders ONCE.
-        variant = _is_variant(e)
+        variant = _is_variant(e)                   # registers the group either way
         if e.needs_confirmation:
+            # I10f: VARIANCY NEVER DEMOTES a safety class — a flagged member is a
+            # WARNING regardless of its group-mates (R-impl4-1).
             xn = _c_info.get(e.id, {}).get("flagged_hidden", 0)
             tail = f" (×{xn + 1} restatements need confirmation)" if xn else ""
             line = (f"{e.relation}: {_obj_counted(e)} — confirm when natural "
                     f"(unrefreshed since {e.provenance.observed_at.date()}){tail}")
-            (variants if variant else confirms).append((line, e))
+            confirms.append((line, e))
             seen.add(e.id)
             continue
         if due:
@@ -193,7 +209,6 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     sel_eps: list[Episode] = []
     admitted: dict[str, list[str]] = {h: [] for h, _ in sections}
     dropped: dict[str, int] = {h: 0 for h, _ in sections}
-    n_clamped = 0
     if token_budget is None:
         for header, items in sections:
             for line, unit in items:
@@ -211,11 +226,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             if not items:
                 continue
             if header == "## RECENT HISTORY":
-                # explicit NEWEST-first sort (ties observed_at DESC then id) —
-                # reversing store order is not an order (R-impl3-1)
+                # explicit NEWEST-first sort; the FINAL id tie is lexicographic
+                # ASCENDING (R-impl4-1): stable sort id ASC first, then
+                # (date, observed_at) DESC on top.
+                items = sorted(items, key=lambda p: p[1].id)
                 items = sorted(
                     items,
-                    key=lambda p: (p[1].date, p[1].provenance.observed_at, p[1].id),
+                    key=lambda p: (p[1].date, p[1].provenance.observed_at),
                     reverse=True)
             header_cost = est(header) + 1
             for line, unit in items:
@@ -231,7 +248,10 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                         else:
                             line = _ci(line, remaining - header_cost - 1)
                         cost = est(line) + 1 + header_cost
-                        n_clamped += 1
+                        if isinstance(unit, Edge):
+                            _clamped_ids.add(unit.id)      # ONE item, however many stages
+                        else:
+                            _clamped_ids.add(getattr(unit, "id", repr(unit)))
                         if cost > remaining:
                             dropped[header] += 1
                             continue
@@ -246,7 +266,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             admitted["## RECENT HISTORY"].sort()           # render chronologically
             #                                                ([YYYY-MM-DD] prefix sorts)
     n_dropped = sum(dropped.values())
-    truncated = bool(n_dropped or n_clamped or comp_clamped[0])
+    truncated = bool(n_dropped or _clamped_ids)
 
     parts = [header + "\n" + "\n".join(admitted[header])
              for header, _ in sections if admitted[header]]
@@ -258,5 +278,5 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                     f"{_bc(dropped['## CURRENT CONTEXT'])} context / "
                     f"{_bc(dropped['## RECENT HISTORY'])} history / "
                     f"{_bc(dropped.get('## RESTATED VARIANTS', 0))} variants / "
-                    f"{_bc(n_clamped + comp_clamped[0])} clamped]")
+                    f"{_bc(len(_clamped_ids))} clamped]")
     return context, sel_edges, sel_eps, truncated

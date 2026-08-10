@@ -499,12 +499,109 @@ def test_proactive_order_ties_and_directions(tmp_path):
     assert "NEWER" in ctx2 and "OLDER" not in ctx2          # observed_at DESC on ties
     # (c) variants last: A-survivor, A-variant, B-survivor at a two-item budget
     s3 = SqliteStore(":memory:")
-    s3.add_edge(_edge("a-surv", "A survivor value " + "pad " * 150, rel="topic",
+    # a GENUINE variant: the same value token-dropped within _subsumes' bound (one
+    # unique anchor), carrying a distinct note so the collapse surfaces it — the
+    # reviewer's correction: incomparable values are independent survivors, never
+    # variants (R-impl4-1).
+    base = "A survivor value " + "pad " * 150
+    s3.add_edge(_edge("a-surv", base, rel="topic",
                       vol=Volatility.TRANSIENT, days=2))
-    s3.add_edge(_edge("a-var", "A variant different value " + "pad " * 150, rel="topic",
-                      vol=Volatility.TRANSIENT, days=1))
+    s3.add_edge(_edge("a-var", base.rsplit("pad", 2)[0].strip(), rel="topic",
+                      note="restated in standup", vol=Volatility.TRANSIENT, days=1))
     s3.add_edge(_edge("b-surv", "B survivor value " + "pad " * 150, rel="other_topic",
                       vol=Volatility.TRANSIENT, days=1))
     ctx3, *_ = assemble(s3, U, cfg, now=NOW, token_budget=400)
     assert "A survivor" in ctx3 and "B survivor" in ctx3    # both survivors first
-    assert "A variant" not in ctx3                          # the variant waited
+    assert "restated in standup" not in ctx3                # the true variant waited
+
+
+# =============================================================================
+# impl round 4 — the reviewer's reproductions, pinned
+# =============================================================================
+
+def test_variancy_never_demotes_a_flagged_member(tmp_path):
+    """R-impl4-1: a flagged same-group member is a WARNING, never a final-tier
+    variant — it survives the floor while the ordinary survivor competes normally.
+    And incomparable same-envelope values are independent proactive survivors."""
+    cfg = MemoryConfig(db_path=":memory:")
+    s = SqliteStore(":memory:")
+    base = "current project state " + "pad " * 150
+    s.add_edge(_edge("base", base, rel="works_on", vol=Volatility.TRANSIENT, days=1))
+    s.add_edge(_edge("flagged", base.rsplit("pad", 2)[0].strip(), rel="works_on",
+                     note="needs another look", vol=Volatility.TRANSIENT,
+                     flag=True, days=300))                  # same group, FLAGGED
+    ctx, edges, _eps, _tr = assemble(s, U, cfg, now=NOW,
+                                     token_budget=floor_for("proactive"))
+    assert "confirm when natural" in ctx                    # the warning SURVIVES
+    assert any(e.id == "flagged" for e in edges)
+    # incomparable values: three independent survivors, no RESTATED VARIANTS section
+    s2 = SqliteStore(":memory:")
+    for i, obj in enumerate(("cat Miso", "dog Miso", "bird Pico")):
+        s2.add_edge(_edge(f"pet{i}", obj, rel="has_pet", vol=Volatility.TRANSIENT))
+    ctx2, *_ = assemble(s2, U, cfg, now=NOW, token_budget=1200)
+    assert "RESTATED VARIANTS" not in ctx2
+    for obj in ("cat Miso", "dog Miso", "bird Pico"):
+        assert obj in ctx2
+
+
+def test_episode_id_tie_is_lexicographic_ascending(tmp_path):
+    """R-impl4-1: with otherwise-identical episodes a and z, the final id tie is
+    ASCENDING — a is selected."""
+    Episode = __import__("veracium.schema", fromlist=["Episode"]).Episode
+    s = SqliteStore(":memory:")
+    for eid in ("z-ep", "a-ep"):
+        s.add_episode(Episode(
+            id=eid, user_id=U, date=NOW.date().isoformat(),
+            summary=f"[{eid}] " + "identical verbose history " * 30,
+            provenance=Provenance(source_type=SourceType.STATED,
+                                  author_of_evidence=EvidenceAuthor.USER,
+                                  evidence_ref=eid, observed_at=NOW)))
+    ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                       token_budget=floor_for("proactive"))
+    assert "[a-ep]" in ctx and "[z-ep]" not in ctx
+
+
+def test_compiler_survivor_is_order_invariant(tmp_path):
+    """R-impl4-2: same-value same-envelope members with distinct notes — the I8j
+    survivor (note-bearing → specificity → freshest → id) compiles under BOTH
+    insertion orders; input permutation never changes the selection."""
+    from veracium.compile import compile_wiki
+    expected = None
+    for order in (("older", "newer"), ("newer", "older")):
+        s = SqliteStore(":memory:")
+        for tag in order:
+            days = 30 if tag == "older" else 1
+            s.add_edge(_edge(f"e-{tag}", "the project codename " + "pad " * 100,
+                             rel="works_on", note=f"{tag.upper()}-NOTE", days=days))
+        cap = {}
+        def llm(prompt, *, system=None, role="compile", json_schema=None):
+            cap["p"] = prompt; return "wiki"
+        compile_wiki(s, llm, U, DEFAULT_RELATIONS,
+                     wiki_input_budget=floor_for("wiki"))   # one line fits
+        got = "NEWER-NOTE" if "NEWER-NOTE" in cap["p"] else "OLDER-NOTE"
+        expected = expected or got
+        assert got == expected, f"insertion order {order} changed the survivor"
+    assert expected == "NEWER-NOTE"                         # freshest among note-bearers
+
+
+def test_public_recall_rejects_a_mutated_sub_floor_cap(tmp_path):
+    """R-impl4-3: mutating the dataclass AFTER construction cannot smuggle a
+    sub-floor item cap past validation — the public recall path revalidates at
+    surface build, wiki layer enabled or not."""
+    mem = _mem(tmp_path, wiki_recompile_after_writes=0)     # wiki layer DISABLED
+    mem.store.add_edge(_edge("e1", "chef"))
+    mem.config.item_cap_tokens = 1                          # post-construction mutation
+    with pytest.raises(ValueError, match="minimum"):
+        mem.recall(U, "chef")
+    mem.close()
+
+
+def test_proactive_clamp_count_is_per_item(tmp_path):
+    """R-impl4-4: one oversized due item clamped at composition AND recomposed at
+    admission reports EXACTLY '1 clamped' — stages are not items."""
+    s = SqliteStore(":memory:")
+    due = (NOW + timedelta(days=2)).date().isoformat()
+    s.add_edge(_edge("huge", ("x" * 500_000) + f" due {due}", rel="deadline", days=1))
+    ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                       token_budget=floor_for("proactive"))
+    assert "1 clamped]" in ctx                              # exactly one ITEM

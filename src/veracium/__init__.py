@@ -240,9 +240,22 @@ class Memory:
         # token_budget gets the validated config default (4,000), never unbounded.
         if token_budget is None:
             token_budget = self.config.query_context_budget_tokens
-        from .budgets import validate_budget
+        # I10e at SURFACE BUILD (R-impl4-3): a config mutated after construction
+        # cannot smuggle a sub-floor bound past __post_init__ — every mutable
+        # recall bound revalidates here, the wiki layer enabled or not.
+        from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
         validate_budget("recall", token_budget,
                         self.config.group_heading_allowance_tokens)
+        if self.config.item_cap_tokens < MIN_ITEM_ALLOWANCE:
+            raise ValueError(
+                f"item_cap_tokens {self.config.item_cap_tokens} is below the minimum "
+                f"item allowance {MIN_ITEM_ALLOWANCE} (I10e, recall surface build)")
+        if not (0 < self.config.wiki_render_share <= 1):
+            raise ValueError("wiki_render_share must be in (0, 1]")
+        if self.config.contested_members_per_line < 2:
+            raise ValueError("contested_members_per_line < 2 (I10e, surface build)")
+        if self.config.group_heading_allowance_tokens < 16:
+            raise ValueError("group_heading_allowance_tokens < 16 (I10e, surface build)")
         wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
                                     self.config.wiki_recompile_after_writes,
                                     self.config.relations,

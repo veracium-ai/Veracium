@@ -191,10 +191,13 @@ def compile_wiki(store, llm: Complete, user_id: str, relations: dict[str, Relati
         env_buckets.setdefault(k, []).append(e)
     # I8's FULL group = the envelope × unique-anchor VALUE grouping (R-impl3-2):
     # incomparable same-envelope values are DISTINCT groups, each owed a survivor.
+    from .graph import _collapse_survivor_order
     groups: dict[tuple, list] = {}
     for k in sorted(env_buckets):
         for vk, members in sorted(_value_groups(env_buckets[k]).items()):
-            groups[k + (vk,)] = members
+            # the I8j survivor total order (note-bearing → specificity → freshest →
+            # edge id) decides each group's representative — NEVER input order
+            groups[k + (vk,)] = sorted(members, key=_collapse_survivor_order)
     ordered_keys = sorted(groups)
     survivors = [groups[k][0] for k in ordered_keys]
     variants = [e for k in ordered_keys for e in groups[k][1:]]
