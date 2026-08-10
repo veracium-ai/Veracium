@@ -835,3 +835,47 @@ def test_reviewer_guide_carries_no_frozen_suite_counts():
     assert not hits, (
         "REVIEWER_GUIDE.md carries frozen suite counts/deltas (they belong in "
         f"COLLECTED.txt): {hits}")
+
+
+def test_conditional_skip_inventory_is_complete():
+    """R13-3 (0014 round 13): the hand-listed COLLECTED inventory missed the
+    optional-MCP importorskip, so the reviewer's delta could not fully reconcile
+    against names. Both directions are now mechanical: every conditional-skip
+    site in tests/ must match an inventory entry (file + condition token within
+    the site's five-line window), and every entry must match a live site."""
+    import pathlib
+    import re
+    import sys
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from skip_inventory import INVENTORY
+
+    site_re = re.compile(
+        r"pytest\.importorskip\(|pytest\.skip\(|pytest\.mark\.skipif")
+    sites = []  # (relpath, line_no, five-line window text)
+    for f in sorted((root / "tests").rglob("*.py")):
+        lines = f.read_text().splitlines()
+        rel = str(f.relative_to(root))
+        for i, line in enumerate(lines):
+            if line.lstrip().startswith("#"):
+                continue
+            if site_re.search(line):
+                window = "\n".join(lines[i:i + 5])
+                sites.append((rel, i + 1, window))
+
+    uninventoried = []
+    for rel, ln, window in sites:
+        if not any(f == rel and token in window
+                   for f, _, token, _, _ in INVENTORY):
+            uninventoried.append(f"{rel}:{ln}")
+    assert not uninventoried, (
+        "conditional-skip sites missing from specs/skip_inventory.py "
+        f"(the R13-3 gap, mechanically): {uninventoried}")
+
+    dead = []
+    for f, kind, token, _, _ in INVENTORY:
+        if not any(rel == f and token in window for rel, _, window in sites):
+            dead.append(f"{f} [{kind}: {token!r}]")
+    assert not dead, (
+        f"inventory entries matching no live skip site (stale — remove): {dead}")
