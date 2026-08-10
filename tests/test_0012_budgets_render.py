@@ -655,3 +655,42 @@ def test_proactive_survivor_is_order_invariant(tmp_path):
                         token_budget=1200)
     assert "project state alpha" in ctx2                     # renders as the survivor,
     assert "RESTATED VARIANTS" not in ctx2                   # never as a variant
+
+
+# =============================================================================
+# impl round 6 — the reviewer's reproductions, pinned
+# =============================================================================
+
+def test_a_fresher_transient_never_demotes_a_due_commitment(tmp_path):
+    """R-impl6-1: class decides priority — the group survivor resolves by class
+    precedence FIRST (flagged > commitment > context), then I8j. A fresher transient
+    group-mate never displaces an older due commitment."""
+    due = (NOW + timedelta(days=2)).date().isoformat()
+    s = SqliteStore(":memory:")
+    base = "quarterly report submission"
+    s.add_edge(_edge("commit", f"{base} due {due}", rel="works_on",
+                     vol=Volatility.DURABLE, days=10))       # the older DUE commitment
+    s.add_edge(_edge("fresh", base, rel="works_on", note="mentioned again",
+                     vol=Volatility.TRANSIENT, days=1))      # fresher transient, same group
+    ctx, edges, _eps, _tr = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                                     token_budget=1200)
+    assert "DATED COMMITMENTS" in ctx                        # the commitment tier renders
+    assert f"due {due}" in ctx                               # with the due framing
+    assert any(e.id == "commit" for e in edges)              # the commitment survived
+
+
+def test_clamp_registry_is_type_tagged(tmp_path):
+    """R-impl6-2: an oversized Edge and an oversized Episode SHARING the same raw id
+    count as TWO clamped items, never one."""
+    Episode = __import__("veracium.schema", fromlist=["Episode"]).Episode
+    s = SqliteStore(":memory:")
+    s.add_edge(_edge("same-id", "x" * 500_000, rel="works_on",
+                     vol=Volatility.TRANSIENT, days=1))
+    s.add_episode(Episode(
+        id="same-id", user_id=U, date=NOW.date().isoformat(), summary="e" * 500_000,
+        provenance=Provenance(source_type=SourceType.STATED,
+                              author_of_evidence=EvidenceAuthor.USER,
+                              evidence_ref="same-id", observed_at=NOW)))
+    ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
+                       token_budget=1200)
+    assert "2 clamped]" in ctx                               # two ITEMS, exactly

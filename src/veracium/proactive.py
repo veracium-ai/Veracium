@@ -96,16 +96,22 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     _survivor_of: dict = {}
     from .graph import _collapse_survivor_order
 
-    def _eligible(_m):
-        # only members this surface can actually render may claim survivorship
-        # (R-impl5-1): flagged, dated-due, or transient/ephemeral — an undated
-        # durable member never displaces the group's only eligible member.
+    def _class_rank(_m):
+        # I10f: CLASS decides priority — a flagged member outranks a dated
+        # commitment outranks transient context. Survivorship resolves by class
+        # FIRST (R-impl6-1: a fresher transient must never demote an older due
+        # commitment from its own group), then by the I8j order within the class.
         if _m.needs_confirmation:
-            return True
+            return 0
         _ds = _dates_in(_m.object + " " + _m.note)
         if any(_d <= window for _d in _ds):
-            return True
-        return _m.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL)
+            return 1
+        if _m.volatility in (Volatility.TRANSIENT, Volatility.EPHEMERAL):
+            return 2
+        return 9                                   # ineligible for this surface
+
+    def _eligible(_m):
+        return _class_rank(_m) < 9
 
     for _bk, _members in _env_buckets.items():
         for _vk, _ms in _value_groups(_members).items():
@@ -114,9 +120,10 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                 _full_group_of[_m.id] = _gk
             _elig = [_m for _m in _ms if _eligible(_m)]
             if _elig:
-                # the I8j total order picks the group's ONE proactive survivor
-                # (note-bearing → specificity → freshest → id), input-order free
-                _survivor_of[_gk] = min(_elig, key=_collapse_survivor_order).id
+                _survivor_of[_gk] = min(
+                    _elig,
+                    key=lambda _m: (_class_rank(_m),
+                                    _collapse_survivor_order(_m))).id
 
     # volunteering gate: active + assertable (mentionable) only
     from .budgets import clamp_item as _clamp, est_tokens as _est0
@@ -134,8 +141,8 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     def _obj_counted(e):
         out = _obj(e)
         if out != e.object:
-            _clamped_ids.add(e.id)
-        return out
+            _clamped_ids.add(("edge", e.id))       # TYPE-tagged (R-impl6-2): an Edge
+        return out                                 # and an Episode may share an id
 
     for e in surfaced:
         if not e.assertable:
@@ -203,7 +210,7 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     for t, e in recents:
         _ct = clamp_item(t, cap)
         if _ct != t:
-            _clamped_ids.add(e.id)                 # an oversized EPISODE signals (I10a)
+            _clamped_ids.add(("episode", e.id))    # an oversized EPISODE signals (I10a)
         _reg_recents.append((_ct, e))
     recents = _reg_recents
     sections = [("## DATED COMMITMENTS", commitments),
@@ -271,10 +278,9 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
                         else:
                             line = _ci(line, remaining - header_cost - 1)
                         cost = est(line) + 1 + header_cost
-                        if isinstance(unit, Edge):
-                            _clamped_ids.add(unit.id)      # ONE item, however many stages
-                        else:
-                            _clamped_ids.add(getattr(unit, "id", repr(unit)))
+                        _clamped_ids.add(
+                            ("edge" if isinstance(unit, Edge) else "episode",
+                             getattr(unit, "id", repr(unit))))   # ONE item, typed
                         if cost > remaining:
                             dropped[header] += 1
                             continue
