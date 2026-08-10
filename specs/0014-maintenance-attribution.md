@@ -5,7 +5,20 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v3) — DESIGN-COMPLETE mechanical contract (2026-08-08).** Matured from the v2 stub so the
+> **draft (v4, 2026-08-10) — REVIEW-READY: every prerequisite has LANDED.** Since v3:
+> **`0006` is ACCEPTED + IMPLEMENTED** (schema v5 shipped; the shared `source_identity_digest`
+> primitive is real code this spec's `identity_digest` calls — `src/veracium/source_identity.py`);
+> **`0012` is ACCEPTED + IMPLEMENTED + its implementation independently REVIEWED AND ACCEPTED**
+> (22 external rounds total), so the reinforcement excision in §3 is landed FACT — the two
+> reinforcement tests now PASS as Design-1 attributions and the ONLY remaining attribution gaps
+> in the whole suite are this spec's two strict xfails (A2/A3). v4 adds the §7b cross-spec
+> carrier table (the `0012` reviews' recurring finding class, pre-empted), mechanizes the §4f
+> tombstone CANDIDATE for the A→B→C transitive gap (explicitly the ONE open design question for
+> round 1 — it touches frozen interface point 5, so any resolution runs the freeze protocol),
+> and updates every stale prerequisite reference. **Review protocol: the two-bin boundary
+> standard (accepted by the reviewer for `0012` and proven over 14+8 rounds) is PROPOSED from
+> ROUND 1** — bin (a) contract-breaking, bin (b) recorded — see the review package COLLECTED.
+> Earlier (v3): **DESIGN-COMPLETE mechanical contract (2026-08-08).** Matured from the v2 stub so the
 > `0006`↔`0014` interface can be frozen: `0006` v3 R11 gates `0006` acceptance on `0014` reaching
 > mechanical completeness, and this is that. §4 now specifies the `contribution_ledger` table
 > (`SCHEMA_VERSION` v6), the `ContributionDraft` a site emits, the per-site ATOMIC write paths (riding
@@ -98,9 +111,11 @@ and new values (all store-clear scalars, Q1) or nothing when no value moved (A1)
 > pair — `origin` store-minted — so among **HONEST** exports an imported source cannot collide with a
 > local one and a revocation keyed on the pair does not reach another store's records. **NOT against
 > an adversarial import (`0006` R7): `origin` is namespacing, not authenticated — forged imports are
-> `0005`'s untrusted-import boundary, not a structural guarantee here.** `0014` v3 is now
-> design-complete; the interface is AGREED and ready to freeze (`0006` R11), and `0006` acceptance
-> waits on the external review of this contract. `0006`'s "opaque"
+> `0005`'s untrusted-import boundary, not a structural guarantee here.** `0014` v3 was
+> design-complete; the interface was FROZEN (reviewer-signed 2026-08-09) and `0006` has since been
+> ACCEPTED (2026-08-09) and IMPLEMENTED (schema v5 shipped) — the dependency is a landed fact, and
+> the seven frozen points bind this spec's review (changes to a frozen point need both owners +
+> the reviewer). `0006`'s "opaque"
 > is a host-convention, not enforced (`0006` §8, F3), so for a content-free surface the ledger stores a
 > **deterministic digest of the pair**, never the raw value. The digest stays joinable:
 > `A3`/`revoke_source`, given a pair to revoke, digests it the same way. `evidence_ref` is digested the
@@ -136,7 +151,7 @@ moved §3.2 after A3 was written):
 
 | # | site (a maintenance op that consults a contributor then discards/merges/invalidates it) | contributor recoverable today? | payload (state it may transfer) |
 |---|---|---|---|
-| ~~**3.1**~~ | ~~**reinforcement**~~ — **CLOSED by `0012` Design 1 (research ruling, 2026-08-08) — NO LONGER a `0014` site.** `0012` Design 1 PERSISTS the reinforcing edge with its own provenance (transfers nothing), so reinforcement is a consult-and-**KEEP**, not a consult-and-discard — the persisted edge IS the attribution. Finding `M9` is repointed `0002`→`0012`. The two reinforcement `xfail`s move to `0012`. | ✅ 0012 | — |
+| ~~**3.1**~~ | ~~**reinforcement**~~ — **CLOSED by `0012` Design 1 — LANDED (accepted 2026-08-10, implemented, implementation-review accepted; the two reinforcement tests PASS as Design-1 attributions in `tests/test_0014_maintenance_attribution.py`). NO LONGER a `0014` site.** `0012` Design 1 PERSISTS the reinforcing edge with its own provenance (transfers nothing), so reinforcement is a consult-and-**KEEP**, not a consult-and-discard — the persisted edge IS the attribution. Finding `M9` is repointed `0002`→`0012`. The two reinforcement `xfail`s move to `0012`. | ✅ 0012 | — |
 | **3.2** | **consolidation** — `lifecycle.consolidate` deletes each claimed input; the summary carries `lineage` (0010) = the whole claimed set in the historical namespace | **Partial (improved by 0010) — VERIFIED 2026-08-08.** `lineage == the whole claimed input set == exactly the deleted inputs` (`lifecycle.py:142–156`), so every deleted contributor's ID is recorded; what is lost is **id→source** (the deleted episode's provenance). Not worse than "partial" | disclosure, confidence, `derived_from`, `observed_at` |
 | **3.3** | **absorption** — `graph._build_supersession_plan` absorption branch retains the absorbed prior and links it by a free-text `note = "absorbed_by:<id>"` | **Partial** — retained + linked, but as a **string in a free-text field, not a queryable relation**, and inherited `min(valid_from)`/`max(observed_at)`/`max(confidence)` cannot be un-inherited | `valid_from`, `observed_at`, `confidence` |
 
@@ -266,6 +281,38 @@ is theirs.
 
 ---
 
+### 4f. The transitive gap — the §7 A→B→C question, mechanized as a CANDIDATE (the ONE open
+### design question for round 1; touches FROZEN interface point 5)
+
+*This section PROPOSES; it does not decide. Any resolution alters frozen point 5's retention rule
+("retained only while its survivor exists") and therefore runs the freeze protocol (both owners +
+the reviewer). The review should treat this as the round-1 design question; everything else in §4
+is submitted as settled contract.*
+
+The gap (§7): `source A → survivor B → consolidation into survivor C`. B's hard-deletion drops the
+`(survivor=B, contributor=A)` rows (A10), so A's contribution becomes undiscoverable from C — a
+`revoke_source(A)` blast radius silently under-reports. Two candidates:
+
+- **CANDIDATE (proposed): the SEVERANCE TOMBSTONE — make the gap visible, retain nothing more.**
+  Mechanically: when a survivor's deletion would drop ledger rows in which that survivor is the
+  `survivor_id` AND the survivor itself appears as a *contributor identity* in other LIVE rows
+  (join: the deleted survivor's own resolved identity digest appears in any live row's
+  `identity_digest`, or the survivor's id appears in a live row's `payload` lineage field), the
+  SAME deleting transaction writes ONE tombstone row: `site='severed'`, `survivor_id` = the LIVE
+  downstream survivor's id, `identity_digest` NULL, `payload` = `{"severed_rows": <n ≤ 999+>,
+  "deleted_survivor": <id>}` — content-free, append-only (A8), retained under A10 by the DOWNSTREAM
+  survivor. The two reads then report honestly: `contributions(C)` includes the tombstone, and any
+  `contributors_of_source()` / future `revoke_source` join that touches a user with tombstones
+  returns an explicit **"incomplete: N links severed"** marker instead of a confidently short
+  answer. Cost: one row per severed link-set, bounded by deletions, no transitive retention.
+- **REJECTED-BY-DEFAULT alternative: propagate inherited identities onto the downstream survivor's
+  rows.** Retains MORE (unbounded transitive copying) — exactly what survivor-existence retention
+  exists to prevent (research, 2026-08-09).
+
+Acceptance criteria for whichever rule the review lands: **A4/A9/A10 gain the multi-generation
+case** (A→B→C, delete B: either A remains reachable from C, or every consumer-visible query
+honestly reports the severed link), and frozen point 5's wording is re-signed if it moves.
+
 ## 5. Regime analysis — where does this behave differently?
 
 - **Growth is the regime that matters.** The ledger gains one row per maintenance CONSUMPTION —
@@ -385,6 +432,24 @@ before it existed, so deferring the schema **permanently loses the interval**, n
 
 ---
 
+## 7b. Cross-spec carriers — what asserts TODAY'S behaviour and must move in the SAME commit
+
+*The `0012` reviews' single most recurring finding class was carrier drift — a fix landing while
+some test, docstring, or sibling-spec sentence still asserted the superseded behaviour. This table
+pre-empts it: every known carrier of pre-`0014` behaviour, each to be inverted/extended in the SAME
+implementation commit as the behaviour it describes.*
+
+| carrier (asserts TODAY) | today's assertion | the same-commit disposition |
+|---|---|---|
+| `tests/test_0014_maintenance_attribution.py::test_consolidation_contributors_survive_input_deletion` | **strict xfail** — lineage ids resolve to nothing after input deletion (A2's finding, executably) | the marker comes OFF; the helper `_summary_contributor_sources` already prefers `store.contributions()` — the assertion flips to the recovered source set |
+| `::test_absorption_link_is_a_queryable_contribution` | **strict xfail** — the contributor link is only the free-text `note` back-pointer (A3's finding) | the marker comes OFF; `_absorption_contributor_queryable` already probes `contributions()` — flips to the queryable record. **The `note` back-pointer STAYS** (presentation; the render-history exclusion keys on it) — the ledger row is the QUERYABLE record beside it, not a replacement |
+| `src/veracium/store/schema_version.py` `SCHEMA_VERSION` + `accepted_digests` + the evidence files; every test pinning the head symbolically | head = v5 (`0006`) | v5→v6 with the additive `contribution_ledger` + two indexes; migration + regenerated evidence (the exact carrier path the `0006` v4→v5 bump walked) |
+| `specs/generated/0002-audit-manifest.md` + `specs/audit_dispositions.py` | no ledger INSERT sites exist | the extended `apply_supersession_plan` / consolidation-primitive writes get dispositions; the manifest regenerates (a NEW mutator cannot hide — the same declared-set discipline §7 requires of consumption sites) |
+| `src/veracium/portability.py` + its tests | a v4 export's content set | export/import EXCLUDE the ledger — a test asserts the export byte-set is unchanged by ledger rows; **no `FORMAT_VERSION` change** |
+| `SupersessionPlan` docstring + `specs/0003` §4f plan-shape text | the plan carries incoming/upserts/invalidations/refusals | gains `contributions: list[ContributionDraft]` — BOTH carriers state it same-commit (a marked additive amendment on accepted `0003`; the store INSERTs it inside the existing CAS commit, A7) |
+| `0003`'s receipt digest (`_logical_request_digest`) | binds the complete logical outcome | **decision required at implementation, stated now:** the drafts are DERIVED from the plan's other fields at the store boundary, so they are NOT digested separately (deriving keeps replay identity unchanged); if the implementation instead passes caller-supplied drafts, they MUST enter the digest — the review should confirm the derived reading |
+| `CHANGELOG.md` + the release upgrade note | v5 store, one-call migration | the v6 note + the pending upgrade-recommendation release line (the platform point rides this) |
+
 ## 8. Claims and limits
 
 **Claims:** every maintenance-time *consumption of a contributor* — value change or not — becomes
@@ -427,8 +492,7 @@ their rulings so the reasoning survives into design lock.*
   wording, now avoided.)
 - **Q5 — ownership / framing — RESOLVED: decoupling CONFIRMED**, and research judged dev's
   recurrence + standalone-audit arguments stronger than A3's original bundling. The one change —
-  re-key to consult-and-discard — is folded into §4/§6. Remaining before `draft` → `in review`: a
-  full mechanical contract (§6 tests real, §7a locked) and the `0006` acceptance it now depends on.
+  re-key to consult-and-discard — is folded into §4/§6. The v3 remainder is MET as of v4: the mechanical contract is full (§4/§6/§7a/§7b), and `0006` is accepted + implemented — nothing gates the external review.
 
 ---
 
@@ -438,3 +502,5 @@ their rulings so the reasoning survives into design lock.*
 |---|---|---|---|
 | v1 (stub) | draft — dev framing from research `A3` §2 | — | this document |
 | **v2 (stub)** | **research reviewed: decoupling CONFIRMED; invariant re-keyed to consult-and-discard; Q1–Q5 resolved; `0014 → 0006` named** | 1 (the transfer-vs-consume sharpening) | `proposals/0014-research-response.md`; this document |
+| **v3** | **design-complete mechanical contract; the `0006`↔`0014` interface FROZEN (reviewer-signed 2026-08-09; seven points; F1 nullable digest / F2 shared primitive / F3 §4.6 folded); the A→B→C transitive gap recorded against frozen point 5** | — | this document; the `0006` §11 closure |
+| **v4** | **review-ready maturation (2026-08-10): prerequisites LANDED (`0006` accepted+implemented; `0012` accepted+implemented+impl-review-accepted — reinforcement excision is fact); §7b carrier table added; §4f tombstone CANDIDATE mechanized as the round-1 design question; two-bin protocol proposed from round 1** | — | this document |

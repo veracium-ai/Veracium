@@ -26,7 +26,7 @@ is the number that decides what can be built.
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 0 | — |
 | **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 0/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
-| **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `draft` | 2026-08-09 | 0 | 0 | 0 | 0 | 0 | — |
+| **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `draft` | 2026-08-10 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
