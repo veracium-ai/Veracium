@@ -77,10 +77,10 @@ def violations() -> list[tuple[str, str, str, str]]:
             flat = _normalise(para)
             if any(m in para for m in MARKERS):
                 continue
-            for pat, why, where in WITHDRAWN:
+            for rid, pat, why, where in WITHDRAWN:
                 m = re.search(pat, flat, re.I)
                 if m:
-                    out.append((f.name, m.group(0)[:70], why, where))
+                    out.append((f.name, f"{m.group(0)[:70]} [{rid}]", why, where))
     return out
 
 
