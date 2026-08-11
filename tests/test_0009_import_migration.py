@@ -54,6 +54,11 @@ def _write_export(path, records, *, uid="u", version=3, origin=None):
                             "exported_at": "2026-01-01T00:00:00+00:00"}) + "\n")
         for marker, model in records:
             rec = json.loads(model.model_dump_json())
+            # mirror the real exporter (specs/0014 §4c R7-3): the index is
+            # emitted with exclude-none semantics — a well-formed v5 file
+            # OMITS None, and an explicit null is malformed on import.
+            if rec.get("consolidation_output_index") is None:
+                rec.pop("consolidation_output_index", None)
             if origin is not None and isinstance(rec.get("provenance"), dict):
                 rec["provenance"]["origin"] = origin
             f.write(json.dumps({"record": marker, **rec}) + "\n")

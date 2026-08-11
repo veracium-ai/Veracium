@@ -517,7 +517,9 @@ def test_s7_export_format_version_is_independent():
     # A separate namespace from the on-disk SCHEMA_VERSION (specs/0007 §8): it moves
     # only when the WIRE format changes. specs/0009 bumped it 2→3 (exports gained
     # seq/supersedes_episode/judgment_time_known); specs/0006 bumped it 3→4 (exports gained
-    # the materialised source `(origin, source_id)`). It now reads 4 while SCHEMA_VERSION
-    # reads 5 — they are INDEPENDENT and no longer coincide, which is the point.
-    assert FORMAT_VERSION == 4
+    # the materialised source `(origin, source_id)`); specs/0014 bumped it 4→5 (exports
+    # gained Episode.consolidation_output_index per accepted 0010's refuse-don't-drop
+    # rule). It now reads 5 while SCHEMA_VERSION reads 6 — they are INDEPENDENT and no
+    # longer coincide, which is the point.
+    assert FORMAT_VERSION == 5
     assert FORMAT_VERSION != SCHEMA_VERSION

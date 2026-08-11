@@ -44,7 +44,7 @@
 | `src/veracium/lifecycle.py:156` | `consolidate()` | `transition_consolidation_if_current` | `f6c9281664ba` | `clean` | maintain-time | finalizes (OUTPUTS_DURABLE→FINALIZED) | act | clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs | `test_finalize_refuses_before_inputs_deleted` |
 | `src/veracium/lifecycle.py:159` | `consolidate()` | `delete_claimed_inputs_if_current` | `8565cc3059e5` | `clean` | maintain-time | deletes the claimed inputs AFTER outputs are durable | act | clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover | `test_every_read_sees_exactly_one_representation` |
 | `src/veracium/lifecycle.py:160` | `consolidate()` | `transition_consolidation_if_current` | `d64d0ee80464` | `clean` | maintain-time | the visibility cutover (GENERATING→OUTPUTS_DURABLE) | act | clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return | `test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output` |
-| `src/veracium/portability.py:402` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `open_moved` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **Residual: the cross-user import-cap concern (M6 — capping the `user_id` remap) remains OPEN, tracked to `0005`.** | tracked as 0005 P1–P4 [M6-import] |
+| `src/veracium/portability.py:513` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `open_moved` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **Residual: the cross-user import-cap concern (M6 — capping the `user_id` remap) remains OPEN, tracked to `0005`.** | tracked as 0005 P1–P4 [M6-import] |
 
 ## Canonical context
 
@@ -241,7 +241,7 @@ d64d0ee80464
   context: -
 
 83f7d603598f
-  file:    src/veracium/portability.py:402
+  file:    src/veracium/portability.py:513
   scope:   _preflight_and_commit()
   mutator: commit_outcome_import_plan
   call:    store.commit_outcome_import_plan(target_uid, plan, expected)

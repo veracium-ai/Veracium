@@ -35,7 +35,10 @@ from .schema import Edge, Episode, is_historical_id, to_historical_id
 from .source_identity import resolve_origin
 from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 
-FORMAT_VERSION = 4
+# specs/0014 §4c/§7a (R5-4): the exported Episode.consolidation_output_index
+# field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
+# older importer REFUSES a v5 export rather than silently dropping the field.
+FORMAT_VERSION = 5
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
 
 
@@ -74,9 +77,41 @@ def export_memory(store, user_id: str, path) -> dict:
             f.write(json.dumps({"record": "edge", **_materialise(json.loads(e.model_dump_json()))})
                     + "\n")
         for ep in episodes:
-            f.write(json.dumps({"record": "episode", **_materialise(json.loads(ep.model_dump_json()))})
-                    + "\n")
+            rec = _materialise(json.loads(ep.model_dump_json()))
+            # specs/0014 §4c (R7-3): the index serializes with EXCLUDE-NONE
+            # semantics — OMITTED when None (a stated exception to the default;
+            # an explicit null on import is malformed). A native v5 output
+            # always carries its index; absence is the unprivileged legacy shape.
+            if rec.get("consolidation_output_index") is None:
+                rec.pop("consolidation_output_index", None)
+            f.write(json.dumps({"record": "episode", **rec}) + "\n")
     return {"edges": len(edges), "episodes": len(episodes), "path": str(path)}
+
+
+# specs/0014 §2c (R11-3/R12-3/R13-2): the source-identity projection over TWO
+# EXACT SETS, riding accepted 0010's stable historical namespace. EXCLUDED =
+# destination-minted, no source meaning; VERBATIM = everything else, compared
+# byte-for-byte after JSON-mode dump — INCLUDING lineage (historical ids are
+# stable across export/import by X18's design: never remapped) and the
+# operation reference (X19's transform is deterministic and retry-stable, so
+# post-transform comparison is direct equality). There is NO normalized set —
+# nothing in the shipped boundary rewrites these references.
+PROJECTION_EXCLUDED_FIELDS = ("id", "user_id")
+PROJECTION_VERBATIM_FIELDS = tuple(
+    f for f in Episode.model_fields if f not in PROJECTION_EXCLUDED_FIELDS)
+
+
+def source_identity_projection(record: dict) -> dict:
+    """The canonical projection of an (imported or stored) indexed-output
+    episode record: the JSON-form dict minus exactly the EXCLUDED fields.
+    Absent optional keys and present-with-default keys compare equal by
+    normalizing through the model dump."""
+    ep = Episode.model_validate({k: v for k, v in record.items()
+                                 if k in Episode.model_fields})
+    d = json.loads(ep.model_dump_json())
+    for f in PROJECTION_EXCLUDED_FIELDS:
+        d.pop(f, None)
+    return d
 
 
 def _chain_id(ep: Episode) -> tuple:
@@ -276,6 +311,33 @@ def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
                 f"{path}: episode {r.get('id')!r} is a CLAIMED input whose "
                 f"consolidation op is non-portable — refuse rather than orphan it "
                 f"(specs/0010 X18)")
+        # specs/0014 §4c/§2c — the store-assigned output index at the import
+        # boundary. 0006 I10 first: a field NEWER than the declared
+        # FORMAT_VERSION is STRIPPED, never trusted — a pre-v5 envelope cannot
+        # legitimately carry the index, so it is dropped (matching the
+        # source_id/origin treatment above), and the v5 gates below never see
+        # it. For v5+ files: explicit null is MALFORMED (the export path omits
+        # None — R7-3); type gates mirror the generic path; a NON-output
+        # carrying an index is fabricated store identity and is refused.
+        if src_version < 5:
+            r.pop("consolidation_output_index", None)     # I10 — newer field
+        idx_present = "consolidation_output_index" in r
+        idx = r.get("consolidation_output_index")
+        if idx_present and idx is None:
+            raise ValueError(
+                f"{path}: episode {r.get('id')!r} carries an explicit null "
+                f"consolidation_output_index — the exporter omits None, so an "
+                f"explicit null is malformed (specs/0014 §4c R7-3)")
+        if idx is not None and (isinstance(idx, bool)
+                                or not isinstance(idx, int) or idx < 0):
+            raise ValueError(
+                f"{path}: episode {r.get('id')!r} consolidation_output_index "
+                f"{idx!r} is not a non-negative integer (specs/0014 §2c)")
+        if idx is not None and not r.get("lineage"):
+            raise ValueError(
+                f"{path}: episode {r.get('id')!r} carries a consolidation_output_"
+                f"index but no lineage — store-assigned identity cannot be "
+                f"fabricated on a plain episode (specs/0014 §4c)")
         if r.get("lineage"):                      # a consolidation OUTPUT
             lin = r["lineage"]
             if not (isinstance(lin, list)
@@ -289,6 +351,55 @@ def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
             # a later local finalization. lineage ids are already historical.
             if r.get("operation_id") is not None:
                 r["operation_id"] = to_historical_id(r["operation_id"])
+
+    # specs/0014 §2c (R8-3/R9-5/R10-5/R11-2/R11-3/R12-2/R13-2): indexed-output
+    # identity at the import boundary. The uniqueness domain is incoming ∪
+    # EXISTING DESTINATION STATE over the tenant-scoped origin-namespaced key
+    # (destination user, resolved origin, operation_id, index) — partial history
+    # explains GAPS, never DUPLICATES. A colliding incoming output is accepted
+    # IFF SOURCE-IDENTICAL under the two-set projection (a true re-import
+    # resolves idempotently — the record is SKIPPED, ordinary records keep the
+    # shipped remap-copy semantics); ANY projected difference REJECTS.
+    def _out_key(rec):
+        origin = (rec.get("provenance") or {}).get("origin")   # post-canonical
+        return (origin, rec.get("operation_id"), rec["consolidation_output_index"])
+
+    incoming_indexed = [r for r in ep_recs
+                        if r.get("lineage")
+                        and r.get("consolidation_output_index") is not None]
+    seen_keys = {}
+    for r in incoming_indexed:
+        k = _out_key(r)
+        if k in seen_keys:
+            raise ValueError(
+                f"{path}: two lineage-bearing outputs claim the same "
+                f"(origin, operation_id, index) {k!r} within one import — "
+                f"partial history explains gaps, never duplicates "
+                f"(specs/0014 §2c R8-3)")
+        seen_keys[k] = r
+    skip_ids = set()
+    if incoming_indexed:
+        dest_uid = user_id if user_id is not None else header.get("user_id")
+        dest_by_key = {}
+        for dep in store.episodes(dest_uid):
+            if dep.lineage and dep.consolidation_output_index is not None:
+                drec = json.loads(dep.model_dump_json())
+                dest_by_key[_out_key(drec)] = drec
+        for r in incoming_indexed:
+            hit = dest_by_key.get(_out_key(r))
+            if hit is None:
+                continue
+            if (source_identity_projection(r)
+                    == source_identity_projection(hit)):
+                skip_ids.add(r["id"])              # idempotent re-import: no-op
+            else:
+                raise ValueError(
+                    f"{path}: incoming output {r.get('id')!r} claims the "
+                    f"existing identity {_out_key(r)!r} with a DIFFERENT "
+                    f"source-identity projection — rejected "
+                    f"(specs/0014 §2c R9-5/R11-3)")
+    if skip_ids:
+        ep_recs = [r for r in ep_recs if r["id"] not in skip_ids]
 
     edges = [Edge.model_validate(r) for r in edge_recs]
     eps = [Episode.model_validate(r) for r in ep_recs]

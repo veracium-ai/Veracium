@@ -313,6 +313,14 @@ class Episode(BaseModel):
     edge_id: Optional[str] = None       # outcome episodes: the edge judged
     outcome: Optional[Outcome] = None   # outcome episodes: current status
     context_ref: Optional[str] = None   # optional comparability key (e.g. rubric hash)
+    # specs/0014 §4c (R5-3/R6-3): STORE-ASSIGNED consolidation output identity —
+    # the position of this output within its operation's outputs. ONLY
+    # `write_consolidation_output_if_current` may set it; caller-supplied values
+    # on generic paths are REFUSED (fabricated store identity). Serialized in
+    # the existing json blob; the EXPORT path emits it with exclude-none
+    # semantics (omitted when None — R7-3's stated exception), and an explicit
+    # JSON null on import is malformed. FORMAT_VERSION 4→5 rides on this field.
+    consolidation_output_index: Optional[int] = None
 
     # --- specs/0009 outcome-authorship chain (append-only history) --------------
     # Store-assigned, OUTCOME-ONLY (None on any non-outcome episode). Never

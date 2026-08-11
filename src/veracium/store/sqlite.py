@@ -618,10 +618,12 @@ class SqliteStore(Store):
         outputs = list(enumerate(bound))   # index over OUTPUTS only, write order
         local = self.local_origin()
         now = self._now().isoformat()
-        for out_index, out_ep in outputs:
-            idx = getattr(out_ep, "consolidation_output_index", None)
+        for _, out_ep in outputs:
+            idx = out_ep.consolidation_output_index
             if idx is None:
-                idx = out_index
+                raise SupersessionIntegrityError(
+                    f"output {out_ep.id!r} reached the cutover without a "
+                    f"store-assigned index (0014 §4c)")
             for eid in op.claimed_ids:
                 row = self._conn.execute(
                     "SELECT json FROM episodes WHERE id=? AND user_id=?",
@@ -719,6 +721,15 @@ class SqliteStore(Store):
 
     # -- episodes ----------------------------------------------------------
     def add_episode(self, episode: Episode) -> None:
+        # specs/0014 §4c: store-assigned identity cannot be fabricated — a
+        # caller-supplied consolidation_output_index on the generic path is
+        # REFUSED; only write_consolidation_output_if_current assigns it.
+        if episode.consolidation_output_index is not None:
+            raise ValueError(
+                f"add_episode refuses episode {episode.id!r} with a "
+                f"caller-supplied consolidation_output_index — the index is "
+                f"store-assigned by the consolidation primitive only "
+                f"(specs/0014 §4c)")
         # specs/0009 H14: outcome-chain rows carry append-only trust state (seq,
         # supersedes_episode, authorship) and may enter ONLY through the sanctioned
         # writers — `append_outcome_if_head` (runtime) or `commit_outcome_import_plan`
@@ -1091,11 +1102,23 @@ class SqliteStore(Store):
             # X23: every derived field is STORE-computed from the claimed set, not the
             # draft/LLM — min trust across the whole set (N9b) and the true date range.
             prov, date_start, date_end = self._derive_output_metadata(inputs, operation_id)
+            # specs/0014 §4c: the STORE assigns the output index — the count of
+            # outputs already written for this operation (sequential from 0,
+            # contiguous by construction; asserted below as the local-op
+            # invariant). Only this primitive ever sets the field.
+            existing = [e for _, e in
+                        self._episodes_for_operation(op.user_id, operation_id)
+                        if e.lineage]
+            next_index = len(existing)
+            assert sorted(
+                e.consolidation_output_index for e in existing) == list(
+                range(next_index)), "output indices must be contiguous 0..M-1"
             ep = Episode(
                 id=f"epc-{uuid.uuid4().hex[:12]}", user_id=op.user_id,
                 date=date_start, summary=draft.summary, date_start=date_start,
                 date_end=date_end, operation_id=operation_id,
                 lineage=[to_historical_id(i) for i in op.claimed_ids],
+                consolidation_output_index=next_index,
                 provenance=prov)
             # INSERT — never replace (X22): a minted-id collision is a store error.
             self._conn.execute(
