@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v2 — *re-read before editing; quote the version you approve*. v1→v2: research's internal review (2026-08-11, `proposals/0015-internal-review.md`) — Q1 ruled (keep the consent gate), Q2 ruled (the consent version belongs to the DISPLAY event, so `set_enabled` never stamps), and one returned finding folded: the per-write counts are a **supersession oracle** and are omitted from the MCP tool result (§3b/§4/§6-I11/§7) |
+| **Version** | v3 — *re-read before editing; quote the version you approve*. v1→v2: research's internal review (2026-08-11, `proposals/0015-internal-review.md`) — Q1 ruled (keep the consent gate), Q2 ruled (the consent version belongs to the DISPLAY event, so `set_enabled` never stamps), and one returned finding folded: the per-write counts are a **supersession oracle** and are omitted from the MCP tool result (§3b/§4/§6-I11/§7). v2→v3: research's completeness verification folded — kept MCP fields verified supersession-invariant (I11 extended), the timing boundary stated (§7), and the two-signals scoping added (§8) so the external reviewer can tell the closed write-result oracle from the inherent, out-of-scope recall-reflects-state property |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
 | **External review** | required (full spec — touches `graph.py`, `ingest.py`, `__init__.py`); not yet sent — goes out as v2 |
@@ -181,6 +181,16 @@ v2 replacement, and its enforcement is I11.*
   keys** from its tool result. The telemetry aggregate (weekly, per-install,
   class-blind) and the host-API return are unaffected — the feature exists
   for the aggregate, which the model never sees.
+- **The kept MCP fields are supersession-invariant** (research verified this
+  rather than leaving §9's completeness question open): the tool result's
+  remaining count fields are `facts` and `quarantined`
+  (`ingest.py:205-209`) — `facts` is the *extraction* count, incremented per
+  non-quarantined edge **before** `apply_supersession` runs, so a fact that
+  supersedes counts exactly like a fact that accumulates; `quarantined`
+  reflects the incoming edge's own disclosure class, independent of any
+  prior. Neither co-varies with the counters. I11's check asserts this
+  co-invariance, not just key absence, so a future field addition re-asks
+  the question mechanically.
 - **Who may see the counts:** (1) the anonymous telemetry endpoint — only
   when opted in, an endpoint is configured, AND the consented version admits
   the fields (§4); (2) the host's audit sink — host-owned, user-scoped, and
@@ -288,7 +298,7 @@ Release class: **stable** — every named regime has a test in §6.
 | I8 — consent-version fail-closed: v1-consented and absent-version configs never emit the new fields; `preview()` == what `flush` posts | `test_v1_consent_strips_new_fields`, `test_absent_schema_version_reads_as_v1`, `test_preview_is_what_flush_posts` | CI |
 | I9 — content-free: the ingest payload contains only int/float/bool values under every fixture | `test_counters_are_content_free` | CI |
 | I10 — consent text and payload move together: `CONSENT_TEXT` mentions supersession/reinforcement iff the fields are whitelisted and populated | extend `test_telemetry_claims.py`'s existing text-pin | CI |
-| I11 — **the oracle is closed**: the MCP `remember` tool result contains neither `"supersessions"` nor `"reinforcements"` under every outcome (fresh supersession, reinforcement, accumulation, replay) — AND the permission side: the host-API `remember()` return contains both | `test_mcp_result_carries_no_supersession_oracle` + `test_host_api_return_carries_counts` | CI |
+| I11 — **the oracle is closed**: the MCP `remember` tool result contains neither `"supersessions"` nor `"reinforcements"` under every outcome (fresh supersession, reinforcement, accumulation, replay); the kept fields (`facts`, `quarantined`) are **byte-identical across a superseding, reinforcing, and accumulating write of the same shape** (co-invariance, not just key absence); AND the permission side: the host-API `remember()` return contains both keys | `test_mcp_result_carries_no_supersession_oracle` (incl. the co-invariance assertion) + `test_host_api_return_carries_counts` | CI |
 | I12 — `set_enabled` never stamps: toggling enabled (either direction, any number of times, with or without an endpoint change) leaves `schema_version` byte-identical; only the display flow stamps | `test_set_enabled_never_stamps_consent_version` | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
@@ -325,7 +335,12 @@ test beside these.
   omits both keys (I11). What remains is two ints flowing to principals that
   can already derive them (host, CLI operator) and a class-blind weekly
   aggregate — no non-user content can influence stored state, recall
-  selection, or rendered context through any of it.
+  selection, or rendered context through any of it. **Timing boundary,
+  stated so it is explicit rather than silent:** supersession does extra
+  store work, so tool-call *latency* co-varies with the closed signal; the
+  MCP result surfaces no timing to the model, so this is out of scope —
+  unless a host independently exposes tool-call latency to its model, which
+  is that host's boundary to defend, not this spec's.
 
 ---
 
@@ -344,7 +359,15 @@ test beside these.
   (§3). The consent-version gate covers **veracium's own dialog**; where a
   host obtained end-user consent through its own UI, honouring the widened
   payload against that consent is the host's obligation, not discharged
-  here.
+  here. **And the scoping the oracle closure needs (two signals, one
+  defect):** I11 closes the **new write-result oracle** — the direct,
+  per-write, magnitude signal v1 would have introduced. It does not and
+  cannot remove the **inherent** property that recall reflects
+  post-supersession state (a model can always ingest, then recall, and
+  observe its claim won or lost) — that signal predates this spec, is the
+  memory working as designed, and is not closable without breaking recall.
+  A review that finds the residual recall signal has found v0's designed
+  behaviour, not an incomplete fix.
 - **Measurements:** none cited — no numbers appear in this spec.
 
 ---
@@ -352,11 +375,15 @@ test beside these.
 ## 9. Brief for the external reviewer
 
 - **Least sure of, one:** the **completeness of the oracle closure** —
-  internal review found that per-write counts leak prior-state information
-  to the MCP model caller, and I11 closes that carrier. Is there another
-  carrier we have not enumerated through which a model-visible signal
-  co-varies with the counts (timing, ordering, an error message, a field the
-  MCP result *does* keep)?
+  internal review found the per-write counts leak prior-state information to
+  the MCP model caller; I11 closes that carrier, and a second internal pass
+  verified the kept fields are supersession-invariant (§3b) and named the
+  timing boundary (§7). What remains genuinely open for you: an
+  enumeration-class check of the write path's **error surface** — does any
+  exception text or refusal shape reaching the MCP caller co-vary with prior
+  state in a way the count fields no longer do? Read §8's two-signals
+  scoping first, so the inherent recall-reflects-state property is not
+  re-reported as an incomplete fix.
 - **Least sure of, two:** the claim that a **committed reinforcement plan is
   structurally indistinguishable from accumulation** rests on today's plan
   shape (§2c-ii last row). If a future spec adds a distinguishing persisted
