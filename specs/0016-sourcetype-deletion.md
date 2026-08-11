@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v3 — *re-read before editing; quote the version you approve*. v2→v3: research's forward-lens addition folded pre-review — **the migration-boundary transition**: the two-way stamp partition (`<7` benign / `=7` integrity) is sound only if `committed_schema` is TOTAL over ops — every op fully-6 or fully-7, never straddling the v6→v7 ALTER. Designed in: the migration is ATOMIC w.r.t. receipt writes (the 0013 offline contract quiesces callers; additionally the ALTER and the stamp backfill commit in ONE transaction, and a receipt write observing a mid-migration schema is impossible by construction — asserted by a boundary test). This is 0015's transitions-vs-states lens applied before the external round could find it. v1→v2: the tenth write site (`model_copy(update=)`) | |
+| **Version** | v4 — *re-read before editing; quote the version you approve*. v3→v4: research's internal review PASSED (2026-08-11, `proposals/0016-internal-review.md` — all three lenses clear; the boundary-error-as-oracle challenge dismissed at the information level and the dismissal survived scrutiny). Two folds: **Q2 RULED** — D1 warns on EVERY public access path including `from veracium.schema import SourceType` (schema-module `__getattr__` provides the enum lazily; it is no longer a normal module binding during D1; internal code uses the private name) — package-namespace-only was rejected: a silently-unwarned common import path blindsides its users at D2, defeating D1's purpose; any path that genuinely cannot warn must be enumerated in the deprecation notice. And §3b now STATES the migration-runner = API-caller assumption instead of leaving it implicit (the conclusion holds even when they differ — the boundary error reveals only temporal facts). v4 = the external round-1 candidate | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; full-spec internal review pending |
 | **External review** | required (full spec — touches `schema.py`, `ingest.py`, `__init__.py`, `store/sqlite.py`, `portability.py`, `lifecycle.py`); not yet sent |
@@ -142,8 +142,11 @@ after D2 that it could not before; the model caller never saw the field at
 all (§2c-ii rows 2-3). No user/tenant/scope boundary is crossed; nothing
 becomes visible to any principal. The one *new* signal is the
 `ReceiptSchemaBoundaryError` name, visible to the host-API caller on a
-cross-boundary retry — it reveals "this op committed before the upgrade,"
-which the host (who ran the migration) already knows.
+cross-boundary retry — it reveals "this op committed before the upgrade."
+*Stated assumption (internal review): this reads most naturally when the
+migration-runner and the API-caller are the same host; the conclusion holds
+even when they differ, because the error carries only a temporal fact about
+an operation's commit era — no user, tenant, or content data.*
 
 ---
 
@@ -300,10 +303,13 @@ byte-stable).
 1. **Which release is D2?** Needs a named API-breaking release (the 0009
    deprecation rides the same train). **Decides: Quentin. Class:
    pre-release** (D1 can ship without the answer; D2 cannot).
-2. **D1 warning mechanism for `from veracium.schema import SourceType`** —
-   module `__getattr__` on `schema` too, or accept the package-namespace-only
-   warning? **Decides: dev at implementation, recorded in the spec at
-   acceptance. Class: blocking** (it defines what D1 promises).
+2. ~~D1 warning mechanism~~ — **RULED (research internal review,
+   2026-08-11): EVERY public access path warns**, including
+   `from veracium.schema import SourceType`, via a `schema`-module
+   `__getattr__` that provides the enum lazily (not a normal binding during
+   D1; internal code binds the private name). Package-namespace-only
+   rejected — an unwarned common import path blindsides its users at D2.
+   Any path that genuinely cannot warn is enumerated in the notice.
 3. **Should the 0009 `last_outcome`/`last_outcome_at` deprecation formally
    name the same D2 release in this spec?** They share the cycle. **Decides:
    Quentin. Class: pre-release.**

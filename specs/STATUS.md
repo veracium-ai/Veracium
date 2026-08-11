@@ -28,7 +28,7 @@ is the number that decides what can be built.
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-10 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
-| **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-11 | 0 | 0 | 0 | 0 | 0 | — |
+| **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-11 | 1 | 0 | 0 | 0 | 0 | — |
 | **0017** | token-usage telemetry over the Metered wrapper | `draft` | 2026-08-11 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
