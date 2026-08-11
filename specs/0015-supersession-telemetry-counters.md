@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v11 — *re-read before editing; quote the version you approve*. v10→v11: EXTERNAL ROUND 8 (3 bin-(a) + 1 bin-(b); the consolidation itself endorsed — "the blocking defect is the replacement lock's correctness, not the decision to consolidate"): R8-1 classes A+C found-in-fix of R7-3 — the stale-break lockfile is NOT mutually exclusive (a live holder pausing past 10 s gets broken: lost updates, duplicate epochs, unowned release) → the stale-break design is WITHDRAWN; the lock is OS-EXCLUSIVE (POSIX `fcntl.flock` / Windows `msvcrt.locking` — two 5-line adapters, ONE contract: kernel-mediated exclusivity + release-on-process-death), so a paused holder KEEPS its lock, no breaking logic exists, and the live-holder/stale-break adversarial case is structurally impossible; §5/§8 narrow the claim honestly (CI verifies the POSIX adapter; the Windows adapter implements the identical kernel contract, its test platform-gated and in the skip inventory); R8-2 classes C+D — adoption ran AFTER the eligibility exits → the flush/preview algorithm now adopts FIRST (locked status-read + normalize + adopt precede not-due/no-endpoint/disabled returns; lock failure at that step returns fail-closed WITHOUT adoption, gated fields stay dropped); R8-3 classes A+D — the two uncovered lock-using operations ruled: `load_collector_if_enabled` on lock failure returns None (no collector at all beats an unnormalized one — I16 holds), `preview` on lock failure returns None, never raises; adversarial tests for both; R8-4 bin-(b) — the CLAIMED registry guards actually added: three withdrawn-phrase entries (blanket lock-failure-False, the pinned-Unix-only lock, non-negative epoch). R7-1/2/4 closures confirmed by the reviewer |
+| **Version** | v12 — *re-read before editing; quote the version you approve*. v11→v12: EXTERNAL ROUND 9 (3 bin-(a) + 1 bin-(b); R8-4 closed): R9-1 classes A+C+G — the POSIX adapter was UNIMPLEMENTABLE as written (`LOCK_EX` blocks — reviewer-probed — while the contract required nonblocking retry) → both adapters pinned EXACTLY (POSIX: `LOCK_EX|LOCK_NB` retried on `BlockingIOError`/EAGAIN every 50 ms against a `time.monotonic()` deadline; Windows: O_CREAT|O_RDWR lockfile initialized to ≥1 byte, `lseek(0)` + `msvcrt.locking(LK_NBLCK, 1)` retried on contention `OSError`, matching `LK_UNLCK` range, descriptor held for the lock lifetime = death-release), with independent-process live-holder + death-release tests per platform; R9-2 classes A+C found-in-fix of R8-2 — adoption-first normalized BEFORE branching on status, which could CREATE a deleted config or rewrite a malformed one → STATUS BRANCHES FIRST: absent/malformed → discard aggregates, NO write, NO normalization, fail-closed (collector keeps its prior adopted consent, empty); parse-valid+invalid-epoch → normalize under lock then adopt; valid → adopt; post-return collector state pinned per cell; R9-3 classes A+D found-in-fix of R8-3 — preview's outcomes were circular → the explicit TOTAL preview matrix (lock failure/absent/malformed/disabled → None; valid+enabled → the adopted payload REGARDLESS of due/endpoint; preview NEVER POSTs), every cell tested; R9-4 bin-(b) — platform-artifact claims made FUTURE TENSE and the narrowed platform limit actually added to §5/§8. | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec). R1: 3 → v4. R2: 5+blocker → v5. R3: 4 → v6. R4: 3 → v7. R5: 3 → v8. R6: 3 → v9. R7: 4 → v10 (the R3 consolidation). R8 (v10): 3 bin-(a) + 1 bin-(b), consolidation endorsed → v11 = the round-9 resubmission |
+| **External review** | required (full spec). R1:3 R2:5+blocker R3:4 R4:3 R5:3 R6:3 R7:4(consolidation) R8:3(consolidation endorsed) R9 (v11): 3 bin-(a) + 1 bin-(b) → v12 = the round-10 resubmission |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -300,9 +300,19 @@ is the consent-erasure mechanism and is never undone by telemetry code.
 The v10 O_EXCL-lockfile-with-stale-break could break a LIVE holder that
 paused past the break age — lost updates, duplicate epochs, unowned release.
 Withdrawn whole. The lock is now **kernel-mediated exclusivity with
-release-on-process-death**: `fcntl.flock(LOCK_EX)` on POSIX,
-`msvcrt.locking(LK_NBLCK)` on Windows — two ~5-line adapters implementing
-ONE contract. Consequences: a paused holder KEEPS its lock (others wait or
+release-on-process-death**: two adapters implementing ONE
+contract, pinned exactly (R9-1): **POSIX** — lockfile opened
+`O_CREAT|O_RDWR`; `fcntl.flock(fd, LOCK_EX | LOCK_NB)` (never bare
+`LOCK_EX`, which blocks with no timeout); on `BlockingIOError`/`EAGAIN`
+(the contention errors — anything else is a failure, not retried) sleep
+50 ms and retry against a **`time.monotonic()` deadline** of 2 s; release =
+`flock(fd, LOCK_UN)` + close. **Windows** — the same lockfile opened
+`O_CREAT|O_RDWR` and initialized to ≥1 byte if empty; `os.lseek(fd, 0, 0)`
+then `msvcrt.locking(fd, LK_NBLCK, 1)` (nonblocking; a held lock raises
+`OSError`, the retried contention signal) with the same 50 ms/monotonic-2 s
+loop; release = `lseek(0)` + `locking(fd, LK_UNLCK, 1)` + close; **the
+descriptor is held for the lock's lifetime, which is what makes
+process-death release work on both platforms.** Consequences: a paused holder KEEPS its lock (others wait or
 fail closed — never enter); a crashed holder's lock is released by the OS
 (no stale-break logic exists to get wrong); release is by the owning file
 descriptor, so no process can release another's lock. Acquisition:
@@ -315,11 +325,11 @@ rather than an unnormalized one — I16's no-unnormalized-collector rule
 holds by construction); `preview()` → returns **None**, never raises
 (documented: "state unavailable"); explicit consent transitions
 (`set_enabled`, `prompt_consent`, CLI flows) → RAISE `TelemetryLockError`.
-**Platform regime, stated honestly (§5/§8):** CI verifies the POSIX
-adapter; the Windows adapter implements the identical kernel contract and
-its test is platform-gated (named in the skip inventory) — the
-concurrency guarantees are CI-verified on POSIX and contract-identical on
-Windows.
+**Platform regime, stated honestly:** CI verifies the POSIX adapter; the
+Windows adapter implements the identical kernel contract and its test
+**will be platform-gated and added to the skip inventory at
+implementation** (future work — no such artifact exists yet, R9-4); §5 and
+§8 carry the narrowed claim.
 
 **3. Transitions.** Every consent transition is a locked read-modify-write:
 acquire → reload → apply → **bump `consent_epoch` iff the persisted
@@ -347,13 +357,20 @@ fields, so no consent is ever widened by a lock failure.
 (b) **under-lock read with STATUS (R7-2):** `_read_config_status()` returns
 `(status ∈ {valid, absent, malformed}, config)`; `absent`/`malformed` are
 distinguished from a valid default-valued file by the read, not inferred.
-(c) **normalize + adopt (rule 4) — BEFORE any eligibility exit**, so a
-long-lived collector adopts a new consent on EVERY flush/preview call,
-due or not (the R8-2 case: accepted v2 + a not-yet-due flush still adopts,
-and subsequent records gate as v2 — I8's named regime).
-(d) absent / malformed / disabled / not due / no endpoint → release,
-return False (preview: the would-be payload or None per its contract) —
-adoption has ALREADY happened.
+(c) **branch by STATUS first (R9-2)** — `absent`/`malformed`: discard
+pending aggregates, perform **NO write and NO normalization** (a deleted
+config is never recreated, a malformed one never rewritten — §4.1), the
+collector keeps its prior adopted consent with empty aggregates, release,
+return fail-closed. Only a **parse-valid** config proceeds:
+invalid-epoch → normalize under lock, then adopt; valid → adopt (rule 4).
+Adoption therefore happens on every flush/preview call that finds a
+parse-valid config, due or not (the R8-2 regime holds: accepted v2 + a
+not-yet-due flush still adopts; records gate as v2 — I8).
+(d) disabled / not due / no endpoint (parse-valid config, adoption done) →
+release, return False; **preview follows its own TOTAL matrix (R9-3):
+lock failure / absent / malformed / disabled → `None`; valid + enabled →
+the adopted would-be payload REGARDLESS of due time or endpoint; preview
+NEVER POSTs.** Every cell is tested (I17).
 (e) valid + enabled + due + endpoint → the payload is AUTHORIZED; release
 the lock; POST.
 (f) **post-POST, TOTAL (the terminal matrix):** reacquire the lock and
@@ -432,6 +449,11 @@ store is unrecoverable or touched.
   display outcome** (no / EOF / interrupt / non-interactive / fresh
   programmatic enable — each ends at version 1, per the §4 table). All are
   cheap unit fixtures.
+- **Platform regime (R9-4):** the lock's concurrency guarantees are
+  CI-verified on POSIX only; the Windows adapter is specified to the same
+  kernel contract and its independent-process tests will be platform-gated
+  at implementation. Until a Windows CI lane runs them, the Windows claim
+  is contract-identity, not test evidence.
 - **Cold vs warm (R4-3): there IS a difference, and it is the restart
   rule** — a warm `Memory` that started disabled keeps `telemetry=None` for
   its lifetime; a restarted process constructs a collector under the new
@@ -534,6 +556,9 @@ test beside these.
   memory working as designed, and is not closable without breaking recall.
   A review that finds the residual recall signal has found v0's designed
   behaviour, not an incomplete fix.
+- **Platform limit (R9-4):** concurrency guarantees are test-verified on
+  POSIX; on Windows they rest on the pinned adapter's kernel contract until
+  its platform-gated tests run in a Windows lane.
 - **Delayed activation (R3-2/R4-3), disclosed:** a process that started
   with telemetry disabled does not begin collecting when consent is granted
   mid-run — activation happens at the next process start. The changelog
