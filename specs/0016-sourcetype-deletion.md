@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v1 — *re-read before editing; quote the version you approve*. Built on the stage-1 proposal (`proposals/0016-proposal.md`) and research's scope adjudication (`proposals/0016-scope-adjudication.md`, 2026-08-11): scope accepted; §4.1 unforgeability rides the freeze; the receipt schema-version stamp is REQUIRED; the redundancy argument recorded |
+| **Version** | v2 — *re-read before editing; quote the version you approve*. v1→v2: research's constructor-sweep correction folded — the write-site count is TEN, not nine: `sqlite.py:1143-1147`'s `model_copy(update={"source_type": ...})` is a write no `Provenance(`-form grep catches (0015 F3 generalized: a construction site is any WRITE, including `model_copy(update=)`); §2c-ii now sweeps BOTH forms and D2 drops the update key. v1 built on the stage-1 proposal (`proposals/0016-proposal.md`) and research's scope adjudication (`proposals/0016-scope-adjudication.md`, 2026-08-11): scope accepted; §4.1 unforgeability rides the freeze; the receipt schema-version stamp is REQUIRED; the redundancy argument recorded |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; full-spec internal review pending |
 | **External review** | required (full spec — touches `schema.py`, `ingest.py`, `__init__.py`, `store/sqlite.py`, `portability.py`, `lifecycle.py`); not yet sent |
@@ -70,7 +70,7 @@ The successor contract, recorded so it cannot drift before its first consumer:
 
 | field | read / written | its **documented** contract | every other consumer | preserved? |
 |---|---|---|---|---|
-| `Provenance.source_type` | **deleted at D2** | "epistemic distance" — in fact derived from `author` (`ingest.py:104-109`) | 9 `Provenance(...)` construction sites (grep, §2c-ii); `contribution.py:143/:201` (partition + comparison); `store/base.py:223` docstring; exports (whole-edge serialisation); 62 non-0014 test refs; 0 docs refs | the contract was never honoured (nothing reads it to decide); deletion makes the surface honest |
+| `Provenance.source_type` | **deleted at D2** | "epistemic distance" — in fact derived from `author` (`ingest.py:104-109`) | **10 write sites**: 9 `Provenance(...)` constructions + the `model_copy(update={"source_type": ...})` write at `sqlite.py:1143-1147` (grep BOTH forms, §2c-ii); `contribution.py:143/:201` (partition + comparison); `store/base.py:223` docstring; exports (whole-edge serialisation); 62 non-0014 test refs; 0 docs refs | the contract was never honoured (nothing reads it to decide); deletion makes the surface honest |
 | `SourceType` (public enum) | **deprecated at D1, removed at D2** | exported at top level | host imports (uncountable — public API, hence the cycle) | D1 warns without behaviour change; D2 is the API break, in an API-breaking release |
 | `EXACT_EQUAL_PROV_FIELDS` | written: drops `source_type` at D2 | the TOTAL partition over `Provenance.model_fields`; totality is test-pinned | `verify_snapshot_against_plan` (`contribution.py:201`), `test_0014_receipt_split.py:80,:125` | yes — the totality test forces the constant and the model to move together; idempotency strength unchanged (the field was redundant with `author_of_evidence`, same set) |
 | `FORMAT_VERSION` | 5 → **6 at D2** | import gates by version | `portability.py`, S7/0006 pins | an OLD build's `Provenance` REQUIRES `source_type` (`schema.py:111`), so without the bump a new export dies there as a pydantic error; the bump makes it an honest version refusal |
@@ -95,7 +95,8 @@ The successor contract, recorded so it cannot drift before its first consumer:
 | no trust decision reads it | `grep -n "source_type" src/veracium/gate.py src/veracium/compile.py src/veracium/graph.py` | no hits (exit 1) |
 | not rendered to the model | `grep -n "source_type" src/veracium/prompts.py src/veracium/proactive.py` | no hits (exit 1) |
 | not exposed via MCP/CLI/introspect/audit | `grep -n "source_type" src/veracium/mcp_server.py src/veracium/cli.py src/veracium/introspect.py src/veracium/audit.py` | no hits |
-| 9 construction sites | `grep -rn "Provenance(" src/veracium/ \| grep -v "class Provenance\|#" \| wc -l` | 9 |
+| 9 `Provenance(` construction sites | `grep -rn "Provenance(" src/veracium/ \| grep -v "class Provenance\|#" \| wc -l` | 9 |
+| **+1 `model_copy(update=)` write — the form a constructor grep misses** (research's 0016 sign-off catch, 0015-F3 generalized: a write site is ANY write, so the sweep runs BOTH greps) | `grep -rn '"source_type":' src/veracium/ \| grep -v "#"` | `store/sqlite.py:1144` — total write sites: **10** |
 | the 0014 consumer A1 predates | `grep -n "source_type" src/veracium/contribution.py` | line 143 (partition); consumed at 201 |
 | outcome digest wraps the plan projection | `grep -n "_outcome_digest_v2" -A 12 src/veracium/store/sqlite.py` | `pre_split` wraps `_logical_request_digest(plan)` (sqlite.py:315-327) |
 | `source_type` is required today (why old builds break on new files) | `grep -n "source_type: SourceType" src/veracium/schema.py` | line 111, no default |
@@ -155,9 +156,13 @@ CHANGELOG names D2's release.
 
 **D2 — removal (the next API-breaking release):**
 
-- `Provenance.source_type` and `SourceType` removed; the 9 construction
-  sites, `store/base.py:223` docstring, and `EXACT_EQUAL_PROV_FIELDS` updated
-  in the same commit (the partition totality test forces this).
+- `Provenance.source_type` and `SourceType` removed; **all 10 write sites**
+  — the 9 `Provenance(` constructions AND the `model_copy(update=)` write at
+  `sqlite.py:1143-1147`, whose `"source_type"` update key is dropped (left in
+  place it would raise or silently no-op depending on model config, neither
+  acceptable) — plus `store/base.py:223` docstring and
+  `EXACT_EQUAL_PROV_FIELDS`, updated in the same commit (the partition
+  totality test forces the constant; I1's byte-identity forces the rest).
 - **`FORMAT_VERSION` 5→6.** New builds import ≤5 files by dropping the key
   (verified `extra` behaviour); old builds refuse 6 by version gate — an
   honest refusal instead of a pydantic crash on a missing required field.
