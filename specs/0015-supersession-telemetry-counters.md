@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v3 — *re-read before editing; quote the version you approve*. v1→v2: research's internal review (2026-08-11, `proposals/0015-internal-review.md`) — Q1 ruled (keep the consent gate), Q2 ruled (the consent version belongs to the DISPLAY event, so `set_enabled` never stamps), and one returned finding folded: the per-write counts are a **supersession oracle** and are omitted from the MCP tool result (§3b/§4/§6-I11/§7). v2→v3: research's completeness verification folded — kept MCP fields verified supersession-invariant (I11 extended), the timing boundary stated (§7), and the two-signals scoping added (§8) so the external reviewer can tell the closed write-result oracle from the inherent, out-of-scope recall-reflects-state property |
+| **Version** | v4 — *re-read before editing; quote the version you approve*. v3→v4: EXTERNAL ROUND 1 (3 bin-(a), all folded; classified first per the standing protocol): F1 class C — consent gated at flush not record, permitting retroactive exposure of pre-acceptance accumulations → RECORD-TIME gating + the same-collector transition test (I8 rewritten); F2 class C — "displayed" not mechanically distinguished from "accepted"; the dataclass default was an unaudited stamping path → the complete stamping transition table, affirmative-consent-only stamping, default floored to 1 (new I13); F3 class D — the unparseable early return omits the new keys (two constructor sites, one specified) → both keys required int-zero on EVERY terminal return (new I14). The reviewer's error-surface check found NO additional oracle — §9's open question is CLOSED by external round 1. v1→v2: internal review (oracle closed, Q1/Q2 ruled). v2→v3: completeness verification folded |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec — touches `graph.py`, `ingest.py`, `__init__.py`); not yet sent — goes out as v2 |
+| **External review** | required (full spec). Round 1 (v3, 2026-08-11): RETURN FOR AMENDMENT, 3 bin-(a) — F1 record-time consent gating, F2 the stamping transition table, F3 the second constructor site; the §9 error-surface question checked and CLOSED (no additional oracle). v4 = the round-2 resubmission |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -73,7 +73,7 @@ contracts touched are in-memory/interface carriers:
 
 | field | read / written | its **documented** contract | every other consumer | preserved? |
 |---|---|---|---|---|
-| `ingest_event()` return dict | written: gains `"supersessions"`, `"reinforcements"` (ints) | "a small summary dict (counts + the episode) for logging/telemetry" (`ingest.py:118-119`) | `__init__.py:155` (sole caller; feeds `_record` and returns to `remember()`'s caller) | yes — additive keys, counts |
+| `ingest_event()` return dict | written: gains `"supersessions"`, `"reinforcements"` (ints) — **at BOTH constructor sites: the normal return AND the unparseable early return (`ingest.py:158-173`), int zero there (F3)** | "a small summary dict (counts + the episode) for logging/telemetry" (`ingest.py:118-119`) | `__init__.py:155` (sole caller; feeds `_record` and returns to `remember()`'s caller) | yes — additive keys, counts |
 | `remember()` return dict | written: same two keys pass through on the **host-API path only** | public API return; the MCP `remember` tool (`mcp_server.py:64`) **strips both keys** before returning to the model caller — a per-write count is a supersession oracle (§3b), and the model must not see it | `cli.py:184` (human operator — keeps them), `selfcheck.py:71`, tests | yes — additive for trusted callers; the untrusted caller's view is unchanged (§6 I11) |
 | `apply_supersession()` return | `None` → `SupersessionCounts` | docstring says nothing about a return today | sole caller `ingest.py:204` (verified §2c-ii) | yes — every existing caller ignores the value |
 | `EVENT_FIELDS["ingest"]` | written: re-add the two names | "whitelist of scalar fields per event; anything not listed is silently dropped" | `Collector.record/snapshot` (`telemetry.py:117-140`), `tests/test_telemetry_claims.py` (fails on any whitelisted-but-unpopulated field) | yes — both fields are populated by this change, which is what the test demands |
@@ -244,12 +244,32 @@ enable path that prints `CONSENT_TEXT` stamp the current version;
 `enabled` and leaves the recorded consent version exactly as it was, so a
 programmatic re-enable by host code that displayed nothing keeps the install
 at its previously-consented version. `load()` floors an absent/invalid value
-to 1. `preview()` (which `flush_if_due` posts verbatim) **strips any field
-whose minimum schema version exceeds the consented one**
-(`FIELD_MIN_VERSION = {("ingest","supersessions"): 2,
-("ingest","reinforcements"): 2}`) — so an install that consented to the v1
-text never sends the new fields until the v2 text has actually been shown and
-accepted. `CONSENT_TEXT` extends its enumeration ("…how often facts are
+to 1, and **`TelemetryConfig`'s dataclass default for `schema_version` is 1**
+— the default is a stamping carrier (F2), and only an affirmative acceptance
+may write the current version. **The gate binds at RECORD time (F1):** the
+`Collector` holds the consented version it was constructed under, and
+`record()` drops any field whose `FIELD_MIN_VERSION`
+(`{("ingest","supersessions"): 2, ("ingest","reinforcements"): 2}`) exceeds
+it — so a gated field NEVER ACCUMULATES under a consent that does not admit
+it, and accepting v2 mid-process cannot retroactively expose pre-acceptance
+values (the accumulated aggregate simply never contained them; post-
+acceptance records, made after the process reloads its config into a
+collector holding v2, include them). `preview()` applies the same strip as
+defense-in-depth, but the record-time gate is the binding one: **a field is
+sent only if it was recorded under a consent that admitted it.**
+
+**The stamping transition table (F2) — TOTAL over the consent surface; only
+the affirmative cell stamps the current version:**
+
+| event | outcome | `enabled` | `schema_version` stamped |
+|---|---|---|---|
+| fresh + interactive prompt | user answers yes | True | **current (2)** — the ONLY stamp-current cell besides CLI enable |
+| fresh + interactive prompt | user answers no | False | **1** — text was displayed, nothing was accepted |
+| fresh + interactive prompt | EOF / interrupt | False | **1** |
+| fresh + non-interactive | (no display) | False | **1** |
+| CLI explicit enable (prints the text, affirmative) | accepted | True | **current (2)** |
+| existing config + programmatic `set_enabled(True/False)` | — | toggled | **unchanged** (I12) |
+| no file + programmatic `set_enabled(True)` | (nothing displayed) | True | **1** — the fresh-programmatic cell F2 named; the floored default is what makes it safe | `CONSENT_TEXT` extends its enumeration ("…how often facts are
 extracted, claims quarantined, values superseded or reinforced, and answers
 abstained…").
 
@@ -272,11 +292,15 @@ send the v1 field set. Nothing is unrecoverable.
   legacy v1-receipt reconstruction); the `PLAN_STALE` retry loop (reaching a
   genuine retry requires the store-level contention fixture from
   `test_0014_receipt_split.py`, reused).
-- **Consent regimes:** v1-consented config (fields stripped), v2-consented
-  (fields sent), config with absent `schema_version` (floored to 1,
-  stripped), fresh consent via the display flow (stamped 2), and
-  **programmatic `set_enabled(True)` on a v1 config (stays v1 — fields still
-  stripped; the Q2 ruling's regime)**. All five are cheap unit fixtures.
+- **Consent regimes are a state MACHINE, not a list of states (F1's
+  lesson):** the static cells (v1-consented stripped · v2-consented sent ·
+  absent-version floored to 1 · fresh affirmative stamped 2 · programmatic
+  enable on v1 stays v1) PLUS the transitions — **the same running collector
+  across a v1→v2 acceptance** (pre-acceptance records must never surface,
+  which record-time gating makes structural), and **every non-acceptance
+  display outcome** (no / EOF / interrupt / non-interactive / fresh
+  programmatic enable — each ends at version 1, per the §4 table). All are
+  cheap unit fixtures.
 - **Cold vs warm:** no difference — counters are per-call derived values;
   the weekly aggregation semantics are the existing `Collector`'s.
 
@@ -295,11 +319,13 @@ Release class: **stable** — every named regime has a test in §6.
 | I5 — reinforcement counts come from the planner branch, not plan shape: a plain accumulation commit counts `(0,0)` even though its plan is shape-identical | `test_accumulation_counts_zero_reinforcements` | CI |
 | I6 — the v2 outcome digest basis is unchanged: the pinned 0014 digest vectors still verify, and `SupersessionPlan` gained no field | pinned-vector tests in `test_0014_receipt_split.py` (existing) + `test_supersession_plan_fields_pinned` (asserts the exact field list) | CI |
 | I7 — whitelisted ⇒ populated (the `2767a35` gate) | `tests/test_telemetry_claims.py` (existing — starts passing for the re-added fields, keeps failing for any future aspirational field) | CI |
-| I8 — consent-version fail-closed: v1-consented and absent-version configs never emit the new fields; `preview()` == what `flush` posts | `test_v1_consent_strips_new_fields`, `test_absent_schema_version_reads_as_v1`, `test_preview_is_what_flush_posts` | CI |
+| I8 — consent-version fail-closed **at RECORD time (F1)**: a field above the collector's consented version never ACCUMULATES; the same-collector transition (record under v1 → accept v2 → record → flush) sends ONLY post-acceptance values; `preview()` re-strips as defense-in-depth and == what `flush` posts | `test_gated_fields_never_accumulate_pre_consent`, `test_same_collector_v1_to_v2_transition_sends_only_post_acceptance`, `test_v1_consent_strips_new_fields`, `test_absent_schema_version_reads_as_v1`, `test_preview_is_what_flush_posts` | CI |
 | I9 — content-free: the ingest payload contains only int/float/bool values under every fixture | `test_counters_are_content_free` | CI |
 | I10 — consent text and payload move together: `CONSENT_TEXT` mentions supersession/reinforcement iff the fields are whitelisted and populated | extend `test_telemetry_claims.py`'s existing text-pin | CI |
 | I11 — **the oracle is closed**: the MCP `remember` tool result contains neither `"supersessions"` nor `"reinforcements"` under every outcome (fresh supersession, reinforcement, accumulation, replay); the kept fields (`facts`, `quarantined`) are **byte-identical across a superseding, reinforcing, and accumulating write of the same shape** (co-invariance, not just key absence); AND the permission side: the host-API `remember()` return contains both keys | `test_mcp_result_carries_no_supersession_oracle` (incl. the co-invariance assertion) + `test_host_api_return_carries_counts` | CI |
 | I12 — `set_enabled` never stamps: toggling enabled (either direction, any number of times, with or without an endpoint change) leaves `schema_version` byte-identical; only the display flow stamps | `test_set_enabled_never_stamps_consent_version` | CI |
+| I13 — **only AFFIRMATIVE consent stamps (F2)**: every non-acceptance path — answer no, EOF, interrupt, non-interactive, fresh programmatic `set_enabled(True)` — ends at `schema_version=1`; the dataclass default is 1; the §4 transition table is exercised cell by cell | `test_only_affirmative_consent_stamps_current` (parametrized over every non-acceptance path) + `test_config_default_schema_version_is_1` | CI |
+| I14 — **both keys on EVERY successful terminal return of `ingest_event` (F3)**, including the unparseable early return, as int zeros; the host result, audit/telemetry recording, and the MCP strip all behave on that branch | `test_unparseable_return_carries_zero_counts` (asserts the host dict, the recorded event, and the MCP result on the parse-failure branch) | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -374,16 +400,18 @@ test beside these.
 
 ## 9. Brief for the external reviewer
 
-- **Least sure of, one:** the **completeness of the oracle closure** —
-  internal review found the per-write counts leak prior-state information to
-  the MCP model caller; I11 closes that carrier, and a second internal pass
-  verified the kept fields are supersession-invariant (§3b) and named the
-  timing boundary (§7). What remains genuinely open for you: an
-  enumeration-class check of the write path's **error surface** — does any
-  exception text or refusal shape reaching the MCP caller co-vary with prior
-  state in a way the count fields no longer do? Read §8's two-signals
-  scoping first, so the inherent recall-reflects-state property is not
-  re-reported as an incomplete fix.
+- ~~The error-surface question~~ — **CLOSED by external round 1**: the
+  reviewer's enumeration found no additional prior-fact oracle in the present
+  MCP error surface (author/date/extractor errors are request-dependent;
+  refusal commits keep the same result shape; receipt-integrity errors need
+  an op-id collision normal MCP writes cannot select; `PLAN_STALE` exhaustion
+  exposes concurrency, not the prior value — and those paths predate this
+  spec). Recorded here so round 2 does not re-litigate it.
+- **Least sure of, one:** the **temporal consent rule's process model** —
+  record-time gating binds a field to the consent the collector held when the
+  event happened; a long-lived process adopts v2 only when it reloads config.
+  Is "reload point" crisp enough, or does the spec need to name the exact
+  reload sites?
 - **Least sure of, two:** the claim that a **committed reinforcement plan is
   structurally indistinguishable from accumulation** rests on today's plan
   shape (§2c-ii last row). If a future spec adds a distinguishing persisted
