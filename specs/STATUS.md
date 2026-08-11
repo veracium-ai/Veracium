@@ -4,11 +4,11 @@
 
 # Spec status
 
-**15 specs · 9 accepted · 117 external review
+**16 specs · 9 accepted · 117 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **9 of 15 are accepted**, which
+review is required to reach it. **9 of 16 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -28,6 +28,7 @@ is the number that decides what can be built.
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-10 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `draft` | 2026-08-11 | 1 | 1 | 0 | 0 | 0 | — |
+| **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-11 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
