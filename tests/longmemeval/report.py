@@ -32,7 +32,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from adapter import QUESTION_TYPES, S_FILE, load
-from manifest import eligibility_for_output, explain_ineligibility
+from manifest import (eligibility_for_output, explain_ineligibility,
+                      output_hash_for)
 
 _WORD = re.compile(r"[a-z0-9]+")
 _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",
@@ -118,8 +119,11 @@ def main(paths: list[str]) -> int:
                   f"eligibility is unknown and cannot be assumed either way.")
             continue
         eligible, detail = verdict
+        oh = output_hash_for(base, Path(base).parent)
+        tag = f"  [sha256:{oh[:16]}…]" if oh else ""
         print(f"  {Path(base).name}: "
-              f"{'DECISION-ELIGIBLE' if eligible else explain_ineligibility(detail)}")
+              f"{'DECISION-ELIGIBLE' if eligible else explain_ineligibility(detail)}"
+              f"{tag}")
 
     # -- 1. per-type, differentiated claims first ---------------------------
     order = ["knowledge-update", "single-session-preference", "temporal-reasoning",

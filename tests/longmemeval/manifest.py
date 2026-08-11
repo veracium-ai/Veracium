@@ -409,6 +409,23 @@ def load_attestation(path) -> CompletionAttestation:
     return CompletionAttestation(**json.loads(Path(path).read_text()))
 
 
+def output_hash_for(hypothesis_path, out_dir: Path):
+    """The attested sha256 of `hypothesis_path`, or None if unattested. Links
+    by the same output-hash membership as `eligibility_for_output`, so the
+    hash printed beside a figure is the one the attestation recorded — G5:
+    figures become attributable to exact artifacts, not filenames."""
+    out_dir = Path(out_dir)
+    target = str(hypothesis_path)
+    for att_file in sorted(out_dir.glob("attestation_*.json")):
+        try:
+            att = load_attestation(att_file)
+        except Exception:
+            continue
+        if target in att.output_hashes:
+            return att.output_hashes[target]
+    return None
+
+
 def eligibility_for_output(hypothesis_path, out_dir: Path):
     """Find the run that produced `hypothesis_path` and judge its eligibility.
 
