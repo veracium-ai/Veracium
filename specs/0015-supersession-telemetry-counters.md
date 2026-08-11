@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v10 — *re-read before editing; quote the version you approve*. v9→v10: EXTERNAL ROUND 7 (4 bin-(a), all in the consent lifecycle) + **the PROCESS R3 CONSOLIDATION, armed last round and triggered**: rounds 3–7 layered the lifecycle until two of dev's own fixes contradicted each other (R7-1: the terminal matrix returns True on post-send lock failure while the older lock paragraph and I17 said False/"nothing sent") — §4's lifecycle paragraphs are REPLACED by one consolidated contract (persisted state · ONE portable lock · transitions · adoption · the flush algorithm with the under-lock STATUS read R7-2 requires · the endorsed authorization claim). R7-3: the lock is decided IN the spec, not deferred — an atomic O_CREAT|O_EXCL lockfile, one code path on every platform (the CI regime that runs IS the regime that ships; former §10 Q4 CLOSED), stale-break at 10 s as the documented portability trade, TelemetryLockError for explicit transitions. R7-4: the last "non-negative" carrier → positive int, zero invalid, everywhere. I17 rewritten to the split failure classes. Standing closures unchanged |
+| **Version** | v11 — *re-read before editing; quote the version you approve*. v10→v11: EXTERNAL ROUND 8 (3 bin-(a) + 1 bin-(b); the consolidation itself endorsed — "the blocking defect is the replacement lock's correctness, not the decision to consolidate"): R8-1 classes A+C found-in-fix of R7-3 — the stale-break lockfile is NOT mutually exclusive (a live holder pausing past 10 s gets broken: lost updates, duplicate epochs, unowned release) → the stale-break design is WITHDRAWN; the lock is OS-EXCLUSIVE (POSIX `fcntl.flock` / Windows `msvcrt.locking` — two 5-line adapters, ONE contract: kernel-mediated exclusivity + release-on-process-death), so a paused holder KEEPS its lock, no breaking logic exists, and the live-holder/stale-break adversarial case is structurally impossible; §5/§8 narrow the claim honestly (CI verifies the POSIX adapter; the Windows adapter implements the identical kernel contract, its test platform-gated and in the skip inventory); R8-2 classes C+D — adoption ran AFTER the eligibility exits → the flush/preview algorithm now adopts FIRST (locked status-read + normalize + adopt precede not-due/no-endpoint/disabled returns; lock failure at that step returns fail-closed WITHOUT adoption, gated fields stay dropped); R8-3 classes A+D — the two uncovered lock-using operations ruled: `load_collector_if_enabled` on lock failure returns None (no collector at all beats an unnormalized one — I16 holds), `preview` on lock failure returns None, never raises; adversarial tests for both; R8-4 bin-(b) — the CLAIMED registry guards actually added: three withdrawn-phrase entries (blanket lock-failure-False, the pinned-Unix-only lock, non-negative epoch). R7-1/2/4 closures confirmed by the reviewer |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec). R1: 3 → v4. R2: 5 + blocker → v5. R3: 4 → v6. R4: 3 → v7. R5: 3 → v8. R6: 3 → v9. R7 (v9): 4 bin-(a), no blocker → v10 = the round-8 resubmission, carrying the PROCESS-R3 lifecycle consolidation |
+| **External review** | required (full spec). R1: 3 → v4. R2: 5+blocker → v5. R3: 4 → v6. R4: 3 → v7. R5: 3 → v8. R6: 3 → v9. R7: 4 → v10 (the R3 consolidation). R8 (v10): 3 bin-(a) + 1 bin-(b), consolidation endorsed → v11 = the round-9 resubmission |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -296,20 +296,30 @@ fresh persisted positive epoch before any collector is constructed**; no
 live collector ever holds an unnormalized or zero epoch. Deleting the file
 is the consent-erasure mechanism and is never undone by telemetry code.
 
-**2. The lock — ONE portable primitive (R7-3, decided HERE, not deferred).**
-An **atomic lockfile**: `os.open(telemetry.json.lock, O_CREAT|O_EXCL)` —
-atomic on POSIX and Windows alike, pure stdlib, one code path on every
-platform (so the CI regime that runs IS the regime that ships; no
-platform-conditional tests, and §10's former Q4 is CLOSED as decided).
-Acquisition: nonblocking attempts every 50 ms up to a 2 s deadline. A crash
-leaves the lockfile; a holder-crash is recovered by breaking locks older
-than 10 s (mtime), the documented trade for portability (flock's
-OS-auto-release is given up; telemetry tolerates the rare double-entry this
-allows because every guarded write is a whole-file temp+rename). **Failure
-splits by operation class:** `record()` and flush fail closed and SILENT —
-telemetry never breaks the host; **explicit consent transitions
-(`set_enabled`, `prompt_consent`, the CLI flows) RAISE `TelemetryLockError`
-on deadline** — a user's consent choice must never silently fail to persist.
+**2. The lock — OS-EXCLUSIVE, the stale-break design WITHDRAWN (R8-1).**
+The v10 O_EXCL-lockfile-with-stale-break could break a LIVE holder that
+paused past the break age — lost updates, duplicate epochs, unowned release.
+Withdrawn whole. The lock is now **kernel-mediated exclusivity with
+release-on-process-death**: `fcntl.flock(LOCK_EX)` on POSIX,
+`msvcrt.locking(LK_NBLCK)` on Windows — two ~5-line adapters implementing
+ONE contract. Consequences: a paused holder KEEPS its lock (others wait or
+fail closed — never enter); a crashed holder's lock is released by the OS
+(no stale-break logic exists to get wrong); release is by the owning file
+descriptor, so no process can release another's lock. Acquisition:
+nonblocking attempts every 50 ms to a 2 s deadline. **Failure splits by
+operation class — TOTAL over the lock's users (R8-3):**
+`record()`/`flush_if_due()` → fail closed and SILENT (flush returns False
+pre-authorization; the post-POST cell of the terminal matrix post-send);
+`load_collector_if_enabled()` → returns **None** (no collector at all
+rather than an unnormalized one — I16's no-unnormalized-collector rule
+holds by construction); `preview()` → returns **None**, never raises
+(documented: "state unavailable"); explicit consent transitions
+(`set_enabled`, `prompt_consent`, CLI flows) → RAISE `TelemetryLockError`.
+**Platform regime, stated honestly (§5/§8):** CI verifies the POSIX
+adapter; the Windows adapter implements the identical kernel contract and
+its test is platform-gated (named in the skip inventory) — the
+concurrency guarantees are CI-verified on POSIX and contract-identical on
+Windows.
 
 **3. Transitions.** Every consent transition is a locked read-modify-write:
 acquire → reload → apply → **bump `consent_epoch` iff the persisted
@@ -330,16 +340,22 @@ adopted epoch. `record()` drops fields above the adopted consent version
 (record-time gating — a field is sent only if recorded under a consent that
 admitted it).
 
-**5. The flush algorithm, start to finish.**
-(a) not due / no endpoint / disabled → return False (nothing sent).
-(b) acquire the lock; failure → return False (nothing sent).
-(c) **under-lock read with STATUS (R7-2):** `_read_config_status()` returns
-`(status ∈ {valid, absent, malformed}, config)` — the executable
-construction the terminal matrix needs; `absent` and `malformed` are
+**5. The flush/preview algorithm, start to finish — ADOPTION FIRST (R8-2).**
+(a) acquire the lock; failure → return False (preview: None) **without
+adoption** — fail-closed: an unadopted collector keeps dropping gated
+fields, so no consent is ever widened by a lock failure.
+(b) **under-lock read with STATUS (R7-2):** `_read_config_status()` returns
+`(status ∈ {valid, absent, malformed}, config)`; `absent`/`malformed` are
 distinguished from a valid default-valued file by the read, not inferred.
-(d) absent/malformed/epoch-mismatch/disabled → discard-or-adopt per rule 4,
-release, return False.
-(e) valid + epoch match → the payload is AUTHORIZED; release the lock; POST.
+(c) **normalize + adopt (rule 4) — BEFORE any eligibility exit**, so a
+long-lived collector adopts a new consent on EVERY flush/preview call,
+due or not (the R8-2 case: accepted v2 + a not-yet-due flush still adopts,
+and subsequent records gate as v2 — I8's named regime).
+(d) absent / malformed / disabled / not due / no endpoint → release,
+return False (preview: the would-be payload or None per its contract) —
+adoption has ALREADY happened.
+(e) valid + enabled + due + endpoint → the payload is AUTHORIZED; release
+the lock; POST.
 (f) **post-POST, TOTAL (the terminal matrix):** reacquire the lock and
 re-read with status; then —
 
@@ -445,7 +461,7 @@ Release class: **stable** — every named regime has a test in §6.
 | I14 — **both keys on EVERY successful terminal return of `ingest_event` (F3)**, including the unparseable early return, as int zeros; the host result, audit/telemetry recording, and the MCP strip all behave on that branch | `test_unparseable_return_carries_zero_counts` (asserts the host dict, the recorded event, and the MCP result on the parse-failure branch) | CI |
 | I15 — **`reset()` preserves consent (R2-2)**: reset clears aggregates only; the two-period sequence (record → flush+reset → record → flush) carries the new fields in BOTH periods exactly once each, and reset after a defaulted or argument-bearing construction neither downgrades the version nor raises | `test_reset_preserves_adopted_consent_two_periods` | CI |
 | I16 — **config validity is a closed predicate (R2-4 + R4-2 + R6-2)**: `schema_version` positive int (bool excluded) ≤ current else 1; **`consent_epoch` positive int (bool excluded); absent/invalid NORMALIZES UNDER LOCK to a fresh persisted nonzero epoch before any collector exists; adoption-time invalidity normalizes-then-discards; no live collector ever holds 0**; an unknown config KEY fails closed to whole-config disabled defaults | parametrized `test_invalid_schema_version_reads_as_v1` + `test_invalid_consent_epoch_normalizes_nonzero` + `test_adoption_time_invalid_epoch_normalizes_and_discards` + `test_unknown_config_key_fails_closed_whole_config` | CI |
-| I17 — **the lifecycle's concurrency contract (consolidated §4)**: racing transitions mint DISTINCT epochs; a pre-authorization lock failure returns False with nothing sent; a POST-send lock/write failure returns True with `last_sent` unwritten (the two failure classes NEVER share an outcome — R7-1); a stalled POST resuming after a disable leaves the disable durable; a config deleted during POST is never recreated; a malformed config is never rewritten; `_read_config_status` distinguishes valid/absent/malformed (R7-2) | `test_racing_transitions_mint_distinct_epochs` + `test_preauth_lock_failure_returns_false_nothing_sent` + `test_postsend_lock_failure_returns_true_last_sent_unwritten` + `test_blocked_poster_disable_survives_post_resume` + `test_delete_during_post_never_recreates` + `test_malformed_config_never_rewritten` + `test_read_config_status_three_states` | CI |
+| I17 — **the lifecycle's concurrency contract (consolidated §4, v11)**: racing transitions serialize on the OS-exclusive lock and mint DISTINCT epochs; **a paused live holder is never broken (the R8-1 adversarial case: holder pauses past any age, a second process must WAIT or FAIL CLOSED, never enter)**; a pre-authorization lock failure returns False with nothing sent AND without adoption; a POST-send lock/write failure returns True with `last_sent` unwritten; `load_collector_if_enabled` under lock failure returns None (never an unnormalized collector); `preview` under lock failure returns None, never raises; a stalled POST resuming after a disable leaves the disable durable; a config deleted during POST is never recreated; a malformed config never rewritten; `_read_config_status` distinguishes valid/absent/malformed; **adoption precedes every eligibility exit (the R8-2 not-due regime: accept v2 → not-due flush → still adopts → records gate as v2)** | `test_racing_transitions_mint_distinct_epochs` + `test_paused_live_holder_is_never_broken` + `test_preauth_lock_failure_returns_false_no_adoption` + `test_postsend_lock_failure_returns_true_last_sent_unwritten` + `test_collector_load_lock_failure_returns_none` + `test_preview_lock_failure_returns_none` + `test_blocked_poster_disable_survives_post_resume` + `test_delete_during_post_never_recreates` + `test_malformed_config_never_rewritten` + `test_read_config_status_three_states` + `test_not_due_flush_still_adopts` | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -579,9 +595,10 @@ test beside these.
    (`prompt_consent()` / the CLI path that prints the text) stamps. One
    behaviour, no API split, nothing stamps v2 unless v2 was shown. §4
    carries the mechanism; I12 enforces it.
-3. ~~Platform scope of the lock~~ — **CLOSED in v10 (R7-3): the O_CREAT|O_EXCL
-   atomic lockfile is one code path on every platform, so no platform regime
-   split exists and nothing was deferred to implementation.**
+3. ~~Platform scope of the lock~~ — **CLOSED (R7-3 in v10, re-decided by
+   R8-1 in v11): OS-exclusive adapters (`flock`/`msvcrt.locking`), one
+   kernel contract; CI verifies POSIX, the Windows adapter's test is
+   platform-gated and inventoried. Decided in-spec; nothing deferred.**
 4. **Absorption/refusal counters** — worth a future spec once these two
    fields have shipped and someone wants them? **Decides: dev, on demand.
    Class: deferred.**
