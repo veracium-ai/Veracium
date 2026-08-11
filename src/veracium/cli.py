@@ -253,6 +253,33 @@ def _forget(args) -> int:
         store.close()
 
 
+def _migrate(args) -> int:
+    """The operator-facing wrapper around the store's offline migration
+    (specs/0013 §5b). Deliberately UNGUARDED: every behaviour — version
+    resolution, the accepted-manifest gate, refusal reasons, audit events —
+    lives in `migrate_store`; this verb only finds the file, calls it, and
+    reports the structured result honestly (label + resulting version +
+    whether anything changed), never inferring facts from the label."""
+    import sys
+    if not os.path.exists(args.db):
+        print(f"no store at {args.db!r} — nothing to migrate", file=sys.stderr)
+        return 2
+    from .store.migration import migrate_store
+    from .store.schema_version import StoreVersionError
+    try:
+        r = migrate_store(args.db)
+    except StoreVersionError as e:
+        print(f"refused: {e}", file=sys.stderr)
+        return 1
+    if r.store_changed:
+        print(f"migrated {args.db} -> schema v{r.resulting_version} "
+              f"(committed: {r.transaction_committed})")
+    else:
+        print(f"{args.db} is already current (schema v{r.resulting_version}) — "
+              f"no change")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="veracium")
     sub = p.add_subparsers(dest="cmd")
@@ -290,6 +317,14 @@ def main(argv=None) -> int:
     im.add_argument("path", help="input .jsonl file")
     im.add_argument("--user", help="remap the records into this user id")
     im.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
+
+    mg = sub.add_parser(
+        "migrate",
+        help="migrate a below-head store forward to the current schema version "
+             "(OFFLINE — quiesce all other access first; safe to run on a "
+             "current store, which is a no-op)")
+    mg.add_argument("--db", default="veracium.db",
+                    help="SQLite store path (default: veracium.db)")
 
     fg = sub.add_parser("forget", help="irreversibly erase EVERYTHING stored for a user (compliance erasure)")
     fg.add_argument("--user", required=True, help="user id to erase")
@@ -332,6 +367,8 @@ def main(argv=None) -> int:
         return _portability(args)
     if args.cmd == "forget":
         return _forget(args)
+    if args.cmd == "migrate":
+        return _migrate(args)
     if args.cmd in ("recall", "remember", "introspect"):
         return _memory_verbs(args)
     if args.cmd != "telemetry":
