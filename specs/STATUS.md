@@ -4,7 +4,7 @@
 
 # Spec status
 
-**16 specs · 9 accepted · 119 external review
+**16 specs · 9 accepted · 120 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -27,7 +27,7 @@ is the number that decides what can be built.
 | **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 0/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-10 | 0 | 16 | 0 | 0 | 0 | — |
-| **0015** | supersession / reinforcement telemetry counters | `draft` | 2026-08-11 | 1 | 3 | 0 | 0 | 0 | — |
+| **0015** | supersession / reinforcement telemetry counters | `draft` | 2026-08-11 | 1 | 4 | 0 | 0 | 0 | — |
 | **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-11 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
