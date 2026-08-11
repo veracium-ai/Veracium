@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v9 — *re-read before editing; quote the version you approve*. v8→v9: EXTERNAL ROUND 6 (3 bin-(a), classified first): R6-1 classes A+C found-in-fix of R5-1 — the post-send operation was not TOTAL (a lock failure AFTER the irreversible POST contradicted "returns False, sends nothing"; config deletion during POST unruled) → the post-POST TERMINAL MATRIX: five cells (unchanged/changed-consent/deleted/malformed/lock-or-write-failure), each with return value, collector reset, `last_sent`, and file-recreation ruled — a deleted or malformed config is NEVER recreated (deletion IS consent erasure), post-POST failures skip the `last_sent` write (interval drift, never consent damage), and the flush return distinguishes sent-True from not-sent-False honestly; R6-2 classes C+F+D (fourth sweep failure) — four carriers still said invalid→0 → ALL amended by fact-search to NORMALIZE-UNDER-LOCK-to-nonzero (adoption-time invalidity normalizes BEFORE adopting; no live collector ever holds 0; I16's test renamed); R6-3 classes A+G — `fcntl.flock` is Unix-only against OS-unrestricted metadata → the lock is an ABSTRACT exclusive advisory file lock (POSIX `fcntl.flock` / Windows `msvcrt.locking`), NONBLOCKING acquisition with bounded retry (deadline ~2s), and the failure rule split by operation class: record/flush fail closed and silent (telemetry never breaks the host); EXPLICIT consent transitions raise a named `TelemetryLockError` (a user's choice must never silently fail to persist); platform tests or a narrowed claim ride implementation. Bin (b): the five-column table's delimiter fixed. Standing closures unchanged |
+| **Version** | v10 — *re-read before editing; quote the version you approve*. v9→v10: EXTERNAL ROUND 7 (4 bin-(a), all in the consent lifecycle) + **the PROCESS R3 CONSOLIDATION, armed last round and triggered**: rounds 3–7 layered the lifecycle until two of dev's own fixes contradicted each other (R7-1: the terminal matrix returns True on post-send lock failure while the older lock paragraph and I17 said False/"nothing sent") — §4's lifecycle paragraphs are REPLACED by one consolidated contract (persisted state · ONE portable lock · transitions · adoption · the flush algorithm with the under-lock STATUS read R7-2 requires · the endorsed authorization claim). R7-3: the lock is decided IN the spec, not deferred — an atomic O_CREAT|O_EXCL lockfile, one code path on every platform (the CI regime that runs IS the regime that ships; former §10 Q4 CLOSED), stale-break at 10 s as the documented portability trade, TelemetryLockError for explicit transitions. R7-4: the last "non-negative" carrier → positive int, zero invalid, everywhere. I17 rewritten to the split failure classes. Standing closures unchanged |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec). R1: 3 → v4. R2: 5 + blocker → v5. R3: 4 → v6. R4: 3 → v7. R5: 3 → v8. R6 (v8): 3 bin-(a) + 1 bin-(b), no blocker → v9 = the round-7 resubmission |
+| **External review** | required (full spec). R1: 3 → v4. R2: 5 + blocker → v5. R3: 4 → v6. R4: 3 → v7. R5: 3 → v8. R6: 3 → v9. R7 (v9): 4 bin-(a), no blocker → v10 = the round-8 resubmission, carrying the PROCESS-R3 lifecycle consolidation |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -279,93 +279,88 @@ the affirmative cell stamps the current version:**
 | no file + programmatic `set_enabled(True)` | (nothing displayed) | True | **1** — the fresh-programmatic cell F2 named; the floored default is what makes it safe | +1 |
 | **existing config (any version) + `prompt_consent()`** | idempotent return — **no display, no prompt** | unchanged | **unchanged** — the reachable no-op row R3-4 named; an existing v1 install is NOT upgraded by a later prompt call (upgrade happens only through an explicit re-display flow) | **unchanged** (no transition, no bump) |
 
-**The adoption operation (R2-1, rebuilt by R3-1): consent is the TUPLE
-(enabled, schema_version), carried by a persisted MONOTONIC EPOCH.**
-`TelemetryConfig` gains `consent_epoch: int` (persisted; absent/invalid is
-NORMALIZED UNDER LOCK to a fresh nonzero epoch before any collector exists —
-R5-2/R6-2: no live collector ever holds 0),
-incremented by EVERY consent-state change — enable, disable, and each stamp.
-The `Collector` records the epoch it was constructed/last adopted under.
-`flush_if_due()` and `preview()` call `adopt_consent(config)` at entry (the
-existing reload points; `load_collector_if_enabled()` constructs with the
-loaded config): **if the config's epoch differs from the collector's — in
-ANY way, including the ABA case where disable→re-enable lands back on the
-same (enabled, version) pair — the accumulated aggregates are DISCARDED
-before adoption.** Fail-closed by construction: an intervening transition
-means some records may have been made under a revoked or narrower consent,
-the aggregate cannot be split after the fact, so revocation discards pending
-aggregates entirely. A same-epoch upgrade cannot exist (stamping bumps the
-epoch), so the old upgrade/downgrade field rules are subsumed: any change →
-discard, then adopt. The carrier test: a long-lived `Memory` runs
-enabled→disabled→record→re-enabled→flush and NO disabled-period field or
-event count is sent (I8).
+### The consent lifecycle — CONSOLIDATED (v10, PROCESS R3: past three rounds, rewrite)
 
-**Concurrency (R4-1) — the epoch's own linearization:** every consent
-transition is a **locked compare-and-set**: acquire an exclusive lock
-(lockfile beside `telemetry.json`), reload, apply the change, **bump the
-epoch iff the persisted (enabled, schema_version) pair actually changed**
-(idempotent calls do not bump), write temp + rename, release. Two racing
-transitions therefore serialize and mint DISTINCT epochs — the
-duplicate-epoch mint is structurally closed. The flush boundary: after
-building the payload, `flush_if_due` **re-loads the config under the lock
-immediately before POST**; epoch ≠ adopted → discard, no send. **The
-residual window, stated rather than hidden (restated by R5-1 — the earlier
-"no send begins after a revocation is observable" was too strong):** the
-recheck is an AUTHORIZATION — a POST authorized by its final locked recheck
-may begin or complete after a later revocation lands; its payload contains
-only increments recorded under admitted consent (record-time gating). The
-precise claim: *revocation is honored at every authorization boundary, and
-no data recorded after a revocation is ever sent* — not "no packet ever
-crosses a revocation". **The POST-SUCCESS write (R5-1):** after a successful POST, `flush_if_due`
-must NOT save its in-memory config (the shipped form saves the stale whole
-object, silently re-enabling a revoked consent — reproduced by the round-5
-reviewer). It performs a **locked reload and updates ONLY `last_sent`**,
-preserving whatever consent tuple and epoch are now on disk. **The
-post-POST step is TOTAL (R6-1) — the terminal matrix, every cell ruled:**
+*Rounds 3–7 each patched this construction and round 7 found two of the
+patches contradicting each other (R7-1) — the exact failure R3 predicts.
+This section replaces every prior lifecycle paragraph as ONE contract;
+where older wording elsewhere disagrees, THIS section governs, and the
+withdrawn-phrase registry guards the retired forms.*
 
-| state found after the POST | flush returns | collector | `last_sent` | file |
+**1. Persisted consent state.** `telemetry.json` carries `enabled`,
+`schema_version` (the DISPLAYED-AND-ACCEPTED consent version; default 1),
+and `consent_epoch` — **a positive `int` (`bool` excluded; zero is INVALID —
+R7-4)** counting consent transitions. Absent/invalid `schema_version` reads
+as 1. Absent/invalid `consent_epoch` is **normalized under the lock to a
+fresh persisted positive epoch before any collector is constructed**; no
+live collector ever holds an unnormalized or zero epoch. Deleting the file
+is the consent-erasure mechanism and is never undone by telemetry code.
+
+**2. The lock — ONE portable primitive (R7-3, decided HERE, not deferred).**
+An **atomic lockfile**: `os.open(telemetry.json.lock, O_CREAT|O_EXCL)` —
+atomic on POSIX and Windows alike, pure stdlib, one code path on every
+platform (so the CI regime that runs IS the regime that ships; no
+platform-conditional tests, and §10's former Q4 is CLOSED as decided).
+Acquisition: nonblocking attempts every 50 ms up to a 2 s deadline. A crash
+leaves the lockfile; a holder-crash is recovered by breaking locks older
+than 10 s (mtime), the documented trade for portability (flock's
+OS-auto-release is given up; telemetry tolerates the rare double-entry this
+allows because every guarded write is a whole-file temp+rename). **Failure
+splits by operation class:** `record()` and flush fail closed and SILENT —
+telemetry never breaks the host; **explicit consent transitions
+(`set_enabled`, `prompt_consent`, the CLI flows) RAISE `TelemetryLockError`
+on deadline** — a user's consent choice must never silently fail to persist.
+
+**3. Transitions.** Every consent transition is a locked read-modify-write:
+acquire → reload → apply → **bump `consent_epoch` iff the persisted
+(enabled, schema_version) pair actually changed** (idempotent calls bump
+nothing; enable+stamp in the affirmative display flow is ONE transition) →
+temp+rename → release. Racing transitions serialize and mint distinct
+epochs.
+
+**4. Collectors and adoption.** `load_collector_if_enabled()` constructs a
+collector holding the (normalized) epoch of the config it read. At the
+entry of `flush_if_due()` and `preview()`, `adopt_consent(config)` compares
+epochs: **any difference — including the ABA disable→re-enable case —
+DISCARDS pending aggregates before adopting** (an aggregate cannot prove
+which increments predate a revocation; the blunt discard is the endorsed
+fail-closed choice). Invalidity first seen at adoption normalizes under the
+lock, then discards. `reset()` clears aggregates only and preserves the
+adopted epoch. `record()` drops fields above the adopted consent version
+(record-time gating — a field is sent only if recorded under a consent that
+admitted it).
+
+**5. The flush algorithm, start to finish.**
+(a) not due / no endpoint / disabled → return False (nothing sent).
+(b) acquire the lock; failure → return False (nothing sent).
+(c) **under-lock read with STATUS (R7-2):** `_read_config_status()` returns
+`(status ∈ {valid, absent, malformed}, config)` — the executable
+construction the terminal matrix needs; `absent` and `malformed` are
+distinguished from a valid default-valued file by the read, not inferred.
+(d) absent/malformed/epoch-mismatch/disabled → discard-or-adopt per rule 4,
+release, return False.
+(e) valid + epoch match → the payload is AUTHORIZED; release the lock; POST.
+(f) **post-POST, TOTAL (the terminal matrix):** reacquire the lock and
+re-read with status; then —
+
+| state after the POST | returns | collector | `last_sent` | file |
 |---|---|---|---|---|
-| config unchanged | True (a send happened — the return is honest) | reset | updated under the lock | untouched otherwise |
-| consent changed (any epoch/tuple change) | True | reset | updated on the CURRENT file, consent preserved | untouched otherwise |
-| config DELETED | True | reset | **not written — the file is NEVER recreated: deletion IS the documented consent-erasure mechanism (§7)** | stays deleted |
-| config malformed (load fails closed) | True | reset | **not written — writing would resurrect a broken file** | untouched |
-| lock or write failure | True | reset | **not written — the accepted cost is interval drift (the next flush may run early), never consent damage; the reset collector means an early re-send carries only new increments, no duplication** | untouched |
+| valid, consent unchanged | True | reset | updated | untouched otherwise |
+| valid, consent changed | True | reset | updated on the CURRENT file; consent preserved | untouched otherwise |
+| absent (deleted during POST) | True | reset | not written | **NEVER recreated** |
+| malformed | True | reset | not written | untouched (never rewritten) |
+| lock or write failure | True | reset | not written — interval drift, never consent damage; the reset collector means an early re-send carries only new increments | untouched |
 
-The `False` return is reserved for *nothing was sent* (pre-POST recheck
-refusal, lock failure before authorization, no endpoint, not due). New
-regressions beside the blocked-poster test: post-send lock-failure and
-delete-during-POST (I17). **The lock
-primitive, pinned:** `fcntl.flock` (exclusive) on `telemetry.json.lock`
-beside the config; acquisition failure or timeout → the flush returns
-`False` and sends nothing (fail-closed; telemetry never breaks the host); a
-crash while holding it is released by the OS with the lock file inert.
-**The linearization claim, restated as AUTHORIZATION semantics (the prior
-"no send begins after a revocation is observable" overreached):** a POST is
-*authorized* by its final locked recheck; an authorized POST may begin or
-complete after a later revocation lands — revocation is honored at every
-authorization boundary, and the payload of any authorized POST contains only
-increments recorded under admitted consent. Adversarial tests: the
-concurrent-disable interleaving, the two-racers-distinct-epochs CAS test,
-and the **blocked-poster regression** (POST stalls → disable persists → POST
-resumes and completes → the disable is still durable on disk and the next
-flush is suppressed) (I17).
+**`True` means a send happened; `False` means nothing was sent — the
+pre-authorization and post-send failure classes never share an outcome
+(R7-1).**
 
-**The `consent_epoch` contract (R4-2):** persisted in `telemetry.json`
-beside `schema_version` (§7: TWO persisted values); **validity: a
-non-negative `int` (`bool` excluded); anything else — absent, `None`,
-string, float, container, negative — is NORMALIZED UNDER LOCK to a fresh
-persisted NONZERO epoch before any collector is constructed; invalidity
-first seen at adoption time normalizes under the lock BEFORE adopting and
-the pending aggregates are discarded (fail-closed, I16). No live collector
-ever holds epoch 0 (R6-2). A
-combined enable+stamp (the affirmative display flow) is ONE transition: one
-bump. Idempotent operations (re-enabling an enabled config, re-running
-`prompt_consent` over an existing file) change nothing and bump nothing.
-**Rollback, probed against the shipped v1 loader:** a v1 build reading a v2
-config containing `consent_epoch` hits the unknown-key whole-config discard
-and runs DISABLED with defaults — under-collection, never misreading;
-re-consent under the old build recreates a v1 config. Stated in §8; the old
-"rollback leaves nothing inconsistent" claim is withdrawn as too strong.
+**6. The authorization claim (endorsed wording).** A POST is authorized by
+its final locked recheck; an authorized POST may begin or complete after a
+later revocation lands. Revocation is honored at every authorization
+boundary, and no data recorded after a revocation is ever sent — not "no
+packet ever crosses a revocation".
+
 
 **The absent-collector state (R3-2): RESTART is the activation boundary.**
 A process that started disabled has no collector (`load_collector_if_enabled
@@ -450,7 +445,7 @@ Release class: **stable** — every named regime has a test in §6.
 | I14 — **both keys on EVERY successful terminal return of `ingest_event` (F3)**, including the unparseable early return, as int zeros; the host result, audit/telemetry recording, and the MCP strip all behave on that branch | `test_unparseable_return_carries_zero_counts` (asserts the host dict, the recorded event, and the MCP result on the parse-failure branch) | CI |
 | I15 — **`reset()` preserves consent (R2-2)**: reset clears aggregates only; the two-period sequence (record → flush+reset → record → flush) carries the new fields in BOTH periods exactly once each, and reset after a defaulted or argument-bearing construction neither downgrades the version nor raises | `test_reset_preserves_adopted_consent_two_periods` | CI |
 | I16 — **config validity is a closed predicate (R2-4 + R4-2 + R6-2)**: `schema_version` positive int (bool excluded) ≤ current else 1; **`consent_epoch` positive int (bool excluded); absent/invalid NORMALIZES UNDER LOCK to a fresh persisted nonzero epoch before any collector exists; adoption-time invalidity normalizes-then-discards; no live collector ever holds 0**; an unknown config KEY fails closed to whole-config disabled defaults | parametrized `test_invalid_schema_version_reads_as_v1` + `test_invalid_consent_epoch_normalizes_nonzero` + `test_adoption_time_invalid_epoch_normalizes_and_discards` + `test_unknown_config_key_fails_closed_whole_config` | CI |
-| I17 — **the epoch is concurrency-safe (R4-1 + R5-1)**: racing transitions mint DISTINCT epochs; a disable before the recheck suppresses the send; **the post-success write updates ONLY `last_sent` under the lock — a stalled POST resuming after a disable leaves the disable durable**; lock acquisition failure → flush returns False, nothing sent | `test_racing_transitions_mint_distinct_epochs` + `test_concurrent_disable_suppresses_send_at_recheck` + `test_blocked_poster_disable_survives_post_resume` + `test_lock_failure_fails_closed` | CI |
+| I17 — **the lifecycle's concurrency contract (consolidated §4)**: racing transitions mint DISTINCT epochs; a pre-authorization lock failure returns False with nothing sent; a POST-send lock/write failure returns True with `last_sent` unwritten (the two failure classes NEVER share an outcome — R7-1); a stalled POST resuming after a disable leaves the disable durable; a config deleted during POST is never recreated; a malformed config is never rewritten; `_read_config_status` distinguishes valid/absent/malformed (R7-2) | `test_racing_transitions_mint_distinct_epochs` + `test_preauth_lock_failure_returns_false_nothing_sent` + `test_postsend_lock_failure_returns_true_last_sent_unwritten` + `test_blocked_poster_disable_survives_post_resume` + `test_delete_during_post_never_recreates` + `test_malformed_config_never_rewritten` + `test_read_config_status_three_states` | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -584,9 +579,9 @@ test beside these.
    (`prompt_consent()` / the CLI path that prints the text) stamps. One
    behaviour, no API split, nothing stamps v2 unless v2 was shown. §4
    carries the mechanism; I12 enforces it.
-3. **Platform scope of the lock (R6-3):** cross-platform lock with platform
-   tests, or a narrowed supported-platform claim? **Decides: dev at
-   implementation, recorded in the spec at acceptance. Class: pre-release.**
+3. ~~Platform scope of the lock~~ — **CLOSED in v10 (R7-3): the O_CREAT|O_EXCL
+   atomic lockfile is one code path on every platform, so no platform regime
+   split exists and nothing was deferred to implementation.**
 4. **Absorption/refusal counters** — worth a future spec once these two
    fields have shipped and someone wants them? **Decides: dev, on demand.
    Class: deferred.**
