@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v1 — *re-read before editing; quote the version you approve* |
+| **Version** | v2 — *re-read before editing; quote the version you approve*. v1→v2: research's preliminary Q1 lean folded (to be confirmed in their full internal review): the payload is COMPLETE, not restoration-scoped — the `compile` role (wiki recompile, the most expensive role) joins as `recall.compile_in_tok`/`compile_out_tok`. Feasibility confirmed before folding: `compile` is a first-class role in the `Complete` protocol (`llm/base.py:20`) and the `Metered` wrapper counts it identically; the recall event's record sites carry it. A payload labelled "token usage" that omits the most expensive role systematically undercounts real cost — v3's consent text enumerates all three roles. | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research (consent semantics + the honest-labels rule are theirs) · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
 | **External review** | required (full spec — touches `__init__.py`, `introspect.py`); not yet sent |
@@ -65,8 +65,8 @@ raises the current consent version.
 
 | field | read / written | its **documented** contract | every other consumer | preserved? |
 |---|---|---|---|---|
-| `EVENT_FIELDS["ingest"]` / `["answer"]` | written: re-add the four token fields | whitelist; anything unlisted is dropped at record | `Collector.record/snapshot`; `tests/test_telemetry_claims.py` (whitelisted ⇒ populated) | yes — populated by this change, which is what the gate demands |
-| `FIELD_MIN_VERSION` | written: the four fields at min version **3** | 0015: a field is sent only if recorded under a consent that admits it | `Collector.record` (the binding gate), `_payload` (defense-in-depth) | yes — the 0015 mechanism reused unchanged |
+| `EVENT_FIELDS["ingest"]` / `["answer"]` / `["recall"]` | written: the four `2767a35` fields return AND `recall.compile_in_tok`/`compile_out_tok` join (v2 — the complete payload; a "token usage" label that omits the most expensive role misleads by omission) | whitelist; anything unlisted is dropped at record | `Collector.record/snapshot`; `tests/test_telemetry_claims.py` (whitelisted ⇒ populated) | yes — populated by this change, which is what the gate demands |
+| `FIELD_MIN_VERSION` | written: all SIX fields at min version **3** | 0015: a field is sent only if recorded under a consent that admits it | `Collector.record` (the binding gate), `_payload` (defense-in-depth) | yes — the 0015 mechanism reused unchanged |
 | `SCHEMA_VERSION` | 2 → **3** | the current consent-text version; stamped only by affirmative display flows (0015 I13) | `prompt_consent`, `accept_current_consent`, the payload stamp | yes — one more version through the same machinery |
 | `CONSENT_TEXT` | written: token sentence returns, scoped | the consent claim; `test_consent_text_does_not_promise_token_totals` PINS that "token" is absent until fields are whitelisted AND written | `prompt_consent()`, CLI enable | **the pin test flips direction in the same commit** (I5): text mentions tokens iff whitelisted and written — both now true |
 | `Metered.totals()` | read: the usage source | host-side accounting only (`metered.py` docstring says nothing writes to telemetry/audit/introspect) | hosts; `tests/test_metered.py` | **changed** — the docstring's "host-side only" paragraph is REWRITTEN by this spec: a `Memory` whose `llm` exposes the `Metered` surface reads per-operation deltas; the wrapper itself still never pushes |
@@ -155,7 +155,10 @@ exposes the `Metered` surface (`totals()` in the documented shape) reads a
 **per-operation delta**: snapshot totals before the operation, subtract
 after, validate every delta (non-negative int, bool excluded), and pass the
 valid ones into `_record` — `ingest` carries `distill_in_tok`/
-`distill_out_tok`; `answer` carries `gate_in_tok`/`gate_out_tok`. Any
+`distill_out_tok`; `answer` carries `gate_in_tok`/`gate_out_tok`; `recall`
+carries `compile_in_tok`/`compile_out_tok` (the wiki-recompile cost — the
+most expensive role, included so the payload's "token usage" label is
+honest about total cost, v2). Any
 exception or shape mismatch anywhere in that read records nothing and never
 propagates (telemetry never breaks the host). An unmetered `llm` is a
 complete no-op — no probing beyond one `getattr`.
@@ -164,8 +167,9 @@ complete no-op — no probing beyond one `getattr`.
 `FIELD_MIN_VERSION` gains the four fields at 3; the record-time gate,
 epoch/lock/tombstone lifecycle, display-flow-only stamping, and every 0015
 invariant apply unchanged. `CONSENT_TEXT` regains a token sentence, scoped
-honestly: *"token totals for your own model calls — only when you opt into
-metering"*. The `test_consent_text_does_not_promise_token_totals` pin FLIPS
+honestly and enumerating ALL THREE roles: *"token totals for your own model
+calls (extraction, answering, and memory maintenance) — only when you opt
+into metering"*. The `test_consent_text_does_not_promise_token_totals` pin FLIPS
 in the same commit to its two-sided form: the text mentions tokens **iff**
 the fields are whitelisted and populated (both now true) — the gate keeps
 biting in both directions.
@@ -216,7 +220,8 @@ Release class: **stable** — every named regime has a CI-reachable test.
 | invariant | executable check | where it runs |
 |---|---|---|
 | I1 — metering changes no stored byte and no decision: identical sequences metered vs unmetered produce identical stores and answers | `test_metering_is_decision_invisible` | CI |
-| I2 — **no counter → no token telemetry**: character accounting never enters the payload under any field name | `test_no_counter_sends_no_token_fields` | CI |
+| I2 — **no counter → no token telemetry**: character accounting never enters the payload under any field name (all six fields) | `test_no_counter_sends_no_token_fields` | CI |
+| I2b — **the payload is COMPLETE over the roles (v2)**: every `Complete` role (distill, compile, gate) has its in/out pair whitelisted and populated; a role added to `llm/base.py` breaks this test until the payload decision is remade | `test_token_payload_covers_every_role` | CI |
 | I3 — delta validity is closed: non-negative int (bool excluded) per delta; garbage/raising counters and malformed `totals()` record nothing and never raise into the operation | `test_garbage_counter_records_nothing_and_never_raises` + `test_totals_shape_mismatch_is_ignored` | CI |
 | I4 — consent v3 gating: v1/v2-consented installs never accumulate the token fields; the v2→v3 live-carrier transition sends only post-acceptance values | `test_v2_consent_strips_token_fields` + `test_v2_to_v3_transition_through_a_live_memory_carrier` | CI |
 | I5 — the consent-text pin is two-sided: "token" appears in `CONSENT_TEXT` iff the token fields are whitelisted AND populated | the FLIPPED `test_consent_text_token_mention_matches_the_payload` (replaces the one-sided pin, same file) | CI |
@@ -296,10 +301,13 @@ Release class: **stable** — every named regime has a CI-reachable test.
 
 ## 10. Open questions
 
-1. **Should the `answer` event also carry `compile`-role tokens** (the wiki
-   recompile cost), or stay scoped to the four restored fields? Restoration
-   scope says the four; the compile role is the actually-expensive one.
-   **Decides: research (payload width is a consent claim). Class: blocking.**
+1. ~~Payload width~~ — **PRELIMINARILY RULED (research, 2026-08-11, to be
+   confirmed in their full internal review): COMPLETE, not
+   restoration-scoped** — the compile role joins (`recall.compile_in_tok`/
+   `compile_out_tok`); a "token usage" payload omitting the most expensive
+   role misleads by omission. Feasibility confirmed: compile is a
+   first-class wrapper role; no separate metering path needed. Folded in
+   v2; the full review confirms or amends.
 2. **Persisted per-user usage** (durable history, `forget_user` integration,
    SCHEMA bump) — wanted? **Decides: Quentin, on demand. Class: deferred.**
 3. **Should `selfcheck --push` include usage** when metered? **Decides: dev
