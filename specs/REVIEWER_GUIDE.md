@@ -77,7 +77,7 @@ crossing the store. Trust classes thread through all of it.
   foreign file is refused rather than silently "fixed."
 - **`store/migration.py`** (`specs/0013`) — offline, additive, forward migrations
   (`migrate_store()`), one step per version, each revalidated against the head schema before
-  commit. `SCHEMA_VERSION` is currently **5**.
+  commit. `SCHEMA_VERSION` is not restated here — read it from `src/veracium/store/schema_version.py` (`SCHEMA_VERSION`); a number frozen in this guide goes stale (round-2 bin-(b), 0015).
 
 ### Read path
 - **`graph.subgraph_for_query`** → **`gate.py`** (abstention: what may be asserted; the gate
@@ -93,7 +93,7 @@ crossing the store. Trust classes thread through all of it.
 
 ### Portability & source identity
 - **`portability.py`** — export/import across a trust boundary. An export is *data*, not
-  authority; import treats the file as untrusted. `FORMAT_VERSION` is currently **4**.
+  authority; import treats the file as untrusted. `FORMAT_VERSION` is not restated here — read it from `src/veracium/portability.py`; a number frozen in this guide goes stale (round-2 bin-(b), 0015).
 - **`source_identity.py`** (`specs/0006`) — the canonical `source_identity_digest` primitive
   and `resolve_origin` chokepoint; the durable per-store `store_identity` origin.
 
@@ -135,15 +135,16 @@ a derived view whose inputs are already guarded.)
 | 0003 | supersession authority (the ladder) | **accepted, shipped 0.6.0** |
 | 0004 | derived views must not outlive a revoked trust decision | draft |
 | 0005 | import has no trust boundary | draft |
-| 0006 | source identity — `(origin, source_id)` | **accepted, implemented (unreleased)** |
+| 0006 | source identity — `(origin, source_id)` | **accepted, shipped 0.7.0** |
 | 0007 | on-disk store schema versioning | **accepted, shipped 0.5.0** |
 | 0008 | what may clear `needs_confirmation` | **accepted, shipped 0.5.0** |
 | 0009 | outcome authorship is append-only history | **accepted, shipped 0.5.0** |
 | 0010 | crash-safe consolidation | **accepted, shipped 0.5.0** |
 | 0011 | subject-scoped entitlement | draft (2 blocking Qs) |
-| 0012 | who may renew a fact's currency | draft (Design-1 ruled) |
+| 0012 | who may renew a fact's currency | **accepted, implemented** |
 | 0013 | on-disk store migrations | **accepted, shipped 0.5.0** |
-| 0014 | maintenance attribution (a consumed contributor must leave a record) | draft |
+| 0014 | maintenance attribution (a consumed contributor must leave a record) | **accepted, implemented** |
+| 0015+ | (see `specs/STATUS.md` — the generated index is the live authority; this table is a snapshot and `STATUS.md` wins on any disagreement) | — |
 
 ### The mechanical gates (`tests/test_spec_gate.py`, ~59 tests)
 The process is enforced by tests, not vigilance. The ones a reviewer should know:
