@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v6 — *re-read before editing; quote the version you approve*. v5→v6: EXTERNAL ROUND 3 (4 bin-(a), three IN prior folds, classified first): R3-1 class C found-in-fix of R2-1 (recurse-the-property) — adoption modeled only `schema_version` when consent is the TUPLE (enabled, version), so revoked-period events flushed after re-enable, with an ABA blind spot → a persisted MONOTONIC CONSENT EPOCH; any epoch mismatch at adoption DISCARDS pending aggregates; the enabled→disabled→record→re-enabled carrier test proves no revoked-period data is ever sent; R3-2 class C — the None-collector state cannot adopt a later opt-in → RESTART is ruled the activation boundary for disabled starts (fail-closed under-collection, stated in §4/§5/§8); R3-3 class D + a PROCESS §4 violation (amendments by search, not memory) — four live carriers still stated the withdrawn CLI/persistence claims → all swept, and the withdrawn phrasings enter the `withdrawn_phrases.py` registry so the check is mechanical; R3-4 class C — the "TOTAL" table omitted the reachable existing-config `prompt_consent` no-op row → added + I13 case. Bin (b): the header round-history and §9 refreshed. v4→v5: round 2 (R2-1..R2-5 + blocker). F2/F3/error-surface closures stand |
+| **Version** | v7 — *re-read before editing; quote the version you approve*. v6→v7: EXTERNAL ROUND 4 (3 bin-(a), all in the round-3 fold, classified first): R4-1 classes A+C found-in-fix of R3-1 — the epoch had no ATOMIC increment (unlocked load→mutate→save can mint duplicate epochs) and no flush linearization (a stale snapshot posts past a mid-flight disable) → locked CAS transitions (epoch bumps iff the persisted pair actually changes, under an exclusive lock, temp+rename), a pre-send epoch RECHECK at the flush boundary, and the residual window NARROWED and stated (a POST already past its final recheck may complete; its contents were all recorded under admitted consent); adversarial concurrent-disable + duplicate-epoch tests (I17); R4-2 classes D+F+G — `consent_epoch` was carrier-incomplete in the spec's OWN tables and §7's "ONE persisted value"/rollback claims were false (the shipped v1 loader reads a v2 config as disabled defaults — probed) → full epoch contract (§2 row, validity predicate: non-negative int else 0, transition-table epoch column, I16 extended), §7 corrected to TWO persisted values, rollback stated honestly (a v1 build fails closed to disabled — under-collection, never misreading); R4-3 classes D+E — the restart ruling was CLAIMED propagated and was not → §5 cold-vs-warm corrected, §8 discloses delayed activation, I8 NAMES both carrier regressions. Reviewer endorsements recorded: blunt discard correct; planner-redundancy and embedded-host under-collection not defects |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec). Round 1 (v3): 3 bin-(a) → v4. Round 2 (v4): 5 bin-(a) + package blocker → v5. Round 3 (v5): 4 bin-(a) (three in prior folds) + 2 bin-(b) → v6 = the round-4 resubmission |
+| **External review** | required (full spec). R1 (v3): 3 → v4. R2 (v4): 5 + blocker → v5. R3 (v5): 4 → v6. R4 (v6): 3, all in the R3 fold, no blocker → v7 = the round-5 resubmission |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -80,6 +80,7 @@ contracts are in-memory/interface carriers:
 | `remember()` return dict | written: same two keys pass through on the **host-API path only** | public API return; the MCP `remember` tool (`mcp_server.py:64`) **strips both keys** before returning to the model caller — a per-write count is a supersession oracle (§3b), and the model must not see it | `cli.py:184-189` consumes the dict but prints its own fixed summary ("remembered: N facts, M quarantined") — **CLI OUTPUT IS UNCHANGED by this spec (R2-3)**; `selfcheck.py:71`; tests | yes — additive for the host-API caller only; CLI text and the untrusted MCP view both unchanged (§6 I11) |
 | `apply_supersession()` return | `None` → `SupersessionCounts` | docstring says nothing about a return today | sole caller `ingest.py:204` (verified §2c-ii) | yes — every existing caller ignores the value |
 | `EVENT_FIELDS["ingest"]` | written: re-add the two names | "whitelist of scalar fields per event; anything not listed is silently dropped" | `Collector.record/snapshot` (`telemetry.py:117-140`), `tests/test_telemetry_claims.py` (fails on any whitelisted-but-unpopulated field) | yes — both fields are populated by this change, which is what the test demands |
+| **`TelemetryConfig.consent_epoch` (NEW, R4-2)** | persisted; bumped by every real consent transition under the lock | none today — new field | `adopt_consent` (mismatch → discard), the pre-send recheck, `load()` (invalid → 0), the v1 loader (unknown key → whole-config disabled defaults on rollback) | new contract, fully stated in §4; I16/I17 |
 | `TelemetryConfig.schema_version` | read+**persisted** (R2-5): gains a second meaning, written to `telemetry.json` on affirmative acceptance | today: payload format stamp only | `preview()` payload; `load()`/`save()`; `Collector` (holds it; `adopt_consent`) | **changed** — it becomes the **consented** schema version (§4), persisted as the cross-restart consent carrier; disable does NOT erase it; enforced by I8/I13/I16 |
 | `CONSENT_TEXT` | written: enumeration extended | the consent claim; `test_telemetry_claims.py` pins that it may not over-claim | `prompt_consent()`, telemetry CLI | yes — text and payload move together in this change |
 
@@ -297,6 +298,37 @@ discard, then adopt. The carrier test: a long-lived `Memory` runs
 enabled→disabled→record→re-enabled→flush and NO disabled-period field or
 event count is sent (I8).
 
+**Concurrency (R4-1) — the epoch's own linearization:** every consent
+transition is a **locked compare-and-set**: acquire an exclusive lock
+(lockfile beside `telemetry.json`), reload, apply the change, **bump the
+epoch iff the persisted (enabled, schema_version) pair actually changed**
+(idempotent calls do not bump), write temp + rename, release. Two racing
+transitions therefore serialize and mint DISTINCT epochs — the
+duplicate-epoch mint is structurally closed. The flush boundary: after
+building the payload, `flush_if_due` **re-loads the config under the lock
+immediately before POST**; epoch ≠ adopted → discard, no send. **The
+residual window, stated rather than hidden:** a POST already past that final
+recheck when a disable lands may complete; its payload contains only
+increments recorded under admitted consent (record-time gating), so the
+narrow claim is: *no data recorded after a revocation is ever sent, and no
+send begins after a revocation is observable* — not "no packet ever crosses
+a revocation". Adversarial tests: concurrent-disable interleaving and the
+two-racers-distinct-epochs CAS test (I17).
+
+**The `consent_epoch` contract (R4-2):** persisted in `telemetry.json`
+beside `schema_version` (§7: TWO persisted values); **validity: a
+non-negative `int` (`bool` excluded); anything else — absent, `None`,
+string, float, container, negative — reads as 0**, which mismatches every
+live collector and therefore discards (fail-closed, I16 extended). A
+combined enable+stamp (the affirmative display flow) is ONE transition: one
+bump. Idempotent operations (re-enabling an enabled config, re-running
+`prompt_consent` over an existing file) change nothing and bump nothing.
+**Rollback, probed against the shipped v1 loader:** a v1 build reading a v2
+config containing `consent_epoch` hits the unknown-key whole-config discard
+and runs DISABLED with defaults — under-collection, never misreading;
+re-consent under the old build recreates a v1 config. Stated in §8; the old
+"rollback leaves nothing inconsistent" claim is withdrawn as too strong.
+
 **The absent-collector state (R3-2): RESTART is the activation boundary.**
 A process that started disabled has no collector (`load_collector_if_enabled
 → None`), and `flush_telemetry()`/`telemetry_preview()` return without
@@ -350,8 +382,10 @@ store is unrecoverable or touched.
   display outcome** (no / EOF / interrupt / non-interactive / fresh
   programmatic enable — each ends at version 1, per the §4 table). All are
   cheap unit fixtures.
-- **Cold vs warm:** no difference — counters are per-call derived values;
-  the weekly aggregation semantics are the existing `Collector`'s.
+- **Cold vs warm (R4-3): there IS a difference, and it is the restart
+  rule** — a warm `Memory` that started disabled keeps `telemetry=None` for
+  its lifetime; a restarted process constructs a collector under the new
+  consent. Delayed activation is disclosed in §8.
 
 Release class: **stable** — every named regime has a test in §6.
 
@@ -368,7 +402,7 @@ Release class: **stable** — every named regime has a test in §6.
 | I5 — reinforcement counts come from the planner branch, not plan shape: a plain accumulation commit counts `(0,0)` even though its plan is shape-identical | `test_accumulation_counts_zero_reinforcements` | CI |
 | I6 — the v2 outcome digest basis is unchanged: the pinned 0014 digest vectors still verify, and `SupersessionPlan` gained no field | pinned-vector tests in `test_0014_receipt_split.py` (existing) + `test_supersession_plan_fields_pinned` (asserts the exact field list) | CI |
 | I7 — whitelisted ⇒ populated (the `2767a35` gate) | `tests/test_telemetry_claims.py` (existing — starts passing for the re-added fields, keeps failing for any future aspirational field) | CI |
-| I8 — consent-version fail-closed **at RECORD time (F1)**, with the adoption lifecycle REAL (R2-1): `adopt_consent` is called at the named reload sites; the v1→v2 transition test runs **through a long-lived `Memory` carrier** (construct v1 → record → accept v2 via the display flow → the carrier's next flush adopts → record → flush sends only post-acceptance values); downgrade adoption discards gated aggregates | `test_v1_to_v2_transition_through_a_live_memory_carrier`, `test_downgrade_adoption_discards_gated_fields`, `test_gated_fields_never_accumulate_pre_consent`, `test_v1_consent_strips_new_fields`, `test_preview_is_what_flush_posts` | CI |
+| I8 — consent-version fail-closed **at RECORD time (F1)**, with the adoption lifecycle REAL (R2-1): `adopt_consent` is called at the named reload sites; the v1→v2 transition test runs **through a long-lived `Memory` carrier** (construct v1 → record → accept v2 via the display flow → the carrier's next flush adopts → record → flush sends only post-acceptance values); downgrade adoption discards gated aggregates; **the two R3 carrier regressions are NAMED on this surface (R4-3): `test_disabled_period_records_are_never_sent` (enabled→disabled→record→re-enabled→flush through a live `Memory`) and `test_disabled_start_activates_only_at_restart` (disabled-start→accept→record→flush sends nothing before restart)** | `test_v1_to_v2_transition_through_a_live_memory_carrier`, `test_disabled_period_records_are_never_sent`, `test_disabled_start_activates_only_at_restart`, `test_downgrade_adoption_discards_gated_fields`, `test_gated_fields_never_accumulate_pre_consent`, `test_v1_consent_strips_new_fields`, `test_preview_is_what_flush_posts` | CI |
 | I9 — content-free: the ingest payload contains only int/float/bool values under every fixture | `test_counters_are_content_free` | CI |
 | I10 — consent text and payload move together: `CONSENT_TEXT` mentions supersession/reinforcement iff the fields are whitelisted and populated | extend `test_telemetry_claims.py`'s existing text-pin | CI |
 | I11 — **the oracle is closed**: the MCP `remember` tool result contains neither `"supersessions"` nor `"reinforcements"` under every outcome (fresh supersession, reinforcement, accumulation, replay); the kept fields (`facts`, `quarantined`) are **byte-identical across a superseding, reinforcing, and accumulating write of the same shape** (co-invariance, not just key absence); AND the permission side: the host-API `remember()` return contains both keys | `test_mcp_result_carries_no_supersession_oracle` (incl. the co-invariance assertion) + `test_host_api_return_carries_counts` | CI |
@@ -376,7 +410,8 @@ Release class: **stable** — every named regime has a test in §6.
 | I13 — **only AFFIRMATIVE consent stamps (F2)**: every non-acceptance path — answer no, EOF, interrupt, non-interactive, fresh programmatic `set_enabled(True)` — ends at `schema_version=1`; the dataclass default is 1; the §4 transition table is exercised cell by cell | `test_only_affirmative_consent_stamps_current` (parametrized over every non-acceptance path) + `test_config_default_schema_version_is_1` | CI |
 | I14 — **both keys on EVERY successful terminal return of `ingest_event` (F3)**, including the unparseable early return, as int zeros; the host result, audit/telemetry recording, and the MCP strip all behave on that branch | `test_unparseable_return_carries_zero_counts` (asserts the host dict, the recorded event, and the MCP result on the parse-failure branch) | CI |
 | I15 — **`reset()` preserves consent (R2-2)**: reset clears aggregates only; the two-period sequence (record → flush+reset → record → flush) carries the new fields in BOTH periods exactly once each, and reset after a defaulted or argument-bearing construction neither downgrades the version nor raises | `test_reset_preserves_adopted_consent_two_periods` | CI |
-| I16 — **`schema_version` validity is a closed predicate (R2-4)**: positive int (bool excluded) ≤ current; every other shape — `None`, str, bool, float, container, 0, negative, over-current — reads as 1; an unknown config KEY fails closed to whole-config disabled defaults (the reproduced behaviour, documented) | parametrized `test_invalid_schema_version_reads_as_v1` + `test_unknown_config_key_fails_closed_whole_config` | CI |
+| I16 — **config validity is a closed predicate (R2-4 + R4-2)**: `schema_version` positive int (bool excluded) ≤ current else 1; **`consent_epoch` non-negative int (bool excluded) else 0 (mismatches every collector → discard)**; an unknown config KEY fails closed to whole-config disabled defaults | parametrized `test_invalid_schema_version_reads_as_v1` + `test_invalid_consent_epoch_reads_as_0` + `test_unknown_config_key_fails_closed_whole_config` | CI |
+| I17 — **the epoch is concurrency-safe (R4-1)**: two racing transitions serialize under the lock and mint DISTINCT epochs; a disable landing before the pre-send recheck suppresses the send; the residual post-recheck window carries only admitted-consent increments | `test_racing_transitions_mint_distinct_epochs` + `test_concurrent_disable_suppresses_send_at_recheck` | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -395,12 +430,13 @@ test beside these.
   supersession count a test failure, not a telemetry mystery) and I5
   (the branch-classification pin).
 - **Over-count risk:** replays or retries double-counting — pinned by I2/I3.
-- **Reversibility:** the memory store is untouched. The ONE persisted value
-  is `telemetry.json`'s `schema_version` (R2-5): disabling telemetry stops
-  all sending but does not erase the recorded consent version; a host that
-  wants the consent record gone deletes the config file. A rollback to v1
-  code leaves nothing inconsistent (old code ignores `schema_version` beyond
-  the payload stamp).
+- **Reversibility:** the memory store is untouched. **TWO values persist in
+  `telemetry.json` (R2-5 + R4-2): `schema_version` and `consent_epoch`** —
+  disabling stops all sending but erases neither; a host that wants the
+  consent record gone deletes the config file. **Rollback to v1 code (probed, R4-2): the v1 loader hits `consent_epoch`
+  as an unknown key and fails closed to whole-config disabled defaults** —
+  telemetry silently OFF until re-consent under the old build;
+  under-collection, never misreading.
 - **Partial failure:** `_record` already swallows telemetry and audit-sink
   exceptions (`__init__.py:104-113`); an exception inside `apply_supersession`
   propagates exactly as today, with nothing recorded for the failed call —
@@ -447,6 +483,10 @@ test beside these.
   memory working as designed, and is not closable without breaking recall.
   A review that finds the residual recall signal has found v0's designed
   behaviour, not an incomplete fix.
+- **Delayed activation (R3-2/R4-3), disclosed:** a process that started
+  with telemetry disabled does not begin collecting when consent is granted
+  mid-run — activation happens at the next process start. The changelog
+  carries this sentence.
 - **Measurements:** none cited — no numbers appear in this spec.
 
 ---
