@@ -247,4 +247,14 @@ WITHDRAWN = [
      r"the full 400.row",
      "the product follows the SHIPPED enum; 400 assumed a class that does not exist",
      "specs/ladder.py"),
+    # ---- 0015 (round 3): the R2-3/R2-5 withdrawn claims survived in four
+    # unswept carriers (R3-3) — exactly this registry's founding failure shape.
+    ("0015-cli-gains-counters",
+     r"CLI (`?remember`? )?(output|returns?) (gains?|keeps?) (the )?(two|both)|CLI (operator|caller)( sees| and .{0,30}sees)? the (counts|counters|two int)",
+     "R2-3/R3-3: CLI output is UNCHANGED — cli.py prints its fixed summary; the counters reach the host-API return only",
+     "specs/0015 §2/§4"),
+    ("0015-nothing-persisted",
+     r"nothing persisted changes|(change|spec) persists nothing|nothing is persisted \(",
+     "R2-5/R3-3: telemetry.json's schema_version (and consent_epoch) ARE persisted consent; claims are scoped to the MEMORY store",
+     "specs/0015 §2/§4/§7"),
 ]

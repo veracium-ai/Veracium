@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v5 — *re-read before editing; quote the version you approve*. v4→v5: EXTERNAL ROUND 2 (5 bin-(a) + package blocker + 2 bin-(b), classified first): R2-1 class A, found-in-fix of R1-F1 — the record-time gate assumed an adoption operation no call site performs → `adopt_consent()` specified with every call site, both directions (downgrade discards), I8 through a long-lived carrier; R2-2 class C — the collector lifecycle matrix missed `reset()` → reset clears aggregates and PRESERVES consent, two-period test (I15); R2-3 class G — the spec claimed a CLI output change that does not exist → CLI output ruled UNCHANGED, row corrected; R2-4 class C+F — consent-response row added, the false extra-keys cell corrected to the reproduced whole-config fail-closed discard, "invalid" defined + parametrized (I16); R2-5 class D — "nothing persisted" contradicted the persisted consent version → claims scoped to the MEMORY STORE. Package reseal: two-copy build, zero cache members asserted mechanically. F2/F3/error-surface closures stand |
+| **Version** | v6 — *re-read before editing; quote the version you approve*. v5→v6: EXTERNAL ROUND 3 (4 bin-(a), three IN prior folds, classified first): R3-1 class C found-in-fix of R2-1 (recurse-the-property) — adoption modeled only `schema_version` when consent is the TUPLE (enabled, version), so revoked-period events flushed after re-enable, with an ABA blind spot → a persisted MONOTONIC CONSENT EPOCH; any epoch mismatch at adoption DISCARDS pending aggregates; the enabled→disabled→record→re-enabled carrier test proves no revoked-period data is ever sent; R3-2 class C — the None-collector state cannot adopt a later opt-in → RESTART is ruled the activation boundary for disabled starts (fail-closed under-collection, stated in §4/§5/§8); R3-3 class D + a PROCESS §4 violation (amendments by search, not memory) — four live carriers still stated the withdrawn CLI/persistence claims → all swept, and the withdrawn phrasings enter the `withdrawn_phrases.py` registry so the check is mechanical; R3-4 class C — the "TOTAL" table omitted the reachable existing-config `prompt_consent` no-op row → added + I13 case. Bin (b): the header round-history and §9 refreshed. v4→v5: round 2 (R2-1..R2-5 + blocker). F2/F3/error-surface closures stand |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec). Round 1 (v3, 2026-08-11): RETURN FOR AMENDMENT, 3 bin-(a) — F1 record-time consent gating, F2 the stamping transition table, F3 the second constructor site; the §9 error-surface question checked and CLOSED (no additional oracle). v4 = the round-2 resubmission |
+| **External review** | required (full spec). Round 1 (v3): 3 bin-(a) → v4. Round 2 (v4): 5 bin-(a) + package blocker → v5. Round 3 (v5): 4 bin-(a) (three in prior folds) + 2 bin-(b) → v6 = the round-4 resubmission |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -199,8 +199,9 @@ v2 replacement, and its enforcement is I11.*
   when opted in, an endpoint is configured, AND the consented version admits
   the fields (§4); (2) the host's audit sink — host-owned, user-scoped, and
   the host can already derive every count from its own store access; (3) the
-  host-API / CLI caller — a trusted principal with full store access, for
-  whom the counts reveal nothing it could not query. **The MCP model caller
+  host-API caller — a trusted principal with full store access, for whom
+  the counts reveal nothing it could not query (the CLI prints its fixed
+  summary and does not surface them — R2-3/R3-3). **The MCP model caller
   is the one recipient that could NOT previously derive them, and it is the
   one that does not receive them.**
 - **Scope change behaviour?** n/a — no sharing/revocation surface is
@@ -233,8 +234,9 @@ host-owned) — both named here so neither carrier is silent.
 **`mcp_server.py`** — the `remember` tool strips `"supersessions"` and
 `"reinforcements"` from the dict before returning it to the model caller
 (§3b: the per-write count is a supersession oracle; the model is the one
-recipient that could not previously derive it). The host-API and CLI returns
-keep both keys.
+recipient that could not previously derive it). The host-API return keeps
+both keys; the CLI consumes the dict but prints its fixed summary, unchanged
+(R2-3/R3-3).
 
 **`telemetry.py`** (not guarded) — `EVENT_FIELDS["ingest"]` re-adds the two
 names; the explanatory comment block from `2767a35` is updated to record that
@@ -274,21 +276,37 @@ the affirmative cell stamps the current version:**
 | CLI explicit enable (prints the text, affirmative) | accepted | True | **current (2)** |
 | existing config + programmatic `set_enabled(True/False)` | — | toggled | **unchanged** (I12) |
 | no file + programmatic `set_enabled(True)` | (nothing displayed) | True | **1** — the fresh-programmatic cell F2 named; the floored default is what makes it safe |
+| **existing config (any version) + `prompt_consent()`** | idempotent return — **no display, no prompt** | unchanged | **unchanged** — the reachable no-op row R3-4 named; an existing v1 install is NOT upgraded by a later prompt call (upgrade happens only through an explicit re-display flow) |
 
-**The adoption operation (R2-1) — the mechanism R1-F1's fold assumed without
-naming:** `Collector.adopt_consent(version)` updates the version the record
-gate binds against. **Call sites, enumerated:** `flush_if_due()` and
-`preview()` call it at entry with the version of the config they were handed
-(both already reload config today — adoption rides the existing reload
-points, no new lifecycle); `load_collector_if_enabled()` constructs with the
-loaded config's version. **Upgrade (v1→v2):** already-accumulated aggregates
-are untouched (everything in them was admitted when recorded); new fields
-begin accumulating from the adoption point. **Downgrade (any lower version —
-e.g. a hand-restored older config):** accumulated fields above the newly
-adopted version are DISCARDED at adoption — fail-closed, never flushed under
-a consent that does not admit them. A long-lived process therefore adopts v2
-at its next flush/preview; I8's test runs through a long-lived `Memory`
-carrier end-to-end, never by mutating a collector attribute directly.
+**The adoption operation (R2-1, rebuilt by R3-1): consent is the TUPLE
+(enabled, schema_version), carried by a persisted MONOTONIC EPOCH.**
+`TelemetryConfig` gains `consent_epoch: int` (persisted; absent reads as 0),
+incremented by EVERY consent-state change — enable, disable, and each stamp.
+The `Collector` records the epoch it was constructed/last adopted under.
+`flush_if_due()` and `preview()` call `adopt_consent(config)` at entry (the
+existing reload points; `load_collector_if_enabled()` constructs with the
+loaded config): **if the config's epoch differs from the collector's — in
+ANY way, including the ABA case where disable→re-enable lands back on the
+same (enabled, version) pair — the accumulated aggregates are DISCARDED
+before adoption.** Fail-closed by construction: an intervening transition
+means some records may have been made under a revoked or narrower consent,
+the aggregate cannot be split after the fact, so revocation discards pending
+aggregates entirely. A same-epoch upgrade cannot exist (stamping bumps the
+epoch), so the old upgrade/downgrade field rules are subsumed: any change →
+discard, then adopt. The carrier test: a long-lived `Memory` runs
+enabled→disabled→record→re-enabled→flush and NO disabled-period field or
+event count is sent (I8).
+
+**The absent-collector state (R3-2): RESTART is the activation boundary.**
+A process that started disabled has no collector (`load_collector_if_enabled
+→ None`), and `flush_telemetry()`/`telemetry_preview()` return without
+loading config when `self.telemetry is None` — a later acceptance therefore
+takes effect at the next process start, never mid-process. Ruled and stated
+(here, §5, §8, changelog) rather than patched: the alternative — a live
+None→enabled transition — would need every `_record` site to re-check
+config, and the fail-closed cost of the restart rule is under-collection
+only. The disabled-start→affirmative-v2→record→flush regime asserts nothing
+is collected or sent before restart (I8).
 
 **`reset()` (R2-2):** clears aggregates only and PRESERVES the adopted
 consent version — it must not re-run the constructor. The two-period rule:
@@ -301,11 +319,14 @@ only). `CONSENT_TEXT` extends its enumeration ("…how often facts are
 extracted, claims quarantined, values superseded or reinforced, and answers
 abstained…").
 
-**Interfaces:** the host-API `remember()` return dict and the CLI `remember`
-output gain the two int keys — additive; **the MCP `remember` tool result
-does NOT** (§3b, I11). No export or store format change. **Migration:** none
-— nothing persisted changes; v1-consented configs keep working and simply
-send the v1 field set. Nothing is unrecoverable.
+**Interfaces:** the host-API `remember()` return dict gains the two int keys
+— additive; **CLI output is UNCHANGED** (its fixed summary, R2-3) and **the
+MCP `remember` tool result does NOT carry them** (§3b, I11). No export or
+memory-store format change. **Migration:** none for the memory store;
+`telemetry.json` gains `consent_epoch` (absent reads as 0) and its
+`schema_version` remains the persisted consent carrier (R2-5) — both survive
+disable and are erased only by deleting the file. Nothing in the memory
+store is unrecoverable or touched.
 
 ---
 
@@ -391,7 +412,7 @@ test beside these.
   indirect-injection attacker could have used the model to read back "did my
   injected claim conflict with existing memory". Closure: the MCP result
   omits both keys (I11). What remains is two ints flowing to principals that
-  can already derive them (host, CLI operator) and a class-blind weekly
+  can already derive them (the host-API caller) and a class-blind weekly
   aggregate — no non-user content can influence stored state, recall
   selection, or rendered context through any of it. **Timing boundary,
   stated so it is explicit rather than silent:** supersession does extra
@@ -439,11 +460,13 @@ test beside these.
   an op-id collision normal MCP writes cannot select; `PLAN_STALE` exhaustion
   exposes concurrency, not the prior value — and those paths predate this
   spec). Recorded here so round 2 does not re-litigate it.
-- **Least sure of, one:** the **temporal consent rule's process model** —
-  record-time gating binds a field to the consent the collector held when the
-  event happened; a long-lived process adopts v2 only when it reloads config.
-  Is "reload point" crisp enough, or does the spec need to name the exact
-  reload sites?
+- **Least sure of, one:** the **epoch discard rule's bluntness** — any
+  consent transition discards ALL pending aggregates, including fields the
+  old and new consent both admit. That is deliberately fail-closed (an
+  aggregate cannot be split by when its increments happened), but it
+  under-reports around every consent change; if you see a sound way to keep
+  provably-always-admitted fields, we would take it — and if not, say the
+  bluntness is right.
 - **Least sure of, two:** the claim that a **committed reinforcement plan is
   structurally indistinguishable from accumulation** rests on today's plan
   shape (§2c-ii last row). If a future spec adds a distinguishing persisted
@@ -459,7 +482,7 @@ test beside these.
 - **What would change our minds:** if the reviewer finds any path where the
   counts differ from the committed store facts (an I4 violation we didn't
   enumerate), the counting moves from the planner into the store layer and
-  this spec gets a v3 with a different §1 trade-off.
+  this spec gets a successor version with a different §1 trade-off.
 - **Reviewer-safe copy:** not needed — no competitive-audit detail or
   unpublished findings appear here.
 
