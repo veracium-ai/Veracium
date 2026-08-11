@@ -7,6 +7,29 @@ from veracium import Memory, EvidenceAuthor
 mem = Memory(llm=your_complete_callable)   # see api.md → Providing an LLM
 ```
 
+## Add your own relations (the registry is host-extensible)
+
+The extractor's vocabulary is `MemoryConfig.relations` — a dict of
+`Relation(name=..., functional=..., desc=...)`. `functional=True` means one
+current value per subject: a new value supersedes the old (history kept),
+which is what you want for changing quantities. The built-in `measures`
+relation covers weight/progress/balance-shaped facts; add domain relations
+the same way:
+
+```python
+from veracium import Memory, MemoryConfig, Relation
+from veracium.schema import DEFAULT_RELATIONS
+
+rels = dict(DEFAULT_RELATIONS)
+rels["assigned_ticket"] = Relation(
+    name="assigned_ticket", functional=True,
+    desc="the ticket the user is currently working on — one at a time")
+mem = Memory(llm=your_complete_callable, config=MemoryConfig(relations=rels))
+```
+
+The gloss (`desc`) is what the extractor sees — write it for the model, and
+keep names non-confusable with the built-ins.
+
 ## Quarantine content your agent merely read
 
 ```python

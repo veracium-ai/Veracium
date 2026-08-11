@@ -195,6 +195,10 @@ DEFAULT_RELATIONS: dict[str, Relation] = {
         Relation(name="has_diet", desc="dietary practice or restriction"),
         Relation(name="works_as", functional=True,
                  desc="the user's employment — employer and/or role; use for jobs"),
+        Relation(name="measures", functional=True,
+                 desc="a changing quantity with one current value — weight, "
+                      "reading progress, savings balance, score; the number "
+                      "updates, history is kept"),
         Relation(name="prefers", functional=True,
                  desc="a standing preference, one current value"),
         Relation(name="located_at", functional=True,
