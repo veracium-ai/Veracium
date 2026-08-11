@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v2 — *re-read before editing; quote the version you approve*. v1→v2: research's constructor-sweep correction folded — the write-site count is TEN, not nine: `sqlite.py:1143-1147`'s `model_copy(update={"source_type": ...})` is a write no `Provenance(`-form grep catches (0015 F3 generalized: a construction site is any WRITE, including `model_copy(update=)`); §2c-ii now sweeps BOTH forms and D2 drops the update key. v1 built on the stage-1 proposal (`proposals/0016-proposal.md`) and research's scope adjudication (`proposals/0016-scope-adjudication.md`, 2026-08-11): scope accepted; §4.1 unforgeability rides the freeze; the receipt schema-version stamp is REQUIRED; the redundancy argument recorded |
+| **Version** | v3 — *re-read before editing; quote the version you approve*. v2→v3: research's forward-lens addition folded pre-review — **the migration-boundary transition**: the two-way stamp partition (`<7` benign / `=7` integrity) is sound only if `committed_schema` is TOTAL over ops — every op fully-6 or fully-7, never straddling the v6→v7 ALTER. Designed in: the migration is ATOMIC w.r.t. receipt writes (the 0013 offline contract quiesces callers; additionally the ALTER and the stamp backfill commit in ONE transaction, and a receipt write observing a mid-migration schema is impossible by construction — asserted by a boundary test). This is 0015's transitions-vs-states lens applied before the external round could find it. v1→v2: the tenth write site (`model_copy(update=)`) | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; full-spec internal review pending |
 | **External review** | required (full spec — touches `schema.py`, `ingest.py`, `__init__.py`, `store/sqlite.py`, `portability.py`, `lifecycle.py`); not yet sent |
@@ -171,6 +171,15 @@ CHANGELOG names D2's release.
   (pre-removal), new receipts write 7. The ALTER-path DDL literal is authored
   empirically and sha-pinned per the 0013/0014 convention, with the stored-DDL
   byte check in the migration.
+- **The migration boundary is an ATOMIC TRANSITION (the 0015
+  transitions-vs-states lens, applied in advance):** `committed_schema` is
+  TOTAL over operations — every receipt is fully-6 (written before the
+  migration, stamped by the ALTER's DEFAULT) or fully-7 (written after),
+  never straddling. Mechanism: 0013 migrations are offline with quiesced
+  callers, AND the ALTER + backfill commit in one transaction, so no receipt
+  write can observe a mid-migration schema; `test_no_receipt_straddles_the_
+  v7_boundary` asserts it. Without this, a boundary op with an ambiguous
+  stamp would be mis-classified by the partition below.
 - **Phase-1/2 receipt behaviour at the boundary:** stamp `< 7` + any digest
   mismatch → **`ReceiptSchemaBoundaryError`** — named, fail-closed, message
   states the op committed under a prior schema and is not replay-verifiable
