@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.7.0 — 2026-08-11
+
+> **Upgrade recommended for consumers ingesting third-party content**: this release
+> ships `specs/0006` source identity and `specs/0014` maintenance attribution —
+> trust-surface improvements that make third-party contributions durably attributable
+> and revocation-joinable. One offline `migrate_store()` call advances a v3/v4/v5
+> store to schema v6; an older build refuses a v6 store rather than misreading it.
+
 - **Maintenance attribution — a consumed contributor now leaves a recoverable record**
   (`specs/0014`, accepted after 16 external review rounds + implemented). When maintenance
   consumes a contributor — absorption folding a duplicate into a more specific restatement, or
