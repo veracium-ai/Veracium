@@ -9,11 +9,17 @@ Veracium can send anonymous usage statistics to help improve the library. It is
 
 | event | fields |
 |---|---|
-| ingest | facts, quarantined, episodes, (distill token/latency totals) |
-| recall | wiki_used, subgraph_edges, grounded_items, unverified_items |
-| answer | abstained (bool), (gate token/latency totals) |
+| ingest | facts, quarantined, episodes, unparseable, latency (ms) |
+| recall | wiki_used, subgraph_edges, grounded_items, unverified_items, trimmed, latency (ms) |
+| answer | abstained (bool), latency (ms) |
 | maintain | lapsed, decayed, flagged, consolidated_in/out |
 | selfcheck | pass/fail scores on synthetic data |
+
+Token counts are **not** collected — `Complete` returns a bare string, so the
+library cannot see usage (`veracium` never owns credentials or model choice).
+Hosts that want token accounting wrap their callable with the opt-in
+`veracium.llm.metered.Metered` and read `totals()` themselves; those numbers
+stay host-side and never enter this payload.
 
 Each weekly payload is these summed counters, a random **install id**, and the
 period — nothing else.
