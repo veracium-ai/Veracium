@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+- **Maintenance attribution — a consumed contributor now leaves a recoverable record**
+  (`specs/0014`, accepted after 16 external review rounds + implemented). When maintenance
+  consumes a contributor — absorption folding a duplicate into a more specific restatement, or
+  consolidation compacting cold episodes into a summary — the store now writes a durable,
+  content-free `contribution_ledger` row in the SAME transaction: who was consumed (as
+  domain-separated digests of the resolved source identity and evidence reference — never raw
+  refs), into which survivor, at which site, with a store-derived payload recording the exact
+  values consulted (total at every site — a stale-but-corroborating input that moves nothing is
+  still recorded, closing the invisible-contribution path). Reversal is RE-COMPUTATION over the
+  recorded values; `revoke_source` gains its blast-radius join (`contributors_of_source`).
+  - **The supersession receipt splits into request and outcome identity**: public
+    `apply_supersession` now performs a pre-plan receipt lookup and a lost-response retry
+    REPLAYS the persisted effects instead of raising (a live defect executed during review);
+    the request digest is STORE-derived from a complete raw-request snapshot under a frozen
+    byte-exact construction with pinned test vectors, verified against the plan by an
+    exhaustive field partition with store-level per-field abort oracles; the
+    concurrent-preflight loser replays, never conflicts.
+  - **Consolidation outputs gain durable identity**: `Episode.consolidation_output_index`,
+    store-assigned only (caller-supplied values refused); exported per the exclude-none rule.
+  - ⚠️ **`SCHEMA_VERSION` v5→v6** — the ledger table + three indexes AND the repo's first
+    ALTER of an existing table (`supersession_operations` gains `request_digest`, `response`,
+    `outcome_digest_version NOT NULL DEFAULT 1`); `MANIFESTS[6]` accepts BOTH the constructor
+    and the reviewed ALTER-path manifest per `0013` §4e (the ALTER-path DDL is an
+    independently authored reviewed constant the migration must byte-match). Migrated
+    receipts read version 1 (legacy semantics preserved honestly); new receipts stamp 2.
+  - ⚠️ **`FORMAT_VERSION` 4→5** — exports carry the output index; older importers refuse a
+    v5 file rather than dropping the field; v4 files stay accepted (a pre-v5 index field is
+    stripped, never trusted, per `0006` I10). Import enforces indexed-output identity against
+    destination state (tenant-scoped, origin-namespaced); a source-identical re-import
+    resolves idempotently.
+  - `specs/0003` §4f is amended in the same commit (the verbatim `0014` §7b text + eleven new
+    I9 checks). The round-16 bin-(b) obligation (carrier-verifier byte-vs-text exactness) is
+    dispositioned as the narrowed text-exact claim, recorded in the §12 acceptance ledger.
+
 - **Fact-currency renewal — a restatement can no longer silently renew a fact's currency**
   (`specs/0012`, accepted after 14 external review rounds + implemented; the implementation
   itself independently reviewed and ACCEPTED after 8 further rounds). Reinforcement now
