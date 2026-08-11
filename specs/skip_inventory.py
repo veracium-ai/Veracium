@@ -29,6 +29,13 @@ shipped inventory fails in the reviewer's own run.
 """
 
 INVENTORY = [
+    ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
+     "host-conditional", "the two 0015 lock-adapter tests run the POSIX kernel "
+                         "contract via independent processes; they skip on "
+                         "non-POSIX hosts (the Windows pair is a platform-gated "
+                         "implementation obligation per 0015 R9-4/R10-3)"),
+    ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
+     "host-conditional", "the death-release half of the same POSIX pair"),
     ("tests/test_mcp.py", "importorskip", "mcp",
      "optional-dependency", "the optional MCP SDK is absent"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",

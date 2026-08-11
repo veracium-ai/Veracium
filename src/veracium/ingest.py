@@ -170,7 +170,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
-        return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True}
+        return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True,
+                "supersessions": 0, "reinforcements": 0}
 
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.
@@ -182,7 +183,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   author_of_evidence=author, evidence_ref=evidence_ref,
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
 
-    n_facts = n_quarantined = 0
+    n_facts = n_quarantined = n_supersessions = n_reinforcements = 0
     for t in data.get("triples", []):
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
             continue
@@ -201,9 +202,12 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   disclosure=disclosure, derived_from=derived_from,
                                   source_id=source_id, observed_at=when),
             valid_from=when)
-        apply_supersession(store, edge, relations)
+        c = apply_supersession(store, edge, relations)
+        n_supersessions += c.superseded
+        n_reinforcements += c.reinforced
         if edge.quarantined:
             n_quarantined += 1
         else:
             n_facts += 1
-    return {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined}
+    return {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
+            "supersessions": n_supersessions, "reinforcements": n_reinforcements}

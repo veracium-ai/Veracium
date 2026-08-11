@@ -53,7 +53,10 @@ def test_enabled_but_no_endpoint_never_sends():
 def test_flush_when_due_sends_content_free_payload():
     cfg = T.set_enabled(True, endpoint="https://example/collect")
     captured = {}
-    c = T.Collector()
+    # specs/0015: collectors carry the consent they were constructed under —
+    # a mismatched epoch is deliberately discarded at adoption.
+    c = T.Collector(consent_epoch=cfg.consent_epoch,
+                    schema_version=cfg.schema_version)
     c.record("answer", {"abstained": True, "ms": 120})
     ok = T.flush_if_due(cfg, c, poster=lambda url, payload: captured.update(payload=payload, url=url))
     assert ok

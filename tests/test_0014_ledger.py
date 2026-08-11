@@ -122,7 +122,7 @@ def _plan_for_absorption(store, uid="u1"):
     winner = _edge(uid, "cat Miso", conf=0.9, observed=NOW,
                    eid=f"e-winner-{uid}")
     import uuid
-    plan = _build_supersession_plan(store, winner, DEFAULT_RELATIONS,
+    plan, _ = _build_supersession_plan(store, winner, DEFAULT_RELATIONS,
                                     f"op-{uuid.uuid4().hex[:8]}")
     assert plan.contribution_drafts, "fixture must reach the absorption branch"
     return plan

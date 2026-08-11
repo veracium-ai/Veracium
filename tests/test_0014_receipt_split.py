@@ -42,7 +42,7 @@ def _store(tmp_path):
 
 
 def _plan(store, edge, op_id=None):
-    p = _build_supersession_plan(store, edge, DEFAULT_RELATIONS,
+    p, _ = _build_supersession_plan(store, edge, DEFAULT_RELATIONS,
                                  op_id or f"op-{uuid.uuid4().hex[:8]}")
     p.raw_request = C.raw_request_snapshot(edge)
     return p
@@ -205,7 +205,7 @@ def test_new_snapshot_less_receipt_verifies_at_v2(tmp_path):
     contribution-field mutation CONFLICTS (the v2 projection sees it)."""
     store = _store(tmp_path)
     edge = _edge(eid="e-snapless")
-    plan = _build_supersession_plan(store, edge, DEFAULT_RELATIONS, "op-snapless")
+    plan, _ = _build_supersession_plan(store, edge, DEFAULT_RELATIONS, "op-snapless")
     plan.raw_request = None                                # snapshot-less
     r1 = store.apply_supersession_plan(plan)
     assert not r1.replayed
@@ -243,7 +243,7 @@ def test_concurrent_public_preflight_loser_replays(tmp_path):
     assert o1.invalidated == 1
     # T2 re-plans against POST-COMMIT state (the absorption already happened,
     # so its plan has nothing to invalidate — a legitimately different outcome)
-    t2 = _build_supersession_plan(store, winner, DEFAULT_RELATIONS, "sup-e-w2")
+    t2, _ = _build_supersession_plan(store, winner, DEFAULT_RELATIONS, "sup-e-w2")
     t2.raw_request = t2_snapshot
     o2_would_be_invalidated = len(t2.prior_invalidations)
     assert o2_would_be_invalidated == 0                     # O1 != O2, the race
@@ -266,7 +266,7 @@ def test_replay_returns_the_persisted_result_not_a_reconstruction(tmp_path):
     t1 = _plan(store, winner, "sup-e-w3")
     o1 = store.apply_supersession_plan(t1)
     assert o1.replayed is False and o1.invalidated == 1
-    t2 = _build_supersession_plan(store, winner, DEFAULT_RELATIONS, "sup-e-w3")
+    t2, _ = _build_supersession_plan(store, winner, DEFAULT_RELATIONS, "sup-e-w3")
     t2.raw_request = C.raw_request_snapshot(winner)
     assert len(t2.prior_invalidations) != o1.invalidated    # O1 != O2
     r = store.apply_supersession_plan(t2)

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **Opt-in telemetry can now report how often values are superseded and
+  reinforced** (accepted spec 0015) — the counters the consent dialog's
+  "aggregate counters" always intended. Counted at the planner from committed
+  results only; consent-gated at record time; stripped from the MCP tool
+  result (a per-write count is a supersession oracle). Installs that
+  consented before this version keep sending exactly the old field set until
+  telemetry is re-enabled against the updated consent text. A process that
+  started with telemetry disabled begins collecting at its next process start
+  after consent, not mid-run. Consent transitions are serialized under an
+  OS-exclusive lock with a persisted transition epoch; deleting
+  `telemetry.json` is the consent-erasure mechanism and is never undone by
+  telemetry code.
+
+## Unreleased
+
 ## 0.7.0 — 2026-08-11
 
 > **Upgrade recommended for consumers ingesting third-party content**: this release

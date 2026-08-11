@@ -61,9 +61,15 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
         raise ValueError(
             f"derived_from={derived_from!r} is not accepted. Use "
             f"{sorted(_AUTHOR)} or omit it.")
-    return mem.remember(user_id, text, author=_AUTHOR[author],
-                        event_type=event_type, date=date,
-                        derived_from=_AUTHOR[derived_from] if derived_from else None)
+    r = dict(mem.remember(user_id, text, author=_AUTHOR[author],
+                          event_type=event_type, date=date,
+                          derived_from=_AUTHOR[derived_from] if derived_from else None))
+    # specs/0015 §3b/I11: the per-write supersession/reinforcement counts are a
+    # SUPERSESSION ORACLE over prior store state; the model caller is the one
+    # principal that cannot otherwise derive them. Never in the tool result.
+    r.pop("supersessions", None)
+    r.pop("reinforcements", None)
+    return r
 
 
 def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,

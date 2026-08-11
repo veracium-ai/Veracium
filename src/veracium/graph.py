@@ -8,6 +8,8 @@ scored best).
 
 from __future__ import annotations
 
+from dataclasses import dataclass as _dataclass
+
 import re
 from datetime import datetime
 from typing import Optional
@@ -54,7 +56,19 @@ def _subsumes(longer: tuple[str, ...], shorter: tuple[str, ...]) -> bool:
     return all(t in it for t in shorter)
 
 
-def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> None:
+@_dataclass(frozen=True)
+class SupersessionCounts:
+    """specs/0015: the content-free per-call outcome summary. Computed ONLY
+    from a fresh commit (replays are zero — the work was not performed in
+    this call); `superseded` counts the committed plan's 'superseded'
+    invalidations; `reinforced` is 1 iff the PLANNER took the reinforcement
+    branch (the committed plan shape cannot distinguish it — I5)."""
+    superseded: int = 0
+    reinforced: int = 0
+    replayed: bool = False
+
+
+def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "SupersessionCounts":
     """Persist a new edge with supersession, reinforcement, and absorption:
 
     - Reinforcement (specs/0012, Design 1): if an active same-class edge already
@@ -118,7 +132,8 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
                 # committed op; NO re-planning occurs (the post-commit re-plan
                 # is never computed, so no outcome comparison can reject a
                 # legitimate lost-response retry — the R5-2 live defect closed).
-                return
+                # specs/0015 I2: a replay performs no work in THIS call.
+                return SupersessionCounts(replayed=True)
             # branch 2: a truly different resubmission reusing an op id
             raise SupersessionIntegrityError(
                 f"operation_id {op_id!r} already committed a DIFFERENT request "
@@ -127,11 +142,19 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> Non
         # identity UNAVAILABLE, never "different": continue to planning and
         # phase 2, where the version-selected outcome comparison governs.
     for _ in range(_MAX_PLAN_ATTEMPTS):
-        plan = _build_supersession_plan(store, edge, relations, op_id)
+        plan, is_reinforcement = _build_supersession_plan(store, edge, relations, op_id)
         plan.raw_request = snapshot
         result = store.apply_supersession_plan(plan)
         if result is not PLAN_STALE:
-            return
+            # specs/0015: count ONLY the committing attempt (I3); phase-2
+            # replays are zero (I2); classification comes from the planner
+            # branch + the plan's invalidation reasons, never plan shape (I5).
+            if result.replayed:
+                return SupersessionCounts(replayed=True)
+            return SupersessionCounts(
+                superseded=sum(1 for _, _, r in plan.prior_invalidations
+                               if r == "superseded"),
+                reinforced=1 if is_reinforcement else 0)
     raise RuntimeError(
         f"apply_supersession_plan kept returning PlanStale for edge {edge.id!r} after "
         f"{_MAX_PLAN_ATTEMPTS} attempts — the (user, subject, relation) scope is being "
@@ -142,7 +165,7 @@ _MAX_PLAN_ATTEMPTS = 16
 
 
 def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
-                             op_id: str) -> SupersessionPlan:
+                             op_id: str) -> tuple[SupersessionPlan, bool]:
     """Compute the plan for one incoming edge from a store read (specs/0003 §4f). Pure —
     it reads and returns a plan, it does not mutate; the Store applies it atomically."""
     same = _value_key(edge.object)
@@ -170,7 +193,7 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
         pk = _value_key(prior.object)
         if pk == same or _subsumes(pk, same):
             return SupersessionPlan(incoming_edge=edge, insert_incoming=True,
-                                    operation_id=op_id, expected_state=expected)
+                                    operation_id=op_id, expected_state=expected), True
 
     incoming = edge.model_copy(deep=True)
     upserts: list[Edge] = []
@@ -251,7 +274,7 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                             refusals=refusals,
                             contribution_drafts=contribution_drafts,
                             absorption_pre_image=(pre_image if contribution_drafts
-                                                  else None))
+                                                  else None)), False
 
 
 _STOP = {"the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on",

@@ -383,7 +383,10 @@ def main(argv=None) -> int:
         print("\nEnabled." if cfg.enabled else "\nLeft disabled.")
         _status(cfg)
     elif args.tcmd == "enable":
-        cfg = telemetry.set_enabled(True, endpoint=args.endpoint)
+        # specs/0015 I13: the CLI enable IS a display flow — the text is shown
+        # and acceptance stamps the current consent version.
+        print(telemetry.CONSENT_TEXT.rsplit("\n\n", 1)[0])
+        cfg = telemetry.accept_current_consent(endpoint=args.endpoint)
         note = "" if cfg.endpoint else "  (no --endpoint set → nothing sends until one is configured)"
         print("Telemetry enabled." + note)
     elif args.tcmd == "disable":

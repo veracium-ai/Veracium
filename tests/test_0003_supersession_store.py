@@ -137,7 +137,7 @@ def test_reinforcement_plan_persists_the_incoming(tmp_path):
     before = next(e for e in s.edges(U, active_only=True) if e.id == "p").model_dump()
     from veracium.graph import _build_supersession_plan
     from veracium.schema import DEFAULT_RELATIONS
-    plan = _build_supersession_plan(s, _edge("i", EvidenceAuthor.USER, "CFO"),
+    plan, _ = _build_supersession_plan(s, _edge("i", EvidenceAuthor.USER, "CFO"),
                                     DEFAULT_RELATIONS, "op")
     assert plan.insert_incoming is True and not plan.prior_upserts    # 0012 §4a
     res = s.apply_supersession_plan(plan)
