@@ -1,15 +1,15 @@
 # Feature spec: supersession / reinforcement telemetry counters
 
-Spec-Status: draft
+Spec-Status: accepted
 
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v13 — *re-read before editing; quote the version you approve*. v12→v13: EXTERNAL ROUND 10 (2 bin-(a) + 2 bin-(b); the R9-1 adapter constructions ACCEPTED at spec level): R10-1 classes A+C+F found-in-fix of R9-2 — retaining the collector's prior consent through an observed absent/malformed state permits consent ABA (delete → records accumulate under the retained v2/E → recreate/repair at the SAME epoch E → no mismatch → post-erasure records send) → the TOMBSTONE state: any observed absent/malformed, pre-authorization or post-POST, tombstones the collector (every subsequent record DROPPED; the tombstone equals no valid persisted epoch — it is a non-int sentinel, not epoch 0; recording resumes ONLY after a successful valid-config adoption); four named regressions (deletion→record→same-epoch-recreation and malformed→record→same-epoch-repair, each × pre/post-POST); R10-2 classes D+F — the v12 closures never reached I17 (still labeled v11) → I17 REWRITTEN around the v13 contract: the per-adapter independent-process live-holder + death-release tests, the absent/malformed post-return collector-state (tombstone) tests, and the complete preview status × enabled × due × endpoint matrix; R10-3 bin-(b) — the present-tense platform claim swept from §10/header/COLLECTED (future tense everywhere); R10-4 bin-(b) — the malformed Version row repaired. |
+| **Version** | v14 — **ACCEPTED 2026-08-11** (round 11: bin (a) empty; the acceptance surface is I1–I17). v14 = v13 + the two same-commit bin-(b) corrections the approval required (the external-review row completed through R10/R11; every present-tense POSIX evidence claim made a future implementation obligation — the round-9 probe verified the primitive's mode behaviour, not an unimplemented adapter). The construction is unchanged from v13. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
-| **External review** | required (full spec). R1:3 R2:5+blocker R3:4 R4:3 R5:3 R6:3 R7:4(consolidation) R8:3(consolidation endorsed) R9 (v11): 3 bin-(a) + 1 bin-(b) → v12 = the round-10 resubmission |
-| **Decision + date** | — |
+| **External review** | required (full spec). R1:3 R2:5+blocker R3:4 R4:3 R5:3 R6:3 R7:4(consolidation) R8:3(consolidation endorsed) R9:3 R10:2(adapters accepted) **R11 (v13): APPROVED FOR ACCEPTANCE — bin (a) EMPTY; the frozen acceptance surface is I1–I17; two same-commit bin-(b) corrections (this row; the POSIX evidence tense) folded in v14 = the accepted version** |
+| **Decision + date** | **accepted — 2026-08-11**, external round 11 (bin (a) empty); dev set the status after folding the two required bin-(b) corrections in the same commit |
 | **Path** | full |
 
 ---
@@ -325,7 +325,8 @@ rather than an unnormalized one — I16's no-unnormalized-collector rule
 holds by construction); `preview()` → returns **None**, never raises
 (documented: "state unavailable"); explicit consent transitions
 (`set_enabled`, `prompt_consent`, CLI flows) → RAISE `TelemetryLockError`.
-**Platform regime, stated honestly:** CI verifies the POSIX adapter; the
+**Platform regime, stated honestly:** the POSIX adapter's tests are a CI
+obligation at implementation (nothing is verified yet — no adapter exists); the
 Windows adapter implements the identical kernel contract and its test
 **will be platform-gated and added to the skip inventory at
 implementation** (future work — no such artifact exists yet, R9-4); §5 and
@@ -455,7 +456,8 @@ store is unrecoverable or touched.
   programmatic enable — each ends at version 1, per the §4 table). All are
   cheap unit fixtures.
 - **Platform regime (R9-4):** the lock's concurrency guarantees are
-  CI-verified on POSIX only; the Windows adapter is specified to the same
+  a FUTURE implementation obligation: the POSIX adapter's tests run in CI at
+  implementation; the Windows adapter is specified to the same
   kernel contract and its independent-process tests will be platform-gated
   at implementation. Until a Windows CI lane runs them, the Windows claim
   is contract-identity, not test evidence.
@@ -488,7 +490,7 @@ Release class: **stable** — every named regime has a test in §6.
 | I14 — **both keys on EVERY successful terminal return of `ingest_event` (F3)**, including the unparseable early return, as int zeros; the host result, audit/telemetry recording, and the MCP strip all behave on that branch | `test_unparseable_return_carries_zero_counts` (asserts the host dict, the recorded event, and the MCP result on the parse-failure branch) | CI |
 | I15 — **`reset()` preserves consent (R2-2)**: reset clears aggregates only; the two-period sequence (record → flush+reset → record → flush) carries the new fields in BOTH periods exactly once each, and reset after a defaulted or argument-bearing construction neither downgrades the version nor raises | `test_reset_preserves_adopted_consent_two_periods` | CI |
 | I16 — **config validity is a closed predicate (R2-4 + R4-2 + R6-2)**: `schema_version` positive int (bool excluded) ≤ current else 1; **`consent_epoch` positive int (bool excluded); absent/invalid NORMALIZES UNDER LOCK to a fresh persisted nonzero epoch before any collector exists; adoption-time invalidity normalizes-then-discards; no live collector ever holds 0**; an unknown config KEY fails closed to whole-config disabled defaults | parametrized `test_invalid_schema_version_reads_as_v1` + `test_invalid_consent_epoch_normalizes_nonzero` + `test_adoption_time_invalid_epoch_normalizes_and_discards` + `test_unknown_config_key_fails_closed_whole_config` | CI |
-| I17 — **the lifecycle's concurrency + lifecycle contract (v13)**: (a) LOCK — racing transitions serialize on the OS-exclusive adapters and mint DISTINCT epochs; a paused live holder is never broken; **per-adapter INDEPENDENT-PROCESS tests: live-holder exclusion and process-death release** (POSIX in CI; Windows platform-gated at implementation); pre-authorization lock failure → False, nothing sent, no adoption; post-send lock/write failure → True, `last_sent` unwritten; collector-load lock failure → None; preview lock failure → None, never raises. (b) TOMBSTONE (R10-1) — any observed absent/malformed state, pre-authorization or post-POST, tombstones the collector: subsequent records DROPPED; the sentinel equals no valid epoch; recording resumes only after successful valid-config adoption; **four regressions: deletion→record→same-epoch-recreation (pre-POST + post-POST) and malformed→record→same-epoch-repair (pre-POST + post-POST) — none of the post-erasure records is ever sent**. (c) FLUSH/PREVIEW — a stalled POST resuming after a disable leaves the disable durable; delete-during-POST never recreates; malformed never rewritten; `_read_config_status` distinguishes valid/absent/malformed; adoption precedes eligibility exits (`test_not_due_flush_still_adopts`); **the preview matrix is exercised over EVERY status × enabled × due × endpoint cell** | `test_racing_transitions_mint_distinct_epochs` · `test_paused_live_holder_is_never_broken` · `test_posix_live_holder_exclusion_across_processes` · `test_posix_death_releases_lock_across_processes` · `test_windows_live_holder_exclusion_across_processes` (platform-gated, future) · `test_windows_death_releases_lock_across_processes` (platform-gated, future) · `test_preauth_lock_failure_returns_false_no_adoption` · `test_postsend_lock_failure_returns_true_last_sent_unwritten` · `test_collector_load_lock_failure_returns_none` · `test_preview_lock_failure_returns_none` · `test_tombstone_after_deletion_drops_records_pre_and_post_post` · `test_tombstone_after_malformed_drops_records_pre_and_post_post` · `test_same_epoch_recreation_never_sends_post_erasure_records` · `test_same_epoch_repair_never_sends_post_erasure_records` · `test_blocked_poster_disable_survives_post_resume` · `test_delete_during_post_never_recreates` · `test_malformed_config_never_rewritten` · `test_read_config_status_three_states` · `test_not_due_flush_still_adopts` · `test_preview_matrix_total` | CI |
+| I17 — **the lifecycle's concurrency + lifecycle contract (v13)**: (a) LOCK — racing transitions serialize on the OS-exclusive adapters and mint DISTINCT epochs; a paused live holder is never broken; **per-adapter INDEPENDENT-PROCESS tests: live-holder exclusion and process-death release** (both adapters' tests are IMPLEMENTATION OBLIGATIONS — the POSIX pair will run in CI, the Windows pair platform-gated; none exists yet); pre-authorization lock failure → False, nothing sent, no adoption; post-send lock/write failure → True, `last_sent` unwritten; collector-load lock failure → None; preview lock failure → None, never raises. (b) TOMBSTONE (R10-1) — any observed absent/malformed state, pre-authorization or post-POST, tombstones the collector: subsequent records DROPPED; the sentinel equals no valid epoch; recording resumes only after successful valid-config adoption; **four regressions: deletion→record→same-epoch-recreation (pre-POST + post-POST) and malformed→record→same-epoch-repair (pre-POST + post-POST) — none of the post-erasure records is ever sent**. (c) FLUSH/PREVIEW — a stalled POST resuming after a disable leaves the disable durable; delete-during-POST never recreates; malformed never rewritten; `_read_config_status` distinguishes valid/absent/malformed; adoption precedes eligibility exits (`test_not_due_flush_still_adopts`); **the preview matrix is exercised over EVERY status × enabled × due × endpoint cell** | `test_racing_transitions_mint_distinct_epochs` · `test_paused_live_holder_is_never_broken` · `test_posix_live_holder_exclusion_across_processes` · `test_posix_death_releases_lock_across_processes` · `test_windows_live_holder_exclusion_across_processes` (platform-gated, future) · `test_windows_death_releases_lock_across_processes` (platform-gated, future) · `test_preauth_lock_failure_returns_false_no_adoption` · `test_postsend_lock_failure_returns_true_last_sent_unwritten` · `test_collector_load_lock_failure_returns_none` · `test_preview_lock_failure_returns_none` · `test_tombstone_after_deletion_drops_records_pre_and_post_post` · `test_tombstone_after_malformed_drops_records_pre_and_post_post` · `test_same_epoch_recreation_never_sends_post_erasure_records` · `test_same_epoch_repair_never_sends_post_erasure_records` · `test_blocked_poster_disable_survives_post_resume` · `test_delete_during_post_never_recreates` · `test_malformed_config_never_rewritten` · `test_read_config_status_three_states` · `test_not_due_flush_still_adopts` · `test_preview_matrix_total` | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -561,9 +563,11 @@ test beside these.
   memory working as designed, and is not closable without breaking recall.
   A review that finds the residual recall signal has found v0's designed
   behaviour, not an incomplete fix.
-- **Platform limit (R9-4):** concurrency guarantees are test-verified on
-  POSIX; on Windows they rest on the pinned adapter's kernel contract until
-  its platform-gated tests run in a Windows lane.
+- **Platform limit (R9-4/R11):** concurrency guarantees WILL BE
+  test-verified on POSIX when the implementation lands (no adapter exists
+  yet — the round-9 probe verified the primitive's mode behaviour, not an
+  adapter); on Windows they rest on the pinned kernel contract until a
+  Windows lane runs the platform-gated tests.
 - **Delayed activation (R3-2/R4-3), disclosed:** a process that started
   with telemetry disabled does not begin collecting when consent is granted
   mid-run — activation happens at the next process start. The changelog
@@ -627,7 +631,7 @@ test beside these.
    carries the mechanism; I12 enforces it.
 3. ~~Platform scope of the lock~~ — **CLOSED (R7-3 in v10, re-decided by
    R8-1 in v11, tense corrected by R10-3): OS-exclusive adapters
-   (`flock`/`msvcrt.locking`), one kernel contract; CI verifies POSIX; the
+   (`flock`/`msvcrt.locking`), one kernel contract; the POSIX adapter's tests are a CI obligation at implementation; the
    Windows adapter's tests WILL BE platform-gated and added to the skip
    inventory at implementation — no such artifact exists yet. Decided
    in-spec; nothing deferred.**
@@ -655,3 +659,26 @@ test beside these.
 - [ ] I have said where I think the **author's conclusion is wrong**
 - [ ] I re-read the current version before reviewing
 - [ ] §9 brief is written, and external review has been sent
+
+---
+
+## Review closure
+
+*PROCESS §4a: one row per external round's findings, each closed by an
+openable artifact — the fold commit and the archive of the resubmission that
+the next round verified. The full per-finding verdicts live in
+`specs/reviews.py` (rounds 1–11) and each round's COLLECTED classification.*
+
+| round | findings | closed by |
+|---|---|---|
+| 1 (v3) | F1 record-time consent · F2 displayed≠accepted · F3 the second constructor site | `850b7f2` (v4); archive `0015-v4-20260811T0906Z` — R2 confirmed F2/F3 closed |
+| 2 (v4) | R2-1 adoption op · R2-2 reset · R2-3 CLI claim · R2-4 §2c cells · R2-5 persistence · the .pyc package blocker | `f69b632` + the two-copy seal (v5); archive `0015-v5-20260811T0951Z` — R3 confirmed blocker/reset/config-validity closed |
+| 3 (v5) | R3-1 consent tuple/epoch · R3-2 restart boundary · R3-3 carrier sweep · R3-4 prompt no-op row | `78a7907` (v6); archive `0015-v6-20260811T1223Z` |
+| 4 (v6) | R4-1 epoch atomicity · R4-2 epoch carriers · R4-3 restart propagation | `1c13737` (v7); archive `0015-v7-20260811T2049Z` |
+| 5 (v7) | R5-1 post-send write · R5-2 epoch-0 hole · R5-3 sweep | `de806fb` (v8); archive `0015-v8-20260811T2117Z` |
+| 6 (v8) | R6-1 post-POST totality · R6-2 epoch carriers · R6-3 lock portability | `a390f6e` (v9); archive `0015-v9-20260811T2130Z` |
+| 7 (v9) | R7-1 fix-vs-fix contradiction · R7-2 config status · R7-3 lock in-spec · R7-4 zero-epoch | `bb886ab` (v10, the PROCESS-R3 consolidation); archive `0015-v10-20260811T2156Z` — R8 endorsed the consolidation, confirmed R7-1/2/4 |
+| 8 (v10) | R8-1 stale-break withdrawn · R8-2 adoption-first · R8-3 split totality · R8-4 claimed guards | `4d745fc` (v11); archive `0015-v11-20260811T2223Z` — R9 confirmed R8-4 closed |
+| 9 (v11) | R9-1 adapters by call · R9-2 status before normalization · R9-3 preview matrix · R9-4 tense | `68239f3` (v12); archive `0015-v12-20260811T2238Z` — R10 accepted the adapter constructions |
+| 10 (v12) | R10-1 the tombstone · R10-2 I17 fidelity · R10-3/4 bin-(b) | `ee2d421` (v13); archive `0015-v13-20260811T2254Z` — R11: bin (a) EMPTY |
+| 11 (v13) | APPROVED FOR ACCEPTANCE; two bin-(b): the review row · the POSIX evidence tense | this commit (v14 = accepted); the acceptance surface is I1–I17 |
