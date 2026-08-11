@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v12 — *re-read before editing; quote the version you approve*. v11→v12: EXTERNAL ROUND 9 (3 bin-(a) + 1 bin-(b); R8-4 closed): R9-1 classes A+C+G — the POSIX adapter was UNIMPLEMENTABLE as written (`LOCK_EX` blocks — reviewer-probed — while the contract required nonblocking retry) → both adapters pinned EXACTLY (POSIX: `LOCK_EX|LOCK_NB` retried on `BlockingIOError`/EAGAIN every 50 ms against a `time.monotonic()` deadline; Windows: O_CREAT|O_RDWR lockfile initialized to ≥1 byte, `lseek(0)` + `msvcrt.locking(LK_NBLCK, 1)` retried on contention `OSError`, matching `LK_UNLCK` range, descriptor held for the lock lifetime = death-release), with independent-process live-holder + death-release tests per platform; R9-2 classes A+C found-in-fix of R8-2 — adoption-first normalized BEFORE branching on status, which could CREATE a deleted config or rewrite a malformed one → STATUS BRANCHES FIRST: absent/malformed → discard aggregates, NO write, NO normalization, fail-closed (collector keeps its prior adopted consent, empty); parse-valid+invalid-epoch → normalize under lock then adopt; valid → adopt; post-return collector state pinned per cell; R9-3 classes A+D found-in-fix of R8-3 — preview's outcomes were circular → the explicit TOTAL preview matrix (lock failure/absent/malformed/disabled → None; valid+enabled → the adopted payload REGARDLESS of due/endpoint; preview NEVER POSTs), every cell tested; R9-4 bin-(b) — platform-artifact claims made FUTURE TENSE and the narrowed platform limit actually added to §5/§8. | |
+| **Version** | v13 — *re-read before editing; quote the version you approve*. v12→v13: EXTERNAL ROUND 10 (2 bin-(a) + 2 bin-(b); the R9-1 adapter constructions ACCEPTED at spec level): R10-1 classes A+C+F found-in-fix of R9-2 — retaining the collector's prior consent through an observed absent/malformed state permits consent ABA (delete → records accumulate under the retained v2/E → recreate/repair at the SAME epoch E → no mismatch → post-erasure records send) → the TOMBSTONE state: any observed absent/malformed, pre-authorization or post-POST, tombstones the collector (every subsequent record DROPPED; the tombstone equals no valid persisted epoch — it is a non-int sentinel, not epoch 0; recording resumes ONLY after a successful valid-config adoption); four named regressions (deletion→record→same-epoch-recreation and malformed→record→same-epoch-repair, each × pre/post-POST); R10-2 classes D+F — the v12 closures never reached I17 (still labeled v11) → I17 REWRITTEN around the v13 contract: the per-adapter independent-process live-holder + death-release tests, the absent/malformed post-return collector-state (tombstone) tests, and the complete preview status × enabled × due × endpoint matrix; R10-3 bin-(b) — the present-tense platform claim swept from §10/header/COLLECTED (future tense everywhere); R10-4 bin-(b) — the malformed Version row repaired. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — reviewed 2026-08-11, returned one amendment (folded in v2) · workflow-platform unavailable, waived: the only consumer-visible change is two additive int keys in the host-API `remember()` return — waiver held by dev |
 | **External review** | required (full spec). R1:3 R2:5+blocker R3:4 R4:3 R5:3 R6:3 R7:4(consolidation) R8:3(consolidation endorsed) R9 (v11): 3 bin-(a) + 1 bin-(b) → v12 = the round-10 resubmission |
@@ -357,11 +357,16 @@ fields, so no consent is ever widened by a lock failure.
 (b) **under-lock read with STATUS (R7-2):** `_read_config_status()` returns
 `(status ∈ {valid, absent, malformed}, config)`; `absent`/`malformed` are
 distinguished from a valid default-valued file by the read, not inferred.
-(c) **branch by STATUS first (R9-2)** — `absent`/`malformed`: discard
-pending aggregates, perform **NO write and NO normalization** (a deleted
-config is never recreated, a malformed one never rewritten — §4.1), the
-collector keeps its prior adopted consent with empty aggregates, release,
-return fail-closed. Only a **parse-valid** config proceeds:
+(c) **branch by STATUS first (R9-2), TOMBSTONING on absence/malformation
+(R10-1)** — `absent`/`malformed`: discard pending aggregates, perform **NO
+write and NO normalization** (a deleted config is never recreated, a
+malformed one never rewritten — §4.1), and **TOMBSTONE the collector**: its
+adopted consent is replaced by a non-int sentinel that equals NO valid
+persisted epoch, every subsequent `record()` is dropped, and recording
+resumes ONLY after a later flush/preview finds a parse-valid config and
+adoption succeeds. (Retaining the prior consent here was the R10-1 ABA:
+recreate/repair at the same epoch → no mismatch → post-erasure records
+send.) Release, return fail-closed. Only a **parse-valid** config proceeds:
 invalid-epoch → normalize under lock, then adopt; valid → adopt (rule 4).
 Adoption therefore happens on every flush/preview call that finds a
 parse-valid config, due or not (the R8-2 regime holds: accepted v2 + a
@@ -380,8 +385,8 @@ re-read with status; then —
 |---|---|---|---|---|
 | valid, consent unchanged | True | reset | updated | untouched otherwise |
 | valid, consent changed | True | reset | updated on the CURRENT file; consent preserved | untouched otherwise |
-| absent (deleted during POST) | True | reset | not written | **NEVER recreated** |
-| malformed | True | reset | not written | untouched (never rewritten) |
+| absent (deleted during POST) | True | reset **+ TOMBSTONED (R10-1)** | not written | **NEVER recreated** |
+| malformed | True | reset **+ TOMBSTONED (R10-1)** | not written | untouched (never rewritten) |
 | lock or write failure | True | reset | not written — interval drift, never consent damage; the reset collector means an early re-send carries only new increments | untouched |
 
 **`True` means a send happened; `False` means nothing was sent — the
@@ -483,7 +488,7 @@ Release class: **stable** — every named regime has a test in §6.
 | I14 — **both keys on EVERY successful terminal return of `ingest_event` (F3)**, including the unparseable early return, as int zeros; the host result, audit/telemetry recording, and the MCP strip all behave on that branch | `test_unparseable_return_carries_zero_counts` (asserts the host dict, the recorded event, and the MCP result on the parse-failure branch) | CI |
 | I15 — **`reset()` preserves consent (R2-2)**: reset clears aggregates only; the two-period sequence (record → flush+reset → record → flush) carries the new fields in BOTH periods exactly once each, and reset after a defaulted or argument-bearing construction neither downgrades the version nor raises | `test_reset_preserves_adopted_consent_two_periods` | CI |
 | I16 — **config validity is a closed predicate (R2-4 + R4-2 + R6-2)**: `schema_version` positive int (bool excluded) ≤ current else 1; **`consent_epoch` positive int (bool excluded); absent/invalid NORMALIZES UNDER LOCK to a fresh persisted nonzero epoch before any collector exists; adoption-time invalidity normalizes-then-discards; no live collector ever holds 0**; an unknown config KEY fails closed to whole-config disabled defaults | parametrized `test_invalid_schema_version_reads_as_v1` + `test_invalid_consent_epoch_normalizes_nonzero` + `test_adoption_time_invalid_epoch_normalizes_and_discards` + `test_unknown_config_key_fails_closed_whole_config` | CI |
-| I17 — **the lifecycle's concurrency contract (consolidated §4, v11)**: racing transitions serialize on the OS-exclusive lock and mint DISTINCT epochs; **a paused live holder is never broken (the R8-1 adversarial case: holder pauses past any age, a second process must WAIT or FAIL CLOSED, never enter)**; a pre-authorization lock failure returns False with nothing sent AND without adoption; a POST-send lock/write failure returns True with `last_sent` unwritten; `load_collector_if_enabled` under lock failure returns None (never an unnormalized collector); `preview` under lock failure returns None, never raises; a stalled POST resuming after a disable leaves the disable durable; a config deleted during POST is never recreated; a malformed config never rewritten; `_read_config_status` distinguishes valid/absent/malformed; **adoption precedes every eligibility exit (the R8-2 not-due regime: accept v2 → not-due flush → still adopts → records gate as v2)** | `test_racing_transitions_mint_distinct_epochs` + `test_paused_live_holder_is_never_broken` + `test_preauth_lock_failure_returns_false_no_adoption` + `test_postsend_lock_failure_returns_true_last_sent_unwritten` + `test_collector_load_lock_failure_returns_none` + `test_preview_lock_failure_returns_none` + `test_blocked_poster_disable_survives_post_resume` + `test_delete_during_post_never_recreates` + `test_malformed_config_never_rewritten` + `test_read_config_status_three_states` + `test_not_due_flush_still_adopts` | CI |
+| I17 — **the lifecycle's concurrency + lifecycle contract (v13)**: (a) LOCK — racing transitions serialize on the OS-exclusive adapters and mint DISTINCT epochs; a paused live holder is never broken; **per-adapter INDEPENDENT-PROCESS tests: live-holder exclusion and process-death release** (POSIX in CI; Windows platform-gated at implementation); pre-authorization lock failure → False, nothing sent, no adoption; post-send lock/write failure → True, `last_sent` unwritten; collector-load lock failure → None; preview lock failure → None, never raises. (b) TOMBSTONE (R10-1) — any observed absent/malformed state, pre-authorization or post-POST, tombstones the collector: subsequent records DROPPED; the sentinel equals no valid epoch; recording resumes only after successful valid-config adoption; **four regressions: deletion→record→same-epoch-recreation (pre-POST + post-POST) and malformed→record→same-epoch-repair (pre-POST + post-POST) — none of the post-erasure records is ever sent**. (c) FLUSH/PREVIEW — a stalled POST resuming after a disable leaves the disable durable; delete-during-POST never recreates; malformed never rewritten; `_read_config_status` distinguishes valid/absent/malformed; adoption precedes eligibility exits (`test_not_due_flush_still_adopts`); **the preview matrix is exercised over EVERY status × enabled × due × endpoint cell** | `test_racing_transitions_mint_distinct_epochs` · `test_paused_live_holder_is_never_broken` · `test_posix_live_holder_exclusion_across_processes` · `test_posix_death_releases_lock_across_processes` · `test_windows_live_holder_exclusion_across_processes` (platform-gated, future) · `test_windows_death_releases_lock_across_processes` (platform-gated, future) · `test_preauth_lock_failure_returns_false_no_adoption` · `test_postsend_lock_failure_returns_true_last_sent_unwritten` · `test_collector_load_lock_failure_returns_none` · `test_preview_lock_failure_returns_none` · `test_tombstone_after_deletion_drops_records_pre_and_post_post` · `test_tombstone_after_malformed_drops_records_pre_and_post_post` · `test_same_epoch_recreation_never_sends_post_erasure_records` · `test_same_epoch_repair_never_sends_post_erasure_records` · `test_blocked_poster_disable_survives_post_resume` · `test_delete_during_post_never_recreates` · `test_malformed_config_never_rewritten` · `test_read_config_status_three_states` · `test_not_due_flush_still_adopts` · `test_preview_matrix_total` | CI |
 
 Standing checks that must not regress: injection asserts 0 · cross-user leaks
 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -621,9 +626,11 @@ test beside these.
    behaviour, no API split, nothing stamps v2 unless v2 was shown. §4
    carries the mechanism; I12 enforces it.
 3. ~~Platform scope of the lock~~ — **CLOSED (R7-3 in v10, re-decided by
-   R8-1 in v11): OS-exclusive adapters (`flock`/`msvcrt.locking`), one
-   kernel contract; CI verifies POSIX, the Windows adapter's test is
-   platform-gated and inventoried. Decided in-spec; nothing deferred.**
+   R8-1 in v11, tense corrected by R10-3): OS-exclusive adapters
+   (`flock`/`msvcrt.locking`), one kernel contract; CI verifies POSIX; the
+   Windows adapter's tests WILL BE platform-gated and added to the skip
+   inventory at implementation — no such artifact exists yet. Decided
+   in-spec; nothing deferred.**
 4. **Absorption/refusal counters** — worth a future spec once these two
    fields have shipped and someone wants them? **Decides: dev, on demand.
    Class: deferred.**
