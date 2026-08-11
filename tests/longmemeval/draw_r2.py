@@ -105,10 +105,16 @@ def main() -> int:
     # the same incomplete-enumeration failure as the audit, in the exposure
     # dimension. Every prior exposure event belongs here, not the one that came
     # to mind.
-    pilot = {i.question_id for i in stratified_pilot(items, evals)}
-    variance = {i.question_id for i in variance_subset(items, evals)}
-    prior = pilot | variance
+    # G1: the LEDGER is the enumeration — every recorded exposure event, not
+    # the subsets this script remembers. Snapshot confirmatory membership
+    # BEFORE recording this draw's own exposure (the order is the point).
+    import exposure
+    exposure.ensure_seeded(items, evals)
+    snap = exposure.confirmatory_snapshot(i.question_id for i in items)
+    prior = exposure.exposed_ids()
     already = [q for q in ids if q in prior]
+    exposure.record_exposure(ids, kind="machine",
+                             source=f"draw_r2 seed={SEED} per_band={PER_BAND}")
 
     print(f"seed={SEED}  per_band={PER_BAND}  items={len(ids)}")
     print()
@@ -116,10 +122,12 @@ def main() -> int:
         print(f"  {d['question_type']:<20} {d['band']:<5} "
               f"drawn {d['drawn']}/{d['available']:<3} days={d['session_days']}")
     print()
-    print(f"  already exposed (pilot {len(pilot)} ∪ variance {len(variance)} "
-          f"= {len(prior)}): {len(already)}"
+    print(f"  already exposed (ledger: {len(prior)} across "
+          f"{snap['by_kind']}): {len(already)}"
           f"{' — ' + ', '.join(already) if already else ''}")
     print(f"  newly exposed, leaving the confirmatory set: {len(ids) - len(already)}")
+    print(f"  pre-draw confirmatory snapshot: {len(snap['confirmatory'])} items, "
+          f"hash {snap['confirmatory_hash'][:16]}…")
     print()
     print(f"item_set_hash: {item_set_hash(ids)}")
     print()
