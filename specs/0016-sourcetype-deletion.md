@@ -6,7 +6,7 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v8 — *re-read before editing; quote the version you approve*. v7→v8: EXTERNAL ROUND 4 (4 bin-(a), bin (b) EMPTY; the deletion direction and version-3 reuse endorsed): R4-1 A+C+F — receipt v3 mechanically defined: the legal v3 triples are {(digest,3,json), (NULL,3,json)}, the v3 projection is the v2 construction computed over the POST-D2 field set, and phase-1/2 selection is BY STORED VERSION with no fall-through (stored 3→v3, 2→v2, 1→legacy; the reviewer's snapshotless-(NULL,3,json)-retry-compared-against-v1 hazard closed); the exhaustive oracle extends over every {1,2,3} triple. R4-2 A+D+G — the migration step's executable declaration per accepted 0013: the reviewed no-op statement tuple `("SELECT 1",)`, sha-pinned, with path evidence bound to that exact SQL; the FALSE 0006-precedent claim corrected (v4→v5 was minimal-DDL — it added `store_identity`; the no-DDL form is NEW here and reviewed as such). R4-3 A+C+D — the false capability premise corrected: `Field(deprecated=…)` DOES warn on field access (reviewer-probed: exactly one warning on access, none on construction/dump, JSON schema marked) → the field-access row JOINS the warned set; model metadata remains the enumerated remainder; §7a moves the `_SourceType` conversions of `ingest.py`/`lifecycle.py`/`store/sqlite.py` to D1 (required for warning-free ordinary operation). R4-4 D — the fact-searched carrier sweep: the withdrawn ALTER/backfill design, the stamp-<7 forms, "different findings", and the byte-identity promises removed from every operative carrier. | |
+| **Version** | v9 — *re-read before editing; quote the version you approve*. v8→v9: EXTERNAL ROUND 5 (3 bin-(a) + 1 bin-(b); direction/version-3/no-op endorsements hold): R5-1 A+C+F found-in-fix of R4-1 — pre-v3 projection RECONSTRUCTION is unimplementable post-D2 (both historical projections included the deleted field; the reduced-model wrapper computes v3) → the rule is now **unconditional boundary refusal for EVERY pre-v3 receipt resubmitted post-D2** (no historical reconstruction claimed; version 3 is the only comparable era), and the verbatim 0014 amendment carries the exact legal v3 triples and comparison rules, not a bare set extension; R5-2 A+C+D — the FIRST two-real-step migration: 0013 M10 deferred the multi-step planner to exactly this spec → the planner is SPECIFIED via a verbatim 0013 amendment block (the chain [base→6 aggregate (existing evidenced construction, destination now non-head), 6→7 declared no-op]; each step its own transaction + audit event + intermediate stamp; failure mid-chain leaves the store at the last completed stamp — a legal accepted version; recovery = re-run, idempotent from any intermediate; per-step evidence binding); R5-3 A+C+D+G found-in-fix of R4-3 — `Field(deprecated=…)` requires pydantic ≥2.7 against the declared `>=2` → **pyproject pins `pydantic>=2.7`**, `pyproject.toml` joins §7a, a lowest-supported-version regression is named, and the six-cell/five-cell/notice contradictions are swept (the matrix is SEVEN rows; I2 matches; the notice says field access warns once). Bin-(b) C1: the reviewer-computed pin ADOPTED as the authorization artifact — canonical bytes `veracium-migration-v1:[6,7,["SELECT 1"]]`, SHA-256 `2deae0327584cb0ed265b79f101843eba9e3b5e81b9092d08bf35326aa83ffe9` (the 0014 R13-1 precedent: the literal is IN the reviewed candidate). | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -163,9 +163,9 @@ an operation's commit era — no user, tenant, or content data.*
 
 ## 4. Behaviour
 
-**D1 — deprecation (next minor, 0.8.0): the six-cell access/introspection
-matrix (R2-2) — every supported path warns or is enumerated; I2 tests every
-row:**
+**D1 — deprecation (next minor, 0.8.0): the SEVEN-row access/introspection
+matrix (R2-2/R4-3/R5-3) — every supported path warns or is enumerated; I2
+tests every row:**
 
 | access path | D1 behaviour | warns |
 |---|---|---|
@@ -174,11 +174,11 @@ row:**
 | `veracium.schema.SourceType` attribute access | enum via schema `__getattr__` (not a normal binding during D1; internal code binds `_SourceType`) | yes |
 | `from veracium.schema import SourceType` | same | yes |
 | `from veracium.schema import *` | **`schema.__all__` is DEFINED (none exists today) and lists `SourceType` during D1**, so PEP-562 star-import triggers the `__getattr__` — probe-verified; without `__all__` this cell silently BREAKS | yes |
-| `provenance.source_type` field access | **WARNS (R4-3 — the v7 "cannot warn" premise was FALSE):** `Field(deprecated=...)` emits exactly ONE `DeprecationWarning` on attribute access, none during construction or dump, and marks the JSON schema deprecated (reviewer-probed on the qualified environment) | yes |
+| `provenance.source_type` field access | **WARNS (R4-3):** `Field(deprecated=...)` emits exactly ONE `DeprecationWarning` on attribute access, none during construction or dump, and marks the JSON schema deprecated — **requires `pydantic>=2.7` (R5-3): 2.0 treats the keyword as an extra and cannot warn; `pyproject.toml` pins ≥2.7 at D1 and a lowest-supported-version regression runs the warning under the pinned floor** | yes |
 | `typing.get_type_hints(Provenance)["source_type"]` | **the D1 annotation binds the private name** (`source_type: _SourceType`, the SAME enum object), so hints resolve to the identical class — no `NameError`; module `__getattr__` cannot intercept annotation resolution through module globals, so this cell CANNOT warn | **no — enumerated in the deprecation notice** |
 
 **The rest of the surface, ruled (R3-1):**
-- **Field access WARNS (R4-3):** `Field(deprecated=...)` on
+- **Field access WARNS (R4-3, `pydantic>=2.7` — R5-3):** `Field(deprecated=...)` on
   `Provenance.source_type` — one warning per access, none on
   construction/dump, JSON schema marked. Only MODEL METADATA
   (`model_fields`, `get_type_hints`) remains un-warned, enumerated in the
@@ -246,20 +246,41 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   a store-level snapshotless submission stores NULL request identity). The
   **v3 digest projection is the v2 construction computed over the POST-D2
   field set** (pre_split + contributions + absorption_pre_image, with the
-  collapsed model — same wrapper, new basis). **Phase-1/2 selection is BY
-  STORED VERSION with NO fall-through:** stored 3 → the v3 projection;
-  stored 2 → v2; stored 1 → the legacy reconstruction; any other value is
-  rejected by `validate_receipt_state`. (The v7 draft's hazard, closed: the
-  shipped branch selects v2 only on `stored_ver == 2`, so an unamended
-  implementation would compare a snapshotless `(NULL, 3, json)` retry
-  against the v1 projection.) The exhaustive read/write oracle extends over
-  EVERY {1,2,3} triple.
+  collapsed model — same wrapper, new basis). **Phase-1/2 selection (re-ruled by
+  R5-1 — historical reconstruction was a FALSE promise):** post-D2 neither
+  the v1 nor the v2 projection can be computed faithfully — both included
+  the deleted field; the reduced-model wrapper computes v3. So: stored 3 →
+  the v3 projection and the ordinary contract; **stored 1 or 2 →
+  UNCONDITIONAL boundary refusal on any resubmission
+  (`ReceiptSchemaBoundaryError`) — no digest comparison is attempted,
+  because none is possible**; any other value is rejected by
+  `validate_receipt_state`. The exhaustive read/write oracle extends over
+  EVERY {1,2,3} triple, and the verbatim 0014 amendment (§7a) carries the
+  exact legal v3 triples and these comparison rules — a bare {1,2}→{1,2,3}
+  set extension leaves the accepted closed-state contract incomplete.
 - **The migration step's executable declaration (R4-2, per accepted 0013):**
   the v6→v7 step declares the reviewed no-op statement tuple
-  **`("SELECT 1",)`** — mechanically legal under the authorizer
-  (reviewer-confirmed), sha-pinned like every declared step, with the 0013
-  path evidence bound to that exact SQL; the version stamp update is the
-  step's effect. An empty tuple is rejected by 0013 and is not used.
+  **`("SELECT 1",)`**, pinned by the reviewer-computed authorization
+  artifact (C1, the 0014 R13-1 precedent — the literal is IN this reviewed
+  candidate): canonical bytes `veracium-migration-v1:[6,7,["SELECT 1"]]`,
+  SHA-256
+  `2deae0327584cb0ed265b79f101843eba9e3b5e81b9092d08bf35326aa83ffe9`;
+  0013 path evidence binds to that exact SQL; the version stamp update is
+  the step's effect. An empty tuple is rejected by 0013 and is not used.
+- **The multi-step planner (R5-2) — specified here because 0013 M10
+  deferred it to the first spec needing two real steps, which is this
+  one.** A below-v6 base now needs TWO steps, and 0013's accepted hook
+  admits only steps whose destination is head. The verbatim 0013 amendment
+  (§7a) defines the planner: the chain for base b < 6 is
+  **[b→6 (the existing aggregate evidenced construction, its destination
+  now an INTERMEDIATE version), 6→7 (the declared no-op)]**; each step runs
+  in its OWN transaction with its OWN audit event and stamps its
+  intermediate version durably before the next begins; a failure mid-chain
+  leaves the store at the last completed stamp — a legal, accepted version
+  a re-run resumes from (idempotent from any intermediate); evidence
+  selection is per-step (each step binds its own declared SQL and
+  artifacts, never an aggregate skip-level digest). A v6 base runs the
+  single 6→7 step; v7 is current.
 - **The migration boundary is an ATOMIC TRANSITION (the 0015
   transitions-vs-states lens):** the era stamp is TOTAL over operations —
   every receipt carries the `outcome_digest_version` its writer computed
@@ -329,7 +350,7 @@ byte-stable).
 | invariant | executable check | where it runs |
 |---|---|---|
 | I1 — **trust/recall-decision identity (narrowed by R2-1)**: identical sequences produce identical gates, disclosure routing, and renders before/after D2 — **EXCLUDING receipt identity and replay/conflict classification, which the defined collapse changes** (I7 owns those); the dumps differ exactly by the deleted key | `test_deletion_is_decision_invisible` (projection compare, receipt outcomes excluded) + the standing 0003/0008/0012 suites green | CI |
-| I2 — the COMPLETE D1 surface (R3-1): the five warnable cells each warn; `get_type_hints` resolves to the identical class without `NameError`; field access and model metadata are un-warned and notice-enumerated; the star-import namespace is byte-identical to pre-D1 (all 42 names); both `dir()` surfaces include the enum; a pickle round-trip emits exactly TWO warnings; **ordinary library import and operation emit ZERO deprecation warnings** (all internal imports bind the private name) | `test_sourcetype_import_warns_at_d1` (all six cells) · `test_star_import_namespace_is_byte_identical` · `test_dir_surfaces_include_sourcetype` · `test_pickle_roundtrip_emits_exactly_two_warnings` · `test_ordinary_operation_emits_no_deprecation_warning` | CI |
+| I2 — the COMPLETE D1 surface (R3-1/R4-3/R5-3): the SIX warnable rows each warn (five access paths + field access via `Field(deprecated=...)` under the `pydantic>=2.7` floor); `get_type_hints` resolves to the identical class without `NameError`; only model metadata is un-warned and notice-enumerated; the star-import namespace is byte-identical to pre-D1 (all 42 names); both `dir()` surfaces include the enum; a pickle round-trip emits exactly TWO warnings; **ordinary library import and operation emit ZERO deprecation warnings** (internal comparisons use model dumps — warning-free, reviewer-confirmed — and all internal imports bind the private name) | `test_sourcetype_import_warns_at_d1` (all seven rows) · `test_field_access_warns_at_pinned_floor` (lowest supported pydantic) · `test_star_import_namespace_is_byte_identical` · `test_dir_surfaces_include_sourcetype` · `test_pickle_roundtrip_emits_exactly_two_warnings` · `test_ordinary_operation_emits_no_deprecation_warning` | CI |
 | I3 — old exports import with the key dropped; every other field preserved | `test_old_export_source_type_is_dropped` | CI |
 | I4 — FORMAT 6 refused by the v5 version gate before validation | `test_format_6_refused_by_version_gate` | CI |
 | I5 — the receipt era rule, ONE contract (R3-2/R3-3): a version<3 receipt whose digest mismatches post-D2 raises `ReceiptSchemaBoundaryError` (a subclass of the integrity error — UNCLASSIFIABLE, never benign, at least as conservative); a version-3 receipt follows the ordinary 0014 contract; a version<3 digest MATCH is impossible by construction and raises integrity if observed; the closed version set {1,2,3} is validated on every read and write by the extended `validate_receipt_state` + exhaustive oracle | `test_pre_v3_mismatch_is_unclassifiable` · `test_v3_receipts_follow_the_ordinary_contract` · `test_impossible_old_match_is_integrity_error` · the extended 0014 oracle test | CI |
@@ -380,6 +401,7 @@ byte-stable).
 | `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction) |
 | `src/veracium/portability.py` | D2 | `FORMAT_VERSION` 6; import drop rule |
 | `src/veracium/lifecycle.py` | **D1** (`_SourceType` binding) + D2 (construction site removed; `test_lifecycle.py:324` reshaped) |
+| `pyproject.toml` | **D1** | `pydantic>=2.7` (the `Field(deprecated=…)` floor — R5-3) |
 | evidence artifacts (`schema_evidence` — BOTH directories) | D2 | the v7 row |
 | `specs/0003-supersession-authority.md` (accepted) | D2, same commit | the §4f amendment block below |
 | `specs/0014-maintenance-attribution.md` (accepted) | D2, same commit | the partition amendment block below |
@@ -399,11 +421,29 @@ superseded contract):**
 > **0014 partition + version amendment (0016 D2):** `EXACT_EQUAL_PROV_FIELDS`
 > loses `source_type` (the field is deleted from `Provenance`); the partition
 > remains TOTAL over the post-D2 model (the totality test enforces the
-> constant). **The digest-projection version increments: post-D2 writers
-> stamp `outcome_digest_version = 3`; the closed receipt set becomes
-> {1, 2, 3}; `validate_receipt_state` and its exhaustive oracle test are
-> extended in the same commit.** Consequence, accepted as part of the API
-> break: requests differing only in the deleted field become identical.
+> constant). **The digest-projection version increments to 3. The legal v3
+> triples are exactly {(request_digest, 3, response_json),
+> (NULL, 3, response_json)}; the v3 projection is the v2 construction
+> computed over the post-D2 field set. Comparison rules: a version-3 receipt
+> follows the ordinary contract; a version-1 or version-2 receipt refuses
+> UNCONDITIONALLY on resubmission (`ReceiptSchemaBoundaryError`) — neither
+> historical projection is computable post-D2, so no comparison is
+> attempted. `validate_receipt_state` and its exhaustive oracle extend over
+> every {1, 2, 3} triple in the same commit.** Consequence, accepted as part
+> of the API break: requests differing only in the deleted field become
+> identical.
+
+> **0013 M10 amendment (0016 D2) — the multi-step planner, specified by the
+> first spec to need two real steps:** a migration may be a CHAIN of
+> declared steps. For base b < 6 the chain is [b→6 (the existing aggregate
+> evidenced construction; its destination becomes an INTERMEDIATE version),
+> 6→7 (the declared no-op, pin
+> `2deae0327584cb0ed265b79f101843eba9e3b5e81b9092d08bf35326aa83ffe9`)].
+> Each step runs in its own transaction, emits its own audit event, and
+> stamps its destination version durably before the next step begins; a
+> mid-chain failure leaves the store at the last completed stamp — a legal
+> accepted version from which a re-run resumes idempotently; evidence binds
+> per-step, never as an aggregate skip-level digest.
 
 ## 8. Claims and limits
 
@@ -414,7 +454,7 @@ superseded contract):**
   which nothing reads. Accessing the enum through the package or
   `veracium.schema` (including `import *` and pickling) now warns. NOT
   warned, by design: reading `provenance.source_type` on an edge, and model
-  metadata (`model_fields`, `get_type_hints`). Reading
+  metadata (`model_fields`, `get_type_hints`); reading
   `provenance.source_type` warns once per access. Hosts reading it from
   exports should stop."
 - **Changelog (D2):** "**Back up your store before migrating — a v7 store
@@ -442,8 +482,8 @@ superseded contract):**
   new-shape dumps byte-wise; if you can construct a collision path (e.g. an
   edge whose old and new serialisations coincide), the cell's routing needs
   re-deciding.
-- **Least sure of, two:** whether the **six-cell matrix + the notice's
-  un-warned list (R3-1 fold)** is now exhaustive — field access, model
+- **Least sure of, two:** whether the **seven-row matrix + the notice's
+  un-warned remainder** is now exhaustive — field access, model
   metadata, both `dir()` surfaces, star-import namespace preservation, and
   the two-warning pickle round-trip are all ruled; is there a supported
   consumption path still unenumerated?
