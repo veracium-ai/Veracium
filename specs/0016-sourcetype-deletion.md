@@ -6,7 +6,7 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v14 — *re-read before editing; quote the version you approve*. v13→v14: EXTERNAL ROUND 10 (2 bin-(a), bin (b) empty; the preflight/no-audit split endorsed): R10-1 A+C+D+F found-in-fix of R9-1 — the preflight had NO EXECUTABLE OWNER (no function/module/signature/return named; the existing CLI carriers — `cli.py`'s migrate verb and `tests/test_migrate_cli.py`, which FREEZE direct `migrate_store` delegation — undispositioned and contradicting) → the ownership model, concrete: **`run_release_migration(path: str) -> Outcome` in `src/veracium/store/migration.py` is the ORCHESTRATOR** — its preflight resolves the base under the R7-1 0007 rules (stamped-verify-then-trust, NEVER bare `user_version`); resolved bases 1–5 → `unsupported-base` (the ONLY interception; no `migrate_store` call, no authority, zero audit rows); **every other state — current v7, newer, foreign, malformed, unstamped, missing, locked — passes through to `migrate_store`, whose accepted 0013 behavior already governs it** (the total matrix by construction); resolved base 6 → authority minting + `migrate_store`, and the preflight→mint race is closed by 0013's EXISTING revalidation (the authority binds endpoints+evidence; a store changed since preflight fails those checks inside the operation); the CLI's migrate verb switches to the orchestrator with `unsupported-base` → exit 1 + the ladder on stderr, and `cli.py` + `test_migrate_cli.py` are dispositioned in §7a; I13 binds to `run_release_migration` by name. R10-2 D found-in-fix of R9-2 — the blank line at 401 had SURVIVED (fixed with a byte-verified edit this time) and four ownership carriers contradicted the preflight (§4's "dedicated migration operation", the §7a migration.py row, the header surface, the changelog) → all swept to the R10-1 ownership model. |
+| **Version** | v15 — *re-read before editing; quote the version you approve*. v14→v15: EXTERNAL ROUND 11 (2 bin-(a), bin (b) empty; all endorsements hold): R11-1 A+C+F found-in-fix of R10-1 — the path-only orchestrator could not honestly create the HOST-OWNED facts 0013 requires (quiescence attestation, backup reference), and the pass-through matrix was IMPOSSIBLE (an authority mints only for an accepted source — current/missing/foreign/malformed/newer/unstamped stores cannot mint, so they cannot "pass through") → the signature gains the host-owned interface: **`run_release_migration(path: str, *, host_attestation: MigrationAttestation) -> MigrationResult`** — `MigrationAttestation` carries the host's quiescence attestation and backup reference VERBATIM into authority minting (the orchestrator never fabricates or defaults them); **the matrix INVERTS: the preflight intercepts EVERYTHING except resolved base 6** — bases 1–5 → `unsupported-base`; already-current v7 → the `current` outcome WITHOUT minting; missing/foreign/malformed/unstamped/newer → the corresponding 0007/0013 refusal outcomes WITHOUT minting; resolved base 6 ALONE mints (attestation passed through) and delegates to `migrate_store(path, authority)`; every preflight short-circuit creates zero authorities and zero audit rows; R11-2 C+D+F — bare `Outcome` cannot carry the CLI's frozen structured reporting (`store_changed`/`transaction_committed`/`resulting_version`; `test_migrate_cli.py` forbids inferring facts from the label) → **`MigrationResult`, on the repo's own `OpenResult` precedent (0013 r8-f3): string-compares as the closed Outcome label while carrying `store_changed`, `transaction_committed`, `resulting_version`, and `diagnostic`** — preflight short-circuits carry (False, False, resolved-or-None); the CLI keeps reporting from structured fields; only the call target changes in `test_migrate_cli.py`. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -299,24 +299,33 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   record — a terminal event is foreign-keyed to an authority-bound
   operation that never exists here). The store's bytes and stamp are
   byte-unchanged. **Base 6 alone proceeds through authority minting and the
-  ordinary audited 0013 operation.** **The executable owner (R10-1):**
-  `run_release_migration(path: str) -> Outcome` in
-  `src/veracium/store/migration.py` — the orchestrator the operator-facing
-  surfaces call. Its preflight resolves the base under the R7-1 0007 rules
-  (stamped-verify-then-trust; never bare `user_version`). **The total state
-  matrix, by construction:** resolved bases 1–5 are the ONLY interception
-  (→ `unsupported-base`); EVERY other state — current v7, newer, foreign,
-  malformed, unstamped, missing path, locked file — passes through to
-  `migrate_store`, whose accepted 0013 behavior already governs it, so the
-  preflight adds one cell and changes nothing else. **The preflight→mint
-  race:** closed by 0013's existing revalidation — the minted authority
-  binds endpoints and evidence, and a store that changed after preflight
-  fails those checks inside the operation; the preflight promises nothing
-  the operation does not re-verify. **The CLI (`veracium migrate`) switches
-  from direct `migrate_store` delegation to the orchestrator**:
-  `unsupported-base` → exit 1 with the ladder on stderr; all other outcomes
-  report as today. `cli.py`'s docstring and `tests/test_migrate_cli.py`'s
-  frozen-delegation test are amended under THIS spec's authority (§7a). **Ordinary OPENING of a below-v6 store is
+  ordinary audited 0013 operation.** **The executable owner (R10-1, re-ruled by
+  R11-1/R11-2):** **`run_release_migration(path: str, *, host_attestation:
+  MigrationAttestation) -> MigrationResult`** in
+  `src/veracium/store/migration.py`. `MigrationAttestation` is the
+  HOST-OWNED interface — the quiescence attestation and backup reference
+  0013 requires, passed VERBATIM into authority minting; the orchestrator
+  never fabricates or defaults them (a path-only signature could not be
+  honest). **The total matrix — the preflight intercepts EVERYTHING except
+  resolved base 6:** bases 1–5 → `unsupported-base` with the ladder;
+  already-current v7 → the `current` outcome WITHOUT minting (minting
+  against a current destination is "not an accepted source" in the 0013
+  instrument); missing path / foreign / malformed / unstamped / newer → the
+  corresponding 0007/0013 refusal outcome WITHOUT minting; **resolved base
+  6 ALONE mints an authority (host attestation passed through) and
+  delegates to `migrate_store(path, authority)`** — 0013's revalidation
+  inside the operation closes the preflight→mint race. Every preflight
+  short-circuit creates ZERO authorities and ZERO audit rows.
+  **`MigrationResult` (R11-2, the `OpenResult` precedent — 0013 r8-f3:
+  facts are never inferred from the label):** string-compares as the closed
+  `Outcome` label while carrying `store_changed`, `transaction_committed`,
+  `resulting_version`, and `diagnostic`; preflight short-circuits carry
+  `(False, False, resolved-version-or-None)`; delegated operations carry
+  `migrate_store`'s own facts. **The CLI (`veracium migrate`) calls the
+  orchestrator and keeps reporting from the STRUCTURED fields exactly as
+  today** — `unsupported-base` → exit 1 with the ladder on stderr; only the
+  call target changes in `cli.py` and `tests/test_migrate_cli.py`,
+  dispositioned in §7a under this spec's authority. **Ordinary OPENING of a below-v6 store is
   UNCHANGED by this spec** — 0013's existing below-head refusal governs it;
   only `run_release_migration`'s PREFLIGHT returns the new outcome (§2c
   carries both cells). **The 0013 M10 amendment is WITHDRAWN**: with older
@@ -415,7 +424,7 @@ byte-stable).
 | I8 — the extractor cannot emit provenance fields (the §4.1 rule as a regression) | `test_extractor_cannot_emit_provenance_fields` | CI |
 | I9 — the v6→v7 step's declared statement tuple `("SELECT 1",)` is sha-pinned and its 0013 path evidence binds to that exact SQL; the step changes no object (asserted: sqlite_master byte-identical before/after) | migration self-check + `test_v7_step_declaration_matches_pin` + `test_v7_step_changes_no_objects` | CI |
 | I10 — the frozen evidence_basis contract is text-pinned: §1b's four clauses present verbatim until a first-consumer spec supersedes them | `test_evidence_basis_contract_frozen` (text pin, breaks on drift) | CI |
-| I13 — **the below-v6 PREFLIGHT refusal (R8-1, construction per R9-1)**: for EVERY legal resolved base 1–5 the ORCHESTRATOR returns `unsupported-base` with the exact ladder diagnostic BEFORE any authority minting — `migrate_store` is never invoked, NO authority exists, and **ZERO 0013 audit rows are created** (asserted); bytes and stamp byte-identical; ordinary opening unchanged; base 6 alone proceeds through the ordinary audited operation | `test_below_v6_base_refuses_with_the_ladder_message` (bases 1–5: outcome, message, byte-identity, no-authority, zero-audit-rows) + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` | CI |
+| I13 — **the preflight matrix, TOTAL (R8-1, construction per R9-1/R10-1/R11-1)**: `run_release_migration` intercepts EVERYTHING except resolved base 6 — bases 1–5 → `unsupported-base` + the exact ladder; current v7 → `current` without minting; missing/foreign/malformed/unstamped/newer → the corresponding refusal outcome without minting; every short-circuit creates ZERO authorities and ZERO 0013 audit rows with bytes+stamp byte-identical; resolved base 6 ALONE mints (host attestation verbatim) and delegates; the returned `MigrationResult` carries the structured facts (never label-inferred) | `test_preflight_matrix_total` (every cell: outcome, structured facts, no-authority, zero-audit-rows, byte-identity) + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` + the amended `test_migrate_cli.py` | CI |
 
 **Reproducer retention:** review defects become regressions beside these.
 
@@ -460,8 +469,8 @@ byte-stable).
 | `src/veracium/store/base.py` | D2 | `ReceiptSchemaBoundaryError(SupersessionIntegrityError)` defined + exported |
 | `src/veracium/store/sqlite.py` | **D1** (`_SourceType` binding) + D2 (construction sites incl. the `model_copy(update=)` write; phase-2 era check; version-3 stamping; the by-stored-version projection selection with no fall-through) |
 | `src/veracium/store/schema_version.py` | D2 | `SCHEMA_V7`, `SCHEMA_VERSION=7`, the sha-pinned declared no-op step |
-| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); **`run_release_migration` — the orchestrator + preflight (R10-1): bases 1–5 intercepted per I13; everything else passes through** |
-| `src/veracium/cli.py` + `tests/test_migrate_cli.py` | D2 | the migrate verb switches to `run_release_migration` (`unsupported-base` → exit 1 + the ladder on stderr); the frozen direct-delegation docstring/test amended under THIS spec's authority |
+| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); **`run_release_migration(path, *, host_attestation) -> MigrationResult` — the orchestrator (R11-1): the preflight intercepts everything except resolved base 6; `MigrationAttestation` + `MigrationResult` defined here** |
+| `src/veracium/cli.py` + `tests/test_migrate_cli.py` | D2 | the migrate verb calls `run_release_migration` with the host attestation it gathers from the operator (flags/prompts — R11-1); reporting stays on the STRUCTURED `MigrationResult` fields; `unsupported-base` → exit 1 + the ladder; the frozen docstring/test amended under THIS spec's authority |
 | `src/veracium/portability.py` | D2 | `FORMAT_VERSION` 6; import drop rule |
 | `src/veracium/lifecycle.py` | **D1** (`_SourceType` binding) + D2 (construction site removed; `test_lifecycle.py:324` reshaped) |
 | `pyproject.toml` | **D1** | `pydantic>=2.7` (the `Field(deprecated=…)` floor — R5-3) |
