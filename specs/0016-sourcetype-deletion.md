@@ -6,7 +6,7 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v6 — *re-read before editing; quote the version you approve*. v5→v6: EXTERNAL ROUND 2 (4 bin-(a) + 4 bin-(b), classified first). **The round's own lesson: v5 folded into revision METADATA, not operative sections (R2-4, classes D+G — the 0015 R10-2 claims-ahead-of-artifacts shape in the fold mechanics themselves).** v6 makes every fold OPERATIVE: the canonical `Spec-Requires:` line (parser-matched), a real §7a surface inventory, the six-cell access/introspection matrix IN §4 with I2 naming every cell, the exception contract and the verbatim 0003/0014 amendment blocks in body sections. R2-1 (B+D): I1 narrowed to trust/recall decisions EXCLUDING receipt identity and replay/conflict classification (the collapse changes those, as I7 says); byte-identical claims swept from §§3/4/7/8. R2-2 (A+C+D): the SIXTH cell — `typing.get_type_hints(Provenance)` resolves annotations through module globals, which `__getattr__` cannot intercept → the D1 annotation binds the private name so hints resolve to the SAME class object (identity preserved, unwarnable, enumerated in the notice); pickling ruled (members pickle by name → `getattr` → warns). R2-3 (B+C): the boundary outcome for a stamp-6 mismatch is UNCLASSIFIABLE (legitimate collapsed retry vs different-request-reusing-op-id cannot be distinguished) — `ReceiptSchemaBoundaryError` now SUBCLASSES `SupersessionIntegrityError` (v5's sibling ruling REVERSED: existing integrity handlers keep catching it; the subclass adds the era context), never labelled benign, handled at least as conservatively as integrity. Bin-(b): falsified-claim sweep; valid-enum vs validation-bypass distinguished; the changelog carries the backup line; the rollback §8 corrected. | |
+| **Version** | v7 — *re-read before editing; quote the version you approve*. v6→v7: EXTERNAL ROUND 3 (3 bin-(a) + 5 bin-(b), classified first). **R3-3 (A+C+D+F) drives a REDESIGN, not a patch: the `committed_schema` column is WITHDRAWN.** Accepted 0014 already owns the durable digest-projection discriminator (`outcome_digest_version`, a closed VALIDATED set) — D2 changes the projection, so the honest construction is `outcome_digest_version = 3` for post-D2 receipts, with 0014's amendment extending the closed set to {1,2,3}, `validate_receipt_state` and its exhaustive oracle extended, and the era rule falling out of machinery that already validates every read and write: **a version<3 receipt whose digest mismatches post-D2 is UNCLASSIFIABLE (`ReceiptSchemaBoundaryError`); a version-3 receipt follows the ordinary contract.** The SQLite-type-freedom hazard (the probe stored TEXT/8/-1/6.5), the missed-writer-DEFAULT-6 hazard, and the two-discriminator ambiguity all VANISH with the column; SCHEMA v6→v7 becomes a no-DDL refusal bump (the 0006 v4→v5 precedent). R3-1 (A+C+D, found-in-fix of R2-2): the COMPLETE D1 construction — field access and model metadata are UN-WARNED BY DESIGN and enumerated in the supplied notice text; `__all__` preserves the exact 42-name namespace (test: star-import before/after identical); package `__dir__` specified; ALL internal imports bind `_SourceType` so ordinary library use is WARNING-FREE (tested) and no package binding defeats the `__getattr__`; pickle = exactly TWO warnings per round-trip, stated. R3-2 (D): every remaining benign/different-findings carrier swept to the ONE contract (unclassifiable, conservative). Bin-(b) ×5 folded. | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -84,7 +84,7 @@ The successor contract, recorded so it cannot drift before its first consumer:
 | `SourceType` (public enum) | **deprecated at D1, removed at D2** | exported at top level | host imports (uncountable — public API, hence the cycle) | D1 warns without behaviour change; D2 is the API break, in an API-breaking release |
 | `EXACT_EQUAL_PROV_FIELDS` | written: drops `source_type` at D2 | the TOTAL partition over `Provenance.model_fields`; totality is test-pinned | `verify_snapshot_against_plan` (`contribution.py:201`), `test_0014_receipt_split.py:80,:125` | the totality test forces the constant and the model to move together; **idempotency discrimination NARROWS by the defined collapse (R2-1/F1)** — requests differing only in the deleted field become identical, per the 0014 amendment block (§7a) |
 | `FORMAT_VERSION` | 5 → **6 at D2** | import gates by version | `portability.py`, S7/0006 pins | an OLD build's `Provenance` REQUIRES `source_type` (`schema.py:111`), so without the bump a new export dies there as a pydantic error; the bump makes it an honest version refusal |
-| supersession receipts | gain `committed_schema` stamp at D2 (`ALTER`, SCHEMA v6→v7) | receipts carry request/outcome digests; phase 1 compares | `apply_supersession_plan` phase 1/2 | the stamp is what keeps schema-shift and tampering different findings (§4) |
+| supersession receipts | post-D2 writers stamp `outcome_digest_version = 3` (no new column — the R3-3 redesign); SCHEMA v6→v7 is a no-DDL refusal bump | 0014: the validated closed receipt state; the version is the durable projection discriminator | `apply_supersession_plan` phase 1/2; `validate_receipt_state` + its exhaustive oracle (extended to {1,2,3}) | **the version separates ERAS; for a pre-v3 receipt a post-D2 mismatch is UNCLASSIFIABLE** (§4) — never "different findings", never benign |
 
 ---
 
@@ -95,7 +95,7 @@ The successor contract, recorded so it cannot drift before its first consumer:
 | old exports (FORMAT ≤5, carry `source_type`) | — | existing gates | key present after D2 | a file claiming any `source_type` value | **silently dropped on import** — pydantic default `extra=None` → ignore (verified §2c-ii: unknown keys tolerated); `test_old_export_source_type_is_dropped` |
 | new exports read by OLD builds | — | — | missing required `source_type` | — | **FORMAT 6 refusal precedes the pydantic error** — old builds gate on version before validation; `test_format_6_refused_by_version_gate` (pinned against the v5 gate code path) |
 | extractor output | — | — | a model-emitted `source_type` (or basis) key | model asserts provenance | **parser drops unknown keys with no reading code path** — the §4.1 rule, now also the deletion's own regression: `test_extractor_cannot_emit_provenance_fields` |
-| pre-D2 receipts (stored digests computed over the old field set) | — | — | digest mismatch on resubmission | indistinguishable-by-digest from tamper | **the `committed_schema` stamp partitions the two** (§4): `< 7` → `ReceiptSchemaBoundaryError` (named, benign, expected); `= 7` mismatch → `SupersessionIntegrityError` (genuine, loud); `test_receipt_boundary_error_names_the_schema` + `test_post_removal_mismatch_still_integrity_error` |
+| pre-D2 receipts (stored digests computed over the old field set) | — | — | digest mismatch on resubmission | **indistinguishable-by-digest from tamper — and that indistinguishability IS the ruling (R2-3/R3-2)** | **a version<3 receipt whose digest mismatches post-D2 is UNCLASSIFIABLE**: `ReceiptSchemaBoundaryError(SupersessionIntegrityError)`, never benign, handled at least as conservatively as integrity; a version-3 receipt follows the ordinary 0014 contract; `test_pre_v3_mismatch_is_unclassifiable` + `test_v3_receipts_follow_the_ordinary_contract` |
 | stored `source_type` values (direct constructors/imports: any VALID enum value incl. `OBSERVED` — an unrecognised string raises `ValidationError` at construction today; arbitrary strings reach storage only via validation-bypassing writes or hand-edited JSON) (F1, precision per round-2 bin-(b)) | — | — | unknown value in stored JSON (bypass/hand-edit only) | a crafted value aimed at post-D2 readers | **dropped on read post-D2 exactly like the historical key** (`extra` ignore); pre-D2 they are inert to decisions (§2c-ii row 1) and discriminate digests only until the boundary; `test_arbitrary_stored_source_type_dropped_post_d2` |
 | host code importing `SourceType` | — | — | import after D2 → `AttributeError` | — | D1's `DeprecationWarning` (module `__getattr__`) is the cycle's notice; `test_sourcetype_import_warns_at_d1` |
 
@@ -176,12 +176,31 @@ row:**
 | `from veracium.schema import *` | **`schema.__all__` is DEFINED (none exists today) and lists `SourceType` during D1**, so PEP-562 star-import triggers the `__getattr__` — probe-verified; without `__all__` this cell silently BREAKS | yes |
 | `typing.get_type_hints(Provenance)["source_type"]` | **the D1 annotation binds the private name** (`source_type: _SourceType`, the SAME enum object), so hints resolve to the identical class — no `NameError`; module `__getattr__` cannot intercept annotation resolution through module globals, so this cell CANNOT warn | **no — enumerated in the deprecation notice** |
 
-**Pickling, ruled:** enum members pickle by module+name; unpickling calls
-`getattr(schema, "SourceType")` → the `__getattr__` → succeeds and warns.
-`schema.__dir__` includes `SourceType` during D1. Any later-discovered path
-joins the notice, never silence. The field is still constructed, stored,
-exported, compared — decision behaviour unchanged (I1's narrowed sense).
-CHANGELOG names D2's release.
+**The rest of the surface, ruled (R3-1):**
+- **Field access does NOT warn**: `provenance.source_type` and model
+  metadata (`Provenance.model_fields`, `get_type_hints`) are un-warned by
+  design — pydantic field access cannot carry a deprecation hook without
+  descriptor intrusion — and are ENUMERATED in the supplied notice text
+  (§8): "the field itself disappears at removal".
+- **Namespace preservation, exact**: `schema.__all__` is the full current
+  public namespace (42 names — the 41 existing plus `SourceType` via the
+  `__getattr__`); `test_star_import_namespace_is_byte_identical` compares
+  the pre-D1 and D1 star-import namespaces exactly.
+- **Both `dir()` surfaces**: package `__dir__` and `schema.__dir__` include
+  `SourceType` during D1.
+- **Internal imports**: `__init__.py`, `ingest.py`, `lifecycle.py`, and
+  `store/sqlite.py` all bind `_SourceType` — no internal use touches the
+  warning path, so **ordinary library import and operation are
+  WARNING-FREE** (`test_ordinary_operation_emits_no_deprecation_warning`),
+  and `__init__.py` creates NO normal package binding that would defeat the
+  package `__getattr__`.
+- **Pickling, exact**: members pickle by module+name; serialization and
+  deserialization EACH invoke the lazy lookup — **one round-trip emits
+  exactly TWO warnings**, stated as such in I2, not a singular warning.
+
+Any later-discovered path joins the notice, never silence. The field is
+still constructed, stored, exported, compared — decision behaviour
+unchanged (I1's narrowed sense). CHANGELOG names D2's release.
 
 **D2 — removal (the next API-breaking release):**
 
@@ -190,33 +209,41 @@ CHANGELOG names D2's release.
   snapshots and digests — they ARE the same request. This is an accepted
   consequence of deleting free-standing public state, not an oversight:
   pre-D2 receipts whose digests were discriminated by the field fall under
-  the `committed_schema` boundary rule like every other pre-D2 receipt.
-  Stored arbitrary values (any string an importer or direct constructor
-  persisted, including `OBSERVED`) are dropped on read post-D2 (§2c).
+  the version-era boundary rule like every other pre-D2 receipt.
+  Stored values (any VALID enum value a constructor or importer persisted —
+  `OBSERVED` included; arbitrary strings only via validation-bypassing
+  writes or hand-edits, per §2c) are dropped on read post-D2.
 - `Provenance.source_type` and `SourceType` removed; **all 10 write sites**
   — the 9 `Provenance(` constructions AND the `model_copy(update=)` write at
   `sqlite.py:1143-1147`, whose `"source_type"` update key is dropped (left in
   place it would raise or silently no-op depending on model config, neither
   acceptable) — plus `store/base.py:223` docstring and
   `EXACT_EQUAL_PROV_FIELDS`, updated in the same commit (the partition
-  totality test forces the constant; I1's byte-identity forces the rest).
+  totality test forces the constant; I1's decision-projection identity forces the rest).
 - **`FORMAT_VERSION` 5→6.** New builds import ≤5 files by dropping the key
   (verified `extra` behaviour); old builds refuse 6 by version gate — an
   honest refusal instead of a pydantic crash on a missing required field.
-- **SCHEMA v6→v7:** `ALTER TABLE supersession_operations ADD COLUMN
-  committed_schema INTEGER NOT NULL DEFAULT 6` — existing receipts stamp 6
-  (pre-removal), new receipts write 7. The ALTER-path DDL literal is authored
-  empirically and sha-pinned per the 0013/0014 convention, with the stored-DDL
-  byte check in the migration.
+- **The era discriminator (R3-3 redesign): `outcome_digest_version = 3` —
+  the `committed_schema` column is WITHDRAWN.** Accepted 0014 already
+  defines the durable digest-projection discriminator and validates the
+  closed receipt state on every read and write. D2 changes the projection
+  (the snapshot loses the field), so post-D2 receipts stamp **version 3**;
+  the 0014 amendment (§7a) extends the closed set to {1, 2, 3} and extends
+  `validate_receipt_state` + its exhaustive oracle test. Everything the
+  parallel column got wrong vanishes with it: no SQLite type freedom (the
+  validated state machinery rejects non-members exactly as 0014 already
+  does for versions), no missed-writer DEFAULT (writers stamp the version
+  they compute — the existing 0014 pattern), no composite-discriminator
+  ambiguity. **SCHEMA v6→v7 is a no-DDL refusal bump** (the 0006 v4→v5
+  precedent: it exists so an older build refuses rather than misreads a
+  store whose receipts it cannot classify).
 - **The migration boundary is an ATOMIC TRANSITION (the 0015
-  transitions-vs-states lens, applied in advance):** `committed_schema` is
-  TOTAL over operations — every receipt is fully-6 (written before the
-  migration, stamped by the ALTER's DEFAULT) or fully-7 (written after),
-  never straddling. Mechanism: 0013 migrations are offline with quiesced
-  callers, AND the ALTER + backfill commit in one transaction, so no receipt
-  write can observe a mid-migration schema; `test_no_receipt_straddles_the_
-  v7_boundary` asserts it. Without this, a boundary op with an ambiguous
-  stamp would be mis-classified by the partition below.
+  transitions-vs-states lens):** the era stamp is TOTAL over operations —
+  every receipt carries the `outcome_digest_version` its writer computed
+  (pre-D2 writers: 1 or 2; post-D2 writers: 3), and the 0013 offline
+  contract (quiesced callers; the version bump commits atomically) means no
+  receipt write can straddle the migration;
+  `test_no_receipt_straddles_the_v7_boundary` asserts it.
 - **`ReceiptSchemaBoundaryError` — the operative API (R2-3, re-ruled):**
   defined in `store/base.py`, **SUBCLASSING `SupersessionIntegrityError`**
   (the earlier sibling ruling REVERSED): for a stamp-6 receipt post-D2, a
@@ -232,10 +259,10 @@ CHANGELOG names D2's release.
   Exported from `veracium.store.base` beside its parent; raised in BOTH
   receipt phases (the phase-1 public lookup in `graph.py` and the store's
   phase-2 check in `sqlite.py`).
-- **Phase-1/2 receipt behaviour at the boundary:** stamp `< 7` + any digest
+- **Phase-1/2 receipt behaviour at the boundary:** version `< 3` + any digest
   mismatch → **`ReceiptSchemaBoundaryError`** — named, fail-closed, message
   states the op committed under a prior schema and is not replay-verifiable
-  across the removal; stamp `= 7` + mismatch → the existing
+  across the removal; version `= 3` + mismatch → the existing
   **`SupersessionIntegrityError`** (genuine violation, distinct and louder).
   Schema-shift and tampering stay different findings (research's required
   refinement). Stamp `< 7` + digest MATCH is impossible by construction
@@ -266,7 +293,7 @@ byte-stable).
   exists for behaviour. The regimes that matter are **boundary regimes**, and
   each gets a test (§6): old-export import; new-export-to-old-build refusal
   (exercised against the pinned v5 gate); pre-D2 receipt resubmitted post-D2
-  (both the benign and the genuine-mismatch cells); D1 warning; a full
+  (the unclassifiable pre-v3 cell and the ordinary v3 cell); D1 warning; a full
   v1→v7 migration chain (extending the 0013 suite).
 - Cold vs warm: no difference. Release class: **stable** — every named
   regime is reachable in CI.
@@ -278,10 +305,10 @@ byte-stable).
 | invariant | executable check | where it runs |
 |---|---|---|
 | I1 — **trust/recall-decision identity (narrowed by R2-1)**: identical sequences produce identical gates, disclosure routing, and renders before/after D2 — **EXCLUDING receipt identity and replay/conflict classification, which the defined collapse changes** (I7 owns those); the dumps differ exactly by the deleted key | `test_deletion_is_decision_invisible` (projection compare, receipt outcomes excluded) + the standing 0003/0008/0012 suites green | CI |
-| I2 — D1 warns on every matrix cell and changes nothing else: the five warnable cells each warn; the `get_type_hints` cell resolves to the identical class object without `NameError`; pickling round-trips with a warning | `test_sourcetype_import_warns_at_d1` (parametrized over ALL SIX cells + pickling) + suite green under `-W error::DeprecationWarning` allowlist | CI |
+| I2 — the COMPLETE D1 surface (R3-1): the five warnable cells each warn; `get_type_hints` resolves to the identical class without `NameError`; field access and model metadata are un-warned and notice-enumerated; the star-import namespace is byte-identical to pre-D1 (all 42 names); both `dir()` surfaces include the enum; a pickle round-trip emits exactly TWO warnings; **ordinary library import and operation emit ZERO deprecation warnings** (all internal imports bind the private name) | `test_sourcetype_import_warns_at_d1` (all six cells) · `test_star_import_namespace_is_byte_identical` · `test_dir_surfaces_include_sourcetype` · `test_pickle_roundtrip_emits_exactly_two_warnings` · `test_ordinary_operation_emits_no_deprecation_warning` | CI |
 | I3 — old exports import with the key dropped; every other field preserved | `test_old_export_source_type_is_dropped` | CI |
 | I4 — FORMAT 6 refused by the v5 version gate before validation | `test_format_6_refused_by_version_gate` | CI |
-| I5 — the receipt boundary partitions: stamp<7 mismatch → `ReceiptSchemaBoundaryError`; stamp=7 mismatch → `SupersessionIntegrityError`; stamp<7 match → integrity error | `test_receipt_boundary_error_names_the_schema` · `test_post_removal_mismatch_still_integrity_error` · `test_impossible_old_match_is_integrity_error` | CI |
+| I5 — the receipt era rule, ONE contract (R3-2/R3-3): a version<3 receipt whose digest mismatches post-D2 raises `ReceiptSchemaBoundaryError` (a subclass of the integrity error — UNCLASSIFIABLE, never benign, at least as conservative); a version-3 receipt follows the ordinary 0014 contract; a version<3 digest MATCH is impossible by construction and raises integrity if observed; the closed version set {1,2,3} is validated on every read and write by the extended `validate_receipt_state` + exhaustive oracle | `test_pre_v3_mismatch_is_unclassifiable` · `test_v3_receipts_follow_the_ordinary_contract` · `test_impossible_old_match_is_integrity_error` · the extended 0014 oracle test | CI |
 | I6 — partition totality survives: `EXACT_EQUAL_PROV_FIELDS` minus the field + the model minus the field still partition exactly | `test_raw_request_field_partition_is_total` (existing, breaks then passes) | CI |
 | I7 — idempotency discrimination, stated honestly (narrowed by F1): author-class differences still conflict; **`source_type`-only differences STOP conflicting at D2 — the defined collapse — and the test asserts BOTH directions** (pre-D2 receipts hitting the boundary rule; post-D2 same-request identity) | `test_idempotency_discrimination_post_collapse` (replaces the unweakened-claim test) | CI |
 | I8 — the extractor cannot emit provenance fields (the §4.1 rule as a regression) | `test_extractor_cannot_emit_provenance_fields` | CI |
@@ -319,10 +346,10 @@ byte-stable).
 | `src/veracium/schema.py` | D1+D2 | `_SourceType` alias + `__getattr__` + `__all__` + `__dir__` (D1); enum + field removed (D2) |
 | `src/veracium/__init__.py` | D1+D2 | package `__getattr__` warning (D1); export removed (D2) |
 | `src/veracium/ingest.py` | D2 | `_source_type` deriver + construction site removed |
-| `src/veracium/graph.py` | D2 | phase-1 receipt lookup raises `ReceiptSchemaBoundaryError` on stamp<7 mismatch |
+| `src/veracium/graph.py` | D2 | phase-1 receipt lookup raises `ReceiptSchemaBoundaryError` on a pre-v3 mismatch |
 | `src/veracium/contribution.py` | D2 | `EXACT_EQUAL_PROV_FIELDS` loses the field (totality test forces it); snapshot shape changes → the defined digest collapse |
 | `src/veracium/store/base.py` | D2 | `ReceiptSchemaBoundaryError(SupersessionIntegrityError)` defined + exported |
-| `src/veracium/store/sqlite.py` | D2 | construction sites incl. the `model_copy(update=)` write; phase-2 boundary check; `committed_schema` written with each receipt |
+| `src/veracium/store/sqlite.py` | D2 | construction sites incl. the `model_copy(update=)` write; phase-2 era check; post-D2 receipts stamp `outcome_digest_version = 3` |
 | `src/veracium/store/schema_version.py` | D2 | `SCHEMA_V7`, `SCHEMA_VERSION=7`, the sha-pinned ALTER constants |
 | `src/veracium/store/migration.py` | D2 | the v6→v7 step (ALTER + backfill, one transaction) |
 | `src/veracium/portability.py` | D2 | `FORMAT_VERSION` 6; import drop rule |
@@ -335,26 +362,34 @@ byte-stable).
 commit — implementation may not land while either still states the
 superseded contract):**
 
-> **0003 §4f amendment (0016 D2):** the receipt comparison gains a
-> schema-conditioned third outcome. Where §4f says a differing digest is an
-> integrity conflict, that holds for receipts whose `committed_schema`
-> equals the current schema. For receipts stamped below the current schema,
-> a differing digest is **unclassifiable** — `ReceiptSchemaBoundaryError`
-> (a subclass of the integrity error) is raised; it is never treated as
-> benign and never replayed.
+> **0003 §4f amendment (0016 D2):** the receipt comparison gains an
+> era-conditioned third outcome. Where §4f says a differing digest is an
+> integrity conflict, that holds for receipts whose `outcome_digest_version`
+> is the current projection version (3). For receipts stamped below it, a
+> differing digest is **unclassifiable** — `ReceiptSchemaBoundaryError` (a
+> subclass of the integrity error) is raised; it is never treated as benign
+> and never replayed.
 
-> **0014 partition amendment (0016 D2):** `EXACT_EQUAL_PROV_FIELDS` loses
-> `source_type` (the field is deleted from `Provenance`). The partition
-> remains TOTAL over the post-D2 model; the totality test enforces the
-> constant. Consequence, accepted as part of the API break: requests
-> differing only in the deleted field become identical.
+> **0014 partition + version amendment (0016 D2):** `EXACT_EQUAL_PROV_FIELDS`
+> loses `source_type` (the field is deleted from `Provenance`); the partition
+> remains TOTAL over the post-D2 model (the totality test enforces the
+> constant). **The digest-projection version increments: post-D2 writers
+> stamp `outcome_digest_version = 3`; the closed receipt set becomes
+> {1, 2, 3}; `validate_receipt_state` and its exhaustive oracle test are
+> extended in the same commit.** Consequence, accepted as part of the API
+> break: requests differing only in the deleted field become identical.
 
 ## 8. Claims and limits
 
-- **Changelog (D1):** "`SourceType` is deprecated and will be removed in
-  <the named API-breaking release>. It has never influenced any decision;
-  hosts reading it from exports should stop — the field is a restatement of
-  `author_of_evidence`."
+- **Changelog (D1), the SUPPLIED notice text (R3-1):** "`SourceType` is
+  deprecated and will be removed in <the named API-breaking release>. It has
+  never influenced any decision. On ingest-derived records it restates
+  `author_of_evidence`; directly-constructed records may carry any value,
+  which nothing reads. Accessing the enum through the package or
+  `veracium.schema` (including `import *` and pickling) now warns. NOT
+  warned, by design: reading `provenance.source_type` on an edge, and model
+  metadata (`model_fields`, `get_type_hints`) — the field itself disappears
+  at removal. Hosts reading it from exports should stop."
 - **Changelog (D2):** "**Back up your store before migrating — a v7 store
   does not open on older builds.** `SourceType`/`Provenance.source_type` removed
   (deprecated since 0.8.0). Behaviour is unchanged (the field gated nothing —
@@ -379,11 +414,11 @@ superseded contract):**
   new-shape dumps byte-wise; if you can construct a collision path (e.g. an
   edge whose old and new serialisations coincide), the cell's routing needs
   re-deciding.
-- **Least sure of, two:** whether the **five-cell access matrix (F2 fold)
-  is exhaustive** — package access/import, schema access/import, and
-  star-import all warn; is there a supported consumption path we have not
-  enumerated (pickling? `inspect` traversal?) that deserves a matrix row or
-  a notice line?
+- **Least sure of, two:** whether the **six-cell matrix + the notice's
+  un-warned list (R3-1 fold)** is now exhaustive — field access, model
+  metadata, both `dir()` surfaces, star-import namespace preservation, and
+  the two-warning pickle round-trip are all ruled; is there a supported
+  consumption path still unenumerated?
 - **Where we may have overstated:** "nothing is unrecoverable" (§4) — true
   for stores, but a host that *depended* on reading `source_type` from
   exports loses that read at D2 with no replacement by design; we believe no
