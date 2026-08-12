@@ -6,7 +6,7 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v10 — *re-read before editing; quote the version you approve*. v9→v10: EXTERNAL ROUND 6 (4 bin-(a), bin (b) EMPTY; every endorsement holds): R6-1 A+C+D+F found-in-fix of R5-2 — the [b→6] "aggregate evidenced step" does NOT EXIST under accepted 0013 (adjacency is enforced by the registry, TerminalFacts, the single-use authority, and the hook; the evidence holds only the concrete 1→2 path) → the planner is the ACTUAL ADJACENT ROUTE [b→b+1, …, 6→7]: the D2 commit DECLARES every missing adjacent edge (2→3, 3→4, 4→5, 5→6) with per-step evidence so the registry is total over 1..7; each step mints and consumes its OWN single-use MigrationAuthority (mint → run in its own transaction → terminal record + durable stamp → the next step mints fresh); fault injection at EVERY inter-step seam joins the 0013 presend gates; the aggregate production path is RETIRED at D2; R6-2 A+C+D+G — `SCHEMA_V7 = SCHEMA_V6` breaks 0007 shape resolution (reviewer-probed: identical digests, resolve → None, HEAD evidence UNKNOWN) → the explicit 0007 same-shape rule by verbatim amendment: THE STAMP discriminates same-shape versions; an UNSTAMPED store matching a multi-version shape resolves to the OLDEST match (fail-conservative — adoption then migrates forward through the no-op); the resolver + `schema_evidence` HEAD probe updated; 0007/`schema_evidence.py`/`schema_model.py`/tests join §7a; R6-3 D found-in-fix of R5-1 — five carriers still described compare-then-branch → ALL swept to UNCONDITIONAL RECEIPT-HIT refusal (a pre-v3 receipt refuses on sight at both phases; NO digest is computed; the regression replaces digest functions with EXPLODING SENTINELS over all three legal pre-v3 states at both phases); R6-4 A+C+D+G found-in-fix of R5-3 — a floor test cannot force 2.7.0 in an unconstrained install → a REAL minimum-dependency CI job (`pydantic==2.7.0`) beside the latest job, `.github/workflows/test.yml` joins §7a, the test ASSERTS the installed version; the notice contradiction fixed (field access removed from the unwarned list). | |
+| **Version** | v11 — *re-read before editing; quote the version you approve*. v10→v11: EXTERNAL ROUND 7 (3 bin-(a), bin (b) empty; R6-3 closed, the min-dep job adequate, endorsements hold): R7-1 A+C+D+G found-in-fix of R6-2 — "oldest match" REOPENED UNSAFE ADOPTION (0007 permits unstamped adoption only from evidenced legacy bases; the reviewer's probe: an unstamped v6-shape would be adopted though `legacy_base_versions()` = {1}) → the corrected rule: a STAMPED store uses its stamp only after shape-vs-that-exact-version verification; an UNSTAMPED store searches ONLY `legacy_base_versions()`; multi-matches inside that restricted set REFUSE; "resolve never returns None" is WITHDRAWN (an unclassified store refuses — adoption grants authority and must not); the HEAD evidence probe may use its verified stamp to tell v6/v7 apart WITHOUT altering runtime adoption; R7-2 A+C+D+F found-in-fix of R6-1 — the historical adjacent edges are NOT CONSTRUCTIBLE under 0013's statements-only contract (2→3 rewrites JSON, 3→4 invalidates caches, 4→5 mints the identity row — the reviewer's probe: an accepted v5 manifest with ZERO identity rows; reopening callbacks is its own review) → the SCOPE IS NARROWED to the reviewer's R5-2 alternative: **D2 migrates base 6 only; below-6 REFUSES with a named error directing the operator to reach v6 on a pre-D2 release first (the two-release ladder, stated in §4/§7/§8/changelog); the 0013 M10 amendment is WITHDRAWN** (with older bases refused, 0016 needs exactly ONE step — M10 stays deferred to the first spec that truly needs a chain); R7-3 D found-in-fix of R6-4 — the notice's original "NOT warned … provenance.source_type" sentence had survived the reword → the notice now lists ONLY metadata/hint paths as unwarned. | |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -239,16 +239,19 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   precedent — CORRECTED by R4-2: v4→v5 was minimal-DDL, adding the
   `store_identity` singleton; the no-DDL form is NEW here and reviewed as
   such): it exists so an older build refuses rather than misreads a store
-  whose receipts it cannot classify. **The 0007 same-shape rule (R6-2 —
-  reviewer-probed: v6 and v7 share one shape digest, so the resolver
-  returned None and HEAD evidence went UNKNOWN):** by verbatim 0007
-  amendment (§7a), when two accepted versions share a shape digest, **the
-  STAMP (`user_version`) discriminates**; an UNSTAMPED store matching a
-  multi-version shape resolves to the OLDEST matching version
-  (fail-conservative — adoption then migrates forward through the declared
-  no-op). The resolver and `schema_evidence`'s HEAD release probe are
-  updated to this rule; tests cover stamped v6, stamped v7, HEAD release
-  evidence, migration-output evidence, and unstamped adoption.
+  whose receipts it cannot classify. **The 0007 same-shape rule (R6-2, CORRECTED by
+  R7-1 — the v10 "oldest match" reopened unsafe adoption):** by verbatim
+  0007 amendment (§7a): a STAMPED store uses its stamp ONLY after its shape
+  verifies against that exact version; an UNSTAMPED store searches ONLY
+  `legacy_base_versions()` (today: {1}) — an unstamped v6/v7 shape is NOT a
+  legacy base and REFUSES; multiple matches inside that restricted set are
+  ambiguous and REFUSE. `resolve` MAY return None — an unclassified store
+  refuses, because adoption grants authority and must not reach an
+  unclassified store. The HEAD release evidence probe may use its VERIFIED
+  stamp to distinguish v6 from v7 (a build-time concern) without altering
+  runtime adoption. Tests: stamped v6, stamped v7, HEAD evidence,
+  migration-output evidence, unstamped-legacy adoption, and the REFUSALS
+  (unstamped v6-shape; zeroed-stamp v6).
 - **Receipt v3, mechanically defined (R4-1):** the legal v3 triples are
   **{(request_digest, 3, response_json), (NULL, 3, response_json)}** — the
   same two shapes as v2 (a post-D2 public submission carries its snapshot;
@@ -276,23 +279,20 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   `2deae0327584cb0ed265b79f101843eba9e3b5e81b9092d08bf35326aa83ffe9`;
   0013 path evidence binds to that exact SQL; the version stamp update is
   the step's effect. An empty tuple is rejected by 0013 and is not used.
-- **The multi-step planner (R5-2, made REPRESENTABLE by R6-1):** accepted
-  0013 enforces adjacency everywhere (registry, `TerminalFacts`, the
-  single-use `MigrationAuthority`, the executable hook), so the chain is the
-  **actual adjacent route [b→b+1, …, 5→6, 6→7]**. The D2 commit **declares
-  every missing adjacent edge (2→3, 3→4, 4→5, 5→6) with its own declaration
-  and per-step path evidence** — the registry becomes TOTAL over 1..7
-  (today's evidence holds only the concrete 1→2 path; the aggregate
-  production path is RETIRED at D2). **Authority lifecycle, explicit:** each
-  step MINTS its own single-use `MigrationAuthority` bound to its adjacent
-  pair and evidence snapshot, runs in its OWN transaction, writes its
-  terminal record and stamps its destination durably, and only then does the
-  next step mint — no authority spans two steps, no handoff object exists;
-  the seam between steps IS the durable stamp. A mid-chain failure leaves
-  the store at the last completed stamp (a legal accepted version); a re-run
-  resumes from it. **Fault injection at every inter-step seam joins the 0013
-  presend gates** (a seam added = an injection added, the standing rule).
-  The verbatim 0013 amendment (§7a) carries exactly this.
+- **Migration scope (R5-2/R6-1, NARROWED by R7-2): D2 migrates base 6
+  ONLY.** The v10 adjacent route named historical steps that accepted
+  0013's statements-only contract cannot construct (2→3 rewrites outcome
+  JSON, 3→4 invalidates wiki-cache rows, 4→5 mints the `store_identity`
+  row — the reviewer's probe: an accepted v5 manifest with ZERO identity
+  rows; reopening the withdrawn callback model is its own construction and
+  review). So the honest scope is the reviewer's R5-2 alternative: **a
+  below-6 base REFUSES with a named error** ("migrate to v6 on a pre-D2
+  release first — the two-release ladder"), stated here, in §7, §8, and the
+  D2 changelog. **The 0013 M10 amendment is WITHDRAWN**: with older bases
+  refused, this spec needs exactly ONE declared step (6→7, the reviewed
+  no-op), and M10's multi-step planner stays deferred to the first spec
+  that truly needs a chain. `test_below_v6_base_refuses_with_the_ladder_
+  message` joins §6.
 - **The migration boundary is an ATOMIC TRANSITION (the 0015
   transitions-vs-states lens):** the era stamp is TOTAL over operations —
   every receipt carries the `outcome_digest_version` its writer computed
@@ -410,7 +410,7 @@ byte-stable).
 | `src/veracium/store/base.py` | D2 | `ReceiptSchemaBoundaryError(SupersessionIntegrityError)` defined + exported |
 | `src/veracium/store/sqlite.py` | **D1** (`_SourceType` binding) + D2 (construction sites incl. the `model_copy(update=)` write; phase-2 era check; version-3 stamping; the by-stored-version projection selection with no fall-through) |
 | `src/veracium/store/schema_version.py` | D2 | `SCHEMA_V7`, `SCHEMA_VERSION=7`, the sha-pinned declared no-op step |
-| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction) |
+| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); **below-6 bases refuse with the two-release-ladder message (R7-2)** |
 | `src/veracium/portability.py` | D2 | `FORMAT_VERSION` 6; import drop rule |
 | `src/veracium/lifecycle.py` | **D1** (`_SourceType` binding) + D2 (construction site removed; `test_lifecycle.py:324` reshaped) |
 | `pyproject.toml` | **D1** | `pydantic>=2.7` (the `Field(deprecated=…)` floor — R5-3) |
@@ -448,30 +448,20 @@ superseded contract):**
 > of the API break: requests differing only in the deleted field become
 > identical.
 
-> **0013 M10 amendment (0016 D2) — the multi-step planner, specified by the
-> first spec to need two real steps:** a migration is a CHAIN of ADJACENT
-> declared steps [b→b+1, …, n−1→n] — adjacency is unchanged; what M10 adds
-> is the chain semantics. Every edge in the chain is individually declared
-> and evidenced in the registry (0016's D2 commit declares the missing
-> 2→3, 3→4, 4→5, 5→6 edges; 6→7 is the declared no-op, pin
-> `2deae0327584cb0ed265b79f101843eba9e3b5e81b9092d08bf35326aa83ffe9`).
-> Each step mints and consumes its OWN single-use `MigrationAuthority`
-> bound to its adjacent pair and evidence snapshot; runs in its own
-> transaction; writes its own terminal record; and stamps its destination
-> durably before the next step mints — no authority spans steps; the
-> durable stamp IS the seam. A mid-chain failure leaves the store at the
-> last completed stamp (a legal accepted version) from which a re-run
-> resumes idempotently. Fault is injected at every inter-step seam in the
-> standing gates. The aggregate base→head production path is retired.
+> ~~0013 M10 amendment~~ — **WITHDRAWN by R7-2** (v10 proposed a chain whose
+> historical steps 0013's statements-only contract cannot construct; with
+> below-6 bases refused, this spec needs exactly one declared step and M10
+> stays deferred to the first spec that truly needs a chain).
 
-> **0007 §4-i amendment (0016 D2) — the same-shape rule:** two accepted
-> versions may share a persistent shape (v6/v7 are the first pair). Where
-> shapes collide, resolution is BY STAMP: a stamped store resolves to its
-> `user_version`; an unstamped store matching a multi-version shape
-> resolves to the OLDEST matching version, and adoption migrates it forward
-> through the declared steps. The resolver and the HEAD release evidence
-> probe implement this rule; `resolve` never returns None for a shape that
-> matches at least one accepted version.
+> **0007 §4-i amendment (0016 D2) — the same-shape rule (R7-1 form):** two
+> accepted versions may share a persistent shape (v6/v7 are the first
+> pair). A STAMPED store resolves to its `user_version` ONLY after its
+> shape verifies against that exact version. An UNSTAMPED store searches
+> ONLY `legacy_base_versions()`; a shape matching no legacy base — or more
+> than one — REFUSES. `resolve` may return None; adoption never reaches an
+> unclassified store. The HEAD release evidence probe may use its verified
+> stamp to distinguish same-shape versions without altering runtime
+> adoption.
 
 ## 8. Claims and limits
 
@@ -480,11 +470,10 @@ superseded contract):**
   never influenced any decision. On ingest-derived records it restates
   `author_of_evidence`; directly-constructed records may carry any value,
   which nothing reads. Accessing the enum through the package or
-  `veracium.schema` (including `import *` and pickling) now warns. NOT
-  warned, by design: reading `provenance.source_type` on an edge, and model
-  metadata (`model_fields`, `get_type_hints`) — those and only those.
-  Reading `provenance.source_type` warns once per access. Hosts reading it
-  from exports should stop."
+  `veracium.schema` (including `import *` and pickling) warns, and reading
+  `provenance.source_type` on an edge warns once per access. NOT warned, by
+  design: model metadata only (`model_fields`, `get_type_hints`) — those
+  and only those. Hosts reading the field from exports should stop."
 - **Changelog (D2):** "**Back up your store before migrating — a v7 store
   does not open on older builds.** `SourceType`/`Provenance.source_type` removed
   (deprecated since 0.8.0). Behaviour is unchanged (the field gated nothing —
