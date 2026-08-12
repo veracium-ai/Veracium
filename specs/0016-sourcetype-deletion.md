@@ -6,11 +6,11 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v13 — *re-read before editing; quote the version you approve*. v12→v13: EXTERNAL ROUND 9 (2 bin-(a), bin (b) empty; the base-6 architecture endorsed; R8-1's observable substantially improved per the reviewer): R9-1 A+C+F found-in-fix of R8-1 — v12's refusal contract was IMPOSSIBLE under accepted 0013 (an exact `MigrationAuthority` binds an adjacent registered step that bases 1–5 do not have; a terminal audit event is foreign-keyed to an authority-bound operation row; my "no authority + one terminal record" could not coexist) → **the reviewer's minimal compatible construction ADOPTED VERBATIM: the release migration ORCHESTRATOR/PREFLIGHT, BEFORE any authority minting, resolves bases 1–5 and returns `unsupported-base` with the ladder diagnostic — it does NOT invoke `migrate_store`, mints NO authority, and creates NO 0013 audit lifecycle; base 6 alone proceeds through the ordinary audited operation**; the vocabulary amendment and I13 are rewritten to that construction (I13 now asserts ZERO 0013 audit rows). R9-2 D found-in-fix of R8-1 — the claimed sweep missed again (a second §5 chain occurrence, my v12 replace silently no-opped; the ladder landed in §4's interface block, not §7; a blank line left I13 OUTSIDE the invariant table; §7a omitted the 0013 executable carriers; v12's own header grew a stray third cell) → all fixed with asserted edits; §7a gains the full accepted-0013 surface. |
+| **Version** | v14 — *re-read before editing; quote the version you approve*. v13→v14: EXTERNAL ROUND 10 (2 bin-(a), bin (b) empty; the preflight/no-audit split endorsed): R10-1 A+C+D+F found-in-fix of R9-1 — the preflight had NO EXECUTABLE OWNER (no function/module/signature/return named; the existing CLI carriers — `cli.py`'s migrate verb and `tests/test_migrate_cli.py`, which FREEZE direct `migrate_store` delegation — undispositioned and contradicting) → the ownership model, concrete: **`run_release_migration(path: str) -> Outcome` in `src/veracium/store/migration.py` is the ORCHESTRATOR** — its preflight resolves the base under the R7-1 0007 rules (stamped-verify-then-trust, NEVER bare `user_version`); resolved bases 1–5 → `unsupported-base` (the ONLY interception; no `migrate_store` call, no authority, zero audit rows); **every other state — current v7, newer, foreign, malformed, unstamped, missing, locked — passes through to `migrate_store`, whose accepted 0013 behavior already governs it** (the total matrix by construction); resolved base 6 → authority minting + `migrate_store`, and the preflight→mint race is closed by 0013's EXISTING revalidation (the authority binds endpoints+evidence; a store changed since preflight fails those checks inside the operation); the CLI's migrate verb switches to the orchestrator with `unsupported-base` → exit 1 + the ladder on stderr, and `cli.py` + `test_migrate_cli.py` are dispositioned in §7a; I13 binds to `run_release_migration` by name. R10-2 D found-in-fix of R9-2 — the blank line at 401 had SURVIVED (fixed with a byte-verified edit this time) and four ownership carriers contradicted the preflight (§4's "dedicated migration operation", the §7a migration.py row, the header surface, the changelog) → all swept to the R10-1 ownership model. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
-| **External review** | required (full spec). **The complete carrier surface (F3):** `schema.py` · `ingest.py` · `__init__.py` · `store/sqlite.py` · `store/base.py` (the new exception) · `store/schema_version.py` (v7 + the declared no-op step) · `store/migration.py` (the D2 step) · `graph.py` + `contribution.py` (the partition + snapshot carriers) · `portability.py` (FORMAT 6) · `lifecycle.py` · the migration evidence artifacts (`schema_evidence` two-directory sweep) · same-commit amendments to accepted `0003` §4f and `0014`. Round 1 (v4): 3 bin-(a) + 2 bin-(b) → v5 = the round-2 resubmission |
+| **External review** | required (full spec). **The complete carrier surface (F3):** `schema.py` · `ingest.py` · `__init__.py` · `store/sqlite.py` · `store/base.py` (the new exception) · `store/schema_version.py` (v7 + the declared no-op step) · `store/migration.py` (the D2 step) · `graph.py` + `contribution.py` (the partition + snapshot carriers) · `portability.py` (FORMAT 6) · `lifecycle.py` · the migration evidence artifacts (`schema_evidence` two-directory sweep) · same-commit amendments to accepted `0003` §4f, `0007` §4-i, `0013` (the Outcome vocabulary, R9-1 preflight form) and `0014` · `run_release_migration` + the CLI migrate verb (`cli.py`, `test_migrate_cli.py`) (R10-1). Round 1 (v4): 3 bin-(a) + 2 bin-(b) → v5 = the round-2 resubmission |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -299,9 +299,26 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   record — a terminal event is foreign-keyed to an authority-bound
   operation that never exists here). The store's bytes and stamp are
   byte-unchanged. **Base 6 alone proceeds through authority minting and the
-  ordinary audited 0013 operation.** **Ordinary OPENING of a below-v6 store is
+  ordinary audited 0013 operation.** **The executable owner (R10-1):**
+  `run_release_migration(path: str) -> Outcome` in
+  `src/veracium/store/migration.py` — the orchestrator the operator-facing
+  surfaces call. Its preflight resolves the base under the R7-1 0007 rules
+  (stamped-verify-then-trust; never bare `user_version`). **The total state
+  matrix, by construction:** resolved bases 1–5 are the ONLY interception
+  (→ `unsupported-base`); EVERY other state — current v7, newer, foreign,
+  malformed, unstamped, missing path, locked file — passes through to
+  `migrate_store`, whose accepted 0013 behavior already governs it, so the
+  preflight adds one cell and changes nothing else. **The preflight→mint
+  race:** closed by 0013's existing revalidation — the minted authority
+  binds endpoints and evidence, and a store that changed after preflight
+  fails those checks inside the operation; the preflight promises nothing
+  the operation does not re-verify. **The CLI (`veracium migrate`) switches
+  from direct `migrate_store` delegation to the orchestrator**:
+  `unsupported-base` → exit 1 with the ladder on stderr; all other outcomes
+  report as today. `cli.py`'s docstring and `tests/test_migrate_cli.py`'s
+  frozen-delegation test are amended under THIS spec's authority (§7a). **Ordinary OPENING of a below-v6 store is
   UNCHANGED by this spec** — 0013's existing below-head refusal governs it;
-  only the dedicated migration operation returns the new outcome (§2c
+  only `run_release_migration`'s PREFLIGHT returns the new outcome (§2c
   carries both cells). **The 0013 M10 amendment is WITHDRAWN**: with older
   bases refused, this spec needs exactly ONE declared step (6→7), and
   M10's planner stays deferred to the first spec that truly needs a chain.
@@ -398,8 +415,8 @@ byte-stable).
 | I8 — the extractor cannot emit provenance fields (the §4.1 rule as a regression) | `test_extractor_cannot_emit_provenance_fields` | CI |
 | I9 — the v6→v7 step's declared statement tuple `("SELECT 1",)` is sha-pinned and its 0013 path evidence binds to that exact SQL; the step changes no object (asserted: sqlite_master byte-identical before/after) | migration self-check + `test_v7_step_declaration_matches_pin` + `test_v7_step_changes_no_objects` | CI |
 | I10 — the frozen evidence_basis contract is text-pinned: §1b's four clauses present verbatim until a first-consumer spec supersedes them | `test_evidence_basis_contract_frozen` (text pin, breaks on drift) | CI |
-
 | I13 — **the below-v6 PREFLIGHT refusal (R8-1, construction per R9-1)**: for EVERY legal resolved base 1–5 the ORCHESTRATOR returns `unsupported-base` with the exact ladder diagnostic BEFORE any authority minting — `migrate_store` is never invoked, NO authority exists, and **ZERO 0013 audit rows are created** (asserted); bytes and stamp byte-identical; ordinary opening unchanged; base 6 alone proceeds through the ordinary audited operation | `test_below_v6_base_refuses_with_the_ladder_message` (bases 1–5: outcome, message, byte-identity, no-authority, zero-audit-rows) + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` | CI |
+
 **Reproducer retention:** review defects become regressions beside these.
 
 ---
@@ -443,7 +460,8 @@ byte-stable).
 | `src/veracium/store/base.py` | D2 | `ReceiptSchemaBoundaryError(SupersessionIntegrityError)` defined + exported |
 | `src/veracium/store/sqlite.py` | **D1** (`_SourceType` binding) + D2 (construction sites incl. the `model_copy(update=)` write; phase-2 era check; version-3 stamping; the by-stored-version projection selection with no fall-through) |
 | `src/veracium/store/schema_version.py` | D2 | `SCHEMA_V7`, `SCHEMA_VERSION=7`, the sha-pinned declared no-op step |
-| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); **bases 1–5 → the `unsupported-base` outcome exactly per the R8-1 contract (I13's named checks)** |
+| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); **`run_release_migration` — the orchestrator + preflight (R10-1): bases 1–5 intercepted per I13; everything else passes through** |
+| `src/veracium/cli.py` + `tests/test_migrate_cli.py` | D2 | the migrate verb switches to `run_release_migration` (`unsupported-base` → exit 1 + the ladder on stderr); the frozen direct-delegation docstring/test amended under THIS spec's authority |
 | `src/veracium/portability.py` | D2 | `FORMAT_VERSION` 6; import drop rule |
 | `src/veracium/lifecycle.py` | **D1** (`_SourceType` binding) + D2 (construction site removed; `test_lifecycle.py:324` reshaped) |
 | `pyproject.toml` | **D1** | `pydantic>=2.7` (the `Field(deprecated=…)` floor — R5-3) |
@@ -510,8 +528,9 @@ superseded contract):**
   and only those. Hosts reading the field from exports should stop."
 - **Changelog (D2):** "**Back up your store before migrating — a v7 store
   does not open on older builds. Stores below v6 must first migrate to v6
-  on a pre-D2 release (the two-release ladder); the migration operation
-  returns `unsupported-base` for them.** `SourceType`/`Provenance.source_type` removed
+  on a pre-D2 release (the two-release ladder); the migration command's
+  PREFLIGHT returns `unsupported-base` for them — before any migration
+  machinery runs.** `SourceType`/`Provenance.source_type` removed
   (deprecated since 0.8.0). Behaviour is unchanged (the field gated nothing —
   the suite proves decision-projection identity; receipt identity changes by
   the defined collapse). Export format is now 6; older builds
