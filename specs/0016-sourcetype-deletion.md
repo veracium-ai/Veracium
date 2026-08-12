@@ -6,7 +6,7 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v12 — *re-read before editing; quote the version you approve*. v11→v12: EXTERNAL ROUND 8 (ONE bin-(a), bin (b) EMPTY; R7-1/R7-3 confirmed closed; base-6-only + M10 withdrawal + every prior endorsement holds): R8-1 A+C+D+F found-in-fix of R7-2 — the below-v6 refusal was not a CLOSED EXECUTABLE CONTRACT ("named error" identified no unique observable result; §5 still demanded the withdrawn v1→v7 chain; §6 had no invariant; §7/§8 omitted the promised ladder) → the exact 0013-compliant contract: **the closed `Outcome` vocabulary is amended by verbatim block with ONE new member, `unsupported-base`** — RETURNED (never raised) by the dedicated migration entry point for every resolved base 1–5, its diagnostic carrying the two-release ladder verbatim; NO authority is minted or consumed (refusal precedes minting); ONE audit terminal record with the refusal facts; store bytes and stamp byte-unchanged; ordinary OPENING of a below-v6 store is UNCHANGED by this spec (0013's existing below-head refusal) and §2c now carries both cells; §5's stale chain claim replaced (base-6 success + bases-1–5 refusal ARE the regimes); §6 gains I13 over every legal resolved base 1–5; §7 and the D2 changelog carry the ladder; the §7a migration row binds to the contract and its named checks. | |
+| **Version** | v13 — *re-read before editing; quote the version you approve*. v12→v13: EXTERNAL ROUND 9 (2 bin-(a), bin (b) empty; the base-6 architecture endorsed; R8-1's observable substantially improved per the reviewer): R9-1 A+C+F found-in-fix of R8-1 — v12's refusal contract was IMPOSSIBLE under accepted 0013 (an exact `MigrationAuthority` binds an adjacent registered step that bases 1–5 do not have; a terminal audit event is foreign-keyed to an authority-bound operation row; my "no authority + one terminal record" could not coexist) → **the reviewer's minimal compatible construction ADOPTED VERBATIM: the release migration ORCHESTRATOR/PREFLIGHT, BEFORE any authority minting, resolves bases 1–5 and returns `unsupported-base` with the ladder diagnostic — it does NOT invoke `migrate_store`, mints NO authority, and creates NO 0013 audit lifecycle; base 6 alone proceeds through the ordinary audited operation**; the vocabulary amendment and I13 are rewritten to that construction (I13 now asserts ZERO 0013 audit rows). R9-2 D found-in-fix of R8-1 — the claimed sweep missed again (a second §5 chain occurrence, my v12 replace silently no-opped; the ladder landed in §4's interface block, not §7; a blank line left I13 OUTSIDE the invariant table; §7a omitted the 0013 executable carriers; v12's own header grew a stray third cell) → all fixed with asserted edits; §7a gains the full accepted-0013 surface. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -97,7 +97,7 @@ The successor contract, recorded so it cannot drift before its first consumer:
 | extractor output | — | — | a model-emitted `source_type` (or basis) key | model asserts provenance | **parser drops unknown keys with no reading code path** — the §4.1 rule, now also the deletion's own regression: `test_extractor_cannot_emit_provenance_fields` |
 | pre-D2 receipts (stored digests computed over the old field set) | — | — | ANY resubmission hitting a pre-v3 receipt | **classification is impossible — and that impossibility IS the ruling (R2-3/R5-1/R6-3)** | **a version<3 receipt refuses UNCONDITIONALLY ON SIGHT at both phases — no digest is computed, no comparison branch exists**: `ReceiptSchemaBoundaryError(SupersessionIntegrityError)`, never benign; a version-3 receipt follows the ordinary 0014 contract; `test_pre_v3_receipt_refuses_on_sight` (all three legal pre-v3 states × both phases, digest functions replaced by EXPLODING SENTINELS) + `test_v3_receipts_follow_the_ordinary_contract` |
 | stored `source_type` values (direct constructors/imports: any VALID enum value incl. `OBSERVED` — an unrecognised string raises `ValidationError` at construction today; arbitrary strings reach storage only via validation-bypassing writes or hand-edited JSON) (F1, precision per round-2 bin-(b)) | — | — | unknown value in stored JSON (bypass/hand-edit only) | a crafted value aimed at post-D2 readers | **dropped on read post-D2 exactly like the historical key** (`extra` ignore); pre-D2 they are inert to decisions (§2c-ii row 1) and discriminate digests only until the boundary; `test_arbitrary_stored_source_type_dropped_post_d2` |
-| a stored below-v6 database (bases 1–5) presented post-D2 (R8-1) | — | — | ordinary OPEN → 0013's existing below-head refusal, unchanged by this spec | the dedicated MIGRATION operation → the `unsupported-base` outcome (returned, never raised), the ladder diagnostic, no authority, one audit record, bytes+stamp unchanged | I13; `test_below_v6_base_refuses_with_the_ladder_message` (all five bases) + `test_below_v6_open_unchanged` |
+| a stored below-v6 database (bases 1–5) presented post-D2 (R8-1) | — | — | ordinary OPEN → 0013's existing below-head refusal, unchanged by this spec | the migration ORCHESTRATOR'S PREFLIGHT → the `unsupported-base` outcome (returned, never raised), the ladder diagnostic, NO authority, ZERO 0013 audit rows, bytes+stamp unchanged (R9-1) | I13; `test_below_v6_base_refuses_with_the_ladder_message` (all five bases) + `test_below_v6_open_unchanged` |
 | host code importing `SourceType` | — | — | import after D2 → `AttributeError` | — | D1's `DeprecationWarning` (module `__getattr__`) is the cycle's notice; `test_sourcetype_import_warns_at_d1` |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -289,13 +289,17 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   review). So the honest scope is the reviewer's R5-2 alternative: **a
   below-6 base REFUSES with a named error** ("migrate to v6 on a pre-D2
   release first — the two-release ladder"). **The exact public contract
-  (R8-1, 0013-compliant):** the dedicated migration entry point RETURNS —
-  never raises — the outcome **`unsupported-base`**, a NEW member added to
-  0013's closed `Outcome` vocabulary by the verbatim amendment below; its
-  diagnostic carries the ladder message verbatim. NO `MigrationAuthority`
-  is minted or consumed (the refusal precedes minting); exactly ONE audit
-  terminal record is written with the refusal facts; the store's bytes and
-  stamp are byte-unchanged. **Ordinary OPENING of a below-v6 store is
+  (R8-1, construction per R9-1 — v12's form was IMPOSSIBLE under 0013's
+  authority/audit machinery):** the release migration
+  **ORCHESTRATOR/PREFLIGHT**, before ANY authority minting, resolves the
+  base; for bases 1–5 it RETURNS — never raises — the outcome
+  **`unsupported-base`** with the ladder diagnostic verbatim. **It does NOT
+  invoke `migrate_store`, mints NO `MigrationAuthority`, and creates NO
+  0013 audit lifecycle** (no operation row, no attempted event, no terminal
+  record — a terminal event is foreign-keyed to an authority-bound
+  operation that never exists here). The store's bytes and stamp are
+  byte-unchanged. **Base 6 alone proceeds through authority minting and the
+  ordinary audited 0013 operation.** **Ordinary OPENING of a below-v6 store is
   UNCHANGED by this spec** — 0013's existing below-head refusal governs it;
   only the dedicated migration operation returns the new outcome (§2c
   carries both cells). **The 0013 M10 amendment is WITHDRAWN**: with older
@@ -303,14 +307,16 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   M10's planner stays deferred to the first spec that truly needs a chain.
   I13 (§6) pins the contract over every legal resolved base 1–5.
 
-> **0013 Outcome-vocabulary amendment (0016 D2):** the closed vocabulary
-> gains ONE member, `unsupported-base` — returned by the dedicated
-> migration entry point when the resolved base is an accepted version below
-> the lowest declared step source (here: bases 1–5 against the 6→7 step).
-> Authority/audit matrix: no authority minted or consumed; one terminal
-> audit record carrying {resolved base, head, the ladder diagnostic}; the
-> store is byte-unchanged. `Outcome` continues to refuse non-members; the
-> exhaustive outcome tests extend over the new member.
+> **0013 Outcome-vocabulary amendment (0016 D2, R9-1 form):** the closed
+> vocabulary gains ONE member, `unsupported-base` — produced by the release
+> migration ORCHESTRATOR'S PREFLIGHT, before authority minting, when the
+> resolved base is an accepted version below the lowest declared step
+> source (bases 1–5 against 6→7). The preflight does not invoke
+> `migrate_store` and creates no audit lifecycle, so the member needs NO
+> permitted-resulting-state rule and NO terminal-facts mapping — it never
+> reaches them; the store is byte-unchanged. `Outcome` continues to refuse
+> non-members; the exhaustive outcome tests extend over the new member and
+> assert the zero-audit-rows property.
 - **The migration boundary is an ATOMIC TRANSITION (the 0015
   transitions-vs-states lens):** the era stamp is TOTAL over operations —
   every receipt carries the `outcome_digest_version` its writer computed
@@ -370,8 +376,9 @@ byte-stable).
   exists for behaviour. The regimes that matter are **boundary regimes**, and
   each gets a test (§6): old-export import; new-export-to-old-build refusal
   (exercised against the pinned v5 gate); pre-D2 receipt resubmitted post-D2
-  (the unclassifiable pre-v3 cell and the ordinary v3 cell); D1 warning; a full
-  v1→v7 migration chain (extending the 0013 suite).
+  (the unclassifiable pre-v3 cell and the ordinary v3 cell); D1 warning; the
+  base-6 migration SUCCESS plus the bases-1–5 preflight `unsupported-base`
+  REFUSAL (every legal resolved base — R9-2's corrected sweep).
 - Cold vs warm: no difference. Release class: **stable** — every named
   regime is reachable in CI.
 
@@ -392,14 +399,18 @@ byte-stable).
 | I9 — the v6→v7 step's declared statement tuple `("SELECT 1",)` is sha-pinned and its 0013 path evidence binds to that exact SQL; the step changes no object (asserted: sqlite_master byte-identical before/after) | migration self-check + `test_v7_step_declaration_matches_pin` + `test_v7_step_changes_no_objects` | CI |
 | I10 — the frozen evidence_basis contract is text-pinned: §1b's four clauses present verbatim until a first-consumer spec supersedes them | `test_evidence_basis_contract_frozen` (text pin, breaks on drift) | CI |
 
-| I13 — **the below-v6 refusal is a closed contract (R8-1)**: for EVERY legal resolved base 1–5 the dedicated migration operation returns `unsupported-base` with the exact ladder diagnostic; no authority is minted or consumed; exactly one audit terminal record; the store's bytes and stamp are byte-identical before/after; ordinary opening is unchanged | `test_below_v6_base_refuses_with_the_ladder_message` (parametrized over bases 1–5: outcome, message, byte-identity, authority-consumption, the audit record) + `test_below_v6_open_unchanged` | CI |
-
+| I13 — **the below-v6 PREFLIGHT refusal (R8-1, construction per R9-1)**: for EVERY legal resolved base 1–5 the ORCHESTRATOR returns `unsupported-base` with the exact ladder diagnostic BEFORE any authority minting — `migrate_store` is never invoked, NO authority exists, and **ZERO 0013 audit rows are created** (asserted); bytes and stamp byte-identical; ordinary opening unchanged; base 6 alone proceeds through the ordinary audited operation | `test_below_v6_base_refuses_with_the_ladder_message` (bases 1–5: outcome, message, byte-identity, no-authority, zero-audit-rows) + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` | CI |
 **Reproducer retention:** review defects become regressions beside these.
 
 ---
 
 ## 7. Failure modes and reversibility
 
+- **The below-v6 ladder (R9-2 — this rule belongs HERE, not only §4):** a
+  base 1–5 store presented to the D2 migration flow fails CLOSED at the
+  preflight — `unsupported-base`, the two-release ladder ("reach v6 on a
+  pre-D2 release first"), no authority, no audit lifecycle, the store
+  untouched. The operator's recovery is the ladder itself.
 - **Silent failure:** a missed consumer of `source_type` discovered post-D2 —
   pinned by §2's grep-enumerated consumer table and I1's decision-projection
   identity, both
@@ -438,6 +449,7 @@ byte-stable).
 | `pyproject.toml` | **D1** | `pydantic>=2.7` (the `Field(deprecated=…)` floor — R5-3) |
 | `.github/workflows/test.yml` | **D1** | a REAL minimum-dependency job (`pydantic==2.7.0`) beside the latest job (R6-4) |
 | `specs/0007-store-schema-versioning.md` (accepted) | D2, same commit | the same-shape rule amendment block below (R6-2) |
+| `specs/0013-store-migrations.md` (accepted) + `specs/migrations_0013.py` + the migration tests + the outcome vocabulary + the terminal-state map + the pre-send gates | D2, same commit | the `unsupported-base` vocabulary amendment (R9-1 preflight form); the exhaustive outcome tests extend over the member with the zero-audit-rows assertion; NO terminal-state row is added (the preflight never reaches terminal facts) |
 | `specs/schema_evidence.py` + `specs/schema_model.py` + their tests | D2 | the same-shape resolver/HEAD-probe update (R6-2) |
 | evidence artifacts (`schema_evidence` — BOTH directories) | D2 | the v7 row |
 | `specs/0003-supersession-authority.md` (accepted) | D2, same commit | the §4f amendment block below |
