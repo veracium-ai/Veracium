@@ -951,9 +951,9 @@ better hand-check rather than a different mechanism. **So the summaries are now
 derived and nothing below is restated by hand.**
 
 <!-- GENERATED:summary -->
-**19 findings · 12 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8, 0.5.0) · 6 unimplemented · 6 still open · **0 fixed but unreleased**.**
+**19 findings · 13 shipped (0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8, 0.5.0, 0.7.0) · 5 unimplemented · 5 still open · **0 fixed but unreleased**.**
 
-**Unimplemented:** `M9`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`. **Open:** `M9`, `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`.
+**Unimplemented:** `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`. **Open:** `N4-decay`, `N9t-transfer`, `M7-correct`, `M8-wiki`, `M6-import`.
 
 *Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes that do not hold.*
 <!-- /GENERATED:summary -->
@@ -969,14 +969,14 @@ derived and nothing below is restated by hand.**
 | **M3** staleness cleared on same-author-class evidence | 0.4.5 closed cross-class clearing and left same-class open | — | **`specs/0008`** | **yes** — 0.5.0 | `test_no_provenance_value_clears_staleness · test_same_author_restatement_does_not_clear_staleness` |
 | **M4** `record_outcome` overwrites authorship | 0.4.5 appends a note to a summary rebuilt on every upgrade | — | **`specs/0009`** | **yes** — 0.5.0 | `0009 H1 test_outcome_authorship_is_never_overwritten` |
 | **M5** merge-time `confidence = max(...)` | T1 retains `max`, which is earned | — | this spec | n/a | `constrains the unwritten T2 design` |
-| **M9** reinforcement transfers `observed_at`/`confidence` unattributed | the reinforcement branch (`graph.py`) never persists the incoming edge; the prior absorbs `max(observed_at)`/`max(confidence)` and returns, leaving no record the contributing source existed | 🔴 a compromised/revoked source that reinforced a fact left no attribution — unattributed state transfer in a provenance product (research A3 §2.1). REPOINTED 0002→0012 (2026-08-08): research ruled 0012 Design 1 (reinforcement PERSISTS the incoming edge with its own provenance, transfers nothing) — that persisted edge IS the attribution, so 0012 Design 1 closes M9 and 0014 §3.1; not 0014's ledger. Open until 0012 lands | **`specs/0012`** | **no** | `test_reinforcement_attributes_the_contributing_source` |
+| **M9** reinforcement transfers `observed_at`/`confidence` unattributed | the reinforcement branch (`graph.py`) never persists the incoming edge; the prior absorbs `max(observed_at)`/`max(confidence)` and returns, leaving no record the contributing source existed | — | **`specs/0012`** | **yes** — 0.7.0 | `test_reinforcement_attributes_the_contributing_source` |
 | **N9b-floor** consolidation manufactured confidence, disclosure and currency | `confidence = 0.9` flat; disclosure inherited from `cold[0]` | — | this spec | **yes** — 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | **N9b-lineage** consolidation retains no record of the absorbed set | inputs deleted, no lineage | — | **`specs/0010`** | **yes** — 0.5.0 | `0010 X6, X8 test_lineage_is_the_whole_batch` |
 | **N4-decay** `MemoryConfig` bounds are unvalidated, and declared field bounds are not enforced on assignment | `decay_factor=2.0`, `NaN`, `-1.0` all accepted; `validate_assignment` is False | 🔴 `expire()` can RAISE confidence, which makes N4 false as written | this spec | **no** | `0002 N4b–N4d` |
 | **N9t-transfer** `transfer` may raise trust and claim new currency | `import_memory` persists every claimed trust field verbatim | 🔴 no importing-principal cap and no currency restriction; N9t is frozen design only | **`specs/0005`** | **no** | `test_transfer_cannot_raise_trust_or_currency` |
 | **N9b-provenance** consolidation inherits `source_type` and `evidence_ref` from `cold[0]` | a SYSTEM summary reports `source_type=stated` and the first input's `evidence_ref` | internally false provenance — M1's `cold[0]` inheritance surviving on two unexamined fields | this spec | **yes** — 0.4.8 | `test_consolidated_provenance_is_internally_consistent` |
 | **M2⁗** offset timestamps fail through `remember()` | `prompts.date_context` parses the raw string and rejects offsets | one input, two parsers — `_event_dt` is not the single contract §7f claims | this spec | **yes** — 0.4.8 | `test_an_offset_timestamp_survives_every_public_entry_point` |
-| **M7-correct** `correct()` bypasses the supersession ladder | `correct()` writes a replacement with hardcoded `author=USER` | 🔴 it is the only `supersedes=` writer and never calls `apply_supersession` | **`specs/0003`** | **no** | `0003 I9, I10` |
+| **M7-correct** `correct()` bypasses the supersession ladder | `correct()` writes a replacement with hardcoded `author=USER` | 🔴 it is the only `supersedes=` writer and never calls `apply_supersession` | **`specs/0011`** | **no** | `0011 E5` |
 | **M8-wiki** the wiki serves a revoked trust decision | a cached wiki outlives the revocation of its inputs | 🔴 no wiki drop on a trust-reducing invalidation | **`specs/0004`** | **no** | `0004 W1–W4` |
 | **M6-import** `import_memory` has no trust boundary | `--user` remap re-homes another principal's records verbatim | 🔴 no cap; and the cap as designed keys on an attacker-controlled header | **`specs/0005`** | **no** | `0005 P1–P6` |
 | **X-crash** consolidation deletes every input before writing any output | delete-all-then-write; a crash loses the batch | — | **`specs/0010`** | **yes** — 0.5.0 | `0010 X1–X9 test_no_crash_point_loses_data` |
@@ -1009,14 +1009,14 @@ as §11, so it cannot become another independently-maintained summary.
 | `M3` | `0008` | resolved | shipped 0.5.0 | `test_no_provenance_value_clears_staleness · test_same_author_restatement_does_not_clear_staleness` |
 | `M4` | `0009` | resolved | shipped 0.5.0 | `0009 H1 test_outcome_authorship_is_never_overwritten` |
 | `M5` | `0002` | resolved | n/a | `constrains the unwritten T2 design` |
-| `M9` | `0012` | open | **not implemented** | `test_reinforcement_attributes_the_contributing_source` |
+| `M9` | `0012` | resolved | shipped 0.7.0 | `test_reinforcement_attributes_the_contributing_source` |
 | `N9b-floor` | `0002` | resolved | shipped 0.4.7 | `test_consolidation_output_is_no_stronger_than_its_weakest_input` |
 | `N9b-lineage` | `0010` | resolved | shipped 0.5.0 | `0010 X6, X8 test_lineage_is_the_whole_batch` |
 | `N4-decay` | `0002` | open | **not implemented** | `0002 N4b–N4d` |
 | `N9t-transfer` | `0005` | open | **not implemented** | `test_transfer_cannot_raise_trust_or_currency` |
 | `N9b-provenance` | `0002` | resolved | shipped 0.4.8 | `test_consolidated_provenance_is_internally_consistent` |
 | `M2⁗` | `0002` | resolved | shipped 0.4.8 | `test_an_offset_timestamp_survives_every_public_entry_point` |
-| `M7-correct` | `0003` | open | **not implemented** | `0003 I9, I10` |
+| `M7-correct` | `0011` | open | **not implemented** | `0011 E5` |
 | `M8-wiki` | `0004` | open | **not implemented** | `0004 W1–W4` |
 | `M6-import` | `0005` | open | **not implemented** | `0005 P1–P6` |
 | `X-crash` | `0010` | resolved | shipped 0.5.0 | `0010 X1–X9 test_no_crash_point_loses_data` |

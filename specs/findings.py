@@ -78,11 +78,18 @@ FINDINGS = [
          released_defect="T1 retains `max`, which is earned",
          current_defect=None),
     dict(id="M9", title="reinforcement transfers `observed_at`/`confidence` unattributed",
-         owner="0012", disposition="open", implementation="none",
-         release=None, advisory=None,
+         owner="0012", disposition="resolved", implementation="shipped",
+         release="0.7.0", advisory=None,
          test="test_reinforcement_attributes_the_contributing_source",
          released_defect="the reinforcement branch (`graph.py`) never persists the incoming edge; the prior absorbs `max(observed_at)`/`max(confidence)` and returns, leaving no record the contributing source existed",
-         current_defect="a compromised/revoked source that reinforced a fact left no attribution — unattributed state transfer in a provenance product (research A3 §2.1). REPOINTED 0002→0012 (2026-08-08): research ruled 0012 Design 1 (reinforcement PERSISTS the incoming edge with its own provenance, transfers nothing) — that persisted edge IS the attribution, so 0012 Design 1 closes M9 and 0014 §3.1; not 0014's ledger. Open until 0012 lands"),
+         current_defect=None),
+         # M9 history: REPOINTED 0002→0012 (2026-08-08) — research ruled 0012
+         # Design 1 (reinforcement PERSISTS the incoming edge with its own
+         # provenance, transfers nothing); the persisted edge IS the attribution,
+         # closing M9 and 0014 §3.1. 0012 implemented 2026-08-10 (Slice A flipped
+         # the two M9 xfails to passing), impl-review accepted, RELEASED in
+         # v0.7.0 (2026-08-11). Ledger row updated 2026-08-13 with the named
+         # test re-run green.
     dict(id="N9b-floor", title="consolidation manufactured confidence, disclosure and currency",
          owner="0002", disposition="resolved", implementation="shipped",
          release="0.4.7", advisory=None,
@@ -115,10 +122,16 @@ FINDINGS = [
          released_defect="`prompts.date_context` parses the raw string and rejects offsets",
          current_defect="one input, two parsers — `_event_dt` is not the single contract §7f claims"),
     dict(id="M7-correct", title="`correct()` bypasses the supersession ladder",
-         owner="0003", disposition="open", implementation="none",
-         release=None, advisory=None, test="0003 I9, I10",
+         owner="0011", disposition="open", implementation="none",
+         release=None, advisory=None, test="0011 E5",
          released_defect="`correct()` writes a replacement with hardcoded `author=USER`",
          current_defect="it is the only `supersedes=` writer and never calls `apply_supersession`"),
+         # M7-correct re-owned 0003→0011 (2026-08-13): accepted 0003 §1b rules
+         # correct() OUT of scope and names the fix — one authorised replacement
+         # operation — as 0011 E5; the 0.6.0 CHANGELOG says the same. The old
+         # test pointer "0003 I9, I10" was pre-split numbering (accepted 0003's
+         # I9 is PlanStale). Verified still open in code: __init__.correct()
+         # calls store.invalidate_edge + writes supersedes= directly.
     dict(id="M8-wiki", title="the wiki serves a revoked trust decision",
          owner="0004", disposition="open", implementation="none",
          release=None, advisory=None, test="0004 W1–W4",
