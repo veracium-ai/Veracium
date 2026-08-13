@@ -4,7 +4,7 @@
 
 # Spec status
 
-**18 specs · 10 accepted · 141 external review
+**18 specs · 10 accepted · 142 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -28,7 +28,7 @@ is the number that decides what can be built.
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-10 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
-| **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-13 | 1 | 14 | 0 | 0 | 0 | — |
+| **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-13 | 1 | 15 | 0 | 0 | 0 | — |
 | **0017** | token-usage telemetry over the Metered wrapper | `draft` | 2026-08-11 | 0 | 0 | 0 | 0 | 0 | — |
 | **0018** | the release-migration orchestrator | `draft` | 2026-08-13 | 1 | 0 | 0 | 0 | 0 | — |
 
