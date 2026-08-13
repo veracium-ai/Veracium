@@ -5,9 +5,9 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v2 — *re-read before editing; quote the version you approve*. v1→v2: research's preliminary Q1 lean folded (to be confirmed in their full internal review): the payload is COMPLETE, not restoration-scoped — the `compile` role (wiki recompile, the most expensive role) joins as `recall.compile_in_tok`/`compile_out_tok`. Feasibility confirmed before folding: `compile` is a first-class role in the `Complete` protocol (`llm/base.py:20`) and the `Metered` wrapper counts it identically; the recall event's record sites carry it. A payload labelled "token usage" that omits the most expensive role systematically undercounts real cost — v3's consent text enumerates all three roles. | |
+| **Version** | v3 — INTERNAL ROUND 1 (research, 2026-08-13, `veracium-research/proposals/0017-internal-review.md`): RETURN FOR AMENDMENT, 3 findings, all folded; the round also AMENDS research's own preliminary Q1 ruling. **F1 (class G+C, found-in-fix of the v2 fold):** the v2 "complete payload" was implemented against a FALSE role↔event mapping — `role="compile"` has TWO producers (`compile.py:239`, the wiki compile reached at RECALL, and `lifecycle.py:128`, the consolidation compile reached at MAINTAIN — a whole-batch call, plausibly the most expensive compile in the system), and v2 mapped compile → recall ONLY. Consequences research named, both fatal to the fold's own rationale: the most expensive role stayed undercounted (the exact thing adding compile was meant to fix), and the v3 CONSENT_TEXT promised "memory maintenance" tokens the code would not capture — the 2767a35 claims-vs-code defect this spec exists to prevent. → the payload is EIGHT fields over FOUR (role, event) pairs: `ingest.distill_*`, `answer.gate_*`, `recall.compile_*`, **`maintain.compile_*`** (the maintain event exists and already calls `_record`, `__init__.py:704`). *Pre-send miss diagnosed: v2 verified compile is "a first-class wrapper role" but never enumerated the role's PRODUCERS — the constructor-sweep lesson (verify every producer, not one) applied at the role level.* **F2 (class E — the check that should have caught F1 could not):** I2b tested ROLE coverage, so it passed green while a whole (role, event) pair silently dropped → recast as PAIR coverage enumerated from the `role="…"` call sites mapped to their Memory events (I2b, §6). **F3 (honesty, folded as restatement):** the concurrency misattribution is between-OPERATIONS and hence between-USERS (`totals()` is process-global) — §8 and §3b now state the cross-user size-smear honestly (bounded: sizes only, non-negative, content-free); the per-operation-handle fallback stays recorded in §9. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
-| **Internal reviewers** | research (consent semantics + the honest-labels rule are theirs) · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
+| **Internal reviewers** | research — round 1 RETURNED 2026-08-13 (3 findings, folded in v3; their preliminary Q1 mapping amended by their own review); re-review requested · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
 | **External review** | required (full spec — touches `__init__.py`, `introspect.py`); not yet sent |
 | **Decision + date** | — |
 | **Path** | full |
@@ -65,8 +65,8 @@ raises the current consent version.
 
 | field | read / written | its **documented** contract | every other consumer | preserved? |
 |---|---|---|---|---|
-| `EVENT_FIELDS["ingest"]` / `["answer"]` / `["recall"]` | written: the four `2767a35` fields return AND `recall.compile_in_tok`/`compile_out_tok` join (v2 — the complete payload; a "token usage" label that omits the most expensive role misleads by omission) | whitelist; anything unlisted is dropped at record | `Collector.record/snapshot`; `tests/test_telemetry_claims.py` (whitelisted ⇒ populated) | yes — populated by this change, which is what the gate demands |
-| `FIELD_MIN_VERSION` | written: all SIX fields at min version **3** | 0015: a field is sent only if recorded under a consent that admits it | `Collector.record` (the binding gate), `_payload` (defense-in-depth) | yes — the 0015 mechanism reused unchanged |
+| `EVENT_FIELDS["ingest"]` / `["answer"]` / `["recall"]` / `["maintain"]` | written: the four `2767a35` fields return AND the compile pairs join at BOTH compile producers — `recall.compile_in_tok`/`compile_out_tok` (the wiki compile, `compile.py:239`) and `maintain.compile_in_tok`/`compile_out_tok` (the consolidation compile, `lifecycle.py:128` — v3, internal F1; a "token usage" label that omits the most expensive producer misleads by omission) | whitelist; anything unlisted is dropped at record | `Collector.record/snapshot`; `tests/test_telemetry_claims.py` (whitelisted ⇒ populated) | yes — populated by this change, which is what the gate demands |
+| `FIELD_MIN_VERSION` | written: all EIGHT fields at min version **3** | 0015: a field is sent only if recorded under a consent that admits it | `Collector.record` (the binding gate), `_payload` (defense-in-depth) | yes — the 0015 mechanism reused unchanged |
 | `SCHEMA_VERSION` | 2 → **3** | the current consent-text version; stamped only by affirmative display flows (0015 I13) | `prompt_consent`, `accept_current_consent`, the payload stamp | yes — one more version through the same machinery |
 | `CONSENT_TEXT` | written: token sentence returns, scoped | the consent claim; `test_consent_text_does_not_promise_token_totals` PINS that "token" is absent until fields are whitelisted AND written | `prompt_consent()`, CLI enable | **the pin test flips direction in the same commit** (I5): text mentions tokens iff whitelisted and written — both now true |
 | `Metered.totals()` | read: the usage source | host-side accounting only (`metered.py` docstring says nothing writes to telemetry/audit/introspect) | hosts; `tests/test_metered.py` | **changed** — the docstring's "host-side only" paragraph is REWRITTEN by this spec: a `Memory` whose `llm` exposes the `Metered` surface reads per-operation deltas; the wrapper itself still never pushes |
@@ -83,7 +83,7 @@ Consumers enumerated mechanically — commands in §2c-ii.
 |---|---|---|---|---|---|
 | the host's `counter` callable | no counter → **no token fields recorded at all** (chars stay host-side) | non-int / negative / NaN / raising counter | — | a counter returning garbage must not poison the payload | **a per-call delta is recorded iff it is a non-negative `int` (`bool` excluded); anything else — including a raising counter — records NOTHING for that call and never breaks the operation** (`test_garbage_counter_records_nothing_and_never_raises`) |
 | the wrapped `complete`'s shape | — | an `llm` with a `totals` attribute that is not `Metered`'s contract (wrong shape, raising) | duck-typed hosts | a hostile `totals()` | **usage is read ONLY when `totals()` returns the documented dict shape; any exception or shape mismatch → no usage recorded, the operation unaffected** (`test_totals_shape_mismatch_is_ignored`) |
-| concurrent operations sharing one wrapper | — | — | — | two threads' deltas interleave | **the delta read is documented per-`Memory`-operation; cross-thread attribution error is bounded to MISCOUNTING between roles of concurrent ops, never content, never negative totals** — stated as a §5 regime with its limitation in §8, clamped non-negative (`test_concurrent_ops_never_produce_negative_deltas`) |
+| concurrent operations sharing one wrapper | — | — | — | two threads' deltas interleave | **the delta read is documented per-`Memory`-operation; `totals()` is process-global, so cross-thread attribution error is between OPERATIONS — and therefore between USERS when concurrent ops serve different users (v3, internal F3)**: bounded to size miscounting (never content, never negative totals), stated honestly in §8 with the §3b caveat, clamped non-negative (`test_concurrent_ops_never_produce_negative_deltas`) |
 | the consent config | — | — | — | — | **unchanged 0015 machinery** — v1/v2-consented installs never send the token fields (min version 3); every 0015 I8/I13/I16/I17 test keeps running |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -142,9 +142,18 @@ Analyzed at the information level (the 0015 §3b lesson):
 - **Per-user introspect totals** are visible to whoever can call
   `introspect(user_id)` — the same principal that can already read that
   user's entire memory; usage numbers are strictly less than what it can
-  already see.
+  already see. **One stated exception (v3, internal F3): under concurrent
+  operations for DIFFERENT users sharing one process-global wrapper, user
+  A's introspect block can absorb deltas from user B's calls — a
+  cross-user size-smear.** The "strictly less" claim does not cover it; the
+  honest bound is: sizes only, non-negative ints, no content, no
+  prior-state information — and single-`Memory`-per-process or
+  per-user-wrapper deployments (the common shapes) don't exhibit it. §8
+  carries the limit; §9's per-operation-handle fallback removes it if
+  external review rules the bound insufficient.
 - **Scope change behaviour:** n/a. **Anything newly visible to a principal
-  that couldn't see it before:** no.
+  that couldn't see it before:** no — with the concurrency size-smear above
+  as the one bounded, stated exception.
 
 ---
 
@@ -154,17 +163,24 @@ Analyzed at the information level (the 0015 §3b lesson):
 exposes the `Metered` surface (`totals()` in the documented shape) reads a
 **per-operation delta**: snapshot totals before the operation, subtract
 after, validate every delta (non-negative int, bool excluded), and pass the
-valid ones into `_record` — `ingest` carries `distill_in_tok`/
+valid ones into `_record` over the FOUR (role, event) pairs (v3, internal
+F1 — the compile role has TWO producers): `ingest` carries `distill_in_tok`/
 `distill_out_tok`; `answer` carries `gate_in_tok`/`gate_out_tok`; `recall`
-carries `compile_in_tok`/`compile_out_tok` (the wiki-recompile cost — the
-most expensive role, included so the payload's "token usage" label is
-honest about total cost, v2). Any
+carries `compile_in_tok`/`compile_out_tok` (the wiki compile,
+`compile.py:239` via `ensure_wiki`); **`maintain` carries
+`compile_in_tok`/`compile_out_tok` (the consolidation compile,
+`lifecycle.py:128` — a whole-batch call, plausibly the most expensive
+compile in the system)**. The consent text's three activities map onto
+these pairs exactly: "extraction" = ingest.distill, "answering" =
+answer.gate, "memory maintenance" = the compile role at BOTH its events
+(the wiki recompile and the consolidation pass) — the mapping is stated
+here so the claims surface is testable, not implied. Any
 exception or shape mismatch anywhere in that read records nothing and never
 propagates (telemetry never breaks the host). An unmetered `llm` is a
 complete no-op — no probing beyond one `getattr`.
 
 **Consent (the 0015 machinery, one more version):** `SCHEMA_VERSION` 2→3;
-`FIELD_MIN_VERSION` gains the four fields at 3; the record-time gate,
+`FIELD_MIN_VERSION` gains all EIGHT fields at 3 (v3); the record-time gate,
 epoch/lock/tombstone lifecycle, display-flow-only stamping, and every 0015
 invariant apply unchanged. `CONSENT_TEXT` regains a token sentence, scoped
 honestly and enumerating ALL THREE roles: *"token totals for your own model
@@ -203,11 +219,12 @@ accepted.
 - **Metering regimes:** unmetered · metered-no-counter · metered-with-counter
   · garbage counter · raising totals — each a §2c/§6 test.
 - **Concurrency regime:** two threads sharing one wrapper — deltas may
-  misattribute BETWEEN concurrent operations' roles (documented, §8) but
-  never go negative and never leak content (`test_concurrent_ops_never_
-  produce_negative_deltas`). This is the regime the tests can reach; the
-  per-operation-delta design is single-writer per `Memory` op by
-  construction.
+  misattribute BETWEEN concurrent OPERATIONS, and therefore between USERS
+  when the operations serve different users (v3 — the process-global
+  `totals()` is the mechanism); never negative, never content
+  (`test_concurrent_ops_never_produce_negative_deltas`, plus a named
+  two-user interleaving case asserting the smear is size-only). §8 states
+  the limit; §3b carries the caveat.
 - **Cold vs warm:** the 0015 restart rule applies unchanged; the introspect
   block resets with the process (stated in its own payload).
 
@@ -220,12 +237,12 @@ Release class: **stable** — every named regime has a CI-reachable test.
 | invariant | executable check | where it runs |
 |---|---|---|
 | I1 — metering changes no stored byte and no decision: identical sequences metered vs unmetered produce identical stores and answers | `test_metering_is_decision_invisible` | CI |
-| I2 — **no counter → no token telemetry**: character accounting never enters the payload under any field name (all six fields) | `test_no_counter_sends_no_token_fields` | CI |
-| I2b — **the payload is COMPLETE over the roles (v2)**: every `Complete` role (distill, compile, gate) has its in/out pair whitelisted and populated; a role added to `llm/base.py` breaks this test until the payload decision is remade | `test_token_payload_covers_every_role` | CI |
+| I2 — **no counter → no token telemetry**: character accounting never enters the payload under any field name (all eight fields, v3) | `test_no_counter_sends_no_token_fields` | CI |
+| I2b — **the payload is COMPLETE over the (role, event) PAIRS (v3 — recast by internal F2, the check that catches F1's class)**: enumerate every `role="…"` call site in `src/veracium/` and map each to the `Memory` event that reaches it (distill→ingest · gate→answer · compile→recall AND compile→maintain); every pair must have its in/out fields whitelisted and populated. A new role in `llm/base.py` OR a new producer of an existing role breaks this test until the payload decision is remade — role-granularity alone passed green while `maintain.compile_*` silently dropped | `test_token_payload_covers_every_role_event_pair` (replaces `test_token_payload_covers_every_role`) | CI |
 | I3 — delta validity is closed: non-negative int (bool excluded) per delta; garbage/raising counters and malformed `totals()` record nothing and never raise into the operation | `test_garbage_counter_records_nothing_and_never_raises` + `test_totals_shape_mismatch_is_ignored` | CI |
 | I4 — consent v3 gating: v1/v2-consented installs never accumulate the token fields; the v2→v3 live-carrier transition sends only post-acceptance values | `test_v2_consent_strips_token_fields` + `test_v2_to_v3_transition_through_a_live_memory_carrier` | CI |
 | I5 — the consent-text pin is two-sided: "token" appears in `CONSENT_TEXT` iff the token fields are whitelisted AND populated | the FLIPPED `test_consent_text_token_mention_matches_the_payload` (replaces the one-sided pin, same file) | CI |
-| I6 — whitelisted ⇒ populated (the `2767a35` gate) holds over the four fields | `tests/test_telemetry_claims.py` (existing, starts passing for them) | CI |
+| I6 — whitelisted ⇒ populated (the `2767a35` gate) holds over all eight fields — the returning four and the four compile fields (v3) | `tests/test_telemetry_claims.py` (existing, starts passing for them) | CI |
 | I7 — no MCP surface carries usage: `remember`/`answer` tool results and every MCP tool omit token fields; `introspect` remains non-MCP | `test_mcp_results_carry_no_usage_fields` + the §2c-ii grep pinned as a test | CI |
 | I8 — the introspect block is honest about scope: present iff metered-with-counter, carries `"scope": "process-lifetime"`, resets with the process, absent from `forget_user`'s domain (nothing persisted) | `test_introspect_usage_block_scope_and_absence` | CI |
 | I9 — content-free: every emitted value is int/float/bool; concurrent deltas clamp non-negative | `test_token_payload_is_content_free` + `test_concurrent_ops_never_produce_negative_deltas` | CI |
@@ -268,8 +285,11 @@ Release class: **stable** — every named regime has a CI-reachable test.
 - **What this does NOT establish:** token counts are the host's counter's
   opinion, not billing truth (no provider invoice is consulted); introspect
   totals are process-lifetime, not history; concurrent operations sharing
-  one wrapper may misattribute deltas between roles (bounded, non-negative,
-  content-free); telemetry token sums are not comparable across installs
+  one wrapper may misattribute deltas **between operations — including
+  between different users' operations** (the process-global-totals limit,
+  v3: bounded to sizes, non-negative, content-free; the §9 per-operation
+  handle is the recorded fix if this bound is ruled insufficient);
+  telemetry token sums are not comparable across installs
   (different counters); and this spec does not persist usage — the durable
   per-user variant is §10 Q2's future decision.
 - **Measurements:** none cited.
@@ -301,13 +321,13 @@ Release class: **stable** — every named regime has a CI-reachable test.
 
 ## 10. Open questions
 
-1. ~~Payload width~~ — **PRELIMINARILY RULED (research, 2026-08-11, to be
-   confirmed in their full internal review): COMPLETE, not
-   restoration-scoped** — the compile role joins (`recall.compile_in_tok`/
-   `compile_out_tok`); a "token usage" payload omitting the most expensive
-   role misleads by omission. Feasibility confirmed: compile is a
-   first-class wrapper role; no separate metering path needed. Folded in
-   v2; the full review confirms or amends.
+1. ~~Payload width~~ — **RULED (research: preliminary 2026-08-11; CONFIRMED
+   IN PRINCIPLE and MAPPING-AMENDED by their internal round 1, 2026-08-13):
+   COMPLETE, not restoration-scoped — and complete means every (role,
+   event) PAIR, not every role.** The compile role has two producers, so
+   the payload is `recall.compile_*` AND `maintain.compile_*` (v3, internal
+   F1); research's own preliminary "joins as recall.compile_*" assumed a
+   single producer and is amended by their review. | resolved |
 2. **Persisted per-user usage** (durable history, `forget_user` integration,
    SCHEMA bump) — wanted? **Decides: Quentin, on demand. Class: deferred.**
 3. **Should `selfcheck --push` include usage** when metered? **Decides: dev
