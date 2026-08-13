@@ -15,9 +15,9 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v2 — v1's design question `I-Q1` was RULED 2026-08-01 (§4b, `proposals/S-I-H-Q1-rulings.md`); v2 folds the ruling, re-verifies every reach claim against the current code, and corrects a v1 mechanism defect found in that re-verification (§4c) |
+| **Version** | v3 — INTERNAL REVIEW PASSED (research, 2026-08-13, `veracium-research/proposals/0005-internal-review.md` — adversarial: the reviewer found/ruled the original defect). **The central claim VERIFIED against every `author_of_evidence` consumer** (edge→disclosure, episode→`third_party_influenced`, supersession→`min(author, derived_from)`, proactive→`assertable`, wiki→gate grounding): no third channel grants trust past the two capped levers. Two same-commit folds: **N1 (§3b, "where the author is wrong")** — the "capped is a function of the file alone" claim was true only for PRE-SKIP counting; now pinned: `capped` counts over the parsed file BEFORE the 0009 record-equality skip (P11 asserts empty-vs-populated destinations yield identical `capped`), making §3b true by construction (net exposure nil either way — `skipped` already carries destination state on the same operator-only surface). **N2 (§8)** — fabricated `kind="outcome"` history cannot promote a capped edge: assertability keys on the capped levers, never on corroboration counts (P12) — the trust×proof_count separation, one level up. **N3 (flag, no spec change)** — the §7b test-relocation sweep is the likeliest implementation slip; §7b now binds the impl commit to per-site verification. *(v2 history: the I-Q1 ruling folded; every reach claim re-verified against the FORMAT-5 machinery; the v1 one-lever mechanism defect corrected — §4c.)* |
 | **Status** | *see `Spec-Status:` — canonical.* |
-| **Internal reviewers** | research — **found the defect**; dev verified it is CLI-reachable; research ruled I-Q1 |
+| **Internal reviewers** | research — **found the defect**, ruled I-Q1, and PASSED the internal review 2026-08-13 (adversarial; N1/N2 folded same-commit in v3, N3 recorded in §7b) |
 | **External review** | required — `portability.py`, `__init__.py` are guarded and this changes what an import means |
 | **Decision + date** | — |
 | **Path** | full |
@@ -94,7 +94,7 @@ as designed, no bug, no advisory to write.
 | `Provenance.disclosure` | derived at ingest (`ingest.py:191`), stored; **floored by the import cap** | routes the gate: `assertable` / `use_only` / `quarantined` key on it (`schema.py:271-284`) | gate partition, proactive, render | **floored at the import boundary to `USE_ONLY` (`QUARANTINED` stays `QUARANTINED` — never raised)** |
 | `Provenance.author_of_evidence` | read everywhere | "who authored the evidence" | disclosure routing, ladder | **unchanged — deliberately.** The record is true; §4c says why we cap rather than rewrite |
 | `Edge.confidence`, `valid_from`, `observed_at`, `needs_confirmation` | imported verbatim | honest history | staleness, rendering | **unchanged** — capped records render in the unverified block at their own confidence (the 0.4.1 per-block contract); §4e states why currency needs no extra rule |
-| `import_memory(...)` return | host API + CLI + `_record("import", ...)` | counts dict | `__init__.py:1063`, `cli.py` | **gains `"capped": <int>`** (0 under restore). §3b runs the oracle lens on it |
+| `import_memory(...)` return | host API + CLI + `_record("import", ...)` | counts dict | `__init__.py:1063`, `cli.py` | **gains `"capped": <int>`** (0 under restore) — **counted over the parsed file BEFORE the 0009 record-equality skip (N1/P11)**, so it is a pure function of (file, flags), never of destination state. §3b runs the oracle lens on it |
 
 ---
 
@@ -151,10 +151,16 @@ no cell grants anything.
   both operator surfaces. Not reachable by the model: no MCP tool (§2c-ii).
 - **What the return newly reveals (the 0015 §3b lens — information, not
   carrier):** the new `"capped"` count is a **function of the incoming file and
-  the flags alone** — the caller could compute it from inputs it already holds.
-  It reveals nothing about prior store state. (The pre-existing `"skipped"`
-  count does reflect destination state; that is shipped v0 behaviour,
-  unchanged here and reachable only by the operator who owns the store.)
+  the flags alone** — and that is true **by construction, not by accident**
+  (the internal review's N1: the claim held only for pre-skip counting, so the
+  counting point is now pinned): `capped` is counted over the parsed records
+  BEFORE the 0009 record-equality skip, never over the committed plan. P11
+  asserts it — the same file yields the identical `capped` into an empty and a
+  pre-populated destination. It therefore reveals nothing about prior store
+  state. (The pre-existing `"skipped"` count does reflect destination state;
+  that is shipped v0 behaviour, unchanged here and reachable only by the
+  operator who owns the store — which is also why the N1 defect's net exposure
+  was nil in both counting designs; what was unsound was the §3b *argument*.)
 - **`--restore` is an authorization act,** not a parser flag: it is the
   operator asserting "this file is my own store's history." §8 states the
   limit that creates.
@@ -277,7 +283,7 @@ about *itself*, rendered — post-cap — only ever as unverified material.
 | regime | behaviour |
 |---|---|
 | default, fresh target user | all records land capped; counts `{edges, episodes, skipped=0, capped=N}` |
-| default, re-import of a default import | capped == capped → record-equal skip; `capped` counts the incoming records that carried a cap-changing value |
+| default, re-import of a default import | capped == capped → record-equal skip; `capped` reports the SAME value as the first import (pre-skip counting, P11 — the skip never deflates it) |
 | default, target holds uncapped originals (own store round-trip) | **refuse whole import**; message names `--restore` |
 | `--restore`, no `user_id` | byte-faithful; provenance preserved; `capped=0`; 0006 I6/I9 round-trip properties live here (§7b) |
 | `--restore` + `--user` (any values) | **refused before the file is opened** — P5 |
@@ -300,6 +306,8 @@ about *itself*, rendered — post-cap — only ever as unverified material.
 | **P8** import mutates nothing existing (N9t currency) | `test_import_never_mutates_existing_rows` — snapshot every destination row; run default import (success), refused import, and a crafted supersedes-into-destination import; assert byte-identical destination rows and unchanged `active` flags in all three | CI |
 | **P9** source-identity fields do not bypass the cap — **0006 I7, discharged** | `test_imported_source_id_does_not_bypass_the_remap_cap` (0006's named test, written here) — a v5 file with foreign `(origin, source_id)`: records cap normally; grouping/digest run on capped records only | CI |
 | **P10** the default-path refusal names the alternative | `test_own_store_reimport_refusal_names_restore` — the refusal message contains `--restore` | CI |
+| **P11** `capped` is destination-blind (N1) | `test_capped_count_is_destination_blind` — the same file imported into an EMPTY store and into a PRE-POPULATED store yields the identical `capped`; the count is taken pre-skip, over the parsed file | CI |
+| **P12** imported corroboration cannot promote (N2) | `test_imported_outcomes_cannot_promote_a_capped_edge` — a default import carrying a capped edge plus N fabricated `kind="outcome"` judgments on it: the edge stays non-assertable and outside the grounded block; only ordering within the unverified block may move | CI |
 
 ---
 
@@ -337,7 +345,7 @@ backup) — nothing is destroyed, because the cap never touched the file.
 |---|---|---|
 | **0006 I7** | "0005's import cap applies before any of this" — its named test `test_imported_source_id_does_not_bypass_the_remap_cap` **does not exist yet** (verified: zero matches in `tests/`); it was an obligation contingent on this spec | **discharged here as P9** — written with this spec's implementation, same commit |
 | **0006 I9 / I6** | `test_local_source_survives_a_roundtrip_into_the_same_store` (`tests/test_0006_source_identity.py:283`) and the I6 round-trip check import into the same store **on the default path**, which now refuses | the I9/I6 *properties* are unchanged and live on the restore path — **the tests move to `restore=True` in the same commit as the implementation**, with a marked note in each citing this spec (the 0014 §7b same-commit rule) |
-| **0009 §4c / 0010 X17-X19 / 0014 §2c** | machinery referenced, not amended — the cap runs strictly before all of them | their import-path test fixtures that round-trip same-store on the default path are updated to `restore=True` where they test *integrity* semantics; fixtures that test *trust* keep the default path. **56 `import_memory` call sites across 8 test files enumerated (2026-08-13); the sweep is an implementation obligation with this inventory as its checklist** |
+| **0009 §4c / 0010 X17-X19 / 0014 §2c** | machinery referenced, not amended — the cap runs strictly before all of them | their import-path test fixtures that round-trip same-store on the default path are updated to `restore=True` where they test *integrity* semantics; fixtures that test *trust* keep the default path. **56 `import_memory` call sites across 8 test files enumerated (2026-08-13); the sweep is an implementation obligation with this inventory as its checklist.** **The internal review's N3 flag, binding on the implementation commit: this sweep's COMPLETENESS is the single likeliest slip — the commit must verify per-site that every relocated test cites this spec and that no default-path integrity fixture is left silently refusing (a silently-refusing fixture reads as coverage while testing nothing)** |
 | **0012** | reinforcement laundering closed at ingest — §4e leans on it | referenced only; no amendment |
 
 ---
@@ -365,6 +373,13 @@ on anything the attacker writes.
 3. **Capped records still exist**: they occupy the unverified block, carry
    their own confidence, and count in outcome-chain history. The boundary
    controls *assertion*, not *presence* — presence is what import is for.
+   **And presence cannot buy promotion (N2):** an attacker who imports a
+   capped edge plus fabricated `kind="outcome"` judgments inflates its
+   corroboration history, but assertability and grounded-block membership key
+   on the two capped levers, never on outcome counts — inflated history is
+   inert to promotion (it can at most reorder material *within* the
+   unverified block). This is the trust × proof-count separation, one level
+   up; P12 pins it.
 4. **The cap does not authenticate `origin`** — 0006 R7's boundary stands;
    forged namespacing remains namespacing. This spec makes it *harmless*
    (grouping runs on capped records, P9), not *honest*.
