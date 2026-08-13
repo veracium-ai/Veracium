@@ -37,9 +37,13 @@ INVENTORY = [
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the death-release half of the same POSIX pair"),
     ("tests/test_mcp.py", "importorskip", "mcp",
-     "optional-dependency", "the optional MCP SDK — 5 tests; PASS ×5 in the "
-                            "measured line (installed in the authoring venv); "
-                            "SKIP ×5 where absent"),
+     "optional-dependency", "the optional MCP SDK — the importorskip is INSIDE "
+                            "test_mcp_server_wiring ONLY (external 0018 B3-1: "
+                            "the earlier ×5 claim mistook the file's test count "
+                            "for the gate's scope); the file's other 4 tests "
+                            "run without the SDK. Author line: all 5 PASS (mcp "
+                            "importable in the authoring venv); an mcp-absent "
+                            "environment sees 4 PASS + 1 SKIP"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
      "package-artifact", "binds COLLECTED's inventory to render(); 1 test, "
                          "SKIPPED in the measured line (COLLECTED.txt is "
@@ -104,7 +108,8 @@ def render() -> str:
         "  RECONCILIATION (0018 external B2-1 — the arithmetic must close): the\n"
         "  measured line's skips decompose as: git-checkout 11 (longmemeval 8,\n"
         "  test_spec_gate 2, test_schema_model 1) + env-flag 2 + package-artifact 1\n"
-        "  = 14. Every OTHER inventoried site PASSED in the measured line (MCP x5;\n"
+        "  = 14. Every OTHER inventoried site PASSED in the measured line (MCP x5,\n"
+        "  of which only the wiring test is SDK-gated;\n"
         "  the 0015 POSIX pair x2; the HOME-anchored coordination-file test x1; the\n"
         "  runtime-identity, euid, and qualified-runtime cells x1 each). Compute\n"
         "  your expected line from these statuses and your environment; the seal\n"
