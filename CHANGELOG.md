@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.0 — 2026-08-13
+
 - **Opt-in telemetry can now report how often values are superseded and
   reinforced** (accepted spec 0015) — the counters the consent dialog's
   "aggregate counters" always intended. Counted at the planner from committed
@@ -14,8 +16,19 @@
   OS-exclusive lock with a persisted transition epoch; deleting
   `telemetry.json` is the consent-erasure mechanism and is never undone by
   telemetry code.
-
-## Unreleased
+  (`specs/0015`, accepted after 11 external review rounds + implemented.)
+- **`veracium migrate` — an operator-facing CLI verb** wrapping the store's offline
+  `migrate_store(path)`: migrates a below-head store to the current schema, reports the
+  structured result (resulting version, whether anything changed), and refuses
+  future-version stores with the store's own reason. Exit 0 migrated/current, 1 refusal,
+  2 no file.
+- **The `measures` relation** joins the default registry — a functional relation for
+  changing quantities (weight, reading progress, balance, score): one current value,
+  history kept. `docs/recipes.md` now shows how hosts extend `MemoryConfig.relations`.
+- **`veracium.llm.metered.Metered`** — an opt-in wrapper for any `Complete` callable:
+  per-role call counts, token counts when the host supplies a counter, honestly-labelled
+  character counts when it does not. Totals stay host-side; `docs/telemetry.md`'s stale
+  token-totals claim is corrected to what the code actually sends.
 
 ## 0.7.0 — 2026-08-11
 
