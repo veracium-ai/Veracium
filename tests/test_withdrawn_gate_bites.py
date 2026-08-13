@@ -77,6 +77,9 @@ MOTIVATING_FORMS = [
     ("0014-validfrom-consolidation", "valid_from is in the consolidation payload set"),
     # 0012
     ("0012-reinforcement-never-persists", "reinforcement never persists the incoming edge"),
+    # 0018 internal F1 — the dead audit-unknown readback branch (R13-3 form)
+    ("0018-readback-never-an-error", "a malformed or missing record yields the audit-unknown facts, never an error"),
+    ("0018-readback-never-an-error", "missing or malformed record yields the\n  audit-unknown facts, never an error"),
 ]
 
 

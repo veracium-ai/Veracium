@@ -269,4 +269,13 @@ WITHDRAWN = [
      r"nothing persisted changes|(change|spec) persists nothing|nothing is persisted \(",
      "R2-5/R3-3: telemetry.json's schema_version (and consent_epoch) ARE persisted consent; claims are scoped to the MEMORY store",
      "specs/0015 §2/§4/§7"),
+    ("0018-readback-never-an-error",
+     r"(malformed or missing|missing or malformed) record yields the\s*audit.unknown facts,? never an error",
+     "0018 internal F1: the R13-3 audit-unknown readback branch was DEAD (every "
+     "call site is post-record_terminal-success) and contradicted R14-3 — the "
+     "integrity check lives AT the read boundary; missing/malformed raises "
+     "MigrationAuditReadError. (Pattern deliberately requires the operative "
+     "'record yields' form so 0016 v18's frozen round-history narrative, which "
+     "describes what R13-3 said using an arrow, is not flagged.)",
+     "specs/0018 §4 readback interface / I17"),
 ]
