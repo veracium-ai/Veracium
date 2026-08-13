@@ -4,7 +4,7 @@
 
 # Spec status
 
-**18 specs · 10 accepted · 145 external review
+**18 specs · 10 accepted · 146 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -30,7 +30,7 @@ is the number that decides what can be built.
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
 | **0016** | SourceType deletion + the evidence_basis contract freeze | `draft` | 2026-08-13 | 1 | 15 | 0 | 0 | 0 | — |
 | **0017** | token-usage telemetry over the Metered wrapper | `draft` | 2026-08-13 | 1 | 1 | 0 | 0 | 0 | — |
-| **0018** | the release-migration orchestrator | `draft` | 2026-08-13 | 1 | 1 | 0 | 0 | 0 | — |
+| **0018** | the release-migration orchestrator | `draft` | 2026-08-13 | 1 | 2 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
