@@ -5,7 +5,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v4 — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via a thread-local operation-context stack — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
+| **Version** | v5 — v4 + the PRE-SEND SUBSTITUTION (research, before round 2 was forwarded; the sealed v4 package was purged unsent and re-sealed — disclosed in COLLECTED): the context primitive is **`contextvars.ContextVar`**, not `threading.local` (sync-identical today; under any future event loop `threading.local` would silently reintroduce the cross-context misattribution class this redesign exists to kill), and §4c gains the **EMIT-BOUNDARY contract clause** (the event is emitted in the context that entered `__call__`, so a host `Complete` fanning out internally still attributes to the calling operation). *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — round 1 RETURNED 2026-08-13 (3 findings, folded in v3; their preliminary Q1 mapping amended by their own review); re-review requested · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
 | **External review** | ROUND 1 RETURNED 2026-08-13 (package `0017-v3-20260813T1157Z.tar.gz`): 6 bin-(a), folded as v4 (the attribution redesign); round-2 package next |
@@ -52,7 +52,7 @@ nearly did.
   concurrent operations both overcounts by up to a factor of N and creates a
   cross-user prior-state side channel (a concurrent compile delta reveals
   the size of what another user's stored memory built) — replaced by §4b's
-  per-call events with thread-local operation context.
+  per-call events with `contextvars`-scoped operation context.
 - **Duck-typed `totals()`-shape detection as opt-in.** WITHDRAWN at external
   round 1 (F2): shape proves data, not intent — replaced by §4a's
   affirmative capability + listener registration.
@@ -80,7 +80,7 @@ raises the current consent version.
 | `SCHEMA_VERSION` | 2 → **3** | the current consent-text version; stamped only by affirmative display flows (0015 I13) | `prompt_consent`, `accept_current_consent`, the payload stamp | yes — one more version through the same machinery |
 | `CONSENT_TEXT` | written: token sentence returns, scoped | the consent claim; `test_consent_text_does_not_promise_token_totals` PINS that "token" is absent until fields are whitelisted AND written | `prompt_consent()`, CLI enable | **the pin test flips direction in the same commit** (I5): text mentions tokens iff whitelisted and written — both now true |
 | `Metered` — the capability + listener interface | `metering_capability = "veracium-metered-v1"` + `add_usage_listener(fn)`; per-call events `{role, in_tok, out_tok}` emitted synchronously on the calling thread AFTER both counts validate (§4a/§4c); `totals()` stays the host's own view and is no longer read by `Memory` | `Memory` (registers the listener); hosts; `tests/test_metered.py` — the shipped docstring's "nothing writes to telemetry" paragraph is REWRITTEN to this contract |
-| `Memory` operation context + per-user accumulator | NEW instance state (§4b/§4d): the thread-local `(event, user_id)` context stack pushed/popped by every public operation; `Memory._llm_usage` keyed by `user_id`, lock-guarded, INSTANCE-lifetime, deleted by `forget(user_id)` | the listener (writes), `introspect()` (reads), `forget()` (erases), `_record` (the attributed fields fan out to telemetry-gated + audit carriers) |
+| `Memory` operation context + per-user accumulator | NEW instance state (§4b/§4d): the `contextvars.ContextVar` `(event, user_id)` context stack pushed/popped by every public operation; `Memory._llm_usage` keyed by `user_id`, lock-guarded, INSTANCE-lifetime, deleted by `forget(user_id)` | the listener (writes), `introspect()` (reads), `forget()` (erases), `_record` (the attributed fields fan out to telemetry-gated + audit carriers) |
 | `introspect()` return | written: an optional `"llm_usage"` block (per-role calls + tokens, `"scope": "instance-lifetime"` in the payload — v3's process-lifetime label was false for instance-local state) | the transparency surface; consent-INDEPENDENT local carrier (§4f) | host API + CLI `introspect` (NOT an MCP tool — §2c-ii); absent when unmetered; empty for a forgotten user |
 
 Consumers enumerated mechanically — commands in §2c-ii.
@@ -187,15 +187,22 @@ and v3's single-`Memory` mitigation claim was FALSE (one `Memory` serves
 arbitrary `user_id`s, including over MCP).
 
 The replacement is EXACT SCOPED ATTRIBUTION: the wrapper emits a per-call
-usage event `{role, in_tok, out_tok}` SYNCHRONOUSLY on the thread making the
-call, to each registered listener. `Memory` maintains a THREAD-LOCAL
-operation-context stack — each public operation (`remember`/`answer`/
+usage event `{role, in_tok, out_tok}` SYNCHRONOUSLY in the context making
+the call, to each registered listener. `Memory` maintains the
+operation-context stack in a **`contextvars.ContextVar`** (research's
+pre-round-2 substitution for `threading.local`: semantically identical for
+today's all-synchronous product, and async-correct for free — under an
+event loop, `threading.local` would let two interleaved tasks share one
+stack, reintroducing the exact cross-context misattribution class this
+redesign kills; stdlib since 3.7, cheap now, expensive to retrofit after a
+round pins the primitive). Each public operation each public operation (`remember`/`answer`/
 `recall`/`maintain`/…) pushes `(event, user_id)` on entry and pops on exit —
-and the listener attributes the event to the TOP of the calling thread's
+and the listener attributes the event to the TOP of the calling context's
 stack (nested operations: the innermost context wins, e.g. `answer → recall`
 attributes the compile to the recall context it ran under, and the §2
-event-field map routes it). A usage event arriving with NO context on its
-thread (no public operation in progress) is attributed to nothing —
+event-field map routes it). A usage event arriving with NO context (no
+public operation in progress in the calling context) is attributed to
+nothing —
 counted only in the wrapper's own host-side totals. Consequences, each a
 named test (I9): two users' concurrent operations attribute EXACTLY (barrier-
 controlled); nested `answer → recall` attributes once, to the inner context;
@@ -217,7 +224,13 @@ promise was placed AFTER the failure point, reviewer-reproduced with a
 two-stage counter that broke the operation AND retained a partial record).
 `calls` and the character counts (which cannot fail) are accounted in the
 wrapper's always-valid block and are unaffected. Only after both counts
-validate does the wrapper, under its lock, mutate totals and emit the event.
+validate does the wrapper, under its lock, mutate totals and emit the
+event. **The emit boundary is a contract clause (research, pre-round-2):
+the event is emitted in the thread/context that ENTERED `__call__` — at
+return, on the caller's side — so a host `Complete` that internally fans
+out to worker threads or processes still attributes to the calling
+operation's context**, never to a worker with no context (a hostile-host
+reading of "synchronous emission" cannot relocate the attribution point).
 
 ### 4d. The per-user accumulator — carrier, lifetime, erasure (external F5)
 
@@ -379,12 +392,16 @@ Release class: **stable** — every named regime has a CI-reachable test.
 
 Round 1 adopted BOTH of the previous §9's least-sure fallbacks as
 requirements (the scoped per-call interface; the affirmative capability) —
-they are now the §4a/§4b design. What v4 is least sure of: (1) the
-THREAD-LOCAL context stack as the attribution scope — it is exact for the
-codebase's synchronous call structure; if a future operation dispatches
-llm calls to worker threads, the context would not follow, and the event
-would fall to wrapper-totals-only (visible, not misattributed — but state
-whether that failure direction is acceptable); (2) the AST-based default-
+they are now the §4a/§4b design; the context primitive is
+`contextvars.ContextVar` (research's pre-round-2 substitution — async-safe
+where `threading.local` would silently reintroduce the misattribution
+class). What v5 is least sure of: (1) plain `threading.Thread` fan-out
+INSIDE a future Memory operation would still not inherit the context (a
+`contextvars` copy rides asyncio tasks, not raw threads) — such an event
+falls to wrapper-totals-only (visible, never misattributed; the §4c emit
+boundary covers HOST-side fan-out, and this residue concerns
+veracium-side fan-out that today does not exist — state whether that
+failure direction is acceptable); (2) the AST-based default-
 role resolution in I2b's registry check — is static resolution of default
 parameters robust enough, or should the wrapper refuse a missing explicit
 `role` outright? **What would change our minds:** if barrier tests show
