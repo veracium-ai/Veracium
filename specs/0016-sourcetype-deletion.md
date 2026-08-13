@@ -1,6 +1,6 @@
 # Feature spec: SourceType deletion + the evidence_basis contract freeze
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0003, 0013, 0014, 0018
 
 | | |
@@ -572,3 +572,33 @@ superseded contract):**
 - [ ] I have said where I think the **author's conclusion is wrong**
 - [ ] I re-read the current version before reviewing
 - [ ] §9 brief is written, and external review has been sent
+
+
+## Review closure
+
+*PROCESS §4a. Approved for acceptance at round 15 (bin (a) empty, findings
+3/4/3/4/3/4/3/1/2/2/2/4/4/4/0) with the status flip BLOCKED until 0018
+passed its own review; 0018 was approved at its round 4 (2026-08-13) and
+BOTH `Spec-Status` flips land in THIS commit — the ruled atomic acceptance.
+No 0016-facing policy moved across 0018's five rounds (confirmed by internal
+review at each fold). Full per-finding verdicts: `specs/reviews.py` + each
+round's COLLECTED.*
+
+| round | findings | closed by |
+|---|---|---|
+| internal (v3→v4) | Q2 ruled: D1 warns on every public path | `4c83a74` |
+| 1 (v4) | F1 the false redundancy proof · F2 the star-import cell · F3 dependencies/carriers | `26ea71c` (v5) |
+| 2 (v5) | R2-1..4 + the no-op-fold lesson (metadata-only edits) | `5e21ac9` (v6, verified operative AT SEAL) |
+| 3 (v6) | R3-1 the complete D1 surface · R3-2 benign-semantics carriers · R3-3 the `committed_schema` WITHDRAWAL → `outcome_digest_version=3` | `5c5ecc6` (v7) |
+| 4 (v7) | R4-1 v3 mechanical · R4-2 the declared no-op step · R4-3 `Field(deprecated=…)` warns · R4-4 carrier sweep | `f0b6f3d` (v8) |
+| 5 (v8) | R5-1 unconditional pre-v3 refusal · R5-2 the 0013 M10 amendment (later WITHDRAWN at R7-2) · R5-3 the pydantic ≥2.7 floor · C1 the sha pin | `319602c` (v9) |
+| 6 (v9) | R6-1 the aggregate step never existed · R6-2 the 0007 same-shape amendment · R6-3 on-sight refusal · R6-4 the real min-dep CI job | `9dffa85` (v10) |
+| 7 (v10) | R7-1 stamped-only-after-verification · R7-2 the scope NARROWED to base-6-only + the ladder · R7-3 the notice sentence | `241f1e1` (v11) |
+| 8 (v11) | R8-1 `unsupported-base` as a closed contract | `548cc68` (v12) |
+| 9 (v12) | R9-1 the preflight construction (adopted verbatim) · R9-2 the unasserted-replace sweep | `1b23154` (v13) |
+| 10 (v13) | R10-1 the executable owner · R10-2 the surviving blank line | `ece71d3` (v14) |
+| 11 (v14) | R11-1 the attestation-honest orchestrator + inverted matrix · R11-2 `MigrationResult` | `1b6f0f4` (v15) |
+| 12 (v15) | R12-1 reclassification · R12-2 the current split + locked · R12-3 the frozen result · R12-4 the frozen attestation + CLI flags | `7051bec` (v16) |
+| 13 (v16) | R13-1 the mint API · R13-2 `resulting_state` · R13-3 the readback · R13-4 the token grammar + exact carrier | `be716ee` (v17) |
+| 14 (v17) | R14-1..4, all orchestrator-construction → **THE RULED SPLIT** (the machinery moved to 0018 with the four findings folded from birth) | `8c0df5a`/`de09c6b` (v18) |
+| 15 (v18) | **APPROVED FOR ACCEPTANCE, bin (a) empty**; two editorial corrections | `dfb15c5`; the flip = THIS commit, atomic with 0018 v6 |

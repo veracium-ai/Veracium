@@ -1,15 +1,15 @@
 # Feature spec: the release-migration orchestrator
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0007, 0013, 0016
 
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v5 — EXTERNAL ROUND 3 (5 bin-(a) + 1 bin-(b), narrowing 7→9→5; R2-2/3/4/9 confirmed closed; every finding confined to v4's own folds): ALL FOLDED. **R3-1 (A, found-in-fix of R2-1):** the reviewer EXECUTED the fingerprint and raw `manifest()` is not JSON-serializable (tuple keys) → the encoding defers to the instrument's own: `identity(manifest())` (0007's tuple-key-safe canonicalisation, `schema_version.py:374`) with `digest()`'s exact `json.dumps` parameters; a NEW independent digest oracle (I22) incl. the tuple-key negative case. **R3-2 (D, sweep-miss of R2-7):** the §2c forged-resolution cell still said "cannot grant an authority", contradicting corrected I18 → rewritten to I18's two-condition comparison verbatim. **R3-3 (D, sweep-miss of R2-8):** I14 still said each-error-re-resolves → pinned to exactly three resolves + three mints, call-counts asserted. **R3-4 (A+F, found-in-fix of R2-5):** `ReadbackResult` was a name → the exact NamedTuple sum carrier with total cross-field laws, immutable capped `problems`, exact-type admission, and the adversarial cells (I23); §7a row added. **R3-5 (G+C, found-in-fix of R2-6):** accepted 0013 permits the package escape PRE-MINT (no operation id exists) → two routes (pre-mint: no readback, labeled unavailable; post-mint: the record is a fact source ONLY when valid AND bound to `package-inconsistent`); §7's every-exit-3-reports-commit claim narrowed. **B3-1 (found-in-fix of B2-1):** the MCP reconciliation was wrong AGAIN — the importorskip gates ONE test (`test_mcp_server_wiring`), not the file's five; the reviewer's mcp-absent run sees 4 PASS + 1 SKIP → the inventory entry now states the gate's SCOPE, and the decomposition follows. *Misses diagnosed: R3-2/R3-3 are carrier-sweep failures of my own round-2 fixes (the 0015 sweep class — fixed the primary site, never grepped the invariant table and §2c); R3-1/R3-4 are constructions I stated but did not EXECUTE (the reviewer ran the probe; the I22 oracle and I23 cells make execution the acceptance condition); B3-1 is verify-against-the-domain at test-file granularity — I counted `def test`, not the gate's scope.* |
+| **Version** | **v6 (ACCEPTED)** — EXTERNAL ROUND 4: **APPROVED FOR ACCEPTANCE under the finite-acceptance rule; the frozen surface is I13–I23** (total preflight · the exact retry sequence · the result truth table · exact attestation · loud audit failures · reason-only resolution evidence · the CLI contract · the terminal-domain split · total routing · the fingerprint encoding · the closed readback carrier). v6 = v5 + the four same-commit CLOSURE OBLIGATIONS, each demonstrated in this revision: (1) the R3-2 sweep COMPLETED — the §2c cell's test clause now carries I18's two-condition expectation (the description half was fixed in v5, the test half still said "no authority"); (2) exactness made RECURSIVE — `ReadbackResult` requires `type(facts) is TerminalFacts` and invokes `TerminalFacts.problems(facts)` UNBOUND (the reviewer's dynamic-validator subclass probe is the named regression), and `PreflightResolution` exact-types every scalar before any comparison (`resolved_base=True` refuses; hostile `str` subclasses refuse) — I18/I23 extended; (3) read-level failure TOTALITY — `malformed(problems)` is the total read-failure arm (`read-failed: <class>` bounded entries; forced-read-failure regression), and the `ReadbackResult` row is IN §7a (v5 had put it in §2 while claiming §7a complete); (4) the R3-5 output sweep FINISHED — the false "store not accessed" clause removed (the preflight reads the manifest), and §4g/I19 enumerate the five package routes. The reviewer's verification: the corrected fingerprint EXECUTED and matched an independent encoder; the suite delta reconciled exactly; B3-1 closed. **Acceptance is ATOMIC with 0016 v18 (this commit flips both).** *(v5 history: external round 3 — 5+1 folded: the executable fingerprint via `identity(manifest())`, the swept §2c/I14 carriers, the constructed `ReadbackResult`, the pre-mint package route, the MCP gate-scope correction.)* |
 | **Status** | *narrative only — canonical is the `Spec-Status:` line* |
 | **Internal reviewers** | research — round 1 RETURNED + folded (v2); re-review CLEARED 2026-08-13. *(v2 history: F1 readback reconciliation — refined by external R1-4; F2 sections inlined; F3 the `PreflightResolution` §2c row + reason-labeling pin.)* |
-| **External review** | ROUND 3 RETURNED 2026-08-13 (package `0018-v4-20260813T2140Z.tar.gz`): 5 bin-(a) + 1 bin-(b), folded as v5; round-4 package next |
+| **External review** | **ROUND 4: APPROVED FOR ACCEPTANCE** (2026-08-13, package `0018-v5-20260813T2202Z.tar.gz` sha `107e7720…`) — findings 3(int)/7/9+1/5+1/0; the four closure obligations folded same-commit with the flip |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -62,7 +62,7 @@ ruling.)*
 | `path` (caller-supplied) | missing file → the missing refusal outcome, no minting | foreign/malformed/unstamped → the corresponding 0007/0013 refusal outcome, no minting | newer-than-head → the newer refusal, no minting | a path racing with concurrent writes | the preflight matrix is TOTAL (I13); the preflight→mint race closes by reclassification (§4c), never by trusting the first resolution |
 | a stored below-v6 database (bases 1–5) presented post-D2 | — | — | ordinary OPEN → 0013's existing below-head refusal, unchanged by this spec | the migration ORCHESTRATOR'S PREFLIGHT → the `unsupported-base` outcome (returned, never raised), the ladder diagnostic, NO authority, ZERO 0013 audit rows, bytes+stamp unchanged | I13; `test_below_v6_base_refuses_with_the_ladder_message` (all five bases) + `test_below_v6_open_unchanged` |
 | `MigrationAttestation` (caller-supplied — the host-owned facts) | absent → `TypeError` (required keyword) | `quiesced=1`/truthy-object → refused (`is True` check); empty/whitespace `backup_ref` → `ValueError` | unknown extra fields → refused (immutable, exact) | a hostile SUBCLASS (attribute-interception) or duck-typed carrier | **exact-type admission `type(x) is MigrationAttestation` (R14-4 — 0013's own authority regression); duck-types and subclasses REFUSED, never copied; `backup_ref` validates with 0013's own token grammar**; `test_attestation_contract` (absent, coerced, grammar-violating incl. embedded-space, duck-type, hostile-subclass cells) |
-| **`PreflightResolution`** (the mint API's `resolved=` evidence — **caller-suppliable**: `mint_release_authority` is the production surface, so its parameters are host-reachable; "orchestrator-internal" is not assumed — the F3 ruling) | absent → `TypeError` (required keyword) | wrong type → refused at the boundary | — | **a FORGED resolution — analyzed in I18's two-condition form VERBATIM (external R3-2; the prior cell's "cannot grant an authority" contradicted I18):** with a VALID store + attestation, mint SUCCEEDS identically under forged evidence (an authority IS granted — forgery must not deny either); with a FAILING store, mint fails identically and at most the `MintError` reason label differs, and the re-resolve then re-establishes truth. Forgery cannot corrupt a terminal outcome or skip a validation; worst case is a misleading reason label on an already-failing call | **the load-bearing pin: mint treats `resolved` as reason-labeling evidence ONLY, never authority-relevant — it never skips or weakens any check because of it** (else this row becomes a TOCTOU and security-critical); `test_resolution_is_reason_labeling_only` (forged resolution → identical validation behaviour, no authority, outcome facts unchanged) |
+| **`PreflightResolution`** (the mint API's `resolved=` evidence — **caller-suppliable**: `mint_release_authority` is the production surface, so its parameters are host-reachable; "orchestrator-internal" is not assumed — the F3 ruling) | absent → `TypeError` (required keyword) | wrong type → refused at the boundary | — | **a FORGED resolution — analyzed in I18's two-condition form VERBATIM (external R3-2; the prior cell's "cannot grant an authority" contradicted I18):** with a VALID store + attestation, mint SUCCEEDS identically under forged evidence (an authority IS granted — forgery must not deny either); with a FAILING store, mint fails identically and at most the `MintError` reason label differs, and the re-resolve then re-establishes truth. Forgery cannot corrupt a terminal outcome or skip a validation; worst case is a misleading reason label on an already-failing call | **the load-bearing pin: mint treats `resolved` as reason-labeling evidence ONLY, never authority-relevant — it never skips or weakens any check because of it** (else this row becomes a TOCTOU and security-critical); `test_resolution_is_reason_labeling_only` — I18's two-condition expectation verbatim: valid store + attestation → mint SUCCEEDS identically under forged evidence; failing store → fails identically, at most the reason label differs (closure obligation 1: the description half of this cell was corrected in v5, the test half still said "no authority") |
 | CLI flags | `--i-have-quiesced`/`--backup` missing on the migration path → exit 2 with usage | invalid `--backup` token → exit 2 with the grammar stated | — | flags are the operator's explicit assertions — never prompted for (prompting is coercion-prone and non-interactive-hostile) | the frozen flag acquisition (§4); `test_migrate_cli.py` amended |
 
 ### 2c-ii. Assertions about reach — run 2026-08-13
@@ -187,8 +187,12 @@ base 1–5). Every non-resolving cell short-circuits with NO
   round-3 byte-exactness case).
 - **Representation, pinned:** a `NamedTuple` (the same representation
   accepted 0013 uses for its own carriers); the validating constructor
-  refuses an empty path, a base outside the accepted set, or a malformed
-  fingerprint. Exact-type admission at every consumer (`type(x) is
+  EXACT-TYPES every scalar BEFORE any membership, regex, or comparison
+  (closure obligation 2 — recursive exactness): `type(canonical_path) is
+  str`, `type(resolved_base) is int` (so `True`, an int subclass, refuses),
+  `type(source_fingerprint) is str` (hostile `str` subclasses refuse before
+  their methods can run); then refuses an empty path, a base outside the
+  accepted set, or a malformed fingerprint. Exact-type admission at every consumer (`type(x) is
   PreflightResolution` — the same rule as the attestation).
 - **Producer:** ONLY the shared opening/planner path, which this spec AMENDS
   (§4h) to RETURN its resolution evidence for every store it RESOLVES —
@@ -311,10 +315,19 @@ operation id, in its own read transaction, returning a closed
 construction):** a `NamedTuple` (the instrument's carrier convention) of
 `kind: str` ∈ {`"record"`, `"absent"`, `"malformed"`},
 `facts: Optional[TerminalFacts]`, and `problems: tuple[str, ...]`, with the
-cross-field laws TOTAL and constructor-enforced: `kind=="record"` ⇔ `facts`
-is a `TerminalFacts` whose own `problems()` is empty ∧ `problems == ()`;
+cross-field laws TOTAL and constructor-enforced: `kind=="record"` ⇔
+`type(facts) is TerminalFacts` (EXACT type — closure obligation 2: the
+reviewer's probe built a subclass whose overridden `problems()` validated
+invalid facts) ∧ **`TerminalFacts.problems(facts)` invoked UNBOUND** (the
+base validator, never the instance's — an override cannot answer) returns
+empty ∧ `problems == ()`;
 `kind=="absent"` ⇔ `facts is None` ∧ `problems == ()`; `kind=="malformed"`
-⇔ `facts is None` ∧ `problems` non-empty. `problems` is an IMMUTABLE tuple
+⇔ `facts is None` ∧ `problems` non-empty — **and `malformed` is the TOTAL
+read-failure arm (closure obligation 3): a failed SELECT, a failed open, or
+a failed read transaction maps to `malformed` with a bounded problem entry
+naming the failure class (`read-failed: <class>`), so the raise-nothing
+promise holds over every read outcome, not only retrieved-or-absent rows; a
+forced-read-failure regression is the named I23 cell.** `problems` is an IMMUTABLE tuple
 of `str` (a list or any mutable/nested collection REFUSES — `type(x) is
 tuple`, each element `type(e) is str`), capped at 32 entries of ≤500
 characters each with an explicit `…truncated` final entry when the cap
@@ -354,7 +367,11 @@ the ORCHESTRATOR**, which holds the kernel outcome the exception needs.
    exists; v4's single retained-id route assumed one always does):
    **pre-mint** (the escape fires before any authority was minted) — no
    readback is possible or attempted; the CLI prints `resulting_state:
-   unavailable (pre-mint: no operation minted; store not accessed)`;
+   unavailable (pre-mint: no operation minted)`
+   — the earlier "store not accessed" clause is REMOVED (closure obligation
+   4: the preflight already read the store's manifest, and the accepted
+   authority path reads it again before a release-identity failure — the
+   clause was false);
    **post-mint** (the orchestrator retains the minted `operation_id`) — the
    escape-path readback runs, and the record is accepted as a fact source
    ONLY when it is valid AND its outcome is `package-inconsistent` (the one
@@ -468,12 +485,12 @@ rows, no readback error); **the loud escapes** (`MigrationAuditWriteError` /
 | **I15** `MigrationResult` carriers are table-only | `test_migration_result_truth_table` — the LITERAL §4e table: every preflight row (all FIFTEEN, incl. both `migration-source-missing` forms — R2-3), the delegated DEFERENCE law (a record-bearing carrier is valid iff its seven-field `TerminalFacts` passes accepted 0013's `problems()` verbatim, tri-state effects included — R2-2), and the four fixed `(False, False, unknown, None)` no-record rows (R2-9); the validating constructor rejects every out-of-table carrier incl. every non-vocabulary state word. **Gate-extension obligation: the validator joins `tests/test_0013_presend_gates.py`'s independent-oracle pattern — a separately-written oracle enumerates the §4e domain and the exhaustive diff must be empty** | CI |
 | **I20** the two new outcomes are returnable, never terminal (external R1-5) | `test_new_outcomes_are_excluded_from_terminal_facts` — the reviewer's probe as the regression: constructing `TerminalFacts` (and attempting terminal publication) with `unsupported-base` or `mint-contention` REFUSES; the extended independent oracle enumerates all FOUR exclusion cells (the two new members + the two never-terminal audit outcomes — R2-4's latent-0013-gap closure) AND the `package-inconsistent` inclusion cell; the explicit `TERMINAL_OUTCOMES` definition is asserted | CI |
 | **I22** the fingerprint has an independent oracle (external R3-1) | `test_preflight_fingerprint_oracle` — a separately-written encoder (its own `identity`-equivalent and framing) reproduces the §4b fingerprint byte-for-byte on fixture stores incl. a generated-column store and a quoted-literal DDL store; the raw-`manifest()` serialization failure (tuple keys) is the named negative case | CI |
-| **I23** `ReadbackResult` is a closed constructed carrier (external R3-4) | `test_readback_result_contract` — every cross-field-law violation, a hostile subclass, a list-typed `problems`, a mutable member inside `problems`, and an uncapped problem flood all REFUSE at construction; the malformed row's total construction yields ≥1 capped problem entry | CI |
+| **I23** `ReadbackResult` is a closed constructed carrier (external R3-4) | `test_readback_result_contract` — every cross-field-law violation, a hostile subclass of `ReadbackResult`, a hostile SUBCLASS OF `TerminalFacts` as `facts` (exact-type + the UNBOUND `problems()` call — the reviewer's dynamic-validator probe as the named regression), a list-typed `problems`, a mutable member inside `problems`, and an uncapped problem flood all REFUSE at construction; the malformed row's total construction yields ≥1 capped problem entry; a FORCED read failure (failed SELECT/open) maps to `malformed(read-failed: …)`, never a raise | CI |
 | **I21** the delegated routing is total (external R1-4) | `test_delegated_routing_total` — for EVERY member of 0013's returnable vocabulary as a delegated return: record-present → facts verbatim; record-absent × the four no-record outcomes → the fixed rows, NO error; record-absent × every other outcome → `MigrationAuditReadError(missing)`; malformed × any outcome → `MigrationAuditReadError(malformed)`; a VALID record whose outcome differs from the kernel return → `MigrationAuditReadError(mismatched)` (R2-5); `PackageConsistencyError` propagates on BOTH routes (R3-5): pre-mint → no readback, `unavailable (pre-mint)`; post-mint → readback with the record accepted ONLY when valid AND bound to `package-inconsistent` (any other outcome → `unavailable (readback: mismatched)`); absent/malformed → unavailable — stderr facts labeled recorded or unavailable, never invented | CI |
 | **I16** the attestation contract is exact | `test_attestation_contract` — absent, coerced (`quiesced=1`/truthy object), grammar-violating (incl. embedded space), duck-typed, and HOSTILE-SUBCLASS cells (R14-4; `type(x) is` admission, the 0013 authority-regression pattern) | CI |
 | **I17** audit failures are loud end-to-end | `test_audit_read_error_is_loud` — a missing record under a record-guaranteed outcome, and a malformed record under ANY outcome, raise `MigrationAuditReadError` whose validated carrier reaches CLI exit 3 with `derived_resulting_state` labeled derived-from-outcome on stderr; the existing `MigrationAuditWriteError` path and the newly-dispositioned `PackageConsistencyError` share the exit-3 loud-escape class, never exit 0. **Gate-extension obligation: the readback boundary, the no-record routing branch, and the mint-retry loop are NEW failure seams — they join `test_every_fault_seam_preserves_the_invariants`'s injection list** | CI |
-| **I18** the resolution evidence is reason-labeling only (internal F3; test form corrected by external R2-7 — the v3 regression demanded unconditional refusal, which would itself have made the evidence authority-relevant) | `test_resolution_is_reason_labeling_only` — forged vs genuine `resolved` compared under BOTH real-store conditions: with a VALID store + attestation, mint SUCCEEDS identically under forged evidence (an authority IS granted — forgery must not deny either); with a FAILING store, mint fails identically, and at most the `MintError` reason label differs | CI |
-| **I19** the CLI contract | `tests/test_migrate_cli.py`, amended under this spec's authority (§7a): flags required on the migration path (missing → exit 2), invalid `--backup` → exit 2 with the grammar, exits 0/1/2/3 as §4, reporting from structured fields only | CI |
+| **I18** the resolution evidence is reason-labeling only (internal F3; test form corrected by external R2-7 — the v3 regression demanded unconditional refusal, which would itself have made the evidence authority-relevant) | `test_resolution_is_reason_labeling_only` — forged vs genuine `resolved` compared under BOTH real-store conditions: with a VALID store + attestation, mint SUCCEEDS identically under forged evidence (an authority IS granted — forgery must not deny either); with a FAILING store, mint fails identically, and at most the `MintError` reason label differs; PLUS the recursive-exactness cells (closure obligation 2): `resolved_base=True` and hostile `str`-subclass scalars REFUSE at the `PreflightResolution` boundary before any comparison runs | CI |
+| **I19** the CLI contract | `tests/test_migrate_cli.py`, amended under this spec's authority (§7a): flags required on the migration path (missing → exit 2), invalid `--backup` → exit 2 with the grammar, exits 0/1/2/3 as §4, reporting from structured fields only — **and the exit-3 package routes enumerated as five named cases (closure obligation 4): pre-mint · bound `package-inconsistent` (recorded facts) · mismatched · missing · malformed, each with its exact stderr form** | CI |
 
 ## 7. Failure modes and reversibility
 
@@ -501,6 +518,7 @@ by construction: nothing was minted, nothing written.
 | `src/veracium/cli.py` migrate verb | re-dispositioned FROM the ce896fc direct-`migrate_store` contract TO the orchestrator: `--i-have-quiesced --backup REF`, exits 0/1/2/3 (this spec's authority — the carriers dev itself froze are re-frozen here) |
 | `tests/test_migrate_cli.py` | amended to the new contract, same commit as the CLI change |
 | 0013/0007 amendments (marked, §4h — land same-commit with implementation per the 0014 §7b rule) | the RETURNABLE vocabulary +`unsupported-base` +`mint-contention` with the **`TERMINAL_OUTCOMES` split** (both excluded from `TerminalFacts`/terminal publication; the independent oracle extended with the exclusion cells); the shared opening-path **resolution-evidence interface** (the `PreflightResolution` producer); `read_terminal` (record-or-ABSENT) + `MigrationAuditReadError`; the exhaustive outcome tests extended |
+| `ReadbackResult` | the closed readback sum carrier (§4f) — NamedTuple, total cross-field laws incl. the total read-failure arm, exact-type facts, immutable capped problems (closure obligation 3: v5 put this row in §2 and claimed §7a was complete — the carrier-confusion the inventory exists to prevent) |
 | `tests/test_0013_presend_gates.py` | EXTENDED per I15/I17 (oracle enumeration for the result table; fault injections at the readback + mint seams) |
 | docs (`docs/api.md` migration section, CLI help) | the flag contract + exit codes |
 | MCP / telemetry | **no change** — not exposed, nothing recorded (§3b) |
@@ -537,3 +555,18 @@ placement survive the same 0013-instrument scrutiny the rest did.
    was not taken: §4 expressly defines it as the production surface.)* | resolved |
 
 **No open questions remain.**
+
+
+## Review closure
+
+*PROCESS §4a: one row per round's findings, each closed by an openable
+artifact — the fold commit and the archive the next round verified. Full
+per-finding verdicts: `specs/reviews.py` + each round's COLLECTED.*
+
+| round | findings | closed by |
+|---|---|---|
+| internal 1 (v1) | F1 readback contradiction (dead branch) · F2 forward-referenced sections · F3 = §10 Q1 `PreflightResolution` row | `df941d6` (v2); internal re-review CLEARED same day |
+| ext 1 (v2) | R1-1 the §4/§4b layering (four superseded v17 forms) · R1-2 `PreflightResolution` a name · R1-3 the invalid table (`unchanged`) · R1-4 the no-record outcomes · R1-5 the TerminalFacts leak · R1-6 the read-error carrier · R1-7 the byte-identity exception | `fdbb28e` + `c5aa22d` (v3, the §4 CONSOLIDATION); archive `0018-v3-20260813T2103Z` |
+| ext 2 (v3) | R2-1 fingerprint constructibility · R2-2 the delegated laws vs 0013 (→ DEFERENCE) · R2-3 the empty-replacement cell + read-only mode · R2-4 the terminal-domain algebra · R2-5 `read_terminal` raise capability + mismatch · R2-6 the package escape's facts · R2-7 I18's direction · R2-8 the retry bounds · R2-9 the stale `source`/6 rows · B2-1 the reconciliation arithmetic | `07b5652` (v4); archive `0018-v4-20260813T2140Z` — R3 confirmed R2-2/3/4/9 closed |
+| ext 3 (v4) | R3-1 tuple-key serialization (probe-executed) · R3-2/R3-3 unswept carriers of the R2 fixes · R3-4 `ReadbackResult` construction · R3-5 the pre-mint package route · B3-1 the MCP gate scope | `cf91b77` (v5); archive `0018-v5-20260813T2202Z` — R4 verified the fingerprint against an independent encoder and reconciled the suite delta exactly |
+| ext 4 (v5) | **APPROVED FOR ACCEPTANCE** — four closure obligations: the §2c test clause · recursive exactness (unbound `problems()`, exact-typed scalars) · read-failure totality + the §7a row · the pre-mint message + five enumerated package routes | THIS commit (v6): all four folded, `Spec-Status: accepted`, atomic with 0016 v18 |
