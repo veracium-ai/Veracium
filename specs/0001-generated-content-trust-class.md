@@ -132,7 +132,7 @@ this spec failed on unverified assertions about what was reachable.***
 | `import` is a shipped CLI verb with `--user` | `grep -n "add_parser" src/veracium/cli.py` | `:278` `import`, `:280` `--user` |
 | which combinations reach `use_only` | `_disclosure_for` over the enum product | user+3P · 3P+any · system+3P |
 | an older library cannot load an `assistant` edge | `Provenance(author_of_evidence='assistant')` | `pydantic.ValidationError` |
-| no `PRAGMA user_version` guard exists | `grep -n "user_version" src/veracium/store/sqlite.py` | no match |
+| ~~no `PRAGMA user_version` guard exists~~ *(dated: true at spec time; `0007` shipped the guard in v0.5.0 — it lives in `store/schema_version.py` + `store/migration.py`, so this command still shows no match in `sqlite.py`)* | `grep -n "user_version" src/veracium/store/sqlite.py` | no match *(guard is in `store/schema_version.py` since `0007`)* |
 
 ---
 
@@ -423,7 +423,8 @@ improving recall.
   there is no `PRAGMA user_version` — so an old library opening a new `.db`
   still fails at pydantic. Adding a store version guard is **out of scope here
   and filed as §10 Q3**, because it is a portability change deserving its own
-  spec rather than a rider on this one.
+  spec rather than a rider on this one. *(Update 2026-08-13: that own-spec is
+  `0007`, accepted and shipped in v0.5.0 — Q3 is struck as resolved.)*
 - **Partial failure.** No new multi-step operation; nothing to leave half-done.
   Permanent errors are not retried into a silent empty success (unchanged).
 - **New attack surface?** **Yes, and it is the point of the design.** This
@@ -517,7 +518,7 @@ improving recall.
 | ~~**Q5**~~ | **RULED 0001-Q5 (research, 2026-08-01 20:06): `(author, derived_from)`.** Author-only mislabels `system+third_party` and omits `user+third_party` — the two commonest `use_only` shapes after plain third-party. **Stale here for 16 hours** while the answer sat in COORDINATION; see the reconciliation check. | resolved | research | — |
 | ~~**Q1**~~ | ~~Should `ASSISTANT × ASSISTANT` merges be blocked?~~ **ANSWERED 2026-07-31 (research):** do not block the merge; block the `observed_at` refresh. The hazard is currency, not confidence. See §3.2 and I10a. | ~~blocking~~ **resolved** | research | done |
 | **Q2** | Does an assistant *restating* user testimony reinforce the user's edge instead of creating an assistant edge? The elegant fix; blocked by the same-disclosure-class rule; would remove most of §8's stated cost. | `deferred` | research | own design round |
-| **Q3** | Store-level version guard (`PRAGMA user_version`) so an old library fails cleanly on a new `.db`, as exports now do. | `pre-release` | dev | before 0.5.0 |
+| ~~**Q3**~~ | **RESOLVED by `0007` (accepted; shipped in v0.5.0, 2026-08-07): the store-level version guard is exactly 0007's contract** — `PRAGMA user_version` stamped + shape-verified adoption; an old build refuses a newer store rather than misreading it. Nothing 0001-specific remains. *(Struck 2026-08-13; the question predated 0007's existence.)* | resolved | dev | — |
 | **Q4** | Does `_source_type` return `STATED` or `INFERRED` for a non-chat assistant event? Currently non-`USER` non-chat → `INFERRED`, which is probably right but is inherited rather than chosen. | `pre-release` | dev | before implementation lands |
 
 ---
@@ -587,7 +588,8 @@ Arm C, so it moves our benchmark score down or nowhere, never up.**
 **Also accepted:** direct fail-closed tests — the reviewer numbered these in their own scheme, which this spec never adopted, so they are described rather than cited; proactive eligibility assessed
 separately from answer-context eligibility; the CLI contradiction (fixed in §4);
 Q4 promoted to **blocking**; the `PRAGMA user_version` guard promoted to a
-**hard release gate**; I10a widened to freeze *every* ranking-relevant field;
+**hard release gate** *(since discharged by `0007` in v0.5.0 — see the struck
+Q3 row)*; I10a widened to freeze *every* ranking-relevant field;
 consolidation provenance to be specified in full, including whether one trusted
 input may lift weaker ones; and I6 to carry a frozen acceptance rule.
 
@@ -657,6 +659,7 @@ one source class, which interacts directly with §3.2's self-reinforcement rule.
    author alone mislabels `system+third_party` as system-derived and omits
    `user+third_party` entirely. **RULED 0001-Q5: `(author, derived_from)`.**
 4. **§2c-ii added.** Every reachability claim now carries its command.
-5. **Q3 (store-version guard) remains a hard release gate.**
+5. ~~**Q3 (store-version guard) remains a hard release gate.**~~ *(Discharged:
+   the guard shipped as `0007` in v0.5.0 — see the struck Q3 row.)*
 6. **Recorded before the fact:** v3 is **more conservative than current Arm C**,
    so it moves our LongMemEval score **down or nowhere, never up.**
