@@ -160,7 +160,8 @@ The preflight's observation, as an immutable evidence carrier:
   (64 lowercase hex — SHA-256 over the resolution's own evidence: the
   stamped `user_version` and the ordered `(type, name, normalized column
   list)` shape set 0007's names+columns resolution already computes; the
-  digest is length-framed per 0006 I12's shared-primitive rule).
+  digest is length-framed and domain-separated per accepted 0006's shared
+  canonical-digest-primitive rule, §4 rule 7 there).
 - **Representation:** a frozen dataclass/NamedTuple; a validating constructor
   refuses an empty path, a base outside the accepted set, or a malformed
   fingerprint. Exact-type admission at every consumer (`type(x) is
