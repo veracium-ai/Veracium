@@ -5,10 +5,10 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v3 — INTERNAL ROUND 1 (research, 2026-08-13, `veracium-research/proposals/0017-internal-review.md`): RETURN FOR AMENDMENT, 3 findings, all folded; the round also AMENDS research's own preliminary Q1 ruling. **F1 (class G+C, found-in-fix of the v2 fold):** the v2 "complete payload" was implemented against a FALSE role↔event mapping — `role="compile"` has TWO producers (`compile.py:239`, the wiki compile reached at RECALL, and `lifecycle.py:128`, the consolidation compile reached at MAINTAIN — a whole-batch call, plausibly the most expensive compile in the system), and v2 mapped compile → recall ONLY. Consequences research named, both fatal to the fold's own rationale: the most expensive role stayed undercounted (the exact thing adding compile was meant to fix), and the v3 CONSENT_TEXT promised "memory maintenance" tokens the code would not capture — the 2767a35 claims-vs-code defect this spec exists to prevent. → the payload is EIGHT fields over FOUR (role, event) pairs: `ingest.distill_*`, `answer.gate_*`, `recall.compile_*`, **`maintain.compile_*`** (the maintain event exists and already calls `_record`, `__init__.py:704`). *Pre-send miss diagnosed: v2 verified compile is "a first-class wrapper role" but never enumerated the role's PRODUCERS — the constructor-sweep lesson (verify every producer, not one) applied at the role level.* **F2 (class E — the check that should have caught F1 could not):** I2b tested ROLE coverage, so it passed green while a whole (role, event) pair silently dropped → recast as PAIR coverage enumerated from the `role="…"` call sites mapped to their Memory events (I2b, §6). **F3 (honesty, folded as restatement):** the concurrency misattribution is between-OPERATIONS and hence between-USERS (`totals()` is process-global) — §8 and §3b now state the cross-user size-smear honestly (bounded: sizes only, non-negative, content-free); the per-operation-handle fallback stays recorded in §9. |
+| **Version** | v4 — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via a thread-local operation-context stack — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — round 1 RETURNED 2026-08-13 (3 findings, folded in v3; their preliminary Q1 mapping amended by their own review); re-review requested · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
-| **External review** | required (full spec — touches `__init__.py`, `introspect.py`); not yet sent |
+| **External review** | ROUND 1 RETURNED 2026-08-13 (package `0017-v3-20260813T1157Z.tar.gz`): 6 bin-(a), folded as v4 (the attribution redesign); round-2 package next |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -44,8 +44,18 @@ nearly did.
 - **Persist per-user usage in the store** (durable historical totals).
   Deferred, not chosen: it needs a SCHEMA bump and a retention/erasure story
   (usage becomes stored personal-adjacent data subject to `forget_user`).
-  v1's `introspect()` totals are **process-lifetime, in-memory**, stated as
-  such; a persisted variant is a successor decision (§10 Q2).
+  v1's `introspect()` totals are **instance-lifetime, in-memory** (§4d),
+  stated as such in the payload itself; a persisted variant is a successor
+  decision (§10 Q2).
+- **Totals-snapshot deltas as the attribution mechanism (the v1–v3 design).**
+  WITHDRAWN at external round 1 (F1): global-snapshot subtraction over
+  concurrent operations both overcounts by up to a factor of N and creates a
+  cross-user prior-state side channel (a concurrent compile delta reveals
+  the size of what another user's stored memory built) — replaced by §4b's
+  per-call events with thread-local operation context.
+- **Duck-typed `totals()`-shape detection as opt-in.** WITHDRAWN at external
+  round 1 (F2): shape proves data, not intent — replaced by §4a's
+  affirmative capability + listener registration.
 - **Auto-wrap the host's callable so usage is always visible.** Rejected:
   veracium never owns the LLM relationship; metering is the host's explicit
   opt-in, exactly as `Metered`'s docstring promises.
@@ -69,9 +79,9 @@ raises the current consent version.
 | `FIELD_MIN_VERSION` | written: all EIGHT fields at min version **3** | 0015: a field is sent only if recorded under a consent that admits it | `Collector.record` (the binding gate), `_payload` (defense-in-depth) | yes — the 0015 mechanism reused unchanged |
 | `SCHEMA_VERSION` | 2 → **3** | the current consent-text version; stamped only by affirmative display flows (0015 I13) | `prompt_consent`, `accept_current_consent`, the payload stamp | yes — one more version through the same machinery |
 | `CONSENT_TEXT` | written: token sentence returns, scoped | the consent claim; `test_consent_text_does_not_promise_token_totals` PINS that "token" is absent until fields are whitelisted AND written | `prompt_consent()`, CLI enable | **the pin test flips direction in the same commit** (I5): text mentions tokens iff whitelisted and written — both now true |
-| `Metered.totals()` | read: the usage source | host-side accounting only (`metered.py` docstring says nothing writes to telemetry/audit/introspect) | hosts; `tests/test_metered.py` | **changed** — the docstring's "host-side only" paragraph is REWRITTEN by this spec: a `Memory` whose `llm` exposes the `Metered` surface reads per-operation deltas; the wrapper itself still never pushes |
-| `Memory.remember()`/`answer()` internals | written: per-operation usage deltas into `_record` | `_record` fans out to telemetry (whitelist-gated) + the host audit sink | both sinks (existing carriers, named per 0015) | yes — two more int fields through the existing dict |
-| `introspect()` return | written: an optional `"llm_usage"` block (per-role calls + tokens, process-lifetime) | the transparency surface | host API + CLI `introspect` (NOT an MCP tool — §2c-ii) | yes — additive, absent when unmetered |
+| `Metered` — the capability + listener interface | `metering_capability = "veracium-metered-v1"` + `add_usage_listener(fn)`; per-call events `{role, in_tok, out_tok}` emitted synchronously on the calling thread AFTER both counts validate (§4a/§4c); `totals()` stays the host's own view and is no longer read by `Memory` | `Memory` (registers the listener); hosts; `tests/test_metered.py` — the shipped docstring's "nothing writes to telemetry" paragraph is REWRITTEN to this contract |
+| `Memory` operation context + per-user accumulator | NEW instance state (§4b/§4d): the thread-local `(event, user_id)` context stack pushed/popped by every public operation; `Memory._llm_usage` keyed by `user_id`, lock-guarded, INSTANCE-lifetime, deleted by `forget(user_id)` | the listener (writes), `introspect()` (reads), `forget()` (erases), `_record` (the attributed fields fan out to telemetry-gated + audit carriers) |
+| `introspect()` return | written: an optional `"llm_usage"` block (per-role calls + tokens, `"scope": "instance-lifetime"` in the payload — v3's process-lifetime label was false for instance-local state) | the transparency surface; consent-INDEPENDENT local carrier (§4f) | host API + CLI `introspect` (NOT an MCP tool — §2c-ii); absent when unmetered; empty for a forgotten user |
 
 Consumers enumerated mechanically — commands in §2c-ii.
 
@@ -81,9 +91,9 @@ Consumers enumerated mechanically — commands in §2c-ii.
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | **invariant that pins it** |
 |---|---|---|---|---|---|
-| the host's `counter` callable | no counter → **no token fields recorded at all** (chars stay host-side) | non-int / negative / NaN / raising counter | — | a counter returning garbage must not poison the payload | **a per-call delta is recorded iff it is a non-negative `int` (`bool` excluded); anything else — including a raising counter — records NOTHING for that call and never breaks the operation** (`test_garbage_counter_records_nothing_and_never_raises`) |
-| the wrapped `complete`'s shape | — | an `llm` with a `totals` attribute that is not `Metered`'s contract (wrong shape, raising) | duck-typed hosts | a hostile `totals()` | **usage is read ONLY when `totals()` returns the documented dict shape; any exception or shape mismatch → no usage recorded, the operation unaffected** (`test_totals_shape_mismatch_is_ignored`) |
-| concurrent operations sharing one wrapper | — | — | — | two threads' deltas interleave | **the delta read is documented per-`Memory`-operation; `totals()` is process-global, so cross-thread attribution error is between OPERATIONS — and therefore between USERS when concurrent ops serve different users (v3, internal F3)**: bounded to size miscounting (never content, never negative totals), stated honestly in §8 with the §3b caveat, clamped non-negative (`test_concurrent_ops_never_produce_negative_deltas`) |
+| the host's `counter` callable | no counter → no token fields ever (chars stay host-side) | non-int / bool / negative / NaN / raising — on EITHER invocation, incl. the second | — | a two-stage counter that succeeds once then raises (the reviewer's F3 reproduction: the operation broke and a partial record survived) | **atomic all-or-nothing accounting (§4c): both counts computed and validated into locals OUTSIDE the lock; any failure discards the whole token pair, mutates no token state, emits no event; the provider output is ALWAYS returned; `calls`/chars ride the always-valid block** — `test_counter_failure_is_atomic_and_never_breaks_the_operation` (both invocation positions) |
+| an unrelated object with a coincidental `totals()` method | — | — | duck-typed hosts | a valid-SHAPED `totals()` on a non-Metered object (F2: shape is not intent) | **never probed, never invoked, never routed — opt-in is the affirmative capability constant + listener registration (§4a)**; `test_coincidental_totals_shape_is_never_invoked` |
+| concurrent operations sharing one wrapper | — | — | — | N overlapping operations, different users, nested calls (F1's reproductions: factor-N overcounting; cross-user prior-state absorption) | **EXACT attribution by construction (§4b): per-call events on the calling thread, attributed to that thread's innermost operation context — no snapshot window exists to overlap**; I9's barrier-controlled cells (cross-user, nested `answer→recall`, concurrent `recall.compile` vs `maintain.compile`) |
 | the consent config | — | — | — | — | **unchanged 0015 machinery** — v1/v2-consented installs never send the token fields (min version 3); every 0015 I8/I13/I16/I17 test keeps running |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -111,7 +121,7 @@ elsewhere. State-transition form over observation outcomes:
 | metered llm, **no counter** | nothing — characters are not tokens and are never sent |
 | unmetered llm (plain `Complete`) | nothing — usage is invisible by design, unchanged |
 | operation raises | nothing recorded for that operation (the existing exception path is untouched) |
-| any outcome, consent < 3 | nothing accumulates (record-time gating, 0015 I8) |
+| any outcome, consent < 3 | the TELEMETRY collector accumulates nothing (record-time gating, 0015 I8); the local audit/introspect carriers are consent-independent by design — the §4f matrix is the total statement (external F6) |
 
 Counting is class-blind and content-free: token counts carry no
 `EvidenceAuthor`/`Disclosure` breakdown (enumerated from `schema.py:37-48`)
@@ -125,112 +135,176 @@ check from 0015 extends over metered runs (`test_metering_is_decision_invisible`
 
 ## 3b. Authorization and scope — *full specs only*
 
-Analyzed at the information level (the 0015 §3b lesson):
+Analyzed at the information level (the 0015 §3b lesson), rewritten at
+external round 1 (F1 overturned v3's analysis):
 
-- **What the new numbers reveal:** how many tokens the *host's own model
-  calls* consumed, per role, per user. Recipients: (1) the telemetry endpoint
-  — weekly per-install sums, only under consent v3; (2) the host audit sink —
-  the host's own data; (3) `introspect()` — host API and CLI only.
-- **The model caller sees nothing new:** `introspect` is not an MCP tool
-  (§2c-ii), and the MCP `remember`/`answer` results gain no usage fields —
-  there is nothing to strip because nothing is added there. **No
-  supersession-oracle analog exists**: token counts derive from the host's
-  own calls, not from prior store state — a per-write token count reveals
-  prompt/output SIZE, which the model caller already knows (it produced the
-  output). Stated for completeness, enforced by the no-new-MCP-fields test
+- **The withdrawn design's side channel, named plainly:** totals-snapshot
+  deltas let user A's numbers absorb a concurrent user-B compile delta, and
+  `compile.py` builds its measured input from B's stored facts and episodes —
+  so the delta's size revealed prior-state information about another user.
+  v3's "no supersession-oracle analog" and "single-Memory deployments avoid
+  it" claims were both false (one `Memory` serves arbitrary `user_id`s, MCP
+  included). **§4b closes the channel by construction:** attribution follows
+  the calling thread's own operation context; no cross-user absorption path
+  exists, and I9's barrier tests prove exact attribution rather than
+  bounding a smear.
+- **What the numbers reveal, per carrier (§4f):** the telemetry endpoint
+  receives weekly per-install sums only under consent v3; the host audit
+  sink and `introspect()` are the host's own LOCAL surfaces,
+  consent-independent by design — consent governs what leaves the machine.
+- **The model caller sees nothing:** `introspect` is not an MCP tool
+  (§2c-ii); MCP results gain no usage fields
   (`test_mcp_results_carry_no_usage_fields`).
-- **Per-user introspect totals** are visible to whoever can call
-  `introspect(user_id)` — the same principal that can already read that
-  user's entire memory; usage numbers are strictly less than what it can
-  already see. **One stated exception (v3, internal F3): under concurrent
-  operations for DIFFERENT users sharing one process-global wrapper, user
-  A's introspect block can absorb deltas from user B's calls — a
-  cross-user size-smear.** The "strictly less" claim does not cover it; the
-  honest bound is: sizes only, non-negative ints, no content, no
-  prior-state information — and single-`Memory`-per-process or
-  per-user-wrapper deployments (the common shapes) don't exhibit it. §8
-  carries the limit; §9's per-operation-handle fallback removes it if
-  external review rules the bound insufficient.
-- **Scope change behaviour:** n/a. **Anything newly visible to a principal
-  that couldn't see it before:** no — with the concurrency size-smear above
-  as the one bounded, stated exception.
-
----
+- **Erasure:** `forget(user_id)` deletes the user's accumulator entry (§4d)
+  — after erasure `introspect(user_id)` reveals no usage record (external
+  F5: persistence is irrelevant to the compliance promise).
 
 ## 4. Behaviour
 
-**Detection (opt-in, duck-typed, fail-closed):** a `Memory` whose `llm`
-exposes the `Metered` surface (`totals()` in the documented shape) reads a
-**per-operation delta**: snapshot totals before the operation, subtract
-after, validate every delta (non-negative int, bool excluded), and pass the
-valid ones into `_record` over the FOUR (role, event) pairs (v3, internal
-F1 — the compile role has TWO producers): `ingest` carries `distill_in_tok`/
-`distill_out_tok`; `answer` carries `gate_in_tok`/`gate_out_tok`; `recall`
-carries `compile_in_tok`/`compile_out_tok` (the wiki compile,
-`compile.py:239` via `ensure_wiki`); **`maintain` carries
-`compile_in_tok`/`compile_out_tok` (the consolidation compile,
-`lifecycle.py:128` — a whole-batch call, plausibly the most expensive
-compile in the system)**. The consent text's three activities map onto
-these pairs exactly: "extraction" = ingest.distill, "answering" =
-answer.gate, "memory maintenance" = the compile role at BOTH its events
-(the wiki recompile and the consolidation pass) — the mapping is stated
-here so the claims surface is testable, not implied. Any
-exception or shape mismatch anywhere in that read records nothing and never
-propagates (telemetry never breaks the host). An unmetered `llm` is a
-complete no-op — no probing beyond one `getattr`.
+### 4a. Opt-in — an affirmative capability, never a shape (external F2)
 
-**Consent (the 0015 machinery, one more version):** `SCHEMA_VERSION` 2→3;
-`FIELD_MIN_VERSION` gains all EIGHT fields at 3 (v3); the record-time gate,
-epoch/lock/tombstone lifecycle, display-flow-only stamping, and every 0015
-invariant apply unchanged. `CONSENT_TEXT` regains a token sentence, scoped
-honestly and enumerating ALL THREE roles: *"token totals for your own model
-calls (extraction, answering, and memory maintenance) — only when you opt
-into metering"*. The `test_consent_text_does_not_promise_token_totals` pin FLIPS
-in the same commit to its two-sided form: the text mentions tokens **iff**
-the fields are whitelisted and populated (both now true) — the gate keeps
-biting in both directions.
+Metering detection is an AFFIRMATIVE, UNIQUE capability, not duck-typed
+shape-probing (v3's `totals()`-shape detection is WITHDRAWN — a coincidental
+`totals()` method on an unrelated `Complete` proves data shape, not host
+intent, and would have been probed and routed): the `Metered` wrapper carries
+`metering_capability = "veracium-metered-v1"` (a class-level string constant
+no unrelated object plausibly carries) AND the registration method
+`add_usage_listener(fn)`. `Memory` opts in by REGISTERING a listener — an
+explicit interaction that cannot happen by coincidence — iff the capability
+constant matches exactly. An object with a `totals()` method but no matching
+capability is NEVER probed, NEVER invoked, NEVER routed
+(`test_coincidental_totals_shape_is_never_invoked`).
 
-**Introspect (step 3):** `introspect(user_id)` gains an optional
-`"llm_usage"` block — per-role `{calls, in_tok, out_tok}` accumulated
-**in-memory for this process's lifetime**, plus `"scope":
-"process-lifetime"` so the boundary is in the payload itself, not only in
-docs. Absent entirely when the `llm` is unmetered or no counter was
-supplied. Not persisted; `forget_user` untouched (nothing stored).
+### 4b. Attribution — per-call events on the operation's own thread (external F1)
 
-**`Metered`'s docstring** is rewritten: the "host-side only / nothing writes
-to telemetry" paragraph becomes the 0017 contract (the wrapper still never
-pushes; the `Memory` pulls deltas when metering is active).
+**The totals-snapshot delta design (v1–v3) is WITHDRAWN in full.** The
+reviewer reproduced both of its failures: factor-N overcounting under N
+overlapping operations (two concurrent ops each observed the global delta),
+and a CROSS-USER PRIOR-STATE side channel — a concurrent user-B compile delta
+absorbed into user A's numbers reveals the size of what `compile.py` built
+from B's stored facts and episodes. "Content-free" was not prior-state-free,
+and v3's single-`Memory` mitigation claim was FALSE (one `Memory` serves
+arbitrary `user_id`s, including over MCP).
 
-**Interfaces:** the host-API `introspect()` return gains the optional block;
-CLI `introspect` prints it when present; **no MCP surface changes**.
-**Migration:** none for the memory store; the consent carriers
-(`schema_version`, `consent_epoch`) behave per accepted 0015 — v2-consented
-installs keep sending the v2 field set until the v3 text is displayed and
-accepted.
+The replacement is EXACT SCOPED ATTRIBUTION: the wrapper emits a per-call
+usage event `{role, in_tok, out_tok}` SYNCHRONOUSLY on the thread making the
+call, to each registered listener. `Memory` maintains a THREAD-LOCAL
+operation-context stack — each public operation (`remember`/`answer`/
+`recall`/`maintain`/…) pushes `(event, user_id)` on entry and pops on exit —
+and the listener attributes the event to the TOP of the calling thread's
+stack (nested operations: the innermost context wins, e.g. `answer → recall`
+attributes the compile to the recall context it ran under, and the §2
+event-field map routes it). A usage event arriving with NO context on its
+thread (no public operation in progress) is attributed to nothing —
+counted only in the wrapper's own host-side totals. Consequences, each a
+named test (I9): two users' concurrent operations attribute EXACTLY (barrier-
+controlled); nested `answer → recall` attributes once, to the inner context;
+concurrent `recall.compile` vs `maintain.compile` never cross; no factor-N
+inflation exists by construction; and NO cross-user absorption is possible —
+the side channel is closed by construction, not bounded.
 
----
+### 4c. The wrapper's atomic accounting (external F3)
+
+`Metered.__call__` is re-specified (an amendment to the shipped wrapper,
+landing with this spec's implementation): the provider is called first and
+its output is ALWAYS returned — a counter failure never breaks the operation.
+Both token counts are computed and validated INTO LOCALS, outside the usage
+lock, with the counter wrapped: any exception, non-int, bool, or negative
+from EITHER invocation (first or second) discards the WHOLE token pair — the
+call mutates NO token state and emits NO usage event (all-or-nothing: a
+partially-counted call cannot be honestly attributed; v3's "records nothing"
+promise was placed AFTER the failure point, reviewer-reproduced with a
+two-stage counter that broke the operation AND retained a partial record).
+`calls` and the character counts (which cannot fail) are accounted in the
+wrapper's always-valid block and are unaffected. Only after both counts
+validate does the wrapper, under its lock, mutate totals and emit the event.
+
+### 4d. The per-user accumulator — carrier, lifetime, erasure (external F5)
+
+The introspection accumulator is constructed exactly: it lives ON THE
+`Memory` INSTANCE (`Memory._llm_usage`, a dict keyed by `user_id` of
+per-role `{calls, in_tok, out_tok}`), updated atomically under an
+instance-level lock by the registered listener, and labeled
+**`"scope": "instance-lifetime"`** in its own payload (v3's
+"process-lifetime" was false for instance-local state; two `Memory`
+instances have independent accumulators, stated). Growth is bounded by the
+distinct `user_id`s the instance serves. **`forget(user_id)` DELETES the
+user's accumulator entry in the same call** — compliance erasure covers
+every per-user record this library holds, persisted or not; after
+`forget()`, `introspect(user_id)` shows no usage (I8's erasure cell).
+Restart/new instance ⇒ empty accumulators (the scope label says so).
+
+### 4e. Self-check accounting — DECIDED: excluded, and stated (external F4; closes §10 Q3)
+
+`Memory.self_check` runs synthetic probes through TEMPORARY throwaway
+memories sharing the host's `llm`. Its distill/gate/compile calls are
+DIAGNOSTIC, not user memory operations: they are EXCLUDED from per-user
+attribution and from the telemetry payload BY DESIGN — the temporary
+memories register no listener, and the outer `self_check` pushes a
+`selfcheck` context that the §2 event-field map carries no token fields for,
+so nothing attributes. The wrapper's own host-side totals still grow
+(honest: the calls happened and cost money; the host sees them in
+`totals()`). The consent text's scope ("your own model calls during
+extraction, answering, and memory maintenance") therefore remains exact:
+self-check usage never enters the payload. **I2b's completeness claim is
+correspondingly scoped and mechanically backed (F4's second half): a
+declarative PRODUCER REGISTRY** — `(role, event, callsite)` rows for the
+four attributed pairs plus the named `selfcheck` exclusion — **asserted
+against an AST-based scan of every `Complete`-invoking call site in
+`src/veracium/`, resolving DEFAULT role values** (the literal `role="…"`
+grep missed the protocol's `role="compile"` default — reviewer-caught), so
+a new call site, a new role, or a default-role call breaks the test until
+the registry decision is remade.
+
+### 4f. The three-carrier consent matrix (external F6)
+
+Consent semantics, stated once for ALL carriers — telemetry consent governs
+what LEAVES the machine; the host's own local surfaces are independent of it
+BY DESIGN, and every claim is scoped accordingly (the changelog and consent
+text say "sent" about the telemetry endpoint only):
+
+| carrier | unmetered | metered, consent <3 | metered, consent v3 |
+|---|---|---|---|
+| telemetry payload (leaves the machine, weekly) | no token fields | **no token fields** (record-time `FIELD_MIN_VERSION` gate, 0015 I8) | the eight fields |
+| host audit sink (`_record` fan-out — the host's own local data) | no token fields (nothing measured) | token fields PRESENT — local, consent-independent, the host's own numbers | same |
+| `introspect()` accumulator (local, instance-lifetime) | absent | PRESENT — local, consent-independent | same |
+
+"Nothing accumulates" in the §3 matrix is corrected to its true scope: the
+TELEMETRY collector accumulates nothing below v3; the local carriers are
+consent-independent and say so (`test_carrier_consent_matrix` walks every
+cell).
+
+### 4g. Consent and interfaces (unchanged from v3 where not amended above)
+
+`SCHEMA_VERSION` 2→3; `FIELD_MIN_VERSION` gains all EIGHT fields at 3; the
+0015 machinery applies unchanged; the consent text enumerates the three
+activities mapped onto the four pairs (§2). `introspect(user_id)` gains the
+optional `"llm_usage"` block per §4d. The `Metered` docstring is rewritten
+to the 4a/4c contract. No MCP surface changes. No store schema change; no
+migration.
 
 ## 5. Regime analysis
 
 - **Consent regimes:** all 0015 regimes re-run green plus: v2-consented
-  (token fields stripped at record), v3-consented (sent), the v2→v3
-  transition through a live carrier (the I8 test pattern re-instantiated for
-  version 3).
-- **Metering regimes:** unmetered · metered-no-counter · metered-with-counter
-  · garbage counter · raising totals — each a §2c/§6 test.
-- **Concurrency regime:** two threads sharing one wrapper — deltas may
-  misattribute BETWEEN concurrent OPERATIONS, and therefore between USERS
-  when the operations serve different users (v3 — the process-global
-  `totals()` is the mechanism); never negative, never content
-  (`test_concurrent_ops_never_produce_negative_deltas`, plus a named
-  two-user interleaving case asserting the smear is size-only). §8 states
-  the limit; §3b carries the caveat.
-- **Cold vs warm:** the 0015 restart rule applies unchanged; the introspect
-  block resets with the process (stated in its own payload).
+  (token fields stripped at telemetry record), v3-consented (sent), the
+  v2→v3 transition through a live carrier — and the §4f carrier matrix's
+  nine cells walked (`test_carrier_consent_matrix`).
+- **Metering regimes:** unmetered · capability-present-but-unregistered
+  (impossible by construction — registration IS detection) ·
+  coincidental-`totals()` object (never invoked) · metered-no-counter
+  (chars host-side, no events) · metered-with-counter · counter failing on
+  first invocation · on second invocation (both atomic, operation
+  unbroken).
+- **Attribution regimes (I9, barrier-controlled):** two users concurrent —
+  exact; nested `answer → recall` — inner context, once; concurrent
+  `recall.compile` vs `maintain.compile` — never cross; a usage event with
+  no operation context on its thread — wrapper totals only; `self_check` —
+  excluded by design (§4e).
+- **Lifecycle regimes (I8):** two `Memory` instances — independent
+  accumulators; `forget(user_id)` — entry deleted, introspect empty;
+  restart/new instance — empty (the scope label says instance-lifetime).
 
 Release class: **stable** — every named regime has a CI-reachable test.
-
----
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -238,14 +312,15 @@ Release class: **stable** — every named regime has a CI-reachable test.
 |---|---|---|
 | I1 — metering changes no stored byte and no decision: identical sequences metered vs unmetered produce identical stores and answers | `test_metering_is_decision_invisible` | CI |
 | I2 — **no counter → no token telemetry**: character accounting never enters the payload under any field name (all eight fields, v3) | `test_no_counter_sends_no_token_fields` | CI |
-| I2b — **the payload is COMPLETE over the (role, event) PAIRS (v3 — recast by internal F2, the check that catches F1's class)**: enumerate every `role="…"` call site in `src/veracium/` and map each to the `Memory` event that reaches it (distill→ingest · gate→answer · compile→recall AND compile→maintain); every pair must have its in/out fields whitelisted and populated. A new role in `llm/base.py` OR a new producer of an existing role breaks this test until the payload decision is remade — role-granularity alone passed green while `maintain.compile_*` silently dropped | `test_token_payload_covers_every_role_event_pair` (replaces `test_token_payload_covers_every_role`) | CI |
-| I3 — delta validity is closed: non-negative int (bool excluded) per delta; garbage/raising counters and malformed `totals()` record nothing and never raise into the operation | `test_garbage_counter_records_nothing_and_never_raises` + `test_totals_shape_mismatch_is_ignored` | CI |
-| I4 — consent v3 gating: v1/v2-consented installs never accumulate the token fields; the v2→v3 live-carrier transition sends only post-acceptance values | `test_v2_consent_strips_token_fields` + `test_v2_to_v3_transition_through_a_live_memory_carrier` | CI |
+| I2b — **the payload is COMPLETE over the (role, event) PAIRS, backed by the producer REGISTRY (v4, external F4)** | `test_token_payload_covers_every_role_event_pair` — the declarative registry (four attributed pairs + the named `selfcheck` exclusion) asserted against an AST scan of every `Complete`-invoking call site in `src/veracium/`, DEFAULT role values resolved; a new call site, role, or default-role call breaks it until the registry decision is remade | CI |
+| I3 — the wrapper's accounting is ATOMIC and non-breaking (§4c, external F3) | `test_counter_failure_is_atomic_and_never_breaks_the_operation` — a counter raising/returning garbage on the FIRST or the SECOND invocation: the operation completes with the provider output, NO token state mutates, NO event emits, `calls`/chars unaffected | CI |
+| I4 — the §4f carrier matrix holds (external F6) | `test_v2_consent_strips_token_fields` + `test_v2_to_v3_transition_through_a_live_memory_carrier` + `test_carrier_consent_matrix` (all nine cells: telemetry gated at record time; audit and introspect consent-independent and local) | CI |
 | I5 — the consent-text pin is two-sided: "token" appears in `CONSENT_TEXT` iff the token fields are whitelisted AND populated | the FLIPPED `test_consent_text_token_mention_matches_the_payload` (replaces the one-sided pin, same file) | CI |
 | I6 — whitelisted ⇒ populated (the `2767a35` gate) holds over all eight fields — the returning four and the four compile fields (v3) | `tests/test_telemetry_claims.py` (existing, starts passing for them) | CI |
 | I7 — no MCP surface carries usage: `remember`/`answer` tool results and every MCP tool omit token fields; `introspect` remains non-MCP | `test_mcp_results_carry_no_usage_fields` + the §2c-ii grep pinned as a test | CI |
-| I8 — the introspect block is honest about scope: present iff metered-with-counter, carries `"scope": "process-lifetime"`, resets with the process, absent from `forget_user`'s domain (nothing persisted) | `test_introspect_usage_block_scope_and_absence` | CI |
-| I9 — content-free: every emitted value is int/float/bool; concurrent deltas clamp non-negative | `test_token_payload_is_content_free` + `test_concurrent_ops_never_produce_negative_deltas` | CI |
+| I11 — opt-in is affirmative (§4a, external F2) | `test_coincidental_totals_shape_is_never_invoked` — an unrelated `Complete` with a valid-shaped `totals()` and no capability constant: never probed, never invoked, nothing routed; registration occurs iff the constant matches exactly | CI |
+| I8 — the accumulator's lifecycle is constructed (§4d, external F5) | `test_usage_accumulator_lifecycle` — instance-lifetime label in the payload; lock-guarded concurrent updates; two instances independent; restart empty; **`forget(user_id)` deletes the entry and post-erasure `introspect` shows no usage**; absent entirely when unmetered | CI |
+| I9 — attribution is EXACT (§4b, external F1) | `test_attribution_is_exact_under_concurrency` — barrier-controlled: two users' overlapping operations each attribute exactly their own calls (no factor-N, no absorption); nested `answer→recall` attributes once to the inner context; concurrent `recall.compile` vs `maintain.compile` never cross; a context-free event reaches only wrapper totals. Plus content-free: every emitted value is a non-negative int | CI |
 | I10 — every 0015 invariant keeps running unmodified (this spec adds a version, not a mechanism) | the existing `test_0015_lifecycle.py` suite green with `SCHEMA_VERSION == 3` | CI |
 
 **Reproducer retention:** review defects become regressions beside these.
@@ -254,10 +329,11 @@ Release class: **stable** — every named regime has a CI-reachable test.
 
 ## 7. Failure modes and reversibility
 
-- **Silent failure:** under-counting — a raising counter or shape mismatch
-  records nothing, invisibly. Accepted and directional (we may under-report,
-  never fabricate); I3 makes the drop deterministic and tested rather than
-  accidental.
+- **Silent failure:** under-counting — a failing counter drops that call's
+  whole token pair, invisibly. Accepted and directional (we may
+  under-report, never fabricate, never retain a PARTIAL record — external
+  F3's reproduction is the named regression); I3 makes the drop
+  deterministic, atomic, and tested.
 - **Silent failure, the worse direction:** character counts leaking under
   token names — structurally closed (I2: the wrapper keeps chars under
   `in_chars`/`out_chars`, which are not whitelisted and gated off by name).
@@ -265,9 +341,10 @@ Release class: **stable** — every named regime has a CI-reachable test.
   untouched beyond 0015's accepted behaviour; disabling metering (unwrap),
   telemetry, or consent each independently stops emission; the introspect
   block vanishes with the process.
-- **Partial failure:** the delta read sits inside the existing
-  `_record`-adjacent try/except discipline — any failure records nothing for
-  that operation and the operation itself is untouched.
+- **Partial failure:** the listener is invoked synchronously but WRAPPED —
+  a raising listener (or accumulator failure) records nothing for that call
+  and never propagates into the operation; the wrapper's own accounting
+  already committed atomically before the event was emitted.
 - **Attack surface:** none added — no non-user content influences stored
   state, recall, or rendered context; the only new flows are non-negative
   ints to the host's own surfaces and a consent-v3-gated weekly aggregate.
@@ -277,47 +354,43 @@ Release class: **stable** — every named regime has a CI-reachable test.
 ## 8. Claims and limits
 
 - **Changelog wording:** "Hosts that wrap their `Complete` with
-  `veracium.llm.metered.Metered` and supply a token counter can now opt into
-  token-usage telemetry (consent version 3 — shown and accepted before
-  anything is sent) and read per-user, per-role usage through
-  `introspect()`. Without a counter, nothing token-shaped is ever sent —
-  character counts stay in the wrapper, labelled as characters."
+  `veracium.llm.metered.Metered` and supply a token counter get exact
+  per-user, per-role usage through `introspect()` (local,
+  instance-lifetime), local audit records, and — separately, only under
+  consent version 3, shown and accepted before anything LEAVES THE MACHINE
+  — token-usage telemetry. Without a counter, nothing token-shaped exists
+  anywhere — character counts stay in the wrapper, labelled as
+  characters." (The sent-scoping is external F6's carrier split.)
 - **What this does NOT establish:** token counts are the host's counter's
   opinion, not billing truth (no provider invoice is consulted); introspect
-  totals are process-lifetime, not history; concurrent operations sharing
-  one wrapper may misattribute deltas **between operations — including
-  between different users' operations** (the process-global-totals limit,
-  v3: bounded to sizes, non-negative, content-free; the §9 per-operation
-  handle is the recorded fix if this bound is ruled insufficient);
-  telemetry token sums are not comparable across installs
-  (different counters); and this spec does not persist usage — the durable
-  per-user variant is §10 Q2's future decision.
+  totals are INSTANCE-lifetime, not history (two instances, two ledgers; a
+  restart is a reset — the payload's scope label says so); self-check's
+  diagnostic calls are excluded from attribution by design (§4e — the
+  wrapper's host-side totals still see them); the audit/introspect carriers
+  are local and consent-independent (§4f — consent governs the telemetry
+  endpoint); and this spec does not persist usage — the durable per-user
+  variant is §10 Q2's future decision. The v3 concurrency-smear limitation
+  is GONE, not restated: attribution is exact by construction (§4b/I9).
 - **Measurements:** none cited.
 
 ---
 
 ## 9. Brief for the external reviewer
 
-- **Least sure of, one:** the **duck-typed detection boundary** — `Memory`
-  reads `totals()` from anything exposing the documented shape. Is
-  shape-validation (I3) sufficient against a host object that *coincidentally*
-  has a `totals()` method, or does the spec need an explicit opt-in marker
-  attribute on the wrapper?
-- **Least sure of, two:** the **concurrency limitation's honesty** — we
-  document between-role misattribution under concurrent ops and clamp
-  non-negative. Is "bounded, content-free miscounting" an acceptable stated
-  limit, or does it need a per-operation wrapper handle to be sound?
-- **Where we may have overstated:** "no supersession-oracle analog exists"
-  (§3b) — we argue token counts reveal only sizes the model caller already
-  knows; if a composition exists where per-role deltas leak prior-state
-  information to any untrusted surface, §3b needs the 0015 treatment.
-- **What would change our minds:** if delta-reading proves unreliable under
-  the host's real threading patterns, the fallback design is the wrapper
-  exposing an explicit per-call event hook instead of totals-deltas — a v2
-  with a different §1 trade-off.
-- **Reviewer-safe copy:** not needed.
-
----
+Round 1 adopted BOTH of the previous §9's least-sure fallbacks as
+requirements (the scoped per-call interface; the affirmative capability) —
+they are now the §4a/§4b design. What v4 is least sure of: (1) the
+THREAD-LOCAL context stack as the attribution scope — it is exact for the
+codebase's synchronous call structure; if a future operation dispatches
+llm calls to worker threads, the context would not follow, and the event
+would fall to wrapper-totals-only (visible, not misattributed — but state
+whether that failure direction is acceptable); (2) the AST-based default-
+role resolution in I2b's registry check — is static resolution of default
+parameters robust enough, or should the wrapper refuse a missing explicit
+`role` outright? **What would change our minds:** if barrier tests show
+the context stack leaking across any real async/thread boundary in the
+shipped codebase, the fallback design is passing an explicit operation
+token through the call chain — invasive but airtight.
 
 ## 10. Open questions
 
@@ -330,9 +403,12 @@ Release class: **stable** — every named regime has a CI-reachable test.
    single producer and is amended by their review. | resolved |
 2. **Persisted per-user usage** (durable history, `forget_user` integration,
    SCHEMA bump) — wanted? **Decides: Quentin, on demand. Class: deferred.**
-3. **Should `selfcheck --push` include usage** when metered? **Decides: dev
-   at implementation if research rules it inside the v3 consent's class.
-   Class: pre-release.**
+3. ~~Should `selfcheck --push` include usage when metered?~~ **DECIDED at
+   external round 1 (F4, §4e): self-check usage is EXCLUDED from per-user
+   attribution and the telemetry payload by design (diagnostic calls
+   through temporary memories, not user memory operations); the wrapper's
+   host-side totals still see it. The consent text's activity scope stays
+   exact.** | resolved |
 
 ---
 
