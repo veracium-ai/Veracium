@@ -6,7 +6,7 @@ Spec-Requires: 0003, 0013, 0014
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v16 — *re-read before editing; quote the version you approve*. v15→v16: EXTERNAL ROUND 12 (4 bin-(a), bin (b) empty; the host-attestation and structured-result DIRECTIONS endorsed — the findings are the executable boundary): R12-1 A+C+F found-in-fix of R11-1 — revalidation cannot close a race that prevents the authority from EXISTING (reviewer-reproduced: competing migration between preflight and mint → "not an accepted source" → migrate_store never reached) → **typed-failure RECLASSIFICATION**: a mint failure whose typed reason is source-changed restarts the preflight (bounded, 3 attempts; a re-resolved current returns `current`); any other mint failure surfaces as its own outcome; R12-2 A+C+D+F — the "total" matrix omitted CURRENT-WITH-REPAIR (0007 repairs rebuildable drift during opening — the probe: `current True True 6`) and LOCKED had vanished → the current cell SPLITS (clean-current → `current` (False, False, 7) byte-identical; current-with-rebuildable-drift → `current` carrying the repair facts (True, True, 7) — the repair rides the ONE shared opening/planner path, never a second repairer) and `locked` is restored (→ the corresponding open-failure refusal outcome, no minting); R12-3 A+C+F — `MigrationResult`'s facts had no executable source → FROZEN: tri-state fields (`store_changed`/`transaction_committed`: `Optional[bool]`, `None` = audit-unknown; `resulting_version`: `Optional[int]`; `diagnostic`: `str`); **the source of delegated facts is 0013's terminal-record READBACK** (the orchestrator reads the terminal facts of the operation it initiated — added to the 0013 amendment); the outcome→facts truth table mirrors 0013's seven cells verbatim; `MigrationAuditWriteError` → the facts from the exception's own `resulting_state`; audit-unknown → `(None, None, None)` + label; a validating constructor REJECTS impossible carriers (e.g. `migrated` with `store_changed=False`); R12-4 A+D+F — `MigrationAttestation` was a name, not a contract → FROZEN: an immutable carrier {`quiesced`: must be the bool literal `True` (`is True` — `1` refused), `backup_ref`: non-empty non-whitespace `str`, opaque to the library}; construction validates and raises `ValueError`; the orchestrator re-validates its own copy against hostile duck-types; the §2c row added (absent → `TypeError`; `quiesced=1` → refused; empty/whitespace backup → refused; hostile carrier → re-validated copy); **the CLI acquisition flow FROZEN as FLAGS, never prompts**: `veracium migrate --db X --i-have-quiesced --backup REF` — both required for the migration path, missing → exit 2 + usage (noninteractive-safe; prompting rejected as coercion-prone); exit codes 0 = migrated/current, 1 = refusals incl. `unsupported-base`, 2 = usage. |
+| **Version** | v17 — *re-read before editing; quote the version you approve*. v16→v17: EXTERNAL ROUND 13 (4 bin-(a), bin (b) empty; the architecture endorsed — every finding is boundary exactness): R13-1 A+C+F found-in-fix of R12-1 — reclassification named no mint API (`make_authority` is test-only, undifferentiated `ValueError`) → **the production mint interface is DEFINED: `mint_release_authority(path, attestation) -> MigrationAuthority`, raising `MintError(reason)` with the closed reason enum {`source-missing`, `source-unaccepted`, `source-changed`}**; EVERY preflight→mint transition classified: `source-changed` AND `source-missing` both RECLASSIFY (a disappeared store re-resolves to the missing refusal — never "surfaces directly"); `source-unaccepted` reclassifies likewise; exhaustion (3 attempts) returns the FINAL preflight's classification outcome with a contention diagnostic — total, never unspecified; R13-2 A+C+D+F found-in-fix of R12-3 — the carrier omitted `resulting_state`, collapsing three distinct 0013 terminal cells → **`MigrationResult` gains `resulting_state`** (the 0013 vocabulary verbatim incl. `missing`/`unaccepted`/`unknown`), the stale resolved-version-or-None short-circuit rule is RETIRED, and the exhaustive table covers BOTH preflight and delegated outcomes over the full quadruple; R13-3 A+C+D+F found-in-fix of R12-3 — the readback had no interface → **the 0013 amendment defines `read_terminal(operation_id) -> TerminalFacts`** on the audit store (own-operation binding: the orchestrator may read only the operation id it minted; consistent snapshot: read on the same connection after `record_terminal` returns; malformed/missing record → the audit-unknown facts, never an error); **`MigrationAuditWriteError` REMAINS the deliberately loud ESCAPING exception** — never converted to a `MigrationResult` (that would hide audit failure behind exit 0); the CLI maps it to a NEW exit 3 with the exception's `resulting_state` on stderr; R13-4 A+C+D+F found-in-fix of R12-4 — my `backup_ref` predicate conflicted with 0013's frozen 1–128-ASCII token grammar, and "exact carrier" conflicted with copying duck-types → **`backup_ref` validates with 0013's OWN grammar validator** (no separate predicate, no normalization — the exact token or refusal); **the ONLY accepted representation is the `MigrationAttestation` type itself (`isinstance` check — duck-types REFUSED, never copied)**; the CLI rejects an invalid `--backup` with exit 2 and the grammar stated. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -98,7 +98,7 @@ The successor contract, recorded so it cannot drift before its first consumer:
 | pre-D2 receipts (stored digests computed over the old field set) | — | — | ANY resubmission hitting a pre-v3 receipt | **classification is impossible — and that impossibility IS the ruling (R2-3/R5-1/R6-3)** | **a version<3 receipt refuses UNCONDITIONALLY ON SIGHT at both phases — no digest is computed, no comparison branch exists**: `ReceiptSchemaBoundaryError(SupersessionIntegrityError)`, never benign; a version-3 receipt follows the ordinary 0014 contract; `test_pre_v3_receipt_refuses_on_sight` (all three legal pre-v3 states × both phases, digest functions replaced by EXPLODING SENTINELS) + `test_v3_receipts_follow_the_ordinary_contract` |
 | stored `source_type` values (direct constructors/imports: any VALID enum value incl. `OBSERVED` — an unrecognised string raises `ValidationError` at construction today; arbitrary strings reach storage only via validation-bypassing writes or hand-edited JSON) (F1, precision per round-2 bin-(b)) | — | — | unknown value in stored JSON (bypass/hand-edit only) | a crafted value aimed at post-D2 readers | **dropped on read post-D2 exactly like the historical key** (`extra` ignore); pre-D2 they are inert to decisions (§2c-ii row 1) and discriminate digests only until the boundary; `test_arbitrary_stored_source_type_dropped_post_d2` |
 | a stored below-v6 database (bases 1–5) presented post-D2 (R8-1) | — | — | ordinary OPEN → 0013's existing below-head refusal, unchanged by this spec | the migration ORCHESTRATOR'S PREFLIGHT → the `unsupported-base` outcome (returned, never raised), the ladder diagnostic, NO authority, ZERO 0013 audit rows, bytes+stamp unchanged (R9-1) | I13; `test_below_v6_base_refuses_with_the_ladder_message` (all five bases) + `test_below_v6_open_unchanged` |
-| `MigrationAttestation` (caller-supplied — the host-owned facts) (R12-4) | absent → `TypeError` (required keyword) | `quiesced=1`/truthy-object → refused (`is True` check); empty/whitespace `backup_ref` → `ValueError` | unknown extra fields → refused (immutable, exact) | a hostile duck-typed carrier mutating after validation | **the orchestrator re-validates into its OWN immutable copy before minting**; `test_attestation_contract` (absent, coerced, empty, hostile cells) |
+| `MigrationAttestation` (caller-supplied — the host-owned facts) (R12-4) | absent → `TypeError` (required keyword) | `quiesced=1`/truthy-object → refused (`is True` check); empty/whitespace `backup_ref` → `ValueError` | unknown extra fields → refused (immutable, exact) | a hostile duck-typed carrier mutating after validation | **duck-typed carriers are REFUSED by `isinstance` (R13-4 — never copied); `backup_ref` validates with 0013's own token grammar**; `test_attestation_contract` (absent, coerced, grammar-violating incl. embedded-space, hostile-type cells) |
 | host code importing `SourceType` | — | — | import after D2 → `AttributeError` | — | D1's `DeprecationWarning` (module `__getattr__`) is the cycle's notice; `test_sourcetype_import_warns_at_d1` |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -322,41 +322,65 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   `Outcome` label while carrying `store_changed`, `transaction_committed`,
   `resulting_version`, and `diagnostic`; preflight short-circuits carry
   `(False, False, resolved-version-or-None)`; delegated operations carry
-  `migrate_store`'s own facts. **The preflight→mint race, closed by RECLASSIFICATION (R12-1 — revalidation
-  cannot close a race that prevents the authority from existing):** a mint
-  failure whose TYPED reason is source-changed ("not an accepted source"
-  after a competing operation) RESTARTS the preflight — bounded at 3
-  attempts, after which the last mint failure surfaces as its outcome; a
-  store that re-resolves current returns `current`. Any other mint failure
-  surfaces directly. **The current cell SPLITS (R12-2):** clean-current →
+  `migrate_store`'s own facts. **The preflight→mint race, closed by RECLASSIFICATION over a DEFINED mint
+  interface (R12-1/R13-1):** the production mint API is
+  **`mint_release_authority(path, attestation) -> MigrationAuthority`**,
+  raising **`MintError(reason)`** with the closed reason enum
+  **{`source-missing`, `source-unaccepted`, `source-changed`}** (the
+  test-only `make_authority` and its undifferentiated `ValueError` are not
+  the production surface). **Every preflight→mint transition, classified:**
+  ANY `MintError` — a competing migration (`source-changed`), a store
+  deleted between preflight and mint (`source-missing`), or an unaccepted
+  shape appearing (`source-unaccepted`) — RESTARTS the preflight, bounded
+  at 3 attempts; the re-run resolves whatever is now true (a vanished store
+  → the missing refusal; a migrated store → `current`; nothing ever
+  "surfaces directly" past classification). **Exhaustion:** after the third
+  failed attempt the orchestrator returns the FINAL preflight's
+  classification outcome with a contention diagnostic appended — the result
+  is total by construction because every preflight outcome already is. **The current cell SPLITS (R12-2):** clean-current →
   `current` with facts (False, False, 7) and byte-identity;
   current-with-rebuildable-drift → `current` carrying the repair facts
   (True, True, 7) — the repair rides the ONE shared opening/planner path
   (0007's own repair-during-opening), never a second repairer; `locked` is
   restored to the matrix (→ the open-failure refusal outcome, no minting).
-  **`MigrationResult`, frozen (R12-3):** `store_changed: Optional[bool]`,
-  `transaction_committed: Optional[bool]` (tri-state — `None` means
-  audit-unknown, never a fabricated bool), `resulting_version:
-  Optional[int]`, `diagnostic: str`; **the source of delegated facts is
-  0013's terminal-record READBACK** — the orchestrator reads the terminal
-  facts of the operation it initiated (an explicit addition to the 0013
-  amendment; never inferred from the label); the outcome→facts truth table
-  mirrors 0013's seven terminal cells verbatim; `MigrationAuditWriteError`
-  → the facts from the exception's own `resulting_state`; audit-unknown →
-  `(None, None, None)` with the label; a validating constructor REJECTS
-  impossible carriers (`migrated` with `store_changed=False` and every
-  other out-of-table combination). **`MigrationAttestation`, frozen
-  (R12-4):** an immutable carrier of exactly {`quiesced` — must be the bool
-  literal `True`, checked `is True`, so `1` and truthy objects refuse;
-  `backup_ref` — a non-empty, non-whitespace `str`, opaque to the library};
-  construction validates and raises `ValueError`; the orchestrator
-  RE-VALIDATES into its own immutable copy so hostile duck-typed carriers
-  cannot mutate after the check. **The CLI acquisition flow, frozen as
+  **`MigrationResult`, frozen (R12-3/R13-2):** `store_changed:
+  Optional[bool]`, `transaction_committed: Optional[bool]` (tri-state —
+  `None` means audit-unknown, never a fabricated bool),
+  **`resulting_state`: the 0013 vocabulary VERBATIM (including `missing`,
+  `unaccepted`, `unknown`)** — the field whose omission collapsed three
+  distinct terminal cells; `resulting_version: Optional[int]`; `diagnostic:
+  str`. The stale resolved-version-or-None short-circuit rule is RETIRED:
+  the exhaustive outcome→facts table covers BOTH preflight and delegated
+  outcomes over the full quadruple, mirroring 0013's seven terminal cells
+  verbatim; a validating constructor REJECTS every out-of-table carrier.
+  **The readback interface, defined (R13-3, in the 0013 amendment):**
+  `read_terminal(operation_id) -> TerminalFacts` on the audit store —
+  own-operation binding (the orchestrator may read ONLY the operation id it
+  minted), consistent snapshot (read on the same connection after
+  `record_terminal` returns), and a malformed or missing record yields the
+  audit-unknown facts, never an error. **`MigrationAuditWriteError` REMAINS
+  the deliberately loud ESCAPING exception exactly as 0013 requires** — the
+  orchestrator never converts it to a `MigrationResult` (that would hide an
+  audit failure behind exit 0); it propagates, and the CLI maps it to
+  **exit 3** with the exception's own `resulting_state` on stderr. **`MigrationAttestation`, frozen
+  (R12-4/R13-4):** an immutable carrier of exactly {`quiesced` — must be
+  the bool literal `True`, checked `is True`, so `1` and truthy objects
+  refuse; `backup_ref` — validated by **0013's OWN frozen token-grammar
+  validator (1–128 ASCII, the accepted grammar)** — no separate predicate,
+  NO normalization: the exact token or a `ValueError` (so `"backup ref"`
+  refuses here rather than failing later inside minting)}. **The ONLY
+  accepted representation is the `MigrationAttestation` type itself —
+  `isinstance` checked; duck-typed carriers are REFUSED, never copied**
+  (v16's re-validated-copy rule is retired as contradictory: exactness wins
+  over tolerance). The CLI rejects an invalid `--backup` value with exit 2
+  and the grammar stated in the message. **The CLI acquisition flow, frozen as
   FLAGS (never prompts — prompting is coercion-prone and non-interactive
   hostile):** `veracium migrate --db X --i-have-quiesced --backup REF`;
   both flags required for the migration path, missing → exit 2 with usage;
   exit codes: 0 = migrated/current · 1 = every refusal incl.
-  `unsupported-base` · 2 = usage. Reporting stays on the structured fields;
+  `unsupported-base` · 2 = usage/invalid attestation · 3 =
+  `MigrationAuditWriteError` escaped (the loud audit failure, with its
+  `resulting_state` on stderr). Reporting stays on the structured fields;
   `cli.py` and `tests/test_migrate_cli.py` are dispositioned in §7a under
   this spec's authority. **Ordinary OPENING of a below-v6 store is
   UNCHANGED by this spec** — 0013's existing below-head refusal governs it;
