@@ -1,12 +1,12 @@
 # Feature spec: SourceType deletion + the evidence_basis contract freeze
 
 Spec-Status: draft
-Spec-Requires: 0003, 0013, 0014
+Spec-Requires: 0003, 0013, 0014, 0018
 
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v17 — *re-read before editing; quote the version you approve*. v16→v17: EXTERNAL ROUND 13 (4 bin-(a), bin (b) empty; the architecture endorsed — every finding is boundary exactness): R13-1 A+C+F found-in-fix of R12-1 — reclassification named no mint API (`make_authority` is test-only, undifferentiated `ValueError`) → **the production mint interface is DEFINED: `mint_release_authority(path, attestation) -> MigrationAuthority`, raising `MintError(reason)` with the closed reason enum {`source-missing`, `source-unaccepted`, `source-changed`}**; EVERY preflight→mint transition classified: `source-changed` AND `source-missing` both RECLASSIFY (a disappeared store re-resolves to the missing refusal — never "surfaces directly"); `source-unaccepted` reclassifies likewise; exhaustion (3 attempts) returns the FINAL preflight's classification outcome with a contention diagnostic — total, never unspecified; R13-2 A+C+D+F found-in-fix of R12-3 — the carrier omitted `resulting_state`, collapsing three distinct 0013 terminal cells → **`MigrationResult` gains `resulting_state`** (the 0013 vocabulary verbatim incl. `missing`/`unaccepted`/`unknown`), the stale resolved-version-or-None short-circuit rule is RETIRED, and the exhaustive table covers BOTH preflight and delegated outcomes over the full quadruple; R13-3 A+C+D+F found-in-fix of R12-3 — the readback had no interface → **the 0013 amendment defines `read_terminal(operation_id) -> TerminalFacts`** on the audit store (own-operation binding: the orchestrator may read only the operation id it minted; consistent snapshot: read on the same connection after `record_terminal` returns; malformed/missing record → the audit-unknown facts, never an error); **`MigrationAuditWriteError` REMAINS the deliberately loud ESCAPING exception** — never converted to a `MigrationResult` (that would hide audit failure behind exit 0); the CLI maps it to a NEW exit 3 with the exception's `resulting_state` on stderr; R13-4 A+C+D+F found-in-fix of R12-4 — my `backup_ref` predicate conflicted with 0013's frozen 1–128-ASCII token grammar, and "exact carrier" conflicted with copying duck-types → **`backup_ref` validates with 0013's OWN grammar validator** (no separate predicate, no normalization — the exact token or refusal); **the ONLY accepted representation is the `MigrationAttestation` type itself (`isinstance` check — duck-types REFUSED, never copied)**; the CLI rejects an invalid `--backup` with exit 2 and the grammar stated. |
+| **Version** | v18 — **THE SPLIT (round 14, Quentin's standing ruling fired):** all four round-14 findings were orchestrator-construction findings, the fourth consecutive such round — the release-migration orchestrator is a SPEC, not a section. v18 keeps the MEANING (deletion semantics, the D1 seven-row surface, the four-clause evidence_basis freeze, the digest-collapse D2 semantics, the receipt-v3 era boundary with on-sight refusal, the 0007 same-shape rule, the ladder POLICY, the 0003/0007/0014 amendments) and GATES D2 implementation on accepted `0018` (`Spec-Requires` updated; I13 is the gate). The v10–v17 execution machinery moves to `specs/0018-release-migration-orchestrator.md` WITH the four R14 findings folded from birth (R14-1 the retry state machine incl. the exhaustion outcome; R14-2 the enumerated result table + the surviving stale carrier removed; R14-3 the post-write missing-record = audit-integrity failure, loud; R14-4 exact-type admission per 0013's own regression). The split line is research's meaning/execution test, pre-agreed 2026-08-13. |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
@@ -289,120 +289,17 @@ unchanged (I1's narrowed sense). CHANGELOG names D2's release.
   rows; reopening the withdrawn callback model is its own construction and
   review). So the honest scope is the reviewer's R5-2 alternative: **a
   below-6 base REFUSES with a named error** ("migrate to v6 on a pre-D2
-  release first — the two-release ladder"). **The exact public contract
-  (R8-1, construction per R9-1 — v12's form was IMPOSSIBLE under 0013's
-  authority/audit machinery):** the release migration
-  **ORCHESTRATOR/PREFLIGHT**, before ANY authority minting, resolves the
-  base; for bases 1–5 it RETURNS — never raises — the outcome
-  **`unsupported-base`** with the ladder diagnostic verbatim. **It does NOT
-  invoke `migrate_store`, mints NO `MigrationAuthority`, and creates NO
-  0013 audit lifecycle** (no operation row, no attempted event, no terminal
-  record — a terminal event is foreign-keyed to an authority-bound
-  operation that never exists here). The store's bytes and stamp are
-  byte-unchanged. **Base 6 alone proceeds through authority minting and the
-  ordinary audited 0013 operation.** **The executable owner (R10-1, re-ruled by
-  R11-1/R11-2):** **`run_release_migration(path: str, *, host_attestation:
-  MigrationAttestation) -> MigrationResult`** in
-  `src/veracium/store/migration.py`. `MigrationAttestation` is the
-  HOST-OWNED interface — the quiescence attestation and backup reference
-  0013 requires, passed VERBATIM into authority minting; the orchestrator
-  never fabricates or defaults them (a path-only signature could not be
-  honest). **The total matrix — the preflight intercepts EVERYTHING except
-  resolved base 6:** bases 1–5 → `unsupported-base` with the ladder;
-  already-current v7 → the `current` outcome WITHOUT minting (minting
-  against a current destination is "not an accepted source" in the 0013
-  instrument); missing path / foreign / malformed / unstamped / newer → the
-  corresponding 0007/0013 refusal outcome WITHOUT minting; **resolved base
-  6 ALONE mints an authority (host attestation passed through) and
-  delegates to `migrate_store(path, authority)`** — 0013's revalidation
-  inside the operation closes the preflight→mint race. Every preflight
-  short-circuit creates ZERO authorities and ZERO audit rows.
-  **`MigrationResult` (R11-2, the `OpenResult` precedent — 0013 r8-f3:
-  facts are never inferred from the label):** string-compares as the closed
-  `Outcome` label while carrying `store_changed`, `transaction_committed`,
-  `resulting_version`, and `diagnostic`; preflight short-circuits carry
-  `(False, False, resolved-version-or-None)`; delegated operations carry
-  `migrate_store`'s own facts. **The preflight→mint race, closed by RECLASSIFICATION over a DEFINED mint
-  interface (R12-1/R13-1):** the production mint API is
-  **`mint_release_authority(path, attestation) -> MigrationAuthority`**,
-  raising **`MintError(reason)`** with the closed reason enum
-  **{`source-missing`, `source-unaccepted`, `source-changed`}** (the
-  test-only `make_authority` and its undifferentiated `ValueError` are not
-  the production surface). **Every preflight→mint transition, classified:**
-  ANY `MintError` — a competing migration (`source-changed`), a store
-  deleted between preflight and mint (`source-missing`), or an unaccepted
-  shape appearing (`source-unaccepted`) — RESTARTS the preflight, bounded
-  at 3 attempts; the re-run resolves whatever is now true (a vanished store
-  → the missing refusal; a migrated store → `current`; nothing ever
-  "surfaces directly" past classification). **Exhaustion:** after the third
-  failed attempt the orchestrator returns the FINAL preflight's
-  classification outcome with a contention diagnostic appended — the result
-  is total by construction because every preflight outcome already is. **The current cell SPLITS (R12-2):** clean-current →
-  `current` with facts (False, False, 7) and byte-identity;
-  current-with-rebuildable-drift → `current` carrying the repair facts
-  (True, True, 7) — the repair rides the ONE shared opening/planner path
-  (0007's own repair-during-opening), never a second repairer; `locked` is
-  restored to the matrix (→ the open-failure refusal outcome, no minting).
-  **`MigrationResult`, frozen (R12-3/R13-2):** `store_changed:
-  Optional[bool]`, `transaction_committed: Optional[bool]` (tri-state —
-  `None` means audit-unknown, never a fabricated bool),
-  **`resulting_state`: the 0013 vocabulary VERBATIM (including `missing`,
-  `unaccepted`, `unknown`)** — the field whose omission collapsed three
-  distinct terminal cells; `resulting_version: Optional[int]`; `diagnostic:
-  str`. The stale resolved-version-or-None short-circuit rule is RETIRED:
-  the exhaustive outcome→facts table covers BOTH preflight and delegated
-  outcomes over the full quadruple, mirroring 0013's seven terminal cells
-  verbatim; a validating constructor REJECTS every out-of-table carrier.
-  **The readback interface, defined (R13-3, in the 0013 amendment):**
-  `read_terminal(operation_id) -> TerminalFacts` on the audit store —
-  own-operation binding (the orchestrator may read ONLY the operation id it
-  minted), consistent snapshot (read on the same connection after
-  `record_terminal` returns), and a malformed or missing record yields the
-  audit-unknown facts, never an error. **`MigrationAuditWriteError` REMAINS
-  the deliberately loud ESCAPING exception exactly as 0013 requires** — the
-  orchestrator never converts it to a `MigrationResult` (that would hide an
-  audit failure behind exit 0); it propagates, and the CLI maps it to
-  **exit 3** with the exception's own `resulting_state` on stderr. **`MigrationAttestation`, frozen
-  (R12-4/R13-4):** an immutable carrier of exactly {`quiesced` — must be
-  the bool literal `True`, checked `is True`, so `1` and truthy objects
-  refuse; `backup_ref` — validated by **0013's OWN frozen token-grammar
-  validator (1–128 ASCII, the accepted grammar)** — no separate predicate,
-  NO normalization: the exact token or a `ValueError` (so `"backup ref"`
-  refuses here rather than failing later inside minting)}. **The ONLY
-  accepted representation is the `MigrationAttestation` type itself —
-  `isinstance` checked; duck-typed carriers are REFUSED, never copied**
-  (v16's re-validated-copy rule is retired as contradictory: exactness wins
-  over tolerance). The CLI rejects an invalid `--backup` value with exit 2
-  and the grammar stated in the message. **The CLI acquisition flow, frozen as
-  FLAGS (never prompts — prompting is coercion-prone and non-interactive
-  hostile):** `veracium migrate --db X --i-have-quiesced --backup REF`;
-  both flags required for the migration path, missing → exit 2 with usage;
-  exit codes: 0 = migrated/current · 1 = every refusal incl.
-  `unsupported-base` · 2 = usage/invalid attestation · 3 =
-  `MigrationAuditWriteError` escaped (the loud audit failure, with its
-  `resulting_state` on stderr). Reporting stays on the structured fields;
-  `cli.py` and `tests/test_migrate_cli.py` are dispositioned in §7a under
-  this spec's authority. **Ordinary OPENING of a below-v6 store is
-  UNCHANGED by this spec** — 0013's existing below-head refusal governs it;
-  only `run_release_migration`'s PREFLIGHT returns the new outcome (§2c
-  carries both cells). **The 0013 M10 amendment is WITHDRAWN**: with older
-  bases refused, this spec needs exactly ONE declared step (6→7), and
-  M10's planner stays deferred to the first spec that truly needs a chain.
-  I13 (§6) pins the contract over every legal resolved base 1–5.
-
-> **0013 Outcome-vocabulary amendment (0016 D2, R9-1 form):** the closed
-> vocabulary gains ONE member, `unsupported-base` — produced by the release
-> migration ORCHESTRATOR'S PREFLIGHT, before authority minting, when the
-> resolved base is an accepted version below the lowest declared step
-> source (bases 1–5 against 6→7). The preflight does not invoke
-> `migrate_store` and creates no audit lifecycle, so the member needs NO
-> permitted-resulting-state rule and NO terminal-facts mapping — it never
-> reaches them; the store is byte-unchanged. `Outcome` continues to refuse
-> non-members; the exhaustive outcome tests extend over the new member and
-> assert the zero-audit-rows property. **Terminal-record readback (R12-3):**
-> the orchestrator that initiated an operation may READ that operation's
-> terminal facts to populate its structured result — a read-only,
-> own-operation interface; the facts are never inferred from the label.
+  release first — the two-release ladder"). **The EXECUTION of D2 — the
+  release-migration orchestrator (preflight, host attestation, minting,
+  structured results, terminal readback, CLI acquisition) — is SPLIT to
+  spec `0018` (round-14 ruling: four consecutive rounds of
+  orchestrator-construction findings showed it is a spec, not a section —
+  the Ruling-2 precedent). THIS spec states only the POLICY: D2 migrates
+  base 6 alone; bases 1–5 are refused with the two-release ladder; the
+  refusal creates no authority and no audit lifecycle. Everything
+  executable about HOW lives in 0018, and D2 IMPLEMENTATION MAY NOT LAND
+  UNTIL 0018 IS ACCEPTED (`Spec-Requires` gains 0018; I13 becomes that
+  gate).**
 - **The migration boundary is an ATOMIC TRANSITION (the 0015
   transitions-vs-states lens):** the era stamp is TOTAL over operations —
   every receipt carries the `outcome_digest_version` its writer computed
@@ -484,7 +381,7 @@ byte-stable).
 | I8 — the extractor cannot emit provenance fields (the §4.1 rule as a regression) | `test_extractor_cannot_emit_provenance_fields` | CI |
 | I9 — the v6→v7 step's declared statement tuple `("SELECT 1",)` is sha-pinned and its 0013 path evidence binds to that exact SQL; the step changes no object (asserted: sqlite_master byte-identical before/after) | migration self-check + `test_v7_step_declaration_matches_pin` + `test_v7_step_changes_no_objects` | CI |
 | I10 — the frozen evidence_basis contract is text-pinned: §1b's four clauses present verbatim until a first-consumer spec supersedes them | `test_evidence_basis_contract_frozen` (text pin, breaks on drift) | CI |
-| I13 — **the preflight matrix, TOTAL (v16 form)**: bases 1–5 → `unsupported-base` + the ladder; CLEAN-current → `current` (False, False, 7) byte-identical; current-WITH-REPAIR → `current` (True, True, 7) via the one shared opening path; missing/foreign/malformed/unstamped/newer/**locked** → the corresponding refusal without minting; every short-circuit zero-authority/zero-audit; resolved base 6 ALONE mints (the validated attestation verbatim) and delegates; the mint-time source-changed failure RECLASSIFIES (bounded 3); the returned `MigrationResult` passes the validating constructor with facts from the terminal readback, never the label | `test_preflight_matrix_total` (every cell incl. both current cells and locked) + `test_mint_race_reclassifies` + `test_migration_result_truth_table` (0013's seven cells + audit-unknown + `MigrationAuditWriteError`) + `test_attestation_contract` + `test_below_v6_open_unchanged` + `test_base_6_proceeds_through_the_audited_operation` + the amended `test_migrate_cli.py` | CI |
+| I13 — **the D2 execution gate (the round-14 split)**: D2 implementation may not land until spec 0018 (the release-migration orchestrator) is `accepted` — the CI spec gate enforces it through the `Spec-Requires: 0018` line; the POLICY invariants that stay here: bases 1–5 are refused with the ladder, zero authorities, zero audit rows (0018 owns the executable contract and its matrix tests) | the `Spec-Requires` gate (`check_spec_reference.py`, existing) + 0018's own I-table at its acceptance | CI |
 
 **Reproducer retention:** review defects become regressions beside these.
 
@@ -529,8 +426,8 @@ byte-stable).
 | `src/veracium/store/base.py` | D2 | `ReceiptSchemaBoundaryError(SupersessionIntegrityError)` defined + exported |
 | `src/veracium/store/sqlite.py` | **D1** (`_SourceType` binding) + D2 (construction sites incl. the `model_copy(update=)` write; phase-2 era check; version-3 stamping; the by-stored-version projection selection with no fall-through) |
 | `src/veracium/store/schema_version.py` | D2 | `SCHEMA_V7`, `SCHEMA_VERSION=7`, the sha-pinned declared no-op step |
-| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); **`run_release_migration(path, *, host_attestation) -> MigrationResult` — the orchestrator (R11-1): the preflight intercepts everything except resolved base 6; `MigrationAttestation` + `MigrationResult` defined here** |
-| `src/veracium/cli.py` + `tests/test_migrate_cli.py` | D2 | the migrate verb calls `run_release_migration` with the attestation built from the REQUIRED flags `--i-have-quiesced --backup REF` (R12-4 — flags, never prompts; missing → exit 2); reporting stays on the STRUCTURED `MigrationResult` fields; exits 0/1/2 per §4; the frozen docstring/test amended under THIS spec's authority |
+| `src/veracium/store/migration.py` | D2 | the v6→v7 step (the declared no-op + version stamp, one transaction); the v6→v7 declared step ONLY — **the orchestrator/preflight/attestation/result machinery is 0018's surface (the split)** |
+| `src/veracium/cli.py` + `tests/test_migrate_cli.py` | D2 | **moved to 0018** — the CLI acquisition flow, exit codes, and the frozen-delegation amendment are 0018's carriers |
 | `src/veracium/portability.py` | D2 | `FORMAT_VERSION` 6; import drop rule |
 | `src/veracium/lifecycle.py` | **D1** (`_SourceType` binding) + D2 (construction site removed; `test_lifecycle.py:324` reshaped) |
 | `pyproject.toml` | **D1** | `pydantic>=2.7` (the `Field(deprecated=…)` floor — R5-3) |
