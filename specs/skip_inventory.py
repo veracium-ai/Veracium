@@ -37,16 +37,26 @@ INVENTORY = [
     ("tests/test_0015_lifecycle.py", "skip", "POSIX adapter test (specs/0015 I17)",
      "host-conditional", "the death-release half of the same POSIX pair"),
     ("tests/test_mcp.py", "importorskip", "mcp",
-     "optional-dependency", "the optional MCP SDK is absent"),
+     "optional-dependency", "the optional MCP SDK — 5 tests; PASS ×5 in the "
+                            "measured line (installed in the authoring venv); "
+                            "SKIP ×5 where absent"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
-     "package-artifact", "binds COLLECTED's inventory to render(); runs only in "
-                         "an extracted review package"),
+     "package-artifact", "binds COLLECTED's inventory to render(); 1 test, "
+                         "SKIPPED in the measured line (COLLECTED.txt is "
+                         "written AFTER the suite runs); in your extraction it "
+                         "EXECUTES iff COLLECTED.txt is present in the tree "
+                         "you run — a reviewer replicating the author command "
+                         "in a COLLECTED-less copy sees it SKIP; either status "
+                         "reconciles, and your report should say which"),
     ("tests/test_eval.py", "skipif", "VERACIUM_EVAL",
      "env-flag", "live acceptance-eval tier"),
     ("tests/test_robustness.py", "skipif", "VERACIUM_ROBUSTNESS",
      "env-flag", "live robustness tier"),
     ("tests/test_spec_gate.py", "skip", "COORDINATION.md not present",
-     "host-conditional", "local-only coordination file absent"),
+     "host-conditional", "reads a HOME-anchored local-only coordination file — "
+                         "1 test, PASS in the measured line (the file exists "
+                         "on the authoring HOST, outside the tree); SKIP on "
+                         "any other host"),
     ("tests/test_spec_gate.py", "skip", "not a git checkout",
      "git-checkout", "STATUS.md `updated` derives from git log"),
     ("tests/test_spec_gate.py", "skip", "no archives present",
@@ -77,20 +87,29 @@ def render() -> str:
         "git-checkout": ("git-checkout-dependent (SKIPPED in the measured line — the "
                          "measuring copy has no .git — and in your extracted run):"),
         "env-flag": "env-flag tiers (SKIPPED unless the flag is set; part of the measured line):",
-        "optional-dependency": ("optional-dependency (PASS where the package is installed, "
-                                "SKIP where absent):"),
-        "package-artifact": ("package-artifact (SKIPPED in the measured line and in git "
-                             "checkouts; RUNS in your extracted package, where "
-                             "COLLECTED.txt exists — so your run gains one PASS here):"),
+        "optional-dependency": ("optional-dependency (per-entry counts and the measured "
+                                "author status are in each entry):"),
+        "package-artifact": ("package-artifact (status depends on whether COLLECTED.txt is "
+                             "in the tree you run — see the entry):"),
         "host-conditional": ("host-conditional (may differ between the authoring host and "
-                             "yours — the usual source of reviewer deltas):"),
+                             "yours — the usual source of reviewer deltas; each entry "
+                             "carries its count and measured author status):"),
     }
     out = []
     for cls in order:
         if cls in classes:
             out.append("  " + blurb[cls])
             out += [f"    {line}" for line in classes[cls]]
-    out.append("  Any delta NOT explained by a named test above is a finding.")
+    out.append(
+        "  RECONCILIATION (0018 external B2-1 — the arithmetic must close): the\n"
+        "  measured line's skips decompose as: git-checkout 11 (longmemeval 8,\n"
+        "  test_spec_gate 2, test_schema_model 1) + env-flag 2 + package-artifact 1\n"
+        "  = 14. Every OTHER inventoried site PASSED in the measured line (MCP x5;\n"
+        "  the 0015 POSIX pair x2; the HOME-anchored coordination-file test x1; the\n"
+        "  runtime-identity, euid, and qualified-runtime cells x1 each). Compute\n"
+        "  your expected line from these statuses and your environment; the seal\n"
+        "  step verifies this decomposition against the measured run (-rs) before\n"
+        "  packaging. Any residual delta is a finding.")
     return "\n".join(out)
 
 
