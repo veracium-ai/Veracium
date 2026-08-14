@@ -4,11 +4,11 @@
 
 # Spec status
 
-**18 specs · 12 accepted · 161 external review
+**18 specs · 13 accepted · 162 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **12 of 18 are accepted**, which
+review is required to reach it. **13 of 18 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -29,7 +29,7 @@ is the number that decides what can be built.
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-10 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
 | **0016** | SourceType deletion + the evidence_basis contract freeze | `accepted` | 2026-08-13 | 1 | 15 | 0 | 0 | 0 | — |
-| **0017** | token-usage telemetry over the Metered wrapper | `draft` | 2026-08-14 | 1 | 14 | 0 | 0 | 0 | — |
+| **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 15 | 0 | 0 | 0 | — |
 | **0018** | the release-migration orchestrator | `accepted` | 2026-08-13 | 1 | 4 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per

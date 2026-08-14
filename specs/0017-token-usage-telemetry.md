@@ -1,16 +1,16 @@
 # Feature spec: token-usage telemetry over the Metered wrapper
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0015
 
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v13 — EXTERNAL ROUND 9 (ONE blocking + one editorial — the narrowing now 6→7→6→5→3→2→1→1; "the attribution, replay, consent, and I1–I12 architecture remains endorsed; R9-1 is confined to the close lifecycle's atomic ordering"): BOTH FOLDED. **R9-1 (A — found-in-fix of R8-1, and the elegant one: the close fix was itself CHECK-THEN-ACT, the exact class R4-4 fixed for `forget`):** a callback pausing after the step-1 `listener_active` read could resume past a close and attribute; an event buffered before close could merge after → the reviewer's RECOMMENDED option adopted: close-deactivate is ONE critical section that deactivates AND cancels every active registry entry (closure = forget-everything at the attribution level); the listener's step 6 RE-CHECKS everything inside its critical section (steps 1–4 demoted to early-outs; **step 6 is the only authority**); the terminal merge's existing cancellation check observes closure with no new mechanism. I8 carries both barrier seams (pause-after-step-1 and buffer-before-close), both lock orderings asserted; I12 asserts deactivate+cancel-all-in-one-section-before-unsubscribe. **R9-C1 (editorial):** the older receives-no-callbacks snapshot wording — which contradicted the R8-1 boundary — replaced by the invocation-vs-attribution rule with its linearization. *(v12: the eighth transition; invocation-vs-attribution; the cross-product cells.)* *(v11: every normative carrier on the same machine — two ContextVars, the five-field entry, the transitions enumerated; the stale-A-during-B prescription in I9.)* *(v10: the call state fully declared — `_active_call`, `armed_call`, the three call transitions, the four-cell replay family, the executable removal rule.)* *(v9: the honest R5-1 binding boundary; registry-owned consumption; the six-step algorithm; the executable handle predicate; the singular close rule.)* *(v8: opaque frames + the registry; the expectation token; the control-plane rows; four atomic transitions; I8 rewritten; the self_check absence boundary.)* *(v7: the module-global routing variable; recursive immutability; pair validation; the control plane — claimed; cancellation tokens; the shared predicate; successful-operation scoping.)* *(v5: the pre-send `contextvars` substitution + emit-boundary clause.)* *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
+| **Version** | **v14 (ACCEPTED)** — EXTERNAL ROUND 10: **APPROVED FOR ACCEPTANCE, bin (a) EMPTY** after ten external rounds (findings 6→7→6→5→3→2→1→1→1→0) + one internal; the frozen surface is the complete §6 table **I1–I12**. v14 = v13 + the two nonblocking corrections (the §4a step-1-alone inertness claim replaced by the actual step-6/terminal-merge linearization; §9 superseded by the acceptance disposition) + the flip + the PROCESS §4a closure ledger, one commit. The arc, for the record: round 1 was a REDESIGN (the totals-delta side channel); rounds 2–9 drove correlation and erasure one construction level deeper each round while the endorsed surfaces never reopened; the final four rounds were single-finding lifecycle exactness. *(v13:)*  — the narrowing now 6→7→6→5→3→2→1→1; "the attribution, replay, consent, and I1–I12 architecture remains endorsed; R9-1 is confined to the close lifecycle's atomic ordering"): BOTH FOLDED. **R9-1 (A — found-in-fix of R8-1, and the elegant one: the close fix was itself CHECK-THEN-ACT, the exact class R4-4 fixed for `forget`):** a callback pausing after the step-1 `listener_active` read could resume past a close and attribute; an event buffered before close could merge after → the reviewer's RECOMMENDED option adopted: close-deactivate is ONE critical section that deactivates AND cancels every active registry entry (closure = forget-everything at the attribution level); the listener's step 6 RE-CHECKS everything inside its critical section (steps 1–4 demoted to early-outs; **step 6 is the only authority**); the terminal merge's existing cancellation check observes closure with no new mechanism. I8 carries both barrier seams (pause-after-step-1 and buffer-before-close), both lock orderings asserted; I12 asserts deactivate+cancel-all-in-one-section-before-unsubscribe. **R9-C1 (editorial):** the older receives-no-callbacks snapshot wording — which contradicted the R8-1 boundary — replaced by the invocation-vs-attribution rule with its linearization. *(v12: the eighth transition; invocation-vs-attribution; the cross-product cells.)* *(v11: every normative carrier on the same machine — two ContextVars, the five-field entry, the transitions enumerated; the stale-A-during-B prescription in I9.)* *(v10: the call state fully declared — `_active_call`, `armed_call`, the three call transitions, the four-cell replay family, the executable removal rule.)* *(v9: the honest R5-1 binding boundary; registry-owned consumption; the six-step algorithm; the executable handle predicate; the singular close rule.)* *(v8: opaque frames + the registry; the expectation token; the control-plane rows; four atomic transitions; I8 rewritten; the self_check absence boundary.)* *(v7: the module-global routing variable; recursive immutability; pair validation; the control plane — claimed; cancellation tokens; the shared predicate; successful-operation scoping.)* *(v5: the pre-send `contextvars` substitution + emit-boundary clause.)* *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — round 1 RETURNED 2026-08-13 (3 findings, folded in v3; their preliminary Q1 mapping amended by their own review); re-review requested · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
 | **External review** | ROUND 9 RETURNED 2026-08-14 (package `0017-v12-20260814T0508Z.tar.gz`): 1 blocking + 1 editorial, folded as v13; round-10 package next — architecture endorsed, R9-1 confined to close ordering |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED — external round 10, 2026-08-14** (bin (a) empty; the frozen surface is I1–I12; the two nonblocking corrections folded in the acceptance commit) |
 | **Path** | full |
 
 ---
@@ -182,8 +182,13 @@ and only THEN attempts unsubscribe** (today `close()` only closes the
 store — the amendment is part of this spec's implementation). The
 distinction is invocation vs attribution: a failed or absent
 `remove_usage_listener` cannot prevent a rogue wrapper from INVOKING the
-retained callback, but the callback's first act is the `listener_active`
-check, so post-close ATTRIBUTION is impossible regardless — it cannot
+retained callback, but post-close ATTRIBUTION is impossible by the
+LINEARIZATION, not by any single check (the acceptance correction: the
+step-1 read alone guarantees nothing — R9-1's interleaving proved it):
+close-deactivate atomically deactivates AND cancels every active entry;
+listener step 6 re-checks `listener_active` and cancellation INSIDE its
+critical section; the terminal merge's cancellation check observes the
+same state under the same lock — so a retained callback cannot
 consume an expectation, touch a buffer, merge, audit, or emit telemetry
 (external R8-1's cross-product: successful registration × absent/raising
 removal × an armed in-flight operation × a post-close emission — the
@@ -592,19 +597,18 @@ Release class: **stable on acceptance** — every named regime has a NAMED check
 
 ## 9. Brief for the external reviewer
 
-What v12 is least sure of: (1) the COMPLETE write set — the registry
-carries EIGHT atomic transitions (register / arm / compare-consume /
-clear / delete+cancel / check+merge / exit-cleanup / close-deactivate);
-to our reading these are every path touching user-keyed, call-keyed, or
-lifecycle state, and the adversarial question is whether ANY other path
-writes such state outside the instance lock; (2) the R8-1 resolution's
-boundary — closure makes attribution impossible via `listener_active`,
-while INVOCATION of a retained callback by a rogue wrapper remains
-unpreventable (a dead call); is inert-invocation the right terminal
-posture, or does any residual invocation channel matter that we have not
-seen? **What would change our minds:** a demonstrated write path outside
-the lock, or a post-close composition where an inert callback still
-influences any carrier.
+**Superseded by the round-10 acceptance disposition (2026-08-14): bin (a)
+empty; no further design round required.** The frozen surface is the
+complete §6 table I1–I12 (decision invisibility; counter/payload
+completeness over the four (role, event) pairs; atomic wrapper accounting;
+the carrier consent matrix; MCP omission; affirmative opt-in; the
+lifecycle/close control plane with the eight-transition linearization;
+exact attribution within the stated producer-claim boundary; preservation
+of accepted 0015). The stage-5 obligations — every check marked
+not-yet-existing — are the implementation's contract. The ten-round §9
+history (the least-sure items each round, two of which the reviewer
+adopted as requirements) lives in the version-history row and
+`specs/reviews.py`.
 
 ## 10. Open questions
 
@@ -644,3 +648,24 @@ influences any carrier.
 - [ ] I have said where I think the **author's conclusion is wrong**
 - [ ] I re-read the current version before reviewing
 - [ ] §9 brief is written, and external review has been sent
+
+
+## Review closure
+
+*PROCESS §4a: one row per round's findings, each closed by an openable
+artifact — the fold commit and the archive the next round verified. Full
+per-finding verdicts: `specs/reviews.py` + each round's COLLECTED.*
+
+| round | findings | closed by |
+|---|---|---|
+| internal 1 (v2) | F1 the compile role's SECOND producer (maintain) · F2 pair-granular I2b · F3 the cross-user smear restated | `bebf74d` (v3) |
+| ext 1 (v3) | THE REDESIGN — F1 the totals-delta cross-user prior-state side channel · F2 duck-typed opt-in · F3 the wrapper's unprotected counter · F4 self-check reach + default roles · F5 the accumulator's lifecycle + forget-erasure · F6 the three-carrier consent split | `e07be13` (v4); pre-send: the `contextvars` substitution + emit boundary (`8085a7b`, v5); archive `0017-v5-20260813T2305Z` |
+| ext 2 (v5) | R2-1 ownerless broadcast · R2-2 no aggregation/commit · R2-3 self-check unconstructible + listener leak · R2-4 emission under the lock · R2-5 the forget race · R2-6 the callback protocol · R2-7 the missing matrix column · the false-CI PACKAGE BLOCKER | `d6029ff` (v6); archive `0017-v6-20260813T2341Z` |
+| ext 3 (v6) | R3-1 the module-global routing variable · R3-2 recursive frame immutability · R3-3 pair validation · R3-4 the control plane · R3-5 the generation tombstone (erasure inside the erasure fix) · R3-6 the shared count predicate + float bound · R3-7 successful-operation scoping · the blocker COMPLETED | `c6f4895` (v7); archive `0017-v7-20260814T0002Z` — the pre-seal SENT-ledger ordering adopted here |
+| ext 4 (v7) | R4-1 the §2c rows actually added · R4-2 the expectation token · R4-3 opaque frames + the registry (user data out of copyable contexts) · R4-4 four atomic transitions · R4-5 I8 rewritten · R4-6 self_check pushes no frame | `1fc574f` (v8); archive `0017-v8-20260814T0035Z` |
+| ext 5 (v8) | R5-1 the honest producer-claim binding boundary · R5-2 registry-owned global consumption · R5-3 the six-step listener algorithm · R5-4 the executable handle predicate + I12 · R5-5 the singular close rule | `3c17863` (v9); archive `0017-v9-20260814T0339Z` — the seal gate caught the surviving `current_frame.event` carrier pre-package (`7235c99`) |
+| ext 6 (v9) | R6-1 the call state fully declared (`_active_call`, `armed_call`, arm/compare-consume/clear) · R6-2 the four-cell replay family · R6-3 the executable removal rule | `cf86ba6` (v10); archive `0017-v10-20260814T0415Z` — the seal gate caught the R6-3 cell's own second column (`4c2a6c0`) |
+| ext 7 (v10) | R7-1 every carrier on the same machine (two vars, five fields, seven transitions) · R7-2 the stale-A-during-B prescription into I9 | `8749a00` (v11); archive `0017-v11-20260814T0436Z` |
+| ext 8 (v11) | R8-1 the close lifecycle cross-product → the eighth transition (close-deactivate) + invocation-vs-attribution | `95bfff4` (v12); archive `0017-v12-20260814T0508Z` |
+| ext 9 (v12) | R9-1 the close linearized (the R8-1 fix was itself check-then-act) → deactivate+cancel-all in one section; step 6 the only authority | `6681f12` (v13); archive `0017-v13-20260814T0534Z` |
+| ext 10 (v13) | **APPROVED FOR ACCEPTANCE — bin (a) EMPTY**; two nonblocking corrections (the §4a inertness claim; the §9 refresh) | THIS commit (v14): corrections + `Spec-Status: accepted` + this ledger |
