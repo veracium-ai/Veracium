@@ -189,17 +189,30 @@ with a confirmation prompt: `veracium forget --user alice`. **Deliberately not
 an MCP tool** — an irreversible-wipe verb callable by an agent is a standing
 prompt-injection target; erasure is a host/operator action.
 
-### `export_memory(user_id, path) -> dict` / `import_memory(path, *, user_id=None) -> dict`
+### `export_memory(user_id, path) -> dict` / `import_memory(path, *, user_id=None, restore=False) -> dict`
 
 Portable memory: one JSONL file per user carrying the **complete** store of
 record — every edge (superseded history and quarantined claims included) and
 episode with full provenance, disclosure, and validity windows. Import is
 idempotent (existing ids are skipped, never overwritten); `user_id=` remaps the
 records. Also available without code: `veracium export out.jsonl --user alice`
-/ `veracium import out.jsonl [--user bob]`.
+/ `veracium import out.jsonl [--user bob | --restore]`.
 
-Trust note: provenance in an export file is *data* — import only from sources
-you trust as much as the database file itself.
+**Trust boundary (specs/0005).** A **default** import caps every record's
+trust: `author_of_evidence` and `derived_from` are set to `third_party` and
+`disclosure` is floored to `use_only` (`quarantined` is never weakened) — so
+nothing imported is assertable or rendered as the target user's own testimony,
+whatever the file claims or omits. The returned dict carries `"capped"`, the
+number of records the cap changed (a function of the file alone, never of
+destination state). A host that wants an imported fact asserted confirms it —
+that affirmation is new user-authored evidence.
+
+`restore=True` (CLI `--restore`) preserves the file's trust fields exactly and
+skips only the cap — it is the operator's assertion that **the file is this
+store's own export**. It trusts every record exactly as written: use it only
+on files you exported yourself or have independently verified, record by
+record. `restore` must be a real bool and is mutually exclusive with
+`user_id` (a restore never remaps).
 
 ### `close()`
 
