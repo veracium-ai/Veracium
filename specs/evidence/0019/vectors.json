@@ -1,0 +1,114 @@
+[
+ {
+  "name": "r1_expressionless_iso_date_flagged",
+  "obj": "2026-09-01",
+  "text": "I have a deadline but have not chosen a date.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "r2_unrelated_expression_does_not_ground_flagged",
+  "obj": "2026-09-01",
+  "text": "I met Bob Friday. The project deadline is undecided.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "weekday_future_resolution_grounded",
+  "obj": "2026-08-21",
+  "text": "Let's meet Friday to review.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "weekday_past_resolution_grounded",
+  "obj": "2026-08-07",
+  "text": "We met Friday and it went well.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "weekday_session_day_resolution_grounded",
+  "obj": "2026-08-14",
+  "text": "We met Friday and it went well.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "tomorrow_grounded",
+  "obj": "2026-08-15",
+  "text": "The report is due tomorrow.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "month_day_grounded",
+  "obj": "2026-07-01",
+  "text": "It happened on July 1 as reported.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "added_year_out_of_window_flagged",
+  "obj": "2023-07-01",
+  "text": "the filing of 1 July, per the article",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "bare_month_does_not_ground_midmonth_flagged",
+  "obj": "2026-09-17",
+  "text": "Sometime in September, probably.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "position0_single_cap_excluded",
+  "obj": "Orange juice is fine",
+  "text": "orange juice every morning",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "midstring_proper_run_checked_flagged",
+  "obj": "lives in Orange County",
+  "text": "they moved somewhere in California",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "identifier_grounded",
+  "obj": "model s21 ultra",
+  "text": "upgraded to the s21 ultra last week",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "fabricated_specific_flagged",
+  "obj": "shutter 1/1000s to 1s",
+  "text": "the camera has manual controls",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "answered_question_as_fact_flagged",
+  "obj": "43%",
+  "text": "what was the EBITDA margin last quarter?",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "computed_value_as_testimony_flagged",
+  "obj": "13260",
+  "text": "line items were 6100, 4200 and 2960",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "no_specifics_vacuous_pass",
+  "obj": "a large amount of money",
+  "text": "they discussed finances",
+  "session": "2026-08-14",
+  "expect": false
+ }
+]

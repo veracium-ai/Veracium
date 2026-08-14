@@ -1,3 +1,9 @@
+"""SUPERSEDED HISTORICAL PROVENANCE (0019 R2-2): the window-form phase-1f
+predicate whose measurement motivated the OPTION-A class choice. NOT the
+candidate; NOT portable (hard-codes research-workspace paths). The
+normative reference is reference_predicate.py beside this file.
+
+"""
 """Phase 1e (final gate, from 1d): the four fixes + dev's specifics-only refinement. Still shadow.
 
 Fixes over phase 1b:

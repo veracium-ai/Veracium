@@ -5,7 +5,10 @@ Spec-Requires: 0005, 0008, 0014, 0016, 0018
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft v3** — external round 1 folded (the 0014 amendment made real
+> **draft v4** — external round 2 folded (the resolution-set date rule;
+> the portable normative reference + verified vectors; the N-ary OR; the
+> total replace guard; the carrier sweep; complete final-form riders).
+> v3: external round 1 folded (the 0014 amendment made real
 > against the shipped digest construction; the renumbering amendments
 > verbatim; the store guard; wiki exclusion; the date-expression-bound
 > exemption; StrictBool). v2: internal review folded (F1: the comparison/projection/
@@ -20,7 +23,7 @@ Spec-Requires: 0005, 0008, 0014, 0016, 0018
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v3 — EXTERNAL ROUND 1 FOLDED (7 blocking, 2026-08-14, classified first): **F1 (G+D)** the digest-exclusion ruling was FALSE against the frozen 0014 construction — `contribution.py:167/:189` snapshots the COMPLETE `model_dump_json`, so any new Edge field shifts the request digest regardless of partition membership (reviewer-executed) → the internal ruling is AMENDED BY THE CODE: `ungrounded` joins the 0014 partition as a **RECOMPUTED absorption field** (the OR is the same pre-persist winner-inheritance shape as the shipped confidence-max, `graph.py:91` — no post-snapshot mutation exists, dissolving the snapshot-conflict sub-finding), the digest shift gets era discrimination (**`outcome_digest_version` 3 — displacing D2's reserved 3 → 4**, joining the renumbering family), the verbatim 0014 rider is in §7b, and 0014 joins `Spec-Requires`. **F2 (D+F — the 0005 R3-3 class repeated with the class KNOWN, disclosed)** the D2 renumbering amendments now appear COMPLETE AND VERBATIM in §7b (both matrices re-stated per R14-2; 0016+0018 in `Spec-Requires`; separate cross-spec sign-off requested). **F3 (B+C)** the ingest-only/immutability claim had no authority mechanism — narrowed honestly + mechanized: no VERACIUM-MEDIATED surface sets the flag; a host writing its own store owns its bytes (it can already write `author=USER`); the STORE enforces the invariant that is enforceable — **the replace path refuses `ungrounded` True→False, mirroring the shipped 0008 §6d guard (`sqlite.py:116`)**; False→True is legal only as the absorption OR; every backend inventoried; the four write paths tested (U4 rewritten). **F4 (A+G)** the compiled-wiki marker guarantee was unconstructed (reviewer-executed: the fake LLM dropped the marker; the cache stored the unmarked fact) → **flagged facts are EXCLUDED from the wiki-compiler input** (the 0003 contested-exclusion precedent; the wiki is the curated grounded view) — the SECOND behavioural reduction, accounted in §4c/§8; the fact remains in query recall with its marker; U5 rewritten to the real mechanism. **F5 (A+C)** the ±366-day window grounded a fabricated date with NO date expression in the text (the reviewer's executed case) → the exemption is REBOUND: it applies ONLY when the event text contains a pinned date-expression (the §4b grammar: weekday/month names, day ordinals, numeric date patterns, relative-day terms) AND the ISO date is within the window — no expression, no exemption; the tokenizer is now normatively pinned (the exact regexes + the position-0 rule); the reference implementation and measurement excerpt ship IN-REPO (`specs/evidence/0019/`); the pinned 0.47% number is re-qualified as the window-form measurement with a pre-ship re-measurement obligation against the same 93,342-object corpus. **F6 (D+F, found-in-fix of the U-Q1 fold)** forged/absent `False` DOES grant proactive eligibility on the restore path → the honest matrix: the DEFAULT path is immune by composition (0005 caps disclosure to `use_only` → proactive-ineligible regardless of the flag); the RESTORE path exposure is accepted as a LIMIT under 0005 §8's own posture (restore is the operator's whole-file trust assertion — this included); §2c and §8 restated precisely. **F7 (F — the 0005 P13 class, and an unexecuted validation claim)** pydantic bool COERCES ("yes"→True) → **`StrictBool`** pinned; the exhaustive coercion cell list in U7. *(v2: internal review folded — carriers ruled, marker renamed, D2 conditions pinned. v1: the option-A draft.)* |
+| **Version** | v4 — EXTERNAL ROUND 2 FOLDED (6 blocking, 2026-08-14, classified first): **R2-1 (A+C, found-in-fix of R1-F5)** the grammar-exists+window form still grounded a fabricated date beside an UNRELATED expression → **the RESOLUTION-SET rule**: an ISO date is exempt iff it EQUALS a deterministic resolution of a specific source expression (per-class resolutions pinned; both reviewer cases are FLAGGED vectors). **R2-2 (G+E)** the shipped evidence didn't implement the candidate → the NORMATIVE reference is now `specs/evidence/0019/reference_predicate.py` (portable, pure, implements §4b exactly) + `vectors.json` (16 vectors, verified against the reference at fold time); the phase-1f files relabeled SUPERSEDED provenance; the 0.47%/precision figures re-scoped to the option-A class choice only — the candidate's numbers come exclusively from U3b. **R2-3 (C, reviewer-executed N-ary absorption)** the OR is over `{incoming} ∪ ALL absorbed contributors`, order-independent, computed pre-insert; U2c tests zero/one/many + permutations. **R2-4 (A+B, found-in-fix of R1-F3)** the replace-path exception had no authority discriminator → NO exception: the same-ID replace path refuses EVERY `ungrounded` transition in both directions; absorption never same-ID-replaces (it inserts a new survivor whose flag is computed pre-insert), so the persistence layer sees only immutable flags. **R2-5 (D)** the round-1 folds swept through every normative carrier: two-reductions language everywhere (the SINGLE-reduction and wiki-unchanged claims WITHDRAWN); write-time absorption named in the §3 scope answer; §7a StrictBool + the previously-missing carriers (graph.py, contribution.py, compile.py, the store guard files, the evidence dir, the four same-commit amendment surfaces); the blanket absence-grants-nothing clause WITHDRAWN for the restore path. **R2-6 (D+F, the third iteration of the rider-completeness class — disclosed)** both riders are now COMPLETE FINAL-FORM: Rider A restates the whole receipt-version table {1,2,3,4}, the D2 era boundary (version<4 refuses on sight), and the final FORMAT 7 / SCHEMA v8 numbers; Rider B restates §4a whole, the LITERAL fifteen-row §4e table with final numerals, and I13 over bases 1–6; an EXECUTABLE numeral sweep ships with the flip commit and the seal compares the riders' tables to the source tables mechanically. *(v3: round 1 — the real 0014 rider, the store guard, the wiki exclusion, the expression-bound exemption, StrictBool. v2: internal. v1: draft.)* |
 | **Status** | *see `Spec-Status:` — canonical.* |
 | **Internal reviewers** | research (they built and measured the instrument; the ask records research+dev aligned on option A) |
 | **External review** | required — `schema.py`, `ingest.py`, `gate.py`/render, `portability.py` are guarded; this adds a stored field and a rendered marker |
@@ -80,7 +83,7 @@ noticing — and only the noticing.
 |---|---|---|---|---|---|
 | the event text (the grounding CORPUS for the check) | empty text → every specific ungrounded → flag set | — | — | **an attacker who authors the event text controls the grounding corpus** — they can make their OWN fabricated specifics "grounded" by writing them into the text | **by design: the check verifies extraction fidelity, never truth.** An attacker-grounded lie is a TRUST problem, fully handled by the existing levers (author/derived_from/disclosure); this flag adds a signal about the DISTILLER, not about the source. Stated as §8 limit 1 |
 | the distiller output (the CHECKED object) | no specifics in the object → vacuously grounded, no flag | — | — | a fabricated value phrased without specifics ("a large amount") evades the specifics-only check | accepted, measured: the specifics-only class catches the VALUE-SHAPED fabrications (the ones that damage functional facts) at 0.47%/~40–50% precision; common-noun fabrication is the offline full predicate's territory (§8 limit 2) |
-| an import file's `ungrounded` values (edges) | absent → `False` (see the adversarial cell — on restore this is a REAL eligibility grant, §8 limit 6) | **non-bool → `StrictBool` raises — coercive inputs ("false", "yes", 0, 1) REFUSE, never coerce (F7; the exhaustive cell list in U7)** | **pre-v6 envelope carrying the field → STRIPPED, never trusted (the 0006 I10 rule)** | a hand-written file sets `ungrounded=False` on fabricated content — or `True` on genuine content | **the flag GRANTS nothing and its absence grants nothing** — no consumer raises trust, assertability, or authority on it (I5-class groups-never-grants). **The forging matrix, honest (F6):** on the DEFAULT path, forging either value gains nothing — 0005 caps disclosure to `use_only`, so the record is proactive-ineligible regardless of the flag (immunity by COMPOSITION, stated not assumed). On the RESTORE path, a forged or absent `False` DOES obtain proactive-volunteering eligibility that a truthful `True` would not have — accepted as §8 limit 6 under 0005 §8's own posture: restore is the operator's explicit whole-file trust assertion, and the flag rides inside that assertion like every other preserved field. Forging `True` remains a self-inflicted narrowing. Carried VERBATIM on both 0005 paths (§7b) — it is extraction-fidelity metadata, not a trust lever, so the cap neither reads nor writes it |
+| an import file's `ungrounded` values (edges) | absent → `False` (see the adversarial cell — on restore this is a REAL eligibility grant, §8 limit 6) | **non-bool → `StrictBool` raises — coercive inputs ("false", "yes", 0, 1) REFUSE, never coerce (F7; the exhaustive cell list in U7)** | **pre-v6 envelope carrying the field → STRIPPED, never trusted (the 0006 I10 rule)** | a hand-written file sets `ungrounded=False` on fabricated content — or `True` on genuine content | **the flag grants no TRUST — no consumer raises trust, assertability, or authority on it (I5-class groups-never-grants) — but absence is NOT behaviourally inert on the restore path (the matrix below; the superseded blanket absence-grants-nothing claim is WITHDRAWN, R2-5).** **The forging matrix, honest (F6):** on the DEFAULT path, forging either value gains nothing — 0005 caps disclosure to `use_only`, so the record is proactive-ineligible regardless of the flag (immunity by COMPOSITION, stated not assumed). On the RESTORE path, a forged or absent `False` DOES obtain proactive-volunteering eligibility that a truthful `True` would not have — accepted as §8 limit 6 under 0005 §8's own posture: restore is the operator's explicit whole-file trust assertion, and the flag rides inside that assertion like every other preserved field. Forging `True` remains a self-inflicted narrowing. Carried VERBATIM on both 0005 paths (§7b) — it is extraction-fidelity metadata, not a trust lever, so the cap neither reads nor writes it |
 | the session date (feeds date-context awareness, §4b) | absent → today (the `remember` contract) | — | — | a crafted date shifts the ±366-day resolved-date window | the window bounds PLAUSIBILITY of resolved dates, never grants trust; a shifted window at worst flags/unflags a date token — the flag grants nothing (row above) |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -117,18 +120,20 @@ system-authored summaries with their own §8 disposition (limit 3).
 
 ## 3b. Authorization and scope
 
-- **Who can set it (F3, the honest claim):** no VERACIUM-MEDIATED surface
-  sets it — not `remember`'s inputs, not the model, not MCP, not import
-  grants. A host writing DIRECTLY to its own store owns its bytes (it can
-  already write `author=USER`; the store boundary is the host's own trust
-  domain — the standing posture). What the store DOES enforce is the
-  enforceable invariant: **the replace path refuses an `ungrounded`
-  True→False transition** (mirroring the shipped 0008 §6d
-  `needs_confirmation` guard at `sqlite.py:116` — a flag, once earned, is
-  not clearable by re-persistence); False→True on replace is refused too
-  EXCEPT through the absorption OR (the one legal strengthening path).
-  Every backend carries the guard: `SqliteStore` implements it; the `Store`
-  base contract documents it as a persistence-path obligation (U4).
+- **Who can set it (F3, made ENFORCEABLE by R2-4):** no VERACIUM-MEDIATED
+  surface sets it — not `remember`'s inputs, not the model, not MCP, not
+  import grants. A host writing DIRECTLY to its own store owns its bytes
+  (it can already write `author=USER`; the store boundary is the host's
+  own trust domain — the standing posture). The store enforces exactly the
+  invariant that needs no authority discriminator: **the same-ID replace
+  path refuses EVERY `ungrounded` transition, in BOTH directions**
+  (mirroring the shipped 0008 §6d guard shape at `sqlite.py:116`). No
+  exception exists to discriminate, because shipped absorption NEVER
+  replaces same-ID: it inserts a NEW survivor row whose flag is the N-ary
+  OR computed pre-insert (R2-3) — the strengthening happens before the row
+  exists, so the persistence layer sees only immutable flags. Every
+  backend carries the guard: `SqliteStore` implements it; the `Store` base
+  contract documents it as a persistence-path obligation (U4).
 - **What it reveals (the observation-surfaces lens — enumerate DISPLAYS, not
   just deciders):** the marker renders wherever the flagged fact renders
   (recall, introspect categories); `introspect()` gains a count. The flag
@@ -160,23 +165,35 @@ so the shipped behaviour is the measured behaviour:
   proper-noun runs (capitalized runs from the raw string, excluding a
   sentence-leading single capitalized common word).
 - **Grounded** ⇔ the token (lowercased, word-tokenized) appears in the event
-  text — with ONE class-aware exception, REBOUND at external round 1 (F5:
-  the v2 window-only form declared a fabricated date grounded when the text
-  contained NO date expression at all — the reviewer's executed case):
-  **date-context awareness** — an ISO date token triplet is exempt from
-  verbatim grounding IFF BOTH hold: (i) the event text contains at least one
-  expression from the PINNED date-expression grammar below (something the
-  date pipeline could have resolved), AND (ii) the date is within ±366 days
-  of the session date (plausibility). No date expression in the text → no
-  exemption → an unprompted ISO date is ungrounded.
-- **The date-expression grammar, pinned (F5):** a token/phrase matching any
-  of: weekday names (monday…sunday); month names (january…december, and
-  three-letter forms); day ordinals (`1st`…`31st`, "the <1-31>(st|nd|rd|th)");
-  numeric date patterns (`\d{1,4}[-/.]\d{1,2}([-/.]\d{1,4})?`); the
-  relative-day lexicon (today, tomorrow, yesterday, tonight); and
-  "next|last|this" followed by a day/week/month/year unit or weekday. The
-  bare word "date" is NOT in the grammar (the reviewer's case).
-- **The tokenizer, pinned normatively (F5 — two conforming implementations
+  text — with ONE class-aware exception, REBOUND AGAIN at external round 2
+  (R2-1, found-in-fix of R1-F5: the v3 grammar-exists+window form still
+  grounded a fabricated deadline when an UNRELATED date expression existed
+  anywhere — "I met Bob Friday. The project deadline is undecided" +
+  fabricated `2026-09-01` passed): **the RESOLUTION-SET rule** — an ISO date
+  token is exempt from verbatim grounding IFF it is a MEMBER of the
+  resolution set: the union, over every date expression the §4b grammar
+  finds in the event text, of that expression's DETERMINISTIC resolutions
+  against the session date. The fabricated date must EQUAL the resolution of
+  a specific source expression; proximity to the session date grounds
+  nothing by itself.
+- **The per-class deterministic resolutions (pinned):** a weekday name → the
+  nearest PAST and nearest FUTURE occurrence relative to the session date
+  (two members — tense is not recoverable deterministically, so both
+  readings are legal resolutions); today/tonight → the session date;
+  tomorrow → session+1; yesterday → session−1; "next <weekday|week|month|
+  year>" and "last <…>" → the single arithmetic resolution; a month name
+  with a day ordinal or number ("July 1", "the 14th of July") → that date in
+  the session year and the two adjacent years, window-filtered; a bare month
+  name → every day of that month in the session year (month-granularity — a
+  fabricated specific DAY inside a merely-mentioned month is NOT a member…
+  a bare month grounds only the month-start token form, so a specific
+  mid-month date stays flagged); a numeric date pattern → its calendar
+  completions. The set is computed by pure functions in the reference
+  (below); membership is exact date equality. **The reviewer's round-2 case
+  is a pinned FLAGGED vector** ("Friday" resolves to `2026-08-08`/`2026-08-15`
+  around the `2026-08-14` session; `2026-09-01` is not a member), as is the
+  round-1 expression-less case.
+- **The tokenizer, pinned normatively- **The tokenizer, pinned normatively (F5 — two conforming implementations
   must agree):** words are `\w+` runs lowercased; a specifics token is (i) a
   pure-digit token, (ii) an identifier matching
   `^(?=.*[a-z])(?=.*\d)[a-z0-9]+$`, or (iii) a token of a capitalized run
@@ -188,15 +205,22 @@ so the shipped behaviour is the measured behaviour:
   implementation and the final-gate measurement ship in this repo at
   `specs/evidence/0019/` (reviewer-safe, in-package).
 - **The flag** ⇔ any specifics token of the object is not grounded.
-- Zero LLM calls; deterministic. **The measured operating point — 0.47%
-  flag rate at ~40–50% precision over 93,342 checkable objects — was
-  measured under the v2 WINDOW-ONLY date exemption (F5 honesty): the
-  rebound exemption is strictly TIGHTER (its flag set is a superset), so
-  the shipped rate may rise. RE-MEASUREMENT against the same 93,342-object
-  corpus is a PRE-SHIP implementation obligation (U3b); the numbers pinned
-  at acceptance are the re-measured ones.** The implementation vendors the
-  in-repo reference (`specs/evidence/0019/phase1f_reference.py`) with test
-  vectors pinned from the classified sample.
+- Zero LLM calls; deterministic. **The measurement provenance, stated
+  honestly (R2-2): the 0.47% / ~40–50% figures were measured over the
+  SUPERSEDED window-only predicate and justify only the OPTION-A CLASS
+  CHOICE (specifics-only over full), not the current predicate's operating
+  point.** The resolution-set form is strictly tighter on dates (its flag
+  set is a superset), so 0.47% is a lower bound on the flag rate; precision
+  is UNKNOWN until re-measured. The shipped predicate's numbers come
+  exclusively from U3b's pre-ship re-measurement, recorded beside the
+  reference before acceptance-pinned figures are quoted anywhere.
+- **The normative reference is `specs/evidence/0019/reference_predicate.py`
+  (R2-2): a PORTABLE, PURE implementation of exactly this section — no
+  external paths, no I/O, no corpus dependency — with the pinned vectors in
+  `specs/evidence/0019/vectors.json` (both reviewer cases included as
+  FLAGGED vectors). The historical `phase1f_*` files remain as clearly
+  headed SUPERSEDED provenance for the option-A measurement; they are not
+  the candidate.**
 - **Predicate changes are spec changes.** Loosening or tightening the token
   classes, the date window, or the grounding rule re-enters review; the
   measured numbers are part of the contract.
@@ -232,9 +256,10 @@ so the shipped behaviour is the measured behaviour:
   COST differs by surface: queried recall shows the marker IN CONTEXT the
   user asked for; proactive would VOLUNTEER AN ALARM at ~50% precision.
   A flagged fact is never proactively surfaced; it remains fully recallable
-  by query. **Suppression is the SINGLE flag-keyed behavioural reduction in
-  the design, and it WITHHOLDS rather than grants** — which is why forging
-  the flag gains nothing (§2c, stated precisely there).
+  by query. **The flag keys exactly TWO behavioural reductions — this
+  suppression and the wiki exclusion (the closed list, §8 limit 5a) — and
+  both WITHHOLD rather than grant** (§2c states the forging consequences
+  precisely; the restore-path absence exposure is §8 limit 6).
 - **Introspect:** the summary gains an `ungrounded` count; categories render
   the marker.
 - **Answer/abstention, supersession, outcomes, staleness, wiki compile:**
@@ -247,10 +272,12 @@ so the shipped behaviour is the measured behaviour:
 ### 4d. The clearing condition: there is none — the flag is MONOTONE
 
 The flag describes THE EXTRACTION EVENT — "the source text did not contain
-these specifics" — and the extraction event never changes. External round 1
-(F1) refined "immutable" to the exact shipped-machinery form, **monotone
-strengthening**: `False → True` happens in exactly ONE place — the
-absorption OR (below) — and NOTHING ever clears `True`. Consequences:
+these specifics" — and the extraction event never changes. Rounds 1–2
+refined "immutable" to the exact shipped-machinery form: **a STORED row's
+flag never changes at all** (the same-ID replace path refuses every
+transition, R2-4); strengthening exists only PRE-PERSIST — the N-ary
+absorption OR computes the NEW survivor's flag before its row is inserted.
+Nothing ever clears `True` anywhere. Consequences:
 
 - **`confirm()` does not clear it.** A user confirming a flagged fact
   vouches for the fact's TRUTH — recorded exactly as today (confirmation
@@ -261,17 +288,21 @@ absorption OR (below) — and NOTHING ever clears `True`. Consequences:
   gives: an affirmation is new user-authored evidence and belongs in
   `remember()` — the restatement lands as a NEW, grounded edge, and the
   ordinary supersession/reinforcement machinery does the rest.
-- **The absorption OR, on the SHIPPED mechanism (F1 — the internal ruling
-  amended by the code):** shipped absorption (`graph.py:89-98`) retires the
-  prior as `absorbed_duplicate` and the WINNER inherits validity/confidence
-  as the max of the pair — a pre-persist winner-inheritance transform, not a
+- **The absorption OR, N-ARY on the shipped mechanism (R2-3 — the reviewer
+  executed a one-incoming-absorbs-TWO-priors case; "pair" was wrong):**
+  shipped absorption retires EVERY absorbed prior as `absorbed_duplicate`
+  and the WINNER inherits validity/confidence maxima — a pre-persist
+  winner-inheritance transform over the whole contributor set, not a
   stored-row mutation. `ungrounded` joins that inheritance: **the winner is
-  flagged iff EITHER of the pair was** (OR), computed pre-persist exactly
-  like the shipped max-inheritance — so no post-snapshot mutation exists,
-  and the 0014 receipt machinery sees it through the RECOMPUTED class
-  (§7b). Once ungrounded, the surviving representation stays flagged; a
-  merge never launders the signal. (0012 reinforcement mutates NOTHING and
-  is untouched: a restatement is its own edge with its own honestly-derived
+  flagged iff the raw incoming OR ANY absorbed contributor is flagged** —
+  the OR over `{incoming} ∪ absorbed`, independent of iteration order,
+  computed pre-persist BEFORE the new survivor row is inserted (R2-4). No
+  post-snapshot mutation exists; the 0014 receipt machinery sees exactly
+  this transform through the RECOMPUTED class (§7b). Once ungrounded, the
+  surviving representation stays flagged; a merge never launders the
+  signal. U2c tests zero, one, and many contributors, in every
+  flag-placement permutation. (0012 reinforcement mutates NOTHING and is
+  untouched: a restatement is its own edge with its own honestly-derived
   flag.)
 - **Nothing else clears it either**: no maintenance path, no import path, no
   host API. This is append-not-mutate (0009) applied to a diagnostic:
@@ -358,8 +389,7 @@ R1-7 rule: a draft spec claims no CI).
 
 | accepted spec | touchpoint | disposition |
 |---|---|---|
-| **0016 D2 / 0018 — THE COMPLETE VERBATIM AMENDMENTS (external F2: v2 promised a future rider; the amendments are now IN the reviewed artifact, per the 0005 R3-3 rule; separate cross-spec sign-off requested)** | D2's frozen text claims FORMAT 5→6, SCHEMA v6→v7, `outcome_digest_version` 3, preflight bases 1–5, base-6-alone migration, current-v7 cells; 0018's result/preflight tables carry the same numerals | **Rider A → `specs/0016-sourcetype-deletion.md` (same-commit with 0019's acceptance):** <br> > **Amended by 0019:** 0019 ships FORMAT 6, SCHEMA v7, and `outcome_digest_version` 3 first. D2's numbers are re-stated in full: `Provenance.source_type` removal ships **FORMAT 6→7**; the receipt-era stamp for post-D2 receipts is **`outcome_digest_version = 4`** (the validated closed set at D2 extends to {1, 2, 3, 4}); the no-DDL refusal bump is **SCHEMA v7→v8**; every occurrence of "FORMAT 5→6", "v6→v7", and "version 3" in D2 rows reads with these replacements; D1 is unaffected (already released, no numerals). <br><br> **Rider B → `specs/0018-release-migration-orchestrator.md` (same commit):** <br> > **Amended by 0019:** the preflight interception matrix is re-stated in full — REFUSED bases: **1–6** (the ladder names the intermediate release for each; a v6-base store migrates to v7 on a 0019-era release BEFORE the D2 release); the sole audited pass-through base is **7** (was 6); the clean/with-repair CURRENT cells read **v8** (was v7); I13's "bases 1–5" reads **"bases 1–6"**. All other preflight semantics (attestation, mint, result carrier, readback) are unchanged. <br><br> Conditions honoured from the internal round: full matrices re-stated (never deltas, R14-2); §7a states 0019's own v6→v7 migration is ORDINARY open-time machinery, never the orchestrator; the released v0.9.0 CHANGELOG's stale D1 numerals get a correcting Unreleased note in the same commit || **0014 — FORMALLY AMENDED (external F1: the v2 exclusion ruling was FALSE against the shipped construction — `contribution.py:167/:189` snapshots the COMPLETE `model_dump_json`, so ANY new Edge field shifts the request digest; reviewer-executed)** | the receipt snapshot, the verification partition (`EXACT_EQUAL_*` / `RECOMPUTED_*` / `FORBIDDEN_*`), `outcome_digest_version` | **The rider, verbatim (lands in `specs/0014-maintenance-attribution.md` §2c in the same commit as this spec's acceptance flip; separate cross-spec sign-off requested):** <br><br> > **Amended by 0019 (same-commit with 0019's acceptance):** `Edge.ungrounded` joins the receipt machinery as follows. (1) The raw-request snapshot remains COMPLETE (`model_dump_json`, unchanged rule) and therefore includes the field; post-0019 receipts stamp **`outcome_digest_version = 3`** and the validated closed set extends to {1, 2, 3}; pre-0019 receipts follow the existing era rule unchanged. (2) In the verification partition, `ungrounded` is classified **RECOMPUTED** (`RECOMPUTED_EDGE_FIELDS` gains it): absorption's winner-inheritance may change it from the raw submission by exactly the OR of the pair (the same pre-persist shape as the shipped validity/confidence max) — the verifier accepts precisely that transform and aborts on any other difference. (3) The totality test's forced classification is thereby satisfied; no FORBIDDEN or EXACT_EQUAL semantics change. <br><br> The 0014 projection remains untouched (an Edge field; the projection partitions Episode fields). U2b now pins the RECOMPUTED membership + the version-3 stamp |
-| **0009 — record-equality composition (F1, ruled not lucky)** | import compares validated models (`Edge.model_validate` normalizes absent→`False`) | RULED: a pre-v6 record (field absent → `False`) compares equal to a stored unflagged record — idempotent re-import composes; a stored `True` vs an incoming absent/`False` DIFFERS → whole-import refusal, the honest outcome (a file claiming a clean extraction for a record we flagged is a real difference). U7 asserts both cells |
+| **0016 D2 / 0018 — THE COMPLETE FINAL-FORM AMENDMENTS (R2-6: the v3 riders were still deltas — "replace occurrences" and "remainder unchanged" are not amendments a freeze can sign; every affected table is now restated WHOLE, final numbers only)** | 0016 D2's version/format/receipt rows; 0018's fifteen-row preflight table, base rows, and I13 | **Rider A → `specs/0016-sourcetype-deletion.md` (same-commit with 0019's acceptance flip; the full final form):** <br> > **Amended by 0019.** (A1) THE RECEIPT-VERSION TABLE, final: `outcome_digest_version` 1 = legacy pre-0014-split receipts (migrated reads); 2 = 0014-era writers; **3 = 0019-era writers (the `ungrounded`-bearing snapshot)**; **4 = post-D2 writers (the `source_type`-less snapshot)**. The validated closed set is {1,2,3} from 0019's release and {1,2,3,4} from D2's. (A2) THE D2 ERA BOUNDARY, final: at and after D2, **a receipt with version < 4 refuses UNCONDITIONALLY ON SIGHT at both phases — no digest is computed, no comparison branch exists** (`ReceiptSchemaBoundaryError(SupersessionIntegrityError)`, never benign); a version-4 receipt follows the ordinary 0014 contract. The pre-D2 exploding-sentinel regression enumerates the legal pre-D2 states over versions {1,2,3}. (A3) THE VERSION NUMBERS, final: D2 ships **FORMAT 6→7** (a FORMAT-7 file omits `source_type`; an older importer refuses a 7-file; a ≤6 file's `source_type` key is dropped on import post-D2) and **SCHEMA v7→v8** (the no-DDL refusal bump; a v8 store refuses on pre-D2 builds — back up first). (A4) D1 (released in 0.9.0) is textually unaffected; the released CHANGELOG's stale "format 6 / schema v7" D1-entry numerals receive a correcting note in the Unreleased section in this same commit. <br><br> **Rider B → `specs/0018-release-migration-orchestrator.md` (same commit; the full final form of every numeral-bearing frozen carrier):** <br> > **Amended by 0019.** (B1) §4a, final: the preflight intercepts everything except resolved base **7**; bases **1–6** → `unsupported-base` with the ladder diagnostic (bases 1–5: "migrate to v6 on a ≤0.8.x release, then to v7 on a 0.9.x/0019-era release, then run this release's migration"; base 6: "migrate to v7 on a 0019-era release, then run this release's migration"); already-current **v8** clean → `current`; already-current **v8** with rebuildable drift → `current` with the repair facts; resolved base **7** ALONE proceeds to minting and delegates to `migrate_store`. (B2) §4e, THE LITERAL TABLE, final and whole: `unsupported-base` (False, False, `source`, the resolved base **1–6**) · `current` clean (False, False, `destination`, **8**) · `current` with repair (True, True, `destination`, **8**) · `migration-source-missing`/nothing-at-path (False, False, `missing`, None) · `migration-source-missing`/empty-user_version-0 (False, False, `unaccepted`, None) · `store-unopenable` (False, False, `unknown`, None) · `invalid-store` (False, False, `unknown`, None) · `locked` (False, False, `unknown`, None) · `unsupported-sqlite` (False, False, `unknown`, None) · `foreign-shape` (False, False, `unaccepted`, None) · `newer` (False, False, `unaccepted`, None) · `invalid-version` (False, False, `unaccepted`, None) · `stamped-shape-mismatch` (False, False, `unaccepted`, None) · `invalid-request` (False, False, `unknown`, None) · `mint-contention` (False, False, `unknown`, None); the delegated rows keep the DEFERENCE law verbatim (base-7 facts from accepted 0013's `TerminalFacts.problems()`, unmodified). (B3) I13, final: parametrized over bases **1–6**; `test_below_v6_base_refuses_with_the_ladder_message` becomes below-v7 over all six bases; `test_below_v6_open_unchanged` reads below-v7. (B4) Every other 0018 frozen surface (attestation, mint/retry, result carrier fields, readback, CLI exits, fingerprint) carries no version numerals and is restated as UNCHANGED — asserted by the executable numeral sweep below, not by declaration. <br><br> **The executable carrier sweep (R2-6):** the acceptance-flip commit runs `grep -nE "\b(FORMAT 5→6|FORMAT.?6|v6→v7|version.?<.?3|\{1, ?2, ?3\}|bases 1–5|base.?6|v7)\b" specs/0016-sourcetype-deletion.md specs/0018-release-migration-orchestrator.md` and disposes EVERY hit: each numeral-bearing line either carries the rider's replacement or is pre-0019-historical (review-ledger/D1-released text, marked so). The sweep's output ships in the flip commit's message; the round-3 seal asserts the riders' tables enumerate EXACTLY the source tables' outcome labels (a mechanical row-count + label comparison) || **0009 — record-equality composition (F1, ruled not lucky)** | import compares validated models (`Edge.model_validate` normalizes absent→`False`) | RULED: a pre-v6 record (field absent → `False`) compares equal to a stored unflagged record — idempotent re-import composes; a stored `True` vs an incoming absent/`False` DIFFERS → whole-import refusal, the honest outcome (a file claiming a clean extraction for a record we flagged is a real difference). U7 asserts both cells |
 | **0005** | the import boundary carries the flag verbatim on both paths; the cap is three levers and STAYS three | §2c row + U7; no 0005 text change — its cap contract never enumerated non-trust fields |
 | **0008** | `needs_confirmation` NOT reused; no staleness path touches the flag | referenced only; U2/U4 enforce |
 | **0009 (append-not-mutate)** | the immutability rationale; no outcome-machinery change | referenced only |
@@ -443,3 +473,9 @@ this month's reviews keep finding half-done.
 | ext-1 | F5 the date window grounded expression-less fabricated dates; tokenizer under-specified; evidence absent | A+C | **folded (v3):** the exemption REBOUND to the pinned date-expression grammar AND the window; the tokenizer pinned normatively (incl. position-0); the reference + measurement in `specs/evidence/0019/`; the 0.47% re-qualified with the pre-ship re-measurement obligation (U3b) | v3 §4b; U3/U3b |
 | ext-1 | F6 forged/absent False grants restore-path proactive eligibility (found-in-fix of the U-Q1 fold) | D+F | **folded (v3):** the honest forging matrix — default-path immunity by composition; the restore exposure accepted as §8 limit 6 under 0005's own posture | v3 §2c, §8 6; U7 |
 | ext-1 | F7 pydantic bool coerces; the §2c raise claim false (unexecuted validation claim) | F | **folded (v3):** `StrictBool` pinned; the exhaustive coercion cells in U7 | v3 §2; U7 |
+| ext-2 | R2-1 the date exemption still unbound (unrelated expression + window passed a fabricated date) | A+C (found-in-fix of R1-F5) | **folded (v4): the RESOLUTION-SET rule** — exemption iff the date EQUALS a deterministic resolution of a specific source expression; per-class resolutions pinned; both reviewer cases pinned FLAGGED vectors | v4 §4b; U3 |
+| ext-2 | R2-2 the evidence didn't implement the candidate (unportable, old predicate, no vectors, superseded measurement cited as justification) | G+E | **folded (v4):** the normative portable pure reference + 16 verified vectors in-repo; phase-1f relabeled SUPERSEDED; the measured figures re-scoped to the class choice; candidate numbers from U3b only | v4 §4b; specs/evidence/0019/ |
+| ext-2 | R2-3 absorption is N-ary; the pairwise OR under-defined (reviewer-executed) | C | **folded (v4):** OR over `{incoming} ∪ absorbed`, order-independent, pre-insert; zero/one/many + permutation tests | v4 §4d; U2c |
+| ext-2 | R2-4 the replace-path exception had no enforceable discriminator | A+B (found-in-fix of R1-F3) | **folded (v4):** every same-ID transition refused, both directions; the OR happens pre-insert on the NEW survivor — no exception to discriminate | v4 §3b, §4d; U4 |
+| ext-2 | R2-5 the round-1 folds not swept through all carriers (four standing contradictions; §7a incomplete) | D | **folded (v4):** all four contradictions resolved with superseded claims WITHDRAWN; §7a completed (seven added carriers) | v4 §2c, §3, §4c, §7a |
+| ext-2 | R2-6 the riders were deltas, not amendments (the third iteration of the class) | D+F | **folded (v4):** complete final-form riders (the whole receipt-version table; the whole fifteen-row table; I13); the executable numeral sweep pinned; the seal compares rider tables to source tables mechanically | v4 §7b |

@@ -1,3 +1,7 @@
+> **SUPERSEDED (0019 R2-2):** this measurement is of the WINDOW-FORM
+> predicate and justifies only the option-A class choice. The candidate
+> predicate's numbers come from the U3b pre-ship re-measurement.
+
 # 0019 evidence: the phase-1f final-gate measurement (verbatim excerpt)
 
 *Source: the research workspace's `patchtest/phase1_RESULTS.md`, the final-gate
