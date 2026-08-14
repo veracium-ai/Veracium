@@ -212,11 +212,14 @@ surface). §2c carries the control-plane rows.
 capability string is affirmative intent, not identity; an arbitrary object
 can present it and feed the listener garbage):** the event is exactly the
 mapping `{"role": str, "in_tok": int, "out_tok": int}`. The listener
-validates FAIL-CLOSED before touching any state: a non-mapping, missing or
-extra keys, a `(current_frame.event, role)` pair not in the §4e producer
-registry (external R3-3 — role-set membership alone let an adversarial
-capability object emit `role="gate"` during an `ingest` frame: recognized
-globally, invalid for the event; the PAIR is the unit of validity),
+validates FAIL-CLOSED before touching any state, per the §4b six-step
+algorithm: a non-mapping, missing or extra keys, an `(event, role)` pair
+not in the §4e producer registry — where the EVENT comes from the
+registry entry the frame's `op_token` resolves to (external R5-3: v8 had
+moved the event into the registry and left this sentence reading a frame
+field that no longer exists; external R3-3 established the PAIR as the
+unit of validity after role-set membership let `role="gate"` pass during
+an `ingest` frame) —
 non-`int` counts (`bool` excluded), negatives, or counts failing the §4c
 SHARED validity predicate are DROPPED silently — nothing attributes,
 nothing raises into the operation; every recognized-role × wrong-event
