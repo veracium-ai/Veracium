@@ -59,9 +59,13 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install with the pinned floor
+        # CORE floor only: the [mcp] extra's own dependencies require a newer
+        # pydantic (their resolver enforces it for mcp users), so the floor
+        # claim is scoped to the core library; the one MCP test is
+        # importorskip-gated and skips cleanly here.
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev,mcp]"
+          pip install -e ".[dev]"
           pip install "pydantic==2.7.0"
       - name: Run tests at the floor
         env:
