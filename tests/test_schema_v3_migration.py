@@ -10,7 +10,8 @@ import sqlite3
 
 import pytest
 
-from veracium.schema import Episode, Provenance, SourceType, EvidenceAuthor
+from veracium.schema import Episode, Provenance, EvidenceAuthor
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import (SCHEMA_V1, SCHEMA_V2, SCHEMA_VERSION,
                                            PackageConsistencyError,

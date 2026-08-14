@@ -8,7 +8,8 @@ import veracium.telemetry as T
 from veracium import EvidenceAuthor, Memory, MemoryConfig, SqliteStore
 from veracium.graph import SupersessionCounts, apply_supersession
 from veracium.ingest import ingest_event
-from veracium.schema import DEFAULT_RELATIONS, Edge, Provenance, SourceType
+from veracium.schema import DEFAULT_RELATIONS, Edge, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.schema import SupersessionPlan
 
 

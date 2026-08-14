@@ -10,7 +10,8 @@ from veracium.config import MemoryConfig
 from veracium.budgets import floor_for as _ff
 _floor_recall = _ff("recall")
 from veracium.graph import apply_supersession
-from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance, SourceType)
+from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 
 U = "u1"
 

@@ -12,8 +12,8 @@ import pytest
 from veracium.config import MemoryConfig
 from veracium.lifecycle import consolidate
 from veracium.portability import export_memory, import_memory
-from veracium.schema import (ConsolidationOutputDraft, Episode, EvidenceAuthor,
-                             Provenance, SourceType, to_historical_id)
+from veracium.schema import (ConsolidationOutputDraft, Episode, EvidenceAuthor, Provenance, to_historical_id)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 NOW = datetime(2026, 6, 1, tzinfo=timezone.utc)

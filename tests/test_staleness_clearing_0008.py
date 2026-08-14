@@ -14,8 +14,8 @@ import pytest
 
 from veracium import Memory, MemoryConfig
 from veracium.graph import apply_supersession, render_edges
-from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance,
-                             SourceType)
+from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from datetime import datetime, timezone
 
 JAN = datetime(2026, 1, 15, tzinfo=timezone.utc)

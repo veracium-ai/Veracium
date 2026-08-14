@@ -42,6 +42,32 @@ jobs:
         # The live LLM acceptance eval is opt-in (VERACIUM_EVAL=1) and needs a
         # provider + key, so it stays skipped here; the offline suite is the gate.
 
+  min-deps:
+    # specs/0016 D1 (R6-4): a REAL minimum-dependency job — pydantic pinned to
+    # the exact 2.7.0 floor that Field(deprecated=...) requires (R5-3). The
+    # floor regression test asserts the installed version, so it cannot
+    # silently "pass" anywhere else; the whole suite also runs here so the
+    # floor is a supported configuration, not a marketing claim.
+    name: pytest (pydantic==2.7.0 floor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install with the pinned floor
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,mcp]"
+          pip install "pydantic==2.7.0"
+      - name: Run tests at the floor
+        env:
+          VERACIUM_MIN_DEP_JOB: "1"
+        run: pytest -q
+
   build:
     name: build & twine check
     runs-on: ubuntu-latest

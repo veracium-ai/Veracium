@@ -15,8 +15,8 @@ from datetime import datetime, timezone
 import pytest
 
 from veracium import EvidenceAuthor, Memory, MemoryConfig
-from veracium.schema import (Edge, Episode, Outcome, OutcomeJudgmentDraft,
-                             Provenance, SourceType)
+from veracium.schema import Edge, Episode, Outcome, OutcomeJudgmentDraft, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import HEAD_MOVED
 from veracium.store.sqlite import SqliteStore
 
@@ -222,8 +222,8 @@ def test_source_type_derived_user_stated_system_inferred(tmp_path):
     usr_ep = s.append_outcome_if_head("u", "e1", "ru", None,
                                       _draft(author=EvidenceAuthor.USER,
                                              outcome=Outcome.CONFIRMED))
-    assert sys_ep.provenance.source_type is SourceType.INFERRED
-    assert usr_ep.provenance.source_type is SourceType.STATED
+    assert sys_ep.provenance.model_dump()["source_type"] == "inferred"
+    assert usr_ep.provenance.model_dump()["source_type"] == "stated"
 
 
 # --- H10: append advances store_version in the same atomic transaction -------

@@ -31,7 +31,7 @@ DISPOSITIONS = {
  # -- explicit user verbs ----------------------------------------------------
  ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"):
    (W, "`active`, `invalidation_reason`", "act", "clean — narrows only", "`test_dispute_removes_from_assertable_but_keeps_history`"),
- ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "4e11253939a4"):
+ ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "9c80ce4f606d"):
    (W, "episode provenance", "act", "clean", "`test_dispute_removes_from_assertable_but_keeps_history`"),
  ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"):
    (W, "`needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation", "act",
@@ -50,7 +50,7 @@ DISPOSITIONS = {
  ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"):
    (W, "**`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes`", "act",
     "➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class", "tracked as 0003 I10 [M7-correct]"),
- ("src/veracium/__init__.py", "Memory.correct", "add_episode", "23255a7f3c3f"):
+ ("src/veracium/__init__.py", "Memory.correct", "add_episode", "eb225b7572e7"):
    (W, "episode provenance", "act", "➡️ moved with M7", "tracked as 0003 I10 [M7-correct]"),
  ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"):
    (W, "**all** — irreversible erasure", "act", "clean — erasure is the contract", "`test_forget_erases_everything_and_only_that_user`"),
@@ -152,13 +152,13 @@ DISPOSITIONS = {
 #   open_moved  open AND owned elsewhere
 STATES = {
   ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"): "clean",
-  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "4e11253939a4"): "clean",
+  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "9c80ce4f606d"): "clean",
   ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "append_outcome_if_head", "65802c446a27"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "5b46e2531803"): "clean",
   ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"): "open_moved",
   ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"): "open_moved",
-  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "23255a7f3c3f"): "open_moved",
+  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "eb225b7572e7"): "open_moved",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "888fd4a4d703"): "open_moved",

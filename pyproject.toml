@@ -12,7 +12,7 @@ license = "MIT"
 authors = [{ name = "Quentin Spencer" }]
 keywords = ["agent", "memory", "llm", "provenance", "mcp", "rag"]
 dependencies = [
-    "pydantic>=2",
+    "pydantic>=2.7",  # specs/0016 D1: Field(deprecated=...) needs >=2.7 (R5-3)
 ]
 
 [project.urls]

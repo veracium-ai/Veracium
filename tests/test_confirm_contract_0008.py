@@ -13,8 +13,8 @@ import pytest
 
 from veracium import Memory, MemoryConfig
 from veracium.portability import export_memory
-from veracium.schema import (ConfirmationActor, ConfirmationCallPath, Disclosure,
-                             Edge, EvidenceAuthor, Provenance, SourceType)
+from veracium.schema import (ConfirmationActor, ConfirmationCallPath, Disclosure, Edge, EvidenceAuthor, Provenance)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store import schema_version as sv
 from veracium.store.migration import migrate_store
 from veracium.store.sqlite import SqliteStore, StoreVersionError

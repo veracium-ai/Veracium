@@ -54,6 +54,11 @@ INVENTORY = [
                          "reconciles, and your report should say which"),
     ("tests/test_eval.py", "skipif", "VERACIUM_EVAL",
      "env-flag", "live acceptance-eval tier"),
+    ("tests/test_0016_d1_deprecation.py", "skip", "VERACIUM_MIN_DEP_JOB",
+     "env-flag", "the pydantic==2.7.0 floor regression (specs/0016 R6-4): "
+                 "runs ONLY in the dedicated minimum-dependency CI job and "
+                 "asserts the installed version there — 1 test, SKIP in any "
+                 "ordinary environment by design"),
     ("tests/test_robustness.py", "skipif", "VERACIUM_ROBUSTNESS",
      "env-flag", "live robustness tier"),
     ("tests/test_spec_gate.py", "skip", "COORDINATION.md not present",

@@ -43,7 +43,10 @@ from .graph import _value_key as _value_key
 from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
                      ConfirmationCallPath, ContestedGroup, ContestedLinkage, Edge,
                      Episode, EvidenceAuthor, OutcomeJudgmentDraft, Provenance,
-                     SourceType, utcnow, validate_correlation_id)
+                     utcnow, validate_correlation_id)
+# specs/0016 D1: internal code binds the PRIVATE name — warning-free operation;
+# the public name resolves through the package __getattr__ below with the notice.
+from .schema import _SourceType
 from .store.base import HEAD_MOVED, Store
 from .store.sqlite import SqliteStore
 from .llm.metered import METERING_CAPABILITY, count_valid as _count_valid
@@ -995,7 +998,7 @@ class Memory:
             id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=today,
             summary=f"({actor}) disputed the remembered fact "
                     f"'{edge.relation}: {edge.object}'{note}",
-            provenance=Provenance(source_type=SourceType.STATED,
+            provenance=Provenance(source_type=_SourceType.STATED,
                                   author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"dispute:{edge_id}")))
         self._record("feedback", {"disputed": 1, "confirmed": 0}, user_id)
@@ -1185,7 +1188,7 @@ class Memory:
             id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,
             relation=edge.relation, object=corrected_value, note=edge.note,
             volatility=edge.volatility, supersedes=edge_id, valid_from=when,
-            provenance=Provenance(source_type=SourceType.STATED,
+            provenance=Provenance(source_type=_SourceType.STATED,
                                   author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=evidence_ref or f"correct:{edge_id}",
                                   observed_at=when))
@@ -1194,7 +1197,7 @@ class Memory:
             id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
             summary=(f"({actor}) corrected '{edge.relation}: {edge.object}' "
                      f"to '{corrected_value}'"),
-            provenance=Provenance(source_type=SourceType.STATED,
+            provenance=Provenance(source_type=_SourceType.STATED,
                                   author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=evidence_ref or f"correct:{edge_id}",
                                   observed_at=when)))
@@ -1277,3 +1280,17 @@ class Memory:
                 pass
             self._metered_handle = None
         self.store.close()
+
+
+# -- specs/0016 D1: the package deprecation surface ----------------------------
+def __getattr__(name):
+    if name == "SourceType":
+        import warnings
+        from .schema import _SOURCETYPE_DEPRECATION
+        warnings.warn(_SOURCETYPE_DEPRECATION, DeprecationWarning, stacklevel=2)
+        return _SourceType
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted([n for n in globals() if not n.startswith("_")] + ["SourceType"])

@@ -10,8 +10,8 @@ from veracium import compile as _compile
 from veracium.compile import (_grounded_inputs, _live_refusal_contention_edge_ids,
                               _policy_digest, needs_recompile)
 from veracium.graph import apply_supersession, subgraph_for_query
-from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor,
-                             Provenance, Relation, SourceType)
+from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance, Relation)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"

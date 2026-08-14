@@ -34,6 +34,15 @@ class SourceType(str, Enum):
     INFERRED = "inferred"  # derived from granted data (email, documents, tools)
 
 
+# specs/0016 D1: the enum is DEPRECATED. Internal code binds the private name
+# (warning-free operation); the public name resolves through this module's
+# __getattr__ below with a DeprecationWarning. The class keeps its public
+# __name__ so pickling routes through the public lookup (two warnings per
+# round-trip, I2). Removed at D2 (the next API-breaking release).
+_SourceType = SourceType
+del SourceType
+
+
 class EvidenceAuthor(str, Enum):
     """Who authored the evidence. The core injection-resistance signal:
     third-party-authored content (e.g. received mail) is an attack surface."""
@@ -108,7 +117,10 @@ class Confirmation(BaseModel):
 
 
 class Provenance(BaseModel):
-    source_type: SourceType
+    source_type: _SourceType = Field(
+        deprecated="provenance.source_type is deprecated and will be removed "
+                   "in the next API-breaking release; it has never influenced "
+                   "any decision (specs/0016 D1)")
     author_of_evidence: EvidenceAuthor
     evidence_ref: str = Field(description="Stable id of the event/message/doc this derives from")
     observed_at: datetime = Field(default_factory=utcnow)
@@ -576,3 +588,48 @@ class ContestedGroup(BaseModel):
     # (highest-effective-authority member + grounded prior, which MAY ALIAS). Additive,
     # defaulted; populated by _build_contested from the refusal records.
     prior_edge_ids: list[str] = Field(default_factory=list)
+
+
+# -- specs/0016 D1: the deprecation surface ------------------------------------
+# The seven-row access matrix (§4): package/module attribute access, from-
+# imports, star-import (PEP 562 via __all__), and pickling all warn through
+# this __getattr__; field access warns via Field(deprecated=...); ONLY model
+# metadata (model_fields, get_type_hints) is un-warned, enumerated in the
+# notice. __all__ pins the star-import namespace byte-identical to pre-D1.
+_SOURCETYPE_DEPRECATION = (
+    "SourceType is deprecated and will be removed in the next API-breaking "
+    "release. It has never influenced any decision. On ingest-derived records "
+    "it restates author_of_evidence; directly-constructed records may carry "
+    "any value, which nothing reads. Accessing the enum through the package "
+    "or veracium.schema (including import * and pickling) warns, and reading "
+    "provenance.source_type on an edge warns once per access. NOT warned, by "
+    "design: model metadata only (model_fields, get_type_hints) — those and "
+    "only those. Hosts reading the field from exports should stop. "
+    "(specs/0016 D1)")
+
+__all__ = [
+    "BaseModel", "CONFIRMATION_RULE_VERSION", "Confirmation",
+    "ConfirmationActor", "ConfirmationCallPath", "ConsolidationOp",
+    "ConsolidationOutputDraft", "ConsolidationState", "ContestedGroup",
+    "ContestedLinkage", "ContributionDraft", "ContributionRecord",
+    "DEFAULT_EXPIRY", "DEFAULT_RELATIONS", "Disclosure", "Edge", "Enum",
+    "Episode", "EvidenceAuthor", "ExpiryBehavior", "Field",
+    "HISTORICAL_PREFIX", "Optional", "Outcome", "OutcomeJudgmentDraft",
+    "Provenance", "QUARANTINE_RELATION", "RECOVERY_PENDING_STATES",
+    "Relation", "SourceType", "SupersessionPlan", "SupersessionRefusal",
+    "SupersessionRefusalDraft", "SupersessionResult", "Volatility",
+    "annotations", "datetime", "is_historical_id", "timezone",
+    "to_historical_id", "utcnow", "validate_correlation_id",
+]
+
+
+def __getattr__(name):
+    if name == "SourceType":
+        import warnings
+        warnings.warn(_SOURCETYPE_DEPRECATION, DeprecationWarning, stacklevel=2)
+        return _SourceType
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__():
+    return sorted([n for n in globals() if not n.startswith("_")] + ["SourceType"])

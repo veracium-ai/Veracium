@@ -20,8 +20,8 @@ import pytest
 from veracium import contribution as C
 from veracium.graph import (DEFAULT_RELATIONS, _build_supersession_plan,
                             apply_supersession)
-from veracium.schema import (Edge, EvidenceAuthor, Provenance, SourceType,
-                             SupersessionPlan)
+from veracium.schema import Edge, EvidenceAuthor, Provenance, SupersessionPlan
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import SupersessionIntegrityError
 from veracium.store.sqlite import SqliteStore
 

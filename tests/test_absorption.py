@@ -10,8 +10,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from veracium.graph import _subsumes, _value_key, apply_supersession, render_edges
-from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor,
-                             Provenance, SourceType)
+from veracium.schema import DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 

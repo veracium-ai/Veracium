@@ -17,8 +17,9 @@ from ._json import extract_json
 from .graph import apply_supersession
 from .llm.base import Complete
 from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
-                     Provenance, QUARANTINE_RELATION, Relation, SourceType,
+                     Provenance, QUARANTINE_RELATION, Relation,
                      Volatility, utcnow)
+from .schema import _SourceType  # specs/0016 D1: the private binding
 
 
 def _uid(prefix: str) -> str:
@@ -101,12 +102,12 @@ def _disclosure_for(author: EvidenceAuthor, relation: str,
     return Disclosure.MENTIONABLE
 
 
-def _source_type(author: EvidenceAuthor, event_type: str) -> SourceType:
+def _source_type(author: EvidenceAuthor, event_type: str) -> _SourceType:
     if event_type == "chat":
-        return SourceType.STATED
+        return _SourceType.STATED
     if author == EvidenceAuthor.USER:
-        return SourceType.STATED       # user-authored (e.g. sent mail)
-    return SourceType.INFERRED         # derived from third-party/tool content
+        return _SourceType.STATED       # user-authored (e.g. sent mail)
+    return _SourceType.INFERRED         # derived from third-party/tool content
 
 
 def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,

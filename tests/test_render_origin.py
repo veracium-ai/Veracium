@@ -25,8 +25,8 @@ from datetime import datetime, timezone
 import pytest
 
 from veracium.graph import _ORIGIN_LABELS, _origin_label, render_edges
-from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance,
-                             SourceType)
+from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 
 NOW = datetime(2026, 8, 1, tzinfo=timezone.utc)
 

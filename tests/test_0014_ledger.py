@@ -15,9 +15,8 @@ import pytest
 from veracium.contribution import (canonical_payload, consolidation_op_key,
                                    evidence_ref_digest, validate_payload)
 from veracium.graph import apply_supersession
-from veracium.schema import (DEFAULT_RELATIONS, ConsolidationState,
-                             ContributionDraft, Disclosure, Edge, EvidenceAuthor,
-                             Episode, Provenance, SourceType)
+from veracium.schema import (DEFAULT_RELATIONS, ConsolidationState, ContributionDraft, Disclosure, Edge, EvidenceAuthor, Episode, Provenance)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.source_identity import resolve_origin, source_identity_digest
 from veracium.store.sqlite import SqliteStore, SupersessionIntegrityError
 

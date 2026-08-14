@@ -18,9 +18,8 @@ import pytest
 
 from veracium import portability as P
 from veracium.schema import to_historical_id as _thi
-from veracium.schema import (ConsolidationOutputDraft, ConsolidationState,
-                             Edge, Episode, EvidenceAuthor, Provenance,
-                             SourceType)
+from veracium.schema import (ConsolidationOutputDraft, ConsolidationState, Edge, Episode, EvidenceAuthor, Provenance)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 NOW = datetime(2026, 8, 1, tzinfo=timezone.utc)

@@ -140,7 +140,8 @@ if __name__ == "__main__":
 # --- 0.4.6: the two defects found verifying 0002's external review ----------
 
 def _one_edge(m, valid_from):
-    from veracium.schema import Edge, Provenance, SourceType
+    from veracium.schema import Edge, Provenance
+    from veracium.schema import _SourceType as SourceType
     e = Edge(id="e-t", user_id="u", subject="user", relation="likes", object="tea",
              valid_from=valid_from,
              provenance=Provenance(source_type=SourceType.STATED,
@@ -276,7 +277,8 @@ def test_consolidation_output_is_no_stronger_than_its_weakest_input():
     episode produced a summary at 0.9 — confidence manufactured from
     recognition, the same defect M5 forbids at T2."""
     from veracium.lifecycle import consolidate
-    from veracium.schema import Episode, Provenance, SourceType, Disclosure
+    from veracium.schema import Episode, Provenance, Disclosure
+    from veracium.schema import _SourceType as SourceType
     from veracium.store.sqlite import SqliteStore
     from datetime import timedelta
     import os, json
@@ -310,7 +312,8 @@ def test_consolidated_provenance_is_internally_consistent():
     input's `evidence_ref`, because both were inherited from cold[0] — M1's
     original defect surviving on two fields the 0.4.7 test never inspected."""
     from veracium.lifecycle import consolidate
-    from veracium.schema import Episode, Provenance, SourceType
+    from veracium.schema import Episode, Provenance
+    from veracium.schema import _SourceType as SourceType
     from veracium.store.sqlite import SqliteStore
     from datetime import timedelta
     import os, json
@@ -328,7 +331,7 @@ def test_consolidated_provenance_is_internally_consistent():
             "u", MemoryConfig(consolidate_after_days=30, consolidate_min_batch=8))
         p = [e for e in st.episodes("u") if e.id.startswith("epc")][0].provenance
         assert p.author_of_evidence == EvidenceAuthor.SYSTEM
-        assert p.source_type == SourceType.INFERRED, "a summary is not STATED"
+        assert p.model_dump()["source_type"] == "inferred", "a summary is not STATED"
         assert not p.evidence_ref.startswith("event-"), \
             "evidence_ref still points at one arbitrary input"
         # specs/0010 X23: the store binds evidence_ref to the consolidation OPERATION
@@ -340,7 +343,8 @@ def test_an_offset_timestamp_survives_every_public_entry_point():
     """`_event_dt` converted offsets correctly while `remember()` still raised,
     because `prompts.date_context` parsed the raw string with
     `date.fromisoformat`. One input, two parsers."""
-    from veracium.schema import Edge, Provenance, SourceType
+    from veracium.schema import Edge, Provenance
+    from veracium.schema import _SourceType as SourceType
     from datetime import date as _date
     with tempfile.TemporaryDirectory() as d:
         m = _mem(d, [{"triples": [], "episode": "x"}])
@@ -378,7 +382,8 @@ _T0 = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
 
 def _edge(**kw):
-    from veracium.schema import Edge, Provenance, SourceType, Volatility
+    from veracium.schema import Edge, Provenance, Volatility
+    from veracium.schema import _SourceType as SourceType
     old = _T0
     e = Edge(id="e", user_id="u", subject="user", relation="works_at", object="Acme",
              volatility=Volatility.TRANSIENT, valid_from=old,

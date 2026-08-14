@@ -19,8 +19,8 @@ from veracium import Memory
 from veracium.config import MemoryConfig
 from veracium.graph import apply_supersession
 from veracium.lifecycle import consolidate
-from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
-                             Provenance, SourceType)
+from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor, Provenance)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"

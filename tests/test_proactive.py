@@ -92,7 +92,7 @@ def test_recall_none_wires_proactive_and_respects_budget():
             # with padded history that cannot fit.
             from datetime import datetime, timezone as _tz
             from veracium.schema import (Episode as _Ep, EvidenceAuthor as _A,
-                                         Provenance as _P, SourceType as _S)
+                                         Provenance as _P, _SourceType as _S)
             for i in range(12):
                 mem.store.add_episode(_Ep(
                     id=f"pad-ep{i}", user_id="u", date=NOW.date().isoformat(),

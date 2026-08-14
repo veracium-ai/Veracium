@@ -11,8 +11,8 @@ import sqlite3
 import pytest
 
 from veracium.authority import RULE_VERSION, effective, scope_fingerprint
-from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance, SourceType,
-                             SupersessionPlan, SupersessionRefusalDraft)
+from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance, SupersessionPlan, SupersessionRefusalDraft)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import PLAN_STALE, SupersessionIntegrityError
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import SCHEMA_V3, SCHEMA_VERSION

@@ -21,9 +21,10 @@ from ..authority import RULE_VERSION, scope_fingerprint
 from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationState,
                       Confirmation, ConfirmationActor, ConfirmationCallPath,
                       Disclosure, Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
-                      Provenance, RECOVERY_PENDING_STATES, SourceType,
+                      Provenance, RECOVERY_PENDING_STATES,
                       SupersessionPlan, SupersessionRefusal, SupersessionResult,
                       is_historical_id, to_historical_id)
+from ..schema import _SourceType  # specs/0016 D1: the private binding
 from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
                    PLAN_STALE, Store, SupersessionIntegrityError)
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
@@ -186,7 +187,7 @@ class SqliteStore(Store):
                              summary=f"({actor_v}) confirmed "
                                      f"'{edge.relation}: {edge.object}' still holds",
                              provenance=Provenance(
-                                 source_type=SourceType.STATED,
+                                 source_type=_SourceType.STATED,
                                  author_of_evidence=EvidenceAuthor.USER,
                                  evidence_ref=f"confirm:{edge_id}")
                              ).model_dump_json()))
@@ -830,8 +831,8 @@ class SqliteStore(Store):
             self._conn.commit()
 
     # -- outcome-authorship chain (specs/0009) ----------------------------------
-    _AUTHOR_SOURCE = {EvidenceAuthor.USER: SourceType.STATED,
-                      EvidenceAuthor.SYSTEM: SourceType.INFERRED}
+    _AUTHOR_SOURCE = {EvidenceAuthor.USER: _SourceType.STATED,
+                      EvidenceAuthor.SYSTEM: _SourceType.INFERRED}
 
     def _chain_head(self, user_id: str, edge_id: str, evidence_ref: str):
         """The head (max-`seq` episode) of the `(edge_id, evidence_ref)` outcome
@@ -1135,13 +1136,13 @@ class SqliteStore(Store):
         _RANK = {Disclosure.QUARANTINED: 0, Disclosure.USE_ONLY: 1,
                  Disclosure.MENTIONABLE: 2}
         base = inputs[0].provenance if inputs else Provenance(
-            source_type=SourceType.INFERRED, author_of_evidence=EvidenceAuthor.SYSTEM,
+            source_type=_SourceType.INFERRED, author_of_evidence=EvidenceAuthor.SYSTEM,
             evidence_ref=operation_id)
         influenced = any(e.provenance.third_party_influenced for e in inputs)
         weakest = (min(inputs, key=lambda e: _RANK[e.provenance.disclosure])
                    .provenance.disclosure if inputs else base.disclosure)
         prov = base.model_copy(update={
-            "source_type": SourceType.INFERRED,
+            "source_type": _SourceType.INFERRED,
             "author_of_evidence": EvidenceAuthor.SYSTEM,
             "evidence_ref": operation_id,
             "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced

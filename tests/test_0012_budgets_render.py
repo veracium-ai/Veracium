@@ -13,8 +13,8 @@ from veracium.budgets import est_tokens, floor_for
 from veracium.config import MemoryConfig
 from veracium.graph import apply_supersession
 from veracium.proactive import assemble
-from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor,
-                             Provenance, SourceType, Volatility)
+from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance, Volatility)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u"

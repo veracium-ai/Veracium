@@ -8,8 +8,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from veracium.schema import (ConsolidationOutputDraft, ConsolidationState, Episode,
-                             EvidenceAuthor, Provenance, SourceType)
+from veracium.schema import (ConsolidationOutputDraft, ConsolidationState, Episode, EvidenceAuthor, Provenance)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 

@@ -14,7 +14,8 @@ from veracium import budgets
 from veracium.compile import _policy_digest, _split_envelope, ensure_wiki
 from veracium.config import MemoryConfig
 from veracium.introspect import report
-from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance, SourceType)
+from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u"

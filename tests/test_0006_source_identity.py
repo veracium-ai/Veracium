@@ -13,7 +13,8 @@ import uuid
 
 import pytest
 
-from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance, SourceType
+from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.source_identity import resolve_origin, source_identity_digest
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import SCHEMA_V4, SCHEMA_VERSION

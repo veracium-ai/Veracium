@@ -10,8 +10,8 @@ import itertools
 
 from veracium.authority import effective, permitted
 from veracium.graph import apply_supersession
-from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor,
-                             Provenance, SourceType)
+from veracium.schema import DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"

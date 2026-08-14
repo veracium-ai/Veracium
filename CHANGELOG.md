@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- **`SourceType` is deprecated and will be removed in the next API-breaking
+  release** (accepted spec 0016, stage D1 — warning-only, no behaviour
+  change). It has never influenced any decision. On ingest-derived records it
+  restates `author_of_evidence`; directly-constructed records may carry any
+  value, which nothing reads. Accessing the enum through the package or
+  `veracium.schema` (including `import *` and pickling) warns, and reading
+  `provenance.source_type` on an edge warns once per access. NOT warned, by
+  design: model metadata only (`model_fields`, `get_type_hints`) — those and
+  only those. Hosts reading the field from exports should stop. Dependency
+  note: the minimum supported pydantic rises to **2.7** (the
+  `Field(deprecated=...)` floor), enforced by a dedicated CI job at the exact
+  floor. Stage D2 (the removal, export format 6, store schema v7) executes
+  only through the accepted 0018 release-migration orchestrator in the next
+  API-breaking release.
+
 - **Token-usage telemetry over the `Metered` wrapper** (accepted spec 0017 —
   15 external review rounds). Wrap your `Complete` in
   `veracium.llm.metered.Metered(fn, counter=your_tokenizer)` and Veracium now

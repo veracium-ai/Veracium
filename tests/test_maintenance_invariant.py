@@ -24,8 +24,8 @@ from veracium import Memory, MemoryConfig
 from veracium.gate import partition
 from veracium.graph import apply_supersession
 from veracium.lifecycle import consolidate, expire
-from veracium.schema import (Disclosure, Edge, Episode, EvidenceAuthor,
-                             Outcome, Provenance, SourceType)
+from veracium.schema import Disclosure, Edge, Episode, EvidenceAuthor, Outcome, Provenance
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 
 JAN = datetime(2026, 1, 15, tzinfo=timezone.utc)
 MAR = datetime(2026, 3, 1, tzinfo=timezone.utc)

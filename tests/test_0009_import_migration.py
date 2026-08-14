@@ -12,8 +12,8 @@ from datetime import datetime, timezone
 import pytest
 
 from veracium.portability import FORMAT_VERSION, export_memory, import_memory
-from veracium.schema import (Edge, Episode, EvidenceAuthor, Outcome,
-                             OutcomeJudgmentDraft, Provenance, SourceType)
+from veracium.schema import (Edge, Episode, EvidenceAuthor, Outcome, OutcomeJudgmentDraft, Provenance)
+from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import DESTINATION_CHANGED
 from veracium.store.migration import DuplicateOutcomeChainError, migrate_store
 from veracium.store.schema_version import SCHEMA_V2

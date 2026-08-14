@@ -197,7 +197,7 @@ def test_recall_token_budget():
         # needs enough grounded detail that facts + claim flags alone sit ABOVE the floor
         # while the wiki + episodes push past it — the original priority intent, legal.
         from veracium.schema import (Disclosure as _D, Edge as _E, EvidenceAuthor as _A,
-                                     Provenance as _P, SourceType as _S)
+                                     Provenance as _P, _SourceType as _S)
         for i in range(30):
             mem.store.add_edge(_E(
                 id=f"pad{i}", user_id="u", subject="user", relation=f"topic_{i}",
