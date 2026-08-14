@@ -49,9 +49,7 @@ def test_export_import_round_trip_is_lossless():
         assert r["edges"] >= 3 and r["episodes"] == 2
 
         dst = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/dst.db")).store
-        # specs/0005 §7b: losslessness (trust fields preserved exactly) is the
-        # RESTORE path's contract — the default import caps trust by design.
-        imp = import_memory(dst, f"{d}/u.jsonl", restore=True)
+        imp = import_memory(dst, f"{d}/u.jsonl")
         assert imp["edges"] == r["edges"] and imp["episodes"] == r["episodes"]
         assert imp["skipped"] == 0
 
@@ -70,7 +68,7 @@ def test_export_import_round_trip_is_lossless():
         assert {ep.id for ep in src.episodes("u")} == {ep.id for ep in dst.episodes("u")}
 
         # idempotent: importing again changes nothing
-        again = import_memory(dst, f"{d}/u.jsonl", restore=True)
+        again = import_memory(dst, f"{d}/u.jsonl")
         assert again["edges"] == 0 and again["episodes"] == 0
         assert again["skipped"] == imp["edges"] + imp["episodes"]
         mem.close(); dst.close()

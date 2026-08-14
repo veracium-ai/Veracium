@@ -1060,22 +1060,13 @@ class Memory:
         self._record("export", {"edges": r["edges"], "episodes": r["episodes"]}, user_id)
         return r
 
-    def import_memory(self, path, *, user_id: Optional[str] = None,
-                      restore: bool = False) -> dict:
+    def import_memory(self, path, *, user_id: Optional[str] = None) -> dict:
         """Load a Veracium JSONL export into this store. Idempotent (existing
         ids are skipped, never overwritten); `user_id` remaps the records.
-
-        Trust note (specs/0005): the DEFAULT import caps every record's trust
-        — nothing imported is assertable or grounded as this user's own
-        testimony, whatever the file claims. ``restore=True`` (mutually
-        exclusive with ``user_id``) preserves the file's trust fields exactly
-        and is the operator's assertion that the file is this store's own
-        history; use it only on files you exported yourself or have
-        independently verified. The returned dict carries ``capped``; the
-        audit record deliberately keeps its shipped field set (§7a)."""
+        Trust note: import only from sources you trust as much as the database
+        file itself — provenance in the file is data."""
         from . import portability
-        r = portability.import_memory(self.store, path, user_id=user_id,
-                                      restore=restore)
+        r = portability.import_memory(self.store, path, user_id=user_id)
         self._record("import", {"edges": r["edges"], "episodes": r["episodes"],
                                 "skipped": r["skipped"]}, r["user_id"])
         return r

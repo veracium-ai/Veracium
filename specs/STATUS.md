@@ -14,10 +14,10 @@ is the number that decides what can be built.
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `deferred` | 2026-08-13 | 1 | 2 | 2 | 0 | 0 | — |
-| **0002** | the maintenance provenance invariant | `deferred` | 2026-08-14 | 2 | 8 | 0 | 0 | 10 | 8/10 |
+| **0002** | the maintenance provenance invariant | `deferred` | 2026-08-13 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
-| **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 10 | 1 | 0 | 2 | 2/2 |
+| **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 10 | 1 | 0 | 2 | 0/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-09 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-10 | 0 | 4 | 0 | 0 | 1 | 1/1 |

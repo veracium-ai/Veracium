@@ -2,25 +2,6 @@
 
 ## Unreleased
 
-- **BEHAVIOUR CHANGE: default imports now cap trust** (accepted spec 0005 —
-  "import has no trust boundary"). Every `import_memory()` / `veracium import`
-  without `--restore` sets `author_of_evidence` and `derived_from` to
-  `third_party` and floors `disclosure` to `use_only` on every imported record
-  (`quarantined` is never weakened), so imported content is never assertable
-  or rendered as the target user's own testimony. The return dict and the CLI
-  line gain a `capped` count. `--restore` (new, mutually exclusive with
-  `--user`; API `restore=True`, strict bool) preserves trust fields exactly —
-  for restoring **your own** exports only; the refusal message on an own-store
-  default re-import explains the distinction. **Upgrade note for hosts that
-  script imports:** a same-store re-import of a pre-0005 export now refuses on
-  the default path — pass `restore=True` for backup-restore flows; seeding a
-  project from another principal's export keeps working and now lands capped
-  (confirm a fact to assert it). One narrow amendment to the 0014
-  source-identity projection rides along: on the default path the comparison
-  runs over capped records, so identity claims differing only within a cap
-  equivalence class skip (inserting nothing) instead of refusing; any content
-  difference still refuses. No schema change, no format change, no migration.
-
 ## 0.8.0 — 2026-08-13
 
 - **Opt-in telemetry can now report how often values are superseded and

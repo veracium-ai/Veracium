@@ -106,9 +106,7 @@ def test_import_preserves_the_outcome_chain(tmp_path):
         d["provenance"]["origin"] = src_origin
 
     dst = SqliteStore(str(tmp_path / "dst.db"))
-    # specs/0005 §7b: byte-preservation of the chain (trust fields included) is
-    # the RESTORE path's contract; the default import caps trust by design.
-    r = import_memory(dst, exp, restore=True)
+    r = import_memory(dst, exp)
     after = {ep.id: ep.model_dump() for ep in _outcomes(dst)}
     assert before == after, "the chain must import preserved (origin materialised to src)"
     # head re-derivable, contiguous, single leaf
@@ -187,9 +185,7 @@ def test_same_user_reimport_is_idempotent(tmp_path):
     exp = str(tmp_path / "e.jsonl")
     export_memory(src, "u", exp)
     before = {ep.id: ep.model_dump() for ep in _outcomes(src)}
-    # specs/0005 §7b: an own-store re-import is the restore path — the default
-    # path refuses it (stored originals differ from the capped incoming form).
-    r2 = import_memory(src, exp, restore=True)   # re-import into itself
+    r2 = import_memory(src, exp)   # re-import into itself
     assert r2["episodes"] == 0 and r2["skipped"] >= 2
     assert {ep.id: ep.model_dump() for ep in _outcomes(src)} == before
 

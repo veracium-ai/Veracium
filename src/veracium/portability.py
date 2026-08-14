@@ -18,15 +18,9 @@ unchanged.
 Import is idempotent: records whose id already exists in the target store are
 skipped, never overwritten. `user_id=` remaps the import into a different user.
 
-Trust note (specs/0005): provenance in an export file is *data*, and the
-sentence "importing a file grants its records whatever authorship and
-disclosure they claim" is true ONLY under `restore=True` — the operator's
-explicit assertion that the file is this store's own history. The DEFAULT
-import caps every record's trust instead: `author_of_evidence` and
-`derived_from` are set to `THIRD_PARTY` and `disclosure` is floored to
-`USE_ONLY` (`QUARANTINED` is never weakened), so nothing imported is
-assertable or grounded as the target user's own testimony, regardless of what
-the file claims, omits, or sets its header to.
+Trust note: provenance in an export file is *data*. Importing a file grants its
+records whatever authorship and disclosure they claim — import only from
+sources you trust exactly as much as the database file itself.
 """
 
 from __future__ import annotations
@@ -37,8 +31,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid4
 
-from .schema import (Disclosure, Edge, Episode, EvidenceAuthor, Provenance,
-                     is_historical_id, to_historical_id)
+from .schema import Edge, Episode, is_historical_id, to_historical_id
 from .source_identity import resolve_origin
 from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 
@@ -47,16 +40,6 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # older importer REFUSES a v5 export rather than silently dropping the field.
 FORMAT_VERSION = 5
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
-
-# specs/0005 §4d — the PINNED default-path refusal warning (P10/P15). A bare
-# pointer at --restore would recruit the operator into the bypass on a
-# tampered own-export; the message must carry both halves.
-_RESTORE_WARNING = (
-    "import refused: existing records differ from the capped incoming form. "
-    "If - and only if - this file is your own store's export, --restore "
-    "imports it with trust preserved. --restore trusts every record in the "
-    "file exactly as written; use it only on a file you exported yourself or "
-    "have independently verified, record by record (specs/0005 §4d)")
 
 
 def export_memory(store, user_id: str, path) -> dict:
@@ -186,34 +169,15 @@ def _validate_incoming_chain(members: list, key, path) -> tuple:
     return root, leaf
 
 
-def import_memory(store, path, *, user_id: Optional[str] = None,
-                  restore: bool = False) -> dict:
+def import_memory(store, path, *, user_id: Optional[str] = None) -> dict:
     """Load a Veracium export into `store`. Idempotent (an existing, record-equal
     record is skipped); `user_id` remaps every record into that user.
-
-    specs/0005: the DEFAULT import caps every record's trust (the three levers,
-    §4a) after validation and before every comparison gate; the returned dict
-    gains ``capped`` — the number of parsed records the cap changed, counted
-    pre-skip so it is a pure function of (file, flags) (P11). ``restore=True``
-    skips the cap and nothing else (trust-field-faithful; the identity
-    canonicalization below still applies) and is mutually exclusive with
-    ``user_id``. ``restore`` must be a real bool — no truthiness (P13).
 
     specs/0009 §4c: the WHOLE file is parsed, cross-user remapped, legacy-converted
     (§4f-ii) and topology-validated BEFORE any persistent write, then committed as
     one atomic plan via `commit_outcome_import_plan` — so a valid chain A is never
     left persisted when a later chain B refuses, and the commit linearizes against
     concurrent `append_outcome_if_head` (no branch, no partial import). Returns counts."""
-    # specs/0005 §4a — the two argument gates, in order, BEFORE the file is
-    # opened: the closed bool predicate (P13), then mutual exclusion (P5).
-    if type(restore) is not bool:
-        raise TypeError(
-            f"restore must be a bool, got {type(restore).__name__!s} — no "
-            f"truthiness coercion at a trust boundary (specs/0005 P13)")
-    if restore and user_id is not None:
-        raise ValueError(
-            "restore and user_id are mutually exclusive — a restore is this "
-            "store's own history and never remaps (specs/0005 P5)")
     path = Path(path)
     with path.open() as f:
         lines = [ln for ln in (l.strip() for l in f) if ln]
@@ -271,39 +235,6 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             rec["edge_id"] = _remap(rec["edge_id"])
         if rec.get("supersedes_episode") is not None:
             rec["supersedes_episode"] = _remap(rec["supersedes_episode"])
-
-    # (2c) specs/0005 §4a/§4c — THE IMPORT TRUST CAP, the boundary this spec
-    # exists for. Sequence per §4c-ii: each record's provenance is VALIDATED
-    # first (a malformed or null trust value raises here per the shipped
-    # 9-cell matrix — never silently normalized into a valid capped value,
-    # R1-4/P14), then the three levers are applied to the validated model:
-    # author_of_evidence := THIRD_PARTY (the claim made true relative to the
-    # target owner, R1-1), derived_from := THIRD_PARTY (min, never raised),
-    # disclosure floored to USE_ONLY (QUARANTINED never weakened). The cap
-    # runs BEFORE every comparison gate below — the 0006 origin gates, the
-    # 0014 identity projection (which per its 0005 rider receives the
-    # path-transformed incoming form), and the 0009 record-equality
-    # preflight — so no gate ever sees an uncapped record. `capped` counts
-    # the records the cap CHANGED, over the parsed file, pre-skip: a pure
-    # function of (file, flags), never of destination state (N1/P11).
-    # restore=True skips exactly this block (trust-field-faithful, R1-3).
-    capped_count = 0
-    if not restore:
-        for rec in edge_recs + ep_recs:
-            prov = rec.get("provenance")
-            if not isinstance(prov, dict):
-                continue   # absent/non-dict provenance: judged by full model validation below
-            model = Provenance.model_validate(prov)   # malformed/null -> raises, whole-import
-            capped = model.model_copy(update={
-                "author_of_evidence": EvidenceAuthor.THIRD_PARTY,
-                "derived_from": EvidenceAuthor.THIRD_PARTY,
-                "disclosure": (Disclosure.QUARANTINED
-                               if model.disclosure == Disclosure.QUARANTINED
-                               else Disclosure.USE_ONLY),
-            })
-            if capped != model:
-                capped_count += 1
-            rec["provenance"] = json.loads(capped.model_dump_json())
 
     # (2b) specs/0006 — source-identity ingress gates, BEFORE any record enters the store.
     #  - I10: a field NEWER than the declared FORMAT_VERSION is STRIPPED, never trusted — a
@@ -485,26 +416,18 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     # NOTHING is ever partially imported (§4c). The destination is re-read each pass.
     for _attempt in range(_IMPORT_RETRIES):
         outcome = _preflight_and_commit(store, path, target_uid, edges, eps,
-                                        incoming_chains, capped_path=not restore)
+                                        incoming_chains)
         if outcome is not DESTINATION_CHANGED:
-            return {**outcome, "capped": capped_count, "user_id": target_uid}
+            return {**outcome, "user_id": target_uid}
     raise ValueError(f"{path}: import kept losing a race against concurrent writes "
                      f"after {_IMPORT_RETRIES} attempts — refused (specs/0009 §4c)")
 
 
-def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains,
-                          *, capped_path: bool = True):
+def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains):
     """One preflight-then-commit pass: validate the COMBINED destination graph
     against the live store, build the plan + the full destination-state assumptions,
     and commit atomically. Returns the store's result (counts dict or
-    `DESTINATION_CHANGED`). specs/0009 §4c.
-
-    `capped_path` (specs/0005 §4d): on the default (capping) import path the
-    record-equality refusals append the pinned `--restore` warning, because
-    the commonest trigger is an own-store re-import whose stored originals
-    differ from the capped incoming form (P10); the warning is never a bare
-    remedy (P15). Restore-path refusals keep the plain message."""
-    _tail = f". {_RESTORE_WARNING}" if capped_path else ""
+    `DESTINATION_CHANGED`). specs/0009 §4c."""
     existing_edges = {e.id: e for e in store.edges(
         target_uid, active_only=False, include_quarantined=True)}
     existing_eps = {ep.id: ep for ep in store.episodes(target_uid)}
@@ -523,7 +446,7 @@ def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains,
         if prior is not None:
             if prior.model_dump() != edge.model_dump():
                 raise ValueError(f"{path}: edge {edge.id!r} already exists with "
-                                 f"different content — refuse (specs/0009 §4c){_tail}")
+                                 f"different content — refuse (specs/0009 §4c)")
             skipped += 1
             edge_ids_expected[edge.id] = True
         else:
@@ -547,7 +470,7 @@ def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains,
         if prior is not None:
             if prior.model_dump() != ep.model_dump():
                 raise ValueError(f"{path}: episode {ep.id!r} already exists with "
-                                 f"different content — refuse (specs/0009 §4c){_tail}")
+                                 f"different content — refuse (specs/0009 §4c)")
             skipped += 1
         else:
             plan_eps.append(ep)
@@ -570,7 +493,7 @@ def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains,
                 if prior.model_dump() != m.model_dump():   # RECORD equality, not id
                     raise ValueError(
                         f"{path}: outcome link {m.id!r} already exists with different "
-                        f"content — refuse the whole import (specs/0009 §4c){_tail}")
+                        f"content — refuse the whole import (specs/0009 §4c)")
                 skipped += 1
             else:
                 new_members.append(m)
