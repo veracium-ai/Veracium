@@ -6,10 +6,10 @@ Spec-Requires: 0015
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v9 — EXTERNAL ROUND 5 (5 blocking, narrowing 6→7→6→5; no package blocker; the opaque frame, atomic ordering, rewritten I8, and self-check boundary confirmed sound): ALL FOLDED. **R5-1 (B — the binding question, answered HONESTLY):** the expectation was mechanically an armed BIT — a retained event replayed DURING a later armed call charged the armed user (reviewer-reproduced). The fold states the impossibility rather than wishing a mechanism: an event dict carries no unforgeable provenance, so within an armed call the NUMBERS are irreducibly the producer's claim (damage-equivalent to lying at emission); what IS mechanically bound is TARGET (only the armed operation, never another user) and COUNT (registry-atomic single consumption) — the §8 boundary, with I9's replay-during-armed cell asserting the bounded outcome, not the impossible one. The reviewer's cardinality ruling adopted (one event per wrapper call). **R5-2 (A, reviewer-reproduced):** `ContextVar` copies retain independent armed values → the context carries ONLY the opaque `call_id`; ARMED/CONSUMED state lives in the Memory-owned registry, consumed atomically under the instance lock — consumption is global per call across all context copies; the barrier copied-context cell named. **R5-3 (D — carrier-incomplete after the R4-3 move, mine):** the listener still validated `current_frame.event` (which no longer exists) and the owner-check had dropped from the operative text → the COMPLETE six-step listener algorithm is specified in order (read frame → owner-reject consuming nothing → registry-resolve → missing/cancelled-reject → pair-validate → ONE critical section: consume + append), defining shared-wrapper listener ordering. **R5-4 (E+C):** the control plane made executable and total — the handle predicate is `returns without raising ∧ is not None` (deliberately nothing more; handles are opaque), §5's "impossible by construction" corrected to REACHABLE, and I12's total registration/removal/close matrix (register-then-raise, duplicate close, raising removal, store-closure proof). **R5-5 (D):** the absolute "stops receiving callbacks" carrier DELETED — the snapshot-boundary formulation is the only close rule. *(v8: opaque frames + the registry; the expectation token; the control-plane rows; four atomic transitions; I8 rewritten; the self_check absence boundary.)* *(v7: the module-global routing variable; recursive immutability; pair validation; the control plane — claimed; cancellation tokens; the shared predicate; successful-operation scoping.)* *(v5: the pre-send `contextvars` substitution + emit-boundary clause.)* *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
+| **Version** | v10 — EXTERNAL ROUND 6 (3 blocking + 2 editorial, narrowing 6→7→6→5→3; the v9 policy narrowing ENDORSED as sound in principle; the six-step ordering, producer-claim boundary, global consumption, I12, and singular close rule confirmed): ALL FOLDED. **R6-1 (A+D, found-in-fix of R5-2, reviewer-reproduced):** the `call_id` consumed in step 6 had NO declared carrier and no arm/consume/clear transitions — and a STALE copied context from completed call A, emitting while call B was armed, consumed B's expectation (consumption was call-CURRENT, not call-EXACT) → the full construction: a second module-global `ContextVar` `_active_call`; the registry entry gains `armed_call: None | (call_id, consumed)`; three new atomic transitions (arm / COMPARE-consume / clear) joining the §4d set — step 6 compares the calling context's `call_id` to the entry's armed id, so the stale-A-during-B emission drops WITHOUT consuming B (the named I9 cell, distinct from the same-call duplicate). **R6-2 (C):** the v9 valid-replay ruling entered §2c as its four-cell family (outside-armed drop; during-matching-armed accept-once-bounded; copied-duplicate drop; stale-A-during-B drop-without-consuming). **R6-3 (D):** "non-opaque" removed as non-executable; removal inputs are exactly {known → removes; unknown (any never-issued value — a returned `0` IS valid) → no-op; duplicate → idempotent no-op}; I12 wording updated. **R6-4 (editorial):** §9 rewritten to v10 (the resolved cardinality question and the discarded wrapper-token fallback gone; the write set stated as the SEVEN transitions). **R6-5 (editorial):** §7's attack-surface claim narrowed — no MEMORY trust-surface attack added; usage-number integrity relies on the host-chosen producer's claims. *(v9: the honest R5-1 binding boundary; registry-owned consumption; the six-step algorithm; the executable handle predicate; the singular close rule.)* *(v8: opaque frames + the registry; the expectation token; the control-plane rows; four atomic transitions; I8 rewritten; the self_check absence boundary.)* *(v7: the module-global routing variable; recursive immutability; pair validation; the control plane — claimed; cancellation tokens; the shared predicate; successful-operation scoping.)* *(v5: the pre-send `contextvars` substitution + emit-boundary clause.)* *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — round 1 RETURNED 2026-08-13 (3 findings, folded in v3; their preliminary Q1 mapping amended by their own review); re-review requested · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
-| **External review** | ROUND 5 RETURNED 2026-08-14 (package `0017-v8-20260814T0035Z.tar.gz`): 5 blocking, folded as v9; round-6 package next |
+| **External review** | ROUND 6 RETURNED 2026-08-14 (package `0017-v9-20260814T0339Z.tar.gz`): 3 blocking + 2 editorial, folded as v10; round-7 package next |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -95,7 +95,8 @@ Consumers enumerated mechanically — commands in §2c-ii.
 | the host's `counter` callable | no counter → no token fields ever (chars stay host-side) | non-int / bool / negative / NaN / raising — on EITHER invocation, incl. the second | — | a two-stage counter that succeeds once then raises (the reviewer's F3 reproduction: the operation broke and a partial record survived) | **atomic all-or-nothing accounting (§4c): both counts computed and validated into locals OUTSIDE the lock; any failure discards the whole token pair, mutates no token state, emits no event; the provider output is ALWAYS returned; `calls`/chars ride the always-valid block** — `test_counter_failure_is_atomic_and_never_breaks_the_operation` (both invocation positions) |
 | an unrelated object with a coincidental `totals()` method | — | — | duck-typed hosts | a valid-SHAPED `totals()` on a non-Metered object (F2: shape is not intent) | **never probed, never invoked, never routed — opt-in is the affirmative capability constant + listener registration (§4a)**; `test_coincidental_totals_shape_is_never_invoked` |
 | **the callback protocol** (an arbitrary callable CAN present the capability string, retain the listener, and invoke it with garbage — R2-6) | non-mapping → dropped | missing/extra keys · non-int/bool/negative counts · counts > 2**53 → dropped | a role outside the producer registry → dropped | malformed data injected DURING a live operation | **listener-side FAIL-CLOSED validation before any state (§4a): drop silently, never attribute, never raise into the operation**; one adversarial cell per malformed form in `test_listener_validates_fail_closed` (stage-5 obligation) |
-| **the registration control plane** (external R4-1 — §4a claimed these rows existed; they did not) | capability present, `add_usage_listener` ABSENT → treated unmetered, never probed again | `add_usage_listener` RAISES, or returns an invalid handle (None/non-opaque) → registration is FAILED — the `Memory` treats itself unregistered; a callback the rogue object retained anyway is INERT (no armed expectation, no owned frame — nothing can attribute) | a duplicate or malformed handle passed to `remove_usage_listener` → isolated no-op | `remove_usage_listener` absent or RAISING during `Memory.close()` | **handle validity is EXECUTABLE (external R5-4): a handle is valid iff `add_usage_listener` returns without raising and the result `is not None` — deliberately NO further structural constraint (handles are opaque by design); every failure is isolated; `close()` runs unsubscribe in its own try and ALWAYS closes the store**; the §4a snapshot boundary governs in-flight emissions; the TOTAL matrix is I12 |
+| **valid-SHAPED adversarial callbacks** (external R6-2 — the v9 ruling's reachable cells, stated in the matrix, not only in §8) | valid replay OUTSIDE any armed call → drop | valid replay DURING the matching armed call → **accepted ONCE as that armed operation's producer-claimed numbers** (the §8 boundary — target and count bound, magnitudes the producer's claim) | copied-context DUPLICATE within one call → drop (globally consumed) | a STALE call-A context emitting while call B is armed → **drop WITHOUT consuming B** (the compare-consume rule) | the four cells are the I9 replay family, each barrier-controlled |
+| **the registration control plane** (external R4-1 — §4a claimed these rows existed; they did not) | capability present, `add_usage_listener` ABSENT → treated unmetered, never probed again | `add_usage_listener` RAISES, or returns an invalid handle (None/non-opaque) → registration is FAILED — the `Memory` treats itself unregistered; a callback the rogue object retained anyway is INERT (no armed expectation, no owned frame — nothing can attribute) | removal inputs are exactly {KNOWN handle → removes; UNKNOWN handle (never issued, incl. any value like `0` — which IS a valid handle if actually returned) → isolated no-op; DUPLICATE removal → idempotent no-op} (external R6-3: 'non-opaque' was not executable and contradicted the predicate — removed) | `remove_usage_listener` absent or RAISING during `Memory.close()` | **handle validity is EXECUTABLE (external R5-4): a handle is valid iff `add_usage_listener` returns without raising and the result `is not None` — deliberately NO further structural constraint (handles are opaque by design); every failure is isolated; `close()` runs unsubscribe in its own try and ALWAYS closes the store**; the §4a snapshot boundary governs in-flight emissions; the TOTAL matrix is I12 |
 | concurrent operations sharing one wrapper | — | — | — | N overlapping operations, different users, nested calls (F1's reproductions: factor-N overcounting; cross-user prior-state absorption) | **EXACT attribution by construction (§4b): per-call events on the calling thread, attributed to that thread's innermost operation context — no snapshot window exists to overlap**; I9's barrier-controlled cells (cross-user, nested `answer→recall`, concurrent `recall.compile` vs `maintain.compile`) |
 | the consent config | — | — | — | — | **unchanged 0015 machinery** — v1/v2-consented installs never send the token fields (min version 3); every 0015 I8/I13/I16/I17 test keeps running |
 
@@ -260,18 +261,30 @@ deliberately-mutable buffer is ordinary lock-guarded instance state with
 stated ownership.) Adversarial copied-context and recursive-immutability
 regressions are named I9/I8 cells.
 
-**Event correlation — the EXPECTATION, registry-owned and truly single-shot
-(external R5-2, reviewer-reproduced: `ContextVar` copies retain independent
-armed values, so consuming the parent's did not consume a
-`copy_context()` clone's — the context now carries ONLY an opaque
-`call_id`; the ARMED/CONSUMED state lives in the Memory-owned registry and
-is consumed ATOMICALLY under the instance lock, so consumption is global
-per call regardless of context copies):** the `Memory` registers a fresh
-`call_id` (armed) in the registry immediately before each of its own
-provider invocations and clears it in a `finally`; the listener consumes
-it registry-atomically on the first accepted event. A copied context's
-later emission finds the entry consumed and drops (the barrier-controlled
-copied-context regression is a named I9 cell).
+**Event correlation — the call state, FULLY DECLARED (external R6-1: v9
+consumed a `call_id` in listener step 6 that no declared carrier held and
+no declared transition armed — and the reviewer reproduced the
+consequence: a STALE copied context from completed call A, emitting while
+call B was armed, consumed B's expectation, because consumption took
+"whichever call is currently armed" instead of comparing):**
+
+- **Carriers, exact:** a SECOND module-global `contextvars.ContextVar`,
+  `_active_call`, holds the opaque `call_id` (set in the operation's
+  context immediately before each provider invocation, reset via its
+  token in a `finally`); the registry entry schema is
+  `(user_id, event, buffer, cancelled, armed_call)` where `armed_call` is
+  `None` or `(call_id, consumed: bool)`.
+- **Transitions (joining the §4d atomic set, all under the instance
+  lock):** **(arm)** write `armed_call = (fresh call_id, False)` before
+  the provider call; **(compare-consume)** listener step 6 reads the
+  CALLING CONTEXT's `call_id` from `_active_call` and consumes IFF it
+  EQUALS the entry's armed, unconsumed `call_id` — a stale copied context
+  carries call A's id while the entry holds call B's, so it DROPS WITHOUT
+  consuming B (the reviewer's reproduction is the named I9 cell, distinct
+  from the same-call duplicate cell); **(clear)** the `finally` sets
+  `armed_call = None`.
+- Consumption remains global per call across context copies (R5-2), and
+  the comparison makes it call-EXACT, not merely call-current.
 
 **What the expectation does and does not bind (external R5-1, answered
 honestly):** the event dict `{role, in_tok, out_tok}` carries no
@@ -302,8 +315,10 @@ are not independently observable.
    (schema, the §4c shared count predicate) and the `(event, role)` pair
    against the §4e producer registry — invalid → return, consuming
    nothing;
-6. in ONE critical section under the instance lock: check-and-consume the
-   armed `call_id` expectation (already consumed/absent → drop) and
+6. in ONE critical section under the instance lock: read the calling
+   context's `call_id` from `_active_call`, COMPARE it to the entry's
+   `armed_call` (absent context id, no armed call, a MISMATCHED id, or
+   already-consumed → drop, consuming NOTHING), then mark consumed and
    append the validated counts to the entry's buffer.
 
 Shared-wrapper listener ordering is thereby defined: every non-owning
@@ -455,7 +470,7 @@ Release class: **stable on acceptance** — every named regime has a NAMED check
 | I6 — whitelisted ⇒ populated (the `2767a35` gate) holds over all eight fields | `tests/test_telemetry_claims.py` EXISTS, but its current assertions REQUIRE the token fields to remain absent — the future condition (passing FOR them) is a **stage-5 obligation**; today it is the guard that keeps this spec unimplemented until accepted |
 | I7 — no MCP surface carries usage: `remember`/`answer` tool results and every MCP tool omit token fields; `introspect` remains non-MCP | `test_mcp_results_carry_no_usage_fields` + the §2c-ii grep pinned as a test | **stage-5 obligation — does NOT exist yet** |
 | I11 — opt-in is affirmative (§4a, external F2) | `test_coincidental_totals_shape_is_never_invoked` — an unrelated `Complete` with a valid-shaped `totals()` and no capability constant: never probed, never invoked, nothing routed; registration occurs iff the constant matches exactly | **stage-5 obligation — does NOT exist yet** |
-| I12 — the registration/removal/close matrix is TOTAL (external R5-4) | `test_registration_control_plane_matrix` — every §2c control-plane cell executed: capability without `add_usage_listener`; registration raising; register-then-raise (callback retained → inert); an invalid (None) handle; a duplicate/malformed handle to remove; `remove_usage_listener` absent/raising; DUPLICATE `close()`; close with raising unsubscribe → the store is PROVEN closed regardless | **stage-5 obligation — does NOT exist yet** |
+| I12 — the registration/removal/close matrix is TOTAL (external R5-4) | `test_registration_control_plane_matrix` — every §2c control-plane cell executed: capability without `add_usage_listener`; registration raising; register-then-raise (callback retained → inert); an invalid (None) handle; unknown and duplicate handles to remove (R6-3 — any non-None returned value, `0` included, is a VALID handle); `remove_usage_listener` absent/raising; DUPLICATE `close()`; close with raising unsubscribe → the store is PROVEN closed regardless | **stage-5 obligation — does NOT exist yet** |
 | I8 — erasure and lifecycle hold over the ACTUAL state machine (§4b/§4d; rewritten by external R4-5 after v7's row still described the withdrawn generation design) | `test_usage_accumulator_lifecycle` — the four atomic transitions under one lock; the R4-4 barrier race (merge-vs-forget interleaving CANNOT recreate an erased entry); after `forget()` + quiescence EVERY carrier is inspected empty: accumulator, registry, cancel marks — and a COPIED CONTEXT retains only opaque tokens that resolve to nothing (R4-3's reproduction as the named cell); instance-lifetime label; two instances independent; restart empty; `self_check` pushes no frame and attributes nothing (R4-6's absence boundary); **the post-close boundary exactly as §4a states it: no callbacks from emissions snapshotted after close; one in-flight snapshotted emission may deliver** | **stage-5 obligation — does NOT exist yet** |
 | I9 — attribution is EXACT within the stated boundary (§4b) | `test_attribution_is_exact_under_concurrency` — barrier-controlled: two users' overlapping operations; nested `answer→recall`; concurrent compiles; the shared-wrapper re-entry trace; the replay-OUTSIDE-any-armed-call cell (drops); **the replay-DURING-a-later-armed-call cell (external R5-1): attributes to the ARMED operation as its own producer-claimed numbers, exactly once, and NEVER to the original user** — the §8 boundary asserted, not wished away; **the copied-context double-emission cell (external R5-2): the clone's second event finds the expectation registry-consumed and drops**; a context-free event reaches only wrapper totals | **stage-5 obligation — does NOT exist yet** |
 | I10 — every 0015 invariant keeps running unmodified (this spec adds a version, not a mechanism) | the existing `test_0015_lifecycle.py` suite EXISTS and is green today with `SCHEMA_VERSION == 2`; green-under-3 is the future condition — a **stage-5 obligation** |
@@ -482,8 +497,11 @@ Release class: **stable on acceptance** — every named regime has a NAMED check
   a raising listener (or accumulator failure) records nothing for that call
   and never propagates into the operation; the wrapper's own accounting
   already committed atomically before the event was emitted.
-- **Attack surface:** none added — no non-user content influences stored
-  state, recall, or rendered context; the only new flows are non-negative
+- **Attack surface:** no MEMORY trust-surface attack is added — no
+  non-user content influences stored state, recall, or rendered context.
+  **Usage-number integrity is narrower (external R6-5): telemetry, audit,
+  and introspection magnitudes rely on the host-CHOSEN producer's
+  valid-shaped claims** (the §8 boundary); the flows remain non-negative
   ints to the host's own surfaces and a consent-v3-gated weekly aggregate.
 
 ---
@@ -530,21 +548,17 @@ Release class: **stable on acceptance** — every named regime has a NAMED check
 
 ## 9. Brief for the external reviewer
 
-What v8 is least sure of (the resolved owner/capability questions are
-gone — external R4-8): (1) the EXPECTATION TOKEN as the correlation
-boundary (§4b) — single-shot, context-scoped, armed around each
-Memory-initiated provider call; is at-most-one-event-per-armed-call the
-right cardinality for a provider that legitimately retries internally, or
-does a genuine wrapper retry need a re-armable window (the failure
-direction as specified: the retry's second emission drops — undercounting,
-never misattribution)? (2) the registry as the sole user-bearing carrier —
-§4d's four atomic transitions are the complete write set to our reading;
-the adversarial question is whether any OTHER path can write user-keyed
-usage state outside the lock. **What would change our minds:** if the
-expectation-token boundary proves too coarse for real providers, the
-fallback is wrapper-issued per-call tokens validated against a
-Memory-side issued-set — heavier, and it re-introduces trust in the
-capability object, which is why it is not the primary design.
+What v10 is least sure of: (1) the COMPLETE write set — the registry now
+carries seven atomic transitions (register / delete+cancel / check+merge /
+finally-cleanup / arm / compare-consume / clear); to our reading these are
+every path that touches user-keyed or call-keyed usage state, and the
+adversarial question is whether ANY other path can write such state
+outside the instance lock; (2) whether the four-cell valid-replay family
+(§2c, external R6-2) plus the §8 boundary is the COMPLETE statement of
+what a rogue producer can and cannot do — the claim is: magnitudes for
+operations that chose it, never target, never count, never another user.
+**What would change our minds:** a demonstrated write path outside the
+lock, or a replay composition the four cells don't cover.
 
 ## 10. Open questions
 
