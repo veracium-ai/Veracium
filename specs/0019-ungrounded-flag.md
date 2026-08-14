@@ -114,8 +114,11 @@ axes by construction:
 The four §3 questions: no new write authority; no provenance change; no
 `needs_confirmation` interaction; no authority movement.
 
-**Write-time or maintain-time?** Write-time only (ingest). Maintenance
-(absorption, consolidation) is OUT of v1 scope — consolidation outputs are
+**Write-time or maintain-time?** Write-time only — stated precisely
+(R2-5): ingest DERIVES the flag, and write-time ABSORPTION (which fires on
+fresh evidence, `graph.py:98` — it is not maintenance) computes the new
+survivor's N-ary OR pre-insert. MAINTAIN-TIME machinery (consolidation,
+expiry) neither reads nor writes the flag; consolidation outputs are
 system-authored summaries with their own §8 disposition (limit 3).
 
 ## 3b. Authorization and scope
@@ -262,9 +265,10 @@ so the shipped behaviour is the measured behaviour:
   precisely; the restore-path absence exposure is §8 limit 6).
 - **Introspect:** the summary gains an `ungrounded` count; categories render
   the marker.
-- **Answer/abstention, supersession, outcomes, staleness, wiki compile:**
-  all UNCHANGED (the wiki compiler input renders the marker like any other
-  surface; the compiler treats it as content).
+- **Answer/abstention, supersession, outcomes, staleness:** all UNCHANGED.
+  (The wiki compiler is NOT unchanged — its input excludes flagged facts,
+  the F4 bullet above; the superseded v2 claim that the compiler "treats
+  the marker as content" is WITHDRAWN, R2-5.)
 - **Telemetry: NO new field in v1.** An `ungrounded` count would be a new
   whitelisted field requiring consent version 4 under the 0015 regime;
   deferred, recorded in §7a — the flag ships with zero telemetry surface.
@@ -373,7 +377,13 @@ R1-7 rule: a draft spec claims no CI).
 
 | carrier | change |
 |---|---|
-| `schema.py` `Edge` | `ungrounded: bool = False` |
+| `schema.py` `Edge` | `ungrounded: StrictBool = False` (F7 — never plain `bool`) |
+| `graph.py` (absorption) | the N-ary OR over `{incoming} ∪ absorbed`, computed pre-insert on the new survivor (R2-3/R2-4) |
+| `contribution.py` | `RECOMPUTED_EDGE_FIELDS` gains `ungrounded`; the verifier accepts exactly the N-ary OR transform; `outcome_digest_version` 3 (the 0014 rider, §7b) |
+| `compile.py` | the wiki-compiler INPUT filter: flagged facts excluded (F4) |
+| `store/sqlite.py` + `store/base.py` | the same-ID replace guard: EVERY `ungrounded` transition refused (R2-4); the base contract documents the obligation |
+| `specs/evidence/0019/` | the normative `reference_predicate.py` + `vectors.json` + the superseded-labeled phase-1f provenance + the U3b re-measurement record |
+| same-commit amendment surfaces | `specs/0014-maintenance-attribution.md` §2c (the rider), `specs/0016-sourcetype-deletion.md` (Rider A), `specs/0018-release-migration-orchestrator.md` (Rider B), the Unreleased-CHANGELOG correcting note — all land with the acceptance flip |
 | `ingest.py` | the §4b check between extraction and storage |
 | render / `gate.py` surfaces | the `[possible extraction error]` marker |
 | `proactive.py` | the suppression rule |
