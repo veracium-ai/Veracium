@@ -5,7 +5,9 @@ Spec-Requires: 0005, 0008
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft v1** — Quentin's option-A ruling (2026-08-14) on the PatchTest
+> **draft v2** — internal review folded (F1: the comparison/projection/
+> digest carriers ruled; the marker renamed; the D2 renumbering conditions
+> pinned). v1: Quentin's option-A ruling (2026-08-14) on the PatchTest
 > landing-pad ask (`proposals/patchtest-landing-pad-ask.md`; measured basis
 > `patchtest/phase1_RESULTS.md`, four shadow rounds over 149k objects, the
 > phase-1f gate). Ships the SPECIFICS-ONLY grounding check as a new,
@@ -15,7 +17,7 @@ Spec-Requires: 0005, 0008
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 — the initial draft for research internal review |
+| **Version** | v2 — INTERNAL REVIEW FOLDED (research, `proposals/0019-internal-review.md`, 2026-08-14; RETURN FOR AMENDMENT, 1 blocking + 3 rulings + 2 notes): **F1 (the month's carrier class, caught PROSPECTIVELY)** — a new Edge field enters every surface that COMPARES, PROJECTS, or HASHES edges, and v1 never ruled its membership → §7b now rules ALL of them: `ungrounded` is EXCLUDED from identity/digest bases (extraction-fidelity metadata, not identity — two extractions of the same fact ARE the same fact; `contribution.py:142`'s frozen 0014 field basis is UNCHANGED, avoiding a digest rider), the merge survivor takes the OR of merged flags, the 0009 record-equality composition is RULED not lucky (absent→False composes; stored-True vs incoming-absent differs → refuses honestly), and the 0014 projection is untouched (an Edge field; the projection is over Episode fields). U-Q1 ruled: proactive suppression CONFIRMED — the false-positive COST differs by surface (queried recall contextualizes the marker; proactive would volunteer an alarm at ~50% precision); suppression is the SINGLE flag-keyed behavioural reduction and it withholds, never grants. U-Q2 ruled: the marker is **`[possible extraction error]`** — 'unverified' would collide with the attribution vocabulary AND a future Veracium run would score its own markers as attribution, contaminating the measurement that vindicated the attribution design (the artifact-seam lesson applied before the seam exists). U-Q3 ruled mechanical with three conditions (§7b). N1 marker-spoofing sentence; N2 the wiki-compiler re-render cell in U5. |
 | **Status** | *see `Spec-Status:` — canonical.* |
 | **Internal reviewers** | research (they built and measured the instrument; the ask records research+dev aligned on option A) |
 | **External review** | required — `schema.py`, `ingest.py`, `gate.py`/render, `portability.py` are guarded; this adds a stored field and a rendered marker |
@@ -75,7 +77,7 @@ noticing — and only the noticing.
 |---|---|---|---|---|---|
 | the event text (the grounding CORPUS for the check) | empty text → every specific ungrounded → flag set | — | — | **an attacker who authors the event text controls the grounding corpus** — they can make their OWN fabricated specifics "grounded" by writing them into the text | **by design: the check verifies extraction fidelity, never truth.** An attacker-grounded lie is a TRUST problem, fully handled by the existing levers (author/derived_from/disclosure); this flag adds a signal about the DISTILLER, not about the source. Stated as §8 limit 1 |
 | the distiller output (the CHECKED object) | no specifics in the object → vacuously grounded, no flag | — | — | a fabricated value phrased without specifics ("a large amount") evades the specifics-only check | accepted, measured: the specifics-only class catches the VALUE-SHAPED fabrications (the ones that damage functional facts) at 0.47%/~40–50% precision; common-noun fabrication is the offline full predicate's territory (§8 limit 2) |
-| an import file's `ungrounded` values (edges) | absent → pydantic default `False` | non-bool → pydantic raises (v6 file) | **pre-v6 envelope carrying the field → STRIPPED, never trusted (the 0006 I10 rule)** | a hand-written file sets `ungrounded=False` on fabricated content — or `True` on genuine content | **the flag GRANTS nothing and its absence grants nothing** — no consumer raises trust, assertability, or authority on it (I5-class groups-never-grants). Forging `False` gains exactly what the file already had; forging `True` only disadvantages the forger's own record. Carried VERBATIM on both 0005 paths (§7b) — it is extraction-fidelity metadata, not a trust lever, so the cap neither reads nor writes it |
+| an import file's `ungrounded` values (edges) | absent → pydantic default `False` | non-bool → pydantic raises (v6 file) | **pre-v6 envelope carrying the field → STRIPPED, never trusted (the 0006 I10 rule)** | a hand-written file sets `ungrounded=False` on fabricated content — or `True` on genuine content | **the flag GRANTS nothing and its absence grants nothing** — no consumer raises trust, assertability, or authority on it (I5-class groups-never-grants). Forging `False` gains exactly what the file already had; forging `True` triggers only the design's single flag-keyed reduction — proactive volunteering of the forger's OWN record is withheld — a self-inflicted narrowing, never a grant. Carried VERBATIM on both 0005 paths (§7b) — it is extraction-fidelity metadata, not a trust lever, so the cap neither reads nor writes it |
 | the session date (feeds date-context awareness, §4b) | absent → today (the `remember` contract) | — | — | a crafted date shifts the ±366-day resolved-date window | the window bounds PLAUSIBILITY of resolved dates, never grants trust; a shifted window at worst flags/unflags a date token — the flag grants nothing (row above) |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -168,16 +170,26 @@ so the shipped behaviour is the measured behaviour:
   false positive; demotion would silently bury real memories at that rate,
   which is refusal wearing a different hat.
 - **Render: the marker.** Wherever a flagged fact renders (recall context,
-  introspect categories), it carries a deterministic inline marker —
-  `[unverified extraction]` — the same never-severed treatment as safety
-  labels under 0012's budget clamps (a clamp shrinks content, never the
-  marker). The model sees the doubt exactly where it sees the fact.
-- **Proactive: suppressed.** Proactive mode VOLUNTEERS facts unprompted;
-  volunteering a possibly-fabricated specific fails the volunteering bar
-  (mentionable-only already encodes "volunteering is held to more"). A
-  flagged fact is never proactively surfaced; it remains fully recallable by
-  query. *(Draft decision — flagged for internal review as the one §4c cell
-  with a defensible alternative.)*
+  introspect categories, the compiled wiki), it carries a deterministic
+  inline marker — **`[possible extraction error]`** — the same never-severed
+  treatment as safety labels under 0012's budget clamps (a clamp shrinks
+  content, never the marker). The model sees the doubt exactly where it sees
+  the fact. **The name is RULED (internal review):** "unverified" vocabulary
+  would collide with the third-party-claims fence AND with the attribution
+  taxonomy — a future Veracium benchmark run would score its own
+  extraction-error markers as attribution, contaminating exactly the
+  measurement that vindicated attributed surfacing. **Marker spoofing:**
+  event text containing the marker string is DATA and renders as content
+  under the same anti-spoof posture as the existing unverified-claims fence
+  — the render layer's own marker placement is the only authoritative one
+  (N1).
+- **Proactive: suppressed (RULED, internal review).** The false-positive
+  COST differs by surface: queried recall shows the marker IN CONTEXT the
+  user asked for; proactive would VOLUNTEER AN ALARM at ~50% precision.
+  A flagged fact is never proactively surfaced; it remains fully recallable
+  by query. **Suppression is the SINGLE flag-keyed behavioural reduction in
+  the design, and it WITHHOLDS rather than grants** — which is why forging
+  the flag gains nothing (§2c, stated precisely there).
 - **Introspect:** the summary gains an `ungrounded` count; categories render
   the marker.
 - **Answer/abstention, supersession, outcomes, staleness, wiki compile:**
@@ -201,6 +213,10 @@ these specifics" — and the extraction event never changes. Consequences:
   gives: an affirmation is new user-authored evidence and belongs in
   `remember()` — the restatement lands as a NEW, grounded edge, and the
   ordinary supersession/reinforcement machinery does the rest.
+- **The merge survivor takes the OR (F1):** when identity-equal edges merge
+  (absorption/dedup), the survivor is flagged iff ANY merged record was —
+  once ungrounded, the surviving record stays flagged; a merge never
+  launders the signal.
 - **Nothing else clears it either**: no maintenance path, no import path, no
   host API. This is append-not-mutate (0009) applied to a diagnostic:
   re-derivation or clearing would make the flag a mutable judgment; as an
@@ -240,9 +256,11 @@ R1-7 rule: a draft spec claims no CI).
 |---|---|---|
 | **U1** the check never refuses, never demotes: ingest outcomes and gate partitions are identical with the check enabled vs a counterfactual disabled run, except the flag and its marker | `test_ungrounded_never_refuses_or_demotes` | obligation — impl commit |
 | **U2** no consumer grants or moves trust/authority/staleness on the flag — a sweep by FACT over every `ungrounded` reader | `test_ungrounded_grants_nothing` | obligation — impl commit |
+| **U2b** the comparison/digest bases hold the F1 ruling: the flag is absent from the frozen `contribution.py` field basis and from the 0014 projection; a NEW Edge field cannot silently join either (basis-membership pinned) | `test_ungrounded_excluded_from_identity_bases` | obligation — impl commit |
+| **U2c** the merge survivor takes the OR: identity-equal merge of flagged+unflagged yields a flagged survivor, in both merge orders | `test_merge_survivor_keeps_the_flag` | obligation — impl commit |
 | **U3** the predicate matches the pinned phase-1f reference on the pinned vectors (incl. one per §1 defect class and the date-resolution exemption) | `test_predicate_matches_the_pinned_vectors` | obligation — impl commit |
 | **U4** the flag is immutable: confirm/dispute/supersession/outcome/maintenance/import leave it byte-unchanged on existing rows | `test_ungrounded_is_immutable` | obligation — impl commit |
-| **U5** the marker is never severed from a rendered flagged fact (the 0012 clamp rule), on every rendering surface | `test_marker_survives_every_surface_and_clamp` | obligation — impl commit |
+| **U5** the marker is never severed from a rendered flagged fact (the 0012 clamp rule), on every rendering surface — **including THROUGH the wiki compiler's re-rendering (N2: re-rendering is where markers get lost; the compiled-surface cell is explicit)** | `test_marker_survives_every_surface_and_clamp` | obligation — impl commit |
 | **U6** proactive never volunteers a flagged fact; query recall returns it | `test_proactive_suppression` | obligation — impl commit |
 | **U7** the import boundary: verbatim carriage both paths; pre-v6 strip; absent→False; forged values grant nothing | `test_import_carries_but_never_grants` | obligation — impl commit |
 | **U8** version honesty: FORMAT 6 refused by older importers; SCHEMA v7 refused by older builds; the migration is additive-only | `test_version_gates_and_migration` | obligation — impl commit |
@@ -269,11 +287,11 @@ R1-7 rule: a draft spec claims no CI).
 |---|---|
 | `schema.py` `Edge` | `ungrounded: bool = False` |
 | `ingest.py` | the §4b check between extraction and storage |
-| render / `gate.py` surfaces | the `[unverified extraction]` marker |
+| render / `gate.py` surfaces | the `[possible extraction error]` marker |
 | `proactive.py` | the suppression rule |
 | `introspect.py` | the count + category markers |
 | `portability.py` | FORMAT 6; pre-v6 strip row; the flag in exports |
-| `store/schema_version.py` + migration | SCHEMA v7, no-DDL, additive |
+| `store/schema_version.py` + migration | SCHEMA v7, no-DDL, additive — **ordinary open-time `migrate_store` machinery, NEVER the 0018 orchestrator** (the orchestrator is D2's; U-Q3 condition 2) |
 | `docs/api.md`, `docs/concepts.md` | the flag's meaning; the restatement remedy |
 | telemetry | **no change in v1** (consent v4 deferred — recorded here so the deferral is a decision, not an omission) |
 | MCP | no change |
@@ -283,10 +301,12 @@ R1-7 rule: a draft spec claims no CI).
 
 | accepted spec | touchpoint | disposition |
 |---|---|---|
-| **0016 D2 / 0018** | D2's spec text claims FORMAT 5→6 and SCHEMA v6→v7 for the removal release; this spec, shipping FIRST, takes 6 and v7 | **the numbering shifts by one for D2 (→ FORMAT 7, SCHEMA v8) — a mechanical amendment to 0016's unimplemented forward-looking numbers, landed same-commit with this spec's acceptance flip (the 0005→0014 rider precedent)**; 0018's preflight ladder gains one legal base version the same way |
+| **0016 D2 / 0018** | D2's spec text claims FORMAT 5→6 and SCHEMA v6→v7 for the removal release; this spec, shipping FIRST, takes 6 and v7 | **the numbering shifts by one for D2 (→ FORMAT 7, SCHEMA v8) — mechanical IN CLASS, with the internal review's three pinned conditions: (1) the rider RE-STATES the full numbered matrix, never deltas (bases 1–5 → 1–6; base-6-alone → base-7-alone; current-v7 → v8; I13's "1–5" → "1–6" — the R14-2 literal-table rule); (2) §7a states this spec's own v6→v7 migration is ORDINARY open-time machinery, NEVER the 0018 orchestrator — so a never-opened v6 store at D2 correctly lands `unsupported-base` with the ladder naming the intermediate release; (3) the rider lands same-commit with this spec's acceptance flip PLUS a fact-search sweep of 0016 D1's text for any version numerals** |
+| **0014 — comparison/digest bases (F1, ruled)** | `contribution.py:142` enumerates Edge fields BY NAME in the frozen 0014 receipt basis; the 0014 source-identity projection partitions Episode fields | **`ungrounded` is EXCLUDED from every identity/digest basis** — it is extraction-fidelity metadata, not identity: two extractions of the same fact ARE the same fact, flag or no flag. The frozen `contribution.py:142` field list is therefore UNCHANGED (no digest rider needed — the exclusion is the rider-avoiding ruling, pinned by a basis-membership test in U2b); the 0014 projection is untouched (an Edge field; the projection is over Episode fields — stated, not assumed) |
+| **0009 — record-equality composition (F1, ruled not lucky)** | import compares validated models (`Edge.model_validate` normalizes absent→`False`) | RULED: a pre-v6 record (field absent → `False`) compares equal to a stored unflagged record — idempotent re-import composes; a stored `True` vs an incoming absent/`False` DIFFERS → whole-import refusal, the honest outcome (a file claiming a clean extraction for a record we flagged is a real difference). U7 asserts both cells |
 | **0005** | the import boundary carries the flag verbatim on both paths; the cap is three levers and STAYS three | §2c row + U7; no 0005 text change — its cap contract never enumerated non-trust fields |
 | **0008** | `needs_confirmation` NOT reused; no staleness path touches the flag | referenced only; U2/U4 enforce |
-| **0009** | append-not-mutate is the immutability rationale; no outcome-machinery change | referenced only |
+| **0009 (append-not-mutate)** | the immutability rationale; no outcome-machinery change | referenced only |
 | **0012** | the marker inherits the never-severed clamp rule | referenced; U5 |
 | **0015** | telemetry deferral — a future `ungrounded` count is consent-v4 work under the 0015 regime | recorded, deferred |
 
@@ -335,6 +355,6 @@ this month's reviews keep finding half-done.
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **U-Q1** | Proactive suppression (§4c): suppress entirely (drafted) vs volunteer WITH the marker? Suppression is the conservative read of the volunteering bar; the alternative keeps proactive complete. | design | research internal review | before external round 1 |
-| **U-Q2** | Does the marker text `[unverified extraction]` collide with the existing unverified-claims fence vocabulary in a way that confuses the model? (Both say "unverified"; different meanings.) | design | research internal review | before external round 1 |
-| **U-Q3** | The D2 renumbering (§7b): confirmed mechanical, or does 0018's frozen preflight table need more than the one-row shift? | cross-spec | dev+research | before acceptance |
+| ~~U-Q1~~ | **RULED (internal review): proactive suppression CONFIRMED** — the false-positive cost differs by surface; suppression withholds, never grants. §4c. | resolved | research | — |
+| ~~U-Q2~~ | **RULED: the marker is `[possible extraction error]`** — avoids the fence-vocabulary collision AND the benchmark artifact-seam (a future run scoring its own markers as attribution). §4c. | resolved | research | — |
+| ~~U-Q3~~ | **RULED: the D2 renumbering is mechanical IN CLASS under three pinned conditions** (full re-stated matrix; ordinary-machinery migration statement; same-commit rider + numeral sweep of D1 text). §7b. | resolved | research+dev | — |
