@@ -112,8 +112,10 @@ def render() -> str:
     out.append(
         "  RECONCILIATION (0018 external B2-1 — the arithmetic must close): the\n"
         "  measured line's skips decompose as: git-checkout 11 (longmemeval 8,\n"
-        "  test_spec_gate 2, test_schema_model 1) + env-flag 2 + package-artifact 1\n"
-        "  = 14. Every OTHER inventoried site PASSED in the measured line (MCP x5,\n"
+        "  test_spec_gate 2, test_schema_model 1) + env-flag 3 (eval, robustness,\n"
+        "  and the 0016 D1 pydantic-floor regression — by design outside the\n"
+        "  min-dep CI job) + package-artifact 1\n"
+        "  = 15. Every OTHER inventoried site PASSED in the measured line (MCP x5,\n"
         "  of which only the wiring test is SDK-gated;\n"
         "  the 0015 POSIX pair x2; the HOME-anchored coordination-file test x1; the\n"
         "  runtime-identity, euid, and qualified-runtime cells x1 each). Compute\n"
