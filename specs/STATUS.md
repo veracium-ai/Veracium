@@ -4,11 +4,11 @@
 
 # Spec status
 
-**18 specs · 14 accepted · 171 external review
+**19 specs · 14 accepted · 171 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **14 of 18 are accepted**, which
+review is required to reach it. **14 of 19 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -31,6 +31,7 @@ is the number that decides what can be built.
 | **0016** | SourceType deletion + the evidence_basis contract freeze | `accepted` | 2026-08-13 | 1 | 15 | 0 | 0 | 0 | — |
 | **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 15 | 0 | 0 | 0 | — |
 | **0018** | the release-migration orchestrator | `accepted` | 2026-08-13 | 1 | 4 | 0 | 0 | 0 | — |
+| **0019** | the `ungrounded` flag — evidence-grounding at ingest | `draft` | 2026-08-14 | 0 | 0 | 3 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
