@@ -4,7 +4,7 @@
 
 # Spec status
 
-**18 specs · 13 accepted · 162 external review
+**18 specs · 13 accepted · 164 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -17,7 +17,7 @@ is the number that decides what can be built.
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-13 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
-| **0005** | import has no trust boundary | `draft` | 2026-08-13 | 1 | 1 | 1 | 0 | 2 | 0/2 |
+| **0005** | import has no trust boundary | `draft` | 2026-08-14 | 1 | 3 | 1 | 0 | 2 | 0/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-09 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-10 | 0 | 4 | 0 | 0 | 1 | 1/1 |
