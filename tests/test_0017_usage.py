@@ -410,29 +410,49 @@ def test_listener_validates_fail_closed(tmp_path):
 
 # -- I9: attribution is exact within the stated boundary -----------------------------
 def test_attribution_is_exact_under_concurrency(tmp_path):
-    mem, w = _metered_mem(tmp_path, "conc.db")
-    users = [f"u{i}" for i in range(4)]
-    barrier = threading.Barrier(len(users))
+    """Two users' operations with OVERLAPPING armed windows: both providers
+    are in flight simultaneously (frames + armed calls live together — the
+    cross-attribution hazard), while the store writes stay serialized (the
+    store's documented contract is single-writer; attribution, not store
+    concurrency, is what I9 pins)."""
+    barrier = threading.Barrier(2)
+    a_done = threading.Event()
+
+    class OverlappingFake(_Fake):
+        def __call__(self, prompt, *, system=None, role="compile",
+                     json_schema=None):
+            if role == "distill":
+                who = threading.current_thread().name
+                barrier.wait()               # both armed windows now overlap
+                if who == "thread-b":        # B stays in-provider until A's
+                    a_done.wait(timeout=30)  # whole operation (incl. writes,
+                                             # emission, merge) completes
+            return super().__call__(prompt, system=system, role=role,
+                                    json_schema=json_schema)
+
+    w = Metered(OverlappingFake(), counter=_counter)
+    mem = _mem(tmp_path, w, "conc.db")
     errors = []
 
-    def work(uid):
+    def work(uid, name):
         try:
-            barrier.wait()
             ctx = contextvars.copy_context()
             ctx.run(mem.remember, uid, "USER: I'm a chef.", date="2026-06-01")
+            if name == "thread-a":
+                a_done.set()
         except Exception as e:                   # pragma: no cover
             errors.append(e)
+            a_done.set()
 
-    threads = [threading.Thread(target=work, args=(u,)) for u in users]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    ta = threading.Thread(target=work, args=("ua", "thread-a"), name="thread-a")
+    tb = threading.Thread(target=work, args=("ub", "thread-b"), name="thread-b")
+    ta.start(); tb.start(); ta.join(); tb.join()
     assert not errors
-    for uid in users:
+    for uid in ("ua", "ub"):
         roles = mem.introspect(uid)["llm_usage"]["roles"]
         assert roles["distill"]["calls"] == 1, \
             f"{uid}: exactly one distill call must attribute (no cross-user smear)"
+        assert roles["distill"]["in_tok"] > 0
     mem.close()
 
 
