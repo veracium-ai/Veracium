@@ -4,11 +4,15 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft v5** — split out of `0002` on 2026-08-01 (v1); matured to the ruled
+> **draft v6** — split out of `0002` on 2026-08-01 (v1); matured to the ruled
 > design 2026-08-13 (v2/v3) and **re-verified line-by-line against the shipped
 > import machinery**; v4 folds external round 1 (seven findings — the cap gains
 > its third lever); v5 folds round 2 (three findings — the third lever's
-> collision with accepted 0014's projection resolved by formal amendment)
+> collision with accepted 0014's projection resolved by formal amendment); v6
+> folds round 3 (three findings — the amendment made implementable and exact:
+> path-transformed-vs-persisted comparison, computed cap-equivalence classes,
+> fixed-point honesty, and the rider carried atomically into 0014 at the
+> acceptance flip)
 > (FORMAT 5: the 0009 whole-file preflight + atomic commit, the
 > 0010 X17–X19 shapes, the 0006 origin gates, the 0014 indexed-output identity
 > gates — none of which existed when v1 was written). **This spec carries a
@@ -18,13 +22,13 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v5 — EXTERNAL ROUND 2 FOLDED (3 bin-(a) + 1 editorial, 2026-08-14, classified first): **R2-1 (C+D, found-in-fix of R1-1)** the third lever collapsed 0014's source-identity projection (reviewer-reproduced: `raw_projection_equal=False, post_cap_projection_equal=True` → skip where accepted 0014 refused) — v4's "0014 unchanged" was a cross-carrier contradiction with its own §4c-ii ordering; **resolved by FORMAL narrow amendment** (§7b: default path compares capped-vs-capped — the cap joins the canonicalization set; trust-field-only conflicts skip inserting nothing; content conflicts refuse; restore keeps 0014's full-resolution alarm; §8 limit 6 states the coarsened-alarm cost; P16 is the matrix). Rejected: pre-cap identity carrier (new schema storing what the cap discards); refuse-on-collision (breaks default idempotency). **R2-2 (D+E)** the absent/malformed claims were wrong per-field — the 9-cell matrix is now EXECUTED on shipped `Provenance` and pinned in §4c-ii (author: all three refuse; disclosure: default/refuse/refuse; derived_from: None/None/refuse); P14 rewritten to all 9 cells (per-field malformed = the anti-normalization teeth); P4's unreachable "omitted entirely" cell corrected. **R2-3 (D+E)** the `capped` carrier inventory contradicted itself (§2 said `_record`; §7a excluded it; the CLI printed nothing) — **resolved: exactly two carriers** (host-API return + the CLI line, which GAINS the count with a compatibility note; `_record` stays excluded). Editorial: §9 two→three levers. *(v4: round 1 folded — the third lever, closed restore predicate, trust-field-faithful restore, validate-then-cap, pinned warning, mechanical manifest, obligations honesty.)* — EXTERNAL ROUND 1 FOLDED (7 bin-(a) + 2 editorial, 2026-08-14, classified before fixing): **R1-1 (C+D)** the two-lever cap left `author_of_evidence=USER` standing under remap — stored provenance and `introspect().by_author` repeated a claim whose referent had changed; **the cap gains its third lever** (author set to `THIRD_PARTY` on every default import) and §4c's "cap rather than rewrite" argument is withdrawn on this spec's own §1 logic. **R1-2 (F)** `restore` is now a closed predicate — `type(restore) is bool` or refuse (P13). **R1-3 (D+G)** "byte-faithful restore" was false against the shipped canonicalization (`portability.py:353` historical-id remap; 0006 origin materialisation) — reviewer-executed; restore is redefined as bypassing ONLY the trust cap (P2 rewritten trust-field-exact, both export shapes × both destinations). **R1-4 (D+C)** the §2c raise contract vs §4c cap-before-validation contradiction — the exact five-step sequence is now pinned (validate THEN cap; P14). **R1-5 (C)** P10's refusal message recruited operators toward `--restore`; the warning text is now pinned and the mixed-file case is the regression (P15). **R1-6 (F+E)** the call-site inventory was wrong (measured: 50 AST sites / 7 files, not "56/8") and prose — replaced by a mechanical per-callsite disposition manifest obligation. **R1-7 (E)** P1–P12 were labelled CI while zero existed — every §6 check is now labelled a stage-5 obligation. *(v3 history: internal review passed; N1/N2 folded, N3 recorded. v2: I-Q1 folded; the v1 one-lever defect corrected.)* |
+| **Version** | v6 — EXTERNAL ROUND 3 FOLDED (3 bin-(a) + 1 editorial, 2026-08-14, classified first; R2-2/R2-3/§9 closed by the reviewer, R2-1's replacement design refined): **R3-1 (A+D)** blanket mixed-path refusal was unimplementable — no persisted import-mode marker exists, and a cap FIXED-POINT record (`(3P, 3P, use_only/quarantined)`) is identical under both path transforms, so mixed-path over it must skip; the comparison is restated implementably as **path-transformed incoming vs persisted row** ("capped-vs-capped" was wrong when the stored row arrived via restore); refusal happens exactly where capping changes a compared field; P16 gains positive fixed-point skip cells. **R3-2 (C+E)** P16's "for EACH capped field → skip" assumed symmetric equivalence; the classes are now COMPUTED per field over the full shipped domains and pinned as a table (author: one class; derived_from: one class incl. `None`; disclosure: TWO — `{mentionable, use_only}` and `{quarantined}`); `mentionable`↔`quarantined` REFUSES (the reviewer's executed probe is the asserted outcome); "trust-field-only" replaced by "cap-equivalent" throughout the operative text. **R3-3 (D+F)** the amendment's CARRIER was wrong — deferring the 0014 rider to the impl commit would leave two contradictory live accepted contracts; now: 0014 added to `Spec-Requires`, the rider text verbatim in §7b as part of THIS review's approval surface (approval = cross-spec signoff), and the acceptance-flip commit updates both files atomically (the 0016+0018 precedent). Editorial: §8 limit 3's "two capped levers" → all three. *(v5: 0014 formal amendment, 9-cell executed matrix, two-carrier capped inventory.)* — EXTERNAL ROUND 2 FOLDED (3 bin-(a) + 1 editorial, 2026-08-14, classified first): **R2-1 (C+D, found-in-fix of R1-1)** the third lever collapsed 0014's source-identity projection (reviewer-reproduced: `raw_projection_equal=False, post_cap_projection_equal=True` → skip where accepted 0014 refused) — v4's "0014 unchanged" was a cross-carrier contradiction with its own §4c-ii ordering; **resolved by FORMAL narrow amendment** (§7b: default path compares capped-vs-capped — the cap joins the canonicalization set; trust-field-only conflicts skip inserting nothing; content conflicts refuse; restore keeps 0014's full-resolution alarm; §8 limit 6 states the coarsened-alarm cost; P16 is the matrix). Rejected: pre-cap identity carrier (new schema storing what the cap discards); refuse-on-collision (breaks default idempotency). **R2-2 (D+E)** the absent/malformed claims were wrong per-field — the 9-cell matrix is now EXECUTED on shipped `Provenance` and pinned in §4c-ii (author: all three refuse; disclosure: default/refuse/refuse; derived_from: None/None/refuse); P14 rewritten to all 9 cells (per-field malformed = the anti-normalization teeth); P4's unreachable "omitted entirely" cell corrected. **R2-3 (D+E)** the `capped` carrier inventory contradicted itself (§2 said `_record`; §7a excluded it; the CLI printed nothing) — **resolved: exactly two carriers** (host-API return + the CLI line, which GAINS the count with a compatibility note; `_record` stays excluded). Editorial: §9 two→three levers. *(v4: round 1 folded — the third lever, closed restore predicate, trust-field-faithful restore, validate-then-cap, pinned warning, mechanical manifest, obligations honesty.)* — EXTERNAL ROUND 1 FOLDED (7 bin-(a) + 2 editorial, 2026-08-14, classified before fixing): **R1-1 (C+D)** the two-lever cap left `author_of_evidence=USER` standing under remap — stored provenance and `introspect().by_author` repeated a claim whose referent had changed; **the cap gains its third lever** (author set to `THIRD_PARTY` on every default import) and §4c's "cap rather than rewrite" argument is withdrawn on this spec's own §1 logic. **R1-2 (F)** `restore` is now a closed predicate — `type(restore) is bool` or refuse (P13). **R1-3 (D+G)** "byte-faithful restore" was false against the shipped canonicalization (`portability.py:353` historical-id remap; 0006 origin materialisation) — reviewer-executed; restore is redefined as bypassing ONLY the trust cap (P2 rewritten trust-field-exact, both export shapes × both destinations). **R1-4 (D+C)** the §2c raise contract vs §4c cap-before-validation contradiction — the exact five-step sequence is now pinned (validate THEN cap; P14). **R1-5 (C)** P10's refusal message recruited operators toward `--restore`; the warning text is now pinned and the mixed-file case is the regression (P15). **R1-6 (F+E)** the call-site inventory was wrong (measured: 50 AST sites / 7 files, not "56/8") and prose — replaced by a mechanical per-callsite disposition manifest obligation. **R1-7 (E)** P1–P12 were labelled CI while zero existed — every §6 check is now labelled a stage-5 obligation. *(v3 history: internal review passed; N1/N2 folded, N3 recorded. v2: I-Q1 folded; the v1 one-lever defect corrected.)* |
 | **Status** | *see `Spec-Status:` — canonical.* |
 | **Internal reviewers** | research — **found the defect**, ruled I-Q1, and PASSED the internal review 2026-08-13 (adversarial; N1/N2 folded same-commit in v3, N3 recorded in §7b) |
 | **External review** | required — `portability.py`, `__init__.py` are guarded and this changes what an import means |
 | **Decision + date** | — |
 | **Path** | full |
-| **Spec-Requires** | `0006` (accepted — this spec discharges 0006's I7 test obligation and amends the path of its I6/I9 round-trip checks, §7b) |
+| **Spec-Requires** | `0006` (accepted — this spec discharges 0006's I7 test obligation and amends the path of its I6/I9 round-trip checks, §7b), **`0014` (accepted — this spec FORMALLY AMENDS its §2c projection contract; the verbatim rider is in §7b and lands in `specs/0014-*.md` in the SAME COMMIT as this spec's acceptance flip — R3-3)** |
 
 > **Why this is its own spec.** The other 0002 splits were defects in shipped
 > behaviour. **This one is a defect that a queued documentation change would
@@ -299,14 +303,34 @@ contract. The pinned sequence, both paths:
    0006 I7's "applies first" holds *with respect to every trust consumer and
    every comparison gate* — nothing downstream of step 3 can smuggle an
    uncapped form. **Consequence for 0014, stated as the formal amendment it
-   is (R2-1, §7b):** on the default path the cap joins the canonicalization
-   set the projection already tolerates (the `hist:` remap, the origin
-   materialisation), so the source-identity comparison runs
-   **capped-vs-capped**. Post-cap projection equality is COARSER than raw
-   equality exactly on the three capped fields: two foreign claims of the
-   same identity tuple differing *only* in trust fields are indistinguishable
-   after step 3 and resolve as a skip (nothing inserted); claims differing in
-   any content field still refuse. §8 limit 6 carries the honest cost.
+   is (R2-1/R3-1/R3-2, §7b):** on the default path the cap joins the
+   canonicalization set the projection already tolerates (the `hist:` remap,
+   the origin materialisation). The implementable comparison — there is no
+   persisted import-mode marker, and this spec adds none — is always
+   **the path-transformed incoming record against the persisted existing
+   row** (R3-1; "capped-vs-capped" was wrong when the stored row arrived via
+   restore). Post-cap equality is coarser than raw equality exactly by the
+   **cap-equivalence classes**, computed per field over the full shipped
+   domains (R3-2 — derived from the cap maps, not assumed symmetric):
+
+   | field | equivalence classes under the cap |
+   |---|---|
+   | `author_of_evidence` | ONE class: `{user, system, third_party}` → `third_party` |
+   | `derived_from` | ONE class: `{user, system, third_party, None}` → `third_party` |
+   | `disclosure` | TWO classes: `{mentionable, use_only}` → `use_only`; `{quarantined}` → `quarantined` |
+
+   **Cap-equivalent differences** (within one class) are invisible to the
+   comparison and resolve as a skip (nothing inserted). **Cap-inequivalent
+   differences refuse** — `mentionable` vs `quarantined` crosses disclosure
+   classes and refuses exactly as raw 0014 would (the reviewer's executed
+   probe: `mentionable_vs_quarantined_after_default=False`). Content-field
+   differences always refuse. **Cap fixed points** — records already at
+   `(third_party, third_party, use_only)` or `(third_party, third_party,
+   quarantined)` — are **path-invisible**: the transform is identity on
+   them, so a default import and a restore of such a record compare
+   identically and skip against an equal persisted row; mixed-path refusal
+   (§4d) exists ONLY where capping changes a compared field. §8 limit 6
+   carries the honest cost.
 5. **Atomic commit** (0009/0010 machinery, unchanged).
 
 **Restore skips step 3 and nothing else** (R1-3 — reviewer-executed against
@@ -367,9 +391,17 @@ idempotent (the remapped form is stable).
   non-source destination skips (the canonical form is stable — §4c-ii; the
   same-SOURCE-store consolidation-output cell refuses instead, a shipped 0014
   refusal predating this spec). **Mixing paths for the
-  same records refuses** — an honest fail-closed outcome, recorded as a limit
-  (§8), including for 0014's indexed-output projection (capped vs uncapped
-  provenance is a projected difference → rejected, never merged).
+  same records refuses exactly where the cap changes a compared field
+  (R3-1)** — an honest fail-closed outcome, recorded as a limit (§8),
+  including for 0014's indexed-output projection (capped vs uncapped
+  provenance is a projected difference → rejected, never merged). **The
+  precise boundary, not the blanket claim:** a record already at a cap fixed
+  point (`(third_party, third_party, use_only)` or `(…, quarantined)`) is
+  identical under both path transforms — no persisted import-mode marker
+  exists to tell the paths apart, so default→restore and restore→default of
+  such records compare equal and SKIP (§4c-ii). Refusal is a consequence of
+  the transform changing bytes, never of path bookkeeping this design does
+  not have.
 - **Imported outcome chains still count as judgment history** on their (capped,
   non-assertable) edges — derived counters do not filter by trust. Another
   principal's judgments arrive as history about a fact this store will not
@@ -436,7 +468,7 @@ applied to the whole table.)
 | **P13** `restore` is a closed predicate (R1-2) | `test_restore_rejects_non_bool_values` — `restore="false"`, `restore=1`, `restore=0`, `restore=None`, `restore=[]`, `restore=object()` each raise `TypeError` before the file is opened (a nonexistent path proves nothing was read); `restore=True`/`False` behave per §4a | obligation — impl commit |
 | **P14** the validate-then-cap sequence is exact — **the full 9-cell per-field matrix (R1-4 + R2-2)** | `test_malformed_trust_fields_raise_never_normalize` — one cell per (field × {omitted, null, malformed}), asserting the §4c-ii step-2 matrix EXACTLY as executed on shipped `Provenance`: `author_of_evidence` refuses all three; `disclosure` defaults on omission (then caps) and refuses null/malformed; `derived_from` accepts omission AND null as `None` (then caps to `THIRD_PARTY`) and refuses malformed. Every refusal cell asserts whole-import refusal with the store untouched. **Per-field malformed cells are the anti-normalization teeth (R2-2's E half): a v4-shape test over `disclosure` alone stays green while an implementation silently normalizes malformed `author_of_evidence` or `derived_from` before validation** | obligation — impl commit |
 | **P15** the mixed-file case stays refused and the operator warned (R1-5) | `test_tampered_own_export_refuses_with_warning` — a legitimate own-store export plus ONE attacker-added new edge: default import refuses whole (the legitimate rows' capped forms differ), the message is the pinned §4d text; the test documents that `--restore` on this file WOULD admit the added edge — the warning is the designed mitigation | obligation — impl commit |
-| **P16** the 0014 amendment behaves exactly as amended (R2-1) | `test_capped_projection_identity_matrix` — for EACH of the three capped fields: two indexed-output files sharing `(origin, operation_id, index)` differing only in that field — default-then-default **skips** (nothing inserted, destination row unchanged); a **content-field** difference on the same tuple still **refuses**; default-then-restore and restore-then-default on the same tuple **refuse** (mixed-path); restore-then-restore with a raw trust difference **refuses** (0014's shipped full-resolution alarm, untouched). Asserts the reviewer's reproduced collapse is now the SPECIFIED outcome: `raw_projection_equal=False, post_cap_projection_equal=True → skip` | obligation — impl commit |
+| **P16** the 0014 amendment behaves exactly as amended — **exhaustive over the equivalence-class pairs AND the fixed points (R2-1 + R3-1 + R3-2)** | `test_capped_projection_identity_matrix` — two indexed-output files sharing `(origin, operation_id, index)`, enumerated: **(i) cap-equivalent pairs skip** — every author pair from `{user, system, third_party}`, every derived_from pair from `{user, system, third_party, None}`, and disclosure `mentionable`↔`use_only`: default-then-default **skips**, nothing inserted, destination row unchanged; **(ii) cap-INEQUIVALENT pairs refuse** — disclosure `mentionable`↔`quarantined` and `use_only`↔`quarantined` **refuse** (the reviewer's executed probe `mentionable_vs_quarantined_after_default=False` is the asserted outcome), as does any content-field difference; **(iii) mixed-path cells split by fixed point** — for a record where capping CHANGES a compared field: default-then-restore and restore-then-default **refuse**; for a cap FIXED-POINT record (`(third_party, third_party, use_only)` and `(…, quarantined)` both tested): default-then-restore and restore-then-default **skip** — path-invisibility asserted positively; **(iv)** restore-then-restore with any raw trust difference **refuses** (0014's full-resolution alarm, untouched). The v5 collapse claim is superseded: the specified outcome is `post_cap_projection_equal → skip` for (i), refuse for (ii) | obligation — impl commit |
 
 ---
 
@@ -476,7 +508,7 @@ backup) — nothing is destroyed, because the cap never touched the file.
 |---|---|---|
 | **0006 I7** | "0005's import cap applies before any of this" — its named test `test_imported_source_id_does_not_bypass_the_remap_cap` **does not exist yet** (verified: zero matches in `tests/`); it was an obligation contingent on this spec | **discharged here as P9** — written with this spec's implementation, same commit |
 | **0006 I9 / I6** | `test_local_source_survives_a_roundtrip_into_the_same_store` (`tests/test_0006_source_identity.py:283`) and the I6 round-trip check import into the same store **on the default path**, which now refuses | the I9/I6 *properties* are unchanged and live on the restore path — **the tests move to `restore=True` in the same commit as the implementation**, with a marked note in each citing this spec (the 0014 §7b same-commit rule) |
-| **0014 §2c — FORMALLY AMENDED (R2-1), the one accepted contract this spec changes** | 0014's projection contract says verbatim comparison with "NO normalized set — nothing in the shipped boundary rewrites these references" (`portability.py:97`). The three-lever cap IS a rewrite feeding that comparison, so v4's "0014 unchanged" was a cross-carrier contradiction (found in the R1-1 fix — the lever changed what an accepted gate *observes*). The amendment, narrow and explicit: **on the default path the cap joins the canonicalization set and `source_identity_projection` compares capped-vs-capped; trust-field-only conflicts on the same identity tuple skip (insert nothing); content-field conflicts refuse unchanged; the restore path compares raw-vs-stored exactly as 0014 shipped.** Rejected alternatives, for the record: a pre-cap identity carrier is new schema storing exactly what the cap deliberately discards; refuse-on-every-collision breaks default-path idempotency (re-import of the same file would refuse). The implementation commit adds the cross-reference rider note to 0014's spec §2c (the 0006-I7 discharge pattern) and P16 is the amendment's test | **P16**, four-cell + three-field matrix; §8 limit 6 |
+| **0014 §2c — FORMALLY AMENDED (R2-1, made exact by R3-1/R3-2, carried correctly by R3-3), the one accepted contract this spec changes** | 0014's projection contract says verbatim comparison with "NO normalized set — nothing in the shipped boundary rewrites these references" (`portability.py:97`). The three-lever cap IS a rewrite feeding that comparison, so v4's "0014 unchanged" was a cross-carrier contradiction. **R3-3 corrected the amendment's CARRIER:** deferring the rider to the implementation commit would leave two contradictory live accepted contracts between 0005's acceptance and its implementation. The rule now: **`0014` is a `Spec-Requires` dependency, the rider text below is part of THIS review's approval surface (approving 0005 for acceptance approves the rider verbatim — the cross-spec signoff), and the acceptance-flip commit updates BOTH files atomically** (the 0016+0018 atomic-flip precedent): `Spec-Status: accepted` here + the rider into 0014 §2c, one commit, no contradictory interval. The rider, verbatim: <br><br> > **Amended by 0005 (landed in the same commit as 0005's acceptance):** on 0005's default (capping) import path, the source-identity comparison receives the **path-transformed incoming record** — the three-lever cap applied, joining the canonicalization set beside the historical-id remap — compared against the persisted row. The comparison itself remains verbatim over the same field sets; what changes is the incoming form. Consequence: **cap-equivalent** differences (0005 §4c-ii class table) are not observable and resolve as skip; **cap-inequivalent** differences (any content field; `mentionable` vs `quarantined`) refuse exactly as before. The restore path is untouched: raw incoming vs persisted row. <br><br> Rejected alternatives, for the record: a pre-cap identity carrier is new schema storing exactly what the cap deliberately discards; refuse-on-every-collision breaks default-path idempotency. P16 is the amendment's test | **P16** (exhaustive pairs + fixed points); §8 limit 6; Spec-Requires row |
 | **0009 §4c / 0010 X17-X19** | machinery referenced, not amended — the cap runs strictly before both (§4c-ii step 4), and restore preserves their identity transforms untouched | their import-path test fixtures that round-trip same-store on the default path are updated to `restore=True` where they test *integrity* semantics; fixtures that test *trust* keep the default path. **Measured inventory (R1-6 — the v3 prose count was wrong): 50 `import_memory` call sites by AST across 7 test files (56 textual hits, same 7 files; v3 said "56 across 8" — a textual count with a miscounted file list). The prose inventory is replaced by a MECHANICAL obligation: the implementation commit adds a per-callsite disposition manifest test that AST-enumerates every `import_memory` call under `tests/` and asserts each site carries a recorded disposition (`stays-default-trust` / `relocated-restore` / `refusal-fixture`) — a new, unmapped site fails the manifest.** **Negative fixtures must assert their ORIGINAL refusal reason** (topology / origin / identity / claimed), not merely "refuses" — otherwise the new default-cap refusal makes them pass vacuously while testing nothing. The internal review's N3 flag stands, now mechanized: completeness is the manifest's job, not a checklist's |
 | **0012** | reinforcement laundering closed at ingest — §4e leans on it | referenced only; no amendment |
 
@@ -504,17 +536,23 @@ on anything the attacker writes.
    file cannot prove it deserves restore; P15's tampered-own-export case is
    the standing regression for what the warning protects against. The CLI
    help and docs carry the same sentence.
-2. **Mixed-path imports of the same records refuse** (§4d) — including 0014's
-   indexed-output projection treating capped-vs-uncapped provenance as a real
-   difference. Fail-closed and loud, never merged; an operator hitting it is
-   holding one file in two trust postures.
+2. **Mixed-path imports of the same records refuse exactly where the cap
+   changes a compared field (R3-1)** — including 0014's indexed-output
+   projection treating capped-vs-uncapped provenance as a real difference.
+   Fail-closed and loud, never merged; an operator hitting it is holding one
+   file in two trust postures. **The honest edge of the claim:** cap
+   fixed-point records are path-invisible (no persisted import-mode marker
+   exists), so mixing paths over records already at
+   `(third_party, third_party, use_only/quarantined)` skips — there is
+   nothing for the refusal to observe, and nothing is lost (the persisted
+   row and the incoming row are byte-equal under both transforms).
 3. **Capped records still exist**: they occupy the unverified block, carry
    their own confidence, and count in outcome-chain history. The boundary
    controls *assertion*, not *presence* — presence is what import is for.
    **And presence cannot buy promotion (N2):** an attacker who imports a
    capped edge plus fabricated `kind="outcome"` judgments inflates its
    corroboration history, but assertability and grounded-block membership key
-   on the two capped levers, never on outcome counts — inflated history is
+   on the capped levers (all three — §4c), never on outcome counts — inflated history is
    inert to promotion (it can at most reorder material *within* the
    unverified block). This is the trust × proof-count separation, one level
    up; P12 pins it.
@@ -530,15 +568,19 @@ on anything the attacker writes.
    it, and that preserved a false statement instead (§4c); target-relative
    honesty outranks provenance archaeology in a store whose reporting
    surfaces repeat what is stored.
-6. **The cap coarsens 0014's fabrication alarm — trust-field-only conflicts
-   (R2-1).** Pre-0005, a second import claiming an existing identity tuple
-   with different trust fields refused loudly (fabrication evidence). Post-cap
-   those claims are indistinguishable and skip silently — nothing is inserted,
-   no trust consequence exists (P1–P12 hold on the stored record either way),
-   but the *alarm* now fires only for conflicts that survive the cap (any
-   content field). This is the price of a lossy cap and it is paid at the
-   alarm, not at the boundary. The restore path keeps 0014's full-resolution
-   alarm.
+6. **The cap coarsens 0014's fabrication alarm — cap-equivalent conflicts
+   (R2-1, made exact by R3-2).** Pre-0005, a second import claiming an
+   existing identity tuple with different trust fields refused loudly
+   (fabrication evidence). Post-cap, **cap-equivalent** claims (§4c-ii's
+   class table: any author difference, any derived_from difference, and
+   `mentionable`-vs-`use_only` — but NOT `mentionable`-vs-`quarantined`,
+   which crosses disclosure classes and still refuses) are indistinguishable
+   and skip silently — nothing is inserted, no trust consequence exists
+   (P1–P12 hold on the stored record either way), but the *alarm* now fires
+   only for conflicts that survive the cap: any content field, and any
+   cap-inequivalent trust difference. This is the price of a lossy cap and
+   it is paid at the alarm, not at the boundary. The restore path keeps
+   0014's full-resolution alarm.
 
 ---
 
@@ -587,3 +629,7 @@ AMENDMENT, 7 bin-(a) + 2 editorial.)*
 | 2 | R2-2 the absent/malformed matrix neither accurate nor exhaustive (author refuses on omission; P14 covered one field) | D+E | **folded (v5):** the 9-cell matrix executed on shipped `Provenance` and pinned as a table in §4c-ii step 2; P14 rewritten to all 9 cells with per-field malformed teeth; P4's unreachable omission cell corrected; §2c row made field-specific | v5 §4c-ii, §2c; P14, P4 |
 | 2 | R2-3 the `capped` carrier inventory self-contradicts (§2 `_record` vs §7a exclusion vs silent CLI) | D+E | **folded (v5): exactly two carriers** — host-API return + the CLI printed line (which gains the count; compatibility note + regression test pinned); `_record` exclusion kept and now consistent across §2/§3b/§7a | v5 §2, §3b, §7a |
 | 2 | (b) §9 still said "two-lever cap" | — | **folded (v5)** | v5 §9 |
+| 3 | R3-1 blanket mixed-path refusal unimplementable (no persisted path marker; cap fixed points are path-invisible) | A+D (found-in-fix of R2-1's fold) | **folded (v6):** comparison restated as path-transformed incoming vs persisted row; refusal exactly where capping changes a compared field; fixed-point skip cells positive in P16; §4d/§8 limit 2 carry the honest edge | v6 §4c-ii, §4d, §8 limit 2; P16(iii) |
+| 3 | R3-2 wrong disclosure equivalence (`mentionable`↔`quarantined` refuses; executed probe) | C+E | **folded (v6):** cap-equivalence classes COMPUTED per field over the full shipped domains and pinned as a table; "trust-field-only" → "cap-equivalent" in all operative text; P16 exhaustive over the pairs | v6 §4c-ii class table, §8 limit 6; P16(i)/(ii) |
+| 3 | R3-3 the formal 0014 amendment absent from the accepted carrier (Spec-Requires missing 0014; rider deferred to impl) | D+F | **folded (v6):** 0014 added to Spec-Requires; the rider text verbatim in §7b as part of the review approval surface (approval = cross-spec signoff); the acceptance-flip commit updates both spec files atomically — no contradictory interval | v6 header Spec-Requires, §7b rider |
+| 3 | (b) §8 limit 3 said "two capped levers" | — | **folded (v6):** all three | v6 §8 limit 3 |
