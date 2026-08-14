@@ -150,9 +150,14 @@ def _portability(args) -> int:
             r = export_memory(store, args.user, args.path)
             print(f"exported {r['edges']} edges + {r['episodes']} episodes -> {r['path']}")
         else:
-            r = import_memory(store, args.path, user_id=args.user)
+            r = import_memory(store, args.path, user_id=args.user,
+                              restore=args.restore)
+            # specs/0005 §7a — the default-path line carries the capped count
+            # (the one surface built for the operator); the restore-path line
+            # says nothing about capping (capped is 0 by construction there).
+            tail = "" if args.restore else f"; {r['capped']} capped to third-party trust"
             print(f"imported {r['edges']} edges + {r['episodes']} episodes into "
-                  f"'{r['user_id']}' ({r['skipped']} already present, skipped)")
+                  f"'{r['user_id']}' ({r['skipped']} already present, skipped{tail})")
         return 0
     finally:
         store.close()
@@ -313,9 +318,15 @@ def main(argv=None) -> int:
     ex.add_argument("--user", required=True, help="user id to export")
     ex.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
-    im = sub.add_parser("import", help="import a Veracium JSONL export (idempotent; never overwrites)")
+    im = sub.add_parser("import", help="import a Veracium JSONL export (idempotent; never overwrites; "
+                                       "DEFAULT imports cap trust — specs/0005)")
     im.add_argument("path", help="input .jsonl file")
-    im.add_argument("--user", help="remap the records into this user id")
+    im_mode = im.add_mutually_exclusive_group()
+    im_mode.add_argument("--user", help="remap the records into this user id (records import capped)")
+    im_mode.add_argument("--restore", action="store_true",
+                         help="trust the file's provenance exactly as written — ONLY for a file "
+                              "you exported yourself or have independently verified; a restore "
+                              "is this store's own history and never remaps (specs/0005 §4a)")
     im.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 
     mg = sub.add_parser(

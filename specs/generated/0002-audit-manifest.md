@@ -7,7 +7,7 @@
 
 **28 call sites** across **16 mutators**, enumerated by **parsing the AST** of every module under `src/veracium/`, with the mutator set read from the interface in `store/base.py`. Two earlier enumerations (from memory, then from a grep keyed on assignment) were incomplete, and a third (a line-oriented regex scan) could silently reattach a verdict to a different operation.
 
-**22 clean · 0 fixed · 1 open · 0 moved · 5 open and moved** — 22 of 28 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
+**23 clean · 0 fixed · 1 open · 0 moved · 4 open and moved** — 23 of 28 sites are unaffected. **States are declared in `audit_dispositions.py`, not inferred from the rendered table**: deriving them by searching rows for emoji double-counted every row whose verdict and test column disagreed, and shipped two different totals in one review package. Clean sites are listed because a findings-only audit cannot demonstrate coverage.
 
 **Identity is `(file, scope, mutator, fingerprint)`.** The fingerprint is a hash of the call's normalised expression and its enclosing control-flow context — **what the call is, not where it sits**. Moving a call keeps its verdict; swapping two different calls invalidates both. **Line numbers are informational.**
 
@@ -26,7 +26,7 @@
 | `src/veracium/__init__.py:1026` | `Memory.correct()` | `add_edge` | `72b03718535b` | `open_moved` | write-time | **`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes` | act | ➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class | tracked as 0003 I10 [M7-correct] |
 | `src/veracium/__init__.py:1027` | `Memory.correct()` | `add_episode` | `23255a7f3c3f` | `open_moved` | write-time | episode provenance | act | ➡️ moved with M7 | tracked as 0003 I10 [M7-correct] |
 | `src/veracium/__init__.py:1048` | `Memory.forget()` | `forget_user` | `c5d9e9e2da39` | `clean` | write-time | **all** — irreversible erasure | act | clean — erasure is the contract | `test_forget_erases_everything_and_only_that_user` |
-| `src/veracium/cli.py:249` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
+| `src/veracium/cli.py:254` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
 | `src/veracium/compile.py:245` | `compile_wiki()` | `set_wiki` | `888fd4a4d703` | `open_moved` | maintain-time | none directly — **caches a trust decision** (now carries the compiler-policy digest envelope, `0003` §4c-ii) | none | ➡️ **MOVED to `0004`.** Output outlives the inputs' revocation; `0003` drops the wiki on a refusal-contention transition, but the general trust-reducing-invalidation drop is 0004 | tracked as 0004 W1–W4 [M8-wiki] |
 | `src/veracium/graph.py:147` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
 | `src/veracium/ingest.py:168` | `ingest_event()` | `add_episode` | `5d29e2f07e03` | `clean` | write-time | episode provenance (unparseable placeholder) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
@@ -44,7 +44,7 @@
 | `src/veracium/lifecycle.py:156` | `consolidate()` | `transition_consolidation_if_current` | `f6c9281664ba` | `clean` | maintain-time | finalizes (OUTPUTS_DURABLE→FINALIZED) | act | clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs | `test_finalize_refuses_before_inputs_deleted` |
 | `src/veracium/lifecycle.py:159` | `consolidate()` | `delete_claimed_inputs_if_current` | `8565cc3059e5` | `clean` | maintain-time | deletes the claimed inputs AFTER outputs are durable | act | clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover | `test_every_read_sees_exactly_one_representation` |
 | `src/veracium/lifecycle.py:160` | `consolidate()` | `transition_consolidation_if_current` | `d64d0ee80464` | `clean` | maintain-time | the visibility cutover (GENERATING→OUTPUTS_DURABLE) | act | clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return | `test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output` |
-| `src/veracium/portability.py:513` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `open_moved` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **Residual: the cross-user import-cap concern (M6 — capping the `user_id` remap) remains OPEN, tracked to `0005`.** | tracked as 0005 P1–P4 [M6-import] |
+| `src/veracium/portability.py:590` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `clean` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **specs/0005 (ACCEPTED, implemented) CLOSED the residual M6 cap concern: every default import applies the unconditional three-lever trust cap (author/derived_from → THIRD_PARTY, disclosure floored USE_ONLY) on the validated records BEFORE this commit primitive ever sees them; `restore=True` is the operator's explicit, closed-bool opt-out, mutually exclusive with the remap.** | test_default_import_caps_every_record · test_handwritten_export_cannot_evade_the_cap · test_every_import_caps_by_default [M6-import closed] |
 
 ## Canonical context
 
@@ -115,7 +115,7 @@ c5d9e9e2da39
   context: -
 
 269b73112fab
-  file:    src/veracium/cli.py:249
+  file:    src/veracium/cli.py:254
   scope:   _forget()
   mutator: forget_user
   call:    store.forget_user(args.user)
@@ -241,7 +241,7 @@ d64d0ee80464
   context: -
 
 83f7d603598f
-  file:    src/veracium/portability.py:513
+  file:    src/veracium/portability.py:590
   scope:   _preflight_and_commit()
   mutator: commit_outcome_import_plan
   call:    store.commit_outcome_import_plan(target_uid, plan, expected)

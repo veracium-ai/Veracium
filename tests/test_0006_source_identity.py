@@ -289,7 +289,9 @@ def test_local_source_survives_a_roundtrip_into_the_same_store(tmp_path):
     d0 = source_identity_digest(resolve_origin(e0.provenance.origin, local), "mailbox")
     exp = str(tmp_path / "e.jsonl")
     export_memory(src.store, "u", exp)
-    import_memory(src.store, exp)                    # re-import into itself — idempotent
+    # specs/0005 §7b: the I9 round-trip property lives on the RESTORE path —
+    # the default import caps trust, so an own-store re-import refuses there.
+    import_memory(src.store, exp, restore=True)      # re-import into itself — idempotent
     works = [x for x in src.store.edges("u", active_only=True) if x.relation == "works_as"]
     assert len(works) == 1                           # one source, not split by the round-trip
     e1 = works[0]
