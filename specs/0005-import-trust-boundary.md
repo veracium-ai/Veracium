@@ -1,11 +1,11 @@
 # Feature spec: import has no trust boundary
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0006, 0014
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft v7** — split out of `0002` on 2026-08-01 (v1); matured to the ruled
+> **ACCEPTED v7 (2026-08-14, round 5, bin (a) empty)** — split out of `0002` on 2026-08-01 (v1); matured to the ruled
 > design 2026-08-13 (v2/v3) and **re-verified line-by-line against the shipped
 > import machinery**; v4 folds external round 1 (seven findings — the cap gains
 > its third lever); v5 folds round 2 (three findings — the third lever's
@@ -29,7 +29,7 @@ Spec-Requires: 0006, 0014
 | **Status** | *see `Spec-Status:` — canonical.* |
 | **Internal reviewers** | research — **found the defect**, ruled I-Q1, and PASSED the internal review 2026-08-13 (adversarial; N1/N2 folded same-commit in v3, N3 recorded in §7b) |
 | **External review** | required — `portability.py`, `__init__.py` are guarded and this changes what an import means |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-14 — external round 5, bin (a) EMPTY** (findings 7/3/3/1/0). The frozen acceptance surface is **P1–P16 exactly as v7 specifies**. The 0014 §2c rider received the reviewer's SEPARATE cross-spec sign-off (approved verbatim) and landed in `specs/0014-maintenance-attribution.md` in this same commit — the atomic flip. Implementation remains gated on delivering P1–P16, the §7b call-site disposition manifest, and the 0006 I6/I9 test relocations in the implementation commit |
 | **Path** | full |
 | **Spec-Requires** | `0006` (accepted — this spec discharges 0006's I7 test obligation and amends the path of its I6/I9 round-trip checks, §7b), **`0014` (accepted — this spec FORMALLY AMENDS its §2c projection contract; the verbatim rider is in §7b and lands in `specs/0014-*.md` in the SAME COMMIT as this spec's acceptance flip — R3-3)** |
 
@@ -639,3 +639,4 @@ AMENDMENT, 7 bin-(a) + 2 editorial.)*
 | 4 | R4-1 `Spec-Requires` not machine-readable (the gate parses `^Spec-Requires:\s*([0-9, ]+)$`; the v6 candidate matched `[]` — a guarded impl commit would have checked ZERO prerequisites) | D+F (found in the R3-3 fix; the v6 closure row's "fully folded" claim falsified — the seal had checked the narrative representation, not the operative carrier) | **folded (v7):** the canonical `Spec-Requires: 0006, 0014` header line added (line 4, the repo-standard position); the seal now parses it with `check_spec_reference.py`'s own regex and asserts the exact dependency set; the atomic acceptance-flip commitment unchanged | v7 header line 4 |
 | 4 | (nb) the rider said "raw incoming" — restore still canonicalizes identity | — | **folded (v7):** "normally canonicalized but uncapped incoming form"; P16(iv) matched | v7 §7b rider, P16(iv) |
 | 4 | (nb) the layered Version row | — | **folded (v7):** consolidated per PROCESS R3 — history lives here and in the opening narrative | v7 header |
+| 5 | APPROVED FOR ACCEPTANCE — bin (a) empty; frozen surface P1–P16 as v7 specifies; the 0014 §2c rider separately signed off verbatim | — | **the atomic flip (this commit):** `Spec-Status: accepted`; the rider landed verbatim in `specs/0014-maintenance-attribution.md` §2c; this round-5 approval recorded here and in `specs/reviews.py`. Implementation gated on P1–P16 + the call-site disposition manifest + the 0006 I6/I9 relocations, all in the implementation commit | this commit |

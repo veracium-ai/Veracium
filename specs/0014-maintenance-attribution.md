@@ -410,6 +410,25 @@ both sites, a no-op transfer visible in the values). The identity is
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
+> **Amended by 0005 (landed in the same commit as 0005's acceptance):** on
+> 0005's default (capping) import path, the source-identity comparison
+> receives the **path-transformed incoming record** — the three-lever cap
+> applied, joining the canonicalization set beside the historical-id remap —
+> compared against the persisted row. The comparison itself remains verbatim
+> over the same field sets; what changes is the incoming form. Consequence:
+> **cap-equivalent** differences (0005 §4c-ii class table) are not observable
+> and resolve as skip; **cap-inequivalent** differences (any content field;
+> `mentionable` vs `quarantined`) refuse exactly as before. The restore path
+> is untouched: the normally canonicalized but uncapped incoming form vs
+> persisted row (restore still performs the historical-id and origin
+> canonicalization — "raw" would misread as contradicting that rule).
+>
+> *(Rider approved verbatim by the 0005 external reviewer, round 5,
+> 2026-08-14 — the separate cross-spec sign-off. The "NO normalized set"
+> sentence in the projection row below is qualified by this rider on the
+> 0005 default path only; the projection's field partition and everything
+> else in this section are unchanged.)*
+
 The contributor whose attribution we record may itself be adversarial (a compromised feed
 is the motivating case). The record must therefore be **fail-closed and content-free**: it records
 *that* a contributor was consumed and *what state, if any,* moved, keyed on a **digest** of
