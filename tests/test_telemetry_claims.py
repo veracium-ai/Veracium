@@ -49,22 +49,42 @@ def test_every_whitelisted_field_is_actually_populated(event, field):
         f'text is built on it.')
 
 
-def test_consent_text_does_not_promise_token_totals():
-    """The specific regression: we asked users to consent to sending token
-    totals we never collected."""
-    assert "token" not in CONSENT_TEXT.lower(), (
-        "CONSENT_TEXT mentions tokens. Only claim this once token fields are "
-        "in EVENT_FIELDS *and* populated — see veracium.llm.metered.")
-
-
-def test_no_token_fields_are_whitelisted_yet():
-    """Guards the pairing: the consent text and the whitelist must move
-    together, in that order."""
+def test_consent_text_token_mention_matches_the_payload():
+    """specs/0017 I5 — the TWO-SIDED pin (this test replaces the one-sided
+    `test_consent_text_does_not_promise_token_totals`, flipped in the same
+    commit that populates the fields): "token" appears in CONSENT_TEXT iff
+    token fields are whitelisted AND populated. Both directions bite: drop
+    the fields and the text must drop the claim; keep the fields and the
+    text must state it."""
     whitelisted = {f for fs in EVENT_FIELDS.values() for f in fs}
-    leaked = {f for f in whitelisted if "tok" in f}
-    assert not leaked, (
-        f"{sorted(leaked)} whitelisted without a populating call site. Re-add "
-        f"token fields only alongside the code that fills them.")
+    token_fields = {f for f in whitelisted if "tok" in f}
+    mentions = "token" in CONSENT_TEXT.lower()
+    if token_fields:
+        body = _sources()
+        for f in sorted(token_fields):
+            assert re.search(rf'["\']{re.escape(f)}["\']', body), (
+                f"{f!r} is whitelisted but no call site populates it — the "
+                f"2767a35 regression, resurfacing")
+        assert mentions, ("token fields are whitelisted and populated but "
+                          "CONSENT_TEXT does not disclose them")
+    else:
+        assert not mentions, ("CONSENT_TEXT mentions tokens with no "
+                              "whitelisted token fields")
+
+
+def test_the_expected_token_fields_are_exactly_the_0017_eight():
+    """specs/0017 §2: the eight fields over the four (role, event) pairs —
+    no more, no fewer, at min consent version 3."""
+    from veracium.telemetry import FIELD_MIN_VERSION
+    token_pairs = {(e, f) for e, fs in EVENT_FIELDS.items()
+                   for f in fs if "tok" in f}
+    assert token_pairs == {
+        ("ingest", "distill_in_tok"), ("ingest", "distill_out_tok"),
+        ("answer", "gate_in_tok"), ("answer", "gate_out_tok"),
+        ("recall", "compile_in_tok"), ("recall", "compile_out_tok"),
+        ("maintain", "compile_in_tok"), ("maintain", "compile_out_tok")}
+    for pair in token_pairs:
+        assert FIELD_MIN_VERSION.get(pair) == 3, pair
 
 
 def test_consent_text_claims_map_to_real_fields():

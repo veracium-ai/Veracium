@@ -125,7 +125,10 @@ adds the facts themselves grouped by relation, rendered with the same
 provenance markers recall uses (so an unverified claim is flagged here
 exactly as the model would see it). The complete raw dump remains
 `export_memory()`; erasure remains `forget()`. CLI:
-`veracium introspect --user X [--categories] [--json]`.
+`veracium introspect --user X [--categories] [--json]`. When the `Memory`'s
+llm is a registered `Metered` wrapper (specs/0017), the result also carries
+`"llm_usage"` — per-role calls and token counts for this user, scope
+`"instance-lifetime"`, local and consent-independent, erased by `forget()`.
 
 ### `dispute(user_id, edge_id, *, reason="", actor="user") -> dict` / `confirm(user_id, edge_id, *, actor="user", date=None) -> dict`
 

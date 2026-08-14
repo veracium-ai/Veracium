@@ -39,11 +39,12 @@ from typing import Optional
 # said, which is the safe direction for privacy but is still a claim the code
 # did not honour.
 #
-#   distill_in_tok, distill_out_tok, gate_in_tok, gate_out_tok
-#       Cannot be populated today BY DESIGN: `Complete` returns a bare string
-#       and veracium never owns credentials or model choice, so usage is not
-#       visible to us. Re-add only with the planned `veracium.llm.metered`
-#       opt-in wrapper that makes it visible.
+#   distill_in_tok, distill_out_tok, gate_in_tok, gate_out_tok,
+#   compile_in_tok, compile_out_tok
+#       RESTORED by accepted specs/0017: the Metered wrapper's listener path
+#       makes usage visible (host opts in with a counter), the six-step
+#       listener attributes it, and the terminal merge writes these fields;
+#       consent-gated at record time (FIELD_MIN_VERSION 3).
 #
 #   supersessions, reinforcements
 #       RESTORED by accepted specs/0015 (the spec 2767a35 asked for): counted at
@@ -56,12 +57,22 @@ EVENT_FIELDS: dict[str, set[str]] = {
     "ingest": {"facts", "quarantined", "episodes", "unparseable", "ms",
                # specs/0015 (accepted): populated by Memory.remember via the
                # planner's SupersessionCounts; consent-gated (min version 2).
-               "supersessions", "reinforcements"},
+               "supersessions", "reinforcements",
+               # specs/0017 (accepted): the 2767a35 token fields RETURN, now
+               # populated by the Metered listener path; consent-gated (min 3).
+               "distill_in_tok", "distill_out_tok"},
     "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items", "proactive",
-               "trimmed", "ms"},  # "trimmed" not "truncated": the content-free
-                                  # guard rejects payloads containing "cat"
-    "answer": {"abstained", "ms"},
-    "maintain": {"lapsed", "decayed", "flagged", "consolidated_in", "consolidated_out"},
+               "trimmed", "ms",  # "trimmed" not "truncated": the content-free
+                                 # guard rejects payloads containing "cat"
+               # specs/0017: the wiki-compile producer (compile.py:239)
+               "compile_in_tok", "compile_out_tok"},
+    "answer": {"abstained", "ms",
+               # specs/0017: the gate producer (gate.py:126)
+               "gate_in_tok", "gate_out_tok"},
+    "maintain": {"lapsed", "decayed", "flagged", "consolidated_in", "consolidated_out",
+                 # specs/0017 (internal F1): the consolidation compile is the
+                 # second compile producer (lifecycle.py:128)
+                 "compile_in_tok", "compile_out_tok"},
     "forget": {"edges", "episodes"},
     "introspect": {"facts", "claims", "episodes"},
     "feedback": {"disputed", "confirmed", "corrected"},
@@ -70,12 +81,22 @@ EVENT_FIELDS: dict[str, set[str]] = {
                   "supersession_n", "abstention_ok", "abstention_n"},
 }
 
-SCHEMA_VERSION = 2  # v2 (specs/0015): the supersession/reinforcement counters
+SCHEMA_VERSION = 3  # v3 (specs/0017): the token-usage fields join under the
+                    # 0015 consent machinery (v2 added the supersession counters)
 
 # specs/0015 §4: fields gated on the CONSENTED schema version — a field is sent
 # only if it was RECORDED under a consent that admitted it (record-time gating).
 FIELD_MIN_VERSION: dict[tuple, int] = {("ingest", "supersessions"): 2,
-                                       ("ingest", "reinforcements"): 2}
+                                       ("ingest", "reinforcements"): 2,
+                                       # specs/0017: all EIGHT token fields at 3
+                                       ("ingest", "distill_in_tok"): 3,
+                                       ("ingest", "distill_out_tok"): 3,
+                                       ("answer", "gate_in_tok"): 3,
+                                       ("answer", "gate_out_tok"): 3,
+                                       ("recall", "compile_in_tok"): 3,
+                                       ("recall", "compile_out_tok"): 3,
+                                       ("maintain", "compile_in_tok"): 3,
+                                       ("maintain", "compile_out_tok"): 3}
 
 # The tombstone sentinel (specs/0015 R10-1): equals NO valid persisted epoch
 # (epochs are positive ints); a tombstoned collector drops every record until a
@@ -381,7 +402,10 @@ CONSENT_TEXT = """\
 veracium can send anonymous, content-free usage statistics once a week to help
 improve the library. It would share ONLY aggregate counters — how often facts are
 extracted, claims quarantined, values superseded or reinforced, and answers
-abstained; latency totals; and
+abstained; latency totals;
+LLM token totals per operation kind, ONLY when you use the opt-in Metered
+wrapper with your own token counter (without one, nothing token-shaped exists
+to send); and
 self-check scores. It NEVER sends your memory: no facts, names, messages, queries,
 or answers. It is anonymous (a random install id) and you can turn it off any time
 with `veracium telemetry disable`. Preview exactly what would be sent with

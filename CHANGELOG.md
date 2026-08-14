@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- **Token-usage telemetry over the `Metered` wrapper** (accepted spec 0017 —
+  15 external review rounds). Wrap your `Complete` in
+  `veracium.llm.metered.Metered(fn, counter=your_tokenizer)` and Veracium now
+  attributes per-operation token usage: the wrapper carries an affirmative
+  capability (`veracium-metered-v1`) and a listener protocol; `Memory`
+  registers a fail-closed listener that attributes each provider call's
+  counts to exactly the operation (and user) that made it — exact under
+  concurrency, shared wrappers, nested operations, and copied contexts.
+  Where the numbers go: the local audit sink and `introspect(user)["llm_usage"]`
+  (instance-lifetime, consent-independent, erased by `forget()`); the
+  telemetry payload gains eight per-operation token fields ONLY under the new
+  consent text (version 3 — existing installs keep sending exactly their old
+  field set until telemetry is re-enabled against the updated text, per the
+  0015 machinery). No counter → no token fields anywhere (character counts
+  stay host-side and are never sent). A failed operation records nothing;
+  `self_check` is excluded; MCP surfaces carry no usage. No schema change,
+  no migration.
+
 - **BEHAVIOUR CHANGE: default imports now cap trust** (accepted spec 0005 —
   "import has no trust boundary"). Every `import_memory()` / `veracium import`
   without `--restore` sets `author_of_evidence` and `derived_from` to

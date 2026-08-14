@@ -40,7 +40,8 @@ def _mem(llm, tmp: str, name: str, relations):
     from . import Memory
     return Memory(llm=llm, config=MemoryConfig(
         db_path=f"{tmp}/{name}.db", relations=relations,
-        wiki_recompile_after_writes=1))
+        wiki_recompile_after_writes=1),
+                  _register_metering=False)
 
 
 def _check_supersession(llm, tmp, relations) -> tuple[int, int, dict]:

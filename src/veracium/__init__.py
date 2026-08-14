@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import hashlib
 import re
+import threading
 import time
+from contextlib import contextmanager
 from uuid import uuid4
 from dataclasses import dataclass, field
 from typing import Optional
@@ -44,6 +46,10 @@ from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
                      SourceType, utcnow, validate_correlation_id)
 from .store.base import HEAD_MOVED, Store
 from .store.sqlite import SqliteStore
+from .llm.metered import METERING_CAPABILITY, count_valid as _count_valid
+from .usage import (ATTRIBUTED_PAIRS, ROLE_FIELDS, ArmingComplete,
+                    active_call as _active_call,
+                    routing_frame as _routing_frame)
 
 __all__ = ["Memory", "MemoryConfig", "Recall", "Store", "SqliteStore",
            "Complete", "Embed", "EvidenceAuthor"]
@@ -80,11 +86,46 @@ class Recall:
 class Memory:
     def __init__(self, *, llm: Complete, store: Optional[Store] = None,
                  embed: Optional[Embed] = None, config: Optional[MemoryConfig] = None,
-                 telemetry=None, diagnostics=None, audit=None):
+                 telemetry=None, diagnostics=None, audit=None,
+                 _register_metering: bool = True):
         self.config = config or MemoryConfig()
         self.store = store or SqliteStore(self.config.db_path)
         self.llm = llm
         self.embed = embed
+        # specs/0017 §4b/§4d — the attribution state: ONE instance lock, the
+        # ACTIVE-OPERATION REGISTRY (five-field entries keyed by op_token),
+        # the per-user accumulator, and the listener-active flag whose
+        # close-deactivate transition is the eighth of §4d's atomic set.
+        self._usage_lock = threading.Lock()
+        self._usage_registry: dict = {}
+        self._llm_usage: dict = {}
+        self._listener_active = True
+        self._metered_handle = None
+        self._metering_note = None   # one debug-visible fact on a failed opt-in
+        # §4a — opt-in is the AFFIRMATIVE capability constant, matched exactly;
+        # a coincidental totals() shape is never probed, invoked, or routed
+        # (I11). The registration control plane is itself untrusted (R3-4):
+        # missing/raising add_usage_listener or a None handle → treated
+        # unmetered, no retries. `_register_metering=False` is the §4e
+        # self-check path — its temporary memories never subscribe.
+        if (_register_metering
+                and getattr(llm, "metering_capability", None) == METERING_CAPABILITY):
+            add = getattr(llm, "add_usage_listener", None)
+            if add is None:
+                self._metering_note = ("metering capability present but "
+                                       "add_usage_listener missing — treated unmetered")
+            else:
+                try:
+                    handle = add(self._usage_listener)
+                except Exception:
+                    handle = None
+                    self._metering_note = ("add_usage_listener raised — "
+                                           "treated unmetered")
+                if handle is not None:
+                    self._metered_handle = handle
+                elif self._metering_note is None:
+                    self._metering_note = ("add_usage_listener returned None — "
+                                           "treated unmetered")
         # Optional content-free telemetry sink (a telemetry.Collector). None = off.
         # The library never creates one implicitly; entry points wire a consented
         # collector. See veracium.telemetry.
@@ -98,6 +139,104 @@ class Memory:
         # content-free line per operation: who called what, when, which user.
         # See veracium.audit.
         self.audit = audit
+
+    # -- specs/0017: the usage listener and operation context ---------------
+    def _usage_listener(self, ev) -> None:
+        """The §4b six-step algorithm. Steps 1–5 are cheap early-outs; STEP 6
+        IS THE ONLY AUTHORITY — it re-checks everything inside one critical
+        section (external R9-1: the step-1 read alone was check-then-act).
+        Fail-closed throughout: nothing here raises into the operation."""
+        # 1. closed-Memory early-out (the binding check is inside step 6)
+        if not self._listener_active:
+            return
+        # 2. the module-global routing frame; owner check (external R3-1)
+        frame = _routing_frame.get()
+        if frame is None or frame[0] is not self:
+            return
+        op_token = frame[1]
+        # 3./4. resolve the entry; missing or cancelled → nothing
+        entry = self._usage_registry.get(op_token)
+        if entry is None or entry["cancelled"]:
+            return
+        # 5. validate the event dict fail-closed BEFORE any state (§4a): the
+        # exact mapping shape, the (event, role) pair against the producer
+        # registry — the EVENT comes from the registry entry (external R5-3)
+        # — and the §4c SHARED count predicate. Drop silently on any failure.
+        if not isinstance(ev, dict) or set(ev.keys()) != {"role", "in_tok", "out_tok"}:
+            return
+        role = ev["role"]
+        if not isinstance(role, str) or (role, entry["event"]) not in ATTRIBUTED_PAIRS:
+            return
+        if not (_count_valid(ev["in_tok"]) and _count_valid(ev["out_tok"])):
+            return
+        # 6. ONE critical section — re-check everything, compare-consume, append
+        with self._usage_lock:
+            if not self._listener_active:
+                return
+            entry = self._usage_registry.get(op_token)
+            if entry is None or entry["cancelled"]:
+                return
+            armed = entry["armed_call"]
+            ctx_call = _active_call.get()
+            if armed is None or ctx_call is None:
+                return
+            call_id, consumed = armed
+            if consumed or call_id is not ctx_call:
+                return                    # stale copied context / duplicate: drop
+            entry["armed_call"] = (call_id, True)     # consume, call-exact
+            buf = entry["buffer"].setdefault(role, [0, 0, 0])
+            buf[0] += ev["in_tok"]
+            buf[1] += ev["out_tok"]
+            buf[2] += 1
+
+    @contextmanager
+    def _usage_operation(self, user_id: str, event: str):
+        """Enter one attributed operation (§4b/§4d): register the five-field
+        entry, push the immutable routing frame, and yield
+        `(op_llm, finish)` — the arming provider proxy and the
+        terminal-merge callable. `finish()` merges the buffer into the
+        accumulator EXACTLY ONCE (transition 6, cancelled-checked) and
+        returns the per-role token fields for the operation's `_record`;
+        the raise path never calls it, so a failed operation records
+        nothing. The `finally` is transition 7 (remove the entry)."""
+        if self._metered_handle is None:
+            yield self.llm, dict
+            return
+        op_token = object()
+        with self._usage_lock:                       # transition 1: register
+            self._usage_registry[op_token] = {
+                "user_id": user_id, "event": event, "buffer": {},
+                "cancelled": False, "armed_call": None}
+        frame_token = _routing_frame.set((self, op_token))
+        finished = []
+
+        def finish() -> dict:
+            if finished:
+                return {}
+            finished.append(True)
+            fields: dict = {}
+            with self._usage_lock:                   # transition 6: merge
+                entry = self._usage_registry.get(op_token)
+                if entry is None or entry["cancelled"]:
+                    return {}
+                acc = self._llm_usage.setdefault(entry["user_id"], {})
+                for role, (i, o, c) in entry["buffer"].items():
+                    slot = acc.setdefault(role,
+                                          {"calls": 0, "in_tok": 0, "out_tok": 0})
+                    slot["calls"] += c
+                    slot["in_tok"] += i
+                    slot["out_tok"] += o
+                    in_f, out_f = ROLE_FIELDS[role]
+                    fields[in_f] = i
+                    fields[out_f] = o
+            return fields
+
+        try:
+            yield ArmingComplete(self, op_token, self.llm), finish
+        finally:
+            _routing_frame.reset(frame_token)
+            with self._usage_lock:                   # transition 7: remove
+                self._usage_registry.pop(op_token, None)
 
     def _record(self, event: str, fields: dict,
                 user_id: Optional[str] = None) -> None:
@@ -151,20 +290,23 @@ class Memory:
         from datetime import date as _date
         date = date or _date.today().isoformat()
         t0 = time.perf_counter()
-        try:
-            r = ingest_event(self.store, self.llm, user_id, event_text=event_text,
-                             author=author, date=date, event_type=event_type,
-                             evidence_ref=evidence_ref, derived_from=derived_from,
-                             source_id=source_id, relations=self.config.relations)
-        except Exception as e:
-            self._on_error("remember", e, user_id)
-            raise
-        self._record("ingest", {"facts": r["facts"], "quarantined": r["quarantined"],
-                                "episodes": 1 if r["episode"] else 0,
-                                "unparseable": 1 if r.get("unparseable") else 0,
-                                "supersessions": r["supersessions"],
-                                "reinforcements": r["reinforcements"],
-                                "ms": int((time.perf_counter() - t0) * 1000)}, user_id)
+        with self._usage_operation(user_id, "ingest") as (op_llm, usage_finish):
+            try:
+                r = ingest_event(self.store, op_llm, user_id, event_text=event_text,
+                                 author=author, date=date, event_type=event_type,
+                                 evidence_ref=evidence_ref, derived_from=derived_from,
+                                 source_id=source_id, relations=self.config.relations)
+            except Exception as e:
+                self._on_error("remember", e, user_id)
+                raise
+            fields = {"facts": r["facts"], "quarantined": r["quarantined"],
+                      "episodes": 1 if r["episode"] else 0,
+                      "unparseable": 1 if r.get("unparseable") else 0,
+                      "supersessions": r["supersessions"],
+                      "reinforcements": r["reinforcements"],
+                      "ms": int((time.perf_counter() - t0) * 1000)}
+            fields.update(usage_finish())          # specs/0017: the terminal merge
+            self._record("ingest", fields, user_id)
         return r
 
     # -- read --------------------------------------------------------------
@@ -205,8 +347,13 @@ class Memory:
             raise ValueError("token_budget must be a positive number of tokens")
         try:
             if query is None:
-                return self._proactive(user_id, token_budget)
-            return self._recall(user_id, query, token_budget)
+                # proactive is LLM-free; the frame is pushed for uniformity
+                # (recall is in the §4b context-entering set) and stays inert.
+                with self._usage_operation(user_id, "recall") as (_op_llm, _fin):
+                    return self._proactive(user_id, token_budget)
+            with self._usage_operation(user_id, "recall") as (op_llm, usage_finish):
+                return self._recall(user_id, query, token_budget,
+                                    op_llm, usage_finish)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
@@ -233,7 +380,13 @@ class Memory:
         return max(1, len(text) // 4)
 
     def _recall(self, user_id: str, query: str,
-                token_budget: Optional[int] = None) -> Recall:
+                token_budget: Optional[int] = None,
+                op_llm=None, usage_finish=dict) -> Recall:
+        # specs/0017: op_llm is the operation's arming provider proxy (or the
+        # raw llm when unmetered); usage_finish merges the token buffer into
+        # the terminal _record exactly once.
+        if op_llm is None:
+            op_llm = self.llm
         # specs/0003 §4c-ii/§4e: the host relation registry flows to BOTH the compiler
         # (so a contested functional group is excluded from the one-value wiki, and the
         # cache binds the registry/policy digest) AND subgraph_for_query (so a functional
@@ -267,7 +420,7 @@ class Memory:
             raise ValueError("contested_members_per_line < 2 (I10e, surface build)")
         if self.config.group_heading_allowance_tokens < 16:
             raise ValueError("group_heading_allowance_tokens < 16 (I10e, surface build)")
-        wiki = _compile.ensure_wiki(self.store, self.llm, user_id,
+        wiki = _compile.ensure_wiki(self.store, op_llm, user_id,
                                     self.config.wiki_recompile_after_writes,
                                     self.config.relations,
                                     wiki_input_budget=self.config.wiki_input_budget_tokens,
@@ -327,7 +480,8 @@ class Memory:
         if unverified:
             context += ("\n\n## UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)\n"
                         + unverified)
-        self._record("recall", {"wiki_used": bool(wiki), "subgraph_edges": len(edges),
+        self._record("recall", {**usage_finish(),
+                                "wiki_used": bool(wiki), "subgraph_edges": len(edges),
                                 "grounded_items": sum(1 for e in edges if not e.quarantined),
                                 "unverified_items": sum(1 for e in edges if e.quarantined),
                                 "trimmed": 1 if truncated else 0}, user_id)
@@ -673,15 +827,17 @@ class Memory:
         abstains ("I don't know") rather than confabulate when memory lacks the
         answer — the finding-23 fix for both confabulation and the episodic
         injection leak."""
-        r = self.recall(user_id, query)   # already error-guarded
+        r = self.recall(user_id, query)   # already error-guarded; its own context
         t0 = time.perf_counter()
-        try:
-            ans = _gate.answer(self.llm, query, r.grounded, r.unverified)
-        except Exception as e:
-            self._on_error("answer", e, user_id)
-            raise
-        self._record("answer", {"abstained": bool(_ABSTAINED.search(ans)),
-                                "ms": int((time.perf_counter() - t0) * 1000)}, user_id)
+        with self._usage_operation(user_id, "answer") as (op_llm, usage_finish):
+            try:
+                ans = _gate.answer(op_llm, query, r.grounded, r.unverified)
+            except Exception as e:
+                self._on_error("answer", e, user_id)
+                raise
+            self._record("answer", {"abstained": bool(_ABSTAINED.search(ans)),
+                                    "ms": int((time.perf_counter() - t0) * 1000),
+                                    **usage_finish()}, user_id)
         return ans
 
     # -- maintenance -------------------------------------------------------
@@ -692,19 +848,21 @@ class Memory:
         get flagged possibly-stale, never silently dropped) and, if enabled,
         consolidates cold episodes into denser records (preserving first failures,
         fixes, illnesses, and dated commitments). Idempotent; call on a schedule."""
-        try:
-            report = {"expiry": _lifecycle.expire(self.store, user_id, self.config)}
-            if consolidate:
-                report["consolidation"] = _lifecycle.consolidate(
-                    self.store, self.llm, user_id, self.config)
-        except Exception as e:
-            self._on_error("maintain", e, user_id)
-            raise
-        ex, co = report["expiry"], report.get("consolidation", {})
-        self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
-                                  "flagged": ex["flagged_for_confirmation"],
-                                  "consolidated_in": co.get("consolidated", 0),
-                                  "consolidated_out": co.get("into", 0)}, user_id)
+        with self._usage_operation(user_id, "maintain") as (op_llm, usage_finish):
+            try:
+                report = {"expiry": _lifecycle.expire(self.store, user_id, self.config)}
+                if consolidate:
+                    report["consolidation"] = _lifecycle.consolidate(
+                        self.store, op_llm, user_id, self.config)
+            except Exception as e:
+                self._on_error("maintain", e, user_id)
+                raise
+            ex, co = report["expiry"], report.get("consolidation", {})
+            self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
+                                      "flagged": ex["flagged_for_confirmation"],
+                                      "consolidated_in": co.get("consolidated", 0),
+                                      "consolidated_out": co.get("into", 0),
+                                      **usage_finish()}, user_id)
         return report
 
     # -- self-check --------------------------------------------------------
@@ -784,6 +942,14 @@ class Memory:
                                     "claims": out["unverified_claims"],
                                     "episodes": sum(out["episodes"].values())},
                      user_id)
+        # specs/0017 §4d/§4f: the local, consent-independent usage view —
+        # present only when metered; empty for a forgotten/unseen user;
+        # instance-lifetime scope stated in the payload, not implied.
+        if self._metered_handle is not None or self._llm_usage.get(user_id):
+            with self._usage_lock:
+                roles = {role: dict(v)
+                         for role, v in self._llm_usage.get(user_id, {}).items()}
+            out["llm_usage"] = {"scope": "instance-lifetime", "roles": roles}
         return out
 
     def edges_since(self, user_id: str, since) -> list[Edge]:
@@ -1046,6 +1212,15 @@ class Memory:
         preserves. There is no undo — export first (`export_memory`) if a
         recoverable copy is wanted. Confirmation is the host's responsibility."""
         r = self.store.forget_user(user_id)
+        # specs/0017 §4d transition 5: delete the user's accumulator entry AND
+        # cancel every active registry entry for the user — ONE critical
+        # section, so a concurrent terminal merge either completed before us
+        # (we delete what it merged) or observes cancelled and discards.
+        with self._usage_lock:
+            self._llm_usage.pop(user_id, None)
+            for entry in self._usage_registry.values():
+                if entry["user_id"] == user_id:
+                    entry["cancelled"] = True
         self._record("forget", {"edges": r["edges"], "episodes": r["episodes"]}, user_id)
         return r
 
@@ -1081,4 +1256,24 @@ class Memory:
         return r
 
     def close(self) -> None:
+        # specs/0017 §4d transition 8 (close-deactivate, LINEARIZED per R9-1):
+        # ONE critical section sets listener_active False AND cancels every
+        # active entry — closure is forget-everything at the attribution
+        # level — BEFORE any unsubscribe attempt. A retained callback may
+        # still be INVOKED afterwards (a dead call); attribution is impossible
+        # because listener step 6 and the terminal merge observe this state
+        # under the same lock. Unsubscribe runs in its own try: a raising or
+        # absent remove_usage_listener NEVER prevents store closure.
+        with self._usage_lock:
+            self._listener_active = False
+            for entry in self._usage_registry.values():
+                entry["cancelled"] = True
+        if self._metered_handle is not None:
+            try:
+                remove = getattr(self.llm, "remove_usage_listener", None)
+                if remove is not None:
+                    remove(self._metered_handle)
+            except Exception:
+                pass
+            self._metered_handle = None
         self.store.close()

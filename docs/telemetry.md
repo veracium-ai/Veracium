@@ -15,11 +15,19 @@ Veracium can send anonymous usage statistics to help improve the library. It is
 | maintain | lapsed, decayed, flagged, consolidated_in/out |
 | selfcheck | pass/fail scores on synthetic data |
 
-Token counts are **not** collected — `Complete` returns a bare string, so the
-library cannot see usage (`veracium` never owns credentials or model choice).
-Hosts that want token accounting wrap their callable with the opt-in
-`veracium.llm.metered.Metered` and read `totals()` themselves; those numbers
-stay host-side and never enter this payload.
+Token counts are collected **only** when the host opts in twice (specs/0017):
+wrap your callable with `veracium.llm.metered.Metered(fn, counter=...)` — a
+bare `Complete` returns a string, so without the wrapper and YOUR counter the
+library cannot see usage — **and** consent to the version-3 telemetry text.
+Then the payload gains eight per-operation token sums
+(`distill_in_tok`/`out`, `gate_in_tok`/`out`, `compile_in_tok`/`out` on
+recall and maintain). Without a counter, nothing token-shaped exists to send
+(character counts stay in the wrapper, host-side). Installs consented under
+an earlier text keep sending exactly their old field set until telemetry is
+re-enabled against the updated text. The local surfaces —
+`introspect(user)["llm_usage"]` and the host's own audit sink — are
+consent-independent (consent governs what leaves the machine) and are erased
+by `forget()`.
 
 Each weekly payload is these summed counters, a random **install id**, and the
 period — nothing else.
