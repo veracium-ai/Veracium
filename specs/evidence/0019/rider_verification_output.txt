@@ -1,0 +1,5 @@
+rider verification: ALL CHECKS PASS
+ - 0014 rider: present exactly once, N-ary transform
+ - Rider B: 15 rows = 15 rows; 13 labels match exactly
+ - Rider A: version tetrad {1,2,3,4} + the D2 on-sight rule
+ - Spec-Requires: ['0005', '0008', '0014', '0016', '0018']

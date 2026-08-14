@@ -110,5 +110,47 @@
   "text": "they discussed finances",
   "session": "2026-08-14",
   "expect": false
+ },
+ {
+  "name": "r3_multidate_atomic_one_grounded_one_fabricated_flagged",
+  "obj": "2026-08-09 and 2026-09-08",
+  "text": "We met on August 9",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "r3_multidate_both_grounded_passes",
+  "obj": "2026-08-09 to 2026-08-10",
+  "text": "the retreat ran August 9 and August 10",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "r3_unrelated_number_near_month_flagged",
+  "obj": "2026-07-12",
+  "text": "July had 12 projects; the deadline is undecided",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "anchored_day_of_month_grounded",
+  "obj": "2026-07-12",
+  "text": "it is planned for the 12th of July",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "weekday_session_day_family_past_grounded",
+  "obj": "2026-08-07",
+  "text": "We met Friday and it went well.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "bare_month_grounds_no_day_including_first_flagged",
+  "obj": "2026-09-01",
+  "text": "Sometime in September, probably.",
+  "session": "2026-08-14",
+  "expect": true
  }
 ]

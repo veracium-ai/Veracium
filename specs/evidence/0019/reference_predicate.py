@@ -87,28 +87,10 @@ def resolution_set(event_text: str, session_date: str) -> set[datetime.date]:
             out.update(_nearest_weekday(session, WEEKDAYS.index(w)))
         if w in RELATIVE_DAYS:
             out.add(session + datetime.timedelta(days=RELATIVE_DAYS[w]))
-        if w in MONTHS or w in MONTHS_ABBR:
-            month = (MONTHS.index(w) if w in MONTHS
-                     else MONTHS_ABBR.index(w)) + 1
-            # a day ordinal or bare day number adjacent to the month name
-            day = None
-            for j in (i - 1, i + 1, i + 2):
-                if 0 <= j < len(low):
-                    m = re.fullmatch(r"(\d{1,2})(?:st|nd|rd|th)?", low[j])
-                    if m and 1 <= int(m.group(1)) <= 31:
-                        day = int(m.group(1))
-                        break
-            if day is not None:
-                for year in (session.year - 1, session.year, session.year + 1):
-                    try:
-                        out.add(datetime.date(year, month, day))
-                    except ValueError:
-                        pass
-            else:
-                # bare month: month-granularity only — the month-START date;
-                # a fabricated specific mid-month day is NOT a member
-                for year in (session.year - 1, session.year, session.year + 1):
-                    out.add(datetime.date(year, month, 1))
+        # (month-day pairing moved to the ANCHORED patterns below — R3-2:
+        # token-index proximity recreated the unrelated-number defect; a bare
+        # month name yields NO date resolutions at all, month granularity
+        # cannot deterministically resolve to any specific day)
 
     for m in NEXT_LAST.finditer(event_text.lower()):
         kind, unit = m.group(1), m.group(2)
@@ -136,12 +118,39 @@ def resolution_set(event_text: str, session_date: str) -> set[datetime.date]:
             except ValueError:
                 out.add(session.replace(year=session.year + sign, day=28))
 
+    # ANCHORED month-day expressions (R3-2): the day number must sit in a
+    # date-syntactic position bound to the month name — "July 12",
+    # "July 12th", "12 July", "the 12th of July". "July had 12 projects"
+    # matches none of these.
+    months_alt = "|".join(MONTHS) + "|" + "|".join(MONTHS_ABBR)
+    low_text = event_text.lower()
+    for m in re.finditer(
+            rf"\b({months_alt})\s+(\d{{1,2}})(?:st|nd|rd|th)?\b", low_text):
+        _add_month_day(out, m.group(1), int(m.group(2)), session)
+    for m in re.finditer(
+            rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?({months_alt})\b",
+            low_text):
+        _add_month_day(out, m.group(2), int(m.group(1)), session)
+
     for m in NUMERIC_DATE.finditer(event_text):
         for cand in _numeric_completions(m.group(0), session):
             out.add(cand)
 
     return {d for d in out
             if abs((d - session).days) <= WINDOW_DAYS}
+
+
+def _add_month_day(out: set, month_word: str, day: int,
+                   session: datetime.date) -> None:
+    if not 1 <= day <= 31:
+        return
+    month = (MONTHS.index(month_word) + 1 if month_word in MONTHS
+             else MONTHS_ABBR.index(month_word) + 1)
+    for year in (session.year - 1, session.year, session.year + 1):
+        try:
+            out.add(datetime.date(year, month, day))
+        except ValueError:
+            pass
 
 
 def _numeric_completions(s: str, session: datetime.date) -> list[datetime.date]:
@@ -172,23 +181,44 @@ def _numeric_completions(s: str, session: datetime.date) -> list[datetime.date]:
 
 def ungrounded(obj_raw: str, event_text: str, session_date: str) -> bool:
     """The §4b predicate: True iff any specifics token of the object is not
-    grounded in the event text (verbatim, or by resolution-set membership
-    for ISO dates)."""
+    grounded in the event text — verbatim, or (for tokens INSIDE an ISO date
+    span) by that SPAN's atomic resolution-set membership.
+
+    R3-1 determinism: every ISO span in the object is parsed and judged
+    ATOMICALLY, by character position — a token is attributed to a span iff
+    it lies within that span's character range, never by shared-token
+    membership over a set (the round-3 nondeterminism). No iteration
+    touches an unordered collection whose order matters; results are
+    PYTHONHASHSEED-independent by construction."""
     text_tokens = set(toks(event_text))
     resolutions = None                        # computed lazily, once
-    iso_in_obj = {m.group(0) for m in ISO_DATE.finditer(obj_raw)}
 
-    for token in specifics_tokens(obj_raw):
-        if token in text_tokens:
+    # 1. judge each ISO span atomically, recording its grounded character range
+    grounded_spans: list[tuple[int, int]] = []
+    for m in ISO_DATE.finditer(obj_raw):
+        span_text = m.group(0)
+        if all(tok in text_tokens for tok in toks(span_text)):
+            grounded_spans.append(m.span())
+            continue                          # verbatim-grounded span
+        try:
+            d = datetime.date.fromisoformat(span_text)
+        except ValueError:
+            continue                          # malformed span: tokens judged plainly
+        if resolutions is None:
+            resolutions = resolution_set(event_text, session_date)
+        if d in resolutions:
+            grounded_spans.append(m.span())
+
+    def _in_grounded_span(pos: int) -> bool:
+        return any(a <= pos < b for a, b in grounded_spans)
+
+    # 2. every specifics token outside a grounded span must ground verbatim
+    for m in WORD.finditer(obj_raw):
+        token = m.group(0).lower()
+        if token not in specifics_tokens(obj_raw):
             continue
-        parent_iso = next((d for d in iso_in_obj if token in toks(d)), None)
-        if parent_iso is not None:
-            if resolutions is None:
-                resolutions = resolution_set(event_text, session_date)
-            try:
-                if datetime.date.fromisoformat(parent_iso) in resolutions:
-                    continue
-            except ValueError:
-                pass
-        return True
+        if _in_grounded_span(m.start()):
+            continue
+        if token not in text_tokens:
+            return True
     return False
