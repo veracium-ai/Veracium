@@ -6,10 +6,10 @@ Spec-Requires: 0015
 | | |
 |---|---|
 | **Author / session** | dev |
-| **Version** | v6 — EXTERNAL ROUND 2 (7 bin-(a) + the corpus's second PACKAGE BLOCKER + 3 bin-(b); the redesign direction, capability, `ContextVar`, consent-v3 reuse, and the four mappings all remain endorsed): ALL FOLDED. **R2-1 (A+B, found-in-fix of the redesign):** broadcast listeners had no owner — the reviewer's shared-wrapper trace (a provider re-entering a second `Memory` mid-call) double-attributed one event to two users, restoring round 1's crime → frames carry an OWNER and each listener attributes only frames it owns; immutable frame values via `set()`/token-restore (a mutated list is not async-safe). **R2-2 (A+C):** no aggregation/commit construction existed (immediate `_record` would multiply audit lines, double-count telemetry `n`, and break §3's raise-rule) → the frame BUFFERS per-role aggregates and merges EXACTLY ONCE into the operation's existing terminal `_record`; a failed operation records NOTHING (decided — wrapper totals still show the real spend, both scopes labeled). **R2-3 (A+G):** the self-check exclusion wasn't constructible and listeners leaked (no unsubscribe; `close()` ignores them) → the explicit `_register_metering=False` path, registration HANDLES, idempotent `remove_usage_listener` + `close()` unsubscription. **R2-4 (A):** emitting under the wrapper lock could deadlock → commit+snapshot under the lock, emit OUTSIDE it, per-listener exception isolation, snapshot add/remove semantics. **R2-5 (A+C):** `forget()` raced an in-flight operation (the merge recreated the erased entry) → per-user usage GENERATIONS captured in the frame; stale-generation merges discarded. **R2-6 (B+C):** the callback protocol was absent from §2c (a capability string is intent, not identity) → the exact event schema + listener-side FAIL-CLOSED validation with one adversarial row per malformed form. **R2-7 (D):** the carrier matrix omitted metered-without-counter → the FOUR-column, twelve-cell matrix. **THE BLOCKER (claims-vs-code inside the spec's own conventions):** §5/§6 claimed the new checks as CI when none exist in `tests/` — every such check is now marked a stage-5 obligation and §5's release-class sentence says so plainly. Bin-(b): the exact context-entering operation set (no ellipsis) mechanically compared to the producer registry; instance-lifetime language in §7; `Spec-Requires: 0015`; the §4b duplication fixed. §9's two questions ANSWERED BY THE ROUND and folded (the thread-fanout mechanical gate; explicit `role=` required in-tree). *(v5: the pre-send `contextvars` substitution + emit-boundary clause.)* *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
+| **Version** | v7 — EXTERNAL ROUND 3 (7 bin-(a) + the blocker PARTIALLY REOPENED + 2 bin-(b); the endorsed direction unchanged): ALL FOLDED. **R3-1 (A, found-in-fix of R2-1 — reviewer-executed):** the owner fix fails with per-instance `ContextVar`s (each listener reads its OWN variable's top frame and accepts) → ONE MODULE-GLOBAL routing `ContextVar` shared by every `Memory`, stated in §2 and §4b. **R3-2 (F — the immutable-container-of-mutable-dict pattern, by name):** the frame's buffer is now RECURSIVELY immutable — functional replacement via `var.set(frame.with_event(...))`, terminal read before token-restore; copied contexts share nothing mutable. **R3-3 (B+C):** validation is over `(event, role)` PAIRS against the registry, not the role set — every recognized-role × wrong-event cross-product a named fail-closed cell. **R3-4 (C):** the registration CONTROL PLANE enters §2c (missing/raising add/remove, malformed/duplicate handles; `close()` never loses store closure to a listener failure); the closed-`Memory` guarantee honestly narrowed to emissions snapshotted after close (no quiescence barrier). **R3-5 (C+compliance):** per-user generations RETAINED a tombstone set of forgotten users → replaced by opaque per-operation CANCELLATION TOKENS in an active-operation set: after quiescence NO per-user residue of any kind; I8 inspects every internal carrier. **R3-6 (F+D):** ONE shared count-validity predicate (`type is int`, `0 ≤ x ≤ 2**53`) at wrapper AND listener — the split-brain (a genuine `2**53+1` committed but dropped) is gone; §8 discloses the 0015 collector's float aggregation bound; the poison ruling folded (drop individually, never erase). **R3-7 (D+honesty):** every public claim rescoped to SUCCESSFUL-operation usage; the dangling §8 pointer made real; the changelog directs hosts to wrapper `totals()` for actual spend incl. failures. **THE BLOCKER, completed after an incomplete fold — owned: v6's header CLAIMED every unbuilt check was marked while five rows still said CI** (multi-test rows and existing-file-future-condition rows escaped the exact-form sweep) → all marked, incl. I5's flip, I6's passing-FOR-them condition, I10's green-under-3, and the nine→twelve cell residue. Bin-(b): the §2 routing-state row rewritten; the reviews ledger now records each round's SENT row PRE-SEAL so it ships IN the package. *(v5: the pre-send `contextvars` substitution + emit-boundary clause.)* *(v4:)* — EXTERNAL ROUND 1 (6 bin-(a), bin (b) empty; the consent-v3 reuse and the corrected compile mapping endorsed as directionally sound): ALL FOLDED — and this is a REDESIGN round: the reviewer adopted BOTH of §9's recorded fallbacks as requirements. **F1 (class A+B, overturns v3's §3b):** totals-snapshot deltas reproduced factor-N overcounting AND a cross-user PRIOR-STATE side channel (a concurrent user-B compile delta reveals the size of what `compile.py` built from B's stored facts; v3's single-`Memory` mitigation was FALSE — one instance serves arbitrary `user_id`s incl. MCP) → the design is WITHDRAWN for §4b's per-call events attributed via an operation-context stack (`contextvars.ContextVar` — the v5 primitive) — exact by construction, barrier-tested (I9). **F2 (class B+E):** duck-typed `totals()` shape is not intent → §4a's affirmative capability constant + listener registration; a coincidental `totals()` is never invoked (I11). **F3 (class A+G, reviewer-reproduced against the SHIPPED wrapper):** the counter fired unprotected inside the lock — the operation broke and a partial record survived → §4c's atomic all-or-nothing accounting (both counts validated into locals; either invocation failing discards the pair, emits nothing, returns the provider output; `calls`/chars ride the always-valid block). **F4 (class C):** I2b missed `self_check`'s reach (temporary memories driving distill/gate/compile) and the protocol's DEFAULT `role="compile"` → §4e DECIDES: self-check excluded by design (closes §10 Q3), and I2b is backed by a declarative producer REGISTRY asserted against an AST call-site scan resolving default roles. **F5 (class A+C):** the accumulator had no construction → §4d: `Memory`-instance carrier, lock-guarded, `"instance-lifetime"` (the process-lifetime label was false), and **`forget(user_id)` deletes the entry — compliance erasure covers unpersisted state too**. **F6 (class D):** consent semantics disagreed across carriers → §4f's explicit three-carrier × consent matrix; "sent" scoped to the telemetry endpoint; audit/introspect stated consent-independent-and-local by design. *Miss diagnosed: v3 restated F1's smear honestly but never re-derived WHAT the smeared bytes measure (compile input = prior store state) — the §3b information-not-carrier lesson one level deeper; and the F3 guarantee was written where the code wasn't (claims-vs-code inside the spec's own wrapper).* *(v3 history: internal round 1 — the two-producer mapping, pair-granular I2b, the honest smear restatement.)* |
 | **Status** | *narrative only — canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research — round 1 RETURNED 2026-08-13 (3 findings, folded in v3; their preliminary Q1 mapping amended by their own review); re-review requested · workflow-platform unavailable, waived: no consumer-visible API change beyond an optional `introspect()` block — waiver held by dev |
-| **External review** | ROUND 2 RETURNED 2026-08-13 (package `0017-v5-20260813T2305Z.tar.gz`): 7 bin-(a) + 1 package blocker + 3 bin-(b), folded as v6; round-3 package next |
+| **External review** | ROUND 3 RETURNED 2026-08-13 (package `0017-v6-20260813T2341Z.tar.gz`): 7 bin-(a) + the partially-open blocker + 2 bin-(b), folded as v7; round-4 package next |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -81,7 +81,7 @@ raises the current consent version.
 | `SCHEMA_VERSION` | 2 → **3** | the current consent-text version; stamped only by affirmative display flows (0015 I13) | `prompt_consent`, `accept_current_consent`, the payload stamp | yes — one more version through the same machinery |
 | `CONSENT_TEXT` | written: token sentence returns, scoped | the consent claim; `test_consent_text_does_not_promise_token_totals` PINS that "token" is absent until fields are whitelisted AND written | `prompt_consent()`, CLI enable | **the pin test flips direction in the same commit** (I5): text mentions tokens iff whitelisted and written — both now true |
 | `Metered` — the capability + listener interface | `metering_capability = "veracium-metered-v1"` + `add_usage_listener(fn)`; per-call events `{role, in_tok, out_tok}` emitted synchronously on the calling thread AFTER both counts validate (§4a/§4c); `totals()` stays the host's own view and is no longer read by `Memory` | `Memory` (registers the listener); hosts; `tests/test_metered.py` — the shipped docstring's "nothing writes to telemetry" paragraph is REWRITTEN to this contract |
-| `Memory` operation context + per-user accumulator | NEW instance state (§4b/§4d): the `contextvars.ContextVar` `(event, user_id)` context stack pushed/popped by every public operation; `Memory._llm_usage` keyed by `user_id`, lock-guarded, INSTANCE-lifetime, deleted by `forget(user_id)` | the listener (writes), `introspect()` (reads), `forget()` (erases), `_record` (the attributed fields fan out to telemetry-gated + audit carriers) |
+| the routing context + per-user accumulator | NEW state (§4b/§4d): ONE MODULE-GLOBAL `contextvars.ContextVar` shared by every `Memory` and read by every listener (external R3-1), holding recursively-immutable frames `(owner, event, user_id, op_token, buffer)` replaced functionally per event; `Memory._llm_usage` keyed by `user_id`, lock-guarded, INSTANCE-lifetime, deleted by `forget(user_id)`; the ACTIVE-OPERATION token set (no per-user residue after quiescence — R3-5); listener HANDLES with idempotent removal + `close()` unsubscription (R3-4) | the listener (functional frame replacement), the terminal merge, `introspect()`, `forget()`, `close()` |
 | `introspect()` return | written: an optional `"llm_usage"` block (per-role calls + tokens, `"scope": "instance-lifetime"` in the payload — v3's process-lifetime label was false for instance-local state) | the transparency surface; consent-INDEPENDENT local carrier (§4f) | host API + CLI `introspect` (NOT an MCP tool — §2c-ii); absent when unmetered; empty for a forgotten user |
 
 Consumers enumerated mechanically — commands in §2c-ii.
@@ -191,28 +191,62 @@ removed during an emission may still receive the in-flight event, never a
 later one. A listener that re-enters the wrapper (calls `totals()`,
 registers, unregisters) therefore cannot deadlock.
 
+**The registration CONTROL PLANE is itself an untrusted input (external
+R3-4):** a matching capability with a missing or raising
+`add_usage_listener` → the `Memory` treats the object as UNMETERED (no
+registration, no probing retries, one debug-visible fact); a raising
+`remove_usage_listener`, or a malformed/duplicate handle → the failure is
+ISOLATED and `Memory.close()` STILL closes the store (unsubscribe runs in
+its own try; store closure is never lost to a listener failure). **The
+closed-`Memory` guarantee is narrowed to what snapshot semantics can
+honestly deliver: a closed `Memory` receives no callbacks from emissions
+snapshotted AFTER close; an emission already snapshotted in flight may
+deliver once** (close does not wait for callback quiescence — the
+alternative, a quiescence barrier in `close()`, is rejected as a deadlock
+surface). §2c carries the control-plane rows.
+
 **The callback protocol is a validated, untrusted input (R2-6 — a matching
 capability string is affirmative intent, not identity; an arbitrary object
 can present it and feed the listener garbage):** the event is exactly the
 mapping `{"role": str, "in_tok": int, "out_tok": int}`. The listener
 validates FAIL-CLOSED before touching any state: a non-mapping, missing or
-extra keys, a role not in the §4e producer registry's role set, non-`int`
-counts (`bool` excluded), negatives, or counts above 2**53 are DROPPED
-silently — nothing attributes, nothing raises into the operation. The §2c
+extra keys, a `(current_frame.event, role)` pair not in the §4e producer
+registry (external R3-3 — role-set membership alone let an adversarial
+capability object emit `role="gate"` during an `ingest` frame: recognized
+globally, invalid for the event; the PAIR is the unit of validity),
+non-`int` counts (`bool` excluded), negatives, or counts failing the §4c
+SHARED validity predicate are DROPPED silently — nothing attributes,
+nothing raises into the operation; every recognized-role × wrong-event
+cross-product is a named fail-closed cell. The §2c
 matrix carries one adversarial row per malformed form.
 
 ### 4b. Attribution — owned frames, buffered aggregation, one terminal merge (external R2-1, R2-2)
 
-The context primitive is a **`contextvars.ContextVar`** holding an
-IMMUTABLE frame value, pushed with `set()` and restored with the returned
-token in a `finally` (never a mutated shared list — mutation is not
-async-safe). **The frame carries an OWNER (R2-1 — the round-2 trace:
+The context primitive is **ONE MODULE-GLOBAL `contextvars.ContextVar`**,
+shared by every `Memory` in the process and read by every listener
+(external R3-1 — the reviewer executed the predicate: with per-instance
+variables, the round-2 shared-wrapper trace STILL double-attributes,
+because each listener reads its own variable's top frame and each sees a
+frame it owns; one shared routing variable accepted the event only in the
+correct Memory). It holds an IMMUTABLE frame value, pushed with `set()`
+and restored with the returned token in a `finally` (never a mutated
+shared list — mutation is not async-safe). **The frame carries an OWNER (R2-1 — the round-2 trace:
 two Memories sharing one wrapper, a provider that re-enters the second
 Memory mid-call, and a broadcast event double-attributed to both users,
 restoring exactly what round 1 removed):**
 
     frame = (owner: the registering Memory's identity, event: str,
-             user_id: str, user_gen: int, buffer: per-role aggregates)
+             user_id: str, op_token: the operation's cancellation token,
+             buffer: an IMMUTABLE per-role aggregate map)
+
+**The frame is RECURSIVELY immutable (external R3-2 — the
+immutable-container-of-mutable-dict pattern, caught by name):** the buffer
+is an immutable mapping (tuple-based); an event does not mutate it — the
+listener REPLACES the frame functionally, `var.set(frame.with_event(role,
+in_tok, out_tok))`, in the emitting context; the terminal merge reads
+`var.get()` at operation exit BEFORE the token-restore pops the frame.
+Copied contexts therefore share nothing mutable, and a late emission after
+the pop lands on the outer (or no) frame, never on sealed state.
 
 A listener attributes an event ONLY when the calling context's top frame's
 `owner` IS its own `Memory` — every other listener ignores the event (its
@@ -228,9 +262,10 @@ EXACTLY ONCE into the operation's own existing terminal `_record` call —
 one audit line per operation, telemetry `n` incremented once by the
 operation as today. **A failed operation records NOTHING (decided): the
 raise-path discards the buffer** — telemetry/audit/introspection are
-operation-outcome-scoped, while the wrapper's own host-side totals remain
-call-scoped and still show the real spend of failed operations (stated in
-§8; the two scopes are different truths, both labeled).
+SUCCESSFUL-OPERATION-scoped, while the wrapper's own host-side totals
+remain call-scoped and show real spend including failures (§8 and the
+changelog now carry this scoping explicitly — external R3-7 caught the
+§8 pointer dangling).
 
 **The context-entering operation set is EXACT (bin-b): `remember`
 (ingest → distill), `answer` (gate), `recall` (wiki compile), `maintain`
@@ -244,9 +279,19 @@ check.
 
 `Metered.__call__`: the provider is called first and its output is ALWAYS
 returned. Both token counts are computed and validated into locals OUTSIDE
-the usage lock, the counter wrapped: any exception, non-int, bool, or
-negative from EITHER invocation discards the whole token pair — no token
-state mutates, no event emits; `calls` and the character counts ride the
+the usage lock, the counter wrapped, against **ONE SHARED count-validity
+predicate used identically at the wrapper AND the listener (external
+R3-6 — v6's split rule let a genuine counter returning `2**53 + 1` commit
+to wrapper totals while the listener dropped the same event: a
+split-brain): valid ⇔ `type(x) is int` ∧ `0 ≤ x ≤ 2**53`.** Any failure
+of the predicate — exception, non-int, bool, negative, or over-limit —
+from EITHER invocation discards the whole token pair BEFORE any
+token-state mutation or emission; a genuine `Metered` therefore never
+emits an event the listener considers malformed (the listener's §4a
+revalidation is defense in depth against non-genuine producers, using
+the same predicate). A malformed INJECTED event is dropped individually
+and never erases previously valid events in the operation buffer (the
+round-3 poison ruling). `calls` and the character counts ride the
 always-valid block. Only after both counts validate does the wrapper
 commit totals and snapshot listeners under its lock, release, and emit per
 §4a. **The emit boundary is a contract clause: the event is emitted in the
@@ -260,14 +305,19 @@ The accumulator lives on the `Memory` instance (`Memory._llm_usage`,
 keyed by `user_id`), updated atomically under an instance lock by the
 terminal merge, labeled `"scope": "instance-lifetime"` in its payload; two
 instances are independent; restart is empty; growth is bounded by served
-`user_id`s. **Erasure survives the in-flight race (R2-5 — the barrier
-trace: an operation pauses pre-merge, `forget(U)` deletes U's entry, the
-resumed merge recreates it):** the instance keeps a per-user USAGE
-GENERATION; the operation frame captures the generation at operation
-start; `forget(user_id)` deletes the entry AND advances the generation;
-a terminal merge whose captured generation is stale is DISCARDED. After
-`forget()`, `introspect(user_id)` shows no usage — including against
-concurrent in-flight operations (the exact race is an I8 cell).
+`user_id`s. **Erasure survives the in-flight race WITHOUT a permanent
+per-user key (external R3-5 — v6's per-user generations retained a
+tombstone set of forgotten `user_id`s forever, itself a per-user record
+the compliance claim forbids):** each operation registers an opaque
+CANCELLATION TOKEN (carried in the frame) in the instance's ACTIVE-
+OPERATION set for its duration; `forget(user_id)` deletes the accumulator
+entry AND marks the in-flight tokens whose operations serve that user as
+cancelled; a terminal merge whose token is cancelled is DISCARDED; tokens
+leave the set at operation exit, so once the last in-flight operation
+finishes, NO per-user residue of any kind remains — no entry, no
+generation, no tombstone. **I8 inspects EVERY usage-related internal
+carrier after `forget()` + quiescence** (accumulator, active set, cancel
+marks), not only `introspect()`'s view.
 
 ### 4e. Self-check accounting — excluded, and now constructible (external R2-3)
 
@@ -311,7 +361,7 @@ change; no migration.
 - **Consent regimes:** all 0015 regimes re-run green plus: v2-consented
   (token fields stripped at telemetry record), v3-consented (sent), the
   v2→v3 transition through a live carrier — and the §4f carrier matrix's
-  nine cells walked (`test_carrier_consent_matrix`).
+  twelve §4f cells walked (`test_carrier_consent_matrix`, a stage-5 obligation).
 - **Metering regimes:** unmetered · capability-present-but-unregistered
   (impossible by construction — registration IS detection) ·
   coincidental-`totals()` object (never invoked) · metered-no-counter
@@ -337,14 +387,14 @@ Release class: **stable on acceptance** — every named regime has a NAMED check
 | I2 — **no counter → no token telemetry**: character accounting never enters the payload under any field name (all eight fields, v3) | `test_no_counter_sends_no_token_fields` | **stage-5 obligation — does NOT exist yet** |
 | I2b — the payload is COMPLETE over the (role, event) PAIRS, registry-backed (§4e; the round-2 §9 ruling) | `test_token_payload_covers_every_role_event_pair` — the declarative registry (four pairs + the `selfcheck` exclusion) asserted against an AST scan of every in-tree `Complete` invocation; **every production invocation must pass explicit `role=` — the scan REJECTS omissions** (default-resolution abandoned); the registry and the §4b context-entering set MECHANICALLY COMPARED; **plus the thread-fanout gate: the scan rejects any thread/executor dispatch inside a context-entering operation path until it propagates context via `copy_context().run(...)` or an explicit token** | **stage-5 obligation — does NOT exist yet** |
 | I3 — the wrapper's accounting is ATOMIC, non-breaking, and lock-safe (§4c + §4a; external R2-4) | `test_counter_failure_is_atomic_and_never_breaks_the_operation` (both invocation positions) + **the deadlock cell: a listener that calls `totals()`, re-enters, or unregisters during emission completes without deadlock (emission outside the lock; per-listener exception isolation)** | **stage-5 obligation — does NOT exist yet** |
-| I4 — the §4f carrier matrix holds (external F6) | `test_v2_consent_strips_token_fields` + `test_v2_to_v3_transition_through_a_live_memory_carrier` + `test_carrier_consent_matrix` (all nine cells: telemetry gated at record time; audit and introspect consent-independent and local) | CI |
-| I5 — the consent-text pin is two-sided: "token" appears in `CONSENT_TEXT` iff the token fields are whitelisted AND populated | the FLIPPED `test_consent_text_token_mention_matches_the_payload` (replaces the one-sided pin, same file) | CI |
-| I6 — whitelisted ⇒ populated (the `2767a35` gate) holds over all eight fields — the returning four and the four compile fields (v3) | `tests/test_telemetry_claims.py` (existing, starts passing for them) | CI |
-| I7 — no MCP surface carries usage: `remember`/`answer` tool results and every MCP tool omit token fields; `introspect` remains non-MCP | `test_mcp_results_carry_no_usage_fields` + the §2c-ii grep pinned as a test | CI |
-| I11 — opt-in is affirmative (§4a, external F2) | `test_coincidental_totals_shape_is_never_invoked` — an unrelated `Complete` with a valid-shaped `totals()` and no capability constant: never probed, never invoked, nothing routed; registration occurs iff the constant matches exactly | CI |
+| I4 — the §4f carrier matrix holds | `test_v2_consent_strips_token_fields` + `test_v2_to_v3_transition_through_a_live_memory_carrier` + `test_carrier_consent_matrix` (all TWELVE §4f cells) | **stage-5 obligation — none of the three exists yet** |
+| I5 — the consent-text pin is two-sided: "token" appears in `CONSENT_TEXT` iff the token fields are whitelisted AND populated | the FLIPPED `test_consent_text_token_mention_matches_the_payload` (replaces the one-sided pin, same file) | **stage-5 obligation — the flip does not exist yet; the current pin asserts the OPPOSITE and stays green until implementation** |
+| I6 — whitelisted ⇒ populated (the `2767a35` gate) holds over all eight fields | `tests/test_telemetry_claims.py` EXISTS, but its current assertions REQUIRE the token fields to remain absent — the future condition (passing FOR them) is a **stage-5 obligation**; today it is the guard that keeps this spec unimplemented until accepted |
+| I7 — no MCP surface carries usage: `remember`/`answer` tool results and every MCP tool omit token fields; `introspect` remains non-MCP | `test_mcp_results_carry_no_usage_fields` + the §2c-ii grep pinned as a test | **stage-5 obligation — does NOT exist yet** |
+| I11 — opt-in is affirmative (§4a, external F2) | `test_coincidental_totals_shape_is_never_invoked` — an unrelated `Complete` with a valid-shaped `totals()` and no capability constant: never probed, never invoked, nothing routed; registration occurs iff the constant matches exactly | **stage-5 obligation — does NOT exist yet** |
 | I8 — the accumulator's lifecycle is constructed (§4d; external R2-5's generation) | `test_usage_accumulator_lifecycle` — instance-lifetime label; lock-guarded updates; two instances independent; restart empty; `forget(user_id)` deletes AND advances the generation; **the barrier race: an in-flight operation paused pre-merge cannot recreate a forgotten user's entry (stale generation discarded)**; repeated `self_check` does not grow the listener set; a closed `Memory` receives no callbacks | **stage-5 obligation — does NOT exist yet** |
 | I9 — attribution is EXACT (§4b; external R2-1's owned frames) | `test_attribution_is_exact_under_concurrency` — barrier-controlled: two users' overlapping operations attribute exactly; nested `answer→recall` once, to the inner context; concurrent `recall.compile` vs `maintain.compile` never cross; **the round-2 adversarial cell: two Memories sharing one wrapper with a provider that re-enters the second mid-call — the event attributes ONLY to the owning Memory's frame, never double**; a context-free event reaches only wrapper totals | **stage-5 obligation — does NOT exist yet** |
-| I10 — every 0015 invariant keeps running unmodified (this spec adds a version, not a mechanism) | the existing `test_0015_lifecycle.py` suite green with `SCHEMA_VERSION == 3` | CI |
+| I10 — every 0015 invariant keeps running unmodified (this spec adds a version, not a mechanism) | the existing `test_0015_lifecycle.py` suite EXISTS and is green today with `SCHEMA_VERSION == 2`; green-under-3 is the future condition — a **stage-5 obligation** |
 
 **Reproducer retention:** review defects become regressions beside these.
 
@@ -378,22 +428,32 @@ Release class: **stable on acceptance** — every named regime has a NAMED check
 
 - **Changelog wording:** "Hosts that wrap their `Complete` with
   `veracium.llm.metered.Metered` and supply a token counter get exact
-  per-user, per-role usage through `introspect()` (local,
-  instance-lifetime), local audit records, and — separately, only under
-  consent version 3, shown and accepted before anything LEAVES THE MACHINE
-  — token-usage telemetry. Without a counter, nothing token-shaped exists
-  anywhere — character counts stay in the wrapper, labelled as
-  characters." (The sent-scoping is external F6's carrier split.)
+  per-user, per-role usage of SUCCESSFUL Veracium operations through
+  `introspect()` (local, instance-lifetime) and local audit records —
+  actual spend including failed operations stays visible in the wrapper's
+  own `totals()` — and, separately, only under consent version 3 (shown
+  and accepted before anything LEAVES THE MACHINE), token-usage
+  telemetry. Without a counter, nothing token-shaped exists anywhere —
+  character counts stay in the wrapper, labelled as characters.
 - **What this does NOT establish:** token counts are the host's counter's
-  opinion, not billing truth (no provider invoice is consulted); introspect
-  totals are INSTANCE-lifetime, not history (two instances, two ledgers; a
-  restart is a reset — the payload's scope label says so); self-check's
-  diagnostic calls are excluded from attribution by design (§4e — the
-  wrapper's host-side totals still see them); the audit/introspect carriers
-  are local and consent-independent (§4f — consent governs the telemetry
-  endpoint); and this spec does not persist usage — the durable per-user
-  variant is §10 Q2's future decision. The v3 concurrency-smear limitation
-  is GONE, not restated: attribution is exact by construction (§4b/I9).
+  opinion, not billing truth; **every attributed number is SUCCESSFUL-
+  OPERATION usage, not total model spend (external R3-7): a provider call
+  inside an operation that subsequently fails contributes NOTHING to
+  telemetry, audit, or introspection — hosts wanting actual spend
+  including failures read the wrapper's own `totals()`, which is
+  call-scoped and sees everything**; introspect totals are
+  INSTANCE-lifetime, not history; self-check's diagnostic calls are
+  excluded from attribution by design (§4e); the audit/introspect
+  carriers are local and consent-independent (§4f); **telemetry
+  aggregation rides accepted 0015's collector, which accumulates numeric
+  fields as floats — individual events are exact under the §4c predicate
+  (≤ 2**53), but a weekly AGGREGATE that itself exceeds 2**53 loses
+  integer exactness in the payload (external R3-6; bounded, stated —
+  integer-preserving accumulation would amend accepted 0015 and is
+  deliberately not proposed)**; and this spec does not persist usage —
+  the durable per-user variant is §10 Q2's future decision. The v3
+  concurrency-smear limitation is GONE, not restated: attribution is
+  exact by construction over successful operations (§4b/I9).
 - **Measurements:** none cited.
 
 ---
