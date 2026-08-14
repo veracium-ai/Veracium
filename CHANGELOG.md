@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.0 — 2026-08-14
+
 - **`SourceType` is deprecated and will be removed in the next API-breaking
   release** (accepted spec 0016, stage D1 — warning-only, no behaviour
   change). It has never influenced any decision. On ingest-derived records it
