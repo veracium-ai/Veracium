@@ -1,0 +1,152 @@
+[
+ {
+  "object": "non-profit organization with local chapters in US, Canada, Europe",
+  "relation": "source_reliable",
+  "evt_tail": " enthusiasts, learn more about your Noiseless Portable, and maybe even find new additions to your collection!\n\nRemember to always follow safety guidelines and best practices when interacting with online communities, and be respectful of others' knowledge and collections. Happy typing and collecting!"
+ },
+ {
+  "object": "12:00 pm (noon), Eastern Daylight Time (EDT) (GMT-4), Wednesday, October 5, 2022 until 12:00 pm (noon), Eastern Standard Time (EST) (GMT-5), Tuesday, November 8, 2022",
+  "relation": "deadline",
+  "evt_tail": "ive a confirmation number.\u202f\u202fIf I submit another\nentry, will I be disqualified?\nIf you did not receive a confirmation number, your entry was not recorded.\u202f You must submit another\nentry.\u202f It will not be counted as a duplicate.\u202f Once you receive a confirmation number, do not resubmit\nyour information."
+ },
+ {
+  "object": "Central Park",
+  "relation": "has_iconic_landmark",
+  "evt_tail": "[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: What are some iconic landmarks in New York City and what makes them special?"
+ },
+ {
+  "object": "affidavits from individuals attesting presence in the US",
+  "relation": "includes",
+  "evt_tail": "lt with your lawyer to determine the best approach to address these gaps.\n\nRemember to consult with your lawyer to ensure you have the necessary documents and to review your application before submission. They can help you determine the most effective way to demonstrate proof of continuous presence."
+ },
+ {
+  "object": "Legislative Council building on 1 July 2023",
+  "relation": "stormed",
+  "evt_tail": "They all express strong condemnation of the violence, support for the Hong Kong SAR government and police in handling the incident, and the need to uphold the rule of law and maintain social order in Hong Kong. Some articles also criticize foreign countries for interfering in Hong Kong's affairs and"
+ },
+ {
+  "object": "a few weeks after 2023-07-21",
+  "relation": "deadline",
+  "evt_tail": " this speaker.]\nuser: I'm considering pursuing a certification in digital marketing and I've narrowed it down to two programs. Can you help me compare the pros and cons of each? By the way, I've been thinking about attending my alma mater's annual alumni reunion in a few weeks, but I'm not sure yet."
+ },
+ {
+  "object": "strength training (upper body) on Tuesdays during weeks 3-4",
+  "relation": "prefers",
+  "evt_tail": "t to emphasize the importance of recovery and rest. Make sure to prioritize rest days and active recovery sessions, as they're crucial for your body to adapt to the increased intensity and frequency of your workouts.\n\nStay focused, stay committed, and most importantly, stay consistent. You got this!"
+ },
+ {
+  "object": "mix types: short steep (100-200m all-out), long gradual (400-600m slower), hill circuits",
+  "relation": "has_tip",
+  "evt_tail": "uch as running hills during the middle or end of a 6-8 mile run.\n\nBy following these tips, you'll be able to execute hill repeats effectively and make the most out of this type of workout. Remember to listen to your body and adjust the intensity and volume of your hill repeats based on how you feel."
+ },
+ {
+  "object": "processor generates a page fault interrupt transferring control to OS",
+  "relation": "takes step",
+  "evt_tail": "nsure that the required page is loaded into memory and the process can continue executing without any interruption. The page fault handling mechanism is an essential part of virtual memory management, which enables a computer system to run larger applications than the available physical memory size."
+ },
+ {
+  "object": "May 2023",
+  "relation": "deadline",
+  "evt_tail": "ject to availability and may not be guaranteed, even with points. However, it never hurts to ask, and being a loyal Marriott Bonvoy member can certainly increase your chances of getting a upgrade.\n\nI hope this helps, and I wish you the best of luck in getting a suite upgrade for your stay in Austin!"
+ },
+ {
+  "object": "desk arrival on 2023-05-31",
+  "relation": "deadline",
+  "evt_tail": "need to measure the space before I make a final decision. I was also thinking of getting a new desk for my home office, and I already found one I like at West Elm. It's a bit pricey, at $400, but it's really high-quality and has great storage. I ordered it online and it should arrive next Wednesday."
+ },
+ {
+  "object": "understanding the difference between 'going to' and 'Will' in English grammar",
+  "relation": "prefers",
+  "evt_tail": "pciones y cambios en la ortograf\u00eda para algunos verbos irregulares en la tercera persona singular, por ejemplo: \"have\" cambia a \"has\" y \"go\" cambia a \"goes\".\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: Diferencia entre going to y Will"
+ },
+ {
+  "object": "Proof of continuous presence in the US since filing asylum application",
+  "relation": "requires_document",
+  "evt_tail": "r to ensure you have all the required documents and to review your application before submission.\n\nKeep in mind that the USCIS may request additional evidence or documentation during the AOS process. It's essential to be prepared and responsive to any requests to ensure a smooth application process."
+ },
+ {
+  "object": "Inventory Auditing",
+  "relation": "has_property",
+  "evt_tail": "pecific needs of your business and the carriers you work with.\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: in tabular format, what are all of the properties required for Warehouse Management for the order fulfillment business scenario"
+ },
+ {
+  "object": "April 10-12 & 17-19, 2023",
+  "relation": "deadline",
+  "evt_tail": "nd is on their \"Who Am I?\" tour, with dates in the US and Europe through May.\n\nThese are just a few examples of the many amazing indie rock festivals and concerts happening in the coming months. Be sure to check out local listings and music blogs for more information on upcoming events in your area."
+ },
+ {
+  "object": "a form used to apply for an IRS Individual Taxpayer Identification Number (ITIN)",
+  "relation": "prefers",
+  "evt_tail": "[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: what are forms IRS W-9 and W-7"
+ },
+ {
+  "object": "replaced brake pads one week prior to 2023-07-08 event",
+  "relation": "prefers",
+  "evt_tail": "ot to do some amateur drifting. It was my first time on a proper track, and I was pretty nervous, but I managed to complete three laps without any major mistakes. My car performed really well, despite the worn-out rear tires, and I'm glad I had replaced the brake pads just a week prior to the event."
+ },
+ {
+  "object": "4 including Best Musical, Best Original Score, Best Choreography, Best Orchestrations",
+  "relation": "tony_awards_won",
+  "evt_tail": "Usnavi. The movie received widespread critical acclaim, with many praising its vibrant energy, stunning choreography, and heartfelt performances.\n\nI hope this gives you a good sense of what \"In the Heights\" is all about! It's a true masterpiece of modern musical theatre, and I'm sure you'll love it."
+ },
+ {
+  "object": "Mother's Day Market sales on May 13th, 2023",
+  "relation": "works_on",
+  "evt_tail": " speaker.]\nuser: Here's the info you requested. I'll just list them out: \n\nMarch 18th, Downtown Farmers Market, $220; March 25th, Arts and Crafts Fair, $85; April 1st, Earth Day Market, $25; May 6th, Downtown Farmers Market, $350; May 13th, Mother's Day Market, $200; May 20th, Foodie Festival, $400."
+ },
+ {
+  "object": "<ul> <li>Item 1</li> <li>Item 2</li> <li>Item 3</li> </ul>",
+  "relation": "syntax",
+  "evt_tail": "beginning of the code is used to indicate that the code is written in HTML5, which is the latest version of the HTML standard.\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: What is Unordered List in HTML? Explain with syntax and example"
+ },
+ {
+  "object": "2021-03-06 to 2021-03-15",
+  "relation": "deadline",
+  "evt_tail": "n which the top two teams will face off in a best-of-13 series. The exact schedule will be subject to weather conditions and other factors, so it is possible that there may be changes to the race schedule as the regatta progresses. You can find more information on the official America's Cup website."
+ },
+ {
+  "object": "2023-04-17 and 2023-04-18",
+  "relation": "deadline",
+  "evt_tail": "ls you'd like to add?\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: This template looks good. I think I can fill in some of the details now. For the machine learning workshop, I remember it was on the 17th and 18th of April, not in May."
+ },
+ {
+  "object": "floor mats arrival on 2023-05-17",
+  "relation": "deadline",
+  "evt_tail": "o this speaker.]\nuser: I'm thinking of getting a maintenance schedule for my car. Can you help me set up a reminder for when I need to replace my brake pads? By the way, I just got my new floor mats, and I'm really happy with the quality - they finally arrived on the 17th, and it was worth the wait."
+ },
+ {
+  "object": "35 years old",
+  "relation": "health_state",
+  "evt_tail": "t to extract facts from. Attribute every fact to this speaker.]\nuser: I'm planning a hot air balloon ride next month and I'm wondering if you can tell me what to expect and what I should wear? By the way, I just celebrated my 35th birthday last month, on the 15th, and I'm feeling pretty adventurous!"
+ },
+ {
+  "object": "43%",
+  "relation": "prefers",
+  "evt_tail": " Profit/Sales) have improved over the years.\n\nPlease let me know if you have any specific questions or if there's anything else I can help you with.\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: What was the EBITDA margin on 31/03/2021?"
+ },
+ {
+  "object": "2023-05-27",
+  "relation": "deadline",
+  "evt_tail": "en feeling really uninspired by our current layout, and I think it's time for a change. I've been pinning some ideas on Pinterest, and I'd love to get some professional input to turn our space into a cozy oasis. Can you give me some general advice on how to create a cozy atmosphere in a living room?"
+ },
+ {
+  "object": "RESTful APIs or GraphQL",
+  "relation": "integration_method",
+  "evt_tail": "resource needs.\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: How would the backend be developed using that solution. What language would it be used and how would it be integrated with the front-end react app? Be as detailed as you can."
+ },
+ {
+  "object": "the exercise schedule proposed on January 9th to January 15th, 2023",
+  "relation": "prefers",
+  "evt_tail": " incorporate?\n\n[CURRENT TURN \u2014 this is the only content to extract facts from. Attribute every fact to this speaker.]\nuser: That sounds like a good plan. I think I'll stick to that schedule for now. One thing I want to ask is, can you recommend some stretching exercises I can do during my rest days?"
+ },
+ {
+  "object": "on 27/3/1975, received a spiritual prophecy from an older woman in a beauty shop in Mount Vernon predicting travel and speaking to millions",
+  "relation": "third_party_claim",
+  "evt_tail": "33\nnever be discouraged\n\n208\n00:09:42,733 --> 00:09:44,066\nnever hold back\n\n209\n00:09:45,100 --> 00:09:46,600\ngive everything you got\n\n210\n00:09:48,066 --> 00:09:49,933\nand when you fall throughout light\n\n211\n00:09:50,200 --> 00:09:51,100\nremember this\n\n212\n00:09:52,766 --> 00:09:53,933\nfall forward"
+ },
+ {
+  "object": "not valid during New Year's (Dec 29-Jan 3) and Golden Week (Apr 29-May 5)",
+  "relation": "restrictions",
+  "evt_tail": "'m thrilled to hear you enjoyed your Amtrak trip to Portland! Japan's train network is renowned for its efficiency and scenic routes, so I'm sure you'll have a great time exploring the country by rail.\n\nIf you have any more questions or need help with planning your Japan itinerary, feel free to ask!"
+ }
+]
