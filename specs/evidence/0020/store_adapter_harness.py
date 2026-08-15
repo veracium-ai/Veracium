@@ -144,6 +144,60 @@ def run():
                       "implementation obligation")
         dest.close()
 
+        # (3b) THE FULL IMPORT MATRIX (round-6 F1 — driving ACTUAL
+        # import_memory: remap, whitespace ids, missing tag, unresolvable
+        # tag; the reference's refusal semantics asserted on each)
+        from reference_scope import (reconstruct_absorption_rows as _rec,
+                                     ImportLinkageError)
+        # (3b-i) supported user_id remap: ids change, notes do not —
+        # the id_remap parameter translates (content-matched here; the
+        # importer's own table is the implementation carrier)
+        dest2 = SqliteStore(f"{d}/dest2.db")
+        portability.import_memory(dest2, exp, user_id="u2")
+        imp2 = [{"id": e.id, "origin": e.provenance.origin,
+                 "source_id": e.provenance.source_id,
+                 "invalidation_reason": e.invalidation_reason,
+                 "note": e.note, "object": e.object}
+                for e in dest2.edges("u2", active_only=False)]
+        by_obj = {e["object"]: e["id"] for e in imp2}
+        remap = {"e-a": by_obj.get("cat Miso"), "e-b": by_obj.get("Miso"),
+                 "e-w2": by_obj.get("dog Rex"), "e-p2": by_obj.get("Rex")}
+        # (the refusal rule caught this map when it was incomplete — an
+        # unresolvable winner refused the whole reconstruction, which is
+        # exactly the fail-closed behaviour under test)
+        rebuilt2 = _rec(imp2, dest2.local_origin(), id_remap=remap)
+        new_surv = remap["e-a"]
+        assert new_surv in rebuilt2 and rebuilt2[new_surv], \
+            "remap-aware reconstruction missed the survivor"
+        checks.append("REMAPPED import: reconstruction keys to post-remap "
+                      f"ids via id_remap ({new_surv})")
+        dest2.close()
+        # (3b-ii) whitespace id in a note: the anchored grammar parses to
+        # the '(restated as' anchor, and an id containing spaces resolves
+        ws = [{"id": "winner id", "invalidation_reason": None, "note": "",
+               "origin": None, "source_id": None},
+              {"id": "prior-1", "invalidation_reason": "absorbed_duplicate",
+               "note": "absorbed_by:winner id (restated as 'x')",
+               "origin": "org-b", "source_id": "agent-9"}]
+        rws = _rec(ws, "L")
+        assert "winner id" in rws, "whitespace id not parsed to the anchor"
+        checks.append("whitespace winner id parsed via the anchored grammar")
+        # (3b-iii) missing tag -> REFUSE; unresolvable tag -> REFUSE
+        for bad, why in (
+            ([{"id": "s", "invalidation_reason": "absorbed_duplicate",
+               "note": "retired", "origin": None, "source_id": None}],
+             "missing tag"),
+            ([{"id": "s", "invalidation_reason": "absorbed_duplicate",
+               "note": "absorbed_by:ghost-id", "origin": None,
+               "source_id": None}], "unresolvable tag"),
+        ):
+            try:
+                _rec(bad, "L")
+                raise AssertionError(f"{why} did not refuse")
+            except ImportLinkageError:
+                pass
+        checks.append("missing/unresolvable linkage -> whole-import REFUSAL")
+
         # (4) host records, no rows
         h = _edge("Tortoise", eid="e-h", sid="agent-z")
         store.add_edge(h)

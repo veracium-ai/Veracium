@@ -163,13 +163,13 @@ def _canonical_groups_ok(groups) -> bool:
 
 @dataclass(frozen=True, eq=False)   # identity hash/eq — the registry key
 class ScopePolicy:
-    """SEALED canonical form (R4-1): `validate_policy` computes `seal` over
-    the ENTIRE canonical projection (groups + digests + the bool) with a
-    module-private nonce. `classify` RECOMPUTES the seal at every
-    consumption — a direct construction with an inconsistent
-    `group_digests` map, a mutated backing mapping, or an
-    `object.__setattr__` flip cannot reproduce it and REFUSES. Shape
-    checks remain as the first, cheaper line."""
+    """REGISTRY-AUTHORITATIVE canonical form (R5-2; wording fixed R6-3):
+    `validate_policy` deposits a RECURSIVELY-IMMUTABLE snapshot in the
+    validator-owned registry, and `classify` refuses on ANY divergence
+    between this object's visible state and that snapshot — the `seal`
+    field is retained as tamper-evidence but is NOT the authority and is
+    NOT recomputed at consumption. Direct construction with raw shapes
+    RAISES here; everything deeper is the registry's job."""
     groups: object
     cross_scope_visible: bool
     group_digests: object              # MappingProxy name -> frozenset[str]
@@ -236,10 +236,12 @@ def validate_policy(groups, cross_scope_visible=False,
                       group_digests=MappingProxyType(frozen_digests),
                       seal=_seal(frozen_groups, cross_scope_visible,
                                  local_origin))
-    # the validator-owned snapshot (R5-2): classification consults THIS,
-    # never the caller-visible fields alone
-    _REGISTRY[pol] = (frozen_groups, cross_scope_visible,
-                      {k: frozenset(v) for k, v in frozen_digests.items()},
+    # the validator-owned snapshot (R5-2), RECURSIVELY IMMUTABLE (R6-3:
+    # "immutable" must be literal — tuples and frozensets only, no dicts)
+    _REGISTRY[pol] = (tuple(sorted((k, v) for k, v in frozen_groups.items())),
+                      cross_scope_visible,
+                      tuple(sorted((k, frozenset(v))
+                                   for k, v in frozen_digests.items())),
                       pol.seal)
     return pol
 
@@ -270,8 +272,10 @@ def _revalidate(policy: ScopePolicy, local_origin: str) -> None:
             "outside validate_policy (R4-1/R5-2)")
     reg_groups, reg_xv, reg_digs, reg_seal = reg
     if (policy.cross_scope_visible is not reg_xv
-            or dict(policy.groups) != reg_groups
-            or {k: frozenset(v) for k, v in policy.group_digests.items()}
+            or tuple(sorted((k, v) for k, v in policy.groups.items()))
+            != reg_groups
+            or tuple(sorted((k, frozenset(v))
+                            for k, v in policy.group_digests.items()))
             != reg_digs
             or policy.seal != reg_seal):
         raise PolicyError(
@@ -340,7 +344,8 @@ def membership(record: dict, rows: Optional[list], op_state: str,
     is_lineage = bool(record.get("lineage"))
     rows = rows or []
     if not is_lineage:
-        ab = [r for r in rows if r.get("site") == "absorption"]
+        ab = [r for r in rows
+              if r.get("site") in ("absorption", "imported-absorption")]
         if ab:                                            # R3-3
             for r in ab:
                 if r.get("identity_digest") != own:
@@ -417,45 +422,77 @@ def decide(record_evidence, principal, policy, local_origin):
 
 # ---- import-time absorption reconstruction (R5-1 — now EXECUTABLE) ---------
 
-_ABSORBED_BY = re.compile(r"absorbed_by:(\S+)")
+#: the SHIPPED note grammar, anchored (R6-1: \S+ broke on whitespace ids;
+#: graph.py writes "absorbed_by:<id> (restated as <obj>)" and appends
+#: segments with "; " — the id runs to the " (restated as" anchor when
+#: present, else to the segment/string end)
+_ABSORBED_BY = re.compile(
+    r"absorbed_by:(.+?)(?: \(restated as |; |$)")
 
 
-def reconstruct_absorption_rows(imported_records: list, local_origin: str):
-    """The 0020 §4a-iii import-time RECONSTRUCTION rule, normative and
-    executable (round-5 F1 — the v6 text claimed it while the harness
-    labelled the same case a residual; this function is the carrier, and
-    `portability.import_memory` writing REAL ledger rows from it is the
-    named implementation obligation).
+class ImportLinkageError(PolicyError):
+    """R6-1: an import whose absorption linkage cannot be reconstructed
+    unambiguously REFUSES WHOLE — the 0009/0005 whole-import posture. A
+    file carrying an absorbed_duplicate record with missing or
+    unresolvable linkage has unreconstructable absorption history; that
+    is an integrity problem, not a soft cell."""
 
-    `imported_records`: [{"id", "origin", "source_id", "invalidation_reason",
-    "note"}] — the edge records as imported. Returns {survivor_id:
-    [synthetic absorption rows]} rebuilt from the absorbed_duplicate
-    records' `absorbed_by:<winner>` notes, each row carrying the ABSORBED
-    record's resolved identity digest — exactly the shape `membership`
-    consumes, so a cross-identity absorption survivor resolves UNRESOLVED
-    on the destination.
 
-    Malformed/ambiguous cells, specified: a note with NO absorbed_by tag →
-    contributes nothing (an ordinary retirement); MULTIPLE absorbed_by tags
-    → the LAST governs (renote appends; the newest wins — matching the
-    shipped note-append order); a tag naming a record ABSENT from the
-    import → the row is still synthesized under the named survivor id
-    (the survivor may arrive in a later import; an absent survivor simply
-    never consults it); a remapped import (user_id remap changes record
-    ids) → out of scope for reconstruction and REFUSED upstream by 0005's
-    remap rules before this runs (restore-path only)."""
+def reconstruct_absorption_rows(imported_records: list, local_origin: str,
+                                *, id_remap: Optional[dict] = None):
+    """The 0020 §4a-iii import-time RECONSTRUCTION rule (v8 — external
+    R6-1/R6-2 folded).
+
+    `imported_records`: the edge records AS THE IMPORTER COMMITS THEM
+    (post-remap ids). `id_remap`: the importer's old→new id table when a
+    `user_id=` remap ran (the shipped importer changes edge ids WITHOUT
+    rewriting notes — R6-1's executed break — so note-referenced winner
+    ids are translated through THIS map; None = no remap). Returns
+    {post-remap survivor_id: [synthetic absorption rows]}.
+
+    FAIL-CLOSED RULES (R6-1 — replacing v7's liberal cells):
+    - an `absorbed_duplicate` record with NO absorbed_by tag → REFUSE the
+      import (its invalidation reason proves it was an absorption; silent
+      "ordinary retirement" treatment laundered the linkage away);
+    - a tag naming an id that is neither in the import's post-remap id
+      set nor in `id_remap` → REFUSE (unresolvable linkage; v7's
+      "may arrive in a later import" contradicted 0014's
+      dangling-survivor rules and is WITHDRAWN);
+    - MULTIPLE tags in one note → the LAST governs (the shipped
+      note-append order), each earlier tag must still RESOLVE.
+
+    These rows are ATTRIBUTION evidence for scope membership ONLY — they
+    are NOT 0014 §4a absorption payloads and provide NO reversal (the
+    pre-inheritance base image is not in the export and cannot be
+    inferred; stated as the imported-absorption site's honest limit —
+    R6-2)."""
+    id_remap = id_remap or {}
+    ids = {r.get("id") for r in imported_records}
     out: dict = {}
     for r in imported_records:
         if r.get("invalidation_reason") != "absorbed_duplicate":
             continue
         tags = _ABSORBED_BY.findall(r.get("note") or "")
         if not tags:
-            continue
-        winner = tags[-1]
+            raise ImportLinkageError(
+                f"absorbed_duplicate record {r.get('id')!r} carries no "
+                f"absorbed_by linkage — unreconstructable absorption "
+                f"history; the import REFUSES (R6-1)")
+        resolved = []
+        for tag in tags:
+            winner = id_remap.get(tag, tag)
+            if winner not in ids:
+                raise ImportLinkageError(
+                    f"absorbed_duplicate record {r.get('id')!r} names "
+                    f"winner {tag!r} which resolves to no imported record "
+                    f"— unresolvable linkage; the import REFUSES (R6-1)")
+            resolved.append(winner)
+        winner = resolved[-1]
         d = digest_of(Identity(r.get("origin"), r.get("source_id")),
                       local_origin)
         out.setdefault(winner, []).append(
-            {"site": "absorption", "identity_digest": d, "op_key": None})
+            {"site": "imported-absorption", "identity_digest": d,
+             "op_key": None})
     return out
 
 

@@ -228,16 +228,24 @@ store with NO source_id (the store-authored shape), in order:
    travel — the reviewer's export/import probe); outputs of pre-feature
    IN-FLIGHT operations completed by recovery; any derivative whose
    ledger rows fail the completeness check. **IMPORTED ABSORPTION
-   SURVIVORS (found by the round-4 real-store harness — the round-3 leak's
-   import form): an absorption survivor crossing export/import loses its
-   ledger rows and would resolve by its claimed identity. The import-time
-   RECONSTRUCTION rule closes it: absorption linkage is reconstructible
-   from the exported records themselves — an imported edge named as the
-   winner in another imported record's `absorbed_by:` note, where that
-   absorbed record carries a DIFFERENT resolved identity, is
-   cross-identity-absorbed → UNRESOLVED on the destination. The residual
-   narrows to absorbed priors that were themselves pruned before export —
-   the same fixed pre-0014-class shape, stated.** **Missing membership evidence
+   SURVIVORS — the import-time RECONSTRUCTION rule, v8 form (external
+   R6-1/R6-2): `reconstruct_absorption_rows` is normative and executable —
+   REMAP-AWARE (the shipped importer changes edge ids without rewriting
+   notes; the importer's own old→new table parameterizes the
+   reconstruction so winner references translate), grammar-ANCHORED (ids
+   parse to the shipped note's `(restated as` anchor — whitespace-bearing
+   ids resolve), and FAIL-CLOSED (an absorbed_duplicate record with
+   missing or unresolvable linkage REFUSES the WHOLE import — the
+   0009/0005 posture; "may arrive later" is WITHDRAWN as contradicting
+   0014's dangling rules). The rows it emits carry the site
+   `imported-absorption` — a NEW 0014 SITE with its own closed integrity
+   semantics (the named 0014 amendment, 0021 §7b): identity/evidence
+   digests from the exported record, NO absorption payload and NO
+   REVERSAL (the pre-inheritance base image is not in the export and
+   cannot be inferred — these rows are ATTRIBUTION evidence for scope
+   membership only, stated). Persisting them atomically extends the
+   whole-import primitive (an 0009 §4 amendment candidate, named). The
+   residual narrows to absorbed priors pruned before export.** **Missing membership evidence
    never silently means "shared."** The operator remedies are restatement
    or re-derivation under 0021; materializing membership at export is a
    recorded widening (a FORMAT change, deliberately not v1).
