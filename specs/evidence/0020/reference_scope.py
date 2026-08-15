@@ -1,10 +1,27 @@
-"""specs/0020 §4a-ii — the NORMATIVE reference for the scope surface (v5).
+"""specs/0020 §4a-ii — the NORMATIVE reference for the scope surface (v9).
 
 PORTABLE AND PURE: no I/O, no store dependency. Two conforming
 implementations must agree with this module on every input; the pinned
 vectors live beside it in `vectors.json`, the SHIPPED HARNESS
 (`vector_harness.py`) executes them, and 0020 V10 binds implementations to
 both.
+
+v9 (external round 7): (R7-1) absorption evidence is TRANSITIVE —
+`close_absorption_rows` is the normative read-side closure (a chain link
+whose record is unavailable, or a cyclic linkage, yields None and the
+caller MUST treat membership as UNRESOLVED); `membership`'s absorption
+input contract is the CLOSED row set. (R7-2) note-grammar parsing is
+REPLACED by id-set-anchored resolution: the LAST `absorbed_by:` tag
+governs and is the only one that must resolve; candidates are matched
+against the export's own id universe; zero or multiple candidates REFUSE
+(the legacy carrier is genuinely ambiguous there — the structured
+`absorbed_by_id` field is the normative carrier going forward, 0020
+§4a-iii). Reconstruction runs PRE-COMMIT on the export file's records and
+propagates digests transitively to every absorber. (R7-3) rows are fully
+populated — the import operation mints ONE `op-<12hex>` op key and passes
+it in. (R7-4) the registry snapshot stores PRIMITIVE (origin, source_id)
+strings — no `Identity` instance is shared between the policy and the
+snapshot, so leaf mutation cannot touch both.
 
 v6 (round 4: the SEALED policy — see ScopePolicy). v5 (external round 3): **membership lives in DIGEST SPACE** (R3-2 — the
 0014 ledger carries only nullable one-way `identity_digest` values;
@@ -163,12 +180,15 @@ def _canonical_groups_ok(groups) -> bool:
 
 @dataclass(frozen=True, eq=False)   # identity hash/eq — the registry key
 class ScopePolicy:
-    """REGISTRY-AUTHORITATIVE canonical form (R5-2; wording fixed R6-3):
-    `validate_policy` deposits a RECURSIVELY-IMMUTABLE snapshot in the
-    validator-owned registry, and `classify` refuses on ANY divergence
-    between this object's visible state and that snapshot — the `seal`
-    field is retained as tamper-evidence but is NOT the authority and is
-    NOT recomputed at consumption. Direct construction with raw shapes
+    """REGISTRY-AUTHORITATIVE canonical form (R5-2; wording fixed R6-3;
+    made LITERAL by R7-4): `validate_policy` deposits a recursively-
+    immutable snapshot in the validator-owned registry — immutable down
+    to PRIMITIVE string leaves, not just immutable containers around
+    shared `Identity` instances (the v8 shape the reviewer mutated
+    through) — and `classify` refuses on ANY divergence between this
+    object's visible state and that snapshot; the `seal` field is
+    retained as tamper-evidence but is NOT the authority and is NOT
+    recomputed at consumption. Direct construction with raw shapes
     RAISES here; everything deeper is the registry's job."""
     groups: object
     cross_scope_visible: bool
@@ -236,9 +256,12 @@ def validate_policy(groups, cross_scope_visible=False,
                       group_digests=MappingProxyType(frozen_digests),
                       seal=_seal(frozen_groups, cross_scope_visible,
                                  local_origin))
-    # the validator-owned snapshot (R5-2), RECURSIVELY IMMUTABLE (R6-3:
-    # "immutable" must be literal — tuples and frozensets only, no dicts)
-    _REGISTRY[pol] = (tuple(sorted((k, v) for k, v in frozen_groups.items())),
+    # the validator-owned snapshot (R5-2), RECURSIVELY IMMUTABLE — NOW
+    # LITERALLY (R7-4: v8 froze the CONTAINERS but retained the same
+    # `Identity` instances the policy exposes, so `object.__setattr__` on a
+    # member mutated both references; the snapshot holds only PRIMITIVE
+    # strings/bools/frozensets from here down — no shared leaf exists)
+    _REGISTRY[pol] = (_prim_groups(frozen_groups),
                       cross_scope_visible,
                       tuple(sorted((k, frozenset(v))
                                    for k, v in frozen_digests.items())),
@@ -246,13 +269,24 @@ def validate_policy(groups, cross_scope_visible=False,
     return pol
 
 
+def _prim_groups(groups) -> tuple:
+    """The snapshot projection of a groups mapping: every Identity leaf
+    decomposed to its (origin, source_id) PRIMITIVE strings (R7-4)."""
+    return tuple(sorted(
+        (name, tuple((m.origin, m.source_id) for m in members))
+        for name, members in groups.items()))
+
+
 def _revalidate(policy: ScopePolicy, local_origin: str) -> None:
-    """Consumption-time revalidation (R3-1/R4-1): shape checks, then the
-    SEAL recomputed over the policy's CURRENT state — the entire canonical
-    projection including the digest map's backing content and the bool. An
-    inconsistent digest map, a mutated backing dict, or a post-hoc
-    attribute flip yields a different projection and refuses; the
-    digest-map consistency is checked by recomputation, not trust."""
+    """Consumption-time revalidation (R3-1/R4-1; wording corrected R7-4 —
+    the seal is COMPARED against the registered value, never RECOMPUTED
+    here): shape checks, then the DIGEST MAP is recomputed from the
+    policy's current groups (an inconsistent map or mutated backing dict
+    yields a mismatch and refuses), then the policy's visible state —
+    PRIMITIVE-projected, so a mutated Identity leaf projects differently —
+    is compared field-for-field against the validator-owned registry
+    snapshot. The registry, not the seal, is the authority; the seal
+    comparison is retained as tamper-evidence only."""
     if not isinstance(policy, ScopePolicy):
         raise PolicyError("policy must be a ScopePolicy")
     if not isinstance(policy.cross_scope_visible, bool) \
@@ -272,8 +306,7 @@ def _revalidate(policy: ScopePolicy, local_origin: str) -> None:
             "outside validate_policy (R4-1/R5-2)")
     reg_groups, reg_xv, reg_digs, reg_seal = reg
     if (policy.cross_scope_visible is not reg_xv
-            or tuple(sorted((k, v) for k, v in policy.groups.items()))
-            != reg_groups
+            or _prim_groups(policy.groups) != reg_groups
             or tuple(sorted((k, frozenset(v))
                             for k, v in policy.group_digests.items()))
             != reg_digs
@@ -300,6 +333,51 @@ def is_legacy_derivative(record: dict) -> bool:
             and record.get("source_id") is not None)
 
 
+def close_absorption_rows(survivor_id: str, direct_rows: dict,
+                          absorbed_links: dict) -> Optional[list]:
+    """0020 §4a-iii v9 (external R7-1) — the TRANSITIVE CLOSURE of
+    absorption evidence. A survivor's direct rows carry only its DIRECT
+    contributors' digests; when an absorbed prior was itself a
+    survivor-with-contributors (the reviewer's A → B → C chain), the
+    ancestor digests live on the PRIOR's rows, and a single-level read
+    misclassifies the survivor as own-scope. Membership for absorption
+    survivors is therefore defined over the CLOSED set this function
+    computes.
+
+    `direct_rows`: {record_id: [ContributionRecord-shaped rows]} — each
+    known record's OWN rows (an empty list is a known record with no rows;
+    a MISSING key is an unknown record). `absorbed_links`:
+    {absorber_id: (absorbed_record_id, ...)} — the absorbed-prior links
+    (from absorption events, `absorbed_by` linkage, or import
+    reconstruction).
+
+    Returns the closed row list, or **None — and None MUST be read as
+    UNRESOLVED** — when the chain is unwalkable: a linked prior absent
+    from `direct_rows` (evidence incomplete), or a repeated node (a record
+    is absorbed at most once, so any revisit is corrupt linkage; both fail
+    closed). Idempotent over write-time-flattened stores (0021 §4c): the
+    union re-adds digests already present.
+
+    The stated residual is UNCHANGED: absorptions predating the 0014
+    ledger left no rows AND no links — their survivors resolve by own
+    identity (0021 §4d)."""
+    if survivor_id not in direct_rows:
+        return None
+    out, seen = [], {survivor_id}
+    stack = [survivor_id]
+    while stack:
+        rid = stack.pop()
+        out.extend(direct_rows[rid])
+        for prior in absorbed_links.get(rid, ()):
+            if prior in seen:
+                return None            # cycle / duplicate link — corrupt
+            seen.add(prior)
+            if prior not in direct_rows:
+                return None            # unwalkable — evidence incomplete
+            stack.append(prior)
+    return out
+
+
 def membership(record: dict, rows: Optional[list], op_state: str,
                local_origin: str, *, expected_contributors: Optional[int] = None):
     """record + REAL ledger rows + operation state → membership evidence:
@@ -309,7 +387,11 @@ def membership(record: dict, rows: Optional[list], op_state: str,
     "lineage": bool} — the provenance-shape fields. `rows`: the record's
     `ContributionRecord`s AS SHIPPED — [{"site": "absorption" |
     "consolidation", "identity_digest": str|None, "op_key": str|None}] —
-    keyed by survivor_id (None/[] = no rows). `expected_contributors`: the
+    keyed by survivor_id (None/[] = no rows). **For absorption survivors
+    this MUST be the transitively CLOSED set (R7-1): either the write path
+    flattened ancestors onto the survivor (0021 §4c, post-0021 stores) or
+    the caller assembled it via `close_absorption_rows`; a None closure is
+    UNRESOLVED before this function is ever called.** `expected_contributors`: the
     completeness denominator the store derives (lineage length for
     consolidation outputs; None = unknown → incomplete).
 
@@ -420,79 +502,138 @@ def decide(record_evidence, principal, policy, local_origin):
                                    local_origin)]
 
 
-# ---- import-time absorption reconstruction (R5-1 — now EXECUTABLE) ---------
-
-#: the SHIPPED note grammar, anchored (R6-1: \S+ broke on whitespace ids;
-#: graph.py writes "absorbed_by:<id> (restated as <obj>)" and appends
-#: segments with "; " — the id runs to the " (restated as" anchor when
-#: present, else to the segment/string end)
-_ABSORBED_BY = re.compile(
-    r"absorbed_by:(.+?)(?: \(restated as |; |$)")
+# ---- import-time absorption reconstruction (R5-1; REBUILT v9 / R7-2) --------
 
 
 class ImportLinkageError(PolicyError):
     """R6-1: an import whose absorption linkage cannot be reconstructed
-    unambiguously REFUSES WHOLE — the 0009/0005 whole-import posture. A
-    file carrying an absorbed_duplicate record with missing or
-    unresolvable linkage has unreconstructable absorption history; that
-    is an integrity problem, not a soft cell."""
+    unambiguously REFUSES WHOLE — the 0009/0005 whole-import posture,
+    and (R7-2) the refusal happens PRE-COMMIT: reconstruction runs on the
+    export file's records BEFORE any destination write, so a refused
+    import leaves the destination byte-identical. A file carrying an
+    absorbed_duplicate record with missing, unresolvable, or AMBIGUOUS
+    linkage has unreconstructable absorption history; that is an
+    integrity problem, not a soft cell."""
 
 
-def reconstruct_absorption_rows(imported_records: list, local_origin: str,
-                                *, id_remap: Optional[dict] = None):
-    """The 0020 §4a-iii import-time RECONSTRUCTION rule (v8 — external
-    R6-1/R6-2 folded).
+def _resolve_winner(record: dict, file_ids: set) -> str:
+    """R7-2 — the DECIDABLE linkage rule, replacing the v8 regex (which
+    treated note punctuation as framing while `Edge.id` permits exactly
+    those characters, rejecting valid native exports).
 
-    `imported_records`: the edge records AS THE IMPORTER COMMITS THEM
-    (post-remap ids). `id_remap`: the importer's old→new id table when a
-    `user_id=` remap ran (the shipped importer changes edge ids WITHOUT
-    rewriting notes — R6-1's executed break — so note-referenced winner
-    ids are translated through THIS map; None = no remap). Returns
-    {post-remap survivor_id: [synthetic absorption rows]}.
+    1. STRUCTURED FIRST: a record carrying `absorbed_by_id` (the FORMAT-7
+       carrier 0020 §4a-iii rules normative) uses it verbatim — no note
+       parsing. It must name a record in the file.
+    2. LEGACY NOTE: the LAST `absorbed_by:` occurrence governs and is the
+       ONLY tag that must resolve (v8 demanded earlier incidental tags
+       resolve too, contradicting its own last-tag rule — the reviewer's
+       third executed case). The tag's value is matched against the
+       export's OWN id universe: candidate winners are every file id W
+       where the remainder equals W, or starts with W + " (restated as "
+       or W + "; " (the shipped append framings). EXACTLY ONE candidate
+       resolves; ZERO refuses (missing/unresolvable); MORE THAN ONE
+       refuses (the legacy carrier is genuinely ambiguous there — ids may
+       embed the framing and each other, so no grammar can decide; the
+       structured field is the fix, refusal is the fallback)."""
+    rid = record.get("id")
+    structured = record.get("absorbed_by_id")
+    if structured is not None:
+        if structured not in file_ids:
+            raise ImportLinkageError(
+                f"absorbed_duplicate record {rid!r} carries structured "
+                f"absorbed_by_id {structured!r} naming no record in the "
+                f"file — unresolvable linkage; the import REFUSES")
+        return structured
+    note = record.get("note") or ""
+    idx = note.rfind("absorbed_by:")
+    if idx < 0:
+        raise ImportLinkageError(
+            f"absorbed_duplicate record {rid!r} carries no absorbed_by "
+            f"linkage — unreconstructable absorption history; the import "
+            f"REFUSES (R6-1)")
+    rest = note[idx + len("absorbed_by:"):]
+    candidates = [w for w in file_ids
+                  if isinstance(w, str)
+                  and (rest == w or rest.startswith(w + " (restated as ")
+                       or rest.startswith(w + "; "))]
+    if len(candidates) == 1:
+        return candidates[0]
+    if not candidates:
+        raise ImportLinkageError(
+            f"absorbed_duplicate record {rid!r} names a winner resolving "
+            f"to no record in the file — unresolvable linkage; the import "
+            f"REFUSES (R6-1)")
+    raise ImportLinkageError(
+        f"absorbed_duplicate record {rid!r}'s linkage matches "
+        f"{len(candidates)} file ids — the legacy note carrier is "
+        f"AMBIGUOUS here; the import REFUSES (R7-2; re-export under the "
+        f"structured absorbed_by_id carrier)")
 
-    FAIL-CLOSED RULES (R6-1 — replacing v7's liberal cells):
-    - an `absorbed_duplicate` record with NO absorbed_by tag → REFUSE the
-      import (its invalidation reason proves it was an absorption; silent
-      "ordinary retirement" treatment laundered the linkage away);
-    - a tag naming an id that is neither in the import's post-remap id
-      set nor in `id_remap` → REFUSE (unresolvable linkage; v7's
-      "may arrive in a later import" contradicted 0014's
-      dangling-survivor rules and is WITHDRAWN);
-    - MULTIPLE tags in one note → the LAST governs (the shipped
-      note-append order), each earlier tag must still RESOLVE.
+
+def reconstruct_absorption_rows(export_records: list, local_origin: str,
+                                *, id_remap: Optional[dict] = None,
+                                op_key: str):
+    """The 0020 §4a-iii import-time RECONSTRUCTION rule (v9 — external
+    R7-1/R7-2/R7-3 folded).
+
+    PRE-COMMIT (R7-2): `export_records` are the records AS PARSED FROM THE
+    EXPORT FILE — original ids, before any destination write. Winner
+    resolution happens in the file's own id universe (`_resolve_winner`);
+    `id_remap` (the importer's old→new table when a `user_id=` remap runs)
+    translates the OUTPUT keys only. A raised `ImportLinkageError` means
+    the importer never writes — destination unchanged.
+
+    TRANSITIVE (R7-1): each absorbed record's identity digest propagates
+    to its direct winner AND every transitive absorber (A → B → C leaves
+    C carrying both B's and A's digests) — the reconstructed sets are
+    BORN CLOSED, matching the write-time flattening rule (0021 §4c). A
+    cyclic winner chain refuses (corrupt linkage).
+
+    FULLY POPULATED ROWS (R7-3): the import operation mints ONE
+    `op-<12hex>` operation key and passes it here; every emitted row
+    carries it (the 0009 amendment's deterministic row identity keys on
+    it). Returns {post-remap survivor_id: [rows]}.
 
     These rows are ATTRIBUTION evidence for scope membership ONLY — they
     are NOT 0014 §4a absorption payloads and provide NO reversal (the
     pre-inheritance base image is not in the export and cannot be
     inferred; stated as the imported-absorption site's honest limit —
     R6-2)."""
+    if not _OP_ID.match(op_key or ""):
+        raise PolicyError(f"op_key must be the minted op-<12hex> operation "
+                          f"key (R7-3), got {op_key!r}")
     id_remap = id_remap or {}
-    ids = {r.get("id") for r in imported_records}
-    out: dict = {}
-    for r in imported_records:
-        if r.get("invalidation_reason") != "absorbed_duplicate":
-            continue
-        tags = _ABSORBED_BY.findall(r.get("note") or "")
-        if not tags:
+    file_ids = {r.get("id") for r in export_records}
+    winner_of: dict = {}
+    for r in export_records:
+        if r.get("invalidation_reason") == "absorbed_duplicate":
+            winner_of[r.get("id")] = _resolve_winner(r, file_ids)
+        elif r.get("absorbed_by_id") is not None:
             raise ImportLinkageError(
-                f"absorbed_duplicate record {r.get('id')!r} carries no "
-                f"absorbed_by linkage — unreconstructable absorption "
-                f"history; the import REFUSES (R6-1)")
-        resolved = []
-        for tag in tags:
-            winner = id_remap.get(tag, tag)
-            if winner not in ids:
-                raise ImportLinkageError(
-                    f"absorbed_duplicate record {r.get('id')!r} names "
-                    f"winner {tag!r} which resolves to no imported record "
-                    f"— unresolvable linkage; the import REFUSES (R6-1)")
-            resolved.append(winner)
-        winner = resolved[-1]
+                f"record {r.get('id')!r} carries absorbed_by_id but is not "
+                f"absorbed_duplicate — a contradictory file; the import "
+                f"REFUSES (fail-closed)")
+    out: dict = {}
+    for r in export_records:
+        rid = r.get("id")
+        if rid not in winner_of:
+            continue
         d = digest_of(Identity(r.get("origin"), r.get("source_id")),
                       local_origin)
-        out.setdefault(winner, []).append(
-            {"site": "imported-absorption", "identity_digest": d,
-             "op_key": None})
+        row = {"site": "imported-absorption", "identity_digest": d,
+               "op_key": op_key}
+        # propagate to the direct winner and every transitive absorber
+        hop, visited = winner_of[rid], {rid}
+        while True:
+            if hop in visited:
+                raise ImportLinkageError(
+                    f"absorption linkage from {rid!r} is CYCLIC at "
+                    f"{hop!r} — corrupt history; the import REFUSES (R7-1)")
+            visited.add(hop)
+            out.setdefault(id_remap.get(hop, hop), []).append(dict(row))
+            if hop not in winner_of:
+                break
+            hop = winner_of[hop]
     return out
 
 

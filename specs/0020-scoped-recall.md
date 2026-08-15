@@ -215,12 +215,31 @@ Membership evidence for a record whose own resolved identity is the local
 store with NO source_id (the store-authored shape), in order:
 
 1. **Ledger evidence** (0014): the contributor rows for the derivative,
-   PRESENT and COMPLETE (the exact-set property the ledger already
-   enforces at write). All contributors resolve to one scope → the
+   PRESENT, COMPLETE (the exact-set property the ledger already enforces
+   at write) — **and, for absorption survivors, TRANSITIVELY CLOSED
+   (external R7-1, the round-7 architectural finding).** The reviewer's
+   chain: `A` (scope A) absorbed by `B` (scope B), then `B` absorbed by
+   `C` (scope B) — C's DIRECT row carries only B's digest, which equals
+   C's own scope, so a single-level read classifies C own-scope while C
+   transitively contains A's testimony. The contract is therefore dual:
+   - **Write-time flattening (0021 §4c, post-0021 stores):** an
+     absorption writes onto the survivor the absorbed prior's identity
+     digest AND carries forward the prior's own absorption rows, in the
+     same atomic operation — row sets are BORN closed; and
+   - **Read-time closure (pre-0021 chains):** `close_absorption_rows`
+     (the normative reference) walks the absorbed-prior links and unions
+     each visited record's rows; a linked prior whose record or rows are
+     unavailable, or any cyclic linkage, closes to None — and **None IS
+     UNRESOLVED**, before the resolver ever runs. Idempotent over
+     flattened stores.
+
+   All contributors (over the CLOSED set) resolve to one scope → the
    derivative is that scope's. Contributors span scopes → cannot occur
-   post-0021 (W1 refusal); a pre-existing mixed derivative is UNRESOLVED.
-   All contributors unidentified → the shared pool (its derivatives stay
-   in the pool).
+   post-0021 (W1 refusal); a pre-existing mixed derivative — including a
+   mixed CHAIN — is UNRESOLVED. All contributors unidentified → the
+   shared pool (its derivatives stay in the pool). The stated residual is
+   unchanged: pre-0014 absorptions left no rows and no links; their
+   survivors resolve by own identity (0021 §4d's disclosure).
 2. **No/partial ledger evidence → UNRESOLVED, fail-closed:** invisible to
    every scoped principal; visible on the unscoped surface; never a merge
    candidate (0021 W9). The populations, enumerated: LEGACY pre-0021
@@ -228,27 +247,50 @@ store with NO source_id (the store-authored shape), in order:
    travel — the reviewer's export/import probe); outputs of pre-feature
    IN-FLIGHT operations completed by recovery; any derivative whose
    ledger rows fail the completeness check. **IMPORTED ABSORPTION
-   SURVIVORS — the import-time RECONSTRUCTION rule, v8 form (external
-   R6-1/R6-2): `reconstruct_absorption_rows` is normative and executable —
-   REMAP-AWARE (the shipped importer changes edge ids without rewriting
-   notes; the importer's own old→new table parameterizes the
-   reconstruction so winner references translate), grammar-ANCHORED (ids
-   parse to the shipped note's `(restated as` anchor — whitespace-bearing
-   ids resolve), and FAIL-CLOSED (an absorbed_duplicate record with
-   missing or unresolvable linkage REFUSES the WHOLE import — the
-   0009/0005 posture; "may arrive later" is WITHDRAWN as contradicting
-   0014's dangling rules). The rows it emits carry the site
-   `imported-absorption` — a NEW 0014 SITE with its own closed integrity
-   semantics (the named 0014 amendment, 0021 §7b): identity/evidence
-   digests from the exported record, NO absorption payload and NO
-   REVERSAL (the pre-inheritance base image is not in the export and
-   cannot be inferred — these rows are ATTRIBUTION evidence for scope
-   membership only, stated). Persisting them atomically extends the
-   whole-import primitive (an 0009 §4 amendment candidate, named). The
-   residual narrows to absorbed priors pruned before export.** **Missing membership evidence
-   never silently means "shared."** The operator remedies are restatement
-   or re-derivation under 0021; materializing membership at export is a
-   recorded widening (a FORMAT change, deliberately not v1).
+   SURVIVORS — the import-time RECONSTRUCTION rule, v9 form (external
+   R7-1/R7-2/R7-3 rebuilt the v8 construction):**
+
+   - **PRE-COMMIT (R7-2):** reconstruction runs on the records AS PARSED
+     FROM THE EXPORT FILE, before any destination write. A refusal
+     (`ImportLinkageError`) means the importer never writes — the
+     destination is byte-identical to before the attempt. (v8 stated
+     whole-import refusal but ordered nothing; the reviewer committed
+     three imports and only then watched reconstruction fail.)
+   - **STRUCTURED LINKAGE IS THE NORMATIVE CARRIER (R7-2, ruled):** the
+     export materializes each absorbed record's winner as a structured
+     `absorbed_by_id` field at the next FORMAT bump (rides 0021's
+     implementation window; linkage only — NOT the full-membership
+     materialization, which stays the recorded widening). The v8 note
+     REGEX is RETIRED: `Edge.id` permits the framing punctuation, so the
+     regex rejected valid native exports (reviewer-executed, three
+     cases). For LEGACY files the rule is the DECIDABLE one: the LAST
+     `absorbed_by:` tag governs and is the only tag that must resolve
+     (earlier incidental tags are ignored — v8 contradicted its own
+     last-tag rule); candidates are matched against the export's own id
+     universe under the shipped framings; exactly one resolves, zero or
+     multiple REFUSE — ambiguity is irreducible in free text that may
+     embed ids, so refusal plus the structured carrier is the honest
+     pair.
+   - **TRANSITIVE (R7-1):** each absorbed record's digest propagates to
+     its direct winner and every transitive absorber — reconstructed row
+     sets are born closed, matching the write-time flattening; cyclic
+     chains refuse.
+   - **FULLY POPULATED (R7-3):** the import operation mints ONE
+     `op-<12hex>` operation key; every reconstructed row carries it plus
+     the site `imported-absorption` — a 0014 SITE with its own closed
+     integrity semantics (the named 0014 amendment, 0021 §7b): NO
+     absorption payload and NO REVERSAL (the pre-inheritance base image
+     is not in the export and cannot be inferred — ATTRIBUTION evidence
+     for scope membership only). Persisting these rows atomically with
+     the records is the 0009 §4 primitive AMENDMENT (exact text: 0021
+     §7b — schema, deterministic row identity, expected-state and
+     conflict rules, idempotent re-import, rollback, concurrency).
+
+   The residual narrows to absorbed priors pruned before export.
+   **Missing membership evidence never silently means "shared."** The
+   operator remedies are restatement or re-derivation under 0021;
+   materializing FULL MEMBERSHIP at export remains a recorded widening
+   (distinct from the linkage field above, which carries no membership).
 
 ### 4b. Scoped assertability — restrict-only
 
@@ -345,7 +387,9 @@ manifest fails `test_read_surface_manifest_is_total`.
 | V8 filter rails M-1..M-4 | `test_filter_rails` |
 | V9 the 0011 gate seam | `test_gate_seam_reserved_for_0011` |
 | V10 the shipped surface matches the normative reference on every vector, via the SHIPPED HARNESS (external F2/R3) | `test_scope_reference_vectors` |
-| V14 absorption survivors resolve through their ledger rows; any cross-digest contributor → UNRESOLVED (external R3-3 — the legacy-absorption read leak closed) | `test_absorption_survivor_membership` |
+| V14 absorption survivors resolve through their ledger rows OVER THE TRANSITIVELY CLOSED SET; any cross-digest contributor → UNRESOLVED (external R3-3; closure per R7-1 — the single-level read misclassified the reviewer's A→B→C chain) | `test_absorption_survivor_membership` |
+| V15 three-hop absorption chains fail closed NATIVE and RESTORED: the A→B→C survivor is UNRESOLVED on the origin store (closure) and on an import destination (transitive reconstruction), including under remap and after reopen (external R7-1) | `test_transitive_absorption_chains` |
+| V16 import linkage reconstruction is PRE-COMMIT: missing/unresolvable/ambiguous/cyclic linkage refuses BEFORE any destination write and the destination is byte-identical after the refused attempt (external R7-2) | `test_import_reconstruction_precommit` |
 | V11 `answer()` and proactive thread the principal; structured carriers carry only visible records (external F3) | `test_all_read_surfaces_scoped` |
 | V12 the read-surface manifest is total (external F3) | `test_read_surface_manifest_is_total` |
 | V13 UNRESOLVED derivatives are invisible to every scoped principal and visible unscoped (external F1) | `test_unresolved_derivative_fail_closed` |

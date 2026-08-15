@@ -896,5 +896,670 @@
   "kind": "direct_construction",
   "expect": "PolicyError",
   "attempt": "resign_after_flip"
+ },
+ {
+  "name": "closure_three_hop_cross_ancestor_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "direct_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     }
+    }
+   ],
+   "A": []
+  },
+  "links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "A"
+   ]
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_three_hop_same_identity_own",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "direct_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "A": []
+  },
+  "links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "A"
+   ]
+  },
+  "expect": {
+   "digest_of": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  }
+ },
+ {
+  "name": "closure_missing_link_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "direct_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ]
+  },
+  "links": {
+   "C": [
+    "B"
+   ]
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_cyclic_linkage_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "direct_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ]
+  },
+  "links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "C"
+   ]
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_flattened_store_idempotent",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "direct_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    },
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     }
+    }
+   ],
+   "A": []
+  },
+  "links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "A"
+   ]
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_unknown_survivor_unresolved",
+  "kind": "closure",
+  "survivor": "ghost",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "direct_rows": {},
+  "links": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "recon_paren_anchor_id_resolves",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "winner (restated as id",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:winner (restated as id (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "winner (restated as id": [
+     {
+      "origin": "org-b",
+      "source_id": "agent-9"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_semicolon_id_resolves",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "winner; id",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:winner; id (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "winner; id": [
+     {
+      "origin": "org-b",
+      "source_id": "agent-9"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_incidental_tag_last_governs",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "real",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "user wrote absorbed_by:ghost here; absorbed_by:real (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "real": [
+     {
+      "origin": "org-b",
+      "source_id": "agent-9"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_ambiguous_candidates_refuse",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "winner",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "winner (restated as id",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-2"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:winner (restated as id (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": "ImportLinkageError"
+ },
+ {
+  "name": "recon_missing_tag_refuses",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "w",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "retired",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": "ImportLinkageError"
+ },
+ {
+  "name": "recon_unresolvable_tag_refuses",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "w",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:ghost-id",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": "ImportLinkageError"
+ },
+ {
+  "name": "recon_chain_transitive_propagation",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "A",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:B (restated as 'x')",
+    "origin": "org-a",
+    "source_id": "agent-a"
+   },
+   {
+    "id": "B",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:C (restated as 'y')",
+    "origin": "org-b",
+    "source_id": "agent-b"
+   },
+   {
+    "id": "C",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "B": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     }
+    ],
+    "C": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_cyclic_chain_refuses",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "A",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:B",
+    "origin": "org-a",
+    "source_id": "agent-a"
+   },
+   {
+    "id": "B",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:A",
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": "ImportLinkageError"
+ },
+ {
+  "name": "recon_structured_field_wins",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "decoy",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "real2",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-2"
+   },
+   {
+    "id": "loserS",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:decoy (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9",
+    "absorbed_by_id": "real2"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "real2": [
+     {
+      "origin": "org-b",
+      "source_id": "agent-9"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_structured_dangling_refuses",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "loserS",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "",
+    "origin": "org-b",
+    "source_id": "agent-9",
+    "absorbed_by_id": "ghost"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": "ImportLinkageError"
+ },
+ {
+  "name": "recon_unminted_op_key_refuses",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "w",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "not-an-op",
+  "expect": "PolicyError"
+ },
+ {
+  "name": "recon_remap_translates_output_keys",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "winner-old",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser-old",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:winner-old (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": {
+   "winner-old": "winner-new",
+   "loser-old": "loser-new"
+  },
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "winner-new": [
+     {
+      "origin": "org-b",
+      "source_id": "agent-9"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_whitespace_id_resolves",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "winner id",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:winner id (restated as 'x')",
+    "origin": "org-b",
+    "source_id": "agent-9"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "winner id": [
+     {
+      "origin": "org-b",
+      "source_id": "agent-9"
+     }
+    ]
+   }
+  }
+ },
+ {
+  "name": "recon_unidentified_absorbed_null_digest",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "w",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1"
+   },
+   {
+    "id": "loser",
+    "invalidation_reason": "absorbed_duplicate",
+    "note": "absorbed_by:w (restated as 'x')",
+    "origin": null,
+    "source_id": null
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": {
+   "rows": {
+    "w": [
+     null
+    ]
+   }
+  }
+ },
+ {
+  "name": "attack_leaf_identity_mutation",
+  "kind": "direct_construction",
+  "attempt": "leaf_identity_mutation",
+  "expect": "PolicyError"
+ },
+ {
+  "name": "recon_structured_on_active_record_refuses",
+  "kind": "reconstruction",
+  "records": [
+   {
+    "id": "w",
+    "invalidation_reason": null,
+    "note": "",
+    "origin": "org-a",
+    "source_id": "agent-1",
+    "absorbed_by_id": "w"
+   }
+  ],
+  "id_remap": null,
+  "op_key": "op-abcdef012345",
+  "expect": "ImportLinkageError"
  }
 ]

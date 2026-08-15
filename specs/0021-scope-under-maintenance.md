@@ -60,7 +60,7 @@ store MERGES. Consequences, stated:
 | supersession | UNTOUCHED | 0003 ladder, store-global | apply_supersession | scope-BLIND: truth is global; visibility is 0020's N-2 |
 | 0012 reinforcement | untouched | mutates nothing | — | scope-safe by construction |
 | lifecycle expiry / staleness | untouched | per-edge aging | — | scope-blind, trivially |
-| 0014 contribution ledger | READ, load-bearing | contributor rows key the digested resolved pair; exact-set completeness at write | scope membership (0020 §4a-iii) | the MEMBERSHIP join; the CROSS-scope reconstruction use remains stated-not-built (v1 refuses cross-scope derivation) |
+| 0014 contribution ledger | READ + WRITTEN (import path) | contributor rows key the digested resolved pair; exact-set completeness at write | scope membership (0020 §4a-iii) | the MEMBERSHIP join, over TRANSITIVELY CLOSED row sets (R7-1); the import path WRITES `imported-absorption` rows through the amended 0009 primitive (§7b — executable reconstruction, R7-4 swept the stale "stated-not-built" phrase this cell carried) |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
@@ -69,7 +69,7 @@ store MERGES. Consequences, stated:
 | identity fields on merge candidates — **PRODUCERS: hosts AND the store's own outputs** | absent identity | HOST-produced identity-less records form the closed shared pool (merge only among themselves; nothing crosses INTO a scope). STORE-produced derivatives take the 0020 §4a-iii evidence hierarchy; **UNRESOLVED derivatives are never merge candidates in any pool (W9)** |
 | a writer omitting identity to make content mergeable everywhere | adversarial | achieves the opposite: the shared pool only |
 | pre-0021 store state (external F1's populations) | legacy | LEGACY derivatives (identity copied from `inputs[0]`, pre-fix) are detected by the NORMATIVE `is_legacy_derivative` predicate (0020 §4a-ii's resolver — system-authored + consolidation-shaped `evidence_ref` + a still-groupable identity; vectored) and treated as UNRESOLVED — never trusted as scope-A evidence merely because they claim A |
-| imported derivatives | portability | the ledger is LOCAL and does not travel (0014): an imported CONSOLIDATION derivative arrives without membership evidence → UNRESOLVED. **Imported ABSORPTION survivors take the EXECUTABLE reconstruction rule (0020 §4a-iii v8): remap-aware, grammar-anchored, FAIL-CLOSED (missing/unresolvable linkage → whole-import REFUSAL — R6-1); `import_memory` writing `imported-absorption` rows through the EXTENDED atomic primitive is the named obligation, under the 0014 amendment (§7b) — attribution only, no reversal (R6-2).** Materializing full membership at export stays a recorded widening |
+| imported derivatives | portability | the ledger is LOCAL and does not travel (0014): an imported CONSOLIDATION derivative arrives without membership evidence → UNRESOLVED. **Imported ABSORPTION survivors take the EXECUTABLE reconstruction rule (0020 §4a-iii v9): PRE-COMMIT (refusal leaves the destination byte-identical — R7-2), structured-`absorbed_by_id`-first with the DECIDABLE legacy rule (last tag governs and is the only one that must resolve; id-set candidate matching; zero/multiple candidates → whole-import REFUSAL), TRANSITIVE (ancestor digests propagate to every absorber — R7-1), fully populated (the minted op key — R7-3); `import_memory` writes `imported-absorption` rows through the amended 0009 primitive (§7b, exact text) — attribution only, no reversal (R6-2).** Materializing full membership at export stays a recorded widening; the LINKAGE field is normative at the next FORMAT bump (0020 §4a-iii) |
 | in-flight pre-feature operations at upgrade | recovery | 0010 recovery completes or abandons them under its own rules. **CORRECTED (external R2-3, reviewer-executed): recovery CANNOT clear an already-OUTPUTS_DURABLE output — it was written pre-feature with the copied identity and recovery only finalizes.** Such outputs keep their stale identity and are caught by the NORMATIVE legacy-derivative predicate (0020 §4a-ii's resolver — by shape, not by recovery); membership → UNRESOLVED. GENERATING-state pre-feature ops that recovery abandons leave no output (0010). Recovery never fabricates membership |
 | host policy enabling cross-scope merge (future) | out of v1 | v1 REFUSES cross-scope merges outright; the recorded future form is intersection-scoped visibility with empty-intersection refusal |
 
@@ -178,6 +178,22 @@ loops additionally require same-scope membership evidence. A cross-scope
 or UNRESOLVED prior accumulates as a separate edge — today's cross-class
 behaviour, extended.
 
+**Write-time FLATTENING (external R7-1):** when an absorption commits, the
+survivor's new contribution rows carry the absorbed prior's identity
+digest AND copies of the prior's transitively CLOSED absorption row set —
+the closure the candidate check just computed, NOT the prior's direct
+rows, which for a legacy prior may themselves be unclosed (found-in-fix
+item 1 applied to this fix's own construction: flattening an unclosed set
+would mint a row set that LOOKS closed) — same site semantics, the new
+operation's op key, in the same atomic operation —
+so every post-0021 survivor's row set is the transitive closure of its
+ancestry BY CONSTRUCTION, and the single-level read that misclassified
+the reviewer's A→B→C chain cannot recur on records this spec writes.
+Pre-0021 chains take 0020 §4a-iii's read-time closure instead. The
+membership evidence a prior must present to be a CANDIDATE is likewise
+the closed set: a prior whose closure is None is UNRESOLVED and never
+absorbs or is absorbed.
+
 ### 4d. Mixed-version shared stores (external R2-6)
 
 No schema/format/feature marker prevents a PRE-0021 process from opening
@@ -187,16 +203,21 @@ therefore NARROWED to stores operated exclusively by 0021-capable
 processes, and the deployment requirement is stated plainly: upgrade
 every writer before relying on the partition invariant** (reads are fail-closed
 throughout, ON BOTH SYNTHESIS PATHS — external R3-3 corrected v4's
-consolidation-only claim: a pre-0021 CONSOLIDATION lands legacy-shaped →
-UNRESOLVED, and a pre-0021 ABSORPTION survivor — identity A carrying B's
-inherited testimony/currency, no lineage — is caught by the resolver's
-absorption-row rule (any cross-digest contributor → UNRESOLVED; the
-ledger recorded B even though the record claims A). What is lost during
-the window is the merge-PREVENTION half, not the visibility half. ONE
-residual, stated: absorptions that predate the 0014 ledger itself
-(pre-v0.7.0 events) left no rows and their survivors resolve by own
-identity — a fixed, shrinking legacy class, named here so it is a
-disclosure, not a discovery). **The ENFORCEMENT upgrade is recorded
+consolidation-only claim, and **external R7-1 corrected v8's
+single-level form of THIS claim**: a pre-0021 CONSOLIDATION lands
+legacy-shaped → UNRESOLVED, and a pre-0021 ABSORPTION survivor is caught
+by the resolver's absorption-row rule ONLY over the TRANSITIVELY CLOSED
+row set (0020 §4a-iii / `close_absorption_rows`) — the reviewer's
+A→B→C chain defeats the direct-row read, because C's only direct
+contributor shares C's scope while A's foreign digest sits one hop
+down. Fail-closed reads during the window therefore REQUIRE the closure
+at every membership consultation; an unwalkable or cyclic chain is
+UNRESOLVED. What is lost during the window is the merge-PREVENTION
+half, not the visibility half. TWO residuals, stated: absorptions that
+predate the 0014 ledger itself (pre-v0.7.0 events) left no rows and no
+links, so their survivors resolve by own identity — a fixed, shrinking
+legacy class; and a chain whose intermediate record was PRUNED before
+the closure runs is unwalkable → UNRESOLVED (fail-closed, not silent)). **The ENFORCEMENT upgrade is recorded
 (Q4): a store-version bump refusing pre-0021 writers — it rides the 0018
 D2 breaking window (SCHEMA v8) rather than minting its own break; until a
 release takes it, W1 carries the operational narrowing in its own text.**
@@ -214,6 +235,7 @@ release takes it, W1 carries the operational narrowing in its own text.**
 | pool B's LLM call raises mid-run | A's commit stands (permanent); B reports "failed" with the error; C/D run anyway; the schema carries all four (R2-5) |
 | a pre-0021 process consolidates during a rolling upgrade | its global merge produces a mixed derivative → UNRESOLVED at read (fail-closed); the partition half of W1 is narrowed per §4d until every writer upgrades |
 | a pre-0021 process ABSORBS during the window (R3-3) | the survivor carries cross-digest absorption rows → UNRESOLVED at read; pre-0014 absorptions (no rows) are the stated residual |
+| a CHAIN of pre-0021 absorptions (A→B→C, the R7-1 cell) | the direct row alone reads own-scope — the read-side CLOSURE walks the chain and finds A's foreign digest → UNRESOLVED; an unwalkable or cyclic chain → UNRESOLVED; post-0021 writes are flattened so the chain shape cannot recur |
 | eight identity-less cold records | ONE pool under the reserved `pool:unidentified` key; today's threshold semantics; today's top-level return values (R3-4) |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
@@ -234,7 +256,9 @@ release takes it, W1 carries the operational narrowing in its own text.**
 | W10 per-pool thresholds: the 4A+4B/min-8 no-op cell + per-pool trigger independence | `test_per_scope_thresholds` *(offline)* |
 | W11 partitioning is policy-independent: an identity-bearing store with NO policy partitions identically to the same store with one | `test_partition_is_policy_independent` *(offline)* |
 | W12 the fault-injection matrix (R2-5/R3-5/R4-3): every pool phase × later-pool continuation, through ALL carriers — the additive-superset return, the amended audit contract (aggregate + per-pool events; closed error codes; **the planted-secret adversarial cell: an exception carrying episode text never reaches the sink**), telemetry's preserved keys, the robustness checker, and the exact-result lifecycle tests | `test_per_pool_fault_matrix` *(offline)* |
-| W13 absorption survivors resolve through ledger rows; the cross-digest cell fails closed (R3-3 — shared with 0020 V14) | `test_absorption_survivor_membership` *(offline)* |
+| W13 absorption survivors resolve through ledger rows OVER THE TRANSITIVELY CLOSED SET; the cross-digest cell fails closed (R3-3; closure per R7-1 — shared with 0020 V14) | `test_absorption_survivor_membership` *(offline)* |
+| W14 write-time flattening: every post-0021 absorption leaves the survivor's row set transitively closed; the A→B→C chain is UNRESOLVED native and restored, under remap and after reopen (R7-1 — shared with 0020 V15) | `test_transitive_absorption_chains` *(offline)* |
+| W15 the amended import primitive: pre-commit refusal leaves the destination byte-identical; rollback on mid-plan failure; idempotent re-import skips (never duplicates) rows; concurrent same-file imports linearize with no partial state; membership identical after reopen (R7-2/R7-3) | `test_import_contribution_primitive` *(offline)* |
 
 ## 7. Failure modes and reversibility
 
@@ -253,8 +277,8 @@ amendment, never a silent relaxation.
 | `store/sqlite._derive_output_metadata` | identity clearing (W8) |
 | `graph.py` (absorption) | the same-scope candidate requirement |
 | `COMBINING_SITES` + `specs/generated/0021-combining-sites.md` | the mechanical totality carrier (F4) |
-| `portability.py` (import path) | the reconstruction call (remap-aware, via the importer's own id table) + whole-import REFUSAL on unresolvable linkage (R6-1) |
-| `store/base.py` + `store/sqlite.py` + the contribution carrier | the `imported-absorption` site (the 0014 amendment) + the whole-import atomic primitive EXTENDED to carry reconstruction rows (an 0009 §4 amendment candidate — rollback, races, restart durability, idempotent re-import all inherit the primitive's tests) |
+| `portability.py` (import path) | the PRE-COMMIT reconstruction call (on the parsed export file, before any write — R7-2), remap via the importer's own id table, whole-import REFUSAL on missing/unresolvable/AMBIGUOUS/cyclic linkage with the destination byte-identical after a refusal; export materializes `absorbed_by_id` at the next FORMAT bump |
+| `store/base.py` + `store/sqlite.py` + the contribution carrier | the `imported-absorption` site (the 0014 amendment) + the whole-import atomic primitive extended by the EXACT 0009 §4c amendment below (R7-3 — v8's "inherit the primitive's tests" claim did not follow from the unamended contract, whose expected-state checks covered edges/episodes/chain heads and nothing of ledger state) |
 | `audit.py` + `tests/test_audit.py` + docs | the amended cardinality contract (aggregate + per-pool events) and the closed error-code enum (R4-3) |
 | `tests/robustness/invariants.py` + lifecycle exact-result tests | updated for the additive-superset result (R4-2) |
 | docs | the behaviour change for identity-bearing stores; the UNRESOLVED operator remedies |
@@ -264,7 +288,8 @@ amendment, never a silent relaxation.
 | spec | touchpoint | disposition |
 |---|---|---|
 | 0020 | **MUTUAL `Spec-Requires` (external F6)** — atomic acceptance, the 0016/0018 precedent | 0020's claim is CONDITIONAL on this spec wherever maintenance runs; neither accepts alone |
-| 0014 | the ledger + **THE NAMED AMENDMENT (external R6-2): the `imported-absorption` SITE** | the MEMBERSHIP join is load-bearing v1. The amendment, drafted for same-commit landing at acceptance (the 0019 rider precedent; separate cross-spec sign-off required): *0014's site set gains `imported-absorption` — rows written ONLY by the import path from reconstructed linkage; identity_digest/evidence_ref_digest from the exported absorbed record; payload is the closed marker `{"reconstructed": true}` (this site's OWN §4a rule — the general absorption-payload totality does NOT apply, because the pre-inheritance base image is not in the export and cannot be inferred); these rows provide ATTRIBUTION for scope membership and explicitly NO reversal; dangling-survivor rules apply unchanged (a row for an absent survivor refuses).* Full-membership materialization at export stays the recorded widening |
+| 0009 | **THE EXACT §4c PRIMITIVE AMENDMENT (external R7-3), drafted verbatim for same-commit landing at acceptance:** | *`commit_outcome_import_plan`'s plan gains a third member, `plan["contributions"]` — ContributionRowPlan dicts, each TOTAL over `{record_type, record_id, site, identity_digest, op_key}`: `record_type`/`record_id` name a record in THIS plan or an already-present idempotent-equal record (anything else refuses at preflight); `site` is `"imported-absorption"` — the ONLY site the import path may write (the 0014 site registry gates); `identity_digest` is a 64-hex digest or None (an unidentified absorbed record); `op_key` is the ONE `op-<12hex>` key the import operation minted — identical on every row of one plan, mixed or malformed keys refuse at preflight. DERIVATION: rows derive ONLY from `reconstruct_absorption_rows` over the export file, PRE-COMMIT (0020 §4a-iii); the store derives nothing. EXPECTED STATE: `expected_destination_state` gains `contribution_state` — for every plan record carrying rows, the destination's current rows for that (user, type, id) must be ABSENT (first import) or EXACTLY EQUAL as a multiset over (site, identity_digest) (idempotent re-import — rows skip, never duplicate; `op_key` is excluded from the equality because a re-import mints a new operation); anything else returns `DESTINATION_CHANGED`, writing nothing — a survivor with different recorded contributors is a different history, refused whole. ROW IDENTITY: (user_id, record_type, record_id, site, identity_digest, op_key) is the natural key, store-enforced unique; same-digest duplicates within one plan collapse (this site's semantics are SET-valued over digests — stated, and harmless to membership, which unions). ROLLBACK: contribution rows ride the SAME single atomic commit as edges/episodes — the primitive's all-or-nothing clause extends verbatim; nothing is written after a prefix. RETURN: success gains `"contributions": n` written and `"contributions_existing": m` skipped-as-equal. CONCURRENT SAME-FILE IMPORTS: the primitive linearizes; the loser's revalidation sees the winner's rows as exact-equal → its rows skip (counted in `contributions_existing`), or `DESTINATION_CHANGED` on a genuinely conflicting race — no duplicates, no partial state, either way. DURABILITY: ordinary ledger rows; membership identical after close/reopen (W15's regression).* |
+| 0014 | the ledger + **THE NAMED AMENDMENT (external R6-2, EXTENDED by R7-1/R7-3): the `imported-absorption` SITE + the transitive capability** | the MEMBERSHIP join is load-bearing v1. The amendment, drafted for same-commit landing at acceptance (the 0019 rider precedent; separate cross-spec sign-off required): *0014's site set gains `imported-absorption` — rows written ONLY by the import path from reconstructed linkage, through the amended 0009 primitive above (site registry + generated manifest entry; payload validator enforces the closed marker); identity_digest/evidence_ref_digest from the exported absorbed record; payload is the closed marker `{"reconstructed": true}` (this site's OWN §4a rule — the general absorption-payload totality does NOT apply, because the pre-inheritance base image is not in the export and cannot be inferred); these rows provide ATTRIBUTION for scope membership and explicitly NO reversal; dangling-survivor rules apply unchanged (a row for an absent survivor refuses). THE §4f PREMISE IS CORRECTED (R7-1, reviewer-demonstrated): a survivor-with-contributors IS reachable by v1 consumers through ordinary absorption chains — the capability statement changes from "no v1 site can consume a survivor-with-contributors" to "every consumer of absorption rows MUST consume the TRANSITIVELY CLOSED set (write-time flattening or `close_absorption_rows`); single-level consumption is a defect." Rows at `imported-absorption` and, post-0021, at native `absorption` may carry ANCESTOR digests — the flattening rule (§4c) makes that the normal shape.* Full-membership materialization at export stays the recorded widening |
 | 0010 | per-pool operations | each pool's op uses the shipped claim/lease/recovery machinery unchanged |
 | 0006 | output identity | cleared-identity outputs resolve to the local singleton at read (I9) — the store-authored shape 0020's hierarchy expects |
 | the consolidation-audit direction | same code path | sequence together when it lands |

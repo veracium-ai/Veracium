@@ -17,6 +17,15 @@ Vector schema, per kind (every vector: {"name", "kind", "expect", ...}):
                     "expected_contributors": int|null, "op_state": s};
                    expect = {"digest_of": id} | "SHARED_POOL" | "UNRESOLVED"
                           | "PolicyError"
+- closure:         (R7-1) {"survivor": id, "record": {...}, "op_state": s,
+                    "direct_rows": {id: [rows]}, "links": {id: [ids]}};
+                   rows' identity fields are digest-sources; a None closure
+                   is UNRESOLVED by contract before membership runs;
+                   expect = {"digest_of": id} | "SHARED_POOL" | "UNRESOLVED"
+- reconstruction:  (R7-2/R7-3) {"records": [...], "id_remap": {}|null,
+                    "op_key": str}; records carry raw origin/source_id;
+                   expect = {"rows": {survivor: [digest-source|null]}}
+                          | "ImportLinkageError" | "PolicyError"
 - validate_filters:{"filters": {...}}; expect = "ok"|"PolicyError"
 - apply_filters:   {"records": [...], "filters": {...}}; expect = "first-only"
 - shared_pool_key: {}; expect = the reserved literal (collision-checked)
@@ -36,9 +45,11 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from reference_scope import (Identity, PolicyError, SHARED, SHARED_POOL_KEY,  # noqa: E402
-                             UNRESOLVED, apply_filters, classify, digest_of,
-                             membership, same_identity, validate_filters,
-                             validate_policy, ScopePolicy)
+                             UNRESOLVED, apply_filters, classify,
+                             close_absorption_rows, digest_of,
+                             ImportLinkageError, membership,
+                             reconstruct_absorption_rows, same_identity,
+                             validate_filters, validate_policy, ScopePolicy)
 
 LOCAL = "org-local-1234"
 A1 = {"origin": "org-a", "source_id": "agent-1"}
@@ -176,6 +187,24 @@ def _run_one(v, policies):
                 object.__setattr__(ok, "cross_scope_visible", True)
                 _cl(_dg(I({"origin": "org-b", "source_id": "agent-9"}),
                         LOCAL), I(A1), ok, LOCAL)
+            elif a == "leaf_identity_mutation":
+                # ROUND-7 (R7-4): mutate an Identity LEAF shared through
+                # the policy. v8's snapshot held the SAME instances, so
+                # this mutated both references; v9's snapshot is primitive
+                # strings — assert that structurally, THEN prove the
+                # mutated policy refuses at consumption.
+                import reference_scope as _rs
+                ok = validate_policy({"ga": [I(A1)]}, False,
+                                     local_origin=LOCAL)
+                snap_groups = _rs._REGISTRY[ok][0]
+                for _name, _members in snap_groups:
+                    for _leaf in _members:
+                        assert isinstance(_leaf, tuple) and all(
+                            isinstance(p, (str, type(None))) for p in _leaf), \
+                            "registry snapshot leaks non-primitive leaves"
+                member = ok.groups["ga"][0]
+                object.__setattr__(member, "source_id", "agent-evil")
+                _cl(_dg(I(A1), LOCAL), I(A1), ok, LOCAL)
             else:
                 raise AssertionError(f"unknown attempt {a}")
         return _expect_err(attempt)
@@ -202,6 +231,53 @@ def _run_one(v, policies):
             return None if got == want else f"got {got!r}"
         want = {"SHARED_POOL": SHARED, "UNRESOLVED": UNRESOLVED}[expect]
         return None if got == want else f"got {got!r}"
+    if kind == "closure":
+        def _rows(rr):
+            return [{"site": x["site"],
+                     "identity_digest": (digest_of(I(x["identity"]), LOCAL)
+                                         if x.get("identity") else None),
+                     "op_key": x.get("op_key")} for x in rr]
+        direct = {k: _rows(v) for k, v in v["direct_rows"].items()}
+        links = {k: tuple(ids) for k, ids in v.get("links", {}).items()}
+        closed = close_absorption_rows(v["survivor"], direct, links)
+        # the contract: a None closure IS UNRESOLVED, before membership runs
+        got = (UNRESOLVED if closed is None
+               else membership(v["record"], closed, v["op_state"], LOCAL))
+        if isinstance(expect, dict):
+            want = digest_of(I(expect["digest_of"]), LOCAL)
+            return None if got == want else f"got {got!r}"
+        want = {"SHARED_POOL": SHARED, "UNRESOLVED": UNRESOLVED}[expect]
+        return None if got == want else f"got {got!r}"
+    if kind == "reconstruction":
+        def build():
+            return reconstruct_absorption_rows(
+                v["records"], LOCAL, id_remap=v.get("id_remap"),
+                op_key=v["op_key"])
+        if expect in ("ImportLinkageError", "PolicyError"):
+            try:
+                build()
+                return f"expected {expect}, none raised"
+            except ImportLinkageError:
+                return None if expect == "ImportLinkageError" else \
+                    "ImportLinkageError raised where plain PolicyError expected"
+            except PolicyError:
+                # ImportLinkageError subclasses PolicyError; reaching here
+                # means a NON-linkage PolicyError (e.g. the op_key rule)
+                return None if expect == "PolicyError" else \
+                    "PolicyError raised where ImportLinkageError expected"
+        got = build()
+        want = {s: sorted(((digest_of(I(x), LOCAL) if x else None)
+                           for x in dl), key=lambda z: z or "")
+                for s, dl in expect["rows"].items()}
+        norm = {s: sorted((r["identity_digest"] for r in rows),
+                          key=lambda z: z or "")
+                for s, rows in got.items()}
+        if norm != want:
+            return f"got {norm!r}, expected {want!r}"
+        bad = [r for rows in got.values() for r in rows
+               if r["op_key"] != v["op_key"]
+               or r["site"] != "imported-absorption"]
+        return None if not bad else f"{len(bad)} rows not fully populated"
     if kind == "validate_filters":
         if expect == "PolicyError":
             return _expect_err(lambda: validate_filters(v["filters"]))
