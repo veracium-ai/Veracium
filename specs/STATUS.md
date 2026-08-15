@@ -4,7 +4,7 @@
 
 # Spec status
 
-**19 specs · 15 accepted · 179 external review
+**19 specs · 15 accepted · 165 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -17,7 +17,7 @@ is the number that decides what can be built.
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-14 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-01 | 0 | 0 | 2 | 0 | 1 | 0/1 |
-| **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 10 | 1 | 0 | 2 | 2/2 |
+| **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-09 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-10 | 0 | 4 | 0 | 0 | 1 | 1/1 |
@@ -29,9 +29,9 @@ is the number that decides what can be built.
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-15 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
 | **0016** | SourceType deletion + the evidence_basis contract freeze | `accepted` | 2026-08-15 | 1 | 15 | 0 | 0 | 0 | — |
-| **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 15 | 0 | 0 | 0 | — |
+| **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 10 | 0 | 0 | 0 | — |
 | **0018** | the release-migration orchestrator | `accepted` | 2026-08-15 | 1 | 4 | 0 | 0 | 0 | — |
-| **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-15 | 1 | 8 | 0 | 0 | 0 | — |
+| **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-15 | 1 | 4 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

@@ -98,8 +98,17 @@ def render() -> str:
         st = (STATUS.search(body).group(1).strip() if STATUS.search(body) else "**MISSING**")
         title = TITLE.search(body).group(1) if TITLE.search(body) else f.name
         title = re.sub(r"^Feature spec:\s*", "", title)
-        internal = sum(1 for r in REVIEWS if r["spec"] == num and r["kind"] == "internal")
-        external = sum(1 for r in REVIEWS if r["spec"] == num and r["kind"] == "external")
+        # Count DISTINCT round numbers, not rows: since the pre-seal ritual
+        # (0005 era) a round can be recorded as a SENT row + a verdict row,
+        # both kind="external" with the same round number — row-counting
+        # inflated those specs (0019 showed 8 rounds for 4; the header total
+        # claimed 179 for 165). Distinct-round counting is correct under
+        # every recording convention in reviews.py (one-row-per-round,
+        # SENT-edited-in-place, and SENT+verdict pairs).
+        internal = len({r["round"] for r in REVIEWS
+                        if r["spec"] == num and r["kind"] == "internal"})
+        external = len({r["round"] for r in REVIEWS
+                        if r["spec"] == num and r["kind"] == "external"})
         open_q, blocking = _questions(body)
         owned = [x for x in FINDINGS if x["owner"] == num]
         live = [x for x in owned if x["implementation"] in ("shipped", "committed")]
