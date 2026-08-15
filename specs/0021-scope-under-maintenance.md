@@ -115,7 +115,7 @@ with its own review, never a silent relaxation.
 | spec | touchpoint | disposition |
 |---|---|---|
 | 0020 | the boundary this spec closes the back door of | **one release story, at true strength (internal R2): 0020's §8 claim is CONDITIONAL on this spec wherever maintenance runs.** The wiki exclusion carries NONE of the consolidation burden — under 0020-alone, maintenance still co-consolidates cross-scope and serves the derivative through scoped recall as an ordinary record; the claim fails at the first maintenance run on a mixed store. Shipping 0020 without 0021 is shipping a boundary with an unlocked back door, and any such decision must say so in those words |
-| 0014 | the ledger join for any future cross-scope derivation | stated, not built |
+| 0014 | the ledger join | the MEMBERSHIP join is load-bearing v1 (R1, §2 row 6); the CROSS-scope reconstruction use remains stated-not-built (v1 refuses cross-scope derivation, so there is nothing to reconstruct) |
 | the consolidation-audit direction (0019 §8 successor) | same code path | sequence together when that work lands — one consolidation story covering grounding AND scope |
 
 ## 8. Claims and limits
