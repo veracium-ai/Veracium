@@ -1,0 +1,421 @@
+[
+ {
+  "name": "unscoped_call_is_own",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": null,
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "no_policy_is_own",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": null,
+  "evidence": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  }
+ },
+ {
+  "name": "own_scope_same_group",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": "org-a",
+   "source_id": "agent-2"
+  }
+ },
+ {
+  "name": "own_scope_self",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "host_unidentified_is_shared",
+  "kind": "classify",
+  "expect": "SHARED",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": null,
+   "source_id": null
+  }
+ },
+ {
+  "name": "cross_scope_hidden_default",
+  "kind": "classify",
+  "expect": "CROSS_HIDDEN",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  }
+ },
+ {
+  "name": "cross_scope_visible_when_enabled",
+  "kind": "classify",
+  "expect": "CROSS_VISIBLE",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": true
+  },
+  "evidence": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  }
+ },
+ {
+  "name": "unresolved_invisible_scoped",
+  "kind": "classify",
+  "expect": "UNRESOLVED",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": "UNRESOLVED"
+ },
+ {
+  "name": "unresolved_own_on_unscoped",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": null,
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": "UNRESOLVED"
+ },
+ {
+  "name": "ungrouped_identified_self_own",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  }
+ },
+ {
+  "name": "ungrouped_identified_cross",
+  "kind": "classify",
+  "expect": "CROSS_HIDDEN",
+  "principal": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "loose_origin_resolves_local",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": {
+   "origin": null,
+   "source_id": "agent-1"
+  },
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  },
+  "evidence": {
+   "origin": null,
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "loose_equals_resolved_local",
+  "kind": "same_identity",
+  "expect": true,
+  "a": {
+   "origin": null,
+   "source_id": "agent-1"
+  },
+  "b": {
+   "origin": "org-local-1234",
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "absent_never_equals_absent",
+  "kind": "same_identity",
+  "expect": false,
+  "a": {
+   "origin": null,
+   "source_id": null
+  },
+  "b": {
+   "origin": null,
+   "source_id": null
+  }
+ },
+ {
+  "name": "overlap_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "policy": {
+   "groups": {
+    "g1": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     }
+    ],
+    "g2": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  }
+ },
+ {
+  "name": "unidentified_in_group_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "policy": {
+   "groups": {
+    "g1": [
+     {
+      "origin": null,
+      "source_id": null
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  }
+ },
+ {
+  "name": "valid_policy_accepted",
+  "kind": "validate_policy",
+  "expect": "ok",
+  "policy": {
+   "groups": {
+    "team-a": [
+     {
+      "origin": "org-a",
+      "source_id": "agent-1"
+     },
+     {
+      "origin": "org-a",
+      "source_id": "agent-2"
+     }
+    ]
+   },
+   "cross_scope_visible": false
+  }
+ },
+ {
+  "name": "unknown_field_refused",
+  "kind": "validate_filters",
+  "expect": "PolicyError",
+  "filters": {
+   "colour": "red"
+  }
+ },
+ {
+  "name": "non_string_value_refused",
+  "kind": "validate_filters",
+  "expect": "PolicyError",
+  "filters": {
+   "relation": 7
+  }
+ },
+ {
+  "name": "valid_filter_accepted",
+  "kind": "validate_filters",
+  "expect": "ok",
+  "filters": {
+   "relation": "budget",
+   "subject": "user"
+  }
+ }
+]

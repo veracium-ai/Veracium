@@ -4,7 +4,9 @@
 Naming convention:
 
     NNNN-[impl-]v<version>-<YYYYMMDDTHHMMZ>.tar.gz   (impl- = implementation-review package)
+    NNNN-NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz     (a COUPLED two-spec round; lead spec first)
     0002-v7-20260802T0410Z.tar.gz
+    0020-0021-v3-20260815T1600Z.tar.gz
 
 Spec number first so archives sort and group by spec; version so the archive is
 tied to the document it carried; UTC timestamp so two archives of one version
@@ -38,7 +40,11 @@ INDEX = ARCHIVES / "INDEX.md"
 # `impl-v` marks a POST-IMPLEMENTATION review package (the accepted protocol
 # preserves reviewer standing against the implementation — 0012 §12); its
 # version numbers count implementation-review rounds, not spec versions.
-NAME = re.compile(r"^(\d{4})-(impl-)?v(\d+)-(\d{8}T\d{4}Z)\.tar\.gz$")
+# COUPLED packages (two specs reviewed as one round — REVIEWER_GUIDE Part 7;
+# the external 0020/0021 reviewer asked for both candidates in the name):
+# NNNN-NNNN-v<version>-<ts>.tar.gz — the FIRST number is the lead spec
+# (grouping/sorting key); the second names the coupled candidate.
+NAME = re.compile(r"^(\d{4})(?:-(\d{4}))?-(impl-)?v(\d+)-(\d{8}T\d{4}Z)\.tar\.gz$")
 
 
 def _entries():
@@ -48,7 +54,9 @@ def _entries():
         if not m:
             bad.append(f.name)
             continue
-        spec, impl, ver, ts = m.groups()
+        spec, coupled, impl, ver, ts = m.groups()
+        if coupled:
+            spec = f"{spec}+{coupled}"
         digest = hashlib.sha256(f.read_bytes()).hexdigest()
         n = len(subprocess.run(["tar", "tzf", str(f)], capture_output=True,
                                text=True).stdout.split())

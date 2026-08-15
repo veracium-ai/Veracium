@@ -1,14 +1,18 @@
 # Feature spec: scoped recall — the principal boundary (S1)
 
 Spec-Status: draft
-Spec-Requires: 0006
+Spec-Requires: 0006, 0014, 0021
 
 *From research's design proposal
 (`veracium-research/proposals/scoped-recall-design-proposal.md` @ f9a5fb9b,
-§7 addendum @ 9f6fb286, §8 addendum @ d808282b) — the two-round dev/research
-cell inventory is folded here in full. Companion: spec 0021 (scope under
-derivation and consolidation). S3 (authenticated principals) is deliberately
-OUT of this spec — see §8.*
+addenda 9f6fb286 / d808282b), internal round 1 (774097d0, PASS at v2),
+external round 1 (RETURN, 7 findings — folded here as v3). Companion: spec
+0021 (scope under derivation and consolidation). **The coupling is now
+MACHINE-CHECKED (external F6): `Spec-Requires` is mutual — 0020 requires
+0021 and 0021 requires 0020 — so acceptance is atomic under the existing
+gate, the 0016/0018 precedent; 0014 is declared because the membership
+join is load-bearing.** S3 (authenticated principals) is deliberately OUT
+— see §8.*
 
 ## 1. Problem and motivation
 
@@ -17,32 +21,35 @@ Veracium's identity half shipped in 0006: every record can carry a durable
 revocation-joinable. The missing half is the PRINCIPAL BOUNDARY: *which
 recalling party sees which records, and whose testimony is assertable to
 whom.* Hosts running memory per-agent or per-session have no isolation —
-every principal recalls every record with full assertability (the demand
-signal, COORDINATION 2026-08-15: no agent/session/run scoping while the
-ecosystem treats it as table stakes).
+every principal recalls every record with full assertability.
 
 Done as machinery this is a trust feature on our own axis; done as a tag it
 is the inert-field trap A1 names. This spec ships the machinery and adds NO
-field.
+per-record field.
 
 ## 2. Field contracts touched
 
 | field | read / written | documented contract | consumers | change here |
 |---|---|---|---|---|
-| `Provenance.origin`, `Provenance.source_id` | read only | 0006: opaque namespacing identity; **groups, never grants** (R3/I5); **not authenticated** (R7) | identity digest, revocation join | become the SCOPE KEY: policy rules key on the RESOLVED pair (0006 I9 — absent origin resolves to the local singleton before any comparison, the same read path the digest uses). **NO new per-record field** (Q1: policy-over-identity; a per-record ACL field is only justified by demonstrated per-record-sharing demand, must satisfy A1/C6 day one, and rides the 0018 breaking window — none of which v1 needs) |
+| `Provenance.origin`, `Provenance.source_id` | read only | 0006: opaque namespacing identity; **groups, never grants** (R3/I5); **not authenticated** (R7) | identity digest, revocation join | become the SCOPE KEY: policy rules key on the RESOLVED pair (0006 I9 — absent origin resolves to the local singleton before any comparison, the same read path the digest uses). **NO new per-record field** (Q1: policy-over-identity) |
 | `recall(user_id, query, token_budget)` | signature widened | today: no principal notion | hosts, MCP | gains `principal: Optional[Identity] = None` and the §4e filter parameters. **`principal=None` is byte-identical to today — the migration invariant, test-named** |
+| `answer(...)` (external F3) | signature widened | calls `recall()` internally | hosts, MCP | gains and THREADS `principal=` — an answer path that ignored the principal would be a public bypass of the whole boundary |
+| queryless `recall()` → proactive assembly (external F3) | filtered | the session-start briefing | hosts | the principal filter applies to the proactive EDGE SET before assembly — same visibility relation, same code path as scoped recall |
+| `Recall.edges` / `Recall.episodes` / `Recall.contested` / `ContestedGroup.exposed` (external F3) | filtered | structured records ride the response independently of rendered context | hosts, MCP | **the boundary is enforced on the STRUCTURED CARRIERS, not on rendered bytes** — every record object in a principal-bearing response satisfies the visibility relation; N-1's equivalence is over the FULL `Recall` value |
+| operator surfaces: `introspect`, `export_memory`, `forget` (external F3) | unchanged, by decision | store-wide operator views | operators | take NO principal and remain unscoped in v1 — they are the OPERATOR's right-to-know/erasure surfaces, not principal surfaces. A named decision, not an omission; per-principal introspection is a recorded widening |
 | gate / `assertable` partition | read only today | disclosure-keyed routing | gate, proactive, render | assertability becomes a RELATION between record provenance and recalling principal — RESTRICT-ONLY (§4b). The gate change leaves a NAMED SEAM for 0011's subject dimension (§7b) |
 | the compiled wiki | read by `recall` | the grounded working view, compiled store-wide | recall's grounded block | **EXCLUDED from principal-bearing recall in v1 (§4d)** — the second synthesis path |
-| scope POLICY | NEW — host-supplied, per-process | none today | recall, gate | lives beside the relations registry in `MemoryConfig`: **the store carries no policy; the host does.** Consequence stated plainly: two hosts opening the same store with different configs see different visibility — correct for honest-host ISOLATION (the host owns its process), and a named cell, not a discovery |
+| scope POLICY | NEW — host-supplied, per-process | none today | recall, gate | lives beside the relations registry in `MemoryConfig`; **READ-SIDE ONLY (external F5): policy governs visibility and assertability at recall — it never governs maintenance.** Maintenance partitioning keys on IDENTITY alone (0021), so two hosts with different policies (or none) can differ only in what they SHOW, never in what the store MERGES. The store carries no policy; the host does |
+| derived records | read via lineage | 0014: contributor rows key the digested resolved pair | scope membership | **the MEMBERSHIP-EVIDENCE HIERARCHY (external F1 — replaces v2's single rule):** see §4a-iii. Ledger evidence when present and complete; otherwise the derivative is UNRESOLVED and FAIL-CLOSED restricted. Missing evidence never silently means "shared" |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| `principal` (host-supplied at recall) | None → unscoped call, byte-identical to today | non-Identity shape → refused (closed predicate) | an identity no record carries → sees only shared-visible records | **a host names another agent's identity as its principal** | C2 verbatim-class: `(origin, source_id)` is NAMESPACING, NOT AUTHENTICATED (0006 R7). S1's boundary is honest-host ISOLATION — context-bleed, confused deputy, cross-agent leakage — never a security boundary against a caller who forges identity. Authentication is S3, a separate spec. The threat model section of any host-facing doc states this in these words |
-| records with ABSENT identity (the default MCP stream supplies none) | — | — | — | a writer omits identity to reach every scope | **unknown is the floor** (C3): absent-identity records are SHARED-VISIBLE, gate unchanged — scoping is not a promise we can keep for records the host never identified, and shared-visible grants nothing beyond today's behaviour. **absent == absent is never SAME-scope** (two unknown-identity records are not one principal; groups-never-grants) — a named test |
-| scope policy rules (host config) | no rules → every principal sees shared-visible + own-scope | malformed rule → refuse at config time, never at recall time | — | a rule that tries to WIDEN (grant cross-scope assertability above today's gate) | **RESTRICT-ONLY (C1, the governing invariant):** scope machinery only ever refuses or demotes. The named refused cell: same-principal re-assertability — "A's own use_only inference is assertable back to A" — is a GRANT and is REFUSED; `test_same_scope_grants_nothing` fails if anyone builds it. Any grant wants a 0006 amendment conversation, not this spec |
-| filter parameters (§4e) | absent → no filtering | unknown field/op → refused (closed grammar) | — | a filter referencing out-of-scope attributes as an oracle | M-2: filters apply AFTER scope, within the visible set — narrow only, never widen; leak-free by construction |
+| `principal` (host-supplied at recall/answer) | None → unscoped call, byte-identical to today | non-Identity shape → refused (the §4a-ii model validates; closed predicate) | an identity no record carries → sees only shared-visible records | **a host names another agent's identity as its principal** | C2 verbatim-class: `(origin, source_id)` is NAMESPACING, NOT AUTHENTICATED (0006 R7). S1's boundary is honest-host ISOLATION — context-bleed, confused deputy, cross-agent leakage — never a security boundary against a caller who forges identity. Authentication is S3, a separate spec |
+| records with ABSENT identity — **PRODUCERS row (the internal-R1 class): the host's unidentified stream AND the store's own machinery (maintenance outputs, migration, imports)** | — | — | — | a writer omits identity to reach every scope | **unknown is the floor** (C3) for HOST-produced identity-less records: shared-visible, gate unchanged. **STORE-produced derivatives are NOT floor-defaulted — they take the §4a-iii evidence hierarchy (external F1), and unresolved evidence fails CLOSED (restricted), never open (shared)**. absent == absent is never SAME-scope (named test) |
+| scope policy rules (host config) | no rules → every principal sees shared-visible + own-scope | malformed → refused at config load by the §4a-ii validator, never at recall time | — | a rule that tries to WIDEN | **RESTRICT-ONLY (C1):** the named refused cell — same-principal re-assertability — is a GRANT and is REFUSED; `test_same_scope_grants_nothing` fails if anyone builds it. Any grant wants a 0006 amendment, not this spec |
+| filter parameters (§4e) | absent → no filtering | unknown field/op → refused (the closed §4a-ii grammar) | — | a filter referencing out-of-scope attributes as an oracle | M-2: filters apply AFTER scope, within the visible set — narrow only; leak-free by construction |
 
 ### 2c-ii. Assertions about reach — REQUIRED
 
@@ -50,8 +57,9 @@ field.
 |---|---|---|
 | no principal notion exists at recall today | `grep -n "principal" src/veracium/__init__.py src/veracium/gate.py` | no hits on the recall path |
 | identity resolution is the shipped read path | `grep -n "resolve_origin" src/veracium/source_identity.py` | the 0006 I9 primitive |
-| the wiki reaches recall's context today | `grep -n "wiki" src/veracium/__init__.py \| head` | the grounded-block assembly |
-| nothing filters recall by metadata today | `grep -n "def recall" src/veracium/__init__.py` | `user_id, query, token_budget` only |
+| the READ surfaces this spec must cover (external F3) | `grep -n "def recall\|def answer\|edges\|episodes\|contested\|exposed" src/veracium/__init__.py src/veracium/schema.py \| grep -i "recall\|answer\|contested"` | the §4f inventory's carriers, no others |
+| consolidation outputs today COPY the first input's identity (external F1 — the assumption v2 got wrong, now asserted as the DEFECT 0021 fixes) | `grep -n "inputs\[0\].provenance" src/veracium/store/sqlite.py` | `_derive_output_metadata`'s base line — origin/source_id inherited, not cleared |
+| the ledger does not travel (portability) | `grep -n "ledger local\|settled outputs portable" src/veracium/store/sqlite.py specs/0014-maintenance-attribution.md \| head -2` | the 0014 locality rule |
 
 *(Re-run at implementation; commands recorded per the 0005 rule.)*
 
@@ -62,34 +70,30 @@ only subtract visibility/assertability:
 
 | operation | scope consequence |
 |---|---|
-| unscoped recall (`principal=None`) | byte-identical to today, every record, every store (the migration invariant) |
-| scoped recall, own-scope record | visible; assertability exactly as today's gate gives |
-| scoped recall, cross-scope record | visibility per policy; **assertability at most today's** — the concrete v1 rule: cross-scope testimony renders with the same non-assertable disclosure third-party testimony gets |
-| scoped recall, absent-identity record | shared-visible, gate unchanged (C3) |
+| unscoped recall/answer (`principal=None`) | byte-identical to today, every record, every store (the migration invariant) |
+| scoped recall/answer, own-scope record | visible; assertability exactly as today's gate gives |
+| scoped recall/answer, cross-scope record | visibility per policy; **assertability at most today's** — v1 pins the third-party-testimony disclosure shape |
+| scoped recall/answer, HOST-produced absent-identity record | shared-visible, gate unchanged (C3) |
+| scoped recall/answer, UNRESOLVED derivative (§4a-iii) | NOT visible to any scoped principal; visible unscoped (fail-closed, external F1) |
 | any write path | UNTOUCHED — this spec changes no write, no lifecycle transition (0021 owns derivation/consolidation) |
 
-**Write-time or maintain-time?** Neither — S1 is READ-time only. Lifecycle
-stays scope-blind (a newer value supersedes per the 0003 ladder regardless
-of scope; the store's truth is GLOBAL and scope filters VISIBILITY — the
-alternative, per-scope divergent truths, is a different and worse product).
-The full operation matrix (absorption, supersession, reinforcement,
-consolidation, expiry) is 0021's §3.
+**Write-time or maintain-time?** Neither — S1 is READ-time only, and
+POLICY is read-side only (external F5): maintenance partitioning is
+identity-driven and policy-independent, ruled in 0021 §3.
 
 ## 3b. Authorization and scope
 
-- **Who supplies the principal:** the HOST, per recall call — same trust
-  domain as every other host input (a host writing to its own store already
-  owns its bytes). No Veracium-mediated surface invents one; MCP passes the
-  host's declared principal through or nothing.
-- **What it reveals:** scoped responses reveal LESS. The two disclosure
-  cells are pinned in §4c (N-1: no existence signal; N-2: lifecycle status
-  without content).
-- **The stated line (N-1 vs N-2/M-3, once, so it never reads as
-  inconsistency):** *lifecycle truth about YOUR VISIBLE records renders
-  (supersession status, contention linkage — content of invisible parties
-  stripped); metadata about what scope WITHHELD does not exist on the
-  principal surface (it is operator/telemetry material, 0017's consent
-  framework as carrier); metadata about the VISIBLE set may render (M-3).*
+- **Who supplies the principal:** the HOST, per call — same trust domain as
+  every other host input. No Veracium-mediated surface invents one; MCP
+  passes the host's declared principal through or nothing.
+- **What it reveals:** scoped responses reveal LESS; the two disclosure
+  cells are §4c.
+- **The stated line (N-1 vs N-2/M-3, once):** *lifecycle truth about YOUR
+  VISIBLE records renders (supersession status, contention linkage —
+  content of invisible parties stripped); metadata about what scope
+  WITHHELD does not exist on the principal surface (operator/telemetry
+  material, 0017's consent framework as carrier); metadata about the
+  VISIBLE set may render (M-3).*
 
 ## 4. Behaviour
 
@@ -101,81 +105,138 @@ host-supplied per-process (`MemoryConfig`, the relations-registry
 precedent) and evaluated over RESOLVED identity (0006 I9), never raw
 fields.
 
-**Derived records (internal R1 — the producer sweep both design rounds
-missed):** hosts are not the only producers of absent-identity records —
-MAINTENANCE is: a consolidation output is store-authored (resolved origin
-= the local singleton, `source_id` absent), so under identity-only policy
-it would resolve shared-visible and leak scope-A content to B as an
-ordinary synthesized record. The rule: **when a record's own identity is
-absent, policy consults its LINEAGE — scope membership evaluates over the
-CONTRIBUTORS' resolved identities** (the 0014 ledger join, load-bearing in
-v1; the same lineage shape `min(author, derived_from)` already uses for a
-derivative's trust). All contributors one scope → the derivative belongs
-to that scope. C3's shared-visible floor applies ONLY to records with no
-identified contributors (the closed pool's derivatives stay in the pool).
-Still no new field; Q1 survives. The partition rule and its test (W7)
-live in 0021.
+### 4a-ii. The normative models and grammars (external F2)
+
+**The executable reference is `specs/evidence/0020/reference_scope.py`
+with `specs/evidence/0020/vectors.json` — pure, portable, no I/O; two
+conforming implementations must agree with it on every vector (the 0019
+reference-predicate discipline, applied to this spec's public surface).**
+It defines, exactly:
+
+- **`Identity`**: `{origin: str|None, source_id: str|None}`;
+  `resolve(identity, local_origin)` — absent origin → the local singleton
+  (I9); equality is over the RESOLVED pair. An identity with BOTH fields
+  None is "the unidentified" and never equals anything, including itself
+  (absent==absent never SAME).
+- **`ScopePolicy`**: `{groups: {name: [Identity…]}, cross_scope_visible:
+  bool = False}`. Validation REFUSES: an identity appearing in more than
+  one group (conflict behaviour = refusal at load, no precedence order
+  exists to dispute); an unresolvable rule shape; a group containing the
+  unidentified identity. No other rule forms exist in v1 — the grammar is
+  CLOSED; wildcards/patterns are a recorded widening.
+- **The visibility decision function** `classify(record_evidence,
+  principal, policy) → OWN | SHARED | CROSS | UNRESOLVED`, and the fixed
+  decision table: OWN → visible, today's assertability; SHARED → visible,
+  today's gate; CROSS → visible iff `cross_scope_visible`, third-party-
+  shaped assertability; UNRESOLVED → invisible to every scoped principal.
+  `record_evidence` is the record's resolved identity or, for derivatives,
+  the §4a-iii evidence outcome.
+- **The filter grammar** (§4e): field set CLOSED to `{subject, relation,
+  author_of_evidence, source_id, volatility}`; the only operator in v1 is
+  exact equality (`eq`); conjunction of at most one term per field. Every
+  extension is a spec change.
+
+The vectors enumerate every `classify` cell (each membership × principal
+× policy shape, including the refusal cases) and every filter cell.
+
+### 4a-iii. Derived records — the membership-evidence hierarchy (external F1)
+
+Hosts are not the only producers of identity-less records — MAINTENANCE
+is. **The shipped defect, named (reviewer-executed):** consolidation
+outputs today COPY the first input's provenance identity
+(`_derive_output_metadata`, `inputs[0].provenance` without clearing
+`origin`/`source_id`) — a mixed A+B derivative claims identity A, and
+export/import then strips its ledger rows, destroying the membership
+evidence while keeping the false identity. 0021 §4a makes clearing that
+inherited identity an IMPLEMENTATION OBLIGATION with the reviewer's probe
+as its regression (0021 W8).
+
+Membership evidence for a record whose own resolved identity is the local
+store with NO source_id (the store-authored shape), in order:
+
+1. **Ledger evidence** (0014): the contributor rows for the derivative,
+   PRESENT and COMPLETE (the exact-set property the ledger already
+   enforces at write). All contributors resolve to one scope → the
+   derivative is that scope's. Contributors span scopes → cannot occur
+   post-0021 (W1 refusal); a pre-existing mixed derivative is UNRESOLVED.
+   All contributors unidentified → the shared pool (its derivatives stay
+   in the pool).
+2. **No/partial ledger evidence → UNRESOLVED, fail-closed:** invisible to
+   every scoped principal; visible on the unscoped surface; never a merge
+   candidate (0021 W9). The populations, enumerated: LEGACY pre-0021
+   outputs; IMPORTED derivatives (the ledger is local-only and does not
+   travel — the reviewer's export/import probe); outputs of pre-feature
+   IN-FLIGHT operations completed by recovery; any derivative whose
+   ledger rows fail the completeness check. **Missing membership evidence
+   never silently means "shared."** The operator remedies are restatement
+   or re-derivation under 0021; materializing membership at export is a
+   recorded widening (a FORMAT change, deliberately not v1).
 
 ### 4b. Scoped assertability — restrict-only
 
-The gate's assertable predicate becomes a relation
-`assertable_to(record, principal)`:
-
-- own-scope: exactly today's `assertable`.
-- cross-scope: at most today's; v1 pins it to the third-party-testimony
-  disclosure shape (rendered non-assertable, attribution preserved).
-- **no promotion path exists**: same-scope status never raises trust,
-  never clears `ungrounded`/`needs_confirmation`, never lifts disclosure.
-  `test_same_scope_grants_nothing` enumerates the tempting cells (the
-  own-inference re-assertability cell by name) and fails on any grant.
+The gate's assertable predicate becomes the relation of §4a-ii's decision
+table. No promotion path exists: same-scope status never raises trust,
+never clears `ungrounded`/`needs_confirmation`, never lifts disclosure.
+`test_same_scope_grants_nothing` enumerates the tempting cells (the
+own-inference re-assertability cell by name) and fails on any grant.
 
 ### 4c. Response-surface disclosure — the two pinned cells
 
 - **N-1, existence non-leakage:** a principal-facing response is
   INDISTINGUISHABLE between nothing-exists and everything-withheld —
-  response bytes identical for an empty store vs an all-out-of-scope store
-  on the same query (test-named). Withholding counts/rates are
-  OPERATOR-side only (0017 consent carrier). Composition sentence, kept
+  **equality over the FULL `Recall` value (context, grounded, unverified,
+  edges, episodes, contested, tokens_estimated, truncated — every
+  structured carrier), not rendered bytes (external F3)** — for an empty
+  store vs an all-out-of-scope store on the same query (test-named).
+  Withholding counts/rates are OPERATOR-side only. Composition sentence,
   verbatim: *a scope-blinded agent saying "no record" is isolation
   WORKING, not abstention failing.*
 - **N-2, superseded-by-invisible:** supersession STATUS is global truth
-  and renders (supersede-never-erase; hiding it would show a stale value
-  as current). The superseding record's CONTENT and ATTRIBUTION follow
-  scope and do not render. Residual accepted with eyes open: the bare
-  status reveals that out-of-scope testimony exists — the price of global
-  truth, stated so a reviewer finds it rather than discovers it.
-  **Precedent: accepted 0003 §4c-ii/Corr-A** — the unseen fenced
-  challenger renders as content-free linkage; 0020 cites, not re-derives.
-  The contested-facts surface gets the same row: a cross-scope contention
-  renders as own member + content-free contention status, challenger
-  content/attribution scoped out.
+  and renders; the superseding record's CONTENT and ATTRIBUTION follow
+  scope and do not render — on the rendered context AND the structured
+  carriers (a `Recall.contested` group exposes only visible members;
+  cross-scope challengers appear as content-free linkage). Precedent:
+  accepted 0003 §4c-ii/Corr-A — cited, not re-derived. Residual accepted
+  with eyes open: the bare status reveals that out-of-scope testimony
+  exists — the price of global truth.
 
 ### 4d. The wiki — the second synthesis path (N-3)
 
-The compiled wiki is a store-wide LLM re-rendering; scope machinery does
-not control it, so scope enforced at the subgraph and ignored by the
-compiler would leak cross-scope content wholesale (the GHSA-hcj3 shape
-through `compile.py`; the general rule, recorded: **every LLM re-rendering
-the scope machinery doesn't control is a laundering site**; the 0019 F4
-precedent — a code-owned property cannot survive an uncontrolled
-re-rendering). **V1: principal-bearing recall EXCLUDES the shared wiki**
-(subgraph-only assembly); the wiki remains the no-principal surface's
-view. Per-scope wiki compilation is a recorded option for the 0021 era,
-cost-gated (compile spend × principal count). Named test: no wiki content
-in any principal-bearing recall.
+The compiled wiki is a store-wide LLM re-rendering; the general rule,
+recorded: **every LLM re-rendering the scope machinery doesn't control is
+a laundering site** (the 0019 F4 precedent). **V1: principal-bearing
+recall and answer EXCLUDE the shared wiki** (subgraph-only assembly); the
+wiki remains the no-principal surface's view. Per-scope wiki compilation
+is a recorded option for the 0021 era, cost-gated. Named test: no wiki
+content in any principal-bearing response.
 
 ### 4e. Metadata filtering (the folded demand signal (b))
 
-A convenience API on the same surface, under four rails (research §8):
+Under the four rails (research §8): **M-1** filters SELECT, never STRIP —
+the narrowest result still renders full disclosure (markers, superseded
+status, `ungrounded`, attribution). **M-2** after scope, within the
+visible set; narrow only. **M-3** empty-result reporting IS
+principal-facing here ("your filter matched 0 of the records visible to
+you") — computed within the visible set; the §3b line governs. **M-4**
+source-field filters evaluate over resolved identity; the grammar is
+§4a-ii's, closed and deterministic.
 
-- **M-1** filters SELECT, never STRIP — the narrowest result still renders
-  full disclosure (markers, superseded status, `ungrounded`, attribution).
-- **M-2** filters apply AFTER scope, within the visible set; narrow only.
-- **M-3** empty-result reporting IS principal-facing here ("your filter
-  matched 0 of the records visible to you") — safe because computed within
-  the visible set; the §3b line governs.
-- **M-4** source-field filters evaluate over resolved identity; the filter
-  grammar is closed, documented, deterministic — no interpretation layer.
+### 4f. The complete read-surface inventory (external F3)
+
+| surface | carrier(s) | scoped how |
+|---|---|---|
+| `recall(query, principal=…)` | rendered context + `Recall.edges/.episodes/.contested` | the visibility relation on the EDGE/EPISODE SET before rendering; structured carriers carry only visible records |
+| `recall(None, principal=…)` → proactive | the briefing + the same structured carriers | the relation on the proactive edge set before categorization |
+| `answer(query, principal=…)` | the answer string (built from a recall) | threads `principal` into its internal recall — never calls unscoped |
+| `Recall.contested` / `ContestedGroup.exposed` | full `Edge` objects | only visible members exposed; cross-scope challengers = content-free linkage (N-2) |
+| MCP tools (recall/answer-shaped) | the same values over MCP | pass the host's principal through; no new fields |
+| `introspect`, `export_memory`, `forget` | operator surfaces | UNSCOPED in v1 by decision (§2); per-principal introspection is a recorded widening |
+| the wiki | excluded from principal-bearing responses (§4d) | — |
+
+The inventory is pinned by a generated PUBLIC-CARRIER MANIFEST
+(`specs/generated/0020-read-surfaces.md`, the 0014 CONSUMPTION_SITES
+precedent): a public read path returning records that is absent from the
+manifest fails `test_read_surface_manifest_is_total`.
 
 ## 5. Regime analysis
 
@@ -183,11 +244,12 @@ A convenience API on the same surface, under four rails (research §8):
 |---|---|
 | store with no identities, no principals ever | byte-identical to today, forever |
 | principals adopted, unscoped call | byte-identical to today (the shared view) |
-| scoped call, mixed store | own-scope full; cross-scope per policy (visibility) + third-party-shaped (assertability); absent-identity shared-visible |
-| scoped call, everything out of scope | indistinguishable from an empty store (N-1) |
-| cross-scope supersession of a visible record | status renders; superseding content/attribution do not (N-2) |
+| scoped call, mixed store | own-scope full; cross-scope per policy + third-party-shaped; host-produced absent-identity shared-visible; UNRESOLVED derivatives invisible |
+| scoped call, everything out of scope | full-`Recall` equality with the empty store (N-1) |
+| cross-scope supersession of a visible record | status renders; superseding content/attribution do not, on every carrier (N-2) |
 | scoped call + filters | scope first, then narrow (M-2); M-3 reporting |
-| MCP default stream (no identities supplied) | NO isolation exists — adoption-path honesty: scoping is opt-in by supplying identity; the docs and marketing rail say so plainly |
+| `answer()` with a principal | identical boundary to recall — no bypass |
+| MCP default stream (no identities supplied) | NO isolation exists — adoption-path honesty: scoping is opt-in by supplying identity; docs and the marketing rail say so plainly |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -196,44 +258,54 @@ A convenience API on the same surface, under four rails (research §8):
 | invariant | executable check |
 |---|---|
 | V1 unscoped calls byte-identical to today on every fixture store | `test_no_principal_is_byte_identical` |
-| V2 restrict-only, by enumerated temptation (incl. own-inference re-assertability) | `test_same_scope_grants_nothing` |
-| V3 empty-vs-withheld indistinguishability, response bytes | `test_existence_non_leakage` |
-| V4 superseded-by-invisible: status yes, content/attribution no; contested row per 0003 | `test_cross_scope_supersession_rendering` |
-| V5 no wiki content in principal-bearing recall | `test_scoped_recall_excludes_wiki` |
+| V2 restrict-only, by enumerated temptation | `test_same_scope_grants_nothing` |
+| V3 empty-vs-withheld indistinguishability over the FULL `Recall` value (external F3) | `test_existence_non_leakage` |
+| V4 cross-scope supersession/contention rendering on every carrier | `test_cross_scope_supersession_rendering` |
+| V5 no wiki content in principal-bearing responses (recall AND answer) | `test_scoped_recall_excludes_wiki` |
 | V6 absent==absent never SAME-scope | `test_unknown_identity_is_not_a_principal` |
-| V7 policy over resolved identity (I9 path; raw-field comparison fails the test) | `test_policy_evaluates_resolved_identity` |
-| V8 filter rails M-1..M-4, each a named cell | `test_filter_rails` |
-| V9 the 0011 gate seam: the relation signature carries the reserved subject slot untouched | `test_gate_seam_reserved_for_0011` |
+| V7 policy over resolved identity | `test_policy_evaluates_resolved_identity` |
+| V8 filter rails M-1..M-4 | `test_filter_rails` |
+| V9 the 0011 gate seam | `test_gate_seam_reserved_for_0011` |
+| V10 the shipped surface matches the normative reference on every vector (external F2) | `test_scope_reference_vectors` |
+| V11 `answer()` and proactive thread the principal; structured carriers carry only visible records (external F3) | `test_all_read_surfaces_scoped` |
+| V12 the read-surface manifest is total (external F3) | `test_read_surface_manifest_is_total` |
+| V13 UNRESOLVED derivatives are invisible to every scoped principal and visible unscoped (external F1) | `test_unresolved_derivative_fail_closed` |
 
 ## 7. Failure modes and reversibility
 
 - **Misconfigured policy** fails at config load, never mid-recall.
-- **Forged principal** (honest-host breach): out of threat model by C2 —
-  stated, not hidden; S3 is the upgrade path.
-- **Reversibility:** v1 adds no field, no schema/format change, no
-  migration — dropping the policy from config restores today's behaviour
-  byte-for-byte. This is why Q1's policy answer also de-risks shipping.
+- **Forged principal**: out of threat model by C2 — stated; S3 upgrades.
+- **Reversibility (external F5, restated honestly):** READ-side behaviour
+  is config-only reversible — drop the policy and recall is byte-identical
+  to today. MAINTENANCE effects are NOT policy-dependent and NOT
+  reversible by config: 0021's identity partitioning applies to
+  identity-bearing stores regardless of policy, and consolidation's
+  deletions/derivatives are permanent once run (0021 §7). v1 still adds no
+  field, no schema/format change, no migration.
 
 ### 7a. Complete public-surface inventory
 
 | carrier | change |
 |---|---|
-| `MemoryConfig` | scope policy (host-supplied rules; closed validation) |
-| `recall()` / MCP recall surface | `principal=` + filter params (§4e) |
+| `MemoryConfig` | scope policy (validated at load per §4a-ii) |
+| `recall()` / `answer()` / MCP | `principal=` + filter params; proactive threading |
+| `Recall` carriers | visibility-filtered record sets (§4f) |
 | `gate.py` | the assertability relation + the 0011-reserved seam |
-| `compile.py` | untouched (the v1 exclusion lives on the recall path) |
-| docs (`concepts.md`, `api.md`) | the isolation-vs-boundary split (C2, verbatim-class); the adoption path (no identities → no isolation) |
-| telemetry | withholding rates as operator-side material — a FUTURE consent-versioned field, deferred and recorded (the 0019 telemetry-deferral pattern) |
-| CHANGELOG / marketing rail | never parity-chasing; claimable only as isolation until S3 |
+| `specs/evidence/0020/` | `reference_scope.py` + `vectors.json` (normative, F2) |
+| `specs/generated/0020-read-surfaces.md` | the generated carrier manifest (F3) |
+| docs | isolation-vs-boundary (C2 verbatim-class); the adoption path; the UNRESOLVED-derivative operator remedies |
+| telemetry | withholding rates deferred to a future consent version (recorded) |
+| CHANGELOG / marketing rail | never parity-chasing; isolation-only claims until S3 |
 
 ### 7b. Cross-spec carriers
 
 | spec | touchpoint | disposition |
 |---|---|---|
-| 0006 | identity, resolution, groups-never-grants, R7 non-authentication | inherited wholesale; any grant semantics = a 0006 amendment, refused here |
-| 0003 | §4c-ii content-free linkage | cited as N-2's precedent; the contested row extends it |
-| 0011 (draft) | the subject dimension | orthogonal in v1; the gate relation reserves its slot (V9) so 0011 composes without rewriting |
-| 0021 | the operation matrix, consolidation partition, per-scope wiki option | companion — S1 read-time, 0021 write/maintain-time |
+| 0006 | identity, resolution, groups-never-grants, R7 | inherited wholesale; any grant = a 0006 amendment |
+| 0014 | the membership join (**declared in Spec-Requires — external F6**) | load-bearing for §4a-iii; the completeness check is the ledger's own exact-set property |
+| 0003 | §4c-ii content-free linkage | cited as N-2's precedent |
+| 0011 (draft) | the subject dimension | orthogonal in v1; the seam reserved (V9) |
+| 0021 | **MUTUAL `Spec-Requires` (external F6)** — acceptance is atomic, the 0016/0018 precedent | 0020's §8 claim is CONDITIONAL on 0021 wherever maintenance runs; neither accepts alone |
 | 0017 | the operator-side withholding channel | future consent-versioned field; deferred, recorded |
 | 0018 | the breaking window | NOT needed by v1 (no field); recorded so its absence is a decision |
 
@@ -241,26 +313,40 @@ A convenience API on the same surface, under four rails (research §8):
 
 **Claim:** with a scope policy configured and identities supplied, a
 recalling principal sees its own scope fully, sees cross-scope material
-only as policy admits and never as assertable testimony, and cannot learn
-what was withheld — at zero change to unscoped stores.
+only as policy admits and never as assertable testimony, cannot learn what
+was withheld, and cannot reach withheld content through ANY public read
+surface — at zero change to unscoped stores.
 
 **Limits:** (1) isolation, not a boundary — C2 verbatim; S3 is the
-boundary. (2) No identities → no isolation (the shipped MCP default);
-adoption is opt-in. (3) Scope shards visibility, not truth — lifecycle is
-global (N-2's residual). (4) The wiki is excluded, not scoped, in v1.
-(5) Policy is per-process: two differently-configured hosts see
-differently — the host owns its process.
+boundary. (2) No identities → no isolation; adoption is opt-in.
+(3) Scope shards visibility, not truth — lifecycle is global (N-2's
+residual). (4) The wiki is excluded, not scoped, in v1. (5) Policy is
+per-process and READ-side only; maintenance conduct is identity-driven
+(0021) and no host's policy can widen or narrow it. (6) UNRESOLVED
+derivatives (legacy/imported/recovered) are invisible to scoped
+principals until re-derived — the fail-closed cost, stated.
 
 ## 9. Brief for the external reviewer
 
-n/a — internal review first (research, the standing path); this section is
-completed at external-round packaging per PROCESS.
+The seam we are LEAST certain of, per your standing request: **the §4a-ii
+policy grammar's minimality.** One-group-membership with refusal-on-
+overlap and eq-only filters is deliberately the smallest closed surface,
+chosen so the decision table stays exhaustively vectorable — but real
+hosts may need overlapping visibility sets (an auditor principal that
+sees two scopes) on day one, and the recorded-widening path may be doing
+load-bearing work the v1 grammar should carry. Attack the decision table
+with host topologies we haven't imagined; the vectors file is the
+contract. Second seam: §4a-iii's completeness check leans on the 0014
+ledger's exact-set property — if you can construct a derivative whose
+ledger rows PASS completeness while misrepresenting membership, that
+breaks the hierarchy's first rung.
 
 ## 10. Open questions
 
 | # | question | state |
 |---|---|---|
-| Q1 | field vs policy | RESOLVED in design review: policy, no field (research §7 ratified) |
-| Q2 | absent-identity default | RESOLVED: shared-visible, gate unchanged (C3) |
+| Q1 | field vs policy | RESOLVED: policy, no field (design review) |
+| Q2 | absent-identity default | RESOLVED: shared-visible for HOST-produced; evidence hierarchy for store-produced (external F1 split the cell) |
 | Q3 | 0011 interaction in v1 | RESOLVED: none; seam reserved (V9) |
-| Q4 | per-scope wiki compilation | DEFERRED to the 0021 era, cost-gated, recorded §4d |
+| Q4 | per-scope wiki compilation | DEFERRED, cost-gated (§4d) |
+| Q5 | overlapping visibility sets (auditor principals) | OPEN — the §9 seam; v1 refuses overlap; widening needs its own review |
