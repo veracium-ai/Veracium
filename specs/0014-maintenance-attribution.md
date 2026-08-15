@@ -429,6 +429,26 @@ both sites, a no-op transfer visible in the values). The identity is
 > 0005 default path only; the projection's field partition and everything
 > else in this section are unchanged.)*
 
+> **Amended by 0019 (same-commit with 0019's acceptance):** `Edge.ungrounded`
+> joins the receipt machinery as follows. (1) The raw-request snapshot
+> remains COMPLETE (`model_dump_json`, unchanged rule) and therefore includes
+> the field; post-0019 receipts stamp **`outcome_digest_version = 3`** and
+> the validated closed set extends to {1, 2, 3}; pre-0019 receipts follow
+> the existing era rule unchanged. (2) In the verification partition,
+> `ungrounded` is classified **RECOMPUTED** (`RECOMPUTED_EDGE_FIELDS` gains
+> it): absorption's winner-inheritance may change it from the raw submission
+> by EXACTLY the N-ary OR over `{the raw incoming} ∪ {every absorbed
+> contributor}` — order-independent, the same pre-persist shape as the
+> shipped validity/confidence maxima — and the verifier accepts precisely
+> that transform (recomputing the OR from the plan's full contributor set)
+> and aborts on any other difference. (3) The totality test's forced
+> classification is thereby satisfied; no FORBIDDEN or EXACT_EQUAL semantics
+> change.
+>
+> *(Rider approved by the 0019 external reviewer, round 4, 2026-08-14 — the
+> separate cross-spec sign-off, granted with the rider-verification
+> executable passing.)*
+
 The contributor whose attribution we record may itself be adversarial (a compromised feed
 is the motivating case). The record must therefore be **fail-closed and content-free**: it records
 *that* a contributor was consumed and *what state, if any,* moved, keyed on a **digest** of

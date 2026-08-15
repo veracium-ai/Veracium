@@ -15,6 +15,23 @@ Spec-Requires: 0007, 0013, 0016
 
 ---
 
+> **Amended by 0019 (same-commit with 0019's acceptance; sign-off granted
+> round 4, 2026-08-14).** (B1) §4a, final: the preflight intercepts
+> everything except resolved base **7**; bases **1–6** → `unsupported-base`
+> with the ladder diagnostic (bases 1–5: migrate to v6 on a ≤0.8.x release,
+> then to v7 on a 0.9.x/0019-era release, then run this release's migration;
+> base 6: migrate to v7 on a 0019-era release first); already-current **v8**
+> clean → `current`; **v8** with rebuildable drift → `current` with the
+> repair facts; resolved base **7** ALONE proceeds to minting. (B2) §4e's
+> literal table, final numerals: `unsupported-base` carries the resolved
+> base **1–6**; the two `current` rows carry resulting_version **8**; every
+> other row is unchanged in facts and label. (B3) I13 is parametrized over
+> bases **1–6**; the below-base tests read below-v7. (B4) Every other
+> frozen surface carries no version numerals and is unchanged — asserted by
+> 0019's executable numeral sweep, whose output ships in the acceptance-flip
+> commit. The body text below is HISTORICAL as-frozen; this rider is the
+> operative numbering.
+
 ## 1. Problem and motivation
 
 Accepted 0016 defines what deleting `source_type` means and rules the D2

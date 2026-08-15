@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- *Correction to the 0.9.0 `SourceType`-deprecation entry (released text is
+  immutable):* that entry said stage D2 ships "export format 6, store schema
+  v7". Accepted spec 0019 takes format 6 and schema v7 first; **D2's numbers
+  are now format 7 and schema v8** (spec 0016, as amended by 0019 — sign-off
+  granted at 0019's round 4).
+
 ## 0.9.0 — 2026-08-14
 
 - **`SourceType` is deprecated and will be removed in the next API-breaking

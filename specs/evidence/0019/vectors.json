@@ -152,5 +152,61 @@
   "text": "Sometime in September, probably.",
   "session": "2026-08-14",
   "expect": true
+ },
+ {
+  "name": "r4_next_friday_past_member_flagged",
+  "obj": "2026-08-07",
+  "text": "We meet next Friday.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "r4_next_friday_session_member_flagged",
+  "obj": "2026-08-14",
+  "text": "We meet next Friday.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "r4_next_friday_forward_grounded",
+  "obj": "2026-08-21",
+  "text": "We meet next Friday.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "r4_last_friday_future_member_flagged",
+  "obj": "2026-08-21",
+  "text": "We met last Friday.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "r4_last_friday_past_grounded",
+  "obj": "2026-08-07",
+  "text": "We met last Friday.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "r4_this_friday_session_grounded",
+  "obj": "2026-08-14",
+  "text": "It happens this Friday.",
+  "session": "2026-08-14",
+  "expect": false
+ },
+ {
+  "name": "r4_this_friday_past_member_flagged",
+  "obj": "2026-08-07",
+  "text": "It happens this Friday.",
+  "session": "2026-08-14",
+  "expect": true
+ },
+ {
+  "name": "r4_bare_and_qualified_weekday_coexist",
+  "obj": "2026-08-07",
+  "text": "We met Friday; the follow-up is next Friday.",
+  "session": "2026-08-14",
+  "expect": false
  }
 ]

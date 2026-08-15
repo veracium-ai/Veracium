@@ -1,4 +1,4 @@
-"""specs/0019 §4b — the NORMATIVE reference predicate (v4, resolution-set form).
+"""specs/0019 §4b — the NORMATIVE reference predicate (resolution-set form, longest-match precedence).
 
 PORTABLE AND PURE: no I/O, no external paths, no corpus dependency. Two
 conforming implementations must agree with this module on every input; the
@@ -82,9 +82,25 @@ def resolution_set(event_text: str, session_date: str) -> set[datetime.date]:
     low = toks(event_text)
     out: set[datetime.date] = set()
 
-    for i, w in enumerate(low):
+    # LONGEST-MATCH PRECEDENCE (round-4 obligation 1): a weekday token inside
+    # a "next|last|this <weekday>" span belongs to THAT expression alone — the
+    # bare-weekday resolutions must not fire for it ("next Friday" resolves
+    # ONLY forward; the past/session members would ground fabricated dates).
+    lowered = event_text.lower()
+    consumed_spans = [m.span() for m in NEXT_LAST.finditer(lowered)]
+
+    def _consumed(pos: int) -> bool:
+        return any(a <= pos < b for a, b in consumed_spans)
+
+    word_positions: dict = {}
+    for m in WORD.finditer(lowered):
+        word_positions.setdefault(m.group(0), []).append(m.start())
+
+    for w in set(low):
         if w in WEEKDAYS:
-            out.update(_nearest_weekday(session, WEEKDAYS.index(w)))
+            positions = word_positions.get(w, [])
+            if any(not _consumed(pos) for pos in positions):
+                out.update(_nearest_weekday(session, WEEKDAYS.index(w)))
         if w in RELATIVE_DAYS:
             out.add(session + datetime.timedelta(days=RELATIVE_DAYS[w]))
         # (month-day pairing moved to the ANCHORED patterns below — R3-2:

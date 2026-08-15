@@ -1,11 +1,12 @@
 # Feature spec: the `ungrounded` flag — evidence-grounding at ingest
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0005, 0008, 0014, 0016, 0018
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft v5** — external round 3 folded (deterministic atomic spans;
+> **ACCEPTED v6 (2026-08-14, round 4 — approved on a finite boundary; the
+> three pre-flip obligations folded in the flip commit)** — v5: round 3 (deterministic atomic spans;
 > the canonical resolution table with anchored month-day pairing; the
 > structural rationales; the v4-deleted 0014 rider RESTORED N-ary; the
 > shipped rider-verification executable). v4: external round 2 folded (the resolution-set date rule;
@@ -26,11 +27,11 @@ Spec-Requires: 0005, 0008, 0014, 0016, 0018
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v5 — EXTERNAL ROUND 3 FOLDED (5 blocking, 2026-08-14, classified first): **R3-1 (A+C)** the reference was NONDETERMINISTIC (token-to-date attribution via `next()` over an unordered set; results alternated across `PYTHONHASHSEED`) → ISO spans are parsed and judged ATOMICALLY by character position; multi-date and four-seed regressions are pinned vectors; the reference is seed-independent by construction. **R3-2 (A+D, found-in-fix of R2-1 — the i±2 proximity search recreated the unrelated-number defect)** "July had 12 projects" no longer yields a July-12 resolution: month-day pairing is ANCHORED (span-bound adjacency patterns only); THE CANONICAL RESOLUTION TABLE replaces the contradictory prose (weekday = 2 members, 3 when the session falls on it, with the exact arithmetic; bare month = NO resolutions at all; the grammar is the table's own expression column, enumerated in place); the v4 Version-row's wrong Friday arithmetic corrected. **R3-3 (D+E)** every current-behavior inference resting on the superseded 0.47%/~40–50% figures is rewritten STRUCTURAL (flag-never-demote and proactive suppression argued from precision-below-1, not a number); §7a states plainly that the U3b record DOES NOT EXIST YET and nothing at acceptance rests on it. **R3-4 (C+D)** the check surface encoded the rejected v3 contract → U2c is N-ary with zero/one/many + permutation cells; U4 is the TOTAL guard (no absorption exception clause); U2b pins the contributor-set-bound transform; the §5 date rows restated in resolution-set form. **R3-5 (D+F — the v4 table edit DELETED the 0014 rider while every cross-reference still claimed it; a `||` row merge from the v3 fold was the mechanism)** the rider is RESTORED (upgraded to the N-ary transform), the three §7b rows are structurally separate again, and the carrier verification is now a SHIPPED EXECUTABLE (`specs/evidence/0019/rider_verification.py`) with its output artifact in the package — run at every seal. *(v4: round 2. v3: round 1. v2: internal. v1: draft.)* |
+| **Version** | v6 (ACCEPTED) — ROUND 4: APPROVED ON A FINITE BOUNDARY with three mandatory pre-flip obligations, all folded here: (1) LONGEST-MATCH PRECEDENCE — a weekday token inside a next|last|this span is consumed by it ("next Friday" resolves only forward; the reviewer's executed 2026-08-07 case is a pinned FLAGGED vector); the full regression matrix (next/last/this × member × the coexistence cell) joins U3 and the vectors (30 total, four-seed-verified). (2) every current false-positive number replaced by UNKNOWN-until-U3b (the superseded predicate keeps its historical figures, labeled). (3) BOTH reductions propagated through every carrier — §2's gate row, §7's failure modes, the honest rollback statement (disabling the check is NOT full rollback: existing True flags stay consumed by both filters), and the restore forging matrix/U7 covering proactive AND wiki eligibility. Cleanups: the duplicated tokenizer heading; the reference's stale v4 label. THE FLIP IS ATOMIC: the 0014 rider, Rider A (0016), Rider B (0018), and the CHANGELOG correcting note land in this commit under the round-4 cross-spec sign-off; the numeral-sweep output is in the commit message. *(v5: round 3. v4: round 2. v3: round 1. v2: internal. v1: draft.)* |
 | **Status** | *see `Spec-Status:` — canonical.* |
 | **Internal reviewers** | research (they built and measured the instrument; the ask records research+dev aligned on option A) |
 | **External review** | required — `schema.py`, `ingest.py`, `gate.py`/render, `portability.py` are guarded; this adds a stored field and a rendered marker |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-14 — external round 4, APPROVED ON A FINITE BOUNDARY** (findings 7/6/5/3-obligations; the frozen surface is §§2–5, U1–U9/U3b, the N-ary pre-insert absorption OR, the total same-ID transition guard, the exact two-consumer reduction set, and §7b's complete riders). **The separate cross-spec sign-off for the 0014 and 0016/0018 riders was GRANTED at round 4** (the rider-verification executable passing); the three riders + the CHANGELOG correcting note land in THIS flip commit — the atomic pattern. The three mandatory pre-flip obligations are folded in this same commit (longest-match weekday precedence + the regression matrix; unknown-until-U3b for every current false-positive number; both reductions propagated through §2c/§7/§8-limit-6/U7 with the honest rollback statement). Implementation gated on U1–U9 + U3b's pre-ship re-measurement |
 | **Path** | full |
 | **Spec-Requires** | `0005` (accepted — the import boundary this flag crosses verbatim, §2c/§7b), `0008` (accepted — `needs_confirmation` untouched; its §6d store guard is the F3 precedent), **`0014` (accepted — FORMALLY AMENDED: the flag joins the RECOMPUTED absorption class; the request digest shifts → `outcome_digest_version` era bump; verbatim rider in §7b, R1-F1)**, **`0016` + `0018` (accepted — the complete verbatim renumbering amendments now IN §7b, R1-F2)** |
 
@@ -74,7 +75,7 @@ noticing — and only the noticing.
 |---|---|---|---|---|
 | `Edge.ungrounded` | **NEW — `StrictBool = False` (F7: pydantic's plain bool COERCES "yes"/0/1; the strict form raises on every non-boolean — the 0005 P13 closed-predicate posture)** — derived at ingest by the §4b check; MONOTONE thereafter (§4d: False→True only via the absorption OR; nothing ever clears True) | "the specifics in this fact's object were not all grounded in the event text it was extracted from" — a property of the EXTRACTION, not of the fact's truth | render (marker), proactive (suppression), introspect (count), export (carried), import (§2c) | the whole spec |
 | `Edge.needs_confirmation` | read only | 0008: staleness — "possibly outdated" | staleness machinery | **untouched — deliberately (§4d).** "Possibly never said" is a different fact from "possibly outdated"; overloading would need a 0008 amendment and would let staleness-clearing paths silently clear a fabrication signal |
-| `assertable` / gate partition | read only | disclosure-keyed routing | gate, proactive, render | **UNCHANGED — flag-never-refuse extends to flag-never-demote (§4c).** The rationale is STRUCTURAL, not numeric (R3-3): at any precision materially below 1, demotion silently buries real facts — which is refusal wearing a different hat; the design spends false positives on a marker, never on suppression |
+| `assertable` / gate partition | read only | disclosure-keyed routing | gate, proactive, render | **UNCHANGED — flag-never-refuse extends to flag-never-demote (§4c).** The rationale is STRUCTURAL, not numeric (R3-3): at any precision materially below 1, demotion silently buries real facts — which is refusal wearing a different hat; the design spends false positives on a marker plus exactly the two withholding reductions (§4c: proactive suppression; wiki exclusion) — never on refusal or demotion |
 | `FORMAT_VERSION` | written: 5 → **6** | export carries every Edge field | `portability.py` | the flag exports; an older importer REFUSES a v6 file rather than silently dropping the field (the accepted 0014 R5-4 / 0010 refuse-don't-drop rule). **Collides with 0016 D2's claimed numbering — §7b** |
 | `SCHEMA_VERSION` | written: 6 → **7** (no DDL — the field lives in `edges.json`, the 0006 v4→v5 precedent) | 0007: an older build refuses a newer store | `store/schema_version.py` | an older build silently DROPPING the flag on rewrite would erase a fabrication signal; refusal is the honest failure. **Collides with 0016 D2's claimed v7 — §7b** |
 
@@ -86,7 +87,7 @@ noticing — and only the noticing.
 |---|---|---|---|---|---|
 | the event text (the grounding CORPUS for the check) | empty text → every specific ungrounded → flag set | — | — | **an attacker who authors the event text controls the grounding corpus** — they can make their OWN fabricated specifics "grounded" by writing them into the text | **by design: the check verifies extraction fidelity, never truth.** An attacker-grounded lie is a TRUST problem, fully handled by the existing levers (author/derived_from/disclosure); this flag adds a signal about the DISTILLER, not about the source. Stated as §8 limit 1 |
 | the distiller output (the CHECKED object) | no specifics in the object → vacuously grounded, no flag | — | — | a fabricated value phrased without specifics ("a large amount") evades the specifics-only check | accepted by design: the specifics-only class catches the VALUE-SHAPED fabrications (the ones that damage functional facts) — the class choice was measured on the superseded form (§4b provenance note); the candidate's own operating point comes from U3b; common-noun fabrication is the offline full predicate's territory (§8 limit 2) |
-| an import file's `ungrounded` values (edges) | absent → `False` (see the adversarial cell — on restore this is a REAL eligibility grant, §8 limit 6) | **non-bool → `StrictBool` raises — coercive inputs ("false", "yes", 0, 1) REFUSE, never coerce (F7; the exhaustive cell list in U7)** | **pre-v6 envelope carrying the field → STRIPPED, never trusted (the 0006 I10 rule)** | a hand-written file sets `ungrounded=False` on fabricated content — or `True` on genuine content | **the flag grants no TRUST — no consumer raises trust, assertability, or authority on it (I5-class groups-never-grants) — but absence is NOT behaviourally inert on the restore path (the matrix below; the superseded blanket absence-grants-nothing claim is WITHDRAWN, R2-5).** **The forging matrix, honest (F6):** on the DEFAULT path, forging either value gains nothing — 0005 caps disclosure to `use_only`, so the record is proactive-ineligible regardless of the flag (immunity by COMPOSITION, stated not assumed). On the RESTORE path, a forged or absent `False` DOES obtain proactive-volunteering eligibility that a truthful `True` would not have — accepted as §8 limit 6 under 0005 §8's own posture: restore is the operator's explicit whole-file trust assertion, and the flag rides inside that assertion like every other preserved field. Forging `True` remains a self-inflicted narrowing. Carried VERBATIM on both 0005 paths (§7b) — it is extraction-fidelity metadata, not a trust lever, so the cap neither reads nor writes it |
+| an import file's `ungrounded` values (edges) | absent → `False` (see the adversarial cell — on restore this is a REAL eligibility grant, §8 limit 6) | **non-bool → `StrictBool` raises — coercive inputs ("false", "yes", 0, 1) REFUSE, never coerce (F7; the exhaustive cell list in U7)** | **pre-v6 envelope carrying the field → STRIPPED, never trusted (the 0006 I10 rule)** | a hand-written file sets `ungrounded=False` on fabricated content — or `True` on genuine content | **the flag grants no TRUST — no consumer raises trust, assertability, or authority on it (I5-class groups-never-grants) — but absence is NOT behaviourally inert on the restore path (the matrix below; the superseded blanket absence-grants-nothing claim is WITHDRAWN, R2-5).** **The forging matrix, honest (F6):** on the DEFAULT path, forging either value gains nothing — 0005 caps disclosure to `use_only`, so the record is proactive-ineligible regardless of the flag (immunity by COMPOSITION, stated not assumed). On the RESTORE path, a forged or absent `False` DOES obtain BOTH flag-keyed eligibilities — proactive volunteering AND wiki-compiler membership — that a truthful `True` would not have — accepted as §8 limit 6 under 0005 §8's own posture: restore is the operator's explicit whole-file trust assertion, and the flag rides inside that assertion like every other preserved field. Forging `True` remains a self-inflicted narrowing. Carried VERBATIM on both 0005 paths (§7b) — it is extraction-fidelity metadata, not a trust lever, so the cap neither reads nor writes it |
 | the session date (feeds date-context awareness, §4b) | absent → today (the `remember` contract) | — | — | a crafted date shifts the ±366-day resolved-date window | the window bounds PLAUSIBILITY of resolved dates, never grants trust; a shifted window at worst flags/unflags a date token — the flag grants nothing (row above) |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -189,7 +190,7 @@ so the shipped behaviour is the measured behaviour:
 
   | expression class (anchored — the grammar below) | resolutions |
   |---|---|
-  | weekday name W | `S + (delta or 7)` and `S − ((7 − delta) mod 7 or 7)`; PLUS `S` itself iff `delta == 0` — **two members normally, THREE when the session falls on W** (e.g. "Friday" at session `2026-08-14`, itself a Friday: {`2026-08-07`, `2026-08-14`, `2026-08-21`}) |
+  | weekday name W | `S + (delta or 7)` and `S − ((7 − delta) mod 7 or 7)`; PLUS `S` itself iff `delta == 0` — **two members normally, THREE when the session falls on W** (e.g. "Friday" at session `2026-08-14`, itself a Friday: {`2026-08-07`, `2026-08-14`, `2026-08-21`})  **LONGEST-MATCH PRECEDENCE (round-4 obligation 1): a weekday token inside a `next|last|this <weekday>` span is CONSUMED by that span — the bare-weekday members do NOT apply to it** ("We meet next Friday" at session `2026-08-14` resolves ONLY `2026-08-21`); a separate bare occurrence of the same weekday elsewhere contributes its members normally |
   | today / tonight | `S` |
   | tomorrow / yesterday | `S ± 1` |
   | "next/last/this" + weekday/week/month/year | the single arithmetic resolution (next=+1 unit, last=−1, this=0; month arithmetic clamps the day to the target month's length) |
@@ -207,7 +208,7 @@ so the shipped behaviour is the measured behaviour:
   across `PYTHONHASHSEED` values). Multi-date objects and hash-seed
   regressions are pinned vectors; the reference is seed-independent by
   construction.
-- **The tokenizer, pinned normatively- **The tokenizer, pinned normatively (F5 — two conforming implementations
+- **The tokenizer, pinned normatively (F5 — two conforming implementations
   must agree):** words are `\w+` runs lowercased; a specifics token is (i) a
   pure-digit token, (ii) an identifier matching
   `^(?=.*[a-z])(?=.*\d)[a-z0-9]+$`, or (iii) a token of a capitalized run
@@ -361,12 +362,12 @@ R1-7 rule: a draft spec claims no CI).
 | **U2** no consumer grants or moves trust/authority/staleness on the flag — a sweep by FACT over every `ungrounded` reader | `test_ungrounded_grants_nothing` | obligation — impl commit |
 | **U2b** the 0014 rider holds mechanically: `ungrounded` sits in `RECOMPUTED_EDGE_FIELDS`; post-0019 receipts stamp `outcome_digest_version` 3 and the validated set is {1,2,3}; **the verifier RECOMPUTES the N-ary OR from the plan's full contributor set (R3-4 — the transform is contributor-set-bound, not pairwise)** and aborts any other flag difference; the partition-totality test passes with the new field classified | `test_ungrounded_joins_the_recomputed_class` | obligation — impl commit |
 | **U2c** the N-ary absorption OR (R2-3/R3-4): with ZERO absorbed contributors the incoming flag passes through; with ONE and with MANY, the winner is flagged iff the raw incoming or ANY contributor is — asserted over every flag-placement PERMUTATION of a three-contributor case and independent of contributor iteration order; 0012 reinforcement leaves every record's flag byte-untouched | `test_absorption_or_nary_permutations` | obligation — impl commit |
-| **U3** the predicate matches the in-repo reference (`specs/evidence/0019/`) on the pinned vectors — incl. one per §1 defect class, the reviewer's F5 case (unprompted ISO date, NO date expression → FLAGGED), a grammar-positive resolution case ("Friday" + in-window ISO → grounded), and the position-0 tokenizer cells (`Orange juice` vs `Orange County`) | `test_predicate_matches_the_pinned_vectors` | obligation — impl commit |
+| **U3** the predicate matches the in-repo reference (`specs/evidence/0019/`) on the pinned vectors — incl. one per §1 defect class, the reviewer's F5 case (unprompted ISO date, NO date expression → FLAGGED), a grammar-positive resolution case ("Friday" + in-window ISO → grounded), and the position-0 tokenizer cells (`Orange juice` vs `Orange County`), **and the round-4 longest-match REGRESSION MATRIX (next/last/this × {past, session, forward} members + the qualified-and-bare coexistence cell)** | `test_predicate_matches_the_pinned_vectors` | obligation — impl commit |
 | **U3b** the RE-MEASUREMENT (F5): the rebound predicate re-measured against the same 93,342-object corpus BEFORE the flag ships; the acceptance-pinned numbers are the re-measured ones, recorded in `specs/evidence/0019/` beside the reference | measurement obligation — pre-ship | obligation — impl commit |
 | **U4** stored flags never change and the store enforces it TOTALLY (R2-4/R3-4): confirm/dispute/supersession/outcome/maintenance/import leave stored flags byte-unchanged; the same-ID replace path REFUSES EVERY `ungrounded` transition in BOTH directions — no exception exists (absorption inserts a NEW survivor with the N-ary OR computed pre-insert, so no discriminator is needed); host-set-at-insert (accepted), host-clear-attempt (refused), host-flag-attempt-on-replace (refused), import, and supersession-plan paths all tested; every backend carries the guard (SqliteStore + the Store base contract) | `test_ungrounded_total_replace_guard` | obligation — impl commit |
 | **U5** the marker is never severed on every CODE-RENDERED surface (the 0012 clamp rule), AND the wiki EXCLUSION holds (F4): flagged facts never enter the compiler input — tested with a compiler-fake that deliberately drops/rephrases markers, proving the guarantee never depended on LLM cooperation; the cached wiki contains no flagged fact and no orphaned marker | `test_marker_surfaces_and_wiki_exclusion` | obligation — impl commit |
 | **U6** proactive never volunteers a flagged fact; query recall returns it | `test_proactive_suppression` | obligation — impl commit |
-| **U7** the import boundary: verbatim carriage both paths; pre-v6 strip; **`StrictBool` refuses "false"/"yes"/0/1/null/containers and accepts only JSON true/false (F7, the exhaustive cell list)**; the F6 forging matrix asserted — default-path forged values inert BY COMPOSITION (capped→use_only→proactive-ineligible), restore-path forged False obtains eligibility (the documented §8 limit 6, asserted as the honest behaviour) | `test_import_strictbool_and_forging_matrix` | obligation — impl commit |
+| **U7** the import boundary: verbatim carriage both paths; pre-v6 strip; **`StrictBool` refuses "false"/"yes"/0/1/null/containers and accepts only JSON true/false (F7, the exhaustive cell list)**; the F6 forging matrix asserted — default-path forged values inert BY COMPOSITION (capped→use_only→proactive-ineligible), restore-path forged/absent False obtains BOTH eligibilities — proactive volunteering AND wiki membership — asserted for each consumer separately (the documented §8 limit 6) | `test_import_strictbool_and_forging_matrix` | obligation — impl commit |
 | **U8** version honesty: FORMAT 6 refused by older importers; SCHEMA v7 refused by older builds; the migration is additive-only | `test_version_gates_and_migration` | obligation — impl commit |
 | **U9** introspect reports the count; MCP results carry no new field beyond the rendered marker | `test_observation_surfaces` | obligation — impl commit |
 
@@ -374,16 +375,22 @@ R1-7 rule: a draft spec claims no CI).
 
 ## 7. Failure modes and reversibility
 
-- **False positives (~50–60% of flags at the measured point):** the designed
-  cost ceiling — a marker on a true fact, never suppression (except
-  proactive volunteering). Rate bounds come from U3b's re-measurement (the superseded form measured ~1 in 400
-  objects; the candidate's own rate is pinned there before ship).
+- **False positives (rate UNKNOWN until the U3b re-measurement — round-4 obligation 2; the superseded predicate measured ~50–60%, historical only):** the designed
+  cost ceiling — a marker on a true fact, plus the two §4c withholding
+  reductions (proactive volunteering suppressed; the fact excluded from the
+  wiki-compiler input), never refusal or demotion. Rate bounds come from
+  U3b's re-measurement (the superseded form measured ~1 in 400 objects;
+  the candidate's own rate is pinned there before ship).
 - **False negatives:** specifics-free fabrications pass (§2c; §8 limit 2).
   The offline full predicate remains the audit net.
 - **Reversibility:** the behaviour is additive. Rolling back the BUILD:
   a v7 store refuses on an older build (backup first — the 0007 posture).
-  Disabling the CHECK (if ever wanted) leaves stored flags inert: no
-  consumer decision keys on them.
+  Disabling the CHECK (if ever wanted) stops NEW flags but is NOT full
+  rollback (round-4 obligation 3, stated honestly): existing `True` flags
+  remain consumed by BOTH reductions — the proactive filter and the wiki
+  exclusion keep acting on them, and no clearing path exists (§4d). A host
+  wanting flagged facts back in those surfaces restates them (the §4d
+  remedy); nothing else keys on the flag.
 
 ### 7a. Complete public-surface inventory
 
@@ -442,7 +449,7 @@ at zero refusal cost and zero trust movement.
    successor once the D-extension's value-level containment work lands.
 4. **A confirmed-true flagged fact carries the marker for life** (§4d); the
    remedy is restatement. Honest cost of an immutable diagnostic.
-5. **~Half of flags are false positives** at the measured point; the design
+5. **The false-positive share is UNKNOWN until U3b** (the superseded form's ~half is historical only — round-4 obligation 2); whatever it measures, the design
    spends that on a marker plus the two behavioural reductions below, never
    on refusal or demotion.
 5a. **The two behavioural reductions (complete list):** proactive
@@ -450,11 +457,14 @@ at zero refusal cost and zero trust movement.
    the wiki-compiler input (F4 — a code-owned marker cannot survive an LLM
    re-rendering it does not control; the fact stays query-recallable with
    its marker). Nothing else keys on the flag.
-6. **On the restore path, a forged or absent `False` obtains proactive
-   eligibility** a truthful `True` would not have (F6). The default path is
-   immune by composition with 0005's cap; the restore exposure sits inside
-   the operator's whole-file trust assertion (0005 §8 limit 1's posture) and
-   is accepted rather than patched with a tri-state.
+6. **On the restore path, a forged or absent `False` obtains BOTH
+   flag-keyed eligibilities** a truthful `True` would not have — proactive
+   volunteering AND wiki-compiler membership (round-4 obligation 3: the two
+   consumers travel together everywhere). The default path is immune by
+   composition with 0005's cap for the proactive half and by the same cap's
+   grounding consequences for the wiki half; the restore exposure sits
+   inside the operator's whole-file trust assertion (0005 §8 limit 1's
+   posture) and is accepted rather than patched with a tri-state.
 
 ---
 
@@ -508,3 +518,4 @@ this month's reviews keep finding half-done.
 | ext-3 | R3-3 the measurement closure false (no U3b artifact; superseded figures driving current-behavior claims) | D+E | **folded (v5):** all number-resting rationales rewritten structural; §7a states the U3b record does not exist yet | v5 §2, §2c, §4c, §7, §7a, §8 |
 | ext-3 | R3-4 the check surface encoded the rejected v3 contract | C+D | **folded (v5):** U2c N-ary+permutations; U4 total guard; U2b contributor-set transform; §5 resolution-set rows | v5 §5, §6 |
 | ext-3 | R3-5 the v4 edit DELETED the 0014 rider (a `||` row merge); the mechanical comparison had no shipped executable | D+F | **folded (v5):** the rider RESTORED N-ary; three structurally separate rows; `rider_verification.py` + output artifact SHIPPED and run at every seal | v5 §7b; specs/evidence/0019/ |
+| ext-4 | APPROVED ON A FINITE BOUNDARY — three mandatory pre-flip obligations + two cleanups; cross-spec sign-off GRANTED for all riders | — | **the atomic flip (this commit):** obligations folded (longest-match precedence + matrix; unknown-until-U3b; both reductions through every carrier + honest rollback); `Spec-Status: accepted`; the 0014 rider + Rider A + Rider B landed in their target specs; the CHANGELOG correcting note; the numeral sweep run and disposed in the commit message | this commit |

@@ -16,6 +16,24 @@ Spec-Requires: 0003, 0013, 0014, 0018
 
 ---
 
+> **Amended by 0019 (same-commit with 0019's acceptance; sign-off granted
+> round 4, 2026-08-14).** (A1) THE RECEIPT-VERSION TABLE, final:
+> `outcome_digest_version` 1 = legacy pre-0014-split receipts (migrated
+> reads); 2 = 0014-era writers; **3 = 0019-era writers (the
+> `ungrounded`-bearing snapshot)**; **4 = post-D2 writers (the
+> `source_type`-less snapshot)**. The validated closed set is {1,2,3} from
+> 0019's release and {1,2,3,4} from D2's. (A2) THE D2 ERA BOUNDARY, final:
+> at and after D2, **a receipt with version < 4 refuses UNCONDITIONALLY ON
+> SIGHT at both phases — no digest is computed, no comparison branch
+> exists** (`ReceiptSchemaBoundaryError(SupersessionIntegrityError)`, never
+> benign); a version-4 receipt follows the ordinary 0014 contract; the
+> exploding-sentinel regression enumerates the legal pre-D2 states over
+> versions {1,2,3}. (A3) THE VERSION NUMBERS, final: D2 ships **FORMAT 6→7**
+> and **SCHEMA v7→v8**. (A4) D1 (released in 0.9.0) is textually
+> unaffected; every "FORMAT 5→6" / "v6→v7" / "version 3" numeral in this
+> spec's D2 rows reads per this rider — the body text below is HISTORICAL
+> as-frozen and this rider is the operative numbering.
+
 ## 1. Problem and motivation
 
 `SourceType` (`STATED`/`OBSERVED`/`INFERRED`) gates nothing and cannot be
