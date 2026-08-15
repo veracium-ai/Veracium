@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.0 — 2026-08-15
+
 - **The `ungrounded` flag — extraction-fidelity marking at ingest**
   (accepted spec 0019). Every extracted fact's specifics (digits,
   identifiers, proper nouns, ISO dates) are checked against the event text
