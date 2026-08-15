@@ -23,31 +23,40 @@ def sha(p):
     return hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
 
 
+def _walk_hashes(node, prefix=""):
+    """R5-4: GENERIC traversal — every key ending in _sha256 pairs with the
+    sibling key it names (foo_sha256 <- foo); nothing declared can go
+    unchecked (the round-5 executed gap: store_adapter_result_sha256 was
+    in the manifest and never verified)."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == "sha256" or k.endswith("_sha256"):
+                sib = (k[: -len("_sha256")] if k.endswith("_sha256")
+                       else "path")
+                path = node.get(sib) or node.get("path")
+                if path and isinstance(path, str):
+                    yield (f"{prefix}{sib}", path, v)
+            elif isinstance(v, dict):
+                yield from _walk_hashes(v, prefix=f"{prefix}{k}.")
+
+
 def main():
     m = json.loads((ROOT / "review_manifest.json").read_text())
     failures = []
-
-    def check(path, want, label):
+    checked = 0
+    for label, path, want in _walk_hashes(m):
         got = sha(path)
+        checked += 1
         (failures.append(f"{label}: {path} sha mismatch")
          if got != want else print(f"ok  {label}: {path}"))
+    if checked == 0:
+        failures.append("no *_sha256 keys found — the manifest is empty?")
 
-    for num, c in m["candidates"].items():
-        check(c["path"], c["sha256"], f"candidate {num}")
     ev = m["normative_evidence"]
-    check(ev["reference"], ev["reference_sha256"], "reference")
-    check(ev["vectors"], ev["vectors_sha256"], "vectors")
-    check(ev["harness"], ev["harness_sha256"], "harness")
-    if "harness_result_sha256" in ev:
-        check(ev["harness_result"], ev["harness_result_sha256"],
-              "harness result")
-    if "store_adapter" in ev:
-        check(ev["store_adapter"], ev["store_adapter_sha256"],
-              "store adapter harness")
-
-    for name, script in (("vector harness", ev["harness"]),
-                         ("store adapter harness",
-                          ev.get("store_adapter"))):
+    for name, script, recorded in (
+            ("vector harness", ev["harness"], ev.get("harness_result")),
+            ("store adapter harness", ev.get("store_adapter"),
+             ev.get("store_adapter_result"))):
         if script is None:
             continue
         r = subprocess.run([sys.executable, str(ROOT / script)],
@@ -55,14 +64,23 @@ def main():
         tail = (r.stdout.strip().splitlines() or ["(no output)"])[-1]
         if r.returncode != 0:
             failures.append(f"{name} FAILED: {tail}")
-        else:
-            print(f"ok  {name}: {tail}")
+            continue
+        print(f"ok  {name}: {tail}")
+        if recorded:
+            rec = (ROOT / recorded).read_text()
+            if tail not in rec:
+                failures.append(
+                    f"{name}: fresh result {tail!r} not in recorded "
+                    f"{recorded} (R5-4: fresh-vs-recorded comparison)")
+            else:
+                print(f"ok  {name}: fresh result matches the recorded file")
 
     if failures:
         for f in failures:
             print("FAIL", f)
         return 1
-    print("package verification: EVERYTHING MATCHES AND PASSES")
+    print(f"package verification: {checked} hashes + both harnesses "
+          f"(fresh-vs-recorded) — EVERYTHING MATCHES AND PASSES")
     return 0
 
 

@@ -69,7 +69,7 @@ store MERGES. Consequences, stated:
 | identity fields on merge candidates — **PRODUCERS: hosts AND the store's own outputs** | absent identity | HOST-produced identity-less records form the closed shared pool (merge only among themselves; nothing crosses INTO a scope). STORE-produced derivatives take the 0020 §4a-iii evidence hierarchy; **UNRESOLVED derivatives are never merge candidates in any pool (W9)** |
 | a writer omitting identity to make content mergeable everywhere | adversarial | achieves the opposite: the shared pool only |
 | pre-0021 store state (external F1's populations) | legacy | LEGACY derivatives (identity copied from `inputs[0]`, pre-fix) are detected by the NORMATIVE `is_legacy_derivative` predicate (0020 §4a-ii's resolver — system-authored + consolidation-shaped `evidence_ref` + a still-groupable identity; vectored) and treated as UNRESOLVED — never trusted as scope-A evidence merely because they claim A |
-| imported derivatives | portability | the ledger is LOCAL and does not travel (0014): an imported derivative arrives without membership evidence → UNRESOLVED (the reviewer's export/import probe). Materializing membership at export is a recorded widening (FORMAT change, not v1) |
+| imported derivatives | portability | the ledger is LOCAL and does not travel (0014): an imported CONSOLIDATION derivative arrives without membership evidence → UNRESOLVED. **Imported ABSORPTION survivors take the EXECUTABLE reconstruction rule (round-5 F1 — 0020 §4a-iii): `reconstruct_absorption_rows` rebuilds the rows from the absorbed_duplicate records' notes (normative, harness-asserted UNRESOLVED for the cross-identity case), and `import_memory` WRITING real ledger rows from it — atomically, with the malformed/ambiguous cells specified in the reference — is the named implementation obligation.** Materializing full membership at export stays a recorded widening |
 | in-flight pre-feature operations at upgrade | recovery | 0010 recovery completes or abandons them under its own rules. **CORRECTED (external R2-3, reviewer-executed): recovery CANNOT clear an already-OUTPUTS_DURABLE output — it was written pre-feature with the copied identity and recovery only finalizes.** Such outputs keep their stale identity and are caught by the NORMATIVE legacy-derivative predicate (0020 §4a-ii's resolver — by shape, not by recovery); membership → UNRESOLVED. GENERATING-state pre-feature ops that recovery abandons leave no output (0010). Recovery never fabricates membership |
 | host policy enabling cross-scope merge (future) | out of v1 | v1 REFUSES cross-scope merges outright; the recorded future form is intersection-scoped visibility with empty-intersection refusal |
 
@@ -205,7 +205,7 @@ release takes it, W1 carries the operational narrowing in its own text.**
 
 | regime | behaviour |
 |---|---|
-| identity-free store | byte-identical to today, policy or none (the migration invariant) |
+| identity-free store | stored state + preserved top-level result VALUES identical to today, policy or none (the migration invariant); the result SHAPE is the additive superset (R4-2/R5-3) |
 | identity-bearing store, NO policy anywhere | **consolidation partitions anyway (§2 — the disclosed behaviour change)**; recall unchanged (0020: no policy → unscoped views) |
 | mixed scopes, maintenance runs | each pool consolidates internally per §4b; cross-scope pairs untouched |
 | four A + four B, min_batch=8 | NO-OP — thresholds are per-pool |

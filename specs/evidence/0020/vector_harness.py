@@ -158,6 +158,18 @@ def _run_one(v, policies):
                                       seal=ok.seal)
                 backing["gb"] = (I(A2),)          # mutate AFTER construction
                 _cl(_dg(I(A2), LOCAL), I(A1), mutated, LOCAL)
+            elif a == "resign_after_flip":
+                # ROUND-5's executed attack VERBATIM: flip the bool AND
+                # re-sign with the module's own _seal — the registry, not
+                # the seal, is the authority, so this must still refuse
+                import reference_scope as _rs
+                ok = validate_policy({"ga": [I(A1)]}, False,
+                                     local_origin=LOCAL)
+                object.__setattr__(ok, "cross_scope_visible", True)
+                object.__setattr__(ok, "seal",
+                                   _rs._seal(dict(ok.groups), True, LOCAL))
+                _cl(_dg(I({"origin": "org-b", "source_id": "agent-9"}),
+                        LOCAL), I(A1), ok, LOCAL)
             elif a == "setattr_flip":
                 ok = validate_policy({"ga": [I(A1)]}, False,
                                      local_origin=LOCAL)

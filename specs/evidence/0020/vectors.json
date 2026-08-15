@@ -890,5 +890,11 @@
   "kind": "direct_construction",
   "expect": "PolicyError",
   "attempt": "setattr_flip"
+ },
+ {
+  "name": "direct_construction_resign_after_flip_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "resign_after_flip"
  }
 ]

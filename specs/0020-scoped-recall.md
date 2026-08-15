@@ -128,17 +128,22 @@ exactly:
   groupable identity, REGARDLESS of origin (I13); absence never relaxes a
   rule (I3).** A non-groupable identity equals nothing, including itself;
   a PRINCIPAL must be groupable (a source_id-less principal REFUSES).
-- **`ScopePolicy`**: SEALED (external R4-1 — shape checks alone were
-  still bypassable by a canonical-LOOKING inconsistent digest map, a
-  mutated backing mapping, or `object.__setattr__`): `validate_policy`
-  computes a SEAL over the ENTIRE canonical projection (groups + digests
-  + the bool) with a module-private nonce, retains no caller state
-  (fresh local backing), and `classify` RECOMPUTES both the digest map
-  AND the seal at every consumption — the reviewer's three executed
-  bypasses are refusal vectors by name (`inconsistent_digest_map`,
-  `backing_map_mutation`, `setattr_flip`). Shape checks remain the first,
-  cheaper line; `ScopePolicy(groups={...}, cross_scope_visible="false")`
-  still RAISES at construction. `validate_policy` refusals, enumerated:
+- **`ScopePolicy`**: REGISTRY-AUTHORITATIVE (external R5-2 — the R4-1
+  seal was RE-SIGNABLE: `_seal` and its nonce are reachable module
+  attributes, so a caller could flip a field and recompute the seal; the
+  reviewer executed exactly that): `validate_policy` deposits an
+  immutable canonical snapshot in a VALIDATOR-OWNED registry keyed by the
+  policy instance, and `classify` refuses on ANY divergence between the
+  object's visible state and the registered snapshot — re-signing does
+  not help because the seal is no longer the authority. The reviewer's
+  four executed bypasses are refusal vectors by name (incl.
+  `resign_after_flip`, their round-5 attack verbatim). **THE THREAT
+  CLAIM, NARROWED HONESTLY (R5-2's alternative, taken alongside the
+  fix): in-process Python cannot defend against a caller that rewrites
+  this module's own state — the construction is accidental-misuse-proof
+  and forgery-evident, not adversarial-caller-proof; the adversarial
+  boundary is S3's, consistent with C2.** Shape checks remain the first
+  line; direct construction with raw shapes still RAISES. `validate_policy` refusals, enumerated:
   non-Identity shapes; non-groupable members (I13); resolved-DIGEST
   overlap across groups; `cross_scope_visible` not a REAL bool ("false" /
   0 / 1 refuse — actual ints vectored, R3-1); members not a LIST or TUPLE
@@ -185,7 +190,7 @@ exactly:
   field is None; the ledger holds only a one-way digest — R2-3, a named
   vector). Every extension is a spec change.
 
-The 59 vectors enumerate every `classify` cell (both refusal states),
+The 60 vectors enumerate every `classify` cell (both refusal states),
 every policy-refusal cell (real ints, sets, bounds), the
 DIRECT-CONSTRUCTION oracle (the reviewer's executed bypass, cell by
 cell), the mutation oracle, the FULL resolver table over REAL row shapes
@@ -307,7 +312,7 @@ manifest fails `test_read_surface_manifest_is_total`.
 
 | regime | behaviour |
 |---|---|
-| store with no identities, no principals ever | byte-identical to today, forever |
+| store with no identities, no principals ever | READS and stored state byte-identical to today; `maintain()`'s return is the additive superset (R4-2/R5-3 — values of existing keys identical) |
 | principals adopted, unscoped call | byte-identical to today (the shared view) |
 | scoped call, mixed store | own-scope full; cross-scope per policy + third-party-shaped; host-produced absent-identity shared-visible; UNRESOLVED derivatives invisible |
 | scoped call, everything out of scope | full-`Recall` equality with the empty store (N-1) |

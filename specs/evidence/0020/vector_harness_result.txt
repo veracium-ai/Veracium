@@ -1,1 +1,1 @@
-vector harness: 59/59 pass against reference_scope.py (20260815T1925Z, commit pre-seal)
+vector harness: 60/60 pass against reference_scope.py (20260815T1947Z, pre-seal)

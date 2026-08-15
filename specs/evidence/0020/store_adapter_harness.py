@@ -14,8 +14,10 @@ Run: `<venv>/python specs/evidence/0020/store_adapter_harness.py`
 Regressions carried, per the ask: (1) legacy-shaped ABSORPTION — an A
 survivor with a B contributor (the round-3 executed leak) → UNRESOLVED
 from the REAL ledger rows; (2) same-identity absorption → own digest;
-(3) export→import of a survivor — the ledger does not travel →
-UNRESOLVED on the destination; (4) a host record with no rows → own
+(3) export→import of a survivor — the ledger does not travel; the
+import-time NOTE-RECONSTRUCTION rule rebuilds the absorption rows and the
+cross-identity survivor ASSERTS UNRESOLVED on the destination (round-5
+F1's executable carrier); (4) a host record with no rows → own
 digest / SHARED. (Consolidation-output and recovery-state regressions
 require the 0021 implementation's cleared-identity outputs and are the
 first implementation-time extension of this harness — recorded in the
@@ -119,16 +121,27 @@ def run():
         assert drows == [], "the ledger travelled?! (0014 locality broken)"
         dsurv = [e for e in dest.edges("u1", active_only=False)
                  if e.id == "e-a"][0]
-        dgot = membership(_record_shape(dsurv), drows, "none", dlocal)
-        # imported survivor: rows gone; its OWN identity remains agent-a —
-        # with no absorption rows it resolves by own identity, and the
-        # destination CANNOT tell it ever absorbed. This is the stated §4d
-        # pre-ledger-class residual IN ITS IMPORT FORM: recorded here so
-        # the harness result carries the honest edge, not just the wins.
-        checks.append(f"imported absorption survivor (no rows) -> {dgot!r} "
-                      "(the stated import-form residual: absorption "
-                      "history does not travel; membership falls back to "
-                      "own identity)")
+        # ROUND-5 F1: the import-time RECONSTRUCTION rule is now the
+        # executable carrier — rebuild absorption rows from the imported
+        # records' absorbed_by notes and ASSERT the cross-identity
+        # survivor fails closed on the destination.
+        from reference_scope import reconstruct_absorption_rows
+        imported = [{"id": e.id, "origin": e.provenance.origin,
+                     "source_id": e.provenance.source_id,
+                     "invalidation_reason": e.invalidation_reason,
+                     "note": e.note}
+                    for e in dest.edges("u1", active_only=False)]
+        rebuilt = reconstruct_absorption_rows(imported, dlocal)
+        rrows = rebuilt.get("e-a", [])
+        assert rrows, "reconstruction produced no rows for the survivor"
+        dgot = membership(_record_shape(dsurv), rrows, "none", dlocal)
+        assert dgot == UNRESOLVED, (
+            f"imported cross-identity absorption survivor must be "
+            f"UNRESOLVED via reconstruction, got {dgot!r}")
+        checks.append("imported absorption survivor -> UNRESOLVED via "
+                      f"note-reconstruction ({len(rrows)} rebuilt row(s)); "
+                      "import_memory writing REAL rows is the named "
+                      "implementation obligation")
         dest.close()
 
         # (4) host records, no rows
@@ -148,7 +161,8 @@ def run():
 
 
 if __name__ == "__main__":
-    for line in run():
+    results = run()                      # once (round-5 F4's note)
+    for line in results:
         print("PASS", line)
-    print(f"store adapter harness: {len(run())} regression groups pass "
+    print(f"store adapter harness: {len(results)} regression groups pass "
           f"against the SHIPPED store")

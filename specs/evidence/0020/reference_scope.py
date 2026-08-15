@@ -111,13 +111,24 @@ def same_identity(a: Identity, b: Identity, local_origin: str) -> bool:
 
 # ---- ScopePolicy — unconstructable unvalidated (R3-1) ----------------------
 
-#: module-private sealing nonce, minted at import (R4-1): the seal binds
-#: the ENTIRE canonical projection (groups, digests, the bool) so a
-#: direct construction with an inconsistent digest map, a mutated backing
-#: mapping, or an object.__setattr__ flip all fail the consumption check —
-#: none can recompute the seal without this module's nonce.
+#: R4-1/R5-2 — THE VALIDATOR-OWNED REGISTRY is the authority, not fields
+#: on the object: `validate_policy` deposits an immutable canonical
+#: snapshot here, keyed by the policy instance; `classify` consults the
+#: REGISTERED snapshot and refuses on any divergence from the object's
+#: current visible state. Re-signing the caller-visible `seal` after an
+#: `object.__setattr__` flip therefore achieves nothing (the round-5
+#: executed attack): the registry comparison catches the flipped field
+#: regardless of the seal's value. THE THREAT CLAIM, NARROWED HONESTLY
+#: (R5-2): in-process Python cannot defend against a caller that rewrites
+#: THIS MODULE's own state (the registry, the nonce, the functions) — the
+#: construction is accidental-misuse-proof and forgery-evident, not
+#: adversarial-caller-proof, consistent with C2's honest-host posture; S3
+#: owns the adversarial boundary.
 import secrets as _secrets
+import weakref as _weakref
 _SEAL_NONCE = _secrets.token_bytes(32)
+_REGISTRY: "dict" = _weakref.WeakValueDictionary() and {}
+_REGISTRY = _weakref.WeakKeyDictionary()
 
 
 def _canonical_projection(groups, cross_scope_visible, local_origin) -> bytes:
@@ -150,7 +161,7 @@ def _canonical_groups_ok(groups) -> bool:
     return True
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)   # identity hash/eq — the registry key
 class ScopePolicy:
     """SEALED canonical form (R4-1): `validate_policy` computes `seal` over
     the ENTIRE canonical projection (groups + digests + the bool) with a
@@ -225,6 +236,11 @@ def validate_policy(groups, cross_scope_visible=False,
                       group_digests=MappingProxyType(frozen_digests),
                       seal=_seal(frozen_groups, cross_scope_visible,
                                  local_origin))
+    # the validator-owned snapshot (R5-2): classification consults THIS,
+    # never the caller-visible fields alone
+    _REGISTRY[pol] = (frozen_groups, cross_scope_visible,
+                      {k: frozenset(v) for k, v in frozen_digests.items()},
+                      pol.seal)
     return pol
 
 
@@ -247,11 +263,22 @@ def _revalidate(policy: ScopePolicy, local_origin: str) -> None:
         raise PolicyError(
             "group_digests is not the canonical projection of groups — "
             "a direct construction or a mutated backing map (R4-1)")
-    if policy.seal != _seal(dict(policy.groups),
-                            policy.cross_scope_visible, local_origin):
+    reg = _REGISTRY.get(policy)
+    if reg is None:
         raise PolicyError(
-            "the policy seal does not verify — constructed outside "
-            "validate_policy or mutated after validation (R4-1)")
+            "the policy is not in the validator's registry — constructed "
+            "outside validate_policy (R4-1/R5-2)")
+    reg_groups, reg_xv, reg_digs, reg_seal = reg
+    if (policy.cross_scope_visible is not reg_xv
+            or dict(policy.groups) != reg_groups
+            or {k: frozenset(v) for k, v in policy.group_digests.items()}
+            != reg_digs
+            or policy.seal != reg_seal):
+        raise PolicyError(
+            "the policy's visible state diverges from the validator-owned "
+            "snapshot — mutated after validation; RE-SIGNING DOES NOT HELP "
+            "(the round-5 executed attack): the registry, not the seal, is "
+            "the authority (R5-2)")
 
 
 # ---- the record→membership RESOLVER — DIGEST SPACE (R3-2 / R3-3) -----------
@@ -386,6 +413,50 @@ def classify(record_evidence, principal: Optional[Identity],
 def decide(record_evidence, principal, policy, local_origin):
     return DECISION_TABLE[classify(record_evidence, principal, policy,
                                    local_origin)]
+
+
+# ---- import-time absorption reconstruction (R5-1 — now EXECUTABLE) ---------
+
+_ABSORBED_BY = re.compile(r"absorbed_by:(\S+)")
+
+
+def reconstruct_absorption_rows(imported_records: list, local_origin: str):
+    """The 0020 §4a-iii import-time RECONSTRUCTION rule, normative and
+    executable (round-5 F1 — the v6 text claimed it while the harness
+    labelled the same case a residual; this function is the carrier, and
+    `portability.import_memory` writing REAL ledger rows from it is the
+    named implementation obligation).
+
+    `imported_records`: [{"id", "origin", "source_id", "invalidation_reason",
+    "note"}] — the edge records as imported. Returns {survivor_id:
+    [synthetic absorption rows]} rebuilt from the absorbed_duplicate
+    records' `absorbed_by:<winner>` notes, each row carrying the ABSORBED
+    record's resolved identity digest — exactly the shape `membership`
+    consumes, so a cross-identity absorption survivor resolves UNRESOLVED
+    on the destination.
+
+    Malformed/ambiguous cells, specified: a note with NO absorbed_by tag →
+    contributes nothing (an ordinary retirement); MULTIPLE absorbed_by tags
+    → the LAST governs (renote appends; the newest wins — matching the
+    shipped note-append order); a tag naming a record ABSENT from the
+    import → the row is still synthesized under the named survivor id
+    (the survivor may arrive in a later import; an absent survivor simply
+    never consults it); a remapped import (user_id remap changes record
+    ids) → out of scope for reconstruction and REFUSED upstream by 0005's
+    remap rules before this runs (restore-path only)."""
+    out: dict = {}
+    for r in imported_records:
+        if r.get("invalidation_reason") != "absorbed_duplicate":
+            continue
+        tags = _ABSORBED_BY.findall(r.get("note") or "")
+        if not tags:
+            continue
+        winner = tags[-1]
+        d = digest_of(Identity(r.get("origin"), r.get("source_id")),
+                      local_origin)
+        out.setdefault(winner, []).append(
+            {"site": "absorption", "identity_digest": d, "op_key": None})
+    return out
 
 
 # ---- the filter grammar ----------------------------------------------------
