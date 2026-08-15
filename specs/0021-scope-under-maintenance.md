@@ -62,9 +62,9 @@ store MERGES. Consequences, stated:
 |---|---|---|
 | identity fields on merge candidates — **PRODUCERS: hosts AND the store's own outputs** | absent identity | HOST-produced identity-less records form the closed shared pool (merge only among themselves; nothing crosses INTO a scope). STORE-produced derivatives take the 0020 §4a-iii evidence hierarchy; **UNRESOLVED derivatives are never merge candidates in any pool (W9)** |
 | a writer omitting identity to make content mergeable everywhere | adversarial | achieves the opposite: the shared pool only |
-| pre-0021 store state (external F1's populations) | legacy | LEGACY derivatives (identity copied from `inputs[0]`, pre-fix) are detected by shape (store-authored `evidence_ref` = an operation id, WITH a non-cleared identity) and treated as UNRESOLVED — never trusted as scope-A evidence merely because they claim A |
+| pre-0021 store state (external F1's populations) | legacy | LEGACY derivatives (identity copied from `inputs[0]`, pre-fix) are detected by the NORMATIVE `is_legacy_derivative` predicate (0020 §4a-ii's resolver — system-authored + consolidation-shaped `evidence_ref` + a still-groupable identity; vectored) and treated as UNRESOLVED — never trusted as scope-A evidence merely because they claim A |
 | imported derivatives | portability | the ledger is LOCAL and does not travel (0014): an imported derivative arrives without membership evidence → UNRESOLVED (the reviewer's export/import probe). Materializing membership at export is a recorded widening (FORMAT change, not v1) |
-| in-flight pre-feature operations at upgrade | recovery | 0010 recovery completes or abandons them under its own rules; a completed pre-feature output lands with CLEARED identity and, if its inputs spanned scopes, NO single-scope ledger evidence → UNRESOLVED. Recovery never fabricates membership |
+| in-flight pre-feature operations at upgrade | recovery | 0010 recovery completes or abandons them under its own rules. **CORRECTED (external R2-3, reviewer-executed): recovery CANNOT clear an already-OUTPUTS_DURABLE output — it was written pre-feature with the copied identity and recovery only finalizes.** Such outputs keep their stale identity and are caught by the NORMATIVE legacy-derivative predicate (0020 §4a-ii's resolver — by shape, not by recovery); membership → UNRESOLVED. GENERATING-state pre-feature ops that recovery abandons leave no output (0010). Recovery never fabricates membership |
 | host policy enabling cross-scope merge (future) | out of v1 | v1 REFUSES cross-scope merges outright; the recorded future form is intersection-scoped visibility with empty-intersection refusal |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -126,14 +126,28 @@ one claim. The v1 construction replaces it:
    their scope's identity digest (the unidentified pool last) — one 0010
    operation PER POOL, each with its own claim, lease, crash-safety, and
    recovery; a pool's failure or contention affects no other pool.
-4. **Aggregation:** the return dict reports per-pool results keyed by
-   scope digest plus rolled-up totals; cost accounting rides per-op as
-   today.
+4. **Continuation and partial success (external R2-5, the frozen
+   contract):** pool failures are CAUGHT AND CONTINUED — a later pool
+   always runs regardless of an earlier pool's outcome. The RESULT SCHEMA,
+   frozen: `{"pools": {<scope-digest>: {"status": "ok" | "failed" |
+   "contended" | "below-threshold", "consolidated": int, "into": int,
+   "error": str?}}, "totals": {"consolidated": int, "into": int,
+   "pools_ok": int, "pools_failed": int}, "recovered": int}` — "A
+   committed, B failed, C/D ran anyway" is representable and tested by a
+   FAULT-INJECTION MATRIX over every pool phase (claim / generate / write
+   / finalize) × later-pool continuation (W12). The CARRIER SWEEP, per the
+   found-in-fix rule: `Memory.maintain`'s public return carries the schema
+   verbatim; the audit sink receives one event per pool op (the existing
+   per-op machinery — nothing aggregated away); docs/api.md documents the
+   schema; telemetry is UNCHANGED in v1 (no new fields — the 0019
+   deferral pattern, recorded).
 5. **Concurrency:** two hosts consolidating concurrently contend per-pool
-   through the existing 0010 claim machinery — no new locking.
-6. **Recovery of pre-feature ops:** §2c's in-flight row; recovery
-   completes under 0010's own rules and the outputs enter the evidence
-   hierarchy like any others.
+   through the existing 0010 claim machinery — no new locking; a contended
+   pool reports `"contended"` and later pools continue.
+6. **Recovery of pre-feature ops:** §2c's corrected in-flight row —
+   recovery finalizes what is durable (stale identity, caught by the
+   legacy predicate → UNRESOLVED) and abandons what is not; outputs enter
+   the evidence hierarchy like any others.
 
 ### 4c. Absorption partition
 
@@ -141,6 +155,22 @@ Extends the shipped same-class idiom (verified at 2c-ii): the candidate
 loops additionally require same-scope membership evidence. A cross-scope
 or UNRESOLVED prior accumulates as a separate edge — today's cross-class
 behaviour, extended.
+
+### 4d. Mixed-version shared stores (external R2-6)
+
+No schema/format/feature marker prevents a PRE-0021 process from opening
+the same store during a rolling upgrade and running today's GLOBAL
+consolidation — new processes partition; old ones do not. **W1's claim is
+therefore NARROWED to stores operated exclusively by 0021-capable
+processes, and the deployment requirement is stated plainly: upgrade
+every writer before relying on the partition invariant** (reads are safe
+throughout — a pre-0021 global merge produces a mixed derivative that the
+legacy/evidence machinery classifies UNRESOLVED, so scoped reads stay
+fail-closed even during the window; what is lost is the merge-prevention
+half, not the visibility half). **The ENFORCEMENT upgrade is recorded
+(Q4): a store-version bump refusing pre-0021 writers — it rides the 0018
+D2 breaking window (SCHEMA v8) rather than minting its own break; until a
+release takes it, W1 carries the operational narrowing in its own text.**
 
 ## 5. Regime analysis
 
@@ -152,6 +182,8 @@ behaviour, extended.
 | four A + four B, min_batch=8 | NO-OP — thresholds are per-pool |
 | legacy/imported/recovered derivatives | UNRESOLVED: excluded from every pool, invisible to scoped principals (0020), visible unscoped; remedy = re-derivation/restatement |
 | repeated cross-scope restatement of one value | parallel per-scope edges; no merge, no laundering; the D-extension cross-principal probe measures exactly this |
+| pool B's LLM call raises mid-run | A's commit stands (permanent); B reports "failed" with the error; C/D run anyway; the schema carries all four (R2-5) |
+| a pre-0021 process consolidates during a rolling upgrade | its global merge produces a mixed derivative → UNRESOLVED at read (fail-closed); the partition half of W1 is narrowed per §4d until every writer upgrades |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -159,7 +191,7 @@ behaviour, extended.
 
 | invariant | executable check |
 |---|---|
-| W1 consolidation never merges across scopes — UNCONDITIONAL (policy-independent) | `test_consolidation_partitions_by_scope` *(offline)* |
+| W1 consolidation never merges across scopes — policy-independent, **on stores operated exclusively by 0021-capable processes (§4d — the mixed-version narrowing; scoped READS stay fail-closed even during a rolling upgrade)** | `test_consolidation_partitions_by_scope` *(offline)* |
 | W2 absorption never absorbs across scopes | `test_absorption_partitions_by_scope` *(offline)* |
 | W3 the operation matrix is total via the `COMBINING_SITES` registry + generated manifest | `test_scope_operation_matrix_is_total` *(offline)* |
 | W4 host-produced unidentified records merge only among themselves | `test_unidentified_pool_is_closed` *(offline)* |
@@ -170,6 +202,7 @@ behaviour, extended.
 | W9 UNRESOLVED fail-closed, per population (legacy / imported / recovered / incomplete-ledger): excluded from every merge pool, invisible scoped, visible unscoped | `test_unresolved_populations_fail_closed` *(offline)* |
 | W10 per-pool thresholds: the 4A+4B/min-8 no-op cell + per-pool trigger independence | `test_per_scope_thresholds` *(offline)* |
 | W11 partitioning is policy-independent: an identity-bearing store with NO policy partitions identically to the same store with one | `test_partition_is_policy_independent` *(offline)* |
+| W12 the fault-injection matrix (R2-5): every pool phase × later-pool continuation; the frozen result schema representable and returned verbatim by `Memory.maintain` | `test_per_pool_fault_matrix` *(offline)* |
 
 ## 7. Failure modes and reversibility
 
@@ -202,10 +235,12 @@ amendment, never a silent relaxation.
 
 ## 8. Claims and limits
 
-**Claim:** after this spec, no maintenance or write-time combining
-operation moves content across scope boundaries, under ANY process's
-configuration; derivatives carry honest membership evidence or fail
-closed; scope survives synthesis.
+**Claim:** after this spec, on a store operated exclusively by
+0021-capable processes, no maintenance or write-time combining operation
+moves content across scope boundaries, under ANY process's configuration;
+derivatives carry honest membership evidence or fail closed; scoped READS
+are fail-closed even under mixed-version operation (§4d); scope survives
+synthesis.
 
 **Limits:** C2 honesty as ever (isolation, not authentication);
 host-produced unidentified material is uniformly shared; UNRESOLVED
@@ -234,3 +269,4 @@ restrict-only holds, but a correctness wart), name it.
 | Q1 | cross-scope merge: refusal vs intersection | RESOLVED for v1: refusal; intersection is the recorded widening |
 | Q2 | per-scope wiki compilation | DEFERRED, cost-gated (0020 §4d) |
 | Q3 | membership materialization at export (FORMAT change) | DEFERRED — recorded widening; would move imported derivatives out of UNRESOLVED |
+| Q4 | mixed-version ENFORCEMENT: the pre-0021-writer refusal bump | DEFERRED to the 0018 D2 breaking window (SCHEMA v8) — until then W1 carries the §4d operational narrowing |

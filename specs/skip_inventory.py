@@ -45,13 +45,15 @@ INVENTORY = [
                             "importable in the authoring venv); an mcp-absent "
                             "environment sees 4 PASS + 1 SKIP"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
-     "package-artifact", "binds COLLECTED's inventory to render(); 1 test, "
-                         "SKIPPED in the measured line (COLLECTED.txt is "
-                         "written AFTER the suite runs); in your extraction it "
-                         "EXECUTES iff COLLECTED.txt is present in the tree "
-                         "you run — a reviewer replicating the author command "
-                         "in a COLLECTED-less copy sees it SKIP; either status "
-                         "reconciles, and your report should say which"),
+     "package-artifact", "binds COLLECTED's inventory to render(); 1 test. "
+                         "SINCE THE 0020/0021 R2 SEAL REORDER the measured "
+                         "line is the PACKAGED-STATE run (COLLECTED present "
+                         "in the measuring tree), so this test EXECUTES AND "
+                         "PASSES in the measured line — and in your "
+                         "extraction, which also carries COLLECTED. A "
+                         "COLLECTED-less copy (e.g. a bare git clone) sees "
+                         "it SKIP; either status reconciles, and your report "
+                         "should say which"),
     ("tests/test_eval.py", "skipif", "VERACIUM_EVAL",
      "env-flag", "live acceptance-eval tier"),
     ("tests/test_0016_d1_deprecation.py", "skip", "VERACIUM_MIN_DEP_JOB",
@@ -110,18 +112,21 @@ def render() -> str:
             out.append("  " + blurb[cls])
             out += [f"    {line}" for line in classes[cls]]
     out.append(
-        "  RECONCILIATION (0018 external B2-1 — the arithmetic must close): the\n"
-        "  measured line's skips decompose as: git-checkout 11 (longmemeval 8,\n"
-        "  test_spec_gate 2, test_schema_model 1) + env-flag 3 (eval, robustness,\n"
-        "  and the 0016 D1 pydantic-floor regression — by design outside the\n"
-        "  min-dep CI job) + package-artifact 1\n"
-        "  = 15. Every OTHER inventoried site PASSED in the measured line (MCP x5,\n"
-        "  of which only the wiring test is SDK-gated;\n"
-        "  the 0015 POSIX pair x2; the HOME-anchored coordination-file test x1; the\n"
-        "  runtime-identity, euid, and qualified-runtime cells x1 each). Compute\n"
-        "  your expected line from these statuses and your environment; the seal\n"
-        "  step verifies this decomposition against the measured run (-rs) before\n"
-        "  packaging. Any residual delta is a finding.")
+        "  RECONCILIATION (0018 external B2-1 — the arithmetic must close): in\n"
+        "  the PACKAGED-STATE measured line (the seal runs the suite in a tree\n"
+        "  carrying COLLECTED.txt — the 0020/0021 R2 reorder) the skips\n"
+        "  decompose as: git-checkout 11 (longmemeval 8, test_spec_gate 2,\n"
+        "  test_schema_model 1) + env-flag 3 (eval, robustness, and the 0016 D1\n"
+        "  pydantic-floor regression — by design outside the min-dep CI job)\n"
+        "  = 14, and the package-artifact test EXECUTES AND PASSES. Every OTHER\n"
+        "  inventoried site PASSED in the measured line (MCP x5, of which only\n"
+        "  the wiring test is SDK-gated; the 0015 POSIX pair x2; the\n"
+        "  HOME-anchored coordination-file test x1; the runtime-identity, euid,\n"
+        "  and qualified-runtime cells x1 each). Compute your expected line from\n"
+        "  these statuses and your environment (a COLLECTED-less copy adds the\n"
+        "  package-artifact skip back: 15). The seal verifies this decomposition\n"
+        "  against the measured run before packaging. Any residual delta is a\n"
+        "  finding.")
     return "\n".join(out)
 
 

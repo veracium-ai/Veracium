@@ -46,7 +46,7 @@ per-record field.
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| `principal` (host-supplied at recall/answer) | None → unscoped call, byte-identical to today | non-Identity shape → refused (the §4a-ii model validates; closed predicate) | an identity no record carries → sees only shared-visible records | **a host names another agent's identity as its principal** | C2 verbatim-class: `(origin, source_id)` is NAMESPACING, NOT AUTHENTICATED (0006 R7). S1's boundary is honest-host ISOLATION — context-bleed, confused deputy, cross-agent leakage — never a security boundary against a caller who forges identity. Authentication is S3, a separate spec |
+| `principal` (host-supplied at recall/answer) | None → unscoped call, byte-identical to today; **principal WITHOUT configured policy → REFUSED (R2-2 — feature-disabled never silently degrades to unscoped)**; source_id-less principal → REFUSED (I13) | non-Identity shape → refused (strict types) | an identity no record carries → sees only shared-visible records | **a host names another agent's identity as its principal** | C2 verbatim-class: `(origin, source_id)` is NAMESPACING, NOT AUTHENTICATED (0006 R7). S1's boundary is honest-host ISOLATION — context-bleed, confused deputy, cross-agent leakage — never a security boundary against a caller who forges identity. Authentication is S3, a separate spec |
 | records with ABSENT identity — **PRODUCERS row (the internal-R1 class): the host's unidentified stream AND the store's own machinery (maintenance outputs, migration, imports)** | — | — | — | a writer omits identity to reach every scope | **unknown is the floor** (C3) for HOST-produced identity-less records: shared-visible, gate unchanged. **STORE-produced derivatives are NOT floor-defaulted — they take the §4a-iii evidence hierarchy (external F1), and unresolved evidence fails CLOSED (restricted), never open (shared)**. absent == absent is never SAME-scope (named test) |
 | scope policy rules (host config) | no rules → every principal sees shared-visible + own-scope | malformed → refused at config load by the §4a-ii validator, never at recall time | — | a rule that tries to WIDEN | **RESTRICT-ONLY (C1):** the named refused cell — same-principal re-assertability — is a GRANT and is REFUSED; `test_same_scope_grants_nothing` fails if anyone builds it. Any grant wants a 0006 amendment, not this spec |
 | filter parameters (§4e) | absent → no filtering | unknown field/op → refused (the closed §4a-ii grammar) | — | a filter referencing out-of-scope attributes as an oracle | M-2: filters apply AFTER scope, within the visible set — narrow only; leak-free by construction |
@@ -113,31 +113,58 @@ conforming implementations must agree with it on every vector (the 0019
 reference-predicate discipline, applied to this spec's public surface).**
 It defines, exactly:
 
-- **`Identity`**: `{origin: str|None, source_id: str|None}`;
-  `resolve(identity, local_origin)` — absent origin → the local singleton
-  (I9); equality is over the RESOLVED pair. An identity with BOTH fields
-  None is "the unidentified" and never equals anything, including itself
-  (absent==absent never SAME).
-- **`ScopePolicy`**: `{groups: {name: [Identity…]}, cross_scope_visible:
-  bool = False}`. Validation REFUSES: an identity appearing in more than
-  one group (conflict behaviour = refusal at load, no precedence order
-  exists to dispute); an unresolvable rule shape; a group containing the
-  unidentified identity. No other rule forms exist in v1 — the grammar is
-  CLOSED; wildcards/patterns are a recorded widening.
+- **`Identity`**: `{origin: str|None, source_id: str|None}`, strict-typed
+  (non-empty strings or None — external R2-1). `resolve(identity,
+  local_origin)` — absent origin → the local singleton (I9), UNIFORMLY (no
+  special cases; the v3 carve-out contradicted I9). **Groupability is
+  ACCEPTED 0006's, verbatim (R2-1): an absent `source_id` yields NO
+  groupable identity, REGARDLESS of origin (I13); absence never relaxes a
+  rule (I3).** A non-groupable identity equals nothing, including itself;
+  a PRINCIPAL must be groupable (a source_id-less principal REFUSES).
+- **`ScopePolicy`**: constructed ONLY through `validate_policy`, which
+  returns the CANONICAL RECURSIVELY-FROZEN form (MappingProxy of name →
+  tuple of frozen Identities — post-validation mutation is impossible and
+  the MUTATION ORACLE is vectored, R2-1). Refusals, enumerated: non-
+  Identity shapes; a NON-GROUPABLE identity in any group (I13); resolved
+  overlap across groups; **`cross_scope_visible` not a REAL bool — "false"
+  / 0 / 1 REFUSE (the 0019 F7 strict posture; a truthy string silently
+  widened v3's reference)**; non-mapping/non-sequence shapes. The grammar
+  is CLOSED; wildcards/patterns are a recorded widening.
+- **The two disabled-vs-empty states (external R2-2):** feature-disabled
+  (no policy configured) **REFUSES a principal-bearing call** — it cannot
+  honour scoping and never silently degrades to an unscoped, fully-
+  assertable view. CONFIGURED-EMPTY (a policy with no groups) is a valid
+  state: the principal is ungrouped — own-identity records are OWN, the
+  host pool is SHARED, every other identified record is CROSS.
+- **The record→membership RESOLVER (external R2-3 — the 0020↔0021 seam,
+  now normative):** `membership(record, ledger, op_state, local_origin) →
+  Identity | SHARED_POOL | UNRESOLVED` converts raw record shape +
+  0014-ledger evidence + 0010 operation state into the evidence
+  `classify` consumes. Total over every 0010 state; the LEGACY-DERIVATIVE
+  predicate is normative (system-authored + consolidation-shaped
+  `evidence_ref` + a still-groupable copied identity → UNRESOLVED,
+  whatever it claims); **recovery CANNOT clear an already-OUTPUTS_DURABLE
+  pre-feature output (the reviewer's executed trace) — such outputs keep
+  their stale copied identity and are caught by the predicate, by shape,
+  not by recovery**. Membership pools are PER-IDENTITY, finer than policy
+  groups (maintenance is policy-independent), so a derivative whose
+  contributors span two identities — even same-group ones — is
+  pre-feature by construction and UNRESOLVED (a named vector).
 - **The visibility decision function** `classify(record_evidence,
-  principal, policy) → OWN | SHARED | CROSS | UNRESOLVED`, and the fixed
-  decision table: OWN → visible, today's assertability; SHARED → visible,
-  today's gate; CROSS → visible iff `cross_scope_visible`, third-party-
-  shaped assertability; UNRESOLVED → invisible to every scoped principal.
-  `record_evidence` is the record's resolved identity or, for derivatives,
-  the §4a-iii evidence outcome.
-- **The filter grammar** (§4e): field set CLOSED to `{subject, relation,
-  author_of_evidence, source_id, volatility}`; the only operator in v1 is
-  exact equality (`eq`); conjunction of at most one term per field. Every
-  extension is a spec change.
+  principal, policy) → OWN | SHARED | CROSS_* | UNRESOLVED` and its fixed
+  table: OWN → visible, today's assertability; SHARED → visible, today's
+  gate; CROSS → visible iff `cross_scope_visible`, third-party-shaped;
+  UNRESOLVED → invisible to every scoped principal.
+- **The filter grammar** (§4e): fields CLOSED to `{subject, relation,
+  author_of_evidence, source_id, volatility}`; eq only; at most one term
+  per field. A `source_id` filter NEVER matches a cleared derivative (its
+  field is None; the ledger holds only a one-way digest — R2-3, a named
+  vector). Every extension is a spec change.
 
-The vectors enumerate every `classify` cell (each membership × principal
-× policy shape, including the refusal cases) and every filter cell.
+The 44 vectors enumerate every `classify` cell (including both refusal
+states), every policy-refusal cell, the mutation oracle, the FULL
+resolver table (every record shape × ledger completeness × operation
+state), and every filter cell.
 
 ### 4a-iii. Derived records — the membership-evidence hierarchy (external F1)
 
@@ -257,7 +284,7 @@ manifest fails `test_read_surface_manifest_is_total`.
 
 | invariant | executable check |
 |---|---|
-| V1 unscoped calls byte-identical to today on every fixture store | `test_no_principal_is_byte_identical` |
+| V1 unscoped READS byte-identical to today over a FIXED store state (R2-4 — maintenance deltas are 0021's disclosed change, cross-referenced) | `test_no_principal_is_byte_identical` |
 | V2 restrict-only, by enumerated temptation | `test_same_scope_grants_nothing` |
 | V3 empty-vs-withheld indistinguishability over the FULL `Recall` value (external F3) | `test_existence_non_leakage` |
 | V4 cross-scope supersession/contention rendering on every carrier | `test_cross_scope_supersession_rendering` |
@@ -315,7 +342,13 @@ manifest fails `test_read_surface_manifest_is_total`.
 recalling principal sees its own scope fully, sees cross-scope material
 only as policy admits and never as assertable testimony, cannot learn what
 was withheld, and cannot reach withheld content through ANY public read
-surface — at zero change to unscoped stores.
+surface. **The zero-change guarantee is READ-SCOPED (external R2-4): an
+unscoped READ over a FIXED store state is byte-identical to today.
+Maintenance on an identity-BEARING store changes under 0021 §2 regardless
+of policy (per-identity pools; the disclosed behaviour change), so stored
+state — and therefore later reads — may lawfully differ from a
+never-upgraded store. Identity-FREE stores are byte-identical end to
+end.**
 
 **Limits:** (1) isolation, not a boundary — C2 verbatim; S3 is the
 boundary. (2) No identities → no isolation; adoption is opt-in.

@@ -4,38 +4,10 @@
   "kind": "classify",
   "expect": "OWN",
   "principal": null,
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": "org-a",
    "source_id": "agent-1"
-  }
- },
- {
-  "name": "no_policy_is_own",
-  "kind": "classify",
-  "expect": "OWN",
-  "principal": {
-   "origin": "org-a",
-   "source_id": "agent-1"
-  },
-  "policy": null,
-  "evidence": {
-   "origin": "org-b",
-   "source_id": "agent-9"
   }
  },
  {
@@ -46,21 +18,7 @@
    "origin": "org-a",
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": "org-a",
    "source_id": "agent-2"
@@ -74,53 +32,22 @@
    "origin": "org-a",
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": "org-a",
    "source_id": "agent-1"
   }
  },
  {
-  "name": "host_unidentified_is_shared",
+  "name": "host_pool_is_shared",
   "kind": "classify",
   "expect": "SHARED",
   "principal": {
    "origin": "org-a",
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
-  "evidence": {
-   "origin": null,
-   "source_id": null
-  }
+  "policy": "policy",
+  "evidence": "SHARED_POOL"
  },
  {
   "name": "cross_scope_hidden_default",
@@ -130,21 +57,7 @@
    "origin": "org-a",
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": "org-b",
    "source_id": "agent-9"
@@ -158,21 +71,7 @@
    "origin": "org-a",
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": true
-  },
+  "policy": "policy_xv",
   "evidence": {
    "origin": "org-b",
    "source_id": "agent-9"
@@ -186,21 +85,7 @@
    "origin": "org-a",
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": "UNRESOLVED"
  },
  {
@@ -208,21 +93,7 @@
   "kind": "classify",
   "expect": "OWN",
   "principal": null,
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": "UNRESOLVED"
  },
  {
@@ -233,21 +104,7 @@
    "origin": "org-b",
    "source_id": "agent-9"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": "org-b",
    "source_id": "agent-9"
@@ -261,21 +118,7 @@
    "origin": "org-b",
    "source_id": "agent-9"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": "org-a",
    "source_id": "agent-1"
@@ -289,23 +132,65 @@
    "origin": null,
    "source_id": "agent-1"
   },
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  },
+  "policy": "policy",
   "evidence": {
    "origin": null,
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "empty_policy_self_own",
+  "kind": "classify",
+  "expect": "OWN",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": "empty",
+  "evidence": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  }
+ },
+ {
+  "name": "empty_policy_other_cross",
+  "kind": "classify",
+  "expect": "CROSS_HIDDEN",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": "empty",
+  "evidence": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  }
+ },
+ {
+  "name": "principal_without_policy_refuses",
+  "kind": "classify",
+  "expect": "PolicyError",
+  "principal": {
+   "origin": "org-a",
+   "source_id": "agent-1"
+  },
+  "policy": null,
+  "evidence": {
+   "origin": "org-b",
+   "source_id": "agent-9"
+  }
+ },
+ {
+  "name": "sourceless_principal_refuses",
+  "kind": "classify",
+  "expect": "PolicyError",
+  "principal": {
+   "origin": "org-a",
+   "source_id": null
+  },
+  "policy": "policy",
+  "evidence": {
+   "origin": "org-a",
    "source_id": "agent-1"
   }
  },
@@ -336,62 +221,424 @@
   }
  },
  {
+  "name": "sourceless_never_equals_itself",
+  "kind": "same_identity",
+  "expect": false,
+  "a": {
+   "origin": "org-a",
+   "source_id": null
+  },
+  "b": {
+   "origin": "org-a",
+   "source_id": null
+  }
+ },
+ {
+  "name": "sourceless_never_equals_sourceless_same_origin",
+  "kind": "same_identity",
+  "expect": false,
+  "a": {
+   "origin": "org-a",
+   "source_id": null
+  },
+  "b": {
+   "origin": "org-a",
+   "source_id": null
+  }
+ },
+ {
   "name": "overlap_refused",
   "kind": "validate_policy",
   "expect": "PolicyError",
-  "policy": {
-   "groups": {
-    "g1": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     }
-    ],
-    "g2": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  }
+  "groups": {
+   "g1": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    }
+   ],
+   "g2": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    }
+   ]
+  },
+  "cross_scope_visible": false
  },
  {
   "name": "unidentified_in_group_refused",
   "kind": "validate_policy",
   "expect": "PolicyError",
-  "policy": {
-   "groups": {
-    "g1": [
-     {
-      "origin": null,
-      "source_id": null
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  }
+  "groups": {
+   "g1": [
+    {
+     "origin": null,
+     "source_id": null
+    }
+   ]
+  },
+  "cross_scope_visible": false
+ },
+ {
+  "name": "sourceless_in_group_refused_i13",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "groups": {
+   "g1": [
+    {
+     "origin": "org-a",
+     "source_id": null
+    }
+   ]
+  },
+  "cross_scope_visible": false
+ },
+ {
+  "name": "string_bool_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "groups": {
+   "team-a": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-2"
+    }
+   ]
+  },
+  "cross_scope_visible": "'false'"
+ },
+ {
+  "name": "int_bool_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "groups": {
+   "team-a": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-2"
+    }
+   ]
+  },
+  "cross_scope_visible": "1"
  },
  {
   "name": "valid_policy_accepted",
   "kind": "validate_policy",
   "expect": "ok",
-  "policy": {
-   "groups": {
-    "team-a": [
-     {
-      "origin": "org-a",
-      "source_id": "agent-1"
-     },
-     {
-      "origin": "org-a",
-      "source_id": "agent-2"
-     }
-    ]
-   },
-   "cross_scope_visible": false
-  }
+  "groups": {
+   "team-a": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-2"
+    }
+   ]
+  },
+  "cross_scope_visible": false
+ },
+ {
+  "name": "frozen_policy_mutation_oracle",
+  "kind": "mutation_oracle",
+  "expect": "all-refused",
+  "attempts": [
+   "insert group",
+   "extend members",
+   "flip cross_scope_visible"
+  ]
+ },
+ {
+  "name": "host_identified",
+  "kind": "membership",
+  "expect": {
+   "identity": {
+    "origin": "org-a",
+    "source_id": "agent-1"
+   }
+  },
+  "record": {
+   "author": "user",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "ev-1",
+   "lineage": false
+  },
+  "ledger": "none",
+  "op_state": "finalized"
+ },
+ {
+  "name": "host_unidentified_shared",
+  "kind": "membership",
+  "expect": "SHARED",
+  "record": {
+   "author": "user",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "ev-2",
+   "lineage": false
+  },
+  "ledger": "none",
+  "op_state": "none"
+ },
+ {
+  "name": "legacy_copied_identity",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "consolidate:abc123",
+   "lineage": true
+  },
+  "ledger": "none",
+  "op_state": "finalized"
+ },
+ {
+  "name": "legacy_recovered_outputs_durable",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "consolidate:abc123",
+   "lineage": true
+  },
+  "ledger": "none",
+  "op_state": "outputs_durable"
+ },
+ {
+  "name": "derivative_single_identity",
+  "kind": "membership",
+  "expect": {
+   "identity": {
+    "origin": "org-a",
+    "source_id": "agent-1"
+   }
+  },
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": true,
+   "contributor_identities": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    }
+   ]
+  },
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_same_group_different_identities_unresolved",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": true,
+   "contributor_identities": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-2"
+    }
+   ]
+  },
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_mixed_scopes",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": true,
+   "contributor_identities": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-b",
+     "source_id": "agent-9"
+    }
+   ]
+  },
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_pool_stays_pooled",
+  "kind": "membership",
+  "expect": "SHARED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": true,
+   "contributor_identities": [
+    {
+     "origin": null,
+     "source_id": null
+    },
+    {
+     "origin": null,
+     "source_id": null
+    }
+   ]
+  },
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_partial_ledger",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": false,
+   "contributor_identities": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    }
+   ]
+  },
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_no_ledger_imported",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": "none",
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_mixed_identified_unidentified",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": true,
+   "contributor_identities": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": null,
+     "source_id": null
+    }
+   ]
+  },
+  "op_state": "finalized"
+ },
+ {
+  "name": "inflight_generating",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "consolidate:def456",
+   "lineage": true
+  },
+  "ledger": {
+   "complete": true,
+   "contributor_identities": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    }
+   ]
+  },
+  "op_state": "generating"
+ },
+ {
+  "name": "abandoned_output_is_malformed",
+  "kind": "membership",
+  "expect": "PolicyError",
+  "record": {
+   "author": "user",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "ev-1",
+   "lineage": false
+  },
+  "ledger": "none",
+  "op_state": "abandoned"
+ },
+ {
+  "name": "unknown_op_state_refused",
+  "kind": "membership",
+  "expect": "PolicyError",
+  "record": {
+   "author": "user",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "ev-1",
+   "lineage": false
+  },
+  "ledger": "none",
+  "op_state": "weird"
  },
  {
   "name": "unknown_field_refused",
@@ -416,6 +663,24 @@
   "filters": {
    "relation": "budget",
    "subject": "user"
+  }
+ },
+ {
+  "name": "source_id_filter_never_matches_cleared_derivative",
+  "kind": "apply_filters",
+  "expect": "first-only",
+  "records": [
+   {
+    "relation": "pet",
+    "source_id": "agent-1"
+   },
+   {
+    "relation": "pet",
+    "source_id": null
+   }
+  ],
+  "filters": {
+   "source_id": "agent-1"
   }
  }
 ]
