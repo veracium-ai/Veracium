@@ -83,7 +83,10 @@ def _archived_specs_missing_external_reviews(entries):
     normal), so `archives == rounds` would false-positive. Zero rounds under >=1
     archive is the only unambiguous defect, and it is the one that bit."""
     from reviews import REVIEWS  # specs/ is sys.path[0] when run as a script
-    archived = {e["spec"] for e in entries}
+    # a COUPLED archive ("0020+0021") is evidence of a round for EACH
+    # component spec — the cross-check requires rows per component, since
+    # reviews.py records per-spec verdicts even for a shared package
+    archived = {part for e in entries for part in e["spec"].split("+")}
     reviewed = {r["spec"] for r in REVIEWS if r["kind"] == "external"}
     return sorted(archived - reviewed)
 
