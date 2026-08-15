@@ -108,48 +108,67 @@ fields.
 ### 4a-ii. The normative models and grammars (external F2)
 
 **The executable reference is `specs/evidence/0020/reference_scope.py`
-with `specs/evidence/0020/vectors.json` — pure, portable, no I/O; two
-conforming implementations must agree with it on every vector (the 0019
-reference-predicate discipline, applied to this spec's public surface).**
-It defines, exactly:
+with `specs/evidence/0020/vectors.json` and the SELF-EXECUTING HARNESS
+`vector_harness.py` (external R3's artifact ask — the seal runs it and
+ships its recorded result; each vector kind has a documented schema).
+Membership lives in DIGEST SPACE (external R3-2): the reference MIRRORS
+the shipped `source_identity_digest` construction byte-for-byte
+(`veracium.source-id.v1`, framed — 0006 §4 rules 6/7), because the 0014
+ledger carries only nullable one-way digests and deleted inputs cannot
+supply original pairs — policy-side digests therefore equal store-side
+digests and the resolver is implementable from real rows.** It defines,
+exactly:
 
 - **`Identity`**: `{origin: str|None, source_id: str|None}`, strict-typed
-  (non-empty strings or None — external R2-1). `resolve(identity,
+  with the SHIPPED bounds (non-empty, ≤512 chars — the Provenance field
+  caps; external R3-1). `resolve(identity,
   local_origin)` — absent origin → the local singleton (I9), UNIFORMLY (no
   special cases; the v3 carve-out contradicted I9). **Groupability is
   ACCEPTED 0006's, verbatim (R2-1): an absent `source_id` yields NO
   groupable identity, REGARDLESS of origin (I13); absence never relaxes a
   rule (I3).** A non-groupable identity equals nothing, including itself;
   a PRINCIPAL must be groupable (a source_id-less principal REFUSES).
-- **`ScopePolicy`**: constructed ONLY through `validate_policy`, which
-  returns the CANONICAL RECURSIVELY-FROZEN form (MappingProxy of name →
-  tuple of frozen Identities — post-validation mutation is impossible and
-  the MUTATION ORACLE is vectored, R2-1). Refusals, enumerated: non-
-  Identity shapes; a NON-GROUPABLE identity in any group (I13); resolved
-  overlap across groups; **`cross_scope_visible` not a REAL bool — "false"
-  / 0 / 1 REFUSE (the 0019 F7 strict posture; a truthy string silently
-  widened v3's reference)**; non-mapping/non-sequence shapes. The grammar
-  is CLOSED; wildcards/patterns are a recorded widening.
+- **`ScopePolicy`**: UNCONSTRUCTABLE UNVALIDATED (external R3-1 — the v4
+  factory could be bypassed by direct construction): `__post_init__`
+  enforces the canonical frozen shapes (MappingProxy + tuples + real
+  bool + the precomputed frozen digest map), so `ScopePolicy(groups={...},
+  cross_scope_visible="false")` RAISES; and `classify` REVALIDATES at
+  consumption, defence in depth. `validate_policy` refusals, enumerated:
+  non-Identity shapes; non-groupable members (I13); resolved-DIGEST
+  overlap across groups; `cross_scope_visible` not a REAL bool ("false" /
+  0 / 1 refuse — actual ints vectored, R3-1); members not a LIST or TUPLE
+  (SETS refused — unordered inputs are not a rule grammar); overlong
+  identities (the 512 bounds). The validator retains no caller state.
+  The grammar is CLOSED; wildcards/patterns are a recorded widening.
 - **The two disabled-vs-empty states (external R2-2):** feature-disabled
   (no policy configured) **REFUSES a principal-bearing call** — it cannot
   honour scoping and never silently degrades to an unscoped, fully-
   assertable view. CONFIGURED-EMPTY (a policy with no groups) is a valid
   state: the principal is ungrouped — own-identity records are OWN, the
   host pool is SHARED, every other identified record is CROSS.
-- **The record→membership RESOLVER (external R2-3 — the 0020↔0021 seam,
-  now normative):** `membership(record, ledger, op_state, local_origin) →
-  Identity | SHARED_POOL | UNRESOLVED` converts raw record shape +
-  0014-ledger evidence + 0010 operation state into the evidence
-  `classify` consumes. Total over every 0010 state; the LEGACY-DERIVATIVE
-  predicate is normative (system-authored + consolidation-shaped
-  `evidence_ref` + a still-groupable copied identity → UNRESOLVED,
-  whatever it claims); **recovery CANNOT clear an already-OUTPUTS_DURABLE
-  pre-feature output (the reviewer's executed trace) — such outputs keep
-  their stale copied identity and are caught by the predicate, by shape,
-  not by recovery**. Membership pools are PER-IDENTITY, finer than policy
-  groups (maintenance is policy-independent), so a derivative whose
-  contributors span two identities — even same-group ones — is
-  pre-feature by construction and UNRESOLVED (a named vector).
+- **The record→membership RESOLVER (the 0020↔0021 seam, normative and
+  IMPLEMENTABLE FROM REAL ROWS — external R3-2):** `membership(record,
+  rows, op_state, local_origin, expected_contributors) → digest |
+  SHARED_POOL | UNRESOLVED` consumes the SHIPPED `ContributionRecord`
+  shape — `{site, identity_digest: str|None, op_key}` keyed by
+  survivor_id — with completeness judged against the store-derived
+  denominator (lineage length); no Identity reconstruction is ever
+  required. Total over every 0010 state. The LEGACY-DERIVATIVE predicate
+  matches the REAL operation-id form (`op-<12 hex>` — corrected from v4's
+  fictional `consolidate:` prefix by the reviewer's store probe);
+  recovery cannot clear an already-OUTPUTS_DURABLE output — caught by the
+  predicate, by shape. **ABSORPTION SURVIVORS are resolved through their
+  ledger rows (external R3-3, reviewer-executed): a pre-0021 absorption
+  moves another identity's testimony and currency into a survivor that
+  carries identity A with NO lineage — the resolver therefore checks
+  every absorption row against the record's OWN digest, and ANY
+  cross-digest (or None-vs-digest) contributor marks the survivor
+  UNRESOLVED. The ledger said B; the record claims A; fail closed.**
+  Membership pools are PER-DIGEST, finer than policy groups; a
+  same-group-two-identity derivative is pre-feature by construction and
+  UNRESOLVED (a named vector). The shared pool's reserved result key is
+  `pool:unidentified` (R3-4 — digests are 64 hex chars; a colon-bearing
+  literal cannot collide).
 - **The visibility decision function** `classify(record_evidence,
   principal, policy) → OWN | SHARED | CROSS_* | UNRESOLVED` and its fixed
   table: OWN → visible, today's assertability; SHARED → visible, today's
@@ -161,10 +180,14 @@ It defines, exactly:
   field is None; the ledger holds only a one-way digest — R2-3, a named
   vector). Every extension is a spec change.
 
-The 44 vectors enumerate every `classify` cell (including both refusal
-states), every policy-refusal cell, the mutation oracle, the FULL
-resolver table (every record shape × ledger completeness × operation
-state), and every filter cell.
+The 56 vectors enumerate every `classify` cell (both refusal states),
+every policy-refusal cell (real ints, sets, bounds), the
+DIRECT-CONSTRUCTION oracle (the reviewer's executed bypass, cell by
+cell), the mutation oracle, the FULL resolver table over REAL row shapes
+(consolidation completeness × digests × operation state, PLUS the four
+absorption-survivor cells including R3-3's cross-digest case), and every
+filter cell — executed by the shipped harness, whose recorded result
+ships in every package.
 
 ### 4a-iii. Derived records — the membership-evidence hierarchy (external F1)
 
@@ -293,7 +316,8 @@ manifest fails `test_read_surface_manifest_is_total`.
 | V7 policy over resolved identity | `test_policy_evaluates_resolved_identity` |
 | V8 filter rails M-1..M-4 | `test_filter_rails` |
 | V9 the 0011 gate seam | `test_gate_seam_reserved_for_0011` |
-| V10 the shipped surface matches the normative reference on every vector (external F2) | `test_scope_reference_vectors` |
+| V10 the shipped surface matches the normative reference on every vector, via the SHIPPED HARNESS (external F2/R3) | `test_scope_reference_vectors` |
+| V14 absorption survivors resolve through their ledger rows; any cross-digest contributor → UNRESOLVED (external R3-3 — the legacy-absorption read leak closed) | `test_absorption_survivor_membership` |
 | V11 `answer()` and proactive thread the principal; structured carriers carry only visible records (external F3) | `test_all_read_surfaces_scoped` |
 | V12 the read-surface manifest is total (external F3) | `test_read_surface_manifest_is_total` |
 | V13 UNRESOLVED derivatives are invisible to every scoped principal and visible unscoped (external F1) | `test_unresolved_derivative_fail_closed` |
@@ -347,8 +371,10 @@ unscoped READ over a FIXED store state is byte-identical to today.
 Maintenance on an identity-BEARING store changes under 0021 §2 regardless
 of policy (per-identity pools; the disclosed behaviour change), so stored
 state — and therefore later reads — may lawfully differ from a
-never-upgraded store. Identity-FREE stores are byte-identical end to
-end.**
+never-upgraded store. Identity-FREE stores: READS and stored STATE are
+byte-identical end to end; `maintain()`'s RETURN is a compatible
+ADDITIVE SUPERSET (0021 §4b — existing keys preserved verbatim, new keys
+added; external R3-4 corrected the v4 claim that it was untouched).**
 
 **Limits:** (1) isolation, not a boundary — C2 verbatim; S3 is the
 boundary. (2) No identities → no isolation; adoption is opt-in.

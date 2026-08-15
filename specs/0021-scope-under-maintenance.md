@@ -126,21 +126,29 @@ one claim. The v1 construction replaces it:
    their scope's identity digest (the unidentified pool last) — one 0010
    operation PER POOL, each with its own claim, lease, crash-safety, and
    recovery; a pool's failure or contention affects no other pool.
-4. **Continuation and partial success (external R2-5, the frozen
-   contract):** pool failures are CAUGHT AND CONTINUED — a later pool
-   always runs regardless of an earlier pool's outcome. The RESULT SCHEMA,
-   frozen: `{"pools": {<scope-digest>: {"status": "ok" | "failed" |
+4. **Continuation and partial success (R2-5, REVISED at external R3-4/
+   R3-5): pool failures are CAUGHT AND CONTINUED, and the result is an
+   ADDITIVE SUPERSET of today's shape** — the existing top-level keys
+   `{"consolidated", "into", "recovered"}` are PRESERVED VERBATIM as the
+   rolled-up totals (an identity-free store's values are identical to
+   today's, and the SHIPPED TELEMETRY MAPPING — which reads exactly those
+   keys — keeps working UNCHANGED, by construction), with the new keys
+   added beside them: `{"pools": {<key>: {"status": "ok" | "failed" |
    "contended" | "below-threshold", "consolidated": int, "into": int,
-   "error": str?}}, "totals": {"consolidated": int, "into": int,
-   "pools_ok": int, "pools_failed": int}, "recovered": int}` — "A
-   committed, B failed, C/D ran anyway" is representable and tested by a
-   FAULT-INJECTION MATRIX over every pool phase (claim / generate / write
-   / finalize) × later-pool continuation (W12). The CARRIER SWEEP, per the
-   found-in-fix rule: `Memory.maintain`'s public return carries the schema
-   verbatim; the audit sink receives one event per pool op (the existing
-   per-op machinery — nothing aggregated away); docs/api.md documents the
-   schema; telemetry is UNCHANGED in v1 (no new fields — the 0019
-   deferral pattern, recorded).
+   "error": str?}}, "pools_ok": int, "pools_failed": int}`. **The pool
+   key is the scope's identity digest, or the RESERVED literal
+   `pool:unidentified` for the shared pool (external R3-4 — 0006 digests
+   a source-less identity to None, so the pool needs a non-digest key;
+   the colon makes collision impossible).** "A committed, B failed, C/D
+   ran anyway" is representable and tested by the FAULT-INJECTION MATRIX
+   over every pool phase × later-pool continuation (W12), THROUGH BOTH
+   CARRIERS (external R3-5): the AUDIT contract is the existing aggregate
+   `maintain` event PRESERVED (compatibility) plus one ADDITIVE per-pool
+   event `{op: "consolidate-pool", pool_key, status, consolidated, into,
+   error?}` per attempted pool — a failed pool reaches the audit sink by
+   its own event, never swallowed by the catch; W12 asserts the audit
+   sink saw N pool events + the aggregate AND that telemetry's mapping
+   reads the preserved keys unchanged.
 5. **Concurrency:** two hosts consolidating concurrently contend per-pool
    through the existing 0010 claim machinery — no new locking; a contended
    pool reports `"contended"` and later pools continue.
@@ -163,11 +171,18 @@ the same store during a rolling upgrade and running today's GLOBAL
 consolidation — new processes partition; old ones do not. **W1's claim is
 therefore NARROWED to stores operated exclusively by 0021-capable
 processes, and the deployment requirement is stated plainly: upgrade
-every writer before relying on the partition invariant** (reads are safe
-throughout — a pre-0021 global merge produces a mixed derivative that the
-legacy/evidence machinery classifies UNRESOLVED, so scoped reads stay
-fail-closed even during the window; what is lost is the merge-prevention
-half, not the visibility half). **The ENFORCEMENT upgrade is recorded
+every writer before relying on the partition invariant** (reads are fail-closed
+throughout, ON BOTH SYNTHESIS PATHS — external R3-3 corrected v4's
+consolidation-only claim: a pre-0021 CONSOLIDATION lands legacy-shaped →
+UNRESOLVED, and a pre-0021 ABSORPTION survivor — identity A carrying B's
+inherited testimony/currency, no lineage — is caught by the resolver's
+absorption-row rule (any cross-digest contributor → UNRESOLVED; the
+ledger recorded B even though the record claims A). What is lost during
+the window is the merge-PREVENTION half, not the visibility half. ONE
+residual, stated: absorptions that predate the 0014 ledger itself
+(pre-v0.7.0 events) left no rows and their survivors resolve by own
+identity — a fixed, shrinking legacy class, named here so it is a
+disclosure, not a discovery). **The ENFORCEMENT upgrade is recorded
 (Q4): a store-version bump refusing pre-0021 writers — it rides the 0018
 D2 breaking window (SCHEMA v8) rather than minting its own break; until a
 release takes it, W1 carries the operational narrowing in its own text.**
@@ -184,6 +199,8 @@ release takes it, W1 carries the operational narrowing in its own text.**
 | repeated cross-scope restatement of one value | parallel per-scope edges; no merge, no laundering; the D-extension cross-principal probe measures exactly this |
 | pool B's LLM call raises mid-run | A's commit stands (permanent); B reports "failed" with the error; C/D run anyway; the schema carries all four (R2-5) |
 | a pre-0021 process consolidates during a rolling upgrade | its global merge produces a mixed derivative → UNRESOLVED at read (fail-closed); the partition half of W1 is narrowed per §4d until every writer upgrades |
+| a pre-0021 process ABSORBS during the window (R3-3) | the survivor carries cross-digest absorption rows → UNRESOLVED at read; pre-0014 absorptions (no rows) are the stated residual |
+| eight identity-less cold records | ONE pool under the reserved `pool:unidentified` key; today's threshold semantics; today's top-level return values (R3-4) |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -202,7 +219,8 @@ release takes it, W1 carries the operational narrowing in its own text.**
 | W9 UNRESOLVED fail-closed, per population (legacy / imported / recovered / incomplete-ledger): excluded from every merge pool, invisible scoped, visible unscoped | `test_unresolved_populations_fail_closed` *(offline)* |
 | W10 per-pool thresholds: the 4A+4B/min-8 no-op cell + per-pool trigger independence | `test_per_scope_thresholds` *(offline)* |
 | W11 partitioning is policy-independent: an identity-bearing store with NO policy partitions identically to the same store with one | `test_partition_is_policy_independent` *(offline)* |
-| W12 the fault-injection matrix (R2-5): every pool phase × later-pool continuation; the frozen result schema representable and returned verbatim by `Memory.maintain` | `test_per_pool_fault_matrix` *(offline)* |
+| W12 the fault-injection matrix (R2-5/R3-5): every pool phase × later-pool continuation, asserted through BOTH carriers — the additive-superset return (existing keys verbatim) AND the audit sink (aggregate + per-pool events; a failed pool's event present) AND telemetry's preserved-key mapping | `test_per_pool_fault_matrix` *(offline)* |
+| W13 absorption survivors resolve through ledger rows; the cross-digest cell fails closed (R3-3 — shared with 0020 V14) | `test_absorption_survivor_membership` *(offline)* |
 
 ## 7. Failure modes and reversibility
 

@@ -221,20 +221,7 @@
   }
  },
  {
-  "name": "sourceless_never_equals_itself",
-  "kind": "same_identity",
-  "expect": false,
-  "a": {
-   "origin": "org-a",
-   "source_id": null
-  },
-  "b": {
-   "origin": "org-a",
-   "source_id": null
-  }
- },
- {
-  "name": "sourceless_never_equals_sourceless_same_origin",
+  "name": "sourceless_never_equals_sourceless",
   "kind": "same_identity",
   "expect": false,
   "a": {
@@ -310,10 +297,10 @@
     }
    ]
   },
-  "cross_scope_visible": "'false'"
+  "cross_scope_visible": "false"
  },
  {
-  "name": "int_bool_refused",
+  "name": "real_int_one_refused",
   "kind": "validate_policy",
   "expect": "PolicyError",
   "groups": {
@@ -328,7 +315,54 @@
     }
    ]
   },
-  "cross_scope_visible": "1"
+  "cross_scope_visible": 1
+ },
+ {
+  "name": "real_int_zero_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "groups": {
+   "team-a": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-2"
+    }
+   ]
+  },
+  "cross_scope_visible": 0
+ },
+ {
+  "name": "set_members_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "groups": {
+   "g1": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    }
+   ]
+  },
+  "cross_scope_visible": false,
+  "member_container": "set"
+ },
+ {
+  "name": "overlong_identity_refused",
+  "kind": "validate_policy",
+  "expect": "PolicyError",
+  "groups": {
+   "g1": [
+    {
+     "origin": "org-a",
+     "source_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    }
+   ]
+  },
+  "cross_scope_visible": false
  },
  {
   "name": "valid_policy_accepted",
@@ -349,6 +383,42 @@
   "cross_scope_visible": false
  },
  {
+  "name": "valid_bool_true_accepted",
+  "kind": "validate_policy",
+  "expect": "ok",
+  "groups": {
+   "team-a": [
+    {
+     "origin": "org-a",
+     "source_id": "agent-1"
+    },
+    {
+     "origin": "org-a",
+     "source_id": "agent-2"
+    }
+   ]
+  },
+  "cross_scope_visible": true
+ },
+ {
+  "name": "direct_construction_raw_dict_groups_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "raw_dict_groups"
+ },
+ {
+  "name": "direct_construction_string_bool_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "string_bool"
+ },
+ {
+  "name": "direct_construction_list_members_in_canonical_slot_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "list_members_in_canonical_slot"
+ },
+ {
   "name": "frozen_policy_mutation_oracle",
   "kind": "mutation_oracle",
   "expect": "all-refused",
@@ -362,7 +432,7 @@
   "name": "host_identified",
   "kind": "membership",
   "expect": {
-   "identity": {
+   "digest_of": {
     "origin": "org-a",
     "source_id": "agent-1"
    }
@@ -374,13 +444,14 @@
    "evidence_ref": "ev-1",
    "lineage": false
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": null,
   "op_state": "finalized"
  },
  {
   "name": "host_unidentified_shared",
   "kind": "membership",
-  "expect": "SHARED",
+  "expect": "SHARED_POOL",
   "record": {
    "author": "user",
    "origin": null,
@@ -388,21 +459,23 @@
    "evidence_ref": "ev-2",
    "lineage": false
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": null,
   "op_state": "none"
  },
  {
-  "name": "legacy_copied_identity",
+  "name": "legacy_real_opid_shape",
   "kind": "membership",
   "expect": "UNRESOLVED",
   "record": {
    "author": "system",
    "origin": "org-a",
    "source_id": "agent-1",
-   "evidence_ref": "consolidate:abc123",
+   "evidence_ref": "op-4e2ff9fa670c",
    "lineage": true
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": null,
   "op_state": "finalized"
  },
  {
@@ -413,17 +486,18 @@
    "author": "system",
    "origin": "org-a",
    "source_id": "agent-1",
-   "evidence_ref": "consolidate:abc123",
+   "evidence_ref": "op-4e2ff9fa670c",
    "lineage": true
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": null,
   "op_state": "outputs_durable"
  },
  {
   "name": "derivative_single_identity",
   "kind": "membership",
   "expect": {
-   "identity": {
+   "digest_of": {
     "origin": "org-a",
     "source_id": "agent-1"
    }
@@ -432,22 +506,22 @@
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": true,
-   "contributor_identities": [
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    },
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    }
-   ]
-  },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   },
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 2,
   "op_state": "finalized"
  },
  {
@@ -458,22 +532,22 @@
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": true,
-   "contributor_identities": [
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    },
-    {
-     "origin": "org-a",
-     "source_id": "agent-2"
-    }
-   ]
-  },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   },
+   {
+    "site": "consolidation",
+    "identity_digest": "c0c4c15812db48fc4afd50117f475b5e60ea493fb5357b68b52ba94bfe839f04",
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 2,
   "op_state": "finalized"
  },
  {
@@ -484,70 +558,90 @@
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": true,
-   "contributor_identities": [
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    },
-    {
-     "origin": "org-b",
-     "source_id": "agent-9"
-    }
-   ]
-  },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   },
+   {
+    "site": "consolidation",
+    "identity_digest": "626aa4330bac3f840a8d1e3928c0915b3d734bc9fad7d0ae5b0e2afe9f1d8ae3",
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 2,
   "op_state": "finalized"
  },
  {
   "name": "derivative_pool_stays_pooled",
   "kind": "membership",
-  "expect": "SHARED",
+  "expect": "SHARED_POOL",
   "record": {
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": true,
-   "contributor_identities": [
-    {
-     "origin": null,
-     "source_id": null
-    },
-    {
-     "origin": null,
-     "source_id": null
-    }
-   ]
-  },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": null,
+    "op_key": "op-x:0:edge:e1"
+   },
+   {
+    "site": "consolidation",
+    "identity_digest": null,
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 2,
   "op_state": "finalized"
  },
  {
-  "name": "derivative_partial_ledger",
+  "name": "derivative_incomplete_rows",
   "kind": "membership",
   "expect": "UNRESOLVED",
   "record": {
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": false,
-   "contributor_identities": [
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    }
-   ]
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 2,
+  "op_state": "finalized"
+ },
+ {
+  "name": "derivative_unknown_denominator",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "system",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "op-1234abcd5678",
+   "lineage": true
   },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": null,
   "op_state": "finalized"
  },
  {
@@ -558,10 +652,11 @@
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": 2,
   "op_state": "finalized"
  },
  {
@@ -572,22 +667,22 @@
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": true,
-   "contributor_identities": [
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    },
-    {
-     "origin": null,
-     "source_id": null
-    }
-   ]
-  },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   },
+   {
+    "site": "consolidation",
+    "identity_digest": null,
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 2,
   "op_state": "finalized"
  },
  {
@@ -598,19 +693,107 @@
    "author": "system",
    "origin": null,
    "source_id": null,
-   "evidence_ref": "consolidate:def456",
+   "evidence_ref": "op-1234abcd5678",
    "lineage": true
   },
-  "ledger": {
-   "complete": true,
-   "contributor_identities": [
-    {
-     "origin": "org-a",
-     "source_id": "agent-1"
-    }
-   ]
-  },
+  "rows": [
+   {
+    "site": "consolidation",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": "op-x:0:edge:e1"
+   }
+  ],
+  "expected_contributors": 1,
   "op_state": "generating"
+ },
+ {
+  "name": "absorption_survivor_same_identity_ok",
+  "kind": "membership",
+  "expect": {
+   "digest_of": {
+    "origin": "org-a",
+    "source_id": "agent-1"
+   }
+  },
+  "record": {
+   "author": "user",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "ev-1",
+   "lineage": false
+  },
+  "rows": [
+   {
+    "site": "absorption",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": null
+   }
+  ],
+  "expected_contributors": null,
+  "op_state": "none"
+ },
+ {
+  "name": "absorption_survivor_cross_identity_unresolved",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "user",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "ev-1",
+   "lineage": false
+  },
+  "rows": [
+   {
+    "site": "absorption",
+    "identity_digest": "626aa4330bac3f840a8d1e3928c0915b3d734bc9fad7d0ae5b0e2afe9f1d8ae3",
+    "op_key": null
+   }
+  ],
+  "expected_contributors": null,
+  "op_state": "none"
+ },
+ {
+  "name": "absorption_survivor_unidentified_contributor_unresolved",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "user",
+   "origin": "org-a",
+   "source_id": "agent-1",
+   "evidence_ref": "ev-1",
+   "lineage": false
+  },
+  "rows": [
+   {
+    "site": "absorption",
+    "identity_digest": null,
+    "op_key": null
+   }
+  ],
+  "expected_contributors": null,
+  "op_state": "none"
+ },
+ {
+  "name": "absorption_onto_unidentified_with_identified_contributor",
+  "kind": "membership",
+  "expect": "UNRESOLVED",
+  "record": {
+   "author": "user",
+   "origin": null,
+   "source_id": null,
+   "evidence_ref": "ev-2",
+   "lineage": false
+  },
+  "rows": [
+   {
+    "site": "absorption",
+    "identity_digest": "82f3c3438c327194e9cc27ad418bbbb637a21e1ee5f81a6fd87ac606ff458f2c",
+    "op_key": null
+   }
+  ],
+  "expected_contributors": null,
+  "op_state": "none"
  },
  {
   "name": "abandoned_output_is_malformed",
@@ -623,7 +806,8 @@
    "evidence_ref": "ev-1",
    "lineage": false
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": null,
   "op_state": "abandoned"
  },
  {
@@ -637,7 +821,8 @@
    "evidence_ref": "ev-1",
    "lineage": false
   },
-  "ledger": "none",
+  "rows": "none",
+  "expected_contributors": null,
   "op_state": "weird"
  },
  {
@@ -682,5 +867,10 @@
   "filters": {
    "source_id": "agent-1"
   }
+ },
+ {
+  "name": "shared_pool_key_reserved_nondigest",
+  "kind": "shared_pool_key",
+  "expect": "pool:unidentified"
  }
 ]

@@ -1,73 +1,88 @@
-"""specs/0020 §4a-ii — the NORMATIVE reference for the scope surface (v4).
+"""specs/0020 §4a-ii — the NORMATIVE reference for the scope surface (v5).
 
-PORTABLE AND PURE: no I/O, no external paths, no store dependency. Two
-conforming implementations must agree with this module on every input; the
-pinned vectors live beside it in `vectors.json` and 0020 V10 binds the
-shipped implementation to both.
+PORTABLE AND PURE: no I/O, no store dependency. Two conforming
+implementations must agree with this module on every input; the pinned
+vectors live beside it in `vectors.json`, the SHIPPED HARNESS
+(`vector_harness.py`) executes them, and 0020 V10 binds implementations to
+both.
 
-v4 (external round 2): (R2-1) identity semantics are ACCEPTED 0006's,
-verbatim — **an absent `source_id` means NO groupable identity, regardless
-of origin (I13); absence never relaxes a rule (I3)** — so "unidentified"
-is `source_id is None`, not `(None, None)`; principals and group members
-REQUIRE a source_id; validation is strict-typed (the 0019 F7 posture:
-`cross_scope_visible` must be a real bool — "false" REFUSES) and policies
-are RECURSIVELY FROZEN at validation (the returned canonical policy admits
-no post-validation mutation; the mutation oracle is vectored). (R2-2) a
-principal WITHOUT a configured policy REFUSES — feature-disabled and
-configured-empty are distinct states. (R2-3) the record→membership
-RESOLVER is normative here: `membership()` converts a record's raw
-identity + ledger evidence + operation/import state into the evidence
-`classify()` consumes — the 0020↔0021 seam, mechanical.
+v5 (external round 3): **membership lives in DIGEST SPACE** (R3-2 — the
+0014 ledger carries only nullable one-way `identity_digest` values;
+deleted inputs cannot supply original pairs, so a resolver demanding
+Identity pairs was unimplementable). This module MIRRORS the shipped
+digest construction byte-for-byte (`veracium.source-id.v1`, 4-byte BE
+framing — 0006 §4 rules 6/7) so policy-side digests equal store-side
+digests. The resolver consumes REAL `ContributionRecord` shapes; the
+legacy predicate matches the REAL op-id form (`op-<12 hex>` — the
+reviewer's store probe); ABSORPTION survivors are resolved through their
+ledger rows (R3-3 — a cross-digest absorption contributor marks the
+survivor UNRESOLVED, closing the legacy-absorption read leak).
+`ScopePolicy` cannot be constructed unvalidated (R3-1 — `__post_init__`
+enforces the canonical frozen shapes, `classify` revalidates at
+consumption); identity fields carry the shipped 512-char bounds.
 """
 
 from __future__ import annotations
 
+import hashlib
+import re
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Optional
 
 VALID_FILTER_FIELDS = ("subject", "relation", "author_of_evidence",
                        "source_id", "volatility")
-
-#: 0021's operation states at recovery time (accepted 0010's vocabulary) —
-#: the resolver is TOTAL over these (R2-3)
 OP_STATES = ("none", "generating", "outputs_durable", "finalized",
              "abandoned")
+IDENTITY_MAX = 512                     # the shipped Provenance field bounds
+
+#: the shipped digest construction, mirrored EXACTLY (0006 §4 rules 6/7)
+_DOMAIN = b"veracium.source-id.v1"
+
+#: the REAL consolidation operation-id shape (store/sqlite.py:
+#: f"op-{uuid4().hex[:12]}") — the round-3 store probe's form
+_OP_ID = re.compile(r"^op-[0-9a-f]{12}$")
+
+#: the reserved SHARED-POOL key (R3-4): digests are 64 hex chars, so a
+#: colon-bearing literal can never collide with one
+SHARED_POOL_KEY = "pool:unidentified"
 
 
 class PolicyError(ValueError):
-    """Raised at CONFIG LOAD or by the resolver's own validation — never
-    silently widened past."""
+    """Raised at CONFIG LOAD, at consumption revalidation, or by the
+    resolver's own validation — never silently widened past."""
+
+
+def _framed(b: bytes) -> bytes:
+    return len(b).to_bytes(4, "big") + b
 
 
 # ---- Identity --------------------------------------------------------------
 
 @dataclass(frozen=True)
 class Identity:
-    """The (origin, source_id) pair — 0006's namespacing identity, verbatim.
-    NOT authenticated (0006 R7)."""
+    """The (origin, source_id) pair — 0006's namespacing identity, verbatim;
+    strict-typed with the SHIPPED bounds (non-empty, ≤512 chars — R3-1)."""
     origin: Optional[str]
     source_id: Optional[str]
 
     def __post_init__(self):
         for f in (self.origin, self.source_id):
-            if f is not None and (not isinstance(f, str) or not f):
-                raise PolicyError(f"identity field {f!r} must be a non-empty "
-                                  f"string or None (strict types, R2-1)")
+            if f is not None and (not isinstance(f, str)
+                                  or not 1 <= len(f) <= IDENTITY_MAX):
+                raise PolicyError(
+                    f"identity field must be a 1..{IDENTITY_MAX}-char string "
+                    f"or None (the shipped Provenance bounds), got {f!r}")
 
     @property
     def groupable(self) -> bool:
         """0006 I13: an absent source_id yields NO groupable identity —
-        REGARDLESS of origin. (origin-only identities are exactly the
-        pseudo-source I13 forbids.)"""
+        regardless of origin."""
         return self.source_id is not None
 
 
 def resolve(identity: Identity, local_origin: str) -> Identity:
-    """0006 I9: an absent origin resolves to the local store's singleton —
-    uniformly, including for source_id-less identities (R2-1: the v3
-    special case contradicted I9). Groupability is judged AFTER resolution
-    and is source_id's alone (I13)."""
+    """0006 I9: absent origin → the local singleton, uniformly."""
     if not isinstance(local_origin, str) or not local_origin:
         raise PolicyError("local_origin must be a non-empty string")
     if identity.origin is None:
@@ -75,139 +90,164 @@ def resolve(identity: Identity, local_origin: str) -> Identity:
     return identity
 
 
+def digest_of(identity: Identity, local_origin: str) -> Optional[str]:
+    """The SHIPPED `source_identity_digest`, mirrored byte-for-byte over the
+    RESOLVED pair: None when source_id is absent (I13 — and therefore the
+    shared pool has NO digest key; see SHARED_POOL_KEY, R3-4)."""
+    r = resolve(identity, local_origin)
+    if r.source_id is None:
+        return None
+    payload = (_DOMAIN + _framed(r.origin.encode("utf-8"))
+               + _framed(r.source_id.encode("utf-8")))
+    return hashlib.sha256(payload).hexdigest()
+
+
 def same_identity(a: Identity, b: Identity, local_origin: str) -> bool:
-    """Resolved equality — defined ONLY over groupable identities: a
-    source_id-less identity equals nothing, including itself (I13/I3;
-    absent==absent is never SAME)."""
-    ra, rb = resolve(a, local_origin), resolve(b, local_origin)
-    if not ra.groupable or not rb.groupable:
+    """Resolved-digest equality; a non-groupable identity equals nothing,
+    including itself (I13/I3)."""
+    da, db = digest_of(a, local_origin), digest_of(b, local_origin)
+    return da is not None and da == db
+
+
+# ---- ScopePolicy — unconstructable unvalidated (R3-1) ----------------------
+
+def _canonical_groups_ok(groups) -> bool:
+    if not isinstance(groups, MappingProxyType):
         return False
-    return ra == rb
+    for name, members in groups.items():
+        if not isinstance(name, str) or not isinstance(members, tuple):
+            return False
+        if not all(isinstance(m, Identity) and m.groupable for m in members):
+            return False
+    return True
 
-
-# ---- ScopePolicy -----------------------------------------------------------
 
 @dataclass(frozen=True)
 class ScopePolicy:
-    """Canonical FROZEN form: `groups` is a MappingProxy of name -> tuple of
-    Identity (frozen dataclasses). Construct via `validate_policy` — direct
-    construction with mutable state is refused there; the returned object
-    admits no post-validation mutation (R2-1's oracle)."""
+    """CANONICAL FROZEN form only: `groups` MUST be a MappingProxy of
+    name → tuple of groupable Identity; `cross_scope_visible` MUST be a
+    real bool; `group_digests` is the precomputed frozen digest map.
+    **Direct construction with any other shape RAISES (R3-1)** — and
+    `classify` revalidates at consumption, so even a hypothetical bypass
+    is caught where it would matter."""
     groups: object
-    cross_scope_visible: bool = False
+    cross_scope_visible: bool
+    group_digests: object              # MappingProxy name -> frozenset[str]
+
+    def __post_init__(self):
+        if not isinstance(self.cross_scope_visible, bool):
+            raise PolicyError(
+                f"cross_scope_visible must be a real bool, got "
+                f"{self.cross_scope_visible!r} (R3-1 — direct construction "
+                f"does not bypass validation)")
+        if not _canonical_groups_ok(self.groups):
+            raise PolicyError(
+                "ScopePolicy must be constructed via validate_policy — "
+                "groups must be the canonical frozen form (R3-1)")
+        if not isinstance(self.group_digests, MappingProxyType):
+            raise PolicyError("group_digests must be the validator's frozen "
+                              "map — construct via validate_policy (R3-1)")
 
 
-def validate_policy(groups: dict, cross_scope_visible: bool = False,
+def validate_policy(groups, cross_scope_visible=False,
                     *, local_origin: str) -> ScopePolicy:
-    """The load-time validator — returns the CANONICAL FROZEN policy or
-    raises. Refusals, enumerated (R2-1 extends v3's set):
-    (a) non-Identity rule shapes / non-string names;
-    (b) a NON-GROUPABLE identity in any group (source_id absent — I13; the
-        v3 rule refused only (None, None));
-    (c) an identity (resolved) in more than one group — no precedence
-        order exists;
-    (d) `cross_scope_visible` not a REAL bool ("false"/0/1 REFUSE — the
-        0019 F7 strict posture; a truthy string silently widened v3);
-    (e) non-mapping groups / non-sequence members."""
+    """The factory. Refusals: non-mapping groups; members not a LIST or
+    TUPLE (sets/other iterables REFUSED — unordered inputs are not a rule
+    grammar, R3-1); non-Identity members; non-groupable members (I13);
+    resolved-digest overlap across groups; non-bool cross_scope_visible.
+    The input is never retained — canonical frozen copies only."""
     if not isinstance(cross_scope_visible, bool):
         raise PolicyError(
             f"cross_scope_visible must be a real bool, got "
-            f"{cross_scope_visible!r} (strict — a truthy string would "
-            f"silently widen visibility; R2-1 (d))")
+            f"{cross_scope_visible!r}")
     if not isinstance(groups, dict):
-        raise PolicyError("groups must be a mapping (R2-1 (e))")
+        raise PolicyError("groups must be a mapping")
     seen: dict = {}
-    frozen_groups = {}
+    frozen_groups, frozen_digests = {}, {}
     for name, members in groups.items():
         if not isinstance(name, str) or not name:
             raise PolicyError(f"group name {name!r} is not a non-empty string")
-        if isinstance(members, (str, bytes)) or not hasattr(members, "__iter__"):
-            raise PolicyError(f"group {name!r} members must be a sequence")
-        out = []
+        if not isinstance(members, (list, tuple)):
+            raise PolicyError(
+                f"group {name!r} members must be a list or tuple, got "
+                f"{type(members).__name__} (sets and other iterables are "
+                f"REFUSED — R3-1)")
+        out, digs = [], set()
         for m in members:
             if not isinstance(m, Identity):
                 raise PolicyError(f"group {name!r} carries a non-Identity "
-                                  f"rule shape {m!r} (R2-1 (a))")
+                                  f"rule shape {m!r}")
             if not m.groupable:
                 raise PolicyError(
-                    f"group {name!r} contains a source_id-less identity — "
-                    f"an absent source_id yields NO groupable identity, "
-                    f"regardless of origin (0006 I13; R2-1 (b))")
-            r = resolve(m, local_origin)
-            if r in seen and seen[r] != name:
+                    f"group {name!r} contains a source_id-less identity "
+                    f"(0006 I13 — no groupable identity)")
+            d = digest_of(m, local_origin)
+            if d in seen and seen[d] != name:
                 raise PolicyError(
-                    f"identity {r!r} appears in groups {seen[r]!r} and "
-                    f"{name!r} — overlap is REFUSED at load (c)")
-            seen[r] = name
-            out.append(m)
+                    f"identity digest {d[:12]}… appears in groups "
+                    f"{seen[d]!r} and {name!r} — overlap is REFUSED at load")
+            seen[d] = name
+            out.append(m); digs.add(d)
         frozen_groups[name] = tuple(out)
+        frozen_digests[name] = frozenset(digs)
     return ScopePolicy(groups=MappingProxyType(frozen_groups),
-                       cross_scope_visible=cross_scope_visible)
+                       cross_scope_visible=cross_scope_visible,
+                       group_digests=MappingProxyType(frozen_digests))
 
 
-def _group_of(identity: Identity, policy: ScopePolicy,
-              local_origin: str) -> Optional[str]:
-    if not identity.groupable:
-        return None
-    r = resolve(identity, local_origin)
-    for name, members in policy.groups.items():
-        for m in members:
-            if resolve(m, local_origin) == r:
-                return name
-    return None
+def _revalidate(policy: ScopePolicy) -> None:
+    """Consumption-time revalidation (R3-1, defence in depth)."""
+    if not isinstance(policy, ScopePolicy):
+        raise PolicyError("policy must be a ScopePolicy")
+    if not isinstance(policy.cross_scope_visible, bool) \
+            or not _canonical_groups_ok(policy.groups):
+        raise PolicyError("policy failed consumption revalidation (R3-1)")
 
 
-# ---- the record→membership RESOLVER (R2-3 — the 0020↔0021 seam) -----------
+# ---- the record→membership RESOLVER — DIGEST SPACE (R3-2 / R3-3) -----------
 
 UNRESOLVED = "UNRESOLVED"
 SHARED = "SHARED_POOL"
 
-#: the normative LEGACY-DERIVATIVE predicate (R2-3: "described, not given"
-#: in v3): a record is legacy-derivative-shaped iff it is SYSTEM-authored
-#: AND its evidence_ref carries the consolidation operation-id shape AND it
-#: still carries a groupable identity (the pre-fix copied identity). Such
-#: an identity is NEVER trusted as membership evidence.
+
 def is_legacy_derivative(record: dict) -> bool:
+    """The REAL shape (R3-2 — the store probe): a consolidation output's
+    `evidence_ref` is its operation id, `op-<12 hex>`; a legacy (pre-0021)
+    output still carries the copied groupable identity."""
     return (record.get("author") == "system"
-            and str(record.get("evidence_ref", "")).startswith("consolidate:")
+            and bool(_OP_ID.match(str(record.get("evidence_ref", ""))))
             and record.get("source_id") is not None)
 
 
-def membership(record: dict, ledger: Optional[dict], op_state: str,
-               local_origin: str):
-    """record + ledger + operation state → membership evidence (R2-3).
+def membership(record: dict, rows: Optional[list], op_state: str,
+               local_origin: str, *, expected_contributors: Optional[int] = None):
+    """record + REAL ledger rows + operation state → membership evidence:
+    a DIGEST (str), SHARED, or UNRESOLVED (fail-closed).
 
-    `record`: {"author": "user"|"system"|..., "origin", "source_id",
-    "evidence_ref", "lineage": bool} — the provenance-shape fields the
-    resolver consumes. `ledger`: None (no rows — legacy/imported/absent) or
-    {"complete": bool, "contributor_identities": [Identity…]} — the 0014
-    join, with the exact-set completeness verdict the store computes.
-    `op_state`: the 0010 state that produced the record ("none" for
-    ordinary host records). Returns an Identity (groupable membership),
-    SHARED (the host-produced pool), or UNRESOLVED (fail-closed).
+    `record`: {"author", "origin", "source_id", "evidence_ref",
+    "lineage": bool} — the provenance-shape fields. `rows`: the record's
+    `ContributionRecord`s AS SHIPPED — [{"site": "absorption" |
+    "consolidation", "identity_digest": str|None, "op_key": str|None}] —
+    keyed by survivor_id (None/[] = no rows). `expected_contributors`: the
+    completeness denominator the store derives (lineage length for
+    consolidation outputs; None = unknown → incomplete).
 
     The table, total:
-    - ordinary host record, groupable identity → that identity (resolved).
-    - ordinary host record, no groupable identity → SHARED (C3's floor —
-      host-produced only).
-    - legacy-derivative-shaped (the predicate above) → UNRESOLVED — its
-      copied identity is never membership evidence, whatever it claims.
-      This INCLUDES pre-feature OUTPUTS_DURABLE operations finalized by
-      recovery: recovery cannot clear an already-written output (the
-      reviewer's executed trace), so those outputs keep their stale copied
-      identity and are caught HERE, by shape, not by recovery.
-    - store-authored derivative (lineage/system-authored, identity cleared):
-      ledger present AND complete AND all contributor identities groupable
-      AND same resolved scope → that scope's Identity;
-      contributors all non-groupable → SHARED (the pool's derivatives stay
-      in the pool);
-      mixed scopes / partial / absent ledger → UNRESOLVED.
-    - op_state "generating" (an in-flight claim at read time) → the record
-      is not yet a settled output; its membership is UNRESOLVED until
-      finalization re-resolves it.
-    - "abandoned" outputs do not exist (0010 rolls them back) — the state
-      is listed for totality; a record claiming it is malformed → refuse.
-    """
+    - legacy-shaped (the predicate) → UNRESOLVED, whatever it claims.
+    - "generating" → UNRESOLVED until finalization; "abandoned" → refuse
+      (no output exists, 0010).
+    - ABSORPTION SURVIVOR (a non-lineage record WITH absorption rows —
+      R3-3): any row's identity_digest differing from the record's own
+      digest (None counts as differing from a digest, and a digest from
+      None) → UNRESOLVED — a pre-0021 absorption moved another identity's
+      testimony into this record and the ledger says so. All rows matching
+      the own digest → the own digest.
+    - consolidation output (lineage): rows None/empty or
+      expected_contributors unknown/mismatched → UNRESOLVED (incomplete).
+      All identity_digest one non-null value → that digest. All None →
+      SHARED (the pool's derivatives stay pooled). Mixed → UNRESOLVED.
+    - ordinary host record, no rows: own digest, or SHARED when
+      non-groupable (C3's floor — host-produced only)."""
     if op_state not in OP_STATES:
         raise PolicyError(f"unknown operation state {op_state!r} — the set "
                           f"is closed: {OP_STATES}")
@@ -218,29 +258,31 @@ def membership(record: dict, ledger: Optional[dict], op_state: str,
         return UNRESOLVED
     if op_state == "generating":
         return UNRESOLVED
-    own = Identity(record.get("origin"), record.get("source_id"))
-    is_derivative = bool(record.get("lineage"))
-    if not is_derivative:
-        if own.groupable:
-            return resolve(own, local_origin)
-        return SHARED
-    # store-authored derivative: membership travels through the ledger only
-    if ledger is None or not ledger.get("complete"):
+    own = digest_of(Identity(record.get("origin"), record.get("source_id")),
+                    local_origin)
+    is_lineage = bool(record.get("lineage"))
+    rows = rows or []
+    if not is_lineage:
+        ab = [r for r in rows if r.get("site") == "absorption"]
+        if ab:                                            # R3-3
+            for r in ab:
+                if r.get("identity_digest") != own:
+                    return UNRESOLVED
+        return own if own is not None else SHARED
+    # consolidation output
+    cons = [r for r in rows if r.get("site") == "consolidation"]
+    if (not cons or expected_contributors is None
+            or len(cons) != expected_contributors):
         return UNRESOLVED
-    contribs = ledger.get("contributor_identities", [])
-    if not contribs:
-        return UNRESOLVED
-    if all(not c.groupable for c in contribs):
+    digs = {r.get("identity_digest") for r in cons}
+    if digs == {None}:
         return SHARED
-    if any(not c.groupable for c in contribs):
-        return UNRESOLVED                      # mixed identified/unidentified
-    scopes = {resolve(c, local_origin) for c in contribs}
-    if len(scopes) == 1:
-        return next(iter(scopes))
-    return UNRESOLVED
+    if None in digs or len(digs) != 1:
+        return UNRESOLVED
+    return next(iter(digs))
 
 
-# ---- the visibility decision ----------------------------------------------
+# ---- the visibility decision (DIGEST space) --------------------------------
 
 DECISION_TABLE = {
     "OWN": (True, "own"),
@@ -251,45 +293,42 @@ DECISION_TABLE = {
 }
 
 
+def _group_of_digest(d: str, policy: ScopePolicy) -> Optional[str]:
+    for name, digs in policy.group_digests.items():
+        if d in digs:
+            return name
+    return None
+
+
 def classify(record_evidence, principal: Optional[Identity],
              policy: Optional[ScopePolicy], local_origin: str) -> str:
-    """The §4a-ii decision function over the RESOLVER's output.
-
-    `principal=None` is the UNSCOPED surface: everything is OWN —
-    byte-identical to today, the migration invariant. **A principal WITHOUT
-    a policy REFUSES (R2-2): feature-disabled (policy None) cannot honour a
-    principal-bearing call and never silently becomes unscoped.** A
-    CONFIGURED-EMPTY policy (no groups) is a valid state: the principal is
-    ungrouped — own-identity records are OWN, the pool is SHARED, every
-    other identified record is CROSS."""
+    """`record_evidence` is the RESOLVER's output: a digest string, SHARED,
+    or UNRESOLVED. `principal=None` → unscoped, everything OWN. A principal
+    WITHOUT a policy REFUSES (R2-2); a source_id-less principal REFUSES
+    (I13). The policy is REVALIDATED at consumption (R3-1)."""
     if principal is None:
         return "OWN"
     if policy is None:
         raise PolicyError(
             "a principal was supplied but no scope policy is configured — "
-            "feature-disabled cannot honour a principal-bearing call; "
-            "configure a policy (possibly empty) or call unscoped (R2-2)")
+            "feature-disabled cannot honour a principal-bearing call (R2-2)")
+    _revalidate(policy)
     if not principal.groupable:
-        raise PolicyError(
-            "a principal must carry a source_id — an absent source_id "
-            "yields no groupable identity (0006 I13; R2-1)")
+        raise PolicyError("a principal must carry a source_id (0006 I13)")
     if record_evidence == UNRESOLVED:
         return "UNRESOLVED"
     if record_evidence == SHARED:
         return "SHARED"
-    if not isinstance(record_evidence, Identity):
-        raise PolicyError(f"record evidence {record_evidence!r} is not an "
-                          f"Identity / SHARED_POOL / UNRESOLVED")
-    if not record_evidence.groupable:
-        # the resolver never emits these for records; defensive totality
-        return "SHARED"
-    pg = _group_of(principal, policy, local_origin)
-    rg = _group_of(record_evidence, policy, local_origin)
-    if rg is None:
-        if same_identity(record_evidence, principal, local_origin):
-            return "OWN"
-        return "CROSS_VISIBLE" if policy.cross_scope_visible else "CROSS_HIDDEN"
-    if pg is not None and pg == rg:
+    if not (isinstance(record_evidence, str)
+            and re.fullmatch(r"[0-9a-f]{64}", record_evidence)):
+        raise PolicyError(f"record evidence {record_evidence!r} is not a "
+                          f"digest / SHARED_POOL / UNRESOLVED")
+    pd = digest_of(principal, local_origin)
+    if record_evidence == pd:
+        return "OWN"
+    pg = _group_of_digest(pd, policy)
+    rg = _group_of_digest(record_evidence, policy)
+    if rg is not None and pg is not None and pg == rg:
         return "OWN"
     return "CROSS_VISIBLE" if policy.cross_scope_visible else "CROSS_HIDDEN"
 
@@ -317,10 +356,9 @@ def validate_filters(filters: Optional[dict]) -> dict:
 
 
 def apply_filters(records: list, filters: dict) -> list:
-    """M-2: after scope, within the visible set; narrow only. NOTE (R2-3):
-    a `source_id` filter never matches a store-authored derivative — its
-    identity is CLEARED and the ledger retains only a one-way digest; the
-    filter operates on the record's own field, which is None."""
+    """M-2: after scope, within the visible set; narrow only. A `source_id`
+    filter never matches a cleared derivative (its field is None; the
+    ledger holds only a one-way digest)."""
     out = records
     for k, v in filters.items():
         out = [r for r in out if r.get(k) is not None and str(r.get(k)) == v]
