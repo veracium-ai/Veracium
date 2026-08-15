@@ -128,12 +128,17 @@ exactly:
   groupable identity, REGARDLESS of origin (I13); absence never relaxes a
   rule (I3).** A non-groupable identity equals nothing, including itself;
   a PRINCIPAL must be groupable (a source_id-less principal REFUSES).
-- **`ScopePolicy`**: UNCONSTRUCTABLE UNVALIDATED (external R3-1 — the v4
-  factory could be bypassed by direct construction): `__post_init__`
-  enforces the canonical frozen shapes (MappingProxy + tuples + real
-  bool + the precomputed frozen digest map), so `ScopePolicy(groups={...},
-  cross_scope_visible="false")` RAISES; and `classify` REVALIDATES at
-  consumption, defence in depth. `validate_policy` refusals, enumerated:
+- **`ScopePolicy`**: SEALED (external R4-1 — shape checks alone were
+  still bypassable by a canonical-LOOKING inconsistent digest map, a
+  mutated backing mapping, or `object.__setattr__`): `validate_policy`
+  computes a SEAL over the ENTIRE canonical projection (groups + digests
+  + the bool) with a module-private nonce, retains no caller state
+  (fresh local backing), and `classify` RECOMPUTES both the digest map
+  AND the seal at every consumption — the reviewer's three executed
+  bypasses are refusal vectors by name (`inconsistent_digest_map`,
+  `backing_map_mutation`, `setattr_flip`). Shape checks remain the first,
+  cheaper line; `ScopePolicy(groups={...}, cross_scope_visible="false")`
+  still RAISES at construction. `validate_policy` refusals, enumerated:
   non-Identity shapes; non-groupable members (I13); resolved-DIGEST
   overlap across groups; `cross_scope_visible` not a REAL bool ("false" /
   0 / 1 refuse — actual ints vectored, R3-1); members not a LIST or TUPLE
@@ -180,7 +185,7 @@ exactly:
   field is None; the ledger holds only a one-way digest — R2-3, a named
   vector). Every extension is a spec change.
 
-The 56 vectors enumerate every `classify` cell (both refusal states),
+The 59 vectors enumerate every `classify` cell (both refusal states),
 every policy-refusal cell (real ints, sets, bounds), the
 DIRECT-CONSTRUCTION oracle (the reviewer's executed bypass, cell by
 cell), the mutation oracle, the FULL resolver table over REAL row shapes
@@ -217,7 +222,17 @@ store with NO source_id (the store-authored shape), in order:
    outputs; IMPORTED derivatives (the ledger is local-only and does not
    travel — the reviewer's export/import probe); outputs of pre-feature
    IN-FLIGHT operations completed by recovery; any derivative whose
-   ledger rows fail the completeness check. **Missing membership evidence
+   ledger rows fail the completeness check. **IMPORTED ABSORPTION
+   SURVIVORS (found by the round-4 real-store harness — the round-3 leak's
+   import form): an absorption survivor crossing export/import loses its
+   ledger rows and would resolve by its claimed identity. The import-time
+   RECONSTRUCTION rule closes it: absorption linkage is reconstructible
+   from the exported records themselves — an imported edge named as the
+   winner in another imported record's `absorbed_by:` note, where that
+   absorbed record carries a DIFFERENT resolved identity, is
+   cross-identity-absorbed → UNRESOLVED on the destination. The residual
+   narrows to absorbed priors that were themselves pruned before export —
+   the same fixed pre-0014-class shape, stated.** **Missing membership evidence
    never silently means "shared."** The operator remedies are restatement
    or re-derivation under 0021; materializing membership at export is a
    recorded widening (a FORMAT change, deliberately not v1).

@@ -115,6 +115,7 @@ def _run_one(v, policies):
         return None
     if kind == "direct_construction":
         a = v["attempt"]
+        from reference_scope import classify as _cl, digest_of as _dg
         def attempt():
             if a == "raw_dict_groups":
                 ScopePolicy(groups={"t": [I(A1)]}, cross_scope_visible=False,
@@ -129,6 +130,40 @@ def _run_one(v, policies):
                 ScopePolicy(groups=MappingProxyType({"t": [I(A1)]}),
                             cross_scope_visible=False,
                             group_digests=ok.group_digests)
+            elif a == "inconsistent_digest_map":
+                # R4-1 (executed by the reviewer): canonical-LOOKING groups
+                # with a digest map claiming B is in A's group — the
+                # construction may pass shape checks; CONSUMPTION must refuse
+                from types import MappingProxyType
+                ok = validate_policy({"ga": [I(A1)]}, False,
+                                     local_origin=LOCAL)
+                forged = ScopePolicy(
+                    groups=ok.groups, cross_scope_visible=False,
+                    group_digests=MappingProxyType(
+                        {"ga": frozenset({_dg(I(A1), LOCAL),
+                                          _dg(I({"origin": "org-b",
+                                                 "source_id": "agent-9"}),
+                                              LOCAL)})}),
+                    seal=ok.seal)
+                _cl(_dg(I({"origin": "org-b", "source_id": "agent-9"}),
+                        LOCAL), I(A1), forged, LOCAL)
+            elif a == "backing_map_mutation":
+                from types import MappingProxyType
+                ok = validate_policy({"ga": [I(A1)]}, False,
+                                     local_origin=LOCAL)
+                backing = {"ga": ok.groups["ga"]}
+                mutated = ScopePolicy(groups=MappingProxyType(backing),
+                                      cross_scope_visible=False,
+                                      group_digests=ok.group_digests,
+                                      seal=ok.seal)
+                backing["gb"] = (I(A2),)          # mutate AFTER construction
+                _cl(_dg(I(A2), LOCAL), I(A1), mutated, LOCAL)
+            elif a == "setattr_flip":
+                ok = validate_policy({"ga": [I(A1)]}, False,
+                                     local_origin=LOCAL)
+                object.__setattr__(ok, "cross_scope_visible", True)
+                _cl(_dg(I({"origin": "org-b", "source_id": "agent-9"}),
+                        LOCAL), I(A1), ok, LOCAL)
             else:
                 raise AssertionError(f"unknown attempt {a}")
         return _expect_err(attempt)

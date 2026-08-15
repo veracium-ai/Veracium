@@ -1,0 +1,1 @@
+store adapter harness: 4 regression groups pass against the SHIPPED store

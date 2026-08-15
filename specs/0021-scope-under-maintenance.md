@@ -35,9 +35,15 @@ store MERGES. Consequences, stated:
 - W1 becomes unconditional — no host's missing policy defeats it.
 - **Behaviour change, disclosed:** an identity-BEARING store gets
   partitioned consolidation even if no host ever configures a policy
-  (previously global). Stores with NO identities are byte-identical to
-  today (the migration invariant) — partitioning needs identities to
-  partition on, so the unidentified world never changes.
+  (previously global). Stores with NO identities: STORED STATE and the
+  preserved top-level result VALUES are identical to today — **the result
+  SHAPE is not (external R4-2, executed against our own robustness
+  checker: the additive `pools`/`pools_ok`/`pools_failed` keys are new
+  for every store, and `tests/robustness/invariants.py` as shipped
+  REJECTS the dict-valued key). Every identity-free "byte-identical"
+  claim is narrowed to state-and-values; the carrier sweep (§4b) now
+  names the robustness checker, the exact-result lifecycle tests, and
+  docs/api.md as implementation-obligation updates.**
 - **Reversibility, restated honestly (the reviewer's cell):**
   "config-only reversibility" applies to READ visibility only (0020 §7).
   Maintenance conduct is not configuration, and consolidation's effects —
@@ -142,13 +148,21 @@ one claim. The v1 construction replaces it:
    the colon makes collision impossible).** "A committed, B failed, C/D
    ran anyway" is representable and tested by the FAULT-INJECTION MATRIX
    over every pool phase × later-pool continuation (W12), THROUGH BOTH
-   CARRIERS (external R3-5): the AUDIT contract is the existing aggregate
-   `maintain` event PRESERVED (compatibility) plus one ADDITIVE per-pool
-   event `{op: "consolidate-pool", pool_key, status, consolidated, into,
-   error?}` per attempted pool — a failed pool reaches the audit sink by
-   its own event, never swallowed by the catch; W12 asserts the audit
-   sink saw N pool events + the aggregate AND that telemetry's mapping
-   reads the preserved keys unchanged.
+   CARRIERS (external R3-5): the AUDIT CONTRACT IS FORMALLY AMENDED
+   (external R4-3 — the shipped contract is one JSON line per operation
+   and `tests/test_audit.py` asserts exact sequences; a silent cardinality
+   change would break both): `audit.py`'s documented contract, its tests,
+   and §7a all carry the new cardinality — the aggregate `maintain` event
+   PRESERVED plus one ADDITIVE per-pool event `{op: "consolidate-pool",
+   pool_key, status, consolidated, into, error_code?}` per attempted
+   pool. **`error_code` is a CLOSED CONTENT-FREE enum — {llm-error,
+   store-error, claim-contention, validation-error, timeout} — NEVER
+   `str(exc)`: an LLM exception can echo prompt or episode text, and the
+   AuditLog's "no memory text ever" invariant forbids it (external R4-3's
+   leak). W12 gains the ADVERSARIAL cell: a pool's exception carrying a
+   planted secret episode string — the secret provably absent from the
+   audit sink.** W12 asserts the sink saw N pool events + the aggregate
+   AND telemetry's preserved-key mapping unchanged.
 5. **Concurrency:** two hosts consolidating concurrently contend per-pool
    through the existing 0010 claim machinery — no new locking; a contended
    pool reports `"contended"` and later pools continue.
@@ -219,7 +233,7 @@ release takes it, W1 carries the operational narrowing in its own text.**
 | W9 UNRESOLVED fail-closed, per population (legacy / imported / recovered / incomplete-ledger): excluded from every merge pool, invisible scoped, visible unscoped | `test_unresolved_populations_fail_closed` *(offline)* |
 | W10 per-pool thresholds: the 4A+4B/min-8 no-op cell + per-pool trigger independence | `test_per_scope_thresholds` *(offline)* |
 | W11 partitioning is policy-independent: an identity-bearing store with NO policy partitions identically to the same store with one | `test_partition_is_policy_independent` *(offline)* |
-| W12 the fault-injection matrix (R2-5/R3-5): every pool phase × later-pool continuation, asserted through BOTH carriers — the additive-superset return (existing keys verbatim) AND the audit sink (aggregate + per-pool events; a failed pool's event present) AND telemetry's preserved-key mapping | `test_per_pool_fault_matrix` *(offline)* |
+| W12 the fault-injection matrix (R2-5/R3-5/R4-3): every pool phase × later-pool continuation, through ALL carriers — the additive-superset return, the amended audit contract (aggregate + per-pool events; closed error codes; **the planted-secret adversarial cell: an exception carrying episode text never reaches the sink**), telemetry's preserved keys, the robustness checker, and the exact-result lifecycle tests | `test_per_pool_fault_matrix` *(offline)* |
 | W13 absorption survivors resolve through ledger rows; the cross-digest cell fails closed (R3-3 — shared with 0020 V14) | `test_absorption_survivor_membership` *(offline)* |
 
 ## 7. Failure modes and reversibility
@@ -239,6 +253,8 @@ amendment, never a silent relaxation.
 | `store/sqlite._derive_output_metadata` | identity clearing (W8) |
 | `graph.py` (absorption) | the same-scope candidate requirement |
 | `COMBINING_SITES` + `specs/generated/0021-combining-sites.md` | the mechanical totality carrier (F4) |
+| `audit.py` + `tests/test_audit.py` + docs | the amended cardinality contract (aggregate + per-pool events) and the closed error-code enum (R4-3) |
+| `tests/robustness/invariants.py` + lifecycle exact-result tests | updated for the additive-superset result (R4-2) |
 | docs | the behaviour change for identity-bearing stores; the UNRESOLVED operator remedies |
 
 ### 7b. Cross-spec carriers

@@ -872,5 +872,23 @@
   "name": "shared_pool_key_reserved_nondigest",
   "kind": "shared_pool_key",
   "expect": "pool:unidentified"
+ },
+ {
+  "name": "direct_construction_inconsistent_digest_map_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "inconsistent_digest_map"
+ },
+ {
+  "name": "direct_construction_backing_map_mutation_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "backing_map_mutation"
+ },
+ {
+  "name": "direct_construction_setattr_flip_refused",
+  "kind": "direct_construction",
+  "expect": "PolicyError",
+  "attempt": "setattr_flip"
  }
 ]

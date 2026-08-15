@@ -6,7 +6,7 @@ vectors live beside it in `vectors.json`, the SHIPPED HARNESS
 (`vector_harness.py`) executes them, and 0020 V10 binds implementations to
 both.
 
-v5 (external round 3): **membership lives in DIGEST SPACE** (R3-2 — the
+v6 (round 4: the SEALED policy — see ScopePolicy). v5 (external round 3): **membership lives in DIGEST SPACE** (R3-2 — the
 0014 ledger carries only nullable one-way `identity_digest` values;
 deleted inputs cannot supply original pairs, so a resolver demanding
 Identity pairs was unimplementable). This module MIRRORS the shipped
@@ -111,6 +111,34 @@ def same_identity(a: Identity, b: Identity, local_origin: str) -> bool:
 
 # ---- ScopePolicy — unconstructable unvalidated (R3-1) ----------------------
 
+#: module-private sealing nonce, minted at import (R4-1): the seal binds
+#: the ENTIRE canonical projection (groups, digests, the bool) so a
+#: direct construction with an inconsistent digest map, a mutated backing
+#: mapping, or an object.__setattr__ flip all fail the consumption check —
+#: none can recompute the seal without this module's nonce.
+import secrets as _secrets
+_SEAL_NONCE = _secrets.token_bytes(32)
+
+
+def _canonical_projection(groups, cross_scope_visible, local_origin) -> bytes:
+    parts = [b"veracium.scope-policy.v1",
+             b"1" if cross_scope_visible else b"0"]
+    for name in sorted(groups):
+        parts.append(_framed(name.encode("utf-8")))
+        for m in sorted(groups[name],
+                        key=lambda i: (i.origin or "", i.source_id or "")):
+            parts.append(_framed((m.origin or "").encode("utf-8")))
+            parts.append(_framed((m.source_id or "").encode("utf-8")))
+            parts.append(_framed(digest_of(m, local_origin).encode("utf-8")))
+    return b"".join(parts)
+
+
+def _seal(groups, cross_scope_visible, local_origin) -> str:
+    return hashlib.sha256(
+        _SEAL_NONCE + _canonical_projection(groups, cross_scope_visible,
+                                            local_origin)).hexdigest()
+
+
 def _canonical_groups_ok(groups) -> bool:
     if not isinstance(groups, MappingProxyType):
         return False
@@ -124,29 +152,30 @@ def _canonical_groups_ok(groups) -> bool:
 
 @dataclass(frozen=True)
 class ScopePolicy:
-    """CANONICAL FROZEN form only: `groups` MUST be a MappingProxy of
-    name → tuple of groupable Identity; `cross_scope_visible` MUST be a
-    real bool; `group_digests` is the precomputed frozen digest map.
-    **Direct construction with any other shape RAISES (R3-1)** — and
-    `classify` revalidates at consumption, so even a hypothetical bypass
-    is caught where it would matter."""
+    """SEALED canonical form (R4-1): `validate_policy` computes `seal` over
+    the ENTIRE canonical projection (groups + digests + the bool) with a
+    module-private nonce. `classify` RECOMPUTES the seal at every
+    consumption — a direct construction with an inconsistent
+    `group_digests` map, a mutated backing mapping, or an
+    `object.__setattr__` flip cannot reproduce it and REFUSES. Shape
+    checks remain as the first, cheaper line."""
     groups: object
     cross_scope_visible: bool
     group_digests: object              # MappingProxy name -> frozenset[str]
+    seal: str = ""
 
     def __post_init__(self):
         if not isinstance(self.cross_scope_visible, bool):
             raise PolicyError(
                 f"cross_scope_visible must be a real bool, got "
-                f"{self.cross_scope_visible!r} (R3-1 — direct construction "
-                f"does not bypass validation)")
+                f"{self.cross_scope_visible!r}")
         if not _canonical_groups_ok(self.groups):
             raise PolicyError(
                 "ScopePolicy must be constructed via validate_policy — "
-                "groups must be the canonical frozen form (R3-1)")
+                "groups must be the canonical frozen form")
         if not isinstance(self.group_digests, MappingProxyType):
             raise PolicyError("group_digests must be the validator's frozen "
-                              "map — construct via validate_policy (R3-1)")
+                              "map — construct via validate_policy")
 
 
 def validate_policy(groups, cross_scope_visible=False,
@@ -190,18 +219,39 @@ def validate_policy(groups, cross_scope_visible=False,
             out.append(m); digs.add(d)
         frozen_groups[name] = tuple(out)
         frozen_digests[name] = frozenset(digs)
-    return ScopePolicy(groups=MappingProxyType(frozen_groups),
-                       cross_scope_visible=cross_scope_visible,
-                       group_digests=MappingProxyType(frozen_digests))
+    proxy = MappingProxyType(frozen_groups)   # backing dict is LOCAL —
+    pol = ScopePolicy(groups=proxy,           # no caller ever held it
+                      cross_scope_visible=cross_scope_visible,
+                      group_digests=MappingProxyType(frozen_digests),
+                      seal=_seal(frozen_groups, cross_scope_visible,
+                                 local_origin))
+    return pol
 
 
-def _revalidate(policy: ScopePolicy) -> None:
-    """Consumption-time revalidation (R3-1, defence in depth)."""
+def _revalidate(policy: ScopePolicy, local_origin: str) -> None:
+    """Consumption-time revalidation (R3-1/R4-1): shape checks, then the
+    SEAL recomputed over the policy's CURRENT state — the entire canonical
+    projection including the digest map's backing content and the bool. An
+    inconsistent digest map, a mutated backing dict, or a post-hoc
+    attribute flip yields a different projection and refuses; the
+    digest-map consistency is checked by recomputation, not trust."""
     if not isinstance(policy, ScopePolicy):
         raise PolicyError("policy must be a ScopePolicy")
     if not isinstance(policy.cross_scope_visible, bool) \
             or not _canonical_groups_ok(policy.groups):
-        raise PolicyError("policy failed consumption revalidation (R3-1)")
+        raise PolicyError("policy failed consumption revalidation")
+    expected_digs = {name: frozenset(digest_of(m, local_origin)
+                                     for m in members)
+                     for name, members in policy.groups.items()}
+    if dict(policy.group_digests) != expected_digs:
+        raise PolicyError(
+            "group_digests is not the canonical projection of groups — "
+            "a direct construction or a mutated backing map (R4-1)")
+    if policy.seal != _seal(dict(policy.groups),
+                            policy.cross_scope_visible, local_origin):
+        raise PolicyError(
+            "the policy seal does not verify — constructed outside "
+            "validate_policy or mutated after validation (R4-1)")
 
 
 # ---- the record→membership RESOLVER — DIGEST SPACE (R3-2 / R3-3) -----------
@@ -312,7 +362,7 @@ def classify(record_evidence, principal: Optional[Identity],
         raise PolicyError(
             "a principal was supplied but no scope policy is configured — "
             "feature-disabled cannot honour a principal-bearing call (R2-2)")
-    _revalidate(policy)
+    _revalidate(policy, local_origin)
     if not principal.groupable:
         raise PolicyError("a principal must carry a source_id (0006 I13)")
     if record_evidence == UNRESOLVED:
