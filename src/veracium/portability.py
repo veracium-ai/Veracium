@@ -45,7 +45,9 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # specs/0014 §4c/§7a (R5-4): the exported Episode.consolidation_output_index
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
-FORMAT_VERSION = 5
+FORMAT_VERSION = 6  # specs/0019: the `ungrounded` flag exports; an older
+                    # importer REFUSES a v6 file rather than silently
+                    # dropping the field (the 0014 R5-4 / 0010 rule)
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
 
 # specs/0005 §4d — the PINNED default-path refusal warning (P10/P15). A bare
@@ -312,6 +314,14 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     #    MALFORMED and REJECTED — it is NEVER resolved to this store's singleton (that
     #    resolution is for LOCAL stored rows only, §4 rule 6). A PRESENT foreign origin is
     #    preserved as-is (I2b), never localised; trust of it is 0005's boundary, applied first.
+    # specs/0019 §2c: a pre-v6 envelope carrying `ungrounded` is STRIPPED,
+    # never trusted (the 0006 I10 rule — a field newer than the declared
+    # FORMAT_VERSION has unknown provenance); post-v6 absent → StrictBool
+    # default False at model validation. Non-bool values REFUSE there (F7).
+    if src_version < 6:
+        for rec in edge_recs:
+            rec.pop("ungrounded", None)
+
     dest_origin = store.local_origin() if src_version >= 4 else None
     for rec in edge_recs + ep_recs:
         prov = rec.get("provenance")

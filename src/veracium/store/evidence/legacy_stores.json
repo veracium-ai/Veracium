@@ -1,7 +1,7 @@
 {
   "manifest_algorithm": 13,
-  "head_digest": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
-  "head_schema_version": 6,
+  "head_digest": null,
+  "head_schema_version": null,
   "legacy_base_versions": [
     1
   ],
@@ -210,16 +210,24 @@
       "tag": "v0.7.0",
       "commit": "19a5148a0f74fd640a60c9daebd20dcce3cf26fb",
       "on_disk_user_version": 6,
-      "store_schema_version": 6,
-      "digest": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
+      "store_schema_version": null,
+      "digest": null,
       "result": "ok"
     },
     {
       "tag": "v0.8.0",
       "commit": "b20512388f48da3fa000c9984adba34cc02c4608",
       "on_disk_user_version": 6,
-      "store_schema_version": 6,
-      "digest": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
+      "store_schema_version": null,
+      "digest": null,
+      "result": "ok"
+    },
+    {
+      "tag": "v0.9.0",
+      "commit": "ee3d5f9f7708ec1004340fe3aa38f4bd1c774e74",
+      "on_disk_user_version": 6,
+      "store_schema_version": null,
+      "digest": null,
       "result": "ok"
     }
   ]

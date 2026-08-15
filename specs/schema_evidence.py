@@ -269,7 +269,11 @@ def build_version_artifact(strict: bool = True) -> dict:
         # (`ALTER_PATH_V6_SQL`, authorized by the 0014 acceptance review), never by
         # running the migration here — `0013` §4c: a migration may not define its own
         # destination. The sha self-check makes a drifted constant fail loudly.
-        if version == 6:
+        # specs/0019: v7 is the NO-DDL bump over v6 (SCHEMA_V7 = SCHEMA_V6
+        # byte-identical), so every v6-legal on-disk shape is v7-legal —
+        # including the reviewed ALTER-path shape, which a ≤v5-base store
+        # migrating to v7 lands in by crossing the v6 ALTER en route.
+        if version in (6, 7):
             import copy
             import hashlib as _h
             if (_h.sha256(sv.ALTER_PATH_V6_SQL.encode()).hexdigest()
@@ -280,8 +284,8 @@ def build_version_artifact(strict: bool = True) -> dict:
             alt["table:supersession_operations"] = dict(
                 alt["table:supersession_operations"], sql=sv.ALTER_PATH_V6_SQL)
             accepted.append({
-                "provenance": "v5:constructor->v6 (reviewed ALTER-path constant — "
-                              "specs/0014 §4b, sha 326ea193…)",
+                "provenance": f"v5:constructor->v{version} (reviewed ALTER-path "
+                              f"constant — specs/0014 §4b, sha 326ea193…)",
                 "digest": sv._digest_of_identity(alt, version),
                 "objects": alt})
         c.close()

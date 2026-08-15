@@ -113,6 +113,28 @@ it was relative. Always pass an accurate `date=` per event (the date it actually
 occurred) so the calendar anchors correctly; the default is "today", which is
 wrong for backfilled or dated content.
 
+## The `ungrounded` flag — extraction fidelity, not truth
+
+At ingest, every extracted fact's *specifics* (numbers, identifiers, proper
+nouns, dates) are checked against the event text they were extracted from
+(spec 0019). A fact whose specifics the source text never contained is stored
+with `ungrounded=True` — stored, rendered, and recallable like any other
+fact, but carrying an inline `[possible extraction error]` marker wherever it
+renders, never volunteered proactively, and excluded from the compiled wiki.
+The flag says something about *our extraction*, never about the fact's truth
+or its source's trustworthiness: no trust, authority, or staleness decision
+ever keys on it, and it never refuses or demotes anything.
+
+The flag is **immutable**: it describes the extraction event, which never
+changes. `confirm()` records the user's vouching for the *fact* but cannot
+make the source text contain what it did not contain — a confirmed-true fact
+keeps its marker. The clean-record remedy is restatement: say the fact again
+(`remember()`), and the new, grounded edge supersedes or coexists through
+the ordinary machinery. Dates get one careful exception: an ISO date is
+grounded when it equals the deterministic resolution of a date expression in
+the source ("next Friday" said on 2026-08-14 grounds 2026-08-21) — proximity
+to the session date grounds nothing by itself.
+
 ## Recall and the abstention gate
 
 `mem.recall(user_id, query)` assembles the curated wiki + a per-query subgraph and

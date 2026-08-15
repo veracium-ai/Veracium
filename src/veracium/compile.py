@@ -128,8 +128,14 @@ def _grounded_inputs(store, user_id: str, relations: dict[str, Relation]):
     excluded, so the "keep one current value" prompt only ever sees facts that HAVE one —
     a refusal never hands the LLM two competing values to collapse."""
     contested = _live_refusal_contention_edge_ids(store, user_id, relations)
+    # specs/0019 §4c (F4 — reviewer-executed): the compiler stores an LLM's
+    # free-text output, and a code-owned marker cannot survive a re-rendering
+    # it does not control — so flagged facts are EXCLUDED from the compiler
+    # INPUT (the 0003 contested-exclusion precedent). The wiki is the curated
+    # grounded view; a possibly-fabricated specific has no place in it. The
+    # fact remains fully reachable through query recall, with its marker.
     edges = [e for e in store.edges(user_id, active_only=True, include_quarantined=False)
-             if not e.use_only and e.id not in contested]
+             if not e.use_only and e.id not in contested and not e.ungrounded]
     # specs/0012 I8: the compiler INPUT collapses strictly-redundant duplicates —
     # N restatements feed the wiki once; the store keeps every edge.
     edges, _since = collapse_for_render(edges)

@@ -81,6 +81,13 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # volatilities and flags all surface by the predicate). The info labels carry
     # the truthful earliest-since and the ×N flagged count.
     surfaced, _c_info = collapse_for_render(list(store.edges(user_id)))
+    # specs/0019 §4c (RULED, internal review): a flagged fact is NEVER
+    # proactively surfaced — proactive would volunteer an unprompted alarm
+    # whose reliability is, structurally, the flag's own. The fact stays
+    # fully recallable by query, with its marker. One of the flag's exactly
+    # TWO behavioural reductions (with the wiki exclusion); both WITHHOLD,
+    # never grant.
+    surfaced = [e for e in surfaced if not e.ungrounded]
     # R-impl4-1: variancy is decided by I8's FULL group — the authority envelope ×
     # unique-anchor VALUE grouping (the shared value_groups construction) — so
     # incomparable same-envelope values are independent survivors, never variants.

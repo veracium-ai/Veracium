@@ -635,6 +635,12 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0019 U7: the forging matrix exercises BOTH paths deliberately
+    # (default-path composition immunity; restore-path flag-keyed
+    # eligibility grants — the documented §8 limit 6); the strip test is a
+    # restore of a downgraded pre-v6 envelope
+    ("test_0019_ungrounded.py", "test_import_strictbool_and_forging_matrix"): "both",
+    ("test_0019_ungrounded.py", "test_pre_v6_envelope_strips_the_field"): "restore",
     ("test_0005_import_boundary.py", "test_default_import_caps_every_record"): "default",
     ("test_0005_import_boundary.py", "test_restore_preserves_trust_fields_exactly"): "restore",
     ("test_0005_import_boundary.py", "test_restore_of_a_finalized_output_export"): "restore",

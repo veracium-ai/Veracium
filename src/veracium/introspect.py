@@ -69,6 +69,9 @@ def report(store, user_id: str, *, mode: str = "summary") -> dict:
         "user_id": user_id,
         "facts": len(facts),
         "unverified_claims": len(claims),
+        # specs/0019 U9: the count of active records whose extraction was not
+        # grounded (categories render each with its inline marker)
+        "ungrounded": sum(1 for e in active if e.ungrounded),
         # specs/0012 R11-5 (frozen public schema): the cached wiki's authoritative
         # compile-drop record, parsed from the marker — VERBATIM in marker_line, and
         # ONLY the cached record (no current-store hypothetical; non-mutating).

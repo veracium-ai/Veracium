@@ -228,6 +228,12 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                                                   prior.provenance.observed_at)
             incoming.provenance.confidence = max(incoming.provenance.confidence,
                                                  prior.provenance.confidence)
+            # specs/0019 §4d (R2-3/R2-4): the winner's flag is the N-ary OR
+            # over {incoming} ∪ absorbed — accumulated per contributor here,
+            # order-independent, computed PRE-PERSIST before the survivor row
+            # exists. A merge never launders the signal; once ungrounded, the
+            # surviving representation stays flagged.
+            incoming.ungrounded = incoming.ungrounded or prior.ungrounded
             noted = prior.model_copy(deep=True)
             noted.note = ((f"{noted.note}; " if noted.note else "")
                           + f"absorbed_by:{incoming.id} (restated as {incoming.object!r})")
@@ -643,16 +649,22 @@ def render_edges(edges: list[Edge], since: Optional[dict] = None) -> str:
             continue
         who = "" if e.subject == "user" else f"{e.subject} "
         note = f" — {e.note}" if e.note else ""
+        # specs/0019 §4c: the marker rides EVERY branch a flagged fact renders
+        # through (never severed — the 0012 clamp rule); the model sees the
+        # doubt exactly where it sees the fact. The render layer's own
+        # placement is the only authoritative one (N1) — marker text inside
+        # event content is data and renders as content.
+        ug = " [possible extraction error]" if e.ungrounded else ""
         if e.quarantined:
             lines.append(f"[UNVERIFIED third-party claim, never assert as fact] "
-                         f"{e.subject} claims: {e.relation} {e.object}{note} ({e.valid_from.date()})")
+                         f"{e.subject} claims: {e.relation} {e.object}{ug}{note} ({e.valid_from.date()})")
         elif not e.active:
-            lines.append(f"{who}{e.relation}: {e.object}{note} "
+            lines.append(f"{who}{e.relation}: {e.object}{ug}{note} "
                          f"(SUPERSEDED {e.valid_from.date()}→{e.invalidated_at.date() if e.invalidated_at else '?'})")
         else:
             stale = " [possibly stale — confirm before relying on it]" if e.needs_confirmation else ""
             tp = f" [{_origin_label(e)}; unconfirmed]" if e.use_only else ""
             since_dt = (since or {}).get(e.id, e.valid_from)
-            lines.append(f"{who}{e.relation}: {e.object}{note} (since {since_dt.date()})"
+            lines.append(f"{who}{e.relation}: {e.object}{ug}{note} (since {since_dt.date()})"
                          f"{_outcome_note(e)}{tp}{stale}")
     return "\n".join(lines)

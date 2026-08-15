@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **The `ungrounded` flag — extraction-fidelity marking at ingest**
+  (accepted spec 0019). Every extracted fact's specifics (digits,
+  identifiers, proper nouns, ISO dates) are checked against the event text
+  they came from; a fact carrying specifics the source never contained
+  stores with `Edge.ungrounded=True` — never refused, never demoted, and
+  fully recallable, but marked `[possible extraction error]` wherever it
+  renders, never volunteered proactively, and excluded from the compiled
+  wiki (the flag's only two behavioural reductions; both withhold, never
+  grant). The flag is immutable for the record's life — `confirm()` cannot
+  clear it (the remedy is restatement); absorption merges strengthen it by
+  an N-ary OR and never launder it. Deterministic, zero LLM calls; dates
+  ground through a pinned resolution-set rule ("next Friday" grounds its
+  arithmetic resolution, proximity grounds nothing). **Export format 5→6**
+  (older importers refuse rather than silently dropping the flag) and
+  **store SCHEMA v6→v7** (no DDL — the ordinary `veracium migrate` /
+  open-time migration applies; older builds refuse a v7 store, so back up
+  before upgrading). Supersession receipts stamp `outcome_digest_version 3`
+  (spec 0014 as amended). `introspect()` gains an `ungrounded` count. No
+  telemetry change (deferred to a future consent version, recorded in the
+  spec).
+
 - *Correction to the 0.9.0 `SourceType`-deprecation entry (released text is
   immutable):* that entry said stage D2 ships "export format 6, store schema
   v7". Accepted spec 0019 takes format 6 and schema v7 first; **D2's numbers

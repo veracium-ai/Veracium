@@ -273,7 +273,7 @@ def test_export_materialises_and_import_roundtrips_source_id_and_origin(tmp_path
     # every exported record carries the materialised (resolved) origin
     for rec in _lines(exp)[1:]:
         assert rec["provenance"]["origin"] == src_origin
-    assert _lines(exp)[0]["version"] == FORMAT_VERSION == 5   # 0014 bumped 4->5
+    assert _lines(exp)[0]["version"] == FORMAT_VERSION == 6   # 0014 bumped 4->5; 0019 5->6
     dst = SqliteStore(str(tmp_path / "dst.db"))
     import_memory(dst, exp)
     e = [x for x in dst.edges("u", active_only=True) if x.relation == "works_as"][0]

@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
 
 
 def utcnow() -> datetime:
@@ -260,6 +260,14 @@ class Edge(BaseModel):
     invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed" | "disputed" | "corrected" | "absorbed_duplicate"
     supersedes: Optional[str] = None
     needs_confirmation: bool = False  # past its expected lifetime; may be stale
+    # specs/0019: "the specifics in this fact's object were not all grounded in
+    # the event text it was extracted from" — a property of the EXTRACTION,
+    # never of the fact's truth. Derived once at ingest (§4b); a STORED row's
+    # flag never changes (§4d — the store refuses every same-ID transition);
+    # strengthening exists only pre-persist via absorption's N-ary OR.
+    # StrictBool (F7): plain bool COERCES "yes"/0/1; the strict form refuses
+    # every non-boolean — the 0005 P13 closed-predicate posture.
+    ungrounded: StrictBool = False
     # Outcome aggregates — DERIVED, mutable-by-design life-history (recomputable
     # from the kind="outcome" episode record; engine-written via record_outcome,
     # never provenance and never an MCP surface). times_used counts uses the

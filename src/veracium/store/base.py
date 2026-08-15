@@ -109,7 +109,18 @@ class Store(ABC):
     # -- edges -------------------------------------------------------------
     @store_mutator
     @abstractmethod
-    def add_edge(self, edge: Edge) -> None: ...
+    def add_edge(self, edge: Edge) -> None:
+        """Persist (or same-ID replace) one edge.
+
+        PERSISTENCE-PATH OBLIGATIONS every backend must enforce (compared
+        against the PERSISTED prior state, the 0008 §6d guard shape):
+        `user_id` never changes; `needs_confirmation` never clears True→False
+        (only confirm_edge may — specs/0008 §6d); and `ungrounded` refuses
+        EVERY same-ID transition in BOTH directions with no exception —
+        absorption inserts a NEW survivor whose flag is the N-ary OR computed
+        pre-insert, so the persistence layer sees only immutable flags
+        (specs/0019 §3b/§4d, U4)."""
+        ...
 
     @store_mutator
     @abstractmethod

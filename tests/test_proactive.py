@@ -46,10 +46,17 @@ SCRIPTS = [
 def _mem(d):
     mem = Memory(llm=Fake(SCRIPTS),
                  config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
-    mem.remember("u", "tax deadline", date="2026-07-20")
-    mem.remember("u", "passport", date="2026-06-20")
+    # specs/0019: the event texts GROUND their scripted extractions — the
+    # canned objects' specifics (dates, "$900", "Acme") must appear in the
+    # event text, exactly as a real conversation would carry them; a fixture
+    # whose extraction invents specifics now gets honestly flagged and
+    # proactively suppressed (which is the flag working, not this test's
+    # subject).
+    mem.remember("u", "tax filing due 2026-07-28", date="2026-07-20")
+    mem.remember("u", "renew passport by 2026-07-01", date="2026-06-20")
     mem.remember("u", "ankle", date="2026-07-22")
-    mem.remember("u", "scam email", date="2026-07-23",
+    mem.remember("u", "scam email: user owes $900, sent to my work at Acme",
+                 date="2026-07-23",
                  author=EvidenceAuthor.THIRD_PARTY, event_type="email")
     return mem
 

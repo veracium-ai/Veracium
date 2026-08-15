@@ -113,11 +113,23 @@ class SqliteStore(Store):
                     f"cannot change edge {edge.id!r}'s user_id "
                     f"({prior[0]!r} → {edge.user_id!r}) — ownership is not "
                     f"transferable through the upsert path (specs/0008 §6d)")
-            if (Edge.model_validate_json(prior[1]).needs_confirmation
-                    and not edge.needs_confirmation):
+            prior_edge = Edge.model_validate_json(prior[1])
+            if prior_edge.needs_confirmation and not edge.needs_confirmation:
                 raise ValueError(
                     f"cannot clear needs_confirmation (True→False) on "
                     f"edge {edge.id!r} — only confirm_edge may (specs/0008 §6d, C1)")
+            # specs/0019 §3b/§4d (R2-4, U4): a STORED row's `ungrounded` never
+            # changes — the same-ID replace path refuses EVERY transition, in
+            # BOTH directions, with no exception (absorption inserts a NEW
+            # survivor whose flag is the N-ary OR computed pre-insert, so no
+            # discriminator is needed here). Compared against the PERSISTED
+            # prior state, the 0008 §6d guard shape.
+            if prior_edge.ungrounded != edge.ungrounded:
+                raise ValueError(
+                    f"cannot change ungrounded "
+                    f"({prior_edge.ungrounded} → {edge.ungrounded}) on edge "
+                    f"{edge.id!r} — a stored flag is immutable in both "
+                    f"directions (specs/0019 §4d, U4)")
         self._conn.execute(
             "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
             "VALUES(?,?,?,?,?,?,?,?)",
@@ -281,7 +293,8 @@ class SqliteStore(Store):
 
     # -- supersession (specs/0003) ----------------------------------------
     @staticmethod
-    def _logical_request_digest(plan: SupersessionPlan) -> str:
+    def _logical_request_digest(plan: SupersessionPlan, *,
+                                strip_0019: bool = False) -> str:
         """A fingerprint of the plan's LOGICAL intent — what it does, NOT the
         `expected_state` it assumed (which changes on a CAS recompute). The same logical
         operation replayed produces the same digest (→ replay a committed receipt); a
@@ -299,10 +312,20 @@ class SqliteStore(Store):
         # `operation_id` (it is the lookup key). A verbatim retry still replays: identical
         # plan → identical serialization; the reinforcement recompute stays stable because
         # max() is idempotent.
+        # era-faithful recomputation (specs/0019 rider): receipts stamped
+        # BEFORE the `ungrounded` field existed were digested over dumps
+        # without it — comparing a pre-0019 receipt against a post-0019 plan
+        # strips the field so an identical logical operation still replays
+        # instead of false-conflicting.
+        def _dump(e):
+            d = json.loads(e.model_dump_json())
+            if strip_0019:
+                d.pop("ungrounded", None)
+            return d
         payload = {
-            "incoming": json.loads(plan.incoming_edge.model_dump_json()),
+            "incoming": _dump(plan.incoming_edge),
             "insert_incoming": plan.insert_incoming,
-            "upserts": sorted((json.loads(e.model_dump_json()) for e in plan.prior_upserts),
+            "upserts": sorted((_dump(e) for e in plan.prior_upserts),
                               key=lambda d: d["id"]),
             "invalidations": sorted([eid, at.isoformat(), reason]
                                     for eid, at, reason in plan.prior_invalidations),
@@ -313,17 +336,21 @@ class SqliteStore(Store):
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
-    def _outcome_digest_v2(self, plan: SupersessionPlan) -> str:
+    def _outcome_digest_v2(self, plan: SupersessionPlan, *,
+                           strip_0019: bool = False) -> str:
         """specs/0014 R5-2/R6-1/R9-2: the EXTENDED outcome projection — everything
         the pre-split digest bound PLUS the contribution drafts and the absorption
         pre-image, so a store-level resubmission that mutates contribution fields
         is detected (the mutation check, reachable by construction because
-        store-level callers submit plans). Version 2 in the receipt's
-        outcome_digest_version column; version-1 (migrated) receipts keep the
-        pre-split projection, selected by the STORED version, never by NULL-ness."""
+        store-level callers submit plans). New receipts stamp version 3 (the
+        0019-era `ungrounded`-bearing snapshot — the 0014 §2c rider); stored
+        version-2 receipts were digested BEFORE the field existed, so their
+        era-faithful recomputation strips it (`strip_0019=True`) — selected by
+        the STORED version, never by NULL-ness; version-1 (migrated) receipts
+        keep the pre-split projection."""
         payload = {
-            "v1": None,   # structural marker: v2 wraps the v1 projection
-            "pre_split": self._logical_request_digest(plan),
+            "v1": None,   # structural marker: v2/v3 wrap the v1 projection
+            "pre_split": self._logical_request_digest(plan, strip_0019=strip_0019),
             "contributions": sorted(
                 (json.loads(d.model_dump_json()) for d in plan.contribution_drafts),
                 key=lambda d: (d["site"], d["contributor_type"], d["contributor_id"])),
@@ -346,11 +373,15 @@ class SqliteStore(Store):
                     f"{'json' if response else None}) — version-1 rows are the "
                     f"migrated legacy form (NULL, 1, NULL) only (0014 R10-4)")
             return
-        if version == 2:
+        if version in (2, 3):
+            # version 3 (specs/0019 rider): the ungrounded-bearing-snapshot
+            # era — identical receipt-state shape to 2; the era difference
+            # lives in the digest projection, selected by the stored version
             if response is None:
                 raise ValueError(
-                    "illegal receipt state (…, 2, NULL) — every version-2 "
-                    "receipt persists its effect payload (0014 R9-1/R10-4)")
+                    f"illegal receipt state (…, {version}, NULL) — every "
+                    f"version-{version} receipt persists its effect payload "
+                    f"(0014 R9-1/R10-4)")
             try:
                 effects = json.loads(response)
             except (TypeError, ValueError) as e:
@@ -365,7 +396,7 @@ class SqliteStore(Store):
             return
         raise ValueError(
             f"illegal outcome_digest_version {version!r} — the closed set is "
-            f"{{1, 2}} (0014 R9-2/R10-4)")
+            f"{{1, 2, 3}} (0014 R9-2/R10-4; 3 per the 0019 rider)")
 
     def supersession_receipt(self, user_id: str, operation_id: str):
         """specs/0014 §4b: the phase-1 lookup surface — the receipt's request
@@ -429,8 +460,15 @@ class SqliteStore(Store):
                         f"operation_id {plan.operation_id!r} already committed a "
                         f"DIFFERENT request for user {user_id!r} (specs/0014 §4b "
                         f"phase 2, request-first)")
-                compare = (digest if stored_ver == 2
-                           else self._logical_request_digest(plan))
+                # the STORED version selects the era-faithful projection
+                # (0019 rider: v3 = ungrounded-bearing; v2/v1 recompute with
+                # the field stripped — those receipts predate it)
+                if stored_ver == 3:
+                    compare = digest
+                elif stored_ver == 2:
+                    compare = self._outcome_digest_v2(plan, strip_0019=True)
+                else:
+                    compare = self._logical_request_digest(plan, strip_0019=True)
                 if stored_outcome != compare:
                     raise SupersessionIntegrityError(
                         f"operation_id {plan.operation_id!r} already committed a DIFFERENT "
@@ -474,8 +512,32 @@ class SqliteStore(Store):
                         f"absorption drafts {sorted(draft_ids)} != absorbed priors "
                         f"{sorted(absorbed_ids)} — the draft set must equal the "
                         f"absorbed_duplicate set exactly (specs/0014 §4b, R5-1)")
-                for d in plan.contribution_drafts:
-                    self._write_contribution(user_id, d, plan)
+                contributor_flags = [self._write_contribution(user_id, d, plan)
+                                     for d in plan.contribution_drafts]
+                # specs/0019 §4d / 0014 §2c as amended (U2b): the committed
+                # survivor's `ungrounded` must be EXACTLY the N-ary OR over
+                # {the raw incoming} ∪ {every absorbed contributor} —
+                # recomputed here from the plan's full contributor set against
+                # the AUTHORITATIVE rows just read. Any other flag difference
+                # aborts. Without a snapshot (phase-2 semantics) the raw
+                # incoming flag is unknowable; the laundering direction is
+                # still fully checkable: a flagged contributor forces a
+                # flagged survivor.
+                if any(contributor_flags) and inc.ungrounded is not True:
+                    raise SupersessionIntegrityError(
+                        "a flagged contributor was absorbed but the survivor "
+                        "is unflagged — the N-ary OR never launders the "
+                        "signal (specs/0019 §4d; 0014 §2c as amended)")
+                if plan.raw_request is not None:
+                    expected = (bool(plan.raw_request.get("ungrounded"))
+                                or any(contributor_flags))
+                    if inc.ungrounded is not expected:
+                        raise SupersessionIntegrityError(
+                            f"survivor ungrounded={inc.ungrounded!r} is not "
+                            f"the N-ary OR of the raw submission and its "
+                            f"absorbed contributors (={expected!r}) — the "
+                            f"verifier accepts exactly that transform "
+                            f"(specs/0019; 0014 §2c as amended)")
                 for e in plan.prior_upserts:
                     self._upsert_edge_row(e)
                 for eid, at, reason in plan.prior_invalidations:
@@ -512,13 +574,15 @@ class SqliteStore(Store):
                     invalidated=len(plan.prior_invalidations),
                     refused=len(plan.refusals))
                 resp_json = effect_payload(result)
-                self.validate_receipt_state(plan_rd, 2, resp_json)  # refused at write
+                # specs/0019 rider: post-0019 receipts stamp version 3 — the
+                # ungrounded-bearing snapshot era
+                self.validate_receipt_state(plan_rd, 3, resp_json)  # refused at write
                 self._conn.execute(
                     "INSERT INTO supersession_operations(user_id,operation_id,"
                     "logical_request_digest,status,request_digest,response,"
                     "outcome_digest_version) VALUES(?,?,?,?,?,?,?)",
                     (user_id, plan.operation_id, digest, "applied",
-                     plan_rd, resp_json, 2))
+                     plan_rd, resp_json, 3))
                 self._bump(user_id)                   # a recall-bearing edge changed
                 # A live_refusal_contention transition — INTO it (this plan records a
                 # refusal) OR OUT of it (this plan retires an edge that a refusal row
@@ -601,6 +665,10 @@ class SqliteStore(Store):
             (f"contrib-{uuid.uuid4().hex[:12]}", user_id, draft.survivor_type,
              draft.survivor_id, "absorption", ident, ev,
              canonical_payload(payload), None, self._now().isoformat()))
+        # specs/0019: the contributor's authoritative flag feeds the caller's
+        # N-ary OR verification (U2b) — read from the row this transaction is
+        # consuming, never from the draft.
+        return contributor.ungrounded
 
     def _write_consolidation_contributions(self, op) -> None:
         """specs/0014 §4b/§4c: the N×M rows at the OUTPUTS_DURABLE cutover —

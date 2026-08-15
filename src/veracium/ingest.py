@@ -12,7 +12,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from . import prompts
+from . import grounding, prompts
 from ._json import extract_json
 from .graph import apply_supersession
 from .llm.base import Complete
@@ -194,10 +194,18 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             vol = Volatility(str(t.get("volatility", "durable")).strip().lower())
         except ValueError:
             vol = Volatility.DURABLE
+        obj = str(t["object"]).strip()
+        # specs/0019 §4a: between extraction and storage, the object's
+        # specifics are checked against the event text (the §4b predicate;
+        # the event's own date is the session date — the remember contract).
+        # A failing edge is STORED with the flag — never refused, never
+        # demoted, never re-derived (§4d: immutable for the record's life).
+        flagged = grounding.ungrounded(obj, event_text, date)
         edge = Edge(
             id=_uid("e"), user_id=user_id, subject=str(t["subject"]).strip(),
-            relation=relation, object=str(t["object"]).strip(),
+            relation=relation, object=obj,
             note=str(t.get("note", "")).strip(), volatility=vol,
+            ungrounded=flagged,
             provenance=Provenance(source_type=_source_type(author, event_type),
                                   author_of_evidence=author, evidence_ref=evidence_ref,
                                   disclosure=disclosure, derived_from=derived_from,

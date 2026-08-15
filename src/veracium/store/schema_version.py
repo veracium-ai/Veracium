@@ -297,10 +297,17 @@ ALTERS_V5_TO_V6 = (
     "outcome_digest_version INTEGER NOT NULL DEFAULT 1",
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
-           6: SCHEMA_V6}
+# specs/0019: v7 is a NO-DDL bump — the `ungrounded` flag lives in
+# `edges.json` (the 0006 v4→v5 precedent), so the object set is v6's,
+# byte-identical. The version exists for REFUSAL honesty alone: an older
+# build silently DROPPING the flag on rewrite would erase a fabrication
+# signal; a v7 store refuses on pre-0019 builds instead (0007).
+SCHEMA_V7 = SCHEMA_V6
 
-SCHEMA_VERSION = 6
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
+           6: SCHEMA_V6, 7: SCHEMA_V7}
+
+SCHEMA_VERSION = 7
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

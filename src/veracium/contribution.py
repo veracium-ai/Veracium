@@ -142,8 +142,12 @@ EXACT_EQUAL_EDGE_FIELDS = ("id", "user_id", "subject", "relation", "object",
                            "note", "volatility", "needs_confirmation")
 EXACT_EQUAL_PROV_FIELDS = ("source_type", "author_of_evidence", "evidence_ref",
                            "disclosure", "derived_from", "source_id", "origin")
-# EXACTLY the three fields the shipped C' absorption inherits (graph.py:163-167)
-RECOMPUTED_EDGE_FIELDS = ("valid_from",)
+# EXACTLY the fields the shipped C' absorption inherits (graph.py absorption
+# loop): the three winner-inheritance maxima/minima PLUS `ungrounded` — the
+# 0019 rider's RECOMPUTED class: absorption may change it from the raw
+# submission by EXACTLY the N-ary OR over {incoming} ∪ absorbed (0014 §2c as
+# amended by 0019; the verifier accepts precisely that transform)
+RECOMPUTED_EDGE_FIELDS = ("valid_from", "ungrounded")
 RECOMPUTED_PROV_FIELDS = ("observed_at", "confidence")
 # store-lifecycle fields a raw submission cannot carry (non-default → abort)
 FORBIDDEN_EDGE_FIELDS = ("invalidated_at", "invalidation_reason", "supersedes",
@@ -226,9 +230,20 @@ def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
     if not contribs:
         if (snapshot.get("valid_from") != inc["valid_from"]
                 or sprov.get("observed_at") != iprov["observed_at"]
-                or sprov.get("confidence") != iprov["confidence"]):
+                or sprov.get("confidence") != iprov["confidence"]
+                or snapshot.get("ungrounded") != inc["ungrounded"]):
             raise ValueError("recomputed fields differ with NO absorption — the "
                              "identity transform must hold (0014 §4b)")
+    else:
+        # specs/0019 rider: `ungrounded` is RECOMPUTED by exactly the N-ary
+        # OR — monotone, so the committed flag may never be WEAKER than the
+        # raw submission's. The full OR (against the absorbed contributors'
+        # authoritative rows) is verified store-side where those rows live;
+        # this snapshot-side check pins the only direction visible here.
+        if snapshot.get("ungrounded") is True and inc["ungrounded"] is not True:
+            raise ValueError("ungrounded weakened across absorption — the "
+                             "N-ary OR only ever strengthens (0019 §4d / "
+                             "0014 §2c as amended)")
 
 
 def effect_payload(result) -> str:

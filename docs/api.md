@@ -117,10 +117,12 @@ Host/admin queries (neither is an MCP tool by design):
 
 The formatted transparency view — "what do you know about me, and where did
 it come from?" — for hosts showing users their own memory. LLM-free and
-store-only. `"summary"` returns counts: facts and unverified claims, by
-relation / evidence author / disclosure tier, lifecycle state
-(`needs_confirmation`, `in_use`), retired history by reason (superseded /
-disputed / absorbed), episode counts, first/last observed. `"categories"`
+store-only. `"summary"` returns counts: facts and unverified claims, an
+`ungrounded` count (spec 0019 — records whose extraction was not grounded
+in their source text; each renders with an inline `[possible extraction
+error]` marker), by relation / evidence author / disclosure tier, lifecycle
+state (`needs_confirmation`, `in_use`), retired history by reason
+(superseded / disputed / absorbed), episode counts, first/last observed. `"categories"`
 adds the facts themselves grouped by relation, rendered with the same
 provenance markers recall uses (so an unverified claim is flagged here
 exactly as the model would see it). The complete raw dump remains

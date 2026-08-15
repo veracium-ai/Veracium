@@ -94,7 +94,7 @@ def test_v5_to_v6_migrates_a_nonempty_receipt_table():
     migrate_store(path)
 
     c = sqlite3.connect(path)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == sv.SCHEMA_VERSION == 6
+    assert c.execute("PRAGMA user_version").fetchone()[0] == sv.SCHEMA_VERSION == 7  # 0019: v7 no-DDL bump
     rows = c.execute(
         "SELECT operation_id, request_digest, response, outcome_digest_version "
         "FROM supersession_operations ORDER BY operation_id").fetchall()
@@ -125,7 +125,7 @@ def test_deep_migration_v1_to_v6_lands_accepted():
     c.close()
     migrate_store(path)
     c = sqlite3.connect(path)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 6
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 7  # 0019: head is v7
     assert digest(manifest(c), 6) in accepted_digests(6)
     cols = [r[1] for r in c.execute("PRAGMA table_info(supersession_operations)")]
     assert cols[-3:] == ["request_digest", "response", "outcome_digest_version"]
