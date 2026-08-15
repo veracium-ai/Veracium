@@ -1,1 +1,17 @@
-store adapter harness: 7 regression groups pass against the SHIPPED store
+PASS [store] single-hop cross-identity absorption -> UNRESOLVED (1 real ledger row(s))
+PASS [store] same-identity absorption -> own digest
+PASS [store] THREE-HOP native chain: single-level read reproduces the R7-1 leak; the CLOSURE -> UNRESOLVED (2 closed row(s), links from real records via the decidable rule)
+PASS [store] three-hop SAME-identity chain closes to own digest (the contrast cell)
+PASS [store] pruned-intermediate chain -> closure None -> UNRESOLVED by contract
+PASS [import-path] RESTORED three-hop: pre-commit transitive reconstruction (minted op key) -> the destination survivor UNRESOLVED via born-closed rows (2 row(s) incl. the ancestor digest)
+PASS [import-path] reconstruction is deterministic across re-runs (idempotent re-import's precondition)
+PASS [import-path] after CLOSE/REOPEN the restored three-hop survivor is still UNRESOLVED
+PASS [import-path] REMAPPED import keys the transitive rows to post-remap ids (imp-e-d6e83413d590)
+PASS [import-path] REAL export with a framing-embedded winner id RESOLVES via the decidable rule (v8's regex refused this valid file)
+PASS [import-path] REAL pre-existing 'absorbed_by:ghost' note + the genuine appended tag RESOLVES — the LAST tag governs and is the only one that must (v8 demanded the ghost resolve too)
+PASS [import-path] AMBIGUOUS id universe (real store: 'winner' + the framing-embedded id) -> PRE-COMMIT whole-import refusal; destination logical state byte-for-byte unchanged (pre-populated sentinel intact)
+PASS [helper-file/import-path] MISSING tag -> PRE-COMMIT whole-import refusal; destination logical state byte-for-byte unchanged (pre-populated sentinel intact)
+PASS [helper-file/import-path] UNRESOLVABLE tag -> PRE-COMMIT whole-import refusal; destination logical state byte-for-byte unchanged (pre-populated sentinel intact)
+PASS [store] host records: own digest / SHARED floor
+PASS [impl-gated] ledger-row ROLLBACK on mid-plan failure, CONCURRENT same-file imports, durable imported-absorption rows after reopen, idempotent re-import ROW-SKIP counts, consolidation-output and recovery-state adapter cases — the amended 0009 primitive's obligations (0021 §7b exact text; W15); stated, awaiting the 0021 implementation
+store adapter harness: 15 executed regression checks pass against the SHIPPED store (+1 impl-gated obligation(s) stated)
