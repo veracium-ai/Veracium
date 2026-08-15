@@ -313,6 +313,30 @@ the **enumerated frozen points**, not to re-review two whole documents. The free
 - **Finite acceptance.** Review is *bounded*: when rounds stop finding architectural problems and
   start finding seams in the prior round's own fixes, the design is accepted on a **frozen
   invariant surface**, and further edges become implementation obligations, not new design rounds.
+- **Coupled specs review as ONE package.** When specs carry mutual or directional
+  `Spec-Requires` and one spec's central claim is CONDITIONAL on another (e.g. 0020/0021, where
+  the read-time boundary's claim fails at the first maintenance run without the write-time
+  companion), the round ships BOTH specs in one package with per-spec verdicts. The seam
+  BETWEEN them is review surface — the strongest findings there are cross-spec attacks neither
+  spec exposes alone. A spec that is *separable by design* (its own threat model, deferrable —
+  e.g. an authentication upgrade to an isolation spec) is deliberately NOT bundled; bundling it
+  would invite scope creep of the round.
+
+### A standing request TO the reviewer (please answer in every round)
+
+The package format above is ours, not gospel. In each round's response, please tell us:
+
+1. **What additional artifacts would have made this review more robust?** Anything you wanted
+   and didn't have — execution traces, a runnable repro harness for the spec's claims, a
+   dependency-graph rendering of `Spec-Requires`, prior rounds' full texts, generated-artifact
+   provenance, more of the tree than `specs src tests` — name it and we will supply it in the
+   next round or explain why we cannot.
+2. **What would you change about the archive itself?** Layout, naming, the `COLLECTED.txt`
+   fields, hash coverage, anything that made verification slower or trust harder than it
+   needed to be. Package-format findings are findings: we treat them with the same discipline
+   as design findings, and past reviewer pushback has already reshaped this process
+   (per-finding ledgers, byte-identity checks, the pre-seal SENT convention all originated as
+   reviewer complaints).
 
 ---
 
