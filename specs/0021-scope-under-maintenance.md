@@ -31,7 +31,7 @@ separable specs but ONE release story (§7b).
 | supersession | UNTOUCHED | 0003 ladder, store-global | apply_supersession | **scope-blind by design** (0020 §3): truth is global; a newer value supersedes per authority regardless of scope; VISIBILITY of the result is 0020's N-2 |
 | 0012 reinforcement | untouched | mutates nothing | — | scope-safe BY CONSTRUCTION (a restatement is its own edge with its own identity); stated so the matrix is total |
 | lifecycle expiry / staleness | untouched | per-edge aging | — | scope-blind, trivially (no cross-record combination) |
-| 0014 contribution ledger | read only | contributor rows key the digested resolved pair | audit | already scope-attributable with shipped machinery — the ledger join is STATED here, not built: a cross-scope derivation (if ever enabled) is reconstructable from contributor identities |
+| 0014 contribution ledger | READ, load-bearing (internal R1) | contributor rows key the digested resolved pair | audit, scope membership | **the derivative-membership rule:** a store-authored derivative (consolidation output — resolved origin = local singleton, `source_id` absent) takes its scope from its CONTRIBUTORS' resolved identities via the ledger join. All contributors one scope → the derivative is that scope's. No identified contributors → the shared pool (C3's floor), and the pool's derivatives STAY in the pool. Without this rule, candidate partitioning is half a rule: scope-A records co-consolidate (W1-compliant) and the store-authored output resolves shared-visible — W6 would fail BY CONSTRUCTION |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
@@ -41,6 +41,16 @@ separable specs but ONE release story (§7b).
 | a writer omitting identity to make content mergeable everywhere | adversarial | it achieves the opposite: absent-identity records reach only the shared-visible pool and merge only among themselves; nothing crosses INTO a scope |
 | host policy enabling cross-scope merge (future) | out of v1 | v1 REFUSES cross-scope merges outright; the recorded future form is intersection-scoped visibility (`min` over parents, the 0014 shape) with empty-intersection → refusal — restrict-only either way |
 
+### 2c-ii. Assertions about reach — REQUIRED
+
+| assertion | command that establishes it | expected result |
+|---|---|---|
+| absorption groups by trust class today (the idiom this spec extends) | `grep -n "same_class\|never cross trust classes" src/veracium/graph.py` | the class-partitioned candidate loops |
+| consolidation outputs are store-authored | `grep -n "SYSTEM\|system-authored" src/veracium/schema.py \| head -3` | the consolidation-output authorship |
+| the ledger keys contributors by resolved identity | `grep -n "identity_digest" src/veracium/store/sqlite.py \| head -3` | the 0014 join this spec makes load-bearing |
+
+*(Re-run at implementation; commands recorded per the 0005 rule.)*
+
 ## 3. The operation matrix — TOTAL, one row per combining operation
 
 | operation | timing | scope rule | why |
@@ -48,7 +58,7 @@ separable specs but ONE release story (§7b).
 | absorption | write-time | partition: cross-scope priors are not candidates | a merge inherits lineage; cross-scope inheritance is laundering |
 | supersession | write-time | scope-BLIND (global truth) | per-scope truths would diverge; visibility is 0020's job |
 | reinforcement | write-time | no-op by construction (0012) | mutates nothing |
-| consolidation | maintain-time | partition; cross-scope co-consolidation REFUSED in v1 | the amplification site itself |
+| consolidation | maintain-time | partition; cross-scope co-consolidation REFUSED in v1; **the OUTPUT's membership follows its contributors (R1/W7)** | the amplification site itself |
 | expiry / decay / staleness | maintain-time | scope-blind | no combination occurs |
 | wiki compilation | maintain-time | v1: unchanged store-wide compile; the wiki never reaches principal-bearing recall (0020 §4d). Per-scope compilation is THE recorded widening, cost-gated | the second synthesis path |
 
@@ -77,12 +87,13 @@ key on existing loops.
 
 | invariant | executable check |
 |---|---|
-| W1 consolidation never merges across scopes (v1 refusal) | `test_consolidation_partitions_by_scope` |
-| W2 absorption never absorbs across scopes | `test_absorption_partitions_by_scope` |
-| W3 the matrix is total against the code's combining sites | `test_scope_operation_matrix_is_total` |
-| W4 absent-identity records merge only among themselves | `test_unidentified_pool_is_closed` |
-| W5 supersession stays scope-blind (a scoped store's lifecycle equals an unscoped clone's) | `test_supersession_is_scope_blind` |
-| W6 value-level cross-principal leak probe (the D-extension form): a value written under A never surfaces in B's post-maintenance recall | `test_no_cross_principal_leak_through_maintenance` |
+| W1 consolidation never merges across scopes (v1 refusal) | `test_consolidation_partitions_by_scope` *(offline)* |
+| W2 absorption never absorbs across scopes | `test_absorption_partitions_by_scope` *(offline)* |
+| W3 the matrix is total against the code's combining sites | `test_scope_operation_matrix_is_total` *(offline)* |
+| W4 absent-identity records merge only among themselves | `test_unidentified_pool_is_closed` *(offline)* |
+| W5 supersession stays scope-blind (a scoped store's lifecycle equals an unscoped clone's) | `test_supersession_is_scope_blind` *(offline)* |
+| W6 value-level cross-principal leak probe (the D-extension form): a value written under A never surfaces in B's post-maintenance recall | `test_no_cross_principal_leak_through_maintenance` *(live / D-ext form)* |
+| W7 a derivative inherits its contributors' partition scope; a no-identified-contributor derivative lands in (and stays in) the shared pool | `test_derivative_inherits_partition_scope` *(offline)* |
 
 ## 7. Failure modes and reversibility
 
@@ -103,7 +114,7 @@ with its own review, never a silent relaxation.
 
 | spec | touchpoint | disposition |
 |---|---|---|
-| 0020 | the boundary this spec closes the back door of | ships in the SAME release (one story) or 0020 ships with the §4d wiki exclusion carrying the whole synthesis burden — stated so partial shipping is a decision, not an accident |
+| 0020 | the boundary this spec closes the back door of | **one release story, at true strength (internal R2): 0020's §8 claim is CONDITIONAL on this spec wherever maintenance runs.** The wiki exclusion carries NONE of the consolidation burden — under 0020-alone, maintenance still co-consolidates cross-scope and serves the derivative through scoped recall as an ordinary record; the claim fails at the first maintenance run on a mixed store. Shipping 0020 without 0021 is shipping a boundary with an unlocked back door, and any such decision must say so in those words |
 | 0014 | the ledger join for any future cross-scope derivation | stated, not built |
 | the consolidation-audit direction (0019 §8 successor) | same code path | sequence together when that work lands — one consolidation story covering grounding AND scope |
 

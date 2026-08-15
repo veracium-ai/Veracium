@@ -101,6 +101,21 @@ host-supplied per-process (`MemoryConfig`, the relations-registry
 precedent) and evaluated over RESOLVED identity (0006 I9), never raw
 fields.
 
+**Derived records (internal R1 — the producer sweep both design rounds
+missed):** hosts are not the only producers of absent-identity records —
+MAINTENANCE is: a consolidation output is store-authored (resolved origin
+= the local singleton, `source_id` absent), so under identity-only policy
+it would resolve shared-visible and leak scope-A content to B as an
+ordinary synthesized record. The rule: **when a record's own identity is
+absent, policy consults its LINEAGE — scope membership evaluates over the
+CONTRIBUTORS' resolved identities** (the 0014 ledger join, load-bearing in
+v1; the same lineage shape `min(author, derived_from)` already uses for a
+derivative's trust). All contributors one scope → the derivative belongs
+to that scope. C3's shared-visible floor applies ONLY to records with no
+identified contributors (the closed pool's derivatives stay in the pool).
+Still no new field; Q1 survives. The partition rule and its test (W7)
+live in 0021.
+
 ### 4b. Scoped assertability — restrict-only
 
 The gate's assertable predicate becomes a relation
