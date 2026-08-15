@@ -1,0 +1,1 @@
+vector harness: 56/56 pass against reference_scope.py (20260815T1900Z, commit 4dabb7d)
