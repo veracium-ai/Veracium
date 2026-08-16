@@ -2322,7 +2322,6 @@
    "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
    "evidence_ref_digest": null,
    "contributor_ref": "A",
-   "op_key": "op-aaaaaaaaaaaa:imported-absorption:xx",
    "payload": {
     "reconstructed": true
    },
@@ -2333,13 +2332,14 @@
    "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
    "evidence_ref_digest": null,
    "contributor_ref": "A",
-   "op_key": "op-bbbbbbbbbbbb:imported-absorption:yy",
    "payload": {
     "reconstructed": true
    },
    "contributor_type": "edge"
   },
-  "expect": "equal"
+  "expect": "equal",
+  "op_a": "op-aaaaaaaaaaaa",
+  "op_b": "op-bbbbbbbbbbbb"
  },
  {
   "name": "row_identity_flattened_without_ref_refuses",
@@ -2754,6 +2754,112 @@
    "evidence_ref_digest": null,
    "contributor_ref": "A",
    "contributor_type": "edge"
+  },
+  "expect": "PolicyError"
+ },
+ {
+  "name": "row_key_missing_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "raw": true,
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   }
+  },
+  "expect": "PolicyError"
+ },
+ {
+  "name": "row_key_null_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "raw": true,
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   },
+   "op_key": null
+  },
+  "expect": "PolicyError"
+ },
+ {
+  "name": "row_key_garbage_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "raw": true,
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   },
+   "op_key": "not-an-operation-key"
+  },
+  "expect": "PolicyError"
+ },
+ {
+  "name": "row_key_cross_context_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "raw": true,
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   },
+   "op_key": "scope-attribution:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "expect": "PolicyError"
+ },
+ {
+  "name": "row_key_wrong_survivor_derivation_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "raw": true,
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   },
+   "op_key": "__DERIVE_FOR_OTHER__"
+  },
+  "expect": "PolicyError"
+ },
+ {
+  "name": "row_op_outside_context_domain_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "op": "sup-native-op-in-import-context",
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   }
   },
   "expect": "PolicyError"
  }

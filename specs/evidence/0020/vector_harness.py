@@ -305,7 +305,8 @@ def _run_one(v, policies):
                 want_key = row_op_key(v["op_key"], r.get("site"), surv,
                                       r.get("contributor_ref") or "")
                 try:
-                    validate_row_plan(r, "import")
+                    validate_row_plan(r, "import", op=v["op_key"],
+                                      survivor_id=surv)
                 except PolicyError as e:
                     return f"emitted row fails its own validator: {e}"
                 flattened = (r.get("payload") or {}).get("flattened", False)
@@ -354,12 +355,38 @@ def _run_one(v, policies):
         return None if got == expect else f"got {got!r}, expected {expect!r}"
     if kind == "row_identity":
         # R9-3: THE ONE canonical logical-row projection — semantic drift
-        # must change the id; contradictory rows must refuse
-        from reference_scope import plan_row_id
+        # must change the id; contradictory rows must refuse. R13-1: the
+        # handler DERIVES each row's op_key from the vector's context/op
+        # (callers never select keys); "raw": true suppresses injection
+        # so the key-binding refusal cells exercise the validator itself.
+        from reference_scope import (plan_row_id, row_op_key,
+                                     native_row_op_key)
+        ctx = v.get("context", "import")
+        op = v.get("op", "sup-fixture-edge" if ctx == "native"
+                   else "op-abcdef012345")
         def build(which):
+            row = dict(v[which])
+            side_op = v.get(f"op_{which}", op)
+            if row.get("op_key") == "__DERIVE_FOR_OTHER__":
+                row["op_key"] = row_op_key(side_op, row["site"],
+                                           "OTHER-SURVIVOR",
+                                           row["contributor_ref"])
+            if not v.get("raw") and "op_key" not in row \
+                    and isinstance(row.get("contributor_ref"), str) \
+                    and row.get("site"):
+                try:
+                    row["op_key"] = (
+                        native_row_op_key(side_op, v.get("survivor", "S"),
+                                          row["contributor_ref"])
+                        if ctx == "native"
+                        else row_op_key(side_op, row["site"],
+                                        v.get("survivor", "S"),
+                                        row["contributor_ref"]))
+                except PolicyError:
+                    pass               # let the validator report it
             return plan_row_id(v.get("user", "u1"), "edge",
-                               v.get("survivor", "S"), v[which],
-                               v.get("context", "import"))
+                               v.get("survivor", "S"), row, ctx,
+                               op=side_op)
         if expect == "PolicyError":
             return _expect_err(lambda: build("a"))
         ida, idb = build("a"), build("b")

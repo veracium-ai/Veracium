@@ -93,10 +93,13 @@ def _chain_rows():
 
 
 def _stored(user, stype, sid, row, created="2026-08-16T00:00:00Z",
-            context="import"):
-    """Complete a reconstruction row to the FULL stored-column tuple."""
+            context="import", op=IMPORT_OP):
+    """Complete a reconstruction row to the FULL stored-column tuple.
+    R13-1: the (context, op) pair rides through to the validator, which
+    enforces the operation-domain and EXACT key-derivation binding."""
     import json
-    return (plan_row_id(user, stype, sid, row, context), user, stype, sid,
+    return (plan_row_id(user, stype, sid, row, context, op=op),
+            user, stype, sid,
             row["site"], row["identity_digest"], row["evidence_ref_digest"],
             json.dumps(row["payload"], sort_keys=True), row["op_key"],
             created, "edge", row["contributor_ref"])
@@ -108,11 +111,12 @@ INSERT = ("INSERT INTO contribution_ledger(id,user_id,survivor_type,"
           "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)")
 
 
-def _insert_plan(conn, plan, *, skip_existing=False):
+def _insert_plan(conn, plan, *, skip_existing=False, context="import",
+                 op=IMPORT_OP):
     written = existing = 0
     for sid, rows in sorted(plan.items()):
         for row in rows:
-            t = _stored("u1", "edge", sid, row)
+            t = _stored("u1", "edge", sid, row, context=context, op=op)
             if skip_existing and conn.execute(
                     "SELECT 1 FROM contribution_ledger WHERE id=?",
                     (t[0],)).fetchone():
@@ -156,24 +160,20 @@ def run():
                       "per-row canonical keys — the accepted UNIQUE partial "
                       "index ACCEPTS the plan")
 
-        # the v9 design's failure, demonstrated verbatim (the reviewer's break)
+        # the v9 design's failure, demonstrated verbatim (the reviewer's
+        # break). RAW tuples: the v14 validator now REFUSES this shape
+        # outright (R13-1), so the demo bypasses it to show the index
+        # behaviour the old design hit
+        import json as _jd
+        def _raw_tuple(rid, sid, dig, ref):
+            return (rid, "u1", "edge", sid, "imported-absorption", dig,
+                    None, _jd.dumps({"reconstructed": True}), IMPORT_OP,
+                    "2026-08-16T00:00:00Z", "edge", ref)
         try:
-            conn.execute(INSERT, _stored("u1", "edge", "X1",
-                                         {"site": "imported-absorption",
-                                          "identity_digest": "0" * 64,
-                                          "evidence_ref_digest": None,
-                                          "contributor_type": "edge",
-                                          "payload": {"reconstructed": True},
-                                          "op_key": IMPORT_OP,
-                                          "contributor_ref": "r1"}))
-            conn.execute(INSERT, _stored("u1", "edge", "X2",
-                                         {"site": "imported-absorption",
-                                          "identity_digest": "1" * 64,
-                                          "evidence_ref_digest": None,
-                                          "contributor_type": "edge",
-                                          "payload": {"reconstructed": True},
-                                          "op_key": IMPORT_OP,
-                                          "contributor_ref": "r2"}))
+            conn.execute(INSERT, _raw_tuple("demo-x1", "X1", "0" * 64,
+                                            "r1"))
+            conn.execute(INSERT, _raw_tuple("demo-x2", "X2", "1" * 64,
+                                            "r2"))
             raise AssertionError("one-key-per-plan did NOT raise — the "
                                  "index changed?")
         except sqlite3.IntegrityError:
@@ -186,14 +186,14 @@ def run():
         # (3b) R9-2: DELIMITER-BEARING ids under ONE operation — the v10
         # colon-join collided ('a:b'+'c' vs 'a'+'b:c'); the injective
         # framed-digest keys insert cleanly against the real unique index
-        from reference_scope import import_row_op_key
+        from reference_scope import (import_row_op_key,
+                                     construct_plan_row)
         collide_cases = [("a:b", "c"), ("a", "b:c")]
         for surv, cref in collide_cases:
-            row = {"site": "imported-absorption", "identity_digest": "3" * 64,
-                   "evidence_ref_digest": None, "contributor_ref": cref,
-                   "contributor_type": "edge",
-                   "payload": {"reconstructed": True},
-                   "op_key": import_row_op_key(IMPORT_OP, surv, cref)}
+            row = construct_plan_row(
+                "import", IMPORT_OP, surv, site="imported-absorption",
+                identity_digest="3" * 64, evidence_ref_digest=None,
+                contributor_ref=cref, payload={"reconstructed": True})
             conn.execute(INSERT, _stored("u1", "edge", surv, row))
         conn.commit()
         keys = {import_row_op_key(IMPORT_OP, s, c) for s, c in collide_cases}
@@ -207,24 +207,24 @@ def run():
         # direct A→C link (imported-absorption) and a flattened A→(B)→C
         # copy (scope-attribution) must never skip as equal
         from reference_scope import plan_row_id as _prid, row_op_key
-        direct_row = {"site": "imported-absorption",
-                      "identity_digest": "4" * 64,
-                      "evidence_ref_digest": None, "contributor_ref": "A2",
-                      "contributor_type": "edge",
-                      "payload": {"reconstructed": True}}
-        flat_row = dict(direct_row, site="scope-attribution",
-                        payload={"flattened": True, "reconstructed": True})
-        assert _prid("u1", "edge", "C2", direct_row, "import") != \
-            _prid("u1", "edge", "C2", flat_row, "import"), \
+        direct_row = construct_plan_row(
+            "import", IMPORT_OP, "C2", site="imported-absorption",
+            identity_digest="4" * 64, evidence_ref_digest=None,
+            contributor_ref="A2", payload={"reconstructed": True})
+        flat_row = construct_plan_row(
+            "import", "op-eeee00001111", "C2", site="scope-attribution",
+            identity_digest="4" * 64, evidence_ref_digest=None,
+            contributor_ref="A2",
+            payload={"flattened": True, "reconstructed": True})
+        assert _prid("u1", "edge", "C2", direct_row, "import",
+                     op=IMPORT_OP) != \
+            _prid("u1", "edge", "C2", flat_row, "import",
+                  op="op-eeee00001111"), \
             "payload drift collapsed into one id (R9-3)"
-        conn.execute(INSERT, _stored("u1", "edge", "C2", dict(
-            direct_row, op_key=import_row_op_key(IMPORT_OP, "C2", "A2"))))
+        conn.execute(INSERT, _stored("u1", "edge", "C2", direct_row))
         conn.commit()
-        w3, e3 = _insert_plan(conn, {"C2": [dict(
-            flat_row,
-            op_key=row_op_key("op-eeee00001111", "scope-attribution",
-                              "C2", "A2"))]},
-            skip_existing=True)
+        w3, e3 = _insert_plan(conn, {"C2": [flat_row]},
+            skip_existing=True, op="op-eeee00001111")
         conn.commit()
         assert (w3, e3) == (1, 0), (
             "a flattened history skipped as equal to a direct one (R9-3)")
@@ -240,11 +240,14 @@ def run():
         # malformed rows)
         from reference_scope import (PolicyError as _PE,
                                      validate_row_plan as _vrp)
+        from reference_scope import row_op_key as _rok, \
+            native_row_op_key as _nrok
         GOOD = {"site": "imported-absorption", "identity_digest": "5" * 64,
                 "evidence_ref_digest": "6" * 64, "contributor_ref": "X",
                 "contributor_type": "edge",
-                "payload": {"reconstructed": True}}
-        _vrp(GOOD, "import")                   # the base row is valid
+                "payload": {"reconstructed": True},
+                "op_key": _rok(IMPORT_OP, "imported-absorption", "M", "X")}
+        _vrp(GOOD, "import", op=IMPORT_OP, survivor_id="M")
         MATRIX = {
             "site": [None, "", "absorption", "consolidation", "alien", 7],
             "identity_digest": ["nothex", "5" * 63, "5" * 65, 7, ""],
@@ -260,12 +263,14 @@ def run():
                         {"reparented": True},
                         {"closure": "partial"}],
         }
+        NATIVE_OP = "sup-matrix-edge"
         ATTR_GOOD = {"site": "scope-attribution",
                      "identity_digest": "5" * 64,
                      "evidence_ref_digest": None, "contributor_ref": "X",
                      "contributor_type": "edge",
-                     "payload": {"flattened": True}}
-        _vrp(ATTR_GOOD, "native")
+                     "payload": {"flattened": True},
+                     "op_key": _nrok(NATIVE_OP, "M", "X")}
+        _vrp(ATTR_GOOD, "native", op=NATIVE_OP, survivor_id="M")
         ATTR_MATRIX = {
             "payload": [{"flattened": 1}, {"flattened": False},
                         {"flattened": True, "extra": 1},
@@ -276,46 +281,94 @@ def run():
             "contributor_ref": [None, ""],
         }
         tried = refused = 0
+        OPS = {"import": IMPORT_OP, "native": NATIVE_OP,
+               "prune": "op-1e1e1e1e1e1e"}
         for base, ctx, matrix in ((GOOD, "import", MATRIX),
                                   (ATTR_GOOD, "native", ATTR_MATRIX)):
             for field, bads in matrix.items():
                 for bad in bads:
                     tried += 1
                     try:
-                        _vrp(dict(base, **{field: bad}), ctx)
+                        _vrp(dict(base, **{field: bad}), ctx,
+                             op=OPS[ctx], survivor_id="M")
                     except _PE:
                         refused += 1
         # R11-2: DELETION cells — presence is separate from value
         # validity (the reviewer deleted keys; .get() accepted them)
         for base, ctx in ((GOOD, "import"), (ATTR_GOOD, "native")):
             for field in ("site", "identity_digest", "evidence_ref_digest",
-                          "contributor_type", "contributor_ref", "payload"):
+                          "contributor_type", "contributor_ref", "payload",
+                          "op_key"):
                 tried += 1
                 gone = {k: v for k, v in base.items() if k != field}
                 try:
-                    _vrp(gone, ctx)
+                    _vrp(gone, ctx, op=OPS[ctx], survivor_id="M")
                 except _PE:
                     refused += 1
         # the cross-field cells the matrix's single-field sweep can't hit
+        # R13-1: the COMPLETE 3×5 writer × payload-class product — the
+        # 5 valid cells built by the constructor (asserted below), the 10
+        # INVALID cells enumerated here mechanically (v14's named list
+        # covered only 6 of 10 — the reviewer counted)
+        from reference_scope import SITE_ATTRIBUTION as _SA
+        CLASS_ROWS = {
+            "reconstructed": ("imported-absorption",
+                              {"reconstructed": True}, "5" * 64),
+            "flattened": (_SA, {"flattened": True}, "5" * 64),
+            "flattened+reconstructed": (_SA, {"flattened": True,
+                                              "reconstructed": True},
+                                        "5" * 64),
+            "reparented": (_SA, {"reparented_from": "B"}, "5" * 64),
+            "marker": (_SA, {"closure": "incomplete"}, None),
+        }
+        VALID_CELLS = {("native", "flattened"),
+                       ("import", "reconstructed"),
+                       ("import", "flattened+reconstructed"),
+                       ("prune", "reparented"), ("prune", "marker")}
+        for ctx in ("native", "import", "prune"):
+            for cls, (site, payload, dig) in CLASS_ROWS.items():
+                if (ctx, cls) in VALID_CELLS:
+                    continue
+                tried += 1
+                key = (_nrok(OPS[ctx], "M", "X") if ctx == "native"
+                       else _rok(OPS[ctx], site, "M", "X"))
+                combo = {"site": site, "identity_digest": dig,
+                         "evidence_ref_digest": None,
+                         "contributor_ref": "X",
+                         "contributor_type": "edge", "payload": payload,
+                         "op_key": key}
+                try:
+                    _vrp(combo, ctx, op=OPS[ctx], survivor_id="M")
+                except _PE:
+                    refused += 1
+        # R13-1: the KEY cases — absent/null/malformed/cross-context/
+        # mis-derived, each against an otherwise-valid import row
+        for bad_key in (None, "not-an-operation-key",
+                        _nrok("sup-alien-edge", "M", "X"),
+                        _rok(IMPORT_OP, "imported-absorption",
+                             "OTHER", "X")):
+            tried += 1
+            try:
+                _vrp(dict(GOOD, op_key=bad_key), "import",
+                     op=IMPORT_OP, survivor_id="M")
+            except _PE:
+                refused += 1
+        # ...and an op OUTSIDE the context's domain, with its own key
+        tried += 1
+        try:
+            _vrp(GOOD, "import", op="sup-not-an-import-op",
+                 survivor_id="M")
+        except _PE:
+            refused += 1
         for combo, ctx in (
             (dict(ATTR_GOOD, payload={"closure": "incomplete"}), "prune"),
             (dict(GOOD, identity_digest=None,
                   payload={"reconstructed": True},
                   evidence_ref_digest="nothex"), "import"),
-            # R12-1: the CROSS-PRODUCT refusals — right shape, WRONG writer
-            (dict(GOOD, site="scope-attribution",
-                  payload={"reparented_from": "B"}), "import"),
-            (dict(GOOD, site="scope-attribution", identity_digest=None,
-                  payload={"closure": "incomplete"}), "import"),
-            (dict(ATTR_GOOD, payload={"flattened": True}), "import"),
-            (dict(GOOD, payload={"reconstructed": True}), "prune"),
-            (dict(GOOD, payload={"reconstructed": True}), "native"),
-            (dict(ATTR_GOOD, payload={"flattened": True,
-                                      "reconstructed": True}), "native"),
         ):
             tried += 1
             try:
-                _vrp(combo, ctx)
+                _vrp(combo, ctx, op=OPS[ctx], survivor_id="M")
             except _PE:
                 refused += 1
         assert tried == refused, (
@@ -328,17 +381,20 @@ def run():
                       f"classes; cross-field combos) — R10-3")
 
         # (4) NULL-digest contributor dedup via the deterministic PK
-        null_row = {"site": "imported-absorption", "identity_digest": None,
-                    "evidence_ref_digest": None,
-                    "contributor_type": "edge",
-                    "payload": {"reconstructed": True},
-                    "op_key": f"{IMPORT_OP}:W:unid-1",
-                    "contributor_ref": "unid-1"}
+        null_row = construct_plan_row(
+            "import", IMPORT_OP, "W", site="imported-absorption",
+            identity_digest=None, evidence_ref_digest=None,
+            contributor_ref="unid-1", payload={"reconstructed": True})
         conn.execute(INSERT, _stored("u1", "edge", "W", null_row))
         conn.commit()
         try:
-            conn.execute(INSERT, _stored("u1", "edge", "W", dict(
-                null_row, op_key="op-9999ffff0000:W:unid-1")))
+            remint = construct_plan_row(
+                "import", "op-9999ffff0000", "W",
+                site="imported-absorption", identity_digest=None,
+                evidence_ref_digest=None, contributor_ref="unid-1",
+                payload={"reconstructed": True})
+            conn.execute(INSERT, _stored("u1", "edge", "W", remint,
+                                         op="op-9999ffff0000"))
             raise AssertionError("NULL-digest logical duplicate not refused")
         except sqlite3.IntegrityError:
             conn.rollback()
@@ -362,7 +418,8 @@ def run():
             LOCAL, import_op="op-feedbeef1234")
         before = conn.execute(
             "SELECT COUNT(*) FROM contribution_ledger").fetchone()[0]
-        w2, e2 = _insert_plan(conn, replan, skip_existing=True)
+        w2, e2 = _insert_plan(conn, replan, skip_existing=True,
+                              op="op-feedbeef1234")
         conn.commit()
         after = conn.execute(
             "SELECT COUNT(*) FROM contribution_ledger").fetchone()[0]
@@ -418,7 +475,8 @@ def run():
             if r["op_key"] in existing_keys:
                 continue                        # immutable — never rewritten
             conn.execute(INSERT, _stored("u1", "edge", "C", r,
-                                         context="prune"))
+                                         context="prune",
+                                         op="op-9e9e9e9e9e9e"))
             inserted += 1
         conn.commit()
         assert inserted == 1, f"expected ONE new reparented row, {inserted}"
@@ -459,23 +517,15 @@ def run():
         # (5c) R10-2: the MISSING-COPY prune path exports NOTHING clean —
         # build A2->B2 with NO flattened copy on the absorber's absorber,
         # prune, and prove the marker never materialises a link
-        for sid, row in (
-            ("B2", {"site": "imported-absorption",
-                    "identity_digest": "7" * 64,
-                    "evidence_ref_digest": None, "contributor_ref": "A9",
-                    "contributor_type": "edge",
-                    "payload": {"reconstructed": True},
-                    "op_key": import_row_op_key("op-777777777777",
-                                                "B2", "A9")}),
-            ("C2b", {"site": "imported-absorption",
-                     "identity_digest": "8" * 64,
-                     "evidence_ref_digest": None, "contributor_ref": "B2",
-                     "contributor_type": "edge",
-                     "payload": {"reconstructed": True},
-                     "op_key": import_row_op_key("op-777777777777",
-                                                 "C2b", "B2")}),
-        ):
-            conn.execute(INSERT, _stored("u1", "edge", sid, row))
+        for sid, cref, dig in (("B2", "A9", "7" * 64),
+                               ("C2b", "B2", "8" * 64)):
+            row = construct_plan_row(
+                "import", "op-777777777777", sid,
+                site="imported-absorption", identity_digest=dig,
+                evidence_ref_digest=None, contributor_ref=cref,
+                payload={"reconstructed": True})
+            conn.execute(INSERT, _stored("u1", "edge", sid, row,
+                                         op="op-777777777777"))
         conn.commit()
         def _load2(c, ids):
             m = {}
@@ -498,7 +548,8 @@ def run():
             if not conn.execute("SELECT 1 FROM contribution_ledger WHERE "
                                 "op_key=?", (r["op_key"],)).fetchone():
                 conn.execute(INSERT, _stored("u1", "edge", "C2b", r,
-                                             context="prune"))
+                                             context="prune",
+                                             op="op-8f8f8f8f8f8f"))
         conn.commit()
         st2 = _load2(conn, ("B2", "C2b"))
         markers = [r for r in st2["C2b"]
@@ -522,13 +573,14 @@ def run():
             c = sqlite3.connect(db, timeout=10)
             barrier.wait()
             c.execute("BEGIN IMMEDIATE")           # the linearization point
-            w, e = _insert_plan(c, {"Z": [{
-                "site": "imported-absorption", "identity_digest": "2" * 64,
-                "evidence_ref_digest": None,
-                "contributor_type": "edge",
-                "payload": {"reconstructed": True},
-                "op_key": f"op-cc00cc00cc00:Z:zz-1",
-                "contributor_ref": "zz-1"}]}, skip_existing=True)
+            from reference_scope import construct_plan_row as _cpr
+            zrow = _cpr("import", "op-cc00cc00cc00", "Z",
+                        site="imported-absorption",
+                        identity_digest="2" * 64,
+                        evidence_ref_digest=None, contributor_ref="zz-1",
+                        payload={"reconstructed": True})
+            w, e = _insert_plan(c, {"Z": [zrow]}, skip_existing=True,
+                                op="op-cc00cc00cc00")
             c.commit(); c.close()
             results[name] = (w, e)
 

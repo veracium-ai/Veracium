@@ -834,7 +834,8 @@ def render_site_matrix() -> str:
     return "\n".join([head] + rows)
 
 
-def validate_row_plan(row: dict, context: str) -> None:
+def validate_row_plan(row: dict, context: str, *, op: str,
+                      survivor_id: str) -> None:
     """R9-3's cross-field validator, made TOTAL under R10-3 and
     CONTEXT-AWARE under R12-1 (the reviewer showed reparented, marker,
     and native-flattened classes all passing as IMPORT-plan rows — each
@@ -859,7 +860,8 @@ def validate_row_plan(row: dict, context: str) -> None:
     # contributor_type). Every semantic field must be a PRESENT key;
     # None is a legal VALUE only where stated.
     required = ("site", "identity_digest", "evidence_ref_digest",
-                "contributor_type", "contributor_ref", "payload")
+                "contributor_type", "contributor_ref", "payload",
+                "op_key")   # R13-1: the key is part of the contract
     missing = [f for f in required if f not in row]
     if missing:
         raise PolicyError(f"plan row is missing required field(s) "
@@ -922,10 +924,31 @@ def validate_row_plan(row: dict, context: str) -> None:
             f"(site, payload-class) cell {cell!r} — its closed set is "
             f"{sorted(WRITER_CONTEXTS[context]['cells'])} (R12-1: each "
             f"atomic primitive owns its own cells)")
+    # R13-1: the OPERATION BINDING — the reviewer stored an import row
+    # under missing/native-format/garbage/null keys and all projected.
+    # The context's op-ID domain is CONSUMED here, and the row's key must
+    # EQUAL the context's derivation over (op, survivor, contributor) —
+    # a caller cannot select an arbitrary, cross-context, or null key.
+    if not (isinstance(op, str)
+            and re.match(WRITER_CONTEXTS[context]["op_re"], op)):
+        raise PolicyError(
+            f"operation id {op!r} is outside writer context {context!r}'s "
+            f"domain {WRITER_CONTEXTS[context]['op_re']!r} (R13-1)")
+    expected_key = (native_row_op_key(op, survivor_id,
+                                      row["contributor_ref"])
+                    if context == "native"
+                    else row_op_key(op, row["site"], survivor_id,
+                                    row["contributor_ref"]))
+    if row["op_key"] != expected_key:
+        raise PolicyError(
+            f"op_key {row['op_key']!r} is not the context's derivation "
+            f"over (op, survivor, contributor) — absent, null, malformed, "
+            f"cross-context, and mis-derived keys all land here (R13-1: "
+            f"the key is DERIVED, never selected)")
 
 
 def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
-                row: dict, context: str) -> str:
+                row: dict, context: str, *, op: str) -> str:
     """The 0009 amendment's DETERMINISTIC row id (R8-3; REBUILT under
     R9-3 as THE ONE canonical logical-row projection): a framed digest
     over EVERY semantic field — user, survivor coordinates, site,
@@ -937,7 +960,7 @@ def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
     plan_row_id set equality (the v10 three-field multiset phrasing is
     WITHDRAWN). The cross-field validator runs first — a contradictory
     row never projects."""
-    validate_row_plan(row, context)
+    validate_row_plan(row, context, op=op, survivor_id=survivor_id)
     parts = [b"veracium.import-contribution-row.v2"]
     for v in (user_id, survivor_type, survivor_id, row["site"],
               row["identity_digest"],
@@ -996,6 +1019,35 @@ def import_row_op_key(import_op: str, survivor_id: str,
     """The imported-absorption specialization of `row_op_key`."""
     return row_op_key(import_op, "imported-absorption", survivor_id,
                       contributor_ref)
+
+
+def construct_plan_row(context: str, op: str, survivor_id: str, *,
+                       site: str, identity_digest, evidence_ref_digest,
+                       contributor_ref: str, payload: dict) -> dict:
+    """THE OPERATION-AWARE ROW CONSTRUCTOR (R13-1's preferred amendment
+    arm): the atomic primitive derives `op_key` ITSELF from its
+    store-owned operation id and the row coordinates — callers never
+    supply a key, so an arbitrary, cross-context, or null key cannot
+    enter by construction. The full validator (domain, cell, exact key
+    equality) runs before the row is returned. Every normative row
+    producer in this module (`reconstruct_absorption_rows`,
+    `prune_absorbed_record`) builds through here."""
+    ctx = WRITER_CONTEXTS.get(context)
+    if ctx is None:
+        raise PolicyError(f"unknown writer context {context!r}")
+    if not (isinstance(op, str) and re.match(ctx["op_re"], op)):
+        raise PolicyError(f"operation id {op!r} outside context "
+                          f"{context!r}'s domain (R13-1)")
+    key = (native_row_op_key(op, survivor_id, contributor_ref)
+           if context == "native"
+           else row_op_key(op, site, survivor_id, contributor_ref))
+    row = {"site": site, "identity_digest": identity_digest,
+           "evidence_ref_digest": evidence_ref_digest,
+           "contributor_ref": contributor_ref,
+           "contributor_type": "edge", "payload": payload,
+           "op_key": key}
+    validate_row_plan(row, context, op=op, survivor_id=survivor_id)
+    return row
 
 
 class ExportLinkageError(PolicyError):
@@ -1091,17 +1143,15 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
                 t.get("contributor_ref") == x
                 and (t.get("payload") or {}).get("flattened")
                 for t in out.get(absorber, []))
-            new = {"site": SITE_ATTRIBUTION,
-                   "identity_digest": (r.get("identity_digest")
-                                       if has_copy else None),
-                   "evidence_ref_digest": (r.get("evidence_ref_digest")
-                                           if has_copy else None),
-                   "contributor_ref": x, "contributor_type": "edge",
-                   "op_key": row_op_key(prune_op, SITE_ATTRIBUTION,
-                                        absorber, x),
-                   "payload": ({"reparented_from": record_id} if has_copy
-                               else {"closure": "incomplete"})}
-            validate_row_plan(new, "prune")
+            new = construct_plan_row(
+                "prune", prune_op, absorber, site=SITE_ATTRIBUTION,
+                identity_digest=(r.get("identity_digest") if has_copy
+                                 else None),
+                evidence_ref_digest=(r.get("evidence_ref_digest")
+                                     if has_copy else None),
+                contributor_ref=x,
+                payload=({"reparented_from": record_id} if has_copy
+                         else {"closure": "incomplete"}))
             out.setdefault(absorber, []).append(new)
     out.pop(record_id, None)                    # the A10 drop
     return out
@@ -1181,12 +1231,10 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
             site = "imported-absorption" if direct else SITE_ATTRIBUTION
             payload = ({"reconstructed": True} if direct
                        else {"flattened": True, "reconstructed": True})
-            out.setdefault(surv, []).append(
-                {"site": site, "identity_digest": d,
-                 "evidence_ref_digest": ev, "contributor_ref": cref,
-                 "contributor_type": "edge",
-                 "op_key": row_op_key(import_op, site, surv, cref),
-                 "payload": payload})
+            out.setdefault(surv, []).append(construct_plan_row(
+                "import", import_op, surv, site=site, identity_digest=d,
+                evidence_ref_digest=ev, contributor_ref=cref,
+                payload=payload))
             if hop not in winner_of:
                 break
             hop = winner_of[hop]
