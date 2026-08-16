@@ -479,7 +479,11 @@ class ContributionDraft(BaseModel):
 
 class ContributionRecord(BaseModel):
     """A ledger row as read back (specs/0014 §4a/§4d). Content-free: identity
-    is digests; `payload` carries scalar field names and values only."""
+    is digests; `payload` carries scalar field names and values only.
+    `contributor_type`/`contributor_ref` are the SCHEMA-v8 typed contributor
+    link (0021 §7b, the 0014 amendment; the 0019 rider): populated on new
+    native absorption rows from the draft's `contributor_type`/`contributor_id`;
+    None on legacy (pre-v8) rows."""
     id: str
     user_id: str
     survivor_type: str
@@ -490,6 +494,8 @@ class ContributionRecord(BaseModel):
     payload: dict
     op_key: Optional[str]
     created_at: datetime
+    contributor_type: Optional[str] = None
+    contributor_ref: Optional[str] = None
 
 
 class SupersessionRefusalDraft(BaseModel):

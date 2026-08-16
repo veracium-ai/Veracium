@@ -658,13 +658,20 @@ class SqliteStore(Store):
             side["derived_from"] = contributor.provenance.derived_from.value
         payload = {"base": dict(plan.absorption_pre_image), "contributor": side}
         validate_payload("absorption", payload)
+        # 0021 §7b (the 0014 amendment, clause 3) / the 0019 rider: the TYPED
+        # CONTRIBUTOR LINK — persisted on every new native absorption row from
+        # the fields the shipped draft ALREADY carries (draft `contributor_id`
+        # -> column `contributor_ref`); legacy rows stay NULL. The accepted
+        # {base, contributor} payload above is NOT amended.
         self._conn.execute(
             "INSERT INTO contribution_ledger(id,user_id,survivor_type,survivor_id,"
-            "site,identity_digest,evidence_ref_digest,payload,op_key,created_at) "
-            "VALUES(?,?,?,?,?,?,?,?,?,?)",
+            "site,identity_digest,evidence_ref_digest,payload,op_key,created_at,"
+            "contributor_type,contributor_ref) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
             (f"contrib-{uuid.uuid4().hex[:12]}", user_id, draft.survivor_type,
              draft.survivor_id, "absorption", ident, ev,
-             canonical_payload(payload), None, self._now().isoformat()))
+             canonical_payload(payload), None, self._now().isoformat(),
+             draft.contributor_type, draft.contributor_id))
         # specs/0019: the contributor's authoritative flag feeds the caller's
         # N-ary OR verification (U2b) — read from the row this transaction is
         # consuming, never from the draft.
@@ -736,12 +743,19 @@ class SqliteStore(Store):
                             f"fields — a mis-keyed second output would lose its "
                             f"attribution invisibly (0014 §4a R3-3)")
                     continue
+                # The contributor columns stay NULL here: the 0021 §7b typed link
+                # is scoped to the draft-carried plan/absorption sites, and the
+                # R3-3 verify above compares the deterministic fields of PRE-v8
+                # rows — a recovered op resuming across the v7→v8 migration must
+                # keep matching its own legacy rows (NULL) field-for-field.
                 self._conn.execute(
                     "INSERT INTO contribution_ledger(id,user_id,survivor_type,"
                     "survivor_id,site,identity_digest,evidence_ref_digest,payload,"
-                    "op_key,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    "op_key,created_at,contributor_type,contributor_ref) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                     (f"contrib-{uuid.uuid4().hex[:12]}", op.user_id, "episode",
-                     out_ep.id, "consolidation", ident, ev, canon, key, now))
+                     out_ep.id, "consolidation", ident, ev, canon, key, now,
+                     None, None))
 
     @staticmethod
     def _contribution_record(r):
@@ -750,10 +764,12 @@ class SqliteStore(Store):
         return ContributionRecord(
             id=r[0], user_id=r[1], survivor_type=r[2], survivor_id=r[3],
             site=r[4], identity_digest=r[5], evidence_ref_digest=r[6],
-            payload=_json.loads(r[7]), op_key=r[8], created_at=r[9])
+            payload=_json.loads(r[7]), op_key=r[8], created_at=r[9],
+            contributor_type=r[10], contributor_ref=r[11])
 
     _CONTRIB_COLS = ("id,user_id,survivor_type,survivor_id,site,identity_digest,"
-                     "evidence_ref_digest,payload,op_key,created_at")
+                     "evidence_ref_digest,payload,op_key,created_at,"
+                     "contributor_type,contributor_ref")
 
     def contributions(self, user_id: str, survivor_type: str,
                       survivor_id: str) -> list:

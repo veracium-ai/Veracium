@@ -288,6 +288,52 @@ def build_version_artifact(strict: bool = True) -> dict:
                               f"constant — specs/0014 §4b, sha 326ea193…)",
                 "digest": sv._digest_of_identity(alt, version),
                 "objects": alt})
+        # SCHEMA v8 (the 0019 rider as amended by 0020/0021, C2/C4; 0021 §7b):
+        # v8's shape evidence includes BOTH manifestations of `contribution_ledger`
+        # — and because the v6 supersession_operations divergence persists, the
+        # accepted set is the full REACHABLE matrix of the two tables' forms:
+        #   constructor × constructor  — fresh v8, or a ≤v3 base (both tables are
+        #                                created by the additive diff, inline);
+        #   ALTER-v6    × constructor  — a v4/v5 base migrated to v8 (the ledger
+        #                                is created inline, the receipts ALTERed);
+        #   constructor × ALTER-v8     — a v6/v7 base BORN at ≥v6, migrated to v8;
+        #   ALTER-v6    × ALTER-v8     — a v6/v7 base that itself arrived from ≤v5
+        #                                by the earlier migration, now migrated on.
+        # The ledger's ALTER-path entry is the RECORDED CONSTANT `ALTER_PATH_V8_SQL`
+        # (schema_v8_evidence.txt [2], sha-checked), never produced by running the
+        # migration here — `0013` §4c: a migration may not define its own destination.
+        if version == 8:
+            import copy
+            import hashlib as _h
+            if (_h.sha256(sv.ALTER_PATH_V8_SQL.encode()).hexdigest()
+                    != sv.ALTER_PATH_V8_SHA256):
+                raise SystemExit("ALTER_PATH_V8_SQL does not match its recorded "
+                                 "sha256 (0019 rider C2 / 0021 §7b) — refusing to "
+                                 "emit evidence")
+            ctor = identity(manifest(c))
+            for sup_alt, ledger_alt, prov in (
+                    (True, False, "v5:constructor->v8 (reviewed v6 ALTER-path "
+                                  "constant — specs/0014 §4b, sha 326ea193…; "
+                                  "ledger created inline)"),
+                    (False, True, "v7:constructor->v8 (recorded ALTER-path "
+                                  "constant — 0019 rider C2 / 0021 §7b, "
+                                  "sha 027b5ca3…)"),
+                    (True, True, "v5:constructor->v7->v8 (both ALTER-path "
+                                 "constants — specs/0014 §4b sha 326ea193…, "
+                                 "0019 rider C2 sha 027b5ca3…)")):
+                alt = copy.deepcopy(ctor)
+                if sup_alt:
+                    alt["table:supersession_operations"] = dict(
+                        alt["table:supersession_operations"],
+                        sql=sv.ALTER_PATH_V6_SQL)
+                if ledger_alt:
+                    alt["table:contribution_ledger"] = dict(
+                        alt["table:contribution_ledger"],
+                        sql=sv.ALTER_PATH_V8_SQL)
+                accepted.append({
+                    "provenance": prov,
+                    "digest": sv._digest_of_identity(alt, version),
+                    "objects": alt})
         c.close()
         # *(Historical: round 7's union across qualified runtimes. `0007` now
         # supports exactly one active build identity; this loop survives so the

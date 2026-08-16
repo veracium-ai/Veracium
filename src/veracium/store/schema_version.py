@@ -297,6 +297,35 @@ ALTERS_V5_TO_V6 = (
     "outcome_digest_version INTEGER NOT NULL DEFAULT 1",
 )
 
+# The RECORDED ALTER-path stored DDL for `contribution_ledger` (the 0019 rider as
+# amended by 0020/0021, C2; 0021 §7b — byte-identical to the recorded evidence
+# `specs/evidence/0020/schema_v8_evidence.txt` [2]: a real database built from the
+# v7 constructor, the two rider ALTERs run, sqlite_master read back on the
+# qualified 3.45.1 — the 0014 `supersession_operations` precedent). The v7→v8
+# migration must byte-match this text, never define it (`0013` §4c); a mismatch
+# means the migration (or an unqualified runtime) is wrong, never the constant.
+ALTER_PATH_V8_SQL = (
+    "CREATE TABLE contribution_ledger (\n"
+    "    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n"
+    "    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,\n"
+    "    site TEXT NOT NULL,\n"
+    "    identity_digest TEXT, evidence_ref_digest TEXT,\n"
+    "    payload TEXT NOT NULL, op_key TEXT,\n"
+    "    created_at TEXT NOT NULL\n"
+    ", contributor_type TEXT, contributor_ref TEXT)"
+)
+ALTER_PATH_V8_SHA256 = \
+    "027b5ca31adc2761e0fc20ebc2214021b419043e6883e7852661675146fc8174"
+
+# The two ALTER statements, in the frozen order — the D2 migration's 0013-declared
+# steps, sha-pinned in the recorded evidence ([4]: 40b66f30…, 51305388…). Shared by
+# the v7->v8 migration step; the resulting stored DDL must equal ALTER_PATH_V8_SQL
+# byte-for-byte (0019 rider C2/C3; 0021 §7b).
+ALTERS_V7_TO_V8 = (
+    "ALTER TABLE contribution_ledger ADD COLUMN contributor_type TEXT",
+    "ALTER TABLE contribution_ledger ADD COLUMN contributor_ref TEXT",
+)
+
 # specs/0019: v7 is a NO-DDL bump — the `ungrounded` flag lives in
 # `edges.json` (the 0006 v4→v5 precedent), so the object set is v6's,
 # byte-identical. The version exists for REFUSAL honesty alone: an older
@@ -304,10 +333,35 @@ ALTERS_V5_TO_V6 = (
 # signal; a v7 store refuses on pre-0019 builds instead (0007).
 SCHEMA_V7 = SCHEMA_V6
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
-           6: SCHEMA_V6, 7: SCHEMA_V7}
+# v8 (the 0019 rider as amended by 0020/0021 — C1/C2; 0021 §7b, the 0014
+# amendment clause 3): `contribution_ledger` gains the TYPED CONTRIBUTOR LINK —
+# `contributor_type TEXT` and `contributor_ref TEXT`, both nullable (legacy rows
+# NULL; populated on every new native absorption row from the fields the shipped
+# `ContributionDraft` already carries). The constructor text below is the v7 text
+# with the two columns appended after `created_at` — byte-identical to the
+# RECORDED evidence (`specs/evidence/0020/schema_v8_evidence.txt` [1],
+# constructor sha a19bc3bf…). The refusal-bump semantics of the version are
+# retained: a v8 store refuses on pre-D2 builds (0007). As at v6, the fresh
+# constructor and the ALTER path legitimately produce DIFFERENT stored DDL for
+# the same table, so `MANIFESTS[8]` is a SET per accepted `0013` §4e.
+SCHEMA_V8 = tuple(
+    o if o.key != ("table", "contribution_ledger") else
+    SchemaObject("table", "contribution_ledger", """CREATE TABLE contribution_ledger (
+    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,
+    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,
+    site TEXT NOT NULL,
+    identity_digest TEXT, evidence_ref_digest TEXT,
+    payload TEXT NOT NULL, op_key TEXT,
+    created_at TEXT NOT NULL,
+    contributor_type TEXT, contributor_ref TEXT
+)""", REQUIRED)
+    for o in SCHEMA_V7
+)
 
-SCHEMA_VERSION = 7
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
+           6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8}
+
+SCHEMA_VERSION = 8
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

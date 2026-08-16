@@ -172,6 +172,34 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
                 diff="the v5->v6 ALTER produced DDL that does not byte-match the "
                      "reviewed expectation (0014 §4b) — the migration or runtime is "
                      "wrong; the expectation never moves")
+    # 0019 rider (as amended by 0020/0021, C1–C3) / 0021 §7b: crossing INTO v8 ALTERs
+    # `contribution_ledger` — the typed contributor link (`contributor_type TEXT`,
+    # `contributor_ref TEXT`, nullable; legacy rows NULL). The same shape as the v6
+    # block above: the table's typed key exists in the base, so its CHANGED DDL is
+    # invisible to the additive object diff. The two ADD COLUMNs are the migration's
+    # 0013-declared steps, sha-pinned in the RECORDED evidence
+    # (`specs/evidence/0020/schema_v8_evidence.txt` [4]); the resulting stored DDL
+    # must byte-match the recorded ALTER-path manifestation (`ALTER_PATH_V8_SQL`,
+    # evidence [2]) — the expectation was recorded independently and the migration may
+    # not define its own destination (0013 §4c); `open_versioned`'s revalidation
+    # against `accepted_digests(8)` refuses a mismatched result rather than adopting
+    # it. Guarded 6 <= base: `contribution_ledger` entered the schema at v6, so only
+    # v6/v7 bases carry a table to ALTER — for bases ≤5 the additive diff above
+    # already created the table in its v8 CONSTRUCTOR form (columns inline), and
+    # those paths land on the CONSTRUCTOR manifest, which is equally accepted.
+    if 6 <= base < 8 <= SCHEMA_VERSION:
+        from .schema_version import ALTERS_V7_TO_V8, ALTER_PATH_V8_SQL
+        for stmt in ALTERS_V7_TO_V8:
+            conn.execute(stmt)
+        stored = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' "
+            "AND name='contribution_ledger'").fetchone()[0]
+        if stored != ALTER_PATH_V8_SQL:
+            raise StoreVersionError(
+                "", base, SCHEMA_VERSION, "unsupported-migration",
+                diff="the v7->v8 ALTER produced DDL that does not byte-match the "
+                     "recorded evidence (0019 rider C2 / 0021 §7b) — the migration "
+                     "or runtime is wrong; the expectation never moves")
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 

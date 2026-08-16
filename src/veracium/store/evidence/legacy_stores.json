@@ -229,6 +229,14 @@
       "store_schema_version": null,
       "digest": null,
       "result": "ok"
+    },
+    {
+      "tag": "v0.10.0",
+      "commit": "6ab8c41e8d0ada970faaea2ec1c117ddc3a04328",
+      "on_disk_user_version": 7,
+      "store_schema_version": null,
+      "digest": null,
+      "result": "ok"
     }
   ]
 }

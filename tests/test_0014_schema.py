@@ -94,7 +94,7 @@ def test_v5_to_v6_migrates_a_nonempty_receipt_table():
     migrate_store(path)
 
     c = sqlite3.connect(path)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == sv.SCHEMA_VERSION == 7  # 0019: v7 no-DDL bump
+    assert c.execute("PRAGMA user_version").fetchone()[0] == sv.SCHEMA_VERSION == 8  # 0021 rider: v8 head
     rows = c.execute(
         "SELECT operation_id, request_digest, response, outcome_digest_version "
         "FROM supersession_operations ORDER BY operation_id").fetchall()
@@ -104,7 +104,9 @@ def test_v5_to_v6_migrates_a_nonempty_receipt_table():
     assert stored == ALTER_PATH_V6_SQL
     assert c.execute("SELECT name FROM sqlite_master "
                      "WHERE name='contribution_ledger'").fetchone()
-    assert digest(manifest(c), 6) in accepted_digests(6)
+    # v8 head: the v5 base lands (receipts ALTER-path × ledger constructor) —
+    # an accepted v8 manifest; the v6 accepted-set membership moved with the head
+    assert digest(manifest(c), 8) in accepted_digests(8)
     # a post-upgrade write stamps 2 EXPLICITLY (never relying on the default)
     c.execute("INSERT INTO supersession_operations "
               "(user_id, operation_id, logical_request_digest, status, "
@@ -125,7 +127,9 @@ def test_deep_migration_v1_to_v6_lands_accepted():
     c.close()
     migrate_store(path)
     c = sqlite3.connect(path)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 7  # 0019: head is v7
-    assert digest(manifest(c), 6) in accepted_digests(6)
+    assert c.execute("PRAGMA user_version").fetchone()[0] == 8  # 0021 rider: head is v8
+    # base 1 lacks BOTH altered tables, so the additive diff creates each in its
+    # v8 CONSTRUCTOR form — the constructor manifest
+    assert digest(manifest(c), 8) in accepted_digests(8)
     cols = [r[1] for r in c.execute("PRAGMA table_info(supersession_operations)")]
     assert cols[-3:] == ["request_digest", "response", "outcome_digest_version"]

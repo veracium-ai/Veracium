@@ -141,12 +141,23 @@ def run():
         conn = sqlite3.connect(db)
         for s in ddl:
             conn.execute(s)
-        for s in AMENDMENT_ALTERS:
-            conn.execute(s)
+        cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(contribution_ledger)")}
+        if {"contributor_type", "contributor_ref"} <= cols:
+            # SCHEMA v8 shipped (the 0019 rider as amended by 0020/0021): the
+            # live store is BORN v8 — the amendment's columns are native in the
+            # extracted DDL, so the ALTERs are already materialised.
+            checks.append("[real-ddl] the extracted live-store schema is BORN "
+                          "v8 — contributor_type/contributor_ref present "
+                          "natively (nullable; legacy rows unaffected); the "
+                          "amendment's ALTERs are already materialised")
+        else:
+            for s in AMENDMENT_ALTERS:
+                conn.execute(s)
+            checks.append("[real-ddl] the amendment's EXACT ALTERs applied over "
+                          "the extracted schema (contributor_type, "
+                          "contributor_ref — nullable; legacy rows unaffected)")
         conn.commit()
-        checks.append("[real-ddl] the amendment's EXACT ALTERs applied over "
-                      "the extracted schema (contributor_type, "
-                      "contributor_ref — nullable; legacy rows unaffected)")
 
         # (2)+(3) multi-row single-operation plan under per-row keys
         plan = _chain_rows()
