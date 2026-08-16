@@ -4,7 +4,7 @@
 
 # Spec status
 
-**21 specs · 15 accepted · 183 external review
+**21 specs · 15 accepted · 185 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -32,8 +32,8 @@ is the number that decides what can be built.
 | **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 10 | 0 | 0 | 0 | — |
 | **0018** | the release-migration orchestrator | `accepted` | 2026-08-15 | 1 | 4 | 0 | 0 | 0 | — |
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-15 | 1 | 4 | 0 | 0 | 0 | — |
-| **0020** | scoped recall — the principal boundary (S1) | `draft` | 2026-08-16 | 1 | 9 | 0 | 0 | 0 | — |
-| **0021** | scope under derivation and consolidation (S2) | `draft` | 2026-08-16 | 1 | 9 | 0 | 0 | 0 | — |
+| **0020** | scoped recall — the principal boundary (S1) | `draft` | 2026-08-16 | 1 | 10 | 0 | 0 | 0 | — |
+| **0021** | scope under derivation and consolidation (S2) | `draft` | 2026-08-16 | 1 | 10 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

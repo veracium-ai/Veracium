@@ -290,13 +290,20 @@ def _run_one(v, policies):
                 for s, rows in got.items()}
         if norm != want:
             return f"got {norm!r}, expected {want!r}"
-        # R8-3: STRUCTURAL total-row check — per-row CANONICAL op keys
-        # (unique by construction, satisfying the accepted UNIQUE partial
-        # index), typed contributor_ref, the closed payload
+        # R8-3/R9-2: STRUCTURAL total-row check — per-row INJECTIVE op
+        # keys (the framed-digest form recomputed independently), typed
+        # contributor_ref, the closed payload, and the cross-field
+        # validator green on every row
+        from reference_scope import import_row_op_key, validate_row_plan
         seen_keys = set()
         for surv, rows in got.items():
             for r in rows:
-                want_key = f"{v['op_key']}:{surv}:{r.get('contributor_ref')}"
+                want_key = import_row_op_key(v["op_key"], surv,
+                                             r.get("contributor_ref") or "")
+                try:
+                    validate_row_plan(r)
+                except PolicyError as e:
+                    return f"emitted row fails its own validator: {e}"
                 if (r["site"] != "imported-absorption"
                         or r.get("contributor_ref") is None
                         or r["op_key"] != want_key
@@ -305,6 +312,54 @@ def _run_one(v, policies):
                     return f"row not fully populated/canonical: {r!r}"
                 seen_keys.add(r["op_key"])
         return None
+    if kind == "derivation":
+        # R9-1: the exact reverse-link algorithm, with the retention
+        # contract's prune-time reparenting applied in order
+        from reference_scope import (derive_absorbed_by,
+                                     prune_absorbed_record,
+                                     ExportLinkageError)
+        def _rows(rr):
+            out = []
+            for x in rr:
+                row = {"site": x.get("site", "absorption"),
+                       "identity_digest": (digest_of(I(x["identity"]), LOCAL)
+                                           if x.get("identity") else None),
+                       "op_key": x.get("op_key"),
+                       "evidence_ref_digest": None,
+                       "contributor_ref": x.get("contributor_ref"),
+                       "payload": x.get("payload", {})}
+                out.append(row)
+            return out
+        ledger = {k: _rows(rw) for k, rw in v["ledger_rows"].items()}
+        try:
+            for pid in v.get("prune", []):
+                ledger = prune_absorbed_record(pid, ledger)
+            got = derive_absorbed_by(v["query"], ledger)
+        except ExportLinkageError:
+            return (None if expect == "ExportLinkageError"
+                    else "ExportLinkageError raised unexpectedly")
+        if expect == "ExportLinkageError":
+            return "expected ExportLinkageError, none raised"
+        return None if got == expect else f"got {got!r}, expected {expect!r}"
+    if kind == "row_identity":
+        # R9-3: THE ONE canonical logical-row projection — semantic drift
+        # must change the id; contradictory rows must refuse
+        from reference_scope import plan_row_id
+        def build(which):
+            return plan_row_id(v.get("user", "u1"), "edge",
+                               v.get("survivor", "S"), v[which])
+        if expect == "PolicyError":
+            return _expect_err(lambda: build("a"))
+        ida, idb = build("a"), build("b")
+        if expect == "differ":
+            return None if ida != idb else "ids EQUAL under semantic drift"
+        return None if ida == idb else "ids differ for the same logical row"
+    if kind == "op_key_injective":
+        # R9-2: delimiter-bearing ids must not collide
+        from reference_scope import import_row_op_key
+        keys = [import_row_op_key(v["op"], s, c) for s, c in v["cases"]]
+        return (None if len(set(keys)) == len(keys)
+                else f"COLLISION among {keys!r}")
     if kind == "validate_filters":
         if expect == "PolicyError":
             return _expect_err(lambda: validate_filters(v["filters"]))

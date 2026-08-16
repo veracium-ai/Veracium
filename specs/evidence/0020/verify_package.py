@@ -1,6 +1,6 @@
 """specs/0020 — ONE COMMAND that verifies the whole package (external
 round 4's archive ask): every hash in review_manifest.json checked against
-the tree, then both harnesses executed. Run from the extracted package
+the tree, then every declared harness executed. Run from the extracted package
 root:
 
     <venv>/python specs/evidence/0020/verify_package.py
@@ -41,28 +41,47 @@ def _walk_hashes(node, prefix=""):
 
 
 def _runtime_qualified():
-    """Round-8 archive ask: an unqualified SQLite must be an EXPLICIT
-    SKIP/unqualified-runtime result, never an opaque harness failure. The
-    packaged store fails closed at open on unqualified runtimes, so the
-    store-backed harnesses cannot run there — the PURE harnesses still
-    verify. Returns (qualified: bool, detail: str)."""
+    """Round-8 archive ask, HARDENED per round 9 (R9-5 — the reviewer
+    injected an internal defect and watched it become a success-with-skip:
+    a broken qualification implementation is NOT evidence that SQLite is
+    merely unsupported). ONLY a successfully evaluated
+    `runtime_supported() == False` is a skip; import errors, malformed
+    evidence, or predicate exceptions return ("error", detail) and FAIL
+    package verification. Returns (state, detail) with state in
+    {"qualified", "unqualified", "error"}."""
     sys.path.insert(0, str(ROOT / "src"))
     try:
+        import veracium.store.schema_version as _sv
+        # the qualification must be THIS package's code — an editable
+        # install or stray module resolving elsewhere would qualify a
+        # DIFFERENT veracium (found by our own fault-injection retest of
+        # R9-5: the injected defect was masked by an installed copy)
+        if not str(pathlib.Path(_sv.__file__).resolve()).startswith(
+                str(ROOT.resolve())):
+            return ("error",
+                    f"the qualification module resolved OUTSIDE the "
+                    f"package tree ({_sv.__file__}) — wrong cwd, missing "
+                    f"src, or a shadowing install (R9-5)")
         from veracium.store.schema_version import (runtime_identity,
                                                    runtime_supported,
                                                    qualified_runtimes)
         me = runtime_identity()
-        if runtime_supported():
-            return True, f"SQLite {me.get('sqlite_version')} (qualified)"
+        supported = runtime_supported()         # total, fail-closed by its
+        if supported:                           # own contract — a raise
+            return ("qualified",                # here is a DEFECT, not an
+                    f"SQLite {me.get('sqlite_version')} (qualified)")
         recs = sorted({r.get("sqlite_version") for r in qualified_runtimes()
                        if isinstance(r, dict)} - {None})
-        return False, (f"SQLite {me.get('sqlite_version')} is NOT a "
-                       f"qualified runtime (package qualifies: "
-                       f"{', '.join(recs) or 'none recorded'}) — run under "
-                       f"the qualified runtime to execute the store-backed "
-                       f"harnesses")
-    except Exception as e:                      # fail toward the skip, loudly
-        return False, f"runtime qualification unreadable ({e!r})"
+        return ("unqualified",
+                f"SQLite {me.get('sqlite_version')} is NOT a qualified "
+                f"runtime (package qualifies: "
+                f"{', '.join(recs) or 'none recorded'}) — run under the "
+                f"qualified runtime to execute the store-backed harnesses")
+    except Exception as e:
+        return ("error",
+                f"runtime qualification COULD NOT BE EVALUATED ({e!r}) — "
+                f"this is a package defect, never an environment skip "
+                f"(R9-5)")
 
 
 def main():
@@ -78,8 +97,13 @@ def main():
     if checked == 0:
         failures.append("no *_sha256 keys found — the manifest is empty?")
 
-    qualified, detail = _runtime_qualified()
-    print(("ok  runtime: " if qualified else "SKIP runtime: ") + detail)
+    state, detail = _runtime_qualified()
+    qualified = state == "qualified"
+    if state == "error":
+        print("FAIL runtime:", detail)
+        failures.append(f"runtime qualification evaluation: {detail}")
+    else:
+        print(("ok  runtime: " if qualified else "SKIP runtime: ") + detail)
 
     ev = m["normative_evidence"]
     for name, script, recorded, needs_store in (
@@ -90,6 +114,10 @@ def main():
             ("ledger plan harness", ev.get("ledger_plan"),
              ev.get("ledger_plan_result"), True)):
         if script is None:
+            continue
+        if needs_store and state == "error":
+            print(f"NOT RUN {name}: runtime qualification errored (already "
+                  f"a FAILURE above — R9-5: never converted to a skip)")
             continue
         if needs_store and not qualified:
             skips.append(name)

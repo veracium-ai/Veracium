@@ -14,11 +14,20 @@ are CONSTRUCTIBLE AND STORABLE against the REAL accepted schema:
    the accepted UNIQUE partial index accepts it — then DEMONSTRATES the
    v9 design's failure verbatim: two rows sharing one op key raise
    IntegrityError (the reviewer's executed break, kept as a regression).
+3b. [op-key] R9-2: DELIMITER-BEARING ids insert under one operation via
+   the INJECTIVE framed-digest key form (the v10 colon-join collided).
+3c. [idempotent] R9-3: HISTORY DRIFT (direct vs flattened payload) and
+   evidence drift carry DIFFERENT plan ids — never silently skipped.
+3d. [construction] R9-3: malformed cross-field combinations refuse at
+   the validator before any projection.
 4. [null-dedup] an unidentified contributor (identity_digest NULL)
    deduplicates by the deterministic `plan_row_id` PRIMARY KEY — SQLite's
    NULL-uniqueness semantics never decide anything.
 5. [idempotent] a RE-IMPORT (new minted operation, same logical rows)
    detects exact-equality by deterministic id and writes NOTHING.
+5b. [reopen] R9-1: the STRUCTURED-EXPORT derivation over STORED rows,
+   before AND after the retention-contract prune of the intermediate
+   (derive(A)=B → prune B → derive(A)=C via the reparented copy).
 6. [concurrent] two connections importing the same plan: BEGIN IMMEDIATE
    linearizes; the loser observes the winner's rows as existing and
    skips — no duplicates, no partial state.
@@ -171,6 +180,80 @@ def run():
                       "break, kept as a regression) — per-row keys are "
                       "REQUIRED, not stylistic")
 
+        # (3b) R9-2: DELIMITER-BEARING ids under ONE operation — the v10
+        # colon-join collided ('a:b'+'c' vs 'a'+'b:c'); the injective
+        # framed-digest keys insert cleanly against the real unique index
+        from reference_scope import import_row_op_key
+        collide_cases = [("a:b", "c"), ("a", "b:c")]
+        for surv, cref in collide_cases:
+            row = {"site": "imported-absorption", "identity_digest": "3" * 64,
+                   "evidence_ref_digest": None, "contributor_ref": cref,
+                   "payload": {"reconstructed": True},
+                   "op_key": import_row_op_key(IMPORT_OP, surv, cref)}
+            conn.execute(INSERT, _stored("u1", "edge", surv, row))
+        conn.commit()
+        keys = {import_row_op_key(IMPORT_OP, s, c) for s, c in collide_cases}
+        assert len(keys) == 2, "injective keys collided?!"
+        checks.append("[op-key] DELIMITER-BEARING ids ('a:b'+'c' vs "
+                      "'a'+'b:c') insert under ONE operation — the "
+                      "injective framed-digest form; the v10 colon-join "
+                      "collided here (R9-2, the reviewer's IntegrityError)")
+
+        # (3c) R9-3: HISTORY DRIFT is a DIFFERENT logical row — a direct
+        # A→C row and a flattened A→(B)→C row must never skip as equal
+        from reference_scope import plan_row_id as _prid
+        direct_row = {"site": "imported-absorption",
+                      "identity_digest": "4" * 64,
+                      "evidence_ref_digest": None, "contributor_ref": "A2",
+                      "payload": {"reconstructed": True}}
+        flat_row = dict(direct_row,
+                        payload={"reconstructed": True, "flattened": True})
+        assert _prid("u1", "edge", "C2", direct_row) != \
+            _prid("u1", "edge", "C2", flat_row), \
+            "payload drift collapsed into one id (R9-3)"
+        conn.execute(INSERT, _stored("u1", "edge", "C2", dict(
+            direct_row, op_key=import_row_op_key(IMPORT_OP, "C2", "A2"))))
+        conn.commit()
+        w3, e3 = _insert_plan(conn, {"C2": [dict(
+            flat_row,
+            op_key=import_row_op_key("op-eeee00001111", "C2", "A2"))]},
+            skip_existing=True)
+        conn.commit()
+        assert (w3, e3) == (1, 0), (
+            "a flattened history skipped as equal to a direct one (R9-3)")
+        checks.append("[idempotent] HISTORY DRIFT detected: a direct A->C "
+                      "row and a flattened A->(B)->C row carry DIFFERENT "
+                      "plan ids — the drift WRITES (surfacing to the "
+                      "primitive's DESTINATION_CHANGED conflict rule), "
+                      "never silently skips (R9-3; evidence-digest drift "
+                      "asserted the same way in the vectors)")
+
+        # (3d) R9-3: malformed cross-field combinations REFUSE at the
+        # validator — they never project to an id, never reach INSERT
+        from reference_scope import PolicyError as _PE
+        for bad, why in (
+            ({"site": "imported-absorption", "identity_digest": "5" * 64,
+              "evidence_ref_digest": None, "contributor_ref": None,
+              "payload": {"reconstructed": True, "flattened": True}},
+             "flattened without a typed contributor link"),
+            ({"site": "imported-absorption", "identity_digest": "5" * 64,
+              "evidence_ref_digest": None, "contributor_ref": "X",
+              "payload": {"reconstructed": True, "reparented": True}},
+             "reparented without flattened"),
+            ({"site": "imported-absorption", "identity_digest": "nothex",
+              "evidence_ref_digest": None, "contributor_ref": "X",
+              "payload": {"reconstructed": True}},
+             "malformed identity digest"),
+        ):
+            try:
+                _prid("u1", "edge", "M", bad)
+                raise AssertionError(f"{why} did not refuse")
+            except _PE:
+                pass
+        checks.append("[construction] malformed cross-field combinations "
+                      "(flattened w/o ref; reparented w/o flattened; "
+                      "non-hex digest) REFUSE at the validator (R9-3)")
+
         # (4) NULL-digest contributor dedup via the deterministic PK
         null_row = {"site": "imported-absorption", "identity_digest": None,
                     "evidence_ref_digest": None,
@@ -213,6 +296,49 @@ def run():
         checks.append("[idempotent] RE-IMPORT under a new minted operation: "
                       "3 rows detected exact-equal by deterministic id, 0 "
                       "written (contributions=0, contributions_existing=3)")
+        conn.close()
+
+        conn = sqlite3.connect(db)
+        # (5b) R9-1: the STRUCTURED-EXPORT derivation, before and after
+        # pruning B — over rows loaded from SQL, never from memory
+        import json as _j
+        from reference_scope import (derive_absorbed_by,
+                                     prune_absorbed_record)
+
+        def _load(c):
+            m = {}
+            for sid, dig, ref, pay, ok in c.execute(
+                    "SELECT survivor_id, identity_digest, contributor_ref,"
+                    " payload, op_key FROM contribution_ledger WHERE "
+                    "survivor_id IN ('B','C')"):
+                m.setdefault(sid, []).append(
+                    {"site": "imported-absorption", "identity_digest": dig,
+                     "evidence_ref_digest": None, "contributor_ref": ref,
+                     "payload": _j.loads(pay), "op_key": ok})
+            return m
+        before = _load(conn)
+        assert derive_absorbed_by("A", before) == "B"
+        assert derive_absorbed_by("B", before) == "C"
+        # the retention contract's prune of B, written back to the store
+        after = prune_absorbed_record("B", before)
+        conn.execute("DELETE FROM contribution_ledger WHERE survivor_id='B'")
+        for r in after.get("C", []):
+            conn.execute("UPDATE contribution_ledger SET payload=? WHERE "
+                         "survivor_id='C' AND contributor_ref=?",
+                         (_j.dumps(r["payload"], sort_keys=True),
+                          r["contributor_ref"]))
+        conn.commit()
+        reloaded = _load(conn)
+        assert "B" not in reloaded
+        assert derive_absorbed_by("A", reloaded) == "C", (
+            "post-prune reverse link did not reparent to the survivor")
+        checks.append("[reopen] STRUCTURED-EXPORT derivation from STORED "
+                      "rows: derive(A)=B and derive(B)=C before the prune; "
+                      "after the retention-contract prune of B (rows "
+                      "dropped per A10, the flattened A->C copy UPGRADED "
+                      "to reparented, both written back to SQL) "
+                      "derive(A)=C — unique both sides of the prune (R9-1)")
+
         conn.close()
 
         # (6) concurrent same-plan imports on two connections
@@ -274,7 +400,8 @@ def run():
 
 
 if __name__ == "__main__":
-    for line in run():
+    results = run()
+    for line in results:
         print("PASS", line)
-    print("ledger plan harness: 8 checks pass against the EXTRACTED real "
-          "DDL + the amendment ALTERs")
+    print(f"ledger plan harness: {len(results)} checks pass against the "
+          f"EXTRACTED real DDL + the amendment ALTERs")

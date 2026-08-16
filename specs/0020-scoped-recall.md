@@ -267,17 +267,32 @@ store with NO source_id (the store-authored shape), in order:
      survivors whose contributors are unavailable are UNRESOLVED where
      the single-hop read called them own-scope — a fail-closed widening,
      remediable by re-derivation.
-   - **The retention contract (R8-1):** no shipped path physically
-     prunes an absorbed edge today (mechanically asserted, 0021 §2c-ii —
-     expiry only invalidates; consolidation deletes episodes; user
-     erasure removes the user's ledger with the records, mooting
-     membership). ANY future pruning capability MUST be
-     closure-preserving: flatten the pruned record's closed row set onto
-     its absorbers first (or, where its own closure is unwalkable, write
-     the closure-incompleteness marker row — identity_digest None,
-     payload `{"closure": "incomplete"}` — which the resolver's
-     cross-digest rule fails closed forever). Pre-contract external
-     deletions are exactly what the typed ledger link makes harmless.
+   - **The retention contract (R8-1; REPARENTING added under R9-1):** no
+     shipped path physically prunes an absorbed edge today (mechanically
+     asserted, 0021 §2c-ii — expiry only invalidates; consolidation
+     deletes episodes; user erasure removes the user's ledger with the
+     records, mooting membership). ANY future pruning capability MUST,
+     before the A10 row-drop: for every CANONICAL row on the pruned
+     record (direct, or reparented onto it by an earlier prune) with
+     contributor X, UPGRADE the pruned record's own canonical absorber's
+     flattened copy of X to `reparented: true` — X's new canonical
+     reverse link (this is what keeps `derive_absorbed_by` unique after
+     the prune); a missing copy (a W14 violation surfacing at prune
+     time) writes the closure-incompleteness marker row instead
+     (identity_digest None, payload `{"closure": "incomplete"}` — failed
+     closed forever). The reference models the whole step
+     (`prune_absorbed_record`), and the ledger harness executes it over
+     SQL-stored rows, before AND after the prune.
+   - **The EXPORT reverse-link algorithm (R9-1 — v10's "find the row
+     whose contributor_ref names this record" had TWO answers under
+     flattening and ZERO after a prune):** `derive_absorbed_by` is
+     normative. CANONICAL rows for a contributor are DIRECT rows and
+     REPARENTED rows; plain flattened copies are NEVER canonical.
+     Exactly one canonical row → its survivor is `absorbed_by_id`; ZERO →
+     the exporter OMITS the field and the record travels as legacy (the
+     import-side note rule governs, fail-closed on ambiguity); MORE THAN
+     ONE → `ExportLinkageError`, the whole export REFUSES — corrupt
+     linkage must not become a portable file that looks clean.
 
    All contributors (over the CLOSED set) resolve to one scope → the
    derivative is that scope's. Contributors span scopes → cannot occur
@@ -340,11 +355,15 @@ store with NO source_id (the store-authored shape), in order:
      contributor BINDING that determines which exported record supplies
      the evidence digest), `evidence_ref_digest` (the shipped
      construction over the absorbed record's resolved origin +
-     evidence_ref), the closed payload, and a PER-ROW canonical op key
-     `{import_op}:{survivor}:{contributor_ref}` following the SHIPPED
-     `consolidation_op_key` idiom — v9's one-op-key-on-every-row claim
-     violated the accepted UNIQUE partial index on op_key
-     (reviewer-executed IntegrityError) and is CORRECTED; `import_op` is
+     evidence_ref), the closed payload, and a PER-ROW op key in the
+     INJECTIVE framed-digest form (`import_row_op_key`:
+     `{import_op}:imported-absorption:{sha256(framed(survivor) +
+     framed(contributor))}` — R9-2 executed the v10 plain colon-join's
+     collision over delimiter-bearing ids, the same class as the R7-2
+     note grammar; the prefix fields are colon-free by construction and
+     the id pair is framed into one fixed-width digest). v9's
+     one-op-key-on-every-row violated the accepted UNIQUE partial index
+     (reviewer-executed IntegrityError); `import_op` is
      the ONE `op-<12hex>` id the import operation mints. The site's 0014
      semantics are unchanged: NO absorption payload and NO REVERSAL
      (ATTRIBUTION evidence only). Persisting these rows atomically with
@@ -456,7 +475,8 @@ manifest fails `test_read_surface_manifest_is_total`.
 | V15 three-hop absorption chains fail closed NATIVE and RESTORED: the A→B→C survivor is UNRESOLVED on the origin store (closure) and on an import destination (transitive reconstruction), including under remap and after reopen (external R7-1) | `test_transitive_absorption_chains` |
 | V16 import linkage reconstruction is PRE-COMMIT: missing/unresolvable/ambiguous/cyclic linkage refuses BEFORE any destination write and the destination is byte-identical after the refused attempt (external R7-2) | `test_import_reconstruction_precommit` |
 | V17 the closure survives the retention lifecycle: an A→B→C store whose intermediate is physically pruned classifies the survivor UNRESOLVED after close/reopen (typed-ref rows walk inside the ledger; a ref-less pruned legacy chain fails closed) — the R8-1 regression | `test_closure_survives_pruning` |
-| V18 the ledger-row plan is storable AGAINST THE ACCEPTED DDL: multi-row single-operation inserts pass the real UNIQUE partial op_key index via per-row canonical keys; NULL-digest contributors deduplicate by the deterministic plan id; idempotent re-import writes nothing; concurrent imports linearize (external R8-3) | `test_ledger_plan_against_real_ddl` |
+| V18 the ledger-row plan is storable AGAINST THE ACCEPTED DDL: multi-row single-operation inserts pass the real UNIQUE partial op_key index via per-row INJECTIVE keys (delimiter-bearing ids never collide — R9-2); NULL-digest contributors deduplicate by the ONE canonical plan id, and history/evidence drift never skips as equal (R9-3); idempotent re-import writes nothing; concurrent imports linearize (external R8-3) | `test_ledger_plan_against_real_ddl` |
+| V19 the export reverse link is unique on both sides of a prune; zero canonical rows omit the field, more than one refuses the export (external R9-1) | `test_export_reverse_link_unique` |
 | V11 `answer()` and proactive thread the principal; structured carriers carry only visible records (external F3) | `test_all_read_surfaces_scoped` |
 | V12 the read-surface manifest is total (external F3) | `test_read_surface_manifest_is_total` |
 | V13 UNRESOLVED derivatives are invisible to every scoped principal and visible unscoped (external F1) | `test_unresolved_derivative_fail_closed` |
@@ -503,7 +523,7 @@ manifest fails `test_read_surface_manifest_is_total`.
 | 0011 (draft) | the subject dimension | orthogonal in v1; the seam reserved (V9) |
 | 0021 | **MUTUAL `Spec-Requires` (external F6)** — acceptance is atomic, the 0016/0018 precedent | 0020's §8 claim is CONDITIONAL on 0021 wherever maintenance runs; neither accepts alone |
 | 0017 | the operator-side withholding channel | future consent-versioned field; deferred, recorded |
-| 0018 | the breaking window | **REQUIRED by the coupled implementation (R8-2 corrected the v9 "not needed" row):** the D2 window carries the three riders — SCHEMA-v8 ledger contributor columns (0014), the FORMAT export-linkage field (rider to the 0016/0018/0019-frozen v7 shape), and 0021's writer enforcement (Q4). The READ surface alone still needs no break |
+| 0018 | the breaking window | **REQUIRED by the coupled implementation (R8-2 corrected the v9 "not needed" row):** the D2 window carries the three riders — SCHEMA-v8 ledger contributor columns (the 0014 amendment + the final-form 0019 rider, 0021 §7b — accepted 0019 froze v8 no-DDL and is amended, not assumed; R9-4), the FORMAT export-linkage field (rider to the frozen v7 file shape), and 0021's writer enforcement (Q4). The READ surface alone still needs no break |
 
 ## 8. Claims and limits
 

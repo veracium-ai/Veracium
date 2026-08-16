@@ -6,15 +6,29 @@ vectors live beside it in `vectors.json`, the SHIPPED HARNESS
 (`vector_harness.py`) executes them, and 0020 V10 binds implementations to
 both.
 
-v10 (external round 8): (R8-1) the closure is LEDGER-RESIDENT — typed
-`contributor_ref` links (durable across record pruning; absence in the
-append-only ledger means leaf) with the legacy note-walk as fallback and
-a DISCLOSED delta (unavailable legacy contributors → UNRESOLVED where v9
-read own-scope). (R8-3) reconstruction emits COMPLETE rows (contributor
+v11 (external round 9): (R9-1) `derive_absorbed_by` is the EXACT
+reverse-link algorithm — canonical rows are DIRECT or REPARENTED, plain
+flattened copies never; `prune_absorbed_record` models the retention
+contract's prune-time reparenting; zero canonical rows → the export
+omits the field (legacy path); >1 → ExportLinkageError. (R9-2) the
+per-row op key is the INJECTIVE framed-digest form
+(`import_row_op_key`) — the v10 colon-join collided over
+delimiter-bearing ids. (R9-3) `plan_row_id` is THE ONE canonical
+logical-row projection (every semantic field incl. canonical payload and
+contributor type; `validate_row_plan` refuses contradictory rows —
+flattened-without-ref, reparented-without-flattened); the closure walker
+refuses marker-only flattened rows. (R9-5 lives in verify_package.)
+
+v10 (external round 8): (R8-1) the closure is BY CONSTRUCTION on the
+survivor's OWN row set (bin-b fixed the stale append-only phrasing this
+header carried: accepted 0014 A10 makes the ledger
+SURVIVOR-LIFETIME-KEYED — a record's rows drop with it, so the durable
+object is the survivor's born-closed flattened set, never ledger
+immortality), with the legacy note-walk as fallback and a DISCLOSED
+delta (unavailable legacy contributors → UNRESOLVED where v9 read
+own-scope). (R8-3) reconstruction emits COMPLETE rows (contributor
 binding via the typed ref → evidence_ref_digest per the shipped
-construction; the closed payload; PER-ROW canonical op keys following the
-shipped `consolidation_op_key` idiom — v9's one-key-on-every-row claim
-violated the accepted UNIQUE partial index and is corrected);
+construction; the closed payload);
 `plan_row_id` is the deterministic store-side identity.
 
 v9 (external round 7): (R7-1) absorption evidence is TRANSITIVE —
@@ -420,6 +434,9 @@ def close_absorption_rows(survivor_id: str, ledger_rows: dict,
                 continue
             ref = r.get("contributor_ref")
             if (r.get("payload") or {}).get("flattened"):
+                if ref is None:
+                    return False           # R9-3: a marker-only row would
+                                           # bypass BOTH accounting paths
                 continue                   # digest counted; subtree covered
             if ref is not None:
                 # closed by the write invariant (0021 W14/§4c: flattening
@@ -670,21 +687,180 @@ def evidence_digest_of(origin: Optional[str], evidence_ref: Optional[str],
     return hashlib.sha256(payload).hexdigest()
 
 
+def canonical_payload(payload: dict) -> str:
+    """The ONE canonical payload form (R9-3): sorted keys, no whitespace —
+    the projection the row identity digests."""
+    import json as _json
+    if not isinstance(payload, dict):
+        raise PolicyError(f"payload must be a mapping, got {payload!r}")
+    return _json.dumps(payload, sort_keys=True, separators=(",", ":"))
+
+
+_ROW_SITES = ("absorption", "imported-absorption")
+
+
+def validate_row_plan(row: dict) -> None:
+    """R9-3's cross-field validator — TOTAL over the row shape; refuses
+    contradictory combinations rather than letting them project:
+    - site outside the closed set;
+    - identity_digest neither None nor 64-hex;
+    - `flattened` WITHOUT a typed contributor link (the reviewer's
+      bypass: such a row skipped both the ref walk and legacy
+      accounting);
+    - `reparented` without `flattened` (reparenting upgrades a flattened
+      copy; it cannot exist alone);
+    - an imported-absorption row without the `reconstructed` marker."""
+    if row.get("site") not in _ROW_SITES:
+        raise PolicyError(f"row site {row.get('site')!r} outside the "
+                          f"closed set {_ROW_SITES}")
+    d = row.get("identity_digest")
+    if d is not None and not (isinstance(d, str)
+                              and re.fullmatch(r"[0-9a-f]{64}", d)):
+        raise PolicyError(f"identity_digest {d!r} is neither None nor a "
+                          f"64-hex digest")
+    payload = row.get("payload")
+    if not isinstance(payload, dict):
+        raise PolicyError("row payload must be a mapping")
+    if payload.get("flattened") and row.get("contributor_ref") is None:
+        raise PolicyError(
+            "a flattened row MUST carry its typed contributor_ref (R9-3: "
+            "a marker-only row bypassed both the ref walk and legacy "
+            "accounting)")
+    if payload.get("reparented") and not payload.get("flattened"):
+        raise PolicyError("reparented is an upgrade OF a flattened copy — "
+                          "it cannot appear alone")
+    if row.get("site") == "imported-absorption" \
+            and not payload.get("reconstructed"):
+        raise PolicyError("an imported-absorption row must carry the "
+                          "closed reconstructed marker")
+
+
 def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
                 row: dict) -> str:
-    """The 0009 amendment's DETERMINISTIC row id (R8-3): a digest over the
-    framed logical fields with sentinels for None — uniqueness rides the
-    ledger's existing PRIMARY KEY, so SQLite's NULL-uniqueness semantics
-    never decide anything. The op key is EXCLUDED: a re-import mints a new
-    operation but the same logical row, and idempotency compares logical
-    rows."""
-    parts = [b"veracium.import-contribution-row.v1"]
+    """The 0009 amendment's DETERMINISTIC row id (R8-3; REBUILT under
+    R9-3 as THE ONE canonical logical-row projection): a framed digest
+    over EVERY semantic field — user, survivor coordinates, site,
+    identity digest, evidence digest, contributor type AND ref, and the
+    CANONICAL PAYLOAD (payload is semantic: it distinguishes a direct
+    from a flattened history — the reviewer executed the drift). Excluded
+    are ONLY the genuinely operational fields: the re-minted op key and
+    the commit timestamp. Idempotent-equality has exactly ONE definition:
+    plan_row_id set equality (the v10 three-field multiset phrasing is
+    WITHDRAWN). The cross-field validator runs first — a contradictory
+    row never projects."""
+    validate_row_plan(row)
+    parts = [b"veracium.import-contribution-row.v2"]
     for v in (user_id, survivor_type, survivor_id, row.get("site"),
-              row.get("identity_digest"), row.get("contributor_ref"),
-              row.get("evidence_ref_digest")):
+              row.get("identity_digest"),
+              row.get("evidence_ref_digest"),
+              row.get("contributor_type", "edge"),
+              row.get("contributor_ref"),
+              canonical_payload(row.get("payload"))):
         parts.append(_framed(b"\x00" if v is None
                              else b"\x01" + str(v).encode("utf-8")))
     return hashlib.sha256(b"".join(parts)).hexdigest()
+
+
+def import_row_op_key(import_op: str, survivor_id: str,
+                      contributor_ref: str) -> str:
+    """The PER-ROW op key, INJECTIVE form (R9-2 — the v10 colon-join was
+    not injective over unrestricted ids: survivor 'a:b'+'c' collided with
+    'a'+'b:c'; the reviewer raised the IntegrityError). The prefix fields
+    are colon-free by construction (`op-<12hex>` + a literal site token);
+    the pair of unrestricted ids is FRAMED and domain-separated into one
+    fixed-width digest — injective up to SHA-256, and the framing makes
+    the pre-image encoding injective outright."""
+    if not _OP_ID.match(import_op or ""):
+        raise PolicyError(f"import_op must be op-<12hex>, got {import_op!r}")
+    h = hashlib.sha256(b"veracium.import-row-op-key.v1"
+                       + _framed(survivor_id.encode("utf-8"))
+                       + _framed(contributor_ref.encode("utf-8"))
+                       ).hexdigest()
+    return f"{import_op}:imported-absorption:{h}"
+
+
+class ExportLinkageError(PolicyError):
+    """R9-1: a contributor with MORE THAN ONE canonical absorber row is
+    corrupt ledger state — the exporter REFUSES to materialise a
+    structured link from it (a corrupt store must not become a portable
+    file that looks clean)."""
+
+
+def derive_absorbed_by(contributor_id: str, ledger_rows: dict):
+    """The EXACT reverse-link algorithm (R9-1 — v10's 'find the row whose
+    contributor_ref names this record' had two answers under flattening,
+    and zero after an A10 prune).
+
+    CANONICAL rows for a contributor are: DIRECT rows (no `flattened`
+    marker), and REPARENTED rows (`flattened`+`reparented` — the
+    retention contract's prune-time upgrade, which is exactly what keeps
+    the reverse link unique after the direct absorber is pruned).
+    Plain flattened copies are NEVER canonical.
+
+    Returns the unique canonical absorber's survivor id; None when no
+    canonical row exists (the exporter OMITS `absorbed_by_id` and the
+    record travels as legacy — the import-side note rule governs,
+    fail-closed on ambiguity); raises ExportLinkageError on >1 (corrupt —
+    the export refuses)."""
+    hits = []
+    for survivor, rows in ledger_rows.items():
+        for r in rows:
+            if r.get("contributor_ref") != contributor_id:
+                continue
+            p = r.get("payload") or {}
+            if not p.get("flattened") or p.get("reparented"):
+                hits.append(survivor)
+    if not hits:
+        return None
+    if len(hits) > 1:
+        raise ExportLinkageError(
+            f"contributor {contributor_id!r} has {len(hits)} canonical "
+            f"absorber rows ({sorted(set(hits))}) — corrupt linkage; the "
+            f"export REFUSES (R9-1)")
+    return hits[0]
+
+
+def prune_absorbed_record(record_id: str, ledger_rows: dict) -> dict:
+    """The RETENTION CONTRACT's prune step, modelled (R8-1/R9-1): what a
+    compliant future prune capability MUST do BEFORE the A10 row-drop.
+
+    For every CANONICAL row on the pruned record (direct, or already
+    reparented onto it by an earlier prune) with contributor X: the
+    pruned record's own canonical absorber S must hold a flattened copy
+    of X (born-closed, W14) — that copy is UPGRADED to
+    `reparented: true`, making it X's new canonical reverse link. A
+    missing copy (a W14 violation surfacing at prune time) writes the
+    closure-incompleteness marker row on S instead (identity None,
+    payload {"closure": "incomplete"} — the resolver fails it closed
+    forever). Then the pruned record's own row set drops (A10).
+
+    Pruning a record with NO canonical absorber (an active record, or a
+    fully-detached corrupt one) just drops its rows — there is no
+    linkage to preserve. Returns the new ledger_rows mapping."""
+    out = {k: [dict(r, payload=dict(r.get("payload") or {}))
+               for r in v] for k, v in ledger_rows.items()}
+    absorber = derive_absorbed_by(record_id, out)
+    if absorber is not None:
+        for r in out.get(record_id, []):
+            p = r.get("payload") or {}
+            if p.get("flattened") and not p.get("reparented"):
+                continue                        # a plain copy — not canonical
+            x = r.get("contributor_ref")
+            if x is None:
+                continue                        # legacy row — nothing typed
+            target = [t for t in out.get(absorber, [])
+                      if t.get("contributor_ref") == x
+                      and (t.get("payload") or {}).get("flattened")]
+            if target:
+                target[0]["payload"]["reparented"] = True
+            else:                               # W14 violation, caught here
+                out.setdefault(absorber, []).append(
+                    {"site": "absorption", "identity_digest": None,
+                     "contributor_ref": x,
+                     "evidence_ref_digest": None,
+                     "payload": {"closure": "incomplete"}, "op_key": None})
+    out.pop(record_id, None)                    # the A10 drop
+    return out
 
 
 def reconstruct_absorption_rows(export_records: list, local_origin: str,
@@ -707,12 +883,11 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
     (the shipped construction over the absorbed record's resolved origin +
     evidence_ref), **payload** ({"reconstructed": true}; transitive copies
     add "flattened": true — counted, never re-walked), and a PER-ROW
-    canonical **op_key** following the SHIPPED consolidation idiom
-    (`contribution.consolidation_op_key`): `{import_op}:{survivor}:
-    {contributor_ref}` — v9's one-key-on-every-row claim violated the
-    accepted UNIQUE partial index on op_key and is CORRECTED; per-row keys
-    are unique by construction. `import_op` is the ONE `op-<12hex>` id the
-    import operation mints. The store-side plan id is `plan_row_id`.
+    **op_key** in the INJECTIVE framed-digest form (`import_row_op_key`,
+    R9-2 — v10's plain colon-join collided over delimiter-bearing ids;
+    v9's one-key-on-every-row violated the accepted UNIQUE partial index;
+    both corrected). `import_op` is the ONE `op-<12hex>` id the import
+    operation mints. The store-side plan id is `plan_row_id`.
 
     TRANSITIVE (R7-1): each absorbed record's digest propagates to its
     direct winner AND every transitive absorber — reconstructed sets are
@@ -762,7 +937,8 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
             out.setdefault(surv, []).append(
                 {"site": "imported-absorption", "identity_digest": d,
                  "evidence_ref_digest": ev, "contributor_ref": cref,
-                 "op_key": f"{import_op}:{surv}:{cref}",
+                 "contributor_type": "edge",
+                 "op_key": import_row_op_key(import_op, surv, cref),
                  "payload": payload})
             if hop not in winner_of:
                 break

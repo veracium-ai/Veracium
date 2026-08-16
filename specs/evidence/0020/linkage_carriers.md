@@ -39,7 +39,7 @@ WRITE TIME (absorption commits, 0021 §4c)
 
 | carrier | version | rider text |
 |---|---|---|
-| `contribution_ledger.contributor_type` / `.contributor_ref` | SCHEMA v8 | 0021 §7b (2) — exact ALTERs; nullable; legacy rows NULL |
+| `contribution_ledger.contributor_type` / `.contributor_ref` | SCHEMA v8 | 0021 §7b (2) — exact ALTERs; nullable; legacy rows NULL. **Allocated by the final-form 0019 RIDER (0021 §7b, R9-4): accepted 0019 froze v8 as no-DDL; the rider amends that clause, keeps the refusal-bump semantics, and mandates regenerated evidence for BOTH DDL manifestations** |
 | exported `absorbed_by_id` | FORMAT 7 rider | 0021 §7b (0016+0018 row) — extends the frozen v7 shape, same-commit landing |
 | pre-0021 writer refusal (the §4d enforcement) | store-version bump | Q4, ruled round 2 — rides the same window |
 
