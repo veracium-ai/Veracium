@@ -220,3 +220,24 @@ sha256sum 0002-v7-20260802T0410Z.tar.gz
 **These are snapshots, not sources.** The repo is the source of truth; where an
 archive and the repo disagree, the repo wins — and the disagreement is itself
 the finding.
+
+## Post-acceptance deltas — READ THIS FIRST at any next external contact
+
+*Where the repo has moved away from a package that was already ACCEPTED. Listed
+so a reviewer opens on the disclosed diff instead of discovering it.*
+
+### `0020-0021-v15-20260816T1159Z.tar.gz` (accepted, seal `449a0624c999d7c3…`)
+
+**TWO defects in the ACCEPTED normative reference (`specs/evidence/0020/reference_scope.py`), both in `prune_absorbed_record`, both self-found AFTER acceptance and fixed in the reference AND the production port together.**
+
+  (1) NON-TERMINATION on a record that is its own canonical absorber: the reparented rows it appended were themselves canonical and were appended to the list being iterated. Found by differentially fuzzing the new production implementation against the reference — 89 of 800 random prune ledgers hit it.
+  (2) BOUNDED-WRONG at cycle length n>=2, found when research asked the domain question about fix (1): a 2-cycle TERMINATED but MANUFACTURED a self-absorbing row on the absorber, silently degrading to a closure-incomplete marker instead of refusing — the corrupt state fix (1) had just been written to reject.
+  Both are failures to implement 0020 §4a-iii's OWN clause (corrupt linkage REFUSES), not gaps in the contract, so the fixes RESTORE accepted semantics rather than moving them. Adjudicated as defect-fix-not-amendment by research (the acceptance-record owner); the frozen surfaces V1–V19 / W1–W18 are untouched.
+  The guard is now length-agnostic: the whole canonical-absorber chain is walked and ANY revisit refuses. No claim is made that n>2 reduces to n=2, and no impossibility argument is relied on — the one-absorber rule lives read-side only, so nothing prevents a corrupt ledger carrying mutual rows, and the defense is refusal.
+
+* Fix commits: `cd5285b`, `2596f4f`
+* Vectors: 129 (self-absorption) · 130 (2-cycle) · 131 (3-cycle); the regression covers n=1..5
+* Found by: a SECOND IMPLEMENTATION disagreeing with the first (defect 1) and a SECOND REVIEWER closing its domain (defect 2) — neither alone was sufficient, and fourteen external rounds had not tried either input.
+* Artifacts that moved:
+  * `specs/evidence/0020/reference_scope.py` — accepted `2a6ab277a04cdb1c…` → now `e71c0237e32c55ce…`
+  * `specs/evidence/0020/vectors.json` — accepted `9da681c9e6505a21…` → now `ace258d8c44e79d5…`
