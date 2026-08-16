@@ -92,10 +92,11 @@ def _chain_rows():
     return reconstruct_absorption_rows(records, LOCAL, import_op=IMPORT_OP)
 
 
-def _stored(user, stype, sid, row, created="2026-08-16T00:00:00Z"):
+def _stored(user, stype, sid, row, created="2026-08-16T00:00:00Z",
+            context="import"):
     """Complete a reconstruction row to the FULL stored-column tuple."""
     import json
-    return (plan_row_id(user, stype, sid, row), user, stype, sid,
+    return (plan_row_id(user, stype, sid, row, context), user, stype, sid,
             row["site"], row["identity_digest"], row["evidence_ref_digest"],
             json.dumps(row["payload"], sort_keys=True), row["op_key"],
             created, "edge", row["contributor_ref"])
@@ -213,8 +214,8 @@ def run():
                       "payload": {"reconstructed": True}}
         flat_row = dict(direct_row, site="scope-attribution",
                         payload={"flattened": True, "reconstructed": True})
-        assert _prid("u1", "edge", "C2", direct_row) != \
-            _prid("u1", "edge", "C2", flat_row), \
+        assert _prid("u1", "edge", "C2", direct_row, "import") != \
+            _prid("u1", "edge", "C2", flat_row, "import"), \
             "payload drift collapsed into one id (R9-3)"
         conn.execute(INSERT, _stored("u1", "edge", "C2", dict(
             direct_row, op_key=import_row_op_key(IMPORT_OP, "C2", "A2"))))
@@ -243,7 +244,7 @@ def run():
                 "evidence_ref_digest": "6" * 64, "contributor_ref": "X",
                 "contributor_type": "edge",
                 "payload": {"reconstructed": True}}
-        _vrp(GOOD)                              # the base row is valid
+        _vrp(GOOD, "import")                   # the base row is valid
         MATRIX = {
             "site": [None, "", "absorption", "consolidation", "alien", 7],
             "identity_digest": ["nothex", "5" * 63, "5" * 65, 7, ""],
@@ -264,7 +265,7 @@ def run():
                      "evidence_ref_digest": None, "contributor_ref": "X",
                      "contributor_type": "edge",
                      "payload": {"flattened": True}}
-        _vrp(ATTR_GOOD)
+        _vrp(ATTR_GOOD, "native")
         ATTR_MATRIX = {
             "payload": [{"flattened": 1}, {"flattened": False},
                         {"flattened": True, "extra": 1},
@@ -275,35 +276,46 @@ def run():
             "contributor_ref": [None, ""],
         }
         tried = refused = 0
-        for base, matrix in ((GOOD, MATRIX), (ATTR_GOOD, ATTR_MATRIX)):
+        for base, ctx, matrix in ((GOOD, "import", MATRIX),
+                                  (ATTR_GOOD, "native", ATTR_MATRIX)):
             for field, bads in matrix.items():
                 for bad in bads:
                     tried += 1
                     try:
-                        _vrp(dict(base, **{field: bad}))
+                        _vrp(dict(base, **{field: bad}), ctx)
                     except _PE:
                         refused += 1
         # R11-2: DELETION cells — presence is separate from value
         # validity (the reviewer deleted keys; .get() accepted them)
-        for base in (GOOD, ATTR_GOOD):
+        for base, ctx in ((GOOD, "import"), (ATTR_GOOD, "native")):
             for field in ("site", "identity_digest", "evidence_ref_digest",
                           "contributor_type", "contributor_ref", "payload"):
                 tried += 1
                 gone = {k: v for k, v in base.items() if k != field}
                 try:
-                    _vrp(gone)
+                    _vrp(gone, ctx)
                 except _PE:
                     refused += 1
         # the cross-field cells the matrix's single-field sweep can't hit
-        for combo in (
-            dict(ATTR_GOOD, payload={"closure": "incomplete"}),  # id set
-            dict(GOOD, identity_digest=None,
-                 payload={"reconstructed": True},
-                 evidence_ref_digest="nothex"),
+        for combo, ctx in (
+            (dict(ATTR_GOOD, payload={"closure": "incomplete"}), "prune"),
+            (dict(GOOD, identity_digest=None,
+                  payload={"reconstructed": True},
+                  evidence_ref_digest="nothex"), "import"),
+            # R12-1: the CROSS-PRODUCT refusals — right shape, WRONG writer
+            (dict(GOOD, site="scope-attribution",
+                  payload={"reparented_from": "B"}), "import"),
+            (dict(GOOD, site="scope-attribution", identity_digest=None,
+                  payload={"closure": "incomplete"}), "import"),
+            (dict(ATTR_GOOD, payload={"flattened": True}), "import"),
+            (dict(GOOD, payload={"reconstructed": True}), "prune"),
+            (dict(GOOD, payload={"reconstructed": True}), "native"),
+            (dict(ATTR_GOOD, payload={"flattened": True,
+                                      "reconstructed": True}), "native"),
         ):
             tried += 1
             try:
-                _vrp(combo)
+                _vrp(combo, ctx)
             except _PE:
                 refused += 1
         assert tried == refused, (
@@ -405,7 +417,8 @@ def run():
         for r in after.get("C", []):
             if r["op_key"] in existing_keys:
                 continue                        # immutable — never rewritten
-            conn.execute(INSERT, _stored("u1", "edge", "C", r))
+            conn.execute(INSERT, _stored("u1", "edge", "C", r,
+                                         context="prune"))
             inserted += 1
         conn.commit()
         assert inserted == 1, f"expected ONE new reparented row, {inserted}"
@@ -484,7 +497,8 @@ def run():
         for r in st.get("C2b", []):
             if not conn.execute("SELECT 1 FROM contribution_ledger WHERE "
                                 "op_key=?", (r["op_key"],)).fetchone():
-                conn.execute(INSERT, _stored("u1", "edge", "C2b", r))
+                conn.execute(INSERT, _stored("u1", "edge", "C2b", r,
+                                             context="prune"))
         conn.commit()
         st2 = _load2(conn, ("B2", "C2b"))
         markers = [r for r in st2["C2b"]

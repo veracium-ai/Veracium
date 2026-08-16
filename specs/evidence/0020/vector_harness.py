@@ -305,7 +305,7 @@ def _run_one(v, policies):
                 want_key = row_op_key(v["op_key"], r.get("site"), surv,
                                       r.get("contributor_ref") or "")
                 try:
-                    validate_row_plan(r)
+                    validate_row_plan(r, "import")
                 except PolicyError as e:
                     return f"emitted row fails its own validator: {e}"
                 flattened = (r.get("payload") or {}).get("flattened", False)
@@ -358,7 +358,8 @@ def _run_one(v, policies):
         from reference_scope import plan_row_id
         def build(which):
             return plan_row_id(v.get("user", "u1"), "edge",
-                               v.get("survivor", "S"), v[which])
+                               v.get("survivor", "S"), v[which],
+                               v.get("context", "import"))
         if expect == "PolicyError":
             return _expect_err(lambda: build("a"))
         ida, idb = build("a"), build("b")

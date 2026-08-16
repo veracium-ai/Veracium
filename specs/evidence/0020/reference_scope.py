@@ -727,63 +727,121 @@ _PAYLOAD_SHAPES = {
                        {"closure": "incomplete"}),
 }
 
-#: R11-1 — THE ONE AUTHORITATIVE SITE MATRIX. Round 11 found the v12
-#: carriers contradicting each other (the 0009 amendment text still
-#: described the pre-split one-site design while the 0014 amendment and
-#: this module required the split). This structure is the single source;
-#: `render_site_matrix()` emits the markdown table that EVERY prose
-#: carrier embeds VERBATIM between SITE-MATRIX markers, and the seal
-#: byte-compares the block across all of them — a carrier cannot drift
-#: without failing the seal.
-SITE_MATRIX = (
-    {"site": "absorption",
-     "writers": "the shipped store (apply_supersession) — ACCEPTED 0014, "
-                "not amended",
-     "payloads": "{base, contributor} (the accepted closed schema)",
+#: R11-1/R12-1 — THE ONE AUTHORITATIVE WRITER MATRIX, split BY ATOMIC
+#: OPERATION CONTEXT (round 12: the site-keyed v13 matrix assigned every
+#: scope-attribution write to the import primitive, contradicting
+#: accepted 0009's "purpose-built, NOT a general Store transaction API"
+#: and the native path's own atomic writer). One row per (writer ×
+#: site): the atomic primitive, its operation-ID domain, the payload
+#: subset it may write, canonical/exact-set status, and its per-row key
+#: form. `render_site_matrix()` emits the markdown block every carrier
+#: embeds VERBATIM; the SHIPPED verifier (R12-3) byte-compares it across
+#: all carriers and this source.
+WRITER_MATRIX = (
+    {"writer": "`apply_supersession_plan` (native — accepted 0003 §4f "
+               "CAS plan, accepted 0014 rows)",
+     "op_domain": "`sup-{edge.id}` (the shipped idiom; unrestricted "
+                  "suffix)",
+     "site": "absorption",
+     "payloads": "{base, contributor} (the accepted closed schema — "
+                 "NOT amended)",
      "canonical": "YES (direct link)",
      "exact_set": "YES — the accepted direct-invalidation equality "
                   "counts exactly these",
      "op_key": "the accepted native idiom, unchanged"},
-    {"site": "imported-absorption",
-     "writers": "the import path ONLY (the amended 0009 primitive), "
-                "from pre-commit reconstruction — DIRECT links",
+    {"writer": "`apply_supersession_plan` (native, post-0021 — the §4c "
+               "flattening rides the SAME plan)",
+     "op_domain": "`sup-{edge.id}`",
+     "site": "scope-attribution",
+     "payloads": '{"flattened": true} ONLY',
+     "canonical": "NO (flattened copy)",
+     "exact_set": "NO — structurally excluded",
+     "op_key": 'native_row_op_key(op_id, survivor, contributor) — the '
+               'ALL-FRAMED digest form (the native op id embeds '
+               'unrestricted text, so it is framed INTO the digest, '
+               'never a prefix)'},
+    {"writer": "`commit_outcome_import_plan` (import — accepted 0009 "
+               "§4c, purpose-built; rows derive ONLY from "
+               "`reconstruct_absorption_rows`)",
+     "op_domain": "`op-<12hex>` (minted once per import)",
+     "site": "imported-absorption",
      "payloads": '{"reconstructed": true} EXACTLY',
      "canonical": "YES (direct link)",
      "exact_set": "NO — never counted",
      "op_key": 'row_op_key(import_op, "imported-absorption", …)'},
-    {"site": "scope-attribution",
-     "writers": "the amended 0009 primitive: write-time flattening "
-                "(native + imported transitive copies) and the retention "
-                "contract's prune step (reparented links, markers) — "
-                "ALWAYS insert-only",
-     "payloads": '{"flattened": true} · {"flattened": true, '
-                 '"reconstructed": true} · {"reparented_from": <id>} · '
-                 '{"closure": "incomplete"}',
-     "canonical": "ONLY the reparented class; flattened copies and "
-                  "markers NEVER",
-     "exact_set": "NO — structurally excluded (its own site)",
-     "op_key": 'row_op_key(op, "scope-attribution", …) — import, '
-               'absorption, or prune op'},
+    {"writer": "`commit_outcome_import_plan` (import — transitive "
+               "copies)",
+     "op_domain": "`op-<12hex>`",
+     "site": "scope-attribution",
+     "payloads": '{"flattened": true, "reconstructed": true} ONLY',
+     "canonical": "NO (flattened copy)",
+     "exact_set": "NO — structurally excluded",
+     "op_key": 'row_op_key(import_op, "scope-attribution", …)'},
+    {"writer": "`apply_retention_prune_plan` (FUTURE — the retention "
+               "contract's primitive, NAMED here; minted as its own "
+               "0009-family §4 amendment at implementation; no shipped "
+               "path prunes today)",
+     "op_domain": "`op-<12hex>` (minted once per prune)",
+     "site": "scope-attribution",
+     "payloads": '{"reparented_from": <id>} · {"closure": "incomplete"} '
+                 'ONLY',
+     "canonical": "ONLY the reparented class; markers NEVER",
+     "exact_set": "NO — structurally excluded",
+     "op_key": 'row_op_key(prune_op, "scope-attribution", …)'},
 )
+
+#: the per-context allowed (site, payload-class) sets + op-id domains —
+#: the machine-checkable core of the matrix (R12-1's cross-product)
+WRITER_CONTEXTS = {
+    "native": {"op_re": r"^sup-.+$",
+               "cells": {("scope-attribution", "flattened")}},
+    "import": {"op_re": r"^op-[0-9a-f]{12}$",
+               "cells": {("imported-absorption", "reconstructed"),
+                         ("scope-attribution", "flattened+reconstructed")}},
+    "prune": {"op_re": r"^op-[0-9a-f]{12}$",
+              "cells": {("scope-attribution", "reparented"),
+                        ("scope-attribution", "marker")}},
+}
+
+
+def payload_class(payload: dict) -> str:
+    """The closed payload-class name (R12-1's cross-product axis)."""
+    if payload == {"reconstructed": True}:
+        return "reconstructed"
+    if payload == {"flattened": True}:
+        return "flattened"
+    if payload == {"flattened": True, "reconstructed": True}:
+        return "flattened+reconstructed"
+    if set(payload) == {"reparented_from"}:
+        return "reparented"
+    if payload == {"closure": "incomplete"}:
+        return "marker"
+    return "UNKNOWN"
 
 
 def render_site_matrix() -> str:
-    """The generated carrier block (R11-1). Emitted verbatim into every
-    spec/diagram carrier between `<!-- SITE-MATRIX -->` markers; the seal
-    byte-compares the block across all carriers and this source."""
-    head = ("| site | writers | closed payload classes | canonical? | "
-            "in the exact set? | op-key form |\n|---|---|---|---|---|---|")
-    rows = ["| `%s` | %s | %s | %s | %s | %s |" % (
-            r["site"], r["writers"], r["payloads"], r["canonical"],
-            r["exact_set"], r["op_key"]) for r in SITE_MATRIX]
+    """The generated carrier block (R11-1; writer-split per R12-1).
+    Emitted verbatim into every spec/diagram carrier between
+    `<!-- SITE-MATRIX -->` markers; the SHIPPED verifier byte-compares
+    the block across all carriers and this source (R12-3)."""
+    head = ("| atomic writer (operation context) | operation-ID domain | "
+            "site | payload subset | canonical? | in the exact set? | "
+            "per-row key form |\n|---|---|---|---|---|---|---|")
+    rows = ["| %s | %s | `%s` | %s | %s | %s | %s |" % (
+            r["writer"], r["op_domain"], r["site"], r["payloads"],
+            r["canonical"], r["exact_set"], r["op_key"])
+            for r in WRITER_MATRIX]
     return "\n".join([head] + rows)
 
 
-def validate_row_plan(row: dict) -> None:
-    """R9-3's cross-field validator, made TOTAL under R10-3 (the reviewer
-    fed it malformed evidence digests, a missing direct ref, an alien
-    contributor_type, and an undeclared payload key — all accepted).
-    Governs every row the AMENDED primitive writes (plan sites); native
+def validate_row_plan(row: dict, context: str) -> None:
+    """R9-3's cross-field validator, made TOTAL under R10-3 and
+    CONTEXT-AWARE under R12-1 (the reviewer showed reparented, marker,
+    and native-flattened classes all passing as IMPORT-plan rows — each
+    atomic writer may emit only ITS OWN (site, payload-class) cells, per
+    `WRITER_CONTEXTS`; `context` is REQUIRED, one of
+    {"native", "import", "prune"}).
+    Governs every row the AMENDED primitives write (plan sites); native
     `absorption` rows are the shipped store's accepted contract and are
     not written through this path. Every field, strictly:
     - site: the closed plan-site set;
@@ -852,10 +910,22 @@ def validate_row_plan(row: dict) -> None:
             and row.get("identity_digest") is not None:
         raise PolicyError("a closure-incompleteness marker asserts MISSING "
                           "evidence — identity_digest must be None")
+    # R12-1: the WRITER cross-product — this context may write ONLY its
+    # own (site, payload-class) cells
+    if context not in WRITER_CONTEXTS:
+        raise PolicyError(f"unknown writer context {context!r} — the set "
+                          f"is closed: {sorted(WRITER_CONTEXTS)}")
+    cell = (row["site"], payload_class(payload))
+    if cell not in WRITER_CONTEXTS[context]["cells"]:
+        raise PolicyError(
+            f"writer context {context!r} may not emit the "
+            f"(site, payload-class) cell {cell!r} — its closed set is "
+            f"{sorted(WRITER_CONTEXTS[context]['cells'])} (R12-1: each "
+            f"atomic primitive owns its own cells)")
 
 
 def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
-                row: dict) -> str:
+                row: dict, context: str) -> str:
     """The 0009 amendment's DETERMINISTIC row id (R8-3; REBUILT under
     R9-3 as THE ONE canonical logical-row projection): a framed digest
     over EVERY semantic field — user, survivor coordinates, site,
@@ -867,7 +937,7 @@ def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
     plan_row_id set equality (the v10 three-field multiset phrasing is
     WITHDRAWN). The cross-field validator runs first — a contradictory
     row never projects."""
-    validate_row_plan(row)
+    validate_row_plan(row, context)
     parts = [b"veracium.import-contribution-row.v2"]
     for v in (user_id, survivor_type, survivor_id, row["site"],
               row["identity_digest"],
@@ -901,6 +971,24 @@ def row_op_key(op: str, site: str, survivor_id: str,
                        + _framed(contributor_ref.encode("utf-8"))
                        ).hexdigest()
     return f"{op}:{site}:{h}"
+
+
+def native_row_op_key(op_id: str, survivor_id: str,
+                      contributor_ref: str) -> str:
+    """The NATIVE-context per-row key (R12-1): the shipped supersession
+    op id is `sup-{edge.id}` with an UNRESTRICTED suffix, so it cannot
+    sit in a colon-delimited prefix — it is FRAMED INTO the digest with
+    the pair. Prefix = the colon-free site token alone; injective by
+    framing; unique-index-safe."""
+    if not re.match(r"^sup-.+$", op_id or ""):
+        raise PolicyError(f"native op id must be sup-<edge-id>, got "
+                          f"{op_id!r}")
+    h = hashlib.sha256(b"veracium.native-attribution-op-key.v1"
+                       + _framed(op_id.encode("utf-8"))
+                       + _framed(survivor_id.encode("utf-8"))
+                       + _framed(contributor_ref.encode("utf-8"))
+                       ).hexdigest()
+    return f"{SITE_ATTRIBUTION}:{h}"
 
 
 def import_row_op_key(import_op: str, survivor_id: str,
@@ -1013,7 +1101,7 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
                                         absorber, x),
                    "payload": ({"reparented_from": record_id} if has_copy
                                else {"closure": "incomplete"})}
-            validate_row_plan(new)
+            validate_row_plan(new, "prune")
             out.setdefault(absorber, []).append(new)
     out.pop(record_id, None)                    # the A10 drop
     return out
