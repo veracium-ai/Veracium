@@ -167,13 +167,46 @@ class Accumulators:
 
     # -- S5 ---------------------------------------------------------------------
     def check_maintain(self, report: dict, *, n_edges: int, n_episodes: int) -> None:
+        """S5, updated for the specs/0021 §4b ADDITIVE-SUPERSET result.
+
+        `consolidation` now also carries `pools` — a mapping of pool key to a
+        per-pool sub-report — beside the preserved integer totals. This
+        checker read EVERY value of that dict as an integer and would have
+        called the new key a violation (the reviewer executed exactly that,
+        external R4-2: the shipped checker REJECTED the dict-valued key). The
+        integer gate therefore runs over the SCALAR counters, and `pools` gets
+        its own structural check rather than being skipped — an unchecked new
+        carrier is how the next one gets missed."""
         self.s5["runs"] += 1
         ex = report.get("expiry", {})
         co = report.get("consolidation", {})
+        pools = co.get("pools") or {}
         counts = {**{f"expiry.{k}": v for k, v in ex.items()},
-                  **{f"consolidation.{k}": v for k, v in co.items()}}
+                  **{f"consolidation.{k}": v for k, v in co.items()
+                     if k != "pools"}}
         bad = [f"{k}={v!r}" for k, v in counts.items()
                if not isinstance(v, int) or v < 0]
+        if not isinstance(pools, dict):
+            bad.append(f"consolidation.pools={pools!r} is not a mapping")
+        else:
+            for key, p in pools.items():
+                if not isinstance(p, dict) or p.get("status") not in (
+                        "ok", "failed", "contended", "below-threshold"):
+                    bad.append(f"pool {key!r} carries no closed status: {p!r}")
+                    continue
+                for f in ("consolidated", "into"):
+                    if not isinstance(p.get(f), int) or p[f] < 0:
+                        bad.append(f"pool {key!r} {f}={p.get(f)!r}")
+                if "error" in p and p["error"] not in (
+                        "llm-error", "store-error", "claim-contention",
+                        "validation-error", "timeout"):
+                    # a free-text error here would be memory text in a report
+                    bad.append(f"pool {key!r} error={p['error']!r} is not one "
+                               f"of the closed content-free codes")
+            if sum(p.get("consolidated", 0) for p in pools.values()
+                   if isinstance(p, dict)) != co.get("consolidated", 0):
+                bad.append("the preserved `consolidated` total is not the sum "
+                           "over pools — the additive superset must roll up")
         if sum(ex.get(k, 0) for k in ("lapsed", "decayed", "flagged_for_confirmation")) > n_edges:
             bad.append(f"expired more than the {n_edges} active edges")
         if co.get("consolidated", 0) > n_episodes:

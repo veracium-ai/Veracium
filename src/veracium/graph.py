@@ -185,6 +185,60 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "Su
 _MAX_PLAN_ATTEMPTS = 16
 
 
+def _absorption_scope_gate(store, edge: Edge):
+    """specs/0021 §4c / W2 — the same-SCOPE half of the absorption candidate
+    rule, as a lazily-built predicate over priors.
+
+    The membership answer is the SHARED `MembershipResolver` (the read half's
+    own resolver, 0020 §4a-iii): read-time and write-time must never disagree
+    about which scope a record is in, and the only way to guarantee that is to
+    ask the same object. Nothing here consults a `ScopePolicy` — §2's ruling
+    is that identity partitioning is policy-independent.
+
+    The rule, per prior:
+
+    - the incoming's own evidence UNRESOLVED → it absorbs nothing (fail
+      closed; a legacy-shaped incoming is the reachable case);
+    - the prior's evidence UNRESOLVED, or differing from the incoming's →
+      NOT a candidate (`SHARED` equals `SHARED`, so the host-produced
+      unidentified population still merges among itself);
+    - a prior whose CLOSURE is None is UNRESOLVED and "never absorbs or is
+      absorbed" (§4c) — the flattening plan is that closure, so demanding it
+      here is the same gate the write step depends on, asked before the
+      decision rather than after.
+
+    Nothing is computed until a value-subsumption candidate actually appears:
+    the overwhelmingly common ingest does no ledger work at all."""
+    from .scope import UNRESOLVED
+    from .scope_read import MembershipResolver
+    if not hasattr(store, "local_origin"):
+        # a backend with no 0006 store identity has no identities to
+        # partition BY — every record is unidentified, which is one shared
+        # pool and today's behaviour exactly (§5's identity-free regime),
+        # reached honestly rather than by an AttributeError. The same
+        # treatment `lifecycle.partition_cold` gives the maintain side.
+        return lambda prior: True
+    state: dict = {}
+
+    def same_scope(prior) -> bool:
+        if "resolver" not in state:
+            r = MembershipResolver(store, edge.user_id)
+            state["resolver"] = r
+            # the incoming is a NEW row: its evidence is its own shape with
+            # NO ledger rows. Asked through the same method the atomic
+            # primitive re-derives it with, so planner and store cannot
+            # answer this differently.
+            state["incoming"] = r.evidence_of_unwritten(edge)
+        r, inc = state["resolver"], state["incoming"]
+        if inc == UNRESOLVED:
+            return False
+        if r.evidence(prior) != inc:
+            return False              # cross-scope, or the prior UNRESOLVED
+        return r.flattening_plan("edge", prior.id) is not None
+
+    return same_scope
+
+
 def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                              op_id: str) -> tuple[SupersessionPlan, bool]:
     """Compute the plan for one incoming edge from a store read (specs/0003 §4f). Pure —
@@ -242,8 +296,17 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     # prior retires reversibly (absorbed_duplicate; note carries the winner's id), and the
     # winner inherits the earliest valid_from / max observed_at+confidence. Identity, not
     # change — no supersedes pointer.
+    #
+    # specs/0021 §4c — THE ABSORPTION PARTITION, extending the shipped
+    # same-class idiom: a candidate must ALSO present the same SCOPE
+    # membership evidence. A cross-scope or UNRESOLVED prior is not a
+    # candidate; it accumulates as a separate edge, which is exactly today's
+    # cross-CLASS behaviour extended one axis. The gate is POLICY-INDEPENDENT
+    # (§2): no host's configuration reaches it, because policy is a read-side
+    # concept and this decides what the store MERGES.
+    same_scope = _absorption_scope_gate(store, edge)
     for prior in same_class:
-        if _subsumes(same, _value_key(prior.object)):
+        if _subsumes(same, _value_key(prior.object)) and same_scope(prior):
             incoming.valid_from = min(incoming.valid_from, prior.valid_from)
             incoming.provenance.observed_at = max(incoming.provenance.observed_at,
                                                   prior.provenance.observed_at)

@@ -703,6 +703,10 @@ _CALLSITE_DISPOSITIONS = {
     # orthogonal to linkage reconstruction, which reads only non-trust
     # fields: id/note/invalidation_reason/identity); default-path where the
     # file is hand-crafted (the refusal cells, the v6 strip) or remapped
+    # specs/0021 W15's durability cell: a restore, so the reconstructed
+    # membership read back after reopen is the SAME evidence, not a capped
+    # projection of it
+    ("test_0021_maintain_scope.py", "test_import_contribution_primitive_membership_after_reopen"): "restore",
     ("test_0021_import_linkage.py", "test_import_persists_direct_and_transitive_rows_and_reads_back"): "restore",
     ("test_0021_import_linkage.py", "test_reimport_is_idempotent_rows_skip_counted_existing"): "restore",
     ("test_0021_import_linkage.py", "test_remapped_import_keys_rows_to_postremap_ids"): "default",

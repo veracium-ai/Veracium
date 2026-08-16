@@ -515,6 +515,12 @@ class SqliteStore(Store):
                         f"absorbed_duplicate set exactly (specs/0014 §4b, R5-1)")
                 contributor_flags = [self._write_contribution(user_id, d, plan)
                                      for d in plan.contribution_drafts]
+                # specs/0021 §4c — WRITE-TIME FLATTENING, in THIS transaction:
+                # the survivor's rows gain copies of every absorbed prior's
+                # TRANSITIVELY CLOSED set, so a post-0021 survivor's row set is
+                # its whole ancestry BY CONSTRUCTION (the A→B→C chain that
+                # defeated the single-level read cannot recur on rows we write).
+                self._write_absorption_flattening(user_id, plan)
                 # specs/0019 §4d / 0014 §2c as amended (U2b): the committed
                 # survivor's `ungrounded` must be EXACTLY the N-ary OR over
                 # {the raw incoming} ∪ {every absorbed contributor} —
@@ -677,6 +683,107 @@ class SqliteStore(Store):
         # N-ary OR verification (U2b) — read from the row this transaction is
         # consuming, never from the draft.
         return contributor.ungrounded
+
+    def _write_absorption_flattening(self, user_id: str, plan) -> None:
+        """specs/0021 §4c / §7b SITE MATRIX row 2 — the NATIVE flattened
+        copies, written by `apply_supersession_plan` inside the SAME atomic
+        plan as the absorption itself.
+
+        For every absorption draft: the prior's TRANSITIVELY CLOSED row set
+        (never its direct rows — a legacy prior's direct rows may themselves
+        be unclosed, and flattening an unclosed set would mint one that merely
+        LOOKS closed) is copied onto the survivor at the `scope-attribution`
+        site with payload EXACTLY `{"flattened": true}` and the NATIVE per-row
+        key form (`native_row_op_key`: the shipped op id is `sup-{edge.id}`
+        with an unrestricted suffix, so it is FRAMED INTO the digest rather
+        than used as a prefix). The DIRECT contributor keeps its accepted
+        native `absorption` row, `{base, contributor}` payload untouched.
+
+        TWO store-side gates, because a rail that lives only in the planner is
+        a rail the atomic primitive does not have (0014 A7's posture):
+
+        1. the prior's closure must EXIST — a None closure is UNRESOLVED and
+           §4c forbids absorbing it; the whole op aborts;
+        2. the prior's membership evidence must EQUAL the survivor's own —
+           the same-scope requirement, re-derived here from authoritative rows
+           rather than trusted from the plan.
+
+        Rows are DERIVED here, never carried in the plan: the plan's outcome
+        digest (0014 R5-2, projection v4) binds caller-supplied fields, and a
+        new plan member would either change that projection for every existing
+        receipt or ride along unbound. The store derives and validates; the
+        caller references (0014 §4b R2-1)."""
+        drafts = [d for d in plan.contribution_drafts if d.site == "absorption"]
+        if not drafts:
+            return
+        from ..contribution import canonical_payload
+        from ..scope import (SITE_ATTRIBUTION, UNRESOLVED, ScopeError,
+                             construct_plan_row)
+        from ..scope_read import MembershipResolver
+        resolver = MembershipResolver(self, user_id)
+        survivor = plan.incoming_edge
+        own_evidence = resolver.evidence_of_unwritten(survivor)
+        if own_evidence == UNRESOLVED:
+            raise SupersessionIntegrityError(
+                f"survivor {survivor.id!r} presents UNRESOLVED membership "
+                f"evidence — specs/0021 §4c: it absorbs nothing (fail closed)")
+        now = self._now().isoformat()
+        written: set = set()
+        for d in drafts:
+            copies = resolver.flattening_plan(d.contributor_type,
+                                              d.contributor_id)
+            if copies is None:
+                raise SupersessionIntegrityError(
+                    f"absorbed prior {d.contributor_id!r} has NO transitively "
+                    f"closed absorption row set (UNRESOLVED) — specs/0021 §4c: "
+                    f"such a prior never absorbs or is absorbed, and a survivor "
+                    f"cannot flatten a set that does not close")
+            prow = self._conn.execute(
+                "SELECT json FROM edges WHERE id=?",
+                (d.contributor_id,)).fetchone()
+            if prow is None:
+                raise SupersessionIntegrityError(
+                    f"absorbed prior {d.contributor_id!r} does not resolve to "
+                    f"a row this transaction is consuming (0014 §4b)")
+            evidence = resolver.evidence(Edge.model_validate_json(prow[0]))
+            if evidence == UNRESOLVED or evidence != own_evidence:
+                raise SupersessionIntegrityError(
+                    f"absorbed prior {d.contributor_id!r} presents membership "
+                    f"evidence {evidence!r}, the survivor {own_evidence!r} — "
+                    f"specs/0021 §4c/W2: absorption never crosses a scope "
+                    f"boundary, and the atomic primitive refuses it "
+                    f"independently of the planner")
+            for c in copies:
+                ref = c["contributor_ref"]
+                if ref in written or ref == d.contributor_id:
+                    continue          # one row per contributor: the direct
+                                      # link is the native row, and a ref can
+                                      # have only one absorber (the closure
+                                      # refuses two), so this only ever
+                                      # collapses a re-reached DAG node
+                written.add(ref)
+                try:
+                    row = construct_plan_row(
+                        "native", plan.operation_id, d.survivor_id,
+                        site=SITE_ATTRIBUTION,
+                        identity_digest=c["identity_digest"],
+                        evidence_ref_digest=c["evidence_ref_digest"],
+                        contributor_ref=ref, payload={"flattened": True})
+                except ScopeError as e:
+                    raise SupersessionIntegrityError(
+                        f"the flattened attribution row for contributor "
+                        f"{ref!r} does not satisfy the 0009 §4c writer "
+                        f"contract: {e}") from e
+                self._conn.execute(
+                    "INSERT INTO contribution_ledger(id,user_id,survivor_type,"
+                    "survivor_id,site,identity_digest,evidence_ref_digest,"
+                    "payload,op_key,created_at,contributor_type,"
+                    "contributor_ref) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (f"contrib-{uuid.uuid4().hex[:12]}", user_id,
+                     d.survivor_type, d.survivor_id, SITE_ATTRIBUTION,
+                     row["identity_digest"], row["evidence_ref_digest"],
+                     canonical_payload(row["payload"]), row["op_key"], now,
+                     row["contributor_type"], ref))
 
     def _write_consolidation_contributions(self, op) -> None:
         """specs/0014 §4b/§4c: the N×M rows at the OUTPUTS_DURABLE cutover —
@@ -1359,6 +1466,18 @@ class SqliteStore(Store):
         prov = base.model_copy(update={
             "author_of_evidence": EvidenceAuthor.SYSTEM,
             "evidence_ref": operation_id,
+            # specs/0021 §4a / W8 (external F1, the IMPLEMENTATION OBLIGATION):
+            # a consolidation output CLEARS the inherited identity. `base` is
+            # `inputs[0].provenance`, so before this the first input's
+            # (origin, source_id) travelled onto every derivative — a mixed
+            # A+B consolidation CLAIMED identity A, which is exactly the
+            # laundering the scope machinery exists to stop. Store-authored
+            # means store-identified: `origin=None` resolves to the LOCAL
+            # singleton at read (0006 I9) and `source_id=None` is not
+            # groupable (I13), so membership can only travel through the
+            # 0014 ledger, never through a copied field.
+            "origin": None,
+            "source_id": None,
             "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced
                              else base.derived_from),
             "disclosure": weakest,

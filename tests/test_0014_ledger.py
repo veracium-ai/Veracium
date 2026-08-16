@@ -38,12 +38,19 @@ def _store(tmp_path):
 
 
 def _absorb(store, uid="u1", *, source_id="src-A", conf=0.8):
-    """Persist a prior, then a MORE specific restatement that absorbs it."""
+    """Persist a prior, then a MORE specific restatement that absorbs it.
+
+    Both carry the SAME `source_id` since specs/0021 §4c: absorption
+    partitions by resolved identity, so a restatement from another (or from
+    no) source is no longer an absorption candidate — it accumulates as a
+    separate edge. These are 0014 ledger tests, not 0021 partition tests, so
+    the fixture stays inside one scope; `test_0021_maintain_scope.py` owns the
+    cross-scope cells (W2)."""
     prior = _edge(uid, "Miso", conf=conf, observed=NOW - timedelta(days=3),
                   source_id=source_id, eid=f"e-prior-{uid}")
     apply_supersession(store, prior, DEFAULT_RELATIONS)
     winner = _edge(uid, "cat Miso", conf=0.9, observed=NOW,
-                   eid=f"e-winner-{uid}")
+                   source_id=source_id, eid=f"e-winner-{uid}")
     apply_supersession(store, winner, DEFAULT_RELATIONS)
     return prior, winner
 
@@ -118,7 +125,7 @@ def _plan_for_absorption(store, uid="u1"):
                   source_id="src-A", eid="e-prior")
     apply_supersession(store, prior, DEFAULT_RELATIONS)
     winner = _edge(uid, "cat Miso", conf=0.9, observed=NOW,
-                   eid=f"e-winner-{uid}")
+                   source_id="src-A", eid=f"e-winner-{uid}")   # 0021 §4c: same scope
     import uuid
     plan, _ = _build_supersession_plan(store, winner, DEFAULT_RELATIONS,
                                     f"op-{uuid.uuid4().hex[:8]}")

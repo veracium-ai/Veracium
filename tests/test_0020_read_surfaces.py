@@ -729,7 +729,11 @@ class _RowStore:
                                 contributor_ref=r.get("contributor_ref"),
                                 contributor_type=r.get("contributor_type", "edge"),
                                 evidence_ref_digest=r.get("evidence_ref_digest"),
-                                payload=r.get("payload") or {})
+                                payload=r.get("payload") or {},
+                                # the survivor coordinates the real
+                                # ContributionRecord always carries (0021 §4c
+                                # flattening pairs ref-less rows by node)
+                                survivor_type=kind, survivor_id=rid)
                 for r in self._rows.get(rid, [])]
 
     def edges(self, user_id, active_only=False, include_quarantined=False):

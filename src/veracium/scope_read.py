@@ -69,49 +69,40 @@ def _asserted_today(record) -> bool:
 def _row_dict(r) -> dict:
     """A `ContributionRecord` projected to the plain mapping shape the 0020
     core consumes (`{site, identity_digest, op_key, contributor_ref,
-    evidence_ref_digest, payload}`)."""
+    evidence_ref_digest, payload}`).
+
+    The SURVIVOR coordinates ride along (0021 §4c): the write-time flattening
+    needs to know which node in the closure a row came from in order to pair a
+    ref-less LEGACY row with its note-derived link. `close_absorption_rows`
+    and `membership` read only the keys they name, so the extra pair is inert
+    to both."""
     return {"site": r.site, "identity_digest": r.identity_digest,
             "op_key": r.op_key, "contributor_ref": r.contributor_ref,
             "contributor_type": r.contributor_type,
             "evidence_ref_digest": r.evidence_ref_digest,
-            "payload": r.payload}
+            "payload": r.payload,
+            "survivor_type": r.survivor_type, "survivor_id": r.survivor_id}
 
 
-class ScopeView:
-    """One recall's principal boundary. Constructed per call (never cached
-    across calls — the store moves under us); memoises only within the call.
+class MembershipResolver:
+    """THE ONE record → membership-evidence resolution, ledger-backed.
 
-    Every public read path routes its record sets through `scoped()` (the
-    visibility relation + the restrict-only shaping) and, for edges, then
-    `narrow()` (the §4e filters — AFTER scope, within the visible set,
-    M-2)."""
+    Split out of `ScopeView` for specs/0021 slice C: the WRITE and MAINTAIN
+    paths (`graph`'s absorption candidate check, `lifecycle`'s consolidation
+    partition) need exactly this answer and take NO principal and NO policy —
+    §2's ruling is that identity partitioning is POLICY-INDEPENDENT. Sharing
+    the class rather than re-deriving it is what keeps the read half and the
+    write half from ever disagreeing about which scope a record is in.
 
-    def __init__(self, store, user_id: str, principal: Identity,
-                 policy, *, filters: Optional[dict] = None):
-        if not isinstance(principal, Identity):
-            raise ScopeError(
-                f"principal must be a veracium.scope.Identity, got "
-                f"{type(principal).__name__} (strict types, 0020 §2c)")
-        # feature-disabled REFUSES a principal-bearing call (§4a-ii, R2-2) —
-        # raised HERE as well as inside `classify`, so the refusal happens
-        # before a single record is read rather than per-record.
-        if policy is None:
-            raise ScopeError(
-                "a principal was supplied but no scope policy is configured — "
-                "feature-disabled cannot honour a principal-bearing call "
-                "(0020 §4a-ii); configure MemoryConfig.scope_groups (`{}` is "
-                "the valid configured-empty state)")
-        if not principal.groupable:
-            raise ScopeError("a principal must carry a source_id (0006 I13)")
+    Memoises within its own lifetime only; a resolver is constructed per call
+    (the store moves under us)."""
+
+    def __init__(self, store, user_id: str):
         self.store = store
         self.user_id = user_id
-        self.principal = principal
-        self.policy = policy
-        self.filters = dict(filters or {})
         self.local_origin = store.local_origin()
         self._rows_cache: dict = {}
         self._evidence: dict = {}
-        self._decisions: dict = {}
         self._legacy_cache = None
 
     # -- the ledger projection (§4a-iii) -----------------------------------
@@ -216,6 +207,122 @@ class ScopeView:
         # inside `membership` is what catches a pre-0021 output regardless.
         return membership(shape, rows, "none", self.local_origin,
                           expected_contributors=expected)
+
+    # -- the WRITE half's three extra questions (0021 §4c) ------------------
+    def evidence_of_unwritten(self, record):
+        """Membership evidence for a record the store does not hold yet: its
+        own shape, NO ledger rows. The absorption survivor at write time is
+        exactly that — a NEW edge whose ledger rows this very transaction is
+        minting, so reading them back would be reading this operation's own
+        output as evidence about itself."""
+        return membership(self._record_shape(record), [], "none",
+                          self.local_origin)
+
+    def closure(self, record_kind: str, record_id: str) -> Optional[list]:
+        """The TRANSITIVELY CLOSED absorption row set for one record, or
+        **None — which IS UNRESOLVED** (§4a-iii). The write path needs the
+        raw closure (not just the evidence verdict) because §4c's candidate
+        rule is stated over it: *a prior whose closure is None is UNRESOLVED
+        and never absorbs or is absorbed.*"""
+        links, digs = self._legacy()
+        return close_absorption_rows(
+            record_id, self._projection(record_kind, record_id), links, digs)
+
+    def flattening_plan(self, record_kind: str,
+                        record_id: str) -> Optional[list]:
+        """0021 §4c — the ATTRIBUTION CONTENT a survivor must copy when it
+        absorbs `record_id`: one
+        `{contributor_ref, identity_digest, evidence_ref_digest}` per
+        contributor in the prior's TRANSITIVELY CLOSED set.
+
+        The prior's CLOSED set, never its direct rows: a legacy prior's own
+        rows may themselves be unclosed, and flattening an unclosed set would
+        mint a row set that merely LOOKS closed (§4c, applying found-in-fix
+        item 1 to this fix's own construction). None (UNRESOLVED) propagates.
+
+        Ref-less LEGACY rows carry no typed contributor, so their contributor
+        is taken from the node's note-derived link — the SAME `legacy_links`
+        the closure just used to account for them (their digest multisets are
+        equal, or the closure would have returned None). The copy therefore
+        names a real record and the resulting set is ref-bearing throughout,
+        which is what makes it immune to later pruning (§4d)."""
+        closed = self.closure(record_kind, record_id)
+        if closed is None:
+            return None
+        links, digs = self._legacy()
+        out: dict = {}
+        legacy_nodes: list = []
+        for r in closed:
+            if r.get("site") not in MEMBERSHIP_SITES:
+                continue
+            if (r.get("payload") or {}) == {"closure": "incomplete"}:
+                continue          # a marker asserts MISSING evidence — never
+                                  # copied forward as if it were evidence
+            ref = r.get("contributor_ref")
+            if ref is None:
+                node = r.get("survivor_id")
+                if node not in legacy_nodes:
+                    legacy_nodes.append(node)
+                continue
+            out.setdefault(ref, {"contributor_ref": ref,
+                                 "identity_digest": r.get("identity_digest"),
+                                 "evidence_ref_digest":
+                                     r.get("evidence_ref_digest")})
+        for node in legacy_nodes:
+            for prior in links.get(node, ()):
+                out.setdefault(prior, {"contributor_ref": prior,
+                                       "identity_digest": digs.get(prior),
+                                       "evidence_ref_digest": None})
+        return [out[k] for k in sorted(out)]
+
+
+class ScopeView:
+    """One recall's principal boundary. Constructed per call (never cached
+    across calls — the store moves under us); memoises only within the call.
+
+    Every public read path routes its record sets through `scoped()` (the
+    visibility relation + the restrict-only shaping) and, for edges, then
+    `narrow()` (the §4e filters — AFTER scope, within the visible set,
+    M-2).
+
+    Membership evidence is the shared `MembershipResolver` — the SAME object
+    the write/maintain paths consult (0021 §2), never a second reading."""
+
+    def __init__(self, store, user_id: str, principal: Identity,
+                 policy, *, filters: Optional[dict] = None):
+        if not isinstance(principal, Identity):
+            raise ScopeError(
+                f"principal must be a veracium.scope.Identity, got "
+                f"{type(principal).__name__} (strict types, 0020 §2c)")
+        # feature-disabled REFUSES a principal-bearing call (§4a-ii, R2-2) —
+        # raised HERE as well as inside `classify`, so the refusal happens
+        # before a single record is read rather than per-record.
+        if policy is None:
+            raise ScopeError(
+                "a principal was supplied but no scope policy is configured — "
+                "feature-disabled cannot honour a principal-bearing call "
+                "(0020 §4a-ii); configure MemoryConfig.scope_groups (`{}` is "
+                "the valid configured-empty state)")
+        if not principal.groupable:
+            raise ScopeError("a principal must carry a source_id (0006 I13)")
+        self.store = store
+        self.user_id = user_id
+        self.principal = principal
+        self.policy = policy
+        self.filters = dict(filters or {})
+        self.local_origin = store.local_origin()
+        self._resolver = MembershipResolver(store, user_id)
+        self._decisions: dict = {}
+
+    @staticmethod
+    def _kind(record) -> str:
+        return MembershipResolver._kind(record)
+
+    def evidence(self, record):
+        """The §4a-iii membership evidence for one record — delegated to the
+        shared resolver so read-time and write-time answers are the same
+        answer, not two implementations of it."""
+        return self._resolver.evidence(record)
 
     def decision(self, record):
         """`(visible, shape)` from the FIXED decision table, memoised per

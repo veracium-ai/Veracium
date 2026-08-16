@@ -168,7 +168,13 @@ def _summary_contributor_sources(store, user_id, summary) -> set:
 # before deletion — the xfail marker documenting the gap comes off with it.
 def test_consolidation_contributors_survive_input_deletion(tmp_path):
     mem, cfg = _cold_mem(tmp_path)
-    _add_cold(mem, 0, EvidenceAuthor.USER, "user-onboarding", source_id="mailbox:me")
+    # specs/0021 §4b: consolidation partitions by resolved IDENTITY, so all
+    # nine inputs share one `source_id` — otherwise this batch splits into a
+    # 1-record pool and an 8-record pool and neither the N×M cardinality nor
+    # the two-output shape this test is about would occur. The two distinct
+    # EVIDENCE refs (what the assertions below actually discriminate on) are
+    # untouched: evidence_ref is not identity.
+    _add_cold(mem, 0, EvidenceAuthor.USER, "user-onboarding", source_id="feed:bad")
     for i in range(1, 9):                    # >= consolidate_min_batch (8) cold inputs
         _add_cold(mem, i, EvidenceAuthor.THIRD_PARTY, "badfeed-ep",
                   source_id="feed:bad")     # source_id SUPPLIED (R2-7)

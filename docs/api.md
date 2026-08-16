@@ -126,6 +126,63 @@ isolation working, not abstention failing.
 The "overnight" job: expire stale facts (transient lapse, durable flag) and
 consolidate cold episodes. Idempotent; call on a schedule.
 
+**Consolidation runs PER SCOPE (spec 0021).** Cold candidates are partitioned
+by their resolved source identity (`provenance.origin` + `source_id`, spec
+0006) and each pool consolidates as its own operation — its own claim, lease
+and crash-safety. Two consequences worth planning for:
+
+- **Thresholds are per pool.** Four records from source A plus four from
+  source B with `consolidate_min_batch=8` is a **no-op**. There is no global
+  trigger to fall back on. If your store carries identities and consolidation
+  seems to have stopped, this is usually why — lower `consolidate_min_batch`
+  or accept the longer accumulation.
+- **This happens with or without a scope policy.** Partitioning is a
+  *maintenance* rule, not a *visibility* rule: `scope_groups` governs what a
+  principal can read, and nothing a host configures changes what the store
+  merges. A store that carries identities gets partitioned consolidation even
+  if no host ever configures scope. **A store with no identities behaves
+  exactly as before** — same stored state, same counter values.
+
+The return value is an **additive superset** of the old shape. The existing
+keys are preserved verbatim as roll-up totals, so anything reading them keeps
+working:
+
+```python
+{"expiry": {...},
+ "consolidation": {
+     "consolidated": 16, "into": 5, "recovered": 0,      # unchanged keys
+     "pools": {
+        "<64-hex identity digest>": {"status": "ok",
+                                     "consolidated": 8, "into": 3},
+        "pool:unidentified":        {"status": "below-threshold",
+                                     "consolidated": 0, "into": 0}},
+     "pools_ok": 1, "pools_failed": 0}}
+```
+
+`status` is one of `ok` / `failed` / `contended` / `below-threshold`. A failed
+pool carries `"error"`, a **closed content-free code** (`llm-error`,
+`store-error`, `claim-contention`, `validation-error`, `timeout`) — never the
+exception text, because a model's exception routinely quotes the prompt back
+and the prompt carries memory content. **Pools fail independently:** one
+pool's model error leaves every pool that already committed standing, and
+later pools still run. Records with no identity share one pool under the
+reserved key `pool:unidentified`.
+
+**Records that fail closed.** A derivative whose membership evidence is
+missing or contradictory — a consolidation output written before 0021 (which
+copied its first input's identity), one that arrived by import (the
+attribution ledger is local and does not travel), or one an interrupted
+operation finalized afterwards — is **UNRESOLVED**: it joins no pool, and it
+is invisible to principal-bearing reads while staying visible on the unscoped
+surface. That is deliberate and it is the fail-closed price. The operator
+remedy is **re-derivation** — restate or re-ingest the underlying material so
+a fresh derivative is written with honest evidence. There is no flag to
+believe an unverifiable claim.
+
+**Maintenance effects are permanent.** Consolidation deletes its inputs and
+writes derivatives; disabling scope configuration later changes read
+visibility only. There is no un-consolidate.
+
 ### `list_entities() -> list[dict]` / `edges_since(user_id, since) -> list[Edge]`
 
 Host/admin queries (neither is an MCP tool by design):

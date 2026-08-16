@@ -55,13 +55,20 @@ def _edge(obj, *, eid, sid, conf=0.9, rel="pet", note=""):
 
 def _chain_store(path):
     """A REAL A→B→C absorption chain via apply_supersession — the slice-1
-    contributor columns populated by the shipped store."""
+    contributor columns populated by the shipped store.
+
+    All three hops are WITHIN ONE SCOPE since specs/0021 §4c landed: the
+    absorption partition refuses a cross-scope prior outright, so a
+    cross-digest chain can no longer be built through the native writer at
+    all (it only arrives as legacy or imported state — which is what the
+    §4d/W13 cells build directly). These tests are about the LINKAGE
+    carriers, and the linkage is identical either way."""
     s = SqliteStore(path)
     apply_supersession(s, _edge("Miso", eid="A", sid="agent-a", conf=0.2),
                        DEFAULT_RELATIONS)
-    apply_supersession(s, _edge("cat Miso", eid="B", sid="agent-b", conf=0.5),
+    apply_supersession(s, _edge("cat Miso", eid="B", sid="agent-a", conf=0.5),
                        DEFAULT_RELATIONS)
-    apply_supersession(s, _edge("small cat Miso", eid="C", sid="agent-b",
+    apply_supersession(s, _edge("small cat Miso", eid="C", sid="agent-a",
                                conf=0.9), DEFAULT_RELATIONS)
     return s
 
@@ -153,7 +160,11 @@ def test_double_canonical_ledger_refuses_the_whole_export(tmp_path):
     row = s._conn.execute(
         "SELECT user_id,survivor_type,site,identity_digest,"
         "evidence_ref_digest,payload,created_at,contributor_type,"
-        "contributor_ref FROM contribution_ledger WHERE contributor_ref='A'"
+        "contributor_ref FROM contribution_ledger WHERE contributor_ref='A' "
+        # the CANONICAL row specifically: since 0021 §4c, C also carries a
+        # flattened scope-attribution COPY naming A, and that one is not
+        # canonical — forging a duplicate of it would prove nothing
+        "AND site='absorption'"
     ).fetchone()
     assert row is not None
     s._conn.execute(

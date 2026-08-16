@@ -123,7 +123,16 @@ def test_ungrounded_grants_nothing():
                        # the same about the disclosure it narrows. Classified
                        # WITHHOLDING-side; `test_same_scope_grants_nothing`
                        # (0020 V2) is the behavioural check that they keep it.
-                       "gate.py", "scope_read.py"}, (
+                       "gate.py", "scope_read.py",
+                       # specs/0021 slice C — NOT a reader either:
+                       # `combining.py` is a REGISTRY of verdicts about write
+                       # sites, and its `_upsert_edge_row` row names
+                       # `ungrounded` among the fields the survivor inherited
+                       # from the absorbed set. Prose about a field, in a
+                       # table; no branch, no read, no write. The N-ary OR
+                       # that actually consumes the flag stays in graph.py
+                       # and sqlite.py, both already enumerated.
+                       "combining.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
         f"trust/authority/staleness key)")

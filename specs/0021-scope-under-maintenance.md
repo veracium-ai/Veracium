@@ -82,19 +82,22 @@ store MERGES. Consequences, stated:
 
 ### 2c-ii. Assertions about reach — REQUIRED
 
-| assertion | command that establishes it | expected result |
+| assertion | command that establishes it | expected result (AS RE-RUN, 2026-08-16, at slice-C implementation) |
 |---|---|---|
-| absorption groups by trust class today (the idiom §4c extends) | `grep -n "same_class\|never cross trust classes" src/veracium/graph.py` | the class-partitioned candidate loops |
-| **consolidation is ONE GLOBAL POOL today (external F4 — the claim v2 got wrong, asserted correctly now)** | `grep -n "cold = \|consolidate_min_batch" src/veracium/lifecycle.py` | one `cold` list, one threshold, no grouping |
-| **outputs copy the first input's identity today (the W8 defect)** | `grep -n "inputs\[0\].provenance" src/veracium/store/sqlite.py` | `_derive_output_metadata`'s base line |
-| the ledger keys contributors by resolved identity | `grep -n "identity_digest" src/veracium/store/sqlite.py \| head -3` | the 0014 join |
-| the ledger is local-only | `grep -n "settled outputs portable" specs/0014-maintenance-attribution.md \| head -1` | the locality rule the import population inherits |
-| **the absorption draft ALREADY carries the typed contributor fields (R8-1's column populates from shipped data)** | `grep -n "contributor_type=\"edge\", contributor_id=prior.id" src/veracium/graph.py` | the ContributionDraft line — the store drops these at persist today; the amendment stops the drop |
-| **no shipped path physically prunes an absorbed edge (the R8-1 retention premise)** | `grep -rn "DELETE FROM edges" src/veracium/` | EMPTY — expiry invalidates (`invalidate_edge`), consolidation deletes EPISODES, user erasure deletes per-user tables wholesale (ledger included, mooting membership) |
-| **the accepted op_key index admits one row per key (R8-3's IntegrityError)** | `grep -n "ix_contribution_ledger_op_key" -A 2 src/veracium/store/schema_version.py` | `CREATE UNIQUE INDEX … ON contribution_ledger(op_key) WHERE op_key IS NOT NULL` |
-| **the shipped per-row canonical key idiom the amendment follows** | `grep -n "def consolidation_op_key" -A 3 src/veracium/contribution.py` | `{operation_id}:{output_index}:{contributor_type}:{contributor_id}` |
+| absorption groups by trust class today (the idiom §4c extends) | `grep -n "same_class\|never cross trust classes" src/veracium/graph.py` | UNCHANGED — the class-partitioned candidate loops (`graph.py:105` the stated rule, `:241` the `same_class` construction, `:256`/`:297` the two loops). **Post-implementation the absorption loop additionally consults `_absorption_scope_gate` (§4c); the reinforcement loop does not need it — its action is persist-incoming-untouched, which is already "accumulates as a separate edge".** |
+| **consolidation is ONE GLOBAL POOL today (external F4 — the claim v2 got wrong, asserted correctly now)** | `grep -n "cold = \|consolidate_min_batch" src/veracium/lifecycle.py` | **MOVED BY THIS IMPLEMENTATION.** Pre-slice-C: one `cold` list, one threshold, no grouping — the premise §4b was specified against. Post-slice-C the same command shows the ONE `cold` list still built once (`lifecycle.py:269`) and the threshold applied PER POOL (`:275`, `len(members) < config.consolidate_min_batch`) after `partition_cold`. The pre-state is recorded as historical, not re-asserted. |
+| **outputs copy the first input's identity today (the W8 defect)** | `grep -n "inputs\[0\].provenance" src/veracium/store/sqlite.py` | **MOVED BY THIS IMPLEMENTATION.** `_derive_output_metadata`'s base line is still there (`sqlite.py:1460`) — `base` remains the source of the non-identity derived fields — but the `model_copy` below it now sets `origin=None, source_id=None`, so the copy no longer carries identity. The second hit (`:1471`) is the comment recording exactly that. |
+| the ledger keys contributors by resolved identity | `grep -n "identity_digest" src/veracium/store/sqlite.py \| head -3` | UNCHANGED IN SHAPE, line numbers moved with the D2 train — the 0014 join (`:631` the import of the shipped digest primitives, `:651` the derivation, `:675` the INSERT column list) |
+| the ledger is local-only | ~~`grep -n "settled outputs portable" …`~~ → **CORRECTED at re-run: that phrase does not appear in 0014 and the command returned EMPTY.** The rule's actual carrier: `grep -n "Store-local" specs/0014-maintenance-attribution.md` | `0014:567` — "The ledger is **Store-local metadata** … never surfaced to the model … and never exported (§4e)": the locality rule the import population inherits. (A grep asserting a phrase that was never written is a non-biting assertion; recorded per the 0005 execute-shipped-claims rule rather than quietly fixed.) |
+| **the absorption draft ALREADY carries the typed contributor fields (R8-1's column populates from shipped data)** | `grep -n "contributor_type=\"edge\", contributor_id=prior.id" src/veracium/graph.py` | UNCHANGED — the `ContributionDraft` line (`graph.py:321`). **The D2 train already stopped the drop: `_write_contribution` persists both columns on every new native absorption row.** |
+| **no shipped path physically prunes an absorbed edge (the R8-1 retention premise)** | `grep -rn "DELETE FROM edges" src/veracium/` | UNCHANGED — EMPTY. Expiry invalidates (`invalidate_edge`), consolidation deletes EPISODES, user erasure deletes per-user tables wholesale (ledger included, mooting membership). The premise still holds, so `apply_retention_prune_plan` stays FUTURE and W16/W18's post-prune halves stay deferred. |
+| **the accepted op_key index admits one row per key (R8-3's IntegrityError)** | `grep -n "ix_contribution_ledger_op_key" -A 2 src/veracium/store/schema_version.py` | UNCHANGED — `schema_version.py:267-269`, `CREATE UNIQUE INDEX ix_contribution_ledger_op_key ON contribution_ledger(op_key) WHERE op_key IS NOT NULL` |
+| **the shipped per-row canonical key idiom the amendment follows** | `grep -n "def consolidation_op_key" -A 3 src/veracium/contribution.py` | UNCHANGED — `contribution.py:137-140`, `{operation_id}:{output_index}:{contributor_type}:{contributor_id}` |
 
-*(Re-run at implementation; commands recorded per the 0005 rule.)*
+*(Commands recorded per the 0005 rule. RE-RUN at slice-C implementation as
+this section requires; three results moved — two because this implementation
+moved them, and one because the command was never biting — and each is
+recorded above rather than silently refreshed.)*
 
 ## 3. The operation matrix — TOTAL, one row per combining operation
 
@@ -382,3 +385,110 @@ restrict-only holds, but a correctness wart), name it.
 | Q2 | per-scope wiki compilation | DEFERRED, cost-gated (0020 §4d) |
 | Q3 | membership materialization at export (FORMAT change) | DEFERRED — recorded widening; would move imported derivatives out of UNRESOLVED |
 | Q4 | mixed-version ENFORCEMENT: the pre-0021-writer refusal bump | DEFERRED to the 0018 D2 breaking window (SCHEMA v8) — until then W1 carries the §4d operational narrowing |
+
+## Review closure
+
+*(PROCESS §4a — one row per finding PER OWNER. The rounds were COUPLED with
+0020, so every finding of every round is listed here with its OWNER: an
+omission and a hand-off must not look alike. `evidence` names the artifact
+that closes the row — a spec section for a design ruling, and additionally a
+vector, harness, test or commit wherever code exists. Round reports are
+verbatim in `specs/reviews/0020-0021/round-N.md`; the compressed per-round
+dispositions are `specs/reviews.py`, which is the source the STATUS index
+renders from. Rounds: internal 1, external 1–14 (findings 7→7→5→3→4→3→4→3→5→
+5→5→3→1→0), plus one POST-ACCEPTANCE self-found defect.
+
+**Two counts, two bases — stated because they differ and a reader who sums the
+wrong one will think the other is a typo.** The series above is PER ROUND: the
+number of distinct findings that round's report raised, which is what the
+verbatim reports in `specs/reviews/0020-0021/` say. `specs/reviews.py` sums PER
+SPEC, and the rounds were COUPLED, so a finding landing on both specs is
+recorded in both rows and its per-spec total is necessarily larger (round 1: 7
+distinct findings, recorded 5 under 0020 and 6 under 0021; 0021's per-spec
+external series is 6→3→3→2→2→1→2→2→3→3→3→1→1→0, plus 4 internal). The table
+below lists one row per finding PER OWNER, so it tracks the per-spec basis. No
+single number is "the" count; the round reports are authoritative for what was
+raised, this table for what closed it.)*
+
+| round | finding | class | owner | disposition | evidence |
+|---|---|---|---|---|---|
+| int-1 | R1 derived-record scope membership UNDEFINED and defaulted to a leak — maintenance is itself a producer of absent-identity records | BLOCKING | both | **folded (v2):** membership evaluates over the CONTRIBUTORS' resolved identities (the 0014 ledger join); the matrix note and W7 carry it here | §3; W7 `test_derivative_inherits_partition_scope` |
+| int-1 | R2 the §7b partial-shipping cell UNDERSTATED the coupling (the wiki exclusion carries none of the consolidation burden) | D | 0021 | **folded (v2), restated at true strength:** 0020's §8 claim is CONDITIONAL on this spec wherever maintenance runs; shipping 0020 alone is a boundary with an unlocked back door, and any such decision must say so in those words | §1; §7b (the 0020 row) |
+| int-1 | R3 no reach assertions — the construction rested on remembered code shape | E | 0021 | folded (v2): §2c-ii, commands recorded per the 0005 rule — **and re-run at implementation, where three results moved and one command proved never to have been biting** | §2c-ii (the re-run table) |
+| int-1 | R4 test tiers unmarked (offline vs live) | E | 0021 | folded (v2): every W-check carries its tier; W6 is the live/D-ext form | §6; `tests/test_0021_maintain_scope.py` (the deferral stubs) |
+| ext-1 | F1 the derivative-membership rule contradicted the implementation and failed across portability (`_derive_output_metadata` copies `inputs[0].provenance` without clearing identity) | G+C, executed | 0020 (+0021) | **folded (v3) as 0020's evidence HIERARCHY; the IMPLEMENTATION OBLIGATION is this spec's:** outputs get `origin=None`/`source_id=None`, and the reviewer's mixed-scope probe is the regression | §4a; W8 `test_output_identity_cleared`; `store/sqlite._derive_output_metadata` |
+| ext-1 | F2 the new public types and grammars had no mechanical definition | A+F | 0020 | folded in 0020 (v3): the reference + pinned vectors | 0020 §4a-ii; `vector_harness.py` |
+| ext-1 | F3 the read-surface inventory was incomplete | C | 0020 | folded in 0020 (v3) | 0020 §4f |
+| ext-1 | F4 this spec's consolidation construction rested on a FALSE reach assertion — v2 claimed consolidation "groups by trust class today"; `lifecycle.consolidate` was ONE global cold pool, one threshold, one call, one claim (the idiom claimed was absorption's; the second execute-shipped-claims miss, disclosed) | G+E+C | 0021 | **folded (v3) against the REAL shape:** §4b's per-scope pools, PER-POOL thresholds (the 4A+4B/min-8 NO-OP cell), deterministic digest order, one 0010 op per pool, independent failures, per-pool reporting, pre-feature recovery; **and W3 upgraded from prose totality to a MECHANICAL `COMBINING_SITES` registry + generated manifest with "combining" defined** | §4b; §3; W10 `test_per_scope_thresholds`; W3 `test_scope_operation_matrix_is_total`; `src/veracium/combining.py`; `specs/generated/0021-combining-sites.md` |
+| ext-1 | F5 per-process READ policy conflicts with shared-store maintenance — an honest unscoped host could co-consolidate A+B while a scoped host assumed isolation | C+D | 0021 | **RULED (v3): identity partitioning is POLICY-INDEPENDENT.** Maintenance partitions by resolved identity always; policy is read-side. The behaviour change for identity-bearing stores is DISCLOSED, and config-only reversibility is WITHDRAWN for maintenance effects (permanent, stated) | §2; §7; W11 `test_partition_is_policy_independent`; `lifecycle.partition_cold` |
+| ext-1 | F6 the coupling was prose-only | E+D | both | folded (v3): MUTUAL `Spec-Requires`, machine-checked | the header; `specs/check_spec_reference.py` |
+| ext-1 | F7 the sealed archive failed its own package verifier | E | archive | folded (v2→v3) | the seal machinery |
+| ext-2 | R2-1 the reference VIOLATED accepted 0006 absence semantics | G+B+E | 0020 | folded in 0020 (v4) | 0020 §4a-ii |
+| ext-2 | R2-2 contradictory semantics for a principal without policy | D | 0020 | folded in 0020 (v4) | 0020 §4a-ii |
+| ext-2 | R2-3 the recovery row was WRONG for OUTPUTS_DURABLE — recovery cannot clear an already-durable pre-feature output, it only finalizes | A+C, executed | both | **folded (v4):** such outputs keep the stale copied identity and are caught by the NORMATIVE legacy predicate BY SHAPE; GENERATING-state abandons leave no output; recovery never fabricates membership | §2c (in-flight row); §4b step 6; W9 `test_unresolved_populations_fail_closed` |
+| ext-2 | R2-4 0020's zero-change claim contradicted this spec's policy-independent rule | D | both | folded (v4): the claim narrowed to READS over a fixed store state | 0020 §8; §2 |
+| ext-2 | R2-5 per-pool failure semantics and the public result construction were incomplete | C+F | 0021 | **folded (v4→v5):** failures are CAUGHT AND CONTINUED; the exact result schema is representable for "A committed, B failed, C/D ran anyway"; W12 is a fault-injection matrix over every pool phase × continuation | §4b step 4; W12 `test_per_pool_fault_matrix` |
+| ext-2 | R2-6 the mixed-version hole — a pre-0021 process can run global consolidation on a shared store | C | 0021 | **RULED (v4):** W1/§8 NARROWED to stores operated exclusively by 0021-capable processes, with the honest split stated (scoped READS stay fail-closed during the window; the merge-PREVENTION half needs every writer upgraded). The enforcement bump is Q4, riding the 0018 D2 window | §4d; §5; Q4; W1's own text |
+| ext-2 | R2-7 the archive's sealed-state fix introduced new packaging defects | E | archive | folded (v4) | the seal machinery |
+| ext-3 | R3-1 policy validation remained BYPASSABLE | B+E | 0020 | folded in 0020 (v5) | 0020 §4a-ii |
+| ext-3 | R3-2 the resolver consumed a ledger shape 0014 does not provide | G+A | 0020 | folded in 0020 (v5): membership moved to DIGEST SPACE | 0020 §4a-ii |
+| ext-3 | R3-3 legacy ABSORPTION defeated the mixed-version read-safety claim (a pre-0021 survivor is an Edge with NO lineage carrying identity A plus B's inherited maxima) | G, executed | both | **folded (v5):** the ABSORPTION-SURVIVOR rule — any cross-digest (or None-vs-digest) contributor → UNRESOLVED; §4d's claim corrected to cover BOTH synthesis paths; the pre-0014 residual stated, not discovered | §4d; §5; W13 `test_absorption_survivor_membership`; `test_a_pre_0021_chain_still_fails_closed` |
+| ext-3 | R3-4 the frozen result schema had NO legal key for the shared pool (0006 digests a source-less identity to None) and REPLACED the public return | F+D | both | **folded (v5): the ADDITIVE-SUPERSET return** — `consolidated`/`into`/`recovered` preserved verbatim as the totals, the RESERVED `pool:unidentified` key (a colon can never collide with 64-hex), and `pools`/`pools_ok`/`pools_failed` added beside them | §4b step 4; W4 `test_unidentified_pool_is_closed`; `lifecycle.SHARED_POOL_KEY` usage; `test_lifecycle.py`'s exact-result cell |
+| ext-3 | R3-5 the promised audit/telemetry carrier sweep was PROSE, not a mechanical contract | E+C | 0021 | **folded (v5→v6):** the aggregate `maintain` event PRESERVED + one additive per-pool event; telemetry's mapping reads the preserved keys UNCHANGED BY CONSTRUCTION (the superset shape is what solves it); W12 asserts through BOTH carriers | §4b step 4; §7a; W12; `audit.py`'s amended cardinality docstring |
+| ext-4 | R4-1 policy sealing STILL bypassable | B+E | 0020 | folded in 0020 (v6) | 0020 §4a-ii |
+| ext-4 | (self-found, ext-4) an absorption survivor crossing export/import loses its ledger rows | G | 0020 | closed in 0020 (v6): the import-time RECONSTRUCTION rule | 0020 §4a-iii |
+| ext-4 | R4-2 the identity-free byte-identity claim contradicted the additive result shape FOR EVERY STORE — executed against our own robustness checker, which REJECTED the dict-valued `pools` key | D+C, executed | 0021 | **folded (v6):** every identity-free claim narrowed to STORED-STATE AND PRESERVED-VALUE compatibility, and the carrier sweep formally NAMES the robustness checker, the exact-result lifecycle tests and docs as implementation obligations — **all three updated in the implementing commit** | §2; §5; §7a; `tests/robustness/invariants.py` (`check_maintain`); `tests/test_lifecycle.py`; `tests/test_0010_consolidate_recovery.py`; `docs/api.md` |
+| ext-4 | R4-3 the shipped audit contract is one JSON line per operation with exact-sequence tests, and a free-text error field can echo memory text | C+B | 0021 | **folded (v6):** a FORMAL audit-contract amendment (audit.py, its tests and §7a all carry the cardinality change) and `error_code` as a CLOSED CONTENT-FREE enum — never `str(exc)`; W12 gains the adversarial planted-secret cell | §4b step 4; §7a; `lifecycle.POOL_ERROR_CODES`; W12's `llm-secret` cell |
+| ext-5 | R5-1 COLLECTED claimed the import reconstruction closed while the harness asserted nothing | D | 0020 | folded in 0020 (v7); this spec's half: the imported-absorption row moved from stated-not-built to the EXECUTABLE rule | §2c (imported row); `store_adapter_harness.py` |
+| ext-5 | R5-2 the R4-1 seal was RE-SIGNABLE | B, executed | 0020 | folded in 0020 (v7) | 0020 §4a-ii |
+| ext-5 | R5-3 the identity-free byte-identity phrasing SURVIVED the R4-2 narrowing in both §5 regime tables (the carrier-sweep class, again, on my own narrowing) | D | 0021 | folded (v7): both regime rows swept to stored-state + preserved-values with the additive-superset shape named | §5 (rows 1 and 9) |
+| ext-5 | R5-4 `verify_package.py` did not verify every declared manifest hash | E, executed | verifier | folded (v7) | `verify_package.py` |
+| ext-6 | R6-1 import reconstruction failed SUPPORTED inputs | G, executed | 0020 | folded in 0020 (v8) | 0020 §4a-iii |
+| ext-6 | R6-2 "import_memory writes real ledger rows" was NOT IMPLEMENTABLE under accepted 0014 (missing fields; the total-payload rule; the primitive carries only edges+episodes) | A+C | both | **folded (v8):** the NAMED 0014 amendment — a distinct imported-evidence SITE with its own integrity semantics, ATTRIBUTION ONLY and explicitly NO reversal — plus the 0009 §4c primitive extension | §7b (0014 + 0009 rows); `ledger_plan_harness.py` |
+| ext-6 | R6-3 policy carrier wording internally stale | D | 0020 | folded in 0020 (v8) | 0020 §4a-ii |
+| ext-7 | R7-1 TRANSITIVE absorption bypassed scope membership — A(scope-a)→B(scope-b)→C(scope-b) leaves C's direct row equal to C's own scope | C+A, executed on a real chain | 0020 (+0021) | **folded (v9): the DUAL transitive contract.** This spec owns the WRITE half: §4c WRITE-TIME FLATTENING copies the prior's transitively CLOSED set onto the survivor in the SAME atomic operation, so a post-0021 survivor's rows are its whole ancestry by construction and the chain shape cannot recur | §4c; §4d; W14 `test_transitive_absorption_chains`; `store/sqlite._write_absorption_flattening` |
+| ext-7 | R7-2 the note REGEX rejected valid native exports; the "full import matrix" claim was false | F+E, executed | 0020 | folded in 0020 (v9) | 0020 §4a-iii |
+| ext-7 | R7-3 the imported-ledger atomic contract was DESCRIPTIVE, not constructive (pre-send miss: checklist item 4 — cross-module trust audited on the sunny path only) | A+C | both | **folded (v9):** THE EXACT 0009 §4c AMENDMENT drafted verbatim — plan rows, expected `contribution_state`, rollback on the one atomic commit, idempotent re-import, concurrent linearization, reopen durability | §7b (the 0009 row); W15; `tests/test_0021_import_linkage.py` |
+| ext-7 | R7-4 "recursively immutable" and carrier-cleanup claims were still false | D×3 | 0020 | folded in 0020 (v9) | 0020 §4a-ii |
+| ext-8 | R8-1 retention pruning erases the intermediate record AND its note — the only closure link | C (found-in-fix of R7-1) | 0020 (+0021) | **folded (v10): closure BY CONSTRUCTION.** This spec's half is the write invariant that makes it true (§4c flattening + the typed `contributor_ref`) and the RETENTION CONTRACT recorded for any future prune — asserted executably to have no shipped writer | §4c; §4d; §7b (0014 clause 6); §2c-ii row 7; W14's post-drop cell |
+| ext-8 | R8-2 `absorbed_by_id` had NO durable write-time source and THREE carriers contradicted | A+D×3 | 0020 | folded in 0020 (v10); the FORMAT rider rides the ONE 0018 D2 window with the SCHEMA-v8 columns and this spec's Q4 | §7b (0016+0018 row) |
+| ext-8 | R8-3 the "exact" import amendment could not construct or store its rows (five fields vs ten; one-op-key-per-plan raised IntegrityError on the accepted UNIQUE index). PRE-SEND MISS: verify-against-the-domain, fifth bite | A+F+G, executed against the accepted DDL | both | **folded (v10→v11):** the amendment rewritten over the full ten-field stored row, per-row injective keys, `plan_row_id` dedup, and the typed contributor binding | §7b (the 0009 row); `ledger_plan_harness.py` |
+| ext-9 | R9-1 flattening made the reverse derivation NON-UNIQUE | C+A, executed | 0020 | folded in 0020 (v11) | 0020 §4a-iii |
+| ext-9 | R9-2 the per-row op-key encoding was not injective | F | 0020 | folded in 0020 (v11): the framed-digest form — and the NATIVE variant this spec's flattening uses frames the whole `sup-{edge.id}` op id | `native_row_op_key`; W14's key assertion |
+| ext-9 | R9-3 THREE incompatible equality definitions; a direct A→C history could silently skip as equal to a flattened A→B→C one | D+F, executed | both | **folded (v11):** `plan_row_id` is THE ONE canonical logical-row projection; the multiset phrasing WITHDRAWN; the walker refuses marker-only rows | §7b (the 0009 row); `ledger_plan_harness.py` |
+| ext-9 | R9-4 the SCHEMA-v8 DDL contradicted accepted 0019's Rider A(A3) freeze and omitted 0019 from `Spec-Requires` | D+C (carrier-completeness) | both | **folded (v11→v12):** the COMPLETE FINAL-FORM 0019 rider (C1–C5), `Spec-Requires` += 0019 | §7b (the 0019 row); the header; `schema_v8_evidence.py` |
+| ext-9 | R9-5 runtime-verifier defects were mislabeled as environment skips | E, fault-injected | verifier | folded (v11) | `verify_package.py` |
+| ext-10 | R10-1 prune-time reparenting MUTATED a ledger row and the payload classes were never legal against the native site's closed schema | A+D, owned | both | **folded (v12): the `scope-attribution` SITE.** Every derived row lives at a new site with its own closed payload vocabulary; every accepted schema untouched; reparenting is an INSERTION; the exact-set partition becomes STRUCTURAL — which is why §4c's flattened copies can never perturb 0014's direct-invalidation equality | §4c; §7b SITE-MATRIX; W14 (the native `absorption` row's payload asserted UNAMENDED) |
+| ext-10 | R10-2 the closure-incompleteness marker LAUNDERED into a clean `absorbed_by_id` | C, executed | 0020 | folded in 0020 (v12) | 0020 §4a-iii; `_is_canonical` |
+| ext-10 | R10-3 `validate_row_plan` was not total over the amended logical row | C | both | folded (v12): strict per-field validation + an exhaustive negative matrix | `validate_row_plan`; `ledger_plan_harness.py` |
+| ext-10 | R10-4 the 0019 rider was still a delta promising evidence later | C+D | both | folded (v12): both manifestations GENERATED now | `schema_v8_evidence.py` |
+| ext-10 | R10-5 the verifier used truthiness and string containment | E, injected | verifier | folded (v12) | `verify_package_selftest.py` |
+| ext-11 | R11-1 the new site split was CONTRADICTORY across normative carriers | D (carrier-completeness) | both | **folded (v13): the AUTHORITATIVE SITE MATRIX** — one source, rendered, embedded verbatim between markers in every carrier, byte-compared by the seal | §7b (the SITE-MATRIX block) |
+| ext-11 | R11-2 `validate_row_plan` used `.get()` — deleted keys were accepted and `contributor_type` silently defaulted | F+E (found-in-fix) | both | folded (v13): PRESENCE required separately from value validity | `validate_row_plan`; `ledger_plan_harness.py` |
+| ext-11 | R11-3 the insert-only regression contained an always-passing assertion | E, owned plainly | both | folded (v13) | `ledger_plan_harness.py` |
+| ext-11 | R11-4 fresh-vs-recorded compared only the final line | E, executed | verifier | folded (v13) | `verify_package.py` |
+| ext-11 | R11-5 the manifest omitted 0019 from this spec's requires and COLLECTED said the wrong round | D | archive | folded (v13): the dependency graph PARSED from `Spec-Requires` and gated at seal | the seal machinery |
+| ext-12 | R12-1 the round-11 matrix assigned WRITERS across atomic-primitive boundaries (native flattened copies routed through the import primitive) | D+C, executed | both | **folded (v14): THE WRITER-SPLIT MATRIX** — one row per ATOMIC WRITER × site, `validate_row_plan` CONTEXT-REQUIRED, cross-context refusals executed. **This is why §4c's flattening rides `apply_supersession_plan` and not the import primitive**, and why the implementation derives the rows inside the store rather than carrying them in the plan | §7b SITE-MATRIX; §7a; `WRITER_CONTEXTS`; `_write_absorption_flattening` |
+| ext-12 | R12-2 one pre-R9 sentence survived (the naive reverse-link lookup) | D | 0020 | folded in 0020 (v14); the retired formulation joined a forbidden-phrase list the shipped verifier scans | `specs/lint_withdrawn.py` |
+| ext-12 | R12-3 the advertised matrix/dependency seal was NOT SHIPPED — the reviewer's negative control passed the packaged verifier with exit 0 | E (the round's sharpest) | verifier | folded (v14): `_consistency_gates` ships INSIDE `verify_package.py` and runs every time; the negative control is now our regression | `verify_package.py`; `verify_package_selftest.py` |
+| ext-13 | R13-1 the writer context was not BOUND to the row's operation key — an import row projected identically under missing, native-format, garbage and null keys. PRE-SEND MISS: the name-is-a-claim item | E+F, executed | both | **folded (v15): `construct_plan_row`** — the operation-aware constructor DERIVES `op_key` inside the primitive; callers never supply one, and every normative producer builds through it. **The implementation follows it: the native flattening calls the constructor and never mints a key by hand** | §7b (the 0009 row); `construct_plan_row`; `_write_absorption_flattening`; `ledger_plan_harness.py` |
+| ext-14 | — ACCEPTED (0020 Accept · 0021 Accept · seam Accept · verifier PASS · archive PASS); no blocking findings | — | both | TWO NON-BLOCKING obligations, BOTH SHIPPED SAME-DAY | `ledger_plan_harness.py`; `vector_harness.py` |
+| post-acceptance | `prune_absorbed_record` NON-TERMINATING on a record that is its own canonical absorber — found by DIFFERENTIAL FUZZING | implementation defect vs 0020's own contract | 0020 | fixed and DISCLOSED in both implementations, then DOMAIN-CLOSED (the whole absorber chain, refusing any revisit) | commits `cd5285b`, `2596f4f`; vectors 129–131 |
+
+**Implementation state, kept separate from disposition** (the 0002 lesson —
+"closed" silently meaning both was itself a finding). Slice A landed 0020's
+normative core; slice B landed 0020's READ surfaces; **slice C landed this
+spec's WRITE and MAINTAIN halves** — W8's cleared output identity, §4c's
+absorption partition with write-time flattening, §4b's per-scope consolidation
+with the additive-superset result and the amended audit contract, and W3's
+mechanical registry. COVERED by executable checks: W1, W2, W3, W4, W5, W7, W8,
+W9, W10, W11, W12, W13, W14 and W15's durability cell. NOT COVERED, and why:
+**W6** is the live / D-extension cross-principal value probe (a real model and
+the benchmark harness; a simulated leak probe measures the simulation);
+**W16** and **W18**'s post-prune halves have no writer, because
+`apply_retention_prune_plan` is FUTURE and §2c-ii asserts executably that no
+shipped path prunes an absorbed edge — their born-closed and pre-prune halves
+ARE covered; **W17** is carried by the shipped evidence program
+`specs/evidence/0020/ledger_plan_harness.py`, which extracts the real DDL from
+a live store, rather than by a weaker pytest copy. Q1–Q4 remain open as
+recorded widenings, Q4 still riding the 0018 D2 window.

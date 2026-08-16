@@ -7,6 +7,23 @@ content-free counters. No memory text ever appears — the log records *that*
 operations happened, not what memory says (pair with `export_memory` when an
 inspection needs content).
 
+**Cardinality (amended by specs/0021 §4b — the ONE place the "one line per
+operation" rule is qualified).** `maintain()` consolidates PER SCOPE, one 0010
+operation per pool, and pools fail independently. It therefore appends one
+ADDITIVE `consolidate-pool` line per ATTEMPTED pool — `{op:
+"consolidate-pool", pool_key, status, consolidated, into, error_code?}` —
+BEFORE the aggregate `maintain` line, which is preserved unchanged as the
+operation's terminal record. A pool that never met its threshold was not
+attempted and writes nothing.
+
+`pool_key` is the scope's identity digest (a one-way 0006 digest, not a
+source name) or the reserved literal `pool:unidentified`. `error_code` is a
+CLOSED CONTENT-FREE enum — `llm-error`, `store-error`, `claim-contention`,
+`validation-error`, `timeout` (`lifecycle.POOL_ERROR_CODES`) — and NEVER
+`str(exc)`: an LLM exception routinely quotes the prompt back, and the prompt
+carries episode text. That is the one way this log could ever have leaked
+memory text, and it is closed by construction rather than by care.
+
 The log is append-only and owned by the host: rotate, ship, or retain it under
 your own policy. Like the other sinks, auditing must never break memory —
 failures are swallowed."""

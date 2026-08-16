@@ -93,8 +93,13 @@ def test_consolidation_writes_before_deleting(tmp_path):
     _seed_cold(store)
     # crash immediately after the input batch-delete: the outputs are ALREADY durable
     proxy = CrashAfter(store, "delete_claimed_inputs_if_current")
-    with pytest.raises(RuntimeError):
-        consolidate(proxy, _llm(), "u", CONF, now=NOW)
+    # specs/0021 §4b: a pool's failure is CAUGHT AND CONTINUED (so a later
+    # pool still runs) and reported as a closed status + content-free code —
+    # it no longer propagates out of consolidate(). The durability assertions
+    # below are unchanged, which is the point.
+    rep = consolidate(proxy, _llm(), "u", CONF, now=NOW)
+    assert rep["pools_failed"] == 1
+    assert [p["error"] for p in rep["pools"].values()] == ["store-error"]
     # outputs are durable+visible; inputs gone — nothing was lost (write preceded delete)
     outs = _visible_outputs(store)
     assert outs, "outputs must be durable before any input is deleted"
@@ -107,8 +112,7 @@ def test_recovery_finalises_after_committed_delete(tmp_path):
     store = _store(tmp_path)
     _seed_cold(store)
     proxy = CrashAfter(store, "delete_claimed_inputs_if_current")
-    with pytest.raises(RuntimeError):
-        consolidate(proxy, _llm(), "u", CONF, now=NOW)
+    consolidate(proxy, _llm(), "u", CONF, now=NOW)   # 0021 §4b: caught, reported
     assert store.pending_consolidations("u"), "an OUTPUTS_DURABLE op awaits finalize"
     # recovery rolls it FORWARD (idempotent re-delete + finalize) — never re-consolidates
     rep = consolidate(store, _llm(), "u", CONF, now=NOW)
@@ -125,7 +129,11 @@ def test_consolidation_retry_is_idempotent(tmp_path):
     r1 = consolidate(store, _llm(), "u", CONF, now=NOW)
     assert r1["consolidated"] == 8
     r2 = consolidate(store, _llm(), "u", CONF, now=NOW)
-    assert r2 == {"consolidated": 0, "into": 0, "recovered": 0}
+    # specs/0021 §4b: the ADDITIVE SUPERSET — the three preserved top-level
+    # keys carry byte-identical VALUES, with the pool keys beside them (no
+    # candidates left, so no pools at all)
+    assert r2 == {"consolidated": 0, "into": 0, "recovered": 0,
+                  "pools": {}, "pools_ok": 0, "pools_failed": 0}
 
 
 def test_finalized_outputs_are_not_reconsolidated(tmp_path):

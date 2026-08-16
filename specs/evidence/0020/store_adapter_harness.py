@@ -13,16 +13,25 @@ overstate): every check line is prefixed with its mode —
   [helper]       the check called a normative helper on synthetic input
                  (used ONLY where the input is deliberately corrupt in a
                  way real machinery refuses to produce);
+  [legacy-writer] the check drove REAL store mutations through the SHIPPED
+                 path with 0021 §4c's two additions (the same-scope
+                 candidate gate and write-time flattening) disabled — see
+                 `pre_0021_writer`. Used ONLY for the cross-identity and
+                 unflattened-chain populations, which §4c makes
+                 unproducible natively and which now arrive only as legacy
+                 or imported state;
   [impl-gated]   obligations recorded, NOT executed by THIS harness —
                  the 0021 implementation has LANDED (the amended 0009
                  primitive); these run as pytest regressions in
                  tests/test_0021_import_linkage.py.
 
 Regression groups:
-(1) [store] the round-3 single-hop leak (cross-identity absorption →
-    UNRESOLVED from real ledger rows); same-identity → own digest.
-(2) [store] THE ROUND-7 THREE-HOP CHAIN, NATIVE: A(scope-a) absorbed by
-    B(scope-b) absorbed by C(scope-b) via real apply_supersession. The
+(1) [legacy-writer] the round-3 single-hop leak (cross-identity absorption
+    → UNRESOLVED from real ledger rows); [store] same-identity → own
+    digest.
+(2) [legacy-writer] THE ROUND-7 THREE-HOP CHAIN: A(scope-a) absorbed by
+    B(scope-b) absorbed by C(scope-b) via real apply_supersession under
+    `pre_0021_writer`. The
     single-level read over C's direct rows returns C's OWN digest — the
     demonstrated leak — and the normative CLOSURE returns UNRESOLVED.
     Links are derived from the REAL records via the decidable linkage
@@ -82,6 +91,38 @@ from veracium.scope_linkage import (  # noqa: E402
     ImportLinkageError as ProductionImportLinkageError)
 
 NOW = datetime(2026, 8, 1, tzinfo=timezone.utc)
+
+
+import contextlib  # noqa: E402
+from veracium import graph as _graph  # noqa: E402
+
+
+@contextlib.contextmanager
+def pre_0021_writer():
+    """Reproduce the PRE-0021 native absorption writer, exactly.
+
+    0021 §4c has LANDED: the shipped writer requires same-SCOPE membership
+    evidence of an absorption candidate (a cross-scope prior accumulates as a
+    separate edge) and FLATTENS every ancestor onto the survivor in the same
+    atomic operation. The two populations several of these cells are about —
+    a CROSS-IDENTITY absorption survivor, and an UNFLATTENED A→B→C chain
+    whose single-level read leaks — therefore cannot be produced through
+    `apply_supersession` any more. They are precisely the rolling-upgrade and
+    legacy state §4d describes.
+
+    Rather than hand-forge ledger rows (which would test the forgery), this
+    disables exactly the two 0021 additions and drives the SAME shipped code
+    path the old writer drove. Cells built inside it are labeled
+    `[legacy-writer]` so COLLECTED cannot overstate what ran."""
+    gate = _graph._absorption_scope_gate
+    flatten = SqliteStore._write_absorption_flattening
+    _graph._absorption_scope_gate = lambda store, edge: (lambda prior: True)
+    SqliteStore._write_absorption_flattening = lambda self, u, p: None
+    try:
+        yield
+    finally:
+        _graph._absorption_scope_gate = gate
+        SqliteStore._write_absorption_flattening = flatten
 
 
 def _mint_op():
@@ -223,18 +264,21 @@ def run():
 
         # ---- (1) [store] the round-3 single-hop cells ------------------
         prior_b = _edge("Miso", eid="e-b", sid="agent-b", conf=0.99)
-        apply_supersession(store, prior_b, DEFAULT_RELATIONS)
         incoming_a = _edge("cat Miso", eid="e-a", sid="agent-a", conf=0.10,
                            observed=NOW - timedelta(days=30))
-        apply_supersession(store, incoming_a, DEFAULT_RELATIONS)
+        with pre_0021_writer():          # 0021 §4c now REFUSES this merge
+            apply_supersession(store, prior_b, DEFAULT_RELATIONS)
+            apply_supersession(store, incoming_a, DEFAULT_RELATIONS)
         rows = _project(store, "u1", "edge", "e-a")
         assert rows, "no real ledger rows written for the absorption"
         surv = [e for e in store.edges("u1", active_only=True)
                 if e.id == "e-a"][0]
         got = membership(_record_shape(surv), rows, "none", local)
         assert got == UNRESOLVED, f"cross-identity absorption: {got!r}"
-        checks.append("[store] single-hop cross-identity absorption -> "
-                      f"UNRESOLVED ({len(rows)} real ledger row(s))")
+        checks.append("[legacy-writer] single-hop cross-identity absorption "
+                      f"-> UNRESOLVED ({len(rows)} real ledger row(s)); the "
+                      "merge itself is REFUSED outright by 0021 §4c, so this "
+                      "population is now legacy/imported only")
         p2 = _edge("Rex", eid="e-p2", sid="agent-c", conf=0.5, rel="dog")
         apply_supersession(store, p2, DEFAULT_RELATIONS)
         w2 = _edge("dog Rex", eid="e-w2", sid="agent-c", conf=0.9, rel="dog")
@@ -253,11 +297,12 @@ def run():
         chain = SqliteStore(f"{d}/chain.db")
         clocal = chain.local_origin()
         e1 = _edge("Miso", eid="c-1", sid="agent-a", conf=0.2)
-        apply_supersession(chain, e1, DEFAULT_RELATIONS)
         e2 = _edge("cat Miso", eid="c-2", sid="agent-b", conf=0.5)
-        apply_supersession(chain, e2, DEFAULT_RELATIONS)      # B absorbs A
         e3 = _edge("small cat Miso", eid="c-3", sid="agent-b", conf=0.9)
-        apply_supersession(chain, e3, DEFAULT_RELATIONS)      # C absorbs B
+        with pre_0021_writer():          # the UNFLATTENED chain §4c ends
+            apply_supersession(chain, e1, DEFAULT_RELATIONS)
+            apply_supersession(chain, e2, DEFAULT_RELATIONS)  # B absorbs A
+            apply_supersession(chain, e3, DEFAULT_RELATIONS)  # C absorbs B
         direct3 = _project(chain, "u1", "edge", "c-3")
         assert direct3, "no rows on the chain survivor"
         surv3 = [e for e in chain.edges("u1", active_only=True)
@@ -276,10 +321,11 @@ def run():
         assert closed is not None, "closure unwalkable on a complete store"
         got3 = membership(_record_shape(surv3), closed, "none", clocal)
         assert got3 == UNRESOLVED, f"three-hop native closure: {got3!r}"
-        checks.append("[store] THREE-HOP native chain: single-level read "
+        checks.append("[legacy-writer] THREE-HOP chain: single-level read "
                       "reproduces the R7-1 leak; the CLOSURE -> UNRESOLVED "
                       f"({len(closed)} closed row(s), links from real "
-                      "records via the decidable rule)")
+                      "records via the decidable rule). 0021 §4c's write-time "
+                      "flattening means this shape can no longer be written")
         # the contrast: an all-same-identity chain closes to own digest
         s1 = _edge("Rex", eid="s-1", sid="agent-z", conf=0.2, rel="dog")
         apply_supersession(chain, s1, DEFAULT_RELATIONS)
@@ -437,10 +483,11 @@ def run():
         # regex refused this valid file; the decidable rule resolves it
         punct = SqliteStore(f"{d}/punct.db")
         pw = _edge("Miso", eid="loser-p", sid="agent-a", conf=0.2)
-        apply_supersession(punct, pw, DEFAULT_RELATIONS)
         pv = _edge("cat Miso", eid="winner (restated as x", sid="agent-b",
                    conf=0.9)
-        apply_supersession(punct, pv, DEFAULT_RELATIONS)
+        with pre_0021_writer():          # a cross-scope legacy export file
+            apply_supersession(punct, pw, DEFAULT_RELATIONS)
+            apply_supersession(punct, pv, DEFAULT_RELATIONS)
         exp_p = pathlib.Path(d) / "punct.jsonl"
         portability.export_memory(punct, "u1", exp_p)
         punct.close()
@@ -458,10 +505,11 @@ def run():
         ghost = SqliteStore(f"{d}/ghost.db")
         gp = _edge("Rex", eid="loser-g", sid="agent-a", conf=0.2, rel="dog",
                    note="user pasted: absorbed_by:ghost")
-        apply_supersession(ghost, gp, DEFAULT_RELATIONS)
         gv = _edge("dog Rex", eid="winner-g", sid="agent-b", conf=0.9,
                    rel="dog")
-        apply_supersession(ghost, gv, DEFAULT_RELATIONS)
+        with pre_0021_writer():          # a cross-scope legacy export file
+            apply_supersession(ghost, gp, DEFAULT_RELATIONS)
+            apply_supersession(ghost, gv, DEFAULT_RELATIONS)
         exp_g = pathlib.Path(d) / "ghost.jsonl"
         portability.export_memory(ghost, "u1", exp_g)
         ghost.close()
@@ -485,10 +533,11 @@ def run():
                    rel="bird")
         amb.add_edge(a0)
         ap = _edge("Miso", eid="loser-a", sid="agent-a", conf=0.2)
-        apply_supersession(amb, ap, DEFAULT_RELATIONS)
         av = _edge("cat Miso", eid="winner (restated as x", sid="agent-b",
                    conf=0.9)
-        apply_supersession(amb, av, DEFAULT_RELATIONS)
+        with pre_0021_writer():          # a cross-scope legacy export file
+            apply_supersession(amb, ap, DEFAULT_RELATIONS)
+            apply_supersession(amb, av, DEFAULT_RELATIONS)
         exp_a = pathlib.Path(d) / "amb.jsonl"
         portability.export_memory(amb, "u1", exp_a)
         amb.close()

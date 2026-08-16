@@ -2,6 +2,67 @@
 
 ## Unreleased
 
+- **0021 scope under maintenance, slice C — THE WRITE AND MAINTAIN HALVES**
+  (spec `specs/0021-scope-under-maintenance.md` §3/§4a–§4d; implemented,
+  unreleased). 0020 without this was a boundary with an unlocked back door:
+  a scope that recall enforces but derivation ignores leaks across principals
+  through synthesis.
+
+  - **Consolidation outputs CLEAR their inherited identity** (§4a / W8).
+    `_derive_output_metadata` copied `inputs[0].provenance` wholesale, so a
+    mixed A+B consolidation output CLAIMED identity A. Outputs now carry
+    `origin=None`, `source_id=None`: store-authored means store-identified,
+    the origin resolves to the local singleton at read (0006 I9), and
+    membership can only travel through the 0014 ledger. Every other derived
+    field (SYSTEM author, whole-set-minimum trust, date range) is unchanged.
+  - **Absorption partitions by resolved identity** (§4c / W2). A cross-scope
+    or UNRESOLVED prior is no longer an absorption candidate — it accumulates
+    as a separate edge, exactly as a cross-CLASS prior always has. The atomic
+    primitive refuses such a plan independently of the planner.
+  - **Write-time FLATTENING** (§4c / W14): when an absorption commits, the
+    survivor's rows gain copies of the absorbed prior's *transitively closed*
+    row set — same operation, `scope-attribution` site, payload
+    `{"flattened": true}`, native per-row keys. Every post-0021 survivor's
+    row set is its whole ancestry by construction, so the A→B→C chain that
+    defeats a single-level read cannot recur on rows we write, and a later
+    prune of an intermediate is harmless.
+  - **Consolidation runs PER SCOPE** (§4b / W1, W10). Cold candidates are
+    partitioned by resolved identity, one 0010 operation per pool (own claim,
+    lease, crash-safety), pools ordered by digest with the unidentified pool
+    last. **Thresholds are per pool: four A records + four B records with
+    `consolidate_min_batch=8` is a NO-OP.** Pools fail INDEPENDENTLY — a
+    pool's model error leaves the pools that already committed standing and
+    later pools still run.
+  - ⚠️ **BEHAVIOUR CHANGE, disclosed (§2): partitioning is
+    POLICY-INDEPENDENT.** An identity-bearing store gets partitioned
+    consolidation even if no host ever configures `scope_groups` — policy is
+    a read-side concept, and no process's configuration may change what the
+    store MERGES. A store with **no** identities keeps identical stored state
+    and identical top-level counter values.
+  - ⚠️ **RESULT SHAPE (additive superset, not byte-identical).**
+    `maintain()["consolidation"]` preserves `consolidated` / `into` /
+    `recovered` verbatim as roll-up totals — the shipped telemetry mapping
+    reads exactly those and is untouched — and adds `pools`, `pools_ok`,
+    `pools_failed`. Hosts that compare the dict for equality (rather than
+    reading keys) will see the new keys.
+  - ⚠️ **AUDIT CARDINALITY (amended contract).** `maintain()` now appends one
+    additional `consolidate-pool` line per ATTEMPTED pool before its
+    aggregate `maintain` line. `error_code` is a CLOSED CONTENT-FREE enum —
+    `llm-error`, `store-error`, `claim-contention`, `validation-error`,
+    `timeout` — never `str(exc)`, because a model's exception routinely
+    quotes the prompt back and the prompt carries memory text.
+  - **A pool's failure no longer propagates.** `consolidate()` catches and
+    reports; callers that relied on an exception escaping `maintain()` should
+    read `pools_failed` / `pools[...]["error"]` instead.
+  - **W3 mechanical totality:** a `COMBINING_SITES` registry
+    (`veracium.combining`) plus the generated manifest
+    `specs/generated/0021-combining-sites.md`, enumerated by parsing the
+    store's SQL. A new record-writing path that is not dispositioned fails
+    `test_scope_operation_matrix_is_total`.
+  - **UNRESOLVED derivatives** (legacy, imported, recovered) join no pool and
+    stay invisible to principal-bearing reads. The operator remedy is
+    re-derivation; see `docs/api.md`.
+
 - **0020 scoped recall, slice B — THE READ SURFACES: the principal
   boundary is live** (spec `specs/0020-scoped-recall.md` §4b–§4f;
   implemented, unreleased). `recall()` and `answer()` gain

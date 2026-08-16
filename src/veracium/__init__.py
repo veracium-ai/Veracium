@@ -1026,6 +1026,27 @@ class Memory:
                 self._on_error("maintain", e, user_id)
                 raise
             ex, co = report["expiry"], report.get("consolidation", {})
+            # specs/0021 §4b — THE AMENDED AUDIT CARDINALITY: one ADDITIVE
+            # `consolidate-pool` event per ATTEMPTED pool, then the aggregate
+            # `maintain` event PRESERVED as the operation's terminal line. A
+            # below-threshold pool was not attempted and emits nothing; it is
+            # still reported in the return value, so the result stays the
+            # complete picture of the partition while the log stays a record
+            # of work done. `error_code` is the CLOSED CONTENT-FREE enum the
+            # lifecycle layer produced — never `str(exc)`, because an LLM
+            # exception can echo episode text into a sink whose invariant is
+            # no-memory-text-ever. (Telemetry has no `consolidate-pool` event,
+            # so its whitelist drops these and the shipped `maintain` mapping
+            # below is untouched — the preserved-key contract, mechanically.)
+            for pool_key, pool in (co.get("pools") or {}).items():
+                if pool.get("status") == "below-threshold":
+                    continue
+                fields = {"pool_key": pool_key, "status": pool["status"],
+                          "consolidated": pool["consolidated"],
+                          "into": pool["into"]}
+                if pool.get("error") is not None:
+                    fields["error_code"] = pool["error"]
+                self._record("consolidate-pool", fields, user_id)
             self._record("maintain", {"lapsed": ex["lapsed"], "decayed": ex["decayed"],
                                       "flagged": ex["flagged_for_confirmation"],
                                       "consolidated_in": co.get("consolidated", 0),

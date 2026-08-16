@@ -120,7 +120,16 @@ def test_consolidation_preserves_and_compresses():
 
         now = datetime(2026, 6, 1, tzinfo=timezone.utc)
         rep = lifecycle.consolidate(mem.store, mem.llm, "u", mem.config, now=now)
-        assert rep == {"consolidated": 10, "into": 3, "recovered": 0}
+        # specs/0021 §4b — the ADDITIVE SUPERSET. This store carries no source
+        # identities, so its STORED STATE and the three PRESERVED top-level
+        # VALUES are exactly what they were before the partition landed; the
+        # SHAPE is not (the `pools`/`pools_ok`/`pools_failed` keys are new for
+        # every store — the honest narrowing of the "byte-identical" claim,
+        # external R4-2/R5-3). One pool, the reserved unidentified key.
+        assert rep == {"consolidated": 10, "into": 3, "recovered": 0,
+                       "pools": {"pool:unidentified": {
+                           "status": "ok", "consolidated": 10, "into": 3}},
+                       "pools_ok": 1, "pools_failed": 0}
         eps = mem.store.episodes("u")
         assert len(eps) == 3
         assert all(e.lineage for e in eps)          # specs/0010: outputs carry lineage

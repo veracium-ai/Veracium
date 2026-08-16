@@ -226,7 +226,7 @@ def test_native_absorption_rows_carry_the_typed_contributor_link(tmp_path):
     prior = _edge("u1", "Miso", conf=0.8, observed=NOW - timedelta(days=3),
                   source_id="src-A", eid="e-prior")
     apply_supersession(store, prior, DEFAULT_RELATIONS)
-    winner = _edge("u1", "cat Miso", conf=0.9, eid="e-winner")
+    winner = _edge("u1", "cat Miso", conf=0.9, source_id="src-A", eid="e-winner")
     apply_supersession(store, winner, DEFAULT_RELATIONS)
 
     recs = store.contributions("u1", "edge", "e-winner")
