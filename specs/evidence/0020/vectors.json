@@ -2879,5 +2879,38 @@
    }
   },
   "expect": "PolicyError"
+ },
+ {
+  "name": "derivation_self_absorber_refuses",
+  "kind": "derivation",
+  "ledger_rows": {
+   "X": [
+    {
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "X",
+     "site": "absorption",
+     "payload": {}
+    },
+    {
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "X",
+     "site": "scope-attribution",
+     "payload": {
+      "flattened": true
+     }
+    }
+   ]
+  },
+  "prune": [
+   "X"
+  ],
+  "query": "X",
+  "expect": "ExportLinkageError"
  }
 ]

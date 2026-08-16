@@ -528,11 +528,13 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
                for r in v] for k, v in ledger_rows.items()}
     absorber = derive_absorbed_by(record_id, out)
     if absorber == record_id:
-        raise ScopeError(
+        raise ExportLinkageError(
             f"record {record_id!r} is its OWN canonical absorber — corrupt "
             f"ledger state (a record cannot absorb itself); the prune "
             f"REFUSES rather than reparenting into the row set it is "
-            f"walking")
+            f"walking. The class is ExportLinkageError, matching the "
+            f"reference exactly: corrupt linkage on the derivation path is "
+            f"what that error names, and V10 requires the SAME class.")
     if absorber is not None:
         # the iteration is over a SNAPSHOT and the appends land on a
         # DIFFERENT survivor's list (guaranteed by the refusal above) —

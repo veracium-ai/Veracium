@@ -1133,8 +1133,23 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
     out = {k: [dict(r, payload=dict(r.get("payload") or {}))
                for r in v] for k, v in ledger_rows.items()}
     absorber = derive_absorbed_by(record_id, out)
+    # POST-ACCEPTANCE DEFECT FIX (dev, 2026-08-16, self-found by differential
+    # fuzzing of the slice-A production port against this reference): a record
+    # that is its OWN canonical absorber made this function NON-TERMINATING —
+    # the reparented rows it appends are themselves canonical, and they were
+    # appended to the very list being iterated, so the loop grew without bound.
+    # That input is corrupt ledger state (a record cannot absorb itself), and
+    # §4a-iii's contract for corrupt linkage is a REFUSAL — which this function
+    # simply failed to implement. Refusing here restores the contract AND the
+    # reference-vs-production agreement V10 depends on; the iteration is over a
+    # SNAPSHOT so appends can never be observed by the walk.
+    if absorber == record_id:
+        raise ExportLinkageError(
+            f"record {record_id!r} is its OWN canonical absorber — corrupt "
+            f"ledger state (a record cannot absorb itself); the prune REFUSES "
+            f"rather than reparenting into the row set it is walking")
     if absorber is not None:
-        for r in out.get(record_id, []):
+        for r in list(out.get(record_id, [])):
             if not _is_canonical(r):
                 continue
             x = r.get("contributor_ref")
