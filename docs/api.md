@@ -49,7 +49,7 @@ mem.remember("alice", "From billing@x: you owe $900.",
              author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-06-02")
 ```
 
-### `recall(user_id, query=None, *, token_budget=None) -> Recall`
+### `recall(user_id, query=None, *, token_budget=None, principal=None, **filters) -> Recall`
 
 Assemble grounded memory context for a query (curated wiki + per-query subgraph).
 
@@ -75,6 +75,27 @@ note in [concepts](concepts.md).
   then the wiki, then recent episodes; best-effort minimum of one item. `None`
   (default) = unbudgeted.
 
+- `principal` — **scoped recall (spec 0020).** A `veracium.scope.Identity`
+  naming the *recalling party*. Omitted (`None`), recall is exactly what it has
+  always been. Supplied, every carrier — the rendered context and
+  `edges`/`episodes`/`contested` — carries only records the scope policy admits
+  to that principal: own-scope records in full, cross-scope records only if
+  `cross_scope_visible` and then fenced as third-party testimony that is never
+  asserted, host records with no identity shared-visible, and derivatives whose
+  membership evidence is missing or mixed withheld entirely (fail-closed). The
+  compiled wiki is excluded from a principal-bearing response. Requires a policy
+  in `MemoryConfig` (`scope_groups`); a principal with no policy configured, or
+  with no `source_id`, is refused rather than silently served unscoped.
+  **This is isolation between honest cooperating agents — context bleed,
+  confused deputy, cross-agent leakage — not a security boundary**: the identity
+  pair is namespacing, not authentication, so a caller that forges an identity
+  is out of the model (see `docs/concepts.md`).
+- `**filters` — narrow the result *within what is already visible*: the closed
+  field set `subject`, `relation`, `author_of_evidence`, `source_id`,
+  `volatility`, equality only, at most one term per field. Unknown fields raise.
+  Filters select, never strip — the narrowest result still renders full
+  disclosure.
+
 `Recall` fields:
 - `context: str` — ready-to-inject block: grounded memory, plus a fenced
   "UNVERIFIED THIRD-PARTY CLAIMS (never assert as fact)" section when present.
@@ -90,11 +111,15 @@ r = mem.recall("alice", "suggest a lunch spot")
 prompt = f"{r.context}\n\nUser: suggest a lunch spot"   # drop into your own call
 ```
 
-### `answer(user_id, query) -> str`
+### `answer(user_id, query, *, principal=None, **filters) -> str`
 
 Recall + the abstention gate → a direct answer that only uses grounded memory,
 never asserts unverified claims, and abstains rather than guessing. Use this when
 you want Veracium to answer; use `recall()` when you want to answer yourself.
+
+`principal` and `filters` are threaded into the internal recall — the same
+boundary as `recall()`, with no bypass. A scoped answer of "no record" is
+isolation working, not abstention failing.
 
 ### `maintain(user_id, *, consolidate=True) -> dict`
 
@@ -253,6 +278,8 @@ Close the underlying store.
 | `decay_factor` / `confidence_floor` | `0.5` / `0.3` | confidence decay and cutoff for DECAY facts. |
 | `consolidate_after_days` | `30` | episodes older than this are consolidation candidates. |
 | `consolidate_min_batch` | `8` | minimum cold episodes before consolidation runs. |
+| `scope_groups` | `None` | **scoped recall (spec 0020)**: `{group_name: [veracium.scope.Identity, ...]}`, the host's read-side scope policy. `None` disables the feature (a `principal=` at recall is then refused, never silently served unscoped); `{}` is the valid configured-empty state (each principal sees its own identity plus shared records). Validated when the config and the `Memory` are built — a malformed policy raises at load, never mid-recall. Read-side only: it governs what recall *shows*, never what maintenance *merges*. |
+| `cross_scope_visible` | `False` | whether records outside the principal's group are visible at all. When `True` they are visible but fenced as third-party testimony — never assertable, never volunteered proactively. |
 
 ## Providing an LLM
 

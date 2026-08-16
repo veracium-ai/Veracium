@@ -2,6 +2,55 @@
 
 ## Unreleased
 
+- **0020 scoped recall, slice B — THE READ SURFACES: the principal
+  boundary is live** (spec `specs/0020-scoped-recall.md` §4b–§4f;
+  implemented, unreleased). `recall()` and `answer()` gain
+  `principal: Optional[veracium.scope.Identity] = None` plus the closed
+  §4e filter parameters, and `MemoryConfig` gains the host-supplied scope
+  policy (`scope_groups`, `cross_scope_visible`), VALIDATED AT LOAD — a
+  malformed policy raises when the config (and then the `Memory`) is
+  built, never mid-recall.
+
+  - **`principal=None` is byte-identical to today** over a fixed store
+    state — the migration invariant, and the unscoped path runs no scope
+    code at all (V1, checked on the FULL `Recall` value and by a
+    detonator substituted for the view).
+  - **The boundary is enforced on the STRUCTURED CARRIERS**, not on
+    rendered bytes: `Recall.edges`, `.episodes`, `.contested` and each
+    `ContestedGroup.exposed` carry only records the visibility relation
+    admits. Membership evidence comes from the 0014 ledger; absorption
+    survivors resolve over the TRANSITIVELY CLOSED row set, and missing
+    or partial evidence is UNRESOLVED — invisible to every scoped
+    principal, visible unscoped, never silently "shared" (V13).
+  - **Restrict-only (§4b):** same-scope status never raises trust, never
+    clears `ungrounded`/`needs_confirmation`, never lifts disclosure.
+    Cross-scope material that policy admits is visible but pinned to the
+    third-party-testimony shape — fenced, never assertable, never
+    volunteered proactively. `gate.scoped_assertable` is the predicate
+    and carries the NAMED, INERT seam 0011's subject dimension will use.
+  - **The compiled wiki is EXCLUDED from principal-bearing responses**
+    (§4d): a store-wide LLM re-rendering is a synthesis path the scope
+    machinery does not control. Not filtered — not compiled.
+  - **`answer()` threads the principal** into its internal recall (an
+    answer path that dropped it would be a public bypass), and the
+    queryless proactive briefing applies the same relation to the edge
+    and episode sets BEFORE assembly.
+  - **Operator surfaces stay UNSCOPED by decision, not by omission**:
+    `introspect`, `export_memory`, `forget` (and `edges_since`) take no
+    principal — right-to-know, portability and erasure must be total.
+    Per-principal introspection is a recorded widening.
+  - **The §4f inventory is now GENERATED**:
+    `specs/generated/0020-read-surfaces.md` is produced by
+    `specs/read_surfaces.py` from the AST of the public surface, with
+    verdicts in `specs/read_surface_dispositions.py`; a new public read
+    path that returns records and carries no disposition fails the gate
+    (V12).
+  - **Honest limits, unchanged:** `(origin, source_id)` is namespacing,
+    NOT authentication (0006 R7) — this is honest-host ISOLATION
+    (context bleed, confused deputy, cross-agent leakage), never a
+    boundary against a caller who forges an identity. The default MCP
+    stream supplies no identities, so no isolation exists on it.
+
 - **0020 scoped recall, slice A — the normative scope core lands in
   production** (spec `specs/0020-scoped-recall.md` §4a-ii/§4a-iii/§4e;
   implemented, no behaviour change yet): a new module `veracium.scope`

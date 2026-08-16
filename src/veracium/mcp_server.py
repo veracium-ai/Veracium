@@ -73,14 +73,21 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
 
 
 def recall_impl(mem: Memory, user_id: str, query: Optional[str] = None,
-                token_budget: Optional[int] = None) -> str:
-    out = mem.recall(user_id, query, token_budget=token_budget).context
+                token_budget: Optional[int] = None, principal=None) -> str:
+    # specs/0020 §4f: MCP passes the HOST's declared principal THROUGH — it
+    # never invents one, and no new MCP tool FIELD is added. The registered
+    # tool below therefore calls this with `principal=None`, which is the
+    # §5 adoption-path honesty row: the default MCP stream supplies no
+    # identities, so NO isolation exists on it. A host embedding these
+    # `*_impl` functions in its own server passes its principal here.
+    out = mem.recall(user_id, query, token_budget=token_budget,
+                     principal=principal).context
     mem.flush_telemetry()  # in-process weekly push; no-ops until due, never raises
     return out
 
 
-def answer_impl(mem: Memory, user_id: str, query: str) -> str:
-    return mem.answer(user_id, query)
+def answer_impl(mem: Memory, user_id: str, query: str, principal=None) -> str:
+    return mem.answer(user_id, query, principal=principal)
 
 
 def maintain_impl(mem: Memory, user_id: str) -> dict:

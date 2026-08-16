@@ -44,6 +44,54 @@ ABSTAINED = re.compile(
     r"not (sure|aware)", re.I)
 
 
+# --------------------------------------------------------------------------- #
+# specs/0020 §4b — SCOPED ASSERTABILITY, RESTRICT-ONLY.
+# --------------------------------------------------------------------------- #
+
+def scoped_assertable(record_assertable: bool, decision,
+                      *, subject_entitlement: Optional[bool] = None) -> bool:
+    """Is this record assertable TO THIS PRINCIPAL? (specs/0020 §4a-ii's
+    decision table, §4b's rail.)
+
+    `decision` is the `(visible, shape)` pair from
+    `scope.DECISION_TABLE` — the FIXED table, consumed, never re-derived.
+
+    **RESTRICT-ONLY, and that is the whole contract.** This function is a
+    conjunction of restrictions over `record_assertable`: it can turn True
+    into False and never False into True. No scope status raises trust, and
+    none of `ungrounded` / `needs_confirmation` / `disclosure` is ever
+    cleared or lifted here — same-scope (OWN) yields *exactly today's*
+    answer, and `test_same_scope_grants_nothing` enumerates the tempting
+    cells (the own-inference re-assertability cell by name). Any grant wants
+    a 0006 amendment, not this predicate.
+
+    The cells:
+
+    - invisible (`CROSS_HIDDEN` / `UNRESOLVED`) → never assertable (it is
+      not even on the response surface);
+    - `third-party-shaped` (`CROSS_VISIBLE`) → visible, NEVER assertable —
+      v1 pins cross-scope material to the third-party-testimony shape;
+    - `own` / `shared` → today's gate verdict, unchanged.
+
+    **THE 0011 SEAM (0020 V9, §7b — reserved, inert in v1).**
+    `subject_entitlement` is the named parameter spec 0011 (subject-scoped
+    entitlement) will drive. It is ORTHOGONAL to the principal dimension and
+    carries no behaviour in v1: `None` means "0011 has not ruled", and the
+    only value that can ever act is `False`, which RESTRICTS. The seam may
+    never be widened into a grant — a True entitlement is still just "0011
+    does not object" and returns today's answer.
+    `test_gate_seam_reserved_for_0011` fails if the parameter disappears or
+    if any (entitlement × decision) cell grants."""
+    visible, shape = decision
+    if not visible:
+        return False
+    if shape == "third-party-shaped":
+        return False
+    if subject_entitlement is False:        # the 0011 seam: RESTRICTS only
+        return False
+    return bool(record_assertable)
+
+
 def partition(edges: list[Edge], episodes: list[Episode]) -> tuple[str, str]:
     """Split assembled memory into (grounded, unverified) rendered blocks.
 

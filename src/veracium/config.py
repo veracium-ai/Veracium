@@ -55,6 +55,21 @@ class MemoryConfig:
     contested_members_per_line: int = 6        # the §4c packing K (validated >= 2)
     wiki_render_share: float = 1 / 3           # recall-time clamp of the cached wiki body
     group_heading_allowance_tokens: int = 48   # sub-cap for a heading's clamped fields
+    # specs/0020 §4a-ii — THE SCOPE POLICY, host-supplied and per-process (the
+    # relations-registry precedent). READ-SIDE ONLY: it governs visibility and
+    # assertability at recall and NEVER governs maintenance (0021 partitions on
+    # identity alone), so two hosts with different policies can differ only in
+    # what they SHOW, never in what the store merges.
+    #   `scope_groups is None`  → the feature is DISABLED: recall is exactly
+    #     today's, and a principal-bearing call REFUSES (R2-2 — never a silent
+    #     degrade to an unscoped, fully-assertable view).
+    #   `scope_groups == {}`    → CONFIGURED-EMPTY, a valid state: the principal
+    #     is ungrouped (own identity is OWN, the host pool is SHARED, every other
+    #     identified record is CROSS).
+    # Members are `veracium.scope.Identity` values; a malformed policy raises HERE,
+    # at config load, never mid-recall (§7).
+    scope_groups: Optional[dict] = None
+    cross_scope_visible: bool = False
 
     def __post_init__(self):
         from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
@@ -90,3 +105,31 @@ class MemoryConfig:
                 f"cached-wiki framing unable to carry any content")
         if self.group_heading_allowance_tokens < 16:
             raise ValueError("group_heading_allowance_tokens must be >= 16")
+        self._validate_scope_policy()
+
+    # -- specs/0020 §4a-ii: the policy is validated AT LOAD, never at recall --
+    #: the local origin the LOAD-TIME shape check resolves absent origins
+    #: against. The authoritative validation happens a second time in
+    #: `Memory.__init__` against the STORE's real `local_origin()` (the value
+    #: 0006 I9 resolves to), which is the only place digest OVERLAP between an
+    #: absent-origin rule and an explicit-origin rule can be judged. This
+    #: sentinel can never collide with a real one: `origin` is store-MINTED and
+    #: never host-set (0006 I2a).
+    _SHAPE_CHECK_ORIGIN = "scope-policy-load-shape-check"
+
+    def _validate_scope_policy(self) -> None:
+        if not isinstance(self.cross_scope_visible, bool):
+            raise ValueError(
+                f"cross_scope_visible must be a real bool, got "
+                f"{self.cross_scope_visible!r} (specs/0020 §4a-ii)")
+        if self.scope_groups is None:
+            if self.cross_scope_visible:
+                raise ValueError(
+                    "cross_scope_visible=True with scope_groups=None is a policy "
+                    "setting with no policy — the feature is DISABLED without "
+                    "scope_groups. Set scope_groups={} for the configured-empty "
+                    "state (specs/0020 §4a-ii)")
+            return
+        from .scope import validate_policy      # the §4a-ii validator, verbatim
+        validate_policy(self.scope_groups, self.cross_scope_visible,
+                        local_origin=self._SHAPE_CHECK_ORIGIN)

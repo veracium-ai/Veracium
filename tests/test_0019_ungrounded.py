@@ -113,7 +113,17 @@ def test_ungrounded_grants_nothing():
     assert readers == {"schema.py", "grounding.py", "ingest.py", "graph.py",
                        "contribution.py", "compile.py", "proactive.py",
                        "introspect.py", "portability.py", "sqlite.py",
-                       "base.py", "schema_version.py"}, (
+                       "base.py", "schema_version.py",
+                       # specs/0020 slice B — NOT readers: both name the flag
+                       # only in prose, and both name it to promise the U2
+                       # property rather than to consume it. `gate.py`'s
+                       # `scoped_assertable` states that no scope status ever
+                       # clears `ungrounded`/`needs_confirmation` (§4b's
+                       # restrict-only rail); `scope_read.py`'s shaping states
+                       # the same about the disclosure it narrows. Classified
+                       # WITHHOLDING-side; `test_same_scope_grants_nothing`
+                       # (0020 V2) is the behavioural check that they keep it.
+                       "gate.py", "scope_read.py"}, (
         f"a NEW ungrounded reader appeared: {readers} — classify it (0019 "
         f"U2: marker, withholding, immutability, or verification; never a "
         f"trust/authority/staleness key)")
@@ -122,6 +132,17 @@ def test_ungrounded_grants_nothing():
     clean = _edge("Miso", eid="e-c", flagged=False)
     for prop in ("assertable", "use_only", "quarantined"):
         assert getattr(flagged, prop) == getattr(clean, prop)
+    # …and the 0020 addition, checked by FACT rather than by the file list:
+    # neither new file READS the flag — it appears in prose only.
+    import re as _re
+    for name in ("gate.py", "scope_read.py"):
+        src = (ROOT / "src" / "veracium" / name).read_text()
+        code = "\n".join(ln for ln in src.splitlines()
+                         if not ln.lstrip().startswith("#"))
+        code = _re.sub(r'""".*?"""', "", code, flags=_re.S)
+        assert "ungrounded" not in code, (
+            f"{name} now READS `ungrounded` outside prose — 0019 U2 requires a "
+            f"classification, and 0020 §4b promises the flag is never cleared")
 
 
 # --------------------------------------------------------------------------- #

@@ -42,9 +42,17 @@ def _dates_in(text: str) -> list[_date]:
 
 def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
              token_budget: Optional[int] = None,
-             est: Callable[[str], int] = lambda s: max(1, len(s) // 4)
+             est: Callable[[str], int] = lambda s: max(1, len(s) // 4),
+             visible: Optional[Callable[[list], list]] = None
              ) -> tuple[str, list[Edge], list[Episode], bool]:
     """Build the briefing. Returns (context, edges, episodes, truncated).
+
+    `visible` (specs/0020 §4f) is the PRINCIPAL LENS: when a principal was
+    supplied to `recall()`, the same visibility relation scoped recall uses
+    is applied to the proactive EDGE SET **before assembly** — before
+    collapse, before categorization, before rendering — and to the episode
+    set at its read. `None` (no principal) leaves both reads exactly as they
+    were: proactive is byte-identical to today on the unscoped path.
 
     Sections, in priority order (budget trims lower sections first):
       1. DATED COMMITMENTS — active mentionable edges whose object/note carries
@@ -80,7 +88,14 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     # (a suppressed member is category-identical to its survivor: distinct notes,
     # volatilities and flags all surface by the predicate). The info labels carry
     # the truthful earliest-since and the ×N flagged count.
-    surfaced, _c_info = collapse_for_render(list(store.edges(user_id)))
+    # specs/0020 §4f: the principal lens is applied to the RAW edge set the
+    # instant it is read — before collapse and categorization — so every
+    # downstream section, and the returned `Recall.edges`, can only contain
+    # records the relation admits.
+    _edges = list(store.edges(user_id))
+    if visible is not None:
+        _edges = visible(_edges)
+    surfaced, _c_info = collapse_for_render(_edges)
     # specs/0019 §4c (RULED, internal review): a flagged fact is NEVER
     # proactively surfaced — proactive would volunteer an unprompted alarm
     # whose reliability is, structurally, the flag's own. The fact stays
@@ -188,7 +203,10 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
             seen.add(e.id)
 
     recents: list[tuple[str, Episode]] = []
-    for ep in store.episodes(user_id):
+    _episodes = list(store.episodes(user_id))
+    if visible is not None:                      # specs/0020 §4f, same relation
+        _episodes = visible(_episodes)
+    for ep in _episodes:
         if ep.kind == "outcome" or ep.provenance.third_party_influenced:
             continue
         try:

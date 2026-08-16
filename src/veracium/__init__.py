@@ -44,6 +44,7 @@ from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
                      ConfirmationCallPath, ContestedGroup, ContestedLinkage, Edge,
                      Episode, EvidenceAuthor, OutcomeJudgmentDraft, Provenance,
                      utcnow, validate_correlation_id)
+from .scope import UNRESOLVED as _SCOPE_UNRESOLVED
 from .store.base import HEAD_MOVED, Store
 from .store.sqlite import SqliteStore
 from .llm.metered import METERING_CAPABILITY, count_valid as _count_valid
@@ -92,6 +93,15 @@ class Memory:
         self.store = store or SqliteStore(self.config.db_path)
         self.llm = llm
         self.embed = embed
+        # specs/0020 §4a-ii — THE SCOPE POLICY, validated AT LOAD and never at
+        # recall. `MemoryConfig.__post_init__` already ran the §4a-ii validator
+        # for SHAPE; this is the authoritative validation, against the STORE's
+        # real `local_origin()` — the singleton 0006 I9 resolves an absent
+        # origin to, and therefore the only value against which digest OVERLAP
+        # between an absent-origin rule and an explicit-origin rule is
+        # decidable. `None` = the feature is disabled (a principal-bearing call
+        # then REFUSES; it never degrades to unscoped).
+        self.scope_policy = self._build_scope_policy()
         # specs/0017 §4b/§4d — the attribution state: ONE instance lock, the
         # ACTIVE-OPERATION REGISTRY (five-field entries keyed by op_token),
         # the per-user accumulator, and the listener-active flag whose
@@ -139,6 +149,31 @@ class Memory:
         # content-free line per operation: who called what, when, which user.
         # See veracium.audit.
         self.audit = audit
+
+    # -- specs/0020: the scope policy and the per-call view ------------------
+    def _build_scope_policy(self):
+        """The §4a-ii validator over the host's configured groups, keyed on
+        THIS store's local origin. Raises at construction (config load), never
+        at recall (§7)."""
+        if self.config.scope_groups is None:
+            return None
+        from .scope import ScopeError, validate_policy
+        local = getattr(self.store, "local_origin", None)
+        if local is None:
+            raise ScopeError(
+                f"a scope policy is configured but {type(self.store).__name__} "
+                f"has no local_origin() — scope keys on the 0006 identity "
+                f"namespace, which this store does not provide")
+        return validate_policy(self.config.scope_groups,
+                               self.config.cross_scope_visible,
+                               local_origin=local())
+
+    def _scope_view(self, user_id: str, principal, filters=None):
+        """The per-call principal boundary, or None when unscoped. `principal
+        is None` runs NO scope code at all — the mechanical form of V1."""
+        from . import scope_read as _scope_read
+        return _scope_read.view_for(self.store, user_id, principal,
+                                    self.scope_policy, filters=filters)
 
     # -- specs/0017: the usage listener and operation context ---------------
     def _usage_listener(self, ev) -> None:
@@ -311,7 +346,8 @@ class Memory:
 
     # -- read --------------------------------------------------------------
     def recall(self, user_id: str, query: Optional[str] = None, *,
-               token_budget: Optional[int] = None) -> Recall:
+               token_budget: Optional[int] = None,
+               principal=None, **filters) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
         Combines the LLM-curated wiki (the grounded, verified working view,
@@ -342,31 +378,69 @@ class Memory:
         `use_only` material and quarantined claims never surface unprompted
         (`Recall.unverified` is always empty in this mode). LLM-free and
         deterministic; see `veracium.proactive`.
+
+        **`principal` (specs/0020) — the scope boundary.** Optional; a
+        `veracium.scope.Identity` naming the RECALLING party. Omitted
+        (`None`), recall is byte-identical to what it has always been over a
+        fixed store state — the migration invariant. Supplied, every
+        structured carrier (`edges`, `episodes`, `contested`, and each
+        group's `exposed`) carries ONLY records the visibility relation
+        admits; cross-scope material renders as third-party-shaped testimony
+        that is never assertable; UNRESOLVED derivatives are invisible
+        (fail-closed); and the store-wide compiled wiki is EXCLUDED (§4d — a
+        store-wide LLM re-rendering is a laundering site the scope machinery
+        does not control). A principal with no configured policy REFUSES, and
+        so does a `source_id`-less one (0006 I13): feature-disabled never
+        silently degrades to an unscoped, fully-assertable view.
+
+        The identity is HOST-SUPPLIED and NOT AUTHENTICATED (0006 R7): this
+        is honest-host ISOLATION — context bleed, confused deputy,
+        cross-agent leakage — never a security boundary against a caller who
+        forges an identity.
+
+        `**filters` (specs/0020 §4e) narrow the result WITHIN what is already
+        visible — the CLOSED field set `subject`, `relation`,
+        `author_of_evidence`, `source_id`, `volatility`, equality only. An
+        unknown field raises. Filters SELECT, never STRIP: the narrowest
+        result still renders full disclosure, and the contested surface's
+        preservation guarantee is never filtered away.
         """
         if token_budget is not None and token_budget <= 0:
             raise ValueError("token_budget must be a positive number of tokens")
+        from .scope import validate_filters
+        filters = validate_filters(filters or None)   # the CLOSED §4e grammar
         try:
             if query is None:
                 # proactive is LLM-free; the frame is pushed for uniformity
                 # (recall is in the §4b context-entering set) and stays inert.
                 with self._usage_operation(user_id, "recall") as (_op_llm, _fin):
-                    return self._proactive(user_id, token_budget)
+                    return self._proactive(user_id, token_budget,
+                                           principal=principal, filters=filters)
             with self._usage_operation(user_id, "recall") as (op_llm, usage_finish):
                 return self._recall(user_id, query, token_budget,
-                                    op_llm, usage_finish)
+                                    op_llm, usage_finish,
+                                    principal=principal, filters=filters)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
 
-    def _proactive(self, user_id: str, token_budget: Optional[int]) -> Recall:
+    def _proactive(self, user_id: str, token_budget: Optional[int],
+                   *, principal=None, filters: Optional[dict] = None) -> Recall:
         from . import proactive
         # specs/0012 I10: proactive is ALWAYS budgeted — the config default (1,200)
         # applies when the caller omits token_budget.
         if token_budget is None:
             token_budget = self.config.proactive_default_budget_tokens
+        # specs/0020 §4f: the SAME visibility relation, on the SAME code path —
+        # the lens is applied to the proactive edge set (and the episode set)
+        # BEFORE assembly, so categorization, collapse, budgeting and the
+        # returned structured carriers all see only visible records. Unscoped,
+        # `view` is None and `assemble` runs exactly as it always has.
+        view = self._scope_view(user_id, principal, filters)
         context, edges, episodes, truncated = proactive.assemble(
             self.store, user_id, self.config,
-            token_budget=token_budget, est=self._est_tokens)
+            token_budget=token_budget, est=self._est_tokens,
+            visible=(view.lens if view is not None else None))
         self._record("recall", {"wiki_used": False, "subgraph_edges": len(edges),
                                 "grounded_items": len(edges), "unverified_items": 0,
                                 "proactive": 1, "trimmed": 1 if truncated else 0},
@@ -381,7 +455,8 @@ class Memory:
 
     def _recall(self, user_id: str, query: str,
                 token_budget: Optional[int] = None,
-                op_llm=None, usage_finish=dict) -> Recall:
+                op_llm=None, usage_finish=dict,
+                *, principal=None, filters: Optional[dict] = None) -> Recall:
         # specs/0017: op_llm is the operation's arming provider proxy (or the
         # raw llm when unmetered); usage_finish merges the token buffer into
         # the terminal _record exactly once.
@@ -420,12 +495,21 @@ class Memory:
             raise ValueError("contested_members_per_line < 2 (I10e, surface build)")
         if self.config.group_heading_allowance_tokens < 16:
             raise ValueError("group_heading_allowance_tokens < 16 (I10e, surface build)")
-        wiki = _compile.ensure_wiki(self.store, op_llm, user_id,
-                                    self.config.wiki_recompile_after_writes,
-                                    self.config.relations,
-                                    wiki_input_budget=self.config.wiki_input_budget_tokens,
-                                    variant_cap=self.config.wiki_variant_cap,
-                                    item_cap=self.config.item_cap_tokens)
+        # specs/0020 §4f — THE PRINCIPAL BOUNDARY. Built once per call; None
+        # when unscoped, and then not one line of scope code runs (V1).
+        view = self._scope_view(user_id, principal, filters)
+        # specs/0020 §4d (V5) — THE WIKI IS EXCLUDED from a principal-bearing
+        # response: it is a store-wide LLM re-rendering, i.e. a synthesis path
+        # the scope machinery does not control, and every such path is a
+        # laundering site (the 0019 F4 precedent). Not filtered — not compiled,
+        # not consulted, not rendered. The unscoped surface keeps it.
+        wiki = None if view is not None else _compile.ensure_wiki(
+            self.store, op_llm, user_id,
+            self.config.wiki_recompile_after_writes,
+            self.config.relations,
+            wiki_input_budget=self.config.wiki_input_budget_tokens,
+            variant_cap=self.config.wiki_variant_cap,
+            item_cap=self.config.item_cap_tokens)
         edges = subgraph_for_query(self.store, user_id, query,
                                    max_edges=self.config.max_subgraph_edges,
                                    coverage_share=self.config.subgraph_coverage_share,
@@ -434,14 +518,46 @@ class Memory:
         # out interaction history for high-volume consumers; their signal
         # reaches recall as counters rendered on the edges themselves
         episodes = [e for e in self.store.episodes(user_id)
-                    if e.kind != "outcome"][-self.config.max_recent_episodes:]
+                    if e.kind != "outcome"]
+        # THE RELATION, on the structured record sets themselves (§2's carrier
+        # row): scope FIRST, then the §4e filters within the visible set (M-2,
+        # narrow-only — a filter can never be an oracle for withheld material).
+        # `n_visible` is computed inside the visible set too, so the M-3 report
+        # never counts anything the principal cannot see.
+        #
+        # THE STATED RESIDUAL: `max_subgraph_edges` is applied by RETRIEVAL,
+        # before this filter, so out-of-scope records can win selection slots
+        # and a scoped principal may be handed fewer records than a store
+        # holding only its own material would have yielded. That is a recall
+        # QUALITY cost, not a disclosure one: the principal observes only a
+        # count, never the cap being reached and never a withheld-count, so
+        # the shortfall is indistinguishable from "little was relevant".
+        # Pushing the relation down into retrieval is a recorded improvement.
+        filter_report = ""
+        if view is not None:
+            edges = view.scoped(edges)
+            # scope BEFORE the recency slice, never after: slicing first would
+            # hand the principal fewer than `max_recent_episodes` whenever the
+            # newest episodes were out of scope — a shortfall that is itself a
+            # signal that other-scope records exist.
+            episodes = view.scoped(episodes)
+            n_visible = len(edges)
+            edges = view.narrow(edges)
+            if filters and not edges and n_visible:
+                from .budgets import bounded_count as _bc
+                filter_report = (f"(your filter matched 0 of the {_bc(n_visible)} "
+                                 f"records visible to you)")
+        elif filters:
+            from .scope_read import narrow_edges
+            edges = narrow_edges(edges, filters)
+        episodes = episodes[-self.config.max_recent_episodes:]
 
         # specs/0003 §4c-ii: the structured contested surface + the de-duplicated
         # Recall.edges union, computed BEFORE rendering so the exposed members render in a
         # deterministic HIGH-priority CONTESTED block rather than the ordinary detail. The
         # exposed higher-authority grounded prior is present even if the query did not
         # select it (the I6a guarantee).
-        contested, exposed_extra = self._build_contested(user_id, edges)
+        contested, exposed_extra = self._build_contested(user_id, edges, view)
         seen = {e.id for e in edges}
         for e in exposed_extra:
             if e.id not in seen:
@@ -463,11 +579,18 @@ class Memory:
         # caller omits token_budget) — the old unbudgeted branch is gone.
         contested_block, spent, c_trunc = self._render_contested(
             contested, token_budget, self._est_tokens)
+        if filter_report:                       # §4e M-3, charged before detail
+            spent += self._est_tokens(filter_report)
         wiki, detail_grounded, unverified, d_trunc = self._fit_to_budget(
             wiki, detail_edges, episodes, max(0, token_budget - spent), query)
         truncated = c_trunc or d_trunc
 
         grounded_parts = []
+        if filter_report:
+            # §4e M-3: empty-result reporting IS principal-facing — computed
+            # WITHIN the visible set, so it discloses nothing about what scope
+            # withheld (the §3b line: withholding counts are operator-side).
+            grounded_parts.append(filter_report)
         if wiki:
             grounded_parts.append(wiki)
         if contested_block:
@@ -598,14 +721,23 @@ class Memory:
         block = heading + "\n" + "\n".join(sel)
         return block, est(block), truncated
 
-    def _build_contested(self, user_id: str, query_edges: list):
+    def _build_contested(self, user_id: str, query_edges: list, view=None):
         """Build the structured contested surface for the LIVE refusal contentions of a
         user (specs/0003 §4c-ii). Returns (contested_groups, exposed_edges). A member is
         EXPOSED (full Edge) iff it is grounded/assertable — the preserved higher-authority
         prior AND every same-partition grounded member I6 deterministically renders, even
         one the query did not select (round-11) — OR the query already selected it. The
         unseen fenced CROSS-partition challenger (use_only/quarantined, not selected) is
-        content-free linkage only: no query-independent reach on any surface (round-10 A)."""
+        content-free linkage only: no query-independent reach on any surface (round-10 A).
+
+        specs/0020 §4c N-2, when `view` is present: supersession/contention STATUS is
+        global truth and still renders, but the CONTENT and ATTRIBUTION of an invisible
+        party do not. A CROSS-SCOPE (policy-hidden) member degrades to content-free
+        `ContestedLinkage` — the 0003 §4c-ii precedent, reused rather than re-derived —
+        while an UNRESOLVED member is dropped outright (V13: fail-closed means invisible,
+        not "invisible with a pointer"). A group with NO exposed member is dropped
+        ENTIRELY, which is what keeps N-1 true: an all-withheld store is
+        indistinguishable from an empty one on the full `Recall` value."""
         try:
             refusals = self.store.refusals(user_id)
         except NotImplementedError:
@@ -615,6 +747,21 @@ class Memory:
         relations = self.config.relations
         active = {e.id: e for e in self.store.edges(user_id, active_only=True,
                                                     include_quarantined=True)}
+        # §4c N-2: the GROUPS are formed over the whole active set — a contention is
+        # global lifecycle truth and its existence is not scope's to rewrite — while
+        # WHAT EACH MEMBER DISCLOSES is decided by the relation, below.
+        dropped: set = set()                    # UNRESOLVED: invisible, no pointer
+        withheld: set = set()                   # cross-scope: content-free linkage
+        if view is not None:
+            shaped = {}
+            for eid, e in active.items():
+                if view.visible(e):
+                    shaped[eid] = view.shape(e)
+                elif view.evidence(e) == _SCOPE_UNRESOLVED:
+                    dropped.add(eid)
+                else:
+                    withheld.add(eid)
+            active = {**active, **shaped}       # visible members carry the shaping
         selected = {e.id for e in query_edges}
         groups: dict = {}
         group_priors: dict = {}
@@ -628,20 +775,31 @@ class Memory:
                 group_priors.setdefault((prior.subject, r.relation), set()).add(prior.id)
         result, exposed_all = [], []
         for (subject, relation), member_ids in sorted(groups.items()):
-            members = [active[mid] for mid in member_ids]
+            members = [active[mid] for mid in member_ids if mid not in dropped]
             exposed, linkage = [], []
             for m in members:
-                if m.assertable or m.id in selected:
+                if m.id in withheld:            # §4c N-2: status, never content
+                    linkage.append(ContestedLinkage(
+                        edge_id=m.id, partition="unverified",
+                        authority=_edge_effective(m)))
+                elif m.assertable or m.id in selected:
                     exposed.append(m)
                 else:
                     linkage.append(ContestedLinkage(
                         edge_id=m.id, partition="unverified",
                         authority=_edge_effective(m)))
+            if view is not None and not exposed:
+                # N-1: a group with nothing visible does not exist on a
+                # principal-facing surface — otherwise the all-withheld store
+                # would be distinguishable from the empty one.
+                continue
             exposed.sort(key=lambda e: (-_edge_effective(e), e.id))
             linkage.sort(key=lambda x: (-x.authority, x.edge_id))
             result.append(ContestedGroup(
                 subject=subject, relation=relation, exposed=exposed, linkage=linkage,
-                prior_edge_ids=sorted(group_priors.get((subject, relation), ()))))
+                prior_edge_ids=sorted(
+                    i for i in group_priors.get((subject, relation), ())
+                    if i not in dropped)))
             exposed_all.extend(exposed)
         return result, exposed_all
 
@@ -819,15 +977,25 @@ class Memory:
         unverified = "\n".join(sel_unv).strip()
         return wiki, detail, unverified, truncated
 
-    def answer(self, user_id: str, query: str) -> str:
+    def answer(self, user_id: str, query: str, *, principal=None,
+               **filters) -> str:
         """Recall + the evidence-grounded abstention gate → a direct answer.
 
         The convenience path for hosts that want veracium to answer: it answers only
         from grounded memory, refuses to assert unverified third-party claims, and
         abstains ("I don't know") rather than confabulate when memory lacks the
         answer — the finding-23 fix for both confabulation and the episodic
-        injection leak."""
-        r = self.recall(user_id, query)   # already error-guarded; its own context
+        injection leak.
+
+        `principal` / `**filters` (specs/0020 §2, external F3) are THREADED into
+        the internal recall — an answer path that ignored the principal would be
+        a public bypass of the whole boundary, so this method never calls recall
+        unscoped when it was given a principal (V11). The gate then sees exactly
+        the scoped partitions: cross-scope material arrives third-party-shaped on
+        the never-assert side, and a scope-blinded answer saying "no record" is
+        isolation WORKING, not abstention failing."""
+        r = self.recall(user_id, query, principal=principal,
+                        **filters)        # already error-guarded; its own context
         t0 = time.perf_counter()
         with self._usage_operation(user_id, "answer") as (op_llm, usage_finish):
             try:
