@@ -1,6 +1,6 @@
 # Feature spec: scoped recall — the principal boundary (S1)
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0006, 0014, 0021
 
 *From research's design proposal

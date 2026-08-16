@@ -331,6 +331,53 @@ Spec-Requires: 0006, 0007, 0013
 
 ---
 
+> **Amended by 0020/0021 (same-commit with the coupled acceptance flip,
+> 2026-08-16; external sign-off at review round 14; research's cross-spec
+> sign-off at `veracium-research/proposals/0020-0021-rider-signoff.md` @
+> 023e11a9; the drafted rider row of 0021 §7b, landed verbatim).** the
+> MEMBERSHIP join is load-bearing v1. The amendment, drafted for same-commit
+> landing at acceptance (the 0019 rider precedent; separate cross-spec
+> sign-off required): *(1) SITES: 0014's site set gains `imported-absorption`
+> (DIRECT reconstructed links, written only by the import path; closed
+> payload EXACTLY `{"reconstructed": true}`) AND **`scope-attribution`**
+> (R10-1 — every DERIVED attribution row: flattened ancestor copies,
+> reparented canonical links, closure-incompleteness markers; closed payload
+> vocabulary EXACTLY `{"flattened": true}` | `{"flattened": true,
+> "reconstructed": true}` | `{"reparented_from": <non-empty id>}` |
+> `{"closure": "incomplete"}` — literal-True markers, no unknown keys, marker
+> rows carry identity_digest None). The native `absorption` site's accepted
+> `{base, contributor}` payload schema and its rows are NOT amended (v11's
+> flattened class was never legal there — the reviewer's catch). Site
+> registry + generated manifest entries for both; the payload validator
+> (`validate_row_plan`, TOTAL over every field — R10-3) gates every row the
+> amended primitive writes; these rows provide ATTRIBUTION for scope
+> membership and explicitly NO reversal; dangling-survivor rules apply
+> unchanged. (2) IMMUTABILITY PRESERVED (R10-1): accepted 0014's insert-only
+> rule is NOT amended — reparenting is the INSERTION of a new
+> scope-attribution row (the reparented class); nothing existing is ever
+> updated or replaced; the A10 drop of the pruned record's own rows is the
+> accepted lifecycle rule, unchanged. (3) THE TYPED CONTRIBUTOR LINK (R8-1):
+> `contribution_ledger` gains two nullable columns — EXACT DDL and BOTH
+> measured manifestations in the 0019 rider below: `ALTER TABLE
+> contribution_ledger ADD COLUMN contributor_type TEXT;` `ALTER TABLE
+> contribution_ledger ADD COLUMN contributor_ref TEXT;` — populated on every
+> NEW plan-site row from the fields the shipped `ContributionDraft` ALREADY
+> carries; NULL on legacy rows. THE DURABILITY MODEL, against accepted 0014
+> A10: the durable object is the survivor's OWN row set — born-closed
+> flattening makes intermediate pruning harmless; the EXPORTER derives
+> `absorbed_by_id` from the unique CANONICAL row (direct or reparented —
+> markers and plain copies NEVER canonical, R10-2's launder closed), never
+> from notes. (4) THE EXACT-SET PARTITION, STRUCTURAL (R8-3/R10-1): §4b's
+> direct-invalidation exact-set equality counts NATIVE-SITE rows only —
+> attribution rows sit at their own site and can never perturb it. (5) THE
+> §4f PREMISE CORRECTED (R7-1): every consumer of absorption evidence MUST
+> consume the TRANSITIVELY CLOSED set; single-level consumption is a defect.
+> (6) THE RETENTION CONTRACT (R8-1/R10-1): any future physical pruning of an
+> absorbed record MUST first INSERT the reparented rows (or the marker where
+> the flattened copy is missing) on its canonical absorber — no shipped path
+> prunes an absorbed edge today (asserted at §2c-ii).* Full-membership
+> materialization at export stays the recorded widening
+
 ## 1. Problem and motivation
 
 **Ordinary maintenance silently destroys the evidence that a source contributed to a fact.**

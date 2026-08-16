@@ -16,6 +16,22 @@ Spec-Requires: 0003, 0013, 0014, 0018
 
 ---
 
+> **Amended by 0020/0021 (same-commit with the coupled acceptance flip,
+> 2026-08-16; external sign-off at review round 14; research's cross-spec
+> sign-off at `veracium-research/proposals/0020-0021-rider-signoff.md` @
+> 023e11a9; the drafted rider row of 0021 §7b, landed verbatim).** drafted
+> rider to the frozen v7 export shape, same-commit landing at acceptance:
+> exported edge records MAY carry `absorbed_by_id` (string; present iff the
+> record is an `absorbed_duplicate` with a unique CANONICAL ledger row —
+> direct or reparented — naming it, per 0020 §4a-iii's `derive_absorbed_by`;
+> NEVER derived from notes); importers of v7-with-rider files consume it as
+> 0020 §4a-iii's structured carrier; files without it take the legacy note
+> rule. The rider rides the SAME 0018 D2 breaking window as the SCHEMA-v8
+> ledger columns (the 0019 rider below) and 0021's writer-version enforcement
+> (Q4) — ONE break carries all three; none of the three mints its own window.
+> Legacy-export refusal behaviour is 0020 §4a-iii's decidable rule (ambiguity
+> → whole-import refusal)
+
 > **Amended by 0019 (same-commit with 0019's acceptance; sign-off granted
 > round 4, 2026-08-14).** (A1) THE RECEIPT-VERSION TABLE, final:
 > `outcome_digest_version` 1 = legacy pre-0014-split receipts (migrated

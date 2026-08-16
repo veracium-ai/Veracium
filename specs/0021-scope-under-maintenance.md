@@ -1,6 +1,6 @@
 # Feature spec: scope under derivation and consolidation (S2)
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0009, 0014, 0016, 0018, 0019, 0020
 
 *Companion to 0020 (S1, read-time); the coupling is MUTUAL in

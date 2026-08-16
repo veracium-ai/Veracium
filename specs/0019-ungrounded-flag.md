@@ -44,6 +44,40 @@ Spec-Requires: 0005, 0008, 0014, 0016, 0018
 
 ---
 
+> **Amended by 0020/0021 (same-commit with the coupled acceptance flip,
+> 2026-08-16; external sign-off at review round 14; research's cross-spec
+> sign-off at `veracium-research/proposals/0020-0021-rider-signoff.md` @
+> 023e11a9; the drafted rider row of 0021 §7b, landed verbatim).** >
+> **Amended by 0020/0021.** (C1) Rider A(A3)'s SCHEMA clause, final: D2 ships
+> SCHEMA v7→v8 **CARRYING DDL** — `contribution_ledger` gains
+> `contributor_type TEXT` and `contributor_ref TEXT` (nullable; legacy rows
+> NULL) — replacing the no-DDL characterization. The refusal-bump semantics
+> are RETAINED (a v8 store refuses on pre-D2 builds — back up first); FORMAT
+> 6→7 and the receipt-era rules (A1/A2) are UNCHANGED. (C2) THE v8
+> MANIFESTATIONS — GENERATED NOW, not promised (R10-4: the previous clause
+> deferred them): `specs/evidence/0020/schema_v8_evidence.py` reads the
+> SHIPPED `SCHEMA_V7` constructor (never retyped), emits (i) the LITERAL v8
+> CONSTRUCTOR (the v7 text + the two columns appended after `created_at`) and
+> (ii) the MEASURED ALTER-path stored DDL (a real database built from v7, the
+> two ALTERs run, sqlite_master read back — byte-distinct from the
+> constructor per the 0014 supersession_operations precedent), PROVES
+> table_info parity between them, and sha-pins both texts and both migration
+> steps; the recorded output (`schema_v8_evidence.txt`) ships in this package
+> and its shas are the review anchor. At the acceptance flip the same
+> generator runs on the QUALIFIED runtime and its output enters
+> `specs/schema_evidence.py`'s generated evidence — regenerated, never
+> hand-authored. (C3) THE MIGRATION CONTRACT: v7→v8 runs ONLY under the 0018
+> orchestrator (0019 U-Q3 condition 2 unchanged — D2 is the orchestrator's);
+> the migration's 0013-declared steps are EXACTLY the two ALTER statements,
+> sha-pinned IN THE RECORDED EVIDENCE (per 0013's declared-step contract —
+> the 0016 declared-no-op-step precedent, upgraded to real steps); rollback
+> is 0018's attestation/backup contract, unchanged. (C4) THE 0007 CLAUSE: v8
+> is a STAMPED version whose shape evidence includes BOTH manifestations;
+> unstamped resolution rules unchanged. (C5) the 0019 R2-6 executable numeral
+> sweep RE-RUNS at the flip commit with every "no-DDL" hit disposed — each
+> carries this rider's replacement or is historical-marked; the sweep output
+> ships in the flip commit's message.
+
 ## 1. Problem and motivation
 
 **Veracium audits WHO said something; nothing audits WHETHER anyone said it.**

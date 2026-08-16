@@ -38,6 +38,113 @@ Spec-Requires: 0007, 0013
 
 ---
 
+> **Amended by 0020/0021 (same-commit with the coupled acceptance flip,
+> 2026-08-16; external sign-off at review round 14; research's cross-spec
+> sign-off at `veracium-research/proposals/0020-0021-rider-signoff.md` @
+> 023e11a9; the drafted rider row of 0021 §7b, landed verbatim).**
+> `commit_outcome_import_plan`'s plan gains a third member,
+> `plan["contributions"]` — ContributionRowPlan dicts, each TOTAL over the
+> STORED ROW's full field set (ContributionRecord has TEN fields; the v9
+> five-field shape was underdetermined): **`id`** = `plan_row_id(...)` — THE
+> ONE CANONICAL LOGICAL-ROW PROJECTION (R9-3: v10 carried three incompatible
+> equality definitions; the reviewer executed direct↔flattened payload drift
+> collapsing into one id): the deterministic framed digest over EVERY
+> semantic field — (user_id, survivor_type, survivor_id, site,
+> identity_digest, evidence_ref_digest, contributor_type, contributor_ref,
+> CANONICAL PAYLOAD JSON) with None-sentinels — excluding ONLY the
+> operational fields (the re-minted op key and the commit timestamp); the
+> PRIMARY-KEY-riding dedup identity, so SQLite NULL-uniqueness semantics
+> never decide anything. A cross-field VALIDATOR (`validate_row_plan`) runs
+> before projection: PRESENCE of every semantic field is required separately
+> from value validity (R11-2 — None is a value, absence is not;
+> contributor_type is never defaulted), and payloads must EXACTLY match one
+> of the row's site's closed classes (type-level literals; unknown keys
+> refuse); and the validator is CONTEXT-AWARE (R12-1): each atomic writer may
+> emit ONLY its own (site, payload-class) cells per the WRITER MATRIX —
+> `commit_outcome_import_plan` writes direct imported links and imported
+> transitive copies ONLY (its rows derive solely from
+> `reconstruct_absorption_rows`); NATIVE flattened copies ride
+> `apply_supersession_plan` (accepted 0003 §4f — the same atomic plan as the
+> absorption itself, with the ALL-FRAMED native key form, since the shipped
+> `sup-{edge.id}` op id embeds unrestricted text); reparented links and
+> markers belong to `apply_retention_prune_plan`, the retention contract's
+> OWN future primitive, NAMED here and minted as its own 0009-family §4
+> amendment at implementation — accepted 0009's import primitive stays
+> purpose-built, never a general transaction API; cross-context cells REFUSE
+> — and THE OPERATION BINDING (R13-1, the round-13 finding: the declared
+> op-ID domains were never consumed and an import row projected under
+> missing/native/garbage/null keys): `op_key` is DERIVED INSIDE the atomic
+> primitive from its store-owned operation id and the row coordinates —
+> `construct_plan_row` is the normative constructor and every normative row
+> producer builds through it; callers NEVER supply a key. Validation consumes
+> each context's operation-ID domain and requires EXACT key equality with the
+> context's derivation, so absent, null, malformed, cross-context, and
+> mis-derived keys all refuse BEFORE projection or storage. The executed gate
+> is the COMPLETE 3×5 writer × payload-class product (5 valid cells built by
+> the constructor AND inserted at the real-DDL boundary; all 10 invalid cells
+> enumerated mechanically) plus the key-presence/domain/derivation cases —
+> the CELL COUNT lives in ONE carrier, the recorded harness result
+> (`ledger_plan_result.txt`; the round-11 rule: prose counts drift —
+> research's rider sign-off caught exactly such a drift, 76 vs 77 after the
+> acceptance-obligation newline cell); **`user_id`** = the import's target
+> user; **`survivor_type`/`survivor_id`** = the plan record the row
+> attributes (must name a record in THIS plan or an already-present
+> idempotent-equal record — else preflight refuses); **`site`** = one of the
+> TWO plan sites (R11-1 — the v12 text still said imported-absorption was the
+> only one, contradicting the 0014 amendment and the reference):
+> `"imported-absorption"` for DIRECT reconstructed links,
+> `"scope-attribution"` for transitive copies (and, from the prune path,
+> reparented links and markers) — the ONLY sites the amended primitive may
+> write; the 0014 site registry gates both; the authoritative SITE MATRIX
+> below is the one source every carrier embeds; **`identity_digest`** =
+> 64-hex or None (an unidentified absorbed record); **`evidence_ref_digest`**
+> = the shipped `evidence_ref_digest(resolved origin, evidence_ref)`
+> construction over THE CONTRIBUTOR record the row binds (None iff its
+> evidence_ref is empty); **`contributor_ref`** = the post-remap absorbed
+> record id — the TYPED BINDING that determines which exported record
+> supplies the evidence digest (R8-3's underdetermination resolved) and the
+> durable closure link (R8-1); with `contributor_type` = "edge";
+> **`payload`** = the row's site's closed class (the SITE MATRIX below):
+> direct links EXACTLY `{"reconstructed": true}`; transitive copies
+> `{"flattened": true, "reconstructed": true}` at scope-attribution;
+> **`op_key`** = the PER-ROW key in the INJECTIVE framed-digest form
+> (`row_op_key`: `{op}:{site-token}:` + sha256 over the domain-separated
+> FRAMED (survivor_id, contributor_ref) pair — the site token parameterized
+> over both plan sites, R11-1 — R9-2: the v10 plain colon-join was not
+> injective over unrestricted ids ('a:b'+'c' collided with 'a'+'b:c',
+> reviewer-executed IntegrityError; the shipped `consolidation_op_key` avoids
+> this only because its sole unrestricted field is TRAILING); colon-free
+> prefix by construction, unique per row, satisfying
+> `ix_contribution_ledger_op_key` (UNIQUE WHERE op_key IS NOT NULL);
+> `import_op` is the ONE minted `op-<12hex>` id; **`created_at`** = the store
+> clock at commit. DERIVATION, corrected from v9's "the store derives
+> nothing": rows derive ONLY from `reconstruct_absorption_rows` over the
+> export file, PRE-COMMIT (0020 §4a-iii); the store SUPPLIES its own clock
+> and VALIDATES everything, and INVENTS nothing. EXPECTED STATE:
+> `expected_destination_state` gains `contribution_state` — for every plan
+> record carrying rows, the destination's current rows for that (user, type,
+> id) must be ABSENT (first import) or EXACTLY EQUAL **by `plan_row_id` set
+> equality — THE one and only equality definition (R9-3: the v10 three-field
+> multiset phrasing is WITHDRAWN; it ignored payload and evidence, so a
+> direct A→C history and a flattened A→B→C history would have silently
+> skipped as equal, against accepted 0009 H4's record-equality idempotency)**
+> (idempotent re-import — rows skip, never duplicate); anything else returns
+> `DESTINATION_CHANGED`, writing nothing — a survivor with different recorded
+> contributors OR a different recorded history SHAPE is a different history,
+> refused whole. ROLLBACK: contribution rows ride the SAME single atomic
+> commit as edges/episodes; nothing is written after a prefix. RETURN:
+> success gains `"contributions": n` written and `"contributions_existing":
+> m` skipped-as-equal. CONCURRENT SAME-FILE IMPORTS: the primitive
+> linearizes; the loser's revalidation sees the winner's rows as exact-equal
+> → skip, or `DESTINATION_CHANGED` on a conflicting race — no duplicates, no
+> partial state. DURABILITY: ordinary ledger rows; membership identical after
+> close/reopen (W15). THE EXECUTABLE CARRIER:
+> `specs/evidence/0020/ledger_plan_harness.py` extracts the REAL
+> contribution_ledger DDL from a live store, applies the amendment's ALTERs,
+> and proves multi-row single-op inserts, NULL-digest dedup, idempotent
+> re-import, and concurrent-connection linearization against real SQLite
+> (V18).
+
 ## 1. Problem and motivation
 
 **`record_outcome` still erases the authorship it was fixed to preserve.**

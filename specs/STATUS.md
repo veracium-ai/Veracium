@@ -4,11 +4,11 @@
 
 # Spec status
 
-**21 specs · 15 accepted · 193 external review
+**21 specs · 17 accepted · 193 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **15 of 21 are accepted**, which
+review is required to reach it. **17 of 21 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -21,19 +21,19 @@ is the number that decides what can be built.
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-09 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-10 | 0 | 4 | 0 | 0 | 1 | 1/1 |
-| **0009** | outcome authorship is append-only history | `accepted` | 2026-08-07 | 0 | 5 | 0 | 0 | 1 | 1/1 |
+| **0009** | outcome authorship is append-only history | `accepted` | 2026-08-16 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
 | **0011** | subject-scoped entitlement | `draft` | 2026-08-02 | 0 | 0 | 3 | 🔴 2 | 1 | 0/1 |
 | **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 1/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
-| **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-15 | 0 | 16 | 0 | 0 | 0 | — |
+| **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-16 | 0 | 16 | 0 | 0 | 0 | — |
 | **0015** | supersession / reinforcement telemetry counters | `accepted` | 2026-08-11 | 1 | 11 | 0 | 0 | 0 | — |
-| **0016** | SourceType deletion + the evidence_basis contract freeze | `accepted` | 2026-08-15 | 1 | 15 | 0 | 0 | 0 | — |
+| **0016** | SourceType deletion + the evidence_basis contract freeze | `accepted` | 2026-08-16 | 1 | 15 | 0 | 0 | 0 | — |
 | **0017** | token-usage telemetry over the Metered wrapper | `accepted` | 2026-08-14 | 1 | 10 | 0 | 0 | 0 | — |
-| **0018** | the release-migration orchestrator | `accepted` | 2026-08-15 | 1 | 4 | 0 | 0 | 0 | — |
-| **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-15 | 1 | 4 | 0 | 0 | 0 | — |
-| **0020** | scoped recall — the principal boundary (S1) | `draft` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
-| **0021** | scope under derivation and consolidation (S2) | `draft` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
+| **0018** | the release-migration orchestrator | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
+| **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
+| **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
+| **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
