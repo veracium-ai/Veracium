@@ -1,10 +1,21 @@
-"""specs/0020 §4a-ii — the NORMATIVE reference for the scope surface (v9).
+"""specs/0020 §4a-ii — the NORMATIVE reference for the scope surface (v10).
 
 PORTABLE AND PURE: no I/O, no store dependency. Two conforming
 implementations must agree with this module on every input; the pinned
 vectors live beside it in `vectors.json`, the SHIPPED HARNESS
 (`vector_harness.py`) executes them, and 0020 V10 binds implementations to
 both.
+
+v10 (external round 8): (R8-1) the closure is LEDGER-RESIDENT — typed
+`contributor_ref` links (durable across record pruning; absence in the
+append-only ledger means leaf) with the legacy note-walk as fallback and
+a DISCLOSED delta (unavailable legacy contributors → UNRESOLVED where v9
+read own-scope). (R8-3) reconstruction emits COMPLETE rows (contributor
+binding via the typed ref → evidence_ref_digest per the shipped
+construction; the closed payload; PER-ROW canonical op keys following the
+shipped `consolidation_op_key` idiom — v9's one-key-on-every-row claim
+violated the accepted UNIQUE partial index and is corrected);
+`plan_row_id` is the deterministic store-side identity.
 
 v9 (external round 7): (R7-1) absorption evidence is TRANSITIVE —
 `close_absorption_rows` is the normative read-side closure (a chain link
@@ -333,49 +344,117 @@ def is_legacy_derivative(record: dict) -> bool:
             and record.get("source_id") is not None)
 
 
-def close_absorption_rows(survivor_id: str, direct_rows: dict,
-                          absorbed_links: dict) -> Optional[list]:
-    """0020 §4a-iii v9 (external R7-1) — the TRANSITIVE CLOSURE of
-    absorption evidence. A survivor's direct rows carry only its DIRECT
-    contributors' digests; when an absorbed prior was itself a
-    survivor-with-contributors (the reviewer's A → B → C chain), the
-    ancestor digests live on the PRIOR's rows, and a single-level read
-    misclassifies the survivor as own-scope. Membership for absorption
-    survivors is therefore defined over the CLOSED set this function
-    computes.
+def close_absorption_rows(survivor_id: str, ledger_rows: dict,
+                          legacy_links: Optional[dict] = None,
+                          legacy_digests: Optional[dict] = None
+                          ) -> Optional[list]:
+    """0020 §4a-iii v10 (external R7-1, REBUILT under R8-1) — the
+    TRANSITIVE CLOSURE of absorption evidence, resident in the LEDGER.
 
-    `direct_rows`: {record_id: [ContributionRecord-shaped rows]} — each
-    known record's OWN rows (an empty list is a known record with no rows;
-    a MISSING key is an unknown record). `absorbed_links`:
-    {absorber_id: (absorbed_record_id, ...)} — the absorbed-prior links
-    (from absorption events, `absorbed_by` linkage, or import
-    reconstruction).
+    R8-1's executed break of the v9 form: the v9 walk chained through
+    free-text `absorbed_by:` notes on the ABSORBED RECORDS — but a pruned
+    intermediate takes its note (the only link) with it, and the walk then
+    looked complete while an ancestor's foreign digest was gone.
 
-    Returns the closed row list, or **None — and None MUST be read as
-    UNRESOLVED** — when the chain is unwalkable: a linked prior absent
-    from `direct_rows` (evidence incomplete), or a repeated node (a record
-    is absorbed at most once, so any revisit is corrupt linkage; both fail
-    closed). Idempotent over write-time-flattened stores (0021 §4c): the
-    union re-adds digests already present.
+    THE DURABILITY MODEL (corrected by our own found-in-fix pass before
+    round 9 — accepted 0014 A10 makes the ledger SURVIVOR-LIFETIME-KEYED,
+    not append-only: `_drop_contributions_for_survivor` drops a record's
+    rows when the record is deleted, so "absence in the ledger = leaf"
+    is UNSOUND): the durable object is the SURVIVOR'S OWN ROW SET, which
+    lives exactly as long as the survivor does. Post-amendment writes are
+    BORN CLOSED (0021 §4c flattening + the typed `contributor_ref`, one
+    rider), so pruning an intermediate touches only rows keyed to IT —
+    the survivor's flattened ancestry is untouched. The closure is BY
+    CONSTRUCTION, not by walk.
+
+    `ledger_rows`: {survivor_id: [rows]} — the ledger projection; a row
+    may carry "contributor_ref" (typed, post-amendment) and the payload
+    marker "flattened". `legacy_links`/`legacy_digests`: the
+    note-derived fallback for PRE-AMENDMENT rows — {absorber: (absorbed
+    ids)} and {record_id: identity digest or None}, both derivable only
+    while the absorbed RECORDS still exist.
+
+    The layered rule, per node:
+    - Rows WITH a typed ref are closed by the write invariant (0021 W14).
+      Where the contributor's own rows are STILL PRESENT, they are
+      opportunistically VERIFIED: its digests must appear among the
+      node's row digests — a mismatch is corrupt (None). Where its rows
+      are absent (A10 prune), no verification is possible and none is
+      claimed: the flattened set stands on the write invariant. (THE
+      DISCLOSED RESIDUAL: a writer that violated W14 *and* a subsequent
+      prune is undetectable read-side — W14 is the write-side gate.)
+    - Ref-less rows are LEGACY: the note-derived links must account for
+      them — the linked absorbed records' digest MULTISET must exactly
+      match the unattributed row digests, and each linked prior is
+      walked. A pruned legacy contributor (R8-1's cell), an unknown
+      linked digest, a mismatched multiset, one absorbed id under two
+      absorbers, or a cyclic path returns **None — and None MUST be read
+      as UNRESOLVED**. THE DISCLOSED BEHAVIOUR DELTA: legacy absorption
+      survivors whose contributors are unavailable are UNRESOLVED where
+      the single-hop read called them own-scope — a fail-closed
+      widening, remediable by re-derivation.
 
     The stated residual is UNCHANGED: absorptions predating the 0014
     ledger left no rows AND no links — their survivors resolve by own
     identity (0021 §4d)."""
-    if survivor_id not in direct_rows:
-        return None
-    out, seen = [], {survivor_id}
-    stack = [survivor_id]
-    while stack:
-        rid = stack.pop()
-        out.extend(direct_rows[rid])
-        for prior in absorbed_links.get(rid, ()):
-            if prior in seen:
-                return None            # cycle / duplicate link — corrupt
-            seen.add(prior)
-            if prior not in direct_rows:
-                return None            # unwalkable — evidence incomplete
-            stack.append(prior)
-    return out
+    legacy_links = legacy_links or {}
+    legacy_digests = legacy_digests or {}
+    absorber_of: dict = {}                 # one-absorber rule, global
+    out: list = []
+    visited = set()
+
+    def walk(node, path, verify_only=False):
+        if node in path:
+            return False                   # cyclic path — corrupt
+        if node in visited:
+            return True                    # DAG shortcut revisit — done
+        visited.add(node)
+        rows = ledger_rows.get(node, [])
+        node_digs = {r.get("identity_digest") for r in rows
+                     if r.get("site") in ("absorption", "imported-absorption")}
+        if not verify_only:
+            out.extend(rows)
+        unattributed = []
+        for r in rows:
+            if r.get("site") not in ("absorption", "imported-absorption"):
+                continue
+            ref = r.get("contributor_ref")
+            if (r.get("payload") or {}).get("flattened"):
+                continue                   # digest counted; subtree covered
+            if ref is not None:
+                # closed by the write invariant (0021 W14/§4c: flattening
+                # and the ref land together). OPPORTUNISTIC verification
+                # only — under accepted 0014 A10 a pruned contributor's
+                # rows are legitimately GONE, so absence proves nothing
+                # and fails nothing; presence is checked.
+                if absorber_of.setdefault(ref, node) != node:
+                    return False           # two absorbers — corrupt
+                for cr in ledger_rows.get(ref, []):
+                    if cr.get("site") in ("absorption",
+                                          "imported-absorption") \
+                            and cr.get("identity_digest") not in node_digs:
+                        return False       # flattening incomplete — corrupt
+                if not walk(ref, path | {node}, verify_only=True):
+                    return False
+            else:
+                unattributed.append(r.get("identity_digest"))
+        if unattributed:
+            linked = legacy_links.get(node)
+            if not linked:
+                return False               # R8-1: the pruned-legacy cell
+            if any(x not in legacy_digests for x in linked):
+                return False
+            if sorted(legacy_digests[x] or "" for x in linked) != \
+                    sorted(d or "" for d in unattributed):
+                return False               # multiset mismatch — unaccounted
+            for prior in linked:
+                if absorber_of.setdefault(prior, node) != node:
+                    return False
+                if not walk(prior, path | {node}):
+                    return False
+        return True
+
+    return out if walk(survivor_id, frozenset()) else None
 
 
 def membership(record: dict, rows: Optional[list], op_state: str,
@@ -386,12 +465,16 @@ def membership(record: dict, rows: Optional[list], op_state: str,
     `record`: {"author", "origin", "source_id", "evidence_ref",
     "lineage": bool} — the provenance-shape fields. `rows`: the record's
     `ContributionRecord`s AS SHIPPED — [{"site": "absorption" |
-    "consolidation", "identity_digest": str|None, "op_key": str|None}] —
-    keyed by survivor_id (None/[] = no rows). **For absorption survivors
-    this MUST be the transitively CLOSED set (R7-1): either the write path
-    flattened ancestors onto the survivor (0021 §4c, post-0021 stores) or
-    the caller assembled it via `close_absorption_rows`; a None closure is
-    UNRESOLVED before this function is ever called.** `expected_contributors`: the
+    "imported-absorption" | "consolidation" (the round-8 bin-(b) fix:
+    the imported site was missing from this enumeration),
+    "identity_digest": str|None, "op_key": str|None, and optionally the
+    0014-amendment fields "contributor_ref"/"evidence_ref_digest"/
+    "payload"}] — keyed by survivor_id (None/[] = no rows). **For
+    absorption survivors this MUST be the transitively CLOSED set (R7-1):
+    either the write path flattened ancestors onto the survivor (0021
+    §4c, post-0021 stores) or the caller assembled it via
+    `close_absorption_rows`; a None closure is UNRESOLVED before this
+    function is ever called.** `expected_contributors`: the
     completeness denominator the store derives (lineage length for
     consolidation outputs; None = unknown → incomplete).
 
@@ -570,38 +653,79 @@ def _resolve_winner(record: dict, file_ids: set) -> str:
         f"structured absorbed_by_id carrier)")
 
 
+#: the shipped evidence-ref digest construction, mirrored EXACTLY
+#: (contribution.py — 0014 §4a; R8-3's contributor binding needs it)
+_EVID_DOMAIN = b"veracium.evidence-ref.v1"
+
+
+def evidence_digest_of(origin: Optional[str], evidence_ref: Optional[str],
+                       local_origin: str) -> Optional[str]:
+    """NULL iff evidence_ref is empty/absent (0014 §4a); origin resolves
+    to the local singleton first (0006 §4 rule 6)."""
+    if not evidence_ref:
+        return None
+    o = resolve(Identity(origin, None), local_origin).origin
+    payload = (_EVID_DOMAIN + _framed(o.encode("utf-8"))
+               + _framed(evidence_ref.encode("utf-8")))
+    return hashlib.sha256(payload).hexdigest()
+
+
+def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
+                row: dict) -> str:
+    """The 0009 amendment's DETERMINISTIC row id (R8-3): a digest over the
+    framed logical fields with sentinels for None — uniqueness rides the
+    ledger's existing PRIMARY KEY, so SQLite's NULL-uniqueness semantics
+    never decide anything. The op key is EXCLUDED: a re-import mints a new
+    operation but the same logical row, and idempotency compares logical
+    rows."""
+    parts = [b"veracium.import-contribution-row.v1"]
+    for v in (user_id, survivor_type, survivor_id, row.get("site"),
+              row.get("identity_digest"), row.get("contributor_ref"),
+              row.get("evidence_ref_digest")):
+        parts.append(_framed(b"\x00" if v is None
+                             else b"\x01" + str(v).encode("utf-8")))
+    return hashlib.sha256(b"".join(parts)).hexdigest()
+
+
 def reconstruct_absorption_rows(export_records: list, local_origin: str,
                                 *, id_remap: Optional[dict] = None,
-                                op_key: str):
-    """The 0020 §4a-iii import-time RECONSTRUCTION rule (v9 — external
-    R7-1/R7-2/R7-3 folded).
+                                import_op: str):
+    """The 0020 §4a-iii import-time RECONSTRUCTION rule (v10 — external
+    R8-3 completed the row construction the v9 form left partial).
 
     PRE-COMMIT (R7-2): `export_records` are the records AS PARSED FROM THE
     EXPORT FILE — original ids, before any destination write. Winner
     resolution happens in the file's own id universe (`_resolve_winner`);
     `id_remap` (the importer's old→new table when a `user_id=` remap runs)
-    translates the OUTPUT keys only. A raised `ImportLinkageError` means
+    translates OUTPUT keys and refs. A raised `ImportLinkageError` means
     the importer never writes — destination unchanged.
 
-    TRANSITIVE (R7-1): each absorbed record's identity digest propagates
-    to its direct winner AND every transitive absorber (A → B → C leaves
-    C carrying both B's and A's digests) — the reconstructed sets are
-    BORN CLOSED, matching the write-time flattening rule (0021 §4c). A
-    cyclic winner chain refuses (corrupt linkage).
+    COMPLETE ROWS (R8-3): every emitted row carries site, identity_digest,
+    **contributor_ref** (the post-remap absorbed record id — the typed
+    link R8-1 requires and the contributor binding that determines WHICH
+    exported record supplies the evidence digest), **evidence_ref_digest**
+    (the shipped construction over the absorbed record's resolved origin +
+    evidence_ref), **payload** ({"reconstructed": true}; transitive copies
+    add "flattened": true — counted, never re-walked), and a PER-ROW
+    canonical **op_key** following the SHIPPED consolidation idiom
+    (`contribution.consolidation_op_key`): `{import_op}:{survivor}:
+    {contributor_ref}` — v9's one-key-on-every-row claim violated the
+    accepted UNIQUE partial index on op_key and is CORRECTED; per-row keys
+    are unique by construction. `import_op` is the ONE `op-<12hex>` id the
+    import operation mints. The store-side plan id is `plan_row_id`.
 
-    FULLY POPULATED ROWS (R7-3): the import operation mints ONE
-    `op-<12hex>` operation key and passes it here; every emitted row
-    carries it (the 0009 amendment's deterministic row identity keys on
-    it). Returns {post-remap survivor_id: [rows]}.
+    TRANSITIVE (R7-1): each absorbed record's digest propagates to its
+    direct winner AND every transitive absorber — reconstructed sets are
+    BORN CLOSED; cyclic winner chains refuse.
 
     These rows are ATTRIBUTION evidence for scope membership ONLY — they
     are NOT 0014 §4a absorption payloads and provide NO reversal (the
     pre-inheritance base image is not in the export and cannot be
     inferred; stated as the imported-absorption site's honest limit —
     R6-2)."""
-    if not _OP_ID.match(op_key or ""):
-        raise PolicyError(f"op_key must be the minted op-<12hex> operation "
-                          f"key (R7-3), got {op_key!r}")
+    if not _OP_ID.match(import_op or ""):
+        raise PolicyError(f"import_op must be the minted op-<12hex> "
+                          f"operation id (R7-3/R8-3), got {import_op!r}")
     id_remap = id_remap or {}
     file_ids = {r.get("id") for r in export_records}
     winner_of: dict = {}
@@ -620,20 +744,30 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
             continue
         d = digest_of(Identity(r.get("origin"), r.get("source_id")),
                       local_origin)
-        row = {"site": "imported-absorption", "identity_digest": d,
-               "op_key": op_key}
+        ev = evidence_digest_of(r.get("origin"), r.get("evidence_ref"),
+                                local_origin)
+        cref = id_remap.get(rid, rid)
         # propagate to the direct winner and every transitive absorber
-        hop, visited = winner_of[rid], {rid}
+        hop, visited, direct = winner_of[rid], {rid}, True
         while True:
             if hop in visited:
                 raise ImportLinkageError(
                     f"absorption linkage from {rid!r} is CYCLIC at "
                     f"{hop!r} — corrupt history; the import REFUSES (R7-1)")
             visited.add(hop)
-            out.setdefault(id_remap.get(hop, hop), []).append(dict(row))
+            surv = id_remap.get(hop, hop)
+            payload = {"reconstructed": True}
+            if not direct:
+                payload["flattened"] = True
+            out.setdefault(surv, []).append(
+                {"site": "imported-absorption", "identity_digest": d,
+                 "evidence_ref_digest": ev, "contributor_ref": cref,
+                 "op_key": f"{import_op}:{surv}:{cref}",
+                 "payload": payload})
             if hop not in winner_of:
                 break
             hop = winner_of[hop]
+            direct = False
     return out
 
 

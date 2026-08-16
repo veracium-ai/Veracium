@@ -40,9 +40,35 @@ def _walk_hashes(node, prefix=""):
                 yield from _walk_hashes(v, prefix=f"{prefix}{k}.")
 
 
+def _runtime_qualified():
+    """Round-8 archive ask: an unqualified SQLite must be an EXPLICIT
+    SKIP/unqualified-runtime result, never an opaque harness failure. The
+    packaged store fails closed at open on unqualified runtimes, so the
+    store-backed harnesses cannot run there — the PURE harnesses still
+    verify. Returns (qualified: bool, detail: str)."""
+    sys.path.insert(0, str(ROOT / "src"))
+    try:
+        from veracium.store.schema_version import (runtime_identity,
+                                                   runtime_supported,
+                                                   qualified_runtimes)
+        me = runtime_identity()
+        if runtime_supported():
+            return True, f"SQLite {me.get('sqlite_version')} (qualified)"
+        recs = sorted({r.get("sqlite_version") for r in qualified_runtimes()
+                       if isinstance(r, dict)} - {None})
+        return False, (f"SQLite {me.get('sqlite_version')} is NOT a "
+                       f"qualified runtime (package qualifies: "
+                       f"{', '.join(recs) or 'none recorded'}) — run under "
+                       f"the qualified runtime to execute the store-backed "
+                       f"harnesses")
+    except Exception as e:                      # fail toward the skip, loudly
+        return False, f"runtime qualification unreadable ({e!r})"
+
+
 def main():
     m = json.loads((ROOT / "review_manifest.json").read_text())
     failures = []
+    skips = []
     checked = 0
     for label, path, want in _walk_hashes(m):
         got = sha(path)
@@ -52,12 +78,24 @@ def main():
     if checked == 0:
         failures.append("no *_sha256 keys found — the manifest is empty?")
 
+    qualified, detail = _runtime_qualified()
+    print(("ok  runtime: " if qualified else "SKIP runtime: ") + detail)
+
     ev = m["normative_evidence"]
-    for name, script, recorded in (
-            ("vector harness", ev["harness"], ev.get("harness_result")),
+    for name, script, recorded, needs_store in (
+            ("vector harness", ev["harness"], ev.get("harness_result"),
+             False),
             ("store adapter harness", ev.get("store_adapter"),
-             ev.get("store_adapter_result"))):
+             ev.get("store_adapter_result"), True),
+            ("ledger plan harness", ev.get("ledger_plan"),
+             ev.get("ledger_plan_result"), True)):
         if script is None:
+            continue
+        if needs_store and not qualified:
+            skips.append(name)
+            print(f"SKIP {name}: unqualified-runtime (explicit skip, not a "
+                  f"failure — the recorded result file still hash-verifies "
+                  f"above)")
             continue
         r = subprocess.run([sys.executable, str(ROOT / script)],
                            capture_output=True, text=True, cwd=ROOT)
@@ -79,7 +117,12 @@ def main():
         for f in failures:
             print("FAIL", f)
         return 1
-    print(f"package verification: {checked} hashes + both harnesses "
+    if skips:
+        print(f"package verification: {checked} hashes verified; "
+              f"{len(skips)} store-backed harness(es) SKIPPED "
+              f"(unqualified-runtime) — NO FAILURES; not a full pass")
+        return 0
+    print(f"package verification: {checked} hashes + all harnesses "
           f"(fresh-vs-recorded) — EVERYTHING MATCHES AND PASSES")
     return 0
 

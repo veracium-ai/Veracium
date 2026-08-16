@@ -105,8 +105,12 @@ def _record_shape(edge):
 
 
 def _links_from_real_records(store, user_id):
-    """Derive absorbed-prior links from the REAL records via the decidable
-    linkage rule (the same candidate matching the import path uses)."""
+    """Derive absorbed-prior links AND digests from the REAL records via
+    the decidable linkage rule (the same candidate matching the import
+    path uses). READ-SIDE assembly is TOLERANT (unlike the import gate): a
+    record whose winner cannot resolve contributes NO link — the closure
+    then fails closed on the unaccounted row rather than crashing the
+    read (R8-1: this is exactly the post-prune shape)."""
     from reference_scope import _resolve_winner
     recs = [{"id": e.id, "invalidation_reason": e.invalidation_reason,
              "note": e.note, "origin": e.provenance.origin,
@@ -114,10 +118,17 @@ def _links_from_real_records(store, user_id):
             for e in store.edges(user_id, active_only=False)]
     ids = {r["id"] for r in recs}
     links: dict = {}
+    digests: dict = {}
     for r in recs:
+        digests[r["id"]] = digest_of(
+            Identity(r["origin"], r["source_id"]), store.local_origin())
         if r["invalidation_reason"] == "absorbed_duplicate":
-            links.setdefault(_resolve_winner(r, ids), []).append(r["id"])
-    return {k: tuple(v) for k, v in links.items()}
+            try:
+                links.setdefault(_resolve_winner(r, ids), []).append(r["id"])
+            except ImportLinkageError:
+                pass                       # unresolvable — no link; closure
+                                           # fails closed downstream
+    return {k: tuple(v) for k, v in links.items()}, digests
 
 
 def _parse_export(path):
@@ -132,6 +143,7 @@ def _parse_export(path):
                     "note": d.get("note"),
                     "origin": prov.get("origin"),
                     "source_id": prov.get("source_id"),
+                    "evidence_ref": prov.get("evidence_ref"),
                     "object": d.get("object"),
                     "absorbed_by_id": d.get("absorbed_by_id")})
     return out
@@ -155,7 +167,7 @@ def scoped_import(dest_store, export_path, *, user_id=None):
     records = _parse_export(export_path)
     op = _mint_op()
     local = dest_store.local_origin()
-    rebuilt_old = reconstruct_absorption_rows(records, local, op_key=op)
+    rebuilt_old = reconstruct_absorption_rows(records, local, import_op=op)
     counts = portability.import_memory(dest_store, export_path,
                                        user_id=user_id,
                                        restore=(user_id is None))
@@ -170,7 +182,7 @@ def scoped_import(dest_store, export_path, *, user_id=None):
     old_by_obj = {r["object"]: r["id"] for r in records}
     remap = {old: by_obj.get(obj) for obj, old in old_by_obj.items()}
     rebuilt = reconstruct_absorption_rows(records, local, id_remap=remap,
-                                          op_key=op)
+                                          import_op=op)
     return counts, rebuilt
 
 
@@ -228,10 +240,10 @@ def run():
             f"expected the single-level read to demonstrate the R7-1 leak "
             f"(own digest), got {leak!r}")
         # the NORMATIVE closure: UNRESOLVED (A's foreign digest, one hop down)
-        links = _links_from_real_records(chain, "u1")
+        links, digests = _links_from_real_records(chain, "u1")
         direct_rows = {e.id: _project(chain, "u1", "edge", e.id)
                        for e in chain.edges("u1", active_only=False)}
-        closed = close_absorption_rows("c-3", direct_rows, links)
+        closed = close_absorption_rows("c-3", direct_rows, links, digests)
         assert closed is not None, "closure unwalkable on a complete store"
         got3 = membership(_record_shape(surv3), closed, "none", clocal)
         assert got3 == UNRESOLVED, f"three-hop native closure: {got3!r}"
@@ -247,22 +259,61 @@ def run():
         s3 = _edge("small dog Rex", eid="s-3", sid="agent-z", conf=0.9,
                    rel="dog")
         apply_supersession(chain, s3, DEFAULT_RELATIONS)
-        linksz = _links_from_real_records(chain, "u1")
+        linksz, digz = _links_from_real_records(chain, "u1")
         drz = {e.id: _project(chain, "u1", "edge", e.id)
                for e in chain.edges("u1", active_only=False)}
-        closedz = close_absorption_rows("s-3", drz, linksz)
+        closedz = close_absorption_rows("s-3", drz, linksz, digz)
         sv3 = [e for e in chain.edges("u1", active_only=True)
                if e.id == "s-3"][0]
         gz = membership(_record_shape(sv3), closedz, "none", clocal)
         assert gz == digest_of(Identity(None, "agent-z"), clocal), repr(gz)
         checks.append("[store] three-hop SAME-identity chain closes to own "
                       "digest (the contrast cell)")
-        # an unwalkable chain (a link to a pruned record) fails closed
-        broken = dict(drz)
-        broken.pop("s-2", None)
-        assert close_absorption_rows("s-3", broken, linksz) is None
-        checks.append("[store] pruned-intermediate chain -> closure None -> "
-                      "UNRESOLVED by contract")
+
+        # ---- (2b) [store] THE ROUND-8 PRUNE REGRESSION (R8-1) ----------
+        # No shipped path physically prunes an absorbed edge (mechanically
+        # asserted in 0021 §2c-ii: expiry invalidates, consolidation
+        # deletes EPISODES, erasure removes whole users) — so the prune is
+        # SIMULATED by direct SQL, labeled, standing in for the future
+        # retention capability the spec's retention contract governs.
+        # v9's harness deleted B's ROWS but kept its LINK — the reviewer
+        # called that artificial; THIS deletes the RECORD, which takes the
+        # note-link with it, exactly the executed break.
+        chain.close()                    # settle the file, then fork a copy
+        import shutil
+        shutil.copyfile(f"{d}/chain.db", f"{d}/chain-pruned.db")
+        chain = SqliteStore(f"{d}/chain.db")        # groups (3)+ keep the
+        pruned = SqliteStore(f"{d}/chain-pruned.db")  # unpruned original
+        pruned._conn.execute("DELETE FROM edges WHERE id='c-2'")
+        pruned._conn.commit()
+        pruned.close()
+        re_chain = SqliteStore(f"{d}/chain-pruned.db")  # close/reopen, real
+        rl = re_chain.local_origin()
+        linksp, digp = _links_from_real_records(re_chain, "u1")
+        drp = {e.id: _project(re_chain, "u1", "edge", e.id)
+               for e in re_chain.edges("u1", active_only=False)}
+        # B's ledger rows happen to survive HERE because the raw SQL prune
+        # bypassed A10's row-drop (the API-level prune would drop them —
+        # accepted 0014 _drop_contributions_for_survivor); include them so
+        # the closure sees the WORST honest case: rows present, link gone
+        drp["c-2"] = _project(re_chain, "u1", "edge", "c-2")
+        surv_p = [e for e in re_chain.edges("u1", active_only=True)
+                  if e.id == "c-3"][0]
+        closed_p = close_absorption_rows("c-3", drp, linksp, digp)
+        got_p = (UNRESOLVED if closed_p is None
+                 else membership(_record_shape(surv_p), closed_p, "none", rl))
+        assert closed_p is None and got_p == UNRESOLVED, (
+            f"pruned legacy chain must close to None -> UNRESOLVED, got "
+            f"closure={'set' if closed_p is not None else 'None'}, "
+            f"{got_p!r}")
+        checks.append("[store] R8-1 PRUNE regression: B's RECORD physically "
+                      "deleted (simulated retention; no shipped API — "
+                      "reach-asserted), close/REOPEN, links re-derived from "
+                      "what survives -> the survivor's row is unattributed "
+                      "with no link -> closure None -> UNRESOLVED (v9 read "
+                      "this cell own-scope; typed contributor_ref rows are "
+                      "the durable fix, proven in ledger_plan_harness)")
+        re_chain.close()
 
         # ---- (3) [import-path] the RESTORED three-hop ------------------
         exp = pathlib.Path(d) / "chain.jsonl"
@@ -277,7 +328,9 @@ def run():
             in digs3 and len(r3) >= 2, (
             f"transitive reconstruction missed the ancestor: {r3!r}")
         assert all(r["op_key"] and r["site"] == "imported-absorption"
-                   for r in r3), "rows not fully populated (R7-3)"
+                   and r["contributor_ref"] and r["evidence_ref_digest"]
+                   for r in r3), "rows not fully populated (R7-3/R8-3: " \
+            "per-row key, typed contributor binding, evidence digest)"
         dsurv = [e for e in dest.edges("u1", active_only=False)
                  if e.id == "c-3"][0]
         dgot = membership(_record_shape(dsurv), r3, "none",
@@ -289,7 +342,7 @@ def run():
                       f"rows ({len(r3)} row(s) incl. the ancestor digest)")
         # idempotent re-run of reconstruction over the same file
         again = reconstruct_absorption_rows(
-            _parse_export(exp), dest.local_origin(), op_key="op-aaaaaaaaaaaa")
+            _parse_export(exp), dest.local_origin(), import_op="op-aaaaaaaaaaaa")
         assert {k: sorted((r["identity_digest"] or "") for r in v)
                 for k, v in again.items()} == \
                {k: sorted((r["identity_digest"] or "") for r in v)
@@ -301,7 +354,7 @@ def run():
         re_dest = SqliteStore(f"{d}/dest.db")
         r3r = reconstruct_absorption_rows(
             _parse_export(exp), re_dest.local_origin(),
-            op_key="op-bbbbbbbbbbbb").get("c-3", [])
+            import_op="op-bbbbbbbbbbbb").get("c-3", [])
         rsurv = [e for e in re_dest.edges("u1", active_only=False)
                  if e.id == "c-3"][0]
         assert membership(_record_shape(rsurv), r3r, "none",

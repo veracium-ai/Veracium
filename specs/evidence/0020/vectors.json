@@ -898,235 +898,6 @@
   "attempt": "resign_after_flip"
  },
  {
-  "name": "closure_three_hop_cross_ancestor_unresolved",
-  "kind": "closure",
-  "survivor": "C",
-  "record": {
-   "author": "user",
-   "origin": "org-b",
-   "source_id": "agent-b",
-   "evidence_ref": "ev-c",
-   "lineage": false
-  },
-  "op_state": "none",
-  "direct_rows": {
-   "C": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    }
-   ],
-   "B": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-a",
-      "source_id": "agent-a"
-     }
-    }
-   ],
-   "A": []
-  },
-  "links": {
-   "C": [
-    "B"
-   ],
-   "B": [
-    "A"
-   ]
-  },
-  "expect": "UNRESOLVED"
- },
- {
-  "name": "closure_three_hop_same_identity_own",
-  "kind": "closure",
-  "survivor": "C",
-  "record": {
-   "author": "user",
-   "origin": "org-b",
-   "source_id": "agent-b",
-   "evidence_ref": "ev-c",
-   "lineage": false
-  },
-  "op_state": "none",
-  "direct_rows": {
-   "C": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    }
-   ],
-   "B": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    }
-   ],
-   "A": []
-  },
-  "links": {
-   "C": [
-    "B"
-   ],
-   "B": [
-    "A"
-   ]
-  },
-  "expect": {
-   "digest_of": {
-    "origin": "org-b",
-    "source_id": "agent-b"
-   }
-  }
- },
- {
-  "name": "closure_missing_link_unresolved",
-  "kind": "closure",
-  "survivor": "C",
-  "record": {
-   "author": "user",
-   "origin": "org-b",
-   "source_id": "agent-b",
-   "evidence_ref": "ev-c",
-   "lineage": false
-  },
-  "op_state": "none",
-  "direct_rows": {
-   "C": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    }
-   ]
-  },
-  "links": {
-   "C": [
-    "B"
-   ]
-  },
-  "expect": "UNRESOLVED"
- },
- {
-  "name": "closure_cyclic_linkage_unresolved",
-  "kind": "closure",
-  "survivor": "C",
-  "record": {
-   "author": "user",
-   "origin": "org-b",
-   "source_id": "agent-b",
-   "evidence_ref": "ev-c",
-   "lineage": false
-  },
-  "op_state": "none",
-  "direct_rows": {
-   "C": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    }
-   ],
-   "B": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    }
-   ]
-  },
-  "links": {
-   "C": [
-    "B"
-   ],
-   "B": [
-    "C"
-   ]
-  },
-  "expect": "UNRESOLVED"
- },
- {
-  "name": "closure_flattened_store_idempotent",
-  "kind": "closure",
-  "survivor": "C",
-  "record": {
-   "author": "user",
-   "origin": "org-b",
-   "source_id": "agent-b",
-   "evidence_ref": "ev-c",
-   "lineage": false
-  },
-  "op_state": "none",
-  "direct_rows": {
-   "C": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-b",
-      "source_id": "agent-b"
-     }
-    },
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-a",
-      "source_id": "agent-a"
-     }
-    }
-   ],
-   "B": [
-    {
-     "site": "absorption",
-     "identity": {
-      "origin": "org-a",
-      "source_id": "agent-a"
-     }
-    }
-   ],
-   "A": []
-  },
-  "links": {
-   "C": [
-    "B"
-   ],
-   "B": [
-    "A"
-   ]
-  },
-  "expect": "UNRESOLVED"
- },
- {
-  "name": "closure_unknown_survivor_unresolved",
-  "kind": "closure",
-  "survivor": "ghost",
-  "record": {
-   "author": "user",
-   "origin": "org-b",
-   "source_id": "agent-b",
-   "evidence_ref": "ev-c",
-   "lineage": false
-  },
-  "op_state": "none",
-  "direct_rows": {},
-  "links": {},
-  "expect": "UNRESOLVED"
- },
- {
   "name": "recon_paren_anchor_id_resolves",
   "kind": "reconstruction",
   "records": [
@@ -1561,5 +1332,586 @@
   "id_remap": null,
   "op_key": "op-abcdef012345",
   "expect": "ImportLinkageError"
+ },
+ {
+  "name": "closure_legacy_three_hop_cross_ancestor_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     }
+    }
+   ]
+  },
+  "legacy_links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "A"
+   ]
+  },
+  "legacy_digests": {
+   "B": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   },
+   "A": {
+    "origin": "org-a",
+    "source_id": "agent-a"
+   }
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_legacy_three_hop_same_identity_own",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ]
+  },
+  "legacy_links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "A"
+   ]
+  },
+  "legacy_digests": {
+   "B": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   },
+   "A": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  },
+  "expect": {
+   "digest_of": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  }
+ },
+ {
+  "name": "closure_pruned_legacy_contributor_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_legacy_link_digest_unknown_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ]
+  },
+  "legacy_links": {
+   "C": [
+    "B"
+   ]
+  },
+  "legacy_digests": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_legacy_multiset_mismatch_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    },
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     }
+    }
+   ],
+   "B": []
+  },
+  "legacy_links": {
+   "C": [
+    "B"
+   ]
+  },
+  "legacy_digests": {
+   "B": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_legacy_cycle_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     }
+    }
+   ]
+  },
+  "legacy_links": {
+   "C": [
+    "B"
+   ],
+   "B": [
+    "C"
+   ]
+  },
+  "legacy_digests": {
+   "B": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   },
+   "C": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  },
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_typed_ref_same_identity_own",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B"
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "A"
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": {
+   "digest_of": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  }
+ },
+ {
+  "name": "closure_flattened_rows_counted_not_walked",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B"
+    },
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "A",
+     "flattened": true
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "A"
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_flattened_same_identity_own",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B"
+    },
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "A",
+     "flattened": true
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "A"
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": {
+   "digest_of": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  }
+ },
+ {
+  "name": "closure_two_absorbers_corrupt_unresolved",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "X"
+    },
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "D"
+    }
+   ],
+   "D": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "X"
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_no_rows_is_ordinary_host_record",
+  "kind": "closure",
+  "survivor": "ghost",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {},
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": {
+   "digest_of": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  }
+ },
+ {
+  "name": "closure_typed_ref_incomplete_flattening_detected",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B"
+    }
+   ],
+   "B": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "A"
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_flattened_survivor_immune_to_a10_prune",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B"
+    },
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "A",
+     "flattened": true
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": "UNRESOLVED"
+ },
+ {
+  "name": "closure_residual_w14_violation_plus_prune_undetectable",
+  "kind": "closure",
+  "survivor": "C",
+  "record": {
+   "author": "user",
+   "origin": "org-b",
+   "source_id": "agent-b",
+   "evidence_ref": "ev-c",
+   "lineage": false
+  },
+  "op_state": "none",
+  "ledger_rows": {
+   "C": [
+    {
+     "site": "absorption",
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B"
+    }
+   ]
+  },
+  "legacy_links": {},
+  "legacy_digests": {},
+  "expect": {
+   "digest_of": {
+    "origin": "org-b",
+    "source_id": "agent-b"
+   }
+  }
  }
 ]

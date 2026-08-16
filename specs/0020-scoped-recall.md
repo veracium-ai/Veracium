@@ -190,14 +190,19 @@ exactly:
   field is None; the ledger holds only a one-way digest — R2-3, a named
   vector). Every extension is a spec change.
 
-The 60 vectors enumerate every `classify` cell (both refusal states),
-every policy-refusal cell (real ints, sets, bounds), the
-DIRECT-CONSTRUCTION oracle (the reviewer's executed bypass, cell by
-cell), the mutation oracle, the FULL resolver table over REAL row shapes
-(consolidation completeness × digests × operation state, PLUS the four
-absorption-survivor cells including R3-3's cross-digest case), and every
-filter cell — executed by the shipped harness, whose recorded result
-ships in every package.
+The vectors (the COUNT lives in one carrier — `review_manifest.json`'s
+`vector_count`, with the recorded harness result as its execution proof;
+round-8 bin (b) caught this paragraph and reviews.py drifting from the
+manifest, so prose carriers no longer state a number) enumerate every
+`classify` cell (both refusal states), every policy-refusal cell (real
+ints, sets, bounds), the DIRECT-CONSTRUCTION oracle (the reviewer's
+executed bypass, cell by cell, plus the round-7 leaf-mutation attack),
+the mutation oracle, the FULL resolver table over REAL row shapes
+(consolidation completeness × digests × operation state, PLUS the
+absorption-survivor cells including R3-3's cross-digest case), the
+closure table (legacy, typed-ref, flattened, pruned, corrupt), the
+reconstruction table, and every filter cell — executed by the shipped
+harness, whose recorded result ships in every package.
 
 ### 4a-iii. Derived records — the membership-evidence hierarchy (external F1)
 
@@ -221,17 +226,58 @@ store with NO source_id (the store-authored shape), in order:
    chain: `A` (scope A) absorbed by `B` (scope B), then `B` absorbed by
    `C` (scope B) — C's DIRECT row carries only B's digest, which equals
    C's own scope, so a single-level read classifies C own-scope while C
-   transitively contains A's testimony. The contract is therefore dual:
+   transitively contains A's testimony. The contract is therefore dual —
+   and LEDGER-RESIDENT (external R8-1, which executed the v9 form's
+   fragility: the v9 walk chained through free-text `absorbed_by:` notes
+   on the absorbed RECORDS, and a pruned intermediate takes its note —
+   the only link — with it, leaving a walk that LOOKS complete while an
+   ancestor's foreign digest is gone):
    - **Write-time flattening (0021 §4c, post-0021 stores):** an
      absorption writes onto the survivor the absorbed prior's identity
-     digest AND carries forward the prior's own absorption rows, in the
-     same atomic operation — row sets are BORN closed; and
-   - **Read-time closure (pre-0021 chains):** `close_absorption_rows`
-     (the normative reference) walks the absorbed-prior links and unions
-     each visited record's rows; a linked prior whose record or rows are
-     unavailable, or any cyclic linkage, closes to None — and **None IS
-     UNRESOLVED**, before the resolver ever runs. Idempotent over
-     flattened stores.
+     digest AND copies of the prior's transitively CLOSED row set, in
+     the same atomic operation — row sets are BORN closed (copies carry
+     the `flattened` payload class: counted as evidence, never
+     re-walked); and every absorption row carries the TYPED
+     **`contributor_ref`** (the 0014 amendment's columns — the shipped
+     absorption draft already supplies contributor_type/contributor_id;
+     the store stops dropping them). **THE DURABILITY MODEL, stated
+     against accepted 0014 A10 (our own pre-send catch — the ledger is
+     NOT append-only: `_drop_contributions_for_survivor` drops a
+     record's rows when the record is deleted):** the durable object is
+     the SURVIVOR'S OWN row set, which lives exactly as long as the
+     survivor does — born-closed flattening means pruning an
+     intermediate touches only rows keyed to IT, and the survivor's
+     ancestry is untouched. Closure is BY CONSTRUCTION, not by ledger
+     immortality.
+   - **Read-time closure:** `close_absorption_rows` (the normative
+     reference): ref-bearing row sets stand on the write invariant
+     (W14), with OPPORTUNISTIC verification where a contributor's rows
+     are still present (its digests must appear among the survivor's —
+     a mismatch is corrupt → None; absence proves nothing under A10 and
+     fails nothing — the DISCLOSED residual: a W14-violating writer
+     plus a subsequent prune is undetectable read-side, vectored as a
+     statement) — with the
+     note-derived link walk as the LEGACY fallback for pre-amendment
+     rows, whose absorbed records' digest multiset must exactly account
+     for every unattributed row. A legacy row whose contributor's record
+     was pruned (R8-1's cell), an unknown linked digest, a multiset
+     mismatch, one absorbed id under two absorbers, or a cyclic path
+     closes to None — and **None IS UNRESOLVED**, before the resolver
+     ever runs. **The DISCLOSED behaviour delta:** legacy absorption
+     survivors whose contributors are unavailable are UNRESOLVED where
+     the single-hop read called them own-scope — a fail-closed widening,
+     remediable by re-derivation.
+   - **The retention contract (R8-1):** no shipped path physically
+     prunes an absorbed edge today (mechanically asserted, 0021 §2c-ii —
+     expiry only invalidates; consolidation deletes episodes; user
+     erasure removes the user's ledger with the records, mooting
+     membership). ANY future pruning capability MUST be
+     closure-preserving: flatten the pruned record's closed row set onto
+     its absorbers first (or, where its own closure is unwalkable, write
+     the closure-incompleteness marker row — identity_digest None,
+     payload `{"closure": "incomplete"}` — which the resolver's
+     cross-digest rule fails closed forever). Pre-contract external
+     deletions are exactly what the typed ledger link makes harmless.
 
    All contributors (over the CLOSED set) resolve to one scope → the
    derivative is that scope's. Contributors span scopes → cannot occur
@@ -256,35 +302,54 @@ store with NO source_id (the store-authored shape), in order:
      destination is byte-identical to before the attempt. (v8 stated
      whole-import refusal but ordered nothing; the reviewer committed
      three imports and only then watched reconstruction fail.)
-   - **STRUCTURED LINKAGE IS THE NORMATIVE CARRIER (R7-2, ruled):** the
-     export materializes each absorbed record's winner as a structured
-     `absorbed_by_id` field at the next FORMAT bump (rides 0021's
-     implementation window; linkage only — NOT the full-membership
-     materialization, which stays the recorded widening). The v8 note
-     REGEX is RETIRED: `Edge.id` permits the framing punctuation, so the
-     regex rejected valid native exports (reviewer-executed, three
-     cases). For LEGACY files the rule is the DECIDABLE one: the LAST
-     `absorbed_by:` tag governs and is the only tag that must resolve
-     (earlier incidental tags are ignored — v8 contradicted its own
-     last-tag rule); candidates are matched against the export's own id
-     universe under the shipped framings; exactly one resolves, zero or
-     multiple REFUSE — ambiguity is irreducible in free text that may
-     embed ids, so refusal plus the structured carrier is the honest
-     pair.
+   - **STRUCTURED LINKAGE IS THE NORMATIVE CARRIER, WITH A DURABLE
+     SOURCE (R7-2, rebuilt under R8-2):** the export materializes each
+     absorbed record's winner as a structured `absorbed_by_id` field
+     derived FROM THE LEDGER's typed `contributor_ref` link (find the
+     row whose contributor_ref names this record → its survivor) —
+     NEVER from the note whose ambiguity motivated the field (R8-2's
+     point: an exporter cannot reliably materialize structure from the
+     same free text). The field is therefore derivable exactly for
+     post-amendment absorptions; legacy absorptions export note-only and
+     take the legacy rule below. **The FORMAT allocation (R8-2's
+     carrier conflicts, corrected):** accepted 0016/0018/0019 freeze the
+     FORMAT-7 shape, so the field lands as a DRAFTED RIDER AMENDMENT to
+     that frozen shape (0021 §7b; same-commit landing at acceptance,
+     the 0014-rider precedent), riding the SAME 0018 D2 breaking window
+     that already carries 0021's enforcement bump (Q4) and the SCHEMA-v8
+     ledger columns — one break, all three riders; linkage only, NOT the
+     full-membership materialization, which stays the recorded widening.
+     The v8 note REGEX is RETIRED: `Edge.id` permits the framing
+     punctuation, so the regex rejected valid native exports
+     (reviewer-executed, three cases). For LEGACY files the rule is the
+     DECIDABLE one: the LAST `absorbed_by:` tag governs and is the only
+     tag that must resolve (earlier incidental tags are ignored — v8
+     contradicted its own last-tag rule); candidates are matched against
+     the export's own id universe under the shipped framings; exactly
+     one resolves, zero or multiple REFUSE — ambiguity is irreducible in
+     free text that may embed ids, so refusal plus the structured
+     carrier is the honest pair.
    - **TRANSITIVE (R7-1):** each absorbed record's digest propagates to
-     its direct winner and every transitive absorber — reconstructed row
-     sets are born closed, matching the write-time flattening; cyclic
-     chains refuse.
-   - **FULLY POPULATED (R7-3):** the import operation mints ONE
-     `op-<12hex>` operation key; every reconstructed row carries it plus
-     the site `imported-absorption` — a 0014 SITE with its own closed
-     integrity semantics (the named 0014 amendment, 0021 §7b): NO
-     absorption payload and NO REVERSAL (the pre-inheritance base image
-     is not in the export and cannot be inferred — ATTRIBUTION evidence
-     for scope membership only). Persisting these rows atomically with
-     the records is the 0009 §4 primitive AMENDMENT (exact text: 0021
-     §7b — schema, deterministic row identity, expected-state and
-     conflict rules, idempotent re-import, rollback, concurrency).
+     its direct winner and every transitive absorber (transitive copies
+     carry the `flattened` payload class) — reconstructed row sets are
+     born closed, matching the write-time flattening; cyclic chains
+     refuse.
+   - **COMPLETE ROWS (R7-3, completed under R8-3):** every reconstructed
+     row carries site `imported-absorption`, identity_digest, the typed
+     `contributor_ref` (the post-remap absorbed record id — the
+     contributor BINDING that determines which exported record supplies
+     the evidence digest), `evidence_ref_digest` (the shipped
+     construction over the absorbed record's resolved origin +
+     evidence_ref), the closed payload, and a PER-ROW canonical op key
+     `{import_op}:{survivor}:{contributor_ref}` following the SHIPPED
+     `consolidation_op_key` idiom — v9's one-op-key-on-every-row claim
+     violated the accepted UNIQUE partial index on op_key
+     (reviewer-executed IntegrityError) and is CORRECTED; `import_op` is
+     the ONE `op-<12hex>` id the import operation mints. The site's 0014
+     semantics are unchanged: NO absorption payload and NO REVERSAL
+     (ATTRIBUTION evidence only). Persisting these rows atomically with
+     the records is the 0009 §4c primitive AMENDMENT (exact text +
+     stored-row construction + DDL: 0021 §7b).
 
    The residual narrows to absorbed priors pruned before export.
    **Missing membership evidence never silently means "shared."** The
@@ -390,6 +455,8 @@ manifest fails `test_read_surface_manifest_is_total`.
 | V14 absorption survivors resolve through their ledger rows OVER THE TRANSITIVELY CLOSED SET; any cross-digest contributor → UNRESOLVED (external R3-3; closure per R7-1 — the single-level read misclassified the reviewer's A→B→C chain) | `test_absorption_survivor_membership` |
 | V15 three-hop absorption chains fail closed NATIVE and RESTORED: the A→B→C survivor is UNRESOLVED on the origin store (closure) and on an import destination (transitive reconstruction), including under remap and after reopen (external R7-1) | `test_transitive_absorption_chains` |
 | V16 import linkage reconstruction is PRE-COMMIT: missing/unresolvable/ambiguous/cyclic linkage refuses BEFORE any destination write and the destination is byte-identical after the refused attempt (external R7-2) | `test_import_reconstruction_precommit` |
+| V17 the closure survives the retention lifecycle: an A→B→C store whose intermediate is physically pruned classifies the survivor UNRESOLVED after close/reopen (typed-ref rows walk inside the ledger; a ref-less pruned legacy chain fails closed) — the R8-1 regression | `test_closure_survives_pruning` |
+| V18 the ledger-row plan is storable AGAINST THE ACCEPTED DDL: multi-row single-operation inserts pass the real UNIQUE partial op_key index via per-row canonical keys; NULL-digest contributors deduplicate by the deterministic plan id; idempotent re-import writes nothing; concurrent imports linearize (external R8-3) | `test_ledger_plan_against_real_ddl` |
 | V11 `answer()` and proactive thread the principal; structured carriers carry only visible records (external F3) | `test_all_read_surfaces_scoped` |
 | V12 the read-surface manifest is total (external F3) | `test_read_surface_manifest_is_total` |
 | V13 UNRESOLVED derivatives are invisible to every scoped principal and visible unscoped (external F1) | `test_unresolved_derivative_fail_closed` |
@@ -403,8 +470,14 @@ manifest fails `test_read_surface_manifest_is_total`.
   to today. MAINTENANCE effects are NOT policy-dependent and NOT
   reversible by config: 0021's identity partitioning applies to
   identity-bearing stores regardless of policy, and consolidation's
-  deletions/derivatives are permanent once run (0021 §7). v1 still adds no
-  field, no schema/format change, no migration.
+  deletions/derivatives are permanent once run (0021 §7). **The no-change
+  claim, NARROWED (external R8-2 — the blanket form contradicted the
+  evidence carriers):** the READ feature itself adds no record field
+  visible to hosts and no read-path migration; the COUPLED
+  implementation's evidence carriers — the ledger's contributor columns
+  (SCHEMA v8), the export linkage field (the FORMAT rider), and 0021's
+  writer enforcement (Q4) — all ride the ONE 0018 D2 breaking window
+  (0021 §7b riders), never a break of this spec's own.
 
 ### 7a. Complete public-surface inventory
 
@@ -430,7 +503,7 @@ manifest fails `test_read_surface_manifest_is_total`.
 | 0011 (draft) | the subject dimension | orthogonal in v1; the seam reserved (V9) |
 | 0021 | **MUTUAL `Spec-Requires` (external F6)** — acceptance is atomic, the 0016/0018 precedent | 0020's §8 claim is CONDITIONAL on 0021 wherever maintenance runs; neither accepts alone |
 | 0017 | the operator-side withholding channel | future consent-versioned field; deferred, recorded |
-| 0018 | the breaking window | NOT needed by v1 (no field); recorded so its absence is a decision |
+| 0018 | the breaking window | **REQUIRED by the coupled implementation (R8-2 corrected the v9 "not needed" row):** the D2 window carries the three riders — SCHEMA-v8 ledger contributor columns (0014), the FORMAT export-linkage field (rider to the 0016/0018/0019-frozen v7 shape), and 0021's writer enforcement (Q4). The READ surface alone still needs no break |
 
 ## 8. Claims and limits
 

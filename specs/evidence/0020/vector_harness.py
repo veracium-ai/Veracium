@@ -17,15 +17,20 @@ Vector schema, per kind (every vector: {"name", "kind", "expect", ...}):
                     "expected_contributors": int|null, "op_state": s};
                    expect = {"digest_of": id} | "SHARED_POOL" | "UNRESOLVED"
                           | "PolicyError"
-- closure:         (R7-1) {"survivor": id, "record": {...}, "op_state": s,
-                    "direct_rows": {id: [rows]}, "links": {id: [ids]}};
-                   rows' identity fields are digest-sources; a None closure
-                   is UNRESOLVED by contract before membership runs;
+- closure:         (R7-1/R8-1) {"survivor": id, "record": {...},
+                    "op_state": s, "ledger_rows": {id: [rows]},
+                    "legacy_links": {id: [ids]}?, "legacy_digests":
+                    {id: identity-source|null}?}; rows may carry
+                    "contributor_ref" and "flattened"; a None closure is
+                   UNRESOLVED by contract before membership runs;
                    expect = {"digest_of": id} | "SHARED_POOL" | "UNRESOLVED"
-- reconstruction:  (R7-2/R7-3) {"records": [...], "id_remap": {}|null,
-                    "op_key": str}; records carry raw origin/source_id;
+- reconstruction:  (R7-2/R8-3) {"records": [...], "id_remap": {}|null,
+                    "op_key": str = the minted import op id}; records carry
+                   raw origin/source_id/evidence_ref;
                    expect = {"rows": {survivor: [digest-source|null]}}
                           | "ImportLinkageError" | "PolicyError"
+                   (the harness ALSO structurally checks every emitted row:
+                   per-row canonical op_key, contributor_ref, payload)
 - validate_filters:{"filters": {...}}; expect = "ok"|"PolicyError"
 - apply_filters:   {"records": [...], "filters": {...}}; expect = "first-only"
 - shared_pool_key: {}; expect = the reserved literal (collision-checked)
@@ -233,13 +238,24 @@ def _run_one(v, policies):
         return None if got == want else f"got {got!r}"
     if kind == "closure":
         def _rows(rr):
-            return [{"site": x["site"],
-                     "identity_digest": (digest_of(I(x["identity"]), LOCAL)
-                                         if x.get("identity") else None),
-                     "op_key": x.get("op_key")} for x in rr]
-        direct = {k: _rows(v) for k, v in v["direct_rows"].items()}
-        links = {k: tuple(ids) for k, ids in v.get("links", {}).items()}
-        closed = close_absorption_rows(v["survivor"], direct, links)
+            out = []
+            for x in rr:
+                row = {"site": x["site"],
+                       "identity_digest": (digest_of(I(x["identity"]), LOCAL)
+                                           if x.get("identity") else None),
+                       "op_key": x.get("op_key")}
+                if "contributor_ref" in x:
+                    row["contributor_ref"] = x["contributor_ref"]
+                if x.get("flattened"):
+                    row["payload"] = {"flattened": True}
+                out.append(row)
+            return out
+        ledger = {k: _rows(rw) for k, rw in v["ledger_rows"].items()}
+        links = {k: tuple(ids)
+                 for k, ids in v.get("legacy_links", {}).items()}
+        digs = {k: (digest_of(I(x), LOCAL) if x else None)
+                for k, x in v.get("legacy_digests", {}).items()}
+        closed = close_absorption_rows(v["survivor"], ledger, links, digs)
         # the contract: a None closure IS UNRESOLVED, before membership runs
         got = (UNRESOLVED if closed is None
                else membership(v["record"], closed, v["op_state"], LOCAL))
@@ -252,7 +268,7 @@ def _run_one(v, policies):
         def build():
             return reconstruct_absorption_rows(
                 v["records"], LOCAL, id_remap=v.get("id_remap"),
-                op_key=v["op_key"])
+                import_op=v["op_key"])
         if expect in ("ImportLinkageError", "PolicyError"):
             try:
                 build()
@@ -262,7 +278,7 @@ def _run_one(v, policies):
                     "ImportLinkageError raised where plain PolicyError expected"
             except PolicyError:
                 # ImportLinkageError subclasses PolicyError; reaching here
-                # means a NON-linkage PolicyError (e.g. the op_key rule)
+                # means a NON-linkage PolicyError (e.g. the import_op rule)
                 return None if expect == "PolicyError" else \
                     "PolicyError raised where ImportLinkageError expected"
         got = build()
@@ -274,10 +290,21 @@ def _run_one(v, policies):
                 for s, rows in got.items()}
         if norm != want:
             return f"got {norm!r}, expected {want!r}"
-        bad = [r for rows in got.values() for r in rows
-               if r["op_key"] != v["op_key"]
-               or r["site"] != "imported-absorption"]
-        return None if not bad else f"{len(bad)} rows not fully populated"
+        # R8-3: STRUCTURAL total-row check — per-row CANONICAL op keys
+        # (unique by construction, satisfying the accepted UNIQUE partial
+        # index), typed contributor_ref, the closed payload
+        seen_keys = set()
+        for surv, rows in got.items():
+            for r in rows:
+                want_key = f"{v['op_key']}:{surv}:{r.get('contributor_ref')}"
+                if (r["site"] != "imported-absorption"
+                        or r.get("contributor_ref") is None
+                        or r["op_key"] != want_key
+                        or r["op_key"] in seen_keys
+                        or not (r.get("payload") or {}).get("reconstructed")):
+                    return f"row not fully populated/canonical: {r!r}"
+                seen_keys.add(r["op_key"])
+        return None
     if kind == "validate_filters":
         if expect == "PolicyError":
             return _expect_err(lambda: validate_filters(v["filters"]))
