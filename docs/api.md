@@ -203,6 +203,18 @@ idempotent (existing ids are skipped, never overwritten); `user_id=` remaps the
 records. Also available without code: `veracium export out.jsonl --user alice`
 / `veracium import out.jsonl [--user bob | --restore]`.
 
+**Absorption linkage (FORMAT 7, specs/0020 §4a-iii).** Exported absorbed
+records carry `absorbed_by_id` — structured linkage derived from the
+store's typed contribution ledger, never from notes. Imports reconstruct
+absorption attribution **pre-commit** (structured-first; a decidable
+legacy note rule covers pre-7 files; ambiguous or unresolvable linkage
+refuses the whole import before any write) and persist the reconstructed
+contribution rows atomically with the records. The returned dict gains
+`"contributions"` (rows written) and `"contributions_existing"`
+(idempotent re-import rows skipped as already recorded); a re-import
+whose file asserts a *different* absorption history than the destination
+already recorded refuses rather than silently merging.
+
 **Trust boundary (specs/0005).** A **default** import caps every record's
 trust: `author_of_evidence` and `derived_from` are set to `third_party` and
 `disclosure` is floored to `use_only` (`quarantined` is never weakened) — so

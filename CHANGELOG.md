@@ -2,6 +2,66 @@
 
 ## Unreleased
 
+- **THE API-BREAKING RELEASE (stage D2)** — the one break every deferred
+  removal and schema change was staged for. Four coordinated changes, all
+  under accepted specs (0016 D2; 0018; and the 0020/0021 acceptance
+  riders to 0009/0014/0016/0018/0019):
+
+  - **`source_type` is removed** (spec 0016, stage D2 — the deletion D1
+    warned about since 0.9.0). The `Provenance.source_type` field, the
+    public `SourceType` enum, and the entire deprecation surface are
+    gone; the star-import inventory is 41 names. The field never
+    influenced any decision; `evidence_basis` remains the frozen
+    standing contract (spec 0016 §1b), deliberately NOT shipped as a
+    field. Request/outcome digests no longer include the field.
+    **Supersession receipts stamp `outcome_digest_version 4`**; the
+    validated set becomes {1,2,3,4}, and — the era boundary — a
+    persisted receipt with version < 4 now refuses UNCONDITIONALLY on
+    sight at both phases (`ReceiptSchemaBoundaryError`, a named
+    integrity refusal; no digest is computed, no comparison runs).
+    Re-run the superseding write to mint a v4 receipt.
+  - **Export FORMAT 6→7**: files no longer carry `source_type` (older
+    importers refuse a 7-file; importing a ≤6 file drops the key), and
+    exported absorbed records now carry **`absorbed_by_id`** — the
+    structured absorption linkage, derived from the store's typed
+    contribution ledger (never from free-text notes). Imports
+    reconstruct absorption attribution PRE-COMMIT: structured-first,
+    with a decidable legacy note rule for old files (ambiguous or
+    unresolvable linkage refuses the WHOLE import before any write),
+    and the reconstructed rows commit atomically with the records
+    through the extended whole-import primitive
+    (`commit_outcome_import_plan` gains `plan["contributions"]` +
+    `contribution_state`; its return gains `contributions` /
+    `contributions_existing`; idempotent re-imports skip rows, and a
+    conflicting recorded history refuses).
+  - **Store SCHEMA v7→v8 — WITH DDL** (the first since v6): the
+    contribution ledger gains `contributor_type`/`contributor_ref`,
+    populated on every new absorption row (legacy rows stay NULL). Both
+    schema manifestations (constructor and ALTER-path) are generated,
+    measured, and sha-pinned in the accepted evidence. **Older builds
+    refuse a v8 store — back up before upgrading.** Migration to v8
+    runs ONLY under the new release-migration orchestrator (below);
+    ordinary open of a v7 store on this build refuses with guidance.
+  - **The release-migration orchestrator** (accepted spec 0018):
+    `veracium migrate --db X --i-have-quiesced --backup REF` — explicit
+    operator attestation (flags, never prompts), a total read-only
+    preflight (older bases get the exact two-release upgrade ladder;
+    nothing is touched without an authority), a bounded mint/retry
+    against concurrent access, structured results whose facts are never
+    inferred from labels, a durable per-store migration audit trail,
+    and loud audit failures (exit 3 — never a silent success). Library
+    surface: `veracium.store.migration.run_release_migration`.
+  - Also in this release: `veracium selfcheck` exits **2** when the
+    provider environment prevents any check from running (previously 0
+    with the DID-NOT-RUN banner) — CI consumers can now distinguish
+    "environment problem" from "checks passed".
+
+  **Upgrade path:** quiesce, back up, then `veracium migrate --db X
+  --i-have-quiesced --backup <ref>`. Stores at v6 or below need the
+  ladder: v7 on a 0.9–0.10 release first. Files exported by ≤0.10
+  import fine (the dropped key is the only difference); files exported
+  by this release refuse on ≤0.10 importers.
+
 ## 0.10.0 — 2026-08-15
 
 - **The `ungrounded` flag — extraction-fidelity marking at ingest**

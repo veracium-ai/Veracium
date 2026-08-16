@@ -340,3 +340,31 @@ def test_a_newer_file_is_refused_by_the_version_gate(tmp_path):
     with pytest.raises(ValueError, match="newer"):
         import_memory(dest, p)
     dest.close()
+
+
+def test_evidence_basis_contract_frozen():
+    """0016 I10 — the §1b successor contract is TEXT-PINNED: its four
+    clauses must remain verbatim (at the anchor-phrase level) until a
+    first-consumer spec supersedes them. This test was named at D1 and is
+    implemented here at D2 (the deletion is that spec's prerequisite —
+    §1b clause 4)."""
+    import pathlib
+    spec = pathlib.Path(__file__).resolve().parents[1] / \
+        "specs/0016-sourcetype-deletion.md"
+    flat = " ".join(spec.read_text().split())
+    anchors = (
+        "The evidence_basis contract — FROZEN here, field NOT shipped",
+        # clause 1 — semantics, no total order, unknown is the floor
+        "NOT a total order",
+        "unknown is a fourth state, stored absent (I8), and is the FLOOR",
+        "the spec that ships the first consumer",
+        # clause 2 — unforgeability: the extraction schema has NO field
+        "the extraction schema must not contain a basis field at all",
+        "attested at a host-controlled boundary or not at all",
+        # clause 3 — optional, host-supplied, never required
+        "never required when `source_id` is present",
+        # clause 4 — trigger
+        "a first consumer, in its own spec",
+    )
+    missing = [a for a in anchors if " ".join(a.split()) not in flat]
+    assert not missing, f"§1b contract drifted — missing anchors: {missing}"

@@ -1,5 +1,5 @@
 PASS [real-ddl] 4 DDL statements extracted from the LIVE store (table + indexes, incl. the UNIQUE partial op_key index)
-PASS [real-ddl] the amendment's EXACT ALTERs applied over the extracted schema (contributor_type, contributor_ref — nullable; legacy rows unaffected)
+PASS [real-ddl] the extracted live-store schema is BORN v8 — contributor_type/contributor_ref present natively (nullable; legacy rows unaffected); the amendment's ALTERs are already materialised
 PASS [op-key] ONE import operation, THREE rows (C carries B+A transitively, B carries A) inserted under per-row canonical keys — the accepted UNIQUE partial index ACCEPTS the plan
 PASS [op-key] the v9 one-key-per-plan design raises IntegrityError on row 2 (the reviewer's executed break, kept as a regression) — per-row keys are REQUIRED, not stylistic
 PASS [op-key] DELIMITER-BEARING ids ('a:b'+'c' vs 'a'+'b:c') insert under ONE operation — the injective framed-digest form; the v10 colon-join collided here (R9-2, the reviewer's IntegrityError)
