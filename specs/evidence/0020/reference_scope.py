@@ -1143,11 +1143,23 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
     # simply failed to implement. Refusing here restores the contract AND the
     # reference-vs-production agreement V10 depends on; the iteration is over a
     # SNAPSHOT so appends can never be observed by the walk.
-    if absorber == record_id:
-        raise ExportLinkageError(
-            f"record {record_id!r} is its OWN canonical absorber — corrupt "
-            f"ledger state (a record cannot absorb itself); the prune REFUSES "
-            f"rather than reparenting into the row set it is walking")
+    # DOMAIN CLOSURE (research's 0018 R1-4 lens, 2026-08-16): self-absorption
+    # is the cycle of length 1, and the n=1 guard alone was BOUNDED-WRONG at
+    # n>=2 — a 2-cycle terminated but MANUFACTURED a self-absorbing row on the
+    # absorber (executed, both implementations). Corrupt linkage is corrupt at
+    # every length, so the guard walks the whole absorber chain and refuses on
+    # ANY revisit. (The read-side closure already refused cycles; only this
+    # write-side step did not.)
+    _seen, _hop = {record_id}, absorber
+    while _hop is not None:
+        if _hop in _seen:
+            raise ExportLinkageError(
+                f"the canonical absorber chain from {record_id!r} is CYCLIC "
+                f"at {_hop!r} — corrupt ledger state (a record cannot absorb "
+                f"itself, directly or transitively); the prune REFUSES rather "
+                f"than reparenting into a cycle")
+        _seen.add(_hop)
+        _hop = derive_absorbed_by(_hop, out)
     if absorber is not None:
         for r in list(out.get(record_id, [])):
             if not _is_canonical(r):

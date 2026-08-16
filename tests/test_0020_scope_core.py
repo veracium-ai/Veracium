@@ -297,13 +297,18 @@ def test_none_closure_means_unresolved_and_markers_are_never_links():
 
 
 def test_a_self_absorbing_record_refuses_the_prune_instead_of_looping():
-    """The ONE deliberate divergence from the normative reference, pinned
-    as a regression: a canonical row on X naming contributor X makes the
-    reference NON-TERMINATING (it appends reparented rows — themselves
-    canonical — to the list it is iterating). Production refuses the
-    corrupt state. Found by differential fuzzing, not by the vectors, so
-    it needs a test of its own; if a future edit reintroduces the
-    unbounded append this test hangs the suite rather than passing."""
+    """The corrupt-linkage domain for the prune walk, closed at EVERY
+    cycle length. History, because it is the lesson: a canonical row on X
+    naming contributor X made the accepted reference NON-TERMINATING (it
+    appended reparented rows — themselves canonical — to the list it was
+    iterating). Found by differential fuzzing, fixed in both
+    implementations. Research then asked the domain question (the 0018
+    R1-4 lens): self-absorption is the cycle of length 1, so what does
+    n>=2 do? Executed answer: it TERMINATED but MANUFACTURED a
+    self-absorbing row on the absorber — bounded-wrong, which is still
+    wrong. The guard now walks the whole absorber chain and refuses any
+    revisit. If a future edit reintroduces the unbounded append this test
+    hangs the suite rather than passing."""
     d = digest_of(Identity("org-a", "agent-1"), LOCAL)
     ledger = {"B": [{"site": "absorption", "identity_digest": d,
                      "op_key": None, "evidence_ref_digest": None,
@@ -312,9 +317,27 @@ def test_a_self_absorbing_record_refuses_the_prune_instead_of_looping():
                      "op_key": None, "evidence_ref_digest": None,
                      "contributor_ref": "B",
                      "payload": {"flattened": True}}]}
-    with pytest.raises(ScopeError, match="OWN canonical absorber"):
+    with pytest.raises(ScopeError, match="CYCLIC"):
         scope.prune_absorbed_record("B", ledger, prune_op="op-000000000001")
     assert ledger["B"][0]["payload"] == {}, "the input was mutated"
+
+    # ...and the same refusal at every longer cycle (n = 2..5): each ring
+    # has a canonical row on each member naming the next, so the absorber
+    # chain returns to the start. Before the generalization, n>=2 silently
+    # wrote a {"closure": "incomplete"} self-absorbing row instead.
+    for n in range(2, 6):
+        ids = [f"c{i}" for i in range(n)]
+        ring = {ids[i]: [
+            {"site": "absorption", "identity_digest": d, "op_key": None,
+             "evidence_ref_digest": None, "contributor_ref": ids[(i + 1) % n],
+             "payload": {}},
+            {"site": scope.SITE_ATTRIBUTION, "identity_digest": d,
+             "op_key": None, "evidence_ref_digest": None,
+             "contributor_ref": ids[(i + 1) % n],
+             "payload": {"flattened": True}}] for i in range(n)}
+        with pytest.raises(ScopeError, match="CYCLIC"):
+            scope.prune_absorbed_record(ids[0], ring,
+                                        prune_op="op-000000000002")
 
     # the ordinary two-record prune still reparents, unchanged
     plain = {"B": [{"site": "absorption", "identity_digest": d,

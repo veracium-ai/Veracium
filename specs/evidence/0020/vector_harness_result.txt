@@ -1,1 +1,1 @@
-vector harness: 129/129 pass against reference_scope.py
+vector harness: 131/131 pass against reference_scope.py

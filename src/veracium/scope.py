@@ -527,14 +527,21 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
     out = {k: [dict(r, payload=dict(r.get("payload") or {}))
                for r in v] for k, v in ledger_rows.items()}
     absorber = derive_absorbed_by(record_id, out)
-    if absorber == record_id:
-        raise ExportLinkageError(
-            f"record {record_id!r} is its OWN canonical absorber — corrupt "
-            f"ledger state (a record cannot absorb itself); the prune "
-            f"REFUSES rather than reparenting into the row set it is "
-            f"walking. The class is ExportLinkageError, matching the "
-            f"reference exactly: corrupt linkage on the derivation path is "
-            f"what that error names, and V10 requires the SAME class.")
+    # DOMAIN CLOSURE (research's 0018 R1-4 lens): self-absorption is the
+    # cycle of length 1, and guarding only n=1 was BOUNDED-WRONG — a 2-cycle
+    # terminated but MANUFACTURED a self-absorbing row on the absorber
+    # (executed against both implementations). Corrupt linkage is corrupt at
+    # every length: walk the whole absorber chain, refuse on ANY revisit.
+    _seen, _hop = {record_id}, absorber
+    while _hop is not None:
+        if _hop in _seen:
+            raise ExportLinkageError(
+                f"the canonical absorber chain from {record_id!r} is CYCLIC "
+                f"at {_hop!r} — corrupt ledger state (a record cannot absorb "
+                f"itself, directly or transitively); the prune REFUSES rather "
+                f"than reparenting into a cycle")
+        _seen.add(_hop)
+        _hop = derive_absorbed_by(_hop, out)
     if absorber is not None:
         # the iteration is over a SNAPSHOT and the appends land on a
         # DIFFERENT survivor's list (guaranteed by the refusal above) —

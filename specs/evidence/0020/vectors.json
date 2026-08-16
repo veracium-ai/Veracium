@@ -2912,5 +2912,137 @@
   ],
   "query": "X",
   "expect": "ExportLinkageError"
+ },
+ {
+  "name": "derivation_two_cycle_absorber_chain_refuses",
+  "kind": "derivation",
+  "ledger_rows": {
+   "A": [
+    {
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "B",
+     "site": "absorption",
+     "payload": {}
+    },
+    {
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B",
+     "site": "scope-attribution",
+     "payload": {
+      "flattened": true
+     }
+    }
+   ],
+   "B": [
+    {
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "A",
+     "site": "absorption",
+     "payload": {}
+    },
+    {
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "A",
+     "site": "scope-attribution",
+     "payload": {
+      "flattened": true
+     }
+    }
+   ]
+  },
+  "prune": [
+   "A"
+  ],
+  "query": "A",
+  "expect": "ExportLinkageError"
+ },
+ {
+  "name": "derivation_three_cycle_absorber_chain_refuses",
+  "kind": "derivation",
+  "ledger_rows": {
+   "A": [
+    {
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "B",
+     "site": "absorption",
+     "payload": {}
+    },
+    {
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "B",
+     "site": "scope-attribution",
+     "payload": {
+      "flattened": true
+     }
+    }
+   ],
+   "B": [
+    {
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "C",
+     "site": "absorption",
+     "payload": {}
+    },
+    {
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "C",
+     "site": "scope-attribution",
+     "payload": {
+      "flattened": true
+     }
+    }
+   ],
+   "C": [
+    {
+     "identity": {
+      "origin": "org-a",
+      "source_id": "agent-a"
+     },
+     "contributor_ref": "A",
+     "site": "absorption",
+     "payload": {}
+    },
+    {
+     "identity": {
+      "origin": "org-b",
+      "source_id": "agent-b"
+     },
+     "contributor_ref": "A",
+     "site": "scope-attribution",
+     "payload": {
+      "flattened": true
+     }
+    }
+   ]
+  },
+  "prune": [
+   "A"
+  ],
+  "query": "A",
+  "expect": "ExportLinkageError"
  }
 ]

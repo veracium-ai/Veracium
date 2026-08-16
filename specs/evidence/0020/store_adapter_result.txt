@@ -6,7 +6,7 @@ PASS [store] R8-1 PRUNE regression: B's RECORD physically deleted (simulated ret
 PASS [import-path] RESTORED three-hop: pre-commit transitive reconstruction (minted op key) -> the destination survivor UNRESOLVED via born-closed rows (2 row(s) incl. the ancestor digest); production PERSISTED the rows through the amended 0009 primitive (plan-site payloads marked reconstructed; multiset equals the independent reconstruction; 0014 locality: derived, never travelled)
 PASS [import-path] reconstruction is deterministic across re-runs (idempotent re-import's precondition)
 PASS [import-path] after CLOSE/REOPEN the restored three-hop survivor is still UNRESOLVED and the persisted plan-site rows are DURABLE (W15)
-PASS [import-path] REMAPPED import keys the transitive rows to post-remap ids (imp-e-dd179b2da55b)
+PASS [import-path] REMAPPED import keys the transitive rows to post-remap ids (imp-e-51e63952f44c)
 PASS [import-path] REAL export with a framing-embedded winner id RESOLVES via the decidable rule (v8's regex refused this valid file)
 PASS [import-path] REAL pre-existing 'absorbed_by:ghost' note + the genuine appended tag RESOLVES — the LAST tag governs and is the only one that must (v8 demanded the ghost resolve too)
 PASS [import-path] AMBIGUOUS id universe on a LEGACY-class file (real store: 'winner' + the framing-embedded id; structured field absent) -> PRE-COMMIT whole-import refusal INSIDE the shipped importer; destination logical state byte-for-byte unchanged (pre-populated sentinel intact)
