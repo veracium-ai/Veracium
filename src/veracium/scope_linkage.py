@@ -61,7 +61,18 @@ PLAN_SITES = (SITE_IMPORTED, SITE_ATTRIBUTION)
 MEMBERSHIP_SITES = ("absorption", SITE_IMPORTED, SITE_ATTRIBUTION)
 
 
-class ImportLinkageError(ValueError):
+class ScopeError(ValueError):
+    """THE ONE scope-surface error class (the production name for the
+    normative reference's `PolicyError`; `veracium.scope` re-exports it
+    under BOTH names so error identity is a single class, never two).
+
+    Raised at config load, at consumption revalidation, and by the
+    linkage validators — never silently widened past. It subclasses
+    `ValueError` so every pre-existing `except ValueError` caller of
+    these primitives is unaffected."""
+
+
+class ImportLinkageError(ScopeError):
     """An import whose absorption linkage cannot be reconstructed
     unambiguously REFUSES WHOLE, PRE-COMMIT (0020 §4a-iii R6-1/R7-2):
     reconstruction runs on the export file's records BEFORE any
@@ -69,7 +80,7 @@ class ImportLinkageError(ValueError):
     byte-identical."""
 
 
-class ExportLinkageError(ValueError):
+class ExportLinkageError(ScopeError):
     """A contributor with MORE THAN ONE canonical absorber row is corrupt
     ledger state — the exporter REFUSES to materialise a structured link
     from it (R9-1: a corrupt store must not become a portable file that
@@ -85,7 +96,7 @@ def canonical_payload(payload: dict) -> str:
     sorted keys, no whitespace — byte-identical to the normative
     reference's projection."""
     if not isinstance(payload, dict):
-        raise ValueError(f"payload must be a mapping, got {payload!r}")
+        raise ScopeError(f"payload must be a mapping, got {payload!r}")
     return json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
@@ -159,10 +170,10 @@ def validate_plan_site_payload(site: str, payload: dict) -> None:
     0014 amendment's site-registry entries): exact match — unknown keys,
     truthy non-True markers, and undeclared classes all refuse (R10-3)."""
     if site not in PLAN_SITES:
-        raise ValueError(f"site {site!r} outside the closed plan-site set "
+        raise ScopeError(f"site {site!r} outside the closed plan-site set "
                          f"{PLAN_SITES} (0014 §4a as amended)")
     if not isinstance(payload, dict):
-        raise ValueError("row payload must be a mapping")
+        raise ScopeError("row payload must be a mapping")
     for shape in _PAYLOAD_SHAPES[site]:
         if shape == "REPARENTED":
             if (set(payload) == {"reparented_from"}
@@ -174,7 +185,7 @@ def validate_plan_site_payload(site: str, payload: dict) -> None:
             # exact: keys AND literal values AND types — dict equality
             # alone admits 1 == True (R10-3's truthy-marker cell)
             return
-    raise ValueError(
+    raise ScopeError(
         f"payload {payload!r} is not one of site {site!r}'s closed shapes "
         f"(R10-3: exact match — unknown keys, truthy non-True markers, and "
         f"undeclared classes all refuse)")
@@ -195,40 +206,40 @@ def validate_row_plan(row: dict, context: str, *, op: str,
                 "op_key")   # R13-1: the key is part of the contract
     missing = [f for f in required if f not in row]
     if missing:
-        raise ValueError(f"plan row is missing required field(s) "
+        raise ScopeError(f"plan row is missing required field(s) "
                          f"{missing} — presence is part of the contract "
                          f"(R11-2); None is a value, absence is not")
     if row["site"] not in PLAN_SITES:
-        raise ValueError(f"row site {row['site']!r} outside the closed "
+        raise ScopeError(f"row site {row['site']!r} outside the closed "
                          f"plan-site set {PLAN_SITES}")
     for field in ("identity_digest", "evidence_ref_digest"):
         d = row[field]
         if d is not None and not (isinstance(d, str) and _HEX64.fullmatch(d)):
-            raise ValueError(f"{field} {d!r} is neither None nor a "
+            raise ScopeError(f"{field} {d!r} is neither None nor a "
                              f"64-hex digest")
     if row["contributor_type"] != "edge":
-        raise ValueError(f"contributor_type {row['contributor_type']!r} "
+        raise ScopeError(f"contributor_type {row['contributor_type']!r} "
                          f"outside the closed set {{'edge'}} — and it is "
                          f"never defaulted (R11-2)")
     if not (isinstance(row["contributor_ref"], str)
             and row["contributor_ref"]):
-        raise ValueError("every plan row NAMES its contributor — "
+        raise ScopeError("every plan row NAMES its contributor — "
                          "contributor_ref must be a non-empty string "
                          "(R10-3: the missing-direct-ref cell)")
     payload = row["payload"]
     validate_plan_site_payload(row["site"], payload)
     if payload == {"closure": "incomplete"} \
             and row.get("identity_digest") is not None:
-        raise ValueError("a closure-incompleteness marker asserts MISSING "
+        raise ScopeError("a closure-incompleteness marker asserts MISSING "
                          "evidence — identity_digest must be None")
     # R12-1: the WRITER cross-product — this context may write ONLY its
     # own (site, payload-class) cells
     if context not in WRITER_CONTEXTS:
-        raise ValueError(f"unknown writer context {context!r} — the set "
+        raise ScopeError(f"unknown writer context {context!r} — the set "
                          f"is closed: {sorted(WRITER_CONTEXTS)}")
     cell = (row["site"], payload_class(payload))
     if cell not in WRITER_CONTEXTS[context]["cells"]:
-        raise ValueError(
+        raise ScopeError(
             f"writer context {context!r} may not emit the "
             f"(site, payload-class) cell {cell!r} — its closed set is "
             f"{sorted(WRITER_CONTEXTS[context]['cells'])} (R12-1: each "
@@ -239,7 +250,7 @@ def validate_row_plan(row: dict, context: str, *, op: str,
     # an arbitrary, cross-context, or null key.
     if not (isinstance(op, str)
             and re.fullmatch(WRITER_CONTEXTS[context]["op_re"], op)):
-        raise ValueError(
+        raise ScopeError(
             f"operation id {op!r} is outside writer context {context!r}'s "
             f"domain {WRITER_CONTEXTS[context]['op_re']!r} (R13-1)")
     expected_key = (native_row_op_key(op, survivor_id,
@@ -248,7 +259,7 @@ def validate_row_plan(row: dict, context: str, *, op: str,
                     else row_op_key(op, row["site"], survivor_id,
                                     row["contributor_ref"]))
     if row["op_key"] != expected_key:
-        raise ValueError(
+        raise ScopeError(
             f"op_key {row['op_key']!r} is not the context's derivation "
             f"over (op, survivor, contributor) — absent, null, malformed, "
             f"cross-context, and mis-derived keys all land here (R13-1: "
@@ -285,9 +296,9 @@ def row_op_key(op: str, site: str, survivor_id: str,
     site token); the pair of unrestricted ids is FRAMED and
     domain-separated into one fixed-width digest."""
     if not _OP_ID.fullmatch(op or ""):
-        raise ValueError(f"op must be op-<12hex>, got {op!r}")
+        raise ScopeError(f"op must be op-<12hex>, got {op!r}")
     if site not in PLAN_SITES:
-        raise ValueError(f"op-key site token {site!r} outside {PLAN_SITES}")
+        raise ScopeError(f"op-key site token {site!r} outside {PLAN_SITES}")
     h = hashlib.sha256(b"veracium.import-row-op-key.v1"
                        + _framed(survivor_id.encode("utf-8"))
                        + _framed(contributor_ref.encode("utf-8"))
@@ -303,7 +314,7 @@ def native_row_op_key(op_id: str, survivor_id: str,
     prefix. Ported for the 0021 feature implementation; unused by
     shipped code today."""
     if not re.fullmatch(r"sup-.+", op_id or ""):
-        raise ValueError(f"native op id must be sup-<edge-id>, got "
+        raise ScopeError(f"native op id must be sup-<edge-id>, got "
                          f"{op_id!r}")
     h = hashlib.sha256(b"veracium.native-attribution-op-key.v1"
                        + _framed(op_id.encode("utf-8"))
@@ -330,9 +341,9 @@ def construct_plan_row(context: str, op: str, survivor_id: str, *,
     returned. Every normative row producer builds through here."""
     ctx = WRITER_CONTEXTS.get(context)
     if ctx is None:
-        raise ValueError(f"unknown writer context {context!r}")
+        raise ScopeError(f"unknown writer context {context!r}")
     if not (isinstance(op, str) and re.fullmatch(ctx["op_re"], op)):
-        raise ValueError(f"operation id {op!r} outside context "
+        raise ScopeError(f"operation id {op!r} outside context "
                          f"{context!r}'s domain (R13-1)")
     key = (native_row_op_key(op, survivor_id, contributor_ref)
            if context == "native"
@@ -426,7 +437,7 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
     they are NOT 0014 §4a absorption payloads and provide NO reversal
     (R6-2)."""
     if not _OP_ID.fullmatch(import_op or ""):
-        raise ValueError(f"import_op must be the minted op-<12hex> "
+        raise ScopeError(f"import_op must be the minted op-<12hex> "
                          f"operation id (R7-3/R8-3), got {import_op!r}")
     id_remap = id_remap or {}
     file_ids = {r.get("id") for r in export_records}

@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- **0020 scoped recall, slice A — the normative scope core lands in
+  production** (spec `specs/0020-scoped-recall.md` §4a-ii/§4a-iii/§4e;
+  implemented, no behaviour change yet): a new module `veracium.scope`
+  provides `Identity`/`resolve`/`same_identity`, the
+  REGISTRY-AUTHORITATIVE `ScopePolicy` + `validate_policy`, the
+  transitive absorption closure `close_absorption_rows` (None means
+  UNRESOLVED) and the retention contract's `prune_absorbed_record`
+  model, the total `membership` resolver, the visibility decision
+  (`classify`/`decide`/`DECISION_TABLE`), and the closed §4e filter
+  grammar. Digests are the SHIPPED 0006 primitive reached through
+  `veracium.scope_linkage` — one implementation, never a copy. **No
+  read surface consumes this yet**: `recall`/`answer`/proactive/the gate
+  and `MemoryConfig` are unchanged, so shipped behaviour is byte-identical
+  (slice B threads the principal). 0020 V10 is bound mechanically —
+  the 128 pinned vectors in `specs/evidence/0020/vectors.json` now
+  execute against the SHIPPED surface as well as against the normative
+  reference. Scope errors are ONE class, `veracium.scope_linkage.ScopeError`
+  (re-exported as `veracium.scope.PolicyError`), a `ValueError` subclass
+  that the linkage errors now derive from — existing `except ValueError`
+  callers are unaffected.
+
 ## 0.11.0 — 2026-08-16
 
 - **THE API-BREAKING RELEASE (stage D2)** — the one break every deferred

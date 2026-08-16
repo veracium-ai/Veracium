@@ -75,6 +75,13 @@ MOTIVATING_FORMS = [
     ("0014-sql-column", "a NEW nullable `episodes.consolidation_output_index INTEGER` column"),
     # R4-6 — valid_from in the consolidation payload
     ("0014-validfrom-consolidation", "valid_from is in the consolidation payload set"),
+    # R5/0007 — the withdrawn base-version resolution map. The entry is
+    # CASE-SENSITIVE (the 0020 slice-A work introduced an unrelated lower-case
+    # `legacy_digests` closure parameter that the case-insensitive form
+    # matched); this fixture proves the tightened pattern still catches the
+    # form 0007 actually stated.
+    ("0007-legacy-digests-map",
+     "version zero resolves a base version from `LEGACY_DIGESTS` and re-enters the migration path"),
     # 0012
     ("0012-reinforcement-never-persists", "reinforcement never persists the incoming edge"),
     # 0018 internal F1 — the dead audit-unknown readback branch (R13-3 form)

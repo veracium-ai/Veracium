@@ -118,8 +118,17 @@ WITHDRAWN = [
     # against the NORMALISED text: `LEGACY_DIGESTS` arrives as `LEGACYDIGESTS`.
     # This is the second time a pattern was written against raw markdown and
     # could never fire; a dead entry reads as coverage.
+    # CASE-SENSITIVE by `(?-i:…)` (the lint searches under re.I globally): the
+    # withdrawn thing is 0007's UPPER-CASE CONSTANT, and the case-insensitive
+    # form also matched `legacy_digests` — an unrelated LOWER-CASE parameter in
+    # 0020's absorption-closure signature (the note-derived fallback digests),
+    # a different spec's namespace with nothing to do with base-version
+    # resolution. A gate that fires on unrelated new code is a defect in the
+    # gate: false positives are how a check gets routed around. The motivating
+    # 0007 form is pinned as a fixture in tests/test_withdrawn_gate_bites.py,
+    # so the tightened pattern is proven to still bite.
     ("0007-legacy-digests-map",
-     r"LEGACY_?DIGESTS",
+     r"(?-i:LEGACY_?DIGESTS)",
      "R5/0007: a digest->version map is the circular design; LEGACY_BASE_VERSIONS restricts resolution",
      "specs/0007 §4-i"),
     ("0007-tested-sqlite-tuple",
