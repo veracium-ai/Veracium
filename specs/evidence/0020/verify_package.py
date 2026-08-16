@@ -152,13 +152,35 @@ def main():
             continue
         print(f"ok  {name}: {tail}")
         if recorded:
-            rec = (ROOT / recorded).read_text()
-            if tail not in rec:
+            # R11-4: compare the FULL normalized output, never just the
+            # final line (the reviewer changed the recorded runtime line
+            # and the old tail-only check still reported a match — the
+            # same logic would miss changed constructor text or hashes).
+            # Environment-dependent lines are DECLARED per entry in the
+            # manifest (`normalize` regex list) and stripped from BOTH
+            # sides; everything that remains must be byte-identical.
+            import re as _re
+            pats = [_re.compile(p, _re.M)
+                    for p in m.get("evidence_normalize", {}).get(
+                        name.replace(" ", "_"), [])]
+            def _norm(text):
+                for p in pats:
+                    text = p.sub("<ENV>", text)
+                return text.strip()
+            fresh_n = _norm(r.stdout)
+            rec_n = _norm((ROOT / recorded).read_text())
+            if fresh_n != rec_n:
+                import difflib
+                delta = list(difflib.unified_diff(
+                    rec_n.splitlines(), fresh_n.splitlines(),
+                    "recorded", "fresh", lineterm=""))[:12]
                 failures.append(
-                    f"{name}: fresh result {tail!r} not in recorded "
-                    f"{recorded} (R5-4: fresh-vs-recorded comparison)")
+                    f"{name}: fresh output differs from recorded "
+                    f"{recorded} after declared normalization (R11-4: "
+                    f"full-output comparison): " + " | ".join(delta))
             else:
-                print(f"ok  {name}: fresh result matches the recorded file")
+                print(f"ok  {name}: full normalized output matches the "
+                      f"recorded file")
 
     if failures:
         for f in failures:

@@ -727,6 +727,57 @@ _PAYLOAD_SHAPES = {
                        {"closure": "incomplete"}),
 }
 
+#: R11-1 — THE ONE AUTHORITATIVE SITE MATRIX. Round 11 found the v12
+#: carriers contradicting each other (the 0009 amendment text still
+#: described the pre-split one-site design while the 0014 amendment and
+#: this module required the split). This structure is the single source;
+#: `render_site_matrix()` emits the markdown table that EVERY prose
+#: carrier embeds VERBATIM between SITE-MATRIX markers, and the seal
+#: byte-compares the block across all of them — a carrier cannot drift
+#: without failing the seal.
+SITE_MATRIX = (
+    {"site": "absorption",
+     "writers": "the shipped store (apply_supersession) — ACCEPTED 0014, "
+                "not amended",
+     "payloads": "{base, contributor} (the accepted closed schema)",
+     "canonical": "YES (direct link)",
+     "exact_set": "YES — the accepted direct-invalidation equality "
+                  "counts exactly these",
+     "op_key": "the accepted native idiom, unchanged"},
+    {"site": "imported-absorption",
+     "writers": "the import path ONLY (the amended 0009 primitive), "
+                "from pre-commit reconstruction — DIRECT links",
+     "payloads": '{"reconstructed": true} EXACTLY',
+     "canonical": "YES (direct link)",
+     "exact_set": "NO — never counted",
+     "op_key": 'row_op_key(import_op, "imported-absorption", …)'},
+    {"site": "scope-attribution",
+     "writers": "the amended 0009 primitive: write-time flattening "
+                "(native + imported transitive copies) and the retention "
+                "contract's prune step (reparented links, markers) — "
+                "ALWAYS insert-only",
+     "payloads": '{"flattened": true} · {"flattened": true, '
+                 '"reconstructed": true} · {"reparented_from": <id>} · '
+                 '{"closure": "incomplete"}',
+     "canonical": "ONLY the reparented class; flattened copies and "
+                  "markers NEVER",
+     "exact_set": "NO — structurally excluded (its own site)",
+     "op_key": 'row_op_key(op, "scope-attribution", …) — import, '
+               'absorption, or prune op'},
+)
+
+
+def render_site_matrix() -> str:
+    """The generated carrier block (R11-1). Emitted verbatim into every
+    spec/diagram carrier between `<!-- SITE-MATRIX -->` markers; the seal
+    byte-compares the block across all carriers and this source."""
+    head = ("| site | writers | closed payload classes | canonical? | "
+            "in the exact set? | op-key form |\n|---|---|---|---|---|---|")
+    rows = ["| `%s` | %s | %s | %s | %s | %s |" % (
+            r["site"], r["writers"], r["payloads"], r["canonical"],
+            r["exact_set"], r["op_key"]) for r in SITE_MATRIX]
+    return "\n".join([head] + rows)
+
 
 def validate_row_plan(row: dict) -> None:
     """R9-3's cross-field validator, made TOTAL under R10-3 (the reviewer
@@ -745,24 +796,36 @@ def validate_row_plan(row: dict) -> None:
       refuse; boolean markers must be the literal True; reparented_from
       must be a non-empty string; a marker row's identity_digest must be
       None (it asserts missing evidence, never an identity)."""
-    if row.get("site") not in _PLAN_SITES:
-        raise PolicyError(f"row site {row.get('site')!r} outside the "
+    # R11-2: PRESENCE is required SEPARATELY from value validity — the
+    # reviewer deleted keys and .get() silently accepted (and defaulted
+    # contributor_type). Every semantic field must be a PRESENT key;
+    # None is a legal VALUE only where stated.
+    required = ("site", "identity_digest", "evidence_ref_digest",
+                "contributor_type", "contributor_ref", "payload")
+    missing = [f for f in required if f not in row]
+    if missing:
+        raise PolicyError(f"plan row is missing required field(s) "
+                          f"{missing} — presence is part of the contract "
+                          f"(R11-2); None is a value, absence is not")
+    if row["site"] not in _PLAN_SITES:
+        raise PolicyError(f"row site {row['site']!r} outside the "
                           f"closed plan-site set {_PLAN_SITES}")
     for field in ("identity_digest", "evidence_ref_digest"):
-        d = row.get(field)
+        d = row[field]
         if d is not None and not (isinstance(d, str)
                                   and re.fullmatch(r"[0-9a-f]{64}", d)):
             raise PolicyError(f"{field} {d!r} is neither None nor a "
                               f"64-hex digest")
-    if row.get("contributor_type", "edge") != "edge":
-        raise PolicyError(f"contributor_type {row.get('contributor_type')!r} "
-                          f"outside the closed set {{'edge'}}")
-    if not (isinstance(row.get("contributor_ref"), str)
-            and row.get("contributor_ref")):
+    if row["contributor_type"] != "edge":
+        raise PolicyError(f"contributor_type {row['contributor_type']!r} "
+                          f"outside the closed set {{'edge'}} — and it is "
+                          f"never defaulted (R11-2)")
+    if not (isinstance(row["contributor_ref"], str)
+            and row["contributor_ref"]):
         raise PolicyError("every plan row NAMES its contributor — "
                           "contributor_ref must be a non-empty string "
                           "(R10-3: the missing-direct-ref cell)")
-    payload = row.get("payload")
+    payload = row["payload"]
     if not isinstance(payload, dict):
         raise PolicyError("row payload must be a mapping")
     shapes = _PAYLOAD_SHAPES[row["site"]]
@@ -806,12 +869,12 @@ def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
     row never projects."""
     validate_row_plan(row)
     parts = [b"veracium.import-contribution-row.v2"]
-    for v in (user_id, survivor_type, survivor_id, row.get("site"),
-              row.get("identity_digest"),
-              row.get("evidence_ref_digest"),
-              row.get("contributor_type", "edge"),
-              row.get("contributor_ref"),
-              canonical_payload(row.get("payload"))):
+    for v in (user_id, survivor_type, survivor_id, row["site"],
+              row["identity_digest"],
+              row["evidence_ref_digest"],
+              row["contributor_type"],     # never defaulted (R11-2)
+              row["contributor_ref"],
+              canonical_payload(row["payload"])):
         parts.append(_framed(b"\x00" if v is None
                              else b"\x01" + str(v).encode("utf-8")))
     return hashlib.sha256(b"".join(parts)).hexdigest()

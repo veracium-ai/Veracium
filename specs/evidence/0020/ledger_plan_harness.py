@@ -161,6 +161,7 @@ def run():
                                          {"site": "imported-absorption",
                                           "identity_digest": "0" * 64,
                                           "evidence_ref_digest": None,
+                                          "contributor_type": "edge",
                                           "payload": {"reconstructed": True},
                                           "op_key": IMPORT_OP,
                                           "contributor_ref": "r1"}))
@@ -168,6 +169,7 @@ def run():
                                          {"site": "imported-absorption",
                                           "identity_digest": "1" * 64,
                                           "evidence_ref_digest": None,
+                                          "contributor_type": "edge",
                                           "payload": {"reconstructed": True},
                                           "op_key": IMPORT_OP,
                                           "contributor_ref": "r2"}))
@@ -188,6 +190,7 @@ def run():
         for surv, cref in collide_cases:
             row = {"site": "imported-absorption", "identity_digest": "3" * 64,
                    "evidence_ref_digest": None, "contributor_ref": cref,
+                   "contributor_type": "edge",
                    "payload": {"reconstructed": True},
                    "op_key": import_row_op_key(IMPORT_OP, surv, cref)}
             conn.execute(INSERT, _stored("u1", "edge", surv, row))
@@ -206,6 +209,7 @@ def run():
         direct_row = {"site": "imported-absorption",
                       "identity_digest": "4" * 64,
                       "evidence_ref_digest": None, "contributor_ref": "A2",
+                      "contributor_type": "edge",
                       "payload": {"reconstructed": True}}
         flat_row = dict(direct_row, site="scope-attribution",
                         payload={"flattened": True, "reconstructed": True})
@@ -279,6 +283,17 @@ def run():
                         _vrp(dict(base, **{field: bad}))
                     except _PE:
                         refused += 1
+        # R11-2: DELETION cells — presence is separate from value
+        # validity (the reviewer deleted keys; .get() accepted them)
+        for base in (GOOD, ATTR_GOOD):
+            for field in ("site", "identity_digest", "evidence_ref_digest",
+                          "contributor_type", "contributor_ref", "payload"):
+                tried += 1
+                gone = {k: v for k, v in base.items() if k != field}
+                try:
+                    _vrp(gone)
+                except _PE:
+                    refused += 1
         # the cross-field cells the matrix's single-field sweep can't hit
         for combo in (
             dict(ATTR_GOOD, payload={"closure": "incomplete"}),  # id set
@@ -303,6 +318,7 @@ def run():
         # (4) NULL-digest contributor dedup via the deterministic PK
         null_row = {"site": "imported-absorption", "identity_digest": None,
                     "evidence_ref_digest": None,
+                    "contributor_type": "edge",
                     "payload": {"reconstructed": True},
                     "op_key": f"{IMPORT_OP}:W:unid-1",
                     "contributor_ref": "unid-1"}
@@ -364,6 +380,16 @@ def run():
                      "payload": _j.loads(pay), "op_key": ok})
             return m
         before = _load(conn)
+        _flat_keys0 = [r["op_key"] for r in before.get("C", [])
+                       if (r["payload"] or {}).get("flattened")]
+        def _raw0(c, keys):
+            q = ",".join("?" * len(keys))
+            return {r[0]: r for r in c.execute(
+                f"SELECT op_key, id, user_id, survivor_type, survivor_id,"
+                f" site, identity_digest, evidence_ref_digest, payload,"
+                f" created_at, contributor_type, contributor_ref FROM"
+                f" contribution_ledger WHERE op_key IN ({q})", keys)}
+        pre_prune_raw = _raw0(conn, _flat_keys0)
         assert derive_absorbed_by("A", before) == "B"
         assert derive_absorbed_by("B", before) == "C"
         # the retention contract's prune of B — INSERT-ONLY (R10-1:
@@ -385,10 +411,23 @@ def run():
         assert inserted == 1, f"expected ONE new reparented row, {inserted}"
         reloaded = _load(conn)
         assert "B" not in reloaded
-        # the old flattened copy is still there, byte-identical (immutable)
-        assert any((r["payload"] or {}).get("flattened")
-                   and not (r["payload"] or {}).get("reconstructed") is None
-                   for r in reloaded["C"]) or True
+        # R11-3 (the reviewer caught an `... or True` tautology here):
+        # the old flattened copy must be BYTE-IDENTICAL — compare the
+        # full stored tuple by op_key, before vs after the prune
+        def _raw(c, keys):
+            q = ",".join("?" * len(keys))
+            return {r[0]: r for r in c.execute(
+                f"SELECT op_key, id, user_id, survivor_type, survivor_id,"
+                f" site, identity_digest, evidence_ref_digest, payload,"
+                f" created_at, contributor_type, contributor_ref FROM"
+                f" contribution_ledger WHERE op_key IN ({q})", keys)}
+        flat_keys = [r["op_key"] for r in before.get("C", [])
+                     if (r["payload"] or {}).get("flattened")]
+        assert flat_keys, "no pre-prune flattened copy to compare"
+        raw_after = _raw(conn, flat_keys)
+        assert raw_after == pre_prune_raw, (
+            "the flattened copy CHANGED across the prune — immutability "
+            "violated")
         flat_copies = [r for r in reloaded["C"]
                        if (r["payload"] or {}).get("flattened")]
         rep_rows = [r for r in reloaded["C"]
@@ -411,12 +450,14 @@ def run():
             ("B2", {"site": "imported-absorption",
                     "identity_digest": "7" * 64,
                     "evidence_ref_digest": None, "contributor_ref": "A9",
+                    "contributor_type": "edge",
                     "payload": {"reconstructed": True},
                     "op_key": import_row_op_key("op-777777777777",
                                                 "B2", "A9")}),
             ("C2b", {"site": "imported-absorption",
                      "identity_digest": "8" * 64,
                      "evidence_ref_digest": None, "contributor_ref": "B2",
+                     "contributor_type": "edge",
                      "payload": {"reconstructed": True},
                      "op_key": import_row_op_key("op-777777777777",
                                                  "C2b", "B2")}),
@@ -470,6 +511,7 @@ def run():
             w, e = _insert_plan(c, {"Z": [{
                 "site": "imported-absorption", "identity_digest": "2" * 64,
                 "evidence_ref_digest": None,
+                "contributor_type": "edge",
                 "payload": {"reconstructed": True},
                 "op_key": f"op-cc00cc00cc00:Z:zz-1",
                 "contributor_ref": "zz-1"}]}, skip_existing=True)
