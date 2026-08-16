@@ -1,0 +1,9 @@
+PASS [real-ddl] 4 DDL statements extracted from the LIVE store (table + indexes, incl. the UNIQUE partial op_key index)
+PASS [real-ddl] the amendment's EXACT ALTERs applied over the extracted schema (contributor_type, contributor_ref — nullable; legacy rows unaffected)
+PASS [op-key] ONE import operation, THREE rows (C carries B+A transitively, B carries A) inserted under per-row canonical keys — the accepted UNIQUE partial index ACCEPTS the plan
+PASS [op-key] the v9 one-key-per-plan design raises IntegrityError on row 2 (the reviewer's executed break, kept as a regression) — per-row keys are REQUIRED, not stylistic
+PASS [null-dedup] an unidentified contributor (identity_digest NULL) deduplicates by the deterministic plan_row_id PRIMARY KEY — a re-minted op key does not evade it; SQLite NULL-uniqueness decides nothing
+PASS [idempotent] RE-IMPORT under a new minted operation: 3 rows detected exact-equal by deterministic id, 0 written (contributions=0, contributions_existing=3)
+PASS [concurrent] two connections, same plan, BEGIN IMMEDIATE: one writes, one observes-and-skips — 1 row total, no duplicates, no partial state
+PASS [reopen] rows persist across close/reopen and the LEDGER-RESIDENT closure classifies the A→B→C survivor UNRESOLVED from stored rows alone (typed refs; no records, no notes needed — R8-1 closed)
+ledger plan harness: 8 checks pass against the EXTRACTED real DDL + the amendment ALTERs
