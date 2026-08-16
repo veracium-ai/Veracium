@@ -6,4 +6,8 @@ PASS evaluated False (the ONLY skip) -> unqualified
 PASS evaluated True -> qualified
 PASS sibling-prefix shadow path -> error
 PASS preloaded foreign module -> error
-verifier fault matrix: 8 classifications hold — no fault becomes a successful skip
+PASS mutation baseline: gates clean on the real carriers
+PASS mutation: corrupted matrix row -> gate FAILS
+PASS mutation: deleted header dependency -> gate FAILS
+PASS mutation: retired formulation reintroduced -> gate FAILS
+verifier fault matrix: 12 classifications hold — no fault becomes a successful skip; gate mutations FAIL
