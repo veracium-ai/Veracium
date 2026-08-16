@@ -354,7 +354,7 @@ def is_legacy_derivative(record: dict) -> bool:
     `evidence_ref` is its operation id, `op-<12 hex>`; a legacy (pre-0021)
     output still carries the copied groupable identity."""
     return (record.get("author") == "system"
-            and bool(_OP_ID.match(str(record.get("evidence_ref", ""))))
+            and bool(_OP_ID.fullmatch(str(record.get("evidence_ref", ""))))
             and record.get("source_id") is not None)
 
 
@@ -930,7 +930,7 @@ def validate_row_plan(row: dict, context: str, *, op: str,
     # EQUAL the context's derivation over (op, survivor, contributor) —
     # a caller cannot select an arbitrary, cross-context, or null key.
     if not (isinstance(op, str)
-            and re.match(WRITER_CONTEXTS[context]["op_re"], op)):
+            and re.fullmatch(WRITER_CONTEXTS[context]["op_re"], op)):
         raise PolicyError(
             f"operation id {op!r} is outside writer context {context!r}'s "
             f"domain {WRITER_CONTEXTS[context]['op_re']!r} (R13-1)")
@@ -985,7 +985,7 @@ def row_op_key(op: str, site: str, survivor_id: str,
     outright. R10-1 generalized the site token: import ops key
     imported-absorption rows AND scope-attribution copies; prune ops key
     scope-attribution reparented/marker rows."""
-    if not _OP_ID.match(op or ""):
+    if not _OP_ID.fullmatch(op or ""):
         raise PolicyError(f"op must be op-<12hex>, got {op!r}")
     if site not in _PLAN_SITES:
         raise PolicyError(f"op-key site token {site!r} outside {_PLAN_SITES}")
@@ -1003,7 +1003,7 @@ def native_row_op_key(op_id: str, survivor_id: str,
     sit in a colon-delimited prefix — it is FRAMED INTO the digest with
     the pair. Prefix = the colon-free site token alone; injective by
     framing; unique-index-safe."""
-    if not re.match(r"^sup-.+$", op_id or ""):
+    if not re.fullmatch(r"sup-.+", op_id or ""):
         raise PolicyError(f"native op id must be sup-<edge-id>, got "
                           f"{op_id!r}")
     h = hashlib.sha256(b"veracium.native-attribution-op-key.v1"
@@ -1035,7 +1035,8 @@ def construct_plan_row(context: str, op: str, survivor_id: str, *,
     ctx = WRITER_CONTEXTS.get(context)
     if ctx is None:
         raise PolicyError(f"unknown writer context {context!r}")
-    if not (isinstance(op, str) and re.match(ctx["op_re"], op)):
+    if not (isinstance(op, str)
+            and re.fullmatch(ctx["op_re"], op)):
         raise PolicyError(f"operation id {op!r} outside context "
                           f"{context!r}'s domain (R13-1)")
     key = (native_row_op_key(op, survivor_id, contributor_ref)
@@ -1127,7 +1128,7 @@ def prune_absorbed_record(record_id: str, ledger_rows: dict,
 
     Pruning a record with NO canonical absorber just drops its rows.
     Returns the new ledger_rows mapping; inputs are never mutated."""
-    if not _OP_ID.match(prune_op or ""):
+    if not _OP_ID.fullmatch(prune_op or ""):
         raise PolicyError(f"prune_op must be op-<12hex>, got {prune_op!r}")
     out = {k: [dict(r, payload=dict(r.get("payload") or {}))
                for r in v] for k, v in ledger_rows.items()}
@@ -1192,7 +1193,7 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
     pre-inheritance base image is not in the export and cannot be
     inferred; stated as the imported-absorption site's honest limit —
     R6-2)."""
-    if not _OP_ID.match(import_op or ""):
+    if not _OP_ID.fullmatch(import_op or ""):
         raise PolicyError(f"import_op must be the minted op-<12hex> "
                           f"operation id (R7-3/R8-3), got {import_op!r}")
     id_remap = id_remap or {}

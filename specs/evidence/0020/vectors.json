@@ -2862,5 +2862,22 @@
    }
   },
   "expect": "PolicyError"
+ },
+ {
+  "name": "row_op_trailing_newline_refuses",
+  "kind": "row_identity",
+  "survivor": "S",
+  "op": "op-abcdef012345\n",
+  "a": {
+   "site": "imported-absorption",
+   "identity_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+   "evidence_ref_digest": null,
+   "contributor_ref": "A",
+   "contributor_type": "edge",
+   "payload": {
+    "reconstructed": true
+   }
+  },
+  "expect": "PolicyError"
  }
 ]

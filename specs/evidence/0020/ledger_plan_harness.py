@@ -325,6 +325,39 @@ def run():
                        ("import", "reconstructed"),
                        ("import", "flattened+reconstructed"),
                        ("prune", "reparented"), ("prune", "marker")}
+        # ACCEPTANCE OBLIGATION 1 (round 14): the FIVE VALID cells are
+        # constructor-BUILT (incl. the native-context call) and INSERTED
+        # at the extracted-real-DDL boundary — the reviewer built this
+        # oracle independently at acceptance; it now ships
+        from reference_scope import construct_plan_row as _cpr14
+        built5 = 0
+        for ctx in ("native", "import", "prune"):
+            for cls, (site, payload, dig) in CLASS_ROWS.items():
+                if (ctx, cls) not in VALID_CELLS:
+                    continue
+                vrow = _cpr14(ctx, OPS[ctx], f"orc-{ctx}-{cls}",
+                              site=site, identity_digest=dig,
+                              evidence_ref_digest=None,
+                              contributor_ref=f"xo-{cls}",
+                              payload=payload)
+                conn.execute(INSERT, _stored(
+                    "u1", "edge", f"orc-{ctx}-{cls}", vrow,
+                    context=ctx, op=OPS[ctx]))
+                built5 += 1
+        conn.commit()
+        assert built5 == 5, built5
+        stored5 = conn.execute(
+            "SELECT COUNT(*) FROM contribution_ledger WHERE survivor_id "
+            "LIKE 'orc-%'").fetchone()[0]
+        assert stored5 == 5, stored5
+        checks.append("[construction] THE FIVE-VALID-CELL ORACLE: every "
+                      "valid (writer, payload-class) cell — native/"
+                      "flattened (the native-context constructor call, "
+                      "sup-domain op), import/reconstructed, import/"
+                      "flattened+reconstructed, prune/reparented, prune/"
+                      "marker — constructor-BUILT and INSERTED against "
+                      "the extracted real DDL: 5/5 stored, keys derived "
+                      "in-primitive (acceptance obligation 1, shipped)")
         for ctx in ("native", "import", "prune"):
             for cls, (site, payload, dig) in CLASS_ROWS.items():
                 if (ctx, cls) in VALID_CELLS:
@@ -358,6 +391,13 @@ def run():
         try:
             _vrp(GOOD, "import", op="sup-not-an-import-op",
                  survivor_id="M")
+        except _PE:
+            refused += 1
+        # ACCEPTANCE OBLIGATION 2: the trailing-newline op id (re.match
+        # with $ accepted it; fullmatch refuses) — the cell is retained
+        tried += 1
+        try:
+            _vrp(GOOD, "import", op=IMPORT_OP + "\n", survivor_id="M")
         except _PE:
             refused += 1
         for combo, ctx in (
