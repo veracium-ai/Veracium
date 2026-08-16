@@ -251,3 +251,16 @@ def migrate_store(path: str, *,
     finally:
         if not closed:
             conn.close()
+
+
+# --------------------------------------------------------------------------
+# The 0018 release-migration orchestrator (specs/0018 §7a): implemented in the
+# sibling `release_migration` module and re-exported here as the public
+# surface. `migrate_store` above stays 0013's ordinary audited operation; the
+# orchestrator wraps it with the preflight matrix, mint/retry, attestation,
+# result carrier, terminal readback, and the loud audit escapes.
+from .release_migration import (  # noqa: E402
+    MigrationAttestation, MigrationAuditReadError, MigrationAuditWriteError,
+    MigrationAuthority, MigrationResult, MintError, PreflightResolution,
+    ReadbackResult, TerminalFacts, mint_release_authority, read_terminal,
+    run_release_migration)

@@ -1566,3 +1566,328 @@ def test_gate_late_authority_getter_never_strands_the_operation():
     assert out == "migration-quiescence-required"
     assert sqlite3.connect(p).execute(
         "PRAGMA user_version").fetchone()[0] == 1
+
+
+# ==========================================================================
+# Gate 3 (0018 I15): the complete MigrationResult §4e domain vs an
+# independent oracle
+# ==========================================================================
+# The 0018 orchestrator's result carrier joins the gate-1 pattern: a
+# separately-written legality oracle over the ENTIRE (outcome, store_changed,
+# transaction_committed, resulting_state, resulting_version) domain at this
+# release's endpoints (7 → 8), diffed exhaustively against the validating
+# constructor. Enumeration has no cell to overlook; when the §4e table
+# changes, update BOTH and let the diff say exactly which cells moved.
+
+import os  # noqa: E402
+
+import veracium.store.release_migration as rm  # noqa: E402  (production)
+
+_RM_FROM, _RM_TO = 7, 8
+
+# INDEPENDENT copy of the returnable vocabulary — written out literally, NOT
+# read from the module (a wrong vocabulary must be able to disagree here).
+_ORACLE_RETURNABLE = {
+    "created", "current", "adopted", "migrated",
+    # 0007's closed reasons
+    "invalid-version", "newer", "foreign-shape", "stamped-shape-mismatch",
+    "adoption-refused", "locked", "unsupported-sqlite", "migration-required",
+    "unsupported-migration",
+    # 0013's closed failures
+    "migration-evidence-missing", "migration-failed",
+    "migration-result-mismatch", "migration-quiescence-required",
+    "migration-source-missing", "migration-audit-unavailable",
+    "migration-audit-state-unknown", "invalid-store", "store-unopenable",
+    "invalid-request", "internal-error",
+    # the two 0018 §4h members
+    "unsupported-base", "mint-contention",
+}
+
+
+def _result_oracle(outcome, ch, co, state, ver):
+    """Independent §4e legality: the preflight fixed rows for the two new
+    members, the fixed no-record rows for the two audit outcomes, and the
+    DEFERENCE law (flat 0013 terminal-facts legality at 7 → 8, reusing gate
+    1's independently-written `_ORACLE_OUTCOME_STATES`) for everything else."""
+    if outcome not in _ORACLE_RETURNABLE:
+        return False
+    if not (ver is None or type(ver) is int):    # bools are not versions
+        return False
+    if outcome == "unsupported-base":
+        return (ch is False and co is False and state == "source"
+                and ver in (1, 2, 3, 4, 5, 6))
+    if outcome in ("mint-contention", "migration-audit-unavailable",
+                   "migration-audit-state-unknown"):
+        return (ch, co, state, ver) == (False, False, "unknown", None)
+    if state not in _STATES:
+        return False
+    if ch != co:
+        return False
+    if ch is None:
+        if not (state == "unknown" and ver is None):
+            return False
+    elif ch is True:
+        if not (state == "destination" and ver == _RM_TO):
+            return False
+    else:
+        if state == "destination":
+            if ver != _RM_TO:
+                return False
+        elif state == "source":
+            if ver != _RM_FROM:
+                return False
+        else:
+            if ver is not None:
+                return False
+    if outcome == "migrated" and not (ch is True and co is True):
+        return False
+    if state not in _ORACLE_OUTCOME_STATES.get(outcome, {"unknown"}):
+        return False
+    return True
+
+
+def test_migration_result_matches_the_independent_oracle():
+    """Every cell of the whole small domain: the validating constructor's
+    verdict must equal the independent oracle's. This pins the entire §4e
+    table, incl. all six `unsupported-base` rows, both `current` rows, both
+    `migration-source-missing` forms, the four no-record rows, the tri-state
+    delegated cells, and every rejection (`package-inconsistent`, made-up
+    outcomes, wrong versions, bool-typed versions)."""
+    outcomes = sorted(_ORACLE_RETURNABLE) + ["package-inconsistent",
+                                             "totally-made-up"]
+    states = sorted(_STATES) + ["bogus-state"]
+    tri = [True, False, None]
+    vers = [None, 1, 2, 5, 6, _RM_FROM, _RM_TO, 9, True]
+    disagreements = []
+    total = 0
+    for outcome in outcomes:
+        for ch in tri:
+            for co in tri:
+                for state in states:
+                    for ver in vers:
+                        total += 1
+                        try:
+                            rm.MigrationResult(outcome, ch, co, state, ver,
+                                               "d")
+                            got = True
+                        except (ValueError, TypeError):
+                            got = False
+                        want = _result_oracle(outcome, ch, co, state, ver)
+                        if got != want:
+                            disagreements.append(
+                                (outcome, ch, co, state, ver, got, want))
+    assert total > 5000                  # the domain is genuinely enumerated
+    assert not disagreements, (
+        f"{len(disagreements)} constructor/oracle disagreements, e.g. "
+        f"{disagreements[:5]}")
+
+
+def test_0018_terminal_facts_oracle_extension():
+    """The I20 oracle extension: the four exclusion cells and the
+    `package-inconsistent` inclusion cell, against the PRODUCTION
+    TerminalFacts (whose gate is `TERMINAL_OUTCOMES`, the explicit split)."""
+    for outcome in ("unsupported-base", "mint-contention",
+                    "migration-audit-unavailable",
+                    "migration-audit-state-unknown"):
+        assert rm.TerminalFacts(outcome, _RM_FROM, _RM_TO, False, False,
+                                "unknown", None).problems(), outcome
+    assert not rm.TerminalFacts("package-inconsistent", _RM_FROM, _RM_TO,
+                                None, None, "unknown", None).problems()
+
+
+# ==========================================================================
+# Gate 4 (0018 I17): fault injections at the orchestrator's NEW seams —
+# the readback boundary, the no-record routing branch, the mint-retry loop
+# ==========================================================================
+
+_0018_ESCAPES = (rm.MigrationAuditWriteError, rm.MigrationAuditReadError,
+                 sv.PackageConsistencyError)
+
+
+def _v7_store():
+    p = tempfile.mktemp(suffix=".db")
+    c = sqlite3.connect(p)
+    for o in sv.SCHEMAS[7]:
+        c.execute(o.ddl)
+    c.execute("PRAGMA user_version = 7")
+    c.commit()
+    c.close()
+    return p
+
+
+def _swap(obj, name, fn):
+    real = getattr(obj, name)
+    setattr(obj, name, fn)
+    return lambda: setattr(obj, name, real)
+
+
+def _rm_raiser(exc):
+    def f(*a, **k):
+        raise exc
+    return f
+
+
+class _HostileRB(rm.ReadbackResult):
+    pass
+
+
+class _SpoofOpen(sv.OpenResult):
+    def __str__(self):
+        return "migrated"
+
+
+def _expect_outcome(want):
+    def check(res, exc):
+        if exc is not None:
+            return f"want outcome {want!r}, got escape {type(exc).__name__}"
+        if res.outcome != want:
+            return f"want outcome {want!r}, got {res.outcome!r}"
+        return None
+    return check
+
+
+def _expect_read_error(failure):
+    def check(res, exc):
+        if not isinstance(exc, rm.MigrationAuditReadError):
+            return (f"want MigrationAuditReadError, got res={res!r} "
+                    f"exc={exc!r}")
+        if exc.failure != failure:
+            return f"want failure {failure!r}, got {exc.failure!r}"
+        return None
+    return check
+
+
+def _expect_write_error(res, exc):
+    if not isinstance(exc, rm.MigrationAuditWriteError):
+        return f"want MigrationAuditWriteError, got res={res!r} exc={exc!r}"
+    if exc.audit_committed is not False:
+        return f"want audit_committed=False, got {exc.audit_committed!r}"
+    return None
+
+
+def _expect_package_escape(res, exc):
+    if not isinstance(exc, sv.PackageConsistencyError):
+        return f"want PackageConsistencyError, got res={res!r} exc={exc!r}"
+    if getattr(exc, "readback_route", None) not in ("recorded", "mismatched",
+                                                    "missing", "malformed"):
+        return f"post-mint escape lacks a readback route"
+    return None
+
+
+# (name, install -> cleanup, expect(res, exc) -> error or None)
+_0018_INJECTIONS = [
+    # --- the readback boundary seam ---------------------------------------
+    ("readback-raises",
+     lambda: _swap(rm, "read_terminal",
+                   _rm_raiser(RuntimeError("readback boom"))),
+     _expect_read_error("malformed")),
+    ("readback-wrong-type-return",
+     lambda: _swap(rm, "read_terminal", lambda op, *, audit_path: "bogus"),
+     _expect_read_error("malformed")),
+    ("readback-hostile-subclass-return",
+     lambda: _swap(rm, "read_terminal",
+                   lambda op, *, audit_path: _HostileRB("absent", None, ())),
+     _expect_read_error("malformed")),
+    # --- the no-record routing branch -------------------------------------
+    ("readback-absent-under-a-record-guaranteed-outcome",
+     lambda: _swap(rm, "read_terminal",
+                   lambda op, *, audit_path: rm.ReadbackResult("absent", None,
+                                                               ())),
+     _expect_read_error("missing")),
+    ("attempted-write-fails-inside-the-transaction",
+     lambda: _swap(rm, "_write_attempted",
+                   _rm_raiser(OSError("attempted-row disk failure"))),
+     _expect_outcome("migration-audit-unavailable")),
+    ("terminal-write-fails-after-the-operation",
+     lambda: _swap(rm, "_write_terminal",
+                   _rm_raiser(OSError("terminal disk failure"))),
+     _expect_write_error),
+    # --- the mint-retry loop ----------------------------------------------
+    ("mint-fails-three-times",
+     lambda: _swap(rm, "mint_release_authority",
+                   _rm_raiser(rm.MintError("source-changed", "forced"))),
+     _expect_outcome("mint-contention")),
+    ("mint-raises-a-raw-defect",
+     lambda: _swap(rm, "mint_release_authority",
+                   _rm_raiser(RuntimeError("mint defect"))),
+     _expect_outcome("internal-error")),
+    # --- the delegated kernel boundary ------------------------------------
+    ("kernel-DatabaseError",
+     lambda: _swap(__import__("veracium.store.migration",
+                              fromlist=["migrate_store"]), "migrate_store",
+                   _rm_raiser(sqlite3.DatabaseError("kernel failure"))),
+     _expect_outcome("migration-failed")),
+    ("kernel-raw-defect",
+     lambda: _swap(__import__("veracium.store.migration",
+                              fromlist=["migrate_store"]), "migrate_store",
+                   _rm_raiser(AssertionError("library bug"))),
+     _expect_outcome("internal-error")),
+    ("kernel-package-escape",
+     lambda: _swap(__import__("veracium.store.migration",
+                              fromlist=["migrate_store"]), "migrate_store",
+                   _rm_raiser(sv.PackageConsistencyError("kernel break"))),
+     _expect_package_escape),
+    ("kernel-returns-a-bare-string",
+     lambda: _swap(__import__("veracium.store.migration",
+                              fromlist=["migrate_store"]), "migrate_store",
+                   lambda path, **kw: "migrated"),
+     _expect_outcome("internal-error")),
+    ("kernel-returns-a-spoofed-subclass",
+     lambda: _swap(__import__("veracium.store.migration",
+                              fromlist=["migrate_store"]), "migrate_store",
+                   lambda path, **kw: _SpoofOpen(
+                       "current", store_changed=True,
+                       transaction_committed=True, resulting_version=8)),
+     _expect_outcome("internal-error")),
+]
+
+
+@pytest.mark.parametrize("name,install,expect", _0018_INJECTIONS,
+                         ids=[i[0] for i in _0018_INJECTIONS])
+def test_every_0018_fault_seam_preserves_the_invariants(name, install,
+                                                        expect):
+    """Inject a fault at one orchestrator seam and assert the universal
+    invariants: the result is a closed returnable outcome OR one of the THREE
+    named escapes (nothing else leaks), every durable terminal record is a
+    valid production TerminalFacts, and a success outcome is never silent —
+    `migrated`/`current` require the store at v8 with a bound record."""
+    import json as _json
+    p = _v7_store()
+    att = rm.MigrationAttestation(quiesced=True, backup_ref="backup-1")
+    cleanup = install()
+    res, exc = None, None
+    try:
+        res = rm.run_release_migration(p, host_attestation=att)
+    except BaseException as e:               # noqa: BLE001 — the point
+        exc = e
+    finally:
+        cleanup()
+
+    errors = []
+    if exc is not None and not isinstance(exc, _0018_ESCAPES):
+        errors.append(f"UN-NAMED escape {type(exc).__name__}: {exc}")
+    if res is not None and res.outcome not in rm.RETURNABLE_OUTCOMES:
+        errors.append(f"outcome {res.outcome!r} is not a closed member")
+    # every durable terminal record is a valid TerminalFacts
+    apath = rm.audit_trail_path(os.path.realpath(p))
+    if os.path.exists(apath):
+        trail = _json.load(open(apath))
+        for op, entry in trail.items():
+            t = entry.get("terminal")
+            if t is None:
+                continue
+            tf = rm.TerminalFacts(*(t.get(f) for f in rm._TERMINAL_FIELDS))
+            probs = rm.TerminalFacts.problems(tf)
+            if probs:
+                errors.append(f"invalid terminal record for {op}: {probs}")
+    # a success is never silent
+    if res is not None and res.outcome in ("migrated", "current"):
+        uv = sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0]
+        if uv != 8:
+            errors.append(f"success {res.outcome!r} but user_version={uv}")
+        if not os.path.exists(apath):
+            errors.append(f"success {res.outcome!r} with no audit trail")
+    spec = expect(res, exc)
+    if spec:
+        errors.append(spec)
+    assert not errors, f"[{name}] " + " | ".join(errors)

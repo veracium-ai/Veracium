@@ -259,30 +259,76 @@ def _forget(args) -> int:
 
 
 def _migrate(args) -> int:
-    """The operator-facing wrapper around the store's offline migration
-    (specs/0013 §5b). Deliberately UNGUARDED: every behaviour — version
-    resolution, the accepted-manifest gate, refusal reasons, audit events —
-    lives in `migrate_store`; this verb only finds the file, calls it, and
-    reports the structured result honestly (label + resulting version +
-    whether anything changed), never inferring facts from the label."""
+    """The operator-facing release-migration verb (specs/0018 §4g) —
+    re-dispositioned from the direct-`migrate_store` contract to the
+    orchestrator. Flags, never prompts: `--i-have-quiesced` and `--backup REF`
+    are the operator's explicit assertions, both required on the migration
+    path. Exit codes: 0 = migrated/current · 1 = every refusal outcome ·
+    2 = usage / invalid attestation · 3 = a named loud escape
+    (MigrationAuditWriteError / MigrationAuditReadError /
+    PackageConsistencyError). Reporting stays on the STRUCTURED result fields
+    (facts are never inferred from the label, 0013 r8-f3), and every printed
+    state on the escape paths is labeled recorded, derived, or unavailable."""
     import sys
-    if not os.path.exists(args.db):
-        print(f"no store at {args.db!r} — nothing to migrate", file=sys.stderr)
+    from .store import release_migration as rm
+    from .store.schema_version import PackageConsistencyError
+    if not args.i_have_quiesced or args.backup is None:
+        print("usage: veracium migrate --db X --i-have-quiesced --backup REF\n"
+              "the migration path requires BOTH flags: --i-have-quiesced (the "
+              "host's explicit\nassertion that all other access to the store "
+              "is stopped) and --backup REF\n(the pre-migration backup token "
+              "this operation made)", file=sys.stderr)
         return 2
-    from .store.migration import migrate_store
-    from .store.schema_version import StoreVersionError
+    if not rm.backup_token_ok(args.backup):
+        print(f"invalid --backup token {args.backup!r}: must match "
+              f"[A-Za-z0-9][A-Za-z0-9._+:/-]{{0,127}} "
+              f"(1-128 ASCII, no whitespace)", file=sys.stderr)
+        return 2
+    attestation = rm.MigrationAttestation(quiesced=True, backup_ref=args.backup)
     try:
-        r = migrate_store(args.db)
-    except StoreVersionError as e:
-        print(f"refused: {e}", file=sys.stderr)
-        return 1
-    if r.store_changed:
-        print(f"migrated {args.db} -> schema v{r.resulting_version} "
-              f"(committed: {r.transaction_committed})")
-    else:
-        print(f"{args.db} is already current (schema v{r.resulting_version}) — "
-              f"no change")
-    return 0
+        r = rm.run_release_migration(args.db, host_attestation=attestation)
+    except rm.MigrationAuditWriteError as e:
+        print(f"MigrationAuditWriteError: {e}", file=sys.stderr)
+        print(f"operation_id: {e.operation_id}", file=sys.stderr)
+        print(f"resulting_state: {e.resulting_state} (recorded)",
+              file=sys.stderr)
+        print(f"store_changed: {e.store_changed}  transaction_committed: "
+              f"{e.committed}  resulting_version: {e.resulting_version}  "
+              f"audit_committed: {e.audit_committed}", file=sys.stderr)
+        return 3
+    except rm.MigrationAuditReadError as e:
+        print(f"MigrationAuditReadError: {e}", file=sys.stderr)
+        print(f"operation_id: {e.operation_id}", file=sys.stderr)
+        print(f"resulting_state: {e.derived_resulting_state} "
+              f"(derived-from-outcome)", file=sys.stderr)
+        return 3
+    except PackageConsistencyError as e:
+        # the accepted package exception itself carries no facts and the CLI
+        # never invents them (0018 §4g, external R2-6/R3-5): the five routes.
+        route = getattr(e, "readback_route", "pre-mint")
+        print(f"PackageConsistencyError: {e}", file=sys.stderr)
+        if route == "pre-mint":
+            print("resulting_state: unavailable (pre-mint: no operation "
+                  "minted)", file=sys.stderr)
+        elif route == "recorded":
+            f = e.recorded_facts
+            print(f"resulting_state: {f.resulting_state} (recorded)",
+                  file=sys.stderr)
+            print(f"store_changed: {f.store_changed}  transaction_committed: "
+                  f"{f.transaction_committed}  resulting_version: "
+                  f"{f.resulting_version}", file=sys.stderr)
+        else:
+            print(f"resulting_state: unavailable (readback: {route})",
+                  file=sys.stderr)
+        return 3
+    print(f"outcome: {r.outcome}")
+    print(f"store_changed: {r.store_changed}  transaction_committed: "
+          f"{r.transaction_committed}")
+    print(f"resulting_state: {r.resulting_state}  resulting_version: "
+          f"{r.resulting_version}")
+    if r.diagnostic:
+        print(r.diagnostic)
+    return 0 if r.outcome in ("migrated", "current") else 1
 
 
 def main(argv=None) -> int:
@@ -331,11 +377,19 @@ def main(argv=None) -> int:
 
     mg = sub.add_parser(
         "migrate",
-        help="migrate a below-head store forward to the current schema version "
-             "(OFFLINE — quiesce all other access first; safe to run on a "
-             "current store, which is a no-op)")
+        help="run this release's migration on a store (OFFLINE — quiesce all "
+             "other access first; safe on a current store, which is a no-op). "
+             "Requires --i-have-quiesced and --backup REF. Exits 0 "
+             "migrated/current, 1 refused, 2 usage, 3 audit failure (loud)")
     mg.add_argument("--db", default="veracium.db",
                     help="SQLite store path (default: veracium.db)")
+    mg.add_argument("--i-have-quiesced", action="store_true",
+                    help="the operator's explicit assertion that every other "
+                         "process/connection using the store is stopped "
+                         "(specs/0013 §5b; asserted, never prompted for)")
+    mg.add_argument("--backup", metavar="REF", default=None,
+                    help="reference token of the pre-migration backup this "
+                         "operation made (1-128 ASCII, no whitespace)")
 
     fg = sub.add_parser("forget", help="irreversibly erase EVERYTHING stored for a user (compliance erasure)")
     fg.add_argument("--user", required=True, help="user id to erase")

@@ -277,3 +277,48 @@ falls back to a plain call — no error — if the endpoint doesn't support it.
 The default `SqliteStore` is embedded and zero-dependency. To back memory with
 Neo4j/Postgres, implement `veracium.store.base.Store` (all methods are per-`user_id`)
 and pass it as `store=`.
+
+## Migrating a store (`veracium migrate`)
+
+Release migrations are **offline** and operator-driven (specs/0013 §5b,
+specs/0018): quiesce every other process using the store, take a backup, then
+
+```
+veracium migrate --db PATH --i-have-quiesced --backup REF
+```
+
+Both flags are required on the migration path — they are the operator's
+explicit assertions (never prompted for): `--i-have-quiesced` states that all
+other access is stopped; `--backup REF` names the pre-migration backup this
+operation made (a token: 1–128 ASCII characters, no whitespace).
+
+This release migrates **v7 stores only**. Older bases take the two-release
+ladder (printed in the refusal): bases 1–5 — migrate to v6 on a ≤0.8.x
+release, then to v7 on a 0.9.x release, then run this release's migration;
+base 6 — migrate to v7 on a 0.9.x release first. A store already at v8 is a
+no-op (`current`); rebuildable index drift is repaired during opening and
+reported honestly as a committed change.
+
+Exit codes: **0** migrated/current · **1** every refusal (structured outcome,
+facts, and diagnostic on stdout) · **2** usage / invalid attestation ·
+**3** an audit failure surfaced loudly (`MigrationAuditWriteError` /
+`MigrationAuditReadError` / `PackageConsistencyError`) — exit 3 means the
+audit trail needs attention, never a silent success; every state printed on
+stderr is labeled `recorded`, `derived-from-outcome`, or `unavailable`.
+
+Each migration writes a durable per-store audit trail
+(`<store>.migration-audit.json`): the attempted event inside the migration
+transaction and an append-once terminal record carrying the operation's
+validated facts.
+
+Library callers use the same machinery directly:
+
+```python
+from veracium.store.migration import (MigrationAttestation,
+                                      run_release_migration)
+result = run_release_migration(
+    "veracium.db",
+    host_attestation=MigrationAttestation(quiesced=True, backup_ref="b-2026"))
+result.outcome              # "migrated" | "current" | a closed refusal
+result.resulting_version    # facts, never inferred from the label
+```
