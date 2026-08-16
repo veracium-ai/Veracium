@@ -39,6 +39,8 @@ from uuid import uuid4
 
 from .schema import (Disclosure, Edge, Episode, EvidenceAuthor, Provenance,
                      is_historical_id, to_historical_id)
+from .scope_linkage import (derive_absorbed_by, plan_row_id,
+                            reconstruct_absorption_rows)
 from .source_identity import resolve_origin
 from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 
@@ -53,6 +55,12 @@ FORMAT_VERSION = 7  # specs/0016 D2 (0019 rider A3): the source_type-less
                     # the bump makes it an honest version refusal. A ≤6
                     # file's provenance.source_type key is DROPPED on import
                     # (the record otherwise intact, §2c row 1).
+                    # specs/0021 §7b (the 0016/0018 rider): a v7 edge record
+                    # MAY carry `absorbed_by_id` — present iff the record is
+                    # an absorbed_duplicate with a unique CANONICAL ledger
+                    # row naming it (derive_absorbed_by, NEVER from notes);
+                    # importers consume it as 0020 §4a-iii's structured
+                    # carrier; files without it take the legacy note rule.
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
 
 # specs/0005 §4d — the PINNED default-path refusal warning (P10/P15). A bare
@@ -91,6 +99,29 @@ def export_memory(store, user_id: str, path) -> dict:
             prov["origin"] = resolve_origin(prov.get("origin"), local)
         return rec
 
+    # specs/0021 §7b — the FORMAT-7 `absorbed_by_id` rider (0016/0018
+    # amendment): for every absorbed_duplicate record, derive the structured
+    # reverse link from the ledger's TYPED `contributor_ref` rows via the
+    # canonical-class algorithm (`derive_absorbed_by` — direct or reparented
+    # rows only; plain flattened copies and markers never), NEVER from notes.
+    # Exactly one canonical row → the field is written; zero (incl. the
+    # disclosed legacy class: pre-v8 rows carry NULL contributor_ref and
+    # never match) → the field is OMITTED and the record travels legacy;
+    # more than one → ExportLinkageError refuses the WHOLE export — derived
+    # BEFORE the file opens, so a corrupt ledger never yields a partial file.
+    absorbed_by: dict = {}
+    for e in edges:
+        if e.invalidation_reason != "absorbed_duplicate":
+            continue
+        ledger_rows: dict = {}
+        for row in store.contributions_naming(user_id, e.id):
+            if row["survivor_type"] != "edge":
+                continue
+            ledger_rows.setdefault(row["survivor_id"], []).append(row)
+        winner = derive_absorbed_by(e.id, ledger_rows)   # >1 canonical raises
+        if winner is not None:
+            absorbed_by[e.id] = winner
+
     path = Path(path)
     with path.open("w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": FORMAT_VERSION,
@@ -98,8 +129,10 @@ def export_memory(store, user_id: str, path) -> dict:
                             "exported_at": datetime.now(timezone.utc).isoformat()})
                 + "\n")
         for e in edges:
-            f.write(json.dumps({"record": "edge", **_materialise(json.loads(e.model_dump_json()))})
-                    + "\n")
+            rec = _materialise(json.loads(e.model_dump_json()))
+            if e.id in absorbed_by:
+                rec["absorbed_by_id"] = absorbed_by[e.id]
+            f.write(json.dumps({"record": "edge", **rec}) + "\n")
         for ep in episodes:
             rec = _materialise(json.loads(ep.model_dump_json()))
             # specs/0014 §4c (R7-3): the index serializes with EXCLUDE-NONE
@@ -210,7 +243,16 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     (§4f-ii) and topology-validated BEFORE any persistent write, then committed as
     one atomic plan via `commit_outcome_import_plan` — so a valid chain A is never
     left persisted when a later chain B refuses, and the commit linearizes against
-    concurrent `append_outcome_if_head` (no branch, no partial import). Returns counts."""
+    concurrent `append_outcome_if_head` (no branch, no partial import). Returns counts.
+
+    specs/0020 §4a-iii / 0021 §7b: absorption linkage is RECONSTRUCTED
+    PRE-COMMIT from the file's own records (structured `absorbed_by_id`
+    first; the decidable legacy note rule otherwise; missing/unresolvable/
+    ambiguous/cyclic linkage raises `ImportLinkageError` before any write),
+    and the reconstructed contribution rows ride the SAME atomic commit
+    through the amended 0009 primitive. The returned dict gains
+    ``contributions`` (rows written) and ``contributions_existing`` (rows
+    skipped as plan-row-id-equal on an idempotent re-import)."""
     # specs/0005 §4a — the two argument gates, in order, BEFORE the file is
     # opened: the closed bool predicate (P13), then mutual exclusion (P5).
     if type(restore) is not bool:
@@ -248,6 +290,29 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
         rec["user_id"] = target_uid
         (edge_recs if marker == "edge" else ep_recs).append(rec)
 
+    # (1b) specs/0020 §4a-iii — the LINKAGE SNAPSHOT, taken over the file's
+    # OWN id universe BEFORE the cross-user remap mutates ids (winner
+    # resolution is defined in the file's universe; `id_remap` translates
+    # only the OUTPUT keys/refs). The FORMAT-7 rider field is DETACHED from
+    # the record here — it is a linkage carrier consumed by reconstruction,
+    # never persisted state — and per 0006 I10 a pre-v7 envelope's
+    # `absorbed_by_id` is STRIPPED, never trusted (the file takes the legacy
+    # note rule); identity fields follow the same I10 rule as gate (2b).
+    linkage_recs: list = []
+    for rec in edge_recs:
+        prov = rec.get("provenance")
+        prov = prov if isinstance(prov, dict) else {}
+        ab = rec.pop("absorbed_by_id", None)
+        linkage_recs.append({
+            "id": rec.get("id"),
+            "invalidation_reason": rec.get("invalidation_reason"),
+            "note": rec.get("note"),
+            "absorbed_by_id": (ab if src_version >= 7 else None),
+            "origin": (prov.get("origin") if src_version >= 4 else None),
+            "source_id": (prov.get("source_id") if src_version >= 4 else None),
+            "evidence_ref": prov.get("evidence_ref"),
+        })
+
     # (2) cross-user remap — a COPY, not a move: edge ids are global primary keys, so
     # importing another user's ids would collide/overwrite (and add_edge refuses a
     # user_id change, specs/0008 §6d). Mint fresh ids and remap EVERY reference:
@@ -278,6 +343,29 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             rec["edge_id"] = _remap(rec["edge_id"])
         if rec.get("supersedes_episode") is not None:
             rec["supersedes_episode"] = _remap(rec["supersedes_episode"])
+
+    # (2a) specs/0020 §4a-iii — PRE-COMMIT absorption reconstruction over the
+    # linkage snapshot: structured `absorbed_by_id` first (the FORMAT-7 rider
+    # carrier); the decidable LAST-tag note rule for legacy records; digests
+    # propagate transitively to every absorber (born-closed row sets); a
+    # missing, unresolvable, ambiguous, contradictory, or cyclic linkage
+    # raises `ImportLinkageError` HERE — before any destination write, so a
+    # refused import leaves the destination byte-identical (R7-2). The ONE
+    # `op-<12hex>` import operation id is minted here; the reconstructed rows
+    # ride the SAME atomic commit as the records (the amended 0009 §4c
+    # primitive), keyed by the importer's own old→new table under a remap.
+    import_op = f"op-{uuid4().hex[:12]}"
+    reconstructed = reconstruct_absorption_rows(
+        linkage_recs, store.local_origin(),
+        id_remap=(id_map if remapping else None), import_op=import_op)
+    contrib_rows: list = []
+    for surv in sorted(reconstructed):
+        for row in reconstructed[surv]:
+            contrib_rows.append({
+                "id": plan_row_id(target_uid, "edge", surv, row, "import",
+                                  op=import_op),
+                "user_id": target_uid, "survivor_type": "edge",
+                "survivor_id": surv, **row})
 
     # (2c) specs/0005 §4a/§4c — THE IMPORT TRUST CAP, the boundary this spec
     # exists for. Sequence per §4c-ii: each record's provenance is VALIDATED
@@ -511,7 +599,8 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     # NOTHING is ever partially imported (§4c). The destination is re-read each pass.
     for _attempt in range(_IMPORT_RETRIES):
         outcome = _preflight_and_commit(store, path, target_uid, edges, eps,
-                                        incoming_chains, capped_path=not restore)
+                                        incoming_chains, contrib_rows,
+                                        capped_path=not restore)
         if outcome is not DESTINATION_CHANGED:
             return {**outcome, "capped": capped_count, "user_id": target_uid}
     raise ValueError(f"{path}: import kept losing a race against concurrent writes "
@@ -519,7 +608,7 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
 
 
 def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains,
-                          *, capped_path: bool = True):
+                          contrib_rows, *, capped_path: bool = True):
     """One preflight-then-commit pass: validate the COMBINED destination graph
     against the live store, build the plan + the full destination-state assumptions,
     and commit atomically. Returns the store's result (counts dict or
@@ -609,12 +698,37 @@ def _preflight_and_commit(store, path, target_uid, edges, eps, incoming_chains,
                     f"diverge) — refuse (specs/0009 §4c)")
             plan_eps.extend(new_members)
 
-    plan = {"edges": plan_edges, "episodes": plan_eps}
+    # specs/0009 §4c as amended (0020/0021): the contribution preflight —
+    # for every survivor the reconstructed rows attribute, the destination's
+    # current ledger rows must be ABSENT (first import) or EXACTLY EQUAL by
+    # plan_row_id set equality (idempotent re-import → the rows skip). A
+    # conflicting recorded history refuses the WHOLE import here, cleanly;
+    # the primitive re-runs the same gate atomically (a mid-flight race
+    # surfaces as DESTINATION_CHANGED and this preflight re-reads).
+    contribution_state: dict = {}
+    contrib_survivors = sorted({r["survivor_id"] for r in contrib_rows})
+    for sid in contrib_survivors:
+        current = [c.id for c in store.contributions(target_uid, "edge", sid)]
+        planned = {r["id"] for r in contrib_rows if r["survivor_id"] == sid}
+        if current and set(current) != planned:
+            raise ValueError(
+                f"{path}: destination record {sid!r} already carries a "
+                f"DIFFERENT recorded absorption history ({len(current)} "
+                f"ledger row(s) not plan-row-equal to the reconstruction) — "
+                f"a different history is refused whole, nothing written "
+                f"(specs/0009 §4c as amended by 0020/0021)")
+        contribution_state[sid] = sorted(current)
+
+    plan = {"edges": plan_edges, "episodes": plan_eps,
+            "contributions": contrib_rows}
     expected = {"edge_ids": edge_ids_expected,
                 "episode_records": ep_records_expected,
-                "chain_heads": chain_heads_expected}
+                "chain_heads": chain_heads_expected,
+                "contribution_state": contribution_state}
     result = store.commit_outcome_import_plan(target_uid, plan, expected)
     if result is DESTINATION_CHANGED:
         return DESTINATION_CHANGED
     return {"edges": result["edges"],
-            "episodes": result["episodes"], "skipped": skipped}
+            "episodes": result["episodes"], "skipped": skipped,
+            "contributions": result.get("contributions", 0),
+            "contributions_existing": result.get("contributions_existing", 0)}

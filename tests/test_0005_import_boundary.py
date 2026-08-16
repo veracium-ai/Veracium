@@ -698,6 +698,19 @@ _CALLSITE_DISPOSITIONS = {
     ("test_0010_consolidate_recovery.py", "test_malformed_lineage_shape_is_refused"): "default",
     ("test_0010_consolidate_recovery.py", "test_imported_operation_id_cannot_collide_with_a_live_local_op"): "default",
     ("test_0010_consolidate_recovery.py", "test_partial_then_retried_import_keeps_one_producer_group"): "default",
+    # specs/0021 §7b / 0020 §4a-iii: the linkage tests — restore-path where
+    # the fixture is the store's own export re-imported (the trust cap is
+    # orthogonal to linkage reconstruction, which reads only non-trust
+    # fields: id/note/invalidation_reason/identity); default-path where the
+    # file is hand-crafted (the refusal cells, the v6 strip) or remapped
+    ("test_0021_import_linkage.py", "test_import_persists_direct_and_transitive_rows_and_reads_back"): "restore",
+    ("test_0021_import_linkage.py", "test_reimport_is_idempotent_rows_skip_counted_existing"): "restore",
+    ("test_0021_import_linkage.py", "test_remapped_import_keys_rows_to_postremap_ids"): "default",
+    ("test_0021_import_linkage.py", "test_conflicting_history_primitive_returns_destination_changed"): "restore",
+    ("test_0021_import_linkage.py", "test_conflicting_history_reimport_refuses_whole_writing_nothing"): "restore",
+    ("test_0021_import_linkage.py", "test_refusal_cell_leaves_destination_unchanged"): "default",
+    ("test_0021_import_linkage.py", "test_legacy_file_without_field_takes_the_note_rule"): "restore",
+    ("test_0021_import_linkage.py", "test_pre_v7_envelope_absorbed_by_id_is_stripped_never_trusted"): "default",
     ("test_0014_portability.py", "test_an_older_importer_refuses_a_v5_export"): "default",
     ("test_0014_portability.py", "test_v5_round_trip_is_lossless_and_v4_stays_accepted"): "default",
     ("test_0014_portability.py", "test_a_v5_output_without_an_index_is_the_legacy_shape"): "default",

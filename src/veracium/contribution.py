@@ -51,7 +51,12 @@ _INPUT_MANDATORY = ("observed_at", "confidence", "disclosure",
                     "author_of_evidence", "date")
 _INPUT_OPTIONAL = ("derived_from",)
 
-SITES = ("absorption", "consolidation")   # the CLOSED site set (§4a)
+# The CLOSED site set (§4a; the 0021 §7b / 0014-amendment clause 1 adds the
+# two PLAN sites — `imported-absorption` for DIRECT reconstructed links and
+# `scope-attribution` for every DERIVED attribution row; their closed payload
+# vocabularies live in `scope_linkage` and are dispatched below).
+SITES = ("absorption", "consolidation", "imported-absorption",
+         "scope-attribution")
 
 
 def json_datetime(dt) -> str:
@@ -118,6 +123,12 @@ def validate_payload(site: str, payload: dict) -> None:
         validate_absorption_payload(payload)
     elif site == "consolidation":
         validate_consolidation_payload(payload)
+    elif site in ("imported-absorption", "scope-attribution"):
+        # 0021 §7b (the 0014 amendment, clause 1): the two plan sites'
+        # closed shapes are owned by scope_linkage (lazy import —
+        # scope_linkage imports this module's digest primitive at top).
+        from .scope_linkage import validate_plan_site_payload
+        validate_plan_site_payload(site, payload)
     else:
         raise ValueError(f"unknown site {site!r} — the site set is CLOSED "
                          f"({', '.join(SITES)}; 0014 §4a)")

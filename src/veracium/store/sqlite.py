@@ -783,6 +783,20 @@ class SqliteStore(Store):
             (user_id, survivor_type, survivor_id)).fetchall()
         return [self._contribution_record(r) for r in rows]
 
+    def contributions_naming(self, user_id: str, contributor_ref: str) -> list:
+        """specs/0021 §7b: every ledger row whose typed `contributor_ref`
+        NAMES the given record — the export path's reverse join
+        (`derive_absorbed_by`). Pre-v8 rows carry NULL `contributor_ref` and
+        never match (the disclosed legacy class)."""
+        rows = self._conn.execute(
+            "SELECT survivor_type,survivor_id,site,payload,contributor_ref "
+            "FROM contribution_ledger WHERE user_id=? AND contributor_ref=? "
+            "ORDER BY created_at DESC, id DESC",
+            (user_id, contributor_ref)).fetchall()
+        return [{"survivor_type": r[0], "survivor_id": r[1], "site": r[2],
+                 "payload": json.loads(r[3]), "contributor_ref": r[4]}
+                for r in rows]
+
     def contributors_of_source(self, user_id: str, identity_digest: str) -> list:
         """§4d: every survivor a source contributed to — revoke_source's
         blast-radius join (A9). COMPLETE identities only: a NULL digest never
@@ -977,9 +991,71 @@ class SqliteStore(Store):
         between the caller's preflight and here is caught by the `chain_heads`
         re-check and the WHOLE import refuses (`DESTINATION_CHANGED`), never after a
         prefix. Installs outcome links through its OWN INSERT — a sanctioned writer
-        even though the generic mutators now refuse outcome rows (H14)."""
+        even though the generic mutators now refuse outcome rows (H14).
+
+        specs/0009 §4c AS AMENDED (0020/0021): `plan["contributions"]` rows —
+        derived by the caller SOLELY from `reconstruct_absorption_rows`,
+        pre-commit — are validated context-aware ("import" is the ONLY writer
+        context this primitive owns), their op keys and row ids RE-DERIVED
+        in-primitive (a caller-selected key or id refuses before any write),
+        gated by `expected_destination_state["contribution_state"]`
+        (absent → write; plan_row_id-set-equal → skip-as-existing; anything
+        else → DESTINATION_CHANGED writing nothing), and installed in the SAME
+        single atomic commit as the records."""
+        from ..contribution import canonical_payload, validate_payload
+        from ..scope_linkage import plan_row_id as _derive_row_id
         edges = plan.get("edges", [])
         episodes = plan.get("episodes", [])
+        contributions = plan.get("contributions", [])
+        # (0) validate the contribution row-plans — pure derivation checks,
+        # before the lock and before ANY write. Presence first (R11-2), then
+        # the ONE-minted-op rule, then the exact in-primitive derivation of
+        # op_key AND row id (R13-1: keys are derived, never selected — the
+        # validator inside plan_row_id consumes the op domain and requires
+        # exact key equality; the id equality below closes the same door for
+        # the PRIMARY-KEY-riding dedup identity).
+        plan_edge_ids = {e.id for e in edges}
+        contrib_by_surv: dict = {}
+        import_op = None
+        for row in contributions:
+            missing = [f for f in ("id", "user_id", "survivor_type",
+                                   "survivor_id", "op_key") if f not in row]
+            if missing:
+                raise ValueError(
+                    f"contribution row-plan is missing {missing} — the plan "
+                    f"row is TOTAL over the stored field set (0009 §4c as "
+                    f"amended, R11-2)")
+            if row["user_id"] != user_id:
+                raise ValueError(
+                    "contribution row-plan names another tenant — refused "
+                    "(0009 §4c as amended)")
+            if row["survivor_type"] != "edge":
+                raise ValueError(
+                    f"contribution row-plan survivor_type "
+                    f"{row['survivor_type']!r} — the import plan sites "
+                    f"attribute EDGE survivors only (0020 §4a-iii)")
+            op_key = row["op_key"]
+            if not isinstance(op_key, str) or ":" not in op_key:
+                raise ValueError(
+                    f"contribution row op_key {op_key!r} is not the "
+                    f"injective {{op}}:{{site}}:{{digest}} form (R9-2)")
+            op = op_key.split(":", 1)[0]
+            if import_op is None:
+                import_op = op
+            elif op != import_op:
+                raise ValueError(
+                    f"contribution rows carry TWO operation ids "
+                    f"({import_op!r}, {op!r}) — the import mints ONE "
+                    f"op-<12hex> id (0009 §4c as amended, R7-3)")
+            derived_id = _derive_row_id(user_id, "edge", row["survivor_id"],
+                                        row, "import", op=op)
+            if row["id"] != derived_id:
+                raise ValueError(
+                    f"contribution row id {row['id']!r} is not the canonical "
+                    f"plan_row_id projection — the id is DERIVED in-primitive, "
+                    f"never selected (0009 §4c as amended, R9-3/R13-1)")
+            validate_payload(row["site"], row["payload"])   # site registry
+            contrib_by_surv.setdefault(row["survivor_id"], []).append(row)
         with self._lock:
             # (1) Revalidate EVERY destination assumption the preflight reasoned
             # about (round-6 Correction B) — atomically, before any write.
@@ -1005,21 +1081,79 @@ class SqliteStore(Store):
                 head_id = head.id if head is not None else None
                 if head_id != expect_head:           # linearize vs append_outcome_if_head
                     return DESTINATION_CHANGED
+            # (1b) 0009 §4c as amended: the contribution gate — EVERY decision
+            # is taken here, BEFORE any write, so DESTINATION_CHANGED writes
+            # nothing (records included). Per survivor: the current row-id set
+            # must equal the caller's expected `contribution_state` (drift is
+            # a lost race); then ABSENT → write, plan_row_id-set-EQUAL → skip
+            # as existing, anything else → a different recorded history,
+            # refused whole.
+            contribution_state = expected_destination_state.get(
+                "contribution_state", {})
+            contrib_writes: list = []
+            contrib_existing = 0
+            for surv, rows in sorted(contrib_by_surv.items()):
+                if surv not in plan_edge_ids:
+                    hit = self._conn.execute(
+                        "SELECT user_id FROM edges WHERE id=?",
+                        (surv,)).fetchone()
+                    if hit is None or hit[0] != user_id:
+                        raise ValueError(
+                            f"contribution rows attribute survivor {surv!r}, "
+                            f"which is neither a plan record nor an "
+                            f"already-present record of this user — the "
+                            f"preflight refuses (0009 §4c as amended)")
+                current = {r[0] for r in self._conn.execute(
+                    "SELECT id FROM contribution_ledger WHERE user_id=? AND "
+                    "survivor_type='edge' AND survivor_id=?",
+                    (user_id, surv)).fetchall()}
+                if current != set(contribution_state.get(surv, ())):
+                    return DESTINATION_CHANGED       # rows moved under us
+                planned = {r["id"] for r in rows}
+                if current == planned:
+                    contrib_existing += len(rows)    # idempotent re-import
+                elif not current:
+                    contrib_writes.extend(rows)
+                else:
+                    # different contributors or a different history SHAPE —
+                    # a different history, refused whole, writing NOTHING
+                    return DESTINATION_CHANGED
             # (2) Install ALL records as one logical commit (edges before episodes so
-            # an outcome link's edge_id always resolves).
-            for edge in edges:
-                self._conn.execute(
-                    "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
-                    "VALUES(?,?,?,?,?,?,?,?)",
-                    (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
-                     int(edge.active), int(edge.quarantined), edge.model_dump_json()))
-            for ep in episodes:
-                self._conn.execute(
-                    "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
-                    (ep.id, ep.user_id, ep.date, ep.model_dump_json()))
-            self._bump(user_id)
+            # an outcome link's edge_id always resolves; contribution rows ride
+            # the SAME transaction — nothing is durable after a prefix).
+            try:
+                for edge in edges:
+                    self._conn.execute(
+                        "INSERT OR REPLACE INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
+                        "VALUES(?,?,?,?,?,?,?,?)",
+                        (edge.id, edge.user_id, edge.subject, edge.relation, edge.object,
+                         int(edge.active), int(edge.quarantined), edge.model_dump_json()))
+                for ep in episodes:
+                    self._conn.execute(
+                        "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
+                        (ep.id, ep.user_id, ep.date, ep.model_dump_json()))
+                now = self._now().isoformat()
+                for row in contrib_writes:
+                    self._conn.execute(
+                        "INSERT INTO contribution_ledger(id,user_id,"
+                        "survivor_type,survivor_id,site,identity_digest,"
+                        "evidence_ref_digest,payload,op_key,created_at,"
+                        "contributor_type,contributor_ref) "
+                        "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (row["id"], user_id, "edge", row["survivor_id"],
+                         row["site"], row["identity_digest"],
+                         row["evidence_ref_digest"],
+                         canonical_payload(row["payload"]), row["op_key"],
+                         now, row["contributor_type"],
+                         row["contributor_ref"]))
+                self._bump(user_id)
+            except BaseException:
+                self._conn.rollback()                # ONE atomic commit —
+                raise                                # nothing after a prefix
             self._conn.commit()
-            return {"edges": len(edges), "episodes": len(episodes)}
+            return {"edges": len(edges), "episodes": len(episodes),
+                    "contributions": len(contrib_writes),
+                    "contributions_existing": contrib_existing}
 
     # -- crash-safe consolidation (specs/0010) --------------------------------
     _OP_COLS = ("operation_id", "user_id", "fence", "state", "owner",

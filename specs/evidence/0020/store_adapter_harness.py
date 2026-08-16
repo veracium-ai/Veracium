@@ -13,8 +13,10 @@ overstate): every check line is prefixed with its mode —
   [helper]       the check called a normative helper on synthetic input
                  (used ONLY where the input is deliberately corrupt in a
                  way real machinery refuses to produce);
-  [impl-gated]   stated obligations that need the 0021 implementation
-                 (the amended 0009 primitive) — recorded, NOT executed.
+  [impl-gated]   obligations recorded, NOT executed by THIS harness —
+                 the 0021 implementation has LANDED (the amended 0009
+                 primitive); these run as pytest regressions in
+                 tests/test_0021_import_linkage.py.
 
 Regression groups:
 (1) [store] the round-3 single-hop leak (cross-identity absorption →
@@ -27,10 +29,13 @@ Regression groups:
     rule. Same-identity chain → own digest (the contrast cell).
 (3) [import-path] the restored three-hop: real export → PRE-COMMIT
     transitive reconstruction (minted op key) → the destination survivor
-    is UNRESOLVED via born-closed rows; under user_id remap; stable
-    across close/reopen; re-running reconstruction is idempotent.
-(4) [import-path] the PRE-COMMIT GATE (`scoped_import`, the spec's
-    normative order around the shipped importer): a REAL native export
+    is UNRESOLVED via born-closed rows — and (0021 §7b LANDED) the
+    shipped importer PERSISTS the reconstructed rows through the amended
+    0009 primitive, matching the independent reconstruction; under
+    user_id remap; durable across close/reopen; re-running
+    reconstruction is idempotent.
+(4) [import-path] the PRE-COMMIT GATE (now INSIDE the shipped
+    `import_memory` — 0021 §7b landed): a REAL native export
     whose winner id embeds the note framing RESOLVES (v8's regex refused
     it — the round-7 headline); a REAL pre-existing `absorbed_by:ghost`
     note followed by the genuine appended tag RESOLVES (last tag
@@ -70,6 +75,11 @@ from veracium.store.sqlite import SqliteStore  # noqa: E402
 from reference_scope import (SHARED, UNRESOLVED, digest_of, Identity,  # noqa: E402
                              ImportLinkageError, close_absorption_rows,
                              membership, reconstruct_absorption_rows)
+# production's own refusal class (0021 §7b landed): the shipped importer
+# raises veracium.scope_linkage.ImportLinkageError — the refusal cells
+# catch BOTH so the check proves the PRODUCTION gate, not the helper's
+from veracium.scope_linkage import (  # noqa: E402
+    ImportLinkageError as ProductionImportLinkageError)
 
 NOW = datetime(2026, 8, 1, tzinfo=timezone.utc)
 
@@ -147,30 +157,51 @@ def _parse_export(path):
     return out
 
 
+def _as_legacy(path):
+    """Model the DISCLOSED legacy class (pre-rider exports and
+    NULL-contributor_ref stores): strip the structured `absorbed_by_id`
+    the LANDED exporter now materialises, so the file exercises the
+    legacy NOTE rule — the carrier these cells were built to pin."""
+    p = pathlib.Path(path)
+    lines = []
+    for line in p.read_text().splitlines():
+        rec = json.loads(line)
+        rec.pop("absorbed_by_id", None)
+        lines.append(json.dumps(rec))
+    p.write_text("\n".join(lines) + "\n")
+    return p
+
+
 def _logical_state(store, user_id):
     """The destination-unchanged fingerprint: the full logical edge state
-    plus the (always-empty-until-implemented) contribution projection."""
-    return sorted((e.id, e.object, e.invalidation_reason or "", e.note or "")
+    plus every edge's contribution-row projection (non-empty now that the
+    0021 implementation persists reconstructed rows)."""
+    return sorted((e.id, e.object, e.invalidation_reason or "", e.note or "",
+                   tuple(sorted((c.site, c.identity_digest or "", c.id)
+                                for c in store.contributions(
+                                    user_id, "edge", e.id))))
                   for e in store.edges(user_id, active_only=False,
                                        include_quarantined=True))
 
 
 def scoped_import(dest_store, export_path, *, user_id=None):
-    """The spec's NORMATIVE pre-commit order (0020 §4a-iii v9 / R7-2):
-    parse the export FILE → reconstruct linkage (refusal raises HERE,
-    before any destination write) → only then hand the file to the
-    shipped importer. Returns (import_counts, reconstructed_rows keyed by
-    post-remap id). The shipped `import_memory` adding these rows through
-    the amended 0009 primitive is the implementation obligation."""
+    """The spec's NORMATIVE pre-commit order (0020 §4a-iii v9 / R7-2) —
+    now PRODUCTION's own order: the shipped `import_memory` runs the
+    reconstruction itself (0021 §7b LANDED), so a linkage refusal raises
+    INSIDE the shipped importer, before any destination write, and the
+    reconstructed rows ride the amended 0009 primitive's atomic commit.
+    The harness still reconstructs INDEPENDENTLY over the same file (its
+    own minted op) to cross-check the rows production persists. Returns
+    (import_counts, reconstructed_rows keyed by post-remap id)."""
     records = _parse_export(export_path)
     op = _mint_op()
     local = dest_store.local_origin()
-    rebuilt_old = reconstruct_absorption_rows(records, local, import_op=op)
     counts = portability.import_memory(dest_store, export_path,
                                        user_id=user_id,
                                        restore=(user_id is None))
     if user_id is None:
-        return counts, rebuilt_old
+        return counts, reconstruct_absorption_rows(records, local,
+                                                   import_op=op)
     # the shipped importer remints ids under a user remap without touching
     # notes; rebuild THROUGH the id table derived from the committed store
     # (content-matched here; the importer's own table is the impl carrier)
@@ -318,8 +349,22 @@ def run():
         portability.export_memory(chain, "u1", exp)
         dest = SqliteStore(f"{d}/dest.db")
         _counts, rebuilt = scoped_import(dest, exp)
-        assert _project(dest, "u1", "edge", "c-3") == [], \
-            "the ledger travelled?! (0014 locality broken)"
+        # 0014 locality still holds: the destination rows are RECONSTRUCTED
+        # (every payload carries the "reconstructed" marker at a plan site),
+        # never the source ledger travelling — and production's rows match
+        # the independent reconstruction on (site, identity_digest).
+        stored3 = dest.contributions("u1", "edge", "c-3")
+        assert stored3 and all(
+            c.site in ("imported-absorption", "scope-attribution")
+            and c.payload.get("reconstructed") is True
+            and c.contributor_ref for c in stored3), \
+            "production rows are not the reconstructed plan-site shape"
+        assert sorted((c.site, c.identity_digest) for c in stored3) == \
+            sorted((r["site"], r["identity_digest"])
+                   for r in rebuilt.get("c-3", [])), \
+            "production's persisted rows diverge from the reconstruction"
+        assert _counts.get("contributions", 0) >= 2, \
+            "the amended primitive reported no written contribution rows"
         r3 = rebuilt.get("c-3", [])
         digs3 = {r["identity_digest"] for r in r3}
         assert digest_of(Identity(clocal, "agent-a"), dest.local_origin()) \
@@ -341,7 +386,12 @@ def run():
         checks.append("[import-path] RESTORED three-hop: pre-commit "
                       "transitive reconstruction (minted op key) -> the "
                       "destination survivor UNRESOLVED via born-closed "
-                      f"rows ({len(r3)} row(s) incl. the ancestor digest)")
+                      f"rows ({len(r3)} row(s) incl. the ancestor digest); "
+                      "production PERSISTED the rows through the amended "
+                      "0009 primitive (plan-site payloads marked "
+                      "reconstructed; multiset equals the independent "
+                      "reconstruction; 0014 locality: derived, never "
+                      "travelled)")
         # idempotent re-run of reconstruction over the same file
         again = reconstruct_absorption_rows(
             _parse_export(exp), dest.local_origin(), import_op="op-aaaaaaaaaaaa")
@@ -361,8 +411,13 @@ def run():
                  if e.id == "c-3"][0]
         assert membership(_record_shape(rsurv), r3r, "none",
                           re_dest.local_origin()) == UNRESOLVED
+        assert sorted((c.site, c.identity_digest) for c in
+                      re_dest.contributions("u1", "edge", "c-3")) == \
+            sorted((c.site, c.identity_digest) for c in stored3), \
+            "the persisted plan-site rows did not survive close/reopen (W15)"
         checks.append("[import-path] after CLOSE/REOPEN the restored "
-                      "three-hop survivor is still UNRESOLVED")
+                      "three-hop survivor is still UNRESOLVED and the "
+                      "persisted plan-site rows are DURABLE (W15)")
         re_dest.close()
         # under user_id remap
         dest2 = SqliteStore(f"{d}/dest2.db")
@@ -389,6 +444,7 @@ def run():
         exp_p = pathlib.Path(d) / "punct.jsonl"
         portability.export_memory(punct, "u1", exp_p)
         punct.close()
+        _as_legacy(exp_p)          # the cell pins the legacy NOTE rule
         dp = SqliteStore(f"{d}/dp.db")
         _cp, rb_p = scoped_import(dp, exp_p)
         assert rb_p.get("winner (restated as x"), \
@@ -409,6 +465,7 @@ def run():
         exp_g = pathlib.Path(d) / "ghost.jsonl"
         portability.export_memory(ghost, "u1", exp_g)
         ghost.close()
+        _as_legacy(exp_g)          # the cell pins the legacy NOTE rule
         dg = SqliteStore(f"{d}/dg.db")
         _cg, rb_g = scoped_import(dg, exp_g)
         assert rb_g.get("winner-g"), \
@@ -435,8 +492,15 @@ def run():
         exp_a = pathlib.Path(d) / "amb.jsonl"
         portability.export_memory(amb, "u1", exp_a)
         amb.close()
-        ref_cases.append(("[import-path] AMBIGUOUS id universe (real "
-                          "store: 'winner' + the framing-embedded id)",
+        # the LANDED exporter materialises the structured absorbed_by_id
+        # from the typed ledger link, which makes this file DECIDABLE —
+        # exactly the fix. The ambiguity cell governs LEGACY files (no
+        # structured field: pre-rider exports, NULL-contributor_ref
+        # stores), so strip the field to model that disclosed class.
+        _as_legacy(exp_a)
+        ref_cases.append(("[import-path] AMBIGUOUS id universe on a "
+                          "LEGACY-class file (real store: 'winner' + the "
+                          "framing-embedded id; structured field absent)",
                           exp_a))
         # hand-corrupted files (real machinery refuses to produce these —
         # [helper]-authored FILES, still driven through the import path)
@@ -481,15 +545,16 @@ def run():
             try:
                 scoped_import(dref, path)
                 raise AssertionError(f"{label} did not refuse")
-            except ImportLinkageError:
-                pass
+            except (ImportLinkageError, ProductionImportLinkageError):
+                pass                       # production import_memory refuses
             after = _logical_state(dref, "u1")
             assert before == after, f"{label}: destination state CHANGED"
             assert _project(dref, "u1", "edge", "pre-existing") == []
             dref.close()
-            checks.append(f"{label} -> PRE-COMMIT whole-import refusal; "
-                          "destination logical state byte-for-byte "
-                          "unchanged (pre-populated sentinel intact)")
+            checks.append(f"{label} -> PRE-COMMIT whole-import refusal "
+                          "INSIDE the shipped importer; destination "
+                          "logical state byte-for-byte unchanged "
+                          "(pre-populated sentinel intact)")
 
         # ---- (5) [store] host records, no rows -------------------------
         floor = SqliteStore(f"{d}/floor.db")
@@ -507,12 +572,14 @@ def run():
 
         # ---- (6) [impl-gated] the amended-primitive obligations --------
         checks.append("[impl-gated] ledger-row ROLLBACK on mid-plan "
-                      "failure, CONCURRENT same-file imports, durable "
-                      "imported-absorption rows after reopen, idempotent "
-                      "re-import ROW-SKIP counts, consolidation-output and "
+                      "failure, CONCURRENT same-plan commits, idempotent "
+                      "re-import ROW-SKIP counts, conflicting-history "
+                      "DESTINATION_CHANGED, consolidation-output and "
                       "recovery-state adapter cases — the amended 0009 "
-                      "primitive's obligations (0021 §7b exact text; W15); "
-                      "stated, awaiting the 0021 implementation")
+                      "primitive's obligations (0021 §7b exact text; W15): "
+                      "IMPLEMENTED; executed as pytest regressions in "
+                      "tests/test_0021_import_linkage.py, not re-executed "
+                      "by this harness")
     return checks
 
 

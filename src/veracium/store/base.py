@@ -182,6 +182,18 @@ class Store(ABC):
         raise NotImplementedError(
             f"{type(self).__name__} does not implement contributions")
 
+    def contributions_naming(self, user_id: str, contributor_ref: str) -> list:
+        """specs/0021 §7b (the 0014 amendment's typed link): every ledger row
+        whose `contributor_ref` NAMES the given record — the REVERSE of
+        `contributions` (which is keyed by survivor). The export path's
+        `derive_absorbed_by` join: rows written before SCHEMA v8 carry a NULL
+        `contributor_ref` and never match (the disclosed legacy class — the
+        record exports without the structured field). Returns dicts with
+        `survivor_type`, `survivor_id`, `site`, `payload`, `contributor_ref`.
+        Read-only; not abstract."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement contributions_naming")
+
     def contributors_of_source(self, user_id: str, identity_digest: str) -> list:
         """specs/0014 §4d/A9: every survivor a source contributed to —
         `revoke_source`'s blast-radius join. Complete identities only: a NULL
@@ -267,16 +279,40 @@ class Store(ABC):
         by the caller's WHOLE-import preflight; it contains ONLY the records to write
         (idempotent-equal records were skipped, differing ones already refused).
 
+        specs/0009 §4c AS AMENDED BY 0020/0021: the plan gains a THIRD member,
+        `plan["contributions"]` — ContributionRowPlan dicts, TOTAL over the stored
+        row's field set (id = `plan_row_id`, THE one canonical logical-row
+        projection; user_id; survivor_type/survivor_id, which must name a record
+        in THIS plan or an already-present idempotent-equal record; site — one of
+        the TWO plan sites `imported-absorption`/`scope-attribution`;
+        identity_digest; evidence_ref_digest; contributor_type/contributor_ref;
+        the site's closed payload; the injective per-row `op_key` derived from
+        the ONE minted `op-<12hex>` import operation). Rows derive ONLY from
+        `reconstruct_absorption_rows` over the export file, PRE-COMMIT (0020
+        §4a-iii); the store validates everything (context-aware validator, exact
+        in-primitive key/id derivation — a caller-selected key or id refuses)
+        and invents nothing but its own clock.
+
         `expected_destination_state` carries EVERY destination assumption the preflight
         reasoned about (round-6 Correction B — not just chain heads): the presence and
         ownership of referenced edges, the current persisted form of every incoming
-        episode id (so a concurrent edit is caught), and the head of every outcome
-        chain identity the plan touches. In ONE atomic operation the store: (1)
-        revalidates ALL of that against the live store — any drift returns
-        `DESTINATION_CHANGED`, writing nothing; (2) installs every plan Edge and
-        Episode (outcome links included) as ONE logical commit, linearized against
-        `append_outcome_if_head`. A lost destination race refuses the WHOLE import;
-        NOTHING is written after a prefix. Returns `{"edges": n, "episodes": n}` on
+        episode id (so a concurrent edit is caught), the head of every outcome
+        chain identity the plan touches, and (the 0009 amendment)
+        `contribution_state` — for every plan record carrying contribution rows,
+        the destination's current ledger row ids for that (user, type, id): the
+        current rows must be ABSENT (first import — rows write) or EXACTLY EQUAL
+        by `plan_row_id` set equality (idempotent re-import — rows skip, counted
+        as existing); anything else returns `DESTINATION_CHANGED`, writing
+        nothing — a survivor with different recorded contributors or a different
+        recorded history shape is a different history, refused whole. In ONE
+        atomic operation the store: (1) revalidates ALL of that against the live
+        store — any drift returns `DESTINATION_CHANGED`, writing nothing; (2)
+        installs every plan Edge, Episode (outcome links included) AND
+        contribution row as ONE logical commit, linearized against
+        `append_outcome_if_head`. A lost destination race refuses the WHOLE
+        import; NOTHING is written after a prefix; contribution rows ride the
+        SAME single atomic commit (rollback included). Returns `{"edges": n,
+        "episodes": n, "contributions": n, "contributions_existing": m}` on
         success or `DESTINATION_CHANGED`.
 
         This is a purpose-built primitive that encodes ONE invariant at the interface
