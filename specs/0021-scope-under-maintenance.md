@@ -11,6 +11,13 @@ combines, retires, or re-renders records. v3 folds external round 1
 
 ## 1. Problem and motivation
 
+> **Amended per paper-2 registration A14 (2026-08-16):** the benchmark
+> localization claimed in this section is withdrawn to exploratory
+> association pending a counterbalanced rerun; the advisories
+> (GHSA-r7j7 / GHSA-hcj3) and the laundering shape remain the standing
+> motivation. The V/W invariant surfaces and the acceptance evidence are
+> unaffected — this is a motivation-prose correction only.
+
 The benchmark campaign's direct contribution: **maintenance is the
 laundering site** — the completed baselines program localized the
 production systems' amplification to LLM cross-record consolidation. The
@@ -96,7 +103,7 @@ store MERGES. Consequences, stated:
 | absorption | write-time | partition by resolved identity (policy-independent) | a merge inherits lineage |
 | supersession | write-time | scope-BLIND (global truth) | per-scope truths would diverge |
 | reinforcement | write-time | no-op by construction (0012) | mutates nothing |
-| consolidation | maintain-time | partition (§4b); cross-scope co-consolidation REFUSED; outputs cleared-identity + ledger membership (W7/W8) | the amplification site |
+| consolidation | maintain-time | partition (§4b); cross-scope co-consolidation REFUSED; outputs cleared-identity + ledger membership (W7/W8) | the LLM cross-record synthesis site (§1's A14 amendment: the benchmark's *amplification* localization is withdrawn to exploratory; the rule in this row is unaffected) |
 | expiry / decay / staleness | maintain-time | scope-blind | no combination occurs |
 | wiki compilation | maintain-time | v1: store-wide compile unchanged; the wiki never reaches principal-bearing responses (0020 §4d); per-scope compilation the recorded widening | the second synthesis path |
 
