@@ -246,7 +246,9 @@ def _run_one(v, policies):
                        "op_key": x.get("op_key")}
                 if "contributor_ref" in x:
                     row["contributor_ref"] = x["contributor_ref"]
-                if x.get("flattened"):
+                if x.get("payload"):
+                    row["payload"] = x["payload"]
+                elif x.get("flattened"):
                     row["payload"] = {"flattened": True}
                 out.append(row)
             return out
@@ -290,21 +292,26 @@ def _run_one(v, policies):
                 for s, rows in got.items()}
         if norm != want:
             return f"got {norm!r}, expected {want!r}"
-        # R8-3/R9-2: STRUCTURAL total-row check — per-row INJECTIVE op
-        # keys (the framed-digest form recomputed independently), typed
-        # contributor_ref, the closed payload, and the cross-field
-        # validator green on every row
-        from reference_scope import import_row_op_key, validate_row_plan
+        # R8-3/R9-2/R10-1: STRUCTURAL total-row check — per-row INJECTIVE
+        # op keys (recomputed independently, per site token), typed
+        # contributor_ref, the closed per-site payload, direct links at
+        # imported-absorption and transitive copies at scope-attribution,
+        # and the cross-field validator green on every row
+        from reference_scope import (row_op_key, validate_row_plan,
+                                     SITE_ATTRIBUTION)
         seen_keys = set()
         for surv, rows in got.items():
             for r in rows:
-                want_key = import_row_op_key(v["op_key"], surv,
-                                             r.get("contributor_ref") or "")
+                want_key = row_op_key(v["op_key"], r.get("site"), surv,
+                                      r.get("contributor_ref") or "")
                 try:
                     validate_row_plan(r)
                 except PolicyError as e:
                     return f"emitted row fails its own validator: {e}"
-                if (r["site"] != "imported-absorption"
+                flattened = (r.get("payload") or {}).get("flattened", False)
+                want_site = (SITE_ATTRIBUTION if flattened
+                             else "imported-absorption")
+                if (r["site"] != want_site
                         or r.get("contributor_ref") is None
                         or r["op_key"] != want_key
                         or r["op_key"] in seen_keys
@@ -313,27 +320,31 @@ def _run_one(v, policies):
                 seen_keys.add(r["op_key"])
         return None
     if kind == "derivation":
-        # R9-1: the exact reverse-link algorithm, with the retention
-        # contract's prune-time reparenting applied in order
+        # R9-1/R10-1: the exact reverse-link algorithm, with the retention
+        # contract's INSERT-ONLY prune-time reparenting applied in order
         from reference_scope import (derive_absorbed_by,
                                      prune_absorbed_record,
                                      ExportLinkageError)
         def _rows(rr):
             out = []
             for x in rr:
-                row = {"site": x.get("site", "absorption"),
+                payload = x.get("payload", {})
+                site = x.get("site") or (
+                    "scope-attribution" if payload else "absorption")
+                row = {"site": site,
                        "identity_digest": (digest_of(I(x["identity"]), LOCAL)
                                            if x.get("identity") else None),
                        "op_key": x.get("op_key"),
                        "evidence_ref_digest": None,
                        "contributor_ref": x.get("contributor_ref"),
-                       "payload": x.get("payload", {})}
+                       "payload": payload}
                 out.append(row)
             return out
         ledger = {k: _rows(rw) for k, rw in v["ledger_rows"].items()}
         try:
-            for pid in v.get("prune", []):
-                ledger = prune_absorbed_record(pid, ledger)
+            for n, pid in enumerate(v.get("prune", [])):
+                ledger = prune_absorbed_record(
+                    pid, ledger, prune_op=f"op-{n:012x}")
             got = derive_absorbed_by(v["query"], ledger)
         except ExportLinkageError:
             return (None if expect == "ExportLinkageError"

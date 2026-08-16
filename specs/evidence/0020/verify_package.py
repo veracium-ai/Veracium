@@ -55,20 +55,35 @@ def _runtime_qualified():
         # the qualification must be THIS package's code — an editable
         # install or stray module resolving elsewhere would qualify a
         # DIFFERENT veracium (found by our own fault-injection retest of
-        # R9-5: the injected defect was masked by an installed copy)
-        if not str(pathlib.Path(_sv.__file__).resolve()).startswith(
-                str(ROOT.resolve())):
+        # R9-5: the injected defect was masked by an installed copy).
+        # REAL path containment (R10-5: string startswith accepted a
+        # sibling '<ROOT>-shadow/...' path), and preloaded modules are
+        # caught the same way — sys.modules caching returns them and
+        # their __file__ fails containment.
+        modpath = pathlib.Path(_sv.__file__).resolve()
+        if not modpath.is_relative_to(ROOT.resolve()):
             return ("error",
                     f"the qualification module resolved OUTSIDE the "
                     f"package tree ({_sv.__file__}) — wrong cwd, missing "
-                    f"src, or a shadowing install (R9-5)")
+                    f"src, a shadowing install, or a preloaded module "
+                    f"(R9-5/R10-5)")
         from veracium.store.schema_version import (runtime_identity,
                                                    runtime_supported,
                                                    qualified_runtimes)
         me = runtime_identity()
-        supported = runtime_supported()         # total, fail-closed by its
-        if supported:                           # own contract — a raise
-            return ("qualified",                # here is a DEFECT, not an
+        supported = runtime_supported()
+        # R10-5: the reviewer injected `lambda: None` and truthiness made
+        # it a successful skip. STRICT: only a real bool is a result;
+        # only the literal False is a skip; True is qualified; anything
+        # else is a package defect.
+        if type(supported) is not bool:
+            return ("error",
+                    f"runtime_supported() returned {supported!r} "
+                    f"({type(supported).__name__}) — its contract is a "
+                    f"total bool; a non-boolean is a package defect, "
+                    f"never an environment skip (R10-5)")
+        if supported is True:
+            return ("qualified",
                     f"SQLite {me.get('sqlite_version')} (qualified)")
         recs = sorted({r.get("sqlite_version") for r in qualified_runtimes()
                        if isinstance(r, dict)} - {None})

@@ -327,10 +327,14 @@ def run():
         assert digest_of(Identity(clocal, "agent-a"), dest.local_origin()) \
             in digs3 and len(r3) >= 2, (
             f"transitive reconstruction missed the ancestor: {r3!r}")
-        assert all(r["op_key"] and r["site"] == "imported-absorption"
+        assert all(r["op_key"]
+                   and r["site"] in ("imported-absorption",
+                                     "scope-attribution")
                    and r["contributor_ref"] and r["evidence_ref_digest"]
                    for r in r3), "rows not fully populated (R7-3/R8-3: " \
             "per-row key, typed contributor binding, evidence digest)"
+        assert any(r["site"] == "scope-attribution" for r in r3), \
+            "the transitive copy should land at the derived-row site (R10-1)"
         dsurv = [e for e in dest.edges("u1", active_only=False)
                  if e.id == "c-3"][0]
         dgot = membership(_record_shape(dsurv), r3, "none",

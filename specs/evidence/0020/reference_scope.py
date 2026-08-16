@@ -425,21 +425,28 @@ def close_absorption_rows(survivor_id: str, ledger_rows: dict,
         visited.add(node)
         rows = ledger_rows.get(node, [])
         node_digs = {r.get("identity_digest") for r in rows
-                     if r.get("site") in ("absorption", "imported-absorption")}
+                     if r.get("site") in _MEMBERSHIP_SITES}
         if not verify_only:
             out.extend(rows)
         unattributed = []
         for r in rows:
-            if r.get("site") not in ("absorption", "imported-absorption"):
+            if r.get("site") not in _MEMBERSHIP_SITES:
                 continue
             ref = r.get("contributor_ref")
-            if (r.get("payload") or {}).get("flattened"):
+            payload = r.get("payload") or {}
+            if payload == {"closure": "incomplete"}:
+                continue                   # R10-2: the marker's None digest
+                                           # fails membership closed; it is
+                                           # never a link and never walked
+            if payload.get("flattened"):
                 if ref is None:
                     return False           # R9-3: a marker-only row would
                                            # bypass BOTH accounting paths
                 continue                   # digest counted; subtree covered
             if ref is not None:
-                # closed by the write invariant (0021 W14/§4c: flattening
+                # direct rows and REPARENTED links (R10-1: reparenting is
+                # an INSERTED scope-attribution row, never a mutation).
+                # Closed by the write invariant (0021 W14/§4c: flattening
                 # and the ref land together). OPPORTUNISTIC verification
                 # only — under accepted 0014 A10 a pruned contributor's
                 # rows are legitimately GONE, so absence proves nothing
@@ -447,8 +454,7 @@ def close_absorption_rows(survivor_id: str, ledger_rows: dict,
                 if absorber_of.setdefault(ref, node) != node:
                     return False           # two absorbers — corrupt
                 for cr in ledger_rows.get(ref, []):
-                    if cr.get("site") in ("absorption",
-                                          "imported-absorption") \
+                    if cr.get("site") in _MEMBERSHIP_SITES \
                             and cr.get("identity_digest") not in node_digs:
                         return False       # flattening incomplete — corrupt
                 if not walk(ref, path | {node}, verify_only=True):
@@ -527,7 +533,7 @@ def membership(record: dict, rows: Optional[list], op_state: str,
     rows = rows or []
     if not is_lineage:
         ab = [r for r in rows
-              if r.get("site") in ("absorption", "imported-absorption")]
+              if r.get("site") in _MEMBERSHIP_SITES]
         if ab:                                            # R3-3
             for r in ab:
                 if r.get("identity_digest") != own:
@@ -696,43 +702,93 @@ def canonical_payload(payload: dict) -> str:
     return _json.dumps(payload, sort_keys=True, separators=(",", ":"))
 
 
-_ROW_SITES = ("absorption", "imported-absorption")
+#: R10-1 — the DEDICATED site for every DERIVED attribution row. Accepted
+#: 0014's native `absorption` payload is the closed {base, contributor}
+#: schema and its rows are INSERT-ONLY; v11's flattened/reparented payload
+#: classes were never legal there, and v11's prune UPDATED a row. The new
+#: site keeps every accepted schema untouched: flattened ancestor copies,
+#: reparented canonical links, and closure-incompleteness markers all live
+#: at `scope-attribution` with their OWN closed payload vocabulary, and
+#: reparenting is an INSERTION of a new row (the old flattened copy stays,
+#: immutable and non-canonical) — never a mutation. The 0014 exact-set
+#: partition becomes STRUCTURAL: it keys on the native site, so
+#: attribution rows can never perturb it.
+SITE_ATTRIBUTION = "scope-attribution"
+_PLAN_SITES = ("imported-absorption", SITE_ATTRIBUTION)
+_MEMBERSHIP_SITES = ("absorption", "imported-absorption", SITE_ATTRIBUTION)
+
+#: the CLOSED payload vocabulary, per plan site (R10-3: exact shapes —
+#: unknown keys refuse, marker values must be the literal True)
+_PAYLOAD_SHAPES = {
+    "imported-absorption": ({"reconstructed": True},),
+    SITE_ATTRIBUTION: ({"flattened": True},
+                       {"flattened": True, "reconstructed": True},
+                       "REPARENTED",          # {"reparented_from": <id>}
+                       {"closure": "incomplete"}),
+}
 
 
 def validate_row_plan(row: dict) -> None:
-    """R9-3's cross-field validator — TOTAL over the row shape; refuses
-    contradictory combinations rather than letting them project:
-    - site outside the closed set;
-    - identity_digest neither None nor 64-hex;
-    - `flattened` WITHOUT a typed contributor link (the reviewer's
-      bypass: such a row skipped both the ref walk and legacy
-      accounting);
-    - `reparented` without `flattened` (reparenting upgrades a flattened
-      copy; it cannot exist alone);
-    - an imported-absorption row without the `reconstructed` marker."""
-    if row.get("site") not in _ROW_SITES:
+    """R9-3's cross-field validator, made TOTAL under R10-3 (the reviewer
+    fed it malformed evidence digests, a missing direct ref, an alien
+    contributor_type, and an undeclared payload key — all accepted).
+    Governs every row the AMENDED primitive writes (plan sites); native
+    `absorption` rows are the shipped store's accepted contract and are
+    not written through this path. Every field, strictly:
+    - site: the closed plan-site set;
+    - identity_digest / evidence_ref_digest: None or 64-hex, each;
+    - contributor_type: the closed set {"edge"};
+    - contributor_ref: REQUIRED on every plan row (direct imported links,
+      flattened copies, reparented links, and markers all NAME a
+      contributor);
+    - payload: EXACTLY one of the site's closed shapes — unknown keys
+      refuse; boolean markers must be the literal True; reparented_from
+      must be a non-empty string; a marker row's identity_digest must be
+      None (it asserts missing evidence, never an identity)."""
+    if row.get("site") not in _PLAN_SITES:
         raise PolicyError(f"row site {row.get('site')!r} outside the "
-                          f"closed set {_ROW_SITES}")
-    d = row.get("identity_digest")
-    if d is not None and not (isinstance(d, str)
-                              and re.fullmatch(r"[0-9a-f]{64}", d)):
-        raise PolicyError(f"identity_digest {d!r} is neither None nor a "
-                          f"64-hex digest")
+                          f"closed plan-site set {_PLAN_SITES}")
+    for field in ("identity_digest", "evidence_ref_digest"):
+        d = row.get(field)
+        if d is not None and not (isinstance(d, str)
+                                  and re.fullmatch(r"[0-9a-f]{64}", d)):
+            raise PolicyError(f"{field} {d!r} is neither None nor a "
+                              f"64-hex digest")
+    if row.get("contributor_type", "edge") != "edge":
+        raise PolicyError(f"contributor_type {row.get('contributor_type')!r} "
+                          f"outside the closed set {{'edge'}}")
+    if not (isinstance(row.get("contributor_ref"), str)
+            and row.get("contributor_ref")):
+        raise PolicyError("every plan row NAMES its contributor — "
+                          "contributor_ref must be a non-empty string "
+                          "(R10-3: the missing-direct-ref cell)")
     payload = row.get("payload")
     if not isinstance(payload, dict):
         raise PolicyError("row payload must be a mapping")
-    if payload.get("flattened") and row.get("contributor_ref") is None:
+    shapes = _PAYLOAD_SHAPES[row["site"]]
+    ok = False
+    for shape in shapes:
+        if shape == "REPARENTED":
+            if (set(payload) == {"reparented_from"}
+                    and isinstance(payload["reparented_from"], str)
+                    and payload["reparented_from"]):
+                ok = True
+                break
+        elif payload == shape and all(
+                type(payload[k]) is type(shape[k]) for k in shape):
+            # exact: keys AND literal values AND types — dict equality
+            # alone admits 1 == True (R10-3's truthy-marker cell)
+            ok = True
+            break
+    if not ok:
         raise PolicyError(
-            "a flattened row MUST carry its typed contributor_ref (R9-3: "
-            "a marker-only row bypassed both the ref walk and legacy "
-            "accounting)")
-    if payload.get("reparented") and not payload.get("flattened"):
-        raise PolicyError("reparented is an upgrade OF a flattened copy — "
-                          "it cannot appear alone")
-    if row.get("site") == "imported-absorption" \
-            and not payload.get("reconstructed"):
-        raise PolicyError("an imported-absorption row must carry the "
-                          "closed reconstructed marker")
+            f"payload {payload!r} is not one of site {row['site']!r}'s "
+            f"closed shapes (R10-3: exact match — unknown keys, truthy "
+            f"non-True markers, and undeclared classes all refuse)")
+    if payload == {"closure": "incomplete"} \
+            and row.get("identity_digest") is not None:
+        raise PolicyError("a closure-incompleteness marker asserts MISSING "
+                          "evidence — identity_digest must be None")
 
 
 def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
@@ -761,22 +817,34 @@ def plan_row_id(user_id: str, survivor_type: str, survivor_id: str,
     return hashlib.sha256(b"".join(parts)).hexdigest()
 
 
-def import_row_op_key(import_op: str, survivor_id: str,
-                      contributor_ref: str) -> str:
+def row_op_key(op: str, site: str, survivor_id: str,
+               contributor_ref: str) -> str:
     """The PER-ROW op key, INJECTIVE form (R9-2 — the v10 colon-join was
     not injective over unrestricted ids: survivor 'a:b'+'c' collided with
     'a'+'b:c'; the reviewer raised the IntegrityError). The prefix fields
-    are colon-free by construction (`op-<12hex>` + a literal site token);
-    the pair of unrestricted ids is FRAMED and domain-separated into one
-    fixed-width digest — injective up to SHA-256, and the framing makes
-    the pre-image encoding injective outright."""
-    if not _OP_ID.match(import_op or ""):
-        raise PolicyError(f"import_op must be op-<12hex>, got {import_op!r}")
+    are colon-free by construction (`op-<12hex>` + the site token, both
+    from closed colon-free alphabets); the pair of unrestricted ids is
+    FRAMED and domain-separated into one fixed-width digest — injective
+    up to SHA-256, and the framing makes the pre-image encoding injective
+    outright. R10-1 generalized the site token: import ops key
+    imported-absorption rows AND scope-attribution copies; prune ops key
+    scope-attribution reparented/marker rows."""
+    if not _OP_ID.match(op or ""):
+        raise PolicyError(f"op must be op-<12hex>, got {op!r}")
+    if site not in _PLAN_SITES:
+        raise PolicyError(f"op-key site token {site!r} outside {_PLAN_SITES}")
     h = hashlib.sha256(b"veracium.import-row-op-key.v1"
                        + _framed(survivor_id.encode("utf-8"))
                        + _framed(contributor_ref.encode("utf-8"))
                        ).hexdigest()
-    return f"{import_op}:imported-absorption:{h}"
+    return f"{op}:{site}:{h}"
+
+
+def import_row_op_key(import_op: str, survivor_id: str,
+                      contributor_ref: str) -> str:
+    """The imported-absorption specialization of `row_op_key`."""
+    return row_op_key(import_op, "imported-absorption", survivor_id,
+                      contributor_ref)
 
 
 class ExportLinkageError(PolicyError):
@@ -786,29 +854,40 @@ class ExportLinkageError(PolicyError):
     file that looks clean)."""
 
 
-def derive_absorbed_by(contributor_id: str, ledger_rows: dict):
-    """The EXACT reverse-link algorithm (R9-1 — v10's 'find the row whose
-    contributor_ref names this record' had two answers under flattening,
-    and zero after an A10 prune).
+def _is_canonical(row: dict) -> bool:
+    """R10-1/R10-2 — CANONICAL means: a DIRECT link (a native
+    `absorption` or `imported-absorption` row) or a REPARENTED link (a
+    scope-attribution row whose payload is the reparented class). Plain
+    flattened copies are never canonical, and NEITHER is the
+    closure-incompleteness marker (R10-2's executed launder: the v11
+    predicate keyed only on `flattened`, so the marker — non-flattened —
+    counted as canonical and materialised a clean absorbed_by_id from a
+    detected W14 violation)."""
+    p = row.get("payload") or {}
+    site = row.get("site")
+    if site in ("absorption", "imported-absorption"):
+        return True
+    if site == SITE_ATTRIBUTION:
+        return set(p) == {"reparented_from"}
+    return False
 
-    CANONICAL rows for a contributor are: DIRECT rows (no `flattened`
-    marker), and REPARENTED rows (`flattened`+`reparented` — the
-    retention contract's prune-time upgrade, which is exactly what keeps
-    the reverse link unique after the direct absorber is pruned).
-    Plain flattened copies are NEVER canonical.
+
+def derive_absorbed_by(contributor_id: str, ledger_rows: dict):
+    """The EXACT reverse-link algorithm (R9-1; the canonical predicate
+    rebuilt under R10-1/R10-2 — see `_is_canonical`).
 
     Returns the unique canonical absorber's survivor id; None when no
     canonical row exists (the exporter OMITS `absorbed_by_id` and the
     record travels as legacy — the import-side note rule governs,
-    fail-closed on ambiguity); raises ExportLinkageError on >1 (corrupt —
-    the export refuses)."""
+    fail-closed on ambiguity; a contributor whose only trace is the
+    incompleteness marker lands HERE, so a detected W14 violation is
+    never laundered into portable linkage); raises ExportLinkageError on
+    >1 (corrupt — the export refuses)."""
     hits = []
     for survivor, rows in ledger_rows.items():
         for r in rows:
-            if r.get("contributor_ref") != contributor_id:
-                continue
-            p = r.get("payload") or {}
-            if not p.get("flattened") or p.get("reparented"):
+            if r.get("contributor_ref") == contributor_id \
+                    and _is_canonical(r):
                 hits.append(survivor)
     if not hits:
         return None
@@ -820,45 +899,59 @@ def derive_absorbed_by(contributor_id: str, ledger_rows: dict):
     return hits[0]
 
 
-def prune_absorbed_record(record_id: str, ledger_rows: dict) -> dict:
-    """The RETENTION CONTRACT's prune step, modelled (R8-1/R9-1): what a
-    compliant future prune capability MUST do BEFORE the A10 row-drop.
+def prune_absorbed_record(record_id: str, ledger_rows: dict,
+                          *, prune_op: str) -> dict:
+    """The RETENTION CONTRACT's prune step, modelled (R8-1/R9-1; made
+    INSERT-ONLY under R10-1 — accepted 0014 says a ledger row is inserted
+    and never updated or replaced, and v11's payload mutation violated
+    that; the v11 SQL harness even ran a raw UPDATE to demonstrate it,
+    which was proof-by-bypass).
 
-    For every CANONICAL row on the pruned record (direct, or already
-    reparented onto it by an earlier prune) with contributor X: the
-    pruned record's own canonical absorber S must hold a flattened copy
-    of X (born-closed, W14) — that copy is UPGRADED to
-    `reparented: true`, making it X's new canonical reverse link. A
-    missing copy (a W14 violation surfacing at prune time) writes the
-    closure-incompleteness marker row on S instead (identity None,
-    payload {"closure": "incomplete"} — the resolver fails it closed
-    forever). Then the pruned record's own row set drops (A10).
+    What a compliant future prune capability MUST do BEFORE the A10
+    row-drop: for every CANONICAL row on the pruned record with
+    contributor X, INSERT a NEW scope-attribution row on the pruned
+    record's own canonical absorber S — payload
+    `{"reparented_from": <pruned id>}`, X's identity/evidence digests
+    carried from the source row, the prune operation's injective per-row
+    op key — making it X's new canonical reverse link. The absorber's
+    existing flattened copy of X is UNTOUCHED (immutable, and
+    non-canonical by class). Where the absorber lacks even the flattened
+    copy (a W14 violation surfacing at prune time), the inserted row is
+    the closure-incompleteness MARKER instead (identity None, payload
+    {"closure": "incomplete"} — never canonical, never exported; the
+    resolver fails it closed). Then the pruned record's own row set
+    drops (A10). Every inserted row passes `validate_row_plan`.
 
-    Pruning a record with NO canonical absorber (an active record, or a
-    fully-detached corrupt one) just drops its rows — there is no
-    linkage to preserve. Returns the new ledger_rows mapping."""
+    Pruning a record with NO canonical absorber just drops its rows.
+    Returns the new ledger_rows mapping; inputs are never mutated."""
+    if not _OP_ID.match(prune_op or ""):
+        raise PolicyError(f"prune_op must be op-<12hex>, got {prune_op!r}")
     out = {k: [dict(r, payload=dict(r.get("payload") or {}))
                for r in v] for k, v in ledger_rows.items()}
     absorber = derive_absorbed_by(record_id, out)
     if absorber is not None:
         for r in out.get(record_id, []):
-            p = r.get("payload") or {}
-            if p.get("flattened") and not p.get("reparented"):
-                continue                        # a plain copy — not canonical
+            if not _is_canonical(r):
+                continue
             x = r.get("contributor_ref")
             if x is None:
                 continue                        # legacy row — nothing typed
-            target = [t for t in out.get(absorber, [])
-                      if t.get("contributor_ref") == x
-                      and (t.get("payload") or {}).get("flattened")]
-            if target:
-                target[0]["payload"]["reparented"] = True
-            else:                               # W14 violation, caught here
-                out.setdefault(absorber, []).append(
-                    {"site": "absorption", "identity_digest": None,
-                     "contributor_ref": x,
-                     "evidence_ref_digest": None,
-                     "payload": {"closure": "incomplete"}, "op_key": None})
+            has_copy = any(
+                t.get("contributor_ref") == x
+                and (t.get("payload") or {}).get("flattened")
+                for t in out.get(absorber, []))
+            new = {"site": SITE_ATTRIBUTION,
+                   "identity_digest": (r.get("identity_digest")
+                                       if has_copy else None),
+                   "evidence_ref_digest": (r.get("evidence_ref_digest")
+                                           if has_copy else None),
+                   "contributor_ref": x, "contributor_type": "edge",
+                   "op_key": row_op_key(prune_op, SITE_ATTRIBUTION,
+                                        absorber, x),
+                   "payload": ({"reparented_from": record_id} if has_copy
+                               else {"closure": "incomplete"})}
+            validate_row_plan(new)
+            out.setdefault(absorber, []).append(new)
     out.pop(record_id, None)                    # the A10 drop
     return out
 
@@ -922,7 +1015,10 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
         ev = evidence_digest_of(r.get("origin"), r.get("evidence_ref"),
                                 local_origin)
         cref = id_remap.get(rid, rid)
-        # propagate to the direct winner and every transitive absorber
+        # propagate to the direct winner and every transitive absorber —
+        # DIRECT links land at imported-absorption; transitive copies at
+        # scope-attribution (R10-1: the derived-row site, so the imported
+        # marker vocabulary stays exactly {"reconstructed": true})
         hop, visited, direct = winner_of[rid], {rid}, True
         while True:
             if hop in visited:
@@ -931,14 +1027,14 @@ def reconstruct_absorption_rows(export_records: list, local_origin: str,
                     f"{hop!r} — corrupt history; the import REFUSES (R7-1)")
             visited.add(hop)
             surv = id_remap.get(hop, hop)
-            payload = {"reconstructed": True}
-            if not direct:
-                payload["flattened"] = True
+            site = "imported-absorption" if direct else SITE_ATTRIBUTION
+            payload = ({"reconstructed": True} if direct
+                       else {"flattened": True, "reconstructed": True})
             out.setdefault(surv, []).append(
-                {"site": "imported-absorption", "identity_digest": d,
+                {"site": site, "identity_digest": d,
                  "evidence_ref_digest": ev, "contributor_ref": cref,
                  "contributor_type": "edge",
-                 "op_key": import_row_op_key(import_op, surv, cref),
+                 "op_key": row_op_key(import_op, site, surv, cref),
                  "payload": payload})
             if hop not in winner_of:
                 break

@@ -267,32 +267,46 @@ store with NO source_id (the store-authored shape), in order:
      survivors whose contributors are unavailable are UNRESOLVED where
      the single-hop read called them own-scope — a fail-closed widening,
      remediable by re-derivation.
-   - **The retention contract (R8-1; REPARENTING added under R9-1):** no
-     shipped path physically prunes an absorbed edge today (mechanically
-     asserted, 0021 §2c-ii — expiry only invalidates; consolidation
-     deletes episodes; user erasure removes the user's ledger with the
-     records, mooting membership). ANY future pruning capability MUST,
-     before the A10 row-drop: for every CANONICAL row on the pruned
-     record (direct, or reparented onto it by an earlier prune) with
-     contributor X, UPGRADE the pruned record's own canonical absorber's
-     flattened copy of X to `reparented: true` — X's new canonical
-     reverse link (this is what keeps `derive_absorbed_by` unique after
-     the prune); a missing copy (a W14 violation surfacing at prune
-     time) writes the closure-incompleteness marker row instead
-     (identity_digest None, payload `{"closure": "incomplete"}` — failed
-     closed forever). The reference models the whole step
-     (`prune_absorbed_record`), and the ledger harness executes it over
-     SQL-stored rows, before AND after the prune.
+   - **The retention contract (R8-1; reparenting added under R9-1; made
+     INSERT-ONLY under R10-1 — accepted 0014 says a ledger row is
+     inserted and NEVER updated or replaced, and the v11 "upgrade" was a
+     payload mutation the v11 harness could only demonstrate by
+     bypassing the store validator with raw SQL):** no shipped path
+     physically prunes an absorbed edge today (mechanically asserted,
+     0021 §2c-ii). ANY future pruning capability MUST, before the A10
+     row-drop: for every CANONICAL row on the pruned record with
+     contributor X, INSERT a NEW `scope-attribution` row on the pruned
+     record's own canonical absorber — payload
+     `{"reparented_from": <pruned id>}`, X's digests carried, the prune
+     operation's injective per-row op key — X's new canonical reverse
+     link. The absorber's existing flattened copy is UNTOUCHED
+     (immutable, non-canonical by class). Where even the flattened copy
+     is missing (a W14 violation surfacing at prune time), the inserted
+     row is the closure-incompleteness MARKER instead (identity_digest
+     None, payload `{"closure": "incomplete"}`). The reference models
+     the whole step (`prune_absorbed_record`, insert-only, every row
+     validator-checked), and the ledger harness executes it over
+     SQL-stored rows — INSERT and A10-DELETE only, no UPDATE exists —
+     before AND after the prune, for both the valid-reparent and
+     missing-copy states.
    - **The EXPORT reverse-link algorithm (R9-1 — v10's "find the row
      whose contributor_ref names this record" had TWO answers under
-     flattening and ZERO after a prune):** `derive_absorbed_by` is
-     normative. CANONICAL rows for a contributor are DIRECT rows and
-     REPARENTED rows; plain flattened copies are NEVER canonical.
-     Exactly one canonical row → its survivor is `absorbed_by_id`; ZERO →
-     the exporter OMITS the field and the record travels as legacy (the
-     import-side note rule governs, fail-closed on ambiguity); MORE THAN
-     ONE → `ExportLinkageError`, the whole export REFUSES — corrupt
-     linkage must not become a portable file that looks clean.
+     flattening and ZERO after a prune; the canonical predicate made
+     CLASS-TOTAL under R10-2):** `derive_absorbed_by` is normative.
+     CANONICAL rows for a contributor are, BY SITE AND CLASS: native
+     `absorption` and `imported-absorption` rows (direct links), and
+     `scope-attribution` rows of the REPARENTED class. Plain flattened
+     copies are NEVER canonical — **and neither is the
+     closure-incompleteness marker (R10-2's executed launder: the v11
+     predicate keyed only on the flattened flag, so the marker counted
+     as canonical and a DETECTED W14 violation materialised a clean
+     `absorbed_by_id`)**; a contributor whose only trace is the marker
+     derives to None — the export OMITS, the import-side note rule
+     fails closed. Exactly one canonical row → its survivor is
+     `absorbed_by_id`; ZERO → the exporter OMITS the field and the
+     record travels as legacy; MORE THAN ONE → `ExportLinkageError`,
+     the whole export REFUSES — corrupt linkage must not become a
+     portable file that looks clean.
 
    All contributors (over the CLOSED set) resolve to one scope → the
    derivative is that scope's. Contributors span scopes → cannot occur
@@ -349,15 +363,18 @@ store with NO source_id (the store-authored shape), in order:
      carry the `flattened` payload class) — reconstructed row sets are
      born closed, matching the write-time flattening; cyclic chains
      refuse.
-   - **COMPLETE ROWS (R7-3, completed under R8-3):** every reconstructed
-     row carries site `imported-absorption`, identity_digest, the typed
-     `contributor_ref` (the post-remap absorbed record id — the
-     contributor BINDING that determines which exported record supplies
-     the evidence digest), `evidence_ref_digest` (the shipped
+   - **COMPLETE ROWS (R7-3, completed under R8-3; SITES split under
+     R10-1):** every reconstructed row carries its site — DIRECT links at
+     `imported-absorption` (payload exactly `{"reconstructed": true}`),
+     transitive copies at `scope-attribution` (payload
+     `{"flattened": true, "reconstructed": true}`) — identity_digest,
+     the typed `contributor_ref` (the post-remap absorbed record id —
+     the contributor BINDING that determines which exported record
+     supplies the evidence digest), `evidence_ref_digest` (the shipped
      construction over the absorbed record's resolved origin +
-     evidence_ref), the closed payload, and a PER-ROW op key in the
-     INJECTIVE framed-digest form (`import_row_op_key`:
-     `{import_op}:imported-absorption:{sha256(framed(survivor) +
+     evidence_ref), and a PER-ROW op key in the
+     INJECTIVE framed-digest form (`row_op_key`:
+     `{op}:{site-token}:{sha256(framed(survivor) +
      framed(contributor))}` — R9-2 executed the v10 plain colon-join's
      collision over delimiter-bearing ids, the same class as the R7-2
      note grammar; the prefix fields are colon-free by construction and

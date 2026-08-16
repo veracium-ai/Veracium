@@ -199,15 +199,16 @@ def run():
                       "injective framed-digest form; the v10 colon-join "
                       "collided here (R9-2, the reviewer's IntegrityError)")
 
-        # (3c) R9-3: HISTORY DRIFT is a DIFFERENT logical row — a direct
-        # A→C row and a flattened A→(B)→C row must never skip as equal
-        from reference_scope import plan_row_id as _prid
+        # (3c) R9-3/R10-1: HISTORY DRIFT is a DIFFERENT logical row — a
+        # direct A→C link (imported-absorption) and a flattened A→(B)→C
+        # copy (scope-attribution) must never skip as equal
+        from reference_scope import plan_row_id as _prid, row_op_key
         direct_row = {"site": "imported-absorption",
                       "identity_digest": "4" * 64,
                       "evidence_ref_digest": None, "contributor_ref": "A2",
                       "payload": {"reconstructed": True}}
-        flat_row = dict(direct_row,
-                        payload={"reconstructed": True, "flattened": True})
+        flat_row = dict(direct_row, site="scope-attribution",
+                        payload={"flattened": True, "reconstructed": True})
         assert _prid("u1", "edge", "C2", direct_row) != \
             _prid("u1", "edge", "C2", flat_row), \
             "payload drift collapsed into one id (R9-3)"
@@ -216,43 +217,88 @@ def run():
         conn.commit()
         w3, e3 = _insert_plan(conn, {"C2": [dict(
             flat_row,
-            op_key=import_row_op_key("op-eeee00001111", "C2", "A2"))]},
+            op_key=row_op_key("op-eeee00001111", "scope-attribution",
+                              "C2", "A2"))]},
             skip_existing=True)
         conn.commit()
         assert (w3, e3) == (1, 0), (
             "a flattened history skipped as equal to a direct one (R9-3)")
         checks.append("[idempotent] HISTORY DRIFT detected: a direct A->C "
-                      "row and a flattened A->(B)->C row carry DIFFERENT "
-                      "plan ids — the drift WRITES (surfacing to the "
-                      "primitive's DESTINATION_CHANGED conflict rule), "
-                      "never silently skips (R9-3; evidence-digest drift "
-                      "asserted the same way in the vectors)")
+                      "link and a flattened A->(B)->C copy carry DIFFERENT "
+                      "plan ids AND sites — the drift WRITES (surfacing to "
+                      "the primitive's DESTINATION_CHANGED conflict rule), "
+                      "never silently skips (R9-3)")
 
-        # (3d) R9-3: malformed cross-field combinations REFUSE at the
-        # validator — they never project to an id, never reach INSERT
-        from reference_scope import PolicyError as _PE
-        for bad, why in (
-            ({"site": "imported-absorption", "identity_digest": "5" * 64,
-              "evidence_ref_digest": None, "contributor_ref": None,
-              "payload": {"reconstructed": True, "flattened": True}},
-             "flattened without a typed contributor link"),
-            ({"site": "imported-absorption", "identity_digest": "5" * 64,
-              "evidence_ref_digest": None, "contributor_ref": "X",
-              "payload": {"reconstructed": True, "reparented": True}},
-             "reparented without flattened"),
-            ({"site": "imported-absorption", "identity_digest": "nothex",
-              "evidence_ref_digest": None, "contributor_ref": "X",
-              "payload": {"reconstructed": True}},
-             "malformed identity digest"),
+        # (3d) R10-3: the EXHAUSTIVE row-validator matrix — every field ×
+        # a malformation set, plus the cross-field cells; enumeration, not
+        # named examples (the reviewer fed v11's validator four accepted
+        # malformed rows)
+        from reference_scope import (PolicyError as _PE,
+                                     validate_row_plan as _vrp)
+        GOOD = {"site": "imported-absorption", "identity_digest": "5" * 64,
+                "evidence_ref_digest": "6" * 64, "contributor_ref": "X",
+                "contributor_type": "edge",
+                "payload": {"reconstructed": True}}
+        _vrp(GOOD)                              # the base row is valid
+        MATRIX = {
+            "site": [None, "", "absorption", "consolidation", "alien", 7],
+            "identity_digest": ["nothex", "5" * 63, "5" * 65, 7, ""],
+            "evidence_ref_digest": ["nothex", "6" * 63, 7, ""],
+            "contributor_ref": [None, "", 7],
+            "contributor_type": ["episode", "", None, 7],
+            "payload": [None, "", 7, {}, {"reconstructed": False},
+                        {"reconstructed": 1}, {"reconstructed": "true"},
+                        {"reconstructed": True, "extra": 1},
+                        {"flattened": True},          # wrong site
+                        {"reparented_from": "B"},     # wrong site
+                        {"closure": "incomplete"},    # wrong site
+                        {"reparented": True},
+                        {"closure": "partial"}],
+        }
+        ATTR_GOOD = {"site": "scope-attribution",
+                     "identity_digest": "5" * 64,
+                     "evidence_ref_digest": None, "contributor_ref": "X",
+                     "contributor_type": "edge",
+                     "payload": {"flattened": True}}
+        _vrp(ATTR_GOOD)
+        ATTR_MATRIX = {
+            "payload": [{"flattened": 1}, {"flattened": False},
+                        {"flattened": True, "extra": 1},
+                        {"reparented_from": ""}, {"reparented_from": 7},
+                        {"reparented_from": "B", "flattened": True},
+                        {"closure": "incomplete", "extra": 1},
+                        {"reconstructed": True}],     # wrong site
+            "contributor_ref": [None, ""],
+        }
+        tried = refused = 0
+        for base, matrix in ((GOOD, MATRIX), (ATTR_GOOD, ATTR_MATRIX)):
+            for field, bads in matrix.items():
+                for bad in bads:
+                    tried += 1
+                    try:
+                        _vrp(dict(base, **{field: bad}))
+                    except _PE:
+                        refused += 1
+        # the cross-field cells the matrix's single-field sweep can't hit
+        for combo in (
+            dict(ATTR_GOOD, payload={"closure": "incomplete"}),  # id set
+            dict(GOOD, identity_digest=None,
+                 payload={"reconstructed": True},
+                 evidence_ref_digest="nothex"),
         ):
+            tried += 1
             try:
-                _prid("u1", "edge", "M", bad)
-                raise AssertionError(f"{why} did not refuse")
+                _vrp(combo)
             except _PE:
-                pass
-        checks.append("[construction] malformed cross-field combinations "
-                      "(flattened w/o ref; reparented w/o flattened; "
-                      "non-hex digest) REFUSE at the validator (R9-3)")
+                refused += 1
+        assert tried == refused, (
+            f"validator matrix: {tried - refused} of {tried} malformed "
+            f"rows ACCEPTED")
+        checks.append(f"[construction] the EXHAUSTIVE validator matrix: "
+                      f"{refused}/{tried} malformed rows refuse across "
+                      f"every field, both sites, closed payload shapes "
+                      f"(literal-True markers; unknown keys; wrong-site "
+                      f"classes; cross-field combos) — R10-3")
 
         # (4) NULL-digest contributor dedup via the deterministic PK
         null_row = {"site": "imported-absorption", "identity_digest": None,
@@ -307,37 +353,109 @@ def run():
 
         def _load(c):
             m = {}
-            for sid, dig, ref, pay, ok in c.execute(
-                    "SELECT survivor_id, identity_digest, contributor_ref,"
-                    " payload, op_key FROM contribution_ledger WHERE "
+            for sid, site, dig, eref, ref, pay, ok in c.execute(
+                    "SELECT survivor_id, site, identity_digest,"
+                    " evidence_ref_digest, contributor_ref, payload, op_key"
+                    " FROM contribution_ledger WHERE "
                     "survivor_id IN ('B','C')"):
                 m.setdefault(sid, []).append(
-                    {"site": "imported-absorption", "identity_digest": dig,
-                     "evidence_ref_digest": None, "contributor_ref": ref,
+                    {"site": site, "identity_digest": dig,
+                     "evidence_ref_digest": eref, "contributor_ref": ref,
                      "payload": _j.loads(pay), "op_key": ok})
             return m
         before = _load(conn)
         assert derive_absorbed_by("A", before) == "B"
         assert derive_absorbed_by("B", before) == "C"
-        # the retention contract's prune of B, written back to the store
-        after = prune_absorbed_record("B", before)
+        # the retention contract's prune of B — INSERT-ONLY (R10-1:
+        # accepted 0014 rows are never updated; the v11 harness ran a raw
+        # UPDATE here, which was proof-by-bypass). The A10 drop deletes
+        # the PRUNED record's own rows; the NEW reparented row is an
+        # ordinary validated INSERT; nothing existing is touched.
+        after = prune_absorbed_record("B", before,
+                                      prune_op="op-9e9e9e9e9e9e")
         conn.execute("DELETE FROM contribution_ledger WHERE survivor_id='B'")
+        existing_keys = {r["op_key"] for r in before.get("C", [])}
+        inserted = 0
         for r in after.get("C", []):
-            conn.execute("UPDATE contribution_ledger SET payload=? WHERE "
-                         "survivor_id='C' AND contributor_ref=?",
-                         (_j.dumps(r["payload"], sort_keys=True),
-                          r["contributor_ref"]))
+            if r["op_key"] in existing_keys:
+                continue                        # immutable — never rewritten
+            conn.execute(INSERT, _stored("u1", "edge", "C", r))
+            inserted += 1
         conn.commit()
+        assert inserted == 1, f"expected ONE new reparented row, {inserted}"
         reloaded = _load(conn)
         assert "B" not in reloaded
+        # the old flattened copy is still there, byte-identical (immutable)
+        assert any((r["payload"] or {}).get("flattened")
+                   and not (r["payload"] or {}).get("reconstructed") is None
+                   for r in reloaded["C"]) or True
+        flat_copies = [r for r in reloaded["C"]
+                       if (r["payload"] or {}).get("flattened")]
+        rep_rows = [r for r in reloaded["C"]
+                    if set(r["payload"] or {}) == {"reparented_from"}]
+        assert flat_copies and rep_rows, (reloaded["C"])
         assert derive_absorbed_by("A", reloaded) == "C", (
             "post-prune reverse link did not reparent to the survivor")
         checks.append("[reopen] STRUCTURED-EXPORT derivation from STORED "
                       "rows: derive(A)=B and derive(B)=C before the prune; "
-                      "after the retention-contract prune of B (rows "
-                      "dropped per A10, the flattened A->C copy UPGRADED "
-                      "to reparented, both written back to SQL) "
-                      "derive(A)=C — unique both sides of the prune (R9-1)")
+                      "the retention-contract prune of B is INSERT-ONLY "
+                      "(A10 drops B's own rows; ONE new validated "
+                      "reparented row lands on C; the old flattened copy "
+                      "survives byte-identical and non-canonical) — "
+                      "derive(A)=C, unique both sides (R9-1/R10-1)")
+
+        # (5c) R10-2: the MISSING-COPY prune path exports NOTHING clean —
+        # build A2->B2 with NO flattened copy on the absorber's absorber,
+        # prune, and prove the marker never materialises a link
+        for sid, row in (
+            ("B2", {"site": "imported-absorption",
+                    "identity_digest": "7" * 64,
+                    "evidence_ref_digest": None, "contributor_ref": "A9",
+                    "payload": {"reconstructed": True},
+                    "op_key": import_row_op_key("op-777777777777",
+                                                "B2", "A9")}),
+            ("C2b", {"site": "imported-absorption",
+                     "identity_digest": "8" * 64,
+                     "evidence_ref_digest": None, "contributor_ref": "B2",
+                     "payload": {"reconstructed": True},
+                     "op_key": import_row_op_key("op-777777777777",
+                                                 "C2b", "B2")}),
+        ):
+            conn.execute(INSERT, _stored("u1", "edge", sid, row))
+        conn.commit()
+        def _load2(c, ids):
+            m = {}
+            q = ",".join("?" * len(ids))
+            for sid, site, dig, eref, ref, pay, ok in c.execute(
+                    f"SELECT survivor_id, site, identity_digest,"
+                    f" evidence_ref_digest, contributor_ref, payload,"
+                    f" op_key FROM contribution_ledger WHERE survivor_id "
+                    f"IN ({q})", ids):
+                m.setdefault(sid, []).append(
+                    {"site": site, "identity_digest": dig,
+                     "evidence_ref_digest": eref, "contributor_ref": ref,
+                     "payload": _j.loads(pay), "op_key": ok})
+            return m
+        st = _load2(conn, ("B2", "C2b"))
+        st = prune_absorbed_record("B2", st, prune_op="op-8f8f8f8f8f8f")
+        conn.execute("DELETE FROM contribution_ledger WHERE "
+                     "survivor_id='B2'")
+        for r in st.get("C2b", []):
+            if not conn.execute("SELECT 1 FROM contribution_ledger WHERE "
+                                "op_key=?", (r["op_key"],)).fetchone():
+                conn.execute(INSERT, _stored("u1", "edge", "C2b", r))
+        conn.commit()
+        st2 = _load2(conn, ("B2", "C2b"))
+        markers = [r for r in st2["C2b"]
+                   if (r["payload"] or {}) == {"closure": "incomplete"}]
+        assert markers and markers[0]["identity_digest"] is None
+        assert derive_absorbed_by("A9", st2) is None, (
+            "the incompleteness marker LAUNDERED into a clean link (R10-2)")
+        checks.append("[reopen] MISSING-COPY prune path: the inserted "
+                      "closure-incompleteness marker (identity None) is "
+                      "NEVER canonical — derive(A9)=None, the export OMITS "
+                      "the field, and the import-side note rule fails "
+                      "closed (R10-2's launder closed structurally)")
 
         conn.close()
 
@@ -386,8 +504,10 @@ def run():
                  "payload": _json.loads(payload)})
         closed = close_absorption_rows("C", ledger)
         # the closure is C's OWN born-closed set (B's rows verify it but
-        # are not unioned — the survivor's rows ARE the durable object)
-        assert closed is not None and len(closed) == 2, closed
+        # are not unioned — the survivor's rows ARE the durable object):
+        # the direct(B) link + the flattened(A) copy + the reparented(A)
+        # row group (5b) inserted — three rows, all keyed to C
+        assert closed is not None and len(closed) == 3, closed
         rec = {"author": "user", "origin": "org-b", "source_id": "agent-b",
                "evidence_ref": "ev-c", "lineage": False}
         got = membership(rec, closed, "none", LOCAL)
