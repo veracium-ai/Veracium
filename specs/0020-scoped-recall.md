@@ -616,7 +616,18 @@ harness, test or commit wherever code exists. Round reports are verbatim in
 `specs/reviews/0020-0021/round-N.md`; the compressed per-round dispositions
 are `specs/reviews.py`, which is the source the STATUS index renders from.
 Rounds: internal 1, external 1–14 (findings 7→7→5→3→4→3→4→3→5→5→5→3→1→0),
-plus one POST-ACCEPTANCE self-found defect.)*
+plus one POST-ACCEPTANCE self-found defect.
+
+**Two counts, two bases — stated because they differ and a reader who sums
+the wrong one will think the other is a typo.** The series above is PER
+ROUND: the number of distinct findings that round's report raised, which is
+what the verbatim reports in `specs/reviews/0020-0021/` say. `specs/reviews.py`
+sums PER SPEC, and the rounds were COUPLED, so a finding landing on both
+specs is recorded in both rows and its per-spec total is necessarily larger
+(round 1: 7 distinct findings, recorded 5 + 6). The table below lists one row
+per finding PER OWNER, so it tracks the per-spec basis. No single number is
+"the" count; the round reports are authoritative for what was raised, this
+table for what closed it.)*
 
 | round | finding | class | owner | disposition | evidence |
 |---|---|---|---|---|---|
