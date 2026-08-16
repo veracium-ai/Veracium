@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.11.0 — 2026-08-16
+
 - **THE API-BREAKING RELEASE (stage D2)** — the one break every deferred
   removal and schema change was staged for. Four coordinated changes, all
   under accepted specs (0016 D2; 0018; and the 0020/0021 acceptance

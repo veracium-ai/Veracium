@@ -175,10 +175,20 @@ def engine_tier(n_ops: int = 100) -> dict:
 
         budgets_ok = {"n": 0, "over": 0}
 
+        # specs/0012 C1 (2026-08-10) introduced per-surface budget FLOORS; the
+        # old 120 is below recall's floor (272 = envelope 48 + max(item 64,
+        # contested 192) + report reserve 32), so every run since has raised
+        # ValueError — the release checklist's bench step has been silently
+        # unrunnable for two releases. 512 is the smallest round budget that
+        # clears the floor with room for several items; the tolerance rides it.
+        # Records before 2026-08-16 measured the 120 budget and are NOT
+        # comparable on `budgeted_ms` (noted in this run's record).
+        BUDGET = 512
+
         def one_budgeted():
-            r = mem.recall("user1", "acme designer diet", token_budget=120)
+            r = mem.recall("user1", "acme designer diet", token_budget=BUDGET)
             budgets_ok["n"] += 1
-            if r.tokens_estimated > 120 * 1.25:   # documented approx tolerance
+            if r.tokens_estimated > BUDGET * 1.25:  # documented approx tolerance
                 budgets_ok["over"] += 1
         budgeted_ms = _median_ms(one_budgeted, n_ops // 2)
 
