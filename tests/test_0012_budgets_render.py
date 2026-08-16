@@ -14,7 +14,6 @@ from veracium.config import MemoryConfig
 from veracium.graph import apply_supersession
 from veracium.proactive import assemble
 from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance, Volatility)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u"
@@ -26,8 +25,7 @@ def _edge(eid, obj, *, author=EvidenceAuthor.USER, disc=Disclosure.MENTIONABLE,
     t = NOW - timedelta(days=days)
     return Edge(id=eid, user_id=U, subject="user", relation=rel, object=obj, note=note,
                 volatility=vol, valid_from=t, needs_confirmation=flag,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=author, evidence_ref=f"ev-{eid}",
+                provenance=Provenance(author_of_evidence=author, evidence_ref=f"ev-{eid}",
                                       disclosure=disc, observed_at=t))
 
 
@@ -47,8 +45,7 @@ def test_a_single_oversized_item_is_clamped_not_emitted(tmp_path):
     mem.store.add_episode(__import__("veracium.schema", fromlist=["Episode"]).Episode(
         id="bigep", user_id=U, date=NOW.date().isoformat(),
         summary="e" * 200_000,                                  # oversized episode
-        provenance=Provenance(source_type=SourceType.STATED,
-                              author_of_evidence=EvidenceAuthor.USER,
+        provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                               evidence_ref="bigep", observed_at=NOW)))
     r = mem.recall(U, "x", token_budget=900)
     assert r.tokens_estimated <= 900                            # never sails through whole
@@ -80,8 +77,7 @@ def test_safety_overflow_is_ordered_and_reported(tmp_path):
         mem.store.add_episode(__import__("veracium.schema", fromlist=["Episode"]).Episode(
             id=f"ep{i}", user_id=U, date=(NOW - timedelta(days=i)).date().isoformat(),
             summary=f"a verbose recent episode line number {i} occupying budget",
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"ep-{i}", observed_at=NOW)))
     r = mem.recall(U, "grounded detail owes", token_budget=300)
     assert r.truncated
@@ -227,12 +223,12 @@ def test_oversized_subject_and_relation_are_heading_clamped(tmp_path):
     mem.store.add_edge(Edge(
         id="hs", user_id=U, subject=big_subject, relation="works_as",
         object="grounded", provenance=Provenance(
-            source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
+            author_of_evidence=EvidenceAuthor.USER,
             evidence_ref="ev-hs", disclosure=Disclosure.MENTIONABLE)))
     apply_supersession(mem.store, Edge(
         id="hc", user_id=U, subject=big_subject, relation="works_as",
         object="challenger", provenance=Provenance(
-            source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.THIRD_PARTY,
+            author_of_evidence=EvidenceAuthor.THIRD_PARTY,
             evidence_ref="ev-hc", disclosure=Disclosure.QUARANTINED)),
         mem.config.relations)
     r = mem.recall(U, "grounded challenger works", token_budget=600)
@@ -288,8 +284,7 @@ def test_query_matched_claim_flag_survives_overflow(tmp_path):
         mem.store.add_episode(__import__("veracium.schema", fromlist=["Episode"]).Episode(
             id=f"ep{i}", user_id=U, date=(NOW - timedelta(days=i)).date().isoformat(),
             summary=f"verbose episode {i} " + "history " * 20,
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"ep-{i}", observed_at=NOW)))
     r = mem.recall(U, "owes collector money", token_budget=400)
     assert "$2,400" in r.unverified                         # the fenced flag SURVIVES
@@ -344,8 +339,7 @@ def test_the_frozen_recall_and_proactive_orders(tmp_path):
         s2.add_episode(Episode(
             id=f"ep-{tag}", user_id=U, date=(NOW - timedelta(days=days)).date().isoformat(),
             summary=f"{tag} " + "verbose history " * 30,
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=tag, observed_at=NOW - timedelta(days=days))))
     ctx, *_ = assemble(s2, U, MemoryConfig(db_path=":memory:"), now=NOW,
                        token_budget=floor_for("proactive"))
@@ -483,8 +477,7 @@ def test_proactive_order_ties_and_directions(tmp_path):
                 id=f"ep-{tag}", user_id=U,
                 date=(NOW - timedelta(days=days)).date().isoformat(),
                 summary=f"{tag} " + "verbose history " * 30,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=tag,
                                       observed_at=NOW - timedelta(days=days))))
         ctx, *_ = assemble(s, U, cfg, now=NOW, token_budget=floor_for("proactive"))
@@ -553,8 +546,7 @@ def test_episode_id_tie_is_lexicographic_ascending(tmp_path):
         s.add_episode(Episode(
             id=eid, user_id=U, date=NOW.date().isoformat(),
             summary=f"[{eid}] " + "identical verbose history " * 30,
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=eid, observed_at=NOW)))
     ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
                        token_budget=floor_for("proactive"))
@@ -618,8 +610,7 @@ def test_oversized_episode_signals_and_reports(tmp_path):
     s = SqliteStore(":memory:")
     s.add_episode(Episode(
         id="bigep", user_id=U, date=NOW.date().isoformat(), summary="e" * 500_000,
-        provenance=Provenance(source_type=SourceType.STATED,
-                              author_of_evidence=EvidenceAuthor.USER,
+        provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                               evidence_ref="bigep", observed_at=NOW)))
     ctx, _edges2, _eps, truncated = assemble(s, U, MemoryConfig(db_path=":memory:"),
                                              now=NOW, token_budget=1200)
@@ -688,8 +679,7 @@ def test_clamp_registry_is_type_tagged(tmp_path):
                      vol=Volatility.TRANSIENT, days=1))
     s.add_episode(Episode(
         id="same-id", user_id=U, date=NOW.date().isoformat(), summary="e" * 500_000,
-        provenance=Provenance(source_type=SourceType.STATED,
-                              author_of_evidence=EvidenceAuthor.USER,
+        provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                               evidence_ref="same-id", observed_at=NOW)))
     ctx, *_ = assemble(s, U, MemoryConfig(db_path=":memory:"), now=NOW,
                        token_budget=1200)

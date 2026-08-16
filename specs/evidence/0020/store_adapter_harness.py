@@ -65,7 +65,6 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from veracium.graph import DEFAULT_RELATIONS, apply_supersession  # noqa: E402
 from veracium.schema import Edge, EvidenceAuthor, Provenance  # noqa: E402
-from veracium.schema import _SourceType as SourceType  # noqa: E402
 from veracium import portability  # noqa: E402
 from veracium.store.sqlite import SqliteStore  # noqa: E402
 from reference_scope import (SHARED, UNRESOLVED, digest_of, Identity,  # noqa: E402
@@ -82,8 +81,7 @@ def _mint_op():
 def _edge(obj, *, eid, sid, conf=0.9, observed=NOW, note="", rel="pet"):
     return Edge(id=eid, user_id="u1", subject="user", relation=rel,
                 object=obj, valid_from=observed, note=note,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=f"ev-{eid}",
                                       source_id=sid,
                                       observed_at=observed, confidence=conf))
@@ -452,8 +450,7 @@ def run():
                      "subject": "user", "relation": "pet", "object": "x",
                      "valid_from": NOW.isoformat(), "note": None,
                      "invalidation_reason": None,
-                     "provenance": {"source_type": "stated",
-                                    "author_of_evidence": "user",
+                     "provenance": {"author_of_evidence": "user",
                                     "evidence_ref": "ev-1",
                                     "source_id": "agent-1",
                                     "origin": "org-x",
@@ -464,8 +461,7 @@ def run():
                      "subject": "user", "relation": "pet", "object": "y",
                      "valid_from": NOW.isoformat(), "note": note,
                      "invalidation_reason": "absorbed_duplicate",
-                     "provenance": {"source_type": "stated",
-                                    "author_of_evidence": "user",
+                     "provenance": {"author_of_evidence": "user",
                                     "evidence_ref": "ev-2",
                                     "source_id": "agent-2",
                                     "origin": "org-x",

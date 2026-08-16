@@ -13,7 +13,6 @@ import pytest
 
 from veracium.portability import FORMAT_VERSION, export_memory, import_memory
 from veracium.schema import (Edge, Episode, EvidenceAuthor, Outcome, OutcomeJudgmentDraft, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import DESTINATION_CHANGED
 from veracium.store.migration import DuplicateOutcomeChainError, migrate_store
 from veracium.store.schema_version import SCHEMA_V2
@@ -27,8 +26,7 @@ JAN = datetime(2026, 1, 1, tzinfo=timezone.utc)
 def _edge(eid="e1", uid="u"):
     return Edge(id=eid, user_id=uid, subject="user", relation="prefers", object="o",
                 valid_from=JAN, active=True,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=eid, observed_at=JAN))
 
 
@@ -40,8 +38,6 @@ def _outcome(*, eid="e1", evref="run-1", seq=1, supersedes=None,
         kind="outcome", edge_id=eid, outcome=outcome, seq=seq,
         supersedes_episode=supersedes, judgment_time_known=jtk,
         provenance=Provenance(
-            source_type=SourceType.INFERRED if author == EvidenceAuthor.SYSTEM
-            else SourceType.STATED,
             author_of_evidence=author, evidence_ref=evref))
 
 
@@ -426,8 +422,7 @@ def _v2_store_with_legacy_outcome(path, *, duplicate=False):
         "id": "leg-1", "user_id": "u", "date": "2026-05-05",
         "summary": "legacy use", "kind": "outcome", "edge_id": "e1",
         "outcome": "concurred",
-        "provenance": {"source_type": "inferred",
-                       "author_of_evidence": "system", "evidence_ref": "run-1"}}
+        "provenance": {"author_of_evidence": "system", "evidence_ref": "run-1"}}
     conn.execute("INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
                  ("leg-1", "u", "2026-05-05", json.dumps(legacy)))
     if duplicate:
@@ -474,8 +469,7 @@ def test_legacy_portable_outcome_import(tmp_path):
     legacy_ep = {
         "id": "leg-1", "user_id": "u", "date": "2026-06-06", "summary": "legacy",
         "kind": "outcome", "edge_id": "e1", "outcome": "concurred",
-        "provenance": {"source_type": "inferred",
-                       "author_of_evidence": "system", "evidence_ref": "run-1"}}
+        "provenance": {"author_of_evidence": "system", "evidence_ref": "run-1"}}
     exp = str(tmp_path / "v2.jsonl")
     with open(exp, "w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": 2,
@@ -493,8 +487,7 @@ def test_legacy_portable_outcome_import(tmp_path):
 def test_v2_duplicate_identity_import_refuses(tmp_path):
     base = {"user_id": "u", "date": "2026-06-06", "summary": "legacy",
             "kind": "outcome", "edge_id": "e1", "outcome": "concurred",
-            "provenance": {"source_type": "inferred",
-                           "author_of_evidence": "system", "evidence_ref": "run-1"}}
+            "provenance": {"author_of_evidence": "system", "evidence_ref": "run-1"}}
     exp = str(tmp_path / "v2.jsonl")
     with open(exp, "w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": 2,
@@ -515,8 +508,7 @@ def test_v3_import_requires_explicit_judgment_time_known(tmp_path):
     ep = {"id": "x", "user_id": "u", "date": "2026-06-06", "summary": "s",
           "kind": "outcome", "edge_id": "e1", "outcome": "concurred",
           "seq": 1, "supersedes_episode": None,
-          "provenance": {"source_type": "inferred",
-                         "author_of_evidence": "system", "evidence_ref": "run-1"}}
+          "provenance": {"author_of_evidence": "system", "evidence_ref": "run-1"}}
     exp = str(tmp_path / "v3.jsonl")
     with open(exp, "w") as f:
         f.write(json.dumps({"kind": "veracium-export", "version": 3,

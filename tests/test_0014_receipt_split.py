@@ -21,7 +21,6 @@ from veracium import contribution as C
 from veracium.graph import (DEFAULT_RELATIONS, _build_supersession_plan,
                             apply_supersession)
 from veracium.schema import Edge, EvidenceAuthor, Provenance, SupersessionPlan
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import SupersessionIntegrityError
 from veracium.store.sqlite import SqliteStore
 
@@ -33,7 +32,7 @@ def _edge(uid="u1", obj="Miso", *, eid=None, conf=0.9, observed=NOW, ref="ev-1")
         id=eid or f"e-{uuid.uuid4().hex[:8]}", user_id=uid, subject="user",
         relation="pet", object=obj, valid_from=observed,
         provenance=Provenance(
-            source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
+            author_of_evidence=EvidenceAuthor.USER,
             evidence_ref=ref, observed_at=observed, confidence=conf))
 
 
@@ -55,17 +54,19 @@ def test_request_digest_frozen_vectors():
     text + a float + a datetime — with their digest hex PINNED. Any
     serialization drift fails loudly here rather than conflicting in
     production. (The vectors were computed once from the frozen construction
-    and are constants from that moment on — RE-PINNED at specs/0019: the
-    snapshot remains COMPLETE, so it gained the `ungrounded` field and the
-    era's digests moved with it; the CONSTRUCTION is byte-identical.)"""
+    and are constants from that moment on — RE-PINNED at specs/0019 (the
+    snapshot gained `ungrounded`) and again at specs/0016 D2: the snapshot
+    remains COMPLETE over the model, so it LOST the deleted `source_type`
+    field and the era's digests moved with it — the defined collapse; the
+    CONSTRUCTION is byte-identical.)"""
     e1 = _edge(eid="e-vector-1", obj="cat", conf=0.5,
                observed=datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc))
     e2 = _edge(eid="e-vector-2", obj="chat Miso Ω→", conf=0.123456789,
                observed=datetime(2026, 12, 31, 23, 59, 59, tzinfo=timezone.utc))
     d1 = C.request_digest(C.raw_request_snapshot(e1))
     d2 = C.request_digest(C.raw_request_snapshot(e2))
-    assert d1 == "343af88119b316d864534a27cfc2c92889b2bd3eff72f6fdb326139d84f4b59a"
-    assert d2 == "776bc4ff3ac910f01fe823abd6350e0a2a4ae24d902cf2dc80aede04d14a4f31"
+    assert d1 == "20738151dd1585c861cedcfb4db8dabf7cb5668d285e72dbe9f09b9dced29e43"
+    assert d2 == "0227dd5b8fa603808ae83febc4d0d6c2aced00dfc650354a9c86e72e6c484f33"
 
 
 def test_request_digest_rejects_nan():
@@ -177,38 +178,29 @@ def _null_receipt(store, uid, op_id, *, version, outcome_digest, response=None):
     store._conn.commit()
 
 
-def test_public_retry_against_a_legacy_null_receipt_reaches_phase_2(tmp_path):
-    """R10-2 continuation test 1: (NULL, 1, NULL) — phase 1 branch 3 proceeds
-    to planning; phase 2 follows the v1 outcome rule (matching → replay with
-    reconstruct-from-plan)."""
+def test_public_retry_against_a_legacy_null_receipt_refuses_on_sight(tmp_path):
+    """RESHAPED by specs/0016 D2 (0019 rider A2): the R10-2 continuation
+    branch is CLOSED for pre-D2 receipts — a (NULL, 1, NULL) legacy receipt
+    no longer reaches phase-2 recomputation (its projection carried the
+    deleted source_type field and is not computable); it refuses on sight.
+    The full sentinel matrix lives in test_0016_d2_deletion.py."""
+    from veracium.store.base import ReceiptSchemaBoundaryError
     store = _store(tmp_path)
     edge = _edge(eid="e-legacy")
-    plan = _plan(store, edge, "sup-e-legacy")
-    # a REAL v1 receipt predates specs/0019's `ungrounded` field — the
-    # era-faithful fabrication digests the pre-0019 dump shape, exactly as
-    # the store's own v1 comparison recomputes it (strip_0019)
-    v1 = store._logical_request_digest(plan, strip_0019=True)
-    _null_receipt(store, "u1", "sup-e-legacy", version=1, outcome_digest=v1)
-    apply_supersession(store, edge, DEFAULT_RELATIONS)     # replays, no raise
-    assert not [e for e in store.edges("u1", active_only=True)
-                if e.id == "e-legacy"]                     # replay: nothing applied
-
-
-def test_legacy_null_receipt_with_conflicting_plan_conflicts(tmp_path):
-    """R9-2 legacy-conflicting: the v1 projection still bites."""
-    store = _store(tmp_path)
-    edge = _edge(eid="e-legacy2")
-    _null_receipt(store, "u1", "sup-e-legacy2", version=1,
-                  outcome_digest="a-different-operation-entirely")
-    with pytest.raises(SupersessionIntegrityError):
+    _null_receipt(store, "u1", "sup-e-legacy", version=1,
+                  outcome_digest="whatever-was-committed-pre-split")
+    with pytest.raises(ReceiptSchemaBoundaryError):
         apply_supersession(store, edge, DEFAULT_RELATIONS)
+    assert not [e for e in store.edges("u1", active_only=True)
+                if e.id == "e-legacy"]                     # refusal: nothing applied
 
 
-def test_new_snapshot_less_receipt_verifies_at_v2(tmp_path):
-    """R10-2 continuation test 2 + R9-2 mutation case: (NULL, 3, json) — a
+def test_new_snapshot_less_receipt_verifies_at_v4(tmp_path):
+    """R10-2 continuation test 2 + R9-2 mutation case: (NULL, 4, json) — a
     store-level plan resubmission verifies at the EXTENDED projection, so a
     contribution-field mutation CONFLICTS (the projection sees it). New
-    writers stamp 3 (the 0019 era); the projection SHAPE is v2's."""
+    writers stamp 4 (the 0016 D2 source_type-less era); the projection SHAPE
+    is v2's."""
     store = _store(tmp_path)
     edge = _edge(eid="e-snapless")
     plan, _ = _build_supersession_plan(store, edge, DEFAULT_RELATIONS, "op-snapless")
@@ -217,7 +209,7 @@ def test_new_snapshot_less_receipt_verifies_at_v2(tmp_path):
     assert not r1.replayed
     receipt = store.supersession_receipt("u1", "op-snapless")
     assert receipt["request_digest"] is None
-    assert receipt["outcome_digest_version"] == 3
+    assert receipt["outcome_digest_version"] == 4
     # identical resubmission → replay from persisted effects
     r2 = store.apply_supersession_plan(plan.model_copy(deep=True))
     assert r2.replayed and r2.inserted_incoming == r1.inserted_incoming
@@ -294,9 +286,11 @@ def test_the_effect_payload_excludes_the_runtime_flag():
 def test_receipt_state_triple_is_closed(tmp_path):
     """R10-4: TABLE-DRIVEN over every legal cell and the illegal
     representatives — write refused and read flagged. The write gate is the
-    store's own INSERT path (new receipts are always (rd?, 3, json) —
-    the 0019 era); illegal
-    combinations are probed at read via supersession_receipt validation."""
+    store's own INSERT path (new receipts are always (rd?, 4, json) —
+    the 0016 D2 era); illegal
+    combinations are probed at read via supersession_receipt validation.
+    Pre-D2 versions {1,2,3} remain LEGAL STORED STATES (validation passes —
+    the era boundary then refuses them on sight, a separate rule)."""
     store = _store(tmp_path)
     edge = _edge(eid="e-triple")
     plan = _plan(store, edge, "op-triple")
@@ -304,7 +298,7 @@ def test_receipt_state_triple_is_closed(tmp_path):
     r = store.supersession_receipt("u1", "op-triple")
     # the legal new-with-snapshot cell, produced by the real writer
     assert r["request_digest"] is not None
-    assert r["outcome_digest_version"] == 3
+    assert r["outcome_digest_version"] == 4
     effects = json.loads(r["response"])
     assert set(effects) == {"inserted_incoming", "invalidated", "refused"}
 
@@ -312,9 +306,12 @@ def test_receipt_state_triple_is_closed(tmp_path):
         (None, 1, None),                                    # legacy
         (None, 2, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),
         ("d" * 64, 2, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),
-        # the 0019 era (rider: the closed set is {1,2,3} from 0019's release)
+        # the 0019 era
         (None, 3, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),
         ("d" * 64, 3, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),
+        # the 0016 D2 era (rider A1: the closed set is {1,2,3,4} from D2's release)
+        (None, 4, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),
+        ("d" * 64, 4, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),
     ]
     illegal = [
         ("d" * 64, 1, None),
@@ -323,7 +320,8 @@ def test_receipt_state_triple_is_closed(tmp_path):
         ("d" * 64, 2, None),
         (None, 0, None),                                    # version 0
         (None, 3, None),                                    # v3 without effects
-        (None, 4, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),  # beyond the closed set (D2's, not yet legal)
+        (None, 4, None),                                    # v4 without effects
+        (None, 5, '{"inserted_incoming":true,"invalidated":0,"refused":0}'),  # beyond the closed set
         (None, 2, "not json"),
         (None, 2, '{"invalidated":0}'),                     # missing effect field
     ]

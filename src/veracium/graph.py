@@ -17,7 +17,8 @@ from typing import Optional
 from . import authority
 from .schema import (DEFAULT_RELATIONS, ContributionDraft, Edge, EvidenceAuthor,
                      Relation, SupersessionPlan, SupersessionRefusalDraft)
-from .store.base import PLAN_STALE, SupersessionIntegrityError
+from .store.base import (PLAN_STALE, ReceiptSchemaBoundaryError,
+                         SupersessionIntegrityError)
 
 
 # Filler words that never change a value's meaning. Deliberately tiny: a false
@@ -125,6 +126,26 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "Su
     snapshot = raw_request_snapshot(edge)
     receipt = store.supersession_receipt(edge.user_id, op_id)
     if receipt is not None:
+        # specs/0016 D2 — the receipt ERA boundary, BEFORE every branch: a
+        # receipt stamped below version 4 committed over the deleted
+        # source_type field's snapshot; no historical projection is
+        # computable, so it refuses UNCONDITIONALLY ON SIGHT — no digest is
+        # computed (the request_digest call below is never reached), no
+        # comparison branch exists (0019 rider A2; 0003 §4f as amended).
+        # An ABSENT version cannot come from a conforming store (0014 read
+        # validation rejects it) — if a non-validating backend surfaces one,
+        # the receipt is unclassifiable and takes the same conservative
+        # refusal (fail closed, never fail open into a digest comparison).
+        stored_ver = receipt.get("outcome_digest_version")
+        if stored_ver is None or stored_ver < 4:
+            raise ReceiptSchemaBoundaryError(
+                f"operation_id {op_id!r} for user {edge.user_id!r} committed "
+                f"under a pre-D2 receipt era (outcome_digest_version "
+                f"{stored_ver}): its digest basis included the deleted "
+                f"source_type field, so this resubmission is not replay-"
+                f"verifiable across the removal — refused on sight, no digest "
+                f"computed, a legitimate retry indistinguishable from a "
+                f"different request (specs/0016 D2; 0003 §4f as amended)")
         stored_rd = receipt.get("request_digest")
         if stored_rd is not None:
             if stored_rd == request_digest(snapshot):

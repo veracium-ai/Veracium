@@ -31,7 +31,7 @@ DISPOSITIONS = {
  # -- explicit user verbs ----------------------------------------------------
  ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"):
    (W, "`active`, `invalidation_reason`", "act", "clean — narrows only", "`test_dispute_removes_from_assertable_but_keeps_history`"),
- ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "9c80ce4f606d"):
+ ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "c5468767db40"):
    (W, "episode provenance", "act", "clean", "`test_dispute_removes_from_assertable_but_keeps_history`"),
  ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"):
    (W, "`needs_confirmation` (cleared), `observed_at`, `confidence`, the confirmation episode + record — ALL in one atomic store operation", "act",
@@ -50,7 +50,7 @@ DISPOSITIONS = {
  ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"):
    (W, "**`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes`", "act",
     "➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class", "tracked as 0003 I10 [M7-correct]"),
- ("src/veracium/__init__.py", "Memory.correct", "add_episode", "eb225b7572e7"):
+ ("src/veracium/__init__.py", "Memory.correct", "add_episode", "38943ba03330"):
    (W, "episode provenance", "act", "➡️ moved with M7", "tracked as 0003 I10 [M7-correct]"),
  ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"):
    (W, "**all** — irreversible erasure", "act", "clean — erasure is the contract", "`test_forget_erases_everything_and_only_that_user`"),
@@ -73,10 +73,10 @@ DISPOSITIONS = {
    (W, "the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here", "observation",
     "✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5).",
     "`test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "5d29e2f07e03"):
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "d404ed9d101a"):
    (W, "episode provenance (unparseable placeholder)", "observation",
     "clean — never retains raw event text", "`test_unparseable_extraction_degrades_gracefully`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "c1fb106f3b09"):
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "2513ea16a235"):
    (W, "episode provenance", "observation", "clean — the origin of trust", "`test_third_party_text_never_moves_into_the_grounded_block`"),
 
  # -- maintenance ------------------------------------------------------------
@@ -152,19 +152,19 @@ DISPOSITIONS = {
 #   open_moved  open AND owned elsewhere
 STATES = {
   ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"): "clean",
-  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "9c80ce4f606d"): "clean",
+  ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "c5468767db40"): "clean",
   ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "append_outcome_if_head", "65802c446a27"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "5b46e2531803"): "clean",
   ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"): "open_moved",
   ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"): "open_moved",
-  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "eb225b7572e7"): "open_moved",
+  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "38943ba03330"): "open_moved",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "888fd4a4d703"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "5d29e2f07e03"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "c1fb106f3b09"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "d404ed9d101a"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "2513ea16a235"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
   ("src/veracium/lifecycle.py", "expire", "add_edge", "79eaf6e63a9c"): "open",

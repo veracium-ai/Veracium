@@ -11,7 +11,6 @@ from pathlib import Path
 
 from veracium.graph import _subsumes, _value_key, apply_supersession, render_edges
 from veracium.schema import DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 
@@ -26,8 +25,7 @@ def _edge(eid, obj, *, day=1, relation="has_pet", subject="user",
     return Edge(id=eid, user_id="u1", subject=subject, relation=relation,
                 object=obj, note=note, needs_confirmation=needs_confirmation,
                 valid_from=_dt(day),
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=author,
+                provenance=Provenance(author_of_evidence=author,
                                       evidence_ref=f"ev-{eid}", observed_at=_dt(day),
                                       disclosure=disclosure,
                                       confidence=confidence))

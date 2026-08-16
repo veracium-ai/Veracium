@@ -16,7 +16,6 @@ from veracium.contribution import (canonical_payload, consolidation_op_key,
                                    evidence_ref_digest, validate_payload)
 from veracium.graph import apply_supersession
 from veracium.schema import (DEFAULT_RELATIONS, ConsolidationState, ContributionDraft, Disclosure, Edge, EvidenceAuthor, Episode, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.source_identity import resolve_origin, source_identity_digest
 from veracium.store.sqlite import SqliteStore, SupersessionIntegrityError
 
@@ -29,7 +28,7 @@ def _edge(uid, obj, *, conf=0.9, observed=NOW, source_id=None, ref="ev-1",
         id=eid or f"e-{obj.replace(' ', '-')}", user_id=uid, subject="user",
         relation="pet", object=obj, valid_from=observed,
         provenance=Provenance(
-            source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
+            author_of_evidence=EvidenceAuthor.USER,
             evidence_ref=ref, observed_at=observed, confidence=conf,
             source_id=source_id))
 
@@ -230,7 +229,6 @@ def _run_consolidation(store, uid="u1", n_inputs=3):
         store.add_episode(Episode(
             id=f"ep-{i}", user_id=uid, date=f"2026-07-0{i+1}",
             summary=f"day {i}", provenance=Provenance(
-                source_type=SourceType.STATED,
                 author_of_evidence=EvidenceAuthor.USER,
                 evidence_ref=f"ev-{i}", observed_at=NOW,
                 confidence=0.9, source_id=f"src-{i}")))
@@ -278,7 +276,6 @@ def test_a_mis_keyed_op_key_conflict_aborts_never_ignores(tmp_path):
         store.add_episode(Episode(
             id=f"ep-{i}", user_id="u1", date=f"2026-07-0{i+1}",
             summary=f"day {i}", provenance=Provenance(
-                source_type=SourceType.STATED,
                 author_of_evidence=EvidenceAuthor.USER,
                 evidence_ref=f"ev-{i}", observed_at=NOW, confidence=0.9)))
     op = store.create_or_takeover_consolidation("u1", ["ep-0", "ep-1"], "w1", 60)

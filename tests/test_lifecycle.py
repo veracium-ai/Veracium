@@ -141,11 +141,9 @@ if __name__ == "__main__":
 
 def _one_edge(m, valid_from):
     from veracium.schema import Edge, Provenance
-    from veracium.schema import _SourceType as SourceType
     e = Edge(id="e-t", user_id="u", subject="user", relation="likes", object="tea",
              valid_from=valid_from,
-             provenance=Provenance(source_type=SourceType.STATED,
-                                   author_of_evidence=EvidenceAuthor.USER,
+             provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                    evidence_ref="x", observed_at=valid_from))
     m.store.add_edge(e)
     return e
@@ -278,7 +276,6 @@ def test_consolidation_output_is_no_stronger_than_its_weakest_input():
     recognition, the same defect M5 forbids at T2."""
     from veracium.lifecycle import consolidate
     from veracium.schema import Episode, Provenance, Disclosure
-    from veracium.schema import _SourceType as SourceType
     from veracium.store.sqlite import SqliteStore
     from datetime import timedelta
     import os, json
@@ -290,7 +287,6 @@ def test_consolidation_output_is_no_stronger_than_its_weakest_input():
                 id=f"ep{i}", user_id="u", date=old.date().isoformat(),
                 summary=f"thing {i}",
                 provenance=Provenance(
-                    source_type=SourceType.STATED,
                     author_of_evidence=EvidenceAuthor.USER, evidence_ref="x",
                     observed_at=old,
                     confidence=0.2 if i == 3 else 0.95,
@@ -308,12 +304,12 @@ def test_consolidation_output_is_no_stronger_than_its_weakest_input():
 
 
 def test_consolidated_provenance_is_internally_consistent():
-    """A SYSTEM-authored summary reported `source_type=STATED` and the FIRST
-    input's `evidence_ref`, because both were inherited from cold[0] — M1's
-    original defect surviving on two fields the 0.4.7 test never inspected."""
+    """The test's REAL intent (specs/0016 D2 reshape, A1 §5 / 0002 M1): a
+    summary does not inherit its first input's `evidence_ref` — M1's original
+    defect surviving on a field the 0.4.7 test never inspected. (The other
+    inherited field this test once watched, `source_type`, was deleted.)"""
     from veracium.lifecycle import consolidate
     from veracium.schema import Episode, Provenance
-    from veracium.schema import _SourceType as SourceType
     from veracium.store.sqlite import SqliteStore
     from datetime import timedelta
     import os, json
@@ -323,15 +319,13 @@ def test_consolidated_provenance_is_internally_consistent():
         for i in range(8):
             st.add_episode(Episode(
                 id=f"e{i}", user_id="u", date=old.date().isoformat(), summary=f"s{i}",
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=f"event-{i}", observed_at=old)))
         consolidate(st, lambda *a, **k: json.dumps(
             {"records": [{"date": old.date().isoformat(), "summary": "S"}]}),
             "u", MemoryConfig(consolidate_after_days=30, consolidate_min_batch=8))
         p = [e for e in st.episodes("u") if e.id.startswith("epc")][0].provenance
         assert p.author_of_evidence == EvidenceAuthor.SYSTEM
-        assert p.model_dump()["source_type"] == "inferred", "a summary is not STATED"
         assert not p.evidence_ref.startswith("event-"), \
             "evidence_ref still points at one arbitrary input"
         # specs/0010 X23: the store binds evidence_ref to the consolidation OPERATION
@@ -344,7 +338,6 @@ def test_an_offset_timestamp_survives_every_public_entry_point():
     because `prompts.date_context` parsed the raw string with
     `date.fromisoformat`. One input, two parsers."""
     from veracium.schema import Edge, Provenance
-    from veracium.schema import _SourceType as SourceType
     from datetime import date as _date
     with tempfile.TemporaryDirectory() as d:
         m = _mem(d, [{"triples": [], "episode": "x"}])
@@ -357,8 +350,7 @@ def test_an_offset_timestamp_survives_every_public_entry_point():
         m.store.add_edge(Edge(
             id="e", user_id="u", subject="user", relation="likes", object="tea",
             valid_from=datetime(2026, 1, 1, tzinfo=timezone.utc),
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref="x",
                                   observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc))))
         r = m.confirm("u", "e", date="2026-03-15T23:00:00-08:00")
@@ -383,12 +375,10 @@ _T0 = datetime(2025, 1, 1, tzinfo=timezone.utc)
 
 def _edge(**kw):
     from veracium.schema import Edge, Provenance, Volatility
-    from veracium.schema import _SourceType as SourceType
     old = _T0
     e = Edge(id="e", user_id="u", subject="user", relation="works_at", object="Acme",
              volatility=Volatility.TRANSIENT, valid_from=old,
-             provenance=Provenance(source_type=SourceType.STATED,
-                                   author_of_evidence=EvidenceAuthor.USER,
+             provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                    evidence_ref="x", observed_at=old))
     for k, v in kw.items():
         setattr(e, k, v)

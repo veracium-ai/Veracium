@@ -28,19 +28,12 @@ def utcnow() -> datetime:
 # Provenance — shared by edges and episodes. The abstention gate reads these.
 # --------------------------------------------------------------------------- #
 
-class SourceType(str, Enum):
-    STATED = "stated"      # the user told the agent directly
-    OBSERVED = "observed"  # inferred from the user's behavior with the agent
-    INFERRED = "inferred"  # derived from granted data (email, documents, tools)
-
-
-# specs/0016 D1: the enum is DEPRECATED. Internal code binds the private name
-# (warning-free operation); the public name resolves through this module's
-# __getattr__ below with a DeprecationWarning. The class keeps its public
-# __name__ so pickling routes through the public lookup (two warnings per
-# round-trip, I2). Removed at D2 (the next API-breaking release).
-_SourceType = SourceType
-del SourceType
+# specs/0016 D2: `SourceType` and `Provenance.source_type` are DELETED (the
+# D1 deprecation cycle's named removal). The field gated nothing and could not
+# be honestly attested; the vocabulary is freed for the frozen evidence_basis
+# contract (0016 §1b — NOT shipped here). Historical `source_type` keys in
+# stored JSON and ≤6 export files are dropped on read (pydantic extra=ignore;
+# portability strips them explicitly at import).
 
 
 class EvidenceAuthor(str, Enum):
@@ -117,10 +110,6 @@ class Confirmation(BaseModel):
 
 
 class Provenance(BaseModel):
-    source_type: _SourceType = Field(
-        deprecated="provenance.source_type is deprecated and will be removed "
-                   "in the next API-breaking release; it has never influenced "
-                   "any decision (specs/0016 D1)")
     author_of_evidence: EvidenceAuthor
     evidence_ref: str = Field(description="Stable id of the event/message/doc this derives from")
     observed_at: datetime = Field(default_factory=utcnow)
@@ -375,9 +364,8 @@ class OutcomeJudgmentDraft(BaseModel):
     """The caller-owned payload of one outcome judgment (specs/0009 §4a, H9).
 
     STRUCTURALLY excludes every store-owned field — no `id`, `seq`,
-    `supersedes_episode`, `source_type`: the Store's `append_outcome_if_head`
-    mints identity, allocates the per-chain `seq`, and DERIVES `source_type`
-    from `author` (USER→STATED, SYSTEM→INFERRED). Making "store-assigned" a
+    `supersedes_episode`: the Store's `append_outcome_if_head` mints identity
+    and allocates the per-chain `seq`. Making "store-assigned" a
     property of the type is what stops a caller-supplied `seq`/`id` turning an
     append into a replace. `summary` is built by `Memory.record_outcome` before
     the Store boundary (it carries corrected-value text); `context_ref` is
@@ -604,23 +592,12 @@ class ContestedGroup(BaseModel):
     prior_edge_ids: list[str] = Field(default_factory=list)
 
 
-# -- specs/0016 D1: the deprecation surface ------------------------------------
-# The seven-row access matrix (§4): package/module attribute access, from-
-# imports, star-import (PEP 562 via __all__), and pickling all warn through
-# this __getattr__; field access warns via Field(deprecated=...); ONLY model
-# metadata (model_fields, get_type_hints) is un-warned, enumerated in the
-# notice. __all__ pins the star-import namespace byte-identical to pre-D1.
-_SOURCETYPE_DEPRECATION = (
-    "SourceType is deprecated and will be removed in the next API-breaking "
-    "release. It has never influenced any decision. On ingest-derived records "
-    "it restates author_of_evidence; directly-constructed records may carry "
-    "any value, which nothing reads. Accessing the enum through the package "
-    "or veracium.schema (including import * and pickling) warns, and reading "
-    "provenance.source_type on an edge warns once per access. NOT warned, by "
-    "design: model metadata only (model_fields, get_type_hints) — those and "
-    "only those. Hosts reading the field from exports should stop. "
-    "(specs/0016 D1)")
-
+# -- specs/0016 D2: the deletion ------------------------------------------------
+# D1's deprecation surface (the lazy __getattr__s, the Field(deprecated=...)
+# warning, the notice text) is RESOLVED by removal: `SourceType` is no longer
+# a name this module provides, on any access path — attribute access,
+# from-import, star-import, pickling — and `Provenance` has no `source_type`
+# field. __all__ remains the star-import pin, now 41 names (was 42).
 __all__ = [
     "BaseModel", "CONFIRMATION_RULE_VERSION", "Confirmation",
     "ConfirmationActor", "ConfirmationCallPath", "ConsolidationOp",
@@ -630,20 +607,8 @@ __all__ = [
     "Episode", "EvidenceAuthor", "ExpiryBehavior", "Field",
     "HISTORICAL_PREFIX", "Optional", "Outcome", "OutcomeJudgmentDraft",
     "Provenance", "QUARANTINE_RELATION", "RECOVERY_PENDING_STATES",
-    "Relation", "SourceType", "SupersessionPlan", "SupersessionRefusal",
+    "Relation", "SupersessionPlan", "SupersessionRefusal",
     "SupersessionRefusalDraft", "SupersessionResult", "Volatility",
     "annotations", "datetime", "is_historical_id", "timezone",
     "to_historical_id", "utcnow", "validate_correlation_id",
 ]
-
-
-def __getattr__(name):
-    if name == "SourceType":
-        import warnings
-        warnings.warn(_SOURCETYPE_DEPRECATION, DeprecationWarning, stacklevel=2)
-        return _SourceType
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-def __dir__():
-    return sorted([n for n in globals() if not n.startswith("_")] + ["SourceType"])

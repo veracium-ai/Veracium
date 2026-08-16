@@ -9,7 +9,6 @@ from veracium import EvidenceAuthor, Memory, MemoryConfig, SqliteStore
 from veracium.graph import SupersessionCounts, apply_supersession
 from veracium.ingest import ingest_event
 from veracium.schema import DEFAULT_RELATIONS, Edge, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.schema import SupersessionPlan
 
 
@@ -32,8 +31,7 @@ def _edge(uid, obj, rel="located_at"):
     import uuid
     return Edge(id=f"e-{uuid.uuid4().hex[:8]}", user_id=uid, subject="user",
                 relation=rel, object=obj,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=f"ev-{uuid.uuid4().hex[:6]}"))
 
 

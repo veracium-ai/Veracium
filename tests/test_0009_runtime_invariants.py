@@ -4,7 +4,7 @@ The append-only *chain* is tested in test_outcomes.py and the import/migration
 boundaries in test_0009_import_migration.py; this file covers the RUNTIME
 primitive and the `record_outcome` surface built on it: seq-decides-the-head,
 the atomic CAS under concurrency, derived aggregates, structural queryability,
-the outcome-only field rules, the draft contract + derived source_type, the
+the outcome-only field rules, the draft contract, the
 store_version bump, and the preserved public surface incl. the HeadMoved retry.
 Each test carries the exact name §6 names it (the name is the claim)."""
 import json
@@ -16,7 +16,6 @@ import pytest
 
 from veracium import EvidenceAuthor, Memory, MemoryConfig
 from veracium.schema import Edge, Episode, Outcome, OutcomeJudgmentDraft, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import HEAD_MOVED
 from veracium.store.sqlite import SqliteStore
 
@@ -26,8 +25,7 @@ JAN = datetime(2026, 1, 1, tzinfo=timezone.utc)
 def _edge(eid="e1", uid="u"):
     return Edge(id=eid, user_id=uid, subject="user", relation="prefers", object="o",
                 valid_from=JAN, active=True,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=eid, observed_at=JAN))
 
 
@@ -150,8 +148,7 @@ def test_non_outcome_episode_has_no_seq(tmp_path):
     s = _store(tmp_path, edge=False)
     s.add_episode(Episode(
         id="x", user_id="u", date="2026-01-01", summary="s",
-        provenance=Provenance(source_type=SourceType.STATED,
-                              author_of_evidence=EvidenceAuthor.USER,
+        provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                               evidence_ref="r")))
     got = s.episodes("u")[0]
     assert got.kind != "outcome"
@@ -174,8 +171,7 @@ def _write_v3(path, ep_extra, uid="u"):
                             **json.loads(_edge("e1").model_dump_json())}) + "\n")
         base = {"id": "o", "user_id": uid, "date": "2026-01-01", "summary": "s",
                 "kind": "outcome", "edge_id": "e1", "outcome": "concurred",
-                "provenance": {"source_type": "inferred",
-                               "author_of_evidence": "system", "evidence_ref": "r"}}
+                "provenance": {"author_of_evidence": "system", "evidence_ref": "r"}}
         base.update(ep_extra)
         f.write(json.dumps({"record": "episode", **base}) + "\n")
 
@@ -202,7 +198,7 @@ def test_non_root_with_unknown_time_is_refused(tmp_path):
 
 def test_outcome_draft_has_no_store_owned_fields():
     fields = set(OutcomeJudgmentDraft.model_fields)
-    for banned in ("id", "seq", "supersedes_episode", "source_type"):
+    for banned in ("id", "seq", "supersedes_episode"):
         assert banned not in fields, f"draft must not carry store-owned {banned!r}"
 
 
@@ -215,15 +211,17 @@ def test_corrected_value_survives_the_store_boundary(tmp_path):
         assert head.outcome is Outcome.CORRECTED and "spam" in head.summary
 
 
-def test_source_type_derived_user_stated_system_inferred(tmp_path):
+def test_append_carries_the_draft_author(tmp_path):
+    """specs/0016 D2 reshaped: the derived `source_type` is deleted; what the
+    primitive still owes the chain is the draft's author, faithfully."""
     s = _store(tmp_path)
     sys_ep = s.append_outcome_if_head("u", "e1", "rs", None,
                                       _draft(author=EvidenceAuthor.SYSTEM))
     usr_ep = s.append_outcome_if_head("u", "e1", "ru", None,
                                       _draft(author=EvidenceAuthor.USER,
                                              outcome=Outcome.CONFIRMED))
-    assert sys_ep.provenance.model_dump()["source_type"] == "inferred"
-    assert usr_ep.provenance.model_dump()["source_type"] == "stated"
+    assert sys_ep.provenance.author_of_evidence is EvidenceAuthor.SYSTEM
+    assert usr_ep.provenance.author_of_evidence is EvidenceAuthor.USER
 
 
 # --- H10: append advances store_version in the same atomic transaction -------

@@ -14,7 +14,6 @@ from veracium.config import MemoryConfig
 from veracium.graph import apply_supersession
 from veracium.lifecycle import expire
 from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance, Volatility)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"
@@ -26,8 +25,7 @@ def _edge(eid, author, disc, days_ago, *, obj="chef", rel="works_as", conf=0.7,
     t = NOW - timedelta(days=days_ago)
     return Edge(id=eid, user_id=U, subject="user", relation=rel, object=obj,
                 volatility=vol, valid_from=t, needs_confirmation=flag,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=author, evidence_ref=f"ev-{eid}",
+                provenance=Provenance(author_of_evidence=author, evidence_ref=f"ev-{eid}",
                                       disclosure=disc, confidence=conf, observed_at=t,
                                       source_id=source_id))
 

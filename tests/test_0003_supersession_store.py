@@ -12,7 +12,6 @@ import pytest
 
 from veracium.authority import RULE_VERSION, effective, scope_fingerprint
 from veracium.schema import (Disclosure, Edge, EvidenceAuthor, Provenance, SupersessionPlan, SupersessionRefusalDraft)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import PLAN_STALE, SupersessionIntegrityError
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import SCHEMA_V3, SCHEMA_VERSION
@@ -25,8 +24,7 @@ def _edge(eid, author, obj, disc=Disclosure.MENTIONABLE, df=None, rel="works_as"
           needs_confirmation=False):
     return Edge(id=eid, user_id=U, subject="user", relation=rel, object=obj,
                 needs_confirmation=needs_confirmation,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=author, evidence_ref="ev",
+                provenance=Provenance(author_of_evidence=author, evidence_ref="ev",
                                       disclosure=disc, derived_from=df))
 
 
@@ -219,8 +217,7 @@ def test_a_refusal_cannot_be_forged_against_another_users_edge(tmp_path):
     """The store BINDS each refusal to an existing edge of THIS user (round-6 corr C)."""
     s = SqliteStore(str(tmp_path / "s.db"))
     other = Edge(id="other", user_id="u2", subject="user", relation="works_as", object="x",
-                 provenance=Provenance(source_type=SourceType.STATED,
-                                       author_of_evidence=EvidenceAuthor.USER, evidence_ref="e"))
+                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="e"))
     s.add_edge(other)
     inc = _edge("i", EvidenceAuthor.THIRD_PARTY, "x", Disclosure.QUARANTINED)
     forged = SupersessionPlan(

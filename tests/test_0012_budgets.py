@@ -15,7 +15,6 @@ from veracium.compile import _policy_digest, _split_envelope, ensure_wiki
 from veracium.config import MemoryConfig
 from veracium.introspect import report
 from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u"
@@ -29,8 +28,7 @@ def _fake_llm(script="## USER MODEL\n- A fact."):
 
 def _edge(eid, obj="chef"):
     return Edge(id=eid, user_id=U, subject="user", relation="works_as", object=obj,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=f"ev-{eid}",
                                       disclosure=Disclosure.MENTIONABLE))
 

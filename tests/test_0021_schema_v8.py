@@ -19,7 +19,6 @@ from datetime import datetime, timedelta, timezone
 from veracium.graph import apply_supersession
 from veracium.schema import (DEFAULT_RELATIONS, Edge, EvidenceAuthor,
                              Provenance)
-from veracium.schema import _SourceType as SourceType  # 0016 D1: internal name
 from veracium.store import schema_version as sv
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import (ALTER_PATH_V8_SHA256,
@@ -212,7 +211,7 @@ def _edge(uid, obj, *, conf=0.9, observed=NOW, source_id=None, eid=None):
         id=eid or f"e-{obj.replace(' ', '-')}", user_id=uid, subject="user",
         relation="pet", object=obj, valid_from=observed,
         provenance=Provenance(
-            source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
+            author_of_evidence=EvidenceAuthor.USER,
             evidence_ref="ev-1", observed_at=observed, confidence=conf,
             source_id=source_id))
 
@@ -259,7 +258,6 @@ def test_consolidation_rows_stay_null_on_the_contributor_columns(tmp_path):
         store.add_episode(Episode(
             id=f"ep-{i}", user_id="u1", date=f"2026-07-0{i+1}",
             summary=f"day {i}", provenance=Provenance(
-                source_type=SourceType.STATED,
                 author_of_evidence=EvidenceAuthor.USER,
                 evidence_ref=f"ev-{i}", observed_at=NOW,
                 confidence=0.9, source_id=f"src-{i}")))

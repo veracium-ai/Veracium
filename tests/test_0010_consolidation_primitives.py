@@ -12,7 +12,6 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from veracium.schema import (ConsolidationOutputDraft, ConsolidationState, Disclosure, Episode, EvidenceAuthor, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.base import NON_QUIESCENT
 from veracium.store.sqlite import SqliteStore
 
@@ -34,7 +33,7 @@ def _ep(i, *, conf=0.9, disc=Disclosure.MENTIONABLE, author=EvidenceAuthor.USER,
         derived=None, uid="u"):
     return Episode(
         id=f"e{i}", user_id=uid, date=f"2026-01-{i:02d}", summary=f"s{i}",
-        provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
+        provenance=Provenance(author_of_evidence=author,
                               evidence_ref=f"r{i}", confidence=conf, disclosure=disc,
                               derived_from=derived,
                               observed_at=datetime(2026, 1, i, tzinfo=timezone.utc)))
@@ -264,7 +263,6 @@ def test_output_trust_is_the_whole_set_minimum(store):
     assert out.provenance.disclosure is Disclosure.USE_ONLY  # weakest
     assert out.provenance.third_party_influenced             # influence retained (N9b)
     assert out.provenance.author_of_evidence is EvidenceAuthor.SYSTEM
-    assert out.provenance.model_dump()["source_type"] == "inferred"
 
 
 def test_output_date_range_is_store_derived_not_llm(store):

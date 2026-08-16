@@ -25,7 +25,6 @@ from veracium.gate import partition
 from veracium.graph import apply_supersession
 from veracium.lifecycle import consolidate, expire
 from veracium.schema import Disclosure, Edge, Episode, EvidenceAuthor, Outcome, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 
 JAN = datetime(2026, 1, 15, tzinfo=timezone.utc)
 MAR = datetime(2026, 3, 1, tzinfo=timezone.utc)
@@ -41,8 +40,7 @@ def _edge(eid, *, author=EvidenceAuthor.USER, obj="dark mode", when=JAN,
           relation="prefers"):
     return Edge(id=eid, user_id="u", subject=subject, relation=relation,
                 object=obj, valid_from=when, active=True, needs_confirmation=needs,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=author, evidence_ref=eid,
+                provenance=Provenance(author_of_evidence=author, evidence_ref=eid,
                                       disclosure=disclosure, observed_at=when))
 
 
@@ -215,16 +213,14 @@ def test_maintenance_never_promotes_across_the_gate():
         # a trusted episode first, then third-party material carrying the marker
         mem.store.add_episode(Episode(
             id="ep0", user_id="u", date=old_day, summary="I signed up.",
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref="r0", disclosure=Disclosure.MENTIONABLE,
                                   observed_at=datetime.now(timezone.utc))))
         for i in range(1, 12):
             mem.store.add_episode(Episode(
                 id=f"ep{i}", user_id="u", date=old_day,
                 summary=f"Received email {i}: {MARKER}",
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.THIRD_PARTY,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.THIRD_PARTY,
                                       evidence_ref=f"r{i}",
                                       disclosure=Disclosure.MENTIONABLE,
                                       observed_at=datetime.now(timezone.utc))))

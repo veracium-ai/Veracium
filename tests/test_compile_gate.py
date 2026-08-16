@@ -197,13 +197,13 @@ def test_recall_token_budget():
         # needs enough grounded detail that facts + claim flags alone sit ABOVE the floor
         # while the wiki + episodes push past it — the original priority intent, legal.
         from veracium.schema import (Disclosure as _D, Edge as _E, EvidenceAuthor as _A,
-                                     Provenance as _P, _SourceType as _S)
+                                     Provenance as _P)
         for i in range(30):
             mem.store.add_edge(_E(
                 id=f"pad{i}", user_id="u", subject="user", relation=f"topic_{i}",
                 object=f"long running diet and debts project workstream item {i} "
                        f"with an unusually verbose description to occupy budget",
-                provenance=_P(source_type=_S.STATED, author_of_evidence=_A.USER,
+                provenance=_P(author_of_evidence=_A.USER,
                               evidence_ref=f"pad-{i}", disclosure=_D.MENTIONABLE)))
         full = mem.recall("u", "diet and debts?")
 

@@ -140,7 +140,12 @@ REQUEST_DIGEST_DOMAIN = b"veracium.supersession-request.v1"
 # the test until classified here.
 EXACT_EQUAL_EDGE_FIELDS = ("id", "user_id", "subject", "relation", "object",
                            "note", "volatility", "needs_confirmation")
-EXACT_EQUAL_PROV_FIELDS = ("source_type", "author_of_evidence", "evidence_ref",
+# specs/0016 D2 (the 0014 partition amendment): `source_type` is DELETED from
+# Provenance, so the partition loses it — the totality test forces the
+# constant and the model to move together. The digest collapse is the defined
+# consequence: requests that differed only in the deleted field are now the
+# same request.
+EXACT_EQUAL_PROV_FIELDS = ("author_of_evidence", "evidence_ref",
                            "disclosure", "derived_from", "source_id", "origin")
 # EXACTLY the fields the shipped C' absorption inherits (graph.py absorption
 # loop): the three winner-inheritance maxima/minima PLUS `ungrounded` — the

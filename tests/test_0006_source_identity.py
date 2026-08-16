@@ -14,7 +14,6 @@ import uuid
 import pytest
 
 from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.source_identity import resolve_origin, source_identity_digest
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import SCHEMA_V4, SCHEMA_VERSION
@@ -105,8 +104,7 @@ def test_v4_to_v5_migration_mints_the_singleton_and_does_not_backfill(tmp_path):
     _build_v4(p)
     # an existing edge whose provenance stores NO origin/source_id (a pre-0006 row)
     e = Edge(id="e1", user_id=U, subject="user", relation="works_as", object="acme",
-             provenance=Provenance(source_type=SourceType.STATED,
-                                   author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev"))
+             provenance=Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev"))
     before = e.model_dump_json()
     with sqlite3.connect(p) as c:
         c.execute("INSERT INTO edges(id,user_id,subject,relation,object,active,quarantined,json) "
@@ -133,15 +131,14 @@ def test_v4_to_v5_migration_mints_the_singleton_and_does_not_backfill(tmp_path):
 
 def test_provenance_carries_origin_and_source_id_through_the_json_blob(tmp_path):
     """The fields need no DDL — they round-trip through edges.json (extra=ignore aside)."""
-    prov = Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
+    prov = Provenance(author_of_evidence=EvidenceAuthor.USER,
                       evidence_ref="ev", source_id="mailbox:primary", origin="STORE-A")
     back = Provenance.model_validate_json(prov.model_dump_json())
     assert back.source_id == "mailbox:primary" and back.origin == "STORE-A"
     # absent by default (a local record); an empty string is rejected (§4 rule 5)
-    assert Provenance(source_type=SourceType.STATED,
-                      author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev").source_id is None
+    assert Provenance(author_of_evidence=EvidenceAuthor.USER, evidence_ref="ev").source_id is None
     with pytest.raises(Exception):
-        Provenance(source_type=SourceType.STATED, author_of_evidence=EvidenceAuthor.USER,
+        Provenance(author_of_evidence=EvidenceAuthor.USER,
                    evidence_ref="ev", source_id="")
 
 
@@ -273,7 +270,7 @@ def test_export_materialises_and_import_roundtrips_source_id_and_origin(tmp_path
     # every exported record carries the materialised (resolved) origin
     for rec in _lines(exp)[1:]:
         assert rec["provenance"]["origin"] == src_origin
-    assert _lines(exp)[0]["version"] == FORMAT_VERSION == 6   # 0014 bumped 4->5; 0019 5->6
+    assert _lines(exp)[0]["version"] == FORMAT_VERSION == 7   # 0014 4->5; 0019 5->6; 0016 D2 6->7
     dst = SqliteStore(str(tmp_path / "dst.db"))
     import_memory(dst, exp)
     e = [x for x in dst.edges("u", active_only=True) if x.relation == "works_as"][0]

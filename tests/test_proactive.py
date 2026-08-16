@@ -99,13 +99,13 @@ def test_recall_none_wires_proactive_and_respects_budget():
             # with padded history that cannot fit.
             from datetime import datetime, timezone as _tz
             from veracium.schema import (Episode as _Ep, EvidenceAuthor as _A,
-                                         Provenance as _P, _SourceType as _S)
+                                         Provenance as _P)
             for i in range(12):
                 mem.store.add_episode(_Ep(
                     id=f"pad-ep{i}", user_id="u", date=NOW.date().isoformat(),
                     summary=f"an intentionally verbose recent-history line {i} that "
                             f"occupies a meaningful share of a tight token budget",
-                    provenance=_P(source_type=_S.STATED, author_of_evidence=_A.USER,
+                    provenance=_P(author_of_evidence=_A.USER,
                                   evidence_ref=f"pad-{i}",
                                   observed_at=datetime.now(_tz.utc))))
             import pytest as _pytest

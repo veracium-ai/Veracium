@@ -20,7 +20,6 @@ from veracium.config import MemoryConfig
 from veracium.graph import apply_supersession
 from veracium.lifecycle import consolidate
 from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"
@@ -34,7 +33,7 @@ def _edge(eid, author, evidence_ref, confidence, observed_at, source_id=None):
     # MENTIONABLE on both → same disclosure class, so the identity merge is permitted
     # (USER and SYSTEM share MENTIONABLE, so a SYSTEM feed reinforces a USER fact).
     return Edge(id=eid, user_id=U, subject="user", relation="works_as", object="CFO at Acme",
-                provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
+                provenance=Provenance(author_of_evidence=author,
                                       evidence_ref=evidence_ref, disclosure=Disclosure.MENTIONABLE,
                                       confidence=confidence, observed_at=observed_at,
                                       source_id=source_id))
@@ -141,7 +140,7 @@ def _add_cold(mem, i, author, evidence_ref, source_id=None):
     old = (datetime.now(timezone.utc) - timedelta(days=400)).date().isoformat()
     mem.store.add_episode(Episode(
         id=f"ep{i}", user_id="u", date=old, summary=f"cold episode {i}",
-        provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
+        provenance=Provenance(author_of_evidence=author,
                               evidence_ref=evidence_ref, disclosure=Disclosure.MENTIONABLE,
                               source_id=source_id,
                               observed_at=datetime.now(timezone.utc))))
@@ -209,8 +208,7 @@ def test_consolidation_contributors_survive_input_deletion(tmp_path):
 
 def _pet_edge(eid, obj, evidence_ref):
     return Edge(id=eid, user_id="u", subject="user", relation="has_pet", object=obj,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=evidence_ref, disclosure=Disclosure.MENTIONABLE))
 
 

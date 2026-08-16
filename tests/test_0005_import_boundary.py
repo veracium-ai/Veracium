@@ -641,6 +641,12 @@ _CALLSITE_DISPOSITIONS = {
     # restore of a downgraded pre-v6 envelope
     ("test_0019_ungrounded.py", "test_import_strictbool_and_forging_matrix"): "both",
     ("test_0019_ungrounded.py", "test_pre_v6_envelope_strips_the_field"): "restore",
+    # specs/0016 D2: the FORMAT-7 boundary tests — the ≤6 source_type strip
+    # and the round-trip run on the restore path so the trust cap does not
+    # mask the strip; the too-new refusal fires before any path choice
+    ("test_0016_d2_deletion.py", "test_v6_import_drops_the_key_and_keeps_the_record"): "restore",
+    ("test_0016_d2_deletion.py", "test_a_7_file_round_trips"): "restore",
+    ("test_0016_d2_deletion.py", "test_a_newer_file_is_refused_by_the_version_gate"): "default",
     ("test_0005_import_boundary.py", "test_default_import_caps_every_record"): "default",
     ("test_0005_import_boundary.py", "test_restore_preserves_trust_fields_exactly"): "restore",
     ("test_0005_import_boundary.py", "test_restore_of_a_finalized_output_export"): "restore",

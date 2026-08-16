@@ -11,7 +11,6 @@ from veracium.compile import (_grounded_inputs, _live_refusal_contention_edge_id
                               _policy_digest, needs_recompile)
 from veracium.graph import apply_supersession, subgraph_for_query
 from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge, EvidenceAuthor, Provenance, Relation)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 U = "u1"
@@ -21,7 +20,7 @@ T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
 def _edge(eid, author, obj, rel="works_as", subject="user", disc=Disclosure.MENTIONABLE,
           df=None, age=0):
     return Edge(id=eid, user_id=U, subject=subject, relation=rel, object=obj,
-                provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
+                provenance=Provenance(author_of_evidence=author,
                                       evidence_ref="ev", disclosure=disc, derived_from=df,
                                       observed_at=T0 + timedelta(days=age)))
 

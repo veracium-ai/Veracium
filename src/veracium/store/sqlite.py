@@ -24,9 +24,9 @@ from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationSt
                       Provenance, RECOVERY_PENDING_STATES,
                       SupersessionPlan, SupersessionRefusal, SupersessionResult,
                       is_historical_id, to_historical_id)
-from ..schema import _SourceType  # specs/0016 D1: the private binding
 from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
-                   PLAN_STALE, Store, SupersessionIntegrityError)
+                   PLAN_STALE, ReceiptSchemaBoundaryError, Store,
+                   SupersessionIntegrityError)
 from .schema_version import (SCHEMA_V1, SCHEMA_VERSION, SCHEMAS,  # noqa: F401
                              PostCommitAuditError,
                              StoreVersionError, open_versioned)
@@ -199,7 +199,6 @@ class SqliteStore(Store):
                              summary=f"({actor_v}) confirmed "
                                      f"'{edge.relation}: {edge.object}' still holds",
                              provenance=Provenance(
-                                 source_type=_SourceType.STATED,
                                  author_of_evidence=EvidenceAuthor.USER,
                                  evidence_ref=f"confirm:{edge_id}")
                              ).model_dump_json()))
@@ -293,8 +292,7 @@ class SqliteStore(Store):
 
     # -- supersession (specs/0003) ----------------------------------------
     @staticmethod
-    def _logical_request_digest(plan: SupersessionPlan, *,
-                                strip_0019: bool = False) -> str:
+    def _logical_request_digest(plan: SupersessionPlan) -> str:
         """A fingerprint of the plan's LOGICAL intent — what it does, NOT the
         `expected_state` it assumed (which changes on a CAS recompute). The same logical
         operation replayed produces the same digest (→ replay a committed receipt); a
@@ -312,16 +310,13 @@ class SqliteStore(Store):
         # `operation_id` (it is the lookup key). A verbatim retry still replays: identical
         # plan → identical serialization; the reinforcement recompute stays stable because
         # max() is idempotent.
-        # era-faithful recomputation (specs/0019 rider): receipts stamped
-        # BEFORE the `ungrounded` field existed were digested over dumps
-        # without it — comparing a pre-0019 receipt against a post-0019 plan
-        # strips the field so an identical logical operation still replays
-        # instead of false-conflicting.
+        # specs/0016 D2: the era-faithful recomputation (0019's strip of the
+        # `ungrounded` field for pre-0019 receipts) is REMOVED — a receipt
+        # stamped below version 4 refuses ON SIGHT before any digest is
+        # computed (no comparison branch exists), so only the CURRENT dump
+        # shape is ever digested here.
         def _dump(e):
-            d = json.loads(e.model_dump_json())
-            if strip_0019:
-                d.pop("ungrounded", None)
-            return d
+            return json.loads(e.model_dump_json())
         payload = {
             "incoming": _dump(plan.incoming_edge),
             "insert_incoming": plan.insert_incoming,
@@ -336,21 +331,22 @@ class SqliteStore(Store):
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
-    def _outcome_digest_v2(self, plan: SupersessionPlan, *,
-                           strip_0019: bool = False) -> str:
+    def _outcome_digest_v2(self, plan: SupersessionPlan) -> str:
         """specs/0014 R5-2/R6-1/R9-2: the EXTENDED outcome projection — everything
         the pre-split digest bound PLUS the contribution drafts and the absorption
         pre-image, so a store-level resubmission that mutates contribution fields
         is detected (the mutation check, reachable by construction because
-        store-level callers submit plans). New receipts stamp version 3 (the
-        0019-era `ungrounded`-bearing snapshot — the 0014 §2c rider); stored
-        version-2 receipts were digested BEFORE the field existed, so their
-        era-faithful recomputation strips it (`strip_0019=True`) — selected by
-        the STORED version, never by NULL-ness; version-1 (migrated) receipts
-        keep the pre-split projection."""
+        store-level callers submit plans). New receipts stamp version 4 (the
+        0016 D2 `source_type`-less snapshot — the 0019 rider A1): the v4
+        projection IS this v2 construction computed over the post-D2 field
+        set (same wrapper, reduced basis). Stored versions 1–3 were digested
+        over snapshots that carried the deleted field; neither historical
+        projection is computable post-D2, so those receipts refuse ON SIGHT
+        at the era boundary before this function is ever called — there is no
+        era-faithful recomputation and no by-version selection."""
         payload = {
-            "v1": None,   # structural marker: v2/v3 wrap the v1 projection
-            "pre_split": self._logical_request_digest(plan, strip_0019=strip_0019),
+            "v1": None,   # structural marker: v2/v3/v4 wrap the v1 projection
+            "pre_split": self._logical_request_digest(plan),
             "contributions": sorted(
                 (json.loads(d.model_dump_json()) for d in plan.contribution_drafts),
                 key=lambda d: (d["site"], d["contributor_type"], d["contributor_id"])),
@@ -362,10 +358,13 @@ class SqliteStore(Store):
     @staticmethod
     def validate_receipt_state(request_digest, version, response) -> None:
         """specs/0014 R9-2/R10-4: the receipt-state triple is a CLOSED
-        enumerated set — (NULL, 1, NULL) legacy; (NULL, 2, json) new
-        snapshot-less; (digest, 2, json) new with snapshot. Any other
-        combination is an integrity error at write AND at read; the response,
-        when present, must deserialize into the exact effect fields."""
+        enumerated set — (NULL, 1, NULL) legacy; (NULL, ver, json) and
+        (digest, ver, json) for ver in {2, 3, 4}. Any other combination is an
+        integrity error at write AND at read; the response, when present,
+        must deserialize into the exact effect fields. A LEGAL pre-D2 state
+        (version < 4) is still a valid stored receipt — validation passes and
+        the 0016 D2 era boundary then refuses it on sight; validation itself
+        computes no digest."""
         if version == 1:
             if request_digest is not None or response is not None:
                 raise ValueError(
@@ -373,10 +372,12 @@ class SqliteStore(Store):
                     f"{'json' if response else None}) — version-1 rows are the "
                     f"migrated legacy form (NULL, 1, NULL) only (0014 R10-4)")
             return
-        if version in (2, 3):
+        if version in (2, 3, 4):
             # version 3 (specs/0019 rider): the ungrounded-bearing-snapshot
-            # era — identical receipt-state shape to 2; the era difference
-            # lives in the digest projection, selected by the stored version
+            # era; version 4 (specs/0016 D2, rider A1): the source_type-less
+            # era — identical receipt-state SHAPE throughout; the era
+            # difference lives in the digest projection, and versions < 4
+            # refuse at the boundary before any projection is computed
             if response is None:
                 raise ValueError(
                     f"illegal receipt state (…, {version}, NULL) — every "
@@ -396,7 +397,8 @@ class SqliteStore(Store):
             return
         raise ValueError(
             f"illegal outcome_digest_version {version!r} — the closed set is "
-            f"{{1, 2, 3}} (0014 R9-2/R10-4; 3 per the 0019 rider)")
+            f"{{1, 2, 3, 4}} (0014 R9-2/R10-4; 3 per the 0019 rider; 4 per "
+            f"0016 D2)")
 
     def supersession_receipt(self, user_id: str, operation_id: str):
         """specs/0014 §4b: the phase-1 lookup surface — the receipt's request
@@ -427,32 +429,49 @@ class SqliteStore(Store):
                                     verify_snapshot_against_plan)
         inc = plan.incoming_edge
         user_id = inc.user_id
-        # specs/0014 §4b: a present snapshot is verified against the plan under
-        # the exhaustive field partition BEFORE any use (forged/malformed →
-        # abort); the store derives the request digest ITSELF (R7-1).
-        plan_rd = None
-        if plan.raw_request is not None:
-            try:
-                verify_snapshot_against_plan(plan.raw_request, plan)
-            except ValueError as e:
-                raise SupersessionIntegrityError(str(e)) from e
-            plan_rd = request_digest(plan.raw_request)
-        digest = self._outcome_digest_v2(plan)
         with self._lock:
             # 1. receipt check — PRECEDES the CAS check, so a committed op REPLAYS rather
-            #    than tripping PlanStale on its own now-stale expected_state (§4f, r9 B3).
+            #    than tripping PlanStale on its own now-stale expected_state (§4f, r9 B3),
+            #    AND precedes EVERY digest computation: the 0016 D2 era boundary fires
+            #    ON SIGHT of a stored version < 4 — no digest is computed (not even the
+            #    plan's own request digest), no comparison branch exists; the
+            #    exploding-sentinel regressions pin exactly this ordering.
             #    PHASE 2 is REQUEST-FIRST where request identity exists on both sides
             #    (R8-1): matching raw_request → replay the PERSISTED effects, the
             #    submitted plan's re-planned outcome DISCARDED unconsulted (the
             #    concurrent-preflight loser lands here); differing → conflict. The
-            #    outcome digest governs ONLY receipts/plans WITHOUT request identity,
-            #    at the receipt's STORED projection version (R9-2 — never by NULL-ness).
+            #    outcome digest governs ONLY receipts/plans WITHOUT request identity —
+            #    always the v4 projection: the era gate admits no other stored version.
             row = self._conn.execute(
                 "SELECT logical_request_digest, request_digest, response, "
                 "outcome_digest_version FROM supersession_operations "
                 "WHERE user_id=? AND operation_id=?", (user_id, plan.operation_id)).fetchone()
             if row is not None:
                 stored_outcome, stored_rd, stored_resp, stored_ver = row
+                self.validate_receipt_state(stored_rd, stored_ver, stored_resp)
+                if stored_ver < 4:
+                    raise ReceiptSchemaBoundaryError(
+                        f"operation_id {plan.operation_id!r} for user {user_id!r} "
+                        f"committed under a pre-D2 receipt era (outcome_digest_"
+                        f"version {stored_ver}): its digest basis included the "
+                        f"deleted source_type field, so no historical projection "
+                        f"is computable and this resubmission is not replay-"
+                        f"verifiable across the removal — refused on sight, no "
+                        f"digest computed, a legitimate retry indistinguishable "
+                        f"from a different request (specs/0016 D2; 0003 §4f as "
+                        f"amended)")
+            # specs/0014 §4b: a present snapshot is verified against the plan under
+            # the exhaustive field partition BEFORE any use (forged/malformed →
+            # abort); the store derives the request digest ITSELF (R7-1).
+            plan_rd = None
+            if plan.raw_request is not None:
+                try:
+                    verify_snapshot_against_plan(plan.raw_request, plan)
+                except ValueError as e:
+                    raise SupersessionIntegrityError(str(e)) from e
+                plan_rd = request_digest(plan.raw_request)
+            digest = self._outcome_digest_v2(plan)
+            if row is not None:
                 if stored_rd is not None and plan_rd is not None:
                     if plan_rd == stored_rd:
                         return self._replay_from_effects(stored_resp)
@@ -460,32 +479,14 @@ class SqliteStore(Store):
                         f"operation_id {plan.operation_id!r} already committed a "
                         f"DIFFERENT request for user {user_id!r} (specs/0014 §4b "
                         f"phase 2, request-first)")
-                # the STORED version selects the era-faithful projection
-                # (0019 rider: v3 = ungrounded-bearing; v2/v1 recompute with
-                # the field stripped — those receipts predate it)
-                if stored_ver == 3:
-                    compare = digest
-                elif stored_ver == 2:
-                    compare = self._outcome_digest_v2(plan, strip_0019=True)
-                else:
-                    compare = self._logical_request_digest(plan, strip_0019=True)
-                if stored_outcome != compare:
+                if stored_outcome != digest:
                     raise SupersessionIntegrityError(
                         f"operation_id {plan.operation_id!r} already committed a DIFFERENT "
                         f"logical operation for user {user_id!r} — a reused id is a caller "
                         f"integrity bug, not a race (specs/0003 §4f; projection "
                         f"v{stored_ver})")
-                if stored_resp is not None:
-                    return self._replay_from_effects(stored_resp)
-                # legacy (NULL response, version 1): the pre-split
-                # reconstruct-from-plan replay — SOUND here because the matching
-                # outcome digest proves the submitted plan IS the recorded plan.
-                refused = self._conn.execute(
-                    "SELECT COUNT(*) FROM supersession_refusals "
-                    "WHERE user_id=? AND incoming_edge_id=?", (user_id, inc.id)).fetchone()[0]
-                return SupersessionResult(
-                    inserted_incoming=plan.insert_incoming,
-                    invalidated=len(plan.prior_invalidations), refused=refused, replayed=True)
+                # every version-4 receipt persists its effects (validated above)
+                return self._replay_from_effects(stored_resp)
             # 2/3. CAS: revalidate the COMPLETE scope fingerprint inside the txn; stale →
             #      PlanStale, no write, receipt NOT consumed (the caller retries).
             scope = self.edges(user_id, subject=inc.subject, relation=inc.relation,
@@ -568,21 +569,21 @@ class SqliteStore(Store):
                 # idempotency; 0014 R9-1/R9-2/R10-1): the persisted EFFECT payload
                 # (result minus the runtime replayed flag), the store-computed
                 # request digest (NULL when no snapshot), and the projection
-                # version stamped 2 EXPLICITLY — never relying on the DEFAULT.
+                # version stamped EXPLICITLY — never relying on the DEFAULT.
                 result = SupersessionResult(
                     inserted_incoming=plan.insert_incoming,
                     invalidated=len(plan.prior_invalidations),
                     refused=len(plan.refusals))
                 resp_json = effect_payload(result)
-                # specs/0019 rider: post-0019 receipts stamp version 3 — the
-                # ungrounded-bearing snapshot era
-                self.validate_receipt_state(plan_rd, 3, resp_json)  # refused at write
+                # specs/0016 D2 (0019 rider A1): post-D2 writers stamp version
+                # 4 — the source_type-less snapshot era
+                self.validate_receipt_state(plan_rd, 4, resp_json)  # refused at write
                 self._conn.execute(
                     "INSERT INTO supersession_operations(user_id,operation_id,"
                     "logical_request_digest,status,request_digest,response,"
                     "outcome_digest_version) VALUES(?,?,?,?,?,?,?)",
                     (user_id, plan.operation_id, digest, "applied",
-                     plan_rd, resp_json, 3))
+                     plan_rd, resp_json, 4))
                 self._bump(user_id)                   # a recall-bearing edge changed
                 # A live_refusal_contention transition — INTO it (this plan records a
                 # refusal) OR OUT of it (this plan retires an edge that a refusal row
@@ -915,9 +916,6 @@ class SqliteStore(Store):
             self._conn.commit()
 
     # -- outcome-authorship chain (specs/0009) ----------------------------------
-    _AUTHOR_SOURCE = {EvidenceAuthor.USER: _SourceType.STATED,
-                      EvidenceAuthor.SYSTEM: _SourceType.INFERRED}
-
     def _chain_head(self, user_id: str, edge_id: str, evidence_ref: str):
         """The head (max-`seq` episode) of the `(edge_id, evidence_ref)` outcome
         chain, or None. Derived — there is no materialised head pointer (H-Q2)."""
@@ -963,7 +961,6 @@ class SqliteStore(Store):
                 seq=seq, supersedes_episode=expected_head_id,
                 judgment_time_known=True,
                 provenance=Provenance(
-                    source_type=self._AUTHOR_SOURCE[draft.author],
                     author_of_evidence=draft.author, evidence_ref=evidence_ref))
             self._conn.execute(
                 "INSERT INTO episodes(id,user_id,date,json) VALUES(?,?,?,?)",
@@ -1220,13 +1217,12 @@ class SqliteStore(Store):
         _RANK = {Disclosure.QUARANTINED: 0, Disclosure.USE_ONLY: 1,
                  Disclosure.MENTIONABLE: 2}
         base = inputs[0].provenance if inputs else Provenance(
-            source_type=_SourceType.INFERRED, author_of_evidence=EvidenceAuthor.SYSTEM,
+            author_of_evidence=EvidenceAuthor.SYSTEM,
             evidence_ref=operation_id)
         influenced = any(e.provenance.third_party_influenced for e in inputs)
         weakest = (min(inputs, key=lambda e: _RANK[e.provenance.disclosure])
                    .provenance.disclosure if inputs else base.disclosure)
         prov = base.model_copy(update={
-            "source_type": _SourceType.INFERRED,
             "author_of_evidence": EvidenceAuthor.SYSTEM,
             "evidence_ref": operation_id,
             "derived_from": (EvidenceAuthor.THIRD_PARTY if influenced

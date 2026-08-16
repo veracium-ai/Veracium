@@ -9,7 +9,6 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from veracium.schema import (ConsolidationOutputDraft, ConsolidationState, Episode, EvidenceAuthor, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 
@@ -26,8 +25,7 @@ class Clock:
 
 def _ep(i, uid="u"):
     return Episode(id=f"e{i}", user_id=uid, date=f"2026-01-{i:02d}", summary=f"s{i}",
-                   provenance=Provenance(source_type=SourceType.STATED,
-                                         author_of_evidence=EvidenceAuthor.USER,
+                   provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                          evidence_ref=f"r{i}"))
 
 
@@ -155,6 +153,5 @@ def test_live_add_episode_cannot_take_a_historical_lineage_id_after_finalization
     with pytest.raises(ValueError, match="X19"):
         store.add_episode(Episode(id="hist:e1", user_id="u", date="2026-02-01",
                                   summary="x",
-                                  provenance=Provenance(source_type=SourceType.STATED,
-                                                        author_of_evidence=EvidenceAuthor.USER,
+                                  provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                                         evidence_ref="r")))

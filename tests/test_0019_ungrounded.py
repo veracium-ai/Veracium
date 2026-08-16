@@ -21,7 +21,6 @@ from veracium.contribution import (RECOMPUTED_EDGE_FIELDS,
                                    raw_request_snapshot)
 from veracium.graph import DEFAULT_RELATIONS, apply_supersession, render_edges
 from veracium.schema import Edge, EvidenceAuthor as EA, Provenance
-from veracium.schema import _SourceType as SourceType
 from veracium.store.sqlite import SqliteStore
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -48,8 +47,7 @@ class Fake:
 def _edge(obj, *, eid, uid="u1", flagged=False, conf=0.9, observed=NOW):
     return Edge(id=eid, user_id=uid, subject="user", relation="pet",
                 object=obj, valid_from=observed, ungrounded=flagged,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EA.USER,
+                provenance=Provenance(author_of_evidence=EA.USER,
                                       evidence_ref=f"ev-{eid}",
                                       observed_at=observed, confidence=conf))
 
@@ -132,14 +130,15 @@ def test_ungrounded_grants_nothing():
 
 def test_ungrounded_joins_the_recomputed_class(tmp_path):
     assert "ungrounded" in RECOMPUTED_EDGE_FIELDS
-    # post-0019 receipts stamp version 3; the closed set is {1,2,3}
+    # 0016 D2 (0019 rider A1): post-D2 receipts stamp version 4; the closed
+    # set is {1,2,3,4} — one beyond it still refuses
     store = SqliteStore(str(tmp_path / "s.db"))
     e = _edge("Miso", eid="e-v3")
     apply_supersession(store, e, DEFAULT_RELATIONS)
     r = store.supersession_receipt("u1", "sup-e-v3")
-    assert r["outcome_digest_version"] == 3
+    assert r["outcome_digest_version"] == 4
     with pytest.raises(ValueError, match="closed set"):
-        store.validate_receipt_state(None, 4, '{"inserted_incoming":true,'
+        store.validate_receipt_state(None, 5, '{"inserted_incoming":true,'
                                      '"invalidated":0,"refused":0}')
     # the verifier aborts a flag difference that is NOT the N-ary OR:
     # snapshot says True, committed survivor False, no absorption
@@ -457,7 +456,7 @@ def test_version_gates_and_migration(tmp_path):
     from veracium.portability import FORMAT_VERSION
     from veracium.store import schema_version as sv
     from veracium.store.migration import migrate_store
-    assert FORMAT_VERSION == 6 and sv.SCHEMA_VERSION == 8  # 0021 rider: v8 head
+    assert FORMAT_VERSION == 7 and sv.SCHEMA_VERSION == 8  # 0016 D2 + 0021 rider
     # a v6-stamped store migrates (crossing the v8 ledger ALTERs en route) and
     # lands head-current
     import sqlite3

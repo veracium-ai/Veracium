@@ -88,6 +88,22 @@ class SupersessionIntegrityError(Exception):
     caller integrity bug, not a race — so it raises rather than replaying or retrying."""
 
 
+class ReceiptSchemaBoundaryError(SupersessionIntegrityError):
+    """specs/0016 D2 — the receipt ERA boundary (0003 §4f as amended). The
+    stored receipt committed under a pre-D2 digest projection
+    (`outcome_digest_version` < 4: its snapshot carried the deleted
+    `source_type` field), and post-D2 neither historical projection can be
+    computed faithfully — so a resubmission refuses UNCONDITIONALLY ON SIGHT,
+    at both receipt phases, before any digest is computed. A legitimate retry
+    whose only removed input was `source_type` and a genuinely different
+    request reusing the operation id produce THE SAME resubmission:
+    classification is impossible, and that impossibility is the ruling — the
+    outcome is handled at least as conservatively as an integrity violation
+    (hence the subclass: existing `except SupersessionIntegrityError`
+    handlers keep catching it). It is never treated as benign and never
+    replayed; recovery is a fresh operation id."""
+
+
 def store_mutator(fn):
     """Marks a Store method that writes persistent state.
 
@@ -132,8 +148,11 @@ class Store(ABC):
         (specs/0003 §4f, I9). Returns a `SupersessionResult` (Applied), the `PLAN_STALE`
         sentinel, or raises `SupersessionIntegrityError`.
 
-        Processing order (frozen, §4f):
+        Processing order (frozen, §4f; era rule per 0016 D2):
           1. receipt for `(user_id, operation_id)` exists?
+               `outcome_digest_version` < 4  → raise `ReceiptSchemaBoundaryError`
+                 UNCONDITIONALLY ON SIGHT — no digest computed, no comparison
+                 branch (the pre-D2 projections are not computable post-D2)
                same `logical_request_digest` → REPLAY the original Applied (no-op)
                different digest              → raise `SupersessionIntegrityError`
           2. new logical operation → revalidate `expected_state` (the complete scope
@@ -230,8 +249,7 @@ class Store(ABC):
         non-root append resolves `context_ref` (omitted → inherit the chain's;
         non-None must equal it); (4) allocates the next per-chain `seq` (root == 1,
         contiguous) and mints a fresh episode id; (5) INSERTs — never replaces — with
-        `supersedes_episode = expected_head_id`, `judgment_time_known = True`, and
-        `source_type` DERIVED from `draft.author` (USER→STATED, SYSTEM→INFERRED);
+        `supersedes_episode = expected_head_id` and `judgment_time_known = True`;
         (6) advances the user's `store_version` (H10). Returns the appended `Episode`
         on success or `HEAD_MOVED` (the caller retries against the new head).
 

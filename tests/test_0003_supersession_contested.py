@@ -11,7 +11,6 @@ from veracium.budgets import floor_for as _ff
 _floor_recall = _ff("recall")
 from veracium.graph import apply_supersession
 from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 
 U = "u1"
 
@@ -29,7 +28,7 @@ def _mem(tmp_path):
 
 def _edge(eid, author, obj, disc=Disclosure.MENTIONABLE, df=None):
     return Edge(id=eid, user_id=U, subject="user", relation="works_as", object=obj,
-                provenance=Provenance(source_type=SourceType.STATED, author_of_evidence=author,
+                provenance=Provenance(author_of_evidence=author,
                                       evidence_ref="ev", disclosure=disc, derived_from=df))
 
 

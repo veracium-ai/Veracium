@@ -45,9 +45,14 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # specs/0014 §4c/§7a (R5-4): the exported Episode.consolidation_output_index
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
-FORMAT_VERSION = 6  # specs/0019: the `ungrounded` flag exports; an older
-                    # importer REFUSES a v6 file rather than silently
-                    # dropping the field (the 0014 R5-4 / 0010 rule)
+# specs/0019: v6 added the `ungrounded` flag (same refuse-don't-drop rule).
+FORMAT_VERSION = 7  # specs/0016 D2 (0019 rider A3): the source_type-less
+                    # file — a v7 export omits the deleted key entirely; an
+                    # OLD build's Provenance REQUIRED source_type, so without
+                    # the bump a new export died there as a pydantic error —
+                    # the bump makes it an honest version refusal. A ≤6
+                    # file's provenance.source_type key is DROPPED on import
+                    # (the record otherwise intact, §2c row 1).
 _IMPORT_RETRIES = 8   # bounded whole-import retries before refusing a persistent race
 
 # specs/0005 §4d — the PINNED default-path refusal warning (P10/P15). A bare
@@ -321,6 +326,17 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     if src_version < 6:
         for rec in edge_recs:
             rec.pop("ungrounded", None)
+
+    # specs/0016 D2 (FORMAT 7): `Provenance.source_type` is DELETED. A ≤6
+    # file legitimately carries the historical key — it is DROPPED on import
+    # with the rest of the record intact (§2c row 1); ANY carried value
+    # (including a crafted one) is never read (§2c row 5). Explicit here so
+    # the drop is a stated boundary rule, not an accident of extra=ignore.
+    if src_version < 7:
+        for rec in edge_recs + ep_recs:
+            prov = rec.get("provenance")
+            if isinstance(prov, dict):
+                prov.pop("source_type", None)
 
     dest_origin = store.local_origin() if src_version >= 4 else None
     for rec in edge_recs + ep_recs:

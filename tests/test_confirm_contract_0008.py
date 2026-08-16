@@ -14,7 +14,6 @@ import pytest
 from veracium import Memory, MemoryConfig
 from veracium.portability import export_memory
 from veracium.schema import (ConfirmationActor, ConfirmationCallPath, Disclosure, Edge, EvidenceAuthor, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store import schema_version as sv
 from veracium.store.migration import migrate_store
 from veracium.store.sqlite import SqliteStore, StoreVersionError
@@ -26,8 +25,7 @@ def _edge(eid="e1", *, needs=True, user="u", obj="dark mode"):
     return Edge(id=eid, user_id=user, subject="user", relation="prefers",
                 object=obj, valid_from=datetime(2026, 1, 1, tzinfo=timezone.utc),
                 active=True, needs_confirmation=needs,
-                provenance=Provenance(source_type=SourceType.STATED,
-                                      author_of_evidence=EvidenceAuthor.USER,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=eid, disclosure=Disclosure.MENTIONABLE,
                                       observed_at=datetime(2026, 1, 1, tzinfo=timezone.utc)))
 

@@ -19,7 +19,6 @@ from .llm.base import Complete
 from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
                      Provenance, QUARANTINE_RELATION, Relation,
                      Volatility, utcnow)
-from .schema import _SourceType  # specs/0016 D1: the private binding
 
 
 def _uid(prefix: str) -> str:
@@ -102,14 +101,6 @@ def _disclosure_for(author: EvidenceAuthor, relation: str,
     return Disclosure.MENTIONABLE
 
 
-def _source_type(author: EvidenceAuthor, event_type: str) -> _SourceType:
-    if event_type == "chat":
-        return _SourceType.STATED
-    if author == EvidenceAuthor.USER:
-        return _SourceType.STATED       # user-authored (e.g. sent mail)
-    return _SourceType.INFERRED         # derived from third-party/tool content
-
-
 def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                  author: EvidenceAuthor, date: str, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
@@ -168,8 +159,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                    f"parseable JSON; content not retained)")
         store.add_episode(Episode(
             id=_uid("ep"), user_id=user_id, date=date, summary=summary,
-            provenance=Provenance(source_type=_source_type(author, event_type),
-                                  author_of_evidence=author, evidence_ref=evidence_ref,
+            provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True,
                 "supersessions": 0, "reinforcements": 0}
@@ -180,8 +170,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     if episode_text:
         store.add_episode(Episode(
             id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
-            provenance=Provenance(source_type=_source_type(author, event_type),
-                                  author_of_evidence=author, evidence_ref=evidence_ref,
+            provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
 
     n_facts = n_quarantined = n_supersessions = n_reinforcements = 0
@@ -206,8 +195,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             relation=relation, object=obj,
             note=str(t.get("note", "")).strip(), volatility=vol,
             ungrounded=flagged,
-            provenance=Provenance(source_type=_source_type(author, event_type),
-                                  author_of_evidence=author, evidence_ref=evidence_ref,
+            provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
                                   disclosure=disclosure, derived_from=derived_from,
                                   source_id=source_id, observed_at=when),
             valid_from=when)

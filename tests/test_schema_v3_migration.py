@@ -11,7 +11,6 @@ import sqlite3
 import pytest
 
 from veracium.schema import Episode, Provenance, EvidenceAuthor
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.migration import migrate_store
 from veracium.store.schema_version import (SCHEMA_V1, SCHEMA_V2, SCHEMA_VERSION,
                                            PackageConsistencyError,
@@ -91,8 +90,7 @@ def test_new_episode_fields_round_trip_through_json(tmp_path):
     # "carried by the blob" property is a pure-model round-trip.
     cep = Episode(
         id="epc-1", user_id="u", date="2026-01-01", summary="c",
-        provenance=Provenance(source_type=SourceType.INFERRED,
-                              author_of_evidence=EvidenceAuthor.SYSTEM,
+        provenance=Provenance(author_of_evidence=EvidenceAuthor.SYSTEM,
                               evidence_ref="op-1"),
         operation_id="op-1", lineage=["hist:ep-a", "hist:ep-b"],
         date_start="2026-01-01", date_end="2026-01-02")

@@ -15,7 +15,6 @@ import pytest
 from veracium import Memory, MemoryConfig
 from veracium.graph import apply_supersession, render_edges
 from veracium.schema import Disclosure, Edge, EvidenceAuthor, Provenance
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from datetime import datetime, timezone
 
 JAN = datetime(2026, 1, 15, tzinfo=timezone.utc)
@@ -28,11 +27,11 @@ def _mem(d):
 
 
 def _edge(eid, *, author=EvidenceAuthor.USER, obj="dark mode", when=JAN,
-          disclosure=Disclosure.MENTIONABLE, source=SourceType.STATED,
+          disclosure=Disclosure.MENTIONABLE,
           needs=False, subject="user", relation="prefers"):
     return Edge(id=eid, user_id="u", subject=subject, relation=relation,
                 object=obj, valid_from=when, active=True, needs_confirmation=needs,
-                provenance=Provenance(source_type=source, author_of_evidence=author,
+                provenance=Provenance(author_of_evidence=author,
                                       evidence_ref=eid, disclosure=disclosure,
                                       observed_at=when))
 
@@ -45,20 +44,20 @@ def _flag_of(mem, eid):
 # --- C1: no provenance VALUE clears the flag --------------------------------
 
 @pytest.mark.parametrize("author", list(EvidenceAuthor))
-@pytest.mark.parametrize("source", list(SourceType))
-def test_no_provenance_value_clears_staleness(author, source):
+def test_no_provenance_value_clears_staleness(author):
     """C1: no value of any provenance field clears `needs_confirmation` — the
-    restatement author/source is not evidence of an entitled reaffirmation.
-    (A USER/STATED restatement is the same-source case that v1 wrongly cleared;
-    every other combination was never entitled to.)"""
+    restatement author is not evidence of an entitled reaffirmation. (A USER
+    restatement is the same-source case that v1 wrongly cleared; every other
+    author was never entitled to. The `source_type` dimension of this sweep
+    was deleted at specs/0016 D2.)"""
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d)
         mem.store.add_edge(_edge("e", author=EvidenceAuthor.USER, needs=True))
-        restatement = _edge("e2", author=author, source=source, when=MAR)
+        restatement = _edge("e2", author=author, when=MAR)
         mem.store.add_edge(restatement)
         apply_supersession(mem.store, restatement, mem.config.relations)
         assert _flag_of(mem, "e") is True, \
-            f"a {author.value}/{source.value} restatement cleared the flag"
+            f"a {author.value} restatement cleared the flag"
         mem.close()
 
 

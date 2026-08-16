@@ -31,7 +31,6 @@ from .llm.base import Complete
 from .schema import (DEFAULT_EXPIRY, Disclosure, Episode, EvidenceAuthor, ExpiryBehavior,
 
                      utcnow)
-from .schema import _SourceType  # specs/0016 D1: the private binding
 
 
 def expire(store, user_id: str, config, *, now: Optional[datetime] = None) -> dict:

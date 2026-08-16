@@ -13,7 +13,6 @@ from veracium.config import MemoryConfig
 from veracium.lifecycle import consolidate
 from veracium.portability import export_memory, import_memory
 from veracium.schema import (ConsolidationOutputDraft, Episode, EvidenceAuthor, Provenance, to_historical_id)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 NOW = datetime(2026, 6, 1, tzinfo=timezone.utc)
@@ -51,8 +50,7 @@ def _seed_cold(store, n=8):
         eid = f"e{i}"
         store.add_episode(Episode(
             id=eid, user_id="u", date=f"2026-01-{i:02d}", summary=f"day {i}",
-            provenance=Provenance(source_type=SourceType.STATED,
-                                  author_of_evidence=EvidenceAuthor.USER,
+            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                   evidence_ref=f"r{i}",
                                   observed_at=datetime(2026, 1, i, tzinfo=timezone.utc))))
         ids.append(eid)
@@ -256,7 +254,7 @@ def _out_rec(oid="epc-1", lineage=None, operation_id="op-src", uid="u"):
         "operation_id": operation_id,
         "lineage": lineage if lineage is not None else ["hist:e1", "hist:e2"],
         "date_start": "2026-01-01", "date_end": "2026-01-02",
-        "provenance": {"source_type": "inferred", "author_of_evidence": "system",
+        "provenance": {"author_of_evidence": "system",
                        "evidence_ref": operation_id,
                        "observed_at": "2026-01-02T00:00:00+00:00"}})
 
@@ -265,7 +263,7 @@ def test_import_refuses_claimed_input_shape(tmp_path):
     claimed = ("episode", {
         "id": "e1", "user_id": "u", "date": "2026-01-01", "summary": "s",
         "claimed_by": "op-x", "operation_id": "op-x",
-        "provenance": {"source_type": "stated", "author_of_evidence": "user",
+        "provenance": {"author_of_evidence": "user",
                        "evidence_ref": "r"}})
     p = str(tmp_path / "x.jsonl")
     _write_export(p, [claimed])

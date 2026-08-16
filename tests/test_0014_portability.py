@@ -19,15 +19,13 @@ import pytest
 from veracium import portability as P
 from veracium.schema import to_historical_id as _thi
 from veracium.schema import (ConsolidationOutputDraft, ConsolidationState, Edge, Episode, EvidenceAuthor, Provenance)
-from veracium.schema import _SourceType as SourceType  # specs/0016 D1: internal tests bind the private name
 from veracium.store.sqlite import SqliteStore
 
 NOW = datetime(2026, 8, 1, tzinfo=timezone.utc)
 
 
 def _prov(ref="ev-1", source_id=None):
-    return Provenance(source_type=SourceType.STATED,
-                      author_of_evidence=EvidenceAuthor.USER,
+    return Provenance(author_of_evidence=EvidenceAuthor.USER,
                       evidence_ref=ref, observed_at=NOW, confidence=0.9,
                       source_id=source_id)
 
@@ -92,7 +90,7 @@ def test_export_omits_none_and_carries_present_indices(tmp_path):
     path = tmp_path / "x.jsonl"
     P.export_memory(store, "u1", path)
     lines = [json.loads(l) for l in path.read_text().splitlines()]
-    assert lines[0]["version"] == 6           # specs/0019 bumped 5->6
+    assert lines[0]["version"] == 7           # specs/0016 D2 bumped 6->7
     eps = [l for l in lines if l.get("record") == "episode"]
     plain = [l for l in eps if not l.get("lineage")]
     outs = [l for l in eps if l.get("lineage")]
@@ -107,10 +105,10 @@ def test_an_older_importer_refuses_a_v5_export(tmp_path):
     P.export_memory(store, "u1", path)
     lines = path.read_text().splitlines()
     header = json.loads(lines[0])
-    assert header["version"] == 6 > 4          # an importer with FORMAT<=5 refuses
+    assert header["version"] == 7 > 4          # an importer with FORMAT<=5 refuses
     dest = _store(tmp_path, "d.db")
     bad = tmp_path / "newer.jsonl"
-    header["version"] = 7                       # simulate a NEWER-than-us file (head FORMAT is 6, specs/0019)
+    header["version"] = 8                       # simulate a NEWER-than-us file (head FORMAT is 7, specs/0016 D2)
     bad.write_text("\n".join([json.dumps(header)] + lines[1:]) + "\n")
     with pytest.raises(ValueError, match="newer"):
         P.import_memory(dest, bad)
