@@ -127,7 +127,11 @@ def main():
             ("store adapter harness", ev.get("store_adapter"),
              ev.get("store_adapter_result"), True),
             ("ledger plan harness", ev.get("ledger_plan"),
-             ev.get("ledger_plan_result"), True)):
+             ev.get("ledger_plan_result"), True),
+            ("schema v8 evidence", ev.get("schema_v8"),
+             ev.get("schema_v8_result"), False),
+            ("verifier fault matrix", ev.get("selftest"),
+             ev.get("selftest_result"), False)):
         if script is None:
             continue
         if needs_store and state == "error":

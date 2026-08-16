@@ -1,0 +1,9 @@
+PASS baseline evaluates cleanly -> qualified
+PASS exception fault -> error
+PASS non-boolean result (None) -> error
+PASS non-boolean result (1 == True) -> error
+PASS evaluated False (the ONLY skip) -> unqualified
+PASS evaluated True -> qualified
+PASS sibling-prefix shadow path -> error
+PASS preloaded foreign module -> error
+verifier fault matrix: 8 classifications hold — no fault becomes a successful skip

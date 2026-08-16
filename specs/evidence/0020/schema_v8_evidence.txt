@@ -1,0 +1,38 @@
+SCHEMA_V8 contribution_ledger — dual-manifestation evidence
+================================================================
+
+[1] THE LITERAL CONSTRUCTOR (v7 text + rider columns):
+
+CREATE TABLE contribution_ledger (
+    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,
+    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,
+    site TEXT NOT NULL,
+    identity_digest TEXT, evidence_ref_digest TEXT,
+    payload TEXT NOT NULL, op_key TEXT,
+    created_at TEXT NOT NULL,
+    contributor_type TEXT, contributor_ref TEXT
+)
+
+constructor_sha256: a19bc3bf2ae4e36c1d559078ef4a7d7a707aa7160139f99a8d30cd4e30728bf8
+
+[2] THE MEASURED ALTER-PATH STORED DDL (sqlite_master, byte-authoritative):
+
+CREATE TABLE contribution_ledger (
+    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,
+    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,
+    site TEXT NOT NULL,
+    identity_digest TEXT, evidence_ref_digest TEXT,
+    payload TEXT NOT NULL, op_key TEXT,
+    created_at TEXT NOT NULL
+, contributor_type TEXT, contributor_ref TEXT)
+
+alter_path_sha256: 027b5ca31adc2761e0fc20ebc2214021b419043e6883e7852661675146fc8174
+
+[3] PARITY: PRAGMA table_info identical over both manifestations (12 columns: ['id', 'user_id', 'survivor_type', 'survivor_id', 'site', 'identity_digest', 'evidence_ref_digest', 'payload', 'op_key', 'created_at', 'contributor_type', 'contributor_ref'])
+
+[4] THE 0013-DECLARED MIGRATION STEPS, sha-pinned:
+  step_sha256 40b66f30a85d7d0fe60b228ee1b92de74b520be456d759172770b96101b0361a  ALTER TABLE contribution_ledger ADD COLUMN contributor_type TEXT
+  step_sha256 5130538b66b2ae4ac888f3c93deedb433e793c4b02a2556fd3aff19083c56897  ALTER TABLE contribution_ledger ADD COLUMN contributor_ref TEXT
+
+sqlite_runtime: 3.45.1
+schema v8 evidence: BOTH manifestations generated + parity proven
