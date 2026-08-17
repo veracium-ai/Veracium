@@ -364,7 +364,7 @@ def survivor_class(rows) -> str:
             else CLASS_LINKLESS)
 
 
-def basis(rows, target: str, standing) -> str:
+def basis(rows, standing, retired=frozenset()) -> str:
     """THE SOLE-BASIS TEST (0022 §4c, resolving research's Q1).
 
     Surviving independent evidence requires a DIFFERENT RESOLVED IDENTITY.
@@ -377,12 +377,41 @@ def basis(rows, target: str, standing) -> str:
       * an UNIDENTIFIED contributor (NULL digest) is not a different resolved
         identity and cannot corroborate either. Otherwise omitting a source_id
         would immunise content against revocation, which is the adversarial
-        cell in reverse."""
+        cell in reverse.
+
+    The STANDING SET is the whole authority here — the revoked source is in
+    it — so the test needs no separate `target` argument, and a LIFT restores
+    the lifted source's rows as corroborating evidence by the same rule.
+
+    THE PROPERTY RECURSES (0022 §4c). A contributor that is ITSELF being
+    retired by this sweep is not surviving evidence either: independence has
+    to hold transitively, or a revoked source launders its testimony one hop
+    down and the record one level up reads as corroborated. `retired` is the
+    set of (type, id) contributor keys already condemned; the sweep iterates
+    to a fixpoint, so a chain of any depth settles."""
     for r in rows:
         d = r["identity_digest"]
-        if d is not None and d != target and d not in standing:
+        if d is not None and d in standing:
+            continue
+        if r["contributor_ref"] is not None \
+                and (r["contributor_type"], r["contributor_ref"]) in retired:
+            continue
+        if d is not None:
             return BASIS_CORROBORATED
     return BASIS_SOLE
+
+
+def dead_rows(rows, standing, retired=frozenset()) -> list:
+    """The rows whose evidence this sweep removes: the source stands revoked,
+    or the typed contributor is itself condemned."""
+    out = []
+    for r in rows:
+        d = r["identity_digest"]
+        if (d is not None and d in standing) or (
+                r["contributor_ref"] is not None
+                and (r["contributor_type"], r["contributor_ref"]) in retired):
+            out.append(r)
+    return out
 
 
 # ---- the recompute ---------------------------------------------------------
@@ -414,7 +443,7 @@ def _fold(base, sides) -> dict:
     return out
 
 
-def recompute(rows, standing) -> dict:
+def recompute(rows, standing, retired=frozenset()) -> dict:
     """RECOMPUTE-NOT-RESTORE, over the SURVIVING evidence only — and a PURE
     FUNCTION OF THE STANDING SET, which is what makes it reversible without a
     `prior_values` column in either direction.
@@ -452,8 +481,7 @@ def recompute(rows, standing) -> dict:
                 "pre-image — the recompute has no floor; refusing")
         side = _side(r["payload"], "contributor")
         all_sides.append(side)
-        d = r["identity_digest"]
-        if d is None or d not in standing:
+        if r not in dead_rows([r], standing, retired):
             live_sides.append(side)
     if base is None:
         raise RevocationError("recompute requires at least one absorption row")
@@ -466,42 +494,6 @@ def recompute(rows, standing) -> dict:
     out["observed_at"] = min(out["observed_at"], full["observed_at"])
     out["confidence"] = min(out["confidence"], full["confidence"])
     return out
-
-
-# ---- the forward closure ---------------------------------------------------
-
-def descendants(seeds, by_survivor) -> tuple:
-    """The transitively CLOSED consumption set over TYPED links (0021's
-    closed-consumption rule: a single-level sweep is a defect by accepted
-    rule).
-
-    Returns (reachable, walkable) — `walkable` is False when any affected
-    survivor carries a linkless row, because that survivor's own descendants
-    cannot be enumerated from the ledger at all. Reporting `reachable` without
-    `walkable` is exactly the quiet half-blast-radius the design brief calls
-    worse than no tool.
-
-    Diamonds are legitimate and are absorbed by the visited set; a row naming
-    its own survivor is corrupt and REFUSES in the validator."""
-    naming: dict = {}
-    for key, rows in by_survivor.items():
-        for r in rows:
-            if r["contributor_ref"] is not None:
-                naming.setdefault((r["contributor_type"], r["contributor_ref"]),
-                                  set()).add(key)
-    reachable, frontier, walkable = set(), list(seeds), True
-    while frontier:
-        node = frontier.pop()
-        for nxt in sorted(naming.get(node, ())):
-            if nxt in reachable:
-                continue
-            reachable.add(nxt)
-            frontier.append(nxt)
-    for key in set(seeds) | reachable:
-        rows = by_survivor.get(key, [])
-        if any(row_class(r) == CLASS_LINKLESS for r in rows):
-            walkable = False
-    return sorted(reachable), walkable
 
 
 # ---- the sweep -------------------------------------------------------------
@@ -567,36 +559,85 @@ def sweep(store: dict, target_digest: str, *, proposed=None) -> dict:
         k for k, r in records.items()
         if digest_of(r["origin"], r["source_id"], local) in standing)
 
-    # (2) CONTRIBUTIONS: survivors the standing-revoked sources contributed to.
+    # (2) CONTRIBUTIONS. `affected` is scoped to THE TARGET — it answers "what
+    # did this source contribute to", which is what a completeness statement
+    # about this source means. `retire`/`recompute` below are the DESIRED
+    # STATE under the whole standing set, and `effects` is the DELTA against
+    # the store as it is; the three are deliberately different questions and
+    # the statement carries all three rather than conflating them.
     affected = sorted(k for k, rws in by_survivor.items()
-                      if any(r["identity_digest"] in standing for r in rws))
+                      if any(r["identity_digest"] == target_digest
+                             for r in rws))
 
-    retire, recompute_to, classes, kinds = list(direct), {}, {}, {}
-    for key in affected:
+    classes = {k: survivor_class(rws) for k, rws in by_survivor.items()}
+    kinds = {k: survivor_kind(rws) for k, rws in by_survivor.items()}
+
+    # (3) THE FIXPOINT. Consumption is TRANSITIVELY CLOSED (a single-level
+    # sweep is a defect by accepted rule), and the closure is the RECURSION OF
+    # THE PROPERTY rather than a blanket retirement of every descendant: at
+    # each pass a condemned contributor stops counting as evidence, which can
+    # turn a survivor that read as corroborated into a sole-basis one. The
+    # retire set only grows, over a finite survivor set, so this terminates;
+    # a self-naming row REFUSED in the validator, so no cycle reaches here.
+    retired = set(direct)
+    recompute_to: dict = {}
+    while True:
+        grew = False
+        recompute_to = {}
+        for key in sorted(by_survivor):
+            if key in retired:
+                continue
+            rws = by_survivor[key]
+            if not dead_rows(rws, standing, retired):
+                continue                     # nothing this sweep removes
+            if kinds[key] == KIND_SYNTHESIZED:
+                # The survivor's CONTENT was written over its contributor set,
+                # so corroboration by another source does not make the
+                # synthesized text safe: the revoked material may be IN it.
+                # Retire. Re-deriving from the surviving inputs is a
+                # maintenance operation the operator can run — never something
+                # a revocation does silently.
+                retired.add(key)
+                grew = True
+            elif basis(rws, standing, retired) == BASIS_SOLE:
+                retired.add(key)
+                grew = True
+            elif any(r["site"] == SITE_ABSORPTION for r in rws):
+                recompute_to[key] = recompute(rws, standing, retired)
+        if not grew:
+            break
+
+    # (3b) THE RESTORING PASS. Desired state is a function of the standing set
+    # in BOTH directions, so a lift must put back the maxima the revocation
+    # took — by RECOMPUTATION over the restored evidence, never from a stored
+    # prior value. The restore is bounded structurally: the target is the fold
+    # over the surviving sides, clamped by the FULL-evidence fold, which is
+    # exactly the value the store committed at write, so nothing can be raised
+    # past it. It is planned only when every field moves in the restoring
+    # direction, so this pass can never manufacture a promotion out of a
+    # difference some other mechanism introduced.
+    for key in sorted(by_survivor):
+        if key in retired or key in recompute_to or key not in records:
+            continue
         rws = by_survivor[key]
-        cls, kind = survivor_class(rws), survivor_kind(rws)
-        classes[key], kinds[key] = cls, kind
-        bs = basis(rws, target_digest, standing)
-        if kind == KIND_SYNTHESIZED:
-            # The survivor's CONTENT was written over its contributor set, so
-            # corroboration by another source does not make the synthesized
-            # text safe: the revoked material may be IN it. Retire, and say in
-            # the statement whether surviving inputs remain, because
-            # re-deriving is a maintenance operation the operator can run —
-            # it is not something a revocation may do silently.
-            retire.append(key)
-        elif bs == BASIS_SOLE:
-            retire.append(key)
-        elif any(r["site"] == SITE_ABSORPTION for r in rws):
-            recompute_to[key] = recompute(rws, standing)
+        if not any(r["site"] == SITE_ABSORPTION for r in rws):
+            continue
+        want = recompute(rws, standing, retired)
+        cur = records[key]
+        if all(want[f] == cur[f] for f in RECOMPUTED_FIELDS):
+            continue
+        if (want["confidence"] >= cur["confidence"]
+                and want["observed_at"] >= cur["observed_at"]
+                and want["valid_from"] <= cur["valid_from"]):
+            recompute_to[key] = want
 
-    # (3) the transitive consumption closure over what we are retiring
-    reach, walkable = descendants(retire, by_survivor)
-    for key in reach:
-        if key not in retire:
-            retire.append(key)
-            recompute_to.pop(key, None)
-    retire = sorted(set(retire))
+    retire = sorted(retired)
+    reach = sorted(k for k in retired
+                   if k not in set(direct) and k not in set(affected))
+    walkable = not any(
+        row_class(r) == CLASS_LINKLESS
+        for k in set(affected) | retired
+        for r in by_survivor.get(k, ()))
 
     # (4) CLASS (c): system-authored records with NO attribution rows at all.
     # An UPPER BOUND on the unreachable population, and deliberately so: the

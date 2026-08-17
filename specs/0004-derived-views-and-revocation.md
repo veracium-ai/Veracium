@@ -4,7 +4,7 @@ Spec-Status: draft
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft v2 — REFRESHED 2026-08-17 for internal review.** Split out of
+> **draft v3.1 — REFRESHED 2026-08-17, internal round 1 folded and PASSED.** Split out of
 > `0002` on 2026-08-01 and never reviewed; sixteen days of shipping moved the
 > ground under it, so every mechanical claim below was RE-EXECUTED before this
 > revision (§2c-ii carries the commands and their real output, run 2026-08-17).
@@ -17,15 +17,19 @@ Spec-Status: draft
 > evidence; (3) `0020` excludes the wiki from principal-bearing recall
 > entirely, so the exposure is now precisely the UNSCOPED path.
 > **This spec is on `0022`'s critical path** (source revocation must reach what
-> the model reads); `0022` §7b carries the drafted rider adding `revoked_source`
-> to the trigger set, to land same-commit at that pair's acceptance.
+> the model reads). **What `0022` §7b's rider must now say changed at v3.1:** with
+> §4 drop-by-default, `revoked_source` needs NO addition to any trigger set — it
+> already drops. The rider registers it in `DISPOSITIONED_REASONS` so W5 passes,
+> which is a process edit, not a behaviour one. Still same-commit at that pair's
+> acceptance; the failure mode if it is forgotten is now a RED BUILD rather than
+> a silently retained wiki.
 
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — internal round 1 folded (research, 2026-08-17: R1 inverted cell, R2 the missed producer class, W-Q1 ruled) |
+| **Version** | **v3.1** — internal round 1 folded and PASSED (research, 2026-08-17: R1 inverted cell, R2 the missed producer class, W-Q1 ruled; v3 @ `01a2d42`, PASS closed @ `da1a805b`). **v3.1 folds the packaging nit — and the nit found a SECOND carrier**: the ABSENT-reason cell still read v2's inverted rationale (now UNREACHABLE-BY-SIGNATURE, drops if forced), and chasing it showed §4 still stated the rule as a DENY-list of dropping reasons, which is the same inversion R1 caught in §2c. §4 is now drop-by-default over a closed RETAIN allow-list; W5 splits into a runtime constant and a process constant so the polarity is carried in CODE, not prose. |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M8/§11c, unchanged in substance. |
-| **Internal reviewers** | research — **found the defect**; fix verified by dev |
+| **Internal reviewers** | research — **found the defect**; round 1 PASS 2026-08-17 (R1/R2 + W-Q1 ruled), fix verified independently by both sessions |
 | **External review** | required — touches `compile.py` and the store write path |
 | **Decision + date** | — |
 | **Path** | full |
@@ -79,6 +83,14 @@ rather than recompiling it.** `invalidate_edge` with reason in
 LLM call, no latency; you lose curated breadth until the next natural recompile
 and never assert revoked content.
 
+> **Two clauses of the finding as filed are corrected in §4, and this is the
+> finding AS FILED, not the normative rule.** (i) "any quarantine" is
+> unreachable — there is no post-ingest quarantine path. (ii) The drop set is
+> written above as a DENY-list, `{disputed, corrected, superseded}`; §4 states
+> the rule in the opposite polarity, **drop by default with a closed RETAIN
+> allow-list**, because the deny form silently retains on any reason nobody
+> enumerated. **§4 governs.**
+
 **Finding for the spec, not an advisory** — attacker-free, and self-healing
 within 8 writes on the library default. But it is **the same shape as both
 advisories**: a derived artifact preserving a trust decision after the decision
@@ -99,7 +111,7 @@ changed.
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| the invalidation `reason` — **PRODUCERS: `Memory.dispute()`/`correct()` (host-initiated), `lifecycle` expiry/decay (the store's OWN clock-driven machinery), `apply_supersession_plan` (the store's own write path), and — post-`0022` — the revocation sweep** | no reason → treated as non-revoking, wiki retained (fail-OPEN on breadth, never on assertion) | an unknown reason string → **DROPS** (internal R1 — v2 had this INVERTED, and the inversion is worth naming: v2 said "retained (fail-OPEN on breadth, never on assertion)", which is backwards. Retaining on an unrecognised reason is precisely the assertion-side risk — if the unknown reason meant "revoked", a retained wiki serves revoked content. Dropping costs breadth only. A spec whose whole thesis is failing closed had a fail-OPEN cell in it) | a reason added by a future spec → drops at RUNTIME immediately, and the W5 registry check additionally FAILS until that spec dispositions it | a caller passing `lapsed` for a genuine revocation to keep the wiki alive | **two layers, in this order**: unknown-drops at runtime (the behaviour), then W5's registry (the process). v2 left W5 standing alone, which §9 itself called out as the only thing standing there |
+| the invalidation `reason` — **PRODUCERS: `Memory.dispute()`/`correct()` (host-initiated), `lifecycle` expiry/decay (the store's OWN clock-driven machinery), `apply_supersession_plan` (the store's own write path), and — post-`0022` — the revocation sweep** | **UNREACHABLE BY SIGNATURE** — `reason: str` is a required positional with no default on BOTH the protocol (`store/base.py:143`) and the implementation (`sqlite.py:263`), so there is no arity by which a caller omits it. Should an untyped caller pass `""` or `None`, it is not a special case: it falls to the SAME unrecognised rule and **DROPS**. **No cell in this row retains** (v3; internal-round nit — this cell was the last survivor of v2's inverted rationale, quoted and corrected in the next column) | an unknown reason string → **DROPS** (internal R1 — v2 had this INVERTED, and the inversion is worth naming: v2 said "retained (fail-OPEN on breadth, never on assertion)", which is backwards. Retaining on an unrecognised reason is precisely the assertion-side risk — if the unknown reason meant "revoked", a retained wiki serves revoked content. Dropping costs breadth only. A spec whose whole thesis is failing closed had a fail-OPEN cell in it) | a reason added by a future spec → drops at RUNTIME immediately, and the W5 registry check additionally FAILS until that spec dispositions it | a caller passing `lapsed` for a genuine revocation to keep the wiki alive | **two layers, in this order**: unknown-drops at runtime (the behaviour), then W5's registry (the process). v2 left W5 standing alone, which §9 itself called out as the only thing standing there |
 | the wiki cache itself | absent → nothing to drop, no-op | — | — | a stale cache surviving a trust change | the whole point: the drop is unconditional on cache content |
 | **`Edge.invalidation_reason` supplied AT CONSTRUCTION — the producer class v2 MISSED (internal R2; found by this spec's own §9 attack).** `invalidation_reason` is a settable field (`schema.py:249`) and `add_edge` accepts an Edge already carrying one, so the PUBLIC CONSTRUCTOR and the FORMAT-7 IMPORT round-trip both produce reason-bearing records that pass NEITHER drop site | — | — | — | a host constructing a born-invalid edge, or an import carrying one | **VERIFIED NON-TRANSITION, and the argument is now stated rather than assumed**: these producers create records that are ALREADY inactive; they never perform an active→inactive TRANSITION, and a record that was never active never contributed to a compiled wiki — no transition, no staleness. Import additionally cannot flip an existing record (its idempotency is exact-equality; a differing record REFUSES). **The defended invariant is therefore transition-form: every active→inactive transition passes the drop, and W7 enforces it structurally** |
 
@@ -178,15 +190,26 @@ GENERALISES a shipped, reviewed drop from one trigger to the trust-reducing
 set.** That is a materially smaller change than v1 proposed, and the reviewer
 should hold it to that smaller claim.
 
-**Which reasons drop the wiki:** `disputed` · `corrected` · `superseded` —
-**and `revoked_source` when `0022` lands** (that spec's §7b carries the drafted
-rider adding it here, to land same-commit at the `0022`/`0023` acceptance; this
-spec does not define the reason, it reserves the seat).
-**Not** `lapsed` / `decayed` — those are time-based staleness, not a revoked
-trust decision, and dropping curated breadth on every decay cycle pays a real
-cost for no trust gain. `absorbed_duplicate` is **arguable and currently
-excluded**: the content survives in the surviving edge, so the wiki is not
-serving anything revoked. Flagged rather than decided.
+**Which reasons drop the wiki — stated as a RETAIN allow-list, and the polarity
+is load-bearing (v3).** The rule is **DROP BY DEFAULT**: *every* reason drops the
+wiki EXCEPT the closed, enumerated retain set. It is deliberately NOT phrased as
+"these three reasons drop", because that form is a deny-list — under it an
+unrecognised reason retains, which is exactly the inversion internal R1 caught in
+§2c. The same rule has two carriers, this section and that table; both now read
+drop-by-default, and W5's registry constant is the third.
+
+| retained (the CLOSED allow-list) | why retaining is safe |
+|---|---|
+| `lapsed` | time-based staleness, not a revoked trust decision; dropping curated breadth on every decay cycle pays a real cost for no trust gain |
+| `decayed` | same |
+| `absorbed_duplicate` | absorption is trust-preserving: the content stays backed by a live same-trust record, so the wiki serves nothing revoked (**W-Q1, ruled 2026-08-17; pinned by W8** — no longer "flagged rather than decided") |
+
+Everything else drops — `disputed`, `corrected`, `superseded` today, an
+unrecognised string at runtime, and **`revoked_source` when `0022` lands, which
+needs no edit here because drop is the default** (that spec's §7b rider adds it
+to W5's registry so the check passes; the seat is reserved, not defined here).
+Adding a retaining reason is the change that requires an explicit spec decision —
+which is the correct asymmetry.
 
 **Where the exposure now IS, after `0020` (v2 refresh).** Principal-bearing
 recall EXCLUDES the compiled wiki entirely (`0020` §4d/V5 — not filtered, not
@@ -248,7 +271,7 @@ exclusion is deliberate, so it is pinned).
 | **W2** the drop covers the **supersession** path, not just the `Memory` verbs — and post-refresh that path is `apply_supersession_plan`'s `prior_invalidations`, NOT `graph.py` | `test_third_party_supersession_drops_the_wiki` (the second store site) | CI |
 | **W3** staleness does **not** drop it | `test_decay_does_not_drop_the_wiki` — pins a deliberate exclusion so it cannot erode into "drop on everything" | CI |
 | **W4** no LLM call on the drop path | `test_wiki_drop_makes_no_llm_call` — a `Complete` that raises if invoked | CI |
-| **W5** the reason set is CLOSED and REGISTERED: every reason any producer can pass is dispositioned drop/retain, and a NEW reason fails the check until its spec dispositions it. **The registry is a CODE CONSTANT** (internal minor: v2 pointed at `schema.py:249`'s comment, and a comment cannot fail a check) | `test_invalidation_reason_registry_is_total` — enumerate the reasons reachable at every producer (the §2c PRODUCERS row) and diff against the dispositioned CONSTANT; an un-dispositioned reason FAILS rather than defaulting | CI |
+| **W5** the reason set is CLOSED and REGISTERED: every reason any producer can pass is dispositioned drop/retain, and a NEW reason fails the check until its spec dispositions it. **The registry is a CODE CONSTANT** (internal minor: v2 pointed at `schema.py:249`'s comment, and a comment cannot fail a check). **Two constants, not one, and the split carries the §4 polarity into the code: `WIKI_RETAINING_REASONS` is what the RUNTIME consults (membership → retain, everything else → drop); `DISPOSITIONED_REASONS` is the process record W5 diffs against. A reason omitted from BOTH still drops** — the registry can only fail the build, never widen what is served | `test_invalidation_reason_registry_is_total` — enumerate the reasons reachable at every producer (the §2c PRODUCERS row) and diff against `DISPOSITIONED_REASONS`; an un-dispositioned reason FAILS rather than defaulting. Plus `test_runtime_consults_only_the_retain_set` — an invented reason string drops, proving the runtime is not branching on a drop-list | CI |
 | **W7** the transition invariant is STRUCTURAL: `_invalidate_edge_row` remains the SOLE writer of `active=0`, so every active→inactive transition inherits the drop (internal R2 — this is what makes the born-state producers safe, and it is enforced rather than grepped once) | `test_sole_active_zero_writer` — an AST sweep of `src/veracium/` asserting exactly one `SET active=0` writer and that it is `_invalidate_edge_row`; a second writer FAILS the build | CI |
 | **W8** the `absorbed_duplicate` exclusion is PINNED (W-Q1, ruled by research 2026-08-17: absorption is trust-preserving by construction and the content stays backed by a live same-trust record, so the exclusion shelters nothing revoked) | `test_absorption_does_not_drop_the_wiki` — the W3 pattern, so a deliberate exclusion cannot erode into "drop on everything" | CI |
 | **W6** the generalisation does not REGRESS `0003`'s shipped refusal-contention drop — that condition still drops, in both sites | `test_refusal_contention_still_drops_the_wiki` (the shipped behaviour this spec widens, pinned so widening cannot silently replace it) | CI |
