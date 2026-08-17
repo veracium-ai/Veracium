@@ -35,7 +35,7 @@ is the number that decides what can be built.
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
 | **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-17 | 1 | 0 | 4 | 0 | 0 | — |
-| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 2 | 0 | 5 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 3 | 0 | 5 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

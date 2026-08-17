@@ -640,6 +640,24 @@ containment, and no row above depends on it.
   will never be asserted. That is the deliberate trade against refusal
   (§1), and an operator with a high-volume compromised connector should
   disconnect it, not rely on this to stop the writes.
+- **THE FENCED RESIDUAL: quarantined text still enters model context as a
+  PROMPT SURFACE, and for a REVOKED source that is a sharper risk than
+  for ordinary quarantined content (internal round 3, stated as a datum
+  rather than discovered).** §4a-iv routes a quarantined episode to the
+  fenced never-assert section — it is not asserted, it does not reach the
+  wiki or the grounded block, and it is not in the assertable set. **It
+  is still in the prompt.** Injection does not require assertion: text
+  that reaches the model can steer it whatever label sits above it, and
+  the never-assert fence is a claim about how the content is USED, not a
+  barrier to it being READ. For ordinary third-party claims that trade is
+  the shipped design and the label is the mitigation. **For a source the
+  operator has explicitly declared hostile, the trade is worse**, because
+  the operator's action said "I no longer trust this", and fencing
+  answers "understood — it will not be asserted", which is a narrower
+  promise than the action implies. We are shipping the narrower promise
+  in v1, deliberately and in the open. **This is the risk datum §10's
+  Q5 starts from**: whoever decides suppression-across-both-types decides
+  it against this sentence, not against a blank page.
 - **No measurement is claimed here.** The resurfacing probe class is
   research's D-extension obligation and is named, not cited as evidence.
 
@@ -702,7 +720,7 @@ operator-chosen option (§10, **Q1**).
 | **Q2** | should a lift un-quarantine records that landed quarantined at birth? | `pre-release` — dev, before implementation. **v1 said NO on a weak argument; v2 says NO on a strong one (internal S2), and the ruling is RATIFIED.** v1's "not decidable from the record alone" is false as stated — `_disclosure_for`'s inputs are all on the record. The argument that holds is the TWO FLOORS: a persisted `disclosure` is the minimum of every floor that applied, the record does not carry which floor bound it, and the executed cell in §4i shows re-derivation returning **`USE_ONLY` for an imported record `0005` deliberately preserved at `QUARANTINED`** — relaxing another mechanism's floor as a side effect of reversing ours. That is a GRANT, and `C1` forbids grants whether or not they were intended. A per-record cause carrier would restore decidability and is refused as the second source of truth `0020` Q1 already refused. **N13** pins the asymmetry in both directions |
 | **Q3** | the mixed-writer ENFORCEMENT: a store-version bump refusing pre-0023 writers | `deferred` — the same shape as 0021's own deferred enforcement question, and it should ride the same window rather than minting one. Until a release takes it, §8 carries the operational narrowing |
 | **Q4** | should the audit line for a quarantined-at-birth write carry the digest, or only a count? | `pre-release` — dev. The digest is content-free and makes "which source is still writing" answerable from the audit sink alone; a count alone is smaller and leaks nothing at all. Leaning: the digest, because the operator investigating a compromise is the whole audience |
-| **Q5** | should quarantined content be SUPPRESSED from the model's context entirely, rather than fenced? | `post-v1` — raised by internal S3's fold, recorded rather than taken. §4a-iv fences quarantined episodes, which makes them behave like quarantined EDGES and satisfies this spec's promise (not assertable, never in the wiki or grounded block). **Suppression is a coherent stricter rule and it is NOT what this spec does**, because it would change SHIPPED edge behaviour — a quarantined edge renders fenced today — and applying it to episodes alone would make one type stricter than the other under a single rule, which is the asymmetry S3 was about. If suppression is wanted, it is a decision about the QUARANTINE PRIMITIVE across both types, not a render fix, and it belongs in its own round |
+| **Q5** | should quarantined content be SUPPRESSED from the model's context entirely, rather than fenced? | `post-v1` — raised by internal S3's fold, recorded rather than taken. §4a-iv fences quarantined episodes, which makes them behave like quarantined EDGES and satisfies this spec's promise (not assertable, never in the wiki or grounded block). **Suppression is a coherent stricter rule and it is NOT what this spec does**, because it would change SHIPPED edge behaviour — a quarantined edge renders fenced today — and applying it to episodes alone would make one type stricter than the other under a single rule, which is the asymmetry S3 was about. If suppression is wanted, it is a decision about the QUARANTINE PRIMITIVE across both types, not a render fix, and it belongs in its own round. **The datum it starts from is §8's fenced residual: fenced text is still IN THE PROMPT, and injection does not require assertion — for a source the operator has declared hostile, "it will not be asserted" is a narrower promise than the revocation implies** |
 
 ## Review closure
 
