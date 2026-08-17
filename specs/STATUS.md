@@ -4,11 +4,11 @@
 
 # Spec status
 
-**23 specs · 17 accepted · 196 external review
+**25 specs · 17 accepted · 196 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **17 of 23 are accepted**, which
+review is required to reach it. **17 of 25 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -36,6 +36,8 @@ is the number that decides what can be built.
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
 | **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-17 | 1 | 1 | 4 | 0 | 0 | — |
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 3 | 1 | 5 | 0 | 0 | — |
+| **0024** | the user's own words are not third-party testimony (L1) | `draft` | 2026-08-17 | 0 | 0 | 3 | 0 | 0 | — |
+| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `draft` | 2026-08-17 | 0 | 0 | 4 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
