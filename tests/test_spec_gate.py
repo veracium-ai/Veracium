@@ -1171,3 +1171,23 @@ def test_the_r19_operation_block_matches_its_executable():
     r = subprocess.run([sys.executable, str(root / "specs" / "render_operation.py")],
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stderr or r.stdout
+
+
+def test_the_closure_ledger_is_complete_against_the_reviews():
+    """External round 6, R6-3. `render_closure --check` proved the rendered
+    block matched `closure_findings.py` — it could not prove that file matched
+    REALITY, so the ledger sat 12-of-15 and 3-of-5 complete while the gate
+    stayed green.
+
+    That is the third time in this review that a check compared an artifact to
+    the same incomplete source it was generated from: `verify_collected`
+    against a blind renderer (R4-4), one hand-maintained twin replaced by
+    another (R5-3), and this. The finding ids are now EXTRACTED from
+    `reviews.py`'s verdict text — written first, independently — and every one
+    must have a ledger row."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from render_closure import completeness_problems
+    problems = completeness_problems()
+    assert not problems, "\n".join(problems)

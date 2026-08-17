@@ -783,15 +783,7 @@ def revocation_operation(conn, user, digest, action, reason, at, *,
 ```
 <!-- /GENERATED:r19-operation -->
 
-**"QUOTED VERBATIM" IS WITHDRAWN (external round 5, R5-2).** The block above
-is the transaction discipline; the executable in
-`store_concurrency_harness.py` differs materially — test hooks (`_gate`,
-`_fault`), helper names, and the return shape. Claiming byte-identity when the
-two differ is the same defect as claiming a construction the code does not
-implement, one level up. **What IS bound: the harness's function is the one
-every check calls, and no check reaches the transaction another way.** If a
-future round wants a mechanical bind, the honest form is generating this block
-from the source, not asserting a resemblance.
+**THE BLOCK ABOVE IS GENERATED FROM THE EXECUTABLE, byte for byte** (`specs/render_operation.py`, gated by `--check`). Round 5 found the spec claiming "quoted verbatim" while the two differed, and v6 withdrew the claim; v7 makes it TRUE instead and **deletes the withdrawal, which had become the stale carrier (external round 6, R6-2)** — the paragraph said the executable "differs materially" on the same page as a block generated from it, and COLLECTED said the opposite again. Three carriers, two answers. `_gate` and `_fault` are test hooks, `None` in every non-test call; they appear because they appear in the code, and hiding them would reintroduce the divergence.
 
 **THE FAILURE OUTCOMES ARE TOTAL (R5-1), and v5's were not.** v5 suppressed a
 failing `ROLLBACK` and re-raised the original error, so a caller could be told
@@ -1237,7 +1229,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`; 0004 remains OUT — approved, frozen). 0022 at v6: R4-1 folded — the shared operation now APPLIES EVERY EFFECT in the same transaction, stores the operator's reason and timestamp, requires `plan`, and rolls the row back with the effects on any fault; … |
 | external 6 (SENT) | 2026-08-17 | — | SENT (the coupled round-6 package `0022-0023-v6`; 0004 remains OUT — approved and frozen at round 2, and named as such in both carriers rather than quietly included). 0022 at v7: all four round-5 findings folded. R5-1 the failure outcomes are total (unknown-state rollback closes the connection; only… |
 
-**Per-finding closure ledger — PROCESS §4a.** 12 finding(s) recorded for `0022`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
+**Per-finding closure ledger — PROCESS §4a.** 17 finding(s) recorded for `0022`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
@@ -1253,5 +1245,10 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | **R4-4** | external 3 | skip_inventory.render()'s category list was hard-coded and dropped future-obligation, so four entries reached the data and never the block | specs/skip_inventory.py render()/reconcile(), tests/test_spec_gate.py | `python3 -m pytest tests/test_spec_gate.py -k 'reconcile or silently_drop or emitted_reason'` |
 | **R5-4** | external 4 | reconcile() matched pytest's EMITTED reason against SOURCE-SITE tokens, so a listed skip read as unlisted on a root host only | specs/skip_inventory.py EMITTED, tests/test_spec_gate.py | `python3 -m pytest tests/test_spec_gate.py -k emitted_reason` |
 | **R5-3** | external 4 | the generated closure was one row per ROUND with a truncated verdict; PROCESS §4a requires one row per FINDING with openable evidence | specs/closure_findings.py (this file), specs/render_closure.py | `python3 specs/render_closure.py --check` |
+| **S1** | internal 1 | the sweep's record DOMAIN was unenumerated — 'records' meant EDGES, while episode text renders into recall context and the episodes table has no retirement column | §4b-i (the enumerated record-type table), §4b-ii, R18 | `grep -n '4b-i' specs/0022-source-revocation.md  # every stored type with its mechanism or its EXECUTED exclusion` |
+| **M1** | external 1 | Q6's rationale was false across time: 'the sweep is a pure function and can be re-run' is pure over inputs that MUTATE, so a re-run answers the present, not what the revocation reached | §10 Q6 | `grep -n 'pure over inputs that MUTATE' specs/0022-source-revocation.md` |
+| **M4** | external 1 | complete=False is the expected steady state on any consolidation-bearing store, and operators had not been told | §8 | `grep -n 'EXPECTED STEADY STATE' specs/0022-source-revocation.md` |
+| **R3-4** | external 2 | the closure ledgers said THREE ROUNDS while enumerating four, claimed rows were below, and still carried 'no review rounds yet (draft)' | specs/render_closure.py (the ledger is generated) | `python3 specs/render_closure.py --check` |
+| **R3-5** | external 2 | COLLECTED did not reconcile: the decomposition implied 14 skips beside a measured line of 6, and four unconditional skips were invisible to the completeness gate's regex | specs/skip_inventory.py (reconcile + the widened site regex), tests/test_spec_gate.py | `python3 -m pytest tests/test_spec_gate.py -k 'reconcile or conditional_skip or emitted_reason'` |
 
 <!-- /GENERATED:review-closure -->

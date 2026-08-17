@@ -145,10 +145,17 @@ def _rollback_or_poison(conn, cause):
     transaction it believes was undone."""
     try:
         conn.execute("ROLLBACK")
-    except Exception as rb:
+    except BaseException as rb:
+        # BaseException, NOT Exception (external round 6, R6-1). The operation
+        # catches BaseException; this helper caught Exception, so a
+        # KeyboardInterrupt during ROLLBACK escaped as itself: the caller saw
+        # KeyboardInterrupt, the connection stayed OPEN and `in_transaction`,
+        # and an uncommitted revocation row survived. The two boundaries have
+        # to be the SAME boundary, or the narrower one is a hole in the wider
+        # one's guarantee — which is the shape of every finding in this pair.
         try:
             conn.close()
-        except Exception:
+        except BaseException:
             pass
         raise RevocationUnknownState(
             f"ROLLBACK FAILED after {type(cause).__name__}: {cause!r}; "
@@ -883,6 +890,54 @@ def _classifier_is_exact():
             return f"the ordinal violation was not recognised: {ordinal_err}"
         if _is_ordinal_violation(other_err):
             return f"a NON-ordinal fault was classified as ordinal: {other_err}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("a BaseException during ROLLBACK is ALSO unknown state, not a leak")
+def _rollback_baseexception_is_reported():
+    """R6-1: the reviewer injected KeyboardInterrupt during ROLLBACK and got
+    KeyboardInterrupt back, with the connection open, in_transaction True, and
+    an uncommitted row. `_rollback_or_poison` caught Exception while the
+    operation caught BaseException — the narrower boundary was a hole in the
+    wider one's guarantee."""
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        real = _conn(path)
+
+        class InterruptRollback:
+            def __init__(self, c):
+                self._c = c
+            def execute(self, sql, *a, **k):
+                if isinstance(sql, str) and sql.strip().upper() == "ROLLBACK":
+                    raise KeyboardInterrupt("injected during rollback")
+                return self._c.execute(sql, *a, **k)
+            def close(self):
+                return self._c.close()
+            def __getattr__(self, n):
+                return getattr(self._c, n)
+
+        c = InterruptRollback(real)
+        def boom():
+            raise RuntimeError("injected between append and apply")
+        try:
+            revocation_operation(
+                c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+                plan=lambda st: [{"verb": "retire", "type": "episode", "id": "ep-1"}],
+                _fault=boom)
+            return "no exception was raised at all"
+        except RevocationUnknownState:
+            pass
+        except KeyboardInterrupt:
+            return ("the KeyboardInterrupt ESCAPED as itself — this is the "
+                    "round-6 defect: the caller learns nothing about the "
+                    "transaction's disposition")
+        try:
+            real.execute("SELECT 1")
+            return "the connection was left OPEN after an unknown-state rollback"
+        except sqlite3.ProgrammingError:
+            pass
         return None
     finally:
         os.unlink(path)

@@ -1,55 +1,81 @@
 #!/usr/bin/env bash
-# Self-contained offline test launcher (external round 5's package request).
-#
-# Creates a venv, installs the pinned wheels with NO network, SELECTS A
-# QUALIFIED SQLITE RUNTIME, and runs the suite. Every step prints what it
-# chose, because "it worked on my machine" is the failure this is against.
+# Self-contained offline test launcher (external round 5's package request,
+# corrected at round 6).
 #
 #   bash specs/evidence/offline/run_offline.sh
 #
-# Exit 0 means the suite passed on a runtime this project qualifies.
+# Creates a venv, installs the pinned wheels with NO network, then asks the
+# REPOSITORY whether this runtime is qualified — and REFUSES if it is not.
+# Exit 0 means the suite passed on a runtime specs/0007 qualifies.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 VENV="${VERACIUM_OFFLINE_VENV:-$ROOT/.venv-offline}"
+PY="${VERACIUM_PYTHON:-python3}"
 
-# --- the qualified-runtime rule, stated and CHECKED --------------------------
-# specs/0007 qualifies the SQLite runtimes this store is tested against. A
-# suite green on an unqualified build proves less than it looks like, so the
-# launcher REFUSES rather than warning.
-MIN_SQLITE="3.35"     # the floor the store's DDL and migrations assume
-
-pick_python() {
-  for cand in "${VERACIUM_PYTHON:-}" python3.12 python3.11 python3; do
-    [ -n "$cand" ] || continue
-    command -v "$cand" >/dev/null 2>&1 || continue
-    v="$("$cand" -c 'import sqlite3;print(sqlite3.sqlite_version)' 2>/dev/null)" || continue
-    if [ "$(printf '%s\n%s\n' "$MIN_SQLITE" "$v" | sort -V | head -1)" = "$MIN_SQLITE" ]; then
-      echo "$cand $v"; return 0
-    fi
-    echo "  skipping $cand: SQLite $v is below the $MIN_SQLITE floor" >&2
-  done
-  return 1
-}
-
-echo "== selecting a qualified runtime =="
-if ! read -r PY SQLITE_V <<<"$(pick_python)"; then
-  echo "NO QUALIFIED RUNTIME FOUND: every candidate interpreter links SQLite" >&2
-  echo "older than $MIN_SQLITE. Set VERACIUM_PYTHON to one that does not." >&2
-  exit 2
-fi
-echo "  interpreter : $(command -v "$PY")"
-echo "  python      : $("$PY" -c 'import sys;print(sys.version.split()[0])')"
-echo "  SQLite      : $SQLITE_V  (floor $MIN_SQLITE)"
+# --- WHY THE ORDER IS VENV-FIRST ---------------------------------------------
+# EXTERNAL ROUND 6, R6-4: v1 of this launcher invented its own rule — "SQLite
+# >= 3.35" — and called anything above that floor qualified. Accepted spec 0007
+# defines qualification as a COMPLETE RECORDED RUNTIME whose identity matches
+# this process and whose recorded constructor manifestations REPRODUCE, and the
+# repository already implements it: `runtime_supported()`. The reviewer
+# measured v1 selecting SQLite 3.53.1, declaring it qualified, and producing
+# 660 FAILED / 951 passed / 31 errors — while `runtime_supported()` returned
+# False for that runtime. A launcher whose job is to refuse unqualified builds
+# certified one instead.
+#
+# The predicate lives INSIDE the package and needs its dependencies, so it
+# cannot be asked before the venv exists. v2 of this fix tried to ask first,
+# rejected every candidate because `import veracium` failed with no pydantic,
+# and hid the reason behind `2>/dev/null`. So: build the venv, THEN qualify,
+# and never silence the answer.
 
 echo "== creating the venv (no network) =="
+echo "  interpreter : $(command -v "$PY")"
 "$PY" -m venv "$VENV"
 "$VENV/bin/pip" install --quiet --no-index \
     --find-links "$HERE" --require-hashes -r "$HERE/requirements-test.lock"
 echo "  installed from $HERE with --require-hashes"
 
-echo "== running the suite =="
+echo "== qualifying the runtime (specs/0007's predicate, not a version floor) =="
 cd "$ROOT"
+QUAL_OUT="$(PYTHONPATH=src "$VENV/bin/python" - <<'PYQ' 2>&1 || true
+import sqlite3, sys
+try:
+    from veracium.store.schema_version import runtime_supported
+    ok = runtime_supported()
+except Exception as e:                      # never silenced: the REASON matters
+    print(f"UNAVAILABLE\t{sqlite3.sqlite_version}\t{type(e).__name__}: {e}")
+    sys.exit(0)
+print(f"{'YES' if ok is True else 'NO'}\t{sqlite3.sqlite_version}\t{ok!r}")
+PYQ
+)"
+QUAL="$(printf '%s' "$QUAL_OUT" | cut -f1)"
+SQLITE_V="$(printf '%s' "$QUAL_OUT" | cut -f2)"
+DETAIL="$(printf '%s' "$QUAL_OUT" | cut -f3-)"
+echo "  SQLite      : ${SQLITE_V:-unknown}"
+echo "  qualified   : $QUAL  ($DETAIL)"
+
+if [ "$QUAL" != "YES" ]; then
+  cat >&2 <<MSG
+
+REFUSING TO RUN: this runtime is NOT qualified.
+
+  SQLite               : ${SQLITE_V:-unknown}
+  runtime_supported()  : $DETAIL
+
+This is a refusal, not a warning. Running the suite on an unqualified SQLite
+build produces a number that LOOKS like a result and is not one — on the build
+this launcher previously accepted, the reviewer measured 660 failures.
+
+Set VERACIUM_PYTHON to an interpreter whose SQLite is recorded and reproduces
+(specs/0007 defines what that means, and src/veracium/store/evidence/
+sqlite_runtimes.json is the recorded set).
+MSG
+  exit 2
+fi
+
+echo "== running the suite =="
 VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src \
     "$VENV/bin/python" -m pytest -q tests -p no:randomly -rs

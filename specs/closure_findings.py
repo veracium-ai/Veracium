@@ -86,8 +86,13 @@ CLOSURES = [
      "quarantine reached ONE consumer of five; a quarantined episode still "
      "entered the gate's grounded partition and the wiki compiler's input",
      "§4a-iv, N14, N15, Episode.assertable",
-     "grep -rn 'third_party_influenced' src/veracium/  "
-     "# every episode-text consumer must route through Episode.assertable"),
+     # R6-3: the previous command grepped `third_party_influenced` and printed
+     # the CURRENT, UNMODIFIED consumers — it demonstrated the defect, not its
+     # closure. The specs are drafts, so the closure lives in the spec's own
+     # inventory and its gate, and the evidence must show THAT.
+     "grep -n 'SIX of the seven text consumers call' "
+     "specs/0023-non-revival-under-maintenance.md && "
+     "python3 specs/render_closure.py --check"),
     ("0023", "external", 2, "R3-3",
      "the lifecycle fix over-excluded and broke N12: Episode.assertable drops "
      "ordinary quarantined/use-only episodes in a store with ZERO revocations",
@@ -122,4 +127,70 @@ CLOSURES = [
      "PROCESS §4a requires one row per FINDING with openable evidence",
      "specs/closure_findings.py (this file), specs/render_closure.py",
      "python3 specs/render_closure.py --check"),
+    # ---- filled at external round 6 (R6-3): every id `reviews.py` names -----
+    ("0022", "internal", 1, "S1",
+     "the sweep's record DOMAIN was unenumerated — 'records' meant EDGES, "
+     "while episode text renders into recall context and the episodes table "
+     "has no retirement column",
+     "§4b-i (the enumerated record-type table), §4b-ii, R18",
+     "grep -n '4b-i' specs/0022-source-revocation.md  "
+     "# every stored type with its mechanism or its EXECUTED exclusion"),
+    ("0022", "external", 1, "M1",
+     "Q6's rationale was false across time: 'the sweep is a pure function and "
+     "can be re-run' is pure over inputs that MUTATE, so a re-run answers the "
+     "present, not what the revocation reached",
+     "§10 Q6",
+     "grep -n 'pure over inputs that MUTATE' specs/0022-source-revocation.md"),
+    ("0022", "external", 1, "M4",
+     "complete=False is the expected steady state on any consolidation-bearing "
+     "store, and operators had not been told",
+     "§8",
+     "grep -n 'EXPECTED STEADY STATE' specs/0022-source-revocation.md"),
+    ("0022", "external", 2, "R3-4",
+     "the closure ledgers said THREE ROUNDS while enumerating four, claimed "
+     "rows were below, and still carried 'no review rounds yet (draft)'",
+     "specs/render_closure.py (the ledger is generated)",
+     "python3 specs/render_closure.py --check"),
+    ("0022", "external", 2, "R3-5",
+     "COLLECTED did not reconcile: the decomposition implied 14 skips beside a "
+     "measured line of 6, and four unconditional skips were invisible to the "
+     "completeness gate's regex",
+     "specs/skip_inventory.py (reconcile + the widened site regex), "
+     "tests/test_spec_gate.py",
+     "python3 -m pytest tests/test_spec_gate.py -k "
+     "'reconcile or conditional_skip or emitted_reason'"),
+    ("0023", "internal", 1, "S1",
+     "the coupled round's 0023 half — the sweep's record domain, inherited "
+     "through the mutual Spec-Requires",
+     "0022 §4b-i, and 0023's §7a consumer inventory",
+     "python3 specs/render_closure.py --check  # both specs' ledgers"),
+    ("0023", "internal", 1, "S2",
+     "the lift asymmetry's justification was attackable: '_disclosure_for's "
+     "inputs are not decidable from the record' is false — they are ALL on the "
+     "record",
+     "§4i (the two-floors argument), Q2",
+     "grep -n 'TWO FLOORS' specs/0023-non-revival-under-maintenance.md"),
+    ("0023", "internal", 2, "S3",
+     "quarantine-at-birth wrote a field NO reader consulted: edges fenced on "
+     "e.quarantined, episodes split on authorship only",
+     "§4a-iv, N14",
+     "grep -n '4a-iv' specs/0023-non-revival-under-maintenance.md"),
+    ("0023", "external", 2, "F4",
+     "N15 was not a total inventory: it swept for reads of the OLD CONDITION, "
+     "so a consumer that never had one passed — and a seventh consumer "
+     "(lifecycle.py:182, the consolidation prompt) was invisible",
+     "N15, §7a",
+     "grep -rn '\\.summary' src/veracium/ | grep -v test  "
+     "# every episode-text consumer the inventory must disposition"),
+    ("0023", "external", 1, "M2",
+     "renewal was the one §4 seam with no executed §2c-ii command — and "
+     "running it showed there is NO renewal verb at all",
+     "§4g, N7",
+     "grep -rn 'renew' src/veracium/ --include=*.py  "
+     "# only consolidation LEASES; 0012 deleted reinforcement's transfers"),
+    ("0023", "external", 1, "M3",
+     "the wiki row's third path — the supersession-refusal cell — was covered "
+     "by neither 'quarantine never enters' nor '0022 retires'",
+     "§3 wiki row, §7b 0004 row",
+     "grep -n 'THIRD path' specs/0023-non-revival-under-maintenance.md"),
 ]

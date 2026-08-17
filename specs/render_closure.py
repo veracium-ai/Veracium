@@ -111,6 +111,51 @@ def _apply(path: pathlib.Path, spec: str, write: bool) -> bool:
     return False
 
 
+# ---------------------------------------------------------------------------
+# COMPLETENESS AGAINST THE REVIEWS — external round 6, R6-3.
+#
+# `--check` proved the rendered block matched `closure_findings.py`. It could
+# not prove `closure_findings.py` matched REALITY, so the ledger sat 12-of-15
+# and 3-of-5 complete while the gate stayed green. That is the same defect as
+# `verify_collected` comparing a block to an incomplete generator (R4-4) and
+# `render_closure` replacing one hand-maintained twin with another (R5-3).
+#
+# So the finding ids are EXTRACTED from `reviews.py`'s own verdict text and
+# every one must appear in the ledger. The reviews are written first and
+# independently; a ledger validated against them cannot quietly fall behind.
+FINDING_ID = None
+
+
+def review_finding_ids(spec: str) -> set:
+    import re as _re
+    sys.path.insert(0, str(SPECS))
+    from reviews import REVIEWS
+    ids = set()
+    for r in REVIEWS:
+        if r["spec"] != spec:
+            continue
+        if r["verdict"].lstrip().upper().startswith("SENT"):
+            continue          # a dispatch names findings it is ANSWERING
+        ids |= set(_re.findall(r"\b(S\d+|F\d+|R\d+-\d+|M\d+)\b", r["verdict"]))
+    return ids
+
+
+def completeness_problems() -> list:
+    sys.path.insert(0, str(SPECS))
+    from closure_findings import CLOSURES
+    problems = []
+    for spec in sorted({c[0] for c in CLOSURES} | {"0022", "0023"}):
+        want = review_finding_ids(spec)
+        have = {c[3] for c in CLOSURES if c[0] == spec}
+        missing = sorted(want - have)
+        if missing:
+            problems.append(
+                f"{spec}: {len(have)}/{len(want)} findings in the closure "
+                f"ledger; MISSING {missing} — they are named in reviews.py and "
+                f"have no row in closure_findings.py")
+    return problems
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--write", action="store_true")
@@ -124,6 +169,12 @@ def main() -> int:
             continue
         if not _apply(p, spec, a.write):
             stale.append(p.name)
+    if a.check:
+        gaps = completeness_problems()
+        if gaps:
+            print("the closure ledger is INCOMPLETE against specs/reviews.py:\n  "
+                  + "\n  ".join(gaps), file=sys.stderr)
+            return 1
     if a.check and stale:
         print("review-closure blocks are stale — run "
               "`python3 specs/render_closure.py --write`:\n  "
@@ -138,3 +189,48 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+# ---------------------------------------------------------------------------
+# COMPLETENESS AGAINST THE REVIEWS — external round 6, R6-3.
+#
+# `--check` proved the rendered block matched `closure_findings.py`. It could
+# not prove `closure_findings.py` matched REALITY, so the ledger sat 12-of-15
+# and 3-of-5 complete while the gate stayed green. That is the same defect as
+# `verify_collected` comparing a block to an incomplete generator (R4-4) and
+# `render_closure` replacing one hand-maintained twin with another (R5-3).
+#
+# So the finding ids are EXTRACTED from `reviews.py`'s own verdict text and
+# every one must appear in the ledger. The reviews are written first and
+# independently; a ledger validated against them cannot quietly fall behind.
+FINDING_ID = None
+
+
+def review_finding_ids(spec: str) -> set:
+    import re as _re
+    sys.path.insert(0, str(SPECS))
+    from reviews import REVIEWS
+    ids = set()
+    for r in REVIEWS:
+        if r["spec"] != spec:
+            continue
+        if r["verdict"].lstrip().upper().startswith("SENT"):
+            continue          # a dispatch names findings it is ANSWERING
+        ids |= set(_re.findall(r"\b(S\d+|F\d+|R\d+-\d+|M\d+)\b", r["verdict"]))
+    return ids
+
+
+def completeness_problems() -> list:
+    sys.path.insert(0, str(SPECS))
+    from closure_findings import CLOSURES
+    problems = []
+    for spec in sorted({c[0] for c in CLOSURES} | {"0022", "0023"}):
+        want = review_finding_ids(spec)
+        have = {c[3] for c in CLOSURES if c[0] == spec}
+        missing = sorted(want - have)
+        if missing:
+            problems.append(
+                f"{spec}: {len(have)}/{len(want)} findings in the closure "
+                f"ledger; MISSING {missing} — they are named in reviews.py and "
+                f"have no row in closure_findings.py")
+    return problems
