@@ -713,36 +713,75 @@ alone: the evidence agreed with the fix rather than with the spec.
 **v4 therefore has ONE function, shown here and CALLED by the evidence** (`specs/evidence/0022/store_concurrency_harness.py`), so the two
 cannot drift again:
 
+<!-- GENERATED:r19-operation -->
+*GENERATED from `specs/evidence/0022/store_concurrency_harness.py` by `specs/render_operation.py` — BYTE-FOR-BYTE, nothing stripped or reformatted, because the finding this closes (R5-2) was a spec block that differed from the executable it claimed to quote. `_gate` and `_fault` are TEST HOOKS, `None` in every non-test call; they appear here because they appear in the code, and hiding them would reintroduce exactly the divergence.*
+
 ```python
 def revocation_operation(conn, user, digest, action, reason, at, *,
-                         plan, busy_deadline_s=5.0):
-    """Allocate, re-read, plan, append the OPERATOR'S row, APPLY EVERY EFFECT,
-    and commit — or roll ALL of it back."""
+                         plan, busy_deadline_s=5.0, _gate=None, _fault=None):
+    """Allocate, re-read, plan, append the operator's row, APPLY EVERY EFFECT,
+    and commit — or roll ALL of it back.
+
+    THIS IS THE CONSTRUCTION §4e-i quotes and the checks below call.
+
+    EXTERNAL ROUND 4, R4-1 — WHAT v1 OF THIS FUNCTION DID NOT DO, and the
+    reason it passed 7/7 anyway:
+
+      * it appended the row and NEVER APPLIED THE EFFECTS, so R19's "the row
+        and the effects land together" was true only of the row. No check
+        asserted an effect had landed, so nothing failed.
+      * it DISCARDED `reason` and `at` — `_append` hard-coded both — so the
+        audit trail recorded the harness's defaults rather than the
+        operator's words, and the signature lied about what it stored.
+      * `plan` defaulted to None while the spec called `plan(standing)`
+        unconditionally, so spec and harness disagreed about the one argument
+        that produces the work.
+      * the BUSY regression exercised a SEPARATE `_retry_operation`, not this
+        function, so "the shared operation retries BUSY" was untested.
+
+    `plan` is now REQUIRED and takes the standing set, returning the effect
+    list. `_gate` and `_fault` are test hooks (None in every real call);
+    `_fault` fires between the row append and the effects, which is the seam
+    R19's atomicity claim is actually about.
+    """
     deadline = time.monotonic() + busy_deadline_s
     while True:
         try:
-            conn.execute("BEGIN IMMEDIATE")      # EXPLICIT. `with conn:` begins nothing.
-        except sqlite3.OperationalError:         # contention on the write lock
+            # EXPLICIT. Not `with conn:` — that begins nothing (R3-1).
+            conn.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError:
             if time.monotonic() >= deadline:
                 raise
             time.sleep(0.01)
-            continue                             # re-acquire, then RE-READ
+            continue                      # contention: re-acquire, RE-READ
         try:
-            seq      = next_seq(conn, user)      # allocate INSIDE the txn
-            standing = standing_from(conn, user) # plan against what is committed
-            effects  = list(plan(standing))
-            append(conn, user, digest, action, seq, reason, at)   # the operator's words
+            seq = _next_seq(conn, user)
+            standing = _standing(conn, user)
+            if _gate is not None:
+                _gate.wait()
+            effects = list(plan(standing))
+            _append(conn, user, digest, action, seq, reason, at)
+            if _fault is not None:
+                _fault()                  # between the row and the effects
             for e in effects:
-                apply_effect(conn, user, e)      # THE WORK, in the same txn
-            conn.execute("COMMIT")               # row + effects land TOGETHER
-            return seq, standing, effects
+                _apply_effect(conn, user, e)
+            conn.execute("COMMIT")
+            return seq, frozenset(standing), effects
         except sqlite3.IntegrityError as e:
-            conn.execute("ROLLBACK")
-            raise OrdinalCollision(str(e)) from e   # NEVER retried
-        except BaseException:
-            conn.execute("ROLLBACK")             # the row AND the effects
+            # R5-1: WHICH constraint fired decides which invariant reports.
+            # Only the per-user ordinal is a serialisation failure.
+            ordinal = _is_ordinal_violation(e)
+            _rollback_or_poison(conn, e)
+            if ordinal:
+                raise OrdinalCollision(str(e)) from e
+            raise RevocationIntegrityError(str(e)) from e
+        except BaseException as e:
+            # the row, the effects, all of it — and if that cannot be
+            # established, say so rather than pretending (R5-1)
+            _rollback_or_poison(conn, e)
             raise
 ```
+<!-- /GENERATED:r19-operation -->
 
 **"QUOTED VERBATIM" IS WITHDRAWN (external round 5, R5-2).** The block above
 is the transaction discipline; the executable in

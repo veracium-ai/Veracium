@@ -1094,3 +1094,80 @@ def test_reconcile_handles_an_emitted_reason_that_differs_from_its_source_token(
                 "the read-only-store fixture\n"
                 "1 passed, 1 skipped in 0.1s")
     assert not reconcile(non_root), reconcile(non_root)
+
+
+def test_r19_binds_the_product_store_the_moment_a_revocation_writer_appears():
+    """0022 R19's PRODUCT-STORE binding test.
+
+    THE HONEST STATUS FIRST: `source_revocations` DOES NOT EXIST in
+    `src/veracium/` today. 0022 and 0023 are drafts, and this repo's own gate
+    refuses any `src/` commit citing a non-accepted spec, so a test that binds
+    the shipped construction to shipped store code cannot test behaviour that
+    has not been written.
+
+    What it CAN do, and this is not a stub, is PRE-EXIST the code and bite the
+    moment it lands. Every structural invariant in this pair works that way —
+    0004 W7's sole-writer sweep, 0023 N2's single-disclosure-writer sweep,
+    0025 X7. Writing the check after the implementation is how
+    `_invalidate_edge_row` acquired two call sites that each had to remember
+    the wiki drop.
+
+    SCOPED TO THE ENCLOSING FUNCTION, not the module. A module-level substring
+    check passes any non-conforming writer that happens to live beside an
+    unrelated BEGIN IMMEDIATE, and `sqlite.py` already contains two. That
+    weakness was found by exercising the NEGATIVE case on a scratch copy: the
+    module-level form accepted a writer with the BEGIN removed."""
+    import ast, re, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    store = root / "src" / "veracium" / "store"
+    pattern = re.compile(r"(INSERT|UPDATE|DELETE)[^\n]*source_revocations", re.I)
+
+    writers = []
+    for f in sorted(store.rglob("*.py")):
+        text = f.read_text()
+        if "source_revocations" not in text:
+            continue
+        for node in ast.walk(ast.parse(text)):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            body = ast.get_source_segment(text, node) or ""
+            if pattern.search(body):
+                writers.append((f.relative_to(root), node.name, node.lineno, body))
+
+    if not writers:
+        specs = root / "specs"
+        for name in ("0022-source-revocation.md",
+                     "0023-non-revival-under-maintenance.md"):
+            status = re.search(r"^Spec-Status:\s*(\S+)",
+                               (specs / name).read_text(), re.M).group(1)
+            assert status != "accepted", (
+                name + " is ACCEPTED but no source_revocations writer exists in "
+                "the store — either the implementation is missing or this "
+                "binding test needs its real assertions turned on")
+        return
+
+    for path, fname, line, body in writers:
+        assert "BEGIN IMMEDIATE" in body, (
+            f"{path}:{line} `{fname}` writes source_revocations without "
+            f"BEGIN IMMEDIATE in the SAME function. R19: allocate, re-read, "
+            f"plan, append and apply must be ONE serialised write — and "
+            f"`with conn:` begins nothing (external round 2, R3-1)")
+        # `.upper()` on both sides: comparing an uppercased haystack against a
+        # mixed-case needle could ONLY fail, which is a check that cannot pass.
+        assert "MAX(SEQ)" in body.upper(), (
+            f"{path}:{line} `{fname}` writes source_revocations without "
+            f"allocating the ordinal from MAX(seq) in the same function — "
+            f"R19 requires the allocation INSIDE the transaction")
+
+
+def test_the_r19_operation_block_matches_its_executable():
+    """External round 5, R5-2 said the spec's construction was "quoted
+    verbatim" when it differed from the executable. I withdrew the claim; this
+    makes it TRUE instead. specs/render_operation.py emits §4e-i's block from
+    `revocation_operation`'s own source, byte for byte, and this is the
+    --check half."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "render_operation.py")],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr or r.stdout
