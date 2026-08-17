@@ -31,6 +31,15 @@ that will be in the archive**, or state the two commits with the intervening
 diff as an explicit allowlist. Identical is better; it needs no allowlist to
 audit.
 
+**MEASURE TO A SCRATCH PATH, THEN SEAL THE ARTIFACT.** `COLLECTED_pytest_rs.txt`
+is a SEALED record of a completed run, and the packaged-state test READS it.
+Redirect pytest straight into that filename and the test reads the file the
+run is still writing — it saw an empty file, rendered the "no measured run"
+block, and failed the byte-exact check while the same comparison passed
+outside the run. Round 5 spent two full suite runs on it. Write to a scratch
+path, copy it in AFTER the run completes, then regenerate COLLECTED's block
+from the copy.
+
 **Sealing is not sending. A sealed package is STAGED to
 `~/Documents/veracium/outbox/`, BOTH files -- the `.tar.gz` and its `.sha256`
 sidecar -- beside every prior package.** Building the archive here leaves it on
