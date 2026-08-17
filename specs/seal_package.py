@@ -86,11 +86,28 @@ def build_collected(rs_path: pathlib.Path, specs: list[str], version: str,
 
 
 def refuse_placeholders(*texts_and_names):
-    """A placeholder that reaches the archive is a lie with a valid sha256."""
+    """A placeholder that reaches the archive is a lie with a valid sha256.
+
+    MENTION IS NOT USE. The first version of this guard matched any occurrence
+    of "PLACEHOLDER", and refused the seal because the COLLECTED header
+    EXPLAINS the round-5 PLACEHOLDER_TS defect in prose. That is the third
+    mention-vs-use error in one day (a `pytest.skip(...)` in a docstring
+    counted as a skip site; the invariant gate read finding ids as citations),
+    and it is the same shape as the findings this package is answering: a
+    checker whose definition of its own domain is wrong in one direction or
+    the other.
+
+    So the check is on VALUE POSITIONS: an unsubstituted `__TOKEN__` anywhere,
+    or a legacy `PLACEHOLDER_*` immediately after a field's colon. Prose about
+    placeholders is prose.
+    """
     for text, name in texts_and_names:
-        for m in re.finditer(r"PLACEHOLDER[_A-Z]*|<TODO>|XXX_FIXME", text):
-            _fail(f"{name} still contains {m.group(0)!r} — round 5 shipped "
-                  f"PLACEHOLDER_TS this way")
+        for m in re.finditer(r"__[A-Z][A-Z_]*__", text):
+            _fail(f"{name} still carries the unsubstituted token {m.group(0)!r}")
+        for m in re.finditer(r"^[A-Za-z][\w /()-]*:\s*(PLACEHOLDER[_A-Z]*|<TODO>)",
+                             text, re.M):
+            _fail(f"{name} has a placeholder in a FIELD VALUE: {m.group(0)!r} "
+                  f"— round 5 shipped PLACEHOLDER_TS exactly this way")
 
 
 def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
