@@ -724,10 +724,30 @@ unit: the second host blocks, then reads a ledger that already contains the
 first host's row, and **plans against the standing set that actually
 exists** rather than a stale one.
 
+**MEASURED, and SQLite refuses EARLIER and for a sharper reason than the
+paragraph above predicted** (`store_concurrency_harness.py`, written for
+this round). The reasoning above says two hosts allocate the same ordinal
+and one hits the UNIQUE backstop. What actually happens under DEFERRED is
+that the second host cannot even reach the backstop: **a transaction that
+has already READ holds a SHARED lock, so its first write against another
+connection's RESERVED lock returns `SQLITE_BUSY` IMMEDIATELY — the busy
+handler is deliberately NOT invoked, because waiting would deadlock.** The
+loser cannot wait its turn. That is a stronger argument for the
+construction than the one the spec reasoned to, and it was only available by
+executing it.
+
+The duplicate-ordinal collision is real too, but it needs the read to happen
+OUTSIDE the write transaction — the allocate-then-write shape a host writes
+when the read is "just a SELECT". Both cells are in the harness.
+
 - **The unique constraint stays**, as a backstop that must never fire. If it
   ever does, that is a construction defect, not a race to retry around —
   `SQLITE_BUSY` on lock acquisition is the ordinary, retryable outcome, and
-  the two must not be conflated.
+  the two must not be conflated. **The harness proves they are
+  distinguishable in practice**: the collision surfaces as `IntegrityError`
+  from the INSERT itself, so a retry loop written around
+  `OperationalError` never sees it — which is the separation this rule
+  needs and could otherwise only assert.
 - **No CAS/retry loop is specified**, deliberately: a retry loop around an
   unserialised read is how you get two operations that each believe they saw
   the final state. Serialise first; there is then nothing to retry.
@@ -739,6 +759,13 @@ exists** rather than a stale one.
 - **Non-SQLite stores** must provide the same guarantee — allocate, plan and
   append inside one serialised write — and **R19** states it as the contract
   rather than as SQLite trivia.
+
+**Evidence (R19):** `specs/evidence/0022/store_concurrency_harness.py` —
+seven checks against real `sqlite3` connections on a real file, exit 0,
+recorded in `store_concurrency_result.txt`. It opens by proving THE DEFECT
+STILL REPRODUCES under the natural construction, so a race that quietly
+stopped racing would fail the build rather than silently retire every
+protection below it.
 
 **Adversarial tests (R19):** two overlapping revocations of DIFFERENT
 sources interleaved; two revocations of the SAME source; revoke racing lift
