@@ -839,7 +839,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0023`; 5 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0023`; 6 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -856,6 +856,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`). 0023 at v6: R3-3 folded — maintenance checks the STANDING REVOCATION rather than `Episode.assertable`, which over-excluded ordinary quarantined/use-only episodes in a ZERO-revocation store and broke N12; N12 gains the behaviour-half negative control… |
 | external 5 (verdict) | 2026-08-17 | 0 | R4-2 CLOSED; no new semantic blocker on this spec. Acceptance remains deferred only through the mutual Spec-Requires with 0022 |
 | external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`). 0023 at v7: R4-2 folded — §7a now says SIX consumers call `Episode.assertable` and names `lifecycle.py:182` as the seventh, explicitly NON-assertability use (maintenance excludes on the standing revocation); the malformed three-cell N12 row is conso… |
+| external 6 (SENT) | 2026-08-17 | — | SENT (the coupled round-6 package `0022-0023-v6`). 0023 at v7: no new finding at round 5 — R4-2 closed and the spec is semantically clear; it travels because acceptance is atomic through the mutual Spec-Requires |
 
 **Per-finding closure ledger — PROCESS §4a.** 3 finding(s) recorded for `0023`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
 

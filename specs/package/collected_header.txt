@@ -1,0 +1,74 @@
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-6 external-review package (v6)
+=====================================================================================
+package built:   __TS__ (UTC)
+source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
+                 sealer REFUSES if they differ — round 4 shipped two)
+specs:           specs/0022-source-revocation.md — draft v7 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v7 (external candidate)
+                 0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
+                 It ships because the pair depends on it. Re-submitting an
+                 approved spec invites re-litigating a closed decision, so it is
+                 named here rather than quietly included.
+
+REPRODUCTION — a launcher now, not instructions:
+  bash specs/evidence/offline/run_offline.sh
+    selects an interpreter whose SQLite meets the 3.35 floor (and REFUSES if
+    none does, rather than running on an unqualified build), creates a venv,
+    installs the 11 pinned wheels with --no-index --require-hashes, and runs
+    the suite. Verified from this package: 1656 passed, 8 skipped.
+    Its skip count differs from the sealed line below exactly where the
+    inventory says it will — no .git, no HOME-anchored file, no MCP SDK.
+
+measured line:   __MEASURED__ (exit 0)
+                 PACKAGED-STATE: measured in a copy carrying this COLLECTED.
+                 The full -rs output ships as COLLECTED_pytest_rs.txt and the
+                 decomposition below is COMPUTED FROM IT.
+
+harnesses:       specs/evidence/0022/vector_harness.py            — 60/60 (exit 0)
+                 specs/evidence/0022/store_concurrency_harness.py — 17/17 (exit 0)
+                 both re-run FROM THE EXTRACTED ARCHIVE by the sealer, which
+                 aborts if either fails there
+
+verifiers:       verify_collected(text, rs) · reconcile(rs) · render_closure --check
+                 · render_operation --check  — all PASS, all executed by the seal
+
+WHAT MOVED SINCE round-5 (v5, sha 1efaa00f…):
+  R5-1  the failure outcomes are TOTAL now. A failing ROLLBACK raises
+        RevocationUnknownState and CLOSES the connection; only the per-user
+        ordinal yields OrdinalCollision; any other integrity fault yields
+        RevocationIntegrityError.
+  R5-2  the BUSY check counts the LOOP'S OWN attempts with busy_timeout=0 —
+        v5's version made ONE BEGIN and caught ZERO errors because SQLite
+        waited internally, and a timing assertion cannot tell you who waited.
+        AND: a stale ordinal CANNOT be injected inside the operation, because
+        while it holds the write lock nothing else can COMMIT. OrdinalCollision
+        is UNREACHABLE from inside the construction; that is now its own check,
+        and the classifier is covered directly on real errors.
+  R5-3  findings are STRUCTURAL (specs/closure_findings.py) and the per-finding
+        §4a ledger is generated from them; the second hand-written table at the
+        top of 0022 is DELETED — keeping it was the previous fix not finishing.
+  R5-4  reconcile() separates EMITTED reasons from SOURCE-SITE tokens, with the
+        root-host regression that would have failed on your host and passed on
+        ours.
+  R19   THE PRODUCT-STORE BINDING TEST EXISTS. It cannot bind behaviour yet —
+        `source_revocations` is unwritten and this repo's gate refuses any src/
+        commit citing a draft spec — so it PRE-EXISTS the code: any function in
+        the store that writes source_revocations must carry BEGIN IMMEDIATE and
+        the MAX(seq) allocation IN THAT FUNCTION. Proven both ways on a scratch
+        copy. While the pair is unaccepted it asserts the other direction: if
+        either spec ever reads `accepted` with no writer present, it FAILS.
+  R5-2  "verbatim" is TRUE now rather than withdrawn: §4e-i's block is
+        GENERATED from revocation_operation's own source, byte for byte,
+        gated by render_operation.py --check.
+  pkg   PLACEHOLDER_TS shipped in v5. The seal is now ONE SCRIPT
+        (specs/seal_package.py) that refuses on a surviving placeholder, a
+        duplicate member, disagreeing commits, or a harness that fails from the
+        extraction — the five seal-time defects of rounds 2-5, each made
+        impossible rather than remembered.
+
+STILL OPEN:
+  - the store-side R19 binding is enforcement-before-implementation, not a
+    behavioural test. It becomes behavioural the day the store code exists,
+    which needs 0022 accepted.
+
+ENVIRONMENT-CONDITIONAL SKIP INVENTORY — GENERATED from specs/skip_inventory.py:

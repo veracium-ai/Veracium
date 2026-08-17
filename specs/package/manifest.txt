@@ -1,0 +1,55 @@
+PACKAGE: 0022-0023-v6 — external ROUND 6
+SEALED:  __TS__ (UTC)
+COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
+MEASURED: __MEASURED__
+
+0004 is not a candidate: approved at round 2, frozen on W1-W8.
+
+ALL FOUR ROUND-5 FINDINGS ARE FOLDED. R5-2 is the one to read, and it is the
+sharpest thing this review has found in us.
+
+  Instrumented, our BUSY check made ONE `BEGIN IMMEDIATE` and caught ZERO
+  OperationalErrors: busy_timeout=5000 meant SQLite waited INTERNALLY, and the
+  assertion "it waited more than 0.1s" was satisfied by the C library, not by
+  the Python retry loop the check was named for. A TIMING ASSERTION CANNOT
+  TELL YOU WHO WAITED. The collision check was worse: it raised
+  OrdinalCollision itself, so no collision ever passed through the function
+  under test.
+
+  Rewriting it established something we did not expect and now state as a
+  property: A STALE ORDINAL CANNOT BE INJECTED INSIDE THE OPERATION. While it
+  holds the write lock nothing else can COMMIT, so the attempt gets "database
+  is locked". OrdinalCollision is UNREACHABLE from inside the construction —
+  a backstop for callers who allocate outside the transaction. We could have
+  added a private hook to force the branch; that would have proved the
+  classifier while asserting the opposite of what is true.
+
+YOUR TWO PACKAGE REQUESTS ARE IN THIS ARCHIVE.
+
+  specs/evidence/offline/run_offline.sh — the self-contained offline launcher.
+  It SELECTS a runtime whose SQLite meets the 3.35 floor and REFUSES if none
+  does, rather than running on an unqualified build; installs the pinned
+  wheels with --no-index --require-hashes; runs the suite. Verified from this
+  package: 1656 passed, 8 skipped.
+
+  The product-store R19 binding test — with an honest limit. It cannot bind
+  behaviour: `source_revocations` does not exist, and this repo's own gate
+  refuses any src/ commit citing a non-accepted spec, so writing the store now
+  would mean bypassing the gate that exists to stop exactly that. Instead it
+  PRE-EXISTS the code and bites the moment it lands, which is how every
+  structural invariant in this pair works. Two defects in our own first draft,
+  both found by exercising the NEGATIVE case rather than only the passing one:
+  it was module-scoped (sqlite.py already contains two unrelated BEGIN
+  IMMEDIATEs, so it accepted a writer with the BEGIN removed), and it compared
+  an uppercased haystack against a mixed-case needle — a check that could ONLY
+  fail.
+
+THE SEAL ITSELF IS NOW ONE SCRIPT (specs/seal_package.py), because every
+seal-time defect of rounds 2-5 was a hand-run step going wrong in a way the
+sha256 could not show: a duplicate member; a manifest whose backticked regex
+names were EATEN by shell command substitution; two commits; PLACEHOLDER_TS;
+and pytest redirected into the artifact the packaged-state test reads. The
+script refuses on each of those rather than warning.
+
+NOT INCLUDED: the full prior external reports. They are your documents and we
+hold no licence to redistribute them in an artifact. Say the word and they go in.

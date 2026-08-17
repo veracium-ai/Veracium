@@ -1220,7 +1220,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**1 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0022`; 5 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**1 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0022`; 6 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -1235,6 +1235,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`; 0004 remains OUT — approved and frozen at round 2). 0022 at v5: R3-1 folded with ONE shared `revocation_operation` quoted verbatim in §4e-i and CALLED by the harness (the spec printed `with conn:` while the harness executed BEGIN IMMEDIATE — the evid… |
 | external 5 (verdict) | 2026-08-17 | 4 | RETURN FOR AMENDMENT (2 blocking on this spec + 2 package/process; 0023 semantically clear, deferred only by the mutual requires; 0004 not reopened). R5-1 — the failure outcomes were NOT TOTAL: a failing ROLLBACK was suppressed and the ORIGINAL error re-raised, so the caller held a live transaction … |
 | external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`; 0004 remains OUT — approved, frozen). 0022 at v6: R4-1 folded — the shared operation now APPLIES EVERY EFFECT in the same transaction, stores the operator's reason and timestamp, requires `plan`, and rolls the row back with the effects on any fault; … |
+| external 6 (SENT) | 2026-08-17 | — | SENT (the coupled round-6 package `0022-0023-v6`; 0004 remains OUT — approved and frozen at round 2, and named as such in both carriers rather than quietly included). 0022 at v7: all four round-5 findings folded. R5-1 the failure outcomes are total (unknown-state rollback closes the connection; only… |
 
 **Per-finding closure ledger — PROCESS §4a.** 12 finding(s) recorded for `0022`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
 
