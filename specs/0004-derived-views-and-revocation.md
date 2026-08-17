@@ -27,7 +27,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3.1** — internal round 1 folded and PASSED (research, 2026-08-17: R1 inverted cell, R2 the missed producer class, W-Q1 ruled; v3 @ `01a2d42`, PASS closed @ `da1a805b`). **v3.1 folds the packaging nit — and the nit found a SECOND carrier**: the ABSENT-reason cell still read v2's inverted rationale (now UNREACHABLE-BY-SIGNATURE, drops if forced), and chasing it showed §4 still stated the rule as a DENY-list of dropping reasons, which is the same inversion R1 caught in §2c. §4 is now drop-by-default over a closed RETAIN allow-list; W5 splits into a runtime constant and a process constant so the polarity is carried in CODE, not prose. |
+| **Version** | **v3.1** — internal round 1 folded and PASSED (research, 2026-08-17: R1 inverted cell, R2 the missed producer class, W-Q1 ruled; v3 @ `01a2d42`, PASS closed @ `da1a805b`). **v3.1 folds the packaging nit — and the nit found a SECOND carrier**: the ABSENT-reason cell still read v2's inverted rationale (now UNREACHABLE-BY-SIGNATURE, drops if forced), and chasing it showed §4 still stated the rule as a DENY-list of dropping reasons, which is the same inversion R1 caught in §2c. §4 is now drop-by-default over a closed RETAIN allow-list; W5 splits into a runtime constant and a process constant so the polarity is carried in CODE, not prose. **v3.2 — EXTERNAL round 1 (F5): the §5 regime table still read "flagged, not decided (W-Q1)" while §4, W8 and the question table all carried the resolved ruling. The FOURTH carrier of a decision whose other three were updated — in the document whose own v3.1 lesson was that a finding is not closed until every carrier is swept, and whose commit message said so. Folded, and the miss is recorded IN the cell rather than only here, because that is what v3.1 claimed to have learned.** |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M8/§11c, unchanged in substance. |
 | **Internal reviewers** | research — **found the defect**; round 1 PASS 2026-08-17 (R1/R2 + W-Q1 ruled), fix verified independently by both sessions |
 | **External review** | required — touches `compile.py` and the store write path |
@@ -260,7 +260,7 @@ exclusion is deliberate, so it is pinned).
 | a store with NO wiki | the drop is a no-op; no path changes |
 | principal-bearing recall (`0020`) | the wiki is excluded from the response ENTIRELY, so this regime is unaffected by the cache's state — the exposure is the unscoped regime |
 | staleness (`lapsed`/`decayed`) | NO drop, deliberately — time-based staleness is not a revoked trust decision, and paying curated breadth on every decay cycle buys no trust |
-| `absorbed_duplicate` | currently NO drop (the content survives in the surviving edge) — flagged, not decided (W-Q1) |
+| `absorbed_duplicate` | **NO drop — RULED, not flagged (W-Q1 resolved 2026-08-17; pinned by W8).** Absorption is trust-preserving by construction: the content stays backed by a live same-trust record, so the wiki serves nothing revoked. **This cell read "flagged, not decided" until external round 1 (F5) found it — the FOURTH carrier of a ruling whose other three had been updated, in the document whose own v3.1 lesson was that a finding is not closed until every carrier is swept** |
 | post-`0022` `revoked_source` | drops, by the rider this spec reserves |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking

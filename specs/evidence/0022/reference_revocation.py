@@ -216,15 +216,29 @@ def standing_revocations(rows, user_id: str) -> frozenset:
     """THE STANDING STATE IS DERIVED, NEVER STORED (0022 §4a).
 
     `source_revocations` is APPEND-ONLY — a revoke row and, later, a lifting
-    row. The standing set is the LATEST row per (user, identity digest) by
-    (at, seq); there is no UPDATE, no `active` column and no row that is
+    row. The standing set is the LATEST row per (user, identity digest) **by
+    `seq` ALONE**; there is no UPDATE, no `active` column and no row that is
     edited in place. This resolves the mutable-state-vs-insert-only seam the
     ledger already settled (0014's insert-only discipline) rather than leaving
     a second, contradictory answer in the store.
 
     `seq` is the per-user append ordinal and is UNIQUE: two rows sharing one
     ordinal make the latest-row rule undecidable, so they REFUSE rather than
-    resolve by dict order."""
+    resolve by dict order.
+
+    **`at` IS AUDIT METADATA AND ORDERS NOTHING (external round 1, F2).**
+    v1 ordered by the tuple `(at, seq)` while this same docstring called `seq`
+    the unique append ordinal — two ideas that contradict each other in
+    effect. `at` is HOST-SUPPLIED and 0022 §2c already named a planted
+    far-future timestamp as adversarial input, so the attack the spec had
+    written down defeated the reference: revoke at 2099 (seq 0), lift at 2026
+    (seq 1), and the lift — appended LATER, by the store's own committed order
+    — loses the tuple comparison and never takes. A revocation became
+    PERMANENT, which is the one property this spec promises it is not.
+
+    Ordering by the committed ordinal alone is not merely a fix; it is the
+    only ordering the store can vouch for. A clock is an input; the append
+    order is a fact."""
     if not isinstance(user_id, str) or not user_id:
         raise RevocationError("user_id must be a non-empty str")
     latest: dict = {}
@@ -242,7 +256,7 @@ def standing_revocations(rows, user_id: str) -> frozenset:
         seen_seq[key] = row
         d = row["identity_digest"]
         prev = latest.get(d)
-        if prev is None or (row["at"], row["seq"]) > (prev["at"], prev["seq"]):
+        if prev is None or row["seq"] > prev["seq"]:      # seq ALONE — F2
             latest[d] = row
     return frozenset(d for d, row in latest.items()
                      if row["action"] == "revoke")
@@ -645,11 +659,41 @@ def sweep(store: dict, target_digest: str, *, proposed=None) -> dict:
         for k in set(affected) | retired
         for r in by_survivor.get(k, ()))
 
-    # (4) CLASS (c): system-authored records with NO attribution rows at all.
-    # An UPPER BOUND on the unreachable population, and deliberately so: the
-    # correct direction of error for a blind-spot count is over-reporting.
-    unattributed = sorted(k for k, r in records.items()
-                          if r["system_authored"] and k not in by_survivor)
+    # (4) CLASS (c): EVERY record with NO attribution rows at all.
+    #
+    # v1 gated this on `system_authored`, calling the result an upper bound.
+    # It was not one (external round 1, F4). A PRE-0014 ABSORPTION SURVIVOR
+    # KEEPS THE INCOMING RECORD'S PROVENANCE — which is routinely
+    # user-authored — while carrying values transferred from a contributor
+    # that no ledger row names, because the linkage discipline did not exist
+    # when it was written. Such a record is exactly the blind spot class (c)
+    # exists to report, and authorship excluded it. Executed: the supplied
+    # class-(c) vector with its unattributed record marked non-system-authored
+    # returned `class-c-unattributed=0` and `complete=True` — a store
+    # declaring itself completely swept while unreachable derived content
+    # survived in it.
+    #
+    # AUTHORSHIP IS NOT A DERIVATION DISCRIMINATOR. It says who authored the
+    # EVIDENCE, not whether the store later combined it with anything. The
+    # only sound predicate available here is the absence of linkage itself:
+    # a record with no rows is a record whose derivation history the store
+    # cannot vouch for, whoever wrote it.
+    #
+    # This over-reports — an ordinary user fact that never combined with
+    # anything is counted — and over-reporting IS the correct direction for a
+    # BLIND-SPOT count. A number that is honestly too big says "look here";
+    # a number that is quietly too small says "nothing to see". The size of
+    # this count is itself the signal about the store's linkage coverage,
+    # which is why §4c reports it beside the class-(a)/(b) counts rather than
+    # summing them.
+    # UNATTRIBUTED **AND UNREACHED**. A class-(a) or class-(b) record is
+    # already found and already acted on; counting it in the blind-spot total
+    # inflates the one number whose entire job is to say how much this sweep
+    # could NOT see. The count is an upper bound on the UNREACHED population,
+    # not a census of records lacking rows.
+    _reached = set(direct) | set(affected)
+    unattributed = sorted(k for k in records
+                          if k not in by_survivor and k not in _reached)
 
     # (5) THE EFFECTS ARE A DIFF AGAINST THE DESIRED STATE, in ONE direction-
     # free construction: a record's desired state is a function of the

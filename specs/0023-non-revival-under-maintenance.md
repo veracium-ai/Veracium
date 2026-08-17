@@ -46,6 +46,22 @@ the lifecycle-op conformance family). See `## Review closure`.*
 > **Twice in one pair, a finding's own evidence row has contained the
 > next finding** — which says the yield is in re-reading what the
 > commands actually printed, not in running more of them.*
+>
+> **v4 — EXTERNAL round 1 folded (RETURN FOR AMENDMENT; one blocking finding
+> here, and it is the same defect one layer out).** **F1:** v3 gave
+> `Episode` a `quarantined` property and made **one** consumer read it. The
+> rule has **five** consumers, and the reviewer executed the counterexample
+> straight into the gate's grounded partition and the wiki compiler's input.
+> The root cause is now named: an `Edge` has ONE shared `assertable`
+> predicate; an `Episode` had five open-coded copies of a condition, and
+> `scope_read.py:65` states that asymmetry in a docstring as though it were
+> a decision. v4 adds `Episode.assertable`, routes all five sites through
+> it, and **generates** the consumer inventory (**N15**) — because a
+> hand-written list of readers is what produced a hand-written list of one.
+> §8's "cannot re-enter by any path" was FALSE in v3 and is unchanged in v4,
+> because the claim was right and only now true. §9.3 no longer invites this
+> hunt: v3 named the gap in that very section and shipped anyway, which
+> turned an honest disclosure into a map to a bug we had not looked for.*
 
 ***The coupling with 0022 is MACHINE-CHECKED and acceptance is ATOMIC:
 `Spec-Requires` is MUTUAL — 0022 requires 0023 and 0023 requires 0022 —
@@ -299,18 +315,58 @@ case this spec exists to govern. §3b's promise ("not assertable, never
 enters the wiki or the grounded block") was true for one type and false
 for the other.
 
+#### The inventory — FIVE consumers, not one (external round 1, F1)
+
+v2 wrote the field. v3 made **one** reader consult it. **The rule has five
+readers, and the external reviewer executed the counterexample: a
+USER-authored episode with `disclosure=QUARANTINED` still reached the gate's
+grounded partition and the wiki compiler's input.** Enumerated by
+`grep -rn "third_party_influenced" src/veracium/`, not sampled:
+
+| # | site | what it decides | v3 status |
+|---|---|---|---|
+| 1 | `__init__.py:869-872` (`_fit_to_budget`) | recall render sections | **fixed in v3 — the only one** |
+| 2 | `gate.py:135-137` (`partition_parts`) | the GROUNDED partition | **MISSED** |
+| 3 | `compile.py:146` | what enters the compiled wiki | **MISSED** |
+| 4 | `proactive.py:210` | proactive assembly | **MISSED** |
+| 5 | `scope_read.py:65` | the `0020` scoped-read grounded predicate | **MISSED — and it is the one that explains all four** |
+
+Site 5 is worth reading in full, because the asymmetry is not an oversight
+in the code — it is **written down as a decision**:
+
+> *"The two record kinds are routed by the gate on two different fields, and
+> this is where that asymmetry is stated ONCE: an `Edge` carries
+> `assertable`; an `Episode` is grounded unless it is
+> third-party-INFLUENCED."*
+
+**An `Edge` has ONE shared predicate; an `Episode` has five open-coded
+copies of a condition.** That is the defect generator, and no fix that adds
+a sixth copy closes it.
+
+**(A sixth site, `sqlite.py:1463`, is NOT an assertability decision** — it
+derives a consolidation output's provenance as the weakest disclosure over
+its inputs, which already accounts for `QUARANTINED` through the rank
+table. Listed so the inventory is exhaustive rather than convenient.)
+
 **Two carriers, both required:**
 
-1. **`Episode.quarantined`** — a derived property mirroring `Edge`'s
-   (`schema.py:274`, `relation == QUARANTINE_RELATION` reading as
-   disclosure-only on a type with no relation). The property is
-   **derived, never stored**, for the same reason §4a point 1 gives: the
-   value already exists in `disclosure`, and a second copy is a second
-   source of truth. **The reason it did not exist is the reason S3
-   happened** — the render could not consult a property no one had
-   derived for this type.
-2. **The render consults it** — a quarantined episode routes to the
-   FENCED section, never to ordinary detail.
+1. **`Episode.quarantined` AND `Episode.assertable`** — derived properties
+   mirroring `Edge`'s (`schema.py:274`, `:290`). `quarantined` reads as
+   disclosure-only on a type with no relation; **`assertable` is the SHARED
+   PREDICATE the five consumers call**, and it is the half v3 omitted.
+   Both are **derived, never stored**, for the reason §4a point 1 gives:
+   the value already exists in `disclosure`, and a second copy is a second
+   source of truth. **The reason neither existed is the reason S3 and F1
+   both happened** — five readers could not consult a property nobody had
+   derived for this type, so each invented its own.
+2. **Every one of the five consumes it** — `Episode.assertable` replaces the
+   open-coded `not third_party_influenced` at all five sites. A quarantined
+   episode is not assertable, so it never enters the grounded partition, the
+   wiki input, proactive assembly or the scoped grounded set, and in the
+   recall render it routes to the FENCED section rather than ordinary detail.
+3. **The inventory is GENERATED, not written** — `N15` regenerates it from
+   the tree and fails when a sixth consumer appears, because a hand-written
+   list of readers is what produced a hand-written list of one.
 
 **Why FENCED and not SUPPRESSED, stated because the review asked for
 suppression and this is a deliberate departure.** Suppressing quarantined
@@ -539,8 +595,8 @@ lifecycle sweep is legible as a whole:
 | **N11** a record with no `source_id` has no digest and is never affected by any standing revocation, at any of the sites above | `test_unidentified_writes_are_never_quarantined_by_revocation` |
 | **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded | `test_no_revocation_is_byte_identical` |
 | **N13** a lift restores ordinary behaviour for FUTURE writes with nothing to unwind, and does NOT rewrite the disclosure of records already written — the declared asymmetry, pinned in both directions | `test_lift_does_not_rewrite_existing_disclosure` |
-| **N14** a quarantined episode's TEXT never renders as ordinary context: `Episode.quarantined` is derived from `disclosure` exactly as `Edge`'s is, and the render routes it to the FENCED section (internal S3 — v2 wrote the field and no reader consulted it) | `test_revoked_source_episode_is_not_ordinary_context` — **asserted at the RENDER SURFACE, R18's form**: under a standing revocation, ingest an event, call `recall()`, and require the episode's text to be ABSENT from `## RELEVANT DETAIL` and present only under the fenced never-assert header. A store-level assertion would pass on the broken code, which is precisely how v2 shipped a field nothing read · `test_episode_quarantine_matches_edge_quarantine` — the same event's edge and episode must reach the SAME partition, so the two types cannot drift apart again |
-
+| **N14** a quarantined episode is NOT ASSERTABLE at **every** consumer — `Episode.assertable` is the one predicate and all five sites call it (external round 1, F1: v3 fixed ONE of five, and the reviewer executed the counterexample straight into the gate partition and the wiki input) | `test_quarantined_episode_is_not_assertable_anywhere` — **parametrised over the five sites**: `recall()` render, `gate.partition_parts`, `compile`'s wiki input, `proactive` assembly, and `scope_read`'s grounded predicate. One assertion per site, each on the SURFACE, because a store-level assertion passes on all five broken |
+| **N15** the consumer inventory is GENERATED and TOTAL — a sixth site that decides episode assertability fails the build | `test_episode_assertability_consumers_are_exhaustive` — sweeps `src/veracium/` for every read of `provenance.third_party_influenced` on an Episode and asserts each is either `Episode.assertable` or a dispositioned non-assertability use (`sqlite.py:1463`'s provenance derivation). **A hand-written reader list is what produced a hand-written list of one** |
 Standing checks that must not regress: injection asserts 0 · cross-user
 leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
 
@@ -621,6 +677,16 @@ containment, and no row above depends on it.
 > consolidate or renew, and importing a file that carries its records
 > re-quarantines them on arrival.
 
+**This sentence was FALSE in v3 and the external reviewer proved it by
+execution (F1).** "Cannot re-enter the assertable set by any path" rested on
+quarantine being consulted wherever assertability is decided; it was
+consulted at one of five sites, so a quarantined episode's text reached the
+grounded partition and the wiki input. The claim is unchanged in v4 because
+the claim was right — **what changed is that it is now true.** Recorded here
+rather than quietly repaired: a claim of the form "by any path" is only as
+good as the enumeration behind it, and v3 had no enumeration, only a spot
+check it described honestly in §9.3 and then did not act on.
+
 **What this does NOT establish.**
 
 - **It is not authentication** (0022's C2, inherited). A revoked source's
@@ -691,13 +757,19 @@ containment, and no row above depends on it.
    and the test asserts at the RENDER surface rather than at the store —
    a store-level assertion passes on the broken code, which is exactly
    how the defect survived v2.
-   **The invitation stands, and it is now sharper rather than
-   discharged.** One instance found means the class is real and the
-   enumeration was never total: the paths we have checked are recall's
-   detail sections, the wiki compiler, and proactive assembly. **We have
-   NOT proven there is no fourth.** If you find one, the finding is the
-   same class as this one, and the honest reading of our evidence is that
-   an executed check on one reader says nothing about the others.
+   **v3 said: "we have NOT proven there is no fourth." The external
+   reviewer found the second, third, fourth AND fifth, by executing the
+   counterexample v3 had described in words (F1).** That is the lesson this
+   spec should carry rather than the finding: **naming a gap is not closing
+   it.** v3 knew the enumeration was incomplete, said so in this very
+   section, and shipped anyway — which converted an honest disclosure into a
+   map for the reviewer to find the bug we had not looked for.
+   **v4 does not ask you to hunt this class any more.** The enumeration is
+   now generated from the tree and gated (**N15**), so the question moves
+   from "did they find them all" to "does the generator's definition of a
+   consumer match yours". **That is the finding we now want**: if a site
+   decides episode assertability by some route the sweep does not recognise,
+   the gate is blind to it and so are we.
 
 **Where we suspect we have overstated:** "cannot re-enter by ANY path" in
 §8. It is true of the paths enumerated in §3, and §3's totality is

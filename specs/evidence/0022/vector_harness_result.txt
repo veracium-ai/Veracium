@@ -1,1 +1,1 @@
-vector harness: 54/54 pass against reference_revocation.py
+vector harness: 60/60 pass against reference_revocation.py

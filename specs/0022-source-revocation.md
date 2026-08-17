@@ -32,6 +32,28 @@ maintenance). See `## Review closure`.*
 > retired-sole-basis, since only one of the two is re-derivable.
 > RATIFIED unchanged: the synthesized-survivor retirement, R3/R4/R6,
 > §4f's desired-state reversal, the ratchet, and R17.*
+>
+> **v3 — EXTERNAL round 1 folded (RETURN FOR AMENDMENT; three blocking
+> findings on this spec).** **F2:** the standing state ordered by `(at, seq)`
+> while `at` is host-supplied — so a planted far-future timestamp made a
+> revocation **permanently unliftable**, executed by the reviewer. Ordering
+> is now `seq` ALONE, `at` is audit metadata, and five clock-skew vectors
+> pin it. **The instructive part: §2c had NAMED this exact attack and its
+> governing rule answered a different question**, which is why §2c now
+> carries a note on its own evidential status — a cell in §2c is prose, a
+> cell in §2c-ii is a command and its output, and F2 lived in the gap.
+> **F3:** "supersession, never edit" was true of no carrier in the product —
+> the reference mutated in place against an abstract `history` list, while
+> `_invalidate_edge_row` UPDATEs the edge row and §4b-ii adds mutable
+> episode fields. C3 is NARROWED to retain-never-erase over reversible
+> in-place state backed by the append-only `source_revocations` ledger, the
+> withdrawal is stated as a withdrawal, and **Q9** opens the successor for a
+> real retirement-event carrier so the narrowing cannot become permanent by
+> default. **F4:** class (c) was gated on `system_authored` and so was not
+> the upper bound it claimed — a pre-`0014` absorption survivor keeps the
+> incoming record's user authorship while carrying transferred values no row
+> names. Class (c) is now every unattributed AND unreached record, whatever
+> its authorship, with a biting vector.*
 
 ***The coupling with 0023 is MACHINE-CHECKED and acceptance is ATOMIC:
 `Spec-Requires` is MUTUAL — 0022 requires 0023 and 0023 requires 0022 — so
@@ -80,7 +102,7 @@ research's and are used throughout):
 |---|---|---|---|
 | C1 | restrict-only | 0006 (identity groups, never grants) / 0020 | revocation only ever retires, quarantines or reduces. It can never promote a rival record, never clear a flag, never raise a confidence. Un-revoke RESTORES; it never grants |
 | C2 | identity is namespacing, NOT authentication | 0006 (the non-authenticated-origin rule, and its own deferred authenticated-origin question) | the revocation key is unauthenticated, so the forged-source cell is real (§3b) and reversibility is a THREAT-MODEL REQUIREMENT, not a courtesy |
-| C3 | supersede-never-erase | house rule | revoked records RETIRE with reason `revoked_source`; nothing is deleted; `forget()` remains the separate data-subject erasure op |
+| C3 | supersede-never-erase — **NARROWED at v3 (F3): retain-never-erase, by reversible in-place state over an append-only LEDGER** | house rule | revoked records RETIRE with reason `revoked_source`; **nothing is deleted and content stays re-derivable**; `forget()` remains the separate data-subject erasure op. **This spec does NOT define retirement events, ids, links or read-time resolution — the shipped store changes record state in place (`_invalidate_edge_row`) and the append-only carrier is `source_revocations`.** §4f states the withdrawal; **Q9** holds the successor |
 | C4 | transitively closed consumption | 0021 (the closed-consumption rule) | the blast radius is the CLOSED set over typed links; a single-level sweep is a defect by accepted rule |
 | C5 | fail-closed on missing evidence | 0020 (the fail-closed membership hierarchy) | where attribution is absent, revocation REPORTS incompleteness. Every revocation returns a completeness statement. *A tool that quietly misses half the blast radius is worse than none* is hereby a design requirement, not a warning |
 | C6 | ordinary-release bias | 0018 | one small append-only table plus read-side consultation is a SCHEMA bump on the ordinary migration path; no API-breaking window is needed or requested |
@@ -140,10 +162,20 @@ their real output are §2c-ii.
 | uncontrolled input | empty | malformed | unrecognised | adversarial | invariant that pins it |
 |---|---|---|---|---|---|
 | the revocation TARGET `(origin, source_id)` (host-supplied) | absent `source_id` → **REFUSED**: there is no digest, so there is no join and no honest sweep. 0006's own acceptance test already asserts a revocation matches neither of two source_id-less records | non-str, over-length (>512), or an origin absent alongside a present source_id → refused at the boundary, never digested half-resolved | an identity no record carries → an EMPTY blast radius is returned, with the class-(c) count still reported. A revocation of nothing is a valid, recorded, reversible act | **the forged-source DoS**: an attacker writes garbage under a victim's pair to bait an operator into revoking the victim | C2 verbatim: identity is NAMESPACING, NOT AUTHENTICATION. The mitigations and their limits are §3b; **R12** (no digest, no reach) and **R6** (dry-run before commit) |
-| the `source_revocations` rows the store reads back — **PRODUCERS row: the host's `revoke_source` call AND THE STORE'S OWN MACHINERY (migration, recovery, and any future importer of an operator log)** | no rows → nothing is revoked; every read path behaves exactly as today | a NULL digest, an unknown action, a missing reason, a non-int ordinal, an unknown column → **REFUSED at read**, never coerced. A NULL-digest row would be a `(resolved_origin, NULL)` pseudo-source, which 0006 forbids, and would revoke every unknown-source record in one row | an action string this version does not know → refused; a future action cannot be silently treated as "revoke" or as "lift" | a row planted with a far-future timestamp to win the latest-row rule | **R1**: the standing state is DERIVED from validated rows; two rows sharing one append ordinal make the rule undecidable and REFUSE rather than resolving by insertion order |
+| the `source_revocations` rows the store reads back — **PRODUCERS row: the host's `revoke_source` call AND THE STORE'S OWN MACHINERY (migration, recovery, and any future importer of an operator log)** | no rows → nothing is revoked; every read path behaves exactly as today | a NULL digest, an unknown action, a missing reason, a non-int ordinal, an unknown column → **REFUSED at read**, never coerced. A NULL-digest row would be a `(resolved_origin, NULL)` pseudo-source, which 0006 forbids, and would revoke every unknown-source record in one row | an action string this version does not know → refused; a future action cannot be silently treated as "revoke" or as "lift" | a row planted with a far-future timestamp to win the latest-row rule | **R1**: `at` ORDERS NOTHING — the latest row is decided by the committed `seq` alone, so a planted timestamp cannot win a comparison it does not enter. Two rows sharing one append ordinal still make the rule undecidable and REFUSE rather than resolving by insertion order. **This cell is why F2 is the round's most instructive finding: v2 NAMED this exact attack here and its governing rule answered a DIFFERENT question** — it addressed duplicate ordinals while the reference went on comparing `(at, seq)`. The attack was written down, unaddressed, for two internal rounds |
 | the 0014 contribution rows the join returns — **PRODUCERS: absorption (`apply_supersession_plan`), consolidation, the import primitive, and 0021's flattening** | a survivor with no rows → it is not reachable through contribution at all, and if it is system-authored it is COUNTED in class (c) | a half-typed link (`contributor_ref` without `contributor_type`) → refused; legacy rows carry BOTH columns NULL, so a half link is corruption, not history | a site this version does not know → the row still counts as evidence for the sole-basis test and its class is read from the typed link, which is total over any site vocabulary | a row NAMING ITS OWN SURVIVOR, which would make a walker loop — the 0020 post-acceptance defect, found by differential fuzzing | **R8**: the closure REFUSES corrupt linkage rather than continuing past it, and the fixpoint terminates because the condemned set only grows |
 | a record's own identity fields, at sweep time | absent `source_id` → unreachable by any revocation, by construction | out-of-bounds → refused by the shipped model validation before this spec sees it | an origin naming a foreign store → resolved as-is (a foreign record keeps its own origin), so it is revocable only under that pair | a writer OMITS `source_id` so its content cannot be revoked | acknowledged and stated in §8: absence buys unreachability, and it costs the writer every grouping benefit. **R12** names the cell rather than pretending the rule is closed |
 | the operator's `reason` string | empty/whitespace → REFUSED. A revocation with no recorded reason is not auditable | non-str → refused | — | a reason echoing memory text into the audit sink | the reason is OPERATOR-SUPPLIED and lands in the revocation row, which is operator-facing state, never model context. **R14** keeps the whole surface off the agent-reachable paths |
+
+**A NOTE ON THIS TABLE'S EVIDENTIAL STATUS, added at v3 because F2 turned
+on it.** Every cell in §2c is a CLAIM IN PROSE. Every cell in §2c-ii below is
+a COMMAND AND ITS REAL OUTPUT. F2 lived in the gap: the far-future-timestamp
+row above named the attack, asserted a rule, and nothing executed the pair
+together — so the spec carried an adversarial cell whose stated defence the
+reference did not implement, through two internal rounds, with both sessions
+reading the table and finding it convincing. **An adversarial cell without a
+vector is a sentence, not a defence.** The clock-skew vectors added at v3
+begin closing that; §10 **Q10** carries the general form.
 
 ## 2c-ii. Assertions about reach — REQUIRED
 
@@ -300,8 +332,28 @@ source_revocations(user_id, identity_digest, action, at, seq, reason)
 ```
 
 **The standing state is DERIVED — the latest row per `(user_id,
-identity_digest)` by `(at, seq)` — and is never stored.** There is no
+identity_digest)` by `seq` ALONE — and is never stored.** There is no
 `active` column and no UPDATE statement anywhere near this table.
+
+**`at` IS AUDIT METADATA AND ORDERS NOTHING (external round 1, F2).** v2
+ordered by the tuple `(at, seq)` while asserting two paragraphs later that
+`seq` is *the* unique append ordinal — two claims that contradict each other
+in effect. `at` is **host-supplied**, and §2c had already named a planted
+far-future timestamp as adversarial input, so **the attack this spec wrote
+down defeated its own reference**, executed by the reviewer:
+
+```
+seq=0  revoke  at 2099-01-01     <- a skewed or malicious clock
+seq=1  lift    at 2026-08-17     <- appended LATER, by the store's own order
+standing after the lift = True   <- the lift never takes
+```
+
+**A revocation became permanently unliftable — the one property this spec
+promises it is not.** Ordering by the committed ordinal is not merely the
+fix; it is the only ordering the store can vouch for. **A clock is an input;
+the append order is a fact.** Five vectors pin it: far-future revoke,
+clock rollback, identical timestamps, list order disagreeing with `seq`, and
+the epoch case.
 
 **This is the explicit resolution of a seam, not an implementation
 detail.** The store has two idioms for "current state": mutable rows
@@ -532,6 +584,33 @@ whether the graph was walkable; and a single `complete` boolean that is
 An operator who revokes gets the true blast radius AND the true blind
 spot (**R7**).
 
+**Class (c) is defined by MISSING LINKAGE, not by authorship (external
+round 1, F4).** v2 counted only `system_authored` records with no
+contribution rows and called the result an upper bound. **It was not one.**
+A pre-`0014` absorption survivor keeps the INCOMING record's provenance —
+routinely user-authored — while carrying values transferred from a
+contributor that no ledger row names, because the linkage discipline did not
+exist when it was written. That is precisely the blind spot class (c)
+reports, and authorship excluded it: the reviewer re-ran the supplied
+class-(c) vector with its unattributed record marked non-system-authored and
+got `class-c-unattributed=0`, `complete=True` — **a store declaring itself
+completely swept while unreachable derived content survived in it.**
+
+**Authorship says who wrote the EVIDENCE, not whether the store later
+combined it with anything.** The only sound predicate available is the
+absence of linkage itself: a record with no rows is a record whose
+derivation history the store cannot vouch for, whoever wrote it. Class (c)
+is therefore **every record with no contribution rows that this sweep has
+not already reached** — the unreached qualifier matters, because counting a
+class-(a) record that was found and retired inflates the one number whose
+entire job is to say what the sweep could NOT see.
+
+This over-reports: an ordinary user fact that never combined with anything
+is counted. **Over-reporting is the correct direction for a blind-spot
+count** — a number honestly too big says "look here"; a number quietly too
+small says "nothing to see" — and the size of this count is itself the
+signal about the store's linkage coverage.
+
 **Retired-synthesized is counted SEPARATELY from retired-sole-basis
 (internal suggestion, adopted).** They are the same disposition and
 completely different operator experiences: a sole-basis retirement is
@@ -617,11 +696,39 @@ right by construction, and it is a pinned vector.
 
 Concretely:
 
-- retirements REVERSE BY SUPERSESSION — a new event that supersedes the
-  retirement — **never by editing the retirement record and never by
-  deletion** (C3). The effect vocabulary is CLOSED to `{retire,
-  recompute, reinstate}` and contains no erasing verb; a vector asserts
-  the vocabulary itself, because C3 is a property of the vocabulary
+- **NARROWED AT v3 (external round 1, F3), and the narrowing is a
+  withdrawal, not a rewording.** v2 said retirements "REVERSE BY
+  SUPERSESSION — a new event that supersedes the retirement, never by
+  editing the retirement record". **The product has no such event.** The
+  reviewer put the contradiction precisely: the normative reference
+  overwrites a record under the same id and appends the former value to an
+  abstract `history` list for which no product carrier exists, while
+  `_invalidate_edge_row` (`sqlite.py:251`) explicitly UPDATEs the existing
+  edge row and this spec's own §4b-ii adds mutable `active`/`retired_reason`
+  fields to the existing episode JSON. **Three carriers, one claim, and the
+  claim was true of none of them.**
+
+  **What v3 claims instead, which is what the store actually does:**
+  retirement is an **in-place, reversible STATE CHANGE** on the record —
+  `active`/`retired_reason` for both record types — and the **append-only
+  carrier is `source_revocations`**, the standing-state ledger. The event
+  log is the ledger; record state is DERIVED from it and is never a second
+  source of truth. That is a real property and it is the one that makes
+  reversal work: **because state is a function of the standing set, revoke
+  and lift are the same computation** (below), and no undo log exists to
+  replay wrongly.
+
+  **`supersede-never-erase` (C3) survives in the sense that carries the
+  guarantee** — nothing is deleted, content is retained and re-derivable,
+  `forget()` remains the only erasure surface — and **is withdrawn in the
+  sense that overreached**: this spec does not introduce retirement events,
+  ids, links or read-time resolution, and no longer implies it does. The
+  effect vocabulary is still CLOSED to `{retire, recompute, reinstate}` with
+  no erasing verb, and a vector still asserts the vocabulary.
+
+  **A general retirement-event carrier is a real design and it is not this
+  spec's** — see §10 **Q9**, which records it as a successor rather than
+  letting the narrowing become permanent by default.
   before it is a property of any implementation.
 - only retirements carrying reason `revoked_source` reverse. A record
   retired as superseded, lapsed or decayed is not this operation's to
@@ -684,7 +791,7 @@ the only row with a live artifact, and its evidence is
 | **R4** the recompute is EXACT and RESTRICT-ONLY: exactly the surviving-evidence fold, never punitively below it, never above the full-evidence fold — with the clamp exercised against a deliberately non-monotone aggregator | `test_recompute_is_exact_and_restrict_only` + `test_revocation_grants_nothing` (the enumerated temptations) |
 | **R5** the ratchet: `ungrounded` is never recomputed downward, and `disclosure`/`derived_from` are never written by a revocation | `test_revocation_never_clears_the_ungrounded_flag` |
 | **R6** dry-run and commit produce the IDENTICAL statement from ONE code path; the dry run leaves the store byte-identical; the planner is a pure function of its inputs | `test_dry_run_equals_the_commit` (+ the `preview_agrees` vectors) |
-| **R7** the completeness statement reports all three class counts, **counts retired-synthesized separately from retired-sole-basis** (§4c — same disposition, different operator action: synthesized output is re-derivable from surviving evidence, sole-basis is not), and is `complete=False` whenever the class-(b) or class-(c) population is non-empty | `test_completeness_statement_is_honest` + `test_retired_synthesized_counted_separately` (a store with both kinds; the two counts must not collapse into one) |
+| **R7** the completeness statement reports all three class counts, **counts retired-synthesized separately from retired-sole-basis**, and is `complete=False` whenever the class-(b) or class-(c) population is non-empty. **Class (c) is UNATTRIBUTED AND UNREACHED — every record with no contribution rows that this sweep did not already find, WHATEVER ITS AUTHORSHIP (external round 1, F4)** | `test_completeness_statement_is_honest` + `test_retired_synthesized_counted_separately` + **`test_user_authored_unattributed_is_counted`** — a pre-`0014` absorption survivor that kept the INCOMING record's user authorship while carrying transferred values no ledger row names. The vector BITES: under the v2 predicate it counted 1, under v3 it counts 5 |
 | **R8** consumption closure is TRANSITIVE and the property RECURSES (a condemned contributor is not corroboration one hop up); a self-naming row REFUSES instead of looping; the fixpoint terminates | `test_closure_is_transitive_and_recursive` |
 | **R9** supersede-never-erase: after any revoke/lift sequence every record is still present, history only grew, and no effect verb outside `{retire, recompute, reinstate}` exists | `test_revocation_only_appends` |
 | **R10** a lift is DESIRED STATE, not undo: it reinstates only what `revoked_source` retired, restores recomputed values by recomputation, and leaves a record retired while a SECOND revocation still reaches it | `test_lift_is_desired_state_not_undo` |
@@ -867,6 +974,8 @@ document generalises.
 | **Q6** | should a revocation's completeness statement be DURABLE (queryable later) rather than only returned? | `pre-release` — dev, before implementation. The audit event carries the counts; storing the full statement would make "what did that revocation reach" answerable months later, at the cost of a second carrier for a value the sweep can always recompute. **Leaning: audit event only — but the v1 REASON was wrong and is corrected (internal M1).** "The sweep is a pure function and can be re-run" is false across time: the function is pure over inputs that MUTATE, so a re-run months later answers *what the store looks like now*, not *what that revocation reached then*. Recomputation reproduces only the present. The leaning survives on the honest ground: **the audit event IS the durable record**, and a second stored copy of a statement the audit already carries is a second carrier to keep consistent (§3b's rule against exactly that) |
 | **Q7** | should `revoke_source` accept a digest directly, for a source whose pair the operator no longer has? | `deferred` — research + dev. It would let an operator act on a digest read from `introspect` without knowing the pair, but it also lets an operator revoke something they cannot name. Not needed for v1 |
 | **Q8** | should the episode retirement field (§4b-ii) be PROMOTED to an `active` COLUMN on the `episodes` table at the next schema window? | `post-v1` — recorded rather than deferred silently, because the v1 choice has a stated ceiling. **Decided for v1 (Quentin, 2026-08-17): JSON field + the `store.episodes()` read seam, no DDL** — it ships without a migration and gives every reader structural inheritance, which is the property that matters most. **The ceiling it accepts:** the guarantee is Python-level, so a future raw-SQL reader could bypass the seam where a column would let SQL filter too. **R18**'s AST sweep is what stands there, and the fourteen raw sites are all inside the store package (§2c-ii), so the check is closed rather than hopeful. Promote when a schema window opens for another reason — never open one for this alone |
+| **Q9** | should the product gain a GENERAL retirement/reinstatement EVENT carrier — ids, links, provenance and read-time resolution — for edges AND episodes? | `successor spec` — **opened by external round 1's F3, and recorded here precisely because the stated risk of narrowing is that the successor never gets scheduled and the narrowing becomes permanent by default.** v3 narrows C3 to reversible in-place state over the append-only `source_revocations` ledger, which is what the shipped store does. A real event carrier would let retirement be a first-class, queryable history for both record types — and it collides with `0004`'s **W7** (sole `active=0` writer), this spec's **R17**, and the export FORMAT, so it needs its own round and its own schema window. **Not deferred silently: it is on the dev queue naming the ACT** |
+| **Q10** | should EVERY adversarial cell in a §2c table be required to carry a vector or an executed check? | `process` — raised by F2, which lived in the gap between §2c (prose claims) and §2c-ii (executed commands). The template asks for the adversarial column and separately asks for executed reach assertions, and never connects them. This is a PROCESS question above any one spec, so it belongs in `PROCESS.md` and the reviewer guide rather than here — recorded so the finding's generalisable half is not lost with the round |
 
 ## Review closure
 
