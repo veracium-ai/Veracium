@@ -40,11 +40,26 @@ INDEX = ARCHIVES / "INDEX.md"
 # `impl-v` marks a POST-IMPLEMENTATION review package (the accepted protocol
 # preserves reviewer standing against the implementation — 0012 §12); its
 # version numbers count implementation-review rounds, not spec versions.
-# COUPLED packages (two specs reviewed as one round — REVIEWER_GUIDE Part 7;
-# the external 0020/0021 reviewer asked for both candidates in the name):
-# NNNN-NNNN-v<version>-<ts>.tar.gz — the FIRST number is the lead spec
-# (grouping/sorting key); the second names the coupled candidate.
-NAME = re.compile(r"^(\d{4})(?:-(\d{4}))?-(impl-)?v(\d+)-(\d{8}T\d{4}Z)\.tar\.gz$")
+# COUPLED packages (two OR MORE specs reviewed as one round — REVIEWER_GUIDE
+# Part 7; the external 0020/0021 reviewer asked for both candidates in the
+# name): NNNN-NNNN[-NNNN...]-v<version>-<ts>.tar.gz — the FIRST number is the
+# lead spec (grouping/sorting key); the rest name the coupled candidates.
+#
+# GENERALISED from exactly-two to N on 2026-08-17, for the 0004+0022+0023
+# triple: 0022/0023 accept atomically (mutual `Spec-Requires`) and 0004 is
+# 0022's critical-path dependency, so all three are reviewed as ONE round.
+# The two-spec form was not a design decision — it was the arity the first
+# coupled round happened to need.
+#
+# `<version>` MEANS TWO DIFFERENT THINGS AND THE DISTINCTION IS LOAD-BEARING.
+# For a single-spec or lockstep-versioned package it is the SPEC version (the
+# 0020/0021 pair moved v3..v15 together, so one number was honest). When the
+# components carry DIFFERENT versions it cannot be a spec version without
+# lying about two of them, so it is the EXTERNAL ROUND number for that
+# package, and the component versions are carried in the package's own
+# PACKAGE_MANIFEST.txt. The triple ships at v1 = its first external round,
+# with 0004 at v3.1, 0022 at v2 and 0023 at v3 named in the manifest.
+NAME = re.compile(r"^(\d{4}(?:-\d{4})*)-(impl-)?v(\d+)-(\d{8}T\d{4}Z)\.tar\.gz$")
 
 
 def _entries():
@@ -54,9 +69,11 @@ def _entries():
         if not m:
             bad.append(f.name)
             continue
-        spec, coupled, impl, ver, ts = m.groups()
-        if coupled:
-            spec = f"{spec}+{coupled}"
+        specs_field, impl, ver, ts = m.groups()
+        # "0004-0022-0023" -> "0004+0022+0023"; the gate below splits on "+"
+        # to cross-check EVERY component against reviews.py, so the join has
+        # to stay lossless for any arity.
+        spec = specs_field.replace("-", "+")
         digest = hashlib.sha256(f.read_bytes()).hexdigest()
         n = len(subprocess.run(["tar", "tzf", str(f)], capture_output=True,
                                text=True).stdout.split())
