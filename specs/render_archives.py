@@ -20,6 +20,22 @@ a 93KiB packed history.
 The sha256 recorded here is what carries the provenance: it is tamper-evident,
 and anyone holding a copy can verify it is the one that was sent.
 
+**Sealing is not sending. A sealed package is STAGED to
+`~/Documents/veracium/outbox/`, BOTH files -- the `.tar.gz` and its `.sha256`
+sidecar -- beside every prior package.** Building the archive here leaves it on
+the dev machine and nowhere else; the outbox is the step that puts it where the
+external reviewer's copy is taken from. Verify after copying (`sha256sum -c`
+run INSIDE the outbox, against the sidecar that travelled with it), so the
+check exercises the copy that will be sent rather than the one that was built.
+
+This paragraph exists because the step was real, load-bearing, and written
+down nowhere: on 2026-08-17 the `0004-0022-0023-v1` package was sealed here,
+indexed, verified by extraction, and never staged -- while `reviews.py` already
+carried its `SENT` rows. Every documented rule was followed and the package
+still had not gone anywhere. **A ledger row saying SENT is only true once both
+files are in the outbox**; write the row at seal time as the convention has it,
+then stage, or the record outruns reality in the window between.
+
 **The known limit of that trade, stated because it is real:** a hash of a file
 nobody kept proves nothing. The archives live on the dev machine only, so if
 they are lost the index becomes a record that something existed rather than a
