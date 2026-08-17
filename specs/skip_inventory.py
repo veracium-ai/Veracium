@@ -213,10 +213,17 @@ def _observed_block(rs_output) -> str:
     for cls, n in sorted(counts.items()):
         lines.append(f"    {cls}: {n}")
     lines.append(f"    TOTAL: {total}")
+    # The PASS count is deliberately NOT echoed here. It belongs in COLLECTED's
+    # header, which is not byte-compared. Putting it in the generated block made
+    # the block depend on the pass count, which depends on whether the block is
+    # correct (the packaged-state test verifies it) — a fixed point that cannot
+    # converge: build the block, the pass count changes, the block no longer
+    # matches. Caught while sealing round 5, by running the suite twice and
+    # diffing the two renderings. Only the SKIP arithmetic belongs to this
+    # block, and it is stable across that feedback.
     summary = _re.search(r"(\d+) passed, (\d+) skipped", rs_output)
     if summary:
-        lines.append(f"    summary line: {summary.group(1)} passed, "
-                     f"{summary.group(2)} skipped")
+        lines.append(f"    summary line skips: {summary.group(2)}")
         if int(summary.group(2)) != total:
             lines.append("    *** MISMATCH: the -rs section and the summary "
                          "disagree ***")
