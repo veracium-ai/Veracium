@@ -4,7 +4,7 @@
 
 # Spec status
 
-**25 specs · 17 accepted · 196 external review
+**25 specs · 17 accepted · 199 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -16,7 +16,7 @@ is the number that decides what can be built.
 | **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `deferred` | 2026-08-13 | 1 | 2 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-14 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
-| **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-17 | 1 | 1 | 1 | 0 | 1 | 0/1 |
+| **0004** | derived views must not outlive a revoked trust decision | `draft` | 2026-08-17 | 1 | 2 | 1 | 0 | 1 | 0/1 |
 | **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-09 | 1 | 5 | 1 | 0 | 0 | — |
 | **0007** | on-disk store schema versioning | `accepted` | 2026-08-03 | 0 | 14 | 1 | 0 | 0 | — |
@@ -34,8 +34,8 @@ is the number that decides what can be built.
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
-| **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-17 | 1 | 1 | 6 | 0 | 0 | — |
-| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 3 | 1 | 5 | 0 | 0 | — |
+| **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-17 | 1 | 2 | 6 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 3 | 2 | 5 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `draft` | 2026-08-17 | 2 | 0 | 4 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `draft` | 2026-08-17 | 2 | 0 | 4 | 0 | 0 | — |
 
