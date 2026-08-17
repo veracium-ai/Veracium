@@ -36,7 +36,7 @@ is the number that decides what can be built.
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
 | **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-17 | 1 | 1 | 4 | 0 | 0 | — |
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 3 | 1 | 5 | 0 | 0 | — |
-| **0024** | the user's own words are not third-party testimony (L1) | `draft` | 2026-08-17 | 0 | 0 | 3 | 0 | 0 | — |
+| **0024** | the user's own words are not third-party testimony (L1) | `draft` | 2026-08-17 | 0 | 0 | 4 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `draft` | 2026-08-17 | 0 | 0 | 4 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per

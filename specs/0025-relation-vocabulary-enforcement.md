@@ -12,9 +12,9 @@ cache. Scheduled by Quentin 2026-08-17. Deliberately SEPARATE from `0024`
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v1** — first draft; no review rounds yet |
+| **Version** | **v2** — internal round 1 folded (research, 2026-08-17). **M2: the reserved member's RESIDENCY was unpinned, and that left the spec's own mechanism able to violate its own X1** — a host registry omitting `unclassified` would make the fallback write a non-member, and a host defining it as FUNCTIONAL would let every unclassified triple supersede. It is now a module constant on the `QUARANTINE_RELATION` pattern, injected into every effective registry and refused if shadowed (**X8**, **X9**). Also folded: **X4** splits into `retried`/`recovered`/`residual` so the re-run can attribute movement, and §7b states the pair composition. Ratified unchanged: the non-superseding ruling, polarity-first with X7, refuse-vs-remap, Q2's separation. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
-| **Internal reviewers** | pending — research |
+| **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 moderate + minors), folded here |
 | **External review** | required — changes what reaches the supersession machinery |
 | **Decision + date** | — |
 | **Path** | full |
@@ -184,10 +184,23 @@ of triples from arriving there.** Two mechanisms, in this order:
    registry (the shipped retry path), then handled by (2) if it still
    fails. This is where the 35% is actually recovered.
 2. **Name the residual.** A triple that still carries an off-vocabulary
-   relation is stored under a RESERVED registry member, non-functional,
-   **with the original relation preserved in the note** — no data loss, no
-   silent pass-through, and the residual is countable rather than
-   invisible.
+   relation is stored under the RESERVED member **`unclassified`**,
+   non-functional, **with the original relation preserved in the note** — no
+   data loss, no silent pass-through, and the residual is countable rather
+   than invisible.
+
+**The reserved member's RESIDENCY is structural, and v1 left it unpinned
+(internal M2).** Saying "a reserved registry member" without saying where it
+lives leaves the mechanism dependent on the very thing it is enforcing
+against — the host's registry — and creates two live adversarial cells:
+
+| cell | what v1 permitted | the rule |
+|---|---|---|
+| a host registry that OMITS `unclassified` | the fallback writes a relation that is not in the effective registry — **the spec's own mechanism violating X1** | `unclassified` is a MODULE CONSTANT on the `QUARANTINE_RELATION` pattern, **injected into every effective registry** at the boundary. Not optional, not removable |
+| a host defining `unclassified` as FUNCTIONAL | every unclassified triple becomes able to supersede — the exact data-loss outcome §4b refuses | a conflicting definition is **REFUSED at the boundary**, beside **X5**. The name is reserved; shadowing it is an error, not an override |
+
+This is the same shape as `QUARANTINE_RELATION`: a constant the system
+depends on cannot be a registry entry a host may redefine.
 
 **Why not refuse the triple.** Refusal destroys extracted content because
 the extractor picked a synonym. The cost lands on the user's memory, not
@@ -203,9 +216,17 @@ it rather than smuggling it in here.**
 
 ### 4c. Visibility of the residual
 
-The ingest result gains a count of triples that landed in the reserved
-member. A residual nobody can see is how 34.9% went unnoticed through
-every review this codebase has had.
+The ingest result gains **three** counts — `retried` (validation failed and
+re-extraction ran), `recovered` (the retry produced a registry member) and
+`residual` (landed in `unclassified`). **One lump sum would be enough to
+prove the mechanism runs and useless for the question that follows it:**
+whether the residual is the extractor formatting badly (retry recovers it)
+or the registry being too small for real corpora (retry cannot). §9's third
+uncertainty and **Q4** both turn on that split, and the development re-run
+needs it to attribute movement.
+
+A residual nobody can see is how 34.9% went unnoticed through every review
+this codebase has had.
 
 ## 5. Regime analysis — where does this behave differently?
 
@@ -225,7 +246,9 @@ every review this codebase has had.
 | **X1** | every stored `Edge.relation` is a member of the registry in force at write time (the reserved member included) | `test_every_stored_relation_is_in_the_registry` — a property test over generated extractor output, including adversarial strings |
 | **X2** | the reserved member is NON-FUNCTIONAL, so an unclassified fact can never supersede | `test_reserved_relation_never_supersedes` |
 | **X3** | the original relation survives on any re-dispositioned triple | `test_offvocab_relation_is_preserved_in_the_note` |
-| **X4** | the residual is COUNTED and returned; a silent fallback fails the check | `test_offvocab_count_is_reported` |
+| **X4** | the off-vocabulary population is reported as **THREE counts, not one — `retried`, `recovered`, `residual`** (internal minor: the development re-run needs to attribute movement between "the retry worked" and "the registry was too small", and a lump sum cannot) | `test_offvocab_counts_are_reported_separately` — asserts all three keys and that they reconcile |
+| **X8** | `unclassified` is present in EVERY effective registry, injected structurally rather than expected — a host cannot remove it | `test_reserved_member_is_always_resident` (including a registry that omits it and one that is empty) |
+| **X9** | a host defining `unclassified` as functional, or otherwise shadowing the reserved name, is REFUSED at the boundary | `test_shadowing_the_reserved_member_is_refused` — the adversarial cell, not the happy path |
 | **X5** | the host registry is validated at the API boundary; an empty registry is REFUSED, not silently accepted | `test_empty_registry_is_refused` |
 | **X6** | a store whose extractions are all in-vocabulary is byte-identical before and after | `test_in_vocabulary_corpus_is_byte_identical` |
 | **X7** | the polarity holds: adding a relation to the registry is what changes behaviour; NO code path stores an unvalidated relation | `test_no_unvalidated_relation_path` — an AST/call-graph sweep asserting the write site is reached only through the validator, the structural form `0004` W7 and `0023` N2 use |
@@ -258,7 +281,7 @@ every review this codebase has had.
 
 | spec | touchpoint | disposition |
 |---|---|---|
-| **`0024`** | the mislabelling of `third_party_claim` | **ORTHOGONAL, AND MUST NOT SHARE A FREEZE.** `third_party_claim` is IN the registry, so nothing here touches that defect, and `0024` does not reduce the off-vocabulary population. **The operative reason is measurement: a shared freeze makes the movement unattributable between two levers of very different size** (~35% vs one contradiction class) |
+| **`0024`** | the mislabelling of `third_party_claim`, **and its re-disposition target** | **COMPOSITION, STATED (internal M3): `0024`'s coherence test runs FIRST — `third_party_claim` is in the registry, so enforcement would pass it through untouched — and its fallback IS this spec's `unclassified`, so the rewrite is registry-resident under X1. A corrected user statement therefore becomes assertable but NON-SUPERSEDING, which `0024` §4b-i adopts as a chosen cell rather than inheriting as an accident. ORTHOGONAL, AND MUST NOT SHARE A FREEZE.** `third_party_claim` is IN the registry, so nothing here touches that defect, and `0024` does not reduce the off-vocabulary population. **The operative reason is measurement: a shared freeze makes the movement unattributable between two levers of very different size** (~35% vs one contradiction class) |
 | **`0012`** | reinforcement and the independence condition | **`Spec-Requires`, because this spec changes WHICH edges reach the supersession path at all.** 0012's rule that a restatement transfers nothing is unchanged; what changes is that ~35% more triples are eligible to be considered in the first place |
 | **`0003`** | the supersession ladder and refusal records | CONSUMED unchanged. More edges reach the ladder; the ladder decides as it always has |
 | **`0019`** | the `ungrounded` flag | untouched — flagged at extraction, independent of relation |

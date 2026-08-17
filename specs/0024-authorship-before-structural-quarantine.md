@@ -13,9 +13,9 @@ measurement.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v1** — first draft; no review rounds yet |
+| **Version** | **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
-| **Internal reviewers** | pending — research |
+| **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
 | **Decision + date** | — |
 | **Path** | full |
@@ -93,8 +93,8 @@ model declining to use things the user plainly told it.
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| the extractor's `relation` — **PRODUCER: the LLM, whose output is not constrained today (`0025`)** | absent → the triple is already dropped by the shipped `subject/relation/object` completeness check (`ingest.py:178`) | non-str → same drop | a relation outside the registry → **out of scope here; `0025` owns it.** This spec changes only the `third_party_claim` cell | an extractor steered into labelling everything `third_party_claim` (a denial-of-assertion attack) | **W1** — the coherence test is structural, so mislabelling in EITHER direction is caught by the same rule |
-| the extractor's `subject` on a `third_party_claim` triple | empty → drop (shipped) | non-str → drop | a claimant name this store has never seen → **QUARANTINES, unchanged.** An unknown claimant is the ordinary case | **the attack that matters: text engineered to make the extractor emit `subject="user"` in order to ESCAPE quarantine** | **W2** — the escape is bounded by the author floor, which is evaluated FIRST after this change. A THIRD_PARTY-authored event cannot reach `MENTIONABLE` by any relation, so the attack buys `USE_ONLY` at best — which is what it would have got with no quarantine relation at all |
+| the extractor's `relation` — **PRODUCER: the LLM, whose output is not constrained today (`0025`)** | absent → the triple is already dropped by the shipped `subject/relation/object` completeness check (`ingest.py:178`) | non-str → same drop | a relation outside the registry → **out of scope here; `0025` owns it.** This spec changes only the `third_party_claim` cell | an extractor steered into labelling everything `third_party_claim` (a denial-of-assertion attack) | **U1** — the coherence test is structural, so mislabelling in EITHER direction is caught by the same rule |
+| the extractor's `subject` on a `third_party_claim` triple | empty → drop (shipped) | non-str → drop | a claimant name this store has never seen → **QUARANTINES, unchanged.** An unknown claimant is the ordinary case | **the apparent attack: text engineered to make the extractor emit `subject="user"` to ESCAPE quarantine** | **THE ATTACK IS VACUOUS, not merely bounded — see §3b.** A steered extractor never needed the subject: it could emit an ORDINARY relation and reach `MENTIONABLE` directly, today, with no coherence test in sight. **U2** additionally pins the author floor |
 | `author_of_evidence` | absent → the model rejects it (required field) | invalid enum → rejected by validation before this code | — | a host declaring THIRD_PARTY content as USER | **out of scope, and stated so:** a host that lies about authorship is outside this spec's threat model and outside the product's (0006 C2 — identity is namespacing, not authentication) |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -108,6 +108,8 @@ column records its real output.**
 | **there is exactly ONE disclosure write site**, so the fix has one home | `grep -rn "_disclosure_for" src/veracium/ --include=*.py` | three hits: the definition (`:88`), a docstring reference (`:113`), and the single call (`:181`) |
 | **`quarantined` ORs on the RELATION as well as the disclosure** — so changing the disclosure alone would not change the behaviour | `sed -n '273,280p' src/veracium/schema.py` | `return (self.relation == QUARANTINE_RELATION or self.provenance.disclosure == Disclosure.QUARANTINED)` |
 | **the adapter is NOT the defect** — user turns are ingested as USER with no `derived_from` | `sed -n '88,96p'` of `longmemeval/run_longmemeval.py` (the harness in `~/Documents/veracium/proposals/`) | `if role == "user": return EvidenceAuthor.USER, None, "chat"` |
+| **the steered-extractor attack is VACUOUS — an ordinary relation already reaches MENTIONABLE** (the executed basis for §3b) | `python -c "from veracium.ingest import _disclosure_for; ..."` over the whole `EvidenceAuthor` domain | `author=user relation=prefers -> mentionable` · `author=system -> mentionable` · `author=third_party -> use_only`. **The extractor could always grant; it never needed the subject slot** |
+| **`EvidenceAuthor` has exactly THREE members — there is no `assistant`** (the domain **U2** must span; internal M1 named the row "ASSISTANT", which is a HOST MAPPING onto `SYSTEM`, not an enum member) | `python -c "from veracium.schema import EvidenceAuthor; print([e.value for e in EvidenceAuthor])"` | `['user', 'third_party', 'system']` |
 | **the mislabelling is real and its size is known** | a $0 pass over the 2026-08-01 extraction cache | 3,945 `third_party_claim` triples; **41.5%** carry a note naming the user as source; **40.7%** have `subject == "user"` |
 
 *(The third row is the one that changed the design: this looked like a
@@ -126,12 +128,40 @@ and changed nothing observable.)*
 | USER | THIRD_PARTY | `third_party_claim` | the user | QUARANTINED | **USE_ONLY** | the author floor still applies — the content embeds lower-trust material, so it never reaches MENTIONABLE |
 | THIRD_PARTY | any | `third_party_claim` | the user | QUARANTINED | **USE_ONLY** | **the attack cell.** Steering `subject` buys `USE_ONLY`, never MENTIONABLE — exactly what an ordinary third-party inference gets |
 | SYSTEM | THIRD_PARTY | `third_party_claim` | the user | QUARANTINED | **USE_ONLY** | `0005`'s three-lever cap logic, unchanged |
+| **SYSTEM** | **none** | `third_party_claim` | the user | QUARANTINED | **MENTIONABLE** | **the cell v1 omitted (internal M1) — and it is LIVE.** See the enumeration below |
 | any | any | ordinary | the user | per author | per author | unchanged |
 
+**The full author domain, enumerated rather than sampled (internal M1).**
+`EvidenceAuthor` has exactly THREE members — `user`, `third_party`,
+`system` (executed, §2c-ii). **There is no `assistant` author**: an
+assistant turn is a HOST MAPPING onto `SYSTEM`, with `derived_from` set or
+not according to the host's trust arm. So the domain of the incoherent cell
+is `author × derived_from` = 3 × 4 (three members plus absent), and every
+cell is decided by the author rules after re-disposition:
+
+| author | `derived_from` | result after re-disposition | live in the re-run? |
+|---|---|---|---|
+| USER | none | MENTIONABLE | yes |
+| USER | THIRD_PARTY | USE_ONLY | yes |
+| USER | USER / SYSTEM | MENTIONABLE | rare, legal |
+| **SYSTEM** | **none** | **MENTIONABLE** | **YES — this is an assistant turn under a trusting host arm** |
+| SYSTEM | THIRD_PARTY | USE_ONLY | yes — the capped assistant arm |
+| SYSTEM | USER / SYSTEM | MENTIONABLE | rare, legal |
+| THIRD_PARTY | any | USE_ONLY | yes |
+
+**The SYSTEM/none cell is not an oversight to be closed; it is the host's
+declared trust arm doing what it says.** A host that declares assistant
+content SYSTEM-authored with no third-party derivation has said that
+content is trusted, and re-disposition returns it to exactly the
+disclosure an ordinary relation from the same event would have received.
+**What v1 got wrong was not the outcome, it was enumerating a domain by
+example.** **U2** now spans the whole product.
+
 **Nothing in this table raises a disclosure for content whose author or
-`derived_from` is THIRD_PARTY.** The only cell that rises is the one where
-BOTH the author and the declared content source are the user, and the
-extractor's own classification contradicts itself.
+`derived_from` is THIRD_PARTY.** The cells that rise are those where the
+trusted inputs — author AND declared content source — already licensed
+MENTIONABLE, and only the extractor's self-contradictory label said
+otherwise.
 
 ## 3b. Authorization and scope
 
@@ -139,13 +169,35 @@ extractor's own classification contradicts itself.
   inside `_disclosure_for`, which no host can reach.
 - **Per record, at write time.** Nothing existing is rewritten (§7).
 - **Does anything become visible to a principal who could not see it
-  before?** **Yes, and this is the one place in the pair where the answer is
-  not "no" — it is stated plainly rather than buried.** A record that was
-  quarantined becomes assertable. That is the POINT: it is the user's own
-  statement, and it should have been assertable when it was written. The
-  bound is the matrix above — the rise happens only when author and
-  `derived_from` are both non-third-party. Under `0020`, scoped principals
-  see no more than the policy already allows.
+  before?** **Yes — a quarantined record becomes assertable — and v1
+  described that as a BOUNDED DOOR. It is not a door at all, and the
+  stronger argument is now stated here rather than left for the external
+  reviewer to find (internal round 1).**
+
+  **The attack cell is VACUOUS.** v1 worried about an extractor steered into
+  emitting `subject="user"` to escape quarantine. But the extractor chooses
+  the RELATION too, and it always could: a steered extractor emits an
+  ORDINARY relation — `prefers`, `works_as`, anything — and reaches
+  `MENTIONABLE` directly, **today, with no coherence test involved**.
+  Executed (§2c-ii): `_disclosure_for(USER, "prefers", None) → mentionable`.
+
+  **`third_party_claim` was never a security boundary against the extractor.
+  It IS the extractor's output.** A defence cannot be built out of the thing
+  it is defending against.
+
+  So compare the two powers honestly. After this change the extractor's
+  power to GRANT is **exactly what it was** — total over its own labels,
+  floored by the author. What changes is its power to unilaterally **DEMOTE**
+  the user's own testimony, which this spec takes away.
+
+  **That is why this is not an un-cap.** An un-cap raises a record above what
+  the TRUSTED inputs license. Here the trusted inputs — `author_of_evidence`
+  and `derived_from`, both supplied by the host, neither chosen by the model —
+  already license `MENTIONABLE`, and the UNTRUSTED input demoted it. **The
+  rule restores the trusted inputs' decision after an untrusted one
+  contradicted it.** `0005`'s C1 forbids granting past a floor; no floor is
+  crossed here, and **U2** pins that over the full author domain.
+- Under `0020`, scoped principals see no more than the policy already allows.
 - **Existing records are NOT re-dispositioned** (§7). This is a write-time
   rule; a retroactive sweep is `Q1`.
 
@@ -170,10 +222,11 @@ higher hit rate** — and we accept a smaller catch as the price.
 
 The triple is **re-dispositioned, not dropped**:
 
-1. its `relation` becomes the extractor's own fallback for an unclassified
-   user statement (§7a names the exact value; it is an ORDINARY relation,
-   never `third_party_claim`, because `Edge.quarantined` ORs on the
-   relation — §2c-ii row 3);
+1. its `relation` becomes **`unclassified`** — the reserved, registry-resident,
+   NON-FUNCTIONAL member `0025` §4b defines and injects into every effective
+   registry. It is an ORDINARY relation (never `third_party_claim`, because
+   `Edge.quarantined` ORs on the relation — §2c-ii row 3), and naming it here
+   rather than "some fallback" is what makes the pair compose (§7b);
 2. its disclosure is decided by the author rules ALONE — the second and
    third branches of `_disclosure_for`, unchanged;
 3. **the original relation is preserved in the `note`**, so the
@@ -183,6 +236,22 @@ The triple is **re-dispositioned, not dropped**:
 **Order matters and is the whole fix:** the author floor is evaluated
 BEFORE the structural quarantine can be skipped, so no path reaches
 `MENTIONABLE` for THIRD_PARTY-authored or THIRD_PARTY-derived content.
+
+**The count is symmetric.** v1 required the original relation to survive in
+the note but did not require the re-dispositions to be COUNTED — while
+`0025` **X4** insists an invisible residual is how 34.9% went unnoticed.
+The same principle applies to this spec's own rewrites: the ingest result
+carries a re-disposition count (**U7**). A rule that silently rewrites
+extractor output is the shape this project keeps finding.
+
+#### 4b-i. What happens when BOTH specs land — the composition, chosen not inherited (internal M3)
+
+| question | answer |
+|---|---|
+| is the fallback relation registry-resident? | **yes** — `unclassified` is `0025`'s reserved member, injected structurally into every registry, so this spec's rewrite cannot violate `0025` **X1** |
+| which rule runs first? | **the coherence test (this spec), then vocabulary enforcement (`0025`).** `third_party_claim` is IN the registry, so enforcement would pass it through untouched; the coherence test is the only rule that can see the contradiction |
+| **is a corrected user statement then able to SUPERSEDE?** | **NO — and this is a CHOSEN cell, not an accident.** `unclassified` is non-functional, so a re-dispositioned triple becomes assertable but never supersedes a prior. **Half-restoration is the honest outcome**: the coherence test establishes that the extractor's TRUST label was self-contradictory; it establishes nothing about which RELATION the fact belonged under. Guessing a functional relation in order to complete the restoration would file a fact under semantics nobody derived, and a wrong guess retires an unrelated record — `0025` §4b refuses exactly that trade for the same reason |
+| could a future spec complete it? | yes, and it would need evidence about the relation, not about the author. Recorded as **Q4** |
 
 ### 4c. What is deliberately NOT done
 
@@ -199,7 +268,7 @@ BEFORE the structural quarantine can be skipped, so no path reaches
 
 | regime | behaviour |
 |---|---|
-| a store with no `third_party_claim` triples | **byte-identical.** The new branch is unreachable; **W4** pins it |
+| a store with no `third_party_claim` triples | **byte-identical.** The new branch is unreachable; **U4** pins it |
 | ordinary assistant/user chat ingest | changes only for triples the extractor labels `third_party_claim` with `subject == user` |
 | a THIRD_PARTY-authored event (mail, documents) | **unchanged in every cell.** The author floor decides, as it does today |
 | import (`0005`) | **unchanged.** The cap runs on already-written records; this is a write-time rule at ingest |
@@ -210,12 +279,13 @@ BEFORE the structural quarantine can be skipped, so no path reaches
 
 | # | invariant | check |
 |---|---|---|
-| **W1** | a `third_party_claim` whose subject is a CLAIMANT still quarantines, whatever the author | `test_relayed_third_party_claim_still_quarantines` |
-| **W2** | no THIRD_PARTY-authored or THIRD_PARTY-derived record reaches `MENTIONABLE` by any relation/subject combination | `test_author_floor_survives_the_coherence_test` — enumerates the §3 matrix and asserts every cell, so the attack cell is exercised rather than argued |
-| **W3** | a re-dispositioned triple does not keep `QUARANTINE_RELATION`, so `Edge.quarantined` reports false | `test_redispositioned_triple_is_not_quarantined_by_relation` — the check that would have failed on a fix that only reordered `_disclosure_for` |
-| **W4** | a store whose extractor never emits `third_party_claim` is byte-identical before and after | `test_no_quarantine_relation_is_byte_identical` |
-| **W5** | the original relation survives in the record | `test_redisposition_is_visible_in_the_note` |
-| **W6** | disclosure still has exactly ONE write site | `test_single_disclosure_write_site` — the AST sweep `0023` **N2** already specifies, extended to cover this change rather than duplicated |
+| **U1** | a `third_party_claim` whose subject is a CLAIMANT still quarantines, whatever the author | `test_relayed_third_party_claim_still_quarantines` |
+| **U2** | no THIRD_PARTY-authored or THIRD_PARTY-derived record reaches `MENTIONABLE` by any relation/subject combination, **over the FULL `author × derived_from` product** (3 × 4, internal M1) | `test_author_floor_spans_the_author_domain` — enumerates the entire product against a separately-written oracle, so a cell cannot be overlooked the way SYSTEM/none was in v1 |
+| **U3** | a re-dispositioned triple does not keep `QUARANTINE_RELATION`, so `Edge.quarantined` reports false | `test_redispositioned_triple_is_not_quarantined_by_relation` — the check that would have failed on a fix that only reordered `_disclosure_for` |
+| **U4** | a store whose extractor never emits `third_party_claim` is byte-identical before and after | `test_no_quarantine_relation_is_byte_identical` |
+| **U5** | the original relation survives in the record | `test_redisposition_is_visible_in_the_note` |
+| **U7** | re-dispositions are COUNTED and returned, never silent — the symmetric form of `0025` **X4** applied to this spec's own rewrites | `test_redisposition_count_is_reported` |
+| **U6** | disclosure still has exactly ONE write site | `test_single_disclosure_write_site` — the AST sweep `0023` **N2** already specifies, extended to cover this change rather than duplicated |
 
 ## 7. Failure modes and reversibility
 
@@ -223,7 +293,7 @@ BEFORE the structural quarantine can be skipped, so no path reaches
   mislabelled population): the residual stays quarantined, which is
   today's behaviour. **Failing narrow costs recall, never assertion.**
 - **If it were too broad** — the case to fear — a genuine relayed claim
-  would become assertable. **W1** is the test that fails first, and the
+  would become assertable. **U1** is the test that fails first, and the
   matrix in §3 is enumerated rather than sampled.
 - **Reversibility:** the rule is write-time, so reverting the code reverts
   the behaviour for all future writes. Records written under it keep the
@@ -304,4 +374,5 @@ accurate for the cell it covers and silent about the rest.
 |---|---|---|
 | **Q1** | should existing quarantined records be re-dispositioned retroactively? | `deferred` — it needs a SECOND disclosure writer, which breaks the single-write-site property `0004` and `0023` reason from. The same asymmetry `0023` §4i declares, for the same reason |
 | **Q2** | should the note signal be used as a SECOND, weaker test — flagging rather than re-dispositioning? | `pre-release` — it would surface the residual without acting on prose. Leaning: no for v1; a flag nobody consumes is a field, not a mechanism |
+| **Q4** | should a re-dispositioned triple ever recover a FUNCTIONAL relation, completing the restoration? | `post-v1` — it would need evidence about the RELATION, which this spec does not have and does not claim. Half-restoration (assertable, never superseding) is §4b-i's chosen cell |
 | **Q3** | should a `third_party_claim` with an EMPTY subject be treated as incoherent too? | `pre-release` — currently dropped by the shipped completeness check before this code sees it, so the cell may be unreachable. Verify before deciding |
