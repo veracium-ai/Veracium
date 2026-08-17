@@ -23,7 +23,7 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | v1 |
+| **Version** | **v3** — internal round 1 folded (research, 2026-08-17: R1 inverted cell, R2 the missed producer class, W-Q1 ruled) |
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M8/§11c, unchanged in substance. |
 | **Internal reviewers** | research — **found the defect**; fix verified by dev |
 | **External review** | required — touches `compile.py` and the store write path |
@@ -99,8 +99,9 @@ changed.
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| the invalidation `reason` — **PRODUCERS: `Memory.dispute()`/`correct()` (host-initiated), `lifecycle` expiry/decay (the store's OWN clock-driven machinery), `apply_supersession_plan` (the store's own write path), and — post-`0022` — the revocation sweep** | no reason → treated as non-revoking, wiki retained (fail-OPEN on breadth, never on assertion) | an unknown reason string → **retained**, and the invariant that makes this safe is that the reason set is CLOSED at its producers, not validated here | a reason added by a future spec → the R5 registry check FAILS until the spec dispositions it | a caller passing `lapsed` for a genuine revocation to keep the wiki alive | the reason set is enumerated and REGISTERED (R5); a new reason cannot ship un-dispositioned |
+| the invalidation `reason` — **PRODUCERS: `Memory.dispute()`/`correct()` (host-initiated), `lifecycle` expiry/decay (the store's OWN clock-driven machinery), `apply_supersession_plan` (the store's own write path), and — post-`0022` — the revocation sweep** | no reason → treated as non-revoking, wiki retained (fail-OPEN on breadth, never on assertion) | an unknown reason string → **DROPS** (internal R1 — v2 had this INVERTED, and the inversion is worth naming: v2 said "retained (fail-OPEN on breadth, never on assertion)", which is backwards. Retaining on an unrecognised reason is precisely the assertion-side risk — if the unknown reason meant "revoked", a retained wiki serves revoked content. Dropping costs breadth only. A spec whose whole thesis is failing closed had a fail-OPEN cell in it) | a reason added by a future spec → drops at RUNTIME immediately, and the W5 registry check additionally FAILS until that spec dispositions it | a caller passing `lapsed` for a genuine revocation to keep the wiki alive | **two layers, in this order**: unknown-drops at runtime (the behaviour), then W5's registry (the process). v2 left W5 standing alone, which §9 itself called out as the only thing standing there |
 | the wiki cache itself | absent → nothing to drop, no-op | — | — | a stale cache surviving a trust change | the whole point: the drop is unconditional on cache content |
+| **`Edge.invalidation_reason` supplied AT CONSTRUCTION — the producer class v2 MISSED (internal R2; found by this spec's own §9 attack).** `invalidation_reason` is a settable field (`schema.py:249`) and `add_edge` accepts an Edge already carrying one, so the PUBLIC CONSTRUCTOR and the FORMAT-7 IMPORT round-trip both produce reason-bearing records that pass NEITHER drop site | — | — | — | a host constructing a born-invalid edge, or an import carrying one | **VERIFIED NON-TRANSITION, and the argument is now stated rather than assumed**: these producers create records that are ALREADY inactive; they never perform an active→inactive TRANSITION, and a record that was never active never contributed to a compiled wiki — no transition, no staleness. Import additionally cannot flip an existing record (its idempotency is exact-equality; a differing record REFUSES). **The defended invariant is therefore transition-form: every active→inactive transition passes the drop, and W7 enforces it structurally** |
 
 ### 2c-ii. Assertions about reach — RE-EXECUTED 2026-08-17
 
@@ -111,6 +112,7 @@ changed.
 | `compile.py` no longer carries the recompile gate | `grep -rn "wiki_recompile_after_writes" src/veracium/` | `config.py:40` (default 8) · `__init__.py:508` · `cli.py:207` (`10**9` once a wiki exists) · `selfcheck.py:43`; **`compile.py` does not appear** — v1's citation is stale |
 | a wiki-drop ALREADY ships, on a narrower condition | `grep -n "DELETE FROM wiki" src/veracium/store/sqlite.py` | `:275` (in `invalidate_edge`, gated on `_edge_in_refusal`) and `:605` (in the supersession plan, gated on `touches_contention`) — **both `0003` refusal-contention rules** |
 | `invalidate_edge` is still a choke point, but **`graph.py` is no longer among its callers** | `grep -rn "invalidate_edge(" --include=*.py src/veracium/` | `__init__.py:1181` (disputed) · `:1371` (corrected) · `lifecycle.py:53` (lapsed) · `:57` (decayed) · the `base.py`/`sqlite.py` definitions. Supersession moved into `apply_supersession_plan`'s `prior_invalidations` (`sqlite.py:326/505/550`) — **so the fix needs BOTH sites**, which v1 did not know |
+| **`active=0` has exactly ONE writer, and BOTH drop sites funnel through it** (executed while folding internal R2 — stronger than the review's own "no third writer" formulation) | `grep -rn "SET active" --include=*.py src/veracium/` | a single hit: `sqlite.py:251`, inside `_invalidate_edge_row`, whose only callers are `invalidate_edge` (`:265`) and the supersession plan loop (`:551`). **This relocates the fix — see §4** |
 | stored `disclosure` is still written in exactly one place | `grep -rn "disclosure\s*=" --include=*.py src/veracium/` | 7 hits, but only `ingest.py:181/199` WRITE a stored value; `scope_read.py:384` narrows a **`model_copy`** for the response and never persists; the rest are reads. The §4 correction stands, for a sharper reason |
 
 ## 3. Trust-class matrix
@@ -136,7 +138,23 @@ of them** — the sentence that falsified `compile.py`'s guarded-list exclusion.
 
 ## 4. Behaviour
 
-**Where — TWO store-layer sites, corrected at the v2 refresh.** v1 said
+**Where — ONE function, corrected AGAIN at v3.** Folding internal R2 turned up
+a fact neither v1 nor v2 had: **`active=0` has exactly one writer in the
+codebase** — `_invalidate_edge_row` (`sqlite.py:251`) — and BOTH store paths
+call it (`invalidate_edge:265`, the supersession plan loop `:551`). So the fix
+does not belong at two call sites that must each remember it; **it belongs
+INSIDE `_invalidate_edge_row`, the single point every active→inactive
+transition already passes.** It has the `reason` and the `user_id` in hand,
+which is everything the rule needs.
+
+This is strictly better than v2's two-site design, and the difference is not
+stylistic: at two sites a THIRD invalidation path added later inherits nothing
+and the defect returns silently; inside the sole writer, any future path
+inherits the drop by construction. W7 then guards the one assumption that
+makes it work — that the writer stays sole.
+
+*(v2's reasoning, retained because it is what led here.)* **TWO store-layer
+sites, corrected at the v2 refresh.** v1 said
 `store.invalidate_edge` was a single choke point covering supersession via
 `graph.py`. **Re-executed 2026-08-17, that is no longer true**: `graph.py` does
 not call `invalidate_edge` at all; supersession invalidations now ride the
@@ -209,23 +227,6 @@ exclusion is deliberate, so it is pinned).
 
 ---
 
-## 6. Invariants and executable checks — REQUIRED, blocking
-
-| invariant | executable check | where |
-|---|---|---|
-| **W1** a revoking invalidation empties the wiki cache | `test_dispute_drops_the_wiki` — the measured reproducer becomes the fixture | CI |
-| **W2** the drop covers the **supersession** path, not just the `Memory` verbs — and post-refresh that path is `apply_supersession_plan`'s `prior_invalidations`, NOT `graph.py` | `test_third_party_supersession_drops_the_wiki` (the second store site) | CI |
-| **W3** staleness does **not** drop it | `test_decay_does_not_drop_the_wiki` — pins a deliberate exclusion so it cannot erode into "drop on everything" | CI |
-| **W4** no LLM call on the drop path | `test_wiki_drop_makes_no_llm_call` — a `Complete` that raises if invoked | CI |
-| **W5** the reason set is CLOSED and REGISTERED: every reason any producer can pass is dispositioned drop/retain, and a NEW reason fails the check until its spec dispositions it | `test_invalidation_reason_registry_is_total` — enumerate the reasons reachable at every producer (the §2c PRODUCERS row) and diff against the dispositioned set; an un-dispositioned reason FAILS rather than defaulting | CI |
-| **W6** the generalisation does not REGRESS `0003`'s shipped refusal-contention drop — that condition still drops, in both sites | `test_refusal_contention_still_drops_the_wiki` (the shipped behaviour this spec widens, pinned so widening cannot silently replace it) | CI |
-
-**W2 is the one that matters** and is the reason the fix sits in the store.
-A fix in `Memory.dispute()`/`correct()` passes W1 and W3 and **fails W2
-silently** — the tests would be green and the attacker path open.
-
----
-
 ## 5. Regime analysis
 
 | regime | behaviour |
@@ -239,22 +240,24 @@ silently** — the tests would be green and the attacker path open.
 | `absorbed_duplicate` | currently NO drop (the content survives in the surviving edge) — flagged, not decided (W-Q1) |
 | post-`0022` `revoked_source` | drops, by the rider this spec reserves |
 
-## 9. Brief for the external reviewer
+## 6. Invariants and executable checks — REQUIRED, blocking
 
-The seam we are least certain of: **the reason set's closure**. The fix's whole
-safety argument is "these reasons revoke, those merely age", and that partition
-is defended by W5's registry rather than by anything structural — a future spec
-that adds an invalidation reason and forgets to disposition it gets a FAILING
-check, not a silent retention, but the check is the only thing standing there.
-Attack that: is there a producer of invalidation reasons the §2c PRODUCERS row
-misses? The `0022` sweep will add one, which is the first real test of the
-mechanism.
+| invariant | executable check | where |
+|---|---|---|
+| **W1** a revoking invalidation empties the wiki cache | `test_dispute_drops_the_wiki` — the measured reproducer becomes the fixture | CI |
+| **W2** the drop covers the **supersession** path, not just the `Memory` verbs — and post-refresh that path is `apply_supersession_plan`'s `prior_invalidations`, NOT `graph.py` | `test_third_party_supersession_drops_the_wiki` (the second store site) | CI |
+| **W3** staleness does **not** drop it | `test_decay_does_not_drop_the_wiki` — pins a deliberate exclusion so it cannot erode into "drop on everything" | CI |
+| **W4** no LLM call on the drop path | `test_wiki_drop_makes_no_llm_call` — a `Complete` that raises if invoked | CI |
+| **W5** the reason set is CLOSED and REGISTERED: every reason any producer can pass is dispositioned drop/retain, and a NEW reason fails the check until its spec dispositions it. **The registry is a CODE CONSTANT** (internal minor: v2 pointed at `schema.py:249`'s comment, and a comment cannot fail a check) | `test_invalidation_reason_registry_is_total` — enumerate the reasons reachable at every producer (the §2c PRODUCERS row) and diff against the dispositioned CONSTANT; an un-dispositioned reason FAILS rather than defaulting | CI |
+| **W7** the transition invariant is STRUCTURAL: `_invalidate_edge_row` remains the SOLE writer of `active=0`, so every active→inactive transition inherits the drop (internal R2 — this is what makes the born-state producers safe, and it is enforced rather than grepped once) | `test_sole_active_zero_writer` — an AST sweep of `src/veracium/` asserting exactly one `SET active=0` writer and that it is `_invalidate_edge_row`; a second writer FAILS the build | CI |
+| **W8** the `absorbed_duplicate` exclusion is PINNED (W-Q1, ruled by research 2026-08-17: absorption is trust-preserving by construction and the content stays backed by a live same-trust record, so the exclusion shelters nothing revoked) | `test_absorption_does_not_drop_the_wiki` — the W3 pattern, so a deliberate exclusion cannot erode into "drop on everything" | CI |
+| **W6** the generalisation does not REGRESS `0003`'s shipped refusal-contention drop — that condition still drops, in both sites | `test_refusal_contention_still_drops_the_wiki` (the shipped behaviour this spec widens, pinned so widening cannot silently replace it) | CI |
 
-Second seam: this spec makes the wiki fail closed but NOT incremental (§8's
-stated limit). A large store loses its whole curated view because one fact was
-disputed. We think that trade is correct and bounded; if you think the breadth
-cost is understated, that is worth hearing before implementation rather than
-after.
+**W2 is the one that matters** and is the reason the fix sits in the store.
+A fix in `Memory.dispute()`/`correct()` passes W1 and W3 and **fails W2
+silently** — the tests would be green and the attacker path open.
+
+---
 
 ## 7. Failure modes and reversibility
 
@@ -284,9 +287,26 @@ from wiki text back to edges, which does not exist.
 
 ---
 
+## 9. Brief for the external reviewer
+
+The seam we are least certain of: **the reason set's closure**. The fix's whole
+safety argument is "these reasons revoke, those merely age", and that partition
+is defended by W5's registry rather than by anything structural — a future spec
+that adds an invalidation reason and forgets to disposition it gets a FAILING
+check, not a silent retention, but the check is the only thing standing there.
+Attack that: is there a producer of invalidation reasons the §2c PRODUCERS row
+misses? The `0022` sweep will add one, which is the first real test of the
+mechanism.
+
+Second seam: this spec makes the wiki fail closed but NOT incremental (§8's
+stated limit). A large store loses its whole curated view because one fact was
+disputed. We think that trade is correct and bounded; if you think the breadth
+cost is understated, that is worth hearing before implementation rather than
+after.
+
 ## 10. Open questions
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **W-Q1** | Should `absorbed_duplicate` drop the wiki? The content survives in the surviving edge, so nothing revoked is served — **currently excluded**. Flagged rather than decided. | `pre-release` | research | before implementation |
+| **W-Q1** | Should `absorbed_duplicate` drop the wiki? | **RESOLVED 2026-08-17 (research, internal round 1): NO.** Absorption is trust-preserving by construction — the content stays backed by a live same-trust record — so the exclusion shelters nothing revoked. **The `0022` composition is closed**: the revocation sweep reaches absorbed contributors through the LEDGER, and a sole-basis survivor's retirement carries reason `revoked_source`, which drops the wiki through the seat this spec reserves. Pinned by W8. | `resolved` | research | done |
 | **W-Q2** | Should the CLI's `10**9` recompile threshold be revisited, given it makes the breadth loss unbounded there? Out of scope for the fix; in scope for whether the trade is acceptable. | `deferred` | dev | own round |
