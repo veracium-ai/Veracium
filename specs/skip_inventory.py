@@ -238,14 +238,25 @@ BEGIN_MARKER = "<!-- GENERATED:skip-inventory -->"
 END_MARKER = "<!-- /GENERATED:skip-inventory -->"
 
 
-def verify_collected(text: str) -> None:
-    """Byte-exact carrier verification (R15-1 — the first verifier split on the
+def verify_collected(text: str, rs_output: str = "") -> None:
+    """Byte-exact carrier verification.
+
+    `rs_output` MUST be the same sealed `pytest -rs` text the block was
+    rendered with (external round 4, R4-4 made the decomposition observed
+    rather than recited). Verifying with a different argument than the block
+    was built with compares two different renderings and fails loudly, which
+    is the correct direction: the alternative is a check that passes because
+    both sides forgot the same thing.
+
+    Original docstring follows.
+
+    Byte-exact carrier verification (R15-1 — the first verifier split on the
     first marker pair and stripped boundary newlines, so a duplicated complete
     block and an extra blank line after the opening marker both passed).
 
     Rules, exactly as the reviewer required: markers count only as COMPLETE
     STANDALONE LINES; exactly one opening and one closing marker; the enclosed
-    block is compared to render() with NO normalization OF THE DECODED TEXT.
+    block is compared to render(rs_output) with NO normalization OF THE DECODED TEXT.
     Narrowed claim (0014 round-16 bin-(b) obligation): callers typically read
     the carrier via Path.read_text(), which normalizes CRLF — so the guarantee
     is TEXT-EXACT across line-ending conversion; the implementation may upgrade
@@ -264,10 +275,10 @@ def verify_collected(text: str) -> None:
     if e <= b:
         raise ValueError("end marker precedes begin marker")
     block = "\n".join(lines[b + 1:e])
-    expected = render()
+    expected = render(rs_output)
     if block != expected:
         raise ValueError(
-            "the enclosed inventory block is not byte-identical to render() "
+            "the enclosed inventory block is not byte-identical to render(rs_output) "
             "(stale, hand-edited, or boundary-padded)")
 
 

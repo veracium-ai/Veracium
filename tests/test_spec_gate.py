@@ -913,7 +913,20 @@ def test_collected_inventory_matches_the_generator():
     sys.path.insert(0, str(root / "specs"))
     from skip_inventory import verify_collected
 
-    verify_collected(collected.read_text())
+    # R4-4: the block is now COMPUTED from the sealed -rs output, so the
+    # verifier must be handed the same input the block was built with. The
+    # sealed run ships beside COLLECTED for exactly this reason; without it
+    # we would be comparing two different renderings and calling the
+    # difference a defect.
+    rs = root / "COLLECTED_pytest_rs.txt"
+    verify_collected(collected.read_text(), rs.read_text() if rs.exists() else "")
+
+    # and the sealed run must RECONCILE against the inventory, not merely
+    # match the generator — the check whose absence was R3-5
+    if rs.exists():
+        from skip_inventory import reconcile
+        problems = reconcile(rs.read_text())
+        assert not problems, problems
 
 
 def test_collected_verifier_rejects_the_adversarial_cases():
