@@ -122,6 +122,40 @@ def _append(c: sqlite3.Connection, user: str, digest: str, action: str, seq: int
               (user, digest, action, reason, at, seq))
 
 
+_ORDINAL_MARKERS = ("source_revocations.user_id", "source_revocations.seq")
+
+
+def _is_ordinal_violation(e: sqlite3.IntegrityError) -> bool:
+    """True only for the per-user ordinal UNIQUE constraint (R5-1).
+
+    Matched on the constraint's own columns as SQLite names them, so a UNIQUE
+    or CHECK anywhere else — a trigger on `records`, a future constraint —
+    cannot masquerade as a serialisation failure."""
+    msg = str(e)
+    return "UNIQUE" in msg.upper() and all(m in msg for m in _ORDINAL_MARKERS)
+
+
+def _rollback_or_poison(conn, cause):
+    """Roll back, or raise RevocationUnknownState and CLOSE the connection.
+
+    R5-1: a failing ROLLBACK is a real outcome and v5 suppressed it. If the
+    rollback cannot be established, the transaction's disposition is unknown;
+    the connection is closed so nothing builds on an unknown base, and the
+    caller is told, rather than receiving the original error and a live
+    transaction it believes was undone."""
+    try:
+        conn.execute("ROLLBACK")
+    except Exception as rb:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        raise RevocationUnknownState(
+            f"ROLLBACK FAILED after {type(cause).__name__}: {cause!r}; "
+            f"rollback error: {rb!r}. The transaction's disposition is UNKNOWN "
+            f"and the connection has been closed.") from cause
+
+
 def _apply_effect(c: sqlite3.Connection, user: str, effect):
     """Apply ONE effect inside the caller's transaction. Verbs are closed
     (0022 R9); an unknown verb raises, which the operation turns into a
@@ -167,6 +201,31 @@ class RevocationEffectError(Exception):
     """An effect could not be applied. Rolls back the WHOLE operation — the
     revocation row included — because R19 requires the row and its effects to
     land together or not at all."""
+
+
+class RevocationIntegrityError(Exception):
+    """An integrity constraint OTHER than the ordinal fired (external round 5,
+    R5-1). v5 converted EVERY `sqlite3.IntegrityError` — from the append, the
+    effects, or the commit — into `OrdinalCollision`, so a trigger on the
+    records table reported a serialisation failure that had not happened.
+    Mis-classifying a fault is worse than not classifying it: it sends the
+    operator to the wrong invariant."""
+
+
+class RevocationUnknownState(Exception):
+    """ROLLBACK ITSELF FAILED, so the transaction's disposition is UNKNOWN
+    (external round 5, R5-1).
+
+    v5 swallowed a failing ROLLBACK (`except sqlite3.Error: pass`) and re-raised
+    the original error, leaving the caller with a `RuntimeError`, a connection
+    still `in_transaction`, and an uncommitted revocation row it had been told
+    was rolled back. "Commit — or roll ALL of it back" has a third outcome and
+    the code hid it.
+
+    This exception SAYS SO, carries the original cause, and the connection is
+    CLOSED before it propagates: a connection whose transaction state cannot be
+    established must not be reused, because every subsequent operation would
+    build on an unknown base."""
 
 
 def revocation_operation(conn, user, digest, action, reason, at, *,
@@ -220,14 +279,17 @@ def revocation_operation(conn, user, digest, action, reason, at, *,
             conn.execute("COMMIT")
             return seq, frozenset(standing), effects
         except sqlite3.IntegrityError as e:
-            conn.execute("ROLLBACK")
-            raise OrdinalCollision(str(e)) from e
-        except BaseException:
-            # the row, the effects, all of it
-            try:
-                conn.execute("ROLLBACK")
-            except sqlite3.Error:
-                pass
+            # R5-1: WHICH constraint fired decides which invariant reports.
+            # Only the per-user ordinal is a serialisation failure.
+            ordinal = _is_ordinal_violation(e)
+            _rollback_or_poison(conn, e)
+            if ordinal:
+                raise OrdinalCollision(str(e)) from e
+            raise RevocationIntegrityError(str(e)) from e
+        except BaseException as e:
+            # the row, the effects, all of it — and if that cannot be
+            # established, say so rather than pretending (R5-1)
+            _rollback_or_poison(conn, e)
             raise
 
 
@@ -638,71 +700,264 @@ def _metadata_is_stored():
         os.unlink(path)
 
 
-@check("BUSY: a forced lock conflict retries THROUGH the shared operation")
+@check("BUSY: the RETRY LOOP runs — SQLite's internal wait is DISABLED")
 def _busy_through_the_operation():
+    """R5-2. v5's version set `busy_timeout=5000` and held the lock 150ms, so
+    SQLite waited INTERNALLY: instrumented, the operation made ONE
+    `BEGIN IMMEDIATE` call and caught ZERO `OperationalError`s. The assertion
+    ("it waited >0.1s") was satisfied by the C library's wait, not by the
+    Python loop the check was named for. A timing assertion cannot tell you
+    WHO waited.
+
+    So this version sets `busy_timeout=0` — acquisition fails IMMEDIATELY —
+    and counts the loop's own attempts. It asserts the branch ran."""
     path = _store_with_records()
     try:
-        released = threading.Event()
         holding = threading.Event()
+        released = threading.Event()
 
         def hold_then_release():
-            # the connection must live in the thread that uses it
             h = _conn(path)
-            h.execute("BEGIN IMMEDIATE")           # hold the write lock
+            h.execute("BEGIN IMMEDIATE")
             holding.set()
-            time.sleep(0.15)
+            time.sleep(0.20)
             h.execute("COMMIT")
             h.close()
             released.set()
 
         t = threading.Thread(target=hold_then_release)
         t.start()
-        holding.wait(2)                            # ensure the lock is held first
-        c = _conn(path)
-        started = time.monotonic()
+        holding.wait(2)
+
+        attempts = {"begin": 0, "busy": 0}
+
+        class Counting:
+            """Counts what the OPERATION does, not what the clock does."""
+            def __init__(self, c):
+                self._c = c
+            def execute(self, sql, *a, **k):
+                if isinstance(sql, str) and sql.strip().upper().startswith("BEGIN IMMEDIATE"):
+                    attempts["begin"] += 1
+                    try:
+                        return self._c.execute(sql, *a, **k)
+                    except sqlite3.OperationalError:
+                        attempts["busy"] += 1
+                        raise
+                return self._c.execute(sql, *a, **k)
+            def __getattr__(self, n):
+                return getattr(self._c, n)
+
+        raw = sqlite3.connect(path, timeout=0, isolation_level=None)
+        raw.execute("PRAGMA busy_timeout = 0")      # NO internal wait (R5-2)
+        c = Counting(raw)
         seq, _st, _e = revocation_operation(
             c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
             plan=lambda st: [], busy_deadline_s=5.0)
-        waited = time.monotonic() - started
-        c.close()
+        raw.close()
         t.join()
-        if not released.is_set():
-            return "the operation committed before the lock was released"
-        if waited < 0.1:
-            return f"it did not actually wait on the lock (waited {waited:.3f}s)"
+        if attempts["busy"] < 1:
+            return ("the retry loop was NEVER ENTERED: caught "
+                    f"{attempts['busy']} OperationalError(s) — SQLite waited "
+                    "internally again, so this check proves nothing")
+        if attempts["begin"] < 2:
+            return f"expected repeated acquisition attempts, saw {attempts['begin']}"
         if seq != 0:
             return f"expected ordinal 0 after the retry, got {seq}"
+        if not released.is_set():
+            return "the operation committed before the lock was released"
         return None
     finally:
         os.unlink(path)
 
 
-@check("COLLISION through the operation is raised, never retried away")
-def _collision_not_retried():
+@check("BUSY DEADLINE: an unreleased lock exhausts the bound and RAISES")
+def _busy_deadline_is_bounded():
+    """The other half of the same branch: the loop is BOUNDED. v5 never held a
+    lock long enough to prove the deadline exists."""
+    path = _store_with_records()
+    holder = None
+    try:
+        holder = _conn(path)
+        holder.execute("BEGIN IMMEDIATE")           # never released
+        raw = sqlite3.connect(path, timeout=0, isolation_level=None)
+        raw.execute("PRAGMA busy_timeout = 0")
+        started = time.monotonic()
+        try:
+            revocation_operation(raw, "u1", DIGEST_A, "revoke", "operator",
+                                 "2026-08-17T00:00:00Z", plan=lambda st: [],
+                                 busy_deadline_s=0.2)
+            raw.close()
+            return "the operation acquired a lock that was never released"
+        except sqlite3.OperationalError:
+            pass
+        elapsed = time.monotonic() - started
+        raw.close()
+        if elapsed > 2.0:
+            return f"the deadline was not honoured: waited {elapsed:.2f}s"
+        return None
+    finally:
+        if holder is not None:
+            holder.execute("ROLLBACK")
+            holder.close()
+        os.unlink(path)
+
+
+@check("NO stale ordinal can arise INSIDE the operation — the backstop is unreachable")
+def _collision_unreachable_inside():
+    """R5-2 asked for a stale ordinal injected inside the shared operation.
+    WE TRIED, AND THE CONSTRUCTION MAKES IT IMPOSSIBLE — which is a property
+    worth proving rather than a gap to paper over.
+
+    While the operation holds the write lock from `BEGIN IMMEDIATE`, no other
+    connection can COMMIT, so no one can steal the ordinal between our read and
+    our append. The attempt below gets `database is locked` instead. That is
+    the serialisation working: `OrdinalCollision` is a BACKSTOP FOR CALLERS WHO
+    DO NOT USE THIS CONSTRUCTION (the allocate-then-write shape covered by
+    `_stale_ordinal_collides`), not a branch reachable from inside it.
+
+    A check that manufactured reachability — a private hook forcing a duplicate
+    seq — would prove the classifier, not the contract, and would say the
+    opposite of what is true."""
     path = _store_with_records()
     try:
         c = _conn(path)
-        revocation_operation(c, "u1", DIGEST_A, "revoke", "operator",
-                             "2026-08-17T00:00:00Z", plan=lambda st: [])
-        # force the stale-ordinal shape: append the SAME ordinal again
-        c.execute("BEGIN IMMEDIATE")
-        try:
-            _append(c, "u1", DIGEST_B, "revoke", 0)
-            c.execute("COMMIT")
-            c.close()
-            return "a duplicate ordinal was accepted"
-        except sqlite3.IntegrityError:
-            c.execute("ROLLBACK")
-        started = time.monotonic()
-        try:
-            # a collision inside the operation must surface immediately
-            c.execute("BEGIN IMMEDIATE"); c.execute("ROLLBACK")
-            raise OrdinalCollision("simulated")
-        except OrdinalCollision:
-            pass
-        if time.monotonic() - started > 1.0:
-            return "the collision path spent time retrying"
+        stolen = {"attempted": False, "error": None}
+
+        class Gate:
+            def wait(self):
+                stolen["attempted"] = True
+                other = sqlite3.connect(path, timeout=0, isolation_level=None)
+                other.execute("PRAGMA busy_timeout = 0")
+                try:
+                    other.execute("BEGIN IMMEDIATE")
+                    _append(other, "u1", DIGEST_B, "revoke", 0)
+                    other.execute("COMMIT")
+                except sqlite3.OperationalError as e:
+                    stolen["error"] = str(e)      # expected: locked out
+                finally:
+                    other.close()
+
+        seq, _st, _e = revocation_operation(
+            c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+            plan=lambda st: [], _gate=Gate())
+        rows = c.execute("SELECT identity_digest, seq FROM source_revocations").fetchall()
         c.close()
+        if not stolen["attempted"]:
+            return "the interleaving hook never ran"
+        if stolen["error"] is None:
+            return ("ANOTHER WRITER COMMITTED while the operation held the write "
+                    "lock — the serialisation this check exists to prove is broken")
+        if "lock" not in stolen["error"].lower():
+            return f"unexpected error from the second writer: {stolen['error']}"
+        if rows != [(DIGEST_A, 0)]:
+            return f"the operation's own row should be the only one: {rows}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("the ordinal CLASSIFIER separates the two integrity shapes")
+def _classifier_is_exact():
+    """Since the collision branch is unreachable through the construction
+    (above), the classifier is covered directly — on REAL errors raised by
+    SQLite, not on constructed strings."""
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        c = _conn(path)
+        _append(c, "u1", DIGEST_A, "revoke", 0)
+        ordinal_err = other_err = None
+        try:
+            _append(c, "u1", DIGEST_B, "revoke", 0)      # duplicate ordinal
+        except sqlite3.IntegrityError as e:
+            ordinal_err = e
+        c.execute("CREATE TRIGGER t BEFORE UPDATE ON records "
+                  "BEGIN SELECT RAISE(ABORT, 'not an ordinal problem'); END")
+        try:
+            c.execute("UPDATE records SET active=0 WHERE id='ep-1'")
+        except sqlite3.IntegrityError as e:
+            other_err = e
+        c.close()
+        if ordinal_err is None or other_err is None:
+            return f"could not raise both shapes: {ordinal_err!r} {other_err!r}"
+        if not _is_ordinal_violation(ordinal_err):
+            return f"the ordinal violation was not recognised: {ordinal_err}"
+        if _is_ordinal_violation(other_err):
+            return f"a NON-ordinal fault was classified as ordinal: {other_err}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("a NON-ordinal integrity fault is NOT reported as a collision")
+def _non_ordinal_integrity():
+    """R5-1: v5 converted every IntegrityError into OrdinalCollision."""
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        c = _conn(path)
+        c.execute("CREATE TRIGGER no_retire BEFORE UPDATE ON records "
+                  "BEGIN SELECT RAISE(ABORT, 'effect integrity failure'); END")
+        try:
+            revocation_operation(
+                c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+                plan=lambda st: [{"verb": "retire", "type": "episode", "id": "ep-1"}])
+            c.close()
+            return "the trigger did not fire"
+        except OrdinalCollision as e:
+            c.close()
+            return f"MIS-CLASSIFIED as an ordinal collision: {e}"
+        except RevocationIntegrityError:
+            pass
+        rows = c.execute("SELECT COUNT(*) FROM source_revocations").fetchone()[0]
+        c.close()
+        if rows != 0:
+            return f"the row survived a failed operation: {rows}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("a FAILING ROLLBACK is reported as UNKNOWN STATE, not swallowed")
+def _rollback_failure_is_reported():
+    """R5-1's executed probe: v5 suppressed the rollback error and re-raised
+    the original, leaving the caller with a live transaction it believed had
+    been undone."""
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        real = _conn(path)
+
+        class BreakRollback:
+            def __init__(self, c):
+                self._c = c
+            def execute(self, sql, *a, **k):
+                if isinstance(sql, str) and sql.strip().upper() == "ROLLBACK":
+                    raise sqlite3.OperationalError("injected rollback failure")
+                return self._c.execute(sql, *a, **k)
+            def close(self):
+                return self._c.close()
+            def __getattr__(self, n):
+                return getattr(self._c, n)
+
+        c = BreakRollback(real)
+        def boom():
+            raise RuntimeError("injected between append and apply")
+        try:
+            revocation_operation(
+                c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+                plan=lambda st: [{"verb": "retire", "type": "episode", "id": "ep-1"}],
+                _fault=boom)
+            return "no exception was raised at all"
+        except RevocationUnknownState as e:
+            if "ROLLBACK FAILED" not in str(e):
+                return f"the outcome is not named: {e}"
+        except RuntimeError:
+            return ("the caller received only the ORIGINAL error — the failing "
+                    "rollback was swallowed (this is v5's behaviour)")
+        # the connection must have been closed: reusing it is the danger
+        try:
+            real.execute("SELECT 1")
+            return "the connection was left OPEN after an unknown-state rollback"
+        except sqlite3.ProgrammingError:
+            pass
         return None
     finally:
         os.unlink(path)

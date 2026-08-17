@@ -664,9 +664,18 @@ def test_no_spec_cites_an_invariant_it_does_not_define():
         # invariants that existed when that round ran. 0007 v10 cut the
         # migration scope and retired 16 ids that its round 1-7 dispositions
         # still cite -- correctly, because those rounds did address them.
+        raw = f.read_text()
+        # EXTERNAL ROUND 5: the generated per-finding closure ledger (R5-3)
+        # names FINDINGS — F1, R3-3, R4-2 — in the same `| **X** |` shape as an
+        # invariant row. They are not invariants and are not defined in the
+        # invariant table, so this gate read them as dangling citations. Strip
+        # the generated block for the same reason review dispositions are
+        # stripped: it legitimately names ids from another vocabulary.
+        raw = re.sub(r"<!-- GENERATED:review-closure -->.*?"
+                     r"<!-- /GENERATED:review-closure -->", "", raw, flags=re.S)
         body = re.split(
             r"^##+ \d+\w*\.\s*(?:Review history\b|[^\n]*review[^\n]*disposition\b)",
-            f.read_text(), flags=re.M | re.I)[0]
+            raw, flags=re.M | re.I)[0]
         # struck rows still DEFINE an id — `~~**Q5**~~` is a resolved question,
         # not an undefined one.
         defined = set(re.findall(r"^\| ~{0,2}\*\*([A-Z]\d+[a-z]?)\*\*", body, re.M))
@@ -861,6 +870,8 @@ def test_conditional_skip_inventory_is_complete():
     # The bug is the checker's DEFINITION of the thing it checks — the third
     # instance of that shape in one review round (0023's N15 swept for the old
     # condition; the withdrawn-phrase pattern matched one phrasing).
+    TQ = chr(34) * 3
+    SQ = chr(39) * 3
     site_re = re.compile(
         r"pytest\.importorskip\(|pytest\.skip\(|pytest\.mark\.skipif"
         r"|pytest\.mark\.skip\(")
@@ -868,8 +879,31 @@ def test_conditional_skip_inventory_is_complete():
     for f in sorted((root / "tests").rglob("*.py")):
         lines = f.read_text().splitlines()
         rel = str(f.relative_to(root))
+        in_doc = False
         for i, line in enumerate(lines):
+            # A triple-quoted block is PROSE. `pytest.skip(...)` inside one
+            # documents the vocabulary; it is not a use of it. This gate fired
+            # on its own new test's docstring (external round 5) — a checker
+            # counting a MENTION as a SITE, which is the same shape as every
+            # finding this round.
+            ticks = line.count(TQ) + line.count(SQ)
+            was_in_doc = in_doc
+            if ticks % 2 == 1:
+                in_doc = not in_doc
+            if was_in_doc:
+                continue
             if line.lstrip().startswith("#"):
+                continue
+            # A MENTION IS NOT A SITE (external round 5, found by this gate
+            # firing on its own new test's docstring). `pytest.skip(...)` inside
+            # a docstring explaining the skip vocabulary is prose; only a call
+            # in code is a site. Detected by the quote that opens the line's
+            # enclosing string — cheap and sufficient here, since every real
+            # site is a bare statement or a decorator.
+            stripped = line.lstrip()
+            if stripped.startswith(('"', "'", "*", ">")):
+                continue
+            if in_doc:
                 continue
             if site_re.search(line):
                 window = "\n".join(lines[i:i + 5])
@@ -1031,3 +1065,32 @@ def test_review_closure_blocks_are_generated_and_current():
     r = subprocess.run([sys.executable, str(root / "specs" / "render_closure.py"),
                         "--check"], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr or r.stdout
+
+
+def test_reconcile_handles_an_emitted_reason_that_differs_from_its_source_token():
+    """External round 5, R5-4 — the ROOT-HOST regression.
+
+    An inventory `token` is a SOURCE-SITE token: it must appear near the
+    `pytest.skip(...)` call so the completeness gate can locate the site.
+    pytest emits the RESOLVED reason, which is frequently different text. The
+    euid entry's token is `geteuid`; on a root host pytest prints "root
+    traverses any directory...". reconcile() matched emitted reasons against
+    source tokens and therefore called a LISTED skip unlisted — but only when
+    running as root, which is why no run of ours ever saw it and a reviewer's
+    did.
+
+    This pins both vocabularies, and it is the regression that would have
+    failed on their host and passed on ours."""
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    from skip_inventory import reconcile
+
+    root_host = ("SKIPPED [1] tests/test_migrations_0013.py:1: root traverses any "
+                 "directory, so the read-only-store fixture cannot bite\n"
+                 "1 passed, 1 skipped in 0.1s")
+    assert not reconcile(root_host), reconcile(root_host)
+
+    non_root = ("SKIPPED [1] tests/test_migrations_0013.py:1: geteuid() == 0 defeats "
+                "the read-only-store fixture\n"
+                "1 passed, 1 skipped in 0.1s")
+    assert not reconcile(non_root), reconcile(non_root)

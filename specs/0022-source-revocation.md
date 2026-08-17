@@ -1,15 +1,5 @@
 # Feature spec: source revocation — the standing state and the sweep (A3a)
-
-| round | finding | verdict | where it closed | evidence |
-|---|---|---|---|---|
-| **internal 1** (research, 2026-08-17) | S1 — the sweep's record DOMAIN was unenumerated; episodes had no retirement mechanism | folded | §4b-i, §4b-ii, **R18** | the enumerated record-type table with executed exclusions |
-| **internal 2** | — (no finding on this spec) | — | — | — |
-| **EXTERNAL 1** (2026-08-17) | **F2 — ordering by `(at, seq)` with host-supplied `at` made a revocation PERMANENTLY UNLIFTABLE** | folded | §4a, **R1** | 5 clock-skew vectors; the reviewer's counterexample reproduced |
-| **EXTERNAL 1** | **F3 — "supersession, never edit" was true of no carrier in the product** | folded by NARROWING | §4f, C3, **R9**, the reference | withdrawal registered in `withdrawn_phrases.py`; **Q9** opens the successor |
-| **EXTERNAL 1** | **F4 — class (c) gated on `system_authored` was not an upper bound** | folded | §4c, **R7** | the pre-0014 user-authored survivor vector, which BITES |
-| **EXTERNAL 2** (2026-08-17) | **F1 — F3's withdrawal was incomplete across SIX further carriers** | folded | §3b, §3 threat cell, §4f, §7, **R9**, the reference + harness + 20 vector stores | the withdrawn-phrase gate now fails the build on any restatement |
-| **EXTERNAL 2** | **F2 — F4's old class-(c) rule was still normative in §2c/§4c/§9** | folded | §4c, §9 | same gate, third registered rule |
-| **EXTERNAL 2** | **F3 — concurrent append ordering was asserted, not constructed** | folded | §4e-i, **R19** | the `BEGIN IMMEDIATE` construction + adversarial interleaving tests |
+*(The hand-written round table that stood here is REMOVED — external round 5, R5-3. It stopped before external rounds 3-4 while claiming to be the closure ledger, and `render_closure.py --check` could not see it because it only guards the marked block. A second, unguarded summary of the same facts is the exact defect the generator was introduced to end; keeping one was the fix failing to finish. The generated ledger below is the only one.)*
 
 
 Spec-Status: draft
@@ -720,8 +710,7 @@ ordinal. **And the harness was green on a DIFFERENT construction** — it
 executed `BEGIN IMMEDIATE` explicitly — which is worse than either error
 alone: the evidence agreed with the fix rather than with the spec.
 
-**v4 therefore has ONE function, quoted here verbatim from the evidence that
-calls it** (`specs/evidence/0022/store_concurrency_harness.py`), so the two
+**v4 therefore has ONE function, shown here and CALLED by the evidence** (`specs/evidence/0022/store_concurrency_harness.py`), so the two
 cannot drift again:
 
 ```python
@@ -754,6 +743,39 @@ def revocation_operation(conn, user, digest, action, reason, at, *,
             conn.execute("ROLLBACK")             # the row AND the effects
             raise
 ```
+
+**"QUOTED VERBATIM" IS WITHDRAWN (external round 5, R5-2).** The block above
+is the transaction discipline; the executable in
+`store_concurrency_harness.py` differs materially — test hooks (`_gate`,
+`_fault`), helper names, and the return shape. Claiming byte-identity when the
+two differ is the same defect as claiming a construction the code does not
+implement, one level up. **What IS bound: the harness's function is the one
+every check calls, and no check reaches the transaction another way.** If a
+future round wants a mechanical bind, the honest form is generating this block
+from the source, not asserting a resemblance.
+
+**THE FAILURE OUTCOMES ARE TOTAL (R5-1), and v5's were not.** v5 suppressed a
+failing `ROLLBACK` and re-raised the original error, so a caller could be told
+its work was undone while holding a live transaction and an uncommitted row;
+and it converted EVERY `sqlite3.IntegrityError` — append, effects, or commit —
+into `OrdinalCollision`, so a trigger on the records table reported a
+serialisation failure that had not happened. Three outcomes now, and they are
+distinct: `OrdinalCollision` ONLY for the per-user ordinal (matched on the
+constraint's own columns), `RevocationIntegrityError` for any other integrity
+fault, and `RevocationUnknownState` when the rollback itself fails — which
+also CLOSES the connection, because a connection whose transaction state
+cannot be established must not be reused.
+
+**AND ONE THING THE EVIDENCE ESTABLISHED THAT THE SPEC DID NOT EXPECT.**
+R5-2 asked for a stale ordinal injected inside the shared operation. It cannot
+be done: while the operation holds the write lock from `BEGIN IMMEDIATE`, no
+other connection can COMMIT, so nothing can steal the ordinal between the read
+and the append — the attempt gets `database is locked`. **`OrdinalCollision`
+is therefore unreachable from inside this construction**; it is a backstop for
+callers who allocate outside the transaction (the allocate-then-write shape).
+That is the serialisation working, it is now a check in its own right, and the
+classifier is covered directly on real errors rather than through a branch the
+design makes dead.
 
 **v4 of this function did three things this one does not, and the harness
 scored 7/7 on it anyway (external round 4, R4-1).** It appended the row and
@@ -829,7 +851,7 @@ STILL REPRODUCES under the natural construction, so a race that quietly
 stopped racing would fail the build rather than silently retire every
 protection below it.
 
-**Evidence (R19), 13 checks, exit 0** — `store_concurrency_harness.py`. Six of them are R4-1's: **effects land** in the same commit; **a fault between the row and the effects rolls BOTH back**; **an effect naming an absent record rolls the row back too**; **the operator's reason and timestamp are stored, not defaulted**; **a forced lock conflict retries THROUGH this function** (not a separate helper, which is what v4's BUSY regression actually exercised); and **a collision is raised, never retried**.
+**Evidence (R19), 17 checks, exit 0** — `store_concurrency_harness.py`. Six of them are R4-1's: **effects land** in the same commit; **a fault between the row and the effects rolls BOTH back**; **an effect naming an absent record rolls the row back too**; **the operator's reason and timestamp are stored, not defaulted**; **a forced lock conflict retries THROUGH this function** (not a separate helper, which is what v4's BUSY regression actually exercised); and **a collision is raised, never retried**.
 
 **Adversarial tests (R19):** two overlapping revocations of DIFFERENT
 sources interleaved; two revocations of the SAME source; revoke racing lift
@@ -1159,7 +1181,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**1 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0022`; 5 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**1 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0022`; 5 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -1172,6 +1194,24 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 3 (SENT) | 2026-08-17 | — | SENT (the coupled round-3 package `0022-0023-v3` — 0004 is NOT in it: it was APPROVED FOR ACCEPTANCE at round 2, frozen on W1-W8, and re-sending an approved spec invites re-litigation. Per-spec verdicts requested; sealed AFTER this row, staged to the outbox, sha pinned on return). 0022 at v4: F1 — r… |
 | external 4 (verdict) | 2026-08-17 | 3 | RETURN FOR AMENDMENT (1 blocking on this spec + 2 package/process; 0004 not reopened). R4-1 — `revocation_operation` was NEITHER ATOMIC NOR ACTUALLY SHARED. The reviewer invoked the submitted function directly and got `applied effects: []`: it appended the row and never applied the effects, so R19's… |
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`; 0004 remains OUT — approved and frozen at round 2). 0022 at v5: R3-1 folded with ONE shared `revocation_operation` quoted verbatim in §4e-i and CALLED by the harness (the spec printed `with conn:` while the harness executed BEGIN IMMEDIATE — the evid… |
+| external 5 (verdict) | 2026-08-17 | 4 | RETURN FOR AMENDMENT (2 blocking on this spec + 2 package/process; 0023 semantically clear, deferred only by the mutual requires; 0004 not reopened). R5-1 — the failure outcomes were NOT TOTAL: a failing ROLLBACK was suppressed and the ORIGINAL error re-raised, so the caller held a live transaction … |
 | external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`; 0004 remains OUT — approved, frozen). 0022 at v6: R4-1 folded — the shared operation now APPLIES EVERY EFFECT in the same transaction, stores the operator's reason and timestamp, requires `plan`, and rolls the row back with the effects on any fault; … |
+
+**Per-finding closure ledger — PROCESS §4a.** 12 finding(s) recorded for `0022`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
+
+| finding | round | what it was | closed in | evidence (runnable) |
+|---|---|---|---|---|
+| **F2** | external 1 | the standing state ordered by (at, seq) with a HOST-SUPPLIED `at`, so a planted far-future timestamp made a revocation permanently unliftable | §4a, R1, reference_revocation.standing_revocations | `python3 specs/evidence/0022/vector_harness.py  # 5 clock-skew vectors: standing_a_far_future_revoke_is_still_liftable, standing_a_clock_rollback_does_not_undo_the_latest_append, standing_identical_timestamps_are_ordered_by_seq_alone, standing_row_order_in_the_list_does_not_decide, standing_the_epoch_timestamp_cannot_resurrect_a_lift` |
+| **F3** | external 1 | 'supersession, never edit' was true of no carrier in the product — the reference mutated in place against an abstract history list with no product analogue | §4f, C3, R9, reference_revocation.apply_effects | `python3 specs/lint_withdrawn.py  # rules 0022-retirement-is-a-new-event and 0022-history-only-grew fail the build on any live restatement` |
+| **F4** | external 1 | class (c) gated on `system_authored` was not the upper bound it advertised: a pre-0014 absorption survivor keeps the incoming record's USER authorship while carrying transferred values no ledger row names | §4c, §2c, §9, R7 | `python3 specs/evidence/0022/vector_harness.py  # sweep_a_pre_0014_user_authored_absorption_survivor_is_counted — it BITES: 1 under the old predicate, 5 under the new` |
+| **R3-1** | external 2 | §4e-i printed `with conn:` and labelled it BEGIN IMMEDIATE; it begins nothing, and the harness was green on a DIFFERENT construction | §4e-i, store_concurrency_harness.revocation_operation | `python3 specs/evidence/0022/store_concurrency_harness.py  # the operation is the one the spec prints` |
+| **R3-2** | external 2 | the withdrawn class-(c) authorship condition was still normative in §2c, because the lint pattern matched the forward wording and not the reversed wording the cell used | §2c, withdrawn_phrases.py rule 0022-class-c-is-system-authored | `python3 specs/lint_withdrawn.py` |
+| **R4-1** | external 3 | `revocation_operation` was neither atomic nor actually shared: it appended the row and NEVER APPLIED THE EFFECTS, discarded `reason` and `at`, and its BUSY regression exercised a different helper | store_concurrency_harness.revocation_operation, §4e-i | `python3 specs/evidence/0022/store_concurrency_harness.py  # EFFECTS LAND / ATOMIC (mid-effect) / ATOMIC (absent record) / METADATA` |
+| **R5-1** | external 4 | the failure outcomes were not total: a failing ROLLBACK was suppressed and re-raised as the original error, and EVERY IntegrityError was converted to OrdinalCollision | store_concurrency_harness: RevocationUnknownState, RevocationIntegrityError, _is_ordinal_violation, _rollback_or_poison | `python3 specs/evidence/0022/store_concurrency_harness.py  # 'a FAILING ROLLBACK is reported as UNKNOWN STATE' and 'a NON-ordinal integrity fault is NOT reported as a collision'` |
+| **R5-2** | external 4 | two claimed regressions did not exercise their named branches: the BUSY test measured SQLite's internal wait (one BEGIN, zero caught errors) and the collision test raised OrdinalCollision by hand | store_concurrency_harness: the BUSY, BUSY-DEADLINE, unreachability and classifier checks | `python3 specs/evidence/0022/store_concurrency_harness.py  # BUSY counts the loop's OWN attempts with busy_timeout=0; the collision branch is proven UNREACHABLE through the construction and the classifier is covered on REAL errors` |
+| **R4-3** | external 3 | the closure ledgers had drifted for a third round — a count disagreeing with its own rows, a placeholder claiming it had been removed | specs/render_closure.py, both closure sections | `python3 specs/render_closure.py --check` |
+| **R4-4** | external 3 | skip_inventory.render()'s category list was hard-coded and dropped future-obligation, so four entries reached the data and never the block | specs/skip_inventory.py render()/reconcile(), tests/test_spec_gate.py | `python3 -m pytest tests/test_spec_gate.py -k 'reconcile or silently_drop or emitted_reason'` |
+| **R5-4** | external 4 | reconcile() matched pytest's EMITTED reason against SOURCE-SITE tokens, so a listed skip read as unlisted on a root host only | specs/skip_inventory.py EMITTED, tests/test_spec_gate.py | `python3 -m pytest tests/test_spec_gate.py -k emitted_reason` |
+| **R5-3** | external 4 | the generated closure was one row per ROUND with a truncated verdict; PROCESS §4a requires one row per FINDING with openable evidence | specs/closure_findings.py (this file), specs/render_closure.py | `python3 specs/render_closure.py --check` |
 
 <!-- /GENERATED:review-closure -->

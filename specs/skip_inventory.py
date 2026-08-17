@@ -340,8 +340,30 @@ def reconcile(pytest_rs_output: str) -> list:
     return problems
 
 
+# EXTERNAL ROUND 5, R5-4. An entry's `token` is a SOURCE-SITE token — it must
+# appear near the `pytest.skip(...)` call so the completeness gate can find the
+# site. pytest emits the RESOLVED reason, which is often different text: the
+# euid entry's token is `geteuid` (what the source says) while pytest prints
+# "root traverses any directory...". Matching emitted reasons against
+# source tokens therefore reported a listed skip as unlisted on any root host —
+# and only on a root host, which is why our own runs never saw it.
+#
+# The two vocabularies are now separate. EMITTED holds the reason text pytest
+# prints, keyed by (file, source-token); reconcile matches against either.
+EMITTED = {
+    ("tests/test_migrations_0013.py", "geteuid"):
+        ("root traverses any directory", "running as root"),
+}
+
+
 def _token_matches(reason: str, entry_file: str) -> bool:
+    r = reason.lower()
     for f, _kind, token, _cat, _note in INVENTORY:
-        if f == entry_file and token.lower() in reason.lower():
+        if f != entry_file:
+            continue
+        if token.lower() in r:
             return True
+        for emitted in EMITTED.get((f, token), ()):
+            if emitted.lower() in r:
+                return True
     return False

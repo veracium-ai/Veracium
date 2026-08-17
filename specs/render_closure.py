@@ -66,6 +66,7 @@ def render(spec: str) -> str:
                f"dispatch records, not outcomes**, and are labelled below so "
                f"the two are never summed.")
     out.append("")
+    # PER-ROUND dispatch/verdict index (R4-3) …
     out.append("| round | date | findings raised | verdict (compressed) |")
     out.append("|---|---|---|---|")
     for r in rows:
@@ -74,6 +75,22 @@ def render(spec: str) -> str:
         label = "SENT" if _is_sent(r) else "verdict"
         out.append(f"| {r['kind']} {r['round']} ({label}) | {r['date']} | "
                    f"{r.get('findings', '—') if label == 'verdict' else '—'} | {v} |")
+    # … and the PER-FINDING closure ledger PROCESS §4a actually requires
+    # (R5-3: the round index above is a shorter verdict, not a closure).
+    from closure_findings import CLOSURES
+    mine = [c for c in CLOSURES if c[0] == spec]
+    out.append("")
+    out.append(f"**Per-finding closure ledger — PROCESS §4a.** {len(mine)} "
+               f"finding(s) recorded for `{spec}`, each with a command you can "
+               f"RUN. Generated from `specs/closure_findings.py`; a finding "
+               f"without runnable evidence cannot be added, which is the point.")
+    out.append("")
+    out.append("| finding | round | what it was | closed in | evidence (runnable) |")
+    out.append("|---|---|---|---|---|")
+    for _spec, kind, rno, fid, summary, closed_in, evidence in mine:
+        e = evidence.replace("|", "\\|")
+        out.append(f"| **{fid}** | {kind} {rno} | {summary} | {closed_in} | "
+                   f"`{e}` |")
     out.append("")
     out.append(END)
     return "\n".join(out)

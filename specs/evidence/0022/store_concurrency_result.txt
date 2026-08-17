@@ -1,1 +1,1 @@
-store concurrency harness: 13/13 pass against the §4e-i construction
+store concurrency harness: 17/17 pass against the §4e-i construction
