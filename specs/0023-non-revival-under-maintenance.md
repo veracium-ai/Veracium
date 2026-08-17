@@ -839,7 +839,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0023`; 4 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0023`; 5 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -854,5 +854,6 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 '.join(ep.summary … |
 | external 4 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (1 blocking on this spec). R4-2 — the R3-3 BEHAVIOUR was corrected and its NORMATIVE CARRIERS still contradicted it: §7a's header said all seven consumers call `Episode.assertable` while its own lifecycle row said lifecycle must not, so following the header recreated the exact N… |
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`). 0023 at v6: R3-3 folded — maintenance checks the STANDING REVOCATION rather than `Episode.assertable`, which over-excluded ordinary quarantined/use-only episodes in a ZERO-revocation store and broke N12; N12 gains the behaviour-half negative control… |
+| external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`). 0023 at v7: R4-2 folded — §7a now says SIX consumers call `Episode.assertable` and names `lifecycle.py:182` as the seventh, explicitly NON-assertability use (maintenance excludes on the standing revocation); the malformed three-cell N12 row is conso… |
 
 <!-- /GENERATED:review-closure -->

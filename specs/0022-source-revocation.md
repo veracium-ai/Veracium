@@ -1159,7 +1159,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**1 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0022`; 4 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**1 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0022`; 5 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -1172,5 +1172,6 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 3 (SENT) | 2026-08-17 | — | SENT (the coupled round-3 package `0022-0023-v3` — 0004 is NOT in it: it was APPROVED FOR ACCEPTANCE at round 2, frozen on W1-W8, and re-sending an approved spec invites re-litigation. Per-spec verdicts requested; sealed AFTER this row, staged to the outbox, sha pinned on return). 0022 at v4: F1 — r… |
 | external 4 (verdict) | 2026-08-17 | 3 | RETURN FOR AMENDMENT (1 blocking on this spec + 2 package/process; 0004 not reopened). R4-1 — `revocation_operation` was NEITHER ATOMIC NOR ACTUALLY SHARED. The reviewer invoked the submitted function directly and got `applied effects: []`: it appended the row and never applied the effects, so R19's… |
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`; 0004 remains OUT — approved and frozen at round 2). 0022 at v5: R3-1 folded with ONE shared `revocation_operation` quoted verbatim in §4e-i and CALLED by the harness (the spec printed `with conn:` while the harness executed BEGIN IMMEDIATE — the evid… |
+| external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`; 0004 remains OUT — approved, frozen). 0022 at v6: R4-1 folded — the shared operation now APPLIES EVERY EFFECT in the same transaction, stores the operator's reason and timestamp, requires `plan`, and rolls the row back with the effects on any fault; … |
 
 <!-- /GENERATED:review-closure -->
