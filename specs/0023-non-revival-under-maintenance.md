@@ -29,6 +29,23 @@ the lifecycle-op conformance family). See `## Review closure`.*
 > lives**; and **M3**, the wiki row's third path (the supersession-
 > refusal cell, covered by `0003`'s shipped drop, which "quarantine
 > never enters" and "0022 retires" did not cover between them).*
+>
+> **v3 — internal round 2 (research, 2026-08-17): ONE finding, and it is
+> 0022 S1's SIBLING CELL, visible inside S1's own new evidence row.**
+> **S3: quarantine-at-birth was INEFFECTIVE FOR EPISODE TEXT.** v2 wrote
+> the field and no reader consulted it — the episode render splits on
+> `third_party_influenced` (authorship), never on `disclosure`, so a
+> quarantined episode rendered in ordinary `## RELEVANT DETAIL` while the
+> identical edge was fenced. §4a-iv adds the reader half and **N14** pins
+> it AT THE RENDER SURFACE; `Episode` gains the derived `quarantined`
+> property `Edge` already had — **whose absence is why no reader could
+> consult it.** Fenced, not suppressed, because suppression would make
+> episodes stricter than shipped edge behaviour under one rule; recorded
+> as **Q5** rather than taken silently. §9.3's invited hunt now carries
+> its first confirmed instance and is sharpened rather than discharged.
+> **Twice in one pair, a finding's own evidence row has contained the
+> next finding** — which says the yield is in re-reading what the
+> commands actually printed, not in running more of them.*
 
 ***The coupling with 0022 is MACHINE-CHECKED and acceptance is ATOMIC:
 `Spec-Requires` is MUTUAL — 0022 requires 0023 and 0023 requires 0022 —
@@ -137,6 +154,9 @@ result column records its real output.** Re-run at implementation.
 | **disclosure is written at exactly ONE site, and never lowered afterwards** — the property this spec's write-time gate depends on and must not break | `grep -rn "disclosure\s*=" --include=*.py src/veracium/` | seven hits, of which exactly ONE is a WRITE at ingest: `ingest.py:181` (`disclosure = _disclosure_for(...)`) feeding `:199`. The others are READS (`schema.py:280/286` the derived properties, `graph.py:254` the same-class comparison, `scope_read.py:384`) and ONE further write — `portability.py:396`, the 0005 IMPORT CAP, which is a boundary cap and is the second site this spec must extend |
 | **the absorption gate seam already exists and already takes one extension** | `grep -n "_absorption_scope_gate" src/veracium/graph.py` | `graph.py:188` (the gate) and `:307` (`same_scope = _absorption_scope_gate(store, edge)`, consulted in the candidate loop). 0021 put it there; the revocation rail rides the SAME seam |
 | **the consolidation partition seam already exists** | `grep -n "partition_cold" src/veracium/lifecycle.py` | `lifecycle.py:132` (the function) and `:274` (`for key, members in partition_cold(store, user_id, cold)`) — the exact site where 0021 excludes UNRESOLVED derivatives from every pool |
+| **THE QUARANTINE FIELD DOES NOT REACH THE EPISODE RENDER — internal S3, the sibling of 0022's S1 and visible in S1's OWN evidence row** | `sed -n '858,872p' src/veracium/__init__.py` | **EDGES consult it:** `claim_edges = [e for e in edges if e.quarantined or (e.active and e.use_only)]` → a fenced never-assert line. **EPISODES do not:** the split is `provenance.third_party_influenced` ONLY. A quarantined episode whose author is USER or SYSTEM therefore renders in ORDINARY `## RELEVANT DETAIL`, **unfenced** |
+| **and `third_party_influenced` cannot stand in for quarantine, because it never reads disclosure** | `sed -n '135,141p' src/veracium/schema.py` | `return (self.author_of_evidence == THIRD_PARTY or self.derived_from == THIRD_PARTY)` — authorship only. A revocation-quarantine sets `disclosure`, which this property does not see |
+| **`quarantined` is an EDGE-ONLY property — the carrier the fix needs does not exist on `Episode`** (correcting the review's premise, which assumed it did) | `awk '/^class /{c=$2} /def quarantined/{print c, NR}' src/veracium/schema.py` | ONE hit: `Edge(BaseModel) 274`. `Episode` carries `provenance` but derives no `quarantined`/`assertable` — **which is itself why the render could not consult it** |
 | **the totality registry this spec's rows inherit is real and mechanical** | `grep -n "COMBINING_SITES\|__all__" src/veracium/combining.py` | `combining.py:30` (`__all__ = ["OPERATIONS", "COMBINING_SITES", "SiteSpec"]`) and `:73` (the registry). `specs/combining_sites.py --check` fails when the code and the registry disagree, which is what **N9** rides |
 | **reinforcement persists the incoming edge and transfers nothing** — so the change here is an ACCOUNTING change, not a data one | `grep -n "reinforcement transfers NOTHING" -B 2 -A 3 src/veracium/graph.py` | `graph.py:76-80` — *"the incoming restatement is PERSISTED as its own edge with its own provenance, and the prior is left byte-untouched — reinforcement transfers NOTHING (not `observed_at`, not `confidence`, not `valid_from`)"* |
 | **the import path ALREADY caps disclosure, so the revocation floor is one more clause at a live site** | `grep -n "capped = model.model_copy" -A 8 src/veracium/portability.py` | `portability.py:392-399` — the cap sets `author_of_evidence`/`derived_from` to THIRD_PARTY and disclosure to `QUARANTINED` if it already was, else `USE_ONLY`, counting every record it capped at `:400` |
@@ -220,6 +240,12 @@ by construction.
   visible to the operator surfaces (`introspect`, `export_memory`) that
   already show quarantined claims. Under 0020, scoped principals see no
   more than before.
+  **v3: this promise was TRUE FOR EDGES AND FALSE FOR EPISODES, and §4a-iv
+  is what makes it true for both (internal S3).** The episode render
+  consulted authorship, never disclosure, so a quarantined episode landed
+  in ordinary `## RELEVANT DETAIL` — the assertable presentation — while
+  the identical edge was fenced. The promise did not change; the code
+  path that has to honour it did.
 - **What an observer can infer.** A host watching its own ingest counts
   can tell that a source is revoked, because its facts land in the
   `quarantined` count. That is the operator's own signal about the
@@ -254,6 +280,49 @@ The record is RETAINED. Nothing is refused, nothing is dropped, the
 `quarantined` count in the ingest result rises, and one audit line
 records that a write from a revoked source was quarantined (content-free:
 the digest, the count, no text).
+
+#### 4a-iv. Writing the field is not enough — the RENDER must consult it (**N14**, internal S3)
+
+**v2 quarantined the episode's FIELD and stopped there, which quarantines
+nothing that matters.** Point 3 above says the rule applies to the
+episode "because both reach the model through different paths" — and the
+episode's path does not read the field this rule writes:
+
+| type | what the render consults | a quarantined record lands in |
+|---|---|---|
+| **edge** | `e.quarantined` — which derives from `disclosure` (`__init__.py:858`) | the **fenced** never-assert claim lines ✓ |
+| **episode** | `e.provenance.third_party_influenced` — **authorship ONLY, never disclosure** (`schema.py:135-141`) | ordinary `## RELEVANT DETAIL`, **unfenced** ✗ |
+
+So under a standing revocation, a new event's edges were fenced while its
+episode text rendered as ordinary context — for exactly the new-writes
+case this spec exists to govern. §3b's promise ("not assertable, never
+enters the wiki or the grounded block") was true for one type and false
+for the other.
+
+**Two carriers, both required:**
+
+1. **`Episode.quarantined`** — a derived property mirroring `Edge`'s
+   (`schema.py:274`, `relation == QUARANTINE_RELATION` reading as
+   disclosure-only on a type with no relation). The property is
+   **derived, never stored**, for the same reason §4a point 1 gives: the
+   value already exists in `disclosure`, and a second copy is a second
+   source of truth. **The reason it did not exist is the reason S3
+   happened** — the render could not consult a property no one had
+   derived for this type.
+2. **The render consults it** — a quarantined episode routes to the
+   FENCED section, never to ordinary detail.
+
+**Why FENCED and not SUPPRESSED, stated because the review asked for
+suppression and this is a deliberate departure.** Suppressing quarantined
+episodes entirely would make episodes STRICTER than edges under one
+rule — a quarantined edge from the same event still renders fenced today,
+and that is shipped, ratified behaviour. The promise this spec makes is
+"not assertable, never in the wiki or the grounded block", and fencing
+satisfies it with the mechanism the codebase already uses for exactly
+this purpose. Making BOTH types invisible is a coherent stricter rule,
+but it is a different and larger decision — it changes shipped edge
+behaviour — so it is recorded as **Q3** rather than taken silently under
+cover of a render fix.
 
 ### 4b. What the standing state costs at write time
 
@@ -470,6 +539,7 @@ lifecycle sweep is legible as a whole:
 | **N11** a record with no `source_id` has no digest and is never affected by any standing revocation, at any of the sites above | `test_unidentified_writes_are_never_quarantined_by_revocation` |
 | **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded | `test_no_revocation_is_byte_identical` |
 | **N13** a lift restores ordinary behaviour for FUTURE writes with nothing to unwind, and does NOT rewrite the disclosure of records already written — the declared asymmetry, pinned in both directions | `test_lift_does_not_rewrite_existing_disclosure` |
+| **N14** a quarantined episode's TEXT never renders as ordinary context: `Episode.quarantined` is derived from `disclosure` exactly as `Edge`'s is, and the render routes it to the FENCED section (internal S3 — v2 wrote the field and no reader consulted it) | `test_revoked_source_episode_is_not_ordinary_context` — **asserted at the RENDER SURFACE, R18's form**: under a standing revocation, ingest an event, call `recall()`, and require the episode's text to be ABSENT from `## RELEVANT DETAIL` and present only under the fenced never-assert header. A store-level assertion would pass on the broken code, which is precisely how v2 shipped a field nothing read · `test_episode_quarantine_matches_edge_quarantine` — the same event's edge and episode must reach the SAME partition, so the two types cannot drift apart again |
 
 Standing checks that must not regress: injection asserts 0 · cross-user
 leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
@@ -514,6 +584,8 @@ containment, and no row above depends on it.
 
 | carrier | change |
 |---|---|
+| **`schema.py` — the `Episode` model** | gains a DERIVED `quarantined` property mirroring `Edge`'s (`schema.py:274`). Derived, never stored — the value lives in `disclosure` and a second copy is a second source of truth (**N14**, internal S3) |
+| **`__init__.py` — the episode render (`_fit_to_budget`, `:869-872`)** | consults `quarantined` and routes a quarantined episode to the FENCED never-assert section. This is the READER half of a rule v2 wrote only on the writer side |
 | `src/veracium/ingest.py` | `_disclosure_for` gains the standing-revocation input; the site does not move (**N1**, **N2**) |
 | `src/veracium/graph.py` | the absorption candidate rail on `_absorption_scope_gate`; the supersession refusal cell |
 | `src/veracium/lifecycle.py` | `partition_cold` excludes revoked-source records; renewal consults the standing state |
@@ -588,14 +660,26 @@ containment, and no row above depends on it.
    the store unwritable for that user rather than merely unrevoked.
    Attack that choice; we are not certain the failure direction is right
    for a store whose ingest is a production pipeline.
-3. **The claim that quarantine is enough.** We assert that a
-   quarantined-at-birth record cannot reach the model, resting on
+3. **The claim that quarantine is enough — and THE INVITED HUNT ALREADY
+   HAS ONE CONFIRMED INSTANCE, found internally at round 2.** We assert
+   that a quarantined-at-birth record cannot reach the model, resting on
    `assertable` excluding quarantined and on the wiki compiling from the
-   assertable set. If you can find any path — proactive assembly, the
-   contested groups, a render of history — where a quarantined record's
-   TEXT reaches rendered context, that breaks the central claim of this
-   spec, and it is exactly the class of thing this project has missed
-   before (the wiki itself was such a path).
+   assertable set. **v2 asked you to hunt for "any path where a
+   quarantined record's TEXT reaches rendered context"; the internal
+   reviewer found one before you got the chance, in this spec's own
+   evidence table: the EPISODE render consulted authorship and never
+   disclosure, so a quarantined episode rendered as ordinary context
+   while the identical edge was fenced.** §4a-iv and **N14** close it,
+   and the test asserts at the RENDER surface rather than at the store —
+   a store-level assertion passes on the broken code, which is exactly
+   how the defect survived v2.
+   **The invitation stands, and it is now sharper rather than
+   discharged.** One instance found means the class is real and the
+   enumeration was never total: the paths we have checked are recall's
+   detail sections, the wiki compiler, and proactive assembly. **We have
+   NOT proven there is no fourth.** If you find one, the finding is the
+   same class as this one, and the honest reading of our evidence is that
+   an executed check on one reader says nothing about the others.
 
 **Where we suspect we have overstated:** "cannot re-enter by ANY path" in
 §8. It is true of the paths enumerated in §3, and §3's totality is
@@ -618,6 +702,7 @@ operator-chosen option (§10, **Q1**).
 | **Q2** | should a lift un-quarantine records that landed quarantined at birth? | `pre-release` — dev, before implementation. **v1 said NO on a weak argument; v2 says NO on a strong one (internal S2), and the ruling is RATIFIED.** v1's "not decidable from the record alone" is false as stated — `_disclosure_for`'s inputs are all on the record. The argument that holds is the TWO FLOORS: a persisted `disclosure` is the minimum of every floor that applied, the record does not carry which floor bound it, and the executed cell in §4i shows re-derivation returning **`USE_ONLY` for an imported record `0005` deliberately preserved at `QUARANTINED`** — relaxing another mechanism's floor as a side effect of reversing ours. That is a GRANT, and `C1` forbids grants whether or not they were intended. A per-record cause carrier would restore decidability and is refused as the second source of truth `0020` Q1 already refused. **N13** pins the asymmetry in both directions |
 | **Q3** | the mixed-writer ENFORCEMENT: a store-version bump refusing pre-0023 writers | `deferred` — the same shape as 0021's own deferred enforcement question, and it should ride the same window rather than minting one. Until a release takes it, §8 carries the operational narrowing |
 | **Q4** | should the audit line for a quarantined-at-birth write carry the digest, or only a count? | `pre-release` — dev. The digest is content-free and makes "which source is still writing" answerable from the audit sink alone; a count alone is smaller and leaks nothing at all. Leaning: the digest, because the operator investigating a compromise is the whole audience |
+| **Q5** | should quarantined content be SUPPRESSED from the model's context entirely, rather than fenced? | `post-v1` — raised by internal S3's fold, recorded rather than taken. §4a-iv fences quarantined episodes, which makes them behave like quarantined EDGES and satisfies this spec's promise (not assertable, never in the wiki or grounded block). **Suppression is a coherent stricter rule and it is NOT what this spec does**, because it would change SHIPPED edge behaviour — a quarantined edge renders fenced today — and applying it to episodes alone would make one type stricter than the other under a single rule, which is the asymmetry S3 was about. If suppression is wanted, it is a decision about the QUARANTINE PRIMITIVE across both types, not a render fix, and it belongs in its own round |
 
 ## Review closure
 
