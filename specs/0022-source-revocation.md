@@ -7,7 +7,31 @@ Spec-Requires: 0004, 0006, 0014, 0020, 0021, 0023
 (`veracium-research/proposals/a3-source-revocation-design-proposal.md`,
 2026-08-17, greenlit, with dev's corrections folded), decomposed by dev into
 this spec (A3a — the operation) and **0023** (A3b — non-revival under
-maintenance). No review rounds yet; see `## Review closure`.*
+maintenance). See `## Review closure`.*
+
+> **v2 — internal round 1 folded (research, 2026-08-17; full review at
+> `veracium-research/proposals/0022-0023-internal-review.md`).** One
+> BLOCKING finding, and it was a design completion rather than a prose
+> fix. **S1: the sweep's record DOMAIN was unenumerated** — "records"
+> meant edges, and **episodes have no retirement mechanism in the
+> shipped store while their text renders straight into recall context**.
+> The normative reference had it right all along (it validates
+> `type in ("edge", "episode")` with `active`/`retired_reason` on both,
+> and the vectors exercise episodes) — so this was a class-G
+> shipped-shape mismatch, not a missing idea: **an evidence package can
+> pass 54/54 against a reference the product cannot implement.** §4b-i
+> now enumerates every stored type with its mechanism or its EXECUTED
+> exclusion, §4b-ii specifies the episode mechanism (Quentin's decision,
+> 2026-08-17: a JSON field plus the `store.episodes()` read seam, no
+> DDL), **R18** pins it, and §2c-ii carries the five commands that were
+> run. Also folded: **M1** (Q6's rationale was false across time — a
+> pure function over MUTATING inputs reproduces the present, not the
+> past), **M4** (`complete=False` is the expected steady state on any
+> consolidation-bearing store, said up front), and research's suggestion
+> that retired-synthesized be counted separately from
+> retired-sole-basis, since only one of the two is re-derivable.
+> RATIFIED unchanged: the synthesized-survivor retirement, R3/R4/R6,
+> §4f's desired-state reversal, the ratchet, and R17.*
 
 ***The coupling with 0023 is MACHINE-CHECKED and acceptance is ATOMIC:
 `Spec-Requires` is MUTUAL — 0022 requires 0023 and 0023 requires 0022 — so
@@ -139,6 +163,12 @@ checked. Re-run at implementation, per the standing rule.
 | **the absorption payload already carries BOTH sides, so recompute needs no new column** | `grep -n 'payload = {"base": dict(plan.absorption_pre_image), "contributor": side}' -B 8 src/veracium/store/sqlite.py` | `sqlite.py:666`, with `side` built at `:658-665` from the contributor's authoritative row (`observed_at`, `confidence`, `valid_from`, `disclosure`) and `base` the survivor's pre-inheritance snapshot |
 | **the recompute transform is the SHIPPED one, not an invention of this spec** | `grep -n "min(valid_from), max(observed_at), max(confidence)" -B 3 src/veracium/contribution.py` | `contribution.py:225-227` — the replay verifier's own words: *"from the snapshot's own values plus the recorded contributor sides, the committed survivor's values must be reproduced — min(valid_from), max(observed_at), max(confidence)"* |
 | **there is exactly ONE writer of `active=0`, which is what the sweep must route through** | `grep -rn "active=0\|active = 0" --include=*.py src/veracium/` | ONE hit: `sqlite.py:251`, inside `_invalidate_edge_row` (`:242`, *"Shared by `invalidate_edge` and `apply_supersession_plan`"*). 0004 v3.1's W7 keeps it that way with an AST sweep that fails the build on a second writer |
+| **EPISODE TEXT REACHES THE MODEL — the assertion that made S1 blocking, and the one v1 never ran** | `sed -n '869,872p' src/veracium/__init__.py` | `ep_lines = [clamp_item(f"[{e.date}] {e.summary}", cap) for e in episodes if not e.provenance.third_party_influenced]` — plus `tp_ep_lines` for the rest. **Episode summaries render into recall context; `third_party_influenced` only chooses WHICH SECTION.** There is no `active`, no `quarantined` and no disclosure consulted on this path |
+| **episodes have NO retirement column — the mechanism genuinely did not exist** | `sed -n '134,138p' src/veracium/store/schema_version.py` | `CREATE TABLE episodes (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL)`. Compare `edges`, which carries BOTH `active` and `quarantined`. The asymmetry is the finding |
+| **`store.episodes()` is the ONE Python read path, and it ALREADY filters structurally** — so the seam this spec needs exists and is proven to carry a filter | `grep -rn "\.episodes(" src/veracium/ --include=*.py` · `sed -n '979,991p' src/veracium/store/sqlite.py` | NINE call sites, all through `store.episodes()`; the implementation already excludes provisional/hidden rows by observed `0010` op state, under the lock. A default-exclude parameter is the shipped `edges(active_only=True)` shape applied to a seam that already does this work |
+| **the raw-SQL episode sites are FOURTEEN and are internal to the store** (so the disposition is bounded and enumerable, not open-ended) | `grep -rn "FROM episodes\|INTO episodes\|UPDATE episodes\|DELETE FROM episodes" src/veracium/ --include=*.py` | 14 hits, ALL in `store/sqlite.py` plus 2 in `store/migration.py`. None outside the store package — which is what makes R18's AST pin a closed check rather than a hope |
+| **the vectors ALREADY cover episodes — the gap was the product's shape, not the evidence's coverage** | `python3 -c "…count vectors carrying a record with type=='episode'…"` · `.venv/bin/python specs/evidence/0022/vector_harness.py` | **18 of 54** vectors carry episode-typed records (e.g. `sweep_a_second_revoke_of_a_standing_source_is_idempotent` retires one with `retired_reason="revoked_source"`), and the harness passes **54/54**. The reference always modelled both types; the store implements one |
+| **refusal records are content-free BY CONSTRUCTION, so the §4b-i exclusion is the DDL, not a claim** | `sed -n '199,204p' src/veracium/store/schema_version.py` | `supersession_refusals(refusal_id, user_id, prior_edge_id, incoming_edge_id, relation, prior_effective, incoming_effective, rule_version, created_at)` — ids, a relation name, two booleans, a version and a timestamp. No content column |
 | **the normative reference and its vectors execute clean** | `.venv/bin/python specs/evidence/0022/vector_harness.py` | EXIT 0, every vector passing. **The pass/total line is recorded verbatim in `specs/evidence/0022/vector_harness_result.txt`, which is the ONE carrier for that count** — the 0020 rule, adopted here from the start: a number written into prose drifts from the artifact that measures it |
 
 *(A cell here is a command and its output. Three of these assertions moved
@@ -146,6 +176,17 @@ the design while it was being written: the indexed join meant no new index,
 the `{base, contributor}` payload killed the `prior_values` column, and the
 shipped replay transform supplied the recompute rule rather than the spec
 inventing one.)*
+
+*(**A fourth assertion moved the design after the first internal round, and
+it is the one this table did not originally contain.** v1 ran the
+sole-`active=0`-writer command and concluded the retirement mechanism was
+settled — but never asked what that writer's table WAS. It is `edges`.
+Running the episode-render command shows episode summaries reaching the
+model on a path with no `active`, no `quarantined` and no disclosure check,
+so a whole record type was outside a sweep whose §8 claim sounded total.
+The lesson generalises past this spec: **an executed assertion about a
+mechanism is not an assertion about its DOMAIN** — `_invalidate_edge_row`
+being sole and correct says nothing about the records it cannot reach.)*
 
 ## 3. Trust-class matrix — REQUIRED, blocking
 
@@ -295,7 +336,8 @@ Consequences that fall out of the append-only form, all vectored:
 records, the user's contribution rows, the standing revocation set)*:
 
 1. **Directly-sourced records** — the record's OWN resolved identity is
-   revoked → RETIRE with reason `revoked_source` (C3).
+   revoked → RETIRE with reason `revoked_source` (C3). **"Records" is a
+   DOMAIN, and it is enumerated below rather than left to the reader.**
 2. **Contributions** — the digest join (the accepted `contributors_of_source`
    read) returns every survivor the source contributed to. Per survivor,
    classify (§4c) and treat:
@@ -313,6 +355,92 @@ records, the user's contribution rows, the standing revocation set)*:
    survivor set, so it terminates, and a row naming its own survivor is
    REFUSED as corrupt rather than walked (**R8**).
 4. **The completeness statement** — §4c.
+
+#### 4b-i. WHICH RECORD TYPES the sweep retires — the enumerated domain
+
+**v1 said "records" and meant edges (internal S1, BLOCKING — and it was
+right).** The word implied a domain it never stated, and the missing
+member was not exotic: **episodes**, whose text reaches the model
+directly.
+
+**The precise shape of the defect, because it is sharper than "a type was
+forgotten" and it is a class-G finding, not a class-C one.** The
+normative reference NEVER forgot episodes: `validate_record` accepts
+`type in ("edge", "episode")` and requires `active` / `retired_reason` on
+both, and the vectors exercise episodes throughout. The DESIGN was
+complete. What was missing sat in two other carriers: **the prose said
+"records" without enumerating them**, and — the part that actually
+bites — **the shipped store has no episode `active` field at all**, so
+the reference presumed a mechanism the product does not have. An
+evidence package can pass 54/54 against a reference whose record model
+the product cannot implement. That is why §7a's shipped-shape row exists,
+and it is why this finding is worth more than the type it names. Every stored type is enumerated here with its mechanism or its
+EXECUTED exclusion argument; a type absent from this table is a defect in
+the table, not a silent exclusion.
+
+| stored type | does its content reach the model? | what the sweep does | mechanism |
+|---|---|---|---|
+| **edge** | YES — rendered claim lines | RETIRE | `_invalidate_edge_row`, the sole `active=0` writer (**R17**) |
+| **episode** (`kind="chat"` etc.) | **YES — `__init__.py:869-872` renders `f"[{e.date}] {e.summary}"` straight into recall context**, split only into the third-party section, which is still rendered | **RETIRE** | **NEW, §4b-ii (**R18**)** — v1 had NO mechanism for this type |
+| **episode** (`kind="outcome"`) | not into recall (`__init__.py:520-521` excludes it) — but it IS exported and counted by `introspect` | **RETIRE**, same mechanism | same; the exclusion from recall is not a reason to leave it standing in an export |
+| **wiki** (derived) | YES — appended to `grounded_parts` | DROPPED, not recomputed | `0004`'s rule, inherited; `revoked_source` drops by default (§7b) |
+| `contribution_ledger` | no — ids and typed links | unchanged; it is the sweep's INPUT | reading it is the join; retiring it would destroy the evidence the sweep runs on |
+| `supersession_refusals` | **no — content-free BY CONSTRUCTION** (`refusal_id · user_id · prior_edge_id · incoming_edge_id · relation · two booleans · rule_version · created_at` — `schema_version.py:199`) | nothing | `0003` designed it content-free; the executed DDL is the argument |
+| `confirmations` | no — ids, actor, call path, request digest | nothing | audit of a transition, carries no remembered content |
+| `consolidation_ops` | no — `operation_id · fence · state · owner · lease · claimed_ids` | nothing | operational state; the CONTENT it points at is episodes, covered above |
+| `store_identity` | no — the store's own singleton | nothing | `0006`'s namespace, not a record |
+
+**The exclusions are arguments, not assertions**: each "no" above is the
+executed DDL or the executed render path, recorded in §2c-ii, because
+"that table has no content in it" is exactly the kind of claim that is
+true until someone adds a column.
+
+#### 4b-ii. Episode retirement — the mechanism v1 lacked (**R18**)
+
+**Decision (Quentin, 2026-08-17): a JSON field plus ONE read seam — no
+DDL.** The shape is chosen to inherit rather than to be remembered,
+which is the same reasoning that moved `0004`'s fix into the sole writer:
+
+- **The state** — `active: bool` and `retired_reason: Optional[str]` on
+  the Episode model, serialised into the existing `episodes.json` blob.
+  **No `ALTER TABLE`, no `SCHEMA` bump**, following the shipped precedent
+  by which `0009`'s and `0010`'s episode fields landed
+  (`schema_version.py` v2→v3 notes: *"serialise into the existing
+  `episodes.json` blob — no episode-table ALTER"*).
+  **The names are not a choice**: they are the fields the NORMATIVE
+  REFERENCE already validates on every record of either type
+  (`reference_revocation.py:501-503`, `_RECORD_FIELDS`), and the vectors
+  already exercise episodes against them. Naming them differently in the
+  product would be the cross-carrier mismatch this pair keeps catching in
+  other people's designs.
+- **The read seam** — `store.episodes(user_id, *, include_retired=False)`,
+  **default-excluding**, exactly mirroring the shipped
+  `store.edges(user_id, *, active_only=True, …)`. All **nine** Python
+  readers (`compile.py` · `proactive.py` · `introspect.py` ·
+  `lifecycle.py` · `portability.py` · `__init__.py`) inherit the
+  exclusion **by construction** — none of them needs to remember it, and
+  a reader added tomorrow inherits it too. This is the single most
+  important property of the choice: the alternative was a filter every
+  reader must repeat, which is the two-call-sites shape `0004` v3.1
+  rejected on the write side.
+- **The writer** — ONE function, mirroring `_invalidate_edge_row`, so
+  the "sole writer" argument holds on this type as it does on edges.
+- **The raw-SQL sites are DISPOSITIONED, not ignored.** There are
+  fourteen `… FROM episodes` statements inside `store/sqlite.py`. They
+  are the store's own internals and several MUST see everything —
+  `forget` (erasure covers retired records too), export (`0005`
+  round-trips retired state rather than dropping it), consolidation's
+  claim/delete paths, the `0013` migrations. Each is dispositioned in
+  §7a; the ones that must not see retired episodes route through the
+  seam.
+
+**The honest limit of this choice, stated because it is the price:** the
+guarantee is **Python-level**. A future raw-SQL reader could bypass the
+seam, where an `active` column would have let SQL filter too. **R18's
+AST sweep is what stands there** — it asserts the seam is the only path
+from `FROM episodes` to a rendered surface — and §10 **Q7** records
+promoting the field to a column at the next schema window, so the
+cheaper guarantee is a recorded decision rather than a silent ceiling.
 
 **THE SWEEP RETIRES THROUGH THE SOLE WRITER OF `active=0`. This is a
 CONSTRAINT ON THE DESIGN, stated with its reason, not an implementation
@@ -403,6 +531,19 @@ whether the graph was walkable; and a single `complete` boolean that is
 **FALSE whenever any class-(b) or class-(c) population is non-empty**.
 An operator who revokes gets the true blast radius AND the true blind
 spot (**R7**).
+
+**Retired-synthesized is counted SEPARATELY from retired-sole-basis
+(internal suggestion, adopted).** They are the same disposition and
+completely different operator experiences: a sole-basis retirement is
+gone because its only evidence is gone, and there is nothing to do; a
+retired synthesized survivor (§4c) is gone because its text is
+indecomposable, **and its content may be fully recoverable from evidence
+that survived**. Lumping them hides an action behind a total. Split, the
+statement can say *"N synthesized outputs retired — re-run `maintain()`
+to re-derive them from surviving evidence"*, which is the one line that
+makes §9.1's breadth cliff survivable in practice rather than only in
+principle. The split is in the returned statement and the audit event
+alike, and **R7** counts it.
 
 ### 4d. The recompute — restrict-only, and the ratchet
 
@@ -543,7 +684,7 @@ the only row with a live artifact, and its evidence is
 | **R4** the recompute is EXACT and RESTRICT-ONLY: exactly the surviving-evidence fold, never punitively below it, never above the full-evidence fold — with the clamp exercised against a deliberately non-monotone aggregator | `test_recompute_is_exact_and_restrict_only` + `test_revocation_grants_nothing` (the enumerated temptations) |
 | **R5** the ratchet: `ungrounded` is never recomputed downward, and `disclosure`/`derived_from` are never written by a revocation | `test_revocation_never_clears_the_ungrounded_flag` |
 | **R6** dry-run and commit produce the IDENTICAL statement from ONE code path; the dry run leaves the store byte-identical; the planner is a pure function of its inputs | `test_dry_run_equals_the_commit` (+ the `preview_agrees` vectors) |
-| **R7** the completeness statement reports all three class counts and is `complete=False` whenever the class-(b) or class-(c) population is non-empty | `test_completeness_statement_is_honest` |
+| **R7** the completeness statement reports all three class counts, **counts retired-synthesized separately from retired-sole-basis** (§4c — same disposition, different operator action: synthesized output is re-derivable from surviving evidence, sole-basis is not), and is `complete=False` whenever the class-(b) or class-(c) population is non-empty | `test_completeness_statement_is_honest` + `test_retired_synthesized_counted_separately` (a store with both kinds; the two counts must not collapse into one) |
 | **R8** consumption closure is TRANSITIVE and the property RECURSES (a condemned contributor is not corroboration one hop up); a self-naming row REFUSES instead of looping; the fixpoint terminates | `test_closure_is_transitive_and_recursive` |
 | **R9** supersede-never-erase: after any revoke/lift sequence every record is still present, history only grew, and no effect verb outside `{retire, recompute, reinstate}` exists | `test_revocation_only_appends` |
 | **R10** a lift is DESIRED STATE, not undo: it reinstates only what `revoked_source` retired, restores recomputed values by recomputation, and leaves a record retired while a SECOND revocation still reaches it | `test_lift_is_desired_state_not_undo` |
@@ -554,6 +695,7 @@ the only row with a live artifact, and its evidence is
 | **R15** a `revoked_source` retirement drops the compiled wiki, and `revoked_source` is registered in 0004's `DISPOSITIONED_REASONS` so its totality check passes | `test_revocation_drops_the_wiki` + 0004's own `test_invalidation_reason_registry_is_total` |
 | **R16** the sweep is idempotent: a second revoke of a standing source appends its row and plans no further effect | `test_second_revoke_is_a_no_op` |
 | **R17** every retirement the sweep performs routes through `_invalidate_edge_row`, the SOLE writer of `active=0` — no bulk update path exists, so the wiki drop is inherited by construction (§4b) | 0004's own `test_sole_active_zero_writer` (the AST sweep — a second writer FAILS the build) + `test_the_sweep_retires_through_the_sole_writer` |
+| **R18** the sweep's record DOMAIN is the enumerated one (§4b-i), and EPISODES are retired by it — through ONE writer, with `store.episodes()` default-excluding retired rows so all nine readers inherit the exclusion (internal S1; v1 had no mechanism for this type at all) | `test_revocation_retires_episodes` (a revoked source's episode text must not appear in `recall()`'s rendered context — the assertion at the RENDER surface, not at the store) · `test_episode_read_seam_is_sole_path` — an AST sweep asserting every `FROM episodes` outside the dispositioned §7a list routes through `store.episodes()`, which is what stands in for the SQL-level guarantee a column would have given · `test_retired_episode_round_trips` (export/import preserve retired state rather than resurrecting it). **The VECTOR side of R18 is ALREADY SATISFIED and was before the finding: 18 of the 54 vectors carry episode-typed records, and the reference retires them with `revoked_source` exactly as it retires edges** (executed, §2c-ii) — which is precisely why S1 is a class-G finding. The evidence proved the DESIGN over both types while the product had a mechanism for only one |
 
 Standing checks that must not regress: injection asserts 0 · cross-user
 leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0
@@ -600,7 +742,11 @@ leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0
 |---|---|
 | `veracium.Memory` (host API) | `revoke_source`, `unrevoke_source`, `source_revocations` |
 | `src/veracium/store/base.py` + `store/sqlite.py` | the append-only table, its validated reads, and the one-transaction sweep application; the existing `contributors_of_source` join is CONSUMED unchanged, and every retirement routes through `_invalidate_edge_row` — **no new `active=0` writer** (§4b, **R17**) |
-| `src/veracium/store/schema_version.py` | one new table (SCHEMA bump, ordinary migration) |
+| `src/veracium/store/schema_version.py` | one new table (SCHEMA bump, ordinary migration). **NO episode-table `ALTER` — §4b-ii's retirement state rides `episodes.json`, the shipped `0009`/`0010` precedent** |
+| **`schema.py` — the `Episode` model** | **`active: bool = True` and `retired_reason: Optional[str] = None`, named to match the normative reference's `_RECORD_FIELDS` exactly (**R18**, internal S1)** |
+| **`store.episodes()` — the ONE read seam** | gains `*, include_retired: bool = False`, **default-excluding**, mirroring the shipped `store.edges(active_only=True)`. All nine Python readers inherit the exclusion; none of them changes |
+| **the fourteen raw `… episodes` SQL sites in `store/sqlite.py` (+2 in `store/migration.py`) — DISPOSITIONED, not ignored** | **MUST see retired rows** (whole-set by contract): `forget` (erasure covers retired records), export (`0005` round-trips retired STATE rather than dropping it — **R18**), consolidation's claim/delete paths, the `0013`/`0018` migrations, the counters. **MUST NOT**: anything feeding a rendered surface — and those already route through the seam. The check is closed because all sixteen sites are inside the store package (§2c-ii) |
+| **one episode retirement writer** | the sole writer for this type, mirroring `_invalidate_edge_row`, so the sole-writer argument holds on episodes as it does on edges |
 | the invalidation reason vocabulary | `revoked_source`, registered in 0004's `DISPOSITIONED_REASONS` (§7b) |
 | `specs/evidence/0022/` | `reference_revocation.py` + `vectors.json` + `vector_harness.py` + the recorded result (NORMATIVE — **R11**) |
 | `audit.py` | one event per revocation and per lift, carrying the digest, the action, the class counts and `complete` — content-free by construction |
@@ -629,7 +775,8 @@ leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0
 else:
 
 > **Source revocation.** A host can revoke a source it no longer trusts.
-> Records that came from it are retired; records it merely contributed to
+> The records that came from it — **both the extracted claims and the
+> stored episodes** — are retired; records it merely contributed to
 > are re-derived from the evidence that survives, or retired if it was
 > their only basis. Every revocation returns a completeness statement
 > saying what was reached AND what could not be — and it is reversible.
@@ -650,6 +797,16 @@ else:
   consolidation-heavy store returns `complete=False` — and that is the
   correct output, not a defect. **The blind spot does not shrink with
   time**, because class (b) has a live producer.
+- **`complete=False` is the EXPECTED STEADY STATE on any store that has
+  ever consolidated, and operators must be told so up front (internal
+  M4).** The boolean is false whenever the class-(b) population is
+  non-empty, and class (b) has a live producer — so a consolidation-
+  bearing store will essentially never return `complete=True`. Documented
+  here, in the changelog line, and in the operator-facing return, because
+  a flag that is *always* false reads as a broken flag to everyone who
+  was not in this conversation. **It is not a health indicator; it is a
+  scope statement**, and the actionable content is in the counts beside
+  it, never in the boolean.
 - **It is per user.** Revoking a source for one user revokes nothing for
   another. A store-wide claim is the host's aggregation, not ours.
 - **No measurement is claimed here.** The resurfacing probe that would
@@ -707,8 +864,9 @@ document generalises.
 | **Q3** | the dry-run / report API shape | **RESOLVED (dev): ONE COMPUTATION, TWO CALLERS** (§4e). `dry_run=True` returns the identical statement by running the same code path; the spec carries the invariant and its executable check because a preview that can diverge from its commit is the classic defect here. Pinned by **R6** and the `preview_agrees` vectors |
 | **Q4** | pre-0014 unattributed history: offer a blunt per-user "quarantine everything older than attribution" escape hatch? | **RESOLVED as research recommended: NO in v1** — recorded as a REJECTED ALTERNATIVE in §1 with the reason (it converts a precise tool into a shotgun, and it retires user content the revoked source never touched). Class (c) is REPORTED instead. Revisit only if an operator with a real pre-0014 store asks for it |
 | **Q5** | store-wide revocation across users | `deferred` — v1 is per user (§3b) because every join and operator surface is user-keyed. A store-wide form is a recorded widening; dev decides if a host asks |
-| **Q6** | should a revocation's completeness statement be DURABLE (queryable later) rather than only returned? | `pre-release` — dev, before implementation. The audit event carries the counts; storing the full statement would make "what did that revocation reach" answerable months later, at the cost of a second carrier for a value the sweep can always recompute. Leaning: audit event only, because the sweep is a pure function and can be re-run |
+| **Q6** | should a revocation's completeness statement be DURABLE (queryable later) rather than only returned? | `pre-release` — dev, before implementation. The audit event carries the counts; storing the full statement would make "what did that revocation reach" answerable months later, at the cost of a second carrier for a value the sweep can always recompute. **Leaning: audit event only — but the v1 REASON was wrong and is corrected (internal M1).** "The sweep is a pure function and can be re-run" is false across time: the function is pure over inputs that MUTATE, so a re-run months later answers *what the store looks like now*, not *what that revocation reached then*. Recomputation reproduces only the present. The leaning survives on the honest ground: **the audit event IS the durable record**, and a second stored copy of a statement the audit already carries is a second carrier to keep consistent (§3b's rule against exactly that) |
 | **Q7** | should `revoke_source` accept a digest directly, for a source whose pair the operator no longer has? | `deferred` — research + dev. It would let an operator act on a digest read from `introspect` without knowing the pair, but it also lets an operator revoke something they cannot name. Not needed for v1 |
+| **Q8** | should the episode retirement field (§4b-ii) be PROMOTED to an `active` COLUMN on the `episodes` table at the next schema window? | `post-v1` — recorded rather than deferred silently, because the v1 choice has a stated ceiling. **Decided for v1 (Quentin, 2026-08-17): JSON field + the `store.episodes()` read seam, no DDL** — it ships without a migration and gives every reader structural inheritance, which is the property that matters most. **The ceiling it accepts:** the guarantee is Python-level, so a future raw-SQL reader could bypass the seam where a column would let SQL filter too. **R18**'s AST sweep is what stands there, and the fourteen raw sites are all inside the store package (§2c-ii), so the check is closed rather than hopeful. Promote when a schema window opens for another reason — never open one for this alone |
 
 ## Review closure
 

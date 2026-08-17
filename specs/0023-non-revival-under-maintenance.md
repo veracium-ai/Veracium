@@ -7,8 +7,28 @@ Spec-Requires: 0005, 0009, 0012, 0021, 0022
 (`veracium-research/proposals/a3-source-revocation-design-proposal.md`,
 2026-08-17, greenlit, with dev's corrections folded), decomposed by dev
 into 0022 (A3a — the operation) and this spec (A3b — the rider rows and
-the lifecycle-op conformance family). No review rounds yet; see
-`## Review closure`.*
+the lifecycle-op conformance family). See `## Review closure`.*
+
+> **v2 — internal round 1 folded (research, 2026-08-17).** The
+> lift-asymmetry ruling is **RATIFIED**, but its justification was
+> replaced: v1's *"not decidable from the record alone"* is false —
+> `_disclosure_for`'s inputs are all ON the record — and a reviewer
+> would have taken it apart. §4i now argues the **TWO FLOORS**, with the
+> executed cell that makes it concrete: a record `0005` deliberately
+> preserved at `QUARANTINED` re-derives to `USE_ONLY`, so lift-time
+> re-derivation would relax **another mechanism's** floor as a side
+> effect of reversing ours. That is a grant; `C1` forbids grants
+> whatever their intent. The per-record cause carrier that would restore
+> decidability is refused by name as the second source of truth `0020`
+> Q1 already refused. Also folded: **M2**, where running the §2c-ii
+> command this seam was missing found that **there is no renewal verb at
+> all** — `0012` deleted reinforcement's transfers — while the real
+> currency-extension path survives in absorption's `max(observed_at)`
+> (`graph.py:311-312`) and is closed by N4's refusal, so **N7's scope is
+> corrected and its test moves to the seam where the behaviour actually
+> lives**; and **M3**, the wiki row's third path (the supersession-
+> refusal cell, covered by `0003`'s shipped drop, which "quarantine
+> never enters" and "0022 retires" did not cover between them).*
 
 ***The coupling with 0022 is MACHINE-CHECKED and acceptance is ATOMIC:
 `Spec-Requires` is MUTUAL — 0022 requires 0023 and 0023 requires 0022 —
@@ -145,7 +165,7 @@ because prior-vs-incoming asymmetry is where the 0.4.1 defect lived:
 | reinforcement | write | n/a — the prior is not touched by reinforcement in any case | the incoming persists (quarantined) but is NOT counted as reinforcement and renews nothing | same | 0012 already transfers nothing; what this closes is the CURRENCY claim (§4c) |
 | consolidation | maintain | excluded from every pool | excluded from every pool | excluded | the LLM cross-record synthesis site — the one path that can launder revoked content into new text (§4e) |
 | expiry / decay / staleness | maintain | unchanged (ageing is not revival) | a revoked-source observation does not clear staleness or extend currency | unchanged | renewal is the one place ageing runs BACKWARDS, and it is exactly the revival path (§4g) |
-| wiki compilation | maintain | — | — | — | compiled from the assertable set, so a quarantined-at-birth record never enters it; and 0022's retirements drop the cache through 0004's reason vocabulary. **No rule of its own is needed, and saying so is a row** |
+| wiki compilation | maintain | — | — | — | compiled from the assertable set, so a quarantined-at-birth record never enters it; and 0022's retirements drop the cache through 0004's reason vocabulary. **The THIRD path is the one v1 left implicit (internal M3): the supersession-REFUSAL cell (§4e) writes a refusal record, and its wiki behaviour is `0003`'s SHIPPED refusal-contention drop, inherited unchanged** — this spec neither adds nor needs a rule there, but the row has to say which mechanism covers it, because "quarantine never enters" and "0022 retires" together do NOT cover a cell that neither quarantines nor retires. **No rule of its own is needed, and saying so — for all three paths — is a row** |
 | import (FORMAT 7) | boundary | — | records whose resolved identity stands revoked in the DESTINATION are capped to QUARANTINED at the existing cap site | same | 0005's boundary gains one floor; the round-trip case re-quarantines (§4h) |
 
 **Totality is MECHANICAL, inherited on day one:** `COMBINING_SITES` and
@@ -287,15 +307,48 @@ gate rather than a third gate — and a cross-revoked prior accumulates as
 a separate edge, which is today's cross-class and cross-scope behaviour
 extended one axis.
 
-### 4g. Expiry-renewal — ageing forward only
+### 4g. Expiry-renewal — ageing forward only, and WHERE the backwards
+path actually is
 
 Expiry and decay are scope-blind and revocation-blind: ageing is not
 revival, and a revoked source's record ageing out is the correct
-outcome. **Renewal is the exception that needs the rule**, because it is
-the one place the lifecycle runs backwards: an observation that clears
-staleness or extends currency must not come from a revoked source
-(**N7**). This is the same reasoning as §4c, at the other end of the
-lifecycle.
+outcome.
+
+**v1 named "renewal" as the exception. Executing the §2c-ii command that
+v1 omitted for this seam (internal M2) shows there is NO renewal verb to
+govern — and finds the real one.**
+
+```
+$ grep -rn "renew" src/veracium/ --include=*.py
+prompts.py:37       (prose in an extraction prompt)
+store/base.py:342   renew_consolidation_lease   <- 0010 LEASES, not memory currency
+store/sqlite.py:1397  renew_consolidation_lease
+graph.py:82   "a restatement can no longer silently renew a fact's currency
+               or raise its confidence (the measured 0012 §1 bypass)"
+graph.py:262  "the old max() transfers are deleted, not relocated"
+```
+
+**`0012` already deleted the renewal path.** Reinforcement transfers
+NOTHING — not `observed_at`, not `confidence`, not `valid_from` — so a
+restatement, from a revoked source or any other, cannot refresh a prior's
+currency. A rule forbidding it would govern a mechanism that does not
+exist.
+
+**But the backwards path survives one hop away, and v1 pointed at the
+wrong seam.** Currency inheritance still happens in ABSORPTION
+(`graph.py:311-312`): the winner takes `max(observed_at)` and
+`max(confidence)` from every prior it absorbs. That is a live path by
+which a revoked source's observation could extend a surviving record's
+currency — and it is **already closed, by the absorption refusal
+(§4d/N4), not by any rule of this section.**
+
+So **N7 is retained and its scope corrected**: ordinary ageing is
+unaffected, and the claim that a revoked-source observation extends no
+currency is TRUE — but it is inherited from N4's refusal at the
+absorption seam, not enforced by an independent renewal rule. Saying it
+this way is the difference between a testable claim and a rule with no
+site. **N7's test asserts at the absorption seam**, which is where the
+behaviour actually lives.
 
 ### 4h. Import — the FORMAT-7 round-trip
 
@@ -331,6 +384,39 @@ recomputation; a quarantine written into `disclosure` would reverse only
 by a SECOND disclosure writer, which would break the single-write-site
 property (§4a, **N2**) that 0004 reasons from and that this spec depends
 on. We are not adding that writer for v1.
+
+**Why re-deriving at lift time is a GRANT, not an economy — restated at
+v2 on the argument that survives (internal S2).** v1 said re-derivation
+"is not decidable from the record alone", which is attackable and was
+attacked: `_disclosure_for`'s inputs (`author`, `relation`,
+`derived_from`, `ingest.py:88`) are ALL on the record, so naive
+re-derivation looks perfectly decidable. The real argument is the **two
+floors**: a persisted `disclosure` is the MINIMUM of every floor that
+applied at write — the structural rule, `0005`'s import cap
+(`portability.py:386-399`), and now revocation — and **the record does
+not carry WHICH floor bound it.**
+
+The cell that makes this concrete, and it is reachable today:
+
+| record | how it got `QUARANTINED` | what re-derivation returns | verdict |
+|---|---|---|---|
+| `relation == QUARANTINE_RELATION` | the structural rule | `QUARANTINED` — agrees | re-derivation would be harmless HERE |
+| revoked-source record (this spec) | the revocation floor | `MENTIONABLE` (ordinary author, no `derived_from`) | un-quarantines — the decision under discussion |
+| **imported record that arrived `QUARANTINED`** | `0005`'s cap **preserves** it (*"QUARANTINED never weakened"*) while setting `author := derived_from := THIRD_PARTY` | **`USE_ONLY`** — strictly WEAKER than what is stored | **a GRANT against a floor this spec does not own** |
+
+That third row is the load-bearing one. `0005` deliberately preserved a
+quarantine the exporting store asserted; a lift that re-derived would
+silently downgrade it to `USE_ONLY` — **relaxing another mechanism's
+floor as a side effect of reversing ours.** `C1` forbids grants, and it
+does not care that the grant was incidental. So the asymmetry is not a
+v1 economy: **it is restrict-only applied to lifts.**
+
+**Why the obvious fix is rejected.** Carrying a per-record *cause* for
+the floor would make re-derivation decidable — and it is exactly the
+second source of truth `0020`'s Q1 refused. The stored `disclosure` is
+the one authority on what a record may do; a parallel field explaining
+WHY invites the two to disagree, and the disagreement would be
+discovered by a reader trusting the wrong one.
 
 The operator's remedies are the ones this codebase already uses
 everywhere: the source is live again, so its next event lands ordinarily;
@@ -377,7 +463,7 @@ lifecycle sweep is legible as a whole:
 | **N4** absorption takes a revoked-source record as a candidate on NEITHER side; both records persist separately | `test_absorption_refuses_a_revoked_source_on_either_side` (both directions, as separate cells) |
 | **N5** a revoked-source incoming may not retire a standing record — the prior stays active and a content-free refusal is recorded; the REVERSE direction still works (a live incoming may retire a revoked-source prior) | `test_revoked_source_cannot_supersede` |
 | **N6** consolidation excludes revoked-source records from every pool, at `partition_cold`; a pool that falls below threshold is a no-op, never a partial merge | `test_consolidation_excludes_revoked_sources` |
-| **N7** renewal: a revoked-source observation clears no staleness and extends no currency; ordinary ageing is unaffected | `test_revoked_source_does_not_renew` |
+| **N7** a revoked-source observation clears no staleness and extends no currency; ordinary ageing is unaffected. **Scope corrected at v2 (internal M2): there is NO renewal verb — `0012` deleted reinforcement's transfers — so this is enforced at the seam where currency inheritance actually survives, absorption's `max(observed_at)`/`max(confidence)` (`graph.py:311-312`), and is INHERITED from N4's refusal rather than independently enforced** | `test_revoked_source_does_not_renew` — asserted AT THE ABSORPTION SEAM (a revoked-source restatement that WOULD subsume a live prior: the prior's `observed_at` must be byte-unchanged), plus `test_reinforcement_transfers_nothing_unchanged` pinning that the deleted path stays deleted |
 | **N8** the FORMAT-7 import round-trip: records whose resolved identity stands revoked in the DESTINATION arrive QUARANTINED, including the export-then-revoke-then-reimport sequence into the SAME store | `test_import_round_trip_requarantines` |
 | **N9** the operation matrix is TOTAL: every combining site carries a revocation disposition, enforced by the shipped registry | `test_scope_operation_matrix_is_total` (0021's, extended) + `specs/combining_sites.py --check` |
 | **N10** non-revival is RESTRICT-ONLY: no operation gains anything under a standing revocation — enumerated temptations, including "a refused supersession must not promote the prior" and "an excluded consolidation candidate must not be re-scored" | `test_non_revival_grants_nothing` |
@@ -448,7 +534,7 @@ containment, and no row above depends on it.
 | **0005** | the import trust boundary and its existing disclosure cap | EXTENDED at the live site: one more floor, capping to `QUARANTINED` when the resolved identity stands revoked in the destination. 0005's own rules — third-party capping, whole-import refusal on malformed provenance — are inherited unchanged, and this floor can only LOWER what an import may claim |
 | **0012** | reinforcement and the independence condition | the incoming edge still persists byte-unchanged, per that spec; what changes is the ACCOUNTING (not a reinforcement) and the CURRENCY consequence (no renewal). 0012's transfer rule is untouched |
 | **0009** | the outcome-authorship chain and the import primitive `commit_outcome_import_plan` | the import floor applies to records arriving through that primitive; no plan member, expected-state rule or atomicity contract changes. Declared in `Spec-Requires` because the import path this spec extends is that primitive's |
-| **0004** | the wiki | **nothing to add.** A quarantined-at-birth record is not assertable, so it never enters the compiled wiki; and 0022's retirements drop the cache through the reason vocabulary. Stated as a row because "no rule needed" is a claim, and an unexamined one is how a derived view outlives a trust decision |
+| **0004** | the wiki | **nothing to add — across all THREE paths, enumerated (internal M3).** (i) A quarantined-at-birth record is not assertable, so it never enters the compiled wiki. (ii) 0022's retirements drop the cache through the reason vocabulary. (iii) The supersession-refusal cell writes a refusal record, whose wiki behaviour is `0003`'s shipped refusal-contention drop, inherited. Stated as a row, and enumerated rather than summarised, because "no rule needed" is a claim — and an unexamined one is exactly how a derived view outlives a trust decision |
 | **0003** | the supersession ladder and the refusal record | the refusal cell uses the SHIPPED content-free refusal carrier; the ladder itself is unchanged — this adds a precondition, never a new authority |
 | **0020** | scoped recall | orthogonal. A quarantined record is not assertable to any principal; scope decides visibility, revocation decides assertability, and neither reads the other |
 | **0013 / 0018** | migration | none of this spec's own: it consumes 0022's table. No schema change, no format change, no breaking window |
@@ -529,7 +615,7 @@ operator-chosen option (§10, **Q1**).
 | # | question | state |
 |---|---|---|
 | **Q1** | should a host be able to choose REFUSAL instead of quarantine-at-birth for a revoked source's writes? | `pre-release` — dev + research, before implementation. v1 quarantines (§1's rejected alternative gives the reasoning), but a host with a high-volume compromised connector may reasonably want the writes to stop. Leaning: keep v1 single-mode and revisit with a real operator's numbers; a mode switch is a configuration that changes what the store ACCEPTS, which §3b argues against |
-| **Q2** | should a lift un-quarantine records that landed quarantined at birth? | `pre-release` — dev, before implementation. v1 says NO and **N13** pins it (§4i). Doing it means a second disclosure writer, which breaks a property 0004 reasons from; doing it WELL means re-deriving each record's disclosure through the write path that produced it, which is not decidable from the record alone. Both halves are stated so this is a decision, not an omission |
+| **Q2** | should a lift un-quarantine records that landed quarantined at birth? | `pre-release` — dev, before implementation. **v1 said NO on a weak argument; v2 says NO on a strong one (internal S2), and the ruling is RATIFIED.** v1's "not decidable from the record alone" is false as stated — `_disclosure_for`'s inputs are all on the record. The argument that holds is the TWO FLOORS: a persisted `disclosure` is the minimum of every floor that applied, the record does not carry which floor bound it, and the executed cell in §4i shows re-derivation returning **`USE_ONLY` for an imported record `0005` deliberately preserved at `QUARANTINED`** — relaxing another mechanism's floor as a side effect of reversing ours. That is a GRANT, and `C1` forbids grants whether or not they were intended. A per-record cause carrier would restore decidability and is refused as the second source of truth `0020` Q1 already refused. **N13** pins the asymmetry in both directions |
 | **Q3** | the mixed-writer ENFORCEMENT: a store-version bump refusing pre-0023 writers | `deferred` — the same shape as 0021's own deferred enforcement question, and it should ride the same window rather than minting one. Until a release takes it, §8 carries the operational narrowing |
 | **Q4** | should the audit line for a quarantined-at-birth write carry the digest, or only a count? | `pre-release` — dev. The digest is content-free and makes "which source is still writing" answerable from the audit sink alone; a count alone is smaller and leaks nothing at all. Leaning: the digest, because the operator investigating a compromise is the whole audience |
 
