@@ -165,7 +165,7 @@ def _run_one(v):
 
         if kind == "sweep":
             got = sweep(store, target, proposed=proposed)
-            for field, want in expect.items():
+            for field, want in _sub(expect).items():
                 if field in ("direct", "affected", "retire", "recompute",
                              "descendants"):
                     want = _keys(want)

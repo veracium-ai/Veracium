@@ -6016,6 +6016,607 @@
   }
  },
  {
+  "name": "sweep_duplicate_record_keys_refuse_instead_of_last_one_wins",
+  "kind": "sweep",
+  "expect": "RevocationError",
+  "store": {
+   "user_id": "u1",
+   "local_origin": "org-local-9f2c",
+   "records": [
+    {
+     "type": "edge",
+     "id": "e-direct",
+     "origin": "connector-a",
+     "source_id": "mailbox-1",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-sole",
+     "origin": null,
+     "source_id": "device-7",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-01-01T00:00:00Z",
+     "observed_at": "2026-03-01T00:00:00Z",
+     "confidence": 0.95,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-corr",
+     "origin": null,
+     "source_id": "device-7",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-01-01T00:00:00Z",
+     "observed_at": "2026-03-01T00:00:00Z",
+     "confidence": 0.95,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-chain",
+     "origin": null,
+     "source_id": "device-7",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "episode",
+     "id": "ep-cons",
+     "origin": null,
+     "source_id": null,
+     "active": true,
+     "retired_reason": null,
+     "system_authored": true,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "episode",
+     "id": "ep-orph",
+     "origin": null,
+     "source_id": null,
+     "active": true,
+     "retired_reason": null,
+     "system_authored": true,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-noid",
+     "origin": "connector-c",
+     "source_id": null,
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-other",
+     "origin": "connector-b",
+     "source_id": "mailbox-2",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-corr",
+     "origin": "connector-b",
+     "source_id": "mailbox-2",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    }
+   ],
+   "ledger": [
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-sole",
+     "site": "absorption",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-a",
+       "source_id": "mailbox-1"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-01-01T00:00:00Z",
+       "observed_at": "2026-03-01T00:00:00Z",
+       "confidence": 0.95,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-x1"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-corr",
+     "site": "absorption",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-a",
+       "source_id": "mailbox-1"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-01-01T00:00:00Z",
+       "observed_at": "2026-03-01T00:00:00Z",
+       "confidence": 0.95,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-x2"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-corr",
+     "site": "absorption",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-b",
+       "source_id": "mailbox-2"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.6,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-x3"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-chain",
+     "site": "absorption",
+     "identity_digest": null,
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.6,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-sole"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "episode",
+     "survivor_id": "ep-cons",
+     "site": "consolidation",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-a",
+       "source_id": "mailbox-1"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "inputs": 2
+     },
+     "op_key": null,
+     "contributor_type": null,
+     "contributor_ref": null
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "episode",
+     "survivor_id": "ep-cons",
+     "site": "consolidation",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-b",
+       "source_id": "mailbox-2"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "inputs": 2
+     },
+     "op_key": null,
+     "contributor_type": null,
+     "contributor_ref": null
+    }
+   ],
+   "revocations": [],
+   "history": []
+  },
+  "target": {
+   "origin": "connector-a",
+   "source_id": "mailbox-1"
+  },
+  "proposed": {
+   "identity_digest": {
+    "identity": {
+     "origin": "connector-a",
+     "source_id": "mailbox-1"
+    }
+   },
+   "action": "revoke",
+   "at": "2026-03-01T00:00:00Z",
+   "reason": "operator: connector compromised"
+  }
+ },
+ {
+  "name": "sweep_echoes_the_exact_row_the_commit_would_append",
+  "kind": "sweep",
+  "expect": {
+   "row": {
+    "user_id": "u1",
+    "identity_digest": {
+     "identity": {
+      "origin": "connector-a",
+      "source_id": "mailbox-1"
+     }
+    },
+    "action": "revoke",
+    "at": "2026-03-01T00:00:00Z",
+    "seq": 0,
+    "reason": "operator: connector compromised"
+   }
+  },
+  "store": {
+   "user_id": "u1",
+   "local_origin": "org-local-9f2c",
+   "records": [
+    {
+     "type": "edge",
+     "id": "e-direct",
+     "origin": "connector-a",
+     "source_id": "mailbox-1",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-sole",
+     "origin": null,
+     "source_id": "device-7",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-01-01T00:00:00Z",
+     "observed_at": "2026-03-01T00:00:00Z",
+     "confidence": 0.95,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-corr",
+     "origin": null,
+     "source_id": "device-7",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-01-01T00:00:00Z",
+     "observed_at": "2026-03-01T00:00:00Z",
+     "confidence": 0.95,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-chain",
+     "origin": null,
+     "source_id": "device-7",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "episode",
+     "id": "ep-cons",
+     "origin": null,
+     "source_id": null,
+     "active": true,
+     "retired_reason": null,
+     "system_authored": true,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "episode",
+     "id": "ep-orph",
+     "origin": null,
+     "source_id": null,
+     "active": true,
+     "retired_reason": null,
+     "system_authored": true,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-noid",
+     "origin": "connector-c",
+     "source_id": null,
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    },
+    {
+     "type": "edge",
+     "id": "e-other",
+     "origin": "connector-b",
+     "source_id": "mailbox-2",
+     "active": true,
+     "retired_reason": null,
+     "system_authored": false,
+     "valid_from": "2026-02-01T00:00:00Z",
+     "observed_at": "2026-02-01T00:00:00Z",
+     "confidence": 0.9,
+     "ungrounded": false
+    }
+   ],
+   "ledger": [
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-sole",
+     "site": "absorption",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-a",
+       "source_id": "mailbox-1"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-01-01T00:00:00Z",
+       "observed_at": "2026-03-01T00:00:00Z",
+       "confidence": 0.95,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-x1"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-corr",
+     "site": "absorption",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-a",
+       "source_id": "mailbox-1"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-01-01T00:00:00Z",
+       "observed_at": "2026-03-01T00:00:00Z",
+       "confidence": 0.95,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-x2"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-corr",
+     "site": "absorption",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-b",
+       "source_id": "mailbox-2"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.6,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-x3"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "edge",
+     "survivor_id": "e-chain",
+     "site": "absorption",
+     "identity_digest": null,
+     "evidence_ref_digest": null,
+     "payload": {
+      "base": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.5,
+       "disclosure": "mentionable"
+      },
+      "contributor": {
+       "valid_from": "2026-02-01T00:00:00Z",
+       "observed_at": "2026-02-01T00:00:00Z",
+       "confidence": 0.6,
+       "disclosure": "mentionable"
+      }
+     },
+     "op_key": null,
+     "contributor_type": "edge",
+     "contributor_ref": "e-sole"
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "episode",
+     "survivor_id": "ep-cons",
+     "site": "consolidation",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-a",
+       "source_id": "mailbox-1"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "inputs": 2
+     },
+     "op_key": null,
+     "contributor_type": null,
+     "contributor_ref": null
+    },
+    {
+     "user_id": "u1",
+     "survivor_type": "episode",
+     "survivor_id": "ep-cons",
+     "site": "consolidation",
+     "identity_digest": {
+      "identity": {
+       "origin": "connector-b",
+       "source_id": "mailbox-2"
+      }
+     },
+     "evidence_ref_digest": null,
+     "payload": {
+      "inputs": 2
+     },
+     "op_key": null,
+     "contributor_type": null,
+     "contributor_ref": null
+    }
+   ],
+   "revocations": [],
+   "history": []
+  },
+  "target": {
+   "origin": "connector-a",
+   "source_id": "mailbox-1"
+  },
+  "proposed": {
+   "identity_digest": {
+    "identity": {
+     "origin": "connector-a",
+     "source_id": "mailbox-1"
+    }
+   },
+   "action": "revoke",
+   "at": "2026-03-01T00:00:00Z",
+   "reason": "operator: connector compromised"
+  }
+ },
+ {
   "name": "the_effect_vocabulary_is_closed_and_contains_no_erasing_verb",
   "kind": "effect_verbs",
   "expect": [

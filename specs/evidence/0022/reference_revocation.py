@@ -42,8 +42,8 @@ FOUR PROPERTIES THIS MODULE EXISTS TO MAKE FALSIFIABLE:
     the SHIPPED absorption transform — min(valid_from), max(observed_at),
     max(confidence) over the surviving sides — which is monotone under
     contributor REMOVAL, and it is additionally CLAMPED against the
-    survivor's current values so that a non-monotone aggregator could
-    still never grant. `ungrounded` is RATCHETED and never recomputed:
+    FULL-evidence fold (the value the store committed at write) so that a
+    non-monotone aggregator could still never grant, in either direction. `ungrounded` is RATCHETED and never recomputed:
     it is an N-ary OR, so re-deriving it over a SMALLER set can flip it
     True→False, which is a promotion wearing a recompute's clothes.
 
@@ -550,8 +550,14 @@ def sweep(store: dict, target_digest: str, *, proposed=None) -> dict:
     standing = standing_revocations(rows, user_id)
     revoked_now = target_digest in standing
 
-    records = {(r["type"], r["id"]): validate_record(r)
-               for r in store["records"]}
+    records = {}
+    for r in store["records"]:
+        key = (validate_record(r)["type"], r["id"])
+        if key in records:
+            # A duplicated record key makes "the desired state of this record"
+            # ambiguous, and the last-one-wins dict would hide it.
+            raise RevocationError(f"two records share the key {key}")
+        records[key] = r
     by_survivor = rows_by_survivor(store["ledger"], user_id)
 
     # (1) DIRECTLY-SOURCED records: their OWN resolved identity is revoked.
@@ -673,6 +679,10 @@ def sweep(store: dict, target_digest: str, *, proposed=None) -> dict:
 
     complete = walkable and not unattributed
     return {
+        # THE ROW THE COMMIT WOULD APPEND, shown by the preview: the caller
+        # never constructs one, so a preview cannot describe a different write
+        # from the one the commit performs.
+        "row": (rows[-1] if proposed is not None else None),
         "target": target_digest,
         "standing": revoked_now,
         "direct": direct,
@@ -729,7 +739,9 @@ def apply_effects(store: dict, statement: dict) -> dict:
     out = dict(store)
     out["records"] = [records[(r["type"], r["id"])] for r in store["records"]]
     out["history"] = history
-    if statement["standing"] and statement.get("row"):
+    if statement.get("row") is not None:
+        # the proposed row is APPENDED, whichever action it carries — a lift
+        # is a row too, and the table is the audit trail of both
         out["revocations"] = list(store.get("revocations", ())) \
             + [statement["row"]]
     return out

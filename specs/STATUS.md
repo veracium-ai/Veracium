@@ -4,11 +4,11 @@
 
 # Spec status
 
-**21 specs · 17 accepted · 193 external review
+**23 specs · 17 accepted · 193 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **17 of 21 are accepted**, which
+review is required to reach it. **17 of 23 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -34,6 +34,8 @@ is the number that decides what can be built.
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
+| **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-17 | 0 | 0 | 3 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-17 | 0 | 0 | 4 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
