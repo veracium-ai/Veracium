@@ -29,7 +29,22 @@ WITHDRAWN = [
      "external round 2 F1/0022: there is no generic record-value history in the store; R9 asserted a carrier that does not exist",
      "specs/0022 §4f/R9 — retained-and-updated-in-place, over the append-only ledger"),
     ("0022-class-c-is-system-authored",
-     r"system.authored records with NO attribution|only system.authored|class \(c\) (counts|is) .{0,30}system.authored",
+     # v2 of this pattern (external round 3, R3-2). The first version matched
+     # the FORWARD wording ("system-authored records with no attribution") and
+     # missed the REVERSED one ("...and if it is system-authored it is COUNTED
+     # in class (c)"), which is what §2c actually said. The sweep reported
+     # closure over a carrier it could not see.
+     # THE LESSON, and it is why this comment is here: registering a retraction
+     # only moves the failure from "did I remember every site" to "does my
+     # pattern match every PHRASING". A pattern is a claim about language, and
+     # it needs the same adversarial treatment as any other claim — which is
+     # what tests/test_withdrawn_gate_bites.py is for, and what this entry now
+     # has fixtures in.
+     r"system.authored records with NO attribution|only system.authored"
+     r"|class \(c\) (counts|is) .{0,30}system.authored"
+     r"|if it is system.authored it is COUNTED"
+     r"|system.authored[^.]{0,60}(COUNTED|counts) in class \(c\)"
+     r"|class \(c\)[^.]{0,60}(only )?if .{0,20}system.authored",
      "external round 2 F2/0022: authorship is not a derivation discriminator — a pre-0014 absorption survivor keeps the incoming record's USER authorship. Class (c) is unattributed AND unreached, any authorship",
      "specs/0022 §4c/R7"),
     # ---- 0014 (rounds 4-8): rules retired during the external review, restated

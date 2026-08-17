@@ -175,7 +175,7 @@ their real output are §2c-ii.
 |---|---|---|---|---|---|
 | the revocation TARGET `(origin, source_id)` (host-supplied) | absent `source_id` → **REFUSED**: there is no digest, so there is no join and no honest sweep. 0006's own acceptance test already asserts a revocation matches neither of two source_id-less records | non-str, over-length (>512), or an origin absent alongside a present source_id → refused at the boundary, never digested half-resolved | an identity no record carries → an EMPTY blast radius is returned, with the class-(c) count still reported. A revocation of nothing is a valid, recorded, reversible act | **the forged-source DoS**: an attacker writes garbage under a victim's pair to bait an operator into revoking the victim | C2 verbatim: identity is NAMESPACING, NOT AUTHENTICATION. The mitigations and their limits are §3b; **R12** (no digest, no reach) and **R6** (dry-run before commit) |
 | the `source_revocations` rows the store reads back — **PRODUCERS row: the host's `revoke_source` call AND THE STORE'S OWN MACHINERY (migration, recovery, and any future importer of an operator log)** | no rows → nothing is revoked; every read path behaves exactly as today | a NULL digest, an unknown action, a missing reason, a non-int ordinal, an unknown column → **REFUSED at read**, never coerced. A NULL-digest row would be a `(resolved_origin, NULL)` pseudo-source, which 0006 forbids, and would revoke every unknown-source record in one row | an action string this version does not know → refused; a future action cannot be silently treated as "revoke" or as "lift" | a row planted with a far-future timestamp to win the latest-row rule | **R1**: `at` ORDERS NOTHING — the latest row is decided by the committed `seq` alone, so a planted timestamp cannot win a comparison it does not enter. Two rows sharing one append ordinal still make the rule undecidable and REFUSE rather than resolving by insertion order. **This cell is why F2 is the round's most instructive finding: v2 NAMED this exact attack here and its governing rule answered a DIFFERENT question** — it addressed duplicate ordinals while the reference went on comparing `(at, seq)`. The attack was written down, unaddressed, for two internal rounds |
-| the 0014 contribution rows the join returns — **PRODUCERS: absorption (`apply_supersession_plan`), consolidation, the import primitive, and 0021's flattening** | a survivor with no rows → it is not reachable through contribution at all, and if it is system-authored it is COUNTED in class (c) | a half-typed link (`contributor_ref` without `contributor_type`) → refused; legacy rows carry BOTH columns NULL, so a half link is corruption, not history | a site this version does not know → the row still counts as evidence for the sole-basis test and its class is read from the typed link, which is total over any site vocabulary | a row NAMING ITS OWN SURVIVOR, which would make a walker loop — the 0020 post-acceptance defect, found by differential fuzzing | **R8**: the closure REFUSES corrupt linkage rather than continuing past it, and the fixpoint terminates because the condemned set only grows |
+| the 0014 contribution rows the join returns — **PRODUCERS: absorption (`apply_supersession_plan`), consolidation, the import primitive, and 0021's flattening** | a survivor with no rows → it is not reachable through contribution at all, and it is COUNTED in class (c) **whatever its authorship**, provided this sweep has not already reached it (round-1 F4; **this cell was the THIRD carrier and survived round 2's sweep — see the note below**) | a half-typed link (`contributor_ref` without `contributor_type`) → refused; legacy rows carry BOTH columns NULL, so a half link is corruption, not history | a site this version does not know → the row still counts as evidence for the sole-basis test and its class is read from the typed link, which is total over any site vocabulary | a row NAMING ITS OWN SURVIVOR, which would make a walker loop — the 0020 post-acceptance defect, found by differential fuzzing | **R8**: the closure REFUSES corrupt linkage rather than continuing past it, and the fixpoint terminates because the condemned set only grows |
 | a record's own identity fields, at sweep time | absent `source_id` → unreachable by any revocation, by construction | out-of-bounds → refused by the shipped model validation before this spec sees it | an origin naming a foreign store → resolved as-is (a foreign record keeps its own origin), so it is revocable only under that pair | a writer OMITS `source_id` so its content cannot be revoked | acknowledged and stated in §8: absence buys unreachability, and it costs the writer every grouping benefit. **R12** names the cell rather than pretending the rule is closed |
 | the operator's `reason` string | empty/whitespace → REFUSED. A revocation with no recorded reason is not auditable | non-str → refused | — | a reason echoing memory text into the audit sink | the reason is OPERATOR-SUPPLIED and lands in the revocation row, which is operator-facing state, never model context. **R14** keeps the whole surface off the agent-reachable paths |
 
@@ -702,19 +702,63 @@ set, both allocate `seq=5`. The unique ordinal then rejects one *valid*
 operation — or, without it, produces exactly the ambiguity **R1** refuses.
 v3 asserted a winner and a loser and specified neither.
 
-**The construction, exactly, for the shipped SQLite store:**
+**The construction, exactly — and v3 printed something that does NOT do this
+(external round 3, R3-1).** v3 wrote `with conn:` and labelled it
+`BEGIN IMMEDIATE`. **Python's `sqlite3` context manager begins nothing** — it
+commits or rolls back at exit. Probed on the shipped connection config
+(`sqlite3.connect(path)`, `store/sqlite.py:60`):
 
 ```
-with conn:                       # BEGIN IMMEDIATE — the write lock is taken
-    seq  = SELECT COALESCE(MAX(seq), -1) + 1                # inside the txn
-          FROM source_revocations WHERE user_id = ?
-    rows = SELECT * FROM source_revocations WHERE user_id = ?
-    statement = sweep(records, ledger, standing_from(rows), target,
-                      proposed=action_at(seq))
-    INSERT INTO source_revocations (...)                    # the ordinal it planned on
-    apply(statement.effects)                                # same txn
-# COMMIT: the row, the retirements and the recomputes land together or not at all
+isolation_level                 = ''
+in_transaction BEFORE a SELECT  = False
+in_transaction AFTER  a SELECT  = False
+statements traced               = ['SELECT 1']       <- no BEGIN, ever
 ```
+
+So the printed construction still allows two hosts to read the same next
+ordinal. **And the harness was green on a DIFFERENT construction** — it
+executed `BEGIN IMMEDIATE` explicitly — which is worse than either error
+alone: the evidence agreed with the fix rather than with the spec.
+
+**v4 therefore has ONE function, quoted here verbatim from the evidence that
+calls it** (`specs/evidence/0022/store_concurrency_harness.py`), so the two
+cannot drift again:
+
+```python
+def revocation_operation(conn, user, digest, action, reason, at, *,
+                         plan=None, busy_deadline_s=5.0):
+    deadline = time.monotonic() + busy_deadline_s
+    while True:
+        try:
+            conn.execute("BEGIN IMMEDIATE")      # EXPLICIT. `with conn:` begins nothing.
+        except sqlite3.OperationalError:         # contention on the write lock
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.01)
+            continue                             # re-acquire, then RE-READ
+        try:
+            seq      = next_seq(conn, user)      # allocate INSIDE the txn
+            standing = standing_from(conn, user) # plan against what is committed
+            planned  = plan(standing)
+            append(conn, user, digest, action, seq)
+            conn.execute("COMMIT")               # row + effects land together
+            return seq, standing, planned
+        except sqlite3.IntegrityError as e:
+            conn.execute("ROLLBACK")
+            raise OrdinalCollision(str(e)) from e   # NEVER retried
+        except BaseException:
+            conn.execute("ROLLBACK")
+            raise
+```
+
+**Where the BUSY handling lives is itself the contract.** It is INSIDE the
+operation, bounded by a deadline, and it retries only lock acquisition —
+after which the read happens again. v3 said "no CAS/retry loop is specified"
+while R19 called BUSY retryable, and the v1 harness put a retry loop OUTSIDE
+the operation; all three could not be true at once. The rule is: **retrying
+the ACQUISITION is required and bounded; retrying around an unserialised
+read is forbidden; an `OrdinalCollision` is never retried at all**, because
+it reports that serialisation failed and a retry would hide it.
 
 **`BEGIN IMMEDIATE` before the read is the whole fix.** SQLite's deferred
 transaction takes the write lock at the first WRITE, so the read that
@@ -748,9 +792,10 @@ when the read is "just a SELECT". Both cells are in the harness.
   from the INSERT itself, so a retry loop written around
   `OperationalError` never sees it — which is the separation this rule
   needs and could otherwise only assert.
-- **No CAS/retry loop is specified**, deliberately: a retry loop around an
-  unserialised read is how you get two operations that each believe they saw
-  the final state. Serialise first; there is then nothing to retry.
+- **No retry around an UNSERIALISED READ**, ever: that is how you get two
+  operations each believing they saw the final state. Serialise first, and
+  the only retry left is on acquiring the lock — which is bounded and lives
+  inside the operation above (R3-1).
 - **The loser is not re-derived, because there is no loser** — there is a
   second operation that runs afterwards, against post-first state. A second
   revoke of an already-standing source is idempotent in effect (**R16**); a
@@ -1091,7 +1136,8 @@ document generalises.
 ## Review closure
 
 *(PROCESS §4a — one row per review finding, with evidence that is openable
-or executable. **THREE ROUNDS HAVE RUN — two internal and two external
+or executable. **FOUR ROUNDS HAVE RUN — two internal and two external at the time this
+sentence was first written, and THREE external now
 (external round 1 RETURNED FOR AMENDMENT, external round 2 RETURNED FOR
 AMENDMENT). The rows are below.** v4/v5 corrected this: the section still
 said "no round has been run" while `specs/reviews.py` carried only `SENT`
@@ -1119,4 +1165,4 @@ typo.)*
 
 | round | finding | class | owner | disposition | evidence |
 |---|---|---|---|---|---|
-| — | *no review rounds yet (draft)* | — | — | — | — |
+| — | *(the rows are the table above; this placeholder is removed — external round 3, R3-4)* | — | — | — | — |

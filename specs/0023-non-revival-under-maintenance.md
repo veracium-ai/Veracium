@@ -393,7 +393,7 @@ sites, and the seventh was invisible to every previous definition**:
 | `compile.py:146` | the wiki INPUT selection | through `Episode.assertable` |
 | `proactive.py:217` | proactive assembly | through `Episode.assertable` |
 | `scope_read.py:65` | the `0020` scoped grounded predicate | through `Episode.assertable` |
-| **`lifecycle.py:182`** | **the CONSOLIDATION PROMPT** — `listing = "\n".join(f"[{e.date}] {e.summary}" for e in cold)`, fed straight to `CONSOLIDATE_PROMPT` | **NEW, and the sharpest of the seven**: a quarantined episode's text reaching the consolidation prompt can be SYNTHESIZED INTO A NEW RECORD, which is `0022` §4c's laundering concern arriving from the other direction. Dispositioned through `Episode.assertable` on the cold pool |
+| **`lifecycle.py:182`** | **the CONSOLIDATION PROMPT** — `listing = "\n".join(f"[{e.date}] {e.summary}" for e in cold)`, fed straight to `CONSOLIDATE_PROMPT` | **NEW at v5, and CORRECTED at v6 (external round 3, R3-3).** A quarantined episode's text reaching the consolidation prompt can be SYNTHESIZED INTO A NEW RECORD — `0022` §4c's laundering concern from the other direction. **v5 dispositioned it through `Episode.assertable` and that was WRONG:** `assertable` excludes every quarantined or use-only episode, so an ordinary IMPORTED `QUARANTINED` episode would drop out of the cold pool **in a store with ZERO revocation rows** — changing maintenance behaviour where this spec promises byte-identical behaviour (**N12**), and contradicting §4e/**N6**, which exclude on STANDING REVOCATION. v6: **the cold pool checks the standing revocation directly**, like every other maintain-time rule, and consolidation is dispositioned in **N15** as an explicit NON-assertability use |
 | `sqlite.py:1080,1441` | WRITE `draft.summary` | **not a consumer** — writes an output's own text; dispositioned as such |
 
 **That seventh site is the argument for the redefinition.** It reads no
@@ -626,10 +626,10 @@ lifecycle sweep is legible as a whole:
 | **N9** the operation matrix is TOTAL: every combining site carries a revocation disposition, enforced by the shipped registry | `test_scope_operation_matrix_is_total` (0021's, extended) + `specs/combining_sites.py --check` |
 | **N10** non-revival is RESTRICT-ONLY: no operation gains anything under a standing revocation — enumerated temptations, including "a refused supersession must not promote the prior" and "an excluded consolidation candidate must not be re-scored" | `test_non_revival_grants_nothing` |
 | **N11** a record with no `source_id` has no digest and is never affected by any standing revocation, at any of the sites above | `test_unidentified_writes_are_never_quarantined_by_revocation` |
-| **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded | `test_no_revocation_is_byte_identical` |
+| **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded | `test_no_revocation_is_byte_identical` **v6 (external round 3, R3-3) adds the NEGATIVE CONTROL this invariant always needed and never had: a store with ZERO revocation rows containing an imported `QUARANTINED` episode and a `USE_ONLY` episode must partition its cold pool EXACTLY as today.** v5 failed that control — routing the pool through `Episode.assertable` excluded both — and no test would have caught it, because N12 was checked on stored state while the defect was in maintenance BEHAVIOUR | `test_no_revocation_is_byte_identical` + **`test_cold_pool_unchanged_without_revocations`** (the behaviour half: quarantined and use-only episodes still partition as they do today) |
 | **N13** a lift restores ordinary behaviour for FUTURE writes with nothing to unwind, and does NOT rewrite the disclosure of records already written — the declared asymmetry, pinned in both directions | `test_lift_does_not_rewrite_existing_disclosure` |
 | **N14** a quarantined episode is NOT ASSERTABLE at **every** consumer — `Episode.assertable` is the one predicate and all five sites call it (external round 1, F1: v3 fixed ONE of five, and the reviewer executed the counterexample straight into the gate partition and the wiki input) | `test_quarantined_episode_is_not_assertable_anywhere` — **parametrised over the five sites**: `recall()` render, `gate.partition_parts`, `compile`'s wiki input, `proactive` assembly, and `scope_read`'s grounded predicate. One assertion per site, each on the SURFACE, because a store-level assertion passes on all five broken |
-| **N15** the consumer inventory is GENERATED FROM EPISODE-TEXT CONSUMPTION and is TOTAL: every read of `Episode.summary`, and every episode COLLECTION entering a prompt, the wiki or a grounded partition, is dispositioned either through `Episode.assertable` or as an explicit non-assertability use. **Redefined at v5 (external round 2, F4): v4 swept for reads of the OLD CONDITION, which is blind to a consumer that never had one** — the reviewer's `"\n".join(ep.summary ...)` passes v4's sweep and leaks | `test_episode_text_consumers_are_exhaustive` — the generator, plus **`test_the_inventory_gate_bites`: an ADVERSARIAL FIXTURE that introduces an unguarded consumer reading only `ep.summary` and asserts the sweep FAILS.** A gate nobody has watched fail is a gate nobody has tested |Standing checks that must not regress: injection asserts 0 · cross-user
+| **N15** the consumer inventory is GENERATED FROM EPISODE-TEXT CONSUMPTION and is TOTAL: every read of `Episode.summary`, and every episode COLLECTION entering a prompt, the wiki or a grounded partition, is dispositioned either through `Episode.assertable` or as an explicit non-assertability use. **`lifecycle.py:182` is such a use (R3-3): maintenance excludes on STANDING REVOCATION, not on assertability, because the read-side predicate over-excludes in a regime this spec promises to leave untouched.** The inventory therefore records TWO legitimate dispositions, and a site with neither still fails. **Redefined at v5 (external round 2, F4): v4 swept for reads of the OLD CONDITION, which is blind to a consumer that never had one** — the reviewer's `"\n".join(ep.summary ...)` passes v4's sweep and leaks | `test_episode_text_consumers_are_exhaustive` — the generator, plus **`test_the_inventory_gate_bites`: an ADVERSARIAL FIXTURE that introduces an unguarded consumer reading only `ep.summary` and asserts the sweep FAILS.** A gate nobody has watched fail is a gate nobody has tested |Standing checks that must not regress: injection asserts 0 · cross-user
 leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
 
 **Measurement counterpart, named and NOT claimed here:** research's
@@ -678,7 +678,7 @@ containment, and no row above depends on it.
 | **`compile.py:146,234` — the wiki input selection AND its render** | consults `assertable`; a quarantined episode never enters the compiled wiki |
 | **`proactive.py:217` — proactive assembly** | consults `assertable` |
 | **`scope_read.py:65` — the `0020` scoped grounded predicate** | consults `assertable`, replacing the open-coded rule whose docstring stated the Edge/Episode asymmetry as a decision |
-| **`lifecycle.py:182` — the CONSOLIDATION PROMPT input (external round 2, F4)** | consults `assertable` on the cold pool. A quarantined episode's text must not reach the consolidation prompt, or it can be synthesized into a new record — `0022` §4c's laundering concern from the other direction |
+| **`lifecycle.py:182` — the CONSOLIDATION PROMPT input (external round 2 F4; CORRECTED at round 3 R3-3)** | consults the **STANDING REVOCATION**, not `assertable`. A revoked source's episode text must not reach the consolidation prompt, or it can be synthesized into a new record. **`assertable` would have over-excluded** — it drops ordinary quarantined/use-only episodes even with no revocations, which is a maintenance behaviour change in the one regime **N12** promises is untouched |
 | **`sqlite.py:1080,1441`** | UNCHANGED — these WRITE an output's own `summary`; dispositioned in the inventory as non-consumers so the sweep's totality is not bought by ignoring them |
 | `src/veracium/ingest.py` | `_disclosure_for` gains the standing-revocation input; the site does not move (**N1**, **N2**) |
 | `src/veracium/graph.py` | the absorption candidate rail on `_absorption_scope_gate`; the supersession refusal cell |
@@ -835,7 +835,8 @@ operator-chosen option (§10, **Q1**).
 ## Review closure
 
 *(PROCESS §4a — one row per review finding, with evidence that is openable
-or executable. **THREE ROUNDS HAVE RUN — two internal and two external
+or executable. **FOUR ROUNDS HAVE RUN — two internal and two external at the time this
+sentence was first written, and THREE external now
 (external round 1 RETURNED FOR AMENDMENT, external round 2 RETURNED FOR
 AMENDMENT). The rows are below.** v4/v5 corrected this: the section still
 said "no round has been run" while `specs/reviews.py` carried only `SENT`
@@ -858,4 +859,10 @@ was raised and this table for what closed it.)*
 
 | round | finding | class | owner | disposition | evidence |
 |---|---|---|---|---|---|
-| — | *no review rounds yet (draft)* | — | — | — | — |
+| round | finding | verdict | where it closed | evidence |
+|---|---|---|---|---|
+| **internal 1** (research, 2026-08-17) | S2 — the lift asymmetry's justification was attackable | folded | §4i, **Q2** | the two-floors argument with the executed imported-QUARANTINED cell |
+| **internal 2** | S3 — quarantine-at-birth wrote a field NO reader consulted | folded | §4a-iv, **N14** | the edge/episode render asymmetry, executed |
+| **EXTERNAL 1** (2026-08-17) | **F1 — quarantine reached ONE consumer of five** | folded | §4a-iv, **N14**, **N15** | `Episode.assertable`; the reviewer's counterexample reached the gate partition and the wiki input |
+| **EXTERNAL 2** | **F4 — N15 was not a total inventory; it swept for the OLD CONDITION** | folded | **N15**, §7a | regenerated from EPISODE-TEXT consumption; found a SEVENTH consumer (`lifecycle.py:182`, the consolidation prompt) |
+| **EXTERNAL 3** | **R3-3 — the lifecycle fix over-excluded and broke N12** | folded | §7a, **N12**, **N15** | `assertable` dropped ordinary quarantined/use-only episodes with ZERO revocations; maintenance now checks the STANDING REVOCATION, with a no-revocation negative control |

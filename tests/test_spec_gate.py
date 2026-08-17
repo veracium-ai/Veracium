@@ -851,8 +851,19 @@ def test_conditional_skip_inventory_is_complete():
     sys.path.insert(0, str(root / "specs"))
     from skip_inventory import INVENTORY
 
+    # EXTERNAL ROUND 3, R3-5 — THE ROOT CAUSE OF THE MISSING FOUR. This regex
+    # matched `pytest.mark.skipif` and NOT `pytest.mark.skip(`, so four
+    # UNCONDITIONAL skips in test_0021_maintain_scope.py were structurally
+    # invisible to a gate named "..._is_complete". It reported completeness
+    # over a domain it could not see, COLLECTED decomposed a measured line it
+    # could not account for, and verify_collected passed because it compares
+    # the block to the same incomplete generator.
+    # The bug is the checker's DEFINITION of the thing it checks — the third
+    # instance of that shape in one review round (0023's N15 swept for the old
+    # condition; the withdrawn-phrase pattern matched one phrasing).
     site_re = re.compile(
-        r"pytest\.importorskip\(|pytest\.skip\(|pytest\.mark\.skipif")
+        r"pytest\.importorskip\(|pytest\.skip\(|pytest\.mark\.skipif"
+        r"|pytest\.mark\.skip\(")
     sites = []  # (relpath, line_no, five-line window text)
     for f in sorted((root / "tests").rglob("*.py")):
         lines = f.read_text().splitlines()

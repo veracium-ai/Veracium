@@ -44,6 +44,38 @@ INVENTORY = [
                             "run without the SDK. Author line: all 5 PASS (mcp "
                             "importable in the authoring venv); an mcp-absent "
                             "environment sees 4 PASS + 1 SKIP"),
+    # ---- FOUR ENTRIES MISSING SINCE 0021 SHIPPED (external round 3, R3-5).
+    # These skip UNCONDITIONALLY on every host and were in no category, so the
+    # generated inventory decomposed a measured line it could not account for
+    # and `verify_collected` passed anyway — it checks the block EQUALS the
+    # generator's output, which is true of an incomplete generator. The
+    # reviewer's extracted run surfaced them with `-rs`; ours never printed
+    # skip reasons at all. The reconciler added alongside this list is the
+    # real fix; these entries are what it needs to reconcile against.
+    ("tests/test_0021_maintain_scope.py", "skip",
+     "W6 is the LIVE",
+     "future-obligation",
+     "1 test. UNCONDITIONAL on every host: it needs a real model and the "
+     "benchmark harness, and a simulated leak probe measures the simulation. "
+     "0021 W6 names it as research's D-extension obligation"),
+    ("tests/test_0021_maintain_scope.py", "skip",
+     "W16's reparenting half",
+     "future-obligation",
+     "1 test. UNCONDITIONAL: 0021 §7a names the primitive FUTURE and §2c-ii "
+     "asserts executably that it has no shipped writer; the born-closed half "
+     "IS covered by test_transitive_absorption_chains"),
+    ("tests/test_0021_maintain_scope.py", "skip",
+     "W17 is the shipped evidence program",
+     "future-obligation",
+     "1 test. UNCONDITIONAL: the check lives in "
+     "specs/evidence/0020/ledger_plan_harness.py, which extracts the REAL "
+     "contribution_ledger DDL from a live store; a pytest copy would be a "
+     "weaker second implementation"),
+    ("tests/test_0021_maintain_scope.py", "skip",
+     "W18's after-a-prune half",
+     "future-obligation",
+     "1 test. UNCONDITIONAL, same FUTURE primitive as W16; the before half is "
+     "test_native_chain_export_carries_absorbed_by_id_on_both_absorbed"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
      "package-artifact", "binds COLLECTED's inventory to render(); 1 test. "
                          "SINCE THE 0020/0021 R2 SEAL REORDER the measured "
@@ -166,3 +198,61 @@ def verify_collected(text: str) -> None:
         raise ValueError(
             "the enclosed inventory block is not byte-identical to render() "
             "(stale, hand-edited, or boundary-padded)")
+
+
+# ---------------------------------------------------------------------------
+# RECONCILIATION — external round 3, R3-5.
+#
+# `verify_collected` proves the shipped block EQUALS this generator's output.
+# That is a real check and it is not the one that was needed: an INCOMPLETE
+# generator satisfies it perfectly, which is exactly what happened — four
+# unconditional skips were invisible to the completeness gate's regex, absent
+# from this list, and `verify_collected` passed while COLLECTED's own
+# decomposition could not account for its own measured line.
+#
+# So this reconciles against REALITY rather than against ourselves: it parses
+# `pytest -q -rs` output and requires every OBSERVED skip reason to match an
+# inventory entry, and the totals to agree. A skip nobody listed is a failure,
+# not a rounding difference.
+def reconcile(pytest_rs_output: str) -> list:
+    """Return a list of problems; empty means the run reconciles.
+
+    Feed it the FULL `pytest -q -rs` output. Two independent checks:
+      1. every `SKIPPED [n] path:line: reason` line matches an entry (by file
+         and by a token of the reason);
+      2. the count of observed skips equals the summary line's skip count, so
+         a truncated `-rs` section cannot pass by omission.
+    """
+    import re as _re
+    problems = []
+    observed = []
+    for m in _re.finditer(r"^SKIPPED \[(\d+)\] ([^:]+):\d+: (.*)$",
+                          pytest_rs_output, _re.M):
+        n, path, reason = int(m.group(1)), m.group(2).strip(), m.group(3).strip()
+        observed.append((n, path, reason))
+    for n, path, reason in observed:
+        # the harness may report a path relative to a different root
+        tail = path.split("tests/")[-1]
+        hit = any(entry_file.endswith(tail) or tail.endswith(entry_file.split("tests/")[-1])
+                  for entry_file, _, _, _, _ in INVENTORY
+                  if _token_matches(reason, entry_file))
+        if not hit:
+            problems.append(f"OBSERVED SKIP NOT IN THE INVENTORY: {path}: {reason[:90]}")
+    summary = _re.search(r"(\d+) passed, (\d+) skipped", pytest_rs_output)
+    if summary:
+        claimed = int(summary.group(2))
+        total = sum(n for n, _, _ in observed)
+        if total != claimed:
+            problems.append(
+                f"the -rs section lists {total} skips but the summary says "
+                f"{claimed} — the report is truncated or the parse is wrong")
+    elif observed:
+        problems.append("no summary line found; cannot reconcile totals")
+    return problems
+
+
+def _token_matches(reason: str, entry_file: str) -> bool:
+    for f, _kind, token, _cat, _note in INVENTORY:
+        if f == entry_file and token.lower() in reason.lower():
+            return True
+    return False

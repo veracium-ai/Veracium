@@ -104,6 +104,73 @@ def _append(c: sqlite3.Connection, user: str, digest: str, action: str, seq: int
 
 
 # --------------------------------------------------------------------------
+# THE OPERATION — one function, and it is the SAME text §4e-i prints.
+#
+# External round 3, R3-1: v1 of this harness executed `BEGIN IMMEDIATE`
+# explicitly while the spec printed `with conn:` and LABELLED it
+# BEGIN IMMEDIATE. Python's sqlite3 context manager does no such thing — it
+# commits or rolls back, and begins nothing. Probed on the shipped
+# connection config: isolation_level == '', in_transaction False before AND
+# after a SELECT, trace showing only the SELECT. So the harness was green on
+# a construction the spec did not describe, which is worse than either being
+# wrong alone.
+#
+# The fix is not to reword the spec. It is to have ONE function, called by
+# the harness and quoted verbatim by §4e-i, so the two cannot drift again.
+# --------------------------------------------------------------------------
+
+class OrdinalCollision(Exception):
+    """The UNIQUE backstop fired. NEVER retried — it means allocate-plan-append
+    was not serialised, and retrying hides the defect it is reporting."""
+
+
+def revocation_operation(conn, user, digest, action, reason, at, *,
+                         plan=None, busy_deadline_s=5.0, _gate=None):
+    """Allocate, plan, append and apply — as ONE serialised write.
+
+    THIS IS THE CONSTRUCTION. §4e-i quotes this function; the checks below
+    call it. `plan` is the sweep, injected so this file needs no product
+    import; `_gate` is a test hook that holds the race window open and is
+    None in every real call.
+
+    BUSY handling is BOUNDED and lives HERE, not in the caller: SQLITE_BUSY
+    on acquiring the write lock is ordinary contention and is retried until
+    `busy_deadline_s`; an ordinal collision is NOT contention and raises.
+    R19 says BUSY is retryable and no retry loop is specified around the
+    OPERATION — the distinction v1 of this harness blurred by putting a loop
+    outside it.
+    """
+    deadline = time.monotonic() + busy_deadline_s
+    while True:
+        try:
+            # EXPLICIT. Not `with conn:` — that begins nothing (R3-1).
+            conn.execute("BEGIN IMMEDIATE")
+        except sqlite3.OperationalError:
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.01)
+            continue                      # contention: re-acquire, re-read
+        try:
+            seq = _next_seq(conn, user)
+            standing = _standing(conn, user)
+            planned = plan(standing) if plan else None
+            if _gate is not None:
+                _gate.wait()
+            _append(conn, user, digest, action, seq)
+            conn.execute("COMMIT")
+            return seq, frozenset(standing), planned
+        except sqlite3.IntegrityError as e:
+            conn.execute("ROLLBACK")
+            raise OrdinalCollision(str(e)) from e
+        except BaseException:
+            try:
+                conn.execute("ROLLBACK")
+            except sqlite3.Error:
+                pass
+            raise
+
+
+# --------------------------------------------------------------------------
 # The two constructions, side by side. The ONLY difference is the BEGIN.
 # --------------------------------------------------------------------------
 
@@ -124,7 +191,14 @@ def _operation(path, user, digest, action, *, immediate: bool, gate, results, id
     """
     c = _conn(path)
     try:
-        c.execute("BEGIN IMMEDIATE" if immediate else "BEGIN")
+        if immediate:
+            # THE SHARED OPERATION — the same function §4e-i prints
+            seq, standing, _ = revocation_operation(
+                c, user, digest, action, "operator", "2026-08-17T00:00:00Z",
+                _gate=gate)
+            results[idx] = ("ok", seq, standing)
+            return
+        c.execute("BEGIN")                     # the NAIVE construction
         seq = _next_seq(c, user)
         standing = _standing(c, user)          # plan against what we can see
         if gate is not None:
@@ -132,6 +206,8 @@ def _operation(path, user, digest, action, *, immediate: bool, gate, results, id
         _append(c, user, digest, action, seq)
         c.execute("COMMIT")
         results[idx] = ("ok", seq, frozenset(standing))
+    except OrdinalCollision as e:
+        results[idx] = ("collision", str(e), None)
     except sqlite3.IntegrityError as e:
         results[idx] = ("collision", str(e), None)
         c.execute("ROLLBACK")
