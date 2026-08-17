@@ -626,7 +626,7 @@ lifecycle sweep is legible as a whole:
 | **N9** the operation matrix is TOTAL: every combining site carries a revocation disposition, enforced by the shipped registry | `test_scope_operation_matrix_is_total` (0021's, extended) + `specs/combining_sites.py --check` |
 | **N10** non-revival is RESTRICT-ONLY: no operation gains anything under a standing revocation — enumerated temptations, including "a refused supersession must not promote the prior" and "an excluded consolidation candidate must not be re-scored" | `test_non_revival_grants_nothing` |
 | **N11** a record with no `source_id` has no digest and is never affected by any standing revocation, at any of the sites above | `test_unidentified_writes_are_never_quarantined_by_revocation` |
-| **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded | `test_no_revocation_is_byte_identical` **v6 (external round 3, R3-3) adds the NEGATIVE CONTROL this invariant always needed and never had: a store with ZERO revocation rows containing an imported `QUARANTINED` episode and a `USE_ONLY` episode must partition its cold pool EXACTLY as today.** v5 failed that control — routing the pool through `Episode.assertable` excluded both — and no test would have caught it, because N12 was checked on stored state while the defect was in maintenance BEHAVIOUR | `test_no_revocation_is_byte_identical` + **`test_cold_pool_unchanged_without_revocations`** (the behaviour half: quarantined and use-only episodes still partition as they do today) |
+| **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded **v6 (external round 3, R3-3) adds the NEGATIVE CONTROL this invariant always needed and never had: a store with ZERO revocation rows containing an imported `QUARANTINED` episode and a `USE_ONLY` episode must partition its cold pool EXACTLY as today.** v5 failed that control — routing the pool through `Episode.assertable` excluded both — and no test would have caught it, because N12 was checked on stored state while the defect was in maintenance BEHAVIOUR | `test_no_revocation_is_byte_identical` + **`test_cold_pool_unchanged_without_revocations`** (the behaviour half: quarantined and use-only episodes still partition as they do today) |
 | **N13** a lift restores ordinary behaviour for FUTURE writes with nothing to unwind, and does NOT rewrite the disclosure of records already written — the declared asymmetry, pinned in both directions | `test_lift_does_not_rewrite_existing_disclosure` |
 | **N14** a quarantined episode is NOT ASSERTABLE at **every** consumer — `Episode.assertable` is the one predicate and all five sites call it (external round 1, F1: v3 fixed ONE of five, and the reviewer executed the counterexample straight into the gate partition and the wiki input) | `test_quarantined_episode_is_not_assertable_anywhere` — **parametrised over the five sites**: `recall()` render, `gate.partition_parts`, `compile`'s wiki input, `proactive` assembly, and `scope_read`'s grounded predicate. One assertion per site, each on the SURFACE, because a store-level assertion passes on all five broken |
 | **N15** the consumer inventory is GENERATED FROM EPISODE-TEXT CONSUMPTION and is TOTAL: every read of `Episode.summary`, and every episode COLLECTION entering a prompt, the wiki or a grounded partition, is dispositioned either through `Episode.assertable` or as an explicit non-assertability use. **`lifecycle.py:182` is such a use (R3-3): maintenance excludes on STANDING REVOCATION, not on assertability, because the read-side predicate over-excludes in a regime this spec promises to leave untouched.** The inventory therefore records TWO legitimate dispositions, and a site with neither still fails. **Redefined at v5 (external round 2, F4): v4 swept for reads of the OLD CONDITION, which is blind to a consumer that never had one** — the reviewer's `"\n".join(ep.summary ...)` passes v4's sweep and leaks | `test_episode_text_consumers_are_exhaustive` — the generator, plus **`test_the_inventory_gate_bites`: an ADVERSARIAL FIXTURE that introduces an unguarded consumer reading only `ep.summary` and asserts the sweep FAILS.** A gate nobody has watched fail is a gate nobody has tested |Standing checks that must not regress: injection asserts 0 · cross-user
@@ -672,7 +672,7 @@ containment, and no row above depends on it.
 
 | carrier | change |
 |---|---|
-| **`schema.py` — the `Episode` model** | gains DERIVED `quarantined` AND **`assertable`** properties mirroring `Edge`'s (`schema.py:274`, `:290`). Derived, never stored — the value lives in `disclosure` and a second copy is a second source of truth (**N14**, internal S3; `assertable` added at v4 per external F1). **`Episode.assertable` is THE shared predicate all seven text consumers call** |
+| **`schema.py` — the `Episode` model** | gains DERIVED `quarantined` AND **`assertable`** properties mirroring `Edge`'s (`schema.py:274`, `:290`). Derived, never stored — the value lives in `disclosure` and a second copy is a second source of truth (**N14**, internal S3; `assertable` added at v4 per external F1). **`Episode.assertable` is the shared predicate SIX of the seven text consumers call. The seventh, `lifecycle.py:182`, MUST NOT call it** (external round 4, R4-2): maintenance excludes on the STANDING REVOCATION, because the read-side predicate over-excludes and breaks **N12** — v5 corrected the lifecycle row and left this sentence saying "all seven", so the two carriers contradicted and following this one recreated the regression |
 | **`__init__.py:869,871` — the recall render (`_fit_to_budget`)** | consults `assertable`; a quarantined episode routes to the FENCED never-assert section |
 | **`gate.py:134,136` — `partition_parts`** | consults `assertable`; a quarantined episode never enters the GROUNDED partition |
 | **`compile.py:146,234` — the wiki input selection AND its render** | consults `assertable`; a quarantined episode never enters the compiled wiki |
@@ -835,34 +835,24 @@ operator-chosen option (§10, **Q1**).
 ## Review closure
 
 *(PROCESS §4a — one row per review finding, with evidence that is openable
-or executable. **FOUR ROUNDS HAVE RUN — two internal and two external at the time this
-sentence was first written, and THREE external now
-(external round 1 RETURNED FOR AMENDMENT, external round 2 RETURNED FOR
-AMENDMENT). The rows are below.** v4/v5 corrected this: the section still
-said "no round has been run" while `specs/reviews.py` carried only `SENT`
-rows and no verdicts — so the declared source of truth recorded that a
-package went out and never that it came back. The external reviewer found
-it (round 2, artifact/process finding 1), and it is the same
-carrier-completeness failure as F1 and F2, applied to the process record
-rather than to the spec text.** The section exists from day one
-deliberately — both 0020 and 0021 hit this gate mid-implementation and had
-to reconstruct it, and the CI gate refuses an `accepted` spec without it.*
+or executable. *The round-by-round ledger below is GENERATED from `specs/reviews.py` (external round 4, R4-3 — it had drifted three rounds running as a hand-maintained twin: a round count that disagreed with its own rows, a placeholder claiming it had been removed, and two tables with different column counts in one document). Regenerate with `python3 specs/render_closure.py --write`; `--check` fails the build when it drifts.*
 
-*One convention is fixed NOW, because it is easier to adopt than to
-retrofit: **rounds with 0022 will be COUPLED, so counts will have TWO
-BASES** — the PER-ROUND count (how many distinct findings a round's report
-raised, which is what the verbatim report says) and the PER-SPEC count
-(`specs/reviews.py` sums per spec, and a finding landing on both specs is
-recorded in both rows, so the per-spec totals are necessarily larger). No
-single number is "the" count; the round reports are authoritative for what
-was raised and this table for what closed it.)*
+<!-- GENERATED:review-closure -->
 
-| round | finding | class | owner | disposition | evidence |
-|---|---|---|---|---|---|
-| round | finding | verdict | where it closed | evidence |
-|---|---|---|---|---|
-| **internal 1** (research, 2026-08-17) | S2 — the lift asymmetry's justification was attackable | folded | §4i, **Q2** | the two-floors argument with the executed imported-QUARANTINED cell |
-| **internal 2** | S3 — quarantine-at-birth wrote a field NO reader consulted | folded | §4a-iv, **N14** | the edge/episode render asymmetry, executed |
-| **EXTERNAL 1** (2026-08-17) | **F1 — quarantine reached ONE consumer of five** | folded | §4a-iv, **N14**, **N15** | `Episode.assertable`; the reviewer's counterexample reached the gate partition and the wiki input |
-| **EXTERNAL 2** | **F4 — N15 was not a total inventory; it swept for the OLD CONDITION** | folded | **N15**, §7a | regenerated from EPISODE-TEXT consumption; found a SEVENTH consumer (`lifecycle.py:182`, the consolidation prompt) |
-| **EXTERNAL 3** | **R3-3 — the lifecycle fix over-excluded and broke N12** | folded | §7a, **N12**, **N15** | `assertable` dropped ordinary quarantined/use-only episodes with ZERO revocations; maintenance now checks the STANDING REVOCATION, with a no-revocation negative control |
+**3 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0023`; 4 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+
+| round | date | findings raised | verdict (compressed) |
+|---|---|---|---|
+| internal 1 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (the 0023 half of the coupled round; see 0022 round 1). S2 (required strengthening, then RATIFIED): the lift-asymmetry's justification was attackable — v1 said re-deriving a quarantined record's disclosure 'is not decidable from the record alone', which is FALSE, since _disclosu… |
+| internal 2 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (1 finding — S1's SIBLING CELL, and it was visible inside the evidence row S1's own fold had just added). S3: QUARANTINE-AT-BIRTH WAS INEFFECTIVE FOR EPISODE TEXT — v2 wrote the field the rule sets and NO READER CONSULTED IT. Executed: edges route through e.quarantined into fenc… |
+| internal 3 (verdict) | 2026-08-17 | 0 | PASS — THE PAIR'S INTERNAL REVIEW IS COMPLETE (0004 + 0022 + 0023 all internally reviewed; the triple packages together for external). Verified against the v3 diff: the premise correction (grep confirms `def quarantined` exactly once in the tree, Edge's — the round-2 finding's parenthetical was wron… |
+| external 1 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (one blocking finding on this spec). F1 — quarantine reached ONE consumer of FIVE: v3 gave Episode a `quarantined` property and made _fit_to_budget read it, while gate.py, compile.py, proactive.py and scope_read.py still partitioned on third_party_influenced. The reviewer execut… |
+| external 1 (SENT) | 2026-08-17 | — | SENT (the coupled round-1 package `0004-0022-0023-v1` — ONE archive, three specs, per-spec verdicts requested; sealed AFTER this row, sha pinned on return). 0023 at v3: non-revival under maintenance — a revoked source cannot re-enter. Carries the render-side quarantine rule (§4a-iv/N14) that interna… |
+| external 2 (SENT) | 2026-08-17 | — | SENT (the coupled round-2 package `0004-0022-0023-v2`). 0023 at v4: F1 folded — quarantine reached ONE consumer of FIVE, and the reviewer executed a quarantined episode straight into the gate's grounded partition and the wiki compiler's input. Root cause named: an Edge has ONE shared `assertable` pr… |
+| external 3 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (1 blocking on this spec). R3-3 — the round-2 lifecycle fix VIOLATED N12: routing the consolidation cold pool through `Episode.assertable` excludes every quarantined or use-only episode, so an ordinary IMPORTED quarantined episode drops out of the pool **in a store with ZERO rev… |
+| external 3 (SENT) | 2026-08-17 | — | SENT (the coupled round-3 package `0022-0023-v3`). 0023 at v5: F4 — N15 was not a total consumer inventory, and the reason generalises: it swept for reads of the OLD CONDITION (third_party_influenced), which is structurally blind to a consumer that never had one. The reviewer's `'
+'.join(ep.summary … |
+| external 4 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (1 blocking on this spec). R4-2 — the R3-3 BEHAVIOUR was corrected and its NORMATIVE CARRIERS still contradicted it: §7a's header said all seven consumers call `Episode.assertable` while its own lifecycle row said lifecycle must not, so following the header recreated the exact N… |
+| external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`). 0023 at v6: R3-3 folded — maintenance checks the STANDING REVOCATION rather than `Episode.assertable`, which over-excluded ordinary quarantined/use-only episodes in a ZERO-revocation store and broke N12; N12 gains the behaviour-half negative control… |
+
+<!-- /GENERATED:review-closure -->

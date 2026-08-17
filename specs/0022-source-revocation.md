@@ -726,7 +726,9 @@ cannot drift again:
 
 ```python
 def revocation_operation(conn, user, digest, action, reason, at, *,
-                         plan=None, busy_deadline_s=5.0):
+                         plan, busy_deadline_s=5.0):
+    """Allocate, re-read, plan, append the OPERATOR'S row, APPLY EVERY EFFECT,
+    and commit — or roll ALL of it back."""
     deadline = time.monotonic() + busy_deadline_s
     while True:
         try:
@@ -739,17 +741,32 @@ def revocation_operation(conn, user, digest, action, reason, at, *,
         try:
             seq      = next_seq(conn, user)      # allocate INSIDE the txn
             standing = standing_from(conn, user) # plan against what is committed
-            planned  = plan(standing)
-            append(conn, user, digest, action, seq)
-            conn.execute("COMMIT")               # row + effects land together
-            return seq, standing, planned
+            effects  = list(plan(standing))
+            append(conn, user, digest, action, seq, reason, at)   # the operator's words
+            for e in effects:
+                apply_effect(conn, user, e)      # THE WORK, in the same txn
+            conn.execute("COMMIT")               # row + effects land TOGETHER
+            return seq, standing, effects
         except sqlite3.IntegrityError as e:
             conn.execute("ROLLBACK")
             raise OrdinalCollision(str(e)) from e   # NEVER retried
         except BaseException:
-            conn.execute("ROLLBACK")
+            conn.execute("ROLLBACK")             # the row AND the effects
             raise
 ```
+
+**v4 of this function did three things this one does not, and the harness
+scored 7/7 on it anyway (external round 4, R4-1).** It appended the row and
+**never applied the effects**, so R19's "the row and the effects land
+together" was true of the row alone. It **discarded `reason` and `at`** —
+the append hard-coded both — so the audit trail recorded defaults instead of
+the operator's words while the signature claimed otherwise. And `plan`
+defaulted to `None` here while the spec called `plan(standing)`
+unconditionally, so the two disagreed about the one argument that produces
+the work. **Every earlier check asked about ordinals and rows; none asked
+whether the work happened**, which is the whole reason an empty operation
+passed. Six checks now cover it, and reverting the function to v4's
+behaviour fails two of them.
 
 **Where the BUSY handling lives is itself the contract.** It is INSIDE the
 operation, bounded by a deadline, and it retries only lock acquisition —
@@ -811,6 +828,8 @@ recorded in `store_concurrency_result.txt`. It opens by proving THE DEFECT
 STILL REPRODUCES under the natural construction, so a race that quietly
 stopped racing would fail the build rather than silently retire every
 protection below it.
+
+**Evidence (R19), 13 checks, exit 0** — `store_concurrency_harness.py`. Six of them are R4-1's: **effects land** in the same commit; **a fault between the row and the effects rolls BOTH back**; **an effect naming an absent record rolls the row back too**; **the operator's reason and timestamp are stored, not defaulted**; **a forced lock conflict retries THROUGH this function** (not a separate helper, which is what v4's BUSY regression actually exercised); and **a collision is raised, never retried**.
 
 **Adversarial tests (R19):** two overlapping revocations of DIFFERENT
 sources interleaved; two revocations of the SAME source; revoke racing lift
@@ -1136,33 +1155,22 @@ document generalises.
 ## Review closure
 
 *(PROCESS §4a — one row per review finding, with evidence that is openable
-or executable. **FOUR ROUNDS HAVE RUN — two internal and two external at the time this
-sentence was first written, and THREE external now
-(external round 1 RETURNED FOR AMENDMENT, external round 2 RETURNED FOR
-AMENDMENT). The rows are below.** v4/v5 corrected this: the section still
-said "no round has been run" while `specs/reviews.py` carried only `SENT`
-rows and no verdicts — so the declared source of truth recorded that a
-package went out and never that it came back. The external reviewer found
-it (round 2, artifact/process finding 1), and it is the same
-carrier-completeness failure as F1 and F2, applied to the process record
-rather than to the spec text.** The section exists from day one
-deliberately — both 0020 and 0021 hit this gate mid-implementation and had
-to reconstruct it, and the CI gate refuses an `accepted` spec without it.
-When rounds begin, the rows land here and the compressed per-round
-dispositions go to `specs/reviews.py`, which is what the STATUS index
-renders from.*
+or executable. *The round-by-round ledger below is GENERATED from `specs/reviews.py` (external round 4, R4-3 — it had drifted three rounds running as a hand-maintained twin: a round count that disagreed with its own rows, a placeholder claiming it had been removed, and two tables with different column counts in one document). Regenerate with `python3 specs/render_closure.py --write`; `--check` fails the build when it drifts.*
 
-*One convention is fixed NOW, because it is easier to adopt than to
-retrofit: **rounds with 0023 will be COUPLED, so counts will have TWO
-BASES** — the PER-ROUND count (how many distinct findings a round's report
-raised, which is what the verbatim report says) and the PER-SPEC count
-(`specs/reviews.py` sums per spec, and a finding landing on both specs is
-recorded in both rows, so the per-spec totals are necessarily larger). No
-single number is "the" count; the round reports are authoritative for what
-was raised and this table for what closed it. That is 0020's model, and it
-exists because a reader who sums the wrong basis thinks the other is a
-typo.)*
+<!-- GENERATED:review-closure -->
 
-| round | finding | class | owner | disposition | evidence |
-|---|---|---|---|---|---|
-| — | *(the rows are the table above; this placeholder is removed — external round 3, R3-4)* | — | — | — | — |
+**1 internal round(s) and 3 external round(s) with a returned VERDICT are recorded for `0022`; 4 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+
+| round | date | findings raised | verdict (compressed) |
+|---|---|---|---|
+| internal 1 (verdict) | 2026-08-17 | 1 | RETURN FOR AMENDMENT (1 blocking + 1 required strengthening + 4 minors, across the coupled pair; the drafts called 'exceptional — the findings are completion, not correction'). S1 (BLOCKING, 0022): the sweep's RECORD DOMAIN was unenumerated — "records" meant EDGES. Executed: __init__.py:869-872 rend… |
+| external 1 (verdict) | 2026-08-17 | 3 | RETURN FOR AMENDMENT (three blocking findings on this spec). F2 — the standing state ordered by (at, seq) while `at` is HOST-SUPPLIED, so a planted far-future timestamp made a revocation PERMANENTLY UNLIFTABLE (executed: revoke at 2099 seq 0, lift at 2026 seq 1, the lift never takes). The instructiv… |
+| external 1 (SENT) | 2026-08-17 | — | SENT (the coupled round-1 package `0004-0022-0023-v1` — ONE archive, three specs, per-spec verdicts requested; sealed AFTER this row, sha pinned on return). 0022 at v2: source revocation — the standing state and the sweep. THE LEAD SPEC. Carries the enumerated record domain (§4b-i) and the episode r… |
+| external 2 (SENT) | 2026-08-17 | — | SENT (the coupled round-2 package `0004-0022-0023-v2`). 0022 at v3: THREE blocking findings folded. F2 — ordering by (at, seq) with a HOST-SUPPLIED `at` made a revocation permanently unliftable (executed: revoke at 2099 seq 0, lift at 2026 seq 1, the lift never takes); now `seq` ALONE with five cloc… |
+| external 3 (verdict) | 2026-08-17 | 2 | RETURN FOR AMENDMENT (2 blocking on this spec + 2 package/process; 0004 NOT reviewed, its round-2 approval stands frozen). R3-1 — §4e-i printed `with conn:` and LABELLED it BEGIN IMMEDIATE. Python's sqlite3 context manager begins nothing; probed on the shipped config, isolation_level=='' and in_tran… |
+| external 3 (verdict) | 2026-08-17 | 2 | RETURN — PACKAGE/PROCESS half (R3-4, R3-5). R3-4 — both closure sections said 'THREE ROUNDS' while enumerating four, claimed rows were below, and still carried `no review rounds yet (draft)`; 0023 had no rows at all. R3-5 — COLLECTED did not reconcile: the measured line said 1651/6 while its own dec… |
+| external 3 (SENT) | 2026-08-17 | — | SENT (the coupled round-3 package `0022-0023-v3` — 0004 is NOT in it: it was APPROVED FOR ACCEPTANCE at round 2, frozen on W1-W8, and re-sending an approved spec invites re-litigation. Per-spec verdicts requested; sealed AFTER this row, staged to the outbox, sha pinned on return). 0022 at v4: F1 — r… |
+| external 4 (verdict) | 2026-08-17 | 3 | RETURN FOR AMENDMENT (1 blocking on this spec + 2 package/process; 0004 not reopened). R4-1 — `revocation_operation` was NEITHER ATOMIC NOR ACTUALLY SHARED. The reviewer invoked the submitted function directly and got `applied effects: []`: it appended the row and never applied the effects, so R19's… |
+| external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`; 0004 remains OUT — approved and frozen at round 2). 0022 at v5: R3-1 folded with ONE shared `revocation_operation` quoted verbatim in §4e-i and CALLED by the harness (the spec printed `with conn:` while the harness executed BEGIN IMMEDIATE — the evid… |
+
+<!-- /GENERATED:review-closure -->

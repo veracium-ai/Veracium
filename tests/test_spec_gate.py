@@ -949,3 +949,72 @@ def test_collected_verifier_rejects_the_adversarial_cases():
     for name, text in bad.items():
         with pytest.raises(ValueError):
             verify_collected(text)
+
+
+def test_reconcile_bites_on_an_unlisted_skip():
+    """External round 4, R4-4: COLLECTED claimed reconcile()'s adversarial
+    cases were "proven to bite" and NO SHIPPED TEST exercised them. A claim
+    about a check, with no check on the claim, is the shape this whole review
+    has been about — so the two cases are here, in the suite, where the seal
+    runs them."""
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    from skip_inventory import reconcile
+
+    unlisted = ("SKIPPED [1] tests/test_invented.py:1: a reason no entry carries\n"
+                "1 passed, 1 skipped in 0.1s")
+    problems = reconcile(unlisted)
+    assert problems, "an unlisted skip must be reported"
+    assert any("NOT IN THE INVENTORY" in p for p in problems), problems
+
+
+def test_reconcile_bites_on_a_truncated_report():
+    """The other half: a `-rs` section that lists fewer skips than the summary
+    counts. Without this, a truncated report reconciles by omission — which is
+    how an incomplete inventory looks identical to a complete one."""
+    import sys, pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    from skip_inventory import reconcile
+
+    truncated = ("SKIPPED [1] tests/test_spec_gate.py:900: COLLECTED.txt not present\n"
+                 "1 passed, 5 skipped in 0.1s")
+    problems = reconcile(truncated)
+    assert problems, "a truncated -rs section must be reported"
+    assert any("truncated" in p for p in problems), problems
+
+
+def test_the_renderer_cannot_silently_drop_a_category():
+    """R4-4's root cause: `render()`'s category list was HARD-CODED and omitted
+    "future-obligation", so four inventory entries never reached the generated
+    block — and `verify_collected` passed because it compares the block to the
+    same blind renderer. The renderer now raises on any category it would drop;
+    this proves the guard fires."""
+    import sys, pathlib, pytest
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "specs"))
+    import skip_inventory as S
+
+    original = list(S.INVENTORY)
+    try:
+        S.INVENTORY.append(("tests/test_invented.py", "skip", "a token",
+                            "a-category-the-renderer-does-not-know", "reason"))
+        with pytest.raises(ValueError, match="silently drop"):
+            S.render()
+    finally:
+        S.INVENTORY[:] = original
+
+
+def test_review_closure_blocks_are_generated_and_current():
+    """External round 4, R4-3. The closure ledgers were hand-maintained beside
+    reviews.py and drifted three rounds running — a round count disagreeing
+    with its own rows, a placeholder claiming it had been removed sitting under
+    the rows it denied, two tables with different column counts in one file.
+
+    This is the defect findings.py's own docstring opens with: "every summary
+    was maintained independently of the thing it summarised". The fix is the
+    one this repo already made for STATUS.md — derive it — and this test is the
+    `--check` half, so drift fails the build instead of a reviewer."""
+    import subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run([sys.executable, str(root / "specs" / "render_closure.py"),
+                        "--check"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr or r.stdout

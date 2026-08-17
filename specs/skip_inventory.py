@@ -116,13 +116,31 @@ INVENTORY = [
 ]
 
 
-def render() -> str:
-    """The COLLECTED.txt inventory section, generated from INVENTORY."""
+def render(rs_output: str = "") -> str:
+    """The COLLECTED.txt inventory section, generated from INVENTORY.
+
+    `rs_output` is the sealed `pytest -q -rs` text. Supplying it makes the
+    reconciliation block OBSERVED rather than remembered (R4-4).
+    """
     classes = {}
     for f, kind, token, cls, reason in INVENTORY:
         classes.setdefault(cls, []).append(f"{f} ({kind}: {reason})")
+    # EXTERNAL ROUND 4, R4-4. This list was HARD-CODED and omitted
+    # "future-obligation", so the four entries added at round 3 went into
+    # INVENTORY and never reached the rendered block: the data was right, the
+    # renderer could not see it, and `verify_collected` compared the block to
+    # that same blind renderer. The order stays explicit for readability, but
+    # any category present in INVENTORY and missing from it now RAISES rather
+    # than being silently dropped — the renderer's domain is INVENTORY's, not
+    # a list someone remembered to extend.
     order = ["git-checkout", "env-flag", "optional-dependency", "package-artifact",
-             "host-conditional"]
+             "host-conditional", "future-obligation"]
+    unordered = sorted(set(classes) - set(order))
+    if unordered:
+        raise ValueError(
+            f"INVENTORY carries categories this renderer would silently drop: "
+            f"{unordered}. Add them to `order` and `blurb` — the failure this "
+            f"guard exists for is external round 4's R4-4.")
     blurb = {
         "git-checkout": ("git-checkout-dependent (SKIPPED in the measured line — the "
                          "measuring copy has no .git — and in your extracted run):"),
@@ -134,6 +152,12 @@ def render() -> str:
         "host-conditional": ("host-conditional (may differ between the authoring host and "
                              "yours — the usual source of reviewer deltas; each entry "
                              "carries its count and measured author status):"),
+        "future-obligation": ("future-obligation (SKIPPED UNCONDITIONALLY on every host, "
+                              "including yours and ours — each names a primitive or a "
+                              "live-model probe a spec marks FUTURE. These four were "
+                              "absent from this inventory until external round 4 because "
+                              "the completeness gate's regex did not recognise "
+                              "`pytest.mark.skip(`):"),
     }
     out = []
     for cls in order:
@@ -141,22 +165,69 @@ def render() -> str:
             out.append("  " + blurb[cls])
             out += [f"    {line}" for line in classes[cls]]
     out.append(
-        "  RECONCILIATION (0018 external B2-1 — the arithmetic must close): in\n"
-        "  the PACKAGED-STATE measured line (the seal runs the suite in a tree\n"
-        "  carrying COLLECTED.txt — the 0020/0021 R2 reorder) the skips\n"
-        "  decompose as: git-checkout 11 (longmemeval 8, test_spec_gate 2,\n"
-        "  test_schema_model 1) + env-flag 3 (eval, robustness, and the 0016 D1\n"
-        "  pydantic-floor regression — by design outside the min-dep CI job)\n"
-        "  = 14, and the package-artifact test EXECUTES AND PASSES. Every OTHER\n"
-        "  inventoried site PASSED in the measured line (MCP x5, of which only\n"
-        "  the wiring test is SDK-gated; the 0015 POSIX pair x2; the\n"
-        "  HOME-anchored coordination-file test x1; the runtime-identity, euid,\n"
-        "  and qualified-runtime cells x1 each). Compute your expected line from\n"
-        "  these statuses and your environment (a COLLECTED-less copy adds the\n"
-        "  package-artifact skip back: 15). The seal verifies this decomposition\n"
-        "  against the measured run before packaging. Any residual delta is a\n"
-        "  finding.")
+        "  RECONCILIATION — DERIVED FROM THE MEASURED RUN, not hand-written\n"
+        "  (external round 4, R4-4). The block that stood here until v5 was\n"
+        "  prose: it decomposed a measured line as 'git-checkout 11 + env-flag 3\n"
+        "  = 14' while the measured line said 6, cited a pydantic-floor\n"
+        "  regression that no longer exists, and claimed 'the seal verifies this\n"
+        "  decomposition' — which nothing did. An arithmetic claim maintained by\n"
+        "  hand beside a number produced by a machine will drift, and did.\n"
+        + _observed_block(rs_output))
     return "\n".join(out)
+
+
+def _observed_block(rs_output) -> str:
+    """The decomposition, computed from `pytest -q -rs` output.
+
+    No argument means no measured run was supplied, and the block SAYS SO
+    rather than reciting a remembered decomposition — the failure R4-4 found.
+    """
+    if not rs_output:
+        return ("  NO MEASURED RUN WAS SUPPLIED to the renderer, so no\n"
+                "  decomposition is claimed here. The seal supplies one; a\n"
+                "  block without these numbers was not sealed.\n")
+    import re as _re
+    from collections import Counter
+    cat_of = {}
+    for f, _kind, token, cls, _reason in INVENTORY:
+        cat_of.setdefault(f, []).append((token, cls))
+    counts, unmatched, total = Counter(), [], 0
+    for m in _re.finditer(r"^SKIPPED \[(\d+)\] ([^:]+):\d+: (.*)$", rs_output, _re.M):
+        n, path, reason = int(m.group(1)), m.group(2).strip(), m.group(3).strip()
+        total += n
+        hit = None
+        for f, pairs in cat_of.items():
+            tail = f.split("tests/")[-1]
+            if path.endswith(tail):
+                for token, cls in pairs:
+                    if token.lower() in reason.lower():
+                        hit = cls
+                        break
+            if hit:
+                break
+        if hit:
+            counts[hit] += n
+        else:
+            unmatched.append(f"{path}: {reason[:60]}")
+    lines = ["  OBSERVED in the sealed run, by category:"]
+    for cls, n in sorted(counts.items()):
+        lines.append(f"    {cls}: {n}")
+    lines.append(f"    TOTAL: {total}")
+    summary = _re.search(r"(\d+) passed, (\d+) skipped", rs_output)
+    if summary:
+        lines.append(f"    summary line: {summary.group(1)} passed, "
+                     f"{summary.group(2)} skipped")
+        if int(summary.group(2)) != total:
+            lines.append("    *** MISMATCH: the -rs section and the summary "
+                         "disagree ***")
+    if unmatched:
+        lines.append("    *** OBSERVED SKIPS MATCHING NO ENTRY ***")
+        lines += [f"      {u}" for u in unmatched]
+    lines.append("  Your environment will differ where the categories above say "
+                 "it will;")
+    lines.append("  reconcile() computes this same table from YOUR run.")
+    return "\n".join(lines) + "\n"
+
 
 
 if __name__ == "__main__":

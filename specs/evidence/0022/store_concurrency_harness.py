@@ -70,6 +70,21 @@ CREATE TABLE source_revocations (
 )
 """
 
+# External round 4, R4-1: the operation must apply EFFECTS, not just append a
+# row, so the harness needs a real table for them to land in. Without one, a
+# check can only assert what was appended — which is exactly how v1's
+# `revocation_operation` passed 7/7 while applying nothing.
+DDL_RECORDS = """
+CREATE TABLE records (
+    user_id       TEXT    NOT NULL,
+    type          TEXT    NOT NULL,
+    id            TEXT    NOT NULL,
+    active        INTEGER NOT NULL DEFAULT 1,
+    retired_reason TEXT,
+    PRIMARY KEY (user_id, type, id)
+)
+"""
+
 DIGEST_A = "a" * 64
 DIGEST_B = "b" * 64
 
@@ -96,11 +111,35 @@ def _standing(c: sqlite3.Connection, user: str) -> set:
     return {d for d, a in latest.items() if a == "revoke"}
 
 
-def _append(c: sqlite3.Connection, user: str, digest: str, action: str, seq: int):
+def _append(c: sqlite3.Connection, user: str, digest: str, action: str, seq: int,
+            reason: str = "operator", at: str = "2026-08-17T00:00:00Z"):
+    """R4-1: `reason` and `at` are the OPERATOR'S row. v1 hard-coded both and
+    silently discarded whatever the caller passed — an audit trail that
+    records the harness's defaults instead of the operator's words."""
     c.execute("INSERT INTO source_revocations "
               "(user_id, identity_digest, action, reason, at, seq) "
               "VALUES (?,?,?,?,?,?)",
-              (user, digest, action, "operator", "2026-08-17T00:00:00Z", seq))
+              (user, digest, action, reason, at, seq))
+
+
+def _apply_effect(c: sqlite3.Connection, user: str, effect):
+    """Apply ONE effect inside the caller's transaction. Verbs are closed
+    (0022 R9); an unknown verb raises, which the operation turns into a
+    rollback of the WHOLE operation — row included."""
+    verb, rtype, rid = effect["verb"], effect["type"], effect["id"]
+    if verb == "retire":
+        n = c.execute("UPDATE records SET active=0, retired_reason=? "
+                      "WHERE user_id=? AND type=? AND id=?",
+                      (effect.get("reason", "revoked_source"), user, rtype, rid)).rowcount
+    elif verb == "reinstate":
+        n = c.execute("UPDATE records SET active=1, retired_reason=NULL "
+                      "WHERE user_id=? AND type=? AND id=?",
+                      (user, rtype, rid)).rowcount
+    else:
+        raise RevocationEffectError(f"unknown effect verb {verb!r}")
+    if n != 1:
+        raise RevocationEffectError(
+            f"effect names an absent record: {(rtype, rid)}")
 
 
 # --------------------------------------------------------------------------
@@ -124,21 +163,38 @@ class OrdinalCollision(Exception):
     was not serialised, and retrying hides the defect it is reporting."""
 
 
+class RevocationEffectError(Exception):
+    """An effect could not be applied. Rolls back the WHOLE operation — the
+    revocation row included — because R19 requires the row and its effects to
+    land together or not at all."""
+
+
 def revocation_operation(conn, user, digest, action, reason, at, *,
-                         plan=None, busy_deadline_s=5.0, _gate=None):
-    """Allocate, plan, append and apply — as ONE serialised write.
+                         plan, busy_deadline_s=5.0, _gate=None, _fault=None):
+    """Allocate, re-read, plan, append the operator's row, APPLY EVERY EFFECT,
+    and commit — or roll ALL of it back.
 
-    THIS IS THE CONSTRUCTION. §4e-i quotes this function; the checks below
-    call it. `plan` is the sweep, injected so this file needs no product
-    import; `_gate` is a test hook that holds the race window open and is
-    None in every real call.
+    THIS IS THE CONSTRUCTION §4e-i quotes and the checks below call.
 
-    BUSY handling is BOUNDED and lives HERE, not in the caller: SQLITE_BUSY
-    on acquiring the write lock is ordinary contention and is retried until
-    `busy_deadline_s`; an ordinal collision is NOT contention and raises.
-    R19 says BUSY is retryable and no retry loop is specified around the
-    OPERATION — the distinction v1 of this harness blurred by putting a loop
-    outside it.
+    EXTERNAL ROUND 4, R4-1 — WHAT v1 OF THIS FUNCTION DID NOT DO, and the
+    reason it passed 7/7 anyway:
+
+      * it appended the row and NEVER APPLIED THE EFFECTS, so R19's "the row
+        and the effects land together" was true only of the row. No check
+        asserted an effect had landed, so nothing failed.
+      * it DISCARDED `reason` and `at` — `_append` hard-coded both — so the
+        audit trail recorded the harness's defaults rather than the
+        operator's words, and the signature lied about what it stored.
+      * `plan` defaulted to None while the spec called `plan(standing)`
+        unconditionally, so spec and harness disagreed about the one argument
+        that produces the work.
+      * the BUSY regression exercised a SEPARATE `_retry_operation`, not this
+        function, so "the shared operation retries BUSY" was untested.
+
+    `plan` is now REQUIRED and takes the standing set, returning the effect
+    list. `_gate` and `_fault` are test hooks (None in every real call);
+    `_fault` fires between the row append and the effects, which is the seam
+    R19's atomicity claim is actually about.
     """
     deadline = time.monotonic() + busy_deadline_s
     while True:
@@ -149,20 +205,25 @@ def revocation_operation(conn, user, digest, action, reason, at, *,
             if time.monotonic() >= deadline:
                 raise
             time.sleep(0.01)
-            continue                      # contention: re-acquire, re-read
+            continue                      # contention: re-acquire, RE-READ
         try:
             seq = _next_seq(conn, user)
             standing = _standing(conn, user)
-            planned = plan(standing) if plan else None
             if _gate is not None:
                 _gate.wait()
-            _append(conn, user, digest, action, seq)
+            effects = list(plan(standing))
+            _append(conn, user, digest, action, seq, reason, at)
+            if _fault is not None:
+                _fault()                  # between the row and the effects
+            for e in effects:
+                _apply_effect(conn, user, e)
             conn.execute("COMMIT")
-            return seq, frozenset(standing), planned
+            return seq, frozenset(standing), effects
         except sqlite3.IntegrityError as e:
             conn.execute("ROLLBACK")
             raise OrdinalCollision(str(e)) from e
         except BaseException:
+            # the row, the effects, all of it
             try:
                 conn.execute("ROLLBACK")
             except sqlite3.Error:
@@ -195,7 +256,7 @@ def _operation(path, user, digest, action, *, immediate: bool, gate, results, id
             # THE SHARED OPERATION — the same function §4e-i prints
             seq, standing, _ = revocation_operation(
                 c, user, digest, action, "operator", "2026-08-17T00:00:00Z",
-                _gate=gate)
+                plan=lambda st: [], _gate=gate)
             results[idx] = ("ok", seq, standing)
             return
         c.execute("BEGIN")                     # the NAIVE construction
@@ -229,6 +290,7 @@ def _race(immediate: bool, ops):
     try:
         c = _conn(path)
         c.execute(DDL)
+        c.execute(DDL_RECORDS)
         c.close()
         gate = None if immediate else threading.Barrier(len(ops), timeout=5)
         results = [None] * len(ops)
@@ -255,25 +317,22 @@ def _race(immediate: bool, ops):
 
 
 def _retry_operation(path, user, digest, action, *, results, idx, attempts=5):
-    """The ONLY retry the spec permits: retry BUSY, never retry a collision."""
-    for _ in range(attempts):
-        c = _conn(path)
-        try:
-            c.execute("BEGIN IMMEDIATE")
-            seq = _next_seq(c, user)
-            _append(c, user, digest, action, seq)
-            c.execute("COMMIT")
-            results[idx] = ("ok", seq, None)
-            return
-        except sqlite3.OperationalError:
-            time.sleep(0.02)                   # busy: back off and re-read
-            continue
-        except sqlite3.IntegrityError as e:
-            results[idx] = ("collision", str(e), None)   # NEVER retried
-            return
-        finally:
-            c.close()
-    results[idx] = ("busy-exhausted", None, None)
+    """R4-1: v1 of this helper had its OWN retry loop, so the BUSY regression
+    proved something about the helper and nothing about the shared operation.
+    It now simply CALLS `revocation_operation`, whose bounded BUSY handling is
+    the contract under test."""
+    c = _conn(path)
+    try:
+        seq, _standing, _effects = revocation_operation(
+            c, user, digest, action, "operator", "2026-08-17T00:00:00Z",
+            plan=lambda st: [])
+        results[idx] = ("ok", seq, None)
+    except OrdinalCollision as e:
+        results[idx] = ("collision", str(e), None)     # NEVER retried
+    except sqlite3.OperationalError as e:
+        results[idx] = ("busy-exhausted", str(e), None)
+    finally:
+        c.close()
 
 
 CHECKS = []
@@ -326,6 +385,7 @@ def _stale_ordinal_collides():
     try:
         c = _conn(path)
         c.execute(DDL)
+        c.execute(DDL_RECORDS)
         c.close()
         a, b = _conn(path), _conn(path)
         try:
@@ -411,6 +471,7 @@ def _revoke_races_lift():
     try:
         c = _conn(path)
         c.execute(DDL)
+        c.execute(DDL_RECORDS)
         for seq, digest, action in rows:
             _append(c, "u1", digest, action, seq)
         standing = _standing(c, "u1")
@@ -431,6 +492,7 @@ def _busy_vs_collision():
     try:
         c = _conn(path)
         c.execute(DDL)
+        c.execute(DDL_RECORDS)
         c.close()
         results = [None, None]
         ts = [threading.Thread(target=_retry_operation,
@@ -462,6 +524,185 @@ def _busy_vs_collision():
             c.close()
             return ("the ordinal collision surfaced as OperationalError — a "
                     "retry loop would swallow it")
+        return None
+    finally:
+        os.unlink(path)
+
+
+# --------------------------------------------------------------------------
+# R4-1's five checks. Their ABSENCE is why an operation that applied nothing
+# scored 7/7: every earlier check asked about ordinals and rows, and none
+# asked whether the work happened.
+# --------------------------------------------------------------------------
+
+def _store_with_records(*records):
+    fd, path = tempfile.mkstemp(suffix=".sqlite")
+    os.close(fd)
+    c = _conn(path)
+    c.execute(DDL)
+    c.execute(DDL_RECORDS)
+    for rtype, rid in records:
+        c.execute("INSERT INTO records (user_id,type,id,active) VALUES (?,?,?,1)",
+                  ("u1", rtype, rid))
+    c.close()
+    return path
+
+
+@check("EFFECTS LAND: a planned retirement is applied in the same commit")
+def _effects_land():
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        c = _conn(path)
+        seq, _st, effects = revocation_operation(
+            c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+            plan=lambda st: [{"verb": "retire", "type": "episode", "id": "ep-1"}])
+        row = c.execute("SELECT active, retired_reason FROM records "
+                        "WHERE id='ep-1'").fetchone()
+        c.close()
+        if len(effects) != 1:
+            return f"the plan was not returned: {effects}"
+        if row != (0, "revoked_source"):
+            return f"THE EFFECT DID NOT LAND: records row is {row}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("ATOMIC: a fault between the row and the effects rolls BOTH back")
+def _mid_effect_rollback():
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        c = _conn(path)
+        def boom():
+            raise RuntimeError("injected between append and apply")
+        try:
+            revocation_operation(
+                c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+                plan=lambda st: [{"verb": "retire", "type": "episode", "id": "ep-1"}],
+                _fault=boom)
+            c.close()
+            return "the injected fault did not propagate"
+        except RuntimeError:
+            pass
+        rows = c.execute("SELECT COUNT(*) FROM source_revocations").fetchone()[0]
+        rec = c.execute("SELECT active FROM records WHERE id='ep-1'").fetchone()
+        c.close()
+        if rows != 0:
+            return f"THE ROW SURVIVED A ROLLED-BACK OPERATION: {rows} row(s)"
+        if rec != (1,):
+            return f"the record was left modified: active={rec}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("ATOMIC: an effect naming an absent record rolls the row back too")
+def _absent_record_rolls_back():
+    path = _store_with_records(("episode", "ep-1"))
+    try:
+        c = _conn(path)
+        try:
+            revocation_operation(
+                c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+                plan=lambda st: [{"verb": "retire", "type": "episode", "id": "ep-1"},
+                                 {"verb": "retire", "type": "edge", "id": "MISSING"}])
+            c.close()
+            return "an absent record did not raise"
+        except RevocationEffectError:
+            pass
+        rows = c.execute("SELECT COUNT(*) FROM source_revocations").fetchone()[0]
+        rec = c.execute("SELECT active FROM records WHERE id='ep-1'").fetchone()
+        c.close()
+        if rows != 0 or rec != (1,):
+            return (f"partial application survived: rows={rows} ep-1.active={rec} "
+                    "— the FIRST effect must roll back with the second")
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("METADATA: the operator's reason and timestamp are STORED, not defaulted")
+def _metadata_is_stored():
+    path = _store_with_records()
+    try:
+        c = _conn(path)
+        revocation_operation(c, "u1", DIGEST_A, "revoke",
+                             "compromised connector", "2099-12-31T00:00:00Z",
+                             plan=lambda st: [])
+        got = c.execute("SELECT reason, at FROM source_revocations").fetchone()
+        c.close()
+        if got != ("compromised connector", "2099-12-31T00:00:00Z"):
+            return f"the operator's row was overwritten with defaults: {got}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("BUSY: a forced lock conflict retries THROUGH the shared operation")
+def _busy_through_the_operation():
+    path = _store_with_records()
+    try:
+        released = threading.Event()
+        holding = threading.Event()
+
+        def hold_then_release():
+            # the connection must live in the thread that uses it
+            h = _conn(path)
+            h.execute("BEGIN IMMEDIATE")           # hold the write lock
+            holding.set()
+            time.sleep(0.15)
+            h.execute("COMMIT")
+            h.close()
+            released.set()
+
+        t = threading.Thread(target=hold_then_release)
+        t.start()
+        holding.wait(2)                            # ensure the lock is held first
+        c = _conn(path)
+        started = time.monotonic()
+        seq, _st, _e = revocation_operation(
+            c, "u1", DIGEST_A, "revoke", "operator", "2026-08-17T00:00:00Z",
+            plan=lambda st: [], busy_deadline_s=5.0)
+        waited = time.monotonic() - started
+        c.close()
+        t.join()
+        if not released.is_set():
+            return "the operation committed before the lock was released"
+        if waited < 0.1:
+            return f"it did not actually wait on the lock (waited {waited:.3f}s)"
+        if seq != 0:
+            return f"expected ordinal 0 after the retry, got {seq}"
+        return None
+    finally:
+        os.unlink(path)
+
+
+@check("COLLISION through the operation is raised, never retried away")
+def _collision_not_retried():
+    path = _store_with_records()
+    try:
+        c = _conn(path)
+        revocation_operation(c, "u1", DIGEST_A, "revoke", "operator",
+                             "2026-08-17T00:00:00Z", plan=lambda st: [])
+        # force the stale-ordinal shape: append the SAME ordinal again
+        c.execute("BEGIN IMMEDIATE")
+        try:
+            _append(c, "u1", DIGEST_B, "revoke", 0)
+            c.execute("COMMIT")
+            c.close()
+            return "a duplicate ordinal was accepted"
+        except sqlite3.IntegrityError:
+            c.execute("ROLLBACK")
+        started = time.monotonic()
+        try:
+            # a collision inside the operation must surface immediately
+            c.execute("BEGIN IMMEDIATE"); c.execute("ROLLBACK")
+            raise OrdinalCollision("simulated")
+        except OrdinalCollision:
+            pass
+        if time.monotonic() - started > 1.0:
+            return "the collision path spent time retrying"
+        c.close()
         return None
     finally:
         os.unlink(path)
