@@ -1612,8 +1612,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -1936,8 +1935,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -2228,8 +2226,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -2521,8 +2518,7 @@
      "seq": 0,
      "reason": "operator"
     }
-   ],
-   "history": []
+   ]
   },
   "target": {
    "origin": "connector-a",
@@ -2815,8 +2811,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -3112,8 +3107,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -3399,8 +3393,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-c",
@@ -3706,8 +3699,7 @@
      "contributor_ref": "e-loop"
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -3755,8 +3747,7 @@
     }
    ],
    "ledger": [],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -3790,7 +3781,6 @@
   "store": {
    "user_id": "u1",
    "local_origin": "org-local-9f2c",
-   "history": [],
    "revocations": [],
    "records": [
     {
@@ -4154,8 +4144,7 @@
      "seq": 0,
      "reason": "operator"
     }
-   ],
-   "history": []
+   ]
   },
   "target": {
    "origin": "connector-a",
@@ -4500,8 +4489,7 @@
      "seq": 1,
      "reason": "operator"
     }
-   ],
-   "history": []
+   ]
   },
   "target": {
    "origin": "connector-a",
@@ -4820,8 +4808,7 @@
      "seq": 0,
      "reason": "operator"
     }
-   ],
-   "history": []
+   ]
   },
   "target": {
    "origin": "connector-a",
@@ -5107,8 +5094,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -5408,8 +5394,7 @@
      "seq": 0,
      "reason": "operator"
     }
-   ],
-   "history": []
+   ]
   },
   "target": {
    "origin": "connector-a",
@@ -5695,8 +5680,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -5996,8 +5980,7 @@
      "seq": 0,
      "reason": "operator"
     }
-   ],
-   "history": []
+   ]
   },
   "target": {
    "origin": "connector-a",
@@ -6296,8 +6279,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -6597,8 +6579,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",
@@ -7101,8 +7082,7 @@
      "contributor_ref": null
     }
    ],
-   "revocations": [],
-   "history": []
+   "revocations": []
   },
   "target": {
    "origin": "connector-a",

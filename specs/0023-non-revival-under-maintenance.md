@@ -364,9 +364,42 @@ table. Listed so the inventory is exhaustive rather than convenient.)
    episode is not assertable, so it never enters the grounded partition, the
    wiki input, proactive assembly or the scoped grounded set, and in the
    recall render it routes to the FENCED section rather than ordinary detail.
-3. **The inventory is GENERATED, not written** — `N15` regenerates it from
-   the tree and fails when a sixth consumer appears, because a hand-written
-   list of readers is what produced a hand-written list of one.
+3. **The inventory is GENERATED FROM EPISODE-TEXT CONSUMPTION, not from the
+   old condition** — `N15`, redefined at v5 (external round 2, F4).
+
+**v4's N15 swept for reads of `provenance.third_party_influenced`, which
+finds another COPY of the old condition and is blind to a consumer that
+never had one.** The reviewer's counterexample needs no such read:
+
+```python
+return "\n".join(ep.summary for ep in store.episodes(user_id))
+```
+
+That site reads neither `third_party_influenced` nor `assertable`, so v4's
+sweep passes while quarantined text becomes grounded context. **A generator
+keyed on the defect's old SHAPE cannot see a consumer that never had it.**
+
+**v5 generates from what actually leaks: EPISODE TEXT.** The sweep is over
+reads of `Episode.summary` and over episode COLLECTIONS entering a prompt,
+the wiki, or a grounded partition. Executed
+(`grep -rn "\.summary" src/veracium/`), the true inventory is **seven
+sites, and the seventh was invisible to every previous definition**:
+
+| site | what it feeds | disposition |
+|---|---|---|
+| `__init__.py:869,871` | recall render | through `Episode.assertable` |
+| `gate.py:134,136` | the GROUNDED partition | through `Episode.assertable` |
+| `compile.py:234` | the wiki render | through `Episode.assertable` |
+| `compile.py:146` | the wiki INPUT selection | through `Episode.assertable` |
+| `proactive.py:217` | proactive assembly | through `Episode.assertable` |
+| `scope_read.py:65` | the `0020` scoped grounded predicate | through `Episode.assertable` |
+| **`lifecycle.py:182`** | **the CONSOLIDATION PROMPT** — `listing = "\n".join(f"[{e.date}] {e.summary}" for e in cold)`, fed straight to `CONSOLIDATE_PROMPT` | **NEW, and the sharpest of the seven**: a quarantined episode's text reaching the consolidation prompt can be SYNTHESIZED INTO A NEW RECORD, which is `0022` §4c's laundering concern arriving from the other direction. Dispositioned through `Episode.assertable` on the cold pool |
+| `sqlite.py:1080,1441` | WRITE `draft.summary` | **not a consumer** — writes an output's own text; dispositioned as such |
+
+**That seventh site is the argument for the redefinition.** It reads no
+disclosure field, sits in `lifecycle` rather than any render path, and feeds
+an LLM rather than a user — and both earlier definitions of "consumer" were
+structurally incapable of seeing it.
 
 **Why FENCED and not SUPPRESSED, stated because the review asked for
 suppression and this is a deliberate departure.** Suppressing quarantined
@@ -504,8 +537,8 @@ write-time state to reverse.
 
 **It does NOT un-quarantine records that already landed quarantined at
 birth, and this asymmetry is declared rather than discovered.** 0022's
-retirements reverse by supersession and its recomputes reverse by
-recomputation; a quarantine written into `disclosure` would reverse only
+retirements and recomputes both reverse by RECOMPUTATION from the standing
+set (its §4f, narrowed at external round 1); a quarantine written into `disclosure` would reverse only
 by a SECOND disclosure writer, which would break the single-write-site
 property (§4a, **N2**) that 0004 reasons from and that this spec depends
 on. We are not adding that writer for v1.
@@ -596,8 +629,7 @@ lifecycle sweep is legible as a whole:
 | **N12** a store with NO standing revocation is byte-identical in stored state and in every read to a store that never upgraded | `test_no_revocation_is_byte_identical` |
 | **N13** a lift restores ordinary behaviour for FUTURE writes with nothing to unwind, and does NOT rewrite the disclosure of records already written — the declared asymmetry, pinned in both directions | `test_lift_does_not_rewrite_existing_disclosure` |
 | **N14** a quarantined episode is NOT ASSERTABLE at **every** consumer — `Episode.assertable` is the one predicate and all five sites call it (external round 1, F1: v3 fixed ONE of five, and the reviewer executed the counterexample straight into the gate partition and the wiki input) | `test_quarantined_episode_is_not_assertable_anywhere` — **parametrised over the five sites**: `recall()` render, `gate.partition_parts`, `compile`'s wiki input, `proactive` assembly, and `scope_read`'s grounded predicate. One assertion per site, each on the SURFACE, because a store-level assertion passes on all five broken |
-| **N15** the consumer inventory is GENERATED and TOTAL — a sixth site that decides episode assertability fails the build | `test_episode_assertability_consumers_are_exhaustive` — sweeps `src/veracium/` for every read of `provenance.third_party_influenced` on an Episode and asserts each is either `Episode.assertable` or a dispositioned non-assertability use (`sqlite.py:1463`'s provenance derivation). **A hand-written reader list is what produced a hand-written list of one** |
-Standing checks that must not regress: injection asserts 0 · cross-user
+| **N15** the consumer inventory is GENERATED FROM EPISODE-TEXT CONSUMPTION and is TOTAL: every read of `Episode.summary`, and every episode COLLECTION entering a prompt, the wiki or a grounded partition, is dispositioned either through `Episode.assertable` or as an explicit non-assertability use. **Redefined at v5 (external round 2, F4): v4 swept for reads of the OLD CONDITION, which is blind to a consumer that never had one** — the reviewer's `"\n".join(ep.summary ...)` passes v4's sweep and leaks | `test_episode_text_consumers_are_exhaustive` — the generator, plus **`test_the_inventory_gate_bites`: an ADVERSARIAL FIXTURE that introduces an unguarded consumer reading only `ep.summary` and asserts the sweep FAILS.** A gate nobody has watched fail is a gate nobody has tested |Standing checks that must not regress: injection asserts 0 · cross-user
 leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0.
 
 **Measurement counterpart, named and NOT claimed here:** research's
@@ -640,8 +672,14 @@ containment, and no row above depends on it.
 
 | carrier | change |
 |---|---|
-| **`schema.py` — the `Episode` model** | gains a DERIVED `quarantined` property mirroring `Edge`'s (`schema.py:274`). Derived, never stored — the value lives in `disclosure` and a second copy is a second source of truth (**N14**, internal S3) |
-| **`__init__.py` — the episode render (`_fit_to_budget`, `:869-872`)** | consults `quarantined` and routes a quarantined episode to the FENCED never-assert section. This is the READER half of a rule v2 wrote only on the writer side |
+| **`schema.py` — the `Episode` model** | gains DERIVED `quarantined` AND **`assertable`** properties mirroring `Edge`'s (`schema.py:274`, `:290`). Derived, never stored — the value lives in `disclosure` and a second copy is a second source of truth (**N14**, internal S3; `assertable` added at v4 per external F1). **`Episode.assertable` is THE shared predicate all seven text consumers call** |
+| **`__init__.py:869,871` — the recall render (`_fit_to_budget`)** | consults `assertable`; a quarantined episode routes to the FENCED never-assert section |
+| **`gate.py:134,136` — `partition_parts`** | consults `assertable`; a quarantined episode never enters the GROUNDED partition |
+| **`compile.py:146,234` — the wiki input selection AND its render** | consults `assertable`; a quarantined episode never enters the compiled wiki |
+| **`proactive.py:217` — proactive assembly** | consults `assertable` |
+| **`scope_read.py:65` — the `0020` scoped grounded predicate** | consults `assertable`, replacing the open-coded rule whose docstring stated the Edge/Episode asymmetry as a decision |
+| **`lifecycle.py:182` — the CONSOLIDATION PROMPT input (external round 2, F4)** | consults `assertable` on the cold pool. A quarantined episode's text must not reach the consolidation prompt, or it can be synthesized into a new record — `0022` §4c's laundering concern from the other direction |
+| **`sqlite.py:1080,1441`** | UNCHANGED — these WRITE an output's own `summary`; dispositioned in the inventory as non-consumers so the sweep's totality is not bought by ignoring them |
 | `src/veracium/ingest.py` | `_disclosure_for` gains the standing-revocation input; the site does not move (**N1**, **N2**) |
 | `src/veracium/graph.py` | the absorption candidate rail on `_absorption_scope_gate`; the supersession refusal cell |
 | `src/veracium/lifecycle.py` | `partition_cold` excludes revoked-source records; renewal consults the standing state |
@@ -797,8 +835,15 @@ operator-chosen option (§10, **Q1**).
 ## Review closure
 
 *(PROCESS §4a — one row per review finding, with evidence that is openable
-or executable. **This spec is a pre-review DRAFT: no round has been run, so
-there are no findings and no rows.** The section exists from day one
+or executable. **THREE ROUNDS HAVE RUN — two internal and two external
+(external round 1 RETURNED FOR AMENDMENT, external round 2 RETURNED FOR
+AMENDMENT). The rows are below.** v4/v5 corrected this: the section still
+said "no round has been run" while `specs/reviews.py` carried only `SENT`
+rows and no verdicts — so the declared source of truth recorded that a
+package went out and never that it came back. The external reviewer found
+it (round 2, artifact/process finding 1), and it is the same
+carrier-completeness failure as F1 and F2, applied to the process record
+rather than to the spec text.** The section exists from day one
 deliberately — both 0020 and 0021 hit this gate mid-implementation and had
 to reconstruct it, and the CI gate refuses an `accepted` spec without it.*
 

@@ -35,8 +35,10 @@ Vector schema, per kind (every vector: {"name", "kind", "expect", ...}):
                    and asserts the two statements are equal
 - append_only:     {"store": {...}, "target": identity, "proposed": {...}}
                    expect = "append-only" — applies the effects and asserts
-                   the input store is untouched, no record disappeared, and
-                   `history` only grew
+                   the input store is untouched, no record appeared or
+                   disappeared, and the `revocations` LEDGER only grew
+                   (external round 2 F1: the per-record `history` this used
+                   to check was withdrawn — the product has no such carrier)
 - effect_verbs:    {} ; expect = the closed verb list (no delete, no edit)
 
 Identities in vectors are {"origin": str|null, "source_id": str|null} and are
@@ -201,12 +203,19 @@ def _run_one(v):
         if store != before:
             return "apply_effects MUTATED its input store"
         if len(after["records"]) != len(store["records"]):
-            return "a record disappeared — supersede-never-erase violated"
-        old_hist = list(store.get("history", ()))
-        if after["history"][:len(old_hist)] != old_hist:
-            return "history is not append-only"
-        if len(after["history"]) != len(old_hist) + len(stmt["effects"]):
-            return "an effect left no superseded value in history"
+            return "a record appeared or disappeared — retain-never-erase violated"
+        before_ids = {(r["type"], r["id"]) for r in store["records"]}
+        after_ids = {(r["type"], r["id"]) for r in after["records"]}
+        if before_ids != after_ids:
+            return "the record SET changed — retention is by identity, not by count"
+        if "history" in after:
+            return "a per-record history carrier reappeared (withdrawn, F1)"
+        old_rows = list(store.get("revocations", ()))
+        new_rows = list(after.get("revocations", ()))
+        if new_rows[:len(old_rows)] != old_rows:
+            return "the revocations ledger is not append-only"
+        if len(new_rows) != len(old_rows) + (1 if stmt.get("row") is not None else 0):
+            return "the ledger grew by something other than the proposed row"
         for rec in after["records"]:
             if rec["active"] and rec.get("retired_reason") is not None:
                 return "an active record kept a retirement reason"

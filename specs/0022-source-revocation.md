@@ -1,5 +1,17 @@
 # Feature spec: source revocation — the standing state and the sweep (A3a)
 
+| round | finding | verdict | where it closed | evidence |
+|---|---|---|---|---|
+| **internal 1** (research, 2026-08-17) | S1 — the sweep's record DOMAIN was unenumerated; episodes had no retirement mechanism | folded | §4b-i, §4b-ii, **R18** | the enumerated record-type table with executed exclusions |
+| **internal 2** | — (no finding on this spec) | — | — | — |
+| **EXTERNAL 1** (2026-08-17) | **F2 — ordering by `(at, seq)` with host-supplied `at` made a revocation PERMANENTLY UNLIFTABLE** | folded | §4a, **R1** | 5 clock-skew vectors; the reviewer's counterexample reproduced |
+| **EXTERNAL 1** | **F3 — "supersession, never edit" was true of no carrier in the product** | folded by NARROWING | §4f, C3, **R9**, the reference | withdrawal registered in `withdrawn_phrases.py`; **Q9** opens the successor |
+| **EXTERNAL 1** | **F4 — class (c) gated on `system_authored` was not an upper bound** | folded | §4c, **R7** | the pre-0014 user-authored survivor vector, which BITES |
+| **EXTERNAL 2** (2026-08-17) | **F1 — F3's withdrawal was incomplete across SIX further carriers** | folded | §3b, §3 threat cell, §4f, §7, **R9**, the reference + harness + 20 vector stores | the withdrawn-phrase gate now fails the build on any restatement |
+| **EXTERNAL 2** | **F2 — F4's old class-(c) rule was still normative in §2c/§4c/§9** | folded | §4c, §9 | same gate, third registered rule |
+| **EXTERNAL 2** | **F3 — concurrent append ordering was asserted, not constructed** | folded | §4e-i, **R19** | the `BEGIN IMMEDIATE` construction + adversarial interleaving tests |
+
+
 Spec-Status: draft
 Spec-Requires: 0004, 0006, 0014, 0020, 0021, 0023
 
@@ -102,7 +114,7 @@ research's and are used throughout):
 |---|---|---|---|
 | C1 | restrict-only | 0006 (identity groups, never grants) / 0020 | revocation only ever retires, quarantines or reduces. It can never promote a rival record, never clear a flag, never raise a confidence. Un-revoke RESTORES; it never grants |
 | C2 | identity is namespacing, NOT authentication | 0006 (the non-authenticated-origin rule, and its own deferred authenticated-origin question) | the revocation key is unauthenticated, so the forged-source cell is real (§3b) and reversibility is a THREAT-MODEL REQUIREMENT, not a courtesy |
-| C3 | supersede-never-erase — **NARROWED at v3 (F3): retain-never-erase, by reversible in-place state over an append-only LEDGER** | house rule | revoked records RETIRE with reason `revoked_source`; **nothing is deleted and content stays re-derivable**; `forget()` remains the separate data-subject erasure op. **This spec does NOT define retirement events, ids, links or read-time resolution — the shipped store changes record state in place (`_invalidate_edge_row`) and the append-only carrier is `source_revocations`.** §4f states the withdrawal; **Q9** holds the successor |
+| C3 | **retain-never-erase** (v3 — WITHDRAWN NAME quoted to retract it: this rule was called *supersede*-never-erase until external round 1's F3 — the supersede half named a carrier the product does not have) — reversible in-place record state over an append-only LEDGER | house rule | revoked records RETIRE with reason `revoked_source`; **nothing is deleted and content stays re-derivable**; `forget()` remains the separate data-subject erasure op. **This spec does NOT define retirement events, ids, links or read-time resolution — the shipped store changes record state in place (`_invalidate_edge_row`) and the append-only carrier is `source_revocations`.** §4f states the withdrawal; **Q9** holds the successor |
 | C4 | transitively closed consumption | 0021 (the closed-consumption rule) | the blast radius is the CLOSED set over typed links; a single-level sweep is a defect by accepted rule |
 | C5 | fail-closed on missing evidence | 0020 (the fail-closed membership hierarchy) | where attribution is absent, revocation REPORTS incompleteness. Every revocation returns a completeness statement. *A tool that quietly misses half the blast radius is worse than none* is hereby a design requirement, not a warning |
 | C6 | ordinary-release bias | 0018 | one small append-only table plus read-side consultation is a SCHEMA bump on the ordinary migration path; no API-breaking window is needed or requested |
@@ -261,8 +273,11 @@ Then, explicitly:
   the only path, and this spec does not touch the flag. Nor does it clear
   `ungrounded` — see the ratchet, **R5**.
 - **Does it merge, drop, or overwrite provenance?** **No.** No ledger row
-  is written, dropped or rewritten; no record is deleted; retirement and
-  reinstatement are both new events (**R9**).
+  is written, dropped or rewritten and **no record is deleted**. Retirement
+  and reinstatement UPDATE THE RECORD'S STATE IN PLACE
+  (`active`/`retired_reason`); the append-only carrier is
+  `source_revocations`, and record state is DERIVED from it (**R9**).
+  Provenance itself is never rewritten.
 
 **Write-time or maintain-time?** **Neither — this is OPERATOR-time**, a
 third category the store already has: `forget()` and `confirm()` are its
@@ -304,9 +319,9 @@ deliberately not in this document.
   garbage that an operator, seeing it, revokes — taking the victim's
   genuine records with it. **This is a real cell and we do not close it.**
   What we do:
-  - revocation is REVERSIBLE, and reversal restores by supersession
-    (**R10**) — the operator is never one mistake away from an
-    unrecoverable state;
+  - revocation is REVERSIBLE — reversal recomputes the desired state from
+    the new standing set and restores the record in place (**R10**) — so
+    the operator is never one mistake away from an unrecoverable state;
   - it is RESTRICT-ONLY, so a forged source can never PROMOTE anything —
     the attack costs availability, never integrity;
   - the blast radius is shown BEFORE the commit, in the same computation
@@ -546,10 +561,15 @@ of the rows in front of us, not of when they were written:
   recompute both work. What does NOT work is the walk: the survivor's
   own DESCENDANTS cannot be enumerated. They are REPORTED unreachable.
 - **(c) unattributed** (no rows at all): reported as unreachable, never
-  guessed. The count is the number of system-authored records carrying no
-  attribution rows, which is an **upper bound** on the population and
-  deliberately so — over-reporting a blind spot is the fail-closed
-  direction; under-reporting it is the failure C5 exists to prevent.
+  guessed. **The count is EVERY record carrying no attribution rows that
+  this sweep has not already reached — WHATEVER ITS AUTHORSHIP** (external
+  round 1, F4; the authorship gate was withdrawn there and this carrier
+  still stated it at round 2, F2). It is an **upper bound** on the
+  UNREACHED population and deliberately so — over-reporting a blind spot is
+  the fail-closed direction; under-reporting it is the failure C5 exists to
+  prevent. The `unreached` qualifier is load-bearing: a class-(a) record is
+  already found and acted on, and counting it inflates the one number whose
+  job is to say what the sweep could NOT see.
 
 **Class (b) has a LIVE PRODUCER and is not a legacy class.**
 Consolidation writes NULL contributor columns TODAY, by a documented
@@ -673,6 +693,58 @@ if dry_run:  return statement
 append(action); apply(statement.effects); return statement
 ```
 
+#### 4e-i. The COMMIT path's concurrency, CONSTRUCTED (external round 2, F3)
+
+**The pseudocode above is a data-flow sketch and v3 shipped it as if it
+were a concurrency contract. It is not one, and the reviewer constructed the
+race:** two hosts both read `max(seq)=4`, both plan against the same standing
+set, both allocate `seq=5`. The unique ordinal then rejects one *valid*
+operation — or, without it, produces exactly the ambiguity **R1** refuses.
+v3 asserted a winner and a loser and specified neither.
+
+**The construction, exactly, for the shipped SQLite store:**
+
+```
+with conn:                       # BEGIN IMMEDIATE — the write lock is taken
+    seq  = SELECT COALESCE(MAX(seq), -1) + 1                # inside the txn
+          FROM source_revocations WHERE user_id = ?
+    rows = SELECT * FROM source_revocations WHERE user_id = ?
+    statement = sweep(records, ledger, standing_from(rows), target,
+                      proposed=action_at(seq))
+    INSERT INTO source_revocations (...)                    # the ordinal it planned on
+    apply(statement.effects)                                # same txn
+# COMMIT: the row, the retirements and the recomputes land together or not at all
+```
+
+**`BEGIN IMMEDIATE` before the read is the whole fix.** SQLite's deferred
+transaction takes the write lock at the first WRITE, so the read that
+allocates `seq` happens outside it and two writers can allocate the same
+ordinal. Taking the lock up front makes allocate-plan-append one serialised
+unit: the second host blocks, then reads a ledger that already contains the
+first host's row, and **plans against the standing set that actually
+exists** rather than a stale one.
+
+- **The unique constraint stays**, as a backstop that must never fire. If it
+  ever does, that is a construction defect, not a race to retry around —
+  `SQLITE_BUSY` on lock acquisition is the ordinary, retryable outcome, and
+  the two must not be conflated.
+- **No CAS/retry loop is specified**, deliberately: a retry loop around an
+  unserialised read is how you get two operations that each believe they saw
+  the final state. Serialise first; there is then nothing to retry.
+- **The loser is not re-derived, because there is no loser** — there is a
+  second operation that runs afterwards, against post-first state. A second
+  revoke of an already-standing source is idempotent in effect (**R16**); a
+  lift following a revoke lifts what the revoke did. Both are ordinary
+  sequences, which is the point of serialising rather than arbitrating.
+- **Non-SQLite stores** must provide the same guarantee — allocate, plan and
+  append inside one serialised write — and **R19** states it as the contract
+  rather than as SQLite trivia.
+
+**Adversarial tests (R19):** two overlapping revocations of DIFFERENT
+sources interleaved; two revocations of the SAME source; revoke racing lift
+on one source; and a forced `SQLITE_BUSY` proving it is retryable while a
+unique-ordinal violation is not.
+
 A preview that can diverge from its commit is the classic defect in this
 shape of feature — it is the reason operators stop trusting previews, and
 it fails silently, because the two paths agree on every example anyone
@@ -682,7 +754,7 @@ statements are equal — including that the preview left the store
 byte-identical, and that the planner is a pure function of its inputs
 (the harness re-plans and compares).
 
-### 4f. Reversal — DESIRED STATE, by supersession, never by edit
+### 4f. Reversal — DESIRED STATE, recomputed; never an undo log
 
 `unrevoke_source(user_id, origin, source_id, reason)` appends a lifting
 row. Reversibility is a threat-model requirement (C2), not a courtesy.
@@ -698,8 +770,9 @@ Concretely:
 
 - **NARROWED AT v3 (external round 1, F3), and the narrowing is a
   withdrawal, not a rewording.** v2 said retirements "REVERSE BY
-  SUPERSESSION — a new event that supersedes the retirement, never by
-  editing the retirement record". **The product has no such event.** The
+  AN IN-PLACE STATE CHANGE recomputed from the standing set, never by
+  deleting the record and never by a retirement event the store does not
+  have". **The product has no such event.** The
   reviewer put the contradiction precisely: the normative reference
   overwrites a record under the same id and appends the former value to an
   abstract `history` list for which no product carrier exists, while
@@ -718,7 +791,8 @@ Concretely:
   and lift are the same computation** (below), and no undo log exists to
   replay wrongly.
 
-  **`supersede-never-erase` (C3) survives in the sense that carries the
+  **WITHDRAWN NAME, quoted to retract it: `supersede-never-erase` (C3)
+  survives in the sense that carries the
   guarantee** — nothing is deleted, content is retained and re-derivable,
   `forget()` remains the only erasure surface — and **is withdrawn in the
   sense that overreached**: this spec does not introduce retirement events,
@@ -793,7 +867,7 @@ the only row with a live artifact, and its evidence is
 | **R6** dry-run and commit produce the IDENTICAL statement from ONE code path; the dry run leaves the store byte-identical; the planner is a pure function of its inputs | `test_dry_run_equals_the_commit` (+ the `preview_agrees` vectors) |
 | **R7** the completeness statement reports all three class counts, **counts retired-synthesized separately from retired-sole-basis**, and is `complete=False` whenever the class-(b) or class-(c) population is non-empty. **Class (c) is UNATTRIBUTED AND UNREACHED — every record with no contribution rows that this sweep did not already find, WHATEVER ITS AUTHORSHIP (external round 1, F4)** | `test_completeness_statement_is_honest` + `test_retired_synthesized_counted_separately` + **`test_user_authored_unattributed_is_counted`** — a pre-`0014` absorption survivor that kept the INCOMING record's user authorship while carrying transferred values no ledger row names. The vector BITES: under the v2 predicate it counted 1, under v3 it counts 5 |
 | **R8** consumption closure is TRANSITIVE and the property RECURSES (a condemned contributor is not corroboration one hop up); a self-naming row REFUSES instead of looping; the fixpoint terminates | `test_closure_is_transitive_and_recursive` |
-| **R9** supersede-never-erase: after any revoke/lift sequence every record is still present, history only grew, and no effect verb outside `{retire, recompute, reinstate}` exists | `test_revocation_only_appends` |
+| **R9** **retain-never-erase**: after any revoke/lift sequence **every record is still present** (none deleted, none created), **the `source_revocations` table only grew** (no row updated or removed), and no effect verb outside `{retire, recompute, reinstate}` exists. **v3 (external round 2, F1) — WITHDRAWN wording, quoted to retract it: v2 said "history only grew", which asserted a generic record-value history the store does not have, so an implementation could not satisfy R9 and §4f at once** | `test_revocation_retains_every_record` + `test_source_revocations_is_append_only` + `test_effect_verbs_are_closed` |
 | **R10** a lift is DESIRED STATE, not undo: it reinstates only what `revoked_source` retired, restores recomputed values by recomputation, and leaves a record retired while a SECOND revocation still reaches it | `test_lift_is_desired_state_not_undo` |
 | **R11** the shipped surface agrees with the normative reference on every pinned vector, through the SHIPPED harness | `test_revocation_reference_vectors` — today: `.venv/bin/python specs/evidence/0022/vector_harness.py`, whose recorded result ships as `vector_harness_result.txt` (the one carrier for the count) |
 | **R12** a source with no `source_id` has no digest, no join and no reach: it cannot be revoked and cannot be reached by any revocation | `test_unknown_source_is_not_revocable` |
@@ -803,6 +877,7 @@ the only row with a live artifact, and its evidence is
 | **R16** the sweep is idempotent: a second revoke of a standing source appends its row and plans no further effect | `test_second_revoke_is_a_no_op` |
 | **R17** every retirement the sweep performs routes through `_invalidate_edge_row`, the SOLE writer of `active=0` — no bulk update path exists, so the wiki drop is inherited by construction (§4b) | 0004's own `test_sole_active_zero_writer` (the AST sweep — a second writer FAILS the build) + `test_the_sweep_retires_through_the_sole_writer` |
 | **R18** the sweep's record DOMAIN is the enumerated one (§4b-i), and EPISODES are retired by it — through ONE writer, with `store.episodes()` default-excluding retired rows so all nine readers inherit the exclusion (internal S1; v1 had no mechanism for this type at all) | `test_revocation_retires_episodes` (a revoked source's episode text must not appear in `recall()`'s rendered context — the assertion at the RENDER surface, not at the store) · `test_episode_read_seam_is_sole_path` — an AST sweep asserting every `FROM episodes` outside the dispositioned §7a list routes through `store.episodes()`, which is what stands in for the SQL-level guarantee a column would have given · `test_retired_episode_round_trips` (export/import preserve retired state rather than resurrecting it). **The VECTOR side of R18 is ALREADY SATISFIED and was before the finding: 18 of the 54 vectors carry episode-typed records, and the reference retires them with `revoked_source` exactly as it retires edges** (executed, §2c-ii) — which is precisely why S1 is a class-G finding. The evidence proved the DESIGN over both types while the product had a mechanism for only one |
+| **R19** allocate-plan-append is ONE SERIALISED WRITE: the ordinal is allocated, the standing set read, the sweep planned, the row appended and the effects applied inside a single write transaction taken BEFORE the first read (`BEGIN IMMEDIATE` on SQLite). The unique ordinal is a backstop that must never fire; lock contention (`SQLITE_BUSY`) is retryable and an ordinal collision is NOT — they are different outcomes and must not be conflated (external round 2, F3) | `test_two_hosts_cannot_allocate_one_ordinal` (two overlapping revocations of different sources · two of the SAME source · revoke racing lift) + `test_busy_is_retryable_and_collision_is_not` — **adversarial interleaving, driven from two real connections, not simulated** |
 
 Standing checks that must not regress: injection asserts 0 · cross-user
 leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0
@@ -819,9 +894,11 @@ leaks 0 · trust canaries 0 · supersession probes pass · malformed edges 0
   reading. The counterpart failure — **over-revocation** — is loud,
   bounded and reversible.
 - **Reversibility.** Full, by design and by threat model. The standing
-  state reverses by appending a lifting row; the retirements reverse BY
-  SUPERSESSION; the recomputed values return by RECOMPUTATION over the
-  restored evidence. Nothing is deleted, so nothing needs restoring from
+  state reverses by appending a lifting row; **the retired records return
+  by RECOMPUTATION of their desired state from the new standing set — an
+  in-place update, not a supersession** (§4f, narrowed at external round 1);
+  the recomputed values return by the same recomputation over the restored
+  evidence. Nothing is deleted, so nothing needs restoring from
   a backup. What does NOT reverse: any maintenance the operator chooses
   to run in between (a re-derivation is a new record), and 0021's
   standing rule that consolidation's effects are permanent once run.
@@ -937,12 +1014,19 @@ else:
    socially rather than technically — we want that finding now. The 0021
    round-9 brief raised the same shape of concern about UNRESOLVED
    economics and it was the right question.
-2. **The class-(c) upper bound.** We count system-authored records with
-   no attribution rows and call it an upper bound on the unreachable
-   population. It over-counts (a system-authored observation that is not a
-   derivation) and, more worryingly, we are not certain it cannot
-   UNDER-count: a derivation-shaped record that is not system-authored
-   would escape it. Attack that predicate.
+2. **The class-(c) upper bound — YOUR ROUND-1 F4, and this brief is what
+   invited it.** (WITHDRAWN predicate, quoted to retract it.) v2 counted
+   only system-authored unattributed records and
+   said here that we were "not certain it cannot UNDER-count: a
+   derivation-shaped record that is not system-authored would escape it."
+   It did escape it, you executed exactly that case, and the predicate is
+   now **every unattributed AND unreached record, any authorship**.
+   **What we would still like attacked:** the new predicate over-counts
+   heavily — an ordinary user fact that never combined with anything is
+   counted — so the number is a bound, not an estimate, and its magnitude is
+   a statement about linkage coverage rather than about revocation. If you
+   think a bound that loose is useless to an operator, that is a finding we
+   would take seriously.
 3. **The recompute's authority.** §4d assumes a surviving edge's
    `confidence`/`observed_at`/`valid_from` are set at write and moved only
    by the absorption transform, so the ledger fold is authoritative. If
@@ -980,8 +1064,15 @@ document generalises.
 ## Review closure
 
 *(PROCESS §4a — one row per review finding, with evidence that is openable
-or executable. **This spec is a pre-review DRAFT: no round has been run, so
-there are no findings and no rows.** The section exists from day one
+or executable. **THREE ROUNDS HAVE RUN — two internal and two external
+(external round 1 RETURNED FOR AMENDMENT, external round 2 RETURNED FOR
+AMENDMENT). The rows are below.** v4/v5 corrected this: the section still
+said "no round has been run" while `specs/reviews.py` carried only `SENT`
+rows and no verdicts — so the declared source of truth recorded that a
+package went out and never that it came back. The external reviewer found
+it (round 2, artifact/process finding 1), and it is the same
+carrier-completeness failure as F1 and F2, applied to the process record
+rather than to the spec text.** The section exists from day one
 deliberately — both 0020 and 0021 hit this gate mid-implementation and had
 to reconstruct it, and the CI gate refuses an `accepted` spec without it.
 When rounds begin, the rows land here and the compressed per-round

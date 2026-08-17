@@ -20,6 +20,17 @@ a 93KiB packed history.
 The sha256 recorded here is what carries the provenance: it is tamper-evident,
 and anyone holding a copy can verify it is the one that was sent.
 
+**ONE COMMIT, NOT TWO. The package's `PACKAGE_MANIFEST.txt` and its
+`COLLECTED.txt` must name the SAME commit.** Round 2's package named
+`1d896041` (the archive commit) in one and `90c418c` (the tested commit) in
+the other, because the suite was measured, then the pre-seal SENT rows were
+committed, then the archive was built from the newer HEAD. The reviewer
+could not tell whether an untested diff had entered the package — and could
+not rule it out, which is the same thing. **Measure AFTER the last commit
+that will be in the archive**, or state the two commits with the intervening
+diff as an explicit allowlist. Identical is better; it needs no allowlist to
+audit.
+
 **Sealing is not sending. A sealed package is STAGED to
 `~/Documents/veracium/outbox/`, BOTH files -- the `.tar.gz` and its `.sha256`
 sidecar -- beside every prior package.** Building the archive here leaves it on

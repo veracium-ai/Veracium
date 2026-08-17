@@ -47,9 +47,18 @@ FOUR PROPERTIES THIS MODULE EXISTS TO MAKE FALSIFIABLE:
     it is an N-ary OR, so re-deriving it over a SMALLER set can flip it
     True→False, which is a promotion wearing a recompute's clothes.
 
-  * SUPERSEDE-NEVER-ERASE (0022 §4f). `apply_effects` returns a NEW store,
-    never mutates its input, never removes a record, and appends every
-    superseded value to `history`.
+  * RETAIN-NEVER-ERASE (0022 §4f, NARROWED at external round 1's F3).
+    `apply_effects` returns a NEW store, never mutates its input, never
+    removes a record and never creates one: it UPDATES record state in
+    place in the returned copy. The only APPEND-ONLY carrier is
+    `revocations` — the `source_revocations` ledger — from which record
+    state is derived.
+    **v2 also appended every superseded value to a `history` list. That was
+    WITHDRAWN**: no such generic record-value history exists in the product,
+    so the reference modelled a carrier an implementation could not build,
+    and R9 ("history only grew") could not be satisfied together with §4f's
+    in-place mutation. The functional-purity guarantee is unchanged and is
+    the part that was real.
 
 WHAT THIS MODULE DELIBERATELY DOES NOT DEFINE (one definition, one
 carrier — the carrier-completeness rule):
@@ -749,18 +758,24 @@ def sweep(store: dict, target_digest: str, *, proposed=None) -> dict:
     }
 
 
-# ---- applying effects: supersede-never-erase, provably --------------------
+# ---- applying effects: retain-never-erase, provably ----------------------
 
 def apply_effects(store: dict, statement: dict) -> dict:
-    """Return a NEW store. Never mutates the input, never removes a record,
-    and appends every superseded value to `history`.
+    """Return a NEW store. Never mutates the input, never removes a record
+    and never creates one — record state is UPDATED IN PLACE in the copy.
 
-    This is the executable form of C3: the reversal of a retirement is a new
-    superseding event, never an edit and never an undelete. 0022 R9 asserts
-    that the input store is byte-identical afterwards and that `history` only
-    grows."""
+    This is the executable form of C3 as NARROWED at external round 1 (F3):
+    retirement is reversible in-place state, and the append-only carrier is
+    the `revocations` ledger, not a per-record history. 0022 R9 asserts that
+    the input store is byte-identical afterwards, that every record is still
+    present, and that `revocations` only grows.
+
+    **The `history` list v2 built here is WITHDRAWN.** The product has no
+    generic record-value history, so it modelled a carrier no implementation
+    could supply — and an implementation obeying R9's old wording would have
+    had to preserve value history that §4f's in-place mutation destroys. The
+    two carriers contradicted each other; this is the side that exists."""
     records = {(r["type"], r["id"]): dict(r) for r in store["records"]}
-    history = list(store.get("history", ()))
     for e in statement["effects"]:
         key = (e["type"], e["id"])
         if key not in records:
@@ -778,11 +793,9 @@ def apply_effects(store: dict, statement: dict) -> dict:
                 after[f] = e["values"][f]
         else:                                    # unreachable: closed above
             raise RevocationError(f"unknown effect verb {e['verb']!r}")
-        history.append({"superseded": before, "by": e["verb"]})
         records[key] = after
     out = dict(store)
     out["records"] = [records[(r["type"], r["id"])] for r in store["records"]]
-    out["history"] = history
     if statement.get("row") is not None:
         # the proposed row is APPENDED, whichever action it carries — a lift
         # is a row too, and the table is the audit trail of both

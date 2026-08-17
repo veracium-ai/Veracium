@@ -14,6 +14,24 @@ rule_id and asserts THAT entry matches it (R8-5 — proving a fixture matches
 """
 
 WITHDRAWN = [
+    # ---- 0022 (external round 2, F1/F2): TWO claims narrowed in round 1 and
+    # then left standing in six and three other carriers respectively. The
+    # docstring above describes this failure exactly, the list was already
+    # gated, and I folded both findings by hand at the site the reviewer named
+    # WITHOUT registering the retraction here. Registering it is the fix; the
+    # sweep below is what found the rest.
+    ("0022-retirement-is-a-new-event",
+     r"retirement and reinstatement are both new events|reinstatement are both new events|(retirements?|reversal) (REVERSE|reverses?) BY SUPERSESSION|by supersession, never by edit|a new event that supersedes the retirement",
+     "external round 2 F1/0022: the product has NO retirement-event carrier. C3 is narrowed to retain-never-erase over reversible IN-PLACE state; only source_revocations is append-only",
+     "specs/0022 §4f + C3; the successor carrier is Q9"),
+    ("0022-history-only-grew",
+     r"history only grew|appends? (every )?superseded value to .?history|supersede.never.erase(?!.{0,80}NARROWED)",
+     "external round 2 F1/0022: there is no generic record-value history in the store; R9 asserted a carrier that does not exist",
+     "specs/0022 §4f/R9 — retained-and-updated-in-place, over the append-only ledger"),
+    ("0022-class-c-is-system-authored",
+     r"system.authored records with NO attribution|only system.authored|class \(c\) (counts|is) .{0,30}system.authored",
+     "external round 2 F2/0022: authorship is not a derivation discriminator — a pre-0014 absorption survivor keeps the incoming record's USER authorship. Class (c) is unattributed AND unreached, any authorship",
+     "specs/0022 §4c/R7"),
     # ---- 0014 (rounds 4-8): rules retired during the external review, restated
     # affirmatively nowhere. Underscores are stripped by _normalise (emphasis
     # folding), so identifiers are written normalised. Added at R6-6, which
