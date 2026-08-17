@@ -839,7 +839,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0023`; 6 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 5 external round(s) with a returned VERDICT are recorded for `0023`; 7 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -856,9 +856,11 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`). 0023 at v6: R3-3 folded — maintenance checks the STANDING REVOCATION rather than `Episode.assertable`, which over-excluded ordinary quarantined/use-only episodes in a ZERO-revocation store and broke N12; N12 gains the behaviour-half negative control… |
 | external 5 (verdict) | 2026-08-17 | 0 | R4-2 CLOSED; no new semantic blocker on this spec. Acceptance remains deferred only through the mutual Spec-Requires with 0022 |
 | external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`). 0023 at v7: R4-2 folded — §7a now says SIX consumers call `Episode.assertable` and names `lifecycle.py:182` as the seventh, explicitly NON-assertability use (maintenance excludes on the standing revocation); the malformed three-cell N12 row is conso… |
+| external 6 (verdict) | 2026-08-17 | 0 | SEMANTICALLY CLEAR, DEFERRED. No new semantic finding: R4-2 is closed and the spec stands. Deferred by its incomplete closure ledger (R6-3, now 9/9) and by the atomic dependency on 0022 through the mutual Spec-Requires |
 | external 6 (SENT) | 2026-08-17 | — | SENT (the coupled round-6 package `0022-0023-v6`). 0023 at v7: no new finding at round 5 — R4-2 closed and the spec is semantically clear; it travels because acceptance is atomic through the mutual Spec-Requires |
+| external 7 (SENT) | 2026-08-17 | — | SENT (the coupled round-7 package `0022-0023-v7`). 0023 at v8: its closure ledger is complete (9/9) and mechanically validated against reviews.py; no semantic change was required |
 
-**Per-finding closure ledger — PROCESS §4a.** 9 finding(s) recorded for `0023`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
+**Per-finding closure ledger — PROCESS §4a.** 10 finding(s) recorded for `0023`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
@@ -871,5 +873,6 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | **F4** | external 2 | N15 was not a total inventory: it swept for reads of the OLD CONDITION, so a consumer that never had one passed — and a seventh consumer (lifecycle.py:182, the consolidation prompt) was invisible | N15, §7a | `grep -rn '\.summary' src/veracium/ \| grep -v test  # every episode-text consumer the inventory must disposition` |
 | **M2** | external 1 | renewal was the one §4 seam with no executed §2c-ii command — and running it showed there is NO renewal verb at all | §4g, N7 | `grep -rn 'renew' src/veracium/ --include=*.py  # only consolidation LEASES; 0012 deleted reinforcement's transfers` |
 | **M3** | external 1 | the wiki row's third path — the supersession-refusal cell — was covered by neither 'quarantine never enters' nor '0022 retires' | §3 wiki row, §7b 0004 row | `grep -n 'THIRD path' specs/0023-non-revival-under-maintenance.md` |
+| **R6-3** | external 6 | its closure ledger was 3/9 against the findings reviews.py names | specs/closure_findings.py, validated by render_closure | `python3 specs/render_closure.py --check` |
 
 <!-- /GENERATED:review-closure -->

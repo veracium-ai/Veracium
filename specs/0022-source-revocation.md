@@ -1212,7 +1212,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**1 internal round(s) and 4 external round(s) with a returned VERDICT are recorded for `0022`; 6 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**1 internal round(s) and 5 external round(s) with a returned VERDICT are recorded for `0022`; 7 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised | verdict (compressed) |
 |---|---|---|---|
@@ -1227,9 +1227,11 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 4 (SENT) | 2026-08-17 | — | SENT (the coupled round-4 package `0022-0023-v4`; 0004 remains OUT — approved and frozen at round 2). 0022 at v5: R3-1 folded with ONE shared `revocation_operation` quoted verbatim in §4e-i and CALLED by the harness (the spec printed `with conn:` while the harness executed BEGIN IMMEDIATE — the evid… |
 | external 5 (verdict) | 2026-08-17 | 4 | RETURN FOR AMENDMENT (2 blocking on this spec + 2 package/process; 0023 semantically clear, deferred only by the mutual requires; 0004 not reopened). R5-1 — the failure outcomes were NOT TOTAL: a failing ROLLBACK was suppressed and the ORIGINAL error re-raised, so the caller held a live transaction … |
 | external 5 (SENT) | 2026-08-17 | — | SENT (the coupled round-5 package `0022-0023-v5`; 0004 remains OUT — approved, frozen). 0022 at v6: R4-1 folded — the shared operation now APPLIES EVERY EFFECT in the same transaction, stores the operator's reason and timestamp, requires `plan`, and rolls the row back with the effects on any fault; … |
+| external 6 (verdict) | 2026-08-17 | 4 | RETURN FOR AMENDMENT (2 blocking on this spec + 2 package/process; 0023 semantically clear but deferred by its incomplete ledger and the atomic dependency; 0004 not reopened). R6-4 — THE OFFLINE LAUNCHER CERTIFIED AN UNQUALIFIED RUNTIME. It invented its own rule (SQLite >= 3.35) while the repository… |
 | external 6 (SENT) | 2026-08-17 | — | SENT (the coupled round-6 package `0022-0023-v6`; 0004 remains OUT — approved and frozen at round 2, and named as such in both carriers rather than quietly included). 0022 at v7: all four round-5 findings folded. R5-1 the failure outcomes are total (unknown-state rollback closes the connection; only… |
+| external 7 (SENT) | 2026-08-17 | — | SENT (the coupled round-7 package `0022-0023-v7`; 0004 remains OUT — approved and frozen; PRIOR EXTERNAL REPORTS ARE NOT INCLUDED, per the reviewer's explicit instruction, with the structured closure ledger as the agreed replacement). 0022 at v8: R6-1 the rollback boundary is BaseException on both s… |
 
-**Per-finding closure ledger — PROCESS §4a.** 17 finding(s) recorded for `0022`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
+**Per-finding closure ledger — PROCESS §4a.** 21 finding(s) recorded for `0022`, each with a command you can RUN. Generated from `specs/closure_findings.py`; a finding without runnable evidence cannot be added, which is the point.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
@@ -1250,5 +1252,9 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | **M4** | external 1 | complete=False is the expected steady state on any consolidation-bearing store, and operators had not been told | §8 | `grep -n 'EXPECTED STEADY STATE' specs/0022-source-revocation.md` |
 | **R3-4** | external 2 | the closure ledgers said THREE ROUNDS while enumerating four, claimed rows were below, and still carried 'no review rounds yet (draft)' | specs/render_closure.py (the ledger is generated) | `python3 specs/render_closure.py --check` |
 | **R3-5** | external 2 | COLLECTED did not reconcile: the decomposition implied 14 skips beside a measured line of 6, and four unconditional skips were invisible to the completeness gate's regex | specs/skip_inventory.py (reconcile + the widened site regex), tests/test_spec_gate.py | `python3 -m pytest tests/test_spec_gate.py -k 'reconcile or conditional_skip or emitted_reason'` |
+| **R6-1** | external 6 | the rollback boundary was not total: _rollback_or_poison caught Exception while the operation caught BaseException, so a KeyboardInterrupt during ROLLBACK escaped as itself — connection open, in_transaction, uncommitted row surviving | store_concurrency_harness._rollback_or_poison | `python3 specs/evidence/0022/store_concurrency_harness.py  # 'a BaseException during ROLLBACK is ALSO unknown state, not a leak'` |
+| **R6-2** | external 6 | §4e-i's block is generated byte-for-byte from the executable and the page still carried round 5's 'verbatim is withdrawn — the executable differs materially': three carriers, two answers | §4e-i (the withdrawal deleted) | `python3 specs/render_operation.py  && grep -c 'IS WITHDRAWN (external round 5' specs/0022-source-revocation.md` |
+| **R6-3** | external 6 | the closure ledger was a HAND-MAINTAINED SECOND LIST — the thing render_closure was introduced to eliminate — at 12/17 and 3/9, with --check green because it compared the block to that same list | specs/render_closure.py completeness_problems(), tests/test_spec_gate.py | `python3 specs/render_closure.py --check  # ids EXTRACTED from reviews.py; every one must have a row` |
+| **R6-4** | external 6 | the offline launcher invented its own qualification rule and CERTIFIED an unqualified runtime: SQLite 3.53.1 accepted, 660 FAILED / 951 passed / 31 errors, while runtime_supported() returned False | specs/evidence/offline/run_offline.sh | `bash specs/evidence/offline/run_offline.sh  # asks runtime_supported() and exits 2 unless it is exactly True` |
 
 <!-- /GENERATED:review-closure -->

@@ -1,10 +1,10 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-6 external-review package (v6)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-7 external-review package (v7)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           specs/0022-source-revocation.md — draft v7 (external candidate)
-                 specs/0023-non-revival-under-maintenance.md — draft v7 (external candidate)
+specs:           specs/0022-source-revocation.md — draft v8 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v8 (external candidate)
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is
@@ -32,39 +32,28 @@ harnesses:       specs/evidence/0022/vector_harness.py            — 60/60 (exi
 verifiers:       verify_collected(text, rs) · reconcile(rs) · render_closure --check
                  · render_operation --check  — all PASS, all executed by the seal
 
-WHAT MOVED SINCE round-5 (v5, sha 1efaa00f…):
-  R5-1  the failure outcomes are TOTAL now. A failing ROLLBACK raises
-        RevocationUnknownState and CLOSES the connection; only the per-user
-        ordinal yields OrdinalCollision; any other integrity fault yields
-        RevocationIntegrityError.
-  R5-2  the BUSY check counts the LOOP'S OWN attempts with busy_timeout=0 —
-        v5's version made ONE BEGIN and caught ZERO errors because SQLite
-        waited internally, and a timing assertion cannot tell you who waited.
-        AND: a stale ordinal CANNOT be injected inside the operation, because
-        while it holds the write lock nothing else can COMMIT. OrdinalCollision
-        is UNREACHABLE from inside the construction; that is now its own check,
-        and the classifier is covered directly on real errors.
-  R5-3  findings are STRUCTURAL (specs/closure_findings.py) and the per-finding
-        §4a ledger is generated from them; the second hand-written table at the
-        top of 0022 is DELETED — keeping it was the previous fix not finishing.
-  R5-4  reconcile() separates EMITTED reasons from SOURCE-SITE tokens, with the
-        root-host regression that would have failed on your host and passed on
-        ours.
-  R19   THE PRODUCT-STORE BINDING TEST EXISTS. It cannot bind behaviour yet —
-        `source_revocations` is unwritten and this repo's gate refuses any src/
-        commit citing a draft spec — so it PRE-EXISTS the code: any function in
-        the store that writes source_revocations must carry BEGIN IMMEDIATE and
-        the MAX(seq) allocation IN THAT FUNCTION. Proven both ways on a scratch
-        copy. While the pair is unaccepted it asserts the other direction: if
-        either spec ever reads `accepted` with no writer present, it FAILS.
-  R5-2  "verbatim" is TRUE now rather than withdrawn: §4e-i's block is
-        GENERATED from revocation_operation's own source, byte for byte,
-        gated by render_operation.py --check.
-  pkg   PLACEHOLDER_TS shipped in v5. The seal is now ONE SCRIPT
-        (specs/seal_package.py) that refuses on a surviving placeholder, a
-        duplicate member, disagreeing commits, or a harness that fails from the
-        extraction — the five seal-time defects of rounds 2-5, each made
-        impossible rather than remembered.
+WHAT MOVED SINCE round-6 (v6, sha 0cb0bf66…) — your four blockers:
+  R6-4  THE LAUNCHER CERTIFIED AN UNQUALIFIED RUNTIME, and that is the worst
+        thing we shipped in this review. It invented "SQLite >= 3.35" while
+        this repository already implements the real predicate,
+        `runtime_supported()` (0007: a complete recorded runtime whose identity
+        matches and whose constructor manifestations reproduce). You measured
+        it selecting 3.53.1, calling it qualified, and producing 660 FAILED.
+        It asks the repository now and REFUSES with exit 2 — proven by forcing
+        the predicate False on a scratch copy. Our first fix was itself wrong:
+        it asked BEFORE the venv existed, so `import veracium` failed for want
+        of pydantic, every candidate was rejected, and `2>/dev/null` hid the
+        reason. Build the venv, THEN qualify, and never silence the answer.
+  R6-1  the rollback boundary is `BaseException` on BOTH sides now. Your
+        KeyboardInterrupt injection is a regression in the harness (18 checks).
+  R6-2  the stale "verbatim is withdrawn" paragraph is DELETED — it contradicted
+        a block generated from the executable on the same page.
+  R6-3  the closure ledger is VALIDATED against reviews.py, not maintained
+        beside it: finding ids are EXTRACTED from verdict text and every one
+        must have a row with a runnable command. It caught its own next gap
+        immediately — recording this round's verdicts failed the gate until the
+        round-6 closures were written — and it caught a precision bug in itself,
+        counting a cross-spec reference ("0023 F1") as an obligation on 0022.
 
 STILL OPEN:
   - the store-side R19 binding is enforcement-before-implementation, not a

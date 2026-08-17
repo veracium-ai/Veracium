@@ -1,55 +1,47 @@
-PACKAGE: 0022-0023-v6 — external ROUND 6
+PACKAGE: 0022-0023-v7 — external ROUND 7
 SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
 
 0004 is not a candidate: approved at round 2, frozen on W1-W8.
 
-ALL FOUR ROUND-5 FINDINGS ARE FOLDED. R5-2 is the one to read, and it is the
-sharpest thing this review has found in us.
+ALL FOUR ROUND-6 BLOCKERS ARE FOLDED. R6-4 is the one to read, and it is the
+worst thing we have shipped in this review.
 
-  Instrumented, our BUSY check made ONE `BEGIN IMMEDIATE` and caught ZERO
-  OperationalErrors: busy_timeout=5000 meant SQLite waited INTERNALLY, and the
-  assertion "it waited more than 0.1s" was satisfied by the C library, not by
-  the Python retry loop the check was named for. A TIMING ASSERTION CANNOT
-  TELL YOU WHO WAITED. The collision check was worse: it raised
-  OrdinalCollision itself, so no collision ever passed through the function
-  under test.
+  The offline launcher we added last round INVENTED its own qualification rule
+  — "SQLite >= 3.35" — while this repository already implements the real one:
+  `runtime_supported()`, which 0007 defines as a COMPLETE RECORDED RUNTIME
+  whose identity matches this process and whose recorded constructor
+  manifestations REPRODUCE. You measured it selecting SQLite 3.53.1, declaring
+  it qualified, and producing 660 FAILED / 951 passed / 31 errors — while the
+  real predicate returned False for that runtime. A tool whose entire purpose
+  is refusing unqualified builds certified one and reported the result as a
+  run. It asks the repository now and REFUSES with exit 2; proven by forcing
+  the predicate False on a scratch copy.
 
-  Rewriting it established something we did not expect and now state as a
-  property: A STALE ORDINAL CANNOT BE INJECTED INSIDE THE OPERATION. While it
-  holds the write lock nothing else can COMMIT, so the attempt gets "database
-  is locked". OrdinalCollision is UNREACHABLE from inside the construction —
-  a backstop for callers who allocate outside the transaction. We could have
-  added a private hook to force the branch; that would have proved the
-  classifier while asserting the opposite of what is true.
+  Our first fix for it was wrong in a way worth recording: it asked the
+  predicate BEFORE creating the venv, so `import veracium` failed for want of
+  pydantic, every candidate was rejected, and `2>/dev/null` hid the reason.
+  Build the venv, THEN qualify, and never silence the answer.
 
-YOUR TWO PACKAGE REQUESTS ARE IN THIS ARCHIVE.
+  R6-1: the two exception boundaries are the same boundary now. Your
+  KeyboardInterrupt injection is a regression beside the existing rollback test.
 
-  specs/evidence/offline/run_offline.sh — the self-contained offline launcher.
-  It SELECTS a runtime whose SQLite meets the 3.35 floor and REFUSES if none
-  does, rather than running on an unqualified build; installs the pinned
-  wheels with --no-index --require-hashes; runs the suite. Verified from this
-  package: 1656 passed, 8 skipped.
+  R6-2: the "verbatim is withdrawn" paragraph is deleted. It contradicted a
+  block generated from the executable on the same page.
 
-  The product-store R19 binding test — with an honest limit. It cannot bind
-  behaviour: `source_revocations` does not exist, and this repo's own gate
-  refuses any src/ commit citing a non-accepted spec, so writing the store now
-  would mean bypassing the gate that exists to stop exactly that. Instead it
-  PRE-EXISTS the code and bites the moment it lands, which is how every
-  structural invariant in this pair works. Two defects in our own first draft,
-  both found by exercising the NEGATIVE case rather than only the passing one:
-  it was module-scoped (sqlite.py already contains two unrelated BEGIN
-  IMMEDIATEs, so it accepted a writer with the BEGIN removed), and it compared
-  an uppercased haystack against a mixed-case needle — a check that could ONLY
-  fail.
+  R6-3: the closure ledger is VALIDATED against reviews.py rather than
+  maintained beside it — ids extracted from verdict text, every one required to
+  have a row with a runnable command. It proved itself immediately: recording
+  this round's verdicts FAILED the gate until the round-6 closures were
+  written, and it exposed a precision bug in its own extractor, which counted a
+  cross-spec reference ("0023 F1") as an obligation on 0022.
 
-THE SEAL ITSELF IS NOW ONE SCRIPT (specs/seal_package.py), because every
-seal-time defect of rounds 2-5 was a hand-run step going wrong in a way the
-sha256 could not show: a duplicate member; a manifest whose backticked regex
-names were EATEN by shell command substitution; two commits; PLACEHOLDER_TS;
-and pytest redirected into the artifact the packaged-state test reads. The
-script refuses on each of those rather than warning.
+YOUR PRIOR REPORTS ARE NOT IN THIS ARCHIVE, per your instruction. The
+structured closure ledger is the replacement, and it is now complete and
+mechanically reconciled — 26 findings, every id reviews.py names, each with a
+command you can run.
 
-NOT INCLUDED: the full prior external reports. They are your documents and we
-hold no licence to redistribute them in an artifact. Say the word and they go in.
+STILL OPEN: the store-side R19 binding remains enforcement-BEFORE-
+implementation. It becomes behavioural the day the store code exists, which
+needs 0022 accepted.
