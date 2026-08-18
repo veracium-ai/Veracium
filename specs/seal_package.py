@@ -195,6 +195,7 @@ def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
                     _fail(f"{member} is already in the archive — appending it "
                           f"again is round 2's duplicate-member defect")
                 p = pathlib.Path(td) / fname
+                p.parent.mkdir(parents=True, exist_ok=True)   # nested member
                 p.write_text(content)
                 # EXTERNAL ROUND 10, R10-3: `git archive` writes root/root, and
                 # tarfile.add() stamped the SEALING USER's uid/gid on the three
