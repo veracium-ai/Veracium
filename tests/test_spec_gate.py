@@ -1542,15 +1542,61 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         problems = validate(t, d / "specs")
         assert problems, ("a transcript with null cwds, boolean exits and "
                           "non-hex digests must be rejected")
-        assert any("not an int" in p for p in problems), problems
-        assert any("64 hex digits" in p for p in problems), problems
+        # assert on the FIELD reported, not on prose: the round-14 schema
+        # rewrite changed every message, and a regression pinned to wording
+        # fails for the right fix as loudly as for a regression
+        assert any("`exit`" in p for p in problems), problems
+        assert any("`output_sha256`" in p for p in problems), problems
         assert any("`cwd`" in p for p in problems), problems
 
-        # (d) RECORDS THAT DO NOT MATCH THE LEDGER
+        # (d) R14-1: THE COERCIONS THE LANGUAGE PERFORMS SILENTLY. Round 13
+        # typed three fields; three MORE cells were still coercible —
+        # `ran: 45.0` (45.0 == 45), a 64-digit JSON INTEGER digest surviving
+        # `str()` before the hex regex, and a duplicated `skipped` entry
+        # vanishing into a set. The reviewer applied all three at once and
+        # repacked an archive the verifier accepted.
+        clean_rows = [{"spec": c[0], "finding": c[3], "argv": c[6],
+                       "cwd": "/x", "exit": 0, "output_sha256": "a" * 64}
+                      for c in CLOSURES if "run_offline.sh" not in c[6]]
+        combined = {"ran": float(len(clean_rows)),
+                    "skipped": skipped * 2,
+                    "commands": [dict(r, output_sha256=int("1" * 64))
+                                 for r in clean_rows]}
+        t.write_text(json.dumps(combined))
+        problems = validate(t, d / "specs")
+        assert problems, "the combined R14-1 mutation must be rejected"
+        assert any("`ran`" in p for p in problems), problems
+
+        # each coercion alone, so a partial fix cannot hide behind the others
+        for name, doc, needle in (
+            ("float ran", {**combined, "skipped": skipped,
+                           "commands": clean_rows}, "`ran`"),
+            ("int digest", {"ran": len(clean_rows), "skipped": skipped,
+                            "commands": [dict(r, output_sha256=int("1" * 64))
+                                         for r in clean_rows]}, "`output_sha256`"),
+            ("duplicated skipped", {"ran": len(clean_rows),
+                                    "skipped": skipped * 2,
+                                    "commands": clean_rows}, "duplicates"),
+            ("undeclared field", {"ran": len(clean_rows), "skipped": skipped,
+                                  "commands": [dict(r, sneaky="x")
+                                               for r in clean_rows]},
+             "undeclared field"),
+        ):
+            t.write_text(json.dumps(doc))
+            ps = validate(t, d / "specs")
+            assert ps and any(needle in x for x in ps), f"{name}: {ps}"
+
+        # and the CLEAN transcript must still pass, or the schema is just a wall
+        t.write_text(json.dumps({"ran": len(clean_rows), "skipped": skipped,
+                                 "commands": clean_rows}))
+        assert not validate(t, d / "specs"), (
+            "the schema rejects a well-formed transcript")
+
+        # (e) RECORDS THAT DO NOT MATCH THE LEDGER
         t.write_text(json.dumps({
             "ran": 1, "skipped": [],
             "commands": [{"spec": "0022", "finding": "INVENTED",
-                          "argv": "echo hi", "cwd": ".", "exit": 0,
+                          "argv": "echo hi", "cwd": "/tmp", "exit": 0,
                           "output_sha256": "0" * 64}]}))
         problems = validate(t, d / "specs")
         assert any("matches no closure row" in p for p in problems), problems

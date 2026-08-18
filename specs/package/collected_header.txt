@@ -1,10 +1,10 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-14 external-review package (v14)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-15 external-review package (v15)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           specs/0022-source-revocation.md — draft v15 (external candidate)
-                 specs/0023-non-revival-under-maintenance.md — draft v15 (external candidate)
+specs:           specs/0022-source-revocation.md — draft v16 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v16 (external candidate)
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is

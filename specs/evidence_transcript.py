@@ -29,6 +29,53 @@ REL_PATH = "specs/generated/evidence_run.json"     # the path COLLECTED names
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 
 
+# EXTERNAL ROUND 13 typed three fields; ROUND 14 found three MORE coercions in
+# the cells I had not typed — `ran: 45.0` (45.0 == 45), a 64-digit JSON INTEGER
+# digest surviving `str()` before the hex regex, and a duplicated `skipped`
+# entry vanishing into a set. Patching cells one round at a time is how a
+# validator acquires a long tail of holes, so the shape changes: every field is
+# DECLARED with its exact JSON type, and anything not declared is rejected.
+#
+# `type(x) is T`, never isinstance, because in Python `bool` is a subclass of
+# `int` and every one of these findings has turned on a coercion the language
+# performs silently.
+def _exact(t):
+    def check(v):
+        return type(v) is t
+    check.__name__ = f"exactly {t.__name__}"
+    return check
+
+
+def _hex64(v):
+    return type(v) is str and _HEX64.fullmatch(v) is not None
+
+
+def _abs_str(v):
+    return type(v) is str and bool(v.strip()) and pathlib.PurePosixPath(v).is_absolute()
+
+
+def _nonempty_str(v):
+    return type(v) is str and bool(v.strip())
+
+
+COMMAND_SCHEMA = {
+    "spec": (_nonempty_str, "a non-empty string"),
+    "finding": (_nonempty_str, "a non-empty string"),
+    "argv": (_nonempty_str, "a non-empty string"),
+    "cwd": (_abs_str, "a non-empty ABSOLUTE path string"),
+    "exit": (_exact(int), "exactly int (a bool is an int in Python)"),
+    "output_sha256": (_hex64, "a STRING of 64 hex digits (an int of 64 "
+                              "digits survived str() before)"),
+}
+
+TOP_SCHEMA = {
+    "ran": (_exact(int), "exactly int (45.0 == 45 passed before)"),
+    "skipped": (lambda v: type(v) is list and all(type(x) is str for x in v),
+                "a list of strings"),
+    "commands": (lambda v: type(v) is list, "a list"),
+}
+
+
 def _ledger(specs_dir: pathlib.Path):
     sys.path.insert(0, str(specs_dir))
     import importlib
@@ -48,14 +95,29 @@ def validate(transcript_path: pathlib.Path, specs_dir: pathlib.Path) -> list:
     except Exception as e:                                    # noqa: BLE001
         return [f"{transcript_path} is not readable JSON: {e}"]
 
-    commands = data.get("commands")
-    if not isinstance(commands, list):
-        return ["the transcript has no `commands` list"]
+    if type(data) is not dict:
+        return ["the transcript is not a JSON object"]
+    for field, (check, why) in TOP_SCHEMA.items():
+        if field not in data:
+            problems.append(f"the transcript has no `{field}`")
+        elif not check(data[field]):
+            problems.append(f"`{field}` is {data[field]!r} "
+                            f"({type(data[field]).__name__}); required: {why}")
+    if problems:
+        return problems
+    commands = data["commands"]
+
+    # R14-1: `skipped` was compared as a SET, so a duplicated launcher record
+    # vanished. Multiplicity is part of the claim.
+    if len(data["skipped"]) != len(set(data["skipped"])):
+        dupes = sorted({x for x in data["skipped"]
+                        if data["skipped"].count(x) > 1})
+        problems.append(f"`skipped` contains duplicates: {dupes}")
 
     # R12-2: the count is DERIVED. A `ran` that disagrees is a claim about the
     # records rather than a summary of them.
-    if data.get("ran") != len(commands):
-        problems.append(f"`ran` is {data.get('ran')} but the transcript holds "
+    if data["ran"] != len(commands):
+        problems.append(f"`ran` is {data['ran']} but the transcript holds "
                         f"{len(commands)} command records")
 
     ledger = _ledger(specs_dir)
@@ -65,40 +127,28 @@ def validate(transcript_path: pathlib.Path, specs_dir: pathlib.Path) -> list:
 
     seen = []
     for i, c in enumerate(commands):
-        for field in ("spec", "finding", "argv", "cwd", "exit", "output_sha256"):
-            if field not in c:
-                problems.append(f"command {i} is missing `{field}`")
-                break
-        else:
-            where = f"{c['spec']} {c['finding']}"
-            # EXTERNAL ROUND 13, R13-1: PRESENCE AND LENGTH ARE NOT VALUES.
-            # `exit != 0` accepted `false`, because in Python `False == 0`;
-            # `len(str(digest)) == 64` accepted 64 letter-x's; and `cwd` was
-            # only required to EXIST, so `null` passed. A transcript of 42
-            # rows with null cwds, boolean exits and non-hex digests satisfied
-            # this function and the whole archive verifier.
-            if type(c["exit"]) is not int or isinstance(c["exit"], bool):
-                problems.append(f"{where}: `exit` is {c['exit']!r} "
-                                f"({type(c['exit']).__name__}), not an int — "
-                                f"note that a bool IS an int in Python and "
-                                f"False == 0, which is how `false` passed")
-            elif c["exit"] != 0:
-                problems.append(f"{where} exited {c['exit']}")
-            if not _HEX64.fullmatch(str(c["output_sha256"])):
-                problems.append(f"{where}: `output_sha256` is not 64 hex "
-                                f"digits: {str(c['output_sha256'])[:16]}…")
-            cwd = c["cwd"]
-            if not isinstance(cwd, str) or not cwd.strip():
-                problems.append(f"{where}: `cwd` is {cwd!r}, not a non-empty "
-                                f"string")
-            elif not pathlib.PurePosixPath(cwd).is_absolute():
-                problems.append(f"{where}: `cwd` {cwd!r} is not absolute — a "
-                                f"relative path does not identify where the "
-                                f"command ran")
-            for field in ("spec", "finding", "argv"):
-                if not isinstance(c[field], str) or not c[field].strip():
-                    problems.append(f"{where}: `{field}` is {c[field]!r}, not "
-                                    f"a non-empty string")
+        if type(c) is not dict:
+            problems.append(f"command {i} is not a JSON object")
+            continue
+        missing = [f for f in COMMAND_SCHEMA if f not in c]
+        if missing:
+            problems.append(f"command {i} is missing {missing}")
+            continue
+        extra = [f for f in c if f not in COMMAND_SCHEMA]
+        if extra:
+            problems.append(f"command {i} carries undeclared field(s) {extra} "
+                            f"— the schema is closed")
+        where = f"{c['spec']} {c['finding']}" if _nonempty_str(c.get("spec")) \
+            and _nonempty_str(c.get("finding")) else f"command {i}"
+        ok = True
+        for field, (check, why) in COMMAND_SCHEMA.items():
+            if not check(c[field]):
+                problems.append(f"{where}: `{field}` is {c[field]!r} "
+                                f"({type(c[field]).__name__}); required: {why}")
+                ok = False
+        if ok and c["exit"] != 0:
+            problems.append(f"{where} exited {c['exit']}")
+        if ok:
             seen.append((c["spec"], c["finding"], c["argv"]))
 
     dupes = {k for k in seen if seen.count(k) > 1}

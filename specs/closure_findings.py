@@ -410,4 +410,13 @@ CLOSURES = [
      "specs/closure_findings.py (selectors repointed), "
      "tests/test_spec_gate.py (every -k atom must select a test)",
      "$PY -m pytest tests/test_spec_gate.py -k k_atom_in_the_closure"),
+    # ---- external round 14 ------------------------------------------------
+    ("0022", "external", 14, "R14-1",
+     "the transcript schema still coerced untyped values: `ran: 45.0` passed "
+     "because 45.0 == 45, a 64-digit JSON integer digest survived str() before "
+     "the hex regex, and a duplicated `skipped` entry vanished into a set — "
+     "all three applied at once produced an archive the verifier accepted",
+     "specs/evidence_transcript.py (a CLOSED schema with exact JSON types), "
+     "tests/test_spec_gate.py (six mutations + a clean-transcript control)",
+     "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
 ]
