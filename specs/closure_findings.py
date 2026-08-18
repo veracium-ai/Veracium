@@ -293,5 +293,8 @@ CLOSURES = [
      "grep -q '__HARNESSES__' specs/package/collected_header.txt && "
      "grep -q '__EVIDENCE__' specs/package/collected_header.txt && "
      "grep -q 'TWO-PHASE' specs/package/collected_header.txt && "
-     "! grep -q 'measuring copy has no .git' specs/skip_inventory.py"),
+     "! grep -q 'measuring copy has no .git' specs/skip_inventory.py && "
+     # the fifth carrier, and the mechanical sweep that replaces hand-checking
+     "! grep -q 'PACKAGED-STATE' specs/skip_inventory.py && "
+     "grep -q 'WITHDRAWN_CLAIMS' specs/seal_package.py"),
 ]

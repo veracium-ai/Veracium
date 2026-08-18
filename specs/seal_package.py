@@ -85,6 +85,31 @@ def build_collected(rs_path: pathlib.Path, specs: list[str], version: str,
     return body
 
 
+# Claims this project has WITHDRAWN. A withdrawn claim reaching the archive is
+# the round-8 defect (four carriers) and its round-9 sequel (a fifth, inside
+# the GENERATED inventory, contradicting the -rs output shipped beside it).
+# Four carriers were swept by hand and a fifth survived, so the sweep is
+# mechanical now: the sealer greps the BUILT artifact, not the sources.
+WITHDRAWN_CLAIMS = (
+    (r"PACKAGED-STATE", "sealing measures BEFORE building COLLECTED, so no "
+                        "carrier may claim the suite ran with COLLECTED present"),
+    (r"measuring copy has no \.git", "sealing measures the git checkout"),
+    (r"meets the 3\.35 floor", "the launcher asks runtime_supported(), not a "
+                               "version floor"),
+    (r'"QUOTED VERBATIM" IS WITHDRAWN', "§4e-i is generated from the "
+                                        "executable; the withdrawal is stale"),
+)
+
+
+def refuse_withdrawn_claims(*texts_and_names):
+    for text, name in texts_and_names:
+        for pat, why in WITHDRAWN_CLAIMS:
+            m = re.search(pat, text)
+            if m:
+                _fail(f"{name} carries the WITHDRAWN claim {m.group(0)!r} — "
+                      f"{why}")
+
+
 def refuse_placeholders(*texts_and_names):
     """A placeholder that reaches the archive is a lie with a valid sha256.
 
@@ -251,6 +276,8 @@ def main() -> int:
         collected = build_collected(rs_path, specs, a.version, header)
         refuse_placeholders((collected, "COLLECTED.txt"),
                             (manifest, "PACKAGE_MANIFEST.txt"))
+        refuse_withdrawn_claims((collected, "COLLECTED.txt"),
+                                (manifest, "PACKAGE_MANIFEST.txt"))
 
         name = f"{'-'.join(specs)}-{a.version}-{ts}"
         archive = build_archive(name, {

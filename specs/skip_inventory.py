@@ -85,15 +85,18 @@ INVENTORY = [
      "VERACIUM_EVIDENCE_CHILD and skip; the parent still runs every command "
      "exactly once. SKIPS ONLY inside a nested run, never at the top level"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
-     "package-artifact", "binds COLLECTED's inventory to render(); 1 test. "
-                         "SINCE THE 0020/0021 R2 SEAL REORDER the measured "
-                         "line is the PACKAGED-STATE run (COLLECTED present "
-                         "in the measuring tree), so this test EXECUTES AND "
-                         "PASSES in the measured line — and in your "
-                         "extraction, which also carries COLLECTED. A "
-                         "COLLECTED-less copy (e.g. a bare git clone) sees "
-                         "it SKIP; either status reconciles, and your report "
-                         "should say which"),
+     "package-artifact",
+     "binds COLLECTED's inventory to render(); 1 test. **It SKIPS in the "
+     "sealed measured line** — sealing measures the committed tree BEFORE "
+     "building COLLECTED, so the file it binds does not exist yet — and it "
+     "EXECUTES in your extraction, which carries COLLECTED. Both statuses "
+     "reconcile; your report should say which. "
+     "(External round 8's R8-2 named four hand-maintained claims that had gone "
+     "false; this entry was a FIFTH, still asserting a 'PACKAGED-STATE run' "
+     "with COLLECTED present in the measuring tree. It contradicted the sealed "
+     "-rs output shipped beside it, which records this very skip. Caught by "
+     "grepping the built artifact for the withdrawn claim rather than trusting "
+     "that four carriers were all of them.)"),
     ("tests/test_eval.py", "skipif", "VERACIUM_EVAL",
      "env-flag", "live acceptance-eval tier"),
     # (specs/0016 D2: the VERACIUM_MIN_DEP_JOB floor regression was removed
