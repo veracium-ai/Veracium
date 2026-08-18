@@ -354,4 +354,31 @@ CLOSURES = [
      "refusing probes, tests/test_spec_gate.py",
      "$PY -m pytest tests/test_spec_gate.py -k "
      "'sealed_environment or reports_a_count'"),
+    # ---- external round 12 ------------------------------------------------
+    ("0022", "external", 12, "R12-1",
+     "the transcript shipped at the archive root while COLLECTED named "
+     "specs/generated/evidence_run.json, and verify_archive() never looked at "
+     "it — removing it entirely still produced a passing archive",
+     "specs/seal_package.py (ships at REL_PATH; a seventh extraction check "
+     "validates it), specs/evidence_transcript.py",
+     # NOT `evidence_transcript.py` itself: that validates the transcript the
+     # evidence runner is still WRITING as it executes this command, so it can
+     # only ever see the previous run's file. The validator's proper home is
+     # the EXTRACTION, where the artifact is finished and static — which is
+     # where the sealer runs it, as extraction check 5 of 7. Here the closure
+     # is shown by the wiring plus the adversarial cases.
+     "grep -q 'evidence_transcript.REL_PATH' specs/seal_package.py && "
+     "grep -q 'evidence_transcript.py' specs/seal_package.py && "
+     "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
+    ("0022", "external", 12, "R12-2",
+     "the observed count was self-asserted: `ran` was trusted without "
+     "requiring records, so a zero-record transcript claiming 40 satisfied "
+     "the sealer and the regression alike",
+     "specs/evidence_transcript.py (count derived from len(commands); records "
+     "matched to the ledger by (spec, finding, argv)), tests/test_spec_gate.py",
+     # Only the ADVERSARIAL half: `transcript_validates` reads the live
+     # transcript, which the evidence runner is rewriting as it executes this
+     # command — the same self-reference R12-1's evidence had. The adversarial
+     # test builds its own fixtures and is independent of the live file.
+     "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
 ]

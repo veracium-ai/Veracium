@@ -4,7 +4,7 @@
 
 # Spec status
 
-**25 specs · 17 accepted · 219 external review
+**25 specs · 17 accepted · 221 external review
 rounds · 2 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -34,8 +34,8 @@ is the number that decides what can be built.
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
-| **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-18 | 1 | 12 | 6 | 0 | 0 | — |
-| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-18 | 3 | 12 | 5 | 0 | 0 | — |
+| **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-18 | 1 | 13 | 6 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-18 | 3 | 13 | 5 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `draft` | 2026-08-17 | 2 | 0 | 4 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `draft` | 2026-08-17 | 2 | 0 | 4 | 0 | 0 | — |
 

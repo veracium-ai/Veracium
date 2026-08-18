@@ -90,6 +90,12 @@ def measure(scratch: pathlib.Path) -> pathlib.Path:
     packaged-state test read a half-written file and failed a check that
     passed outside the run.
     """
+    # R12-2: a STALE transcript from an earlier run would satisfy every check
+    # while describing a different tree. Remove it, so the measured run is the
+    # only thing that can produce one.
+    stale = ROOT / "specs" / "generated" / "evidence_run.json"
+    if stale.exists():
+        stale.unlink()
     out = scratch / "pytest_rs.txt"
     env = sealed_env(VERACIUM_FORBID_NETWORK="1", PYTHONPATH="src")
     r = subprocess.run(
@@ -232,6 +238,8 @@ EXTRACTION_CHECKS = (
      [sys.executable, "specs/verify_extracted.py", "collected"]),
     ("verify_extracted.py reconcile",
      [sys.executable, "specs/verify_extracted.py", "reconcile"]),
+    ("evidence_transcript.py (validate the shipped transcript)",
+     [sys.executable, "specs/evidence_transcript.py"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
@@ -385,21 +393,15 @@ def main() -> int:
         # during measure(). Reading an artifact costs nothing; the first
         # version spawned another pytest to watch the runner print a number,
         # and that duplication took the suite to 23 minutes.
-        tpath = ROOT / "specs" / "generated" / "evidence_run.json"
-        if not tpath.exists():
-            _fail("no evidence transcript after the measured run — the runner "
-                  "was skipped (a stray VERACIUM_EVIDENCE_CHILD, or a -k that "
-                  "deselected it), so the all-commands-ran claim has no source")
+        sys.path.insert(0, str(SPECS))
+        import evidence_transcript
+        tpath = ROOT / evidence_transcript.REL_PATH
+        tproblems = evidence_transcript.validate(tpath, SPECS)
+        if tproblems:
+            _fail("the evidence transcript does not validate:\n  "
+                  + "\n  ".join(tproblems))
         import json as _json
-        tdata = _json.loads(tpath.read_text())
-        observed = tdata["ran"]
-        bad = [c for c in tdata["commands"] if c["exit"] != 0]
-        if bad:
-            _fail(f"the transcript records failing evidence commands: "
-                  f"{[c['finding'] for c in bad]}")
-        if observed != total_ev - launcher_ev:
-            _fail(f"the evidence runner ran {observed} commands; the ledger "
-                  f"holds {total_ev} with {launcher_ev} launcher entry(ies)")
+        observed = len(_json.loads(tpath.read_text())["commands"])
         evidence_claim = (
             f"{total_ev} closure-evidence commands: {observed} OBSERVED "
             f"executing during this seal's measured run, each with its argv, "
@@ -448,7 +450,7 @@ def main() -> int:
             "COLLECTED.txt": collected,
             "COLLECTED_pytest_rs.txt": rs,
             "PACKAGE_MANIFEST.txt": manifest,
-            "evidence_run.json": tpath.read_text(),
+            evidence_transcript.REL_PATH: tpath.read_text(),
         })
 
     digest = verify_archive(archive, specs)

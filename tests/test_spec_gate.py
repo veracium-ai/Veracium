@@ -1363,6 +1363,8 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
             ("python", "specs/verify_extracted.py", "collected"),
         "verify_extracted.py reconcile":
             ("python", "specs/verify_extracted.py", "reconcile"),
+        "evidence_transcript.py (validate the shipped transcript)":
+            ("python", "specs/evidence_transcript.py"),
         "render_closure.py --check":
             ("python", "specs/render_closure.py", "--check"),
         "render_operation.py --check":
@@ -1477,33 +1479,59 @@ def test_the_sealed_environment_drops_the_recursion_marker():
         os.environ.update(saved)
 
 
-def test_the_evidence_transcript_is_written_and_complete():
-    """External round 11. The sealer must OBSERVE how many evidence commands
-    ran rather than counting the ledger — but my first version of that had the
-    sealer AND a regression each spawn a full pytest to watch the runner print
-    a number. Nested pytest inside nested pytest: the suite went from 39s to
-    23 minutes.
+def test_the_evidence_transcript_validates_against_the_ledger():
+    """External round 12, R12-2. The sealer and this regression both read
+    `data["ran"]` and trusted it, so the reviewer's counterfeit —
 
-    The runner writes a transcript instead — argv, cwd, exit status and an
-    output digest per command — and everything else reads it. One execution,
-    machine-readable, and it is the execution record the reviewer has been
-    asking for."""
-    import json, pathlib, sys
+        {"ran": 40, "skipped": [], "commands": []}
+
+    — satisfied both. A number in a file is a claim; a transcript is evidence
+    of execution, and nothing distinguished them.
+
+    Validation lives in ONE place now (specs/evidence_transcript.py) and the
+    seal, the extraction verifier and this test all call it. The count is
+    DERIVED from the records, every non-launcher closure row must be matched
+    exactly once by (spec, finding, argv), and the skipped set must be exactly
+    the launcher rows."""
+    import sys, pathlib
     root = pathlib.Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(root / "specs"))
-    from closure_findings import CLOSURES
+    from evidence_transcript import validate, REL_PATH
 
-    t = root / "specs" / "generated" / "evidence_run.json"
-    assert t.exists(), (
-        "no evidence transcript — the runner did not execute in this session. "
-        "The sealer reads this file; without it the observed claim has no "
-        "source (R11-2)")
-    data = json.loads(t.read_text())
-    launcher = sum(1 for c in CLOSURES if "run_offline.sh" in c[6])
-    assert data["ran"] == len(CLOSURES) - launcher, (
-        f"the transcript records {data['ran']} commands; the ledger holds "
-        f"{len(CLOSURES)} with {launcher} launcher entry(ies)")
-    for c in data["commands"]:
-        assert c["exit"] == 0, f"{c['finding']} exited {c['exit']}"
-        assert len(c["output_sha256"]) == 64
-        assert c["argv"] and c["cwd"]
+    problems = validate(root / REL_PATH, root / "specs")
+    assert not problems, "\n".join(problems)
+
+
+def test_a_counterfeit_or_missing_transcript_is_rejected():
+    """R12-1 and R12-2's adversarial cases, run rather than described: the
+    reviewer DELETED the transcript from an archive and it still passed, and
+    fabricated a zero-record one that satisfied every count check."""
+    import json, pathlib, shutil, sys, tempfile
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from evidence_transcript import validate, REL_PATH
+
+    with tempfile.TemporaryDirectory() as td:
+        d = pathlib.Path(td)
+        (d / "specs").mkdir()
+        shutil.copy2(root / "specs" / "closure_findings.py", d / "specs")
+
+        # (a) DELETED — the R12-1 archive mutation
+        assert validate(d / REL_PATH, d / "specs"), (
+            "a missing transcript must be rejected")
+
+        # (b) COUNTERFEIT — the R12-2 fabrication
+        t = d / "evidence_run.json"
+        t.write_text(json.dumps({"ran": 40, "skipped": [], "commands": []}))
+        problems = validate(t, d / "specs")
+        assert problems, "the counterfeit transcript must be rejected"
+        assert any("command records" in p for p in problems), problems
+
+        # (c) RECORDS THAT DO NOT MATCH THE LEDGER
+        t.write_text(json.dumps({
+            "ran": 1, "skipped": [],
+            "commands": [{"spec": "0022", "finding": "INVENTED",
+                          "argv": "echo hi", "cwd": ".", "exit": 0,
+                          "output_sha256": "0" * 64}]}))
+        problems = validate(t, d / "specs")
+        assert any("matches no closure row" in p for p in problems), problems
