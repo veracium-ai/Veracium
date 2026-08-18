@@ -59,8 +59,11 @@ harnesses:       __HARNESSES__
 
 evidence:        __EVIDENCE__
 
-verifiers:       verify_collected(text, rs) · reconcile(rs) · render_closure --check
-                 · render_operation --check  — all PASS, all executed by the seal
+verifiers:       the SAME six checks listed above under "RUN FROM THE EXTRACTED
+                 ARCHIVE" — this line used to name them a second time, by hand,
+                 and drifted the moment the registry changed (round 11 renamed
+                 two verifiers to named scripts and this line kept the old
+                 labels). One list, generated once.
 
 WHAT MOVED SINCE round-6 (v6, sha 0cb0bf66…) — your four blockers:
   R6-4  THE LAUNCHER CERTIFIED AN UNQUALIFIED RUNTIME, and that is the worst
