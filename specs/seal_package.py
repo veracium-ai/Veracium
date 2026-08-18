@@ -165,6 +165,40 @@ def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
     return dest
 
 
+# EXTERNAL ROUND 9, R9-1. The carriers claimed the sealer reran "both
+# harnesses and both verifiers from the EXTRACTED archive". It ran the two
+# harnesses and nothing else — the verifiers ran BEFORE the archive existed,
+# against the build tree. An execution trace of verify_archive() showed it.
+#
+# The claim was the better one, so the code moved to meet it rather than the
+# claim shrinking to meet the code: everything below RUNS FROM THE EXTRACTION,
+# which is the only place a reviewer's copy is actually represented. The
+# registry is the single source for both the execution and the carrier's
+# description, so they cannot drift apart again.
+EXTRACTION_CHECKS = (
+    ("vector_harness.py",
+     [sys.executable, "specs/evidence/0022/vector_harness.py"]),
+    ("store_concurrency_harness.py",
+     [sys.executable, "specs/evidence/0022/store_concurrency_harness.py"]),
+    ("verify_collected(text, rs)",
+     [sys.executable, "-c",
+      "import sys,pathlib;sys.path.insert(0,'specs');"
+      "from skip_inventory import verify_collected;"
+      "verify_collected(pathlib.Path('COLLECTED.txt').read_text(),"
+      "pathlib.Path('COLLECTED_pytest_rs.txt').read_text())"]),
+    ("reconcile(rs)",
+     [sys.executable, "-c",
+      "import sys,pathlib;sys.path.insert(0,'specs');"
+      "from skip_inventory import reconcile;"
+      "p=reconcile(pathlib.Path('COLLECTED_pytest_rs.txt').read_text());"
+      "sys.exit(('\n'.join(p)) if p else 0)"]),
+    ("render_closure.py --check",
+     [sys.executable, "specs/render_closure.py", "--check"]),
+    ("render_operation.py --check",
+     [sys.executable, "specs/render_operation.py"]),
+)
+
+
 def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
     """Extract and RUN, because the build tree is not the artifact."""
     with tarfile.open(path) as tf:
@@ -188,13 +222,18 @@ def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
                 or c2.group(1).startswith(c1.group(1)[:7])):
             _fail(f"COLLECTED names {c1.group(1)} and the manifest names "
                   f"{c2.group(1)} — round 4's two-commit defect")
-        for harness in ("vector_harness.py", "store_concurrency_harness.py"):
-            hp = d / "specs" / "evidence" / "0022" / harness
-            if not hp.exists():
-                continue
-            r = _run([sys.executable, str(hp)], cwd=d)
+        ran = []
+        for name, cmd in EXTRACTION_CHECKS:
+            target = cmd[-1]
+            if target.endswith(".py") and not (d / target).exists():
+                _fail(f"{name}: {target} is not in the archive")
+            r = _run(cmd, cwd=d)
             if r.returncode != 0:
-                _fail(f"{harness} FAILS from the extracted archive:\n{r.stdout}")
+                _fail(f"{name} FAILS from the EXTRACTED archive "
+                      f"(exit {r.returncode}):\n{r.stdout}\n{r.stderr}")
+            ran.append(name)
+        if [n for n, _ in EXTRACTION_CHECKS] != ran:
+            _fail(f"the extraction ran {ran}, not the registry")
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
@@ -272,7 +311,9 @@ def main() -> int:
             launcher = line.strip()
         subs = {"__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
                 "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
-                "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim}
+                "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,
+                "__EXTRACTED__": "\n                 ".join(
+                    f"{i+1}. {n}" for i, (n, _) in enumerate(EXTRACTION_CHECKS))}
         manifest = a.manifest.read_text()
         for k, v in subs.items():
             header = header.replace(k, v)

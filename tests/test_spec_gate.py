@@ -1308,3 +1308,32 @@ def test_the_rendered_finding_count_comes_from_raised_not_the_legacy_field():
         f"the rendered count is {shown}, the legacy field is "
         f"{disagree[0]['findings']}, and `raised` has "
         f"{len(disagree[0]['raised'])} — the column must show the structure")
+
+
+def test_the_extraction_check_list_matches_the_sealer_registry():
+    """External round 9, R9-1. Both package carriers claimed the sealer reran
+    "both harnesses and both verifiers from the EXTRACTED archive". It ran the
+    two harnesses; the verifiers ran before the archive existed, against the
+    build tree — the reviewer traced the subprocesses.
+
+    The claim was the better one, so the code moved to meet it. This binds the
+    carrier's list to the sealer's registry: the header carries a token the
+    sealer fills FROM `EXTRACTION_CHECKS`, and the sealer aborts if it runs
+    anything else. A description of what a tool does, maintained separately
+    from the tool, is the defect this whole review has been about."""
+    import sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import seal_package
+
+    names = [n for n, _ in seal_package.EXTRACTION_CHECKS]
+    assert len(names) == len(set(names)), f"duplicate check names: {names}"
+    for expected in ("vector_harness.py", "store_concurrency_harness.py",
+                     "verify_collected(text, rs)", "reconcile(rs)",
+                     "render_closure.py --check", "render_operation.py --check"):
+        assert expected in names, f"{expected} is not in the extraction registry"
+
+    header = (root / "specs" / "package" / "collected_header.txt").read_text()
+    assert "__EXTRACTED__" in header, (
+        "the header must carry the token the sealer fills from the registry — "
+        "a hand-written list is what R9-1 found overstating the checks")

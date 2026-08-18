@@ -1,4 +1,4 @@
-PACKAGE: 0022-0023-v9 — external ROUND 9
+PACKAGE: 0022-0023-v10 — external ROUND 10
 SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
@@ -28,9 +28,23 @@ machine.
 
   All four are now produced rather than asserted: the sealer RUNS both
   harnesses and substitutes their output, derives the evidence split from the
-  ledger, and the two-phase workflow is described as what it is. The
-  packaged-state claim is withdrawn: what IS verified with the file present is
-  the re-run from the EXTRACTED archive before staging.
+  ledger, and the two-phase workflow is described as what it is.
+
+ROUND 9 (R9-1) THEN CAUGHT US OVERSTATING THE EXTRACTION CHECK, and the code
+moved to meet the claim rather than the claim shrinking to meet the code.
+
+  Both carriers said the sealer reran "both harnesses and both verifiers from
+  the EXTRACTED archive". It ran the two harnesses and nothing else; the
+  verifiers ran BEFORE the archive existed, against the build tree. You traced
+  the subprocesses and found it.
+
+  The claim was the better one — the build tree is not the artifact, which is
+  the whole reason to extract — so all six checks now run FROM THE EXTRACTION:
+  both harnesses, verify_collected against the sealed -rs, reconcile,
+  render_closure --check and render_operation --check. They come from a single
+  registry in the sealer, the carrier's list is GENERATED from that registry,
+  and the sealer aborts if it executes anything other than exactly it. The two
+  cannot drift apart again, which is the failure that produced this finding.
 
 WHAT THE PREVIOUS ROUND FIXED, still standing:
 

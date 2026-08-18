@@ -839,7 +839,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 7 external round(s) with a returned VERDICT are recorded for `0023`; 9 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 8 external round(s) with a returned VERDICT are recorded for `0023`; 10 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -862,9 +862,11 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 7 (SENT) | 2026-08-17 | — | SENT (the coupled round-7 package `0022-0023-v7`). 0023 at v8: its closure ledger is complete (9/9) and mechanically validated against reviews.py; no semantic change was required |
 | external 8 (verdict) | 2026-08-18 | 0 | SEMANTICALLY CLEAR; blocked by its missing structured declaration (R8-1 — this spec's external round 7 row omitted `raised`) and the atomic dependency on 0022. No finding on this spec's content |
 | external 8 (SENT) | 2026-08-18 | — | SENT (the coupled round-8 package `0022-0023-v8`). 0023 at v9: no semantic change required; its ledger is complete and mechanically validated |
+| external 9 (verdict) | 2026-08-18 | 0 | SEMANTICALLY CLEAR; deferred with the shared package finding and the atomic dependency on 0022. No finding on this spec's content |
 | external 9 (SENT) | 2026-08-18 | — | SENT (the coupled round-9 package `0022-0023-v9`). 0023 at v10: its external round-7 row now declares raised=[] explicitly |
+| external 10 (SENT) | 2026-08-18 | — | SENT (the coupled round-10 package `0022-0023-v10`). 0023 at v11: no semantic change required |
 
-**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 35 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 36 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

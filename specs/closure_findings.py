@@ -297,4 +297,14 @@ CLOSURES = [
      # the fifth carrier, and the mechanical sweep that replaces hand-checking
      "! grep -q 'PACKAGED-STATE' specs/skip_inventory.py && "
      "grep -q 'WITHDRAWN_CLAIMS' specs/seal_package.py"),
+    # ---- external round 9 -------------------------------------------------
+    ("0022", "external", 9, "R9-1",
+     "both package carriers claimed the sealer reran 'both harnesses and both "
+     "verifiers from the EXTRACTED archive'; verify_archive() ran the two "
+     "harnesses only, the verifiers having run before the archive existed "
+     "against the build tree",
+     "specs/seal_package.py EXTRACTION_CHECKS (all six run from the "
+     "extraction), specs/package/collected_header.txt (__EXTRACTED__ generated "
+     "from the registry), tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k extraction_check_list"),
 ]

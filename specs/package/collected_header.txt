@@ -1,10 +1,10 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-9 external-review package (v9)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-10 external-review package (v10)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           specs/0022-source-revocation.md — draft v10 (external candidate)
-                 specs/0023-non-revival-under-maintenance.md — draft v10 (external candidate)
+specs:           specs/0022-source-revocation.md — draft v11 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v11 (external candidate)
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is
@@ -37,9 +37,13 @@ measured line:   __MEASURED__ (exit 0)
                  above, and THIS FILE IS BUILT FROM THAT RUN afterwards. So the
                  measured line was NOT produced with this COLLECTED present —
                  earlier rounds claimed "packaged-state" execution, which the
-                 sealer's own order contradicts. What IS verified with the file
-                 present: the sealer re-runs both harnesses and both verifiers
-                 from the EXTRACTED archive before staging.
+                 sealer's own order contradicts.
+                 What IS verified with the file present, RUN FROM THE
+                 EXTRACTED ARCHIVE before staging — this list is
+                 GENERATED from the sealer's registry and the sealer
+                 aborts if it runs anything else (round 9 found this
+                 claim naming four verifiers the code never ran):
+                 __EXTRACTED__
                  The full -rs output ships as COLLECTED_pytest_rs.txt and the
                  decomposition below is COMPUTED FROM IT.
 
