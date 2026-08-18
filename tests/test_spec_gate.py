@@ -1639,3 +1639,61 @@ def test_every_k_atom_in_the_closure_ledger_selects_a_test():
     assert not empty, (
         f"these -k atoms select NO test, so the evidence citing them exercises "
         f"nothing while exiting 0: {empty}")
+
+
+def test_no_closure_evidence_reads_an_artifact_the_runner_produces():
+    """CLASS 5 of specs/REVIEW_LESSONS.md — self-reference — and the only class
+    that had no mechanical gate.
+
+    Evidence commands validated the transcript the evidence runner was WRITING
+    as it executed them (external R12-1/R12-2), and I REINTRODUCED it at R13-3
+    while repointing a stale selector — the same defect, in the fix for a
+    different one. Re-finding a class after fixing its first instance is the
+    pattern this gate exists to break.
+
+    An evidence command must not read an artifact whose production it is part
+    of. Two forms are forbidden: naming the transcript path directly, and
+    selecting a test that reads it."""
+    import re, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from closure_findings import CLOSURES
+    from evidence_transcript import REL_PATH
+
+    # tests that READ the live transcript — found by source, not by memory
+    source = pathlib.Path(__file__).read_text()
+    readers = set()
+    for m in re.finditer(r"^def (test_\w+)\(", source, re.M):
+        body = source[m.end():source.find("\ndef ", m.end()) if
+                      source.find("\ndef ", m.end()) > 0 else len(source)]
+        # READS THE LIVE FILE, not merely mentions the constant. The
+        # counterfeit test imports REL_PATH and writes its own fixtures into a
+        # temp dir; flagging it would be this gate committing class 4's mirror
+        # — a domain too WIDE — in the fix for class 5.
+        if re.search(r"root\s*/\s*REL_PATH|root\s*/\s*[\"']specs[\"']\s*/\s*"
+                     r"[\"']generated[\"']", body):
+            readers.add(m.group(1))
+    producer = "test_every_closure_evidence_command_actually_runs"
+    assert producer in source, "the evidence runner was renamed"
+    readers.add(producer)          # it WRITES the transcript
+    assert len(readers) >= 2, ("expected the producer and at least one reader; "
+                               f"found {sorted(readers)}")
+
+    problems = []
+    for spec, kind, rno, fid, _s, _c, ev in CLOSURES:
+        if "run_offline.sh" in ev:
+            continue
+        if REL_PATH in ev or "evidence_run.json" in ev:
+            problems.append(f"{spec} {fid}: names the transcript path")
+        for m in re.finditer(r"-k\s+'([^']+)'|-k\s+(\S+)", ev):
+            expr = m.group(1) or m.group(2)
+            for atom in re.split(r"\s+(?:or|and)\s+", expr):
+                atom = atom.strip().strip("()")
+                for reader in readers:
+                    if atom and atom in reader:
+                        problems.append(
+                            f"{spec} {fid}: selects `{atom}` -> {reader}, which "
+                            f"reads the transcript the runner is writing")
+    assert not problems, (
+        "closure evidence that reads an artifact the runner produces:\n  "
+        + "\n  ".join(problems))

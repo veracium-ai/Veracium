@@ -259,9 +259,12 @@ CLOSURES = [
      "(exact (spec, kind, round, id) validation + derived counts), "
      "specs/closure_findings.py ($PY-parameterised evidence), "
      "tests/test_spec_gate.py",
+     # NOT `closure_evidence_command`: that is the runner, and the runner
+     # executing this command spawns a child that SKIPS on the recursion
+     # marker — so that half exercised nothing while exiting 0. R13-3's defect
+     # wearing the marker instead of a rename, caught by the class-5 gate.
      "$PY specs/render_closure.py --check && "
-     "$PY -m pytest tests/test_spec_gate.py -k "
-     "'closure_ledger_is_complete or closure_evidence_command'"),
+     "$PY -m pytest tests/test_spec_gate.py -k closure_ledger_is_complete"),
     ("0022", "external", 7, "R7-2",
      "the reproduction carrier described the SQLite-floor launcher a round "
      "after the code changed, and repeated the previous round's launcher "
@@ -419,4 +422,15 @@ CLOSURES = [
      "specs/evidence_transcript.py (a CLOSED schema with exact JSON types), "
      "tests/test_spec_gate.py (six mutations + a clean-transcript control)",
      "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
+    # ---- self-found while writing specs/REVIEW_LESSONS.md (round 15) --------
+    ("0022", "internal", 14, "R14-2",
+     "SELF-FOUND, not raised: classifying fifteen rounds of findings by "
+     "failure MECHANISM showed class 5 (self-reference) had no mechanical "
+     "gate — the only class re-found after its first fix — and building that "
+     "gate immediately caught R7-1's evidence selecting the evidence RUNNER, "
+     "whose nested child skips on the recursion marker, so that half of the "
+     "command exercised nothing while exiting 0",
+     "specs/REVIEW_LESSONS.md (the taxonomy), tests/test_spec_gate.py (the "
+     "class-5 gate), specs/closure_findings.py (R7-1's selector)",
+     "$PY -m pytest tests/test_spec_gate.py -k reads_an_artifact"),
 ]
