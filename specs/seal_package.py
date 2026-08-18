@@ -90,6 +90,11 @@ def build_collected(rs_path: pathlib.Path, specs: list[str], version: str,
 # the GENERATED inventory, contradicting the -rs output shipped beside it).
 # Four carriers were swept by hand and a fifth survived, so the sweep is
 # mechanical now: the sealer greps the BUILT artifact, not the sources.
+#
+# COROLLARY, learned the hard way and worth obeying: prose EXPLAINING a
+# withdrawn claim must not QUOTE it. A check searching for a string cannot tell
+# a live assertion from a description of one, and every carrier that quoted its
+# own needle broke either the check or the claim. Describe; do not quote.
 WITHDRAWN_CLAIMS = (
     (r"PACKAGED-STATE", "sealing measures BEFORE building COLLECTED, so no "
                         "carrier may claim the suite ran with COLLECTED present"),

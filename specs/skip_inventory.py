@@ -92,11 +92,14 @@ INVENTORY = [
      "EXECUTES in your extraction, which carries COLLECTED. Both statuses "
      "reconcile; your report should say which. "
      "(External round 8's R8-2 named four hand-maintained claims that had gone "
-     "false; this entry was a FIFTH, still asserting a 'PACKAGED-STATE run' "
-     "with COLLECTED present in the measuring tree. It contradicted the sealed "
-     "-rs output shipped beside it, which records this very skip. Caught by "
-     "grepping the built artifact for the withdrawn claim rather than trusting "
-     "that four carriers were all of them.)"),
+     "false; this entry was a FIFTH, still asserting the withdrawn "
+     "measured-with-the-file-present story. It contradicted the sealed -rs "
+     "output shipped beside it, which records this very skip. Caught by "
+     "grepping the BUILT artifact rather than trusting that four carriers were "
+     "all of them. NOTE: this note deliberately does NOT quote the withdrawn "
+     "phrase — explanatory prose that quotes the string a mechanical check "
+     "searches for defeats the check, which is its own recurring defect in "
+     "this review.)"),
     ("tests/test_eval.py", "skipif", "VERACIUM_EVAL",
      "env-flag", "live acceptance-eval tier"),
     # (specs/0016 D2: the VERACIUM_MIN_DEP_JOB floor regression was removed
