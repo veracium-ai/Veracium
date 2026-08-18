@@ -1,11 +1,38 @@
-PACKAGE: 0022-0023-v8 — external ROUND 8
+PACKAGE: 0022-0023-v9 — external ROUND 9
 SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
 
 0004 is not a candidate: approved at round 2, frozen on W1-W8.
 
-BOTH ROUND-7 BLOCKERS ARE FOLDED, and both were ours.
+BOTH ROUND-8 BLOCKERS ARE FOLDED, and both are the same disease at different
+depths: a number or a status maintained BY HAND beside one produced by a
+machine.
+
+  R8-1 — `raised` was read with `.get(..., [])`, so FORGETTING the field was
+  indistinguishable from declaring no findings: you injected a verdict naming
+  R99-1 with no `raised` and the gate reported nothing. A returned verdict must
+  now DECLARE, `raised=[]` included, and omission raises. The displayed count
+  comes from `raised` rather than the legacy `findings=`, which disagrees in
+  four rows — that field is now documented as what the round REPORT stated
+  (historically blocking-only, or grouped differently for a coupled round)
+  rather than silently contradicting the column above it. Two regressions: a
+  missing field, and the rendered count against the structure.
+
+  R8-2 — four package claims were typed. The harness line said 17/17 against
+  an 18/18 executable; "All 31" evidence commands described a 33-row ledger of
+  which the test runs 32; COLLECTED claimed the suite was measured with itself
+  present when the sealer measures BEFORE building it; and the inventory said
+  git-dependent tests skipped for want of `.git` when sealing measures the git
+  checkout and the sealed reconciliation shows no such skips.
+
+  All four are now produced rather than asserted: the sealer RUNS both
+  harnesses and substitutes their output, derives the evidence split from the
+  ledger, and the two-phase workflow is described as what it is. The
+  packaged-state claim is withdrawn: what IS verified with the file present is
+  the re-run from the EXTRACTED archive before staging.
+
+WHAT THE PREVIOUS ROUND FIXED, still standing:
 
   R7-1 — our "completeness gate" compared SETS OF IDS. Set equality cannot see
   a wrong round, an erased evidence string, a duplicate row, or a count that
@@ -25,8 +52,11 @@ BOTH ROUND-7 BLOCKERS ARE FOLDED, and both were ours.
   bare python3 has no pytest; one was a grep-for-absence rendered INTO the
   document it searched, so the file supplied its own needle and the command
   failed on a clean tree. Evidence that does not execute is a description of
-  evidence. All 31 now run — parameterised on `$PY`, the launcher's venv — and
-  a new test RUNS THEM ALL, so a non-running command cannot ship again.
+  evidence. They all run now — parameterised on `$PY`, the launcher's venv —
+  and a test RUNS THEM. **The exact split is in COLLECTED.txt and is DERIVED,
+  not stated here**: round 8 caught this paragraph saying "All 31" about a
+  33-row ledger of which the test runs 32, the launcher being run separately
+  during sealing because it builds a venv and runs the whole suite.
 
   R7-2 — this carrier still described the SQLite-floor launcher a round after
   the code changed, and repeated v6's "1656 passed, 8 skipped" against a

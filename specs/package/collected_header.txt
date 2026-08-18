@@ -1,10 +1,10 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-8 external-review package (v8)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-9 external-review package (v9)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           specs/0022-source-revocation.md — draft v9 (external candidate)
-                 specs/0023-non-revival-under-maintenance.md — draft v9 (external candidate)
+specs:           specs/0022-source-revocation.md — draft v10 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v10 (external candidate)
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is
@@ -32,14 +32,23 @@ REPRODUCTION — a launcher, and it REFUSES rather than reporting:
   against a different test set.
 
 measured line:   __MEASURED__ (exit 0)
-                 PACKAGED-STATE: measured in a copy carrying this COLLECTED.
+                 TWO-PHASE, described honestly (external round 8, R8-2): the
+                 suite is measured FIRST, in the committed tree at the commit
+                 above, and THIS FILE IS BUILT FROM THAT RUN afterwards. So the
+                 measured line was NOT produced with this COLLECTED present —
+                 earlier rounds claimed "packaged-state" execution, which the
+                 sealer's own order contradicts. What IS verified with the file
+                 present: the sealer re-runs both harnesses and both verifiers
+                 from the EXTRACTED archive before staging.
                  The full -rs output ships as COLLECTED_pytest_rs.txt and the
                  decomposition below is COMPUTED FROM IT.
 
-harnesses:       specs/evidence/0022/vector_harness.py            — 60/60 (exit 0)
-                 specs/evidence/0022/store_concurrency_harness.py — 17/17 (exit 0)
-                 both re-run FROM THE EXTRACTED ARCHIVE by the sealer, which
-                 aborts if either fails there
+harnesses:       __HARNESSES__
+                 (RUN by the sealer on the tree being sealed, and re-run from
+                 the EXTRACTED archive before staging — round 8 found this line
+                 typed as 17/17 against an 18/18 executable)
+
+evidence:        __EVIDENCE__
 
 verifiers:       verify_collected(text, rs) · reconcile(rs) · render_closure --check
                  · render_operation --check  — all PASS, all executed by the seal

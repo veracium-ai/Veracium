@@ -270,4 +270,28 @@ CLOSURES = [
      "RUNS the launcher and substitutes what it printed)",
      "grep -q '__LAUNCHER__' specs/package/collected_header.txt && "
      "grep -q 'the sealer RUNS the launcher' specs/seal_package.py"),
+    # ---- external round 8 -------------------------------------------------
+    ("0022", "external", 8, "R8-1",
+     "the structured closure had an ADMISSION HOLE: `raised` was read with "
+     ".get(..., []), so omitting the field was indistinguishable from "
+     "declaring no findings — a verdict naming R99-1 with no `raised` produced "
+     "zero problems, and the displayed count came from the legacy `findings=` "
+     "which disagrees with `raised` in four rows",
+     "specs/render_closure.py (omission raises; the count is derived), "
+     "specs/reviews.py (0023 external 7 declares raised=[]; the legacy field "
+     "documented), tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k "
+     "'returned_verdict_must_declare or comes_from_raised'"),
+    ("0022", "external", 8, "R8-2",
+     "four package claims were hand-maintained and false: harness 17/17 "
+     "against an 18/18 executable, 'All 31' evidence commands against a 33-row "
+     "ledger, a packaged-state claim the sealer's own order contradicts, and a "
+     "git-checkout blurb describing a workflow that had stopped being true",
+     "specs/seal_package.py (harnesses RUN, evidence split derived), "
+     "specs/package/collected_header.txt (two-phase described), "
+     "specs/skip_inventory.py (the git-checkout blurb)",
+     "grep -q '__HARNESSES__' specs/package/collected_header.txt && "
+     "grep -q '__EVIDENCE__' specs/package/collected_header.txt && "
+     "grep -q 'TWO-PHASE' specs/package/collected_header.txt && "
+     "! grep -q 'measuring copy has no .git' specs/skip_inventory.py"),
 ]

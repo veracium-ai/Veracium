@@ -150,8 +150,15 @@ def render(rs_output: str = "") -> str:
             f"{unordered}. Add them to `order` and `blurb` — the failure this "
             f"guard exists for is external round 4's R4-4.")
     blurb = {
-        "git-checkout": ("git-checkout-dependent (SKIPPED in the measured line — the "
-                         "measuring copy has no .git — and in your extracted run):"),
+        # R8-2: this said the measured line SKIPPED them because the measuring
+        # copy had no .git. The sealer measures ROOT, which IS a git checkout,
+        # and the sealed reconciliation contains no git-dependent skips at all
+        # — the blurb described a workflow that stopped being true.
+        "git-checkout": ("git-checkout-dependent (these EXECUTE in the sealed "
+                         "measured line, because sealing measures the git "
+                         "checkout itself; they SKIP in your extracted run, "
+                         "which has no .git — that difference is the largest "
+                         "single source of the delta between the two numbers):"),
         "env-flag": "env-flag tiers (SKIPPED unless the flag is set; part of the measured line):",
         "optional-dependency": ("optional-dependency (per-entry counts and the measured "
                                 "author status are in each entry):"),

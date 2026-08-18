@@ -1259,3 +1259,52 @@ def test_every_closure_evidence_command_actually_runs():
     assert not failures, "closure evidence that does not run:\n  " + "\n  ".join(failures)
     print(f"\n{len(CLOSURES) - len(skipped)} evidence commands ran clean; "
           f"skipped: {skipped}")
+
+
+def test_a_returned_verdict_must_declare_what_it_raised():
+    """External round 8, R8-1. `raised` was read with `.get(..., [])`, so
+    FORGETTING the field was indistinguishable from declaring no findings —
+    the reviewer injected a verdict naming R99-1 with no `raised` and the gate
+    reported zero problems. Omission is not a declaration."""
+    import sys, pathlib, pytest
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import render_closure
+
+    real = render_closure.review_findings()          # the clean tree must pass
+    assert real
+
+    import reviews
+    victim = next(r for r in reviews.REVIEWS
+                  if r["spec"] in render_closure.TRACKED
+                  and not render_closure._is_sent(r))
+    saved = victim.pop("raised")
+    try:
+        with pytest.raises(ValueError, match="NO `raised` field"):
+            render_closure.review_findings()
+    finally:
+        victim["raised"] = saved
+
+
+def test_the_rendered_finding_count_comes_from_raised_not_the_legacy_field():
+    """R8-1's other half: the column is labelled "findings raised" and was fed
+    by the legacy `findings=`, which disagrees with `raised` in four rows. The
+    displayed number now comes from the structure it claims to show."""
+    import sys, pathlib, re
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import reviews, render_closure
+
+    disagree = [r for r in reviews.REVIEWS
+                if "raised" in r and r.get("findings") != len(r["raised"])]
+    assert disagree, ("this regression is pointless if no row disagrees — if "
+                      "the legacy field has been reconciled, delete this test")
+    block = render_closure.render(disagree[0]["spec"])
+    row = [l for l in block.splitlines()
+           if l.startswith(f"| {disagree[0]['kind']} {disagree[0]['round']} (verdict)")]
+    assert row, f"no rendered row for {disagree[0]['spec']} {disagree[0]['round']}"
+    shown = row[0].split("|")[3].strip()
+    assert shown == str(len(disagree[0]["raised"])), (
+        f"the rendered count is {shown}, the legacy field is "
+        f"{disagree[0]['findings']}, and `raised` has "
+        f"{len(disagree[0]['raised'])} — the column must show the structure")

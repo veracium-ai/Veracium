@@ -29,6 +29,15 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SPECS = ROOT / "specs"
+TRACKED = ("0022", "0023")     # the specs whose ledgers this gate governs
+
+
+def _is_sent(row) -> bool:
+    """A SENT row is a DISPATCH record: it names the findings it is answering,
+    not findings it raised. Declaring `raised` on one would double-count."""
+    return row["verdict"].lstrip().upper().startswith("SENT")
+
+
 BEGIN = "<!-- GENERATED:review-closure -->"
 END = "<!-- /GENERATED:review-closure -->"
 
@@ -67,14 +76,14 @@ def render(spec: str) -> str:
                f"the two are never summed.")
     out.append("")
     # PER-ROUND dispatch/verdict index (R4-3) …
-    out.append("| round | date | findings raised | verdict (compressed) |")
+    out.append("| round | date | findings raised (from `raised=`) | verdict (compressed) |")
     out.append("|---|---|---|---|")
     for r in rows:
         v = r["verdict"].replace("|", "\\|")
         v = (v[:300] + "…") if len(v) > 300 else v
         label = "SENT" if _is_sent(r) else "verdict"
         out.append(f"| {r['kind']} {r['round']} ({label}) | {r['date']} | "
-                   f"{r.get('findings', '—') if label == 'verdict' else '—'} | {v} |")
+                   f"{len(r['raised']) if label == 'verdict' else '—'} | {v} |")
     # … and the PER-FINDING closure ledger PROCESS §4a actually requires
     # (R5-3: the round index above is a shorter verdict, not a closure).
     from closure_findings import CLOSURES
@@ -149,6 +158,16 @@ def review_findings() -> dict:
     from reviews import REVIEWS
     out = {}
     for r in REVIEWS:
+        # EXTERNAL ROUND 8, R8-1: `.get("raised", [])` made an OMITTED field
+        # indistinguishable from an explicit "this round raised nothing". A
+        # verdict naming R99-1 with no `raised` produced zero problems — the
+        # ledger's whole guarantee, silently opted out of by forgetting a key.
+        # A returned verdict must DECLARE, including `raised=[]`.
+        if r["spec"] in TRACKED and not _is_sent(r) and "raised" not in r:
+            raise ValueError(
+                f"{r['spec']} {r['kind']} {r['round']} is a returned verdict "
+                f"with NO `raised` field. Declare the findings it raised, or "
+                f"`raised=[]` if none — omission is not a declaration (R8-1)")
         for fid in r.get("raised", []):
             key = (r["spec"], fid)
             if key in out and out[key] != (r["kind"], r["round"]):

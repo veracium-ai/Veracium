@@ -199,6 +199,34 @@ def main() -> int:
         # asks for it, the sealer RUNS the launcher on the final tree and
         # substitutes what it actually printed. A number nobody measured in
         # this state cannot reach the carrier.
+        # EXTERNAL ROUND 8, R8-2: every one of these was TYPED into the header
+        # and went stale — the harness line said 17/17 against an 18/18
+        # executable, and "All 31" evidence commands described a 33-row ledger
+        # of which the test runs 32. Numbers a human maintains beside numbers a
+        # machine produces will disagree; these are produced.
+        harnesses = []
+        for h in ("vector_harness.py", "store_concurrency_harness.py"):
+            hp = ROOT / "specs" / "evidence" / "0022" / h
+            if not hp.exists():
+                continue
+            hr = _run([sys.executable, str(hp)], cwd=ROOT)
+            if hr.returncode != 0:
+                _fail(f"{h} fails on the tree being sealed:\n{hr.stdout}")
+            harnesses.append(f"{h:<32} — {hr.stdout.strip().splitlines()[-1]}")
+        harness_block = "\n                 ".join(harnesses)
+
+        sys.path.insert(0, str(SPECS))
+        import closure_findings
+        total_ev = len(closure_findings.CLOSURES)
+        launcher_ev = sum(1 for c in closure_findings.CLOSURES
+                          if "run_offline.sh" in c[6])
+        evidence_claim = (
+            f"{total_ev} closure-evidence commands: {total_ev - launcher_ev} "
+            f"executed by tests/test_spec_gate.py's evidence runner, and "
+            f"{launcher_ev} (the launcher) run separately during sealing — "
+            f"the runner skips it because it builds a venv and runs the whole "
+            f"suite, which would recurse")
+
         launcher = "not requested"
         if "__LAUNCHER__" in header:
             lv = scratch / "launcher-venv"
@@ -213,7 +241,8 @@ def main() -> int:
                       f"(exit {lr.returncode}): {line}")
             launcher = line.strip()
         subs = {"__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
-                "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher}
+                "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
+                "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim}
         manifest = a.manifest.read_text()
         for k, v in subs.items():
             header = header.replace(k, v)
