@@ -191,7 +191,7 @@ EXTRACTION_CHECKS = (
       "import sys,pathlib;sys.path.insert(0,'specs');"
       "from skip_inventory import reconcile;"
       "p=reconcile(pathlib.Path('COLLECTED_pytest_rs.txt').read_text());"
-      "sys.exit(('\n'.join(p)) if p else 0)"]),
+      "sys.exit(chr(10).join(p) if p else 0)"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
