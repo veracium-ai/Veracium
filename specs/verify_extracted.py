@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""The extraction verifiers, as NAMED SCRIPTS rather than inline `-c` programs.
+
+External round 11, R11-1. The registry's two verifier entries were
+`python -c "<program>"`, and the binding regression checked that the program
+CONTAINED the strings `verify_collected` and `COLLECTED`. The reviewer
+substituted:
+
+    python -c "pass # verify_collected COLLECTED"
+
+kept the label, and both the binding test and `verify_archive()` accepted the
+archive. Substring inspection of a source string is not a binding to
+behaviour — it is a binding to spelling, which is what round 10's finding said
+about labels one level up.
+
+Named scripts fix the shape: the registry pins a complete argv ending in a
+FILE, that file's behaviour is fixed by its own source, and the adversarial
+test corrupts the packaged carrier and requires the extraction to refuse.
+
+Each verb reads the carriers as they exist IN THE EXTRACTION and exits
+non-zero with a reason.
+"""
+from __future__ import annotations
+
+import pathlib
+import sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent
+
+
+def _carriers():
+    collected = ROOT / "COLLECTED.txt"
+    rs = ROOT / "COLLECTED_pytest_rs.txt"
+    for p in (collected, rs):
+        if not p.exists():
+            print(f"{p.name} is not in the extraction", file=sys.stderr)
+            raise SystemExit(2)
+    return collected.read_text(), rs.read_text()
+
+
+def verify_collected_carrier() -> int:
+    sys.path.insert(0, str(HERE))
+    from skip_inventory import verify_collected
+    collected, rs = _carriers()
+    try:
+        verify_collected(collected, rs)
+    except Exception as e:                       # noqa: BLE001 — the reason matters
+        print(f"verify_collected FAILED: {e}", file=sys.stderr)
+        return 1
+    print("verify_collected: PASS")
+    return 0
+
+
+def reconcile_carrier() -> int:
+    sys.path.insert(0, str(HERE))
+    from skip_inventory import reconcile
+    _collected, rs = _carriers()
+    problems = reconcile(rs)
+    if problems:
+        print("reconcile FAILED:\n  " + "\n  ".join(problems), file=sys.stderr)
+        return 1
+    print("reconcile: PASS")
+    return 0
+
+
+VERBS = {
+    "collected": verify_collected_carrier,
+    "reconcile": reconcile_carrier,
+}
+
+
+def main(argv) -> int:
+    if len(argv) != 2 or argv[1] not in VERBS:
+        print(f"usage: verify_extracted.py {{{'|'.join(VERBS)}}}", file=sys.stderr)
+        return 2
+    return VERBS[argv[1]]()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

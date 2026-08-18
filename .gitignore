@@ -21,3 +21,4 @@ specs/archives/*.tar.gz
 specs/generated/*.tmp
 specs/generated/migration_0013_evidence.lock
 .venv-offline/
+specs/generated/evidence_run.json

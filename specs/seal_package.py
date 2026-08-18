@@ -55,6 +55,34 @@ def _fail(msg):
     raise SystemExit(1)
 
 
+# EXTERNAL ROUND 11, R11-2. `measure()` copied ALL of os.environ and overrode
+# two keys. With VERACIUM_EVIDENCE_CHILD=1 inherited from the shell, the
+# evidence-runner test SKIPS — and the sealer went on generating "all N
+# evidence commands ran" from the closure ledger, unconditionally, because the
+# claim was counted rather than observed. The skip is inventoried, so
+# reconciliation would not reject it either. A sealed package could therefore
+# assert an execution that had been silently switched off.
+#
+# So the measurement environment is an ALLOWLIST, and the claim is OBSERVED.
+_ENV_ALLOW = ("PATH", "HOME", "LANG", "LC_ALL", "TZ", "TMPDIR", "SHELL",
+              "SSL_CERT_FILE", "SSL_CERT_DIR", "SOURCE_DATE_EPOCH")
+
+
+def sealed_env(**extra) -> dict:
+    """The ONLY environment sealing runs anything in.
+
+    Anything not on the allowlist is dropped — most pointedly
+    VERACIUM_EVIDENCE_CHILD, whose presence turns the evidence runner into a
+    skip, and VERACIUM_* flags generally, which gate live tiers."""
+    env = {k: v for k, v in os.environ.items() if k in _ENV_ALLOW}
+    leaked = sorted(k for k in os.environ
+                    if k.startswith("VERACIUM_") and k in env)
+    if leaked:                      # belt and braces: the allowlist has no
+        _fail(f"the allowlist leaks {leaked}")   # VERACIUM_* keys by design
+    env.update(extra)
+    return env
+
+
 def measure(scratch: pathlib.Path) -> pathlib.Path:
     """Run the suite to a SCRATCH path, never to the artifact's own name.
 
@@ -63,7 +91,7 @@ def measure(scratch: pathlib.Path) -> pathlib.Path:
     passed outside the run.
     """
     out = scratch / "pytest_rs.txt"
-    env = dict(os.environ, VERACIUM_FORBID_NETWORK="1", PYTHONPATH="src")
+    env = sealed_env(VERACIUM_FORBID_NETWORK="1", PYTHONPATH="src")
     r = subprocess.run(
         [sys.executable, "-m", "pytest", "-q", "tests", "-p", "no:randomly", "-rs"],
         cwd=ROOT, env=env, capture_output=True, text=True)
@@ -196,18 +224,14 @@ EXTRACTION_CHECKS = (
      [sys.executable, "specs/evidence/0022/vector_harness.py"]),
     ("store_concurrency_harness.py",
      [sys.executable, "specs/evidence/0022/store_concurrency_harness.py"]),
-    ("verify_collected(text, rs)",
-     [sys.executable, "-c",
-      "import sys,pathlib;sys.path.insert(0,'specs');"
-      "from skip_inventory import verify_collected;"
-      "verify_collected(pathlib.Path('COLLECTED.txt').read_text(),"
-      "pathlib.Path('COLLECTED_pytest_rs.txt').read_text())"]),
-    ("reconcile(rs)",
-     [sys.executable, "-c",
-      "import sys,pathlib;sys.path.insert(0,'specs');"
-      "from skip_inventory import reconcile;"
-      "p=reconcile(pathlib.Path('COLLECTED_pytest_rs.txt').read_text());"
-      "sys.exit(chr(10).join(p) if p else 0)"]),
+    # R11-1: NAMED SCRIPTS, not inline `-c`. A registry entry whose command is
+    # a source string can only be checked by inspecting that string, and
+    # `python -c "pass # verify_collected COLLECTED"` satisfied every such
+    # inspection while doing nothing.
+    ("verify_extracted.py collected",
+     [sys.executable, "specs/verify_extracted.py", "collected"]),
+    ("verify_extracted.py reconcile",
+     [sys.executable, "specs/verify_extracted.py", "reconcile"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
@@ -318,14 +342,27 @@ def main() -> int:
         # pytest version and node count. They were absent from COLLECTED, so
         # the promise was carried by a document that could not keep it. They
         # are MEASURED here and substituted.
-        pv = _run([sys.executable, "-m", "pytest", "--version"], cwd=ROOT)
-        collected_n = _run([sys.executable, "-m", "pytest", "-q", "tests",
-                            "--collect-only", "-p", "no:randomly"], cwd=ROOT)
+        probe_env = sealed_env(VERACIUM_FORBID_NETWORK="1", PYTHONPATH="src")
+        pv = subprocess.run([sys.executable, "-m", "pytest", "--version"],
+                            cwd=ROOT, capture_output=True, text=True,
+                            env=probe_env)
+        if pv.returncode != 0:
+            _fail(f"the pytest-version probe failed: {pv.stderr.strip()[:200]}")
+        collected_n = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", "tests", "--collect-only",
+             "-p", "no:randomly"], cwd=ROOT, capture_output=True, text=True,
+            env=probe_env)
+        if collected_n.returncode != 0:
+            _fail(f"the collection probe failed: "
+                  f"{collected_n.stderr.strip()[:200]}")
         n_nodes = ""
         for ln in reversed((collected_n.stdout or "").strip().splitlines()):
             if "test" in ln and ("collected" in ln or "tests" in ln):
                 n_nodes = ln.strip()
                 break
+        if not n_nodes:
+            # R11-2: "collection unavailable" was a carrier shipping a shrug
+            _fail("the collection probe produced no count line")
         import platform as _plat
         context = (
             f"command        VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "
@@ -344,12 +381,32 @@ def main() -> int:
         total_ev = len(closure_findings.CLOSURES)
         launcher_ev = sum(1 for c in closure_findings.CLOSURES
                           if "run_offline.sh" in c[6])
+        # R11-2: OBSERVED, from the transcript the evidence runner wrote
+        # during measure(). Reading an artifact costs nothing; the first
+        # version spawned another pytest to watch the runner print a number,
+        # and that duplication took the suite to 23 minutes.
+        tpath = ROOT / "specs" / "generated" / "evidence_run.json"
+        if not tpath.exists():
+            _fail("no evidence transcript after the measured run — the runner "
+                  "was skipped (a stray VERACIUM_EVIDENCE_CHILD, or a -k that "
+                  "deselected it), so the all-commands-ran claim has no source")
+        import json as _json
+        tdata = _json.loads(tpath.read_text())
+        observed = tdata["ran"]
+        bad = [c for c in tdata["commands"] if c["exit"] != 0]
+        if bad:
+            _fail(f"the transcript records failing evidence commands: "
+                  f"{[c['finding'] for c in bad]}")
+        if observed != total_ev - launcher_ev:
+            _fail(f"the evidence runner ran {observed} commands; the ledger "
+                  f"holds {total_ev} with {launcher_ev} launcher entry(ies)")
         evidence_claim = (
-            f"{total_ev} closure-evidence commands: {total_ev - launcher_ev} "
-            f"executed by tests/test_spec_gate.py's evidence runner, and "
-            f"{launcher_ev} (the launcher) run separately during sealing — "
-            f"the runner skips it because it builds a venv and runs the whole "
-            f"suite, which would recurse")
+            f"{total_ev} closure-evidence commands: {observed} OBSERVED "
+            f"executing during this seal's measured run, each with its argv, "
+            f"cwd, exit status and output digest recorded in "
+            f"specs/generated/evidence_run.json (shipped), and {launcher_ev} "
+            f"(the launcher) run separately — the runner skips that one "
+            f"because it builds a venv and runs the whole suite")
 
         launcher = "not requested"
         if "__LAUNCHER__" in header:
@@ -357,7 +414,7 @@ def main() -> int:
             lr = subprocess.run(
                 ["bash", "specs/evidence/offline/run_offline.sh"],
                 cwd=ROOT, capture_output=True, text=True,
-                env=dict(os.environ, VERACIUM_OFFLINE_VENV=str(lv)))
+                env=sealed_env(VERACIUM_OFFLINE_VENV=str(lv)))
             tail = (lr.stdout + lr.stderr).strip().splitlines()
             line = next((l for l in reversed(tail) if "passed" in l or "REFUS" in l), "")
             if lr.returncode != 0:
@@ -391,6 +448,7 @@ def main() -> int:
             "COLLECTED.txt": collected,
             "COLLECTED_pytest_rs.txt": rs,
             "PACKAGE_MANIFEST.txt": manifest,
+            "evidence_run.json": tpath.read_text(),
         })
 
     digest = verify_archive(archive, specs)

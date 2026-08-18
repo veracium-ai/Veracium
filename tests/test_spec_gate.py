@@ -1244,21 +1244,39 @@ def test_every_closure_evidence_command_actually_runs():
         py = pathlib.Path(sys.executable)
     env = dict(os.environ, PY=str(py), VERACIUM_EVIDENCE_CHILD="1")
 
-    failures, skipped = [], []
+    import hashlib, json
+    failures, skipped, transcript = [], [], []
     for spec, kind, rno, fid, _summary, _closed, evidence in CLOSURES:
         # the launcher builds a venv and runs the entire suite: running it from
         # inside the suite would recurse
         if "run_offline.sh" in evidence:
-            skipped.append(f"{spec} {fid} (launcher — would recurse)")
+            skipped.append(f"{spec} {fid} (launcher — run separately at seal)")
             continue
         r = subprocess.run(evidence, shell=True, capture_output=True,
                            cwd=root, env=env, timeout=600)
+        out = (r.stdout or b"") + (r.stderr or b"")
+        transcript.append({
+            "spec": spec, "finding": fid, "argv": evidence, "cwd": str(root),
+            "exit": r.returncode,
+            "output_sha256": hashlib.sha256(out).hexdigest(),
+        })
         if r.returncode != 0:
-            tail = (r.stderr or r.stdout).decode(errors="replace")[-200:]
-            failures.append(f"{spec} {fid}: exit {r.returncode}\n    {evidence}\n    {tail}")
+            failures.append(f"{spec} {fid}: exit {r.returncode}\n    {evidence}\n"
+                            f"    {out.decode(errors='replace')[-200:]}")
+
+    # THE TRANSCRIPT IS THE ARTIFACT (external round 11): argv, cwd, exit and an
+    # output digest per command. The sealer READS this instead of spawning
+    # another pytest to watch this test print a number — that duplication took
+    # the suite from 39s to 23 MINUTES and is the reason this file exists.
+    # It also answers the reviewer's standing request for an execution record.
+    gen = root / "specs" / "generated"
+    gen.mkdir(exist_ok=True)
+    (gen / "evidence_run.json").write_text(json.dumps(
+        {"ran": len(transcript), "skipped": skipped, "commands": transcript},
+        indent=1) + "\n")
+
     assert not failures, "closure evidence that does not run:\n  " + "\n  ".join(failures)
-    print(f"\n{len(CLOSURES) - len(skipped)} evidence commands ran clean; "
-          f"skipped: {skipped}")
+    print(f"\n{len(transcript)} evidence commands ran clean; skipped: {skipped}")
 
 
 def test_a_returned_verdict_must_declare_what_it_raised():
@@ -1326,54 +1344,42 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
     sys.path.insert(0, str(root / "specs"))
     import seal_package
 
+    # R11-1: the FULL normalised argv, pinned. The previous version accepted
+    # any command whose text contained the right words, and
+    # `python -c "pass # verify_collected COLLECTED"` passed it. Every entry
+    # now ends in a FILE whose behaviour is fixed by its own source.
     def norm(cmd):
-        """Normalised argv: the interpreter collapses to `python`, and a -c
-        program collapses to the names it invokes. R10-2 replaced
-        verify_collected's COMMAND with `python -c pass`, kept the LABEL, and
-        the package was accepted — because the test inspected names. Behaviour
-        is what must be pinned."""
-        out = []
-        for i, part in enumerate(cmd):
-            if i == 0:
-                out.append("python")
-            elif part == "-c":
-                out.append("-c")
-            else:
-                out.append(part)
-        return tuple(out)
+        return ("python",) + tuple(cmd[1:])
 
     names = [n for n, _ in seal_package.EXTRACTION_CHECKS]
     assert len(names) == len(set(names)), f"duplicate check names: {names}"
 
-    # THE EXACT ARGV each label must run. A label whose command changes is a
-    # different check wearing the old name.
     required = {
         "vector_harness.py":
             ("python", "specs/evidence/0022/vector_harness.py"),
         "store_concurrency_harness.py":
             ("python", "specs/evidence/0022/store_concurrency_harness.py"),
+        "verify_extracted.py collected":
+            ("python", "specs/verify_extracted.py", "collected"),
+        "verify_extracted.py reconcile":
+            ("python", "specs/verify_extracted.py", "reconcile"),
         "render_closure.py --check":
             ("python", "specs/render_closure.py", "--check"),
         "render_operation.py --check":
             ("python", "specs/render_operation.py", "--check"),
     }
     got = {n: norm(c) for n, c in seal_package.EXTRACTION_CHECKS}
+    assert set(got) == set(required), (
+        f"the extraction registry is {sorted(got)}, expected {sorted(required)}")
     for label, argv in required.items():
-        assert label in got, f"{label} is not in the extraction registry"
         assert got[label] == argv, (
             f"{label} runs {got[label]}, not {argv} — the carrier advertises "
             f"the LABEL, so the label must name the command that runs")
-
-    # the two -c checks are pinned on the callables they import, which is the
-    # behaviour their labels claim
-    for label, must_call in (("verify_collected(text, rs)", "verify_collected"),
-                             ("reconcile(rs)", "reconcile")):
-        assert label in got, f"{label} is not in the extraction registry"
-        program = got[label][-1]
-        assert must_call in program and "COLLECTED" in program, (
-            f"{label} does not actually invoke {must_call} on the packaged "
-            f"carriers — R10-2 swapped this command for `python -c pass`, kept "
-            f"the label, and the package was accepted")
+    for label, argv in got.items():
+        assert "-c" not in argv, (
+            f"{label} uses an inline -c program; R11-1 showed those can only "
+            f"be checked by inspecting their source text, which a comment "
+            f"defeats. Use a named script.")
 
     header = (root / "specs" / "package" / "collected_header.txt").read_text()
     assert "__EXTRACTED__" in header, (
@@ -1381,25 +1387,123 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
         "a hand-written list is what R9-1 found overstating the checks")
 
 
-def test_a_no_op_substituted_into_the_extraction_registry_is_rejected():
-    """External round 10, R10-2's adversarial case, run rather than described.
+def test_corrupting_the_packaged_collected_makes_the_extraction_refuse():
+    """External round 11, R11-1's behavioural mutation, run rather than
+    described.
 
-    The reviewer replaced `verify_collected`'s command with `python -c pass`,
-    kept its label, and `verify_archive()` accepted the package: the registry
-    paired a name with a command by hand, and everything downstream read only
-    the name. This substitutes the no-op and requires the binding test to
-    fail."""
-    import sys, pathlib, pytest
+    The previous version of this test substituted a no-op COMMAND and checked
+    that a SOURCE-INSPECTING assertion caught it — which the reviewer defeated
+    with `python -c "pass # verify_collected COLLECTED"`. Inspecting a string
+    proves nothing about what runs.
+
+    So this corrupts the packaged carrier and requires the extraction verifier
+    to REFUSE. It exercises the real script, on real files, exactly as the
+    sealer runs it from an extracted archive."""
+    import subprocess, sys, pathlib, shutil, tempfile
+    root = pathlib.Path(__file__).resolve().parent.parent
+    live_rs = root / "COLLECTED_pytest_rs.txt"
+    live_col = root / "COLLECTED.txt"
+
+    with tempfile.TemporaryDirectory() as td:
+        d = pathlib.Path(td)
+        shutil.copytree(root / "specs", d / "specs",
+                        ignore=shutil.ignore_patterns("archives", "__pycache__"))
+        # a MINIMAL sealed pair: whatever the tree currently has, or a stub
+        if live_col.exists() and live_rs.exists():
+            shutil.copy2(live_col, d / "COLLECTED.txt")
+            shutil.copy2(live_rs, d / "COLLECTED_pytest_rs.txt")
+        else:
+            sys.path.insert(0, str(root / "specs"))
+            import skip_inventory as S
+            rs = "1 passed, 0 skipped in 0.1s\n"
+            (d / "COLLECTED_pytest_rs.txt").write_text(rs)
+            (d / "COLLECTED.txt").write_text(
+                "head\n" + S.BEGIN_MARKER + "\n" + S.render(rs) + "\n"
+                + S.END_MARKER + "\n")
+
+        script = d / "specs" / "verify_extracted.py"
+        clean = subprocess.run([sys.executable, str(script), "collected"],
+                               cwd=d, capture_output=True, text=True)
+        assert clean.returncode == 0, (
+            f"the verifier must PASS on the intact carriers first, else the "
+            f"mutation proves nothing: {clean.stderr}")
+
+        # CORRUPT the packaged carrier — one byte inside the generated block
+        col = d / "COLLECTED.txt"
+        text = col.read_text()
+        marker = text.index("<!-- GENERATED:skip-inventory -->")
+        col.write_text(text[:marker + 40] + "CORRUPTED" + text[marker + 40:])
+
+        dirty = subprocess.run([sys.executable, str(script), "collected"],
+                               cwd=d, capture_output=True, text=True)
+        assert dirty.returncode != 0, (
+            "the extraction verifier ACCEPTED a corrupted COLLECTED.txt — "
+            "R11-1's point: the check must bind behaviour, not spelling")
+        assert "verify_collected FAILED" in dirty.stderr, dirty.stderr
+
+
+def test_the_sealed_environment_drops_the_recursion_marker():
+    """External round 11, R11-2. `measure()` copied all of os.environ and
+    overrode two keys. With VERACIUM_EVIDENCE_CHILD=1 in the shell, the
+    evidence runner SKIPS — and the sealer still generated "all N evidence
+    commands ran", because that number came from the closure ledger's length
+    rather than from execution. The skip is inventoried, so reconciliation
+    would not have rejected it either: a sealed package could assert an
+    execution that had been silently switched off.
+
+    The sealing environment is an allowlist now. This pins the two properties
+    that matter: the recursion marker cannot survive it, and no VERACIUM_*
+    flag can."""
+    import os, sys, pathlib
     root = pathlib.Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(root / "specs"))
     import seal_package
 
-    saved = seal_package.EXTRACTION_CHECKS
+    saved = dict(os.environ)
     try:
-        seal_package.EXTRACTION_CHECKS = tuple(
-            (n, ([sys.executable, "-c", "pass"] if n.startswith("verify_collected") else c))
-            for n, c in saved)
-        with pytest.raises(AssertionError, match="does not actually invoke"):
-            test_the_extraction_check_list_matches_the_sealer_registry()
+        os.environ["VERACIUM_EVIDENCE_CHILD"] = "1"
+        os.environ["VERACIUM_ROBUSTNESS"] = "1"
+        os.environ["VERACIUM_SOMETHING_NEW"] = "1"
+        env = seal_package.sealed_env(PYTHONPATH="src")
+        assert "VERACIUM_EVIDENCE_CHILD" not in env, (
+            "the recursion marker survived the sealing environment — it turns "
+            "the evidence runner into a skip while the claim stands")
+        leaked = [k for k in env if k.startswith("VERACIUM_")
+                  and k != "VERACIUM_FORBID_NETWORK"]
+        assert not leaked, f"VERACIUM_* flags leaked into sealing: {leaked}"
+        assert "PATH" in env and env["PYTHONPATH"] == "src"
     finally:
-        seal_package.EXTRACTION_CHECKS = saved
+        os.environ.clear()
+        os.environ.update(saved)
+
+
+def test_the_evidence_transcript_is_written_and_complete():
+    """External round 11. The sealer must OBSERVE how many evidence commands
+    ran rather than counting the ledger — but my first version of that had the
+    sealer AND a regression each spawn a full pytest to watch the runner print
+    a number. Nested pytest inside nested pytest: the suite went from 39s to
+    23 minutes.
+
+    The runner writes a transcript instead — argv, cwd, exit status and an
+    output digest per command — and everything else reads it. One execution,
+    machine-readable, and it is the execution record the reviewer has been
+    asking for."""
+    import json, pathlib, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from closure_findings import CLOSURES
+
+    t = root / "specs" / "generated" / "evidence_run.json"
+    assert t.exists(), (
+        "no evidence transcript — the runner did not execute in this session. "
+        "The sealer reads this file; without it the observed claim has no "
+        "source (R11-2)")
+    data = json.loads(t.read_text())
+    launcher = sum(1 for c in CLOSURES if "run_offline.sh" in c[6])
+    assert data["ran"] == len(CLOSURES) - launcher, (
+        f"the transcript records {data['ran']} commands; the ledger holds "
+        f"{len(CLOSURES)} with {launcher} launcher entry(ies)")
+    for c in data["commands"]:
+        assert c["exit"] == 0, f"{c['finding']} exited {c['exit']}"
+        assert len(c["output_sha256"]) == 64
+        assert c["argv"] and c["cwd"]

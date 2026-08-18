@@ -335,4 +335,23 @@ CLOSURES = [
      "specs/seal_package.py (normalised TarInfo + a plain-tar extraction gate)",
      "grep -q 'info.uname = info.gname = .root.' specs/seal_package.py && "
      "grep -q 'plain .tar -xzf. FAILS' specs/seal_package.py"),
+    # ---- external round 11 ------------------------------------------------
+    ("0022", "external", 11, "R11-1",
+     "the verifier binding was textual: the regression only required the "
+     "inline program to CONTAIN `verify_collected` and `COLLECTED`, so "
+     "`python -c \"pass # verify_collected COLLECTED\"` was accepted with the "
+     "original label",
+     "specs/verify_extracted.py (named scripts), specs/seal_package.py "
+     "(full argv, no inline -c), tests/test_spec_gate.py (argv pinning + a "
+     "corrupt-the-carrier mutation)",
+     "$PY -m pytest tests/test_spec_gate.py -k "
+     "'extraction_check_list or corrupting_the_packaged'"),
+    ("0022", "external", 11, "R11-2",
+     "sealing inherited the whole environment, so VERACIUM_EVIDENCE_CHILD=1 "
+     "turned the evidence runner into a skip while the sealer still generated "
+     "the all-commands-ran claim from the ledger's length",
+     "specs/seal_package.py sealed_env() + the observed evidence claim + "
+     "refusing probes, tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k "
+     "'sealed_environment or reports_a_count'"),
 ]
