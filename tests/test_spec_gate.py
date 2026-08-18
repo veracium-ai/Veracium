@@ -1326,14 +1326,80 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
     sys.path.insert(0, str(root / "specs"))
     import seal_package
 
+    def norm(cmd):
+        """Normalised argv: the interpreter collapses to `python`, and a -c
+        program collapses to the names it invokes. R10-2 replaced
+        verify_collected's COMMAND with `python -c pass`, kept the LABEL, and
+        the package was accepted — because the test inspected names. Behaviour
+        is what must be pinned."""
+        out = []
+        for i, part in enumerate(cmd):
+            if i == 0:
+                out.append("python")
+            elif part == "-c":
+                out.append("-c")
+            else:
+                out.append(part)
+        return tuple(out)
+
     names = [n for n, _ in seal_package.EXTRACTION_CHECKS]
     assert len(names) == len(set(names)), f"duplicate check names: {names}"
-    for expected in ("vector_harness.py", "store_concurrency_harness.py",
-                     "verify_collected(text, rs)", "reconcile(rs)",
-                     "render_closure.py --check", "render_operation.py --check"):
-        assert expected in names, f"{expected} is not in the extraction registry"
+
+    # THE EXACT ARGV each label must run. A label whose command changes is a
+    # different check wearing the old name.
+    required = {
+        "vector_harness.py":
+            ("python", "specs/evidence/0022/vector_harness.py"),
+        "store_concurrency_harness.py":
+            ("python", "specs/evidence/0022/store_concurrency_harness.py"),
+        "render_closure.py --check":
+            ("python", "specs/render_closure.py", "--check"),
+        "render_operation.py --check":
+            ("python", "specs/render_operation.py", "--check"),
+    }
+    got = {n: norm(c) for n, c in seal_package.EXTRACTION_CHECKS}
+    for label, argv in required.items():
+        assert label in got, f"{label} is not in the extraction registry"
+        assert got[label] == argv, (
+            f"{label} runs {got[label]}, not {argv} — the carrier advertises "
+            f"the LABEL, so the label must name the command that runs")
+
+    # the two -c checks are pinned on the callables they import, which is the
+    # behaviour their labels claim
+    for label, must_call in (("verify_collected(text, rs)", "verify_collected"),
+                             ("reconcile(rs)", "reconcile")):
+        assert label in got, f"{label} is not in the extraction registry"
+        program = got[label][-1]
+        assert must_call in program and "COLLECTED" in program, (
+            f"{label} does not actually invoke {must_call} on the packaged "
+            f"carriers — R10-2 swapped this command for `python -c pass`, kept "
+            f"the label, and the package was accepted")
 
     header = (root / "specs" / "package" / "collected_header.txt").read_text()
     assert "__EXTRACTED__" in header, (
         "the header must carry the token the sealer fills from the registry — "
         "a hand-written list is what R9-1 found overstating the checks")
+
+
+def test_a_no_op_substituted_into_the_extraction_registry_is_rejected():
+    """External round 10, R10-2's adversarial case, run rather than described.
+
+    The reviewer replaced `verify_collected`'s command with `python -c pass`,
+    kept its label, and `verify_archive()` accepted the package: the registry
+    paired a name with a command by hand, and everything downstream read only
+    the name. This substitutes the no-op and requires the binding test to
+    fail."""
+    import sys, pathlib, pytest
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import seal_package
+
+    saved = seal_package.EXTRACTION_CHECKS
+    try:
+        seal_package.EXTRACTION_CHECKS = tuple(
+            (n, ([sys.executable, "-c", "pass"] if n.startswith("verify_collected") else c))
+            for n, c in saved)
+        with pytest.raises(AssertionError, match="does not actually invoke"):
+            test_the_extraction_check_list_matches_the_sealer_registry()
+    finally:
+        seal_package.EXTRACTION_CHECKS = saved

@@ -1,4 +1,4 @@
-PACKAGE: 0022-0023-v10 — external ROUND 10
+PACKAGE: 0022-0023-v11 — external ROUND 11
 SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
@@ -30,54 +30,40 @@ machine.
   harnesses and substitutes their output, derives the evidence split from the
   ledger, and the two-phase workflow is described as what it is.
 
-ROUND 9 (R9-1) THEN CAUGHT US OVERSTATING THE EXTRACTION CHECK, and the code
-moved to meet the claim rather than the claim shrinking to meet the code.
+ROUND 10 FOUND THREE, AND ALL THREE WERE THE SAME SHAPE ONE MORE TIME: a
+description maintained apart from the thing described.
 
-  Both carriers said the sealer reran "both harnesses and both verifiers from
-  the EXTRACTED archive". It ran the two harnesses and nothing else; the
-  verifiers ran BEFORE the archive existed, against the build tree. You traced
-  the subprocesses and found it.
+  R10-1 — the REVIEWER GUIDE said measurement happens in a separate extracted
+  archive with no `.git`, so the measured line "already reflects the extracted
+  shape a reviewer runs". The sealer measures the author's committed checkout,
+  and COLLECTED said so correctly — two carriers, two answers, for ten rounds,
+  while our withdrawn-claim guard read only COLLECTED and the manifest. The
+  guide ships IN the archive; the guard reads it now.
 
-  The claim was the better one — the build tree is not the artifact, which is
-  the whole reason to extract — so all six checks now run FROM THE EXTRACTION:
-  both harnesses, verify_collected against the sealed -rs, reconcile,
-  render_closure --check and render_operation --check. They come from a single
-  registry in the sealer, the carrier's list is GENERATED from that registry,
-  and the sealer aborts if it executes anything other than exactly it. The two
-  cannot drift apart again, which is the failure that produced this finding.
+  There is ONE canonical protocol and it is the one the code implements: the
+  author's committed git checkout, measured before COLLECTED is built. Your run
+  WILL differ — the git-dependent tests execute for us and skip for you, which
+  is the largest single term in the delta — and the skip inventory is what
+  makes that reconcile. Compare the decomposition, not the total.
 
-WHAT THE PREVIOUS ROUND FIXED, still standing:
+  The guide also promised an exact command, environment, pytest version and
+  node count that COLLECTED never carried. They are GENERATED now: interpreter
+  path, python build, pytest version, SQLite version, cwd, and the collection
+  line, measured during sealing.
 
-  R7-1 — our "completeness gate" compared SETS OF IDS. Set equality cannot see
-  a wrong round, an erased evidence string, a duplicate row, or a count that
-  disagrees with the rows it counts, and you demonstrated all four by mutation.
-  Finding identities are STRUCTURAL now: each verdict row in reviews.py
-  declares `raised=[...]`, and the ledger must match on (spec, kind, round, id)
-  EXACTLY — extras, duplicates, wrong rounds and empty evidence each fail the
-  build. We re-ran your mutations; each is caught by name.
+  R10-2 — the extraction registry bound LABELS, not behaviour. You replaced
+  verify_collected's command with `python -c pass`, kept the label, and the
+  package was accepted; the advertised `render_operation.py --check` also
+  omitted `--check` from its argv, harmless only because checking was the
+  default. The regression pins exact normalised ARGV, `--check` is a real flag,
+  and your no-op substitution is now an adversarial test that must fail.
 
-  Building it exposed three data defects it then caught: 18 wrong round labels,
-  a finding attributed to two rounds because a later verdict REFERENCED it
-  rather than raising it, and the cross-spec stripper eating `0022 R99-1` —
-  which you predicted. Counts are DERIVED: the ledger headers now read "10 for
-  0023; 31 across the pair" where prose had said 26.
-
-  AND FOUR EVIDENCE COMMANDS DID NOT RUN. Three said `python3 -m pytest` and a
-  bare python3 has no pytest; one was a grep-for-absence rendered INTO the
-  document it searched, so the file supplied its own needle and the command
-  failed on a clean tree. Evidence that does not execute is a description of
-  evidence. They all run now — parameterised on `$PY`, the launcher's venv —
-  and a test RUNS THEM. **The exact split is in COLLECTED.txt and is DERIVED,
-  not stated here**: round 8 caught this paragraph saying "All 31" about a
-  33-row ledger of which the test runs 32, the launcher being run separately
-  during sealing because it builds a venv and runs the whole suite.
-
-  R7-2 — this carrier still described the SQLite-floor launcher a round after
-  the code changed, and repeated v6's "1656 passed, 8 skipped" against a
-  different test set. The description is taken from the script that exists, and
-  THE SEALER NOW RUNS THE LAUNCHER on the final tree and substitutes what it
-  printed. A number nobody measured in this state can no longer reach the
-  carrier.
+  R10-3 — a plain `tar -xzf` could not open the package. `git archive` writes
+  root/root; the three appended carriers carried the sealing user's uid/gid, so
+  extraction exited 2 wherever uid 1000 cannot be restored and you needed
+  --no-same-owner. Appended members are normalised to root/root 0644, and the
+  sealer RUNS a plain extraction as a gate — the ordinary command is the one
+  that must work.
 
 STILL OPEN: the store-side R19 binding remains enforcement-BEFORE-
 implementation. It becomes behavioural the day the store code exists, which

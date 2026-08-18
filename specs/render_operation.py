@@ -72,6 +72,10 @@ def main() -> int:
         SPEC.write_text(new)
         print("R19 operation block written")
         return 0
+    # R10-2: the sealer ADVERTISED `render_operation.py --check` while its argv
+    # omitted the flag — harmless only because checking is the default. An
+    # advertised command that differs from the executed one is the R9-1 defect
+    # in miniature, so `--check` is now a real flag and the registry passes it.
     if new != text:
         print("the R19 operation block in 0022 §4e-i DISAGREES with the "
               "executable it claims to show — run "

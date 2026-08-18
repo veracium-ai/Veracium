@@ -34,6 +34,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import sqlite3
 import sys
 import tarfile
 import tempfile
@@ -101,6 +102,9 @@ WITHDRAWN_CLAIMS = (
     (r"measuring copy has no \.git", "sealing measures the git checkout"),
     (r"meets the 3\.35 floor", "the launcher asks runtime_supported(), not a "
                                "version floor"),
+    (r"That copy has no `\.git`", "sealing measures the author's git checkout; "
+                                  "the separate-extracted-copy workflow is "
+                                  "withdrawn (R10-1)"),
     (r'"QUOTED VERBATIM" IS WITHDRAWN', "§4e-i is generated from the "
                                         "executable; the withdrawal is stale"),
 )
@@ -158,7 +162,19 @@ def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
                           f"again is round 2's duplicate-member defect")
                 p = pathlib.Path(td) / fname
                 p.write_text(content)
-                tf.add(p, arcname=member)
+                # EXTERNAL ROUND 10, R10-3: `git archive` writes root/root, and
+                # tarfile.add() stamped the SEALING USER's uid/gid on the three
+                # appended carriers. A plain `tar -xzf` then exits 2 on any host
+                # that cannot restore uid 1000 — the reviewer needed
+                # --no-same-owner to open the package at all. Normalise so the
+                # archive extracts with the ordinary command.
+                info = tf.gettarinfo(str(p), arcname=member)
+                info.uid = info.gid = 0
+                info.uname = info.gname = "root"
+                info.mode = 0o644
+                info.mtime = int(info.mtime)
+                with open(p, "rb") as fh:
+                    tf.addfile(info, fh)
         data = tar_path.read_bytes()
     import gzip
     dest.write_bytes(gzip.compress(data, 9))
@@ -195,12 +211,26 @@ EXTRACTION_CHECKS = (
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
-     [sys.executable, "specs/render_operation.py"]),
+     [sys.executable, "specs/render_operation.py", "--check"]),
 )
 
 
 def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
     """Extract and RUN, because the build tree is not the artifact."""
+    # R10-3: ownership must be uniform, and the archive must open with the
+    # ORDINARY command — not one carrying --no-same-owner.
+    with tarfile.open(path) as tf:
+        owners = {(m.uname or str(m.uid), m.gname or str(m.gid))
+                  for m in tf.getmembers()}
+    if len(owners) > 1:
+        _fail(f"the archive carries mixed ownership {sorted(owners)} — a plain "
+              f"`tar -xzf` fails on hosts that cannot restore those ids (R10-3)")
+    with tempfile.TemporaryDirectory() as probe:
+        pr = subprocess.run(["tar", "-xzf", str(path)], cwd=probe,
+                            capture_output=True, text=True)
+        if pr.returncode != 0:
+            _fail(f"plain `tar -xzf` FAILS on this archive (exit "
+                  f"{pr.returncode}): {pr.stderr.strip()[:200]}")
     with tarfile.open(path) as tf:
         names = tf.getnames()
     dupes = {n for n in names if names.count(n) > 1}
@@ -284,6 +314,31 @@ def main() -> int:
             harnesses.append(f"{h:<32} — {hr.stdout.strip().splitlines()[-1]}")
         harness_block = "\n                 ".join(harnesses)
 
+        # R10-1: the reviewer guide promises the exact command, environment,
+        # pytest version and node count. They were absent from COLLECTED, so
+        # the promise was carried by a document that could not keep it. They
+        # are MEASURED here and substituted.
+        pv = _run([sys.executable, "-m", "pytest", "--version"], cwd=ROOT)
+        collected_n = _run([sys.executable, "-m", "pytest", "-q", "tests",
+                            "--collect-only", "-p", "no:randomly"], cwd=ROOT)
+        n_nodes = ""
+        for ln in reversed((collected_n.stdout or "").strip().splitlines()):
+            if "test" in ln and ("collected" in ln or "tests" in ln):
+                n_nodes = ln.strip()
+                break
+        import platform as _plat
+        context = (
+            f"command        VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "
+            f"{sys.executable} -m pytest -q tests -p no:randomly -rs\n"
+            f"                 cwd            {ROOT}  (the author's committed git "
+            f"checkout — R10-1: the ONE canonical measurement site)\n"
+            f"                 interpreter    {sys.executable}\n"
+            f"                 python         {sys.version.split()[0]} "
+            f"({_plat.machine()}, {_plat.system()} {_plat.release()})\n"
+            f"                 pytest         {(pv.stdout or pv.stderr).strip()}\n"
+            f"                 sqlite         {sqlite3.sqlite_version}\n"
+            f"                 collection     {n_nodes or 'unavailable'}")
+
         sys.path.insert(0, str(SPECS))
         import closure_findings
         total_ev = len(closure_findings.CLOSURES)
@@ -312,6 +367,7 @@ def main() -> int:
         subs = {"__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
                 "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
                 "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,
+                "__CONTEXT__": context,
                 "__EXTRACTED__": "\n                 ".join(
                     f"{i+1}. {n}" for i, (n, _) in enumerate(EXTRACTION_CHECKS))}
         manifest = a.manifest.read_text()
@@ -322,8 +378,13 @@ def main() -> int:
         collected = build_collected(rs_path, specs, a.version, header)
         refuse_placeholders((collected, "COLLECTED.txt"),
                             (manifest, "PACKAGE_MANIFEST.txt"))
+        guide = (ROOT / "specs" / "REVIEWER_GUIDE.md").read_text()
         refuse_withdrawn_claims((collected, "COLLECTED.txt"),
-                                (manifest, "PACKAGE_MANIFEST.txt"))
+                                (manifest, "PACKAGE_MANIFEST.txt"),
+                                # R10-1: the guide SHIPS in the archive and
+                                # carried the withdrawn workflow claim for ten
+                                # rounds while the guard read only two files
+                                (guide, "specs/REVIEWER_GUIDE.md"))
 
         name = f"{'-'.join(specs)}-{a.version}-{ts}"
         archive = build_archive(name, {

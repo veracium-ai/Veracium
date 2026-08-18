@@ -307,4 +307,32 @@ CLOSURES = [
      "extraction), specs/package/collected_header.txt (__EXTRACTED__ generated "
      "from the registry), tests/test_spec_gate.py",
      "$PY -m pytest tests/test_spec_gate.py -k extraction_check_list"),
+    # ---- external round 10 ------------------------------------------------
+    ("0022", "external", 10, "R10-1",
+     "the reviewer guide said measurement happens in a separate extracted "
+     "archive with no .git, so the measured line already reflected the "
+     "reviewer's shape; the sealer measures the author's git checkout — and "
+     "the guide promised command/environment/pytest-version/node-count that "
+     "COLLECTED did not carry",
+     "specs/REVIEWER_GUIDE.md (one canonical protocol), "
+     "specs/seal_package.py (__CONTEXT__ generated; the guard reads the guide)",
+     "! grep -q 'That copy has no `.git`' specs/REVIEWER_GUIDE.md && "
+     "grep -q '__CONTEXT__' specs/package/collected_header.txt && "
+     "grep -q 'REVIEWER_GUIDE.md' specs/seal_package.py"),
+    ("0022", "external", 10, "R10-2",
+     "the extraction registry bound LABELS not behaviour: swapping "
+     "verify_collected's command for `python -c pass` while keeping its label "
+     "was accepted, and the advertised render_operation `--check` was absent "
+     "from the executed argv",
+     "specs/seal_package.py (argv), specs/render_operation.py (--check is "
+     "real), tests/test_spec_gate.py (argv pinning + the no-op adversary)",
+     "$PY -m pytest tests/test_spec_gate.py -k "
+     "'extraction_check_list or no_op_substituted'"),
+    ("0022", "external", 10, "R10-3",
+     "git-archived members were root/root while the appended carriers carried "
+     "the sealing user's uid/gid, so a plain `tar -xzf` exited 2 and "
+     "--no-same-owner was needed to open the package",
+     "specs/seal_package.py (normalised TarInfo + a plain-tar extraction gate)",
+     "grep -q 'info.uname = info.gname = .root.' specs/seal_package.py && "
+     "grep -q 'plain .tar -xzf. FAILS' specs/seal_package.py"),
 ]

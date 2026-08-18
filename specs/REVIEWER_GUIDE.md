@@ -231,10 +231,17 @@ value moves* and asserts a record still exists.
   (R11-4/0014: a hardcoded count triple here drifted three releases behind the suite and
   contradicted the package it shipped in; counts live where they are measured). Each package's
   `COLLECTED.txt` records the exact command, environment, and pass/skip/xfail line.
-- **Where it is measured:** in a SEPARATE extracted copy of the source commit's
-  `git archive` (never the dev tree, never inside the shipped archive itself — so the
-  archive carries zero cache artifacts). That copy has no `.git`, so the measured line
-  ALREADY reflects the extracted shape a reviewer runs.
+- **Where it is measured — ONE canonical protocol, corrected at external round 10
+  (R10-1):** in the AUTHOR'S COMMITTED GIT CHECKOUT, at the commit both carriers name,
+  with `specs/seal_package.py` running the suite before it builds `COLLECTED.txt`. This
+  paragraph previously described a separate extracted copy with no `.git`, and claimed
+  the measured line therefore already reflected the reviewer's shape. **It does not, and
+  it never did** — the sealer measures `ROOT`. The observable consequence is the
+  git-dependent tests: they EXECUTE in the sealed line and SKIP in your extraction, which
+  is the largest single term in the delta between the two numbers.
+  **Your run will differ from the sealed line, by design, and the skip inventory in
+  `COLLECTED.txt` is what makes the difference reconcile.** Anyone comparing the two
+  numbers should expect them to differ and check the decomposition, not the total.
 - **Reconciling your own run:** `COLLECTED.txt` records the measured line AND the
   environment-conditional skip inventory — the named tests that skip or run depending on
   the host (git checkout present, coordination files present, qualified SQLite runtime,
