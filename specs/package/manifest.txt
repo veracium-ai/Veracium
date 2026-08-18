@@ -1,46 +1,39 @@
-PACKAGE: 0022-0023-v7 — external ROUND 7
+PACKAGE: 0022-0023-v8 — external ROUND 8
 SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
 
 0004 is not a candidate: approved at round 2, frozen on W1-W8.
 
-ALL FOUR ROUND-6 BLOCKERS ARE FOLDED. R6-4 is the one to read, and it is the
-worst thing we have shipped in this review.
+BOTH ROUND-7 BLOCKERS ARE FOLDED, and both were ours.
 
-  The offline launcher we added last round INVENTED its own qualification rule
-  — "SQLite >= 3.35" — while this repository already implements the real one:
-  `runtime_supported()`, which 0007 defines as a COMPLETE RECORDED RUNTIME
-  whose identity matches this process and whose recorded constructor
-  manifestations REPRODUCE. You measured it selecting SQLite 3.53.1, declaring
-  it qualified, and producing 660 FAILED / 951 passed / 31 errors — while the
-  real predicate returned False for that runtime. A tool whose entire purpose
-  is refusing unqualified builds certified one and reported the result as a
-  run. It asks the repository now and REFUSES with exit 2; proven by forcing
-  the predicate False on a scratch copy.
+  R7-1 — our "completeness gate" compared SETS OF IDS. Set equality cannot see
+  a wrong round, an erased evidence string, a duplicate row, or a count that
+  disagrees with the rows it counts, and you demonstrated all four by mutation.
+  Finding identities are STRUCTURAL now: each verdict row in reviews.py
+  declares `raised=[...]`, and the ledger must match on (spec, kind, round, id)
+  EXACTLY — extras, duplicates, wrong rounds and empty evidence each fail the
+  build. We re-ran your mutations; each is caught by name.
 
-  Our first fix for it was wrong in a way worth recording: it asked the
-  predicate BEFORE creating the venv, so `import veracium` failed for want of
-  pydantic, every candidate was rejected, and `2>/dev/null` hid the reason.
-  Build the venv, THEN qualify, and never silence the answer.
+  Building it exposed three data defects it then caught: 18 wrong round labels,
+  a finding attributed to two rounds because a later verdict REFERENCED it
+  rather than raising it, and the cross-spec stripper eating `0022 R99-1` —
+  which you predicted. Counts are DERIVED: the ledger headers now read "10 for
+  0023; 31 across the pair" where prose had said 26.
 
-  R6-1: the two exception boundaries are the same boundary now. Your
-  KeyboardInterrupt injection is a regression beside the existing rollback test.
+  AND FOUR EVIDENCE COMMANDS DID NOT RUN. Three said `python3 -m pytest` and a
+  bare python3 has no pytest; one was a grep-for-absence rendered INTO the
+  document it searched, so the file supplied its own needle and the command
+  failed on a clean tree. Evidence that does not execute is a description of
+  evidence. All 31 now run — parameterised on `$PY`, the launcher's venv — and
+  a new test RUNS THEM ALL, so a non-running command cannot ship again.
 
-  R6-2: the "verbatim is withdrawn" paragraph is deleted. It contradicted a
-  block generated from the executable on the same page.
-
-  R6-3: the closure ledger is VALIDATED against reviews.py rather than
-  maintained beside it — ids extracted from verdict text, every one required to
-  have a row with a runnable command. It proved itself immediately: recording
-  this round's verdicts FAILED the gate until the round-6 closures were
-  written, and it exposed a precision bug in its own extractor, which counted a
-  cross-spec reference ("0023 F1") as an obligation on 0022.
-
-YOUR PRIOR REPORTS ARE NOT IN THIS ARCHIVE, per your instruction. The
-structured closure ledger is the replacement, and it is now complete and
-mechanically reconciled — 26 findings, every id reviews.py names, each with a
-command you can run.
+  R7-2 — this carrier still described the SQLite-floor launcher a round after
+  the code changed, and repeated v6's "1656 passed, 8 skipped" against a
+  different test set. The description is taken from the script that exists, and
+  THE SEALER NOW RUNS THE LAUNCHER on the final tree and substitutes what it
+  printed. A number nobody measured in this state can no longer reach the
+  carrier.
 
 STILL OPEN: the store-side R19 binding remains enforcement-BEFORE-
 implementation. It becomes behavioural the day the store code exists, which

@@ -20,3 +20,4 @@ specs/archives/*.tar.gz
 # renames; one escaped into a review package in v12
 specs/generated/*.tmp
 specs/generated/migration_0013_evidence.lock
+.venv-offline/

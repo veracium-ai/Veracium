@@ -76,6 +76,14 @@ INVENTORY = [
      "future-obligation",
      "1 test. UNCONDITIONAL, same FUTURE primitive as W16; the before half is "
      "test_native_chain_export_carries_absorbed_by_id_on_both_absorbed"),
+    ("tests/test_spec_gate.py", "skip", "nested evidence run",
+     "recursion-bound",
+     "1 test. The closure-evidence runner executes commands that legitimately "
+     "invoke `pytest tests/test_spec_gate.py`, which would re-enter the runner "
+     "and nest until the timeout — measured at 10m44s and a self-inflicted "
+     "failure before the bound existed. Children are marked with "
+     "VERACIUM_EVIDENCE_CHILD and skip; the parent still runs every command "
+     "exactly once. SKIPS ONLY inside a nested run, never at the top level"),
     ("tests/test_spec_gate.py", "skip", "COLLECTED.txt not present",
      "package-artifact", "binds COLLECTED's inventory to render(); 1 test. "
                          "SINCE THE 0020/0021 R2 SEAL REORDER the measured "
@@ -134,7 +142,7 @@ def render(rs_output: str = "") -> str:
     # than being silently dropped — the renderer's domain is INVENTORY's, not
     # a list someone remembered to extend.
     order = ["git-checkout", "env-flag", "optional-dependency", "package-artifact",
-             "host-conditional", "future-obligation"]
+             "host-conditional", "future-obligation", "recursion-bound"]
     unordered = sorted(set(classes) - set(order))
     if unordered:
         raise ValueError(
@@ -152,6 +160,10 @@ def render(rs_output: str = "") -> str:
         "host-conditional": ("host-conditional (may differ between the authoring host and "
                              "yours — the usual source of reviewer deltas; each entry "
                              "carries its count and measured author status):"),
+        "recursion-bound": ("recursion-bound (SKIPS ONLY inside a NESTED run "
+                            "and never at the top level — the closure-evidence "
+                            "runner marks its children so they do not re-enter "
+                            "it; at the top level this test EXECUTES):"),
         "future-obligation": ("future-obligation (SKIPPED UNCONDITIONALLY on every host, "
                               "including yours and ours — each names a primitive or a "
                               "live-model probe a spec marks FUTURE. These four were "

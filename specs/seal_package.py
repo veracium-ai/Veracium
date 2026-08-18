@@ -194,8 +194,26 @@ def main() -> int:
         measured = re.search(r"\d+ passed[^\n]*", rs).group(0)
 
         header = a.header.read_text()
+        # EXTERNAL ROUND 7, R7-2: the launcher result was PROSE, carried over
+        # from the previous round against a different test set. If the header
+        # asks for it, the sealer RUNS the launcher on the final tree and
+        # substitutes what it actually printed. A number nobody measured in
+        # this state cannot reach the carrier.
+        launcher = "not requested"
+        if "__LAUNCHER__" in header:
+            lv = scratch / "launcher-venv"
+            lr = subprocess.run(
+                ["bash", "specs/evidence/offline/run_offline.sh"],
+                cwd=ROOT, capture_output=True, text=True,
+                env=dict(os.environ, VERACIUM_OFFLINE_VENV=str(lv)))
+            tail = (lr.stdout + lr.stderr).strip().splitlines()
+            line = next((l for l in reversed(tail) if "passed" in l or "REFUS" in l), "")
+            if lr.returncode != 0:
+                _fail(f"the offline launcher did not succeed on the final tree "
+                      f"(exit {lr.returncode}): {line}")
+            launcher = line.strip()
         subs = {"__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
-                "__TS__": ts, "__MEASURED__": measured}
+                "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher}
         manifest = a.manifest.read_text()
         for k, v in subs.items():
             header = header.replace(k, v)

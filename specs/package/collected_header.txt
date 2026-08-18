@@ -1,23 +1,35 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-7 external-review package (v7)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-8 external-review package (v8)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           specs/0022-source-revocation.md — draft v8 (external candidate)
-                 specs/0023-non-revival-under-maintenance.md — draft v8 (external candidate)
+specs:           specs/0022-source-revocation.md — draft v9 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v9 (external candidate)
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is
                  named here rather than quietly included.
 
-REPRODUCTION — a launcher now, not instructions:
+REPRODUCTION — a launcher, and it REFUSES rather than reporting:
   bash specs/evidence/offline/run_offline.sh
-    selects an interpreter whose SQLite meets the 3.35 floor (and REFUSES if
-    none does, rather than running on an unqualified build), creates a venv,
-    installs the 11 pinned wheels with --no-index --require-hashes, and runs
-    the suite. Verified from this package: 1656 passed, 8 skipped.
-    Its skip count differs from the sealed line below exactly where the
-    inventory says it will — no .git, no HOME-anchored file, no MCP SDK.
+
+  It uses $VERACIUM_PYTHON (or python3), creates a venv, installs the 11
+  pinned wheels with --no-index --require-hashes, then asks THIS REPOSITORY
+  whether the runtime is qualified — `runtime_supported()`, which specs/0007
+  defines as a complete recorded runtime whose identity matches and whose
+  recorded constructor manifestations reproduce. If that is not exactly True
+  it EXITS 2 without running the suite.
+
+  It does NOT apply a version floor. Round 6's version did, invented the rule
+  itself, certified SQLite 3.53.1, and produced 660 failures on a build the
+  real predicate rejected — and round 7 found this carrier still DESCRIBING
+  that behaviour a round after the code changed. The description is now taken
+  from the script that exists.
+
+  LAUNCHER RESULT ON THIS PACKAGE'S FINAL STATE: __LAUNCHER__
+  Measured after the archive's test set was frozen, not carried over from a
+  previous round — round 7 caught v7 repeating v6's "1656 passed, 8 skipped"
+  against a different test set.
 
 measured line:   __MEASURED__ (exit 0)
                  PACKAGED-STATE: measured in a copy carrying this COLLECTED.

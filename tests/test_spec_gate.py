@@ -1191,3 +1191,71 @@ def test_the_closure_ledger_is_complete_against_the_reviews():
     from render_closure import completeness_problems
     problems = completeness_problems()
     assert not problems, "\n".join(problems)
+
+
+def test_the_round5_verbatim_withdrawal_is_absent_from_0022():
+    """External round 7, R7-1's tail. R6-2's closure evidence was a
+    `grep -q` for the withdrawn assertion's ABSENCE — and that command is
+    rendered into the generated ledger inside 0022 itself, so the file
+    contained its own needle and the evidence failed on a clean tree.
+
+    A grep-for-absence cannot live in the document it searches. The assertion
+    lives here instead, where the ledger can point at it without becoming it."""
+    import pathlib
+    spec = (pathlib.Path(__file__).resolve().parent.parent / "specs"
+            / "0022-source-revocation.md").read_text()
+    # split off the GENERATED ledger, which legitimately DESCRIBES the finding
+    body = spec.split("<!-- GENERATED:review-closure -->")[0]
+    assert '"QUOTED VERBATIM" IS WITHDRAWN' not in body, (
+        "0022 §4e-i has regained round 5's withdrawal assertion, which "
+        "contradicts the block generated from the executable on the same page "
+        "(external round 6, R6-2)")
+
+
+def test_every_closure_evidence_command_actually_runs():
+    """External round 7, R7-1. Four of the ledger's evidence commands could not
+    run as written — three said `python3 -m pytest` and a bare python3 has no
+    pytest; one was a grep-for-absence rendered INTO the document it searched,
+    so the file supplied its own needle.
+
+    PROCESS §4a asks for openable evidence. A command that does not execute is
+    a description of evidence, which is the exact substitution this field
+    exists to refuse — so the commands are RUN here rather than eyeballed.
+
+    `$PY` is the reviewer's interpreter (the offline launcher's venv). Commands
+    that need the whole suite are skipped when it is absent, and named, so a
+    thin environment cannot silently reduce coverage."""
+    import os, subprocess, sys, pathlib, pytest
+    # RECURSION BOUND. Several evidence commands legitimately invoke
+    # `pytest tests/test_spec_gate.py`, which runs THIS test, which runs them
+    # again — nesting until the timeout. Measured: the suite went from 27s to
+    # 10m44s and this test failed inside itself. The runner marks its children,
+    # and a marked child does not re-enter. Depth 1, and the check is still the
+    # one that matters: every command runs, once, from the top.
+    if os.environ.get("VERACIUM_EVIDENCE_CHILD"):
+        pytest.skip("nested evidence run — the parent already executes every "
+                    "command exactly once")
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from closure_findings import CLOSURES
+
+    py = root / ".venv-offline" / "bin" / "python"
+    if not py.exists():
+        py = pathlib.Path(sys.executable)
+    env = dict(os.environ, PY=str(py), VERACIUM_EVIDENCE_CHILD="1")
+
+    failures, skipped = [], []
+    for spec, kind, rno, fid, _summary, _closed, evidence in CLOSURES:
+        # the launcher builds a venv and runs the entire suite: running it from
+        # inside the suite would recurse
+        if "run_offline.sh" in evidence:
+            skipped.append(f"{spec} {fid} (launcher — would recurse)")
+            continue
+        r = subprocess.run(evidence, shell=True, capture_output=True,
+                           cwd=root, env=env, timeout=600)
+        if r.returncode != 0:
+            tail = (r.stderr or r.stdout).decode(errors="replace")[-200:]
+            failures.append(f"{spec} {fid}: exit {r.returncode}\n    {evidence}\n    {tail}")
+    assert not failures, "closure evidence that does not run:\n  " + "\n  ".join(failures)
+    print(f"\n{len(CLOSURES) - len(skipped)} evidence commands ran clean; "
+          f"skipped: {skipped}")

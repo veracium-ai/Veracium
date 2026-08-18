@@ -80,10 +80,17 @@ def render(spec: str) -> str:
     from closure_findings import CLOSURES
     mine = [c for c in CLOSURES if c[0] == spec]
     out.append("")
-    out.append(f"**Per-finding closure ledger — PROCESS §4a.** {len(mine)} "
-               f"finding(s) recorded for `{spec}`, each with a command you can "
-               f"RUN. Generated from `specs/closure_findings.py`; a finding "
-               f"without runnable evidence cannot be added, which is the point.")
+    counts = ledger_counts()
+    out.append(f"**Per-finding closure ledger — PROCESS §4a.** "
+               f"**{counts['per_spec'].get(spec, 0)} finding(s) for `{spec}`; "
+               f"{counts['total']} across the pair** — every number here is "
+               f"DERIVED from the rows below (external round 7, R7-1: the "
+               f"manifest claimed 26 while the ledgers held 31, and 0023 said "
+               f"9/9 above a 10-row table). Generated from "
+               f"`specs/closure_findings.py` and validated against "
+               f"`specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — "
+               f"extras, duplicates, wrong rounds and empty evidence all fail "
+               f"the build.")
     out.append("")
     out.append("| finding | round | what it was | closed in | evidence (runnable) |")
     out.append("|---|---|---|---|---|")
@@ -126,41 +133,79 @@ def _apply(path: pathlib.Path, spec: str, write: bool) -> bool:
 FINDING_ID = None
 
 
-def review_finding_ids(spec: str) -> set:
-    import re as _re
+def review_findings() -> dict:
+    """The AUTHORITATIVE map {(spec, id): (kind, round)} — read from each review
+    row's STRUCTURED `raised` list, never regex-extracted from prose.
+
+    External round 7, R7-1: the previous version pulled ids out of verdict TEXT
+    and compared SETS. Set equality cannot see a wrong round, an erased
+    evidence string, a duplicate row, or a count that disagrees with the rows
+    it counts — and the cross-spec regex ate `0022 R99-1` because it could not
+    tell a reference to another spec from this spec's own finding. Structure
+    replaces inference: the reviews declare their ids, and the ledger must
+    match on `(spec, kind, round, id)` EXACTLY.
+    """
     sys.path.insert(0, str(SPECS))
     from reviews import REVIEWS
-    ids = set()
+    out = {}
     for r in REVIEWS:
-        if r["spec"] != spec:
-            continue
-        if r["verdict"].lstrip().upper().startswith("SENT"):
-            continue          # a dispatch names findings it is ANSWERING
-        text = r["verdict"]
-        # A verdict may DISCUSS another spec's finding ("0023 F1's
-        # command…"). That is a cross-reference, not an obligation on
-        # THIS spec, so strip any id immediately preceded by a
-        # different spec number. Found by the gate itself demanding a
-        # row for 0022 F1, which is 0023's finding.
-        text = _re.sub(r"\b0\d{3}\s+(S\d+|F\d+|R\d+-\d+|M\d+)\b", " ", text)
-        ids |= set(_re.findall(r"\b(S\d+|F\d+|R\d+-\d+|M\d+)\b", text))
-    return ids
+        for fid in r.get("raised", []):
+            key = (r["spec"], fid)
+            if key in out and out[key] != (r["kind"], r["round"]):
+                raise ValueError(
+                    f"{key} is raised by two different rounds: {out[key]} and "
+                    f"{(r['kind'], r['round'])} — a finding id must be unique "
+                    f"within its spec")
+            out[key] = (r["kind"], r["round"])
+    return out
 
 
 def completeness_problems() -> list:
+    """EXACT equality, not containment. Every clause here is a defect R7-1
+    demonstrated by mutating the ledger and watching the old check stay green."""
     sys.path.insert(0, str(SPECS))
     from closure_findings import CLOSURES
+    import collections
+
+    want = review_findings()
     problems = []
-    for spec in sorted({c[0] for c in CLOSURES} | {"0022", "0023"}):
-        want = review_finding_ids(spec)
-        have = {c[3] for c in CLOSURES if c[0] == spec}
-        missing = sorted(want - have)
-        if missing:
+
+    seen = collections.Counter((c[0], c[3]) for c in CLOSURES)
+    for key, n in sorted(seen.items()):
+        if n > 1:
+            problems.append(f"{key[0]} {key[1]}: {n} ledger rows for one finding")
+
+    have = {(c[0], c[3]): (c[1], c[2]) for c in CLOSURES}
+    for key in sorted(set(want) - set(have)):
+        problems.append(f"{key[0]} {key[1]}: raised in reviews.py, NO ledger row")
+    for key in sorted(set(have) - set(want)):
+        problems.append(f"{key[0]} {key[1]}: in the ledger, raised by NO review "
+                        f"row — every closure must close something")
+    for key in sorted(set(want) & set(have)):
+        if want[key] != have[key]:
             problems.append(
-                f"{spec}: {len(have)}/{len(want)} findings in the closure "
-                f"ledger; MISSING {missing} — they are named in reviews.py and "
-                f"have no row in closure_findings.py")
+                f"{key[0]} {key[1]}: ledger says {have[key][0]} {have[key][1]}, "
+                f"reviews.py says {want[key][0]} {want[key][1]}")
+
+    for spec, kind, rno, fid, summary, closed_in, evidence in CLOSURES:
+        if not (evidence or "").strip():
+            problems.append(f"{spec} {fid}: EMPTY evidence — a closure with no "
+                            f"runnable command closes nothing")
+        if not (summary or "").strip():
+            problems.append(f"{spec} {fid}: empty summary")
+        if not (closed_in or "").strip():
+            problems.append(f"{spec} {fid}: no carrier named")
     return problems
+
+
+def ledger_counts() -> dict:
+    """Counts DERIVED from the rows, so no prose can claim a different total —
+    the manifest said 26 while the ledgers held 31 (R7-1)."""
+    sys.path.insert(0, str(SPECS))
+    from closure_findings import CLOSURES
+    import collections
+    per = collections.Counter(c[0] for c in CLOSURES)
+    return {"total": len(CLOSURES), "per_spec": dict(sorted(per.items()))}
 
 
 def main() -> int:
