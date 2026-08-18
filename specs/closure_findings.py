@@ -327,7 +327,7 @@ CLOSURES = [
      "specs/seal_package.py (argv), specs/render_operation.py (--check is "
      "real), tests/test_spec_gate.py (argv pinning + the no-op adversary)",
      "$PY -m pytest tests/test_spec_gate.py -k "
-     "'extraction_check_list or no_op_substituted'"),
+     "'extraction_check_list or corrupting_the_packaged'"),
     ("0022", "external", 10, "R10-3",
      "git-archived members were root/root while the appended carriers carried "
      "the sealing user's uid/gid, so a plain `tar -xzf` exited 2 and "
@@ -353,7 +353,15 @@ CLOSURES = [
      "specs/seal_package.py sealed_env() + the observed evidence claim + "
      "refusing probes, tests/test_spec_gate.py",
      "$PY -m pytest tests/test_spec_gate.py -k "
-     "'sealed_environment or reports_a_count'"),
+     # NOT `transcript_validates`: that test reads the LIVE transcript, which
+     # the evidence runner is rewriting as it executes this command — the
+     # self-reference R12-1/R12-2 already hit, walked back into while
+     # repointing a stale selector. THE RULE: ledger evidence must never
+     # select a test that reads an artifact the runner is producing. The
+     # observed-claim half is shown by the sealer reading the transcript
+     # instead of counting the ledger.
+     "sealed_environment && "
+     "grep -q 'evidence_transcript.validate' specs/seal_package.py"),
     # ---- external round 12 ------------------------------------------------
     ("0022", "external", 12, "R12-1",
      "the transcript shipped at the archive root while COLLECTED named "
@@ -381,4 +389,25 @@ CLOSURES = [
      # command — the same self-reference R12-1's evidence had. The adversarial
      # test builds its own fixtures and is independent of the live file.
      "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
+    # ---- external round 13 ------------------------------------------------
+    ("0022", "external", 13, "R13-1",
+     "the transcript validator checked field PRESENCE and length, not values: "
+     "`exit: false` passed because a bool is an int and False == 0, a 64-char "
+     "non-hex string passed the digest check, and `cwd: null` passed presence "
+     "— a fully fabricated transcript of every ledger row was accepted",
+     "specs/evidence_transcript.py (typed validation), tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
+    ("0022", "external", 13, "R13-2",
+     "COLLECTED listed seven extracted checks and called them 'the SAME six "
+     "checks', in the sentence explaining that the list must not be "
+     "maintained twice",
+     "specs/package/collected_header.txt (the cardinal removed)",
+     "! grep -q 'SAME six checks' specs/package/collected_header.txt"),
+    ("0022", "external", 13, "R13-3",
+     "a closure selector named a test that had been replaced, so the evidence "
+     "command exercised half its claim and exited 0 — satisfying the "
+     "every-command-runs gate while covering nothing",
+     "specs/closure_findings.py (selectors repointed), "
+     "tests/test_spec_gate.py (every -k atom must select a test)",
+     "$PY -m pytest tests/test_spec_gate.py -k k_atom_in_the_closure"),
 ]

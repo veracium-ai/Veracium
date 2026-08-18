@@ -1527,7 +1527,26 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         assert problems, "the counterfeit transcript must be rejected"
         assert any("command records" in p for p in problems), problems
 
-        # (c) RECORDS THAT DO NOT MATCH THE LEDGER
+        # (c) R13-1: FIELD VALUES, not just presence. `exit: false` passed
+        # because in Python False == 0; a 64-character non-hex string passed a
+        # length check; and `cwd: null` passed a presence check. A full-length
+        # transcript of every ledger row, entirely fabricated, was accepted.
+        from closure_findings import CLOSURES
+        rows = [{"spec": c[0], "finding": c[3], "argv": c[6],
+                 "cwd": None, "exit": False, "output_sha256": "x" * 64}
+                for c in CLOSURES if "run_offline.sh" not in c[6]]
+        skipped = [f"{c[0]} {c[3]} (launcher — run separately at seal)"
+                   for c in CLOSURES if "run_offline.sh" in c[6]]
+        t.write_text(json.dumps({"ran": len(rows), "skipped": skipped,
+                                 "commands": rows}))
+        problems = validate(t, d / "specs")
+        assert problems, ("a transcript with null cwds, boolean exits and "
+                          "non-hex digests must be rejected")
+        assert any("not an int" in p for p in problems), problems
+        assert any("64 hex digits" in p for p in problems), problems
+        assert any("`cwd`" in p for p in problems), problems
+
+        # (d) RECORDS THAT DO NOT MATCH THE LEDGER
         t.write_text(json.dumps({
             "ran": 1, "skipped": [],
             "commands": [{"spec": "0022", "finding": "INVENTED",
@@ -1535,3 +1554,42 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
                           "output_sha256": "0" * 64}]}))
         problems = validate(t, d / "specs")
         assert any("matches no closure row" in p for p in problems), problems
+
+
+def test_every_k_atom_in_the_closure_ledger_selects_a_test():
+    """External round 13, R13-3. R11-2's evidence selected
+    `sealed_environment or reports_a_count`, but `reports_a_count` had been
+    replaced — so the command reported "1 passed, 80 deselected" and exercised
+    only half of what its label claimed. It EXITED 0, so the
+    every-command-runs gate was satisfied by a check that had quietly stopped
+    covering its own finding.
+
+    A `-k` expression that matches nothing is the sharpest form of this
+    review's recurring defect: it passes, it looks like evidence, and it tests
+    nothing. Every atom must select at least one test."""
+    import re, subprocess, sys, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from closure_findings import CLOSURES
+
+    atoms = set()
+    for c in CLOSURES:
+        for m in re.finditer(r"-k\s+'([^']+)'|-k\s+(\S+)", c[6]):
+            expr = m.group(1) or m.group(2)
+            for a in re.split(r"\s+(?:or|and)\s+", expr):
+                a = a.strip().strip("()")
+                if a:
+                    atoms.add(a)
+    assert atoms, "no -k atoms found — has the evidence format changed?"
+
+    empty = []
+    for a in sorted(atoms):
+        r = subprocess.run(
+            [sys.executable, "-m", "pytest", "-q", "--collect-only",
+             "tests/test_spec_gate.py", "-k", a],
+            cwd=root, capture_output=True, text=True)
+        if not [l for l in r.stdout.splitlines() if "::" in l]:
+            empty.append(a)
+    assert not empty, (
+        f"these -k atoms select NO test, so the evidence citing them exercises "
+        f"nothing while exiting 0: {empty}")

@@ -1,10 +1,10 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-13 external-review package (v13)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-14 external-review package (v14)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           specs/0022-source-revocation.md — draft v14 (external candidate)
-                 specs/0023-non-revival-under-maintenance.md — draft v14 (external candidate)
+specs:           specs/0022-source-revocation.md — draft v15 (external candidate)
+                 specs/0023-non-revival-under-maintenance.md — draft v15 (external candidate)
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is
@@ -59,11 +59,15 @@ harnesses:       __HARNESSES__
 
 evidence:        __EVIDENCE__
 
-verifiers:       the SAME six checks listed above under "RUN FROM THE EXTRACTED
+verifiers:       the SAME checks listed above under "RUN FROM THE EXTRACTED
                  ARCHIVE" — this line used to name them a second time, by hand,
                  and drifted the moment the registry changed (round 11 renamed
                  two verifiers to named scripts and this line kept the old
-                 labels). One list, generated once.
+                 labels). One list, generated once — and NO CARDINAL here
+                 either: round 13 found this paragraph saying "six" while the
+                 generated list above it had grown to seven, in the very
+                 sentence explaining that the list must not be maintained
+                 twice. A count is a second copy of a list.
 
 WHAT MOVED SINCE round-6 (v6, sha 0cb0bf66…) — your four blockers:
   R6-4  THE LAUNCHER CERTIFIED AN UNQUALIFIED RUNTIME, and that is the worst

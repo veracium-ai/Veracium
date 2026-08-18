@@ -21,10 +21,12 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 REL_PATH = "specs/generated/evidence_run.json"     # the path COLLECTED names
+_HEX64 = re.compile(r"[0-9a-f]{64}")
 
 
 def _ledger(specs_dir: pathlib.Path):
@@ -68,10 +70,35 @@ def validate(transcript_path: pathlib.Path, specs_dir: pathlib.Path) -> list:
                 problems.append(f"command {i} is missing `{field}`")
                 break
         else:
-            if c["exit"] != 0:
-                problems.append(f"{c['spec']} {c['finding']} exited {c['exit']}")
-            if len(str(c["output_sha256"])) != 64:
-                problems.append(f"{c['spec']} {c['finding']} has no output digest")
+            where = f"{c['spec']} {c['finding']}"
+            # EXTERNAL ROUND 13, R13-1: PRESENCE AND LENGTH ARE NOT VALUES.
+            # `exit != 0` accepted `false`, because in Python `False == 0`;
+            # `len(str(digest)) == 64` accepted 64 letter-x's; and `cwd` was
+            # only required to EXIST, so `null` passed. A transcript of 42
+            # rows with null cwds, boolean exits and non-hex digests satisfied
+            # this function and the whole archive verifier.
+            if type(c["exit"]) is not int or isinstance(c["exit"], bool):
+                problems.append(f"{where}: `exit` is {c['exit']!r} "
+                                f"({type(c['exit']).__name__}), not an int — "
+                                f"note that a bool IS an int in Python and "
+                                f"False == 0, which is how `false` passed")
+            elif c["exit"] != 0:
+                problems.append(f"{where} exited {c['exit']}")
+            if not _HEX64.fullmatch(str(c["output_sha256"])):
+                problems.append(f"{where}: `output_sha256` is not 64 hex "
+                                f"digits: {str(c['output_sha256'])[:16]}…")
+            cwd = c["cwd"]
+            if not isinstance(cwd, str) or not cwd.strip():
+                problems.append(f"{where}: `cwd` is {cwd!r}, not a non-empty "
+                                f"string")
+            elif not pathlib.PurePosixPath(cwd).is_absolute():
+                problems.append(f"{where}: `cwd` {cwd!r} is not absolute — a "
+                                f"relative path does not identify where the "
+                                f"command ran")
+            for field in ("spec", "finding", "argv"):
+                if not isinstance(c[field], str) or not c[field].strip():
+                    problems.append(f"{where}: `{field}` is {c[field]!r}, not "
+                                    f"a non-empty string")
             seen.append((c["spec"], c["finding"], c["argv"]))
 
     dupes = {k for k in seen if seen.count(k) > 1}
