@@ -1212,7 +1212,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 15 external round(s) with a returned VERDICT are recorded for `0022`; 16 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 15 external round(s) with a returned VERDICT are recorded for `0022`; 17 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -1251,6 +1251,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 15 (SENT) | 2026-08-18 | — | SENT (the coupled round-15 package `0022-0023-v15`; 0004 out, approved and frozen; prior reports omitted). 0022 at v16: R14-1 folded with a closed, exactly-typed transcript schema and six mutations plus a clean control |
 | external 16 (verdict) | 2026-08-19 | 2 | RETURN FOR AMENDMENT — PACKAGE/PROCESS ONLY; both specs semantically clear and byte-identical to v15 before their closure sections, and both v15 findings confirmed closed. R16-1 — PACKAGE IDENTITY WAS HAND-MAINTAINED AND STALE. The archive was named v16 while COLLECTED.txt line 1 said `round-15 ... … |
 | external 16 (SENT) | 2026-08-19 | — | SENT (the coupled round-16 package `0022-0023-v16`; 0004 out, approved and frozen; prior reports omitted). 0022 at v17: R15-1 the transcript schema is closed at EVERY level, with the mutation matrix DERIVED from the schema so a field or level added later cannot go untested; R15-2 the lessons taxonom… |
+| external 17 (SENT) | 2026-08-19 | — | SENT (the coupled round-17 package `0022-0023-v17`; 0004 out, approved and frozen; prior reports omitted). 0022 at v18: R16-1 the package identity is SUBSTITUTED from the requested version, the round derived from it, both cross-checked against this row, and any disagreement among the three identity … |
 
 **Per-finding closure ledger — PROCESS §4a.** **43 finding(s) for `0022`; 53 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
