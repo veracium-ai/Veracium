@@ -251,6 +251,11 @@ EXTRACTION_CHECKS = (
     # that ships must be re-checked from the extraction.
     ("review_lessons.py --check",
      [sys.executable, "specs/review_lessons.py", "--check"]),
+    # R17-1: the identity record is the source every identity carrier is filled
+    # from, so it is re-checked against reviews.py FROM THE EXTRACTION — where
+    # a reviewer can run it — rather than only in the tree that built it.
+    ("package_identity.py (the record agrees with reviews.py)",
+     [sys.executable, "specs/package_identity.py"]),
 )
 
 
@@ -292,10 +297,41 @@ def identity_problems(archive_name: str, col: str, man: str) -> list:
     }
     if len(set(claims.values())) != 1:
         problems.append(
-            "the package's THREE identity carriers disagree — "
+            "the package's identity carriers disagree — "
             + "; ".join(f"{k} says {v[0]} round {v[1]}"
                         for k, v in claims.items())
             + " (R16-1: v16 shipped with both carriers saying v15)")
+
+    # R17-1: AND THE PER-SPEC CANDIDATE REVISIONS, which round 16's fix did not
+    # count as identity carriers — so v17 shipped `draft v16` on both spec
+    # lines while the three carriers above agreed perfectly. The expected
+    # values come from the structured record, so this cannot be satisfied by a
+    # template and a matching typo.
+    version = stem.group(2)
+    sys.path.insert(0, str(SPECS))
+    import package_identity as pid
+    if version not in pid.PACKAGES:
+        problems.append(f"specs/package_identity.py has no row for {version} — "
+                        f"the packaged candidate revisions are undeclared "
+                        f"(R17-1)")
+        return problems
+    expected = pid.candidates(version)
+    # NOT anchored to the start of a line: the first candidate shares its line
+    # with the `specs:` label, so `^\s*specs/` silently found only the SECOND
+    # one — and a check that sees one of two carriers is how R17-1 happened.
+    # Caught by the clean control, which is the argument for keeping one.
+    found = dict(re.findall(
+        r"specs/(\d{4})-\S+\.md — draft (v\d+(?:\.\d+)?) \(external candidate\)",
+        col))
+    if not found:
+        problems.append("COLLECTED.txt names no `specs/NNNN-*.md — draft vN "
+                        "(external candidate)` line, so the packaged revision "
+                        "of each specification is unstated (R17-1)")
+    elif found != expected:
+        problems.append(
+            f"COLLECTED.txt states candidate revisions {found} and the identity "
+            f"record declares {expected} — a spec's own revision is an identity "
+            f"carrier too (R17-1: v17 shipped saying draft v16)")
     return problems
 
 
@@ -499,6 +535,26 @@ def main() -> int:
         round_no = int(m.group(1))
         sys.path.insert(0, str(SPECS))
         import reviews as _reviews
+        import package_identity as _pid
+
+        # R17-1: the STRUCTURED identity record governs everything a carrier
+        # may claim about this package. Round 16 fixed the three carriers the
+        # reviewer named and left two — each spec's own candidate revision, in
+        # COLLECTED lines 6-7 — as template literals, so v17 shipped saying
+        # `draft v16`. A version with no row here cannot be sealed at all.
+        for p in _pid.validate():
+            _fail(f"the package identity record is invalid: {p}")
+        if a.version not in _pid.PACKAGES:
+            _fail(f"specs/package_identity.py has no row for {a.version} — the "
+                  f"package's round and each spec's candidate revision must be "
+                  f"declared there before sealing (R17-1)")
+        rec_round, rec_cands = _pid.PACKAGES[a.version]
+        if rec_round != round_no:
+            _fail(f"the identity record puts {a.version} at round {rec_round}, "
+                  f"its version says {round_no}")
+        if sorted(rec_cands) != sorted(specs):
+            _fail(f"the identity record packages {sorted(rec_cands)} for "
+                  f"{a.version}, --specs says {sorted(specs)}")
         # `pkg in verdict` would be a SUBSTRING match, and `0022-0023-v1`
         # occurs inside `0022-0023-v16` — a check that silently accepts the
         # wrong dispatch row for every single-digit version. Bounded on the
@@ -519,6 +575,7 @@ def main() -> int:
 
         subs = {"__VERSION__": a.version, "__ROUND__": str(round_no),
                 "__PACKAGE__": pkg,
+                "__CANDIDATES__": _pid.render_candidate_lines(a.version),
                 "__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
                 "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
                 "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,

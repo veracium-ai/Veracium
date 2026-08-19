@@ -1,12 +1,14 @@
-# What fifteen external rounds actually found
+# What the external review of 0022 and 0023 actually found
 
 Spec-Status: n/a — this is a process record, not a spec
 
-**Both specs have been semantically clear since round 7.** Every finding
-since has been in the EVIDENCE MACHINERY: the checks, the carriers and the
-packaging. That is worth stating plainly, because the natural reading of
-"fifteen rounds" is that the design is troubled, and the design has not moved
-in eight rounds.
+**The design stopped moving early; the packaging did not.** Since the last
+change to either specification, every finding has been in the EVIDENCE
+MACHINERY — the checks, the carriers, and the way the package is built. That
+is worth stating plainly, because the natural reading of a long series of
+returned rounds is that the design is troubled. The generated table below
+says when the last specification change was, and how many rounds have passed
+since; this prose is no longer permitted to say it.
 
 The findings are not a pile of unrelated defects. Classified by FAILURE
 MECHANISM rather than by symptom, they collapse into a small number of classes
@@ -14,13 +16,17 @@ MECHANISM rather than by symptom, they collapse into a small number of classes
 fixed. That is the actual problem: not that the reviewer keeps finding things,
 but that I kept fixing the named cell and shipping.
 
-**This document previously got its own lesson wrong.** Its first version was
-hand-written: it claimed 39 findings in six classes while the six headings
-summed to thirty, and it restated a suite duration that three carriers in the
-same package measured differently (R15-2). A document about the second-copy
-class was two second copies. The table below is now generated from
-`specs/review_lessons.py`, where every finding is classified exactly once and
-the classification is checked TOTAL against the closure ledger: an
+**This document has been the defect it describes, repeatedly.** Its first
+version was hand-written, with class counts that did not match the findings
+they counted and a restated duration no carrier agreed with. Its replacement
+generated the table and then left a free-text round count in this opening
+summary — outside the block, ungated, and wrong; the reviewer flipped it to an
+absurd value and every check still passed.
+
+So: no quantity appears above the table, and a gate enforces that rather than
+trusting me. Everything countable is generated from
+`specs/review_lessons.py`, where every finding carries its own classification
+and the whole set is checked TOTAL against the closure ledger — an
 unclassified finding fails the build, so does a classification naming a
 finding that does not exist, and so does a class with nothing in it.
 
@@ -30,18 +36,20 @@ finding that does not exist, and so does a class with nothing in it.
 
 <!-- GENERATED:mechanism-table -->
 
-**43 external findings, raised across 15 rounds, and 10 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
+**45 external findings, raised across 16 rounds, and 10 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
 
 | # | class | external | self-found | rounds it was raised in | recurred |
 |---|---|---|---|---|---|
 | 1 | **self-assertion** — A claim not produced by the thing it describes | 8 | 1 | 1, 4, 6, 8, 9, 12, 16 | **yes** |
 | 2 | **proxy** — The check binds a stand-in, not the property | 9 | 0 | 1, 3, 5, 7, 10, 11 | **yes** |
-| 3 | **second-copy** — The same fact stated twice | 12 | 0 | 3, 4, 6, 7, 10, 13, 15, 16 | **yes** |
-| 4 | **domain** — The rule's reach is not its domain | 9 | 6 | 1, 3, 4, 5, 6, 15 | **yes** |
+| 3 | **second-copy** — The same fact stated twice | 13 | 0 | 3, 4, 6, 7, 10, 13, 15, 16, 17 | **yes** |
+| 4 | **domain** — The rule's reach is not its domain | 10 | 6 | 1, 3, 4, 5, 6, 15, 17 | **yes** |
 | 5 | **self-reference** — The check reads what its own run produces | 0 | 2 | — | — |
 | 6 | **coercion** — A silent cast or default admits what the check meant to reject | 3 | 0 | 8, 13, 14 | **yes** |
 | 7 | **env-leak** — The producing environment leaked into the artifact | 2 | 0 | 10, 11 | **yes** |
 | 8 | **disclosure** — Behaviour that is correct but never stated to whoever must act on it | 0 | 1 | — | — |
+
+**The last finding that required a change to either specification was raised in round 6.** The 11 rounds that returned a verdict since (7–17) raised packaging and process findings only — 21 of the 55 findings here are spec-scoped, and every one of them is at or before round 6. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
 
 **6 of 8 classes recurred** — they were raised in more than one round, which means the first instance was fixed and the mechanism shipped again in another costume: `self-assertion`, `proxy`, `second-copy`, `domain`, `coercion`, `env-leak`. That is the finding this document exists for. It is derived from the rounds column, not asserted.
 

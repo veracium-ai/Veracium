@@ -1400,6 +1400,10 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
         # the only verification the reviewer receives.
         "review_lessons.py --check":
             ("python", "specs/review_lessons.py", "--check"),
+        # R17-1: identity is structured data now, and the record is verified
+        # from the extraction like every other generated carrier.
+        "package_identity.py (the record agrees with reviews.py)":
+            ("python", "specs/package_identity.py"),
     }
     got = {n: norm(c) for n, c in seal_package.EXTRACTION_CHECKS}
     assert set(got) == set(required), (
@@ -1861,7 +1865,7 @@ def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():
         # (b) A CLASS NAMING A FINDING THAT DOES NOT EXIST — the same defect
         # mirrored: a renamed or deleted closure row leaves a classification
         # behind, and the count stays plausible.
-        rl.MECHANISM = {**real_mech, ("0022", 99, "R99-1"): ("proxy", "x")}
+        rl.MECHANISM = {**real_mech, ("0022", 99, "R99-1"): ("proxy", "packaging", "x")}
         assert any("matches no closure row" in p for p in rl.validate()), \
             rl.validate()
 
@@ -1876,12 +1880,12 @@ def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():
             k for k, *_ in real_classes)
 
         # (d) AN UNDECLARED CLASS on an otherwise valid entry
-        rl.MECHANISM = {**real_mech, victim: ("not-a-class", "x")}
+        rl.MECHANISM = {**real_mech, victim: ("not-a-class", "packaging", "x")}
         assert any("undeclared class" in p for p in rl.validate()), rl.validate()
 
         # (e) A CLASSIFICATION WITH NO REASON — the reason is the part that
         # can be argued with; without it the table is an assertion again.
-        rl.MECHANISM = {**real_mech, victim: (real_mech[victim][0], "   ")}
+        rl.MECHANISM = {**real_mech, victim: (real_mech[victim][0], "packaging", "   ")}
         assert any("no reason" in p for p in rl.validate()), rl.validate()
 
         # (f) MALFORMED ENTRIES — R15-1's lesson applied to this module:
@@ -1890,8 +1894,8 @@ def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():
         # unpacking loop would then raise instead of reporting — a `--check`
         # gate that crashes has returned no verdict at all.
         for label, mutant in (
-            ("a 3-tuple value",
-             {**real_mech, victim: (real_mech[victim][0], "why", "extra")}),
+            ("a 4-tuple value",
+             {**real_mech, victim: (real_mech[victim][0], "packaging", "why", "x")}),
             ("a bare string value", {**real_mech, victim: "domain"}),
             ("a stringified round in the key",
              {**real_mech, (victim[0], str(victim[1]), victim[2]):
@@ -2016,27 +2020,37 @@ def test_the_packages_three_identity_carriers_must_agree():
     sys.path.insert(0, str(root / "specs"))
     from seal_package import identity_problems
 
-    NAME = "0022-0023-v16-20260819T0136Z.tar.gz"
-    COL = ("0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
-           "round-16 external-review package (v16)\nsource commit: abc1234\n")
-    MAN = "PACKAGE: 0022-0023-v16 — external ROUND 16\nCOMMIT:  abc1234\n"
-    assert identity_problems(NAME, COL, MAN) == [], "the agreeing case must pass"
+    # R17-1 made the identity record the source of the packaged revisions, so
+    # the fixtures are built from the GOVERNED package rather than pinned to
+    # the round this test was written in — a fixture that names a version the
+    # record no longer governs tests nothing about today's seal.
+    import package_identity as pid
+    V = max(pid.PACKAGES, key=lambda v: int(v[1:]))
+    RND = pid.PACKAGES[V][0]
+    STALE = f"v{RND - 1}"
+    NAME = f"0022-0023-{V}-20260819T0136Z.tar.gz"
+    COL = (f"0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
+           f"round-{RND} external-review package ({V})\nsource commit: abc1234\n"
+           f"specs:           {pid.render_candidate_lines(V)}\n")
+    MAN = f"PACKAGE: 0022-0023-{V} — external ROUND {RND}\nCOMMIT:  abc1234\n"
+    assert identity_problems(NAME, COL, MAN) == [], (
+        f"the agreeing case must pass: {identity_problems(NAME, COL, MAN)}")
 
     # ONE CARRIER WRONG AT A TIME — including the exact shipped defect
     for label, name, col, man in (
-        ("the v16 archive shipped with v15 carriers (R16-1 exactly)",
-         NAME, COL.replace("round-16", "round-15").replace("(v16)", "(v15)"),
-         MAN.replace("v16", "v15").replace("ROUND 16", "ROUND 15")),
+        ("the archive shipped with the PREVIOUS round's carriers (R16-1)",
+         NAME, COL.replace(f"round-{RND}", f"round-{RND - 1}").replace(f"({V})", f"({STALE})"),
+         MAN.replace(V, STALE).replace(f"ROUND {RND}", f"ROUND {RND - 1}")),
         ("the manifest alone is stale", NAME, COL,
-         MAN.replace("v16", "v15").replace("ROUND 16", "ROUND 15")),
+         MAN.replace(V, STALE).replace(f"ROUND {RND}", f"ROUND {RND - 1}")),
         ("the COLLECTED header alone is stale", NAME,
-         COL.replace("round-16", "round-15").replace("(v16)", "(v15)"), MAN),
+         COL.replace(f"round-{RND}", f"round-{RND - 1}").replace(f"({V})", f"({STALE})"), MAN),
         ("the archive alone is renamed",
-         "0022-0023-v17-20260819T0136Z.tar.gz", COL, MAN),
+         f"0022-0023-v{RND + 1}-20260819T0136Z.tar.gz", COL, MAN),
         ("the round disagrees with the version", NAME,
-         COL.replace("round-16", "round-15"), MAN),
+         COL.replace(f"round-{RND}", f"round-{RND - 1}"), MAN),
         ("the manifest names a different SPEC SET", NAME, COL,
-         MAN.replace("0022-0023-v16", "0022-0099-v16")),
+         MAN.replace(f"0022-0023-{V}", f"0022-0099-{V}")),
         ("the manifest has no identity line", NAME, COL, "COMMIT: abc1234\n"),
         ("COLLECTED has no identity line", NAME, "source commit: abc1234\n", MAN),
         ("the archive name carries no version",
@@ -2056,3 +2070,128 @@ def test_the_packages_three_identity_carriers_must_agree():
             f"substituted at seal (R16-1)")
         assert re.search(r"__(VERSION|ROUND|PACKAGE)__", head), (
             f"{rel} names no identity token")
+
+
+# R17-2: the quantities this document is not allowed to type outside its
+# generated block. Cardinals only — ordinals ("its first version") are not
+# claims about how many of anything there are.
+_CARDINAL_WORDS = (
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+    "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty",
+    "sixty", "seventy", "eighty", "ninety", "hundred", "thousand", "dozen",
+    "once", "twice",
+)
+
+
+def test_no_quantity_survives_outside_the_lessons_generated_block():
+    """External round 17, R17-2. The generated block made every count derived —
+    and the opening summary still said the design "has not moved in eight
+    rounds" in free text. It was wrong (nine), it was OUTSIDE the markers, and
+    `--check` compares only what is between them. The reviewer changed it to
+    "999 rounds" and the check still returned 0.
+
+    Generating a block does not protect the prose around it. The rule is now
+    positional and total: ABOVE the table, no cardinal quantity at all — the
+    spec ids in the title are the only numerals allowed, and every countable
+    claim moved into the block, where it is derived from the classification.
+
+    The mutations below are the reviewer's and the original defect's, plus the
+    clean control — because a gate that rejects every prologue would pass all
+    its rejection tests."""
+    import pathlib, re, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import review_lessons as rl
+
+    def quantities(prologue):
+        """Cardinal quantities in the text, ignoring spec ids like `0022`."""
+        scrubbed = re.sub(r"\b\d{4}\b", "", prologue)
+        found = re.findall(r"\d+", scrubbed)
+        found += [w for w in _CARDINAL_WORDS
+                  if re.search(rf"\b{w}\b", scrubbed, re.I)]
+        return found
+
+    # POSITIVE CONTROLS FIRST — a scrubber that never matches would make the
+    # real assertion below vacuous, which is this review's oldest lesson.
+    assert quantities("the design has not moved in eight rounds"), \
+        "the word form is not detected — R17-2's original defect"
+    assert quantities("the design has not moved in 999 rounds"), \
+        "the digit form is not detected — the reviewer's mutation"
+    assert quantities("nine rounds returned"), "compound word form missed"
+    # NEGATIVE CONTROLS: spec ids and ordinals are not quantities
+    assert not quantities("the external review of 0022 and 0023"), \
+        "spec ids must not read as quantities"
+    assert not quantities("its first version was hand-written"), \
+        "ordinals are not cardinal quantities — the gate's domain is too wide"
+
+    text = rl.DOC.read_text()
+    assert rl.BEGIN in text, "the generated block is gone"
+    prologue = text.split(rl.BEGIN)[0]
+    assert not quantities(prologue), (
+        f"specs/REVIEW_LESSONS.md states quantities ABOVE its generated block "
+        f"({quantities(prologue)}) — a number in that prose is hand-kept and "
+        f"ungated, which is R17-2 exactly. Move the claim into the block and "
+        f"derive it.")
+
+    # and the claim the prose used to make BY HAND is in the block, derived
+    assert "last finding that required a change to either specification" in \
+        rl.render(), ("the derived spec-scope paragraph is gone — R17-2's "
+                      "claim would then be nowhere, which is not the fix")
+
+
+def test_the_package_identity_record_governs_every_candidate_carrier():
+    """External round 17, R17-1. Round 16 made the package version PRODUCED and
+    enumerated three carriers of it. There were five: COLLECTED lines 6-7 name
+    each specification's own candidate revision, and those were still template
+    literals — so the v17 package shipped saying `draft v16` for both specs
+    while its SENT rows described them as v18, and identity verification found
+    nothing wrong because it read only the carriers the previous finding had
+    named.
+
+    Enumerating the carriers a reviewer NAMED is not enumerating the carrier
+    domain. Identity is structured data now, and every carrier is filled from
+    it and checked against it."""
+    import pathlib, re, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import package_identity as pid
+    from seal_package import identity_problems
+
+    assert pid.validate() == [], pid.validate()
+
+    version = max(pid.PACKAGES, key=lambda v: int(v[1:]))
+    rnd, cands = pid.PACKAGES[version]
+    specs = "-".join(sorted(cands))
+    name = f"{specs}-{version}-20260819T0000Z.tar.gz"
+    col = (f"0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
+           f"round-{rnd} external-review package ({version})\n"
+           f"source commit: abc1234\n"
+           f"specs:           {pid.render_candidate_lines(version)}\n")
+    man = f"PACKAGE: {specs}-{version} — external ROUND {rnd}\nCOMMIT: abc1234\n"
+    assert identity_problems(name, col, man) == [], (
+        f"the agreeing package is refused: {identity_problems(name, col, man)}")
+
+    # ONE DRAFT LINE AT A TIME — the reviewer's required regression. Each spec's
+    # own revision is an identity carrier, so each must be able to fail alone.
+    for spec, rev in sorted(cands.items()):
+        stale = col.replace(f"{spec}-", f"{spec}-", 1)
+        stale = re.sub(rf"(specs/{spec}-\S+\.md — draft )v\d+", r"\g<1>v1", col)
+        assert stale != col, f"could not mutate {spec}'s draft line"
+        assert identity_problems(name, stale, man), (
+            f"a stale `draft vN` on {spec} ALONE was accepted — R17-1 exactly")
+
+    # and the whole block missing, and a package with no identity row
+    assert identity_problems(name, col.split("specs:")[0], man)
+    assert identity_problems(name.replace(version, "v999"),
+                             col.replace(version, "v999"),
+                             man.replace(version, "v999"))
+
+    # THE TEMPLATE MUST NOT CARRY THE LITERALS AGAIN
+    header = (root / "specs" / "package" / "collected_header.txt").read_text()
+    assert "__CANDIDATES__" in header, (
+        "collected_header.txt must fill its candidate lines from the identity "
+        "record, not carry `draft vN` literals (R17-1)")
+    assert not re.search(r"draft v\d+", header), (
+        "collected_header.txt carries a literal `draft vN` — that is the "
+        "defect, restored")

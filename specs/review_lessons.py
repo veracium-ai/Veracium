@@ -87,156 +87,171 @@ CLASSES = (
 
 CLASS_KEYS = tuple(k for k, *_ in CLASSES)
 
+# R17-2. `spec` means the finding required a change to a specification's
+# NORMATIVE BODY — a § section, one of its generated blocks, or the
+# reference implementation such a block is generated from. `packaging` is
+# everything else: the checks, the carriers, the evidence machinery. The
+# document's standing claim about the design not having moved is derived
+# from this field and from nothing else.
+SCOPES = ("spec", "packaging")
+
 # (spec, round, finding) -> (class, why THIS mechanism and not a neighbouring
 # one). A finding often exhibits two; the class recorded is the PRIMARY one —
 # the mechanism that, if it had been absent, would have prevented the finding.
 MECHANISM = {
     # ---- external ----------------------------------------------------------
-    ("0022", 1, "F2"): ("proxy",
+    ("0022", 1, "F2"): ("proxy", "spec",
         "the host-supplied wall clock stood in for the order decisions were made in"),
-    ("0022", 1, "F3"): ("self-assertion",
+    ("0022", 1, "F3"): ("self-assertion", "spec",
         "'supersession, never edit' was normative text true of no carrier that shipped"),
-    ("0022", 1, "F4"): ("proxy",
+    ("0022", 1, "F4"): ("proxy", "spec",
         "`system_authored` stood in for the author-blindness the class claimed"),
-    ("0023", 1, "F1"): ("domain",
+    ("0023", 1, "F1"): ("domain", "spec",
         "quarantine reached one consumer of five — the rule's reach was not its domain"),
-    ("0022", 3, "R3-1"): ("proxy",
+    ("0022", 3, "R3-1"): ("proxy", "spec",
         "`with conn:` was LABELLED BEGIN IMMEDIATE, and the harness was green on a "
         "different construction"),
-    ("0022", 3, "R3-2"): ("domain",
+    ("0022", 3, "R3-2"): ("domain", "spec",
         "the lint pattern matched one phrasing of the withdrawn rule, so the other "
         "phrasing stayed normative"),
-    ("0022", 3, "R3-4"): ("second-copy",
+    ("0022", 3, "R3-4"): ("second-copy", "packaging",
         "a round count beside the rows it counts, disagreeing with them"),
-    ("0022", 3, "R3-5"): ("domain",
+    ("0022", 3, "R3-5"): ("domain", "packaging",
         "the completeness gate's regex could not see four unconditional skips; the "
         "14-vs-6 mismatch was the symptom"),
-    ("0023", 3, "F4"): ("domain",
+    ("0023", 3, "F4"): ("domain", "spec",
         "N15 swept for the OLD CONDITION, so a consumer that never had one was "
         "outside the sweep's reach — form, not fact"),
-    ("0023", 3, "R3-3"): ("domain",
+    ("0023", 3, "R3-3"): ("domain", "spec",
         "the mirror case: the lifecycle predicate was applied too WIDELY and dropped "
         "episodes in a store with zero revocations"),
-    ("0022", 4, "R4-1"): ("self-assertion",
+    ("0022", 4, "R4-1"): ("self-assertion", "spec",
         "the construction was NAMED atomic-and-shared while appending the row and "
         "never applying the effects — the name was the only evidence"),
-    ("0022", 4, "R4-3"): ("second-copy",
+    ("0022", 4, "R4-3"): ("second-copy", "packaging",
         "the hand-maintained ledger drifted from its own rows for a third round"),
-    ("0022", 4, "R4-4"): ("domain",
+    ("0022", 4, "R4-4"): ("domain", "packaging",
         "`render()`'s hard-coded category list silently dropped a whole category"),
-    ("0023", 4, "R4-2"): ("second-copy",
+    ("0023", 4, "R4-2"): ("second-copy", "spec",
         "the section header contradicted a row of the table beneath it"),
-    ("0022", 5, "R5-1"): ("domain",
+    ("0022", 5, "R5-1"): ("domain", "spec",
         "the failure outcomes were not total: a failing rollback and every "
         "IntegrityError fell outside the enumerated cases"),
-    ("0022", 5, "R5-2"): ("proxy",
+    ("0022", 5, "R5-2"): ("proxy", "packaging",
         "the BUSY test measured SQLite's internal wait — a stand-in for the branch "
         "it was named after"),
-    ("0022", 5, "R5-3"): ("proxy",
+    ("0022", 5, "R5-3"): ("proxy", "packaging",
         "a per-ROUND row stood in for the per-FINDING row PROCESS §4a requires"),
-    ("0022", 5, "R5-4"): ("proxy",
+    ("0022", 5, "R5-4"): ("proxy", "packaging",
         "pytest's emitted reason was matched against source-site tokens — two "
         "representations compared as if one were the other"),
-    ("0022", 6, "R6-1"): ("domain",
+    ("0022", 6, "R6-1"): ("domain", "spec",
         "the rollback boundary caught Exception while the operation caught "
         "BaseException, leaving part of its own domain uncovered"),
-    ("0022", 6, "R6-2"): ("second-copy",
+    ("0022", 6, "R6-2"): ("second-copy", "spec",
         "a withdrawn sentence survived beside the generated block that replaced it"),
-    ("0022", 6, "R6-3"): ("second-copy",
+    ("0022", 6, "R6-3"): ("second-copy", "packaging",
         "the closure ledger was a hand-maintained twin of the generated one"),
-    ("0023", 6, "R6-3"): ("second-copy",
+    ("0023", 6, "R6-3"): ("second-copy", "packaging",
         "the same twin, on 0023's ledger"),
-    ("0022", 6, "R6-4"): ("self-assertion",
+    ("0022", 6, "R6-4"): ("self-assertion", "packaging",
         "the launcher invented its own qualification rule and certified against it, "
         "while runtime_supported() said False"),
-    ("0022", 7, "R7-1"): ("proxy",
+    ("0022", 7, "R7-1"): ("proxy", "packaging",
         "set-equality of ids stood in for per-finding validation, so a wrong round, "
         "an erased evidence string and a duplicate all passed"),
-    ("0022", 7, "R7-2"): ("second-copy",
+    ("0022", 7, "R7-2"): ("second-copy", "packaging",
         "the reproduction carrier restated the previous round's launcher result"),
-    ("0022", 8, "R8-1"): ("coercion",
+    ("0022", 8, "R8-1"): ("coercion", "packaging",
         "`.get(..., [])` made an OMITTED field indistinguishable from a declared "
         "absence — a default that fabricated the fact"),
-    ("0022", 8, "R8-2"): ("self-assertion",
+    ("0022", 8, "R8-2"): ("self-assertion", "packaging",
         "four package claims were hand-maintained beside the executables that "
         "contradicted them"),
-    ("0022", 9, "R9-1"): ("self-assertion",
+    ("0022", 9, "R9-1"): ("self-assertion", "packaging",
         "both carriers claimed an extracted-archive rerun that did not happen"),
-    ("0022", 10, "R10-1"): ("second-copy",
+    ("0022", 10, "R10-1"): ("second-copy", "packaging",
         "the reviewer guide's workflow contradicted COLLECTED for ten rounds"),
-    ("0022", 10, "R10-2"): ("proxy",
+    ("0022", 10, "R10-2"): ("proxy", "packaging",
         "the extraction registry bound LABELS, so swapping a command for "
         "`python -c pass` was invisible"),
-    ("0022", 10, "R10-3"): ("env-leak",
+    ("0022", 10, "R10-3"): ("env-leak", "packaging",
         "the sealing user's uid/gid rode into the archive, so a plain `tar -xzf` "
         "exited 2 for the recipient"),
-    ("0022", 11, "R11-1"): ("proxy",
+    ("0022", 11, "R11-1"): ("proxy", "packaging",
         "the binding was textual containment of two names, satisfiable by a "
         "program that does nothing"),
-    ("0022", 11, "R11-2"): ("env-leak",
+    ("0022", 11, "R11-2"): ("env-leak", "packaging",
         "sealing inherited the whole environment, so a recursion marker turned the "
         "evidence runner into a skip"),
-    ("0022", 12, "R12-1"): ("self-assertion",
+    ("0022", 12, "R12-1"): ("self-assertion", "packaging",
         "the evidence claim had no source read: deleting the transcript entirely "
         "still produced a passing archive"),
-    ("0022", 12, "R12-2"): ("self-assertion",
+    ("0022", 12, "R12-2"): ("self-assertion", "packaging",
         "`ran` was trusted rather than derived, so a zero-record transcript "
         "claiming 40 satisfied every check"),
-    ("0022", 13, "R13-1"): ("coercion",
+    ("0022", 13, "R13-1"): ("coercion", "packaging",
         "`exit: false` passed `!= 0` because bool subclasses int; a 64-character "
         "non-hex string passed a length check"),
-    ("0022", 13, "R13-2"): ("second-copy",
+    ("0022", 13, "R13-2"): ("second-copy", "packaging",
         "'the SAME six checks' over seven, in the sentence explaining that the list "
         "must not be maintained twice"),
-    ("0022", 13, "R13-3"): ("second-copy",
+    ("0022", 13, "R13-3"): ("second-copy", "packaging",
         "a selector naming a test that had been replaced — a stale copy of a name "
         "that lives in the test file"),
-    ("0022", 14, "R14-1"): ("coercion",
+    ("0022", 14, "R14-1"): ("coercion", "packaging",
         "`ran: 45.0` == 45, a 64-digit integer digest through `str()`, a duplicate "
         "vanishing into a set"),
-    ("0022", 15, "R15-1"): ("domain",
+    ("0022", 15, "R15-1"): ("domain", "packaging",
         "closedness was established for command objects and not for the object "
         "holding them — the property's own domain is every level with keys"),
-    ("0022", 15, "R15-2"): ("second-copy",
+    ("0022", 15, "R15-2"): ("second-copy", "packaging",
         "hand-written class counts beside the findings they count, and a restated "
         "duration beside three carriers that measure it"),
 
     # ---- internal / self-found --------------------------------------------
-    ("0022", 1, "M1"): ("domain",
+    ("0022", 1, "M1"): ("domain", "spec",
         "'the sweep is pure and can be re-run' quantified over one moment; its "
         "domain is every moment, and the inputs mutate"),
-    ("0022", 1, "M4"): ("disclosure",
+    ("0022", 1, "M4"): ("disclosure", "spec",
         "complete=False is the expected steady state on a consolidation-bearing "
         "store and operators had not been told"),
-    ("0022", 1, "S1"): ("domain",
+    ("0022", 1, "S1"): ("domain", "spec",
         "the sweep's record domain was unenumerated — 'records' silently meant "
         "edges, and episode text renders into recall"),
-    ("0023", 1, "M2"): ("domain",
+    ("0023", 1, "M2"): ("domain", "spec",
         "the one §4 seam with no executed command turned out to have no verb at "
         "all — an unexercised cell of the domain"),
-    ("0023", 1, "M3"): ("domain",
+    ("0023", 1, "M3"): ("domain", "spec",
         "the supersession-refusal path was covered by neither rule of the split"),
-    ("0023", 1, "S1"): ("domain",
+    ("0023", 1, "S1"): ("domain", "spec",
         "0022's unenumerated record domain, inherited through the mutual "
         "Spec-Requires"),
-    ("0023", 1, "S2"): ("self-assertion",
+    ("0023", 1, "S2"): ("self-assertion", "spec",
         "the lift asymmetry's justification asserted the inputs were not decidable "
         "from the record; they are all ON the record"),
-    ("0023", 2, "S3"): ("domain",
+    ("0023", 2, "S3"): ("domain", "spec",
         "quarantine-at-birth wrote a field no reader consulted — enforcement that "
         "reached none of its domain"),
-    ("0022", 16, "R16-1"): ("self-assertion",
+    ("0022", 17, "R17-1"): ("domain", "packaging",
+        "the round-16 fix enumerated the three identity carriers the reviewer "
+        "NAMED; the carrier domain had five, and the two it missed were the "
+        "per-spec candidate revisions"),
+    ("0022", 17, "R17-2"): ("second-copy", "packaging",
+        "a derivable count restated in prose OUTSIDE the generated block — the "
+        "table was guarded and the sentence above it was not"),
+    ("0022", 16, "R16-1"): ("self-assertion", "packaging",
         "the package's identity was typed into a template instead of produced "
         "from the version the seal was asked for — R8-2's shape, in the first "
         "line a reviewer reads"),
-    ("0022", 16, "R16-2"): ("second-copy",
+    ("0022", 16, "R16-2"): ("second-copy", "packaging",
         "a second, weaker implementation of a marker-block verifier that already "
         "existed here — and the copy carried the bug the original was written to "
         "fix. An implementation is a second copy of a RULE"),
-    ("0022", 15, "R15-3"): ("self-reference",
+    ("0022", 15, "R15-3"): ("self-reference", "packaging",
         "a test read the live transcript another test writes, and pytest-randomly "
         "shuffles order — so CI failed on some seeds from round 12 onward"),
-    ("0022", 14, "R14-2"): ("self-reference",
+    ("0022", 14, "R14-2"): ("self-reference", "packaging",
         "R7-1's evidence selected the evidence RUNNER, whose nested child skips on "
         "the recursion marker, so half the command exercised nothing and exited 0"),
 }
@@ -271,10 +286,19 @@ def validate() -> list:
                 and type(k[1]) is int and type(k[2]) is str):
             problems.append(f"classification key {k!r} is not "
                             f"(spec: str, round: int, finding: str)")
-        if not (type(v) is tuple and len(v) == 2
+        if not (type(v) is tuple and len(v) == 3
                 and all(type(x) is str for x in v)):
             problems.append(f"{k!r} is classified as {v!r}, which is not "
-                            f"(class: str, why: str)")
+                            f"(class: str, scope: str, why: str)")
+        elif v[1] not in SCOPES:
+            # R17-2: the document claimed the design "has not moved in eight
+            # rounds" as free text, and it was wrong (nine) and ungated. The
+            # claim is now DERIVED from this field, so the field must be
+            # declared per finding and never defaulted — a default would
+            # silently file an unclassified finding as packaging and make the
+            # claim stronger than the evidence.
+            problems.append(f"{k!r} declares scope {v[1]!r}; expected one of "
+                            f"{sorted(SCOPES)}")
     if problems:
         return problems
 
@@ -288,13 +312,13 @@ def validate() -> list:
         problems.append(f"{k[0]} r{k[1]} {k[2]}: classified but matches no "
                         f"closure row (renamed, or the row was removed)")
 
-    for k, (cls, why) in sorted(MECHANISM.items()):
+    for k, (cls, _scope, why) in sorted(MECHANISM.items()):
         if cls not in CLASS_KEYS:
             problems.append(f"{k}: undeclared class {cls!r}")
         if not (why or "").strip():
             problems.append(f"{k}: classified with no reason")
 
-    used = {cls for cls, _ in MECHANISM.values()}
+    used = {v[0] for v in MECHANISM.values()}
     for k in CLASS_KEYS:
         if k not in used:
             problems.append(f"class {k!r} is declared with NO finding — a class "
@@ -307,10 +331,10 @@ def rows():
     ledger = {(c[0], c[2], c[3]): c[1] for c in _ledger()}
     out = []
     for key, title, _rule, _mech in CLASSES:
-        ext = sorted(k for k, (c, _) in MECHANISM.items()
-                     if c == key and ledger.get(k) == "external")
-        internal = sorted(k for k, (c, _) in MECHANISM.items()
-                          if c == key and ledger.get(k) == "internal")
+        ext = sorted(k for k, v in MECHANISM.items()
+                     if v[0] == key and ledger.get(k) == "external")
+        internal = sorted(k for k, v in MECHANISM.items()
+                          if v[0] == key and ledger.get(k) == "internal")
         out.append((key, title, ext, internal))
     return out
 
@@ -356,6 +380,33 @@ def render() -> str:
         rlist = ", ".join(str(r) for r in rnds) if rnds else "—"
         lines.append(f"| {i} | **{key}** — {title} | {len(ext)} | "
                      f"{len(internal)} | {rlist} | {recurred} |")
+
+    # R17-2: THE CLAIM THE PROSE USED TO MAKE BY HAND. "the design has not
+    # moved in eight rounds" was free text, ungated and wrong — it was nine,
+    # and the reviewer edited it to "999 rounds" with every check still
+    # passing. It is derived here, from the per-finding scope, and the prose
+    # above the table now carries no quantity at all.
+    spec_rounds = sorted({k[1] for k, v in MECHANISM.items()
+                          if v[1] == "spec" and ledger.get(k) == "external"})
+    if spec_rounds:
+        last_spec = max(spec_rounds)
+        since = sorted(r for r in verdicted if r > last_spec)
+        lines += [
+            "",
+            f"**The last finding that required a change to either "
+            f"specification was raised in round {last_spec}.** The "
+            f"{len(since)} rounds that returned a verdict since "
+            f"({since[0]}–{since[-1]}) raised packaging and process findings "
+            f"only — {sum(1 for k, v in MECHANISM.items() if v[1] == 'spec')} "
+            f"of the {len(MECHANISM)} findings here are spec-scoped, and every "
+            f"one of them is at or before round {last_spec}. Derived from the "
+            f"`scope` field on each classification; nothing in this paragraph "
+            f"is typed."
+            if since else
+            f"**The last finding that required a change to either "
+            f"specification was raised in round {last_spec}**, which is the "
+            f"most recent round to return a verdict.",
+        ]
 
     recurring = [k for k, _t, e, _i in rows() if len({x[1] for x in e}) > 1]
     lines += [

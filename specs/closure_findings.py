@@ -460,6 +460,29 @@ CLOSURES = [
      "specs/skip_inventory.py + specs/review_lessons.py (both delegate), "
      "specs/seal_package.py (the lessons check added to EXTRACTION_CHECKS)",
      "$PY -m pytest tests/test_spec_gate.py -k marker_mutation"),
+    # ---- external round 17 ------------------------------------------------
+    ("0022", "external", 17, "R17-1",
+     "R16-1's fix enumerated the three identity carriers the reviewer named "
+     "and there were FIVE: COLLECTED lines 6-7 state each spec's own candidate "
+     "revision and were still template literals, so the v17 package shipped "
+     "saying `draft v16` while its SENT rows said v18, and identity "
+     "verification found nothing wrong",
+     "specs/package_identity.py (the structured record: version, round, "
+     "per-spec candidate revision, with exactly one SENT row required per "
+     "packaged spec), specs/package/collected_header.txt (__CANDIDATES__), "
+     "specs/seal_package.py (filled from the record; identity_problems() now "
+     "covers the candidate carriers), tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k identity_record_governs"),
+    ("0022", "external", 17, "R17-2",
+     "the lessons document stated `has not moved in eight rounds` in free text "
+     "OUTSIDE the generated block — wrong (nine) and ungated, since --check "
+     "compares only what is between the markers; the reviewer changed it to "
+     "999 rounds and every check still returned 0",
+     "specs/review_lessons.py (a per-finding `scope` field, checked total, "
+     "with the claim DERIVED into the block), specs/REVIEW_LESSONS.md (no "
+     "quantity above the table), tests/test_spec_gate.py (the prologue gate "
+     "with the reviewer's mutation, the original defect, and both controls)",
+     "$PY -m pytest tests/test_spec_gate.py -k quantity_survives"),
     # ---- self-found by CI, round 15 ---------------------------------------
     ("0022", "internal", 15, "R15-3",
      "SELF-FOUND (by CI, five red runs before I looked): the transcript "
