@@ -839,7 +839,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 13 external round(s) with a returned VERDICT are recorded for `0023`; 15 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 14 external round(s) with a returned VERDICT are recorded for `0023`; 15 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -874,9 +874,10 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 13 (SENT) | 2026-08-18 | — | SENT (the coupled round-13 package `0022-0023-v13`). 0023 at v14: no semantic change required |
 | external 14 (verdict) | 2026-08-18 | 0 | SEMANTICALLY CLEAR; deferred with the shared package finding and the atomic dependency on 0022 |
 | external 14 (SENT) | 2026-08-18 | — | SENT (the coupled round-14 package `0022-0023-v14`). 0023 at v15: no semantic change required |
+| external 15 (verdict) | 2026-08-19 | 0 | SEMANTICALLY CLEAR; deferred with the shared package findings and the atomic dependency on 0022 |
 | external 15 (SENT) | 2026-08-18 | — | SENT (the coupled round-15 package `0022-0023-v15`). 0023 at v16: no semantic change required |
 
-**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 48 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 51 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

@@ -356,10 +356,13 @@ CLOSURES = [
      "specs/seal_package.py sealed_env() + the observed evidence claim + "
      "refusing probes, tests/test_spec_gate.py",
      "$PY -m pytest tests/test_spec_gate.py -k "
-     # NOT `transcript_validates`: that test reads the LIVE transcript, which
-     # the evidence runner is rewriting as it executes this command — the
-     # self-reference R12-1/R12-2 already hit, walked back into while
-     # repointing a stale selector. THE RULE: ledger evidence must never
+     # NOT a selector that reads the LIVE transcript, which the evidence
+     # runner is rewriting as it executes this command — the self-reference
+     # R12-1/R12-2 already hit, walked back into while repointing a stale
+     # selector. (The test that read it, `transcript_validates`, was REMOVED at
+     # round 15: pytest-randomly shuffles order, so it failed whenever the
+     # shuffle put it before the runner. Its validation now happens inside the
+     # runner.) THE RULE: ledger evidence must never
      # select a test that reads an artifact the runner is producing. The
      # observed-claim half is shown by the sealer reading the transcript
      # instead of counting the ledger.
@@ -387,10 +390,11 @@ CLOSURES = [
      "the sealer and the regression alike",
      "specs/evidence_transcript.py (count derived from len(commands); records "
      "matched to the ledger by (spec, finding, argv)), tests/test_spec_gate.py",
-     # Only the ADVERSARIAL half: `transcript_validates` reads the live
-     # transcript, which the evidence runner is rewriting as it executes this
-     # command — the same self-reference R12-1's evidence had. The adversarial
-     # test builds its own fixtures and is independent of the live file.
+     # Only the ADVERSARIAL half. The live transcript is rewritten by the
+     # evidence runner as it executes this command — the same self-reference
+     # R12-1's evidence had — so nothing that reads it may be selected here.
+     # The adversarial test builds its own fixtures in a temp dir and is
+     # independent of the live file.
      "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
     # ---- external round 13 ------------------------------------------------
     ("0022", "external", 13, "R13-1",
@@ -433,4 +437,40 @@ CLOSURES = [
      "specs/REVIEW_LESSONS.md (the taxonomy), tests/test_spec_gate.py (the "
      "class-5 gate), specs/closure_findings.py (R7-1's selector)",
      "$PY -m pytest tests/test_spec_gate.py -k reads_an_artifact"),
+    # ---- self-found by CI, round 15 ---------------------------------------
+    ("0022", "internal", 15, "R15-3",
+     "SELF-FOUND (by CI, five red runs before I looked): the transcript "
+     "validator was a SEPARATE test reading the live file that the evidence "
+     "runner writes, and `pytest-randomly` — a dev dependency that shuffles "
+     "order every run — put the reader before the writer on some seeds, so the "
+     "suite failed intermittently from the round-12 seal onward while every "
+     "local run happened to shuffle the other way. Class 5 exactly: a check "
+     "that reads what the run produces. The ledger already forbade EVIDENCE "
+     "COMMANDS from reading that artifact and the rule was never carried across "
+     "to test-to-test dependencies",
+     "tests/test_spec_gate.py (the separate test REMOVED; its validation now "
+     "runs inside the producer, so there is no order to get wrong), "
+     "specs/closure_findings.py (both selector notes)",
+     "$PY -m pytest tests/test_spec_gate.py -k reads_an_artifact"),
+    # ---- external round 15 ------------------------------------------------
+    ("0022", "external", 15, "R15-1",
+     "the CLOSED transcript schema was closed one level down only: commands "
+     "rejected undeclared fields while the object holding them did not, so "
+     "`{\"undeclared_top_level\": \"accepted\"}` passed validate(), the whole "
+     "archive verifier, and a repacked archive",
+     "specs/evidence_transcript.py (undeclared keys refused at EVERY level "
+     "with keys), tests/test_spec_gate.py (the mutation matrix is now DERIVED "
+     "from the schema — every declared field of every level, plus an "
+     "undeclared-key mutation per level, plus a coverage assertion that fails "
+     "when a field or level has no mutation)",
+     "$PY -m pytest tests/test_spec_gate.py -k counterfeit_or_missing"),
+    ("0022", "external", 15, "R15-2",
+     "specs/REVIEW_LESSONS.md carried two second copies of its own: it said 39 "
+     "external findings collapse into six classes while the six headings summed "
+     "to THIRTY (nine findings were never classified), and it restated the "
+     "suite duration as ~5min beside carriers measuring 16:45, 15:06 and 1:33",
+     "specs/review_lessons.py (a per-finding classification checked TOTAL "
+     "against the closure ledger, with the table GENERATED from it), "
+     "specs/REVIEW_LESSONS.md (counts and the duration removed from prose)",
+     "$PY specs/review_lessons.py --check"),
 ]

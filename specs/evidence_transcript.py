@@ -97,6 +97,16 @@ def validate(transcript_path: pathlib.Path, specs_dir: pathlib.Path) -> list:
 
     if type(data) is not dict:
         return ["the transcript is not a JSON object"]
+    # EXTERNAL ROUND 15 (R15-1): closedness was established one layer down and
+    # not at the layer above it. Commands rejected undeclared fields; the
+    # OBJECT HOLDING THEM did not, so `{"undeclared_top_level": "accepted"}`
+    # rode through validate() and the whole archive verifier. A property named
+    # "closed" is recursive or it is decoration — every level that has keys
+    # rejects keys it does not declare.
+    extra = [f for f in data if f not in TOP_SCHEMA]
+    if extra:
+        problems.append(f"the transcript carries undeclared top-level field(s) "
+                        f"{sorted(extra)} — the schema is closed at EVERY level")
     for field, (check, why) in TOP_SCHEMA.items():
         if field not in data:
             problems.append(f"the transcript has no `{field}`")

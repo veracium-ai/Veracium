@@ -1276,6 +1276,32 @@ def test_every_closure_evidence_command_actually_runs():
         indent=1) + "\n")
 
     assert not failures, "closure evidence that does not run:\n  " + "\n  ".join(failures)
+
+    # R12-2's validation happens HERE, against the transcript this test just
+    # wrote, and not in a test of its own.
+    #
+    # It USED to be a separate test that read the live file — and `pytest-
+    # randomly` (a dev dependency, shuffling order every run) put the reader
+    # before the writer on some seeds, so CI went red intermittently from the
+    # round-12 seal onward while every local run happened to order them the
+    # other way. Five red runs before I looked, which is the actual lesson: the
+    # ledger already recorded that this artifact must not be read by anything
+    # taking part in its production, and that rule was applied to the EVIDENCE
+    # COMMANDS while a test was left depending on another test to run first.
+    #
+    # A test that needs a different test to have run is the same defect as an
+    # evidence command that reads what the runner writes. The dependency is
+    # removed rather than ordered: one test writes the transcript and validates
+    # it in the same breath. Presence is still MANDATORY where it matters — the
+    # sealer calls validate() directly and the extraction runs
+    # specs/evidence_transcript.py inside the archive — so nothing is weakened
+    # by this test not existing separately.
+    sys.path.insert(0, str(root / "specs"))
+    from evidence_transcript import validate as _validate
+    problems = _validate(gen / "evidence_run.json", root / "specs")
+    assert not problems, ("the transcript this run just produced does not "
+                          "validate:\n  " + "\n  ".join(problems))
+
     print(f"\n{len(transcript)} evidence commands ran clean; skipped: {skipped}")
 
 
@@ -1479,29 +1505,6 @@ def test_the_sealed_environment_drops_the_recursion_marker():
         os.environ.update(saved)
 
 
-def test_the_evidence_transcript_validates_against_the_ledger():
-    """External round 12, R12-2. The sealer and this regression both read
-    `data["ran"]` and trusted it, so the reviewer's counterfeit —
-
-        {"ran": 40, "skipped": [], "commands": []}
-
-    — satisfied both. A number in a file is a claim; a transcript is evidence
-    of execution, and nothing distinguished them.
-
-    Validation lives in ONE place now (specs/evidence_transcript.py) and the
-    seal, the extraction verifier and this test all call it. The count is
-    DERIVED from the records, every non-launcher closure row must be matched
-    exactly once by (spec, finding, argv), and the skipped set must be exactly
-    the launcher rows."""
-    import sys, pathlib
-    root = pathlib.Path(__file__).resolve().parent.parent
-    sys.path.insert(0, str(root / "specs"))
-    from evidence_transcript import validate, REL_PATH
-
-    problems = validate(root / REL_PATH, root / "specs")
-    assert not problems, "\n".join(problems)
-
-
 def test_a_counterfeit_or_missing_transcript_is_rejected():
     """R12-1 and R12-2's adversarial cases, run rather than described: the
     reviewer DELETED the transcript from an archive and it still passed, and
@@ -1509,7 +1512,8 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
     import json, pathlib, shutil, sys, tempfile
     root = pathlib.Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(root / "specs"))
-    from evidence_transcript import validate, REL_PATH
+    from evidence_transcript import (validate, REL_PATH, TOP_SCHEMA,
+                                     COMMAND_SCHEMA)
 
     with tempfile.TemporaryDirectory() as td:
         d = pathlib.Path(td)
@@ -1567,28 +1571,117 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         assert problems, "the combined R14-1 mutation must be rejected"
         assert any("`ran`" in p for p in problems), problems
 
-        # each coercion alone, so a partial fix cannot hide behind the others
+        # each coercion alone, so a partial fix cannot hide behind the others.
+        #
+        # EXTERNAL ROUND 15 (R15-1) CHANGED THE SHAPE OF THIS TEST. The list
+        # below was hand-enumerated, so it covered exactly the attacks that had
+        # already been made: every entry mutated a COMMAND field, and none
+        # added an undeclared key to the object HOLDING the commands. The
+        # closedness the schema advertised was therefore untested one level up,
+        # and `{"undeclared_top_level": "accepted"}` rode through validate(),
+        # the archive verifier, and a repacked archive.
+        #
+        # A hand list can only replay the attacks already suffered. So the
+        # matrix below is DERIVED FROM THE SCHEMA: every declared field of
+        # every level gets a cross-type mutation, and every level with keys
+        # gets an undeclared-key mutation. The coverage assertion at the end
+        # closes the loop — add a field or a level to the schema without a
+        # mutation and this test fails, which is the check that did not exist
+        # when R15-1 was written.
+        clean = {"ran": len(clean_rows), "skipped": skipped,
+                 "commands": clean_rows}
+
+        def _cross_type(v):
+            """Values of every JSON type the clean value is NOT. Every schema
+            check pins an exact type, so all of these must be rejected —
+            including `True` for an int field, which is R13-1's attack
+            regenerated rather than remembered."""
+            bank = [None, True, 7, 4.5, "x", ["x"], {"k": "v"}]
+            return [b for b in bank if type(b) is not type(v)]
+
+        def _at_top(doc, field, value):
+            return {**doc, field: value}
+
+        def _at_command(doc, field, value):
+            head = dict(doc["commands"][0], **{field: value})
+            return {**doc, "commands": [head] + doc["commands"][1:]}
+
+        LEVELS = (("top", TOP_SCHEMA, _at_top, "`%s`"),
+                  ("command", COMMAND_SCHEMA, _at_command, "`%s`"))
+        covered = set()
+        for level, schema, place, needle_fmt in LEVELS:
+            for field in schema:
+                for bad in _cross_type(clean[field] if level == "top"
+                                       else clean["commands"][0][field]):
+                    doc = place(clean, field, bad)
+                    t.write_text(json.dumps(doc))
+                    ps = validate(t, d / "specs")
+                    assert ps, (f"{level} `{field}` = {bad!r} "
+                                f"({type(bad).__name__}) was ACCEPTED")
+                    assert any((needle_fmt % field) in x or "missing" in x
+                               or "not a JSON object" in x for x in ps), \
+                        f"{level} `{field}` = {bad!r}: wrong complaint {ps}"
+                covered.add((level, field))
+
+                # and the key REMOVED — a schema that only type-checks present
+                # keys is satisfied by an empty object
+                doc = place(clean, field, None)
+                doc = ({k: v for k, v in doc.items() if k != field}
+                       if level == "top" else
+                       {**clean, "commands": [
+                           {k: v for k, v in clean["commands"][0].items()
+                            if k != field}] + clean["commands"][1:]})
+                t.write_text(json.dumps(doc))
+                assert validate(t, d / "specs"), (
+                    f"{level} with `{field}` REMOVED was accepted")
+
+            # R15-1 ITSELF, at every level that has keys: an undeclared key
+            doc = place(clean, "undeclared_%s_level" % level, "accepted")
+            t.write_text(json.dumps(doc))
+            ps = validate(t, d / "specs")
+            assert ps, (f"an undeclared {level}-level key was ACCEPTED — "
+                        f"R15-1 exactly")
+            assert any("undeclared" in x for x in ps), ps
+            covered.add((level, "<undeclared key>"))
+
+        # THE COVERAGE CLOSURE: the mutation domain is the schema's domain.
+        # This is the assertion whose absence let R15-1 exist — the old list
+        # tested what had been attacked, not what was declared.
+        expected = {(lvl, f) for lvl, schema, _, _ in LEVELS for f in schema}
+        expected |= {(lvl, "<undeclared key>") for lvl, _, _, _ in LEVELS}
+        assert covered == expected, (
+            f"the mutation matrix does not cover the schema: "
+            f"missing {sorted(expected - covered)}")
+
+        # THE REVIEWER'S EXACT ATTACKS, replayed. The matrix above generates
+        # cross-type mutations; these are SAME-TYPE near misses no generator
+        # would invent, each one an attack that was actually made.
         for name, doc, needle in (
-            ("float ran", {**combined, "skipped": skipped,
-                           "commands": clean_rows}, "`ran`"),
-            ("int digest", {"ran": len(clean_rows), "skipped": skipped,
-                            "commands": [dict(r, output_sha256=int("1" * 64))
-                                         for r in clean_rows]}, "`output_sha256`"),
-            ("duplicated skipped", {"ran": len(clean_rows),
-                                    "skipped": skipped * 2,
-                                    "commands": clean_rows}, "duplicates"),
-            ("undeclared field", {"ran": len(clean_rows), "skipped": skipped,
-                                  "commands": [dict(r, sneaky="x")
-                                               for r in clean_rows]},
-             "undeclared field"),
+            ("R14-1 float ran", {**clean, "ran": float(len(clean_rows))},
+             "`ran`"),
+            ("R14-1 int digest", {**clean, "commands": [
+                dict(r, output_sha256=int("1" * 64)) for r in clean_rows]},
+             "`output_sha256`"),
+            ("R14-1 duplicated skipped", {**clean, "skipped": skipped * 2},
+             "duplicates"),
+            ("R13-1 non-hex 64-char digest", {**clean, "commands": [
+                dict(r, output_sha256="x" * 64) for r in clean_rows]},
+             "`output_sha256`"),
+            ("R13-1 relative cwd", {**clean, "commands": [
+                dict(r, cwd="relative/path") for r in clean_rows]}, "`cwd`"),
+            ("R14-1 undeclared command field", {**clean, "commands": [
+                dict(r, sneaky="x") for r in clean_rows]}, "undeclared field"),
+            ("R15-1 undeclared top-level field",
+             {**clean, "undeclared_top_level": "accepted"},
+             "undeclared top-level"),
         ):
             t.write_text(json.dumps(doc))
             ps = validate(t, d / "specs")
             assert ps and any(needle in x for x in ps), f"{name}: {ps}"
 
-        # and the CLEAN transcript must still pass, or the schema is just a wall
-        t.write_text(json.dumps({"ran": len(clean_rows), "skipped": skipped,
-                                 "commands": clean_rows}))
+        # and the CLEAN transcript must still pass, or the schema is just a
+        # wall — a check that rejects everything passes all its rejection tests
+        t.write_text(json.dumps(clean))
         assert not validate(t, d / "specs"), (
             "the schema rejects a well-formed transcript")
 
@@ -1661,23 +1754,52 @@ def test_no_closure_evidence_reads_an_artifact_the_runner_produces():
     from evidence_transcript import REL_PATH
 
     # tests that READ the live transcript — found by source, not by memory
+    def _readers(source_text):
+        found = set()
+        for m in re.finditer(r"^def (test_\w+)\(", source_text, re.M):
+            nxt = source_text.find("\ndef ", m.end())
+            body = source_text[m.end():nxt if nxt > 0 else len(source_text)]
+            # READS THE LIVE FILE, not merely mentions the constant. The
+            # counterfeit test imports REL_PATH and writes its own fixtures
+            # into a temp dir; flagging it would be this gate committing class
+            # 4's mirror — a domain too WIDE — in the fix for class 5.
+            if re.search(r"root\s*/\s*REL_PATH|root\s*/\s*[\"']specs[\"']\s*/\s*"
+                         r"[\"']generated[\"']", body):
+                found.add(m.group(1))
+        return found
+
+    # THE DETECTOR'S POSITIVE AND NEGATIVE CONTROLS, on synthetic source.
+    # This assertion used to be `len(readers) >= 2` against the real file —
+    # "the producer plus at least one genuine reader must be found, or the
+    # regex matches nothing". That tied the gate's own validity to the codebase
+    # CONTAINING a hazard, so removing the last live reader (the order-dependent
+    # transcript test, deleted when pytest-randomly exposed it) broke the gate
+    # rather than satisfying it. A control belongs on a fixture, never on the
+    # continued existence of the thing being guarded against.
+    #
+    # The hazard fixture is COMPOSED from fragments instead of written as a
+    # literal: spelled out in full, it would make this gate detect ITSELF as a
+    # reader, and the ledger row that points at this test would then be flagged
+    # for selecting it. Mention-versus-use, which this review has now produced
+    # seven times — a docstring counted as a skip site, a finding id read as a
+    # citation, a placeholder guard firing on prose about placeholders, a
+    # grep-for-absence rendered into the document it searched. The rule that
+    # keeps coming back: a checker's own text is inside its domain.
+    hazard = "def test_hazard():\n    p = root /" + " REL_PATH\n"
+    mention = "def test_safe():\n    x = REL" + "_PATH\n    d / \"f.json\"\n"
+    assert _readers(hazard) == {"test_hazard"}, (
+        "the reader detector matches nothing — it is vacuous")
+    assert _readers(mention) == set(), (
+        "the reader detector flags a mere mention — its domain is too wide")
+
     source = pathlib.Path(__file__).read_text()
-    readers = set()
-    for m in re.finditer(r"^def (test_\w+)\(", source, re.M):
-        body = source[m.end():source.find("\ndef ", m.end()) if
-                      source.find("\ndef ", m.end()) > 0 else len(source)]
-        # READS THE LIVE FILE, not merely mentions the constant. The
-        # counterfeit test imports REL_PATH and writes its own fixtures into a
-        # temp dir; flagging it would be this gate committing class 4's mirror
-        # — a domain too WIDE — in the fix for class 5.
-        if re.search(r"root\s*/\s*REL_PATH|root\s*/\s*[\"']specs[\"']\s*/\s*"
-                     r"[\"']generated[\"']", body):
-            readers.add(m.group(1))
+    readers = _readers(source)
     producer = "test_every_closure_evidence_command_actually_runs"
     assert producer in source, "the evidence runner was renamed"
+    assert producer in readers, (
+        "the producer no longer reads the transcript it writes — if the "
+        "validation moved out of it, this gate is guarding the wrong function")
     readers.add(producer)          # it WRITES the transcript
-    assert len(readers) >= 2, ("expected the producer and at least one reader; "
-                               f"found {sorted(readers)}")
 
     problems = []
     for spec, kind, rno, fid, _s, _c, ev in CLOSURES:
@@ -1697,3 +1819,105 @@ def test_no_closure_evidence_reads_an_artifact_the_runner_produces():
     assert not problems, (
         "closure evidence that reads an artifact the runner produces:\n  "
         + "\n  ".join(problems))
+
+
+def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():
+    """External round 15, R15-2. `specs/REVIEW_LESSONS.md` was hand-written: it
+    said 39 external findings collapsed into six classes while the six headings
+    summed to THIRTY — nine findings had no class and the prose could not show
+    it — and it restated a suite duration three carriers in the same package
+    measured at 16:45, 15:06 and 1:33.
+
+    A count is a second copy of a list, and this was a count of a list nobody
+    had written down. The list exists now (`MECHANISM`), the counts are
+    rendered from it, and the drift gate below is what makes that true rather
+    than intended. Every mutation the classification could suffer is injected:
+    a finding with no class, a class naming a finding that does not exist, a
+    class with nothing in it, and a document that has drifted from the source.
+    The clean control runs last, because a validator that rejects everything
+    passes all its rejection tests."""
+    import pathlib, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import review_lessons as rl
+
+    real_mech, real_classes = rl.MECHANISM, rl.CLASSES
+    try:
+        # (a) A FINDING WITH NO CLASS — R15-2 itself. Nine of these were live
+        # in the shipped document and the prose read as if they were covered.
+        victim = sorted(real_mech)[0]
+        rl.MECHANISM = {k: v for k, v in real_mech.items() if k != victim}
+        problems = rl.validate()
+        assert any("NOT classified" in p for p in problems), problems
+        assert any(victim[2] in p for p in problems), (
+            f"the unclassified finding {victim} must be NAMED, not counted: "
+            f"{problems}")
+
+        # (b) A CLASS NAMING A FINDING THAT DOES NOT EXIST — the same defect
+        # mirrored: a renamed or deleted closure row leaves a classification
+        # behind, and the count stays plausible.
+        rl.MECHANISM = {**real_mech, ("0022", 99, "R99-1"): ("proxy", "x")}
+        assert any("matches no closure row" in p for p in rl.validate()), \
+            rl.validate()
+
+        # (c) A CLASS WITH NOTHING IN IT — a taxonomy grows classes to look
+        # complete; an empty one is a claim about the world, not an
+        # observation of it.
+        rl.MECHANISM = real_mech
+        rl.CLASSES = real_classes + (("phantom", "t", "r", "m"),)
+        rl.CLASS_KEYS = tuple(k for k, *_ in rl.CLASSES)
+        assert any("NO finding" in p for p in rl.validate()), rl.validate()
+        rl.CLASSES, rl.CLASS_KEYS = real_classes, tuple(
+            k for k, *_ in real_classes)
+
+        # (d) AN UNDECLARED CLASS on an otherwise valid entry
+        rl.MECHANISM = {**real_mech, victim: ("not-a-class", "x")}
+        assert any("undeclared class" in p for p in rl.validate()), rl.validate()
+
+        # (e) A CLASSIFICATION WITH NO REASON — the reason is the part that
+        # can be argued with; without it the table is an assertion again.
+        rl.MECHANISM = {**real_mech, victim: (real_mech[victim][0], "   ")}
+        assert any("no reason" in p for p in rl.validate()), rl.validate()
+
+        # (f) MALFORMED ENTRIES — R15-1's lesson applied to this module:
+        # totality over the KEY SET is not totality. A key set that matches the
+        # ledger exactly still admits a value of the wrong shape, and the
+        # unpacking loop would then raise instead of reporting — a `--check`
+        # gate that crashes has returned no verdict at all.
+        for label, mutant in (
+            ("a 3-tuple value",
+             {**real_mech, victim: (real_mech[victim][0], "why", "extra")}),
+            ("a bare string value", {**real_mech, victim: "domain"}),
+            ("a stringified round in the key",
+             {**real_mech, (victim[0], str(victim[1]), victim[2]):
+              real_mech[victim]}),
+        ):
+            rl.MECHANISM = mutant
+            ps = rl.validate()
+            assert ps and any("not (" in p for p in ps), f"{label}: {ps}"
+
+        # and the class rows themselves, at their own level
+        rl.MECHANISM = real_mech
+        rl.CLASSES = real_classes[:-1] + (("key", "title", "rule"),)
+        rl.CLASS_KEYS = tuple(k for k, *_ in rl.CLASSES)
+        assert any("class row" in p for p in rl.validate()), rl.validate()
+        rl.CLASSES, rl.CLASS_KEYS = real_classes, tuple(
+            k for k, *_ in real_classes)
+    finally:
+        rl.MECHANISM, rl.CLASSES = real_mech, real_classes
+        rl.CLASS_KEYS = tuple(k for k, *_ in real_classes)
+
+    # (f) THE DOCUMENT ITSELF — total classification is worth nothing if the
+    # shipped block is a stale copy of it. This is the assertion that makes
+    # the counts generated rather than merely generatable.
+    assert not rl.validate(), rl.validate()
+    text = rl.DOC.read_text()
+    assert rl.BEGIN in text and rl.END in text, "the generated block is gone"
+    shipped = text.split(rl.BEGIN, 1)[1].split(rl.END, 1)[0]
+    assert shipped.strip() == rl.render().strip(), (
+        "specs/REVIEW_LESSONS.md has drifted from specs/review_lessons.py — "
+        "regenerate with `python3 specs/review_lessons.py --write`")
+
+    # and the CLEAN control: the real classification passes, so the gate is
+    # not passing by rejecting everything
+    assert rl.main(["review_lessons.py", "--check"]) == 0

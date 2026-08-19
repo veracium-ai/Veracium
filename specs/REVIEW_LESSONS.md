@@ -8,21 +8,58 @@ packaging. That is worth stating plainly, because the natural reading of
 "fifteen rounds" is that the design is troubled, and the design has not moved
 in eight rounds.
 
-The findings are not fifteen unrelated defects. Classified by FAILURE
-MECHANISM rather than by symptom, 39 external findings collapse into six
-classes, and **I re-found five of them after fixing the first instance.** That
-is the actual problem: not that the reviewer keeps finding things, but that I
-kept fixing the named cell and shipping.
+The findings are not a pile of unrelated defects. Classified by FAILURE
+MECHANISM rather than by symptom, they collapse into a small number of classes
+— and most of those classes were RE-FOUND after their first instance was
+fixed. That is the actual problem: not that the reviewer keeps finding things,
+but that I kept fixing the named cell and shipping.
+
+**This document previously got its own lesson wrong.** Its first version was
+hand-written: it claimed 39 findings in six classes while the six headings
+summed to thirty, and it restated a suite duration that three carriers in the
+same package measured differently (R15-2). A document about the second-copy
+class was two second copies. The table below is now generated from
+`specs/review_lessons.py`, where every finding is classified exactly once and
+the classification is checked TOTAL against the closure ledger: an
+unclassified finding fails the build, so does a classification naming a
+finding that does not exist, and so does a class with nothing in it.
 
 ---
 
-## The six classes, with what now catches them
+## The classes
 
-### 1. Self-assertion — a claim read from the thing it describes (9 findings)
-The count came from the ledger's length, not from execution (R11-2). `ran`
-was trusted rather than derived from the records (R12-2). The manifest said
-"26 findings" beside 31 rows (R7-1). COLLECTED claimed packaged-state
-execution the sealer's own order contradicts (R8-2).
+<!-- GENERATED:mechanism-table -->
+
+**41 external findings, raised across 14 rounds, and 10 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
+
+| # | class | external | self-found | rounds it was raised in | recurred |
+|---|---|---|---|---|---|
+| 1 | **self-assertion** — A claim not produced by the thing it describes | 7 | 1 | 1, 4, 6, 8, 9, 12 | **yes** |
+| 2 | **proxy** — The check binds a stand-in, not the property | 9 | 0 | 1, 3, 5, 7, 10, 11 | **yes** |
+| 3 | **second-copy** — The same fact stated twice | 11 | 0 | 3, 4, 6, 7, 10, 13, 15 | **yes** |
+| 4 | **domain** — The rule's reach is not its domain | 9 | 6 | 1, 3, 4, 5, 6, 15 | **yes** |
+| 5 | **self-reference** — The check reads what its own run produces | 0 | 2 | — | — |
+| 6 | **coercion** — A silent cast or default admits what the check meant to reject | 3 | 0 | 8, 13, 14 | **yes** |
+| 7 | **env-leak** — The producing environment leaked into the artifact | 2 | 0 | 10, 11 | **yes** |
+| 8 | **disclosure** — Behaviour that is correct but never stated to whoever must act on it | 0 | 1 | — | — |
+
+**6 of 8 classes recurred** — they were raised in more than one round, which means the first instance was fixed and the mechanism shipped again in another costume: `self-assertion`, `proxy`, `second-copy`, `domain`, `coercion`, `env-leak`. That is the finding this document exists for. It is derived from the rounds column, not asserted.
+
+**`self-reference`, `disclosure` were never raised by the reviewer** — they are the classes I found myself, while fixing something else. The previous hand-written version of this table attributed external finding ids to `self-reference`, which is how a document about second copies acquired one.
+
+**Gap in the source, derived not described:** round 2 was DISPATCHED and returned, and `specs/reviews.py` holds no verdict row for these specs — so a round that came back clean is indistinguishable from a round nobody recorded. The report is not in the repo (the reviewer asked that prior reports stay out of the package), so the row is not reconstructed here rather than guessed at. This sentence disappears when the gap is filled.
+
+<!-- /GENERATED:mechanism-table -->
+
+Each class, its rule, and what now catches it — the per-finding assignments
+and the reason each one was filed where it was are in
+`specs/review_lessons.py`:
+
+### 1. self-assertion — a claim not produced by the thing it describes
+`ran` trusted rather than derived from the records (R12-2). A transcript whose
+deletion left every check green (R12-1). Four hand-maintained package claims
+beside the executables that contradicted them (R8-2). A launcher that invented
+its own qualification rule and certified against it (R6-4).
 
 **Rule:** a number or status in a carrier must be PRODUCED by the thing it
 describes, in the same run that ships it.
@@ -30,72 +67,128 @@ describes, in the same run that ships it.
 `__HARNESSES__`, `__EVIDENCE__`, `__LAUNCHER__`, `__CONTEXT__`) and refuses
 unsubstituted tokens. The transcript is read, not counted.
 
-### 2. Proxy-not-property — the check inspects a stand-in (6 findings)
+### 2. proxy — the check binds a stand-in, not the property
 Set-equality of ids instead of per-finding validation (R7-1). Substring
 inspection of a command's source, defeated by a comment (R11-1). Labels
-instead of argv (R10-2). Presence and length instead of values (R13-1).
+instead of argv (R10-2). A BUSY test measuring SQLite's internal wait instead
+of the branch it was named for (R5-2). And in the spec itself: a host-supplied
+clock standing in for the order decisions were made in (F2).
 
 **Rule:** ask what the check would accept that is wrong. If a rename, a
 comment or a cast defeats it, it binds a proxy.
-**Mechanized:** argv pinned exactly with `-c` forbidden; the closed schema;
-adversarial mutations for each.
+**Mechanized:** argv pinned exactly with `-c` forbidden; every `-k` atom must
+select a test; the extraction registry binds behaviour, not labels.
 
-### 3. Second copy — the same fact stated twice (6 findings)
-Two closure ledgers (R5-3). A hand-written verifier list beside the generated
-one (round 12, self-found). "The SAME six checks" over seven (R13-2). The
-reviewer guide's workflow contradicting COLLECTED for ten rounds (R10-1).
+### 3. second-copy — the same fact stated twice
+A hand-maintained closure ledger beside the generated one (R6-3, both specs).
+"The SAME six checks" over seven (R13-2). The reviewer guide's workflow
+contradicting COLLECTED for ten rounds (R10-1). A section header contradicting
+a row of its own table (R4-2). This document's own counts (R15-2).
 
 **Rule:** if a fact appears twice, one copy is already wrong or will be.
 Delete or generate — never sync. **A COUNT IS A SECOND COPY OF A LIST.**
-**Mechanized:** generated blocks with `--check` gates; the withdrawn-claim
-sweep reads the BUILT artifact and the reviewer guide.
+**Mechanized:** generated blocks with `--check` gates, including the table
+above; the withdrawn-claim sweep reads the BUILT artifact and the reviewer
+guide.
 
-### 4. Domain-too-narrow — the checker cannot see part of its own domain (4)
+### 4. domain — the rule's reach is not its domain
 The skip-site regex matched `pytest.mark.skipif` and not `pytest.mark.skip(`,
-so four unconditional skips were invisible to a test named `..._is_complete`
-(R4-4). `render()`'s hard-coded category list silently dropped a category. The
+so four unconditional skips were invisible to the completeness gate (R3-5).
+`render()`'s hard-coded category list silently dropped a category (R4-4). The
 withdrawn-phrase pattern matched one phrasing of the retracted rule (R3-2).
+Failure outcomes that were not total (R5-1), a rollback boundary catching
+`Exception` inside an operation catching `BaseException` (R6-1), a closed
+schema closed at one level and not the one above it (R15-1). **And the mirror,
+which is the same defect:** a lifecycle predicate applied too WIDELY, dropping
+episodes in stores with zero revocations (0023 R3-3).
 
 **Rule:** enumerate the domain and prove the enumeration, or make the checker
-RAISE on anything it does not recognise.
+RAISE on anything it does not recognise. Then check the reach is not too wide
+either — over-reach and under-reach are one mechanism.
 **Mechanized:** `render()` raises on an unknown category; every `-k` atom must
-select a test; the closed schema refuses undeclared fields.
+select a test; the transcript schema is closed at every level, with a mutation
+matrix DERIVED from the schema so a field or level added later cannot be
+untested.
 
-### 5. Self-reference — the check reads what it is producing (3 findings)
-Evidence commands validated the transcript the runner was writing (R12-1/2),
-**and I reintroduced it at R13-3 while repointing a stale selector.** A test
-spawned the suite that runs it, turning 39s into 23 minutes.
+### 5. self-reference — the check reads what its own run produces
+Evidence commands that validated the transcript the runner was writing, and a
+command selecting the evidence RUNNER, whose nested child skips on the
+recursion marker — so half of it exercised nothing while exiting 0. A test
+that spawned the suite that runs it, turning 39s into 23 minutes.
 
-**Rule:** an evidence command must never read an artifact whose production it
-is part of. Validate finished artifacts in the extraction.
-**Mechanized below** — this class had no gate until now.
+**And the same mechanism between TESTS:** the transcript validator was a
+separate test reading the file the runner writes, while `pytest-randomly`
+shuffles test order every run — so CI failed on the seeds that put the reader
+first, intermittently, from the round-12 seal onward. Four seals went out with
+the suite red on GitHub because I pushed and did not look. The ledger already
+carried the rule, in two places, and it had been applied to evidence
+*commands* only.
 
-### 6. Silent coercion — the language accepts what the check meant to reject (2)
+**Rule:** nothing may read an artifact whose production it takes part in —
+evidence commands and tests alike. Where possible, remove the ordering rather
+than fix it: the validation now runs inside the producer.
+**Mechanized:** the closure-evidence gate rejects any command that reads an
+artifact the runner writes, and is itself proven against synthetic positive and
+negative fixtures. *This class was never externally raised — both instances are
+mine, and the second was caught by a CI signal I was not reading.*
+
+### 6. coercion — a silent cast or default admits what the check meant to reject
 `exit: false` passed `!= 0` because `bool` subclasses `int`. A 64-digit
 integer survived `str()` before a hex regex. A duplicated entry vanished into
-a set (R13-1, R14-1).
+a set. `raised` read with `.get(..., [])`, so an OMITTED field was
+indistinguishable from a declared absence — a default that fabricated the fact
+being checked (R8-1, R13-1, R14-1).
 
-**Rule:** `type(x) is T`, never `isinstance`, in any integrity check.
-**Mechanized:** the closed, exactly-typed transcript schema.
+**Rule:** `type(x) is T`, never `isinstance`, in any integrity check — and
+never a default that fabricates the fact.
+**Mechanized:** the closed, exactly-typed transcript schema; `raised` required
+explicitly.
+
+### 7. env-leak — the producing environment leaked into the artifact
+The sealing user's uid/gid rode into the archive, so a plain `tar -xzf` exited
+2 for the recipient (R10-3). Sealing inherited the whole environment, so a
+recursion marker turned the evidence runner into a skip while the sealer still
+generated an all-commands-ran claim (R11-2).
+
+**Rule:** an artifact must be built and verified as the RECIPIENT will open
+it, not as its producer happens to hold it.
+**Mechanized:** normalized ownership on every member, a plain `tar -xzf` gate,
+and an allowlisted sealing environment.
+
+### 8. disclosure — correct behaviour never stated to whoever must act on it
+`complete=False` is the expected steady state on any consolidation-bearing
+store, and operators had not been told (M4, internal).
+
+**Rule:** if the steady state surprises an operator, the surprise is the
+defect.
+**Not mechanized** — prose review only, and it is the one class here with no
+gate behind it.
 
 ---
 
-## The two rules under all six
+## The two rules under all of them
 
 **A check that cannot fail is not a check.** Every class above passes while
 examining nothing. So: for every gate, write the mutation that must fail it,
 run it, and keep it — *and* keep a clean control, because a check that rejects
 everything passes all its rejection tests.
 
-**Fix the class, not the cell.** Five of six classes were re-found after I
-fixed the first instance. When a finding lands, ask where else that mechanism
-lives before fixing the site named.
+**Fix the class, not the cell.** Most of these classes were re-found after the
+first instance was fixed, and the table above derives which ones from the
+rounds they appeared in. When a finding lands, ask where else that mechanism
+lives before fixing the site named. R15-1 is the sharpest example: the round-14
+fix established "closed" for command objects, wrote six mutations for command
+objects, and never asked whether the object holding them was closed too.
 
 ## Honest limits
 
 - Classes 1 and 3 are only partly mechanized: the sealer substitutes what it
   knows to substitute, and a NEW hand-written claim in a carrier is still
   possible. The withdrawn-claim list is the backstop and it is hand-extended.
-- The suite grew from 39s to ~5min as the evidence runner grew with the
-  ledger. That is a real cost, accepted deliberately, and it will keep growing
-  linearly with findings.
+- Class 8 has no gate at all.
+- The evidence machinery costs real time, and it grows with the ledger: every
+  closure row adds a command, and several commands are themselves suite runs.
+  No duration is quoted here on purpose — R15-2 was partly a stale one, and the
+  same suite measured 16:45, 15:06 and 1:33 in one package depending on the
+  host and the environment. The current figures are in `COLLECTED.txt`, which
+  is generated by the run that produces them.
