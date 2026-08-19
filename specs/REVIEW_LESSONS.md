@@ -30,13 +30,13 @@ finding that does not exist, and so does a class with nothing in it.
 
 <!-- GENERATED:mechanism-table -->
 
-**41 external findings, raised across 14 rounds, and 10 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
+**43 external findings, raised across 15 rounds, and 10 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
 
 | # | class | external | self-found | rounds it was raised in | recurred |
 |---|---|---|---|---|---|
-| 1 | **self-assertion** — A claim not produced by the thing it describes | 7 | 1 | 1, 4, 6, 8, 9, 12 | **yes** |
+| 1 | **self-assertion** — A claim not produced by the thing it describes | 8 | 1 | 1, 4, 6, 8, 9, 12, 16 | **yes** |
 | 2 | **proxy** — The check binds a stand-in, not the property | 9 | 0 | 1, 3, 5, 7, 10, 11 | **yes** |
-| 3 | **second-copy** — The same fact stated twice | 11 | 0 | 3, 4, 6, 7, 10, 13, 15 | **yes** |
+| 3 | **second-copy** — The same fact stated twice | 12 | 0 | 3, 4, 6, 7, 10, 13, 15, 16 | **yes** |
 | 4 | **domain** — The rule's reach is not its domain | 9 | 6 | 1, 3, 4, 5, 6, 15 | **yes** |
 | 5 | **self-reference** — The check reads what its own run produces | 0 | 2 | — | — |
 | 6 | **coercion** — A silent cast or default admits what the check meant to reject | 3 | 0 | 8, 13, 14 | **yes** |
@@ -61,8 +61,14 @@ deletion left every check green (R12-1). Four hand-maintained package claims
 beside the executables that contradicted them (R8-2). A launcher that invented
 its own qualification rule and certified against it (R6-4).
 
-**Rule:** a number or status in a carrier must be PRODUCED by the thing it
-describes, in the same run that ships it.
+And the package's own IDENTITY: an archive named v16 shipped two carriers
+saying v15, because the requested version reached the builder and controlled
+only the filename (R16-1). The commit had been cross-checked between those two
+carriers since round 4; nothing checked which package they claimed to be.
+
+**Rule:** a number, status or NAME in a carrier must be PRODUCED by the thing
+it describes, in the same run that ships it — and where a fact has several
+carriers, verification must refuse any disagreement between them.
 **Mechanized:** the sealer substitutes measured values (`__MEASURED__`,
 `__HARNESSES__`, `__EVIDENCE__`, `__LAUNCHER__`, `__CONTEXT__`) and refuses
 unsubstituted tokens. The transcript is read, not counted.
@@ -85,8 +91,19 @@ A hand-maintained closure ledger beside the generated one (R6-3, both specs).
 contradicting COLLECTED for ten rounds (R10-1). A section header contradicting
 a row of its own table (R4-2). This document's own counts (R15-2).
 
+**And a form of it I had not seen until round 16:** `review_lessons.py`
+located its generated block with `split(BEGIN, 1)` and never required exactly
+one marker pair, so an appended second block claiming different numbers passed
+every check (R16-2). The strict rule already existed twelve metres away in
+`skip_inventory.verify_collected`, written for 0014's identical finding — so
+this was a second, weaker *implementation* of a rule, and it carried the very
+bug the original had been written to fix.
+
 **Rule:** if a fact appears twice, one copy is already wrong or will be.
-Delete or generate — never sync. **A COUNT IS A SECOND COPY OF A LIST.**
+Delete or generate — never sync. **A COUNT IS A SECOND COPY OF A LIST — and AN
+IMPLEMENTATION IS A SECOND COPY OF A RULE.** Before writing a checker, grep for
+one: this project had already solved marker-block verification, strictly, for
+this same reviewer.
 **Mechanized:** generated blocks with `--check` gates, including the table
 above; the withdrawn-claim sweep reads the BUILT artifact and the reviewer
 guide.

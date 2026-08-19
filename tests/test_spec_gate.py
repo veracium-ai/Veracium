@@ -1395,6 +1395,11 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
             ("python", "specs/render_closure.py", "--check"),
         "render_operation.py --check":
             ("python", "specs/render_operation.py", "--check"),
+        # R16-2: the lessons carrier was verified in the build tree and NOWHERE
+        # in the archive, so a block appended after the build was invisible to
+        # the only verification the reviewer receives.
+        "review_lessons.py --check":
+            ("python", "specs/review_lessons.py", "--check"),
     }
     got = {n: norm(c) for n, c in seal_package.EXTRACTION_CHECKS}
     assert set(got) == set(required), (
@@ -1921,3 +1926,133 @@ def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():
     # and the CLEAN control: the real classification passes, so the gate is
     # not passing by rejecting everything
     assert rl.main(["review_lessons.py", "--check"]) == 0
+
+
+def test_one_generated_block_verifier_refuses_every_marker_mutation():
+    """External round 16, R16-2. `review_lessons.py` located its block with
+    `split(BEGIN, 1)` — the FIRST marker pair, with nothing requiring there be
+    only one — so an appended second block claiming "999 external findings"
+    passed `--check`, the dedicated gate, and full archive verification after
+    repacking.
+
+    The defect is not that the parsing was weak. THE STRICT RULE ALREADY
+    EXISTED IN THIS REPO: `skip_inventory.verify_collected`, written for 0014's
+    round-15 finding, where `split(begin, 1)` accepted exactly this mutation.
+    I wrote a second, weaker copy of a verifier that already existed, and the
+    copy carried the bug the original was written to fix. An implementation is
+    a second copy of a rule and it goes stale the same way a count does.
+
+    So this exercises the ONE implementation both carriers now call, over the
+    full mutation domain rather than the mutation that was reported."""
+    import pathlib, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import generated_block as gb
+
+    B, E = "<!-- B -->", "<!-- /B -->"
+    body = "one\ntwo"
+    good = f"prose\n{B}\n{body}\n{E}\ntail\n"
+    gb.verify(good, B, E, body)                    # the CLEAN control, first
+
+    for label, text in (
+        ("a duplicated complete block — the reviewer's mutation",
+         good + f"{B}\n999 findings\n{E}\n"),
+        ("a second OPENING marker only", good + f"{B}\n"),
+        ("a second CLOSING marker only", good + f"{E}\n"),
+        ("no markers at all", "prose\n"),
+        ("the opening marker missing", f"prose\n{body}\n{E}\n"),
+        ("the closing marker missing", f"prose\n{B}\n{body}\n"),
+        ("end before begin", f"{E}\n{body}\n{B}\n"),
+    ):
+        with pytest.raises(gb.BlockError):
+            gb.verify(text, B, E, body)
+        # and the WRITE path must refuse too — regenerating the first block of
+        # a duplicated carrier leaves the second one lying, which is how the
+        # reviewer's mutation would have survived a `--write`
+        with pytest.raises(gb.BlockError):
+            gb.replace(text, B, E, body)
+
+    # MARKERS COUNT ONLY AS STANDALONE LINES: prose that mentions one is prose.
+    # (Mention-versus-use, which this review has produced seven times.)
+    mentioned = f"prose about {B} inline\n{B}\n{body}\n{E}\n"
+    gb.verify(mentioned, B, E, body)
+
+    # CONTENT, with no normalization: a boundary newline is a difference
+    for label, text in (
+        ("stale content", f"{B}\nSTALE\n{E}\n"),
+        ("a boundary newline after the opening marker",
+         f"{B}\n\n{body}\n{E}\n"),
+        ("a boundary newline before the closing marker",
+         f"{B}\n{body}\n\n{E}\n"),
+    ):
+        with pytest.raises(gb.BlockError):
+            gb.verify(text, B, E, body)
+
+    # BOTH CARRIERS CALL IT — the point of the fix is that there is no second
+    # copy left to drift. Checked by behaviour: each refuses the duplicate.
+    import review_lessons as rl
+    from skip_inventory import BEGIN_MARKER, END_MARKER, verify_collected
+    dup = rl.DOC.read_text() + f"\n{rl.BEGIN}\n\n**999 external findings.**\n\n{rl.END}\n"
+    with pytest.raises(gb.BlockError):
+        gb.verify(dup, rl.BEGIN, rl.END, "\n" + rl.render() + "\n")
+    with pytest.raises(ValueError):     # BlockError subclasses ValueError
+        verify_collected(f"{BEGIN_MARKER}\nx\n{END_MARKER}\n{BEGIN_MARKER}\ny\n{END_MARKER}\n")
+
+
+def test_the_packages_three_identity_carriers_must_agree():
+    """External round 16, R16-1. The archive was named v16 while both shipped
+    carriers said v15 / ROUND 15: `build_collected(..., version, ...)` received
+    the requested version and never used it, so `--version` controlled the
+    FILENAME alone and the identity line a reviewer reads first came from a
+    hand-edited template.
+
+    Round 4 made the two carriers agree about the COMMIT. Nothing made them
+    agree about WHICH PACKAGE THEY ARE. Identity has three carriers here, so
+    every one-carrier disagreement is injected below, plus the agreeing
+    control — and the templates are asserted to be tokenized, because a
+    template that carries a literal version is the defect itself."""
+    import pathlib, re, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    from seal_package import identity_problems
+
+    NAME = "0022-0023-v16-20260819T0136Z.tar.gz"
+    COL = ("0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
+           "round-16 external-review package (v16)\nsource commit: abc1234\n")
+    MAN = "PACKAGE: 0022-0023-v16 — external ROUND 16\nCOMMIT:  abc1234\n"
+    assert identity_problems(NAME, COL, MAN) == [], "the agreeing case must pass"
+
+    # ONE CARRIER WRONG AT A TIME — including the exact shipped defect
+    for label, name, col, man in (
+        ("the v16 archive shipped with v15 carriers (R16-1 exactly)",
+         NAME, COL.replace("round-16", "round-15").replace("(v16)", "(v15)"),
+         MAN.replace("v16", "v15").replace("ROUND 16", "ROUND 15")),
+        ("the manifest alone is stale", NAME, COL,
+         MAN.replace("v16", "v15").replace("ROUND 16", "ROUND 15")),
+        ("the COLLECTED header alone is stale", NAME,
+         COL.replace("round-16", "round-15").replace("(v16)", "(v15)"), MAN),
+        ("the archive alone is renamed",
+         "0022-0023-v17-20260819T0136Z.tar.gz", COL, MAN),
+        ("the round disagrees with the version", NAME,
+         COL.replace("round-16", "round-15"), MAN),
+        ("the manifest names a different SPEC SET", NAME, COL,
+         MAN.replace("0022-0023-v16", "0022-0099-v16")),
+        ("the manifest has no identity line", NAME, COL, "COMMIT: abc1234\n"),
+        ("COLLECTED has no identity line", NAME, "source commit: abc1234\n", MAN),
+        ("the archive name carries no version",
+         "0022-0023-20260819T0136Z.tar.gz", COL, MAN),
+    ):
+        assert identity_problems(name, col, man), f"ACCEPTED: {label}"
+
+    # THE TEMPLATES MUST BE TOKENIZED. Substitution is what makes the identity
+    # produced rather than typed, and `refuse_placeholders` already fails the
+    # seal on any token that survives — so the only way back to R16-1 is a
+    # template with a literal version in it again.
+    for rel in ("specs/package/collected_header.txt", "specs/package/manifest.txt"):
+        head = (root / rel).read_text().split("\n")[0]
+        assert not re.search(r"\bv\d+\b|ROUND\s+\d+|round-\d+", head), (
+            f"{rel} carries a LITERAL version/round in its identity line "
+            f"({head!r}) — it must be __VERSION__/__ROUND__/__PACKAGE__ and "
+            f"substituted at seal (R16-1)")
+        assert re.search(r"__(VERSION|ROUND|PACKAGE)__", head), (
+            f"{rel} names no identity token")

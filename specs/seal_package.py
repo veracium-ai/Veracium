@@ -245,7 +245,58 @@ EXTRACTION_CHECKS = (
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
      [sys.executable, "specs/render_operation.py", "--check"]),
+    # R16-2: the lessons carrier was checked in the build tree and NOWHERE in
+    # the archive, so a block appended after the build was invisible to the
+    # only verification a reviewer actually receives. Every generated carrier
+    # that ships must be re-checked from the extraction.
+    ("review_lessons.py --check",
+     [sys.executable, "specs/review_lessons.py", "--check"]),
 )
+
+
+def identity_problems(archive_name: str, col: str, man: str) -> list:
+    """R16-1. Return the ways the package's THREE identity carriers disagree.
+
+    The commit has been checked across both carriers since round 4. The
+    VERSION was checked nowhere, so `--version v16` produced an archive named
+    v16 whose manifest said `0022-0023-v15 — external ROUND 15` and whose
+    COLLECTED header said `round-15 ... (v15)`: the version reached
+    build_collected and controlled the FILENAME alone, while the identity a
+    reviewer reads first came from a hand-edited template.
+
+    Identity lives in three carriers, so all three are read and compared here —
+    a pure function over the extracted text, which is why it can be exercised
+    per-carrier by a regression instead of only by building an archive.
+    """
+    problems = []
+    stem = re.match(r"(.+)-(v\d+)-\d{8}T\d{4}Z\.tar\.gz$", archive_name)
+    if not stem:
+        return [f"the archive name {archive_name!r} does not carry a "
+                f"`<specs>-v<N>-<timestamp>` identity (R16-1)"]
+    mp = re.search(r"^PACKAGE:\s*(\S+)\s+—\s+external ROUND\s+(\d+)", man, re.M)
+    if not mp:
+        problems.append("PACKAGE_MANIFEST.txt has no `PACKAGE: <name> — "
+                        "external ROUND <n>` identity line (R16-1)")
+    ch = re.search(r"COUPLED round-(\d+) external-review package \((v\d+)\)", col)
+    if not ch:
+        problems.append("COLLECTED.txt has no `COUPLED round-<n> "
+                        "external-review package (<version>)` line (R16-1)")
+    if problems:
+        return problems
+
+    claims = {
+        "archive basename": (f"{stem.group(1)}-{stem.group(2)}",
+                             int(stem.group(2)[1:])),
+        "PACKAGE_MANIFEST.txt": (mp.group(1), int(mp.group(2))),
+        "COLLECTED.txt": (f"{stem.group(1)}-{ch.group(2)}", int(ch.group(1))),
+    }
+    if len(set(claims.values())) != 1:
+        problems.append(
+            "the package's THREE identity carriers disagree — "
+            + "; ".join(f"{k} says {v[0]} round {v[1]}"
+                        for k, v in claims.items())
+            + " (R16-1: v16 shipped with both carriers saying v15)")
+    return problems
 
 
 def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
@@ -285,6 +336,9 @@ def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
                 or c2.group(1).startswith(c1.group(1)[:7])):
             _fail(f"COLLECTED names {c1.group(1)} and the manifest names "
                   f"{c2.group(1)} — round 4's two-commit defect")
+
+        for p in identity_problems(path.name, col, man):
+            _fail(p)
         ran = []
         for name, cmd in EXTRACTION_CHECKS:
             target = cmd[-1]
@@ -424,7 +478,48 @@ def main() -> int:
                 _fail(f"the offline launcher did not succeed on the final tree "
                       f"(exit {lr.returncode}): {line}")
             launcher = line.strip()
-        subs = {"__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
+        # R16-1: PACKAGE IDENTITY IS DERIVED AND CROSS-CHECKED, not typed into
+        # a template. `--version v16` produced an archive named v16 whose two
+        # shipped carriers both still said v15/ROUND 15, because `version`
+        # reached build_collected and was never used — it controlled the
+        # FILENAME alone. Round 8's finding was four hand-maintained package
+        # claims that had gone false; this was a fifth and a sixth, in the
+        # identity line a reviewer reads first.
+        #
+        # The round number is not a second hand-kept fact either: it comes from
+        # the version, and both are checked against the SENT row recorded in
+        # specs/reviews.py before sealing. Sealing a version nobody dispatched,
+        # or one whose recorded round disagrees, now fails here rather than
+        # arriving as next round's finding.
+        pkg = f"{'-'.join(specs)}-{a.version}"
+        m = re.fullmatch(r"v(\d+)", a.version)
+        if not m:
+            _fail(f"--version {a.version!r} is not `v<N>`, so the round number "
+                  f"cannot be derived from it (R16-1)")
+        round_no = int(m.group(1))
+        sys.path.insert(0, str(SPECS))
+        import reviews as _reviews
+        # `pkg in verdict` would be a SUBSTRING match, and `0022-0023-v1`
+        # occurs inside `0022-0023-v16` — a check that silently accepts the
+        # wrong dispatch row for every single-digit version. Bounded on the
+        # right so v1 stops matching v16, v17, v18...
+        _pkg_re = re.compile(re.escape(pkg) + r"(?![0-9])")
+        sent = [r for r in _reviews.REVIEWS
+                if r["kind"] == "external" and r["spec"] in specs
+                and r["verdict"].startswith("SENT") and _pkg_re.search(r["verdict"])]
+        if not sent:
+            _fail(f"no SENT row in specs/reviews.py names `{pkg}` — the "
+                  f"dispatch must be recorded BEFORE sealing, so the archive "
+                  f"carries the row that describes it (R16-1)")
+        bad = sorted({r["round"] for r in sent} - {round_no})
+        if bad:
+            _fail(f"`{pkg}` is dispatched at round(s) {bad} in "
+                  f"specs/reviews.py but its version says round {round_no} "
+                  f"(R16-1)")
+
+        subs = {"__VERSION__": a.version, "__ROUND__": str(round_no),
+                "__PACKAGE__": pkg,
+                "__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
                 "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
                 "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,
                 "__CONTEXT__": context,

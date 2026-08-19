@@ -295,23 +295,18 @@ def verify_collected(text: str, rs_output: str = "") -> None:
     to raw-bytes verification per the acceptance ledger. Raises ValueError with
     a specific reason; returns None on success. Shared by the packaging step
     and tests/test_spec_gate.py — one verifier, no drift."""
-    lines = text.split("\n")
-    begins = [i for i, l in enumerate(lines) if l == BEGIN_MARKER]
-    ends = [i for i, l in enumerate(lines) if l == END_MARKER]
-    if len(begins) != 1 or len(ends) != 1:
-        raise ValueError(
-            f"expected exactly one standalone begin and end marker, found "
-            f"{len(begins)} begin / {len(ends)} end (a duplicated block or a "
-            f"missing/edited marker)")
-    b, e = begins[0], ends[0]
-    if e <= b:
-        raise ValueError("end marker precedes begin marker")
-    block = "\n".join(lines[b + 1:e])
-    expected = render(rs_output)
-    if block != expected:
-        raise ValueError(
-            "the enclosed inventory block is not byte-identical to render(rs_output) "
-            "(stale, hand-edited, or boundary-padded)")
+    # EXTERNAL ROUND 16, R16-2. The rules below used to be implemented HERE,
+    # and I later wrote a SECOND, weaker copy of them in review_lessons.py
+    # (`split(BEGIN, 1)` — the first marker pair, no count), which the reviewer
+    # defeated with an appended block claiming different numbers. The rule now
+    # has one implementation and this function is one of its two callers;
+    # `generated_block.BlockError` subclasses ValueError, so every existing
+    # caller and adversarial test still sees exactly what it saw before.
+    import pathlib
+    import sys
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import generated_block as gb
+    gb.verify(text, BEGIN_MARKER, END_MARKER, render(rs_output))
 
 
 # ---------------------------------------------------------------------------

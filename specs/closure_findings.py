@@ -437,6 +437,29 @@ CLOSURES = [
      "specs/REVIEW_LESSONS.md (the taxonomy), tests/test_spec_gate.py (the "
      "class-5 gate), specs/closure_findings.py (R7-1's selector)",
      "$PY -m pytest tests/test_spec_gate.py -k reads_an_artifact"),
+    # ---- external round 16 ------------------------------------------------
+    ("0022", "external", 16, "R16-1",
+     "package identity was HAND-MAINTAINED and stale: the archive was named "
+     "v16 while both shipped carriers said v15 / external ROUND 15, because "
+     "build_collected() received the requested version and never used it — "
+     "`--version` controlled the FILENAME alone",
+     "specs/package/collected_header.txt + manifest.txt (identity tokenized as "
+     "__VERSION__/__ROUND__/__PACKAGE__), specs/seal_package.py (substituted, "
+     "round derived from the version and CROSS-CHECKED against the SENT row in "
+     "reviews.py, plus identity_problems() refusing any disagreement among the "
+     "three carriers), tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k identity_carriers"),
+    ("0022", "external", 16, "R16-2",
+     "the lessons carrier was located with split(BEGIN, 1) and never required "
+     "exactly one marker pair, so an appended second block claiming 999 "
+     "findings passed --check, the gate and full archive verification — a "
+     "SECOND, WEAKER COPY of the strict rule already in skip_inventory, "
+     "written for 0014's identical finding",
+     "specs/generated_block.py (ONE implementation: standalone-line markers, "
+     "exactly one pair, no normalization, strict on the WRITE path too), "
+     "specs/skip_inventory.py + specs/review_lessons.py (both delegate), "
+     "specs/seal_package.py (the lessons check added to EXTRACTION_CHECKS)",
+     "$PY -m pytest tests/test_spec_gate.py -k marker_mutation"),
     # ---- self-found by CI, round 15 ---------------------------------------
     ("0022", "internal", 15, "R15-3",
      "SELF-FOUND (by CI, five red runs before I looked): the transcript "

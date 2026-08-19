@@ -1,4 +1,4 @@
-0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-15 external-review package (v15)
+0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED round-__ROUND__ external-review package (__VERSION__)
 =====================================================================================
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the

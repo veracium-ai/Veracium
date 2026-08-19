@@ -225,6 +225,14 @@ MECHANISM = {
     ("0023", 2, "S3"): ("domain",
         "quarantine-at-birth wrote a field no reader consulted — enforcement that "
         "reached none of its domain"),
+    ("0022", 16, "R16-1"): ("self-assertion",
+        "the package's identity was typed into a template instead of produced "
+        "from the version the seal was asked for — R8-2's shape, in the first "
+        "line a reviewer reads"),
+    ("0022", 16, "R16-2"): ("second-copy",
+        "a second, weaker implementation of a marker-block verifier that already "
+        "existed here — and the copy carried the bug the original was written to "
+        "fix. An implementation is a second copy of a RULE"),
     ("0022", 15, "R15-3"): ("self-reference",
         "a test read the live transcript another test writes, and pytest-randomly "
         "shuffles order — so CI failed on some seeds from round 12 onward"),
@@ -396,22 +404,33 @@ def main(argv) -> int:
               + "\n  ".join(problems), file=sys.stderr)
         return 1
 
-    block = f"{BEGIN}\n\n{render()}\n\n{END}"
+    # R16-2: this used to be `text.split(BEGIN, 1)` — the FIRST marker pair,
+    # with nothing requiring there be only one. The reviewer appended a second
+    # block claiming 999 findings and `--check`, the pytest gate and the whole
+    # archive verifier all passed. The strict rule already existed in this repo
+    # (skip_inventory.verify_collected, written for 0014's identical finding);
+    # this was a second, weaker copy of it. Now there is ONE implementation and
+    # both carriers call it — including on the WRITE path, so a duplicated
+    # block cannot be papered over by regenerating.
+    sys.path.insert(0, str(HERE))
+    import generated_block as gb
+    expected = f"\n{render()}\n"
     text = DOC.read_text()
-    if BEGIN not in text or END not in text:
-        print(f"{DOC} carries no generated block", file=sys.stderr)
-        return 1
-    head, rest = text.split(BEGIN, 1)
-    _old, tail = rest.split(END, 1)
-    new = head + block + tail
 
     if "--write" in argv:
-        DOC.write_text(new)
+        try:
+            DOC.write_text(gb.replace(text, BEGIN, END, expected))
+        except gb.BlockError as e:
+            print(f"{DOC}: {e}", file=sys.stderr)
+            return 1
         print(f"wrote {DOC}")
         return 0
-    if new != text:
-        print(f"{DOC} has DRIFTED from specs/review_lessons.py — regenerate "
-              f"with `python3 specs/review_lessons.py --write`", file=sys.stderr)
+    try:
+        gb.verify(text, BEGIN, END, expected)
+    except gb.BlockError as e:
+        print(f"{DOC} has DRIFTED from specs/review_lessons.py ({e}) — "
+              f"regenerate with `python3 specs/review_lessons.py --write`",
+              file=sys.stderr)
         return 1
     print(f"review lessons: VALID ({len(MECHANISM)} findings classified, "
           f"{len(CLASSES)} classes, block in sync)")
