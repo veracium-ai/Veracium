@@ -42,6 +42,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 # version -> (round, {spec: candidate revision of that spec in this package})
 PACKAGES = {
     "v17": (17, {"0022": "v18", "0023": "v18"}),
+    "v18": (18, {"0022": "v19", "0023": "v19"}),
 }
 
 FIRST_GOVERNED = 17          # the domain declared in the docstring, mechanized
