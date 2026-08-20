@@ -97,3 +97,70 @@ def test_an_unknown_effect_verb_refuses_and_rolls_back(tmp_path):
     with pytest.raises(rv.RevocationEffectError):
         rv._apply_statement_effect(s, AT, {"verb": "vaporise", "type": "edge",
                                            "id": "e1"})
+
+
+# --- R18's three NAMED tests (0022 §6) ---------------------------------------
+
+def test_revocation_retires_episodes(tmp_path):
+    """R18 at the surface S1 was ABOUT: a revoked source's episode text must
+    not appear in recall()'s rendered context. The store-level exclusion is
+    necessary; this is the assertion at the RENDER seam, where the model
+    actually reads."""
+    from veracium import Memory, MemoryConfig
+
+    def fake_llm(prompt, *, system=None, role="compile", json_schema=None):
+        return "wiki: compiled"          # recall compiles the wiki en route
+
+    db = str(tmp_path / "m.db")
+    m = Memory(llm=fake_llm, config=MemoryConfig(db_path=db))
+    s = m.store
+    d = _seed(s)
+    marker = "the feed said the user is in Lisbon"
+    ctx_before = m.recall(U, "where is the user").context
+    assert marker in ctx_before, (
+        "fixture defect: the episode never rendered, so its absence after "
+        "the revocation would prove nothing")
+    rv.revoke_source(s, U, d, "revoke", "operator", AT)
+    assert marker not in m.recall(U, "where is the user").context, (
+        "a revoked source's episode text reached the rendered context — the "
+        "read-seam exclusion did not carry to the surface that matters")
+
+
+def test_episode_read_seam_is_sole_path():
+    """R18: every `FROM episodes` outside the store package routes through
+    store.episodes(), which is what stands in for the SQL-level guarantee a
+    retirement column would have given. The raw sites are dispositioned in
+    §7a — all inside src/veracium/store/ — so the check is a closed sweep,
+    not a hope."""
+    import pathlib
+    src_root = pathlib.Path("src/veracium")
+    offenders = []
+    for f in sorted(src_root.rglob("*.py")):
+        if f.parts[:3] == ("src", "veracium", "store"):
+            continue                     # the dispositioned §7a interior
+        if "FROM episodes" in f.read_text():
+            offenders.append(str(f))
+    assert not offenders, (
+        f"{offenders} query episodes RAW outside the store package — retired "
+        f"episodes would bypass the sole read seam (R18)")
+
+
+def test_retired_episode_round_trips(tmp_path):
+    """R18: export/import PRESERVE retired state rather than resurrecting it.
+    A retired episode that came back live through portability would be
+    non-revival's back door in the export file."""
+    from veracium import Memory, MemoryConfig
+    m = Memory(llm=None, config=MemoryConfig(db_path=str(tmp_path / "a.db")))
+    d = _seed(m.store)
+    rv.revoke_source(m.store, U, d, "revoke", "operator", AT)
+    out = tmp_path / "export.json"
+    m.export_memory(U, out)
+
+    m2 = Memory(llm=None, config=MemoryConfig(db_path=str(tmp_path / "b.db")))
+    m2.import_memory(out)
+    assert m2.store.episodes(U) == [], (
+        "the retired episode re-entered the read seam through import")
+    got = m2.store.episodes(U, include_retired=True)
+    assert got and got[0].retired_reason == "revoked_source", (
+        "retired state was dropped in the round trip — the export file is a "
+        "revival path (R18)")
