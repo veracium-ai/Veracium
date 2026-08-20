@@ -1,205 +1,226 @@
-# The COLLECTED.txt header as one structured artifact — the ask, and the design question
+# The COLLECTED.txt header as one structured artifact — the ruled construction
 
 Spec-Status: n/a — a design note, not a spec. Nothing here is normative.
 
-The external reviewer has asked three times, in escalating scope, for package
-carriers to be generated and verified as whole artifacts rather than validated
-as detached substrings. Twice the ask was narrow enough to implement directly,
-and both are done. The third covers the entire `COLLECTED.txt` header, and it
-is not blocked on effort — it is blocked on a question about what the
-verification would be checking *against*. This note states the ask, the current
-machinery, the question, and the options, so the question can be ruled rather
-than quietly answered by whoever writes the code.
+**Reviewed by the external reviewer 2026-08-20. Verdict: sound direction,
+revise before implementation — three blocking findings, four moderate, and
+rulings on all three open questions.** This revision folds every finding; the
+construction is settled below as **C-plus** and implementation is unblocked,
+pending scheduling. The review's most important sentence is recorded first,
+because it is this project's recurring defect stated in its purest form yet:
+
+> *If each field carries its own evidentiary status, a mutation could change
+> `cross-checked → stated-only` and the verifier would honestly satisfy the
+> altered record while silently removing a previously required check.*
+
+My Option C handed the subject of verification the choice of its own policy.
+**A record may REPORT how it is witnessed; it must never CHOOSE it.** That is
+self-assertion one level up from anywhere it has appeared in twenty-one
+rounds: not a claim about a value, but a claim about how much scrutiny the
+value deserves.
 
 ---
 
-## 1. What was asked, and what has been delivered
+## 1. History of the ask
 
-**Round 18** — *"For the archive, I would ship one data-only identity manifest
-and generate every identity carrier from it, while placing the entire lessons
-summary under exact generator control."*
+**Round 18** — a data-only identity manifest; the lessons summary under exact
+generator control. *Delivered* (`package_identity.py`; `review_lessons.py
+--check` byte-verifies the whole summary).
 
-Delivered. `specs/package_identity.py` is the data-only record (version, round,
-per-spec candidate revision); every identity carrier is filled from it; the
-whole lessons summary — title, prologue, table, derived paragraphs — is
-generated and byte-verified by `review_lessons.py --check`, which the archive
-verifier runs.
+**Round 19** — the candidate block as an exact rendered artifact; boundary
+constraints on generated blocks. *Delivered* (`render_candidate_field`;
+`generated_block`'s required `at_start` policy).
 
-**Round 19** — *"I would make the candidate block an exact rendered artifact
-rather than parsing selected fields from it, and give generated blocks optional
-boundary constraints such as 'must begin at byte zero.'"*
+**Round 20** — a machine-readable schema for the complete header; generate and
+verify it as one structured artifact. *This note.*
 
-Delivered. The candidate field is compared byte-for-byte against
-`render_candidate_field(version)`; `generated_block` takes a required
-keyword-only `at_start` policy.
-
-**Round 20** — *"For future robustness, a machine-readable schema for the
-complete `COLLECTED.txt` header would help. I would change the archive by
-generating and verifying that header as one structured artifact rather than
-validating detached substrings."*
-
-**Open.** This note is about that one.
-
-The escalation is not the reviewer repeating themselves. Each ask was answered
-at exactly the scope it named, and the next finding arrived one level up:
-R19-1 was fields-instead-of-artifact, R20-1 was artifact-without-position. The
-whole-header ask is the same lesson at the scope where it stops recursing.
+**The note's own review (2026-08-20)** — direction endorsed, design corrected
+before a line of code: my proposal had the record choosing its own scrutiny
+(blocking 1), left the seam between two verified artifacts unverified
+(blocking 2), and never specified the order that stops the renderer and the
+record agreeing because they were derived from the same wrong in-memory values
+(blocking 3). Each is a found-in-fix failure caught at the design stage — the
+cheapest place this review has ever caught one.
 
 ---
 
 ## 2. What the header is today
 
-`COLLECTED.txt` = a substituted template (`specs/package/collected_header.txt`)
-followed by the generated skip-inventory block. The template carries eleven
-tokens; the sealer substitutes them and refuses any that survive
-(`refuse_placeholders`), which is what stops an unsubstituted token shipping.
-
-Verification today is **per-fact and detached**: `identity_problems()` checks
-the identity carriers, `verify_collected` checks the inventory block byte-for-
-byte, the commit is cross-checked against `PACKAGE_MANIFEST.txt`,
-`refuse_withdrawn_claims` greps the built artifact. Everything between those
-checks — the explanatory prose, the field labels, the layout — is verified by
-nothing.
-
-That is the reviewer's point. The parts we learned to check are checked; the
-rest of the file is unexamined, and "unexamined" is where every finding in this
-review has lived.
+`COLLECTED.txt` = a substituted template (`specs/package/collected_header.txt`,
+eleven tokens) + the generated skip-inventory block. Verification is per-fact
+and detached: identity carriers, the candidate field, the inventory block, the
+commit agreement, and the withdrawn-claims sweep are each checked; the prose,
+layout, and — decisively — **the seams between the checked parts** are checked
+by nothing.
 
 ---
 
-## 3. Every header value, and what independently carries it
+## 3. Every header value, its source, and its witness
 
-This table is the actual content of the design question. The column that
-matters is the last one.
+Revised per moderate findings 4 and 5: "witnessed?" was one column collapsing
+several questions, and "stated-only" undersold what the sealing execution can
+capture.
 
-| header value | filled from | independent carrier inside the archive | witnessed? |
+| header value | source | witness (package-local) | external attestation |
 |---|---|---|---|
-| round, version (line 1) | `package_identity` | the record + the archive basename + the manifest | **yes** |
-| candidate revisions | `package_identity` | the record, cross-checked against `reviews.py` SENT rows | **yes** |
-| source commit | `git rev-parse` | `PACKAGE_MANIFEST.txt` names it; agreement enforced | **partly** — see §4 |
-| measured line | the `-rs` run | `COLLECTED_pytest_rs.txt` ships the full output | **yes** |
-| harness results | running them | the extraction **re-runs both harnesses** | **yes** |
-| evidence claim | the transcript | `specs/generated/evidence_run.json` ships and validates | **yes** |
-| extracted-check list | `EXTRACTION_CHECKS` | the registry ships in `seal_package.py` | **yes** |
-| package-built timestamp | `time.gmtime()` at seal | the archive **basename**, from the same variable | **no** — see §4 |
-| measurement context | the sealing host | nothing | **no** |
-| launcher result | the launcher run | nothing | **no** |
-| explanatory prose | the template | nothing | n/a — not a claim about the run |
+| round, version | `package_identity` | the record + basename + manifest, cross-checked | — |
+| candidate revisions | `package_identity` | the record + `reviews.py` SENT rows | — |
+| source commit | git | `PACKAGE_MANIFEST.txt` agreement; the commit object itself | — |
+| measured line | measurement output | `COLLECTED_pytest_rs.txt` (full `-rs` output ships) | — |
+| harness results | harness runs | the extraction re-runs both | — |
+| evidence claim | the transcript | `evidence_run.json` ships and validates | — |
+| extracted-check list | `EXTRACTION_CHECKS` | the registry ships in code | — |
+| measurement context | **runtime probe** | a captured probe artifact (python/pytest/sqlite versions, command, cwd, env controls) — *currently prose; C-plus captures it* | none |
+| launcher result | the launcher run | its complete stdout/stderr + exit + digest — *currently one line; C-plus captures it* | none |
+| package-built timestamp | clock | structural checks only (§5.4) | **none — declared** |
+| static prose | template | byte-exact render | n/a |
+
+Moderate 5's point, folded: the measurement context and launcher result are
+not condemned to "stated-only". They can carry **captured-from-the-sealing-
+execution** evidence — a runtime probe artifact, a launcher transcript with
+digest — which does not prove the sealing host honest but is strictly stronger
+than prose. The distinction that survives is between *captured* and
+*externally attested*, and only the timestamp's wall-clock truth sits in the
+second gap.
 
 ---
 
-## 4. The design question
+## 4. The two consistency-not-truth traps, both now closed by construction
 
-> Verify the header against **what**?
+**At verification time** (original §4): the timestamp appears in the header
+and the basename, but both come from one variable — comparing them proves
+consistency, not truth.
 
-For most rows above the answer exists: the archive already carries an
-independent witness, and the check can be a comparison against it. For three it
-does not.
-
-**The timestamp looks witnessed and is not.** It appears in the header and in
-the archive filename, so a naive check would compare them and pass. But both
-are filled from the same `ts` variable in the same function. Two carriers
-written from one source prove **consistency, not truth** — the distinction this
-review has spent twenty rounds on, in the one place it is easiest to miss,
-because agreement between two copies *feels* like verification. A second copy
-is not a witness.
-
-**The measurement context and the launcher result describe the sealing host**,
-which the extraction is not running on and cannot re-derive. A reviewer can
-confirm the shape of those lines. Nothing in the package can confirm their
-content.
-
-So a structured header record shipped beside `COLLECTED.txt`, with the
-extraction asserting `render(record) == header`, would prove:
-
-- the header is exactly what the generator produces from the record — real, and
-  it closes the unexamined-prose gap;
-- every declared field is present, in order, with nothing undeclared — real,
-  and it is the closed-schema property that R15-1 taught us to make recursive.
-
-and would **not** prove that the record's own run-specific values are true. For
-those fields it relocates the self-assertion from the prose into the record. A
-smaller surface, better shaped — but the same class this review keeps finding,
-and worth naming before we build it rather than after someone attacks it.
+**At construction time** (blocking 3, new): if the record and the rendered
+header are produced from the same in-memory values in the same step, they
+agree *perfectly and vacuously* — including when those values are wrong. The
+witness must be an **immutable raw output captured before the record exists**,
+and the record must be **derived from the capture**, never from the variables
+that produced it.
 
 ---
 
-## 5. Options
+## 5. The ruled construction: C-plus
 
-**A. Structured record + byte-exact render.** Ship `collected_header.json`;
-extraction asserts the header renders from it. *Closes:* unverified prose,
-field order, undeclared/missing fields. *Leaves:* three self-asserted values,
-now in a tidier place.
+### 5.1 The pieces
 
-**B. Per-field witness binding, no record.** Bind each field to its independent
-carrier (measured ↔ `-rs` tail, harnesses ↔ re-run, evidence ↔ transcript,
-identity ↔ record) and leave the rest alone. *Closes:* the fields that can be
-witnessed, properly. *Leaves:* the prose and the layout unverified — i.e. the
-reviewer's actual complaint.
+1. **`collected_header.json`** — generated, closed at every level (R15-1),
+   never hand-maintained (R8-2). It reports values and *reports* their
+   evidentiary classification.
+2. **A code-owned field-policy registry**, keyed by field name, in the
+   verifier's codebase — **the sole authority on how each field must be
+   witnessed**. The record cannot downgrade what the registry demands; a
+   record whose reported classification disagrees with the registry is
+   refused, and so is a record missing a field the registry names (blocking 1).
+3. **Fixed witness implementations** with closed identifiers — `pytest_rs`,
+   `package_manifest`, `harness_rerun`, `runtime_probe`,
+   `launcher_transcript`, `none` — not free-form strings. A witness id the
+   verifier does not implement is a refusal, not a skip (moderate 4).
+4. **Captured raw artifacts** shipped in the archive: the `-rs` output
+   (already ships), the runtime probe, the launcher transcript with digest
+   (moderate 5).
+5. **Whole-file construction**, not part-wise checking (blocking 2):
 
-**C. Both, with the evidentiary status declared per field.** The record carries,
-for every field, its value **and how it is witnessed** — `derived`,
-`cross-checked-against-<carrier>`, or `stated-only`. Extraction asserts the
-render is byte-exact, runs each declared cross-check, and refuses any field
-whose declared status it cannot satisfy. `stated-only` fields are printed as
-such in the header.
+       COLLECTED.txt == render_header(record) + render_skip_inventory(run)
 
-C is the only one that does not create a new place for an unbacked claim to
-hide, because it makes the archive **say which of its own claims are
-unverifiable from inside it**. That is a stronger position than either proving
-nothing about them or implying they were checked.
+   header anchored at byte zero; exactly one inventory block immediately
+   following; EOF immediately after the permitted final newline. **No bytes
+   exist that no check owns.** Verifying parts separately leaves the next
+   finding living between two "verified" artifacts — R20-1's lesson at file
+   scope.
+6. **A dedicated renderer/template module** owning the static prose, governed
+   by the record's schema — *not* `seal_package.py` (moderate 7, ruling 3).
+   Editorial changes stay reviewable as data; the verifier binds exact bytes
+   and positions either way, so moving prose cannot weaken anything.
+7. **Mutations generated from BOTH the record schema and the policy
+   registry** — every field crossed with: value mutations, status
+   *downgrades*, changed witness ids, and removal of a required witness. The
+   downgrade mutations are the ones blocking 1 exists for, and the transcript
+   schema's derived matrix (R15-1's fix) is the working model.
 
-**Recommendation: C.** The prose moves into the generator, exactly as the
-lessons prologue did under R18-2 — precedent exists and it worked.
+### 5.2 Evidentiary axes (moderate 4)
+
+One enum collapsed origin, validation, comparison, independence, and
+attestation. Four closed axes instead:
+
+    source:               measurement_output | runtime_probe | clock | package_identity | registry
+    validation:           syntax | internal_consistency | independent_cross_check
+    witness:              pytest_rs | package_manifest | harness_rerun | runtime_probe | launcher_transcript | none
+    external_attestation: none | signed_ci
+
+The registry declares the *required minimum* per field on every axis; the
+record reports what was done; the verifier refuses any field below its
+registry minimum.
+
+### 5.3 Construction order (blocking 3) — normative for the implementation
+
+    1. run the measurement and harness commands
+    2. capture immutable raw outputs (files, digested)
+    3. derive the structured record FROM THOSE OUTPUTS — never from the
+       in-memory values that produced them
+    4. cross-check every independently-sourced field against its witness
+    5. render COLLECTED.txt from the record
+    6. reparse and verify the FINAL ARCHIVE (the whole-file equation, from
+       the extraction)
+    7. refuse any later mutation
+
+Steps 2→3 are the load-bearing pair: they are what makes agreement between
+record and render mean something.
+
+### 5.4 The timestamp (moderate 6, ruling 2)
+
+Wall-clock truth: **externally unattested, and the record says so.** Still
+enforced, labelled as consistency-and-plausibility rather than truth:
+
+- strict UTC format;
+- one canonical value across basename and header (consistency between copies
+  of one variable — labelled as exactly that);
+- ordered after measurement completion;
+- not in the verifier's future beyond a declared tolerance;
+- archive-member mtimes not later than the declared seal time.
+
+Signed CI provenance only if authenticated creation time ever becomes a real
+requirement. It is not one today.
 
 ---
 
-## 6. What to settle before code is written
+## 6. The three questions — RULED (2026-08-20)
 
-1. **Is C's honesty acceptable in a reviewer-facing carrier?** The header would
-   gain a short line saying, in effect, *these three values are stated by the
-   sealer and nothing in this package can confirm them.* I think that is
-   strictly better than the status quo, where the same is true and unsaid. It
-   is a presentation decision, not a technical one.
-2. **Is the timestamp worth witnessing at all?** It could be bound to something
-   external (a signature, a CI attestation, the commit date as a lower bound).
-   Each adds machinery. My read: record it `stated-only` and stop pretending
-   otherwise. But it is the reviewer's instrument, so their view should decide.
-3. **Prose in the generator — accepted cost?** Editing the header would then
-   mean editing `seal_package.py` and regenerating. That is the cost of
-   byte-exactness and I think it is worth paying; it is also irreversible in
-   practice once the template is gone.
+1. **Is the honesty acceptable in a reviewer-facing carrier?** **Yes.**
+   *"Explicitly disclosing internally unverifiable claims is preferable to
+   implying they were verified."*
+2. **Witness the timestamp?** **Not for this package generation.** Structural
+   and consistency checks per §5.4; wall-clock truth declared unattested.
+3. **Prose under generator control?** **Yes — in a dedicated renderer/template
+   module governed by a closed schema**, not inside the sealing code. Coupling
+   editorial edits to security-critical packaging was the cost I had accepted
+   and should not have.
 
 ---
 
 ## 7. Failure modes to design against
 
-Written down first because five of the last six findings were defects *in the
-previous round's fix*, and this change touches the machinery that has produced
-most of them.
+The original five stand (hand-maintained record · schema closed at every
+level · bound to position and label · nothing verifies what its own run
+produces · every field gets a mutation). The review added three, each a class
+instance caught before it shipped:
 
-- **The record must not be hand-maintained.** A `collected_header.json` typed
-  by a human is R8-2 with a schema — four hand-maintained package claims that
-  had gone false.
-- **The schema must be closed at every level.** R15-1: commands rejected
-  undeclared fields while the object holding them did not.
-- **The record must be bound to its position and label**, not merely present
-  somewhere in the archive. R20-1: a block that occurs anywhere is not a field
-  that states it.
-- **Nothing may verify an artifact its own run produces.** R21-1, R15-3: the
-  header check must not read a record written by the same step that renders it
-  without an independent path.
-- **Every new field needs a mutation.** The transcript's derived mutation
-  matrix is the working model: adding a field automatically demands coverage,
-  so the "which fields did we test" question cannot be answered wrongly.
+- **The record must not choose its own scrutiny** (blocking 1). Policy lives
+  in the verifier's code; the record reports it; disagreement refuses.
+  Self-assertion, one level up: a claim about how much checking a claim
+  deserves.
+- **The seam between two verified artifacts is unverified** (blocking 2). Own
+  every byte of the file or name the finding now: undeclared bytes between
+  blocks, duplicated blocks, trailing prose, a header at the wrong boundary.
+- **Agreement is vacuous when both sides share a source** (blocking 3). The
+  record derives from captured immutable outputs, never from the variables
+  that produced them — consistency-not-truth, at construction time.
 
 ---
 
 ## 8. Status
 
-Not started. Not blocked on effort — blocked on §6.1 and §6.2, which are
-judgement calls about what a review package should claim about itself, and
-those belong to Quentin and to the reviewer rather than to whoever writes the
-patch.
-
-This note ships in the archive so the reviewer can rule on it directly.
+Design **ruled and closed**; implementation unblocked and unscheduled — the
+0022/0023 review concluded at round 21, so C-plus targets the *next* package
+line (0024/0025, when their external sends are authorized). It ships in
+`specs/` so any future package carries its own packaging contract.
