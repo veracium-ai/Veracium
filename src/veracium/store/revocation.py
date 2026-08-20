@@ -155,6 +155,15 @@ import json as _json
 from . import revocation_sweep as _sw
 
 
+def _iso_z(dt) -> str:
+    """Canonical Z-suffixed UTC text. The sweep's recompute folds compare
+    timestamps AS STRINGS (the reference's own convention, exercised by the
+    corpus), and the ledger payloads already carry Z — a projection emitting
+    +00:00 beside them would misorder every mixed comparison, because
+    'Z' > '+' lexicographically. One convention, the corpus's."""
+    return dt.isoformat().replace("+00:00", "Z")
+
+
 def _edge_record(e) -> dict:
     from ..schema import EvidenceAuthor
     return {
@@ -164,8 +173,8 @@ def _edge_record(e) -> dict:
         "retired_reason": e.invalidation_reason if not e.active else None,
         "system_authored":
             e.provenance.author_of_evidence == EvidenceAuthor.SYSTEM,
-        "valid_from": e.valid_from.isoformat(),
-        "observed_at": e.provenance.observed_at.isoformat(),
+        "valid_from": _iso_z(e.valid_from),
+        "observed_at": _iso_z(e.provenance.observed_at),
         "confidence": float(e.provenance.confidence),
         "ungrounded": bool(e.ungrounded),
     }
@@ -180,8 +189,13 @@ def _episode_record(ep) -> dict:
         "retired_reason": ep.retired_reason,
         "system_authored":
             ep.provenance.author_of_evidence == EvidenceAuthor.SYSTEM,
-        "valid_from": ep.date,
-        "observed_at": ep.provenance.observed_at.isoformat(),
+        # episodes store a DATE; the sweep's shape wants a timestamp. The
+        # convention is midnight UTC, and it is exactly representable both
+        # ways — the whole corpus uses T00:00:00Z for episode records, and a
+        # future vector needing episode time-of-day would be a SHAPE change
+        # for Q9's successor carrier, not for this projection to invent.
+        "valid_from": f"{ep.date}T00:00:00Z",
+        "observed_at": _iso_z(ep.provenance.observed_at),
         "confidence": float(ep.provenance.confidence),
         "ungrounded": False,     # episodes carry no ungrounded flag (0019 is
                                  # an edge-object property; §4b-i's enumeration)
