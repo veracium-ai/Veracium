@@ -486,7 +486,7 @@ def test_version_gates_and_migration(tmp_path):
     from veracium.portability import FORMAT_VERSION
     from veracium.store import schema_version as sv
     from veracium.store.migration import migrate_store
-    assert FORMAT_VERSION == 7 and sv.SCHEMA_VERSION == 8  # 0016 D2 + 0021 rider
+    assert FORMAT_VERSION == 7 and sv.SCHEMA_VERSION >= 8  # 0016 D2 + 0021 rider (head has since moved to 9, 0022)
     # a v6-stamped store migrates (crossing the v8 ledger ALTERs en route) and
     # lands head-current
     import sqlite3
@@ -498,7 +498,7 @@ def test_version_gates_and_migration(tmp_path):
     c.commit(); c.close()
     assert str(migrate_store(str(p))) == "migrated"
     c = sqlite3.connect(p)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 8
+    assert c.execute("PRAGMA user_version").fetchone()[0] == sv.SCHEMA_VERSION
     c.close()
     # (an OLDER build refusing a v8 store is 0007's found>expected rule —
     # exercised by the shipped store_versioning suite's newer-store cells)

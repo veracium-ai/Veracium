@@ -302,7 +302,16 @@ def build_version_artifact(strict: bool = True) -> dict:
         # The ledger's ALTER-path entry is the RECORDED CONSTANT `ALTER_PATH_V8_SQL`
         # (schema_v8_evidence.txt [2], sha-checked), never produced by running the
         # migration here — `0013` §4c: a migration may not define its own destination.
-        if version == 8:
+        # SCHEMA v9 (specs/0022 §4a): a PURELY ADDITIVE bump — `source_revocations`
+        # and its index are created identically by the fresh constructor and by the
+        # additive migration diff, so no NEW divergence enters the matrix and the
+        # v8 reachable matrix over the two historically-divergent tables persists
+        # UNCHANGED at v9. Discovered the hard way: emitting only the constructor
+        # manifestation left a migrated v7 base refused by the post-migration
+        # re-check ("nearest accepted manifest: constructor v9; 1 object differs:
+        # contribution_ledger") — the migration was right and the evidence was
+        # incomplete, which is the correct direction of refusal.
+        if version in (8, 9):
             import copy
             import hashlib as _h
             if (_h.sha256(sv.ALTER_PATH_V8_SQL.encode()).hexdigest()
@@ -312,15 +321,15 @@ def build_version_artifact(strict: bool = True) -> dict:
                                  "emit evidence")
             ctor = identity(manifest(c))
             for sup_alt, ledger_alt, prov in (
-                    (True, False, "v5:constructor->v8 (reviewed v6 ALTER-path "
-                                  "constant — specs/0014 §4b, sha 326ea193…; "
-                                  "ledger created inline)"),
-                    (False, True, "v7:constructor->v8 (recorded ALTER-path "
-                                  "constant — 0019 rider C2 / 0021 §7b, "
-                                  "sha 027b5ca3…)"),
-                    (True, True, "v5:constructor->v7->v8 (both ALTER-path "
-                                 "constants — specs/0014 §4b sha 326ea193…, "
-                                 "0019 rider C2 sha 027b5ca3…)")):
+                    (True, False, f"v5:constructor->v{version} (reviewed v6 ALTER-path "
+                                  f"constant — specs/0014 §4b, sha 326ea193…; "
+                                  f"ledger created inline)"),
+                    (False, True, f"v7:constructor->v{version} (recorded ALTER-path "
+                                  f"constant — 0019 rider C2 / 0021 §7b, "
+                                  f"sha 027b5ca3…)"),
+                    (True, True, f"v5:constructor->v7->v{version} (both ALTER-path "
+                                 f"constants — specs/0014 §4b sha 326ea193…, "
+                                 f"0019 rider C2 sha 027b5ca3…)")):
                 alt = copy.deepcopy(ctor)
                 if sup_alt:
                     alt["table:supersession_operations"] = dict(

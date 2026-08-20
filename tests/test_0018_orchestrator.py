@@ -443,7 +443,7 @@ def test_migration_result_truth_table():
     MR("migrated", True, True, "destination", HEAD, "d")
     # out-of-table carriers REFUSE
     for bad in [
-        ("unsupported-base", False, False, "source", 7, "d"),    # base 7 never
+        ("unsupported-base", False, False, "source", MINT_BASE, "d"),  # the mint base is never
         ("unsupported-base", False, False, "source", None, "d"),
         ("unsupported-base", True, True, "source", 3, "d"),
         ("current", False, False, "destination", MINT_BASE, "d"),  # wrong ver
@@ -688,7 +688,7 @@ def test_resolution_recursive_exactness():
     with pytest.raises((TypeError, ValueError)):
         rm.PreflightResolution("", 7, "0" * 64)           # empty path
     with pytest.raises((TypeError, ValueError)):
-        rm.PreflightResolution("/s", 8, "0" * 64)         # outside 1..7
+        rm.PreflightResolution("/s", HEAD, "0" * 64)      # outside 1..MINT_BASE
     with pytest.raises((TypeError, ValueError)):
         rm.PreflightResolution("/s", 7, "0" * 63)         # malformed digest
     # wrong type at the mint boundary → refused

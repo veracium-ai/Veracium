@@ -358,10 +358,34 @@ SCHEMA_V8 = tuple(
     for o in SCHEMA_V7
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
-           6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8}
+# v9 (specs/0022 §4a, accepted at external round 21): `source_revocations` —
+# the APPEND-ONLY standing-state ledger. No UPDATE, no `active` column, no row
+# edited in place: the standing state is DERIVED as the latest row per
+# (user, identity_digest) by `seq` ALONE. `seq` is the store-allocated
+# per-user append ordinal; PRIMARY KEY(user_id, seq) makes an ordinal
+# collision an IntegrityError the R19 operation classifies rather than a
+# silent overwrite. `at` is HOST-SUPPLIED AUDIT METADATA AND ORDERS NOTHING
+# (F2: a planted far-future timestamp must not make a revocation permanent —
+# the append order is a fact, a clock is an input). A NEW table, so the fresh
+# constructor and the additive-diff migration produce IDENTICAL stored DDL —
+# one manifestation, no ALTER path.
+SCHEMA_V9 = SCHEMA_V8 + (
+    SchemaObject("table", "source_revocations", """CREATE TABLE source_revocations (
+    user_id TEXT NOT NULL, seq INTEGER NOT NULL,
+    identity_digest TEXT NOT NULL,
+    action TEXT NOT NULL CHECK(action IN ('revoke','lift')),
+    at TEXT NOT NULL, reason TEXT NOT NULL,
+    PRIMARY KEY (user_id, seq)
+)""", REQUIRED),
+    SchemaObject("index", "ix_source_revocations_user_digest",
+                 "CREATE INDEX ix_source_revocations_user_digest "
+                 "ON source_revocations(user_id, identity_digest)", REBUILDABLE),
+)
 
-SCHEMA_VERSION = 8
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
+           6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8, 9: SCHEMA_V9}
+
+SCHEMA_VERSION = 9
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

@@ -86,8 +86,10 @@ def test_a_new_store_is_born_v8_with_the_recorded_constructor_ddl(tmp_path):
         "SELECT sql FROM sqlite_master WHERE type='table' "
         "AND name='contribution_ledger'").fetchone()[0]
     assert stored == _ledger_ddl(sv.SCHEMA_V8)
+    # the HEAD moved to v9 at 0022's acceptance; this test pins v8's CONTENT
+    # (the ledger DDL above), not the head — a new store is born at the head
     assert (store._conn.execute("PRAGMA user_version").fetchone()[0]
-            == sv.SCHEMA_VERSION == 8)
+            == sv.SCHEMA_VERSION)
     store.close()
 
 
@@ -129,11 +131,12 @@ def test_a_v7_store_migrates_onto_the_recorded_alter_path():
     migrate_store(path)
 
     c = sqlite3.connect(path)
-    assert c.execute("PRAGMA user_version").fetchone()[0] == 8
+    from veracium.store.schema_version import SCHEMA_VERSION
+    assert c.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     stored = c.execute("SELECT sql FROM sqlite_master "
                        "WHERE name='contribution_ledger'").fetchone()[0]
-    assert stored == ALTER_PATH_V8_SQL
-    assert digest(manifest(c), 8) in accepted_digests(8)
+    assert stored == ALTER_PATH_V8_SQL      # the v8 CONTENT pin — unchanged
+    assert digest(manifest(c), SCHEMA_VERSION) in accepted_digests(SCHEMA_VERSION)
     assert c.execute(
         "SELECT contributor_type, contributor_ref FROM contribution_ledger "
         "WHERE id='contrib-legacy1'").fetchone() == (None, None)

@@ -1583,7 +1583,11 @@ import os  # noqa: E402
 
 import veracium.store.release_migration as rm  # noqa: E402  (production)
 
-_RM_FROM, _RM_TO = 7, 8
+# The hop under test is ALWAYS head-1 -> head: these are environment facts the
+# oracle shares with the constructor, not contract facts it must derive
+# independently (the contract is which COMBINATIONS are legal; 0022's v9 bump
+# proved the distinction by moving the hop under 23 oracle cells at once).
+_RM_FROM, _RM_TO = sv.SCHEMA_VERSION - 1, sv.SCHEMA_VERSION
 
 # INDEPENDENT copy of the returnable vocabulary — written out literally, NOT
 # read from the module (a wrong vocabulary must be able to disagree here).
@@ -1705,11 +1709,18 @@ _0018_ESCAPES = (rm.MigrationAuditWriteError, rm.MigrationAuditReadError,
 
 
 def _v7_store():
+    # NAMED FOR ITS BIRTH, DEFINED BY ITS ROLE: this fixture is "the store the
+    # release migrates" — one version below the head, whatever the head is. It
+    # was hard-coded at 7 when the head was 8, and 0022's v9 bump moved
+    # rm._MINT_BASE to 8, so every seam test's injected fault was masked by an
+    # `unsupported-base` refusal that fired BEFORE the seam was reached: the
+    # fixture, not the seam, was what the gate was exercising.
+    import veracium.store.release_migration as _rm
     p = tempfile.mktemp(suffix=".db")
     c = sqlite3.connect(p)
-    for o in sv.SCHEMAS[7]:
+    for o in sv.SCHEMAS[_rm._MINT_BASE]:
         c.execute(o.ddl)
-    c.execute("PRAGMA user_version = 7")
+    c.execute(f"PRAGMA user_version = {_rm._MINT_BASE}")
     c.commit()
     c.close()
     return p
@@ -1883,7 +1894,7 @@ def test_every_0018_fault_seam_preserves_the_invariants(name, install,
     # a success is never silent
     if res is not None and res.outcome in ("migrated", "current"):
         uv = sqlite3.connect(p).execute("PRAGMA user_version").fetchone()[0]
-        if uv != 8:
+        if uv != rm._HEAD:
             errors.append(f"success {res.outcome!r} but user_version={uv}")
         if not os.path.exists(apath):
             errors.append(f"success {res.outcome!r} with no audit trail")
