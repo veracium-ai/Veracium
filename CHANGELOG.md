@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — 2026-08-20
+
+**The principal boundary: scoped recall (0020) and scope under maintenance (0021).** A scope that recall enforces but derivation ignores is a boundary with an unlocked back door, so both halves land together — the read surfaces and the write/maintain surfaces.
 
 - **0021 scope under maintenance, slice C — THE WRITE AND MAINTAIN HALVES**
   (spec `specs/0021-scope-under-maintenance.md` §3/§4a–§4d; implemented,

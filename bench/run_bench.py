@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
+import re
 import subprocess
 import sys
 import tempfile
@@ -289,10 +290,24 @@ def main() -> int:
     if args.compare:
         return compare(records)
 
+    # `version` USED TO COME FROM importlib.metadata, which reports whatever
+    # distribution is INSTALLED — and an editable install keeps the metadata it
+    # was created with. This venv's said 0.4.3, so every bench record since
+    # 2026-07-31 was labelled 0.4.3 INCLUDING THE 0.11.0 RELEASE BENCH, and
+    # results.jsonl — whose whole purpose is "releases diff against a baseline"
+    # — could not tell two releases apart.
+    #
+    # The version being RELEASED is the one in pyproject.toml, so that is what
+    # the record carries. The installed metadata is kept beside it under its
+    # own name: when they disagree the record now SAYS SO instead of quietly
+    # reporting the wrong one.
     from importlib.metadata import version as _v
+    _pyproject = (ROOT / "pyproject.toml").read_text()
+    source_version = re.search(r'(?m)^version = "([^"]+)"', _pyproject).group(1)
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
                             capture_output=True, text=True).stdout.strip()
-    rec = {"schema": 1, "version": _v("veracium"), "commit": commit,
+    rec = {"schema": 1, "version": source_version,
+           "installed_version": _v("veracium"), "commit": commit,
            "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "note": args.note, "tiers": {"engine": engine_tier()}}
 
