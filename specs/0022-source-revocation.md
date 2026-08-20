@@ -2,7 +2,7 @@
 *(The hand-written round table that stood here is REMOVED — external round 5, R5-3. It stopped before external rounds 3-4 while claiming to be the closure ledger, and `render_closure.py --check` could not see it because it only guards the marked block. A second, unguarded summary of the same facts is the exact defect the generator was introduced to end; keeping one was the fix failing to finish. The generated ledger below is the only one.)*
 
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0004, 0006, 0014, 0020, 0021, 0023
 
 *From research's design proposal
@@ -1212,7 +1212,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**4 internal round(s) and 19 external round(s) with a returned VERDICT are recorded for `0022`; 21 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**4 internal round(s) and 20 external round(s) with a returned VERDICT are recorded for `0022`; 21 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -1260,6 +1260,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 19 (SENT) | 2026-08-19 | — | SENT (the coupled round-19 package `0022-0023-v19`; 0004 out, approved and frozen; prior reports omitted). 0022 at v20: R18-1 the identity record is total over its domain — contiguous governed run, prose claims cross-checked against the record, duplicate carriers counted rather than collapsed; R18-2… |
 | external 20 (verdict) | 2026-08-20 | 1 | RETURN FOR AMENDMENT — PACKAGE/PROCESS ONLY; both specs semantically clear, normative bodies unchanged from v19, and the exact R19-1/R19-2 attacks confirmed closed. R20-1 — CANDIDATE IDENTITY WAS NOT BOUND TO THE CARRIER THAT STATES IT. R19-1 stopped the check comparing extracted fields and made it … |
 | external 20 (SENT) | 2026-08-20 | — | SENT (the coupled round-20 package `0022-0023-v20`; 0004 out, approved and frozen; prior reports omitted). 0022 at v21: R19-1 the candidate block is compared as a rendered artifact and every declared path must be an archive member; R19-2 generated blocks carry an explicit boundary policy and the les… |
+| external 21 (verdict) | 2026-08-20 | 0 | 🏁 ACCEPTED on the frozen invariant surface R1–R19 — ATOMIC with 0023 (N1–N15), and with prerequisite 0004 moved draft→accepted in this same commit per the reviewer's instruction ('acceptance is atomic: both specifications must transition together, with prerequisite 0004 also moved'). NO new semantic… |
 | external 21 (SENT) | 2026-08-20 | — | SENT (the coupled round-21 package `0022-0023-v21`; 0004 out, approved and frozen; prior reports omitted). 0022 at v22: R20-1 the `specs:` field is rendered whole from the identity record and verified as one anchored artifact — exactly one field, in the header, byte-identical — with a pure-function … |
 
 **Per-finding closure ledger — PROCESS §4a.** **51 finding(s) for `0022`; 61 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.

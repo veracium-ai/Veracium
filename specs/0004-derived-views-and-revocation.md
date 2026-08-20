@@ -1,6 +1,6 @@
 # Feature spec: derived views must not outlive a revoked trust decision
 
-Spec-Status: draft
+Spec-Status: accepted
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
@@ -333,3 +333,21 @@ after.
 |---|---|---|---|---|
 | **W-Q1** | Should `absorbed_duplicate` drop the wiki? | **RESOLVED 2026-08-17 (research, internal round 1): NO.** Absorption is trust-preserving by construction — the content stays backed by a live same-trust record — so the exclusion shelters nothing revoked. **The `0022` composition is closed**: the revocation sweep reaches absorbed contributors through the LEDGER, and a sole-basis survivor's retirement carries reason `revoked_source`, which drops the wiki through the seat this spec reserves. Pinned by W8. | `resolved` | research | done |
 | **W-Q2** | Should the CLI's `10**9` recompile threshold be revisited, given it makes the breadth loss unbounded there? Out of scope for the fix; in scope for whether the trade is acceptable. | `deferred` | dev | own round |
+
+## Review closure
+
+*(PROCESS §4a — one row per review finding, with openable evidence. 0004's
+review closed at external round 2 (approved, frozen on W1–W8) and it was never
+a candidate again through the nineteen further rounds its dependents ran. This
+ledger is hand-written — 0004 predates the generated-ledger machinery its
+dependents use — and every evidence command runs from the repo root. The spec
+is accepted, NOT yet implemented: W1–W8's named tests are the §6 implementation
+obligations, so the evidence below pins the FOLDS in this document, and
+deliberately cites no test that does not exist yet.)*
+
+| finding | round | summary | closed in | evidence |
+|---|---|---|---|---|
+| **R1** | internal 1 | the §2c unrecognised-reason cell was INVERTED — v2 retained the wiki on an unknown reason, calling it "fail-OPEN on breadth, never on assertion", which is backwards for a spec whose thesis is failing closed | §2c: an unknown reason DROPS at runtime, then W5's registry fails the build until the reason is dispositioned; the inversion is quoted in the corrected cell so it cannot be re-argued | `grep -n 'v2 had this INVERTED' specs/0004-derived-views-and-revocation.md` |
+| **R2** | internal 1 | `invalidation_reason` is settable and `add_edge` accepts an Edge already carrying one, so the constructor and the FORMAT-7 import round-trip produced reason-bearing records passing NEITHER drop site — the spec's own §9 attack, landed | the fix RELOCATED into the sole `active=0` writer (`_invalidate_edge_row`), so every invalidation path inherits the drop by construction; W7 makes the sole-writer property an AST sweep, not a one-time grep | `grep -c '_invalidate_edge_row' specs/0004-derived-views-and-revocation.md  # 4 carriers, all naming the SAME sole writer` |
+| **F5** | external 1 | the §5 regime table still read "flagged, not decided (W-Q1)" while §4, W8 and the question table carried the RESOLVED ruling — the FOURTH carrier of a decision whose other three were swept, in the document whose own v3.1 lesson was that a finding is not closed until every carrier is swept | v3.2: all four carriers aligned on the W-Q1 ruling (absorption is trust-preserving; the exclusion shelters nothing revoked), and the miss is recorded IN the corrected cell | `grep -c 'W-Q1' specs/0004-derived-views-and-revocation.md  # every carrier now cites the ruling` |
+| **artifact 1** | external 2 | reviews.py carried 0004's round-1 SENT rows and no verdict — the source of truth recorded that a package went out and never that it came back | the round-1 verdict row was added then; the ROUND-2 verdict row repeated the same omission and was added at acceptance (2026-08-20), labelled as late rather than backdated | `python3 -c "import sys; sys.path.insert(0,'specs'); import reviews; rows=[r for r in reviews.REVIEWS if r['spec']=='0004' and not r['verdict'].startswith('SENT')]; assert {r['round'] for r in rows} >= {1,2,21}, rows; print('0004 verdict rows:', sorted(r['round'] for r in rows))"` |

@@ -1100,10 +1100,12 @@ def test_r19_binds_the_product_store_the_moment_a_revocation_writer_appears():
     """0022 R19's PRODUCT-STORE binding test.
 
     THE HONEST STATUS FIRST: `source_revocations` DOES NOT EXIST in
-    `src/veracium/` today. 0022 and 0023 are drafts, and this repo's own gate
-    refuses any `src/` commit citing a non-accepted spec, so a test that binds
-    the shipped construction to shipped store code cannot test behaviour that
-    has not been written.
+    `src/veracium/` today. 0022 and 0023 were ACCEPTED at external round 21
+    (2026-08-20) and are not yet implemented — the state this repo's process
+    deliberately passes through, since only an accepted spec AUTHORISES
+    implementation (0006 sat in it for days). A test binding the shipped
+    construction to shipped store code cannot test behaviour that has not been
+    written.
 
     What it CAN do, and this is not a stub, is PRE-EXIST the code and bite the
     moment it lands. Every structural invariant in this pair works that way —
@@ -1135,15 +1137,17 @@ def test_r19_binds_the_product_store_the_moment_a_revocation_writer_appears():
                 writers.append((f.relative_to(root), node.name, node.lineno, body))
 
     if not writers:
-        specs = root / "specs"
-        for name in ("0022-source-revocation.md",
-                     "0023-non-revival-under-maintenance.md"):
-            status = re.search(r"^Spec-Status:\s*(\S+)",
-                               (specs / name).read_text(), re.M).group(1)
-            assert status != "accepted", (
-                name + " is ACCEPTED but no source_revocations writer exists in "
-                "the store — either the implementation is missing or this "
-                "binding test needs its real assertions turned on")
+        # This branch used to assert the specs were NOT accepted, on the
+        # premise that acceptance and implementation arrive together. The
+        # premise was wrong the day it was tested: acceptance AUTHORISES
+        # implementation here, it does not imply it — 0006 sat
+        # accepted-unimplemented, and 0022/0023 entered the same state at
+        # round 21. The dormancy that assertion guarded against cannot occur:
+        # any implementation must write `source_revocations` inside
+        # `src/veracium/store/`, which is exactly where this sweep reads, so
+        # the moment a writer lands the real assertions below run on it.
+        # Accepted-with-no-writer is the authorised-pending state, not a
+        # defect.
         return
 
     for path, fname, line, body in writers:

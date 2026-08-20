@@ -1,6 +1,6 @@
 # Feature spec: non-revival under maintenance — a revoked source cannot re-enter (A3b)
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0005, 0009, 0012, 0021, 0022
 
 *From research's design proposal
@@ -839,7 +839,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 
 <!-- GENERATED:review-closure -->
 
-**3 internal round(s) and 19 external round(s) with a returned VERDICT are recorded for `0023`; 21 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**3 internal round(s) and 20 external round(s) with a returned VERDICT are recorded for `0023`; 21 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -886,6 +886,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 19 (SENT) | 2026-08-19 | — | SENT (the coupled round-19 package `0022-0023-v19`). 0023 at v20: no semantic change required |
 | external 20 (verdict) | 2026-08-20 | 0 | SEMANTICALLY CLEAR; deferred with the shared package finding and the atomic dependency on 0022 |
 | external 20 (SENT) | 2026-08-20 | — | SENT (the coupled round-20 package `0022-0023-v20`). 0023 at v21: no semantic change required |
+| external 21 (verdict) | 2026-08-20 | 0 | 🏁 ACCEPTED on the frozen invariant surface N1–N15 — atomic with 0022; see the 0022 round-21 row for the full disposition. Pre-implementation: Q1 and Q4 must be resolved before release as stated |
 | external 21 (SENT) | 2026-08-20 | — | SENT (the coupled round-21 package `0022-0023-v21`). 0023 at v22: no semantic change required |
 
 **Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 61 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.

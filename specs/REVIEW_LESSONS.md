@@ -49,7 +49,7 @@ finding that does not exist, and so does a class with nothing in it.
 | 7 | **env-leak** — The producing environment leaked into the artifact | 2 | 0 | 10, 11 | **yes** |
 | 8 | **disclosure** — Behaviour that is correct but never stated to whoever must act on it | 0 | 1 | — | — |
 
-**The last finding that required a change to either specification was raised in round 6.** The 14 rounds that returned a verdict since (7–20) raised packaging and process findings only — 21 of the 61 findings here are spec-scoped, and every one of them is at or before round 6. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
+**The last finding that required a change to either specification was raised in round 6.** The 15 rounds that returned a verdict since (7–21) raised packaging and process findings only — 21 of the 61 findings here are spec-scoped, and every one of them is at or before round 6. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
 
 **6 of 8 classes recurred** — they were raised in more than one round, which means the first instance was fixed and the mechanism shipped again in another costume: `self-assertion`, `proxy`, `second-copy`, `domain`, `coercion`, `env-leak`. That is the finding this document exists for. It is derived from the rounds column, not asserted.
 
