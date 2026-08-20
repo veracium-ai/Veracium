@@ -31,9 +31,27 @@ PY="${VERACIUM_PYTHON:-python3}"
 # and hid the reason behind `2>/dev/null`. So: build the venv, THEN qualify,
 # and never silence the answer.
 
+# ROUND-21 PACKAGE NOTE (the reviewer's non-blocking recommendation): rerunning
+# into an EXISTING venv reused its original interpreter while this script
+# printed the newly requested one — `python -m venv` over an existing directory
+# keeps the interpreter it was created with, so the qualification diagnostics
+# described an interpreter that was not the one being qualified. An existing
+# venv is REFUSED rather than reused; the marker file names what created it so
+# the refusal can say so.
+if [ -e "$VENV" ]; then
+  echo "REFUSED: $VENV already exists." >&2
+  if [ -f "$VENV/.created-by" ]; then
+    echo "  created by: $(cat "$VENV/.created-by")" >&2
+  fi
+  echo "  Reusing it would qualify ITS interpreter while printing the one you" >&2
+  echo "  just requested. Remove it, or set VERACIUM_OFFLINE_VENV to a fresh path." >&2
+  exit 2
+fi
+
 echo "== creating the venv (no network) =="
 echo "  interpreter : $(command -v "$PY")"
 "$PY" -m venv "$VENV"
+command -v "$PY" > "$VENV/.created-by"
 "$VENV/bin/pip" install --quiet --no-index \
     --find-links "$HERE" --require-hashes -r "$HERE/requirements-test.lock"
 echo "  installed from $HERE with --require-hashes"
