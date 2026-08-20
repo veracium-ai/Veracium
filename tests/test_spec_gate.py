@@ -1242,27 +1242,74 @@ def test_every_closure_evidence_command_actually_runs():
     py = root / ".venv-offline" / "bin" / "python"
     if not py.exists():
         py = pathlib.Path(sys.executable)
-    env = dict(os.environ, PY=str(py), VERACIUM_EVIDENCE_CHILD="1")
+    # `-p no:cacheprovider` because concurrency introduces one hazard the
+    # reviewer never has: they run these commands ONE AT A TIME, so their
+    # children never contend for `.pytest_cache`. Ours now do. Disabling the
+    # cache in our runner restores the reviewer's conditions rather than
+    # departing from them, and it changes nothing a command asserts.
+    #
+    # Recorded because it is unresolved: one run failed here with a child
+    # reporting a test failure that five subsequent runs — three normal, two
+    # under deliberate extra load — did not reproduce, and I no longer have its
+    # output. This is the most plausible mechanism I can name, not a diagnosis.
+    # CI runs the suite on every push and the transcript now records per-command
+    # durations, so a load-induced failure has somewhere to show up.
+    env = dict(os.environ, PY=str(py), VERACIUM_EVIDENCE_CHILD="1",
+               PYTEST_ADDOPTS="-p no:cacheprovider")
 
-    import hashlib, json
-    failures, skipped, transcript = [], [], []
-    for spec, kind, rno, fid, _summary, _closed, evidence in CLOSURES:
+    import hashlib, json, time
+    from concurrent.futures import ThreadPoolExecutor
+
+    # WHY THIS RUNS CONCURRENTLY, measured rather than assumed.
+    #
+    # The ledger holds 59 runnable commands and each pays ~6.5s that is almost
+    # entirely interpreter start plus importing the project — 1.1s of it is
+    # `import pytest` alone. Serially that is ~6.4 minutes, and it was the bulk
+    # of an 8-minute suite and of every seal.
+    #
+    # The obvious fix was the wrong one. Selecting by NODE ID instead of `-k`
+    # saves nothing, because `-k` is not what costs: measured on this tree, the
+    # node-id form ran 7.58s against 6.48s for `-k`. The cost is the import,
+    # and the only way to stop paying it 59 times in a row is to stop being in
+    # a row.
+    #
+    # Each command keeps running EXACTLY as written, in its own process, with
+    # its own exit code and output digest — the reviewer runs these one at a
+    # time and must get what we got. Only the scheduling changes. Results are
+    # reassembled in LEDGER ORDER, so the transcript is byte-identical to what
+    # a serial run would have produced apart from the durations.
+    workers = min(4, (os.cpu_count() or 2))
+    runnable, skipped = [], []
+    for row in CLOSURES:
+        spec, _kind, _rno, fid, _summary, _closed, evidence = row
         # the launcher builds a venv and runs the entire suite: running it from
         # inside the suite would recurse
         if "run_offline.sh" in evidence:
             skipped.append(f"{spec} {fid} (launcher — run separately at seal)")
-            continue
+        else:
+            runnable.append((spec, fid, evidence))
+
+    def _execute(item):
+        spec, fid, evidence = item
+        t0 = time.monotonic()
         r = subprocess.run(evidence, shell=True, capture_output=True,
                            cwd=root, env=env, timeout=600)
+        ms = int((time.monotonic() - t0) * 1000)
         out = (r.stdout or b"") + (r.stderr or b"")
-        transcript.append({
+        return {
             "spec": spec, "finding": fid, "argv": evidence, "cwd": str(root),
-            "exit": r.returncode,
+            "exit": r.returncode, "duration_ms": ms,
             "output_sha256": hashlib.sha256(out).hexdigest(),
-        })
-        if r.returncode != 0:
-            failures.append(f"{spec} {fid}: exit {r.returncode}\n    {evidence}\n"
-                            f"    {out.decode(errors='replace')[-200:]}")
+        }, (None if r.returncode == 0 else
+            f"{spec} {fid}: exit {r.returncode}\n    {evidence}\n"
+            f"    {out.decode(errors='replace')[-200:]}")
+
+    wall0 = time.monotonic()
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        results = list(pool.map(_execute, runnable))
+    wall_ms = int((time.monotonic() - wall0) * 1000)
+    transcript = [rec for rec, _ in results]
+    failures = [f for _, f in results if f]
 
     # THE TRANSCRIPT IS THE ARTIFACT (external round 11): argv, cwd, exit and an
     # output digest per command. The sealer READS this instead of spawning
@@ -1271,8 +1318,13 @@ def test_every_closure_evidence_command_actually_runs():
     # It also answers the reviewer's standing request for an execution record.
     gen = root / "specs" / "generated"
     gen.mkdir(exist_ok=True)
+    # `wall_ms` and the per-command `duration_ms` exist so the NEXT round can
+    # see what the checks cost without rediscovering it. Every round added a
+    # check and no round measured one; a number nobody records is a number
+    # nobody defends.
     (gen / "evidence_run.json").write_text(json.dumps(
-        {"ran": len(transcript), "skipped": skipped, "commands": transcript},
+        {"ran": len(transcript), "wall_ms": wall_ms, "workers": workers,
+         "skipped": skipped, "commands": transcript},
         indent=1) + "\n")
 
     assert not failures, "closure evidence that does not run:\n  " + "\n  ".join(failures)
@@ -1302,7 +1354,13 @@ def test_every_closure_evidence_command_actually_runs():
     assert not problems, ("the transcript this run just produced does not "
                           "validate:\n  " + "\n  ".join(problems))
 
-    print(f"\n{len(transcript)} evidence commands ran clean; skipped: {skipped}")
+    slowest = sorted(transcript, key=lambda c: -c["duration_ms"])[:3]
+    print(f"\n{len(transcript)} evidence commands ran clean in "
+          f"{wall_ms / 1000:.1f}s across {workers} workers "
+          f"(serial cost would be {sum(c['duration_ms'] for c in transcript) / 1000:.1f}s); "
+          f"slowest: " + ", ".join(f"{c['finding']} {c['duration_ms']}ms"
+                                   for c in slowest)
+          + f"; skipped: {skipped}")
 
 
 def test_a_returned_verdict_must_declare_what_it_raised():
@@ -1536,6 +1594,16 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         # (b) COUNTERFEIT — the R12-2 fabrication
         t = d / "evidence_run.json"
         t.write_text(json.dumps({"ran": 40, "skipped": [], "commands": []}))
+        assert validate(t, d / "specs"), (
+            "the reviewer's literal counterfeit must be rejected")
+        # ...and the PROPERTY it was written to prove, kept alive as the schema
+        # grows: a schema-complete transcript with zero records still cannot
+        # claim a count. Without this, extending the schema would silently
+        # retire R12-2's finding — the counterfeit would be refused for a
+        # missing field and the "a number is not evidence" check would never
+        # run again.
+        t.write_text(json.dumps({"ran": 40, "wall_ms": 1, "workers": 1,
+                                 "skipped": [], "commands": []}))
         problems = validate(t, d / "specs")
         assert problems, "the counterfeit transcript must be rejected"
         assert any("command records" in p for p in problems), problems
@@ -1546,11 +1614,13 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         # transcript of every ledger row, entirely fabricated, was accepted.
         from closure_findings import CLOSURES
         rows = [{"spec": c[0], "finding": c[3], "argv": c[6],
-                 "cwd": None, "exit": False, "output_sha256": "x" * 64}
+                 "cwd": None, "exit": False, "output_sha256": "x" * 64,
+                 "duration_ms": 1}
                 for c in CLOSURES if "run_offline.sh" not in c[6]]
         skipped = [f"{c[0]} {c[3]} (launcher — run separately at seal)"
                    for c in CLOSURES if "run_offline.sh" in c[6]]
-        t.write_text(json.dumps({"ran": len(rows), "skipped": skipped,
+        t.write_text(json.dumps({"ran": len(rows), "wall_ms": 1,
+                                 "workers": 1, "skipped": skipped,
                                  "commands": rows}))
         problems = validate(t, d / "specs")
         assert problems, ("a transcript with null cwds, boolean exits and "
@@ -1569,10 +1639,11 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         # vanishing into a set. The reviewer applied all three at once and
         # repacked an archive the verifier accepted.
         clean_rows = [{"spec": c[0], "finding": c[3], "argv": c[6],
-                       "cwd": "/x", "exit": 0, "output_sha256": "a" * 64}
+                       "cwd": "/x", "exit": 0, "output_sha256": "a" * 64,
+                       "duration_ms": 1}
                       for c in CLOSURES if "run_offline.sh" not in c[6]]
-        combined = {"ran": float(len(clean_rows)),
-                    "skipped": skipped * 2,
+        combined = {"ran": float(len(clean_rows)), "wall_ms": 1,
+                    "workers": 1, "skipped": skipped * 2,
                     "commands": [dict(r, output_sha256=int("1" * 64))
                                  for r in clean_rows]}
         t.write_text(json.dumps(combined))
@@ -1597,8 +1668,8 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
         # closes the loop — add a field or a level to the schema without a
         # mutation and this test fails, which is the check that did not exist
         # when R15-1 was written.
-        clean = {"ran": len(clean_rows), "skipped": skipped,
-                 "commands": clean_rows}
+        clean = {"ran": len(clean_rows), "wall_ms": 1, "workers": 1,
+                 "skipped": skipped, "commands": clean_rows}
 
         def _cross_type(v):
             """Values of every JSON type the clean value is NOT. Every schema
@@ -1696,10 +1767,10 @@ def test_a_counterfeit_or_missing_transcript_is_rejected():
 
         # (e) RECORDS THAT DO NOT MATCH THE LEDGER
         t.write_text(json.dumps({
-            "ran": 1, "skipped": [],
+            "ran": 1, "wall_ms": 1, "workers": 1, "skipped": [],
             "commands": [{"spec": "0022", "finding": "INVENTED",
                           "argv": "echo hi", "cwd": "/tmp", "exit": 0,
-                          "output_sha256": "0" * 64}]}))
+                          "output_sha256": "0" * 64, "duration_ms": 1}]}))
         problems = validate(t, d / "specs")
         assert any("matches no closure row" in p for p in problems), problems
 
@@ -1730,14 +1801,36 @@ def test_every_k_atom_in_the_closure_ledger_selects_a_test():
                     atoms.add(a)
     assert atoms, "no -k atoms found — has the evidence format changed?"
 
-    empty = []
-    for a in sorted(atoms):
-        r = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "--collect-only",
-             "tests/test_spec_gate.py", "-k", a],
-            cwd=root, capture_output=True, text=True)
-        if not [l for l in r.stdout.splitlines() if "::" in l]:
-            empty.append(a)
+    # ONE COLLECTION, not one per atom. This spawned `pytest --collect-only -k
+    # <atom>` for each of the 19 atoms, and collection costs ~6.5s on this tree
+    # — almost all of it interpreter start and importing the project — so the
+    # gate paid two minutes to ask a question about strings. Collect once, then
+    # answer every atom against the same list.
+    #
+    # THE PROPERTY IS UNCHANGED: `-k <atom>` for a bare atom selects the tests
+    # whose node id contains it as a substring, which is exactly the test
+    # below. The controls guard the equivalence rather than assuming it — a
+    # known-present atom must be found and a deliberately absent one must not,
+    # so a collection that returned nothing (or everything) cannot pass this.
+    r = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "--collect-only",
+         "tests/test_spec_gate.py"],
+        cwd=root, capture_output=True, text=True)
+    node_ids = [l.strip() for l in r.stdout.splitlines() if "::" in l]
+    assert len(node_ids) > 50, (
+        f"the single collection returned {len(node_ids)} node ids — too few "
+        f"for this file, so every atom below would pass or fail for the wrong "
+        f"reason:\n{r.stdout[-400:]}")
+
+    def selects(atom):
+        return any(atom in nid for nid in node_ids)
+
+    assert selects("k_atom_in_the_closure"), (
+        "the collection does not contain THIS test — the matcher is broken")
+    assert not selects("definitely_not_a_test_name_9f3a"), (
+        "the matcher claims an absent atom selects something")
+
+    empty = sorted(a for a in atoms if not selects(a))
     assert not empty, (
         f"these -k atoms select NO test, so the evidence citing them exercises "
         f"nothing while exiting 0: {empty}")

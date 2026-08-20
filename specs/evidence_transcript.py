@@ -66,10 +66,22 @@ COMMAND_SCHEMA = {
     "exit": (_exact(int), "exactly int (a bool is an int in Python)"),
     "output_sha256": (_hex64, "a STRING of 64 hex digits (an int of 64 "
                               "digits survived str() before)"),
+    # ROUND 21 (self-found, cost work): how long this command took. Declared
+    # rather than smuggled — the schema is closed, so an undeclared field is
+    # refused, and the mutation matrix in tests/test_spec_gate.py derives a
+    # mutation for every declared field automatically. Adding a field to a
+    # closed schema is the cheap case BECAUSE it was closed.
+    "duration_ms": (_exact(int), "exactly int (milliseconds; a float would "
+                                 "pass == comparisons, which is R14-1)"),
 }
 
 TOP_SCHEMA = {
     "ran": (_exact(int), "exactly int (45.0 == 45 passed before)"),
+    # what the evidence machinery COSTS, recorded where the next round will
+    # read it. The suite went from 39s to 8 minutes over fifteen rounds because
+    # every round added a check and none measured one.
+    "wall_ms": (_exact(int), "exactly int (milliseconds of wall clock)"),
+    "workers": (_exact(int), "exactly int (concurrent runners)"),
     "skipped": (lambda v: type(v) is list and all(type(x) is str for x in v),
                 "a list of strings"),
     "commands": (lambda v: type(v) is list, "a list"),
