@@ -259,7 +259,8 @@ EXTRACTION_CHECKS = (
 )
 
 
-def identity_problems(archive_name: str, col: str, man: str) -> list:
+def identity_problems(archive_name: str, col: str, man: str,
+                      members: set) -> list:
     """R16-1. Return the ways the package's THREE identity carriers disagree.
 
     The commit has been checked across both carriers since round 4. The
@@ -269,9 +270,16 @@ def identity_problems(archive_name: str, col: str, man: str) -> list:
     build_collected and controlled the FILENAME alone, while the identity a
     reviewer reads first came from a hand-edited template.
 
-    Identity lives in three carriers, so all three are read and compared here —
-    a pure function over the extracted text, which is why it can be exercised
-    per-carrier by a regression instead of only by building an archive.
+    Identity lives in several carriers, so all of them are read and compared
+    here — a pure function over the extracted text, which is why it can be
+    exercised per-carrier by a regression instead of only by building an
+    archive.
+
+    `members` is the archive's member set. It is REQUIRED, not optional with a
+    default: R19-1 showed the carrier can name a path that does not exist, and
+    a default of `None` meaning "skip the check" would be exactly the kind of
+    silent absence this review keeps finding. A caller with no member list must
+    say so by passing one.
     """
     problems = []
     stem = re.match(r"(.+)-(v\d+)-\d{8}T\d{4}Z\.tar\.gz$", archive_name)
@@ -320,32 +328,47 @@ def identity_problems(archive_name: str, col: str, man: str) -> list:
     # with the `specs:` label, so `^\s*specs/` silently found only the SECOND
     # one — and a check that sees one of two carriers is how R17-1 happened.
     # Caught by the clean control, which is the argument for keeping one.
-    # R18-1(b): this was `dict(re.findall(...))`, so a PREPENDED conflicting
-    # line `0022 ... draft v999` collapsed into the dict and the later correct
-    # value won — the carrier disagreed with itself and the check could not see
-    # it. Exactly R14-1's mechanism (a duplicate vanishing into a set), in a
-    # check written after it. Multiplicity is part of the claim: exactly one
-    # line per packaged spec, counted before anything is compared.
-    pairs = re.findall(
-        r"specs/(\d{4})-\S+\.md — draft (v\d+(?:\.\d+)?) \(external candidate\)",
-        col)
-    seen = [s for s, _ in pairs]
-    dupes = sorted({s for s in seen if seen.count(s) > 1})
-    if dupes:
+    # R19-1: PARSING FIELDS OUT OF THE CARRIER IS NOT CHECKING THE CARRIER.
+    # This used to extract the four-digit spec id and the revision from each
+    # candidate line and compare only those, so renaming the PATH —
+    # `specs/0022-source-revocation.md` to `specs/0022-not-the-shipped-spec.md`
+    # — left the id and revision correct, every identity check passed, and
+    # COLLECTED pointed the reviewer at a file that does not exist. The fields
+    # I chose to extract stood in for the artifact; that is the proxy class,
+    # inside the fix that was closing the previous carrier finding.
+    #
+    # So the block is compared as a RENDERED ARTIFACT, byte for byte, against
+    # the generator — no fields, no parsing, nothing selected. Then nothing of
+    # that shape may exist outside it, because an exact match somewhere in the
+    # file says nothing about what else the file says.
+    block = pid.render_candidate_lines(version)
+    if block not in col:
         problems.append(
-            f"COLLECTED.txt states the candidate revision of {dupes} more than "
-            f"once — a carrier that disagrees with itself (R18-1)")
+            f"COLLECTED.txt's candidate block is not byte-identical to "
+            f"package_identity.render_candidate_lines({version!r}) — expected:\n"
+            f"{block}\n(R19-1: comparing the spec id and revision alone let a "
+            f"renamed PATH through)")
         return problems
-    found = dict(pairs)
-    if not found:
-        problems.append("COLLECTED.txt names no `specs/NNNN-*.md — draft vN "
-                        "(external candidate)` line, so the packaged revision "
-                        "of each specification is unstated (R17-1)")
-    elif found != expected:
+    CAND_RE = r"specs/\S+\.md — draft v\d+(?:\.\d+)? \(external candidate\)"
+    outside = re.findall(CAND_RE, col.replace(block, "", 1))
+    if outside:
         problems.append(
-            f"COLLECTED.txt states candidate revisions {found} and the identity "
-            f"record declares {expected} — a spec's own revision is an identity "
-            f"carrier too (R17-1: v17 shipped saying draft v16)")
+            f"COLLECTED.txt carries candidate line(s) OUTSIDE its verified "
+            f"block: {outside} — a carrier that states the same fact twice can "
+            f"disagree with itself (R18-1/R19-1)")
+
+    # AND EVERY DECLARED PATH MUST BE IN THE ARCHIVE. A block that matches the
+    # generator perfectly still misdirects if the generator names a file the
+    # package does not carry.
+    # `git archive` writes members as `./specs/...`; the carrier names them
+    # without the prefix. Normalised here rather than at one call site, so a
+    # second caller cannot get it subtly wrong.
+    normalised = {m[2:] if m.startswith("./") else m for m in members}
+    for path in re.findall(r"(specs/\S+\.md) — draft", block):
+        if path not in normalised:
+            problems.append(
+                f"COLLECTED.txt directs the reviewer to {path}, which is NOT a "
+                f"member of the archive (R19-1)")
     return problems
 
 
@@ -387,7 +410,7 @@ def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
             _fail(f"COLLECTED names {c1.group(1)} and the manifest names "
                   f"{c2.group(1)} — round 4's two-commit defect")
 
-        for p in identity_problems(path.name, col, man):
+        for p in identity_problems(path.name, col, man, set(names)):
             _fail(p)
         ran = []
         for name, cmd in EXTRACTION_CHECKS:

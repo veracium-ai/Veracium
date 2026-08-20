@@ -282,6 +282,12 @@ MECHANISM = {
     ("0023", 2, "S3"): ("domain", "spec",
         "quarantine-at-birth wrote a field no reader consulted — enforcement that "
         "reached none of its domain"),
+    ("0022", 19, "R19-1"): ("proxy", "packaging",
+        "the fields I chose to extract — spec id and revision — stood in for the "
+        "carrier, so a renamed PATH passed every identity check"),
+    ("0022", 19, "R19-2"): ("domain", "packaging",
+        "the check's domain was the region BETWEEN the markers; the document is "
+        "larger than that, and a prepended title retitled it"),
     ("0022", 18, "R18-1"): ("domain", "packaging",
         "a record called structured was untotal three ways at once — an "
         "unchecked second copy in prose, duplicate carriers collapsing through "
@@ -530,14 +536,15 @@ def main(argv) -> int:
 
     if "--write" in argv:
         try:
-            DOC.write_text(gb.replace(text, BEGIN, END, expected))
+            DOC.write_text(gb.replace(text, BEGIN, END, expected,
+                                      at_start=True))
         except gb.BlockError as e:
             print(f"{DOC}: {e}", file=sys.stderr)
             return 1
         print(f"wrote {DOC}")
         return 0
     try:
-        gb.verify(text, BEGIN, END, expected)
+        gb.verify(text, BEGIN, END, expected, at_start=True)
     except gb.BlockError as e:
         print(f"{DOC} has DRIFTED from specs/review_lessons.py ({e}) — "
               f"regenerate with `python3 specs/review_lessons.py --write`",

@@ -510,6 +510,29 @@ CLOSURES = [
      "specs/REVIEW_LESSONS.md, tests/test_spec_gate.py (the natural-language "
      "heuristic deleted; mutations now assert --check itself refuses)",
      "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
+    # ---- external round 19 ------------------------------------------------
+    ("0022", "external", 19, "R19-1",
+     "identity_problems() extracted the four-digit spec id and the revision "
+     "from each candidate line and compared only those, so renaming the PATH "
+     "to specs/0022-not-the-shipped-spec.md kept both fields correct, every "
+     "identity check passed, and COLLECTED could direct the reviewer at a file "
+     "that does not exist",
+     "specs/seal_package.py (the candidate block compared BYTE FOR BYTE against "
+     "package_identity.render_candidate_lines(); nothing of that shape allowed "
+     "outside it; every declared path required to be an archive MEMBER, with "
+     "the member set a required argument rather than an optional one), "
+     "tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k identity_record_governs"),
+    ("0022", "external", 19, "R19-2",
+     "the generated summary was verified BETWEEN its markers and the text "
+     "before the opening marker was unconstrained, so a prepended "
+     "`# What 9999 rounds actually found` became the document's title while "
+     "--check, the pytest gate and full archive verification all passed",
+     "specs/generated_block.py (a REQUIRED keyword-only at_start policy; the "
+     "opening marker must be the first line when it is set), "
+     "specs/review_lessons.py (at_start=True) and specs/skip_inventory.py "
+     "(at_start=False, stated rather than defaulted), tests/test_spec_gate.py",
+     "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
     # ---- self-found by CI, round 15 ---------------------------------------
     ("0022", "internal", 15, "R15-3",
      "SELF-FOUND (by CI, five red runs before I looked): the transcript "

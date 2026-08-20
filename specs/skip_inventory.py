@@ -306,7 +306,11 @@ def verify_collected(text: str, rs_output: str = "") -> None:
     import sys
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
     import generated_block as gb
-    gb.verify(text, BEGIN_MARKER, END_MARKER, render(rs_output))
+    # COLLECTED carries a header above its block, so this one is NOT
+    # anchored — stated explicitly, because R19-2 was a policy nobody had
+    # to state and therefore nobody checked.
+    gb.verify(text, BEGIN_MARKER, END_MARKER, render(rs_output),
+              at_start=False)
 
 
 # ---------------------------------------------------------------------------

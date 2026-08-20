@@ -1956,7 +1956,7 @@ def test_one_generated_block_verifier_refuses_every_marker_mutation():
     B, E = "<!-- B -->", "<!-- /B -->"
     body = "one\ntwo"
     good = f"prose\n{B}\n{body}\n{E}\ntail\n"
-    gb.verify(good, B, E, body)                    # the CLEAN control, first
+    gb.verify(good, B, E, body, at_start=False)                    # the CLEAN control, first
 
     for label, text in (
         ("a duplicated complete block — the reviewer's mutation",
@@ -1969,17 +1969,37 @@ def test_one_generated_block_verifier_refuses_every_marker_mutation():
         ("end before begin", f"{E}\n{body}\n{B}\n"),
     ):
         with pytest.raises(gb.BlockError):
-            gb.verify(text, B, E, body)
+            gb.verify(text, B, E, body, at_start=False)
         # and the WRITE path must refuse too — regenerating the first block of
         # a duplicated carrier leaves the second one lying, which is how the
         # reviewer's mutation would have survived a `--write`
         with pytest.raises(gb.BlockError):
-            gb.replace(text, B, E, body)
+            gb.replace(text, B, E, body, at_start=False)
+
+    # R19-2: THE ANCHOR, both directions. A carrier that must start at the
+    # marker refuses anything above it; one that legitimately carries a header
+    # (COLLECTED) must still pass. Neither is a default — both call sites state
+    # their policy, because the unstated one is what shipped.
+    anchored = f"{B}\n{body}\n{E}\ntail\n"
+    gb.verify(anchored, B, E, body, at_start=True)
+    for label, text in (("a prepended title", "# What 9999 rounds\n" + anchored),
+                        ("a prepended blank line", "\n" + anchored)):
+        with pytest.raises(gb.BlockError):
+            gb.verify(text, B, E, body, at_start=True)
+        # the SAME text is fine for an unanchored carrier — the anchor is the
+        # only thing being tested here, not the marker rules
+        gb.verify(text, B, E, body, at_start=False)
+
+    # and indenting the marker breaks it for BOTH policies, because it is no
+    # longer a standalone line — a different rule, asserted as a different case
+    for policy in (True, False):
+        with pytest.raises(gb.BlockError):
+            gb.verify(" " + anchored, B, E, body, at_start=policy)
 
     # MARKERS COUNT ONLY AS STANDALONE LINES: prose that mentions one is prose.
     # (Mention-versus-use, which this review has produced seven times.)
     mentioned = f"prose about {B} inline\n{B}\n{body}\n{E}\n"
-    gb.verify(mentioned, B, E, body)
+    gb.verify(mentioned, B, E, body, at_start=False)
 
     # CONTENT, with no normalization: a boundary newline is a difference
     for label, text in (
@@ -1990,7 +2010,7 @@ def test_one_generated_block_verifier_refuses_every_marker_mutation():
          f"{B}\n{body}\n\n{E}\n"),
     ):
         with pytest.raises(gb.BlockError):
-            gb.verify(text, B, E, body)
+            gb.verify(text, B, E, body, at_start=False)
 
     # BOTH CARRIERS CALL IT — the point of the fix is that there is no second
     # copy left to drift. Checked by behaviour: each refuses the duplicate.
@@ -1998,7 +2018,8 @@ def test_one_generated_block_verifier_refuses_every_marker_mutation():
     from skip_inventory import BEGIN_MARKER, END_MARKER, verify_collected
     dup = rl.DOC.read_text() + f"\n{rl.BEGIN}\n\n**999 external findings.**\n\n{rl.END}\n"
     with pytest.raises(gb.BlockError):
-        gb.verify(dup, rl.BEGIN, rl.END, "\n" + rl.render() + "\n")
+        gb.verify(dup, rl.BEGIN, rl.END, "\n" + rl.render() + "\n",
+                  at_start=True)
     with pytest.raises(ValueError):     # BlockError subclasses ValueError
         verify_collected(f"{BEGIN_MARKER}\nx\n{END_MARKER}\n{BEGIN_MARKER}\ny\n{END_MARKER}\n")
 
@@ -2026,6 +2047,8 @@ def test_the_packages_three_identity_carriers_must_agree():
     # record no longer governs tests nothing about today's seal.
     import package_identity as pid
     V = max(pid.PACKAGES, key=lambda v: int(v[1:]))
+    MEMBERS = {"./" + m for m in re.findall(
+        r"(specs/\S+\.md) — draft", pid.render_candidate_lines(V))}
     RND = pid.PACKAGES[V][0]
     STALE = f"v{RND - 1}"
     NAME = f"0022-0023-{V}-20260819T0136Z.tar.gz"
@@ -2033,8 +2056,8 @@ def test_the_packages_three_identity_carriers_must_agree():
            f"round-{RND} external-review package ({V})\nsource commit: abc1234\n"
            f"specs:           {pid.render_candidate_lines(V)}\n")
     MAN = f"PACKAGE: 0022-0023-{V} — external ROUND {RND}\nCOMMIT:  abc1234\n"
-    assert identity_problems(NAME, COL, MAN) == [], (
-        f"the agreeing case must pass: {identity_problems(NAME, COL, MAN)}")
+    assert identity_problems(NAME, COL, MAN, MEMBERS) == [], (
+        f"the agreeing case must pass: {identity_problems(NAME, COL, MAN, MEMBERS)}")
 
     # ONE CARRIER WRONG AT A TIME — including the exact shipped defect
     for label, name, col, man in (
@@ -2056,7 +2079,7 @@ def test_the_packages_three_identity_carriers_must_agree():
         ("the archive name carries no version",
          "0022-0023-20260819T0136Z.tar.gz", COL, MAN),
     ):
-        assert identity_problems(name, col, man), f"ACCEPTED: {label}"
+        assert identity_problems(name, col, man, MEMBERS), f"ACCEPTED: {label}"
 
     # THE TEMPLATES MUST BE TOKENIZED. Substitution is what makes the identity
     # produced rather than typed, and `refuse_placeholders` already fails the
@@ -2116,6 +2139,13 @@ def test_the_whole_lessons_summary_is_byte_verified_by_check():
                           "findings are not a pile", 1)),
         ("the title edited", original.replace(
             "# What the external review", "# What fifteen rounds", 1)),
+        # R19-2: everything BETWEEN the markers was verified and the text
+        # BEFORE the opening marker was not, so a prepended markdown title
+        # became the document's title while every check passed. Verifying the
+        # block is not verifying the document.
+        ("a title PREPENDED above the opening marker",
+         "# What 9999 rounds actually found\n\n" + original),
+        ("a single blank line prepended", "\n" + original),
         ("a table row edited", original.replace("| 1 | **self-assertion**",
                                                 "| 1 | **self-assertions**", 1)),
         ("a derived paragraph edited",
@@ -2155,7 +2185,14 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
 
     assert pid.validate() == [], pid.validate()
 
+    # R19-1: the member set is REQUIRED, and derived from the record's own
+    # rendered paths so the fixture cannot drift from what the generator emits.
+    def _members(v):
+        return {"./" + m for m in re.findall(
+            r"(specs/\S+\.md) — draft", pid.render_candidate_lines(v))}
+
     version = max(pid.PACKAGES, key=lambda v: int(v[1:]))
+    MEMBERS = _members(version)
     rnd, cands = pid.PACKAGES[version]
     specs = "-".join(sorted(cands))
     name = f"{specs}-{version}-20260819T0000Z.tar.gz"
@@ -2164,8 +2201,8 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
            f"source commit: abc1234\n"
            f"specs:           {pid.render_candidate_lines(version)}\n")
     man = f"PACKAGE: {specs}-{version} — external ROUND {rnd}\nCOMMIT: abc1234\n"
-    assert identity_problems(name, col, man) == [], (
-        f"the agreeing package is refused: {identity_problems(name, col, man)}")
+    assert identity_problems(name, col, man, MEMBERS) == [], (
+        f"the agreeing package is refused: {identity_problems(name, col, man, MEMBERS)}")
 
     # ONE DRAFT LINE AT A TIME — the reviewer's required regression. Each spec's
     # own revision is an identity carrier, so each must be able to fail alone.
@@ -2173,14 +2210,14 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
         stale = col.replace(f"{spec}-", f"{spec}-", 1)
         stale = re.sub(rf"(specs/{spec}-\S+\.md — draft )v\d+", r"\g<1>v1", col)
         assert stale != col, f"could not mutate {spec}'s draft line"
-        assert identity_problems(name, stale, man), (
+        assert identity_problems(name, stale, man, MEMBERS), (
             f"a stale `draft vN` on {spec} ALONE was accepted — R17-1 exactly")
 
     # and the whole block missing, and a package with no identity row
-    assert identity_problems(name, col.split("specs:")[0], man)
+    assert identity_problems(name, col.split("specs:")[0], man, MEMBERS)
     assert identity_problems(name.replace(version, "v999"),
                              col.replace(version, "v999"),
-                             man.replace(version, "v999"))
+                             man.replace(version, "v999"), MEMBERS)
 
     # EXTERNAL ROUND 18, R18-1: three mutations the record accepted, kept here
     # because each one is a different way for a "structured" record to be
@@ -2195,7 +2232,7 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
         "specs:           specs/0022-source-revocation.md — draft v999 "
         "(external candidate)\n                 ", 1)
     assert dup != col
-    assert identity_problems(name, dup, man), (
+    assert identity_problems(name, dup, man, MEMBERS), (
         "a carrier stating one spec's revision TWICE, with different values, "
         "was accepted — R18-1")
 
@@ -2245,6 +2282,34 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
         reviews.REVIEWS[:] = real
         pid._reviews = real_reviews
     assert pid.validate() == [], pid.validate()
+
+    # EXTERNAL ROUND 19, R19-1: THE PATH IS PART OF THE IDENTITY. The check
+    # extracted the four-digit spec id and the revision from each candidate
+    # line and compared only those, so renaming the PATH kept both correct and
+    # every identity check passed — COLLECTED could point the reviewer at a
+    # file that does not exist. The fields I chose to extract stood in for the
+    # artifact; the block is compared byte for byte against the generator now.
+    renamed = col.replace("specs/0022-source-revocation.md",
+                          "specs/0022-not-the-shipped-spec.md")
+    assert renamed != col
+    assert identity_problems(name, renamed, man, MEMBERS), (
+        "a renamed candidate PATH with the right id and revision was accepted "
+        "— R19-1 exactly")
+
+    # and a path the archive does not carry, which a byte-perfect block cannot
+    # rule out on its own
+    assert identity_problems(name, col, man, set()), (
+        "a candidate path that is not an archive member was accepted (R19-1)")
+    for drop in sorted(MEMBERS):
+        assert identity_problems(name, col, man, MEMBERS - {drop}), (
+            f"a package missing {drop} was accepted (R19-1)")
+
+    # a candidate line OUTSIDE the verified block: the block matching exactly
+    # says nothing about what else the carrier says
+    stray = col + ("\n                 specs/0022-source-revocation.md — "
+                   "draft v99 (external candidate)\n")
+    assert identity_problems(name, stray, man, MEMBERS), (
+        "a second candidate line outside the block was accepted")
 
     # THE TEMPLATE MUST NOT CARRY THE LITERALS AGAIN
     header = (root / "specs" / "package" / "collected_header.txt").read_text()

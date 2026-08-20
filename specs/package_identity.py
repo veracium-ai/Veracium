@@ -44,6 +44,7 @@ PACKAGES = {
     "v17": (17, {"0022": "v18", "0023": "v18"}),
     "v18": (18, {"0022": "v19", "0023": "v19"}),
     "v19": (19, {"0022": "v20", "0023": "v20"}),
+    "v20": (20, {"0022": "v21", "0023": "v21"}),
 }
 
 FIRST_GOVERNED = 17          # the domain declared in the docstring, mechanized

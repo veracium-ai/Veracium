@@ -36,8 +36,31 @@ class BlockError(ValueError):
     """A carrier's generated block is missing, duplicated or damaged."""
 
 
-def locate(text: str, begin: str, end: str) -> tuple:
-    """Return (begin_index, end_index, enclosed_text) or raise BlockError."""
+def locate(text: str, begin: str, end: str, *, at_start: bool) -> tuple:
+    """Return (begin_index, end_index, enclosed_text) or raise BlockError.
+
+    `at_start` is REQUIRED and keyword-only, because it is a per-carrier policy
+    and getting it silently wrong is EXTERNAL ROUND 19, R19-2: everything
+    BETWEEN the markers was verified byte for byte, and the text BEFORE the
+    opening marker was unconstrained, so prepending
+
+        # What 9999 rounds actually found
+
+    to the lessons document gave it a new title — the first thing a reader
+    sees, and a markdown document's identity — while `--check`, the pytest gate
+    and full archive verification all passed. Verifying the block is not
+    verifying the document.
+
+    COLLECTED legitimately carries a header above its block, so this cannot be
+    unconditional; it is passed explicitly at both call sites instead of
+    defaulted, so neither can acquire the wrong answer by omission.
+    """
+    if at_start and not text.startswith(begin + "\n"):
+        raise BlockError(
+            f"`{begin}` is not the first line of the carrier — text before a "
+            f"generated block is text nobody checks (R19-2: a prepended "
+            f"markdown title replaced the document's title and every check "
+            f"still passed)")
     lines = text.split("\n")
     begins = [i for i, l in enumerate(lines) if l == begin]
     ends = [i for i, l in enumerate(lines) if l == end]
@@ -54,16 +77,18 @@ def locate(text: str, begin: str, end: str) -> tuple:
     return b, e, "\n".join(lines[b + 1:e])
 
 
-def verify(text: str, begin: str, end: str, expected: str) -> None:
+def verify(text: str, begin: str, end: str, expected: str, *,
+           at_start: bool) -> None:
     """Raise BlockError unless the carrier holds exactly one block == expected."""
-    _b, _e, block = locate(text, begin, end)
+    _b, _e, block = locate(text, begin, end, at_start=at_start)
     if block != expected:
         raise BlockError(
             "the enclosed block is not byte-identical to the generator's "
             "output (stale, hand-edited, or boundary-padded)")
 
 
-def replace(text: str, begin: str, end: str, block: str) -> str:
+def replace(text: str, begin: str, end: str, block: str, *,
+            at_start: bool) -> str:
     """Return `text` with its ONE generated block replaced by `block`.
 
     Strict on the way in: a carrier that already carries two blocks cannot be
@@ -71,5 +96,5 @@ def replace(text: str, begin: str, end: str, block: str) -> str:
     told which mutation to undo.
     """
     lines = text.split("\n")
-    b, e, _ = locate(text, begin, end)
+    b, e, _ = locate(text, begin, end, at_start=at_start)
     return "\n".join(lines[:b + 1] + block.split("\n") + lines[e:])
