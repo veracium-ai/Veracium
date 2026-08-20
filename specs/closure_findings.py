@@ -510,6 +510,18 @@ CLOSURES = [
      "specs/REVIEW_LESSONS.md, tests/test_spec_gate.py (the natural-language "
      "heuristic deleted; mutations now assert --check itself refuses)",
      "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
+    # ---- self-found while making the evidence runner concurrent -----------
+    ("0022", "internal", 21, "R21-1",
+     "SELF-FOUND (by CI, on the first push): the byte-verification test MUTATED "
+     "the shipped specs/REVIEW_LESSONS.md and restored it, which was safe only "
+     "while nothing else ran at the same time — the moment the evidence runner "
+     "became concurrent it raced the evidence command that reads that file, and "
+     "the two commands whose evidence touches it (R15-2 and R19-2) failed in "
+     "two of five CI jobs while five local runs passed",
+     "tests/test_spec_gate.py (every mutation runs on a COPY in a temp dir, "
+     "with rl.DOC repointed; the shipped document is asserted unmodified at the "
+     "end)",
+     "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
     # ---- external round 19 ------------------------------------------------
     ("0022", "external", 19, "R19-1",
      "identity_problems() extracted the four-digit spec id and the revision "

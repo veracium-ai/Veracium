@@ -1279,15 +1279,35 @@ def test_every_closure_evidence_command_actually_runs():
     # reassembled in LEDGER ORDER, so the transcript is byte-identical to what
     # a serial run would have produced apart from the durations.
     workers = min(4, (os.cpu_count() or 2))
-    runnable, skipped = [], []
+
+    # SOME EVIDENCE MEASURES CONTENTION, so it cannot be measured under
+    # contention. The store-concurrency harness times SQLite BUSY behaviour and
+    # a deadline; run beside three other interpreters on a four-core box it
+    # reported 17/18 and failed the seal. That is not flakiness to be retried
+    # away — the command's SUBJECT is timing, so unrelated load changes what it
+    # observes, and a green result obtained that way would be worth less than
+    # the slow one.
+    #
+    # These run alone, after the concurrent batch has drained. The property is
+    # a fact about what the command measures, not a workaround, so it is named
+    # by what it runs rather than by which finding cites it — five closure rows
+    # cite this harness today and a sixth must not silently miss the lane.
+    NEEDS_QUIET = ("store_concurrency_harness",)
+
+    runnable, quiet, skipped = [], [], []
     for row in CLOSURES:
         spec, _kind, _rno, fid, _summary, _closed, evidence = row
         # the launcher builds a venv and runs the entire suite: running it from
         # inside the suite would recurse
         if "run_offline.sh" in evidence:
             skipped.append(f"{spec} {fid} (launcher — run separately at seal)")
+        elif any(n in evidence for n in NEEDS_QUIET):
+            quiet.append((spec, fid, evidence))
         else:
             runnable.append((spec, fid, evidence))
+    assert quiet, ("no command claims the quiet lane — the harness that "
+                   "measures contention was renamed, and it is now being "
+                   "measured under load")
 
     def _execute(item):
         spec, fid, evidence = item
@@ -1307,7 +1327,14 @@ def test_every_closure_evidence_command_actually_runs():
     wall0 = time.monotonic()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         results = list(pool.map(_execute, runnable))
+    results += [_execute(item) for item in quiet]      # alone, machine idle
     wall_ms = int((time.monotonic() - wall0) * 1000)
+
+    # LEDGER ORDER, whatever order they finished in: the transcript must be
+    # what a serial run would have produced.
+    order = {(spec, fid): i for i, (spec, _k, _r, fid, _s, _c, _e)
+             in enumerate(CLOSURES)}
+    results.sort(key=lambda r: order[(r[0]["spec"], r[0]["finding"])])
     transcript = [rec for rec, _ in results]
     failures = [f for _, f in results if f]
 
@@ -2204,7 +2231,7 @@ def test_the_whole_lessons_summary_is_byte_verified_by_check():
     generator can just say it. The whole summary — title, prologue, table,
     derived paragraphs — is generated and byte-verified now, so ANY edit fails,
     quantitative or not, in the tree and in the extraction alike."""
-    import pathlib, sys
+    import pathlib, sys, tempfile
     root = pathlib.Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(root / "specs"))
     import review_lessons as rl
@@ -2218,6 +2245,20 @@ def test_the_whole_lessons_summary_is_byte_verified_by_check():
 
     original = rl.DOC.read_text()
     assert rl.main(["review_lessons.py", "--check"]) == 0, "the clean control"
+
+    # EVERY MUTATION BELOW RUNS ON A COPY, never on the shipped document.
+    #
+    # It used to edit specs/REVIEW_LESSONS.md in place and restore it in a
+    # `finally`, which was safe only because nothing else ran at the same time.
+    # When the evidence runner became concurrent, this test and the evidence
+    # command `$PY specs/review_lessons.py --check` began racing over the same
+    # file — one mutating it, the other reading it — and CI failed on exactly
+    # that pair (R15-2 and R19-2) in two of five jobs. Class 5 again: a check
+    # reading an artifact another check is producing. The fix is not to
+    # serialize them; it is to stop sharing the file.
+    #
+    # It also removes a worse failure mode: a process killed mid-test used to
+    # leave a tracked file mutated on disk.
 
     # THE REVIEWER'S MUTATION, and it must be `--check` that refuses it — not a
     # test, because a test does not ship inside the archive.
@@ -2246,16 +2287,21 @@ def test_the_whole_lessons_summary_is_byte_verified_by_check():
                           "The last finding that required no change", 1)),
     ):
         assert mutant != original, f"{label}: the mutation did not apply"
-        rl.DOC.write_text(mutant)
-        try:
-            assert rl.main(["review_lessons.py", "--check"]) == 1, (
-                f"--check ACCEPTED {label} — the summary is not byte-verified, "
-                f"which is R18-2")
-        finally:
-            rl.DOC.write_text(original)
+        real_doc = rl.DOC
+        with tempfile.TemporaryDirectory() as td:
+            copy = pathlib.Path(td) / "REVIEW_LESSONS.md"
+            copy.write_text(mutant)
+            rl.DOC = copy
+            try:
+                assert rl.main(["review_lessons.py", "--check"]) == 1, (
+                    f"--check ACCEPTED {label} — the summary is not "
+                    f"byte-verified, which is R18-2")
+            finally:
+                rl.DOC = real_doc
 
-    assert rl.main(["review_lessons.py", "--check"]) == 0, (
-        "the document was not restored")
+    assert rl.DOC.read_text() == original, (
+        "the shipped document was modified by this test")
+    assert rl.main(["review_lessons.py", "--check"]) == 0
 
 
 def test_the_package_identity_record_governs_every_candidate_carrier():

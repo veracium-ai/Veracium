@@ -888,7 +888,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 20 (SENT) | 2026-08-20 | — | SENT (the coupled round-20 package `0022-0023-v20`). 0023 at v21: no semantic change required |
 | external 21 (SENT) | 2026-08-20 | — | SENT (the coupled round-21 package `0022-0023-v21`). 0023 at v22: no semantic change required |
 
-**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 60 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 61 across the pair** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

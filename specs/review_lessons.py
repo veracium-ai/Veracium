@@ -316,6 +316,10 @@ MECHANISM = {
         "a second, weaker implementation of a marker-block verifier that already "
         "existed here — and the copy carried the bug the original was written to "
         "fix. An implementation is a second copy of a RULE"),
+    ("0022", 21, "R21-1"): ("self-reference", "packaging",
+        "a test MUTATED the shipped document that another check reads, which "
+        "only concurrency could expose — the mirror of R15-3, where a test read "
+        "what another test wrote"),
     ("0022", 15, "R15-3"): ("self-reference", "packaging",
         "a test read the live transcript another test writes, and pytest-randomly "
         "shuffles order — so CI failed on some seeds from round 12 onward"),
