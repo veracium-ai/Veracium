@@ -11,12 +11,33 @@ combines, retires, or re-renders records. v3 folds external round 1
 
 ## 1. Problem and motivation
 
-> **Amended per paper-2 registration A14 (2026-08-16):** the benchmark
-> localization claimed in this section is withdrawn to exploratory
-> association pending a counterbalanced rerun; the advisories
-> (GHSA-r7j7 / GHSA-hcj3) and the laundering shape remain the standing
-> motivation. The V/W invariant surfaces and the acceptance evidence are
-> unaffected — this is a motivation-prose correction only.
+> **Amended per paper-2 registration A14 (2026-08-16); CONCLUDED 2026-08-20:**
+> the counterbalanced rerun that amendment was pending has now run — the
+> A15/A16 repair programme, 24,192 units, reported at
+> `paper2/analysis/repair_paired_results.md`. **THE EFFECT DOES NOT SURVIVE
+> IDENTIFICATION.** Under a within-probe paired design with content held
+> identical, the registered sign test came back 1 of 5 production arms
+> positive where 5 of 5 was required; every confidence interval contains zero;
+> and the largest absolute delta anywhere in the programme is 1.06pp, against
+> originals of +9.1 to +21.9pp. The benchmark localization claimed in this
+> section is therefore **withdrawn outright**, not merely held as exploratory
+> association.
+>
+> **And withdrawn in one direction only.** The campaign leaves the question
+> UNANSWERED rather than answered: a design that cannot identify a contrast
+> cannot exclude the effect either. Nothing here licenses the opposite claim —
+> that maintenance timing does not matter — and no rule in this specification
+> may be argued from that reading.
+>
+> Recorded because it is the part that makes the correction credible: **our own
+> system was not exempt.** Veracium's case-study arm moved +9.1pp in the
+> confounded design and +0.58pp paired. The artifact was in the instrument, not
+> in anyone's architecture — including ours.
+>
+> The advisories (GHSA-r7j7 / GHSA-hcj3) and the structural laundering shape
+> remain the standing motivation, and they never rested on the benchmark. The
+> V/W invariant surfaces and the acceptance evidence are unaffected — this is a
+> motivation-prose correction only.
 
 The benchmark campaign's direct contribution: **maintenance is the
 laundering site** — the completed baselines program localized the
@@ -106,7 +127,7 @@ recorded above rather than silently refreshed.)*
 | absorption | write-time | partition by resolved identity (policy-independent) | a merge inherits lineage |
 | supersession | write-time | scope-BLIND (global truth) | per-scope truths would diverge |
 | reinforcement | write-time | no-op by construction (0012) | mutates nothing |
-| consolidation | maintain-time | partition (§4b); cross-scope co-consolidation REFUSED; outputs cleared-identity + ledger membership (W7/W8) | the LLM cross-record synthesis site (§1's A14 amendment: the benchmark's *amplification* localization is withdrawn to exploratory; the rule in this row is unaffected) |
+| consolidation | maintain-time | partition (§4b); cross-scope co-consolidation REFUSED; outputs cleared-identity + ledger membership (W7/W8) | the LLM cross-record synthesis site (§1's A14 amendment, concluded 2026-08-20: the benchmark's *amplification* localization is WITHDRAWN — the counterbalanced rerun did not reproduce it at any arm, including ours; the rule in this row rests on the advisories and the structural argument and is unaffected) |
 | expiry / decay / staleness | maintain-time | scope-blind | no combination occurs |
 | wiki compilation | maintain-time | v1: store-wide compile unchanged; the wiki never reaches principal-bearing responses (0020 §4d); per-scope compilation the recorded widening | the second synthesis path |
 

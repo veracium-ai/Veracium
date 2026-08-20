@@ -33,7 +33,7 @@ is the number that decides what can be built.
 | **0018** | the release-migration orchestrator | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
-| **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-16 | 1 | 14 | 0 | 0 | 0 | — |
+| **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-20 | 1 | 14 | 0 | 0 | 0 | — |
 | **0022** | source revocation — the standing state and the sweep (A3a) | `draft` | 2026-08-20 | 3 | 20 | 6 | 0 | 0 | — |
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `draft` | 2026-08-20 | 3 | 20 | 5 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `draft` | 2026-08-17 | 2 | 0 | 4 | 0 | 0 | — |
