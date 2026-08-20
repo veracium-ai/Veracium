@@ -320,9 +320,23 @@ def identity_problems(archive_name: str, col: str, man: str) -> list:
     # with the `specs:` label, so `^\s*specs/` silently found only the SECOND
     # one — and a check that sees one of two carriers is how R17-1 happened.
     # Caught by the clean control, which is the argument for keeping one.
-    found = dict(re.findall(
+    # R18-1(b): this was `dict(re.findall(...))`, so a PREPENDED conflicting
+    # line `0022 ... draft v999` collapsed into the dict and the later correct
+    # value won — the carrier disagreed with itself and the check could not see
+    # it. Exactly R14-1's mechanism (a duplicate vanishing into a set), in a
+    # check written after it. Multiplicity is part of the claim: exactly one
+    # line per packaged spec, counted before anything is compared.
+    pairs = re.findall(
         r"specs/(\d{4})-\S+\.md — draft (v\d+(?:\.\d+)?) \(external candidate\)",
-        col))
+        col)
+    seen = [s for s, _ in pairs]
+    dupes = sorted({s for s in seen if seen.count(s) > 1})
+    if dupes:
+        problems.append(
+            f"COLLECTED.txt states the candidate revision of {dupes} more than "
+            f"once — a carrier that disagrees with itself (R18-1)")
+        return problems
+    found = dict(pairs)
     if not found:
         problems.append("COLLECTED.txt names no `specs/NNNN-*.md — draft vN "
                         "(external candidate)` line, so the packaged revision "

@@ -29,8 +29,57 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 DOC = HERE / "REVIEW_LESSONS.md"
-BEGIN = "<!-- GENERATED:mechanism-table -->"
-END = "<!-- /GENERATED:mechanism-table -->"
+BEGIN = "<!-- GENERATED:lessons-summary -->"
+END = "<!-- /GENERATED:lessons-summary -->"
+
+# EXTERNAL ROUND 18, R18-2. The summary above the table used to be hand-written
+# prose guarded by a pytest heuristic that hunted for cardinal words and digits.
+# Two things were wrong with that. It lived only in the test file, so
+# `--check` — the thing the ARCHIVE VERIFIER runs, and the only check a
+# reviewer's extraction exercises — never saw it. And detecting quantities in
+# natural language is a proxy for the property that matters: the scrubber
+# dropped every four-digit number as though all of them were spec ids, so
+# "has not moved in 9999 rounds" read as clean.
+#
+# A proxy for "this prose is what the generator says" is not needed when the
+# generator can simply say it. The WHOLE summary — title, prologue, table and
+# derived paragraphs — is generated from here and byte-verified, so any edit to
+# any of it fails `--check`, in the tree and in the extraction alike.
+PROLOGUE = """# What the external review of 0022 and 0023 actually found
+
+Spec-Status: n/a — this is a process record, not a spec
+
+**The design stopped moving early; the packaging did not.** Since the last
+change to either specification, every finding has been in the EVIDENCE
+MACHINERY — the checks, the carriers, and the way the package is built. That
+is worth stating plainly, because the natural reading of a long series of
+returned rounds is that the design is troubled. The generated table below
+says when the last specification change was, and how many rounds have passed
+since; this prose is no longer permitted to say it.
+
+The findings are not a pile of unrelated defects. Classified by FAILURE
+MECHANISM rather than by symptom, they collapse into a small number of classes
+— and most of those classes were RE-FOUND after their first instance was
+fixed. That is the actual problem: not that the reviewer keeps finding things,
+but that I kept fixing the named cell and shipping.
+
+**This document has been the defect it describes, repeatedly.** Its first
+version was hand-written, with class counts that did not match the findings
+they counted and a restated duration no carrier agreed with. Its replacement
+generated the table and then left a free-text round count in this opening
+summary — outside the block, ungated, and wrong; the reviewer flipped it to an
+absurd value and every check still passed.
+
+So: no quantity appears above the table, and a gate enforces that rather than
+trusting me. Everything countable is generated from
+`specs/review_lessons.py`, where every finding carries its own classification
+and the whole set is checked TOTAL against the closure ledger — an
+unclassified finding fails the build, so does a classification naming a
+finding that does not exist, and so does a class with nothing in it.
+
+---
+
+## The classes"""
 SPECS = ("0022", "0023")
 
 
@@ -233,6 +282,15 @@ MECHANISM = {
     ("0023", 2, "S3"): ("domain", "spec",
         "quarantine-at-birth wrote a field no reader consulted — enforcement that "
         "reached none of its domain"),
+    ("0022", 18, "R18-1"): ("domain", "packaging",
+        "a record called structured was untotal three ways at once — an "
+        "unchecked second copy in prose, duplicate carriers collapsing through "
+        "dict() (R14-1's mechanism, in a check written after it), and a lower "
+        "bound mistaken for a domain"),
+    ("0022", 18, "R18-2"): ("proxy", "packaging",
+        "hunting cardinal words stood in for `this prose is what the generator "
+        "says` — and the check lived only in the test file, never in the "
+        "command the archive verifier runs"),
     ("0022", 17, "R17-1"): ("domain", "packaging",
         "the round-16 fix enumerated the three identity carriers the reviewer "
         "NAMED; the carrier domain had five, and the two it missed were the "
@@ -363,6 +421,8 @@ def render() -> str:
     unrecorded = sorted(dispatched - verdicted - in_flight)
 
     lines = [
+        PROLOGUE,
+        "",
         f"**{n_ext} external findings, raised across {len(ext_rounds)} rounds, "
         f"and {n_int} found internally — every one classified below, exactly "
         f"once.** Counts are DERIVED from `MECHANISM` in "

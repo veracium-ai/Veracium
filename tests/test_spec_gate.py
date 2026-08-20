@@ -2072,72 +2072,67 @@ def test_the_packages_three_identity_carriers_must_agree():
             f"{rel} names no identity token")
 
 
-# R17-2: the quantities this document is not allowed to type outside its
-# generated block. Cardinals only — ordinals ("its first version") are not
-# claims about how many of anything there are.
-_CARDINAL_WORDS = (
-    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
-    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
-    "seventeen", "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty",
-    "sixty", "seventy", "eighty", "ninety", "hundred", "thousand", "dozen",
-    "once", "twice",
-)
+def test_the_whole_lessons_summary_is_byte_verified_by_check():
+    """External round 18, R18-2. The summary above the table was hand-written
+    prose guarded by a pytest heuristic that hunted for cardinal words and
+    digits. Two things were wrong with that.
 
+    It lived only in this file, so `review_lessons.py --check` — the command
+    the ARCHIVE VERIFIER runs, and the only check a reviewer's extraction
+    exercises — never saw it. And detecting quantities in natural language is a
+    PROXY for the property that matters: the scrubber dropped every four-digit
+    number as though all of them were spec ids, so "has not moved in 9999
+    rounds" read as clean and both checks passed.
 
-def test_no_quantity_survives_outside_the_lessons_generated_block():
-    """External round 17, R17-2. The generated block made every count derived —
-    and the opening summary still said the design "has not moved in eight
-    rounds" in free text. It was wrong (nine), it was OUTSIDE the markers, and
-    `--check` compares only what is between them. The reviewer changed it to
-    "999 rounds" and the check still returned 0.
-
-    Generating a block does not protect the prose around it. The rule is now
-    positional and total: ABOVE the table, no cardinal quantity at all — the
-    spec ids in the title are the only numerals allowed, and every countable
-    claim moved into the block, where it is derived from the classification.
-
-    The mutations below are the reviewer's and the original defect's, plus the
-    clean control — because a gate that rejects every prologue would pass all
-    its rejection tests."""
-    import pathlib, re, sys
+    A proxy for "this prose is what the generator says" is unnecessary when the
+    generator can just say it. The whole summary — title, prologue, table,
+    derived paragraphs — is generated and byte-verified now, so ANY edit fails,
+    quantitative or not, in the tree and in the extraction alike."""
+    import pathlib, sys
     root = pathlib.Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(root / "specs"))
     import review_lessons as rl
 
-    def quantities(prologue):
-        """Cardinal quantities in the text, ignoring spec ids like `0022`."""
-        scrubbed = re.sub(r"\b\d{4}\b", "", prologue)
-        found = re.findall(r"\d+", scrubbed)
-        found += [w for w in _CARDINAL_WORDS
-                  if re.search(rf"\b{w}\b", scrubbed, re.I)]
-        return found
+    rendered = rl.render()
+    assert rendered.lstrip().startswith("# "), (
+        "the TITLE is outside the generated region — it carried a stale count "
+        "once already")
+    assert "Spec-Status:" in rendered and "## The classes" in rendered, (
+        "the prologue is outside the generated region")
 
-    # POSITIVE CONTROLS FIRST — a scrubber that never matches would make the
-    # real assertion below vacuous, which is this review's oldest lesson.
-    assert quantities("the design has not moved in eight rounds"), \
-        "the word form is not detected — R17-2's original defect"
-    assert quantities("the design has not moved in 999 rounds"), \
-        "the digit form is not detected — the reviewer's mutation"
-    assert quantities("nine rounds returned"), "compound word form missed"
-    # NEGATIVE CONTROLS: spec ids and ordinals are not quantities
-    assert not quantities("the external review of 0022 and 0023"), \
-        "spec ids must not read as quantities"
-    assert not quantities("its first version was hand-written"), \
-        "ordinals are not cardinal quantities — the gate's domain is too wide"
+    original = rl.DOC.read_text()
+    assert rl.main(["review_lessons.py", "--check"]) == 0, "the clean control"
 
-    text = rl.DOC.read_text()
-    assert rl.BEGIN in text, "the generated block is gone"
-    prologue = text.split(rl.BEGIN)[0]
-    assert not quantities(prologue), (
-        f"specs/REVIEW_LESSONS.md states quantities ABOVE its generated block "
-        f"({quantities(prologue)}) — a number in that prose is hand-kept and "
-        f"ungated, which is R17-2 exactly. Move the claim into the block and "
-        f"derive it.")
+    # THE REVIEWER'S MUTATION, and it must be `--check` that refuses it — not a
+    # test, because a test does not ship inside the archive.
+    for label, mutant in (
+        ("a quantitative sentence inserted mid-prologue",
+         original.replace("The findings are not a pile",
+                          "The design has not moved in 9999 rounds.\n\nThe "
+                          "findings are not a pile", 1)),
+        ("a word-form quantity, R17-2's original defect",
+         original.replace("The findings are not a pile",
+                          "The design has not moved in eight rounds.\n\nThe "
+                          "findings are not a pile", 1)),
+        ("the title edited", original.replace(
+            "# What the external review", "# What fifteen rounds", 1)),
+        ("a table row edited", original.replace("| 1 | **self-assertion**",
+                                                "| 1 | **self-assertions**", 1)),
+        ("a derived paragraph edited",
+         original.replace("The last finding that required a change",
+                          "The last finding that required no change", 1)),
+    ):
+        assert mutant != original, f"{label}: the mutation did not apply"
+        rl.DOC.write_text(mutant)
+        try:
+            assert rl.main(["review_lessons.py", "--check"]) == 1, (
+                f"--check ACCEPTED {label} — the summary is not byte-verified, "
+                f"which is R18-2")
+        finally:
+            rl.DOC.write_text(original)
 
-    # and the claim the prose used to make BY HAND is in the block, derived
-    assert "last finding that required a change to either specification" in \
-        rl.render(), ("the derived spec-scope paragraph is gone — R17-2's "
-                      "claim would then be nowhere, which is not the fix")
+    assert rl.main(["review_lessons.py", "--check"]) == 0, (
+        "the document was not restored")
 
 
 def test_the_package_identity_record_governs_every_candidate_carrier():
@@ -2186,6 +2181,70 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     assert identity_problems(name.replace(version, "v999"),
                              col.replace(version, "v999"),
                              man.replace(version, "v999"))
+
+    # EXTERNAL ROUND 18, R18-1: three mutations the record accepted, kept here
+    # because each one is a different way for a "structured" record to be
+    # untotal over the domain it claims.
+    #
+    # (b) A DUPLICATE CARRIER. The candidate lines were read with
+    # `dict(re.findall(...))`, so a PREPENDED conflicting line collapsed and the
+    # later correct value won — R14-1's mechanism (a duplicate vanishing into a
+    # set) inside a check written after R14-1.
+    dup = col.replace(
+        "specs:           ",
+        "specs:           specs/0022-source-revocation.md — draft v999 "
+        "(external candidate)\n                 ", 1)
+    assert dup != col
+    assert identity_problems(name, dup, man), (
+        "a carrier stating one spec's revision TWICE, with different values, "
+        "was accepted — R18-1")
+
+    # (c) CONTINUITY FROM THE BOUND. `FIRST_GOVERNED` was enforced and the run
+    # from it was not, so deleting the oldest governed row left the record
+    # valid while a governed package went undeclared. A bound is not a domain.
+    saved = dict(pid.PACKAGES)
+    try:
+        if len(pid.PACKAGES) > 1:
+            pid.PACKAGES.pop(f"v{pid.FIRST_GOVERNED}")
+            assert any("contiguous" in x for x in pid.validate()), (
+                f"a gap at the bottom of the governed run was accepted: "
+                f"{pid.validate()}")
+        pid.PACKAGES.clear()
+        pid.PACKAGES.update(saved)
+        pid.PACKAGES[f"v{max(int(v[1:]) for v in saved) + 2}"] = (
+            max(int(v[1:]) for v in saved) + 2, {"0022": "v1", "0023": "v1"})
+        assert any("contiguous" in x for x in pid.validate()), (
+            "a HOLE in the governed run was accepted")
+    finally:
+        pid.PACKAGES.clear()
+        pid.PACKAGES.update(saved)
+    assert pid.validate() == [], pid.validate()
+
+    # (a) THE SENT PROSE IS A SECOND COPY of the candidate revisions, and it was
+    # unchecked: a row could say `0022 at v999` beside a record saying v19 and
+    # validate() returned clean, because it only asked whether the row NAMED
+    # the package and the round.
+    import reviews
+    real = [dict(r) for r in reviews.REVIEWS]
+    real_reviews = pid._reviews
+    try:
+        pid._reviews = lambda: reviews.REVIEWS
+        hit = 0
+        for r in reviews.REVIEWS:
+            if (r["kind"] == "external" and r["verdict"].startswith("SENT")
+                    and f"0022-0023-{version}" in r["verdict"]
+                    and re.search(r"\b0022 at v\d+", r["verdict"])):
+                r["verdict"] = re.sub(r"\b0022 at v\d+", "0022 at v999",
+                                      r["verdict"])
+                hit += 1
+        assert hit, "no SENT row carries a candidate claim to mutate"
+        assert any("second copy" in x for x in pid.validate()), (
+            f"a SENT row contradicting the identity record was accepted: "
+            f"{pid.validate()}")
+    finally:
+        reviews.REVIEWS[:] = real
+        pid._reviews = real_reviews
+    assert pid.validate() == [], pid.validate()
 
     # THE TEMPLATE MUST NOT CARRY THE LITERALS AGAIN
     header = (root / "specs" / "package" / "collected_header.txt").read_text()

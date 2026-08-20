@@ -43,6 +43,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 PACKAGES = {
     "v17": (17, {"0022": "v18", "0023": "v18"}),
     "v18": (18, {"0022": "v19", "0023": "v19"}),
+    "v19": (19, {"0022": "v20", "0023": "v20"}),
 }
 
 FIRST_GOVERNED = 17          # the domain declared in the docstring, mechanized
@@ -82,6 +83,24 @@ def render_candidate_lines(version: str, indent: str = "                 ") -> s
 def validate() -> list:
     """Return a list of problems; empty means every row agrees with reviews.py."""
     problems = []
+
+    # R18-1(c): the lower bound was enforced and CONTINUITY FROM IT WAS NOT, so
+    # deleting the v17 row left the record valid while a governed package went
+    # undeclared. A bound is not a domain: the governed versions must be the
+    # exact contiguous run from FIRST_GOVERNED to the newest.
+    nums = sorted(int(v[1:]) for v in PACKAGES if re.fullmatch(r"v\d+", v))
+    if nums:
+        want = list(range(FIRST_GOVERNED, max(nums) + 1))
+        if nums != want:
+            missing = sorted(set(want) - set(nums))
+            problems.append(
+                f"the governed versions are {['v%d' % n for n in nums]}, which "
+                f"is not the contiguous run v{FIRST_GOVERNED}..v{max(nums)} — "
+                f"missing {['v%d' % n for n in missing]} (R18-1: the lower "
+                f"bound was checked and continuity from it was not)")
+    elif PACKAGES:
+        problems.append("no row carries a `vN` version")
+
     for version, row in sorted(PACKAGES.items()):
         if not re.fullmatch(r"v\d+", version):
             problems.append(f"{version!r} is not a `vN` package version")
@@ -126,6 +145,31 @@ def validate() -> list:
                 problems.append(
                     f"{version} {spec}: the SENT row is at round "
                     f"{sent[0]['round']}, the package declares round {rnd}")
+
+        # R18-1(a): THE SENT PROSE IS A SECOND COPY OF THE CANDIDATE REVISIONS
+        # and it was unchecked — the row could say `0022 at v999` beside a
+        # record saying v19 and validate() returned clean, because it only
+        # asked whether the row NAMED the package and the round. A dispatch row
+        # may still describe what it carried; it may not disagree with the
+        # record. Rows that make no such claim are fine — there is nothing to
+        # contradict — so the rule is: every claim of this shape must match.
+        for r in _reviews():
+            if not (r["kind"] == "external" and r["spec"] in cands
+                    and r["verdict"].startswith("SENT")
+                    and bounded.search(r["verdict"])):
+                continue
+            for claimed_spec, claimed_rev in re.findall(
+                    r"\b(\d{4}) at (v\d+(?:\.\d+)?)", r["verdict"]):
+                if claimed_spec not in cands:
+                    problems.append(
+                        f"{version}: the {r['spec']} SENT row claims a revision "
+                        f"for {claimed_spec}, which this package does not carry")
+                elif cands[claimed_spec] != claimed_rev:
+                    problems.append(
+                        f"{version}: the {r['spec']} SENT row says "
+                        f"`{claimed_spec} at {claimed_rev}` and the record "
+                        f"declares {cands[claimed_spec]} — the prose is a "
+                        f"second copy and it disagrees (R18-1)")
     return problems
 
 

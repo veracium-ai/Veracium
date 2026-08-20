@@ -482,7 +482,34 @@ CLOSURES = [
      "with the claim DERIVED into the block), specs/REVIEW_LESSONS.md (no "
      "quantity above the table), tests/test_spec_gate.py (the prologue gate "
      "with the reviewer's mutation, the original defect, and both controls)",
-     "$PY -m pytest tests/test_spec_gate.py -k quantity_survives"),
+     # R18-2 replaced the natural-language prologue heuristic with byte
+     # verification of the whole summary, so the test this row selected no
+     # longer exists. Repointed — and the every-atom-selects-a-test gate is
+     # what caught it, which is R13-3's defect refused before it shipped.
+     "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
+    # ---- external round 18 ------------------------------------------------
+    ("0022", "external", 18, "R18-1",
+     "the structured identity record was not total over its claimed domain in "
+     "THREE ways: the candidate revisions restated in SENT prose were never "
+     "cross-checked (a row could say `0022 at v999`), duplicate candidate lines "
+     "collapsed through dict(re.findall(...)) so a carrier could disagree with "
+     "itself, and FIRST_GOVERNED bounded the run without requiring continuity "
+     "from it, so deleting the oldest governed row left the record valid",
+     "specs/package_identity.py (contiguity of the governed run; every "
+     "`NNNN at vN` claim in a matching SENT row must equal the record), "
+     "specs/seal_package.py (candidate lines counted before compared), "
+     "tests/test_spec_gate.py (all three mutations retained)",
+     "$PY -m pytest tests/test_spec_gate.py -k identity_record_governs"),
+    ("0022", "external", 18, "R18-2",
+     "the prologue control lived only in the pytest file and not in "
+     "review_lessons.py --check, which is what the archive verifier runs; its "
+     "scrubber also dropped every four-digit number as a spec id, so `has not "
+     "moved in 9999 rounds` passed both the gate and --check",
+     "specs/review_lessons.py (the WHOLE summary — title, prologue, table, "
+     "derived paragraphs — is generated and byte-verified by --check), "
+     "specs/REVIEW_LESSONS.md, tests/test_spec_gate.py (the natural-language "
+     "heuristic deleted; mutations now assert --check itself refuses)",
+     "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
     # ---- self-found by CI, round 15 ---------------------------------------
     ("0022", "internal", 15, "R15-3",
      "SELF-FOUND (by CI, five red runs before I looked): the transcript "
