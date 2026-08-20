@@ -45,6 +45,7 @@ PACKAGES = {
     "v18": (18, {"0022": "v19", "0023": "v19"}),
     "v19": (19, {"0022": "v20", "0023": "v20"}),
     "v20": (20, {"0022": "v21", "0023": "v21"}),
+    "v21": (21, {"0022": "v22", "0023": "v22"}),
 }
 
 FIRST_GOVERNED = 17          # the domain declared in the docstring, mechanized
@@ -63,7 +64,23 @@ def candidates(version: str) -> dict:
     return PACKAGES[version][1]
 
 
-def render_candidate_lines(version: str, indent: str = "                 ") -> str:
+# EXTERNAL ROUND 20, R20-1. The label lived in the template and the lines were
+# rendered here, so verification could only ask whether the LINES occurred
+# somewhere in COLLECTED — and a package that answered `specs: none — this
+# package has no external candidates` while carrying the correct block further
+# down passed every check. The FIELD is the carrier, so the field is what is
+# rendered: label and lines together, from here, verified as one artifact at
+# one position.
+LABEL = "specs:" + " " * 11
+INDENT = " " * len(LABEL)
+
+
+def render_candidate_field(version: str) -> str:
+    """The COLLECTED `specs:` field, whole — the unit that gets verified."""
+    return LABEL + render_candidate_lines(version)
+
+
+def render_candidate_lines(version: str, indent: str = INDENT) -> str:
     """The COLLECTED `specs:` block, generated from the record.
 
     R17-1: these two lines were template literals reading `draft v16` while the

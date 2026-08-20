@@ -115,6 +115,16 @@ INVENTORY = [
      "git-checkout", "STATUS.md `updated` derives from git log"),
     ("tests/test_spec_gate.py", "skip", "no archives present",
      "git-checkout", "archives are gitignored; a clone has none"),
+    ("tests/test_spec_gate.py", "skip",
+     "the newest archive predates the identity record's domain",
+     "package-artifact",
+     "1 test. External round 20 asked for a FULL-REPACK regression, so the "
+     "R20-1 test mutates the most recent SEALED archive and requires "
+     "verify_archive to refuse. It needs an archive the identity record "
+     "governs (v17 onward); on a tree whose newest archive predates that "
+     "domain there is nothing to repack, and the pure-function matrix in "
+     "test_the_package_identity_record_governs_every_candidate_carrier covers "
+     "the same mutations without an artifact"),
     ("tests/longmemeval/test_run_wiring.py", "skipif", "not a git checkout",
      "git-checkout", "a run's manifest resolves git state by design"),
     ("tests/longmemeval/test_manifest.py", "skip", "not a git checkout",

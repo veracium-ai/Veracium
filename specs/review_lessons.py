@@ -282,6 +282,10 @@ MECHANISM = {
     ("0023", 2, "S3"): ("domain", "spec",
         "quarantine-at-birth wrote a field no reader consulted — enforcement that "
         "reached none of its domain"),
+    ("0022", 20, "R20-1"): ("proxy", "packaging",
+        "occurrence ANYWHERE in the carrier stood in for the field's value, so "
+        "`specs: none` on the line a reviewer reads passed while the correct "
+        "block sat lower down"),
     ("0022", 19, "R19-1"): ("proxy", "packaging",
         "the fields I chose to extract — spec id and revision — stood in for the "
         "carrier, so a renamed PATH passed every identity check"),

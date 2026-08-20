@@ -3,7 +3,7 @@
 package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ — round 4 shipped two)
-specs:           __CANDIDATES__
+__CANDIDATES__
                  0004 is NOT a candidate: APPROVED at round 2, frozen on W1-W8.
                  It ships because the pair depends on it. Re-submitting an
                  approved spec invites re-litigating a closed decision, so it is

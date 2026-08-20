@@ -2054,7 +2054,7 @@ def test_the_packages_three_identity_carriers_must_agree():
     NAME = f"0022-0023-{V}-20260819T0136Z.tar.gz"
     COL = (f"0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
            f"round-{RND} external-review package ({V})\nsource commit: abc1234\n"
-           f"specs:           {pid.render_candidate_lines(V)}\n")
+           f"{pid.render_candidate_field(V)}\n")
     MAN = f"PACKAGE: 0022-0023-{V} — external ROUND {RND}\nCOMMIT:  abc1234\n"
     assert identity_problems(NAME, COL, MAN, MEMBERS) == [], (
         f"the agreeing case must pass: {identity_problems(NAME, COL, MAN, MEMBERS)}")
@@ -2199,7 +2199,7 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     col = (f"0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
            f"round-{rnd} external-review package ({version})\n"
            f"source commit: abc1234\n"
-           f"specs:           {pid.render_candidate_lines(version)}\n")
+           f"{pid.render_candidate_field(version)}\n")
     man = f"PACKAGE: {specs}-{version} — external ROUND {rnd}\nCOMMIT: abc1234\n"
     assert identity_problems(name, col, man, MEMBERS) == [], (
         f"the agreeing package is refused: {identity_problems(name, col, man, MEMBERS)}")
@@ -2215,6 +2215,39 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
 
     # and the whole block missing, and a package with no identity row
     assert identity_problems(name, col.split("specs:")[0], man, MEMBERS)
+
+    # EXTERNAL ROUND 20, R20-1: THE FIELD IS THE CARRIER, AND WHERE IT SITS
+    # IS PART OF IT. The check asked whether the rendered block occurred
+    # ANYWHERE in COLLECTED, so a package could answer `specs: none — this
+    # package has no external candidates` on the line a reviewer reads and
+    # carry the correct block further down; the contradiction passed every
+    # check and the repacked archive verified clean. Presence somewhere
+    # stood in for the field's value — the proxy class one level up from
+    # where R19-1 closed it.
+    import skip_inventory as _si
+    field = pid.render_candidate_field(version)
+    lines = pid.render_candidate_lines(version)
+    lie = "specs: none — this package has no external candidates"
+    body = f"{_si.BEGIN_MARKER}\ninventory\n{_si.END_MARKER}\n"
+    anchored = col + body
+    assert identity_problems(name, anchored, man, MEMBERS) == [], (
+        "the anchored control must pass: "
+        f"{identity_problems(name, anchored, man, MEMBERS)}")
+    for label, mutant in (
+        ("the reviewer's reproducer: a LIE in the field, the correct "
+         "lines appended after the inventory block",
+         anchored.replace(field, lie) + lines + "\n"),
+        ("a lie in the field, a whole second FIELD appended below",
+         anchored.replace(field, lie) + field + "\n"),
+        ("the field relocated below the inventory block",
+         anchored.replace(field + "\n", "") + field + "\n"),
+        ("two specs: fields", anchored + field + "\n"),
+        ("the field replaced by a plausible lie", anchored.replace(field, lie)),
+    ):
+        assert mutant != anchored, f"{label}: the mutation did not apply"
+        assert identity_problems(name, mutant, man, MEMBERS), (
+            f"ACCEPTED {label} — R20-1")
+
     assert identity_problems(name.replace(version, "v999"),
                              col.replace(version, "v999"),
                              man.replace(version, "v999"), MEMBERS)
@@ -2228,9 +2261,9 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # later correct value won — R14-1's mechanism (a duplicate vanishing into a
     # set) inside a check written after R14-1.
     dup = col.replace(
-        "specs:           ",
-        "specs:           specs/0022-source-revocation.md — draft v999 "
-        "(external candidate)\n                 ", 1)
+        pid.LABEL,
+        pid.LABEL + "specs/0022-source-revocation.md — draft v999 "
+        "(external candidate)\n" + pid.INDENT, 1)
     assert dup != col
     assert identity_problems(name, dup, man, MEMBERS), (
         "a carrier stating one spec's revision TWICE, with different values, "
@@ -2306,7 +2339,7 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
 
     # a candidate line OUTSIDE the verified block: the block matching exactly
     # says nothing about what else the carrier says
-    stray = col + ("\n                 specs/0022-source-revocation.md — "
+    stray = col + ("\n" + pid.INDENT + "specs/0022-source-revocation.md — "
                    "draft v99 (external candidate)\n")
     assert identity_problems(name, stray, man, MEMBERS), (
         "a second candidate line outside the block was accepted")
@@ -2314,8 +2347,92 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # THE TEMPLATE MUST NOT CARRY THE LITERALS AGAIN
     header = (root / "specs" / "package" / "collected_header.txt").read_text()
     assert "__CANDIDATES__" in header, (
-        "collected_header.txt must fill its candidate lines from the identity "
+        "collected_header.txt must fill its candidate field from the identity "
         "record, not carry `draft vN` literals (R17-1)")
+    assert "specs:" not in header, (
+        "collected_header.txt still carries the `specs:` LABEL — the label and "
+        "the lines must be ONE rendered field, or verification can only ask "
+        "whether the lines appear somewhere (R20-1)")
     assert not re.search(r"draft v\d+", header), (
         "collected_header.txt carries a literal `draft vN` — that is the "
         "defect, restored")
+
+
+def test_a_repacked_archive_with_a_relocated_candidate_field_is_refused(capsys):
+    """External round 20, R20-1, at the ARCHIVE level — the reviewer asked for
+    both a pure-function and a full-repack regression, because the pure
+    function is not what shipped: `verify_archive` is.
+
+    The reviewer built a contradictory package — `specs: none ...` on the
+    reviewer-facing line, the correct candidate lines appended lower down — and
+    the complete extracted-archive verifier accepted it. This repacks the most
+    recent sealed archive with that same mutation and requires the verifier to
+    REFUSE.
+
+    It skips when no archive is present (they are gitignored, so a clone has
+    none), which is the inventoried `no archives present` condition."""
+    import pathlib, re, sys, tarfile, tempfile
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import package_identity as pid
+    import seal_package as sp
+
+    archives = sorted((root / "specs" / "archives").glob("*.tar.gz"),
+                      key=lambda p: p.stat().st_mtime, reverse=True)
+    if not archives:
+        pytest.skip("no archives present (they are gitignored; a clone has none)")
+    src = archives[0]
+    m = re.match(r".+-(v\d+)-\d{8}T\d{4}Z\.tar\.gz$", src.name)
+    if not m or m.group(1) not in pid.PACKAGES:
+        pytest.skip("the newest archive predates the identity record's domain")
+    version = m.group(1)
+
+    with tempfile.TemporaryDirectory() as td:
+        d = pathlib.Path(td)
+        with tarfile.open(src) as tf:
+            tf.extractall(d / "x")
+        col_path = d / "x" / "COLLECTED.txt"
+        col = col_path.read_text()
+        field = pid.render_candidate_field(version)
+        assert field in col, (
+            "the sealed archive does not carry the rendered candidate field — "
+            "this test would otherwise pass by mutating nothing")
+
+        # THE REVIEWER'S EXACT MUTATION
+        lie = "specs: none — this package has no external candidates"
+        col_path.write_text(col.replace(field, lie)
+                            + pid.render_candidate_lines(version) + "\n")
+
+        repacked = d / src.name
+        with tarfile.open(repacked, "w:gz") as tf:
+            # FILES ONLY, and non-recursive. Adding directories as well made
+            # every child appear twice, so verify_archive refused for
+            # `duplicate members` and this test passed WITHOUT the identity
+            # check ever running — which is precisely why the refusal reason is
+            # asserted below rather than just the refusal.
+            for f in sorted((d / "x").rglob("*")):
+                if f.is_file():
+                    tf.add(f, arcname="./" + str(f.relative_to(d / "x")),
+                           recursive=False)
+
+        # the UNMUTATED carriers must pass the same check, or this test could
+        # be satisfied by an archive that was already broken. (The control is
+        # the pure function, not a second verify_archive: a clean run executes
+        # nine extraction subprocesses, and the identity refusal below happens
+        # before any of them.)
+        man = (d / "x" / "PACKAGE_MANIFEST.txt").read_text()
+        with tarfile.open(src) as tf:
+            members = set(tf.getnames())
+        assert sp.identity_problems(src.name, col, man, members) == [], (
+            "the sealed archive's own carriers do not verify — this test would "
+            "then prove nothing about the mutation")
+
+        with pytest.raises(SystemExit):
+            sp.verify_archive(repacked, ["0022", "0023"])
+        # AND FOR THE RIGHT REASON: a seal can abort for many reasons, and a
+        # test that accepts any of them would pass while the identity check
+        # slept.
+        refusal = capsys.readouterr().err
+        assert "R20-1" in refusal or "specs:" in refusal, (
+            f"the archive was refused, but not by the identity check: "
+            f"{refusal[-400:]}")

@@ -533,6 +533,22 @@ CLOSURES = [
      "specs/review_lessons.py (at_start=True) and specs/skip_inventory.py "
      "(at_start=False, stated rather than defaulted), tests/test_spec_gate.py",
      "$PY -m pytest tests/test_spec_gate.py -k byte_verified"),
+    # ---- external round 20 ------------------------------------------------
+    ("0022", "external", 20, "R20-1",
+     "the candidate block was checked for occurrence ANYWHERE in COLLECTED "
+     "rather than as the reviewer-facing `specs:` field, so a package could "
+     "answer `specs: none — this package has no external candidates` on the "
+     "line a reviewer reads and carry the correct block lower down; the "
+     "contradiction passed identity_problems() and the complete extracted "
+     "verifier",
+     "specs/package_identity.py (LABEL/INDENT own the field; "
+     "render_candidate_field() renders it whole), "
+     "specs/package/collected_header.txt (the label removed from the "
+     "template), specs/seal_package.py (exactly one `specs:` field, in the "
+     "header above the inventory block, byte-identical to the rendered "
+     "field), tests/test_spec_gate.py (pure-function matrix AND a full-repack "
+     "regression that asserts the REASON for refusal)",
+     "$PY -m pytest tests/test_spec_gate.py -k relocated_candidate"),
     # ---- self-found by CI, round 15 ---------------------------------------
     ("0022", "internal", 15, "R15-3",
      "SELF-FOUND (by CI, five red runs before I looked): the transcript "

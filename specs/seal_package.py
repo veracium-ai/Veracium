@@ -328,43 +328,67 @@ def identity_problems(archive_name: str, col: str, man: str,
     # with the `specs:` label, so `^\s*specs/` silently found only the SECOND
     # one — and a check that sees one of two carriers is how R17-1 happened.
     # Caught by the clean control, which is the argument for keeping one.
-    # R19-1: PARSING FIELDS OUT OF THE CARRIER IS NOT CHECKING THE CARRIER.
-    # This used to extract the four-digit spec id and the revision from each
-    # candidate line and compare only those, so renaming the PATH —
-    # `specs/0022-source-revocation.md` to `specs/0022-not-the-shipped-spec.md`
-    # — left the id and revision correct, every identity check passed, and
-    # COLLECTED pointed the reviewer at a file that does not exist. The fields
-    # I chose to extract stood in for the artifact; that is the proxy class,
-    # inside the fix that was closing the previous carrier finding.
+    # R19-1 / R20-1: THE FIELD IS THE CARRIER, AND WHERE IT SITS IS PART OF IT.
     #
-    # So the block is compared as a RENDERED ARTIFACT, byte for byte, against
-    # the generator — no fields, no parsing, nothing selected. Then nothing of
-    # that shape may exist outside it, because an exact match somewhere in the
-    # file says nothing about what else the file says.
-    block = pid.render_candidate_lines(version)
-    if block not in col:
+    # R19-1 stopped this from comparing extracted fields and made it compare
+    # the rendered lines. R20-1 showed that was still not the carrier: the
+    # check asked whether the block occurred ANYWHERE in COLLECTED, so a
+    # package could answer
+    #
+    #     specs: none — this package has no external candidates
+    #
+    # on the reviewer-facing line and carry the correct block further down, and
+    # every check passed on the contradiction. Presence somewhere stood in for
+    # the field's value — the proxy class again, one level up from where it was
+    # last closed.
+    #
+    # So the unit verified is the WHOLE FIELD, label included, rendered from
+    # the identity record, required to be the file's ONLY `specs:` field, and
+    # required to sit exactly where that field sits.
+    field = pid.render_candidate_field(version)
+    labels = [m.start() for m in re.finditer(r"(?m)^specs:", col)]
+    if len(labels) != 1:
         problems.append(
-            f"COLLECTED.txt's candidate block is not byte-identical to "
-            f"package_identity.render_candidate_lines({version!r}) — expected:\n"
-            f"{block}\n(R19-1: comparing the spec id and revision alone let a "
-            f"renamed PATH through)")
+            f"COLLECTED.txt carries {len(labels)} `specs:` fields, expected "
+            f"exactly one — a second one can contradict the first (R20-1)")
         return problems
+    # ...and in the HEADER, where a reviewer reads it. "Unique expected header
+    # position" is enforced against the inventory marker rather than a line
+    # number, so the template can grow without the rule going stale.
+    sys.path.insert(0, str(SPECS))
+    import skip_inventory as _si
+    body_at = col.find(_si.BEGIN_MARKER)
+    if body_at != -1 and labels[0] > body_at:
+        problems.append(
+            f"COLLECTED.txt's `specs:` field sits BELOW the generated "
+            f"inventory block — the identity a reviewer reads is in the "
+            f"header, and a field relocated out of it is not that field "
+            f"(R20-1)")
+        return problems
+    if not col.startswith(field, labels[0]):
+        got = col[labels[0]:labels[0] + len(field)].split("\n")[0]
+        problems.append(
+            f"COLLECTED.txt's `specs:` field is not the rendered candidate "
+            f"field for {version}. Found: {got!r}. Expected the field to BEGIN "
+            f"at that position with:\n{field}\n(R20-1: the block appearing "
+            f"somewhere in the file is not the field stating it)")
+        return problems
+
+    # nothing of that shape anywhere else — an exact field says nothing about
+    # what the rest of the carrier claims
     CAND_RE = r"specs/\S+\.md — draft v\d+(?:\.\d+)? \(external candidate\)"
-    outside = re.findall(CAND_RE, col.replace(block, "", 1))
+    outside = re.findall(CAND_RE, col.replace(field, "", 1))
     if outside:
         problems.append(
             f"COLLECTED.txt carries candidate line(s) OUTSIDE its verified "
-            f"block: {outside} — a carrier that states the same fact twice can "
+            f"field: {outside} — a carrier that states the same fact twice can "
             f"disagree with itself (R18-1/R19-1)")
 
-    # AND EVERY DECLARED PATH MUST BE IN THE ARCHIVE. A block that matches the
+    # AND EVERY DECLARED PATH MUST BE IN THE ARCHIVE. A field that matches the
     # generator perfectly still misdirects if the generator names a file the
     # package does not carry.
-    # `git archive` writes members as `./specs/...`; the carrier names them
-    # without the prefix. Normalised here rather than at one call site, so a
-    # second caller cannot get it subtly wrong.
     normalised = {m[2:] if m.startswith("./") else m for m in members}
-    for path in re.findall(r"(specs/\S+\.md) — draft", block):
+    for path in re.findall(r"(specs/\S+\.md) — draft", field):
         if path not in normalised:
             problems.append(
                 f"COLLECTED.txt directs the reviewer to {path}, which is NOT a "
@@ -612,7 +636,7 @@ def main() -> int:
 
         subs = {"__VERSION__": a.version, "__ROUND__": str(round_no),
                 "__PACKAGE__": pkg,
-                "__CANDIDATES__": _pid.render_candidate_lines(a.version),
+                "__CANDIDATES__": _pid.render_candidate_field(a.version),
                 "__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
                 "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
                 "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,
