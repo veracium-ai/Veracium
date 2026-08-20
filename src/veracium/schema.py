@@ -232,6 +232,39 @@ QUARANTINE_RELATION = "third_party_claim"
 # Store-of-record units
 # --------------------------------------------------------------------------- #
 
+# specs/0004 W5 — the invalidation-reason registries. TWO constants, not one,
+# and the split carries §4's polarity into the code:
+#
+#   WIKI_RETAINING_REASONS is what the RUNTIME consults: membership → the wiki
+#   survives the invalidation; every other reason — including one no spec has
+#   named yet — DROPS it. The runtime never branches on a drop-list, so the
+#   registry can only fail the build, never widen what is served (internal R1:
+#   v2 had this inverted, retaining on an unknown reason, which serves revoked
+#   content if the unknown reason meant "revoked").
+#
+#   DISPOSITIONED_REASONS is the process record W5's registry test diffs
+#   against: every reason any producer can pass, each explicitly dispositioned.
+#   A producer growing a new reason fails test_invalidation_reason_registry_is
+#   _total until the spec that adds it dispositions it here.
+#
+# "revoked_source" is the seat specs/0022 reserves: a sole-basis survivor
+# retired by the revocation sweep drops the wiki through this registry.
+WIKI_RETAINING_REASONS: frozenset = frozenset({
+    "lapsed",              # W3 — staleness is not a trust event
+    "decayed",             # W3
+    "absorbed_duplicate",  # W8 / W-Q1 — absorption is trust-preserving
+})
+DISPOSITIONED_REASONS: dict = {
+    "disputed": "drop",            # W1 — the host revoked its trust
+    "corrected": "drop",           # the host replaced the content
+    "superseded": "drop",          # W2 — the supersession path
+    "revoked_source": "drop",      # 0022's sweep (reserved seat)
+    "lapsed": "retain",            # W3
+    "decayed": "retain",           # W3
+    "absorbed_duplicate": "retain",  # W8
+}
+
+
 class Edge(BaseModel):
     """A typed relational fact. `subject`/`object` are entity refs (e.g. 'user',
     'person:tansy', 'org:thornbury'). Bi-temporal: superseded/invalidated edges

@@ -23,7 +23,8 @@ from ..schema import (ConsolidationOp, ConsolidationOutputDraft, ConsolidationSt
                       Disclosure, Edge, Episode, EvidenceAuthor, OutcomeJudgmentDraft,
                       Provenance, RECOVERY_PENDING_STATES,
                       SupersessionPlan, SupersessionRefusal, SupersessionResult,
-                      is_historical_id, to_historical_id)
+                      is_historical_id, to_historical_id,
+                      WIKI_RETAINING_REASONS)
 from .base import (DESTINATION_CHANGED, HEAD_MOVED, LEASE_MAX, NON_QUIESCENT,
                    PLAN_STALE, ReceiptSchemaBoundaryError, Store,
                    SupersessionIntegrityError)
@@ -250,6 +251,14 @@ class SqliteStore(Store):
         edge.invalidation_reason = reason
         self._conn.execute("UPDATE edges SET active=0, json=? WHERE id=?",
                            (edge.model_dump_json(), edge_id))
+        # specs/0004 (W1/W2, internal R2): the wiki drop lives HERE, in the sole
+        # active=0 writer, so every invalidation path — present and future —
+        # inherits it by construction instead of having to remember it. The
+        # RETAIN-set is consulted, never a drop-list: an unrecognised reason
+        # drops (§2c, fail-closed). The refusal-contention drops in the callers
+        # are 0003's independent, reason-blind condition and remain beside this.
+        if reason not in WIKI_RETAINING_REASONS:
+            self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
         return row[1]
 
     def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:
