@@ -309,13 +309,21 @@ class SqliteStore(Store):
     def _recompute_edge_row(self, edge_id: str, values: dict) -> None:
         """0022's recompute verb: the three RECOMPUTED_FIELDS, nothing else."""
         from datetime import datetime
+
+        def _parse(ts: str):
+            # the sweep's values carry the corpus's canonical Z suffix, and
+            # fromisoformat only accepts Z from Python 3.11 — this package's
+            # floor is 3.10, which CI's clean-checkout matrix caught while the
+            # authoring venv (3.12) parsed it happily
+            return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
         row = self._conn.execute("SELECT json, user_id FROM edges WHERE id=?",
                                  (edge_id,)).fetchone()
         if not row:
             return
         edge = Edge.model_validate_json(row[0])
-        edge.valid_from = datetime.fromisoformat(values["valid_from"])
-        edge.provenance.observed_at = datetime.fromisoformat(values["observed_at"])
+        edge.valid_from = _parse(values["valid_from"])
+        edge.provenance.observed_at = _parse(values["observed_at"])
         edge.provenance.confidence = float(values["confidence"])
         self._conn.execute("UPDATE edges SET json=? WHERE id=?",
                            (edge.model_dump_json(), edge_id))
