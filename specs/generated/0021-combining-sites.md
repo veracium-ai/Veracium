@@ -5,7 +5,7 @@
 
 # specs/0021 §3 — combining-site manifest
 
-**21 record-mutating code paths**, enumerated by **parsing the store's SQL**
+**25 record-mutating code paths**, enumerated by **parsing the store's SQL**
 rather than by reading the spec's prose matrix. **11 of them COMBINE**:
 they write a record derived from, or mutate a record because of, MORE THAN
 ONE existing record — the definition §3 gives the registry.
@@ -44,6 +44,10 @@ outside the boundary by construction.
 | `src/veracium/store/sqlite.py` | `_claim_inputs` | `UPDATE episodes` | **yes** | consolidation | claims ONE POOL's inputs. `lifecycle.partition_cold` selects the set, so a claim never spans two identities (§4b) and each pool holds its own claim, lease and crash-safety |
 | `src/veracium/store/sqlite.py` | `_drop_contributions_for_survivor` | `DELETE FROM contribution_ledger` | no | — | accepted 0014 A10 — a ledger row lives exactly as long as its survivor. Removes attribution, never derives it (and §4c flattening is what makes that harmless) |
 | `src/veracium/store/sqlite.py` | `_invalidate_edge_row` | `DELETE FROM wiki` · `UPDATE edges` | **yes** | absorption · supersession | retires a prior BECAUSE of the incoming — absorbed_duplicate only within one scope (§4c); superseded is scope-blind (§3) |
+| `src/veracium/store/sqlite.py` | `_recompute_edge_row` | `DELETE FROM wiki` · `UPDATE edges` | no | — | 0022's recompute verb: applies the sweep's PRECOMPUTED RECOMPUTED_FIELDS (valid_from, observed_at, confidence) to one edge. The fold over surviving contributor sides happens in the sweep over ledger rows; this writer consults no second record |
+| `src/veracium/store/sqlite.py` | `_reinstate_edge_row` | `DELETE FROM wiki` · `UPDATE edges` | no | — | 0022's reinstate verb: reverses OUR OWN revoked_source retirement on ONE edge when the last overlapping revocation lifts; drops the wiki because the derived view changed in the restoring direction too |
+| `src/veracium/store/sqlite.py` | `_reinstate_episode_row` | `UPDATE episodes` | no | — | the episode half of the reinstate verb — one record, standing-state consequence |
+| `src/veracium/store/sqlite.py` | `_retire_episode_row` | `UPDATE episodes` | no | — | 0022 R18: retires ONE episode because its resolved source identity is revoked — a standing-state consequence, not a combination; the sole episode-retirement writer, mirroring _invalidate_edge_row |
 | `src/veracium/store/sqlite.py` | `_upsert_edge_row` | `INSERT OR REPLACE INTO edges` | **yes** | absorption · supersession | the survivor row whose valid_from/observed_at/confidence/ungrounded were inherited from the absorbed set; same-scope by the gate above |
 | `src/veracium/store/sqlite.py` | `_write_absorption_flattening` | `INSERT INTO contribution_ledger` | **yes** | absorption | §4c WRITE-TIME FLATTENING: copies of the prior's TRANSITIVELY CLOSED row set onto the survivor at `scope-attribution`, payload {"flattened": true}, native per-row keys — so every post-0021 survivor's row set is its whole ancestry by construction (§7b row 2) |
 | `src/veracium/store/sqlite.py` | `_write_consolidation_contributions` | `INSERT INTO contribution_ledger` | **yes** | consolidation | the N×M ledger rows at the cutover — the ONLY membership evidence a cleared-identity derivative has (§4a). All inputs share one identity by the partition, so a complete row set resolves to that identity or to SHARED; anything else is UNRESOLVED (0020 §4a-iii) |

@@ -124,6 +124,15 @@ def test_ungrounded_grants_nothing():
                        # WITHHOLDING-side; `test_same_scope_grants_nothing`
                        # (0020 V2) is the behavioural check that they keep it.
                        "gate.py", "scope_read.py",
+                       # 0022's sweep (external round 21): `revocation_sweep`
+                       # VALIDATES the flag as record data (a required bool in
+                       # the ported record schema) and `revocation` PROJECTS
+                       # it into that shape — U2's verification class exactly:
+                       # both carry the property through; neither branches on
+                       # it, grants anything from it, or treats it as a trust/
+                       # authority/staleness key. The sweep's retire/recompute
+                       # decisions read the LEDGER and the standing set only.
+                       "revocation_sweep.py", "revocation.py",
                        # specs/0021 slice C — NOT a reader either:
                        # `combining.py` is a REGISTRY of verdicts about write
                        # sites, and its `_upsert_edge_row` row names

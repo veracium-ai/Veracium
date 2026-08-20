@@ -88,6 +88,28 @@ COMBINING_SITES = {
         True, ("absorption", "supersession"),
         "retires a prior BECAUSE of the incoming — absorbed_duplicate only "
         "within one scope (§4c); superseded is scope-blind (§3)"),
+    # ---- specs/0022 (the revocation sweep's writers, external round 21) -----
+    # None of the four COMBINES: each mutates ONE record because of the
+    # standing revocation state, never because of another record's content.
+    # The recompute verb LOOKS combining (it folds contributor sides) but the
+    # fold is computed by the sweep from the EXISTING ledger rows — this
+    # writer applies precomputed values to one row and consults nothing else.
+    (_STORE, "_retire_episode_row"): SiteSpec(
+        False, why="0022 R18: retires ONE episode because its resolved source identity "
+        "is revoked — a standing-state consequence, not a combination; the "
+        "sole episode-retirement writer, mirroring _invalidate_edge_row"),
+    (_STORE, "_reinstate_edge_row"): SiteSpec(
+        False, why="0022's reinstate verb: reverses OUR OWN revoked_source retirement on "
+        "ONE edge when the last overlapping revocation lifts; drops the wiki "
+        "because the derived view changed in the restoring direction too"),
+    (_STORE, "_reinstate_episode_row"): SiteSpec(
+        False, why="the episode half of the reinstate verb — one record, standing-state "
+        "consequence"),
+    (_STORE, "_recompute_edge_row"): SiteSpec(
+        False, why="0022's recompute verb: applies the sweep's PRECOMPUTED "
+        "RECOMPUTED_FIELDS (valid_from, observed_at, confidence) to one edge. "
+        "The fold over surviving contributor sides happens in the sweep over "
+        "ledger rows; this writer consults no second record"),
     (_STORE, "_write_contribution"): SiteSpec(
         True, ("absorption",),
         "the native `absorption` row: the direct link, carrying the absorbed "

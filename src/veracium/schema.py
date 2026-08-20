@@ -368,6 +368,15 @@ class Episode(BaseModel):
     # JSON null on import is malformed. FORMAT_VERSION 4→5 rides on this field.
     consolidation_output_index: Optional[int] = None
 
+    # --- specs/0022 §4b-ii (R18; internal S1) — episode retirement -----------
+    # Quentin's ruled mechanism (2026-08-17): a JSON field plus the
+    # store.episodes() read seam, no DDL. The sweep retires an episode whose
+    # resolved source identity is revoked, exactly as it retires an edge;
+    # store.episodes() default-EXCLUDES retired rows so every reader inherits
+    # the exclusion, and Q9's successor spec owns a first-class carrier.
+    retired_reason: Optional[str] = None
+    retired_at: Optional[datetime] = None
+
     # --- specs/0009 outcome-authorship chain (append-only history) --------------
     # Store-assigned, OUTCOME-ONLY (None on any non-outcome episode). Never
     # host-supplied: `append_outcome_if_head` mints them. `seq` is the per-chain

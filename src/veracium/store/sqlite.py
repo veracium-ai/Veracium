@@ -261,6 +261,66 @@ class SqliteStore(Store):
             self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
         return row[1]
 
+    def _retire_episode_row(self, episode_id: str, at, reason: str) -> Optional[str]:
+        """Retire one episode WITHOUT lock/bump/commit; returns its user_id or
+        None. THE SOLE episode-retirement writer (specs/0022 R18, mirroring
+        _invalidate_edge_row) — every retirement path inherits this shape."""
+        row = self._conn.execute("SELECT json, user_id FROM episodes WHERE id=?",
+                                 (episode_id,)).fetchone()
+        if not row:
+            return None
+        ep = Episode.model_validate_json(row[0])
+        ep.retired_at = at
+        ep.retired_reason = reason
+        self._conn.execute("UPDATE episodes SET json=? WHERE id=?",
+                           (ep.model_dump_json(), episode_id))
+        return row[1]
+
+    def _reinstate_edge_row(self, edge_id: str) -> None:
+        """Reverse OUR OWN revoked_source retirement (0022's reinstate verb —
+        the sweep only emits it for rows it retired). The wiki drops too: the
+        derived view changed in the restoring direction as surely as in the
+        retiring one, and a stale cache serving the pre-lift world is the same
+        defect mirrored."""
+        row = self._conn.execute("SELECT json, user_id FROM edges WHERE id=?",
+                                 (edge_id,)).fetchone()
+        if not row:
+            return
+        edge = Edge.model_validate_json(row[0])
+        # `active` is DERIVED (invalidated_at is None) — clearing the fields
+        # IS the reinstatement; the column mirrors it
+        edge.invalidated_at = None
+        edge.invalidation_reason = None
+        self._conn.execute("UPDATE edges SET active=1, json=? WHERE id=?",
+                           (edge.model_dump_json(), edge_id))
+        self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
+
+    def _reinstate_episode_row(self, episode_id: str) -> None:
+        row = self._conn.execute("SELECT json FROM episodes WHERE id=?",
+                                 (episode_id,)).fetchone()
+        if not row:
+            return
+        ep = Episode.model_validate_json(row[0])
+        ep.retired_at = None
+        ep.retired_reason = None
+        self._conn.execute("UPDATE episodes SET json=? WHERE id=?",
+                           (ep.model_dump_json(), episode_id))
+
+    def _recompute_edge_row(self, edge_id: str, values: dict) -> None:
+        """0022's recompute verb: the three RECOMPUTED_FIELDS, nothing else."""
+        from datetime import datetime
+        row = self._conn.execute("SELECT json, user_id FROM edges WHERE id=?",
+                                 (edge_id,)).fetchone()
+        if not row:
+            return
+        edge = Edge.model_validate_json(row[0])
+        edge.valid_from = datetime.fromisoformat(values["valid_from"])
+        edge.provenance.observed_at = datetime.fromisoformat(values["observed_at"])
+        edge.provenance.confidence = float(values["confidence"])
+        self._conn.execute("UPDATE edges SET json=? WHERE id=?",
+                           (edge.model_dump_json(), edge_id))
+        self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
+
     def _edge_in_refusal(self, user_id: str, edge_id: str) -> bool:
         """True if `edge_id` participates (as prior or incoming) in any refusal record —
         i.e. it may be a member of a live refusal contention (specs/0003 §4c-ii)."""
@@ -985,7 +1045,8 @@ class SqliteStore(Store):
             self._bump(episode.user_id)
             self._conn.commit()
 
-    def episodes(self, user_id, *, limit=None) -> list[Episode]:
+    def episodes(self, user_id, *, limit=None,
+                 include_retired=False) -> list[Episode]:
         # specs/0010 X9: every ordinary read sees EXACTLY ONE complete representation —
         # all relevant inputs, or all committed outputs, never both and never neither.
         # The episode rows and the op states are read in ONE snapshot (under the lock),
@@ -999,6 +1060,11 @@ class SqliteStore(Store):
         out = []
         for (blob,) in rows:
             ep = Episode.model_validate_json(blob)
+            # specs/0022 R18: retired episodes are DEFAULT-EXCLUDED at the one
+            # read seam, so all readers inherit the exclusion — the JSON-field
+            # stand-in for the SQL guarantee a column would have given (§4b-ii)
+            if ep.retired_reason is not None and not include_retired:
+                continue
             if self._ordinary_read_visible(ep, op_state):
                 out.append(ep)
                 if limit and len(out) >= limit:

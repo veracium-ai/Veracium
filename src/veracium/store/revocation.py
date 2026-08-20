@@ -140,3 +140,146 @@ def revocation_operation(conn, user_id: str, identity_digest: str,
             # established, say so rather than pretending (R5-1)
             _rollback_or_poison(conn, e)
             raise
+
+
+# ---------------------------------------------------------------------------
+# The product adapter (0022 §4e): project the SQLite store into the ported
+# computation's store-dict shape, and apply its closed effect vocabulary
+# through the store's SOLE writers. All the fidelity risk of the verbatim
+# port concentrates HERE, which is why the differential vector test compares
+# product and reference over the whole corpus.
+# ---------------------------------------------------------------------------
+
+import json as _json
+
+from . import revocation_sweep as _sw
+
+
+def _edge_record(e) -> dict:
+    from ..schema import EvidenceAuthor
+    return {
+        "type": "edge", "id": e.id,
+        "origin": e.provenance.origin, "source_id": e.provenance.source_id,
+        "active": bool(e.active),
+        "retired_reason": e.invalidation_reason if not e.active else None,
+        "system_authored":
+            e.provenance.author_of_evidence == EvidenceAuthor.SYSTEM,
+        "valid_from": e.valid_from.isoformat(),
+        "observed_at": e.provenance.observed_at.isoformat(),
+        "confidence": float(e.provenance.confidence),
+        "ungrounded": bool(e.ungrounded),
+    }
+
+
+def _episode_record(ep) -> dict:
+    from ..schema import EvidenceAuthor
+    return {
+        "type": "episode", "id": ep.id,
+        "origin": ep.provenance.origin, "source_id": ep.provenance.source_id,
+        "active": ep.retired_reason is None,
+        "retired_reason": ep.retired_reason,
+        "system_authored":
+            ep.provenance.author_of_evidence == EvidenceAuthor.SYSTEM,
+        "valid_from": ep.date,
+        "observed_at": ep.provenance.observed_at.isoformat(),
+        "confidence": float(ep.provenance.confidence),
+        "ungrounded": False,     # episodes carry no ungrounded flag (0019 is
+                                 # an edge-object property; §4b-i's enumeration)
+    }
+
+
+def project_store(store, user_id: str) -> dict:
+    """The reference store-dict, read from the live connection. Called INSIDE
+    the R19 transaction on the commit path, so the sweep computes over exactly
+    the rows the operation will mutate."""
+    conn = store._conn
+    # RAW reads, not store verbs: this runs INSIDE revoke_source's lock and
+    # the R19 transaction, and the store's public verbs re-take the
+    # non-reentrant lock — the first version deadlocked on exactly that.
+    # Reading the connection directly is also the CORRECT consistency: the
+    # sweep must see the rows this transaction will mutate, not a second
+    # snapshot.
+    from ..schema import Edge as _Edge, Episode as _Episode
+    records = [_edge_record(_Edge.model_validate_json(b0))
+               for (b0,) in conn.execute(
+                   "SELECT json FROM edges WHERE user_id=?", (user_id,))]
+    records += [_episode_record(_Episode.model_validate_json(b0))
+                for (b0,) in conn.execute(
+                    "SELECT json FROM episodes WHERE user_id=?", (user_id,))]
+    ledger = []
+    for row in conn.execute(
+            "SELECT user_id, survivor_type, survivor_id, site, "
+            "identity_digest, evidence_ref_digest, payload, op_key, "
+            "contributor_type, contributor_ref FROM contribution_ledger "
+            "WHERE user_id=?", (user_id,)):
+        d = dict(zip(("user_id", "survivor_type", "survivor_id", "site",
+                      "identity_digest", "evidence_ref_digest", "payload",
+                      "op_key", "contributor_type", "contributor_ref"), row))
+        d["payload"] = _json.loads(d["payload"])
+        ledger.append(d)
+    revs = [dict(zip(("user_id", "seq", "identity_digest", "action", "at",
+                      "reason"), r))
+            for r in conn.execute(
+                "SELECT user_id, seq, identity_digest, action, at, reason "
+                "FROM source_revocations WHERE user_id=? ORDER BY seq",
+                (user_id,))]
+    return {"user_id": user_id, "local_origin": store.local_origin(),
+            "records": records, "ledger": ledger, "revocations": revs}
+
+
+def _apply_statement_effect(store, at, effect: dict) -> None:
+    """The CLOSED verb vocabulary, through the store's sole writers. An
+    unknown verb REFUSES (the 0004 W5 polarity: the registry can only fail,
+    never widen), and refusal rolls back the whole operation (R19)."""
+    verb, rtype, rid = effect["verb"], effect["type"], effect["id"]
+    if verb == "retire" and rtype == "edge":
+        # reason "revoked_source": the seat 0004's registry reserved — the
+        # wiki drops through the SOLE active=0 writer, in the same txn
+        store._invalidate_edge_row(rid, at, effect["reason"])
+    elif verb == "retire" and rtype == "episode":
+        store._retire_episode_row(rid, at, effect["reason"])
+    elif verb == "reinstate" and rtype == "edge":
+        store._reinstate_edge_row(rid)
+    elif verb == "reinstate" and rtype == "episode":
+        store._reinstate_episode_row(rid)
+    elif verb == "recompute" and rtype == "edge":
+        store._recompute_edge_row(rid, effect["values"])
+    else:
+        raise RevocationEffectError(
+            f"no applier for effect {verb!r} on {rtype!r} — the vocabulary "
+            f"is closed and an unknown verb must refuse, not skip")
+
+
+def revoke_source(store, user_id: str, target_digest: str, action: str,
+                  reason: str, at: str, *, dry_run: bool = False) -> dict:
+    """0022 §4e: preview or commit ONE revocation/lift, sweep included.
+
+    Both paths run THE SAME sweep (§4e's one-computation rule, R6's executed
+    comparison). `dry_run=True` returns the completeness statement and writes
+    nothing; `dry_run=False` appends the row and applies every effect through
+    the R19 operation — together or not at all. The statement is RETURNED and
+    is audit-event-only (Q6, approved 2026-08-20): the caller's audit sink is
+    the durable record; the store keeps no second copy."""
+    proposed = {"identity_digest": target_digest, "action": action,
+                "at": at, "reason": reason}
+    with store._lock:
+        if dry_run:
+            return _sw.sweep(project_store(store, user_id), target_digest,
+                             proposed=proposed)
+        statement = {}
+
+        def plan(_standing):
+            # INSIDE the R19 transaction: project and sweep over exactly the
+            # rows this operation sees and will mutate
+            st = _sw.sweep(project_store(store, user_id), target_digest,
+                           proposed=proposed)
+            statement.update(st)
+            return st["effects"]
+
+        revocation_operation(
+            store._conn, user_id, target_digest, action, reason, at,
+            plan=plan,
+            apply_effect=lambda _conn, e: _apply_statement_effect(store, at, e))
+        store._bump(user_id)
+        store._conn.commit()
+        return statement
