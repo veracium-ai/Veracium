@@ -23,7 +23,7 @@ measurement.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v5** — external round 3 folded (2026-08-21): **R3-1** the combined pipeline gains the standing-revocation floor as an explicit step (`0025` §4b-iii step 3) and §5's "unchanged under 0023" claim corrected — accepted N1 wins over the coherence rewrite, with revoked-source vectors; **R3-2** `Edge.original_relation` defined ONCE at `0025` §2 with both writers enumerated, §5's registry claim and §7a's schema row de-staled. *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
+| **Version** | **v6** — external round 4 folded (2026-08-21): **R4-1** the §3 matrix scoped to non-revoked sources with the revocation dimension as its own row (N1 wins over every column) and "author rules ALONE" retired for base-vs-final disclosure language; **PAIR-R4-1** every measured figure is the shipped script's exact output (183,417; note rule 1,644 = 41.7%). *Prior:* **v5** — external round 3 folded (2026-08-21): **R3-1** the combined pipeline gains the standing-revocation floor as an explicit step (`0025` §4b-iii step 3) and §5's "unchanged under 0023" claim corrected — accepted N1 wins over the coherence rewrite, with revoked-source vectors; **R3-2** `Edge.original_relation` defined ONCE at `0025` §2 with both writers enumerated, §5's registry claim and §7a's schema row de-staled. *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
@@ -52,13 +52,15 @@ statement, the store quarantines content the user said in their own voice,
 and every assertable surface then refuses it — *"there are some unverified
 third-party claims … but these were never confirmed by you."*
 
-**Measured, not inferred.** Over 183,416 cached triples from the 2026-08-01
+**Measured, not inferred — figures are the SHIPPED script's exact output
+(round 4, PAIR-R4-1; `specs/evidence/0025/corpus_counts.py`, cache sha
+`654e336a…`).** Over 183,417 cached triples from the 2026-08-01
 LongMemEval run:
 
 | measure | count | share of `third_party_claim` |
 |---|---|---|
 | triples on `third_party_claim` | 3,945 | — |
-| … whose own `note` names the USER as the source | **1,637** | **41.5%** |
+| … whose own `note` names the USER as the source | **1,644** | **41.7%** — the script's substring rule; the earlier 1,637/41.5% used an unshipped phrase set and is retired |
 | … whose `subject` is literally `"user"` | **1,606** | **40.7%** |
 
 The extractor testifies against itself in the note field it wrote:
@@ -120,7 +122,7 @@ column records its real output.**
 | **the adapter is NOT the defect** — user turns are ingested as USER with no `derived_from` | `sed -n '88,96p'` of `longmemeval/run_longmemeval.py` (the harness in `~/Documents/veracium/proposals/`) | `if role == "user": return EvidenceAuthor.USER, None, "chat"` |
 | **the steered-extractor attack is VACUOUS — an ordinary relation already reaches MENTIONABLE** (the executed basis for §3b) | `python -c "from veracium.ingest import _disclosure_for; ..."` over the whole `EvidenceAuthor` domain | `author=user relation=prefers -> mentionable` · `author=system -> mentionable` · `author=third_party -> use_only`. **The extractor could always grant; it never needed the subject slot** |
 | **`EvidenceAuthor` has exactly THREE members — there is no `assistant`** (the domain **U2** must span; internal M1 named the row "ASSISTANT", which is a HOST MAPPING onto `SYSTEM`, not an enum member) | `python -c "from veracium.schema import EvidenceAuthor; print([e.value for e in EvidenceAuthor])"` | `['user', 'third_party', 'system']` |
-| **the mislabelling is real and its size is known** | a $0 pass over the 2026-08-01 extraction cache | 3,945 `third_party_claim` triples; **41.5%** carry a note naming the user as source; **40.7%** have `subject == "user"` |
+| **the mislabelling is real and its size is known** | a $0 pass over the 2026-08-01 extraction cache | 3,945 `third_party_claim` triples; **41.7%** carry a note naming the user as source (script rule, round 4); **40.7%** have `subject == "user"` — the load-bearing cell, exact |
 
 *(The third row is the one that changed the design: this looked like a
 one-line reordering until `Edge.quarantined` turned out to OR on the
@@ -130,8 +132,16 @@ and changed nothing observable.)*
 
 ## 3. Trust-class matrix — REQUIRED, blocking
 
+**Scope (external round 4, R4-1, blocking): every row below states the
+result for a NON-REVOKED standing source.** The rows are BASE authorship
+disclosure — step 2 of `0025` §4b-iii — and the accepted floors then run on
+the result; v5's rows read as unconditional finals, which was false the
+moment `0023` N1 applied. The revocation dimension collapses to one row
+because the floor ignores every column:
+
 | author | `derived_from` | relation | subject | disclosure TODAY | disclosure AFTER | why |
 |---|---|---|---|---|---|---|
+| **any** | **any** | **any** | **any** — source standing-REVOKED | QUARANTINED | **QUARANTINED** | accepted `0023` **N1**: the standing-revocation floor is evaluated independently of relation, subject and author, and it WINS over the coherence re-disposition — `reference_enforcement.vector_revoked_source_floor_wins_over_coherence` pins the revoked USER-authored `third_party_claim` cell the reviewer named |
 | USER | — | ordinary | anything | MENTIONABLE | MENTIONABLE | unchanged |
 | USER | — | `third_party_claim` | **a claimant** | QUARANTINED | **QUARANTINED** | the user is the courier; the claim is still hearsay. **Unchanged, and this is the case the fix must not break** |
 | USER | — | `third_party_claim` | **the user** | QUARANTINED | **MENTIONABLE**, relation re-dispositioned | **the contradiction.** A third-party claim whose claimant is the user is not a third-party claim |
@@ -249,7 +259,7 @@ the subject slot of a third-party claim IS the claimant, and a claim whose
 claimant is the user is a contradiction in the extractor's own terms.
 
 **The test is on the SUBJECT, not on the note.** The note is free text and
-was the strongest measured signal (41.5%), but it is prose an LLM wrote and
+was the strongest measured signal (41.7%), but it is prose an LLM wrote and
 nothing constrains it. The subject is a structural slot with a stated
 meaning. **We test the thing with a contract, not the thing with the
 higher hit rate** — and we accept a smaller catch as the price.
@@ -263,12 +273,14 @@ The triple is **re-dispositioned, not dropped**:
    registry. It is an ORDINARY relation (never `third_party_claim`, because
    `Edge.quarantined` ORs on the relation — §2c-ii row 3), and naming it here
    rather than "some fallback" is what makes the pair compose (§7b);
-2. its disclosure is decided by the author rules ALONE — the second and
-   third branches of `_disclosure_for`, unchanged. **This is step 2 of the
-   combined pipeline `0025` §4b-iii states once for both specs** (external
-   round 2, R2-1: the coherence rewrite deliberately changes the semantic
-   state disclosure is computed FOR, which is why `0025` X10 is scoped to
-   the vocabulary fallback and does not constrain this step);
+2. its disclosure is decided by the author rules — the second and
+   third branches of `_disclosure_for`, unchanged — **as the BASE
+   authorship disclosure: step 2 of the combined pipeline `0025` §4b-iii,
+   after which the accepted floors (step 3 — standing revocation among
+   them) produce the FINAL result** (round 4, R4-1 retired the "author
+   rules ALONE" phrasing: authorship determines the base, never the
+   final; round 2's R2-1 note stands — `0025` X10 is scoped to the
+   vocabulary fallback and does not constrain this step);
 3. **the original relation is preserved in the TYPED field
    `Edge.original_relation`** — defined ONCE at `0025` §2 as the original
    relation for ANY structural re-disposition, this rewrite being one of
@@ -428,7 +440,7 @@ against it, the `0022` vector-harness discipline.
 **What we are least sure of:**
 
 1. **The subject test's coverage.** We chose the structural slot (40.7%)
-   over the note text (41.5%) because the note has no contract. If you
+   over the note text (41.7%) because the note has no contract. If you
    think prose with a measurably higher hit rate is the better instrument,
    argue it — we think a signal nothing constrains is not enforcement, but
    we are trading measured coverage for that principle.

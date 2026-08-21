@@ -15,19 +15,20 @@ and that the spec numbers cite this construction):
     entries        52,359
     file sha256    654e336addaf600ca0363fa40933ae92a38d26f23143e5aa0a780f3fbc011df3
     unparseable    6 cache values (counted, skipped)
-    triples        183,417     (spec tables say 183,416 — the original pass
-                                differed by one on a malformed row boundary)
-    distinct rels  12,576      (spec: 12,575, same boundary)
-    off-vocab      64,030 = 34.9%   (spec: 64,029 = 34.9% — the headline
-                                     figure is stable under the delta)
-    prefers        62,143 = 33.9%   (exact)
-    third_party_claim  3,945        (exact)
-      note names user  1,644 = 41.7%  (spec: 1,637 = 41.5% — this script's
-                                       substring test is slightly broader
-                                       than the original's phrase set; the
-                                       structural subject count is the one
-                                       the rule uses)
-      subject=='user'  1,606 = 40.7%  (exact — the load-bearing number)
+    triples        183,417
+    distinct rels  12,576
+    off-vocab      64,030 = 34.9%
+    prefers        62,143 = 33.9%
+    prefers+uses_tool  88,253 = 48.1%
+    near-synonyms  0 under the stated mechanical rule (the earlier ~2.6%
+                   was a semantic grouping, unshipped — requalified in
+                   0025 §1, round 4 PAIR-R4-1)
+    third_party_claim  3,945
+      note names user  1,644 = 41.7%  (this script's substring rule)
+      subject=='user'  1,606 = 40.7%  (the load-bearing cell)
+    Round 4 (PAIR-R4-1): BOTH specs now cite these figures exactly — the
+    earlier hand-recorded 183,416/12,575/64,029/1,637=41.5% are retired;
+    they differed on a malformed-row boundary and an unshipped phrase set.
 
 Not computed here: the stranded near-synonym mass (2.60%) — that pass
 canonicalises relation strings and groups them; 0025 Q2 holds it and its
@@ -92,6 +93,19 @@ def main() -> int:
 
     offvocab = sum(n for r, n in rel_counter.items() if r not in registry)
 
+    # PAIR-R4-1: every numeric claim the specs retain is computed HERE.
+    # near-synonym rule, STATED: canonical(r) = casefold, strip, runs of
+    # non-alphanumerics collapsed to "_". A triple is stranded-near-synonym
+    # when its relation is off-vocabulary but its canonical form equals a
+    # registry member's canonical form ("Prefers", "prefers ", "uses-tool").
+    import re
+    def canon(r):
+        return re.sub(r"[^a-z0-9]+", "_", r.casefold().strip()).strip("_")
+    reg_canon = {canon(m) for m in registry}
+    near_syn = sum(n for r, n in rel_counter.items()
+                   if r not in registry and canon(r) in reg_canon)
+    combined = rel_counter.get("prefers", 0) + rel_counter.get("uses_tool", 0)
+
     print("== cache manifest ==")
     print(f"entries        {entries:,}")
     print(f"file sha256    {sha.hexdigest()}")
@@ -102,6 +116,9 @@ def main() -> int:
     print(f"off-vocab      {offvocab:,}  ({offvocab / triples:.1%})")
     top = rel_counter.most_common(1)[0]
     print(f"top relation   {top[0]}  {top[1]:,}  ({top[1] / triples:.1%})")
+    print(f"prefers+uses_tool             {combined:,}  ({combined / triples:.1%})")
+    print(f"stranded near-synonyms        {near_syn:,}  ({near_syn / triples:.2%})"
+          "  [rule: canonical form matches a member]")
     print(f"third_party_claim            {tpc:,}")
     print(f"  note names the user        {tpc_note_user:,}  "
           f"({tpc_note_user / tpc:.1%})" if tpc else "  (none)")

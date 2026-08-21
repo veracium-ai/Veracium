@@ -19,8 +19,24 @@ Spec-Requires: 0006, 0007, 0013
 > receipts are never migrated. (4) A true mismatch refuses exactly as
 > today. (5) Frozen vectors:
 > `specs/evidence/0025/reference_enforcement.py::vector_receipt_digest_crosses_eras`.
-> Nothing changes behaviour until `0025` lands — the amendment is recorded
-> now so the freeze moves by AUTHORIZATION, not by implementation drift.
+> **Enumeration and matrix (completed under `0025` round 4, R4-4 — the
+> round-3 form was authorized but not implementable):** the durable field
+> is `receipts.request_digest_domain TEXT NULL` storing the FULL domain
+> string from the closed set {`veracium.supersession-request.v1`,
+> `…​.v2`}; the affected surfaces, all moving in the implementation
+> commit: `contribution.py`'s domain constant and `request_digest`
+> (unchanged construction, second domain constant), the raw-request
+> complete-dump serializer against `0025`'s None-omission rule, the
+> receipts DDL + `SCHEMA_VERSION` `ADD COLUMN` migration
+> (`schema_version.py`), `graph.py`'s phase-2 comparison (the total
+> decision matrix: NULL → dual-domain; a stored valid domain → that
+> domain only; malformed/unknown → FAIL-CLOSED named refusal, never
+> replayed, never a new request), the total field-partition test
+> (`Edge.original_relation` classified), and portability's
+> FORMAT_VERSION gate. Real-SQLite evidence:
+> `specs/evidence/0025/receipt_era_harness.py`. Nothing changes behaviour
+> until `0025` lands — the amendment is recorded now so the freeze moves
+> by AUTHORIZATION, not by implementation drift.
 
 > **draft (v19, 2026-08-10) — round 15 folded (ONE bin-(a); R14-1's carrier binding held
 > in content but not at its boundaries):** the carrier verifier is STRICT and SHARED

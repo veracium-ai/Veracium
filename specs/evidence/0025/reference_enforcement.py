@@ -44,13 +44,24 @@ class FrozenRel:                # §4b-ii step 5: ALL prompt- and
     desc: str = ""
 
 
-# canonical reserved forms — the COMPLETE shipped definitions (R3-1). The
-# desc strings mirror the module constants DEFAULT_RELATIONS references.
+# canonical reserved forms — round 4, R4-1: the v5 harness INVENTED the
+# third_party_claim gloss; the canonical desc is the SHIPPED one, imported
+# from the product wherever it is importable, with the exact literal as
+# the only fallback (kept byte-identical to schema.py:224 by the
+# shipped-registry vector, which feeds the ACTUAL objects).
+def _shipped_tpc_desc() -> str:
+    try:
+        from veracium.schema import DEFAULT_RELATIONS
+        return DEFAULT_RELATIONS[QUARANTINE_RELATION].desc
+    except ImportError:
+        return ("an unverified claim by a third party; "
+                "subject is the claimant")
+
 CANONICAL = {
     UNCLASSIFIED: ("unclassified", False,
-                   "reserved fallback for off-vocabulary relations"),
-    QUARANTINE_RELATION: ("third_party_claim", False,
-                          "a claim asserted by a third party"),
+                   "reserved fallback for off-vocabulary relations; "
+                   "never extractor-selectable"),        # authored by 0025 §4b-ii
+    QUARANTINE_RELATION: ("third_party_claim", False, _shipped_tpc_desc()),
 }
 
 
@@ -107,8 +118,10 @@ def effective_registry(host: dict) -> MappingProxyType:
         if name in host:
             v = host[name]
             cname, cfun, cdesc = CANONICAL[name]
+            # R4-1: EMPTY is drift too — a lost gloss steers the prompt as
+            # surely as a rewritten one (unless the canonical is empty)
             drifted = (bool(v.functional) != cfun
-                       or getattr(v, "desc", "") not in ("", cdesc))
+                       or getattr(v, "desc", "") != cdesc)
             if drifted:
                 raise RegistryError(
                     f"reserved name conflictingly shadowed: {name}")
@@ -129,7 +142,9 @@ def render_prompt_relations(reg) -> list:
     `unclassified`. third_party_claim stays selectable (the trust
     convention requires it). Rendered from the FROZEN snapshot, so prompt
     and classification cannot observe different registries."""
-    return [f"{r.name}: {r.desc}" for name, r in sorted(reg.items())
+    # INSERTION order (R4-2): the shipped renderer iterates the mapping —
+    # sorting changed prompt BYTES and broke "rendered as today" / X6.
+    return [f"{r.name}: {r.desc}" for name, r in reg.items()
             if name != UNCLASSIFIED]
 
 
@@ -267,14 +282,25 @@ def vector_construction_refuses_mismatched_key():
              "!= Relation.name")
 
 
+@dataclass(frozen=True)
+class DescRelation:             # a stand-in that CARRIES its gloss (R4-1)
+    name: str
+    functional: bool
+    desc: str
+
+
 def vector_only_conflicting_reserved_shadows_are_refused():
-    """Round 2, R2-1: a FUNCTIONAL reserved entry is refused; an exactly
-    canonical one is accepted (the shipped default registry's case)."""
+    """Round 2, R2-1 + round 4, R4-1: a FUNCTIONAL reserved entry is
+    refused; the exactly-canonical COMPLETE form — gloss included — is
+    accepted. A desc-less form is no longer canonical (that laxity is how
+    the invented gloss survived v5)."""
     for name in RESERVED:
-        _refuses(lambda n=name: effective_registry(
-            dict(HOST, **{n: Relation(n, True)})), "conflictingly")
-        reg = effective_registry(dict(HOST, **{name: Relation(name, False)}))
-        assert reg[name].functional is False
+        cdesc = CANONICAL[name][2]
+        _refuses(lambda n=name, d=cdesc: effective_registry(
+            dict(HOST, **{n: DescRelation(n, True, d)})), "conflictingly")
+        reg = effective_registry(
+            dict(HOST, **{name: DescRelation(name, False, cdesc)}))
+        assert reg[name].functional is False and reg[name].desc == cdesc
 
 
 def vector_the_shipped_default_registry_is_accepted():
@@ -285,11 +311,16 @@ def vector_the_shipped_default_registry_is_accepted():
     except ImportError:
         SKIPPED.append("shipped_default_registry (veracium not importable)")
         return
-    host = {k: Relation(v.name, bool(v.functional))
-            for k, v in DEFAULT_RELATIONS.items()}
-    reg = effective_registry(host)
+    # R4-1: the ACTUAL objects, no conversion — the v5 vector rebuilt them
+    # without desc, so the invented canonical gloss passed its own check.
+    reg = effective_registry(DEFAULT_RELATIONS)
     assert QUARANTINE_RELATION in reg and UNCLASSIFIED in reg
-    assert len(reg) >= len(host)
+    assert reg[QUARANTINE_RELATION].desc == \
+        DEFAULT_RELATIONS[QUARANTINE_RELATION].desc != ""
+    # R4-2: prompt order == the shipped mapping's insertion order
+    shipped_order = [n for n in DEFAULT_RELATIONS if n != UNCLASSIFIED]
+    rendered = [ln.split(":")[0] for ln in render_prompt_relations(reg)]
+    assert rendered == shipped_order
 
 
 def vector_construction_injects_both_reserved_members():
@@ -488,7 +519,8 @@ def vector_prompt_renders_selectable_set_from_the_snapshot():
     """Round 3, R3-1 + R3-3: the prompt comes from the FROZEN snapshot and
     excludes `unclassified`; third_party_claim stays selectable."""
     host = dict(HOST, **{QUARANTINE_RELATION:
-                         Relation(QUARANTINE_RELATION, False)})
+                         DescRelation(QUARANTINE_RELATION, False,
+                                      CANONICAL[QUARANTINE_RELATION][2])})
     reg = effective_registry(host)
     lines = render_prompt_relations(reg)
     names = [ln.split(":")[0] for ln in lines]
@@ -510,6 +542,10 @@ def vector_reserved_desc_drift_is_refused():
              CANONICAL[QUARANTINE_RELATION][2])
     reg = effective_registry(dict(HOST, **{QUARANTINE_RELATION: good}))
     assert reg[QUARANTINE_RELATION].desc == CANONICAL[QUARANTINE_RELATION][2]
+    # R4-1: an OMITTED gloss is drift too — refused, not silently accepted
+    empty = R(QUARANTINE_RELATION, False, "")
+    _refuses(lambda: effective_registry(dict(HOST,
+             **{QUARANTINE_RELATION: empty})), "conflictingly")
 
 
 def vector_receipt_digest_crosses_eras():
