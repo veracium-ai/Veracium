@@ -40,8 +40,18 @@ Spec-Requires: 0006, 0007, 0013
 > complete-dump serializer against `0025`'s None-omission rule, the
 > `ADD COLUMN` migration in the v6 ALTER convention + schema
 > manifest/evidence regeneration, both comparison sites,
-> `supersession_receipt()` and the atomic INSERT, `0025` X13's
-> table-driven receipt-state test, the total field-partition test
+> `supersession_receipt()` and the atomic INSERT, `0025` X13's FIVE
+> per-surface receipt-state tests (`test_receipt_write_states`,
+> `test_receipt_read_states`, `test_receipt_phase1_states`,
+> `test_receipt_phase2_states`, `test_receipt_migration_states`) over
+> the per-surface reachability obligations — WRITE stamps only
+> digest-bearing new receipts; READ refuses the digest-less/domained
+> inconsistency; PHASE 1 and PHASE 2 each apply the full matrix with
+> pre-D2 precedence FIRST (`ReceiptSchemaBoundaryError` before any
+> domain or digest operation, exploding-sentinel-proven at phase 2);
+> MIGRATION never fabricates a domain (round 9, R9-2: the earlier
+> "verbatim" claim went stale the day X13 split into five) —
+> the total field-partition test
 > (`Edge.original_relation` classified), and portability's
 > FORMAT_VERSION gate. Live-path evidence:
 > `specs/evidence/0025/receipt_era_harness.py`. Nothing changes

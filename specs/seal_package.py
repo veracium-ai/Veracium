@@ -187,8 +187,15 @@ def _changed_from_previous(line: str, version: str,
     import gzip as _gzip
     import hashlib as _hashlib
     import io as _io
-    priors = sorted(p for p in outbox.glob(f"{line}-v*.tar.gz")
-                    if p.name != f"{line}-{version}")
+    # Round 9 (R9-3): numeric version + timestamp ordering — lexicographic
+    # picked v9 over v10, and same-version reseals were not excluded.
+    def _key(p: pathlib.Path):
+        m = re.match(rf"{re.escape(line)}-v(\d+)-(\d+T\d+Z)\.tar\.gz$",
+                     p.name)
+        return (int(m.group(1)), m.group(2)) if m else None
+    cur = int(version.lstrip("v"))
+    priors = sorted((p for p in outbox.glob(f"{line}-v*.tar.gz")
+                     if _key(p) and _key(p)[0] < cur), key=_key)
     if not priors:
         return ("No prior archive of this line was present on the sealing "
                 "host — diff SKIPPED, named here rather than omitted.\n")

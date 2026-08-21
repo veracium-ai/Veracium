@@ -10,7 +10,9 @@ a first round):
 __REQUIRES__
 Prior review reports are omitted per the reviewer's standing instruction.
 The archive
-is the full committed tree at the commit above plus the four loose carriers
+is the full committed tree at the commit above plus the loose carriers
+(no count typed here — round 9, R9-3: "four" survived the fifth carrier's
+arrival; the archive member list is the authority)
 (COLLECTED.txt, COLLECTED_pytest_rs.txt, this manifest, the evidence
 transcript at the path COLLECTED names).
 

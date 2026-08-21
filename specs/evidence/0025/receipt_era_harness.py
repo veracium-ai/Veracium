@@ -48,7 +48,8 @@ try:
     from veracium.graph import apply_supersession
     from veracium.schema import (DEFAULT_RELATIONS, Disclosure, Edge,
                                  EvidenceAuthor, Provenance, Volatility)
-    from veracium.store.base import SupersessionIntegrityError
+    from veracium.store.base import (ReceiptSchemaBoundaryError,
+                                     SupersessionIntegrityError)
     from veracium.store.sqlite import SqliteStore
 except ImportError as e:
     print(f"REFUSED: cannot import the shipped construction ({e}). Run "
@@ -225,6 +226,40 @@ def vector_live_phase2_replay_and_era_bite():
     assert same_request(v2_digest, None, raw_request_snapshot(inc)) is True
 
 
+def vector_phase2_pre_d2_precedes_all_domain_logic():
+    """Round 9, R9-1: accepted 0016 requires the pre-D2 boundary at BOTH
+    phases, BEFORE any domain validation or digest computation. A version-3
+    receipt with a POISONED domain value must raise the boundary error —
+    never the domain refusal, never a digest comparison — at the live
+    store-level path."""
+    from veracium.graph import _build_supersession_plan
+    s = SqliteStore(":memory:")
+    s.add_edge(_edge("e-prior", "chef", days_ago=200))
+    inc = _edge("e-inc", "carpenter")
+    plan, _ = _build_supersession_plan(s, inc, DEFAULT_RELATIONS,
+                                       f"sup-{inc.id}")
+    plan.raw_request = raw_request_snapshot(inc)
+    s.apply_supersession_plan(plan)
+    s._conn.execute(PROPOSED_ALTER)
+    # a pre-D2 receipt wearing a poisoned domain: the boundary must win
+    s._conn.execute("UPDATE supersession_operations SET "
+                    "outcome_digest_version=3, request_digest_domain=? "
+                    "WHERE user_id=? AND operation_id=?",
+                    ("garbage-domain", U, f"sup-{inc.id}"))
+    s._conn.commit()
+    try:
+        s.apply_supersession_plan(plan)
+        raise AssertionError("a pre-D2 receipt was not refused on sight")
+    except ReceiptSchemaBoundaryError:
+        pass          # the boundary, not EraRefusal, not a digest compare
+    # and the same precedence at the public phase-1 path
+    try:
+        apply_supersession(s, inc, DEFAULT_RELATIONS)
+        raise AssertionError("phase 1 accepted a pre-D2 receipt")
+    except ReceiptSchemaBoundaryError:
+        pass
+
+
 def vector_the_product_matrix_on_real_migrated_rows():
     """§4b-v over the REAL migrated table: stored digest × submitted
     snapshot × domain, including the writer invariant's fail-closed cells."""
@@ -292,9 +327,10 @@ def main() -> int:
     for v in vectors:
         v()
         print(f"ok  {v.__name__}")
-    print(f"{len(vectors)} vectors: live phase-1 replay+bite, live "
-          f"phase-2 replay+bite (same-plan resubmission), snapshot-less "
-          f"outcome-refusal, and the §4b-v matrix over row-read states")
+    print(f"{len(vectors)} vectors: live phase-1 and phase-2 replay+bite, "
+          f"pre-D2 precedence over a poisoned domain at both phases, "
+          f"snapshot-less outcome-refusal, the §4b-v matrix over "
+          f"row-read states")
     return 0
 
 
