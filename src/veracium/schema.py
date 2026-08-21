@@ -377,6 +377,36 @@ class Episode(BaseModel):
     retired_reason: Optional[str] = None
     retired_at: Optional[datetime] = None
 
+    # --- specs/0023 §4a (N12/N14/N15; internal S3, external F1) --------------
+    # DERIVED, never stored, mirroring Edge's pair: the value already exists
+    # in `disclosure` (and, post-0022, in `retired_reason`), and a second
+    # stored copy is a second source of truth. The reason neither existed is
+    # the reason S3 and F1 both happened — five readers could not consult a
+    # property nobody had derived for this type, so each invented its own.
+    @property
+    def quarantined(self) -> bool:
+        return self.provenance.disclosure == Disclosure.QUARANTINED
+
+    @property
+    def use_only(self) -> bool:
+        return self.provenance.disclosure == Disclosure.USE_ONLY
+
+    @property
+    def active(self) -> bool:
+        # 0022 §4b-ii: retirement is the episode's active/inactive axis
+        return self.retired_reason is None
+
+    @property
+    def assertable(self) -> bool:
+        """THE SHARED PREDICATE the text consumers call (0023 §4a-iv): safe
+        to render as ordinary narrative — active (not retired by 0022's
+        sweep), not a quarantined claim, not an unconfirmed third-party
+        inference. LIFECYCLE MUST NOT CALL THIS (the §7a lifecycle row,
+        internal R3-3): expiry applies to fenced content too, and routing
+        lifecycle through assertable dropped ordinary quarantined episodes
+        from aging in stores with zero revocations."""
+        return self.active and not self.quarantined and not self.use_only
+
     # --- specs/0009 outcome-authorship chain (append-only history) --------------
     # Store-assigned, OUTCOME-ONLY (None on any non-outcome episode). Never
     # host-supplied: `append_outcome_if_head` mints them. `seq` is the per-chain
