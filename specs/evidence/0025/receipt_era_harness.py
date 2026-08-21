@@ -24,10 +24,14 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve()
                        .parents[3] / "src"))
 try:
     from veracium.contribution import REQUEST_DIGEST_DOMAIN, request_digest
-except ImportError:
-    print("REFUSED: veracium source not found beside this harness — it "
-          "exists to exercise the SHIPPED digest construction, not a "
-          "stand-in")
+except ImportError as e:
+    # Name the ACTUAL failure — a missing dependency is not missing source
+    # (the first version of this message misdiagnosed exactly that).
+    print(f"REFUSED: cannot import the shipped construction ({e}). Run "
+          f"under an interpreter with the pinned test dependencies — the "
+          f"offline launcher's .venv-offline/bin/python — from the "
+          f"extraction root. This harness exercises the SHIPPED digest, "
+          f"never a stand-in.")
     sys.exit(2)
 
 # the v2 domain: same construction, the None-omission serialization era.

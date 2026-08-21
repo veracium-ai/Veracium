@@ -22,9 +22,17 @@ re-disposition; 0023 N1; 0014 receipts (cross-era rule, pending its
 co-owner amendment).
 """
 import json
+import pathlib as _pathlib
+import sys as _sys
 from dataclasses import dataclass
 from enum import Enum
 from types import MappingProxyType
+
+# The optional product imports (the shipped gloss, the shipped-registry
+# vector) must find THIS TREE's source in an extraction too, where the
+# offline venv does not pip-install the package (round 4: without this the
+# R4-1 vector silently skipped in exactly the environment it exists for).
+_sys.path.insert(0, str(_pathlib.Path(__file__).resolve().parents[3] / "src"))
 
 QUARANTINE_RELATION = "third_party_claim"
 UNCLASSIFIED = "unclassified"
