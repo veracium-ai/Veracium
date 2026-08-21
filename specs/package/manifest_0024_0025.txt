@@ -1,0 +1,18 @@
+PACKAGE: __PACKAGE__ — external ROUND __ROUND__
+SEALED:  __TS__ (UTC)
+COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
+MEASURED: __MEASURED__
+
+Two INDEPENDENT specs, one archive, per-spec verdicts requested. This is
+their FIRST external round; there are no prior reports to omit. The archive
+is the full committed tree at the commit above plus the four loose carriers
+(COLLECTED.txt, COLLECTED_pytest_rs.txt, this manifest, the evidence
+transcript at the path COLLECTED names).
+
+Verification machinery a reviewer can run from the extraction is listed in
+COLLECTED.txt and generated from the sealer's own registry. The packaging
+constructions this archive uses are the ones the 0022/0023 review hardened
+over twenty-one rounds: produced-not-typed identity across all five
+carriers, the candidate field as one rendered artifact, byte-verified
+generated blocks, a closed evidence-transcript schema, and an offline
+launcher that refuses an unqualified runtime or a reused venv.

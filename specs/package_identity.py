@@ -39,16 +39,30 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 
-# version -> (round, {spec: candidate revision of that spec in this package})
+# line -> version -> (round, {spec: candidate revision in this package}).
+# GENERALIZED for the second package line (0024/0025, first send 2026-08-21):
+# a flat version->record map was AMBIGUOUS the moment two lines existed — v1
+# of the L-pair would collide with a v1 of any future line, and the contiguity
+# rule would weld unrelated lines into one run. Each line carries its own
+# governed range.
 PACKAGES = {
-    "v17": (17, {"0022": "v18", "0023": "v18"}),
-    "v18": (18, {"0022": "v19", "0023": "v19"}),
-    "v19": (19, {"0022": "v20", "0023": "v20"}),
-    "v20": (20, {"0022": "v21", "0023": "v21"}),
-    "v21": (21, {"0022": "v22", "0023": "v22"}),
+    "0022-0023": {
+        "v17": (17, {"0022": "v18", "0023": "v18"}),
+        "v18": (18, {"0022": "v19", "0023": "v19"}),
+        "v19": (19, {"0022": "v20", "0023": "v20"}),
+        "v20": (20, {"0022": "v21", "0023": "v21"}),
+        "v21": (21, {"0022": "v22", "0023": "v22"}),
+    },
+    # L1 (author-blind quarantine) + L2 (relation-vocabulary enforcement):
+    # independent Spec-Requires, coupled as ONE review package for the same
+    # economy the 0004 triple used; per-spec verdicts requested.
+    "0024-0025": {
+        "v1": (1, {"0024": "v2", "0025": "v2"}),
+    },
 }
 
-FIRST_GOVERNED = 17          # the domain declared in the docstring, mechanized
+# per-line: the version each line's mechanism first governed
+FIRST_GOVERNED = {"0022-0023": 17, "0024-0025": 1}
 
 
 def _reviews():
@@ -59,9 +73,9 @@ def _reviews():
     return reviews.REVIEWS
 
 
-def candidates(version: str) -> dict:
-    """The per-spec candidate revisions for `version`, or raise KeyError."""
-    return PACKAGES[version][1]
+def candidates(line: str, version: str) -> dict:
+    """The per-spec candidate revisions for `line`/`version`, or raise KeyError."""
+    return PACKAGES[line][version][1]
 
 
 # EXTERNAL ROUND 20, R20-1. The label lived in the template and the lines were
@@ -75,20 +89,22 @@ LABEL = "specs:" + " " * 11
 INDENT = " " * len(LABEL)
 
 
-def render_candidate_field(version: str) -> str:
+def render_candidate_field(line: str, version: str) -> str:
     """The COLLECTED `specs:` field, whole — the unit that gets verified."""
-    return LABEL + render_candidate_lines(version)
+    return LABEL + render_candidate_lines(line, version)
 
 
-def render_candidate_lines(version: str, indent: str = INDENT) -> str:
+def render_candidate_lines(line: str, version: str, indent: str = INDENT) -> str:
     """The COLLECTED `specs:` block, generated from the record.
 
     R17-1: these two lines were template literals reading `draft v16` while the
     package was v17. A carrier that states a fact must be filled from the fact.
     """
-    cands = candidates(version)
+    cands = candidates(line, version)
     names = {"0022": "specs/0022-source-revocation.md",
-             "0023": "specs/0023-non-revival-under-maintenance.md"}
+             "0023": "specs/0023-non-revival-under-maintenance.md",
+             "0024": "specs/0024-authorship-before-structural-quarantine.md",
+             "0025": "specs/0025-relation-vocabulary-enforcement.md"}
     out = []
     for i, spec in enumerate(sorted(cands)):
         if spec not in names:
@@ -101,52 +117,61 @@ def render_candidate_lines(version: str, indent: str = INDENT) -> str:
 def validate() -> list:
     """Return a list of problems; empty means every row agrees with reviews.py."""
     problems = []
+    for line, versions in sorted(PACKAGES.items()):
+        if line not in FIRST_GOVERNED:
+            problems.append(f"line {line!r} has no FIRST_GOVERNED entry")
+            continue
+        problems += _validate_line(line, versions, FIRST_GOVERNED[line])
+    for line in FIRST_GOVERNED:
+        if line not in PACKAGES:
+            problems.append(f"FIRST_GOVERNED names line {line!r} with no packages")
+    return problems
 
-    # R18-1(c): the lower bound was enforced and CONTINUITY FROM IT WAS NOT, so
-    # deleting the v17 row left the record valid while a governed package went
-    # undeclared. A bound is not a domain: the governed versions must be the
-    # exact contiguous run from FIRST_GOVERNED to the newest.
-    nums = sorted(int(v[1:]) for v in PACKAGES if re.fullmatch(r"v\d+", v))
+
+def _validate_line(line: str, versions: dict, first: int) -> list:
+    """One package line's record, held to the round-18 rules WITHIN the line.
+
+    R18-1(c) generalized: contiguity is a PER-LINE property — welding two
+    lines into one run would demand a v2..v16 the L-pair never had, which is
+    the same category error as no contiguity at all."""
+    problems = []
+    nums = sorted(int(v[1:]) for v in versions if re.fullmatch(r"v\d+", v))
     if nums:
-        want = list(range(FIRST_GOVERNED, max(nums) + 1))
+        want = list(range(first, max(nums) + 1))
         if nums != want:
             missing = sorted(set(want) - set(nums))
             problems.append(
-                f"the governed versions are {['v%d' % n for n in nums]}, which "
-                f"is not the contiguous run v{FIRST_GOVERNED}..v{max(nums)} — "
-                f"missing {['v%d' % n for n in missing]} (R18-1: the lower "
-                f"bound was checked and continuity from it was not)")
-    elif PACKAGES:
-        problems.append("no row carries a `vN` version")
+                f"{line}: governed versions {['v%d' % n for n in nums]} are "
+                f"not the contiguous run v{first}..v{max(nums)} — missing "
+                f"{['v%d' % n for n in missing]} (R18-1)")
+    elif versions:
+        problems.append(f"{line}: no row carries a `vN` version")
 
-    for version, row in sorted(PACKAGES.items()):
+    for version, row in sorted(versions.items()):
         if not re.fullmatch(r"v\d+", version):
-            problems.append(f"{version!r} is not a `vN` package version")
+            problems.append(f"{line} {version!r} is not a `vN` package version")
             continue
         if not (isinstance(row, tuple) and len(row) == 2
                 and type(row[0]) is int and type(row[1]) is dict
                 and row[1] and all(type(k) is str and type(v) is str
                                    for k, v in row[1].items())):
-            problems.append(f"{version}: the row is not (round: int, "
+            problems.append(f"{line} {version}: the row is not (round: int, "
                             f"{{spec: revision}}) with at least one spec")
             continue
         rnd, cands = row
         if rnd != int(version[1:]):
-            problems.append(f"{version} declares round {rnd} — the round is "
-                            f"DERIVED from the version and must be "
+            problems.append(f"{line} {version} declares round {rnd} — the "
+                            f"round is DERIVED from the version and must be "
                             f"{int(version[1:])}")
-        if rnd < FIRST_GOVERNED:
-            problems.append(f"{version} is below the declared domain "
-                            f"(v{FIRST_GOVERNED} onward)")
+        if sorted(cands) != line.split("-"):
+            problems.append(f"{line} {version}: candidates {sorted(cands)} do "
+                            f"not match the line's own specs")
         for spec, rev in sorted(cands.items()):
             if not re.fullmatch(r"v\d+(\.\d+)?", rev):
-                problems.append(f"{version} {spec}: {rev!r} is not a `vN` "
-                                f"candidate revision")
+                problems.append(f"{line} {version} {spec}: {rev!r} is not a "
+                                f"`vN` candidate revision")
 
-        # EXACTLY ONE SENT ROW PER PACKAGED SPEC — the reviewer's requirement.
-        # `no row` was already refused at the seal; two rows for one spec is
-        # the other half of the same question, and it was unasked.
-        pkg = f"{'-'.join(sorted(cands))}-{version}"
+        pkg = f"{line}-{version}"
         bounded = re.compile(re.escape(pkg) + r"(?![0-9])")
         for spec in sorted(cands):
             sent = [r for r in _reviews()
@@ -155,22 +180,16 @@ def validate() -> list:
                     and bounded.search(r["verdict"])]
             if len(sent) != 1:
                 problems.append(
-                    f"{version} {spec}: found {len(sent)} SENT rows naming "
+                    f"{pkg} {spec}: found {len(sent)} SENT rows naming "
                     f"`{pkg}` in reviews.py, expected exactly one — a dispatch "
                     f"recorded twice or not at all (R17-1)")
                 continue
             if sent[0]["round"] != rnd:
                 problems.append(
-                    f"{version} {spec}: the SENT row is at round "
+                    f"{pkg} {spec}: the SENT row is at round "
                     f"{sent[0]['round']}, the package declares round {rnd}")
 
-        # R18-1(a): THE SENT PROSE IS A SECOND COPY OF THE CANDIDATE REVISIONS
-        # and it was unchecked — the row could say `0022 at v999` beside a
-        # record saying v19 and validate() returned clean, because it only
-        # asked whether the row NAMED the package and the round. A dispatch row
-        # may still describe what it carried; it may not disagree with the
-        # record. Rows that make no such claim are fine — there is nothing to
-        # contradict — so the rule is: every claim of this shape must match.
+        # R18-1(a): SENT prose restating candidate revisions must AGREE
         for r in _reviews():
             if not (r["kind"] == "external" and r["spec"] in cands
                     and r["verdict"].startswith("SENT")
@@ -180,11 +199,11 @@ def validate() -> list:
                     r"\b(\d{4}) at (v\d+(?:\.\d+)?)", r["verdict"]):
                 if claimed_spec not in cands:
                     problems.append(
-                        f"{version}: the {r['spec']} SENT row claims a revision "
+                        f"{pkg}: the {r['spec']} SENT row claims a revision "
                         f"for {claimed_spec}, which this package does not carry")
                 elif cands[claimed_spec] != claimed_rev:
                     problems.append(
-                        f"{version}: the {r['spec']} SENT row says "
+                        f"{pkg}: the {r['spec']} SENT row says "
                         f"`{claimed_spec} at {claimed_rev}` and the record "
                         f"declares {cands[claimed_spec]} — the prose is a "
                         f"second copy and it disagrees (R18-1)")
@@ -197,8 +216,9 @@ def main(argv) -> int:
         print("package identity INVALID:\n  " + "\n  ".join(problems),
               file=sys.stderr)
         return 1
-    print(f"package identity: VALID ({len(PACKAGES)} package(s), each with "
-          f"exactly one SENT row per packaged spec)")
+    n = sum(len(v) for v in PACKAGES.values())
+    print(f"package identity: VALID ({n} package(s) across {len(PACKAGES)} "
+          f"line(s), each with exactly one SENT row per packaged spec)")
     return 0
 
 

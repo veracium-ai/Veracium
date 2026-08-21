@@ -316,14 +316,15 @@ def identity_problems(archive_name: str, col: str, man: str,
     # values come from the structured record, so this cannot be satisfied by a
     # template and a matching typo.
     version = stem.group(2)
+    line = stem.group(1)
     sys.path.insert(0, str(SPECS))
     import package_identity as pid
-    if version not in pid.PACKAGES:
-        problems.append(f"specs/package_identity.py has no row for {version} — "
-                        f"the packaged candidate revisions are undeclared "
-                        f"(R17-1)")
+    if version not in pid.PACKAGES.get(line, {}):
+        problems.append(f"specs/package_identity.py has no row for line "
+                        f"{line} version {version} — the packaged candidate "
+                        f"revisions are undeclared (R17-1)")
         return problems
-    expected = pid.candidates(version)
+    expected = pid.candidates(line, version)
     # NOT anchored to the start of a line: the first candidate shares its line
     # with the `specs:` label, so `^\s*specs/` silently found only the SECOND
     # one — and a check that sees one of two carriers is how R17-1 happened.
@@ -345,7 +346,7 @@ def identity_problems(archive_name: str, col: str, man: str,
     # So the unit verified is the WHOLE FIELD, label included, rendered from
     # the identity record, required to be the file's ONLY `specs:` field, and
     # required to sit exactly where that field sits.
-    field = pid.render_candidate_field(version)
+    field = pid.render_candidate_field(line, version)
     labels = [m.start() for m in re.finditer(r"(?m)^specs:", col)]
     if len(labels) != 1:
         problems.append(
@@ -605,11 +606,12 @@ def main() -> int:
         # `draft v16`. A version with no row here cannot be sealed at all.
         for p in _pid.validate():
             _fail(f"the package identity record is invalid: {p}")
-        if a.version not in _pid.PACKAGES:
-            _fail(f"specs/package_identity.py has no row for {a.version} — the "
-                  f"package's round and each spec's candidate revision must be "
-                  f"declared there before sealing (R17-1)")
-        rec_round, rec_cands = _pid.PACKAGES[a.version]
+        _line = "-".join(specs)
+        if a.version not in _pid.PACKAGES.get(_line, {}):
+            _fail(f"specs/package_identity.py has no row for line {_line} "
+                  f"version {a.version} — the package's round and each spec's "
+                  f"candidate revision must be declared before sealing (R17-1)")
+        rec_round, rec_cands = _pid.PACKAGES[_line][a.version]
         if rec_round != round_no:
             _fail(f"the identity record puts {a.version} at round {rec_round}, "
                   f"its version says {round_no}")
@@ -636,7 +638,7 @@ def main() -> int:
 
         subs = {"__VERSION__": a.version, "__ROUND__": str(round_no),
                 "__PACKAGE__": pkg,
-                "__CANDIDATES__": _pid.render_candidate_field(a.version),
+                "__CANDIDATES__": _pid.render_candidate_field(_line, a.version),
                 "__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
                 "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
                 "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,

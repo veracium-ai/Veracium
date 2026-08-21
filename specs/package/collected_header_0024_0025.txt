@@ -1,0 +1,64 @@
+0024 authorship-before-structural-quarantine (L1) + 0025 relation-vocabulary enforcement (L2) — COUPLED round-__ROUND__ external-review package (__VERSION__)
+=====================================================================================
+package built:   __TS__ (UTC)
+source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
+                 sealer REFUSES if they differ)
+__CANDIDATES__
+                 The two specs are INDEPENDENT (Spec-Requires 0005 and 0012
+                 respectively) and are coupled in ONE archive for review
+                 economy only — per-spec verdicts requested. Their
+                 implementation freezes are SEPARATE by design: L1's is a
+                 measurement constraint (the paper-2 probe suite scores the
+                 conflation it fixes), so accepting one does not schedule
+                 the other.
+
+WHAT EACH SPEC IS, in one sentence each:
+  0024 (L1)  `_disclosure_for` tests the RELATION before the AUTHOR, so a
+             user-authored event whose triple the extractor mislabels
+             `third_party_claim` is quarantined as though a third party said
+             it — 3,945 corpus triples, the extractor's own note naming the
+             user as source on 41.5% of them. The fix removes the model's
+             power to unilaterally demote user testimony; the genuinely
+             third-party relay stays quarantined. Invariants U1–U8.
+  0025 (L2)  34.9% of extracted triples are off-vocabulary; they resolve to
+             None at `graph.py`'s registry lookup, so they can NEVER
+             supersede and never enter contention — restatements accumulate
+             as parallel edges. Enforcement is polarity-first with the
+             reserved `unclassified` member pinned as a module constant.
+             Invariants X1–X9.
+
+MEASUREMENT CONTEXT — GENERATED, not promised:
+                 __CONTEXT__
+
+REPRODUCTION — a launcher, and it REFUSES rather than reporting:
+  bash specs/evidence/offline/run_offline.sh
+
+  It uses $VERACIUM_PYTHON (or python3), creates a fresh venv (an existing
+  one is REFUSED with the creating interpreter named), installs the pinned
+  wheels with --no-index --require-hashes, then asks THIS REPOSITORY whether
+  the runtime is qualified — `runtime_supported()`. If that is not exactly
+  True it EXITS 2 without running the suite.
+
+  LAUNCHER RESULT ON THIS PACKAGE'S FINAL STATE: __LAUNCHER__
+
+measured line:   __MEASURED__ (exit 0)
+                 TWO-PHASE, described honestly: the suite is measured FIRST,
+                 in the committed tree at the commit above, and THIS FILE IS
+                 BUILT FROM THAT RUN afterwards.
+                 What IS verified with the file present, RUN FROM THE
+                 EXTRACTED ARCHIVE before staging — this list is GENERATED
+                 from the sealer's registry and the sealer aborts if it runs
+                 anything else:
+                 __EXTRACTED__
+                 The full -rs output ships as COLLECTED_pytest_rs.txt and the
+                 decomposition below is COMPUTED FROM IT.
+
+harnesses:       __HARNESSES__
+                 (RUN by the sealer on the tree being sealed, and re-run from
+                 the EXTRACTED archive before staging. They are the 0022
+                 acceptance harnesses — the tree's standing evidence, kept
+                 green; neither is an L1/L2 artifact.)
+
+evidence:        __EVIDENCE__
+
+ENVIRONMENT-CONDITIONAL SKIP INVENTORY — GENERATED from specs/skip_inventory.py:

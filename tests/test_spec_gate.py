@@ -2170,15 +2170,18 @@ def test_the_packages_three_identity_carriers_must_agree():
     # the round this test was written in — a fixture that names a version the
     # record no longer governs tests nothing about today's seal.
     import package_identity as pid
-    V = max(pid.PACKAGES, key=lambda v: int(v[1:]))
+    LINE = "0022-0023"           # the fixtures below are written in this
+    #                              line's names; the record went per-line when
+    #                              the 0024-0025 send opened a second line
+    V = max(pid.PACKAGES[LINE], key=lambda v: int(v[1:]))
     MEMBERS = {"./" + m for m in re.findall(
-        r"(specs/\S+\.md) — draft", pid.render_candidate_lines(V))}
-    RND = pid.PACKAGES[V][0]
+        r"(specs/\S+\.md) — draft", pid.render_candidate_lines(LINE, V))}
+    RND = pid.PACKAGES[LINE][V][0]
     STALE = f"v{RND - 1}"
     NAME = f"0022-0023-{V}-20260819T0136Z.tar.gz"
     COL = (f"0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
            f"round-{RND} external-review package ({V})\nsource commit: abc1234\n"
-           f"{pid.render_candidate_field(V)}\n")
+           f"{pid.render_candidate_field(LINE, V)}\n")
     MAN = f"PACKAGE: 0022-0023-{V} — external ROUND {RND}\nCOMMIT:  abc1234\n"
     assert identity_problems(NAME, COL, MAN, MEMBERS) == [], (
         f"the agreeing case must pass: {identity_problems(NAME, COL, MAN, MEMBERS)}")
@@ -2332,17 +2335,19 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # rendered paths so the fixture cannot drift from what the generator emits.
     def _members(v):
         return {"./" + m for m in re.findall(
-            r"(specs/\S+\.md) — draft", pid.render_candidate_lines(v))}
+            r"(specs/\S+\.md) — draft",
+            pid.render_candidate_lines("0022-0023", v))}
 
-    version = max(pid.PACKAGES, key=lambda v: int(v[1:]))
+    LINE = "0022-0023"
+    version = max(pid.PACKAGES[LINE], key=lambda v: int(v[1:]))
     MEMBERS = _members(version)
-    rnd, cands = pid.PACKAGES[version]
+    rnd, cands = pid.PACKAGES[LINE][version]
     specs = "-".join(sorted(cands))
     name = f"{specs}-{version}-20260819T0000Z.tar.gz"
     col = (f"0022 source revocation (A3a) + 0023 non-revival (A3b) — COUPLED "
            f"round-{rnd} external-review package ({version})\n"
            f"source commit: abc1234\n"
-           f"{pid.render_candidate_field(version)}\n")
+           f"{pid.render_candidate_field(LINE, version)}\n")
     man = f"PACKAGE: {specs}-{version} — external ROUND {rnd}\nCOMMIT: abc1234\n"
     assert identity_problems(name, col, man, MEMBERS) == [], (
         f"the agreeing package is refused: {identity_problems(name, col, man, MEMBERS)}")
@@ -2368,8 +2373,8 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # stood in for the field's value — the proxy class one level up from
     # where R19-1 closed it.
     import skip_inventory as _si
-    field = pid.render_candidate_field(version)
-    lines = pid.render_candidate_lines(version)
+    field = pid.render_candidate_field(LINE, version)
+    lines = pid.render_candidate_lines(LINE, version)
     lie = "specs: none — this package has no external candidates"
     body = f"{_si.BEGIN_MARKER}\ninventory\n{_si.END_MARKER}\n"
     anchored = col + body
@@ -2415,22 +2420,23 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # (c) CONTINUITY FROM THE BOUND. `FIRST_GOVERNED` was enforced and the run
     # from it was not, so deleting the oldest governed row left the record
     # valid while a governed package went undeclared. A bound is not a domain.
-    saved = dict(pid.PACKAGES)
+    saved = {k: dict(v) for k, v in pid.PACKAGES.items()}
     try:
-        if len(pid.PACKAGES) > 1:
-            pid.PACKAGES.pop(f"v{pid.FIRST_GOVERNED}")
+        if len(pid.PACKAGES[LINE]) > 1:
+            pid.PACKAGES[LINE].pop(f"v{pid.FIRST_GOVERNED[LINE]}")
             assert any("contiguous" in x for x in pid.validate()), (
                 f"a gap at the bottom of the governed run was accepted: "
                 f"{pid.validate()}")
         pid.PACKAGES.clear()
-        pid.PACKAGES.update(saved)
-        pid.PACKAGES[f"v{max(int(v[1:]) for v in saved) + 2}"] = (
-            max(int(v[1:]) for v in saved) + 2, {"0022": "v1", "0023": "v1"})
+        pid.PACKAGES.update({k: dict(v) for k, v in saved.items()})
+        _top = max(int(v[1:]) for v in saved[LINE])
+        pid.PACKAGES[LINE][f"v{_top + 2}"] = (
+            _top + 2, {"0022": "v1", "0023": "v1"})
         assert any("contiguous" in x for x in pid.validate()), (
             "a HOLE in the governed run was accepted")
     finally:
         pid.PACKAGES.clear()
-        pid.PACKAGES.update(saved)
+        pid.PACKAGES.update({k: dict(v) for k, v in saved.items()})
     assert pid.validate() == [], pid.validate()
 
     # (a) THE SENT PROSE IS A SECOND COPY of the candidate revisions, and it was
@@ -2536,7 +2542,7 @@ def test_a_repacked_archive_with_a_relocated_candidate_field_is_refused(capsys):
             tf.extractall(d / "x")
         col_path = d / "x" / "COLLECTED.txt"
         col = col_path.read_text()
-        field = pid.render_candidate_field(version)
+        field = pid.render_candidate_field(LINE, version)
         assert field in col, (
             "the sealed archive does not carry the rendered candidate field — "
             "this test would otherwise pass by mutating nothing")
