@@ -37,7 +37,13 @@ Not computed here: the stranded near-synonym mass (2.60%) — that pass
 canonicalises relation strings and groups them; 0025 Q2 holds it and its
 construction ships with any spec that acts on it.
 """
-import argparse, collections, hashlib, json, sys
+import argparse, collections, hashlib, json, pathlib, sys
+
+# The SHIPPED registry, from this tree — the conftest bootstrap, so the
+# --aggregate verification runs in an extraction under the offline venv
+# (round 5: the third artifact to need this; the in-extraction check is
+# the only thing that keeps finding it).
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[3] / "src"))
 
 
 def default_relations() -> set:
