@@ -2585,3 +2585,42 @@ def test_a_repacked_archive_with_a_relocated_candidate_field_is_refused(capsys):
         assert "R20-1" in refusal or "specs:" in refusal, (
             f"the archive was refused, but not by the identity check: "
             f"{refusal[-400:]}")
+
+
+def test_changed_from_previous_orders_numerically_and_skips_same_version():
+    """0025 round 10, R10-2. The prior-archive selector was lexicographic:
+    once v10 existed, 'v9' > 'v10' as strings, so a v11 seal would diff
+    against v9; and a same-version reseal could pick its own predecessor as
+    itself. The selector now parses numeric version + timestamp; this is
+    the regression the reviewer asked for, on real (tiny) archives."""
+    import gzip, io, sys, tarfile, tempfile, pathlib
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import seal_package
+
+    def tiny_archive(dirp, name):
+        buf = io.BytesIO()
+        with tarfile.open(fileobj=buf, mode="w") as tf:
+            data = f"content-of-{name}".encode()
+            info = tarfile.TarInfo("./member.txt")
+            info.size = len(data)
+            tf.addfile(info, io.BytesIO(data))
+        (dirp / name).write_bytes(gzip.compress(buf.getvalue()))
+
+    with tempfile.TemporaryDirectory() as td:
+        outbox = pathlib.Path(td)
+        for n in ("0024-0025-v9-20260821T2210Z.tar.gz",
+                  "0024-0025-v10-20260821T2249Z.tar.gz",
+                  "0024-0025-v11-20260821T2300Z.tar.gz"):
+            tiny_archive(outbox, n)
+        # a v11 seal must diff against v10 numerically — not v9
+        # lexicographically — and must EXCLUDE the existing v11 (the
+        # same-version reseal case)
+        out = seal_package._changed_from_previous("0024-0025", "v11", outbox)
+        assert "PREVIOUS: 0024-0025-v10-" in out
+        # a v12 seal picks v11
+        out = seal_package._changed_from_previous("0024-0025", "v12", outbox)
+        assert "PREVIOUS: 0024-0025-v11-" in out
+        # no prior below the current version: the named skip, never a crash
+        out = seal_package._changed_from_previous("0024-0025", "v9", outbox)
+        assert "SKIPPED" in out

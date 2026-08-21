@@ -227,11 +227,20 @@ def vector_live_phase2_replay_and_era_bite():
 
 
 def vector_phase2_pre_d2_precedes_all_domain_logic():
-    """Round 9, R9-1: accepted 0016 requires the pre-D2 boundary at BOTH
-    phases, BEFORE any domain validation or digest computation. A version-3
-    receipt with a POISONED domain value must raise the boundary error —
-    never the domain refusal, never a digest comparison — at the live
-    store-level path."""
+    """Round 9 R9-1 + round 10 R10-1: accepted 0016 requires the pre-D2
+    boundary at BOTH phases, BEFORE any domain validation or digest
+    computation. A version-3 receipt with a POISONED domain value must
+    raise the boundary error at the live store path AND the live public
+    path — and round 10's EXPLODING-DIGEST SENTINEL makes "no digest
+    computation" a counted fact, not an inference: a hook on the SHIPPED
+    `contribution.request_digest` fails this vector if invoked during
+    either pre-D2 case.
+
+    Honest scope (R10-1): the shipped accessor does not yet SELECT
+    `request_digest_domain`, so the poisoned value proves precedence over
+    the FUTURE domain logic by construction; the digest sentinel proves
+    the no-computation half on live code today."""
+    import veracium.contribution as contribution
     from veracium.graph import _build_supersession_plan
     s = SqliteStore(":memory:")
     s.add_edge(_edge("e-prior", "chef", days_ago=200))
@@ -247,17 +256,26 @@ def vector_phase2_pre_d2_precedes_all_domain_logic():
                     "WHERE user_id=? AND operation_id=?",
                     ("garbage-domain", U, f"sup-{inc.id}"))
     s._conn.commit()
+
+    calls = []
+    real = contribution.request_digest
+    contribution.request_digest = lambda *a, **k: (
+        calls.append(1), (_ for _ in ()).throw(
+            AssertionError("digest computed during a pre-D2 case")))[1]
     try:
-        s.apply_supersession_plan(plan)
-        raise AssertionError("a pre-D2 receipt was not refused on sight")
-    except ReceiptSchemaBoundaryError:
-        pass          # the boundary, not EraRefusal, not a digest compare
-    # and the same precedence at the public phase-1 path
-    try:
-        apply_supersession(s, inc, DEFAULT_RELATIONS)
-        raise AssertionError("phase 1 accepted a pre-D2 receipt")
-    except ReceiptSchemaBoundaryError:
-        pass
+        try:
+            s.apply_supersession_plan(plan)
+            raise AssertionError("a pre-D2 receipt was not refused on sight")
+        except ReceiptSchemaBoundaryError:
+            pass      # the boundary, not EraRefusal, not a digest compare
+        try:
+            apply_supersession(s, inc, DEFAULT_RELATIONS)
+            raise AssertionError("phase 1 accepted a pre-D2 receipt")
+        except ReceiptSchemaBoundaryError:
+            pass
+    finally:
+        contribution.request_digest = real
+    assert calls == []          # the sentinel counted ZERO invocations
 
 
 def vector_the_product_matrix_on_real_migrated_rows():

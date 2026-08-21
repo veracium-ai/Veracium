@@ -11,10 +11,10 @@ __REQUIRES__
 Prior review reports are omitted per the reviewer's standing instruction.
 The archive
 is the full committed tree at the commit above plus the loose carriers
-(no count typed here — round 9, R9-3: "four" survived the fifth carrier's
-arrival; the archive member list is the authority)
-(COLLECTED.txt, COLLECTED_pytest_rs.txt, this manifest, the evidence
-transcript at the path COLLECTED names).
+(the list below is GENERATED from the sealer's own LOOSE set — round 10,
+R10-2: round 9 de-counted the count and left the hand enumeration, which
+still omitted the fifth carrier):
+__LOOSE__
 
 Verification machinery a reviewer can run from the extraction is listed in
 COLLECTED.txt and generated from the sealer's own registry. The packaging

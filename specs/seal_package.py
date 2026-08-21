@@ -182,8 +182,9 @@ def _changed_from_previous(line: str, version: str,
                            outbox: pathlib.Path) -> str:
     """Member-level diff against the newest prior same-line archive found on
     the sealing host (outbox). Emits prior name+sha and added/removed/changed
-    paths; the four always-regenerated loose carriers are listed under their
-    own heading so real tree changes stand out."""
+    paths; the always-regenerated loose carriers (the LOOSE set below — one
+    authority, no typed count) are listed under their own heading so real
+    tree changes stand out."""
     import gzip as _gzip
     import hashlib as _hashlib
     import io as _io
@@ -729,6 +730,16 @@ def main() -> int:
             header = header.replace(k, v)
             manifest = manifest.replace(k, v)
 
+        # R10-2: ONE authority for the loose-carrier names — this tuple
+        # drives both the manifest's generated list and the extra dict
+        # below; a hand enumeration drifted twice.
+        LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
+                          "PACKAGE_MANIFEST.txt", evidence_transcript.REL_PATH,
+                          "CHANGED_FROM_PREVIOUS.txt")
+        loose_lines = "\n".join(f"  - {k}" for k in sorted(LOOSE_CARRIERS))
+        header = header.replace("__LOOSE__", loose_lines)
+        manifest = manifest.replace("__LOOSE__", loose_lines)
+
         collected = build_collected(rs_path, specs, a.version, header)
         refuse_placeholders((collected, "COLLECTED.txt"),
                             (manifest, "PACKAGE_MANIFEST.txt"))
@@ -746,13 +757,15 @@ def main() -> int:
             "COLLECTED_pytest_rs.txt": rs,
             "PACKAGE_MANIFEST.txt": manifest,
             evidence_transcript.REL_PATH: tpath.read_text(),
+            # Round 8 (L-line) package feedback: the machine-generated diff
+            # against the previous same-line archive; a missing prior is a
+            # NAMED skip, never silent.
+            "CHANGED_FROM_PREVIOUS.txt": _changed_from_previous(
+                _line, a.version, a.outbox),
         }
-        # Round 8 (L-line) package feedback: a machine-generated diff against
-        # the previous same-line archive, so regression review reads changed
-        # paths instead of re-walking 400 members. Non-normative carrier; a
-        # missing prior archive is a NAMED skip, never silent.
-        extra["CHANGED_FROM_PREVIOUS.txt"] = _changed_from_previous(
-            _line, a.version, a.outbox)
+        if set(extra) != set(LOOSE_CARRIERS):
+            _fail("the extra dict and LOOSE_CARRIERS diverged — the one "
+                  "authority split (R10-2)")
         archive = build_archive(name, extra)
 
     digest = verify_archive(archive, specs)

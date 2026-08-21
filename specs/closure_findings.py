@@ -959,5 +959,8 @@ CLOSURES = [
      "survived the fifth carrier",
      "seal_package._changed_from_previous (numeric key), the de-counted "
      "manifest template",
-     "grep -nF 'no count typed here' specs/package/manifest_0024_0025.txt"),
+     "grep -nF \"GENERATED from the sealer's own LOOSE set\" "
+     "specs/package/manifest_0024_0025.txt  "
+     "# round 10 replaced the de-count note with the generated list; the "
+     "de-counting this finding demanded survives one construction deeper"),
 ]
