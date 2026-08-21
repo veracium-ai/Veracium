@@ -381,6 +381,25 @@ MECHANISM = {
     ("0025", 2, "R2-5"): ("second-copy", "spec",
         "§3b contradicted §4c inside one spec, and counter ownership was "
         "stated twice across the pair"),
+    # ---- the L-pair, external round 3 --------------------------------------
+    ("0024", 3, "R3-1"): ("domain", "spec",
+        "the pipeline was composed over the pair but not over the ACCEPTED "
+        "stack — 0023's floor was not in the composition domain"),
+    ("0024", 3, "R3-2"): ("second-copy", "spec",
+        "the shared field acquired a definition per spec, and two carriers "
+        "still described shapes earlier rounds had replaced"),
+    ("0025", 3, "R3-1"): ("domain", "spec",
+        "the snapshot froze the fields the FIX read, not the fields its "
+        "consumers read — the prompt renderer was a consumer"),
+    ("0025", 3, "R3-2"): ("second-copy", "spec",
+        "counter inventories again — the third round running; the authority "
+        "table itself omitted a counter another spec deferred to it"),
+    ("0025", 3, "R3-3"): ("domain", "spec",
+        "the fix's own injection made the catch-all prompt-visible — the "
+        "new state opened the evasion it was measuring"),
+    ("0025", 3, "R3-4"): ("domain", "spec",
+        "the digest bump was verified against the writer, never against the "
+        "stored-receipt reader on the failure path it exists for"),
 }
 
 

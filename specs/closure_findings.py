@@ -725,4 +725,47 @@ CLOSURES = [
      "changed; counter ownership was scattered across the pair",
      "§3b, §4c (the single authority), 0024 U7 pointer",
      "grep -n 'AUTHORITATIVE disposition' specs/0025-relation-vocabulary-enforcement.md"),
+    # ---- 0024 (L1) external round 3 -------------------------------------
+    ("0024", "external", 3, "R3-1",
+     "the combined pipeline composed the pair and forgot the accepted stack "
+     "— a standing-revoked source's incoherent triple came out MENTIONABLE "
+     "against 0023 N1, and §5 claimed 0023 behaviour unchanged",
+     "0025 §4b-iii step 3, 0024 §5 regime row",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_revoked_source_floor_wins_over_coherence — shows the "
+     "without-the-floor bite on purpose"),
+    ("0024", "external", 3, "R3-2",
+     "Edge.original_relation carried two definitions across the pair, and "
+     "§5/§7a still described the pre-round-1 registry and schema shapes",
+     "0025 §2 (the one definition, two writers), 0024 §4b(3), §5, §7a",
+     "grep -n 'TWO writers' specs/0025-relation-vocabulary-enforcement.md"),
+    # ---- 0025 (L2) external round 3 -------------------------------------
+    ("0025", "external", 3, "R3-1",
+     "the snapshot froze (name, functional) while the prompt renders desc — "
+     "prompt and classification could observe different registries, and a "
+     "desc-drifted reserved shadow passed the check",
+     "§4b-ii steps 3+5 (complete canonical form, one snapshot for all reads)",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_reserved_desc_drift_is_refused + "
+     "vector_prompt_renders_selectable_set_from_the_snapshot"),
+    ("0025", "external", 3, "R3-2",
+     "counter inventories conflicted (three vs invalid vs five reference "
+     "keys) and redispositioned was missing from the authority 0024 defers "
+     "to",
+     "§4c (THE inventory: five public counters, retry_calls reference-only)",
+     "grep -n 'THE COUNTER INVENTORY' specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 3, "R3-3",
+     "the extractor could select unclassified directly and bypass the "
+     "residual instrument — stored in-vocabulary with invalid=0",
+     "§4b-iv (the selectable set)",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_direct_unclassified_emission_is_residual"),
+    ("0025", "external", 3, "R3-4",
+     "the receipt digest-domain bump had no cross-era rule — a legitimate "
+     "lost-response retry hashed under the new domain read as a different "
+     "request against a legacy receipt",
+     "§2 field row (cross-era rule), §7b 0014 row (amendment authorization)",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_receipt_digest_crosses_eras — legacy dual-domain match, "
+     "true mismatch still refused"),
 ]
