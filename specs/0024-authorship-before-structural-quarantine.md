@@ -23,7 +23,7 @@ measurement.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
+| **Version** | **v5** — external round 3 folded (2026-08-21): **R3-1** the combined pipeline gains the standing-revocation floor as an explicit step (`0025` §4b-iii step 3) and §5's "unchanged under 0023" claim corrected — accepted N1 wins over the coherence rewrite, with revoked-source vectors; **R3-2** `Edge.original_relation` defined ONCE at `0025` §2 with both writers enumerated, §5's registry claim and §7a's schema row de-staled. *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
@@ -270,10 +270,11 @@ The triple is **re-dispositioned, not dropped**:
    state disclosure is computed FOR, which is why `0025` X10 is scoped to
    the vocabulary fallback and does not constrain this step);
 3. **the original relation is preserved in the TYPED field
-   `Edge.original_relation`** (`0025` F6 moved this out of note prose for
-   both specs — one carrier, mechanically reversible), so the
-   re-disposition is visible in the record and reversible by inspection.
-   Nothing is silently rewritten.
+   `Edge.original_relation`** — defined ONCE at `0025` §2 as the original
+   relation for ANY structural re-disposition, this rewrite being one of
+   its two enumerated writers (round 3, R3-2: the two specs had drifted
+   into two definitions) — so the re-disposition is visible in the record
+   and reversible by inspection. Nothing is silently rewritten.
 
 **Order matters and is the whole fix:** the author floor is evaluated
 BEFORE the structural quarantine can be skipped, so no path reaches
@@ -314,8 +315,8 @@ extractor output is the shape this project keeps finding.
 | ordinary assistant/user chat ingest | changes only for triples the extractor labels `third_party_claim` with `subject == user` |
 | a THIRD_PARTY-authored event (mail, documents) | **unchanged in every cell.** The author floor decides, as it does today |
 | import (`0005`) | **unchanged.** The cap runs on already-written records; this is a write-time rule at ingest |
-| a store under `0023` revocation | unchanged — revocation quarantine is a separate floor and is not relation-derived |
-| a host supplying its own `relations` registry | unchanged: `QUARANTINE_RELATION` is a module constant, not a registry entry |
+| a store under `0023` revocation | **the standing-revocation floor applies AFTER the coherence rewrite and wins (external round 3, R3-1, blocking: v4 said "unchanged" while the §4b pipeline as written let a revoked source's incoherent triple out at MENTIONABLE, against accepted N1).** A revoked source's records land QUARANTINED whatever the coherence test decides — step 3 of `0025` §4b-iii, and the revoked-source vectors pin it |
+| a host supplying its own `relations` registry | unchanged in effect — and stated correctly now (round 3, R3-2): `QUARANTINE_RELATION` is a module constant AND a protected effective-registry resident under `0025` §4b-ii; a host cannot remove or conflictingly redefine it |
 
 ## 6. Invariants and executable checks — REQUIRED, blocking
 
@@ -354,7 +355,7 @@ extractor output is the shape this project keeps finding.
 | carrier | change |
 |---|---|
 | `src/veracium/ingest.py` | `_disclosure_for` gains the coherence test; the call site and the write site do not move |
-| `src/veracium/schema.py` | the fallback relation for a re-dispositioned triple, if the registry has no suitable ordinary member — a registry addition, not a new mechanism |
+| `src/veracium/schema.py` | the FIXED re-disposition target `unclassified` (`0025`'s reserved member — never conditional, round 3 R3-2 removed the stale "if the registry has no suitable member" phrasing) and the shared `Edge.original_relation` typed field, defined once at `0025` §2 with its two writers enumerated |
 | `src/veracium/prompts.py` | **optional and non-normative**: tightening the claimant convention. Explicitly NOT the fix (§4c) |
 | the ingest result dict / `Memory.remember` / MCP / CLI / telemetry | `redispositioned` on every path / passthrough / STRIPPED / printed / whitelisted field under the telemetry contract with consent gating (round 2, R2-3 — these carriers were governed by U7 but absent from this inventory) |
 | tests | the §6 table's named tests, U1–U7 — §6 is the ONE authoritative invariant list (external round 1, F3: this row said W1–W6, §6 listed U1–U7 out of order, and the package header hand-typed a range ending one past the real list — three versions of one surface; every other carrier now REFERENCES §6 rather than restating it) |

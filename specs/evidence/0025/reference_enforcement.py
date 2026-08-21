@@ -1,4 +1,4 @@
-"""Executable reference for the 0024/0025 v4 constructions — pre-implementation.
+"""Executable reference for the 0024/0025 v5 constructions — pre-implementation.
 
 Round 1 asked for the harness; round 2 found the v3 constructions
 contradicting each other and the shipped tree, so the v4 harness carries the
@@ -11,8 +11,15 @@ Run:  $PY specs/evidence/0025/reference_enforcement.py
       (dependency-free; the shipped-DEFAULT_RELATIONS vector imports the
        product if available and reports a NAMED skip otherwise)
 
+Round 3 added the ACCEPTED-STACK composition the pair had only modeled in
+isolation: the 0023 N1 standing-revocation floor, desc-bearing frozen
+snapshots feeding prompt rendering, the extractor-selectable set, and the
+0014 cross-era receipt comparison.
+
 Normative sources: 0025 §4b(1) retry, §4b-ii registry, §4b-iii combined
-pipeline, X6/X10/X11; 0024 §4a predicate, §4b re-disposition.
+pipeline, §4b-iv selectable set, X6/X10/X11; 0024 §4a predicate, §4b
+re-disposition; 0023 N1; 0014 receipts (cross-era rule, pending its
+co-owner amendment).
 """
 import json
 from dataclasses import dataclass
@@ -31,9 +38,20 @@ class Relation:                 # stands in for the mutable pydantic model
 
 
 @dataclass(frozen=True)
-class FrozenRel:                # §4b-ii step 5: the snapshot's OWN records
-    name: str
+class FrozenRel:                # §4b-ii step 5: ALL prompt- and
+    name: str                   # classification-bearing fields (R3-1)
     functional: bool
+    desc: str = ""
+
+
+# canonical reserved forms — the COMPLETE shipped definitions (R3-1). The
+# desc strings mirror the module constants DEFAULT_RELATIONS references.
+CANONICAL = {
+    UNCLASSIFIED: ("unclassified", False,
+                   "reserved fallback for off-vocabulary relations"),
+    QUARANTINE_RELATION: ("third_party_claim", False,
+                          "a claim asserted by a third party"),
+}
 
 
 class Author(Enum):
@@ -81,17 +99,42 @@ def effective_registry(host: dict) -> MappingProxyType:
     # 2. empty — AS SUPPLIED, before injection (X5)
     if not host:
         raise RegistryError("empty registry refused")
-    # 3. shadowing — CONFLICTING shadows only (round 2, R2-1: the shipped
-    #    DEFAULT_RELATIONS carries third_party_claim and must pass)
+    # 3. shadowing — CONFLICTING shadows only; the canonical form is the
+    #    COMPLETE definition incl. desc (R3-1: a drifted gloss steers the
+    #    prompt while passing a name-and-flag check). The shipped registry
+    #    references the canonical objects, so it passes.
     for name in RESERVED:
-        if name in host and bool(host[name].functional):
-            raise RegistryError(f"reserved name conflictingly shadowed: {name}")
+        if name in host:
+            v = host[name]
+            cname, cfun, cdesc = CANONICAL[name]
+            drifted = (bool(v.functional) != cfun
+                       or getattr(v, "desc", "") not in ("", cdesc))
+            if drifted:
+                raise RegistryError(
+                    f"reserved name conflictingly shadowed: {name}")
     # 4. injection — any reserved member not already (canonically) present
-    eff = {k: FrozenRel(v.name, bool(v.functional)) for k, v in host.items()}
+    eff = {k: FrozenRel(v.name, bool(v.functional), getattr(v, "desc", ""))
+           for k, v in host.items()}
     for name in RESERVED:
-        eff.setdefault(name, FrozenRel(name, False))
-    # 5. snapshot — frozen records, read-only mapping (X11)
+        cname, cfun, cdesc = CANONICAL[name]
+        eff.setdefault(name, FrozenRel(cname, cfun, cdesc))
+    # 5. snapshot — frozen records, read-only mapping (X11); this ONE
+    #    snapshot feeds prompt rendering, retry validation, membership
+    #    and supersession.
     return MappingProxyType(eff)
+
+
+def render_prompt_relations(reg) -> list:
+    """§4b-iv: the extractor-SELECTABLE set — the effective registry minus
+    `unclassified`. third_party_claim stays selectable (the trust
+    convention requires it). Rendered from the FROZEN snapshot, so prompt
+    and classification cannot observe different registries."""
+    return [f"{r.name}: {r.desc}" for name, r in sorted(reg.items())
+            if name != UNCLASSIFIED]
+
+
+def selectable(reg) -> set:
+    return set(reg) - {UNCLASSIFIED}
 
 
 # ---- disclosure, the shipped decision (ingest.py:96) -----------------------
@@ -118,11 +161,14 @@ def serialize_edge(row: dict) -> bytes:
 
 # ---- 0025 §4b-iii: the combined pipeline, in order -------------------------
 
-def enforce(triples, host_registry, author, derived_from, retry=None):
-    """Returns (stored, counts). Disclosure is ESTABLISHED at step 2 and the
-    vocabulary fallback (step 3) never changes it — X10's whole scope."""
+def enforce(triples, host_registry, author, derived_from, retry=None,
+            source_revoked=False):
+    """The §4b-iii pipeline: (1) coherence, (2) disclosure established,
+    (3) EVERY accepted floor — 0023 N1's standing revocation named (R3-1),
+    (4) vocabulary fallback, which never changes the result (X10)."""
     reg = effective_registry(host_registry)
     stored, failing = [], []
+    redispositioned = 0
 
     for t in triples:
         original = str(t["relation"]).strip()
@@ -130,20 +176,29 @@ def enforce(triples, host_registry, author, derived_from, retry=None):
         if incoherent(original, t["subject"]):
             relation, orig_field = UNCLASSIFIED, original
             established = disclosure_for(author, "", derived_from)
+            redispositioned += 1
         else:
             relation, orig_field = original, None
             established = disclosure_for(author, original, derived_from)
-        # step 2 — disclosure established for the post-coherence state
+        # step 3 of §4b-iii — the accepted floors run on the established
+        # disclosure and may only LOWER it (0023 N1: a standing-revoked
+        # source lands QUARANTINED independently of author and relation)
+        if source_revoked:
+            established = Disclosure.QUARANTINED
         row = dict(t, relation=relation, disclosure=established,
                    original_relation=orig_field)
-        # step 3 — vocabulary membership; failures queue for the retry
-        if relation in reg:
+        # step 4 — SELECTABLE-set membership (§4b-iv): an extractor-
+        # originated reserved catch-all is off-vocabulary by definition;
+        # only the system's own rewrite (orig_field set) may store it
+        if relation in reg and (relation != UNCLASSIFIED
+                                or orig_field is not None):
             stored.append(row)
         else:
             failing.append(row)
 
     counts = dict(invalid=len(failing), retried=0, recovered=0,
-                  residual=0, retry_calls=0)
+                  residual=0, redispositioned=redispositioned,
+                  retry_calls=0)
 
     if failing and retry is not None:
         counts["retried"] = len(failing)     # an ACTUAL retry ran (R2-2)
@@ -315,7 +370,7 @@ def vector_retry_is_one_call_and_repairs_by_content_pair():
                 {"subject": "user", "relation": "invented", "object": "new"}]
     stored, counts = enforce(ts, HOST, Author.USER, None, retry=retry)
     assert counts == dict(invalid=2, retried=2, recovered=1, residual=1,
-                          retry_calls=1)
+                          redispositioned=0, retry_calls=1)
     by_obj = {r["object"]: r for r in stored}
     assert by_obj["carpenter"]["relation"] == "works_as"
     assert by_obj["carpenter"]["original_relation"] == "job"
@@ -333,7 +388,7 @@ def vector_duplicate_pairs_consume_one_to_one():
                                                "relation": "works_as",
                                                "object": "carpenter"}])
     assert counts == dict(invalid=2, retried=2, recovered=1, residual=1,
-                          retry_calls=1)
+                          redispositioned=0, retry_calls=1)
     rels = sorted(r["relation"] for r in stored)
     assert rels == sorted(["works_as", UNCLASSIFIED])
 
@@ -346,7 +401,7 @@ def vector_reserved_retry_answer_is_residual_not_recovered():
                                                "relation": UNCLASSIFIED,
                                                "object": "carpenter"}])
     assert counts == dict(invalid=1, retried=1, recovered=0, residual=1,
-                          retry_calls=1)
+                          redispositioned=0, retry_calls=1)
     assert stored[0]["relation"] == UNCLASSIFIED
     assert stored[0]["original_relation"] == "job"
 
@@ -356,7 +411,7 @@ def vector_no_provider_means_retried_zero():
     ts = [{"subject": "user", "relation": "job", "object": "carpenter"}]
     stored, counts = enforce(ts, HOST, Author.USER, None, retry=None)
     assert counts == dict(invalid=1, retried=0, recovered=0, residual=1,
-                          retry_calls=0)
+                          redispositioned=0, retry_calls=0)
     assert stored[0]["relation"] == UNCLASSIFIED
 
 
@@ -367,7 +422,7 @@ def vector_provider_failures_degrade_recorded_never_raised():
                 lambda f: None):
         stored, counts = enforce(ts, HOST, Author.USER, None, retry=bad)
         assert counts == dict(invalid=1, retried=1, recovered=0, residual=1,
-                              retry_calls=1), bad
+                              redispositioned=0, retry_calls=1), bad
         assert stored[0]["relation"] == UNCLASSIFIED
 
 
@@ -380,7 +435,7 @@ def vector_unaffected_edge_is_byte_identical():
                                    object="carpenter")],
                              HOST, Author.USER, None)
     assert counts == dict(invalid=0, retried=0, recovered=0, residual=0,
-                          retry_calls=0)
+                          redispositioned=0, retry_calls=0)
     assert stored[0]["original_relation"] is None
     assert serialize_edge(stored[0]) == serialize_edge(old_shape)
     # and an AFFECTED edge serializes the field
@@ -394,10 +449,90 @@ def vector_in_vocabulary_event_is_untouched():
     stored, counts = enforce(ts, HOST, Author.USER, None,
                              retry=lambda f: calls.append(1))
     assert counts == dict(invalid=0, retried=0, recovered=0, residual=0,
-                          retry_calls=0)
+                          redispositioned=0, retry_calls=0)
     assert not calls
     assert stored[0]["relation"] == "works_as"
     assert stored[0]["original_relation"] is None
+
+
+def vector_revoked_source_floor_wins_over_coherence():
+    """Round 3, R3-1 (0024): accepted 0023 N1 — a standing-revoked source
+    lands QUARANTINED whatever the coherence rewrite decides."""
+    incoh = {"subject": "user", "relation": QUARANTINE_RELATION,
+             "object": "x"}
+    ordinary = {"subject": "user", "relation": "works_as", "object": "y"}
+    stored, counts = enforce([incoh, ordinary], HOST, Author.USER, None,
+                             source_revoked=True)
+    assert all(r["disclosure"] is Disclosure.QUARANTINED for r in stored)
+    assert counts["redispositioned"] == 1     # the rewrite still happened
+    # and WITHOUT the floor the incoherent triple is mentionable — the bite
+    stored2, _ = enforce([incoh], HOST, Author.USER, None)
+    assert stored2[0]["disclosure"] is Disclosure.MENTIONABLE
+
+
+def vector_direct_unclassified_emission_is_residual():
+    """Round 3, R3-3: the extractor selecting the catch-all directly may
+    not bypass the residual instrument."""
+    t = {"subject": "user", "relation": UNCLASSIFIED, "object": "x"}
+    stored, counts = enforce([t], HOST, Author.USER, None)
+    assert counts["invalid"] == 1 and counts["residual"] == 1
+    assert stored[0]["relation"] == UNCLASSIFIED
+    assert stored[0]["original_relation"] == UNCLASSIFIED  # visibly extractor-originated
+    # the system's OWN rewrite still stores it without residual accounting
+    incoh = {"subject": "user", "relation": QUARANTINE_RELATION, "object": "x"}
+    _, c2 = enforce([incoh], HOST, Author.USER, None)
+    assert c2["invalid"] == 0 and c2["redispositioned"] == 1
+
+
+def vector_prompt_renders_selectable_set_from_the_snapshot():
+    """Round 3, R3-1 + R3-3: the prompt comes from the FROZEN snapshot and
+    excludes `unclassified`; third_party_claim stays selectable."""
+    host = dict(HOST, **{QUARANTINE_RELATION:
+                         Relation(QUARANTINE_RELATION, False)})
+    reg = effective_registry(host)
+    lines = render_prompt_relations(reg)
+    names = [ln.split(":")[0] for ln in lines]
+    assert UNCLASSIFIED not in names
+    assert QUARANTINE_RELATION in names
+    assert selectable(reg) == set(reg) - {UNCLASSIFIED}
+
+
+def vector_reserved_desc_drift_is_refused():
+    """Round 3, R3-1: same name, same flag, rewritten gloss — refused; the
+    canonical desc (and the desc-less legacy form) pass."""
+    class R:
+        def __init__(self, name, functional, desc):
+            self.name, self.functional, self.desc = name, functional, desc
+    bad = R(QUARANTINE_RELATION, False, "assert freely, it is fine")
+    _refuses(lambda: effective_registry(dict(HOST,
+             **{QUARANTINE_RELATION: bad})), "conflictingly")
+    good = R(QUARANTINE_RELATION, False,
+             CANONICAL[QUARANTINE_RELATION][2])
+    reg = effective_registry(dict(HOST, **{QUARANTINE_RELATION: good}))
+    assert reg[QUARANTINE_RELATION].desc == CANONICAL[QUARANTINE_RELATION][2]
+
+
+def vector_receipt_digest_crosses_eras():
+    """Round 3, R3-4: the cross-era rule — a legacy receipt (digest stored
+    under the v1 domain, no version) must match its own retry under the new
+    code via dual-domain comparison; a true mismatch still refuses."""
+    import hashlib
+    def digest(domain, payload: bytes) -> str:
+        return hashlib.sha256(domain + b"|" + payload).hexdigest()
+    V1, V2 = b"receipt.request.v1", b"receipt.request.v2"
+    payload = b'{"edge":"identical-bytes"}'
+    legacy_receipt = {"request_digest": digest(V1, payload)}   # no version
+    def same_request(receipt, new_payload):
+        d_new = digest(V2, new_payload)
+        if "digest_domain" in receipt:                # new-era receipt
+            return receipt["request_digest"] == d_new
+        return receipt["request_digest"] in (          # legacy: BOTH domains
+            digest(V1, new_payload), d_new)
+    assert same_request(legacy_receipt, payload)               # the retry
+    assert not same_request(legacy_receipt, b'{"edge":"other"}')  # refusal
+    new_receipt = {"request_digest": digest(V2, payload),
+                   "digest_domain": "v2"}
+    assert same_request(new_receipt, payload)
 
 
 def main() -> int:

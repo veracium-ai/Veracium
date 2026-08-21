@@ -3,8 +3,13 @@ SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
 
-Two INDEPENDENT specs, one archive, per-spec verdicts requested. This is
-their FIRST external round; there are no prior reports to omit. The archive
+One archive, per-spec verdicts requested — external ROUND __ROUND__ (the
+round number above and the dependency lines below are DERIVED at seal
+time; round 3 caught this paragraph still hand-claiming independence and
+a first round):
+__REQUIRES__
+Prior review reports are omitted per the reviewer's standing instruction.
+The archive
 is the full committed tree at the commit above plus the four loose carriers
 (COLLECTED.txt, COLLECTED_pytest_rs.txt, this manifest, the evidence
 transcript at the path COLLECTED names).

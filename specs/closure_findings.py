@@ -658,7 +658,9 @@ CLOSURES = [
      "§2 said one new count while §4c and X4 said three, and no caller "
      "surface (Memory/MCP/CLI/telemetry) was dispositioned",
      "§2 result-dict row, §4c, §7a",
-     "grep -n 'STRIPS all three' specs/0025-relation-vocabulary-enforcement.md"),
+     "grep -n 'STRIPS all five' specs/0025-relation-vocabulary-enforcement.md  "
+     "# the carrier table moved into the SS4c inventory at round 3 (R3-2); the "
+     "MCP-strips disposition this finding demanded is this row"),
     ("0025", "external", 1, "F6",
      "'preserved in the note' put the recovery carrier in free prose an LLM "
      "also writes — unparseable back out and spoofable by note content",

@@ -48,7 +48,7 @@ Data flows **write → store → read**, with **lifecycle** maintenance and **po
 crossing the store. Trust classes thread through all of it.
 
 ### The trust model (`schema.py`, `authority.py`) — read this first
-- **`EvidenceAuthor`** — `USER > SYSTEM > ASSISTANT > THIRD_PARTY`. Who authored the evidence.
+- **`EvidenceAuthor`** — exactly `USER`, `SYSTEM`, `THIRD_PARTY`. Who authored the evidence. *(Corrected external round 3: this guide previously listed an `ASSISTANT` member the shipped enum does not have — assistant-generated content is a deferred trust class, 0001 in the status table below.)*
 - **`Disclosure`** — `MENTIONABLE` (assertable) → `USE_ONLY` (may inform, never asserted) →
   `QUARANTINED` (structurally isolated). The gate keys on this.
 - **`SourceType`**, **`Provenance`** — `observed_at` (last recorded) vs `valid_from` (first
