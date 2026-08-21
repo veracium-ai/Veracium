@@ -19,13 +19,17 @@ WHAT EACH SPEC IS, in one sentence each:
              it — 3,945 corpus triples, the extractor's own note naming the
              user as source on 41.5% of them. The fix removes the model's
              power to unilaterally demote user testimony; the genuinely
-             third-party relay stays quarantined. Invariants U1–U8.
+             third-party relay stays quarantined. The invariant list is
+             §6's table IN THE SPEC — not restated here, where it drifted
+             once already (round 1 found three versions of this surface,
+             and this line's hand-typed count was one of them).
   0025 (L2)  34.9% of extracted triples are off-vocabulary; they resolve to
              None at `graph.py`'s registry lookup, so they can NEVER
              supersede and never enter contention — restatements accumulate
              as parallel edges. Enforcement is polarity-first with the
              reserved `unclassified` member pinned as a module constant.
-             Invariants X1–X9.
+             The invariant list is §6's table in the spec — not
+             restated here (same round-1 lesson).
 
 MEASUREMENT CONTEXT — GENERATED, not promised:
                  __CONTEXT__

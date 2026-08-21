@@ -48,6 +48,17 @@ if [ -e "$VENV" ]; then
   exit 2
 fi
 
+# ROUND-1 L-PAIR PACKAGE NOTE: the reviewer's /usr/bin/python3 lacked
+# ensurepip, so `python -m venv` left a PARTIAL environment (no pip) that a
+# rerun then refused — the refusal machinery punishing the wrong actor.
+# Detect the capability BEFORE creating anything, and name the fix.
+if ! "$PY" -c "import ensurepip" 2>/dev/null; then
+  echo "REFUSED: $(command -v "$PY") has no ensurepip, so it cannot build a venv." >&2
+  echo "  On Debian/Ubuntu: install python3-venv, or set VERACIUM_PYTHON to an" >&2
+  echo "  interpreter that carries ensurepip. Nothing was created." >&2
+  exit 2
+fi
+
 echo "== creating the venv (no network) =="
 echo "  interpreter : $(command -v "$PY")"
 "$PY" -m venv "$VENV"
