@@ -403,6 +403,15 @@ this codebase has had.
 
 ## 9. Brief for the external reviewer
 
+**The constructions are executable (round-1 package feedback):**
+`specs/evidence/0025/reference_enforcement.py` is a dependency-free
+reference of the v3 constructions — the §4b-ii registry order, the §4b(1)
+retry with its matching and no-op rules, X10's disclosure ordering (the
+laundering cell runs the WRONG order on purpose and shows the bite),
+X11's snapshot, and `0024`'s §4a predicate with its fail-closed odd-type
+cells. 13 vectors; the implementation will be differentially tested
+against it, the `0022` vector-harness discipline.
+
 **What we are least sure of:**
 
 1. **Whether the reserved member is a bucket or a bug factory.** It keeps
