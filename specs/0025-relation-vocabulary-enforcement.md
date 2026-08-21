@@ -12,7 +12,7 @@ cache. Scheduled by Quentin 2026-08-17. Deliberately SEPARATE from `0024`
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — internal round 1 folded (research, 2026-08-17). **M2: the reserved member's RESIDENCY was unpinned, and that left the spec's own mechanism able to violate its own X1** — a host registry omitting `unclassified` would make the fallback write a non-member, and a host defining it as FUNCTIONAL would let every unclassified triple supersede. It is now a module constant on the `QUARANTINE_RELATION` pattern, injected into every effective registry and refused if shadowed (**X8**, **X9**). Also folded: **X4** splits into `retried`/`recovered`/`residual` so the re-run can attribute movement, and §7b states the pair composition. Ratified unchanged: the non-superseding ruling, polarity-first with X7, refuse-vs-remap, Q2's separation. |
+| **Version** | **v3** — external round 1 folded (2026-08-21): **F1** disclosure ordered before the rewrite (X10) and `third_party_claim` made a protected resident beside `unclassified` (X8/X9 widened); **F2** the retry constructed — one call per event, content-pair matching, discard rule, malformed no-op, reconciling counts; **F3** the effective-registry construction ordered (§4b-ii) with X5 pinned to the as-supplied dict and X11's immutable snapshot; **F4** the `prefers` matrix row corrected to shipped code; **F5** the three counts dispositioned on every caller surface; **F6** `Edge.original_relation` typed field replaces note prose (X3). *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **M2: the reserved member's RESIDENCY was unpinned, and that left the spec's own mechanism able to violate its own X1** — a host registry omitting `unclassified` would make the fallback write a non-member, and a host defining it as FUNCTIONAL would let every unclassified triple supersede. It is now a module constant on the `QUARANTINE_RELATION` pattern, injected into every effective registry and refused if shadowed (**X8**, **X9**). Also folded: **X4** splits into `retried`/`recovered`/`residual` so the re-run can attribute movement, and §7b states the pair composition. Ratified unchanged: the non-superseding ruling, polarity-first with X7, refuse-vs-remap, Q2's separation. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 moderate + minors), folded here |
 | **External review** | required — changes what reaches the supersession machinery |
@@ -91,7 +91,8 @@ stale facts is true only of the 65% that landed in the registry.
 | `Edge.relation` | written at ingest | the extractor's classification, drawn from the registry | supersession (`graph.py:341`), contention (`:423`), absorption, render, `0024` | the value is now VALIDATED against the registry before storage. The field's type and meaning are unchanged; what changes is that the documented constraint becomes real |
 | `DEFAULT_RELATIONS` | read | *"a small, extensible default registry. Hosts can add their own via config"* (`schema.py:185`) | `ingest_event(relations=…)`, `apply_supersession` | **UNCHANGED and load-bearing: host extensibility is why enforcement cannot mean a hardcoded list.** The registry stays the authority; enforcement means the registry is CONSULTED, not that it is frozen |
 | `Relation.functional` | read | one current value per subject → supersede on change | supersession, contention | unchanged. More triples reach it; none behave differently once there |
-| the ingest result dict | written | per-event counts the host logs | hosts, telemetry | gains one count for off-vocabulary triples (§4c). **A new key, so §7a states the compatibility question rather than assuming it** |
+| the ingest result dict | written | per-event counts the host logs | hosts, telemetry | gains THREE counts — `retried`/`recovered`/`residual` (§4c), present on every path. **New keys, so §7a states the compatibility question rather than assuming it** |
+| `Edge.original_relation` | **NEW** — written ONLY by the §4b rewrite | the extractor's original off-vocabulary relation; `None` everywhere else | render (inspection), a future `Q1` migration | additive, default `None`; no existing consumer reads it (external round 1, F6) |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
 
@@ -121,21 +122,40 @@ different severity and a different fix.)*
 
 ## 3. Trust-class matrix — REQUIRED, blocking
 
-Relation membership is **orthogonal to trust**: nothing in this spec reads
-or writes `disclosure`, `author_of_evidence` or `derived_from`. The matrix
-is therefore about what the UPDATE machinery does, which is the axis this
-spec moves.
+Relation membership is **orthogonal to trust**, and the fold makes the
+orthogonality an ORDERING rather than an assertion (external round 1, F1,
+blocking): **disclosure is computed from the ORIGINAL extracted relation,
+BEFORE any vocabulary rewrite, and the computed value is retained.** The
+rewrite never feeds `_disclosure_for`. Without that order the mechanism
+launders hearsay: a registry from which `third_party_claim` is missing
+sends the extractor's `third_party_claim` down the off-vocabulary path,
+the rewrite lands it on `unclassified`, and a disclosure computed from the
+REWRITTEN relation no longer trips the quarantine test. **X10** pins the
+order; §4b-ii closes the registry hole itself by making
+`third_party_claim` a protected resident like `unclassified`. Nothing in
+this spec WRITES `disclosure`, `author_of_evidence` or `derived_from`. The
+matrix is therefore about what the UPDATE machinery does, which is the
+axis this spec moves.
 
 | relation | in registry? | functional? | supersedes today | supersedes after | contention grouping |
 |---|---|---|---|---|---|
 | `works_as` | yes | yes | yes | yes | yes |
-| `prefers` | yes | no | no (by design — preferences accumulate) | no | no |
+| `prefers` | yes | **yes** (`schema.py:203`) | yes | yes | yes |
+| `works_on` | yes | no (accumulates) | no | no | no |
 | `has_feature` | **no** | — | **no — unreachable** | **decided by §4b, explicitly** | **no → per §4b** |
 | `is_a` | **no** | — | **no — unreachable** | as above | as above |
 | a host's custom relation | yes (host registry) | host's choice | per host | per host, unchanged | per host |
 | `third_party_claim` | yes | no | no | no | no |
 
-**The cell that matters is row 3.** Today it is unreachable by accident.
+> **external round 1, F4:** v2's `prefers` row typed "no (by design —
+> preferences accumulate)" — shipped `schema.py:203` marks `prefers`
+> `functional=True`, so the matrix contradicted the code it claims to
+> describe. The row now restates the code, and the accumulating example is
+> `works_on`, which actually is non-functional. A matrix cell is a second
+> copy of the code; it is regenerated against `DEFAULT_RELATIONS`, not
+> remembered.
+
+**The cell that matters is the `has_feature` row.** Today it is unreachable by accident.
 After this spec it is unreachable, or reachable, **by decision** — and the
 decision is written down.
 
@@ -178,16 +198,44 @@ makes it intentional.
 **So the fix is NOT to make unknown relations supersede. It is to stop 35%
 of triples from arriving there.** Two mechanisms, in this order:
 
-1. **Constrain extraction.** The registry is already rendered into the
-   prompt; the returned relation is validated against it, and a triple
-   whose relation is off-vocabulary is **re-extracted once** against the
-   registry (the shipped retry path), then handled by (2) if it still
-   fails. This is where the 35% is actually recovered.
+1. **Constrain extraction — the retry, constructed (external round 1, F2,
+   blocking; v2 described a retry without defining one).**
+   - **Budget: exactly ONE provider call per EVENT**, issued only when at
+     least one triple fails membership. Never one call per triple; never a
+     second call, whatever the first returns.
+   - **Prompt:** the same extraction prompt, the registry rendered as
+     today, plus ONLY the failing triples as `(subject, relation, object)`
+     with the instruction to re-emit exactly those triples using relations
+     drawn from the registry. The passing triples and the episode are NOT
+     re-extracted.
+   - **Matching:** a retry triple replaces a failing triple only when it
+     matches on the `(subject, object)` pair after the shipped
+     `str().strip()` canonicalisation — the content pair is the identity;
+     the relation is the thing under repair. The replacement relation must
+     itself be a registry member, or the match is ignored.
+   - **Discards:** retry output that matches no failing triple is
+     DISCARDED — the retry may repair relations, never add facts. A
+     failing triple with no match remains failing and is handled by (2).
+   - **Malformed retry output** (unparseable JSON, wrong shape): the whole
+     retry is a no-op — every failing triple goes to (2). No second
+     attempt.
+   - **The episode is written once**, from the original extraction; the
+     retry cannot touch it.
+   - **Counts reconcile by construction:** `retried` = triples that
+     entered the retry, `recovered` = triples replaced by a registry
+     member, `residual` = `retried − recovered` = triples landing in
+     `unclassified` (X4).
+   This is where the 35% is actually recovered.
 2. **Name the residual.** A triple that still carries an off-vocabulary
    relation is stored under the RESERVED member **`unclassified`**,
-   non-functional, **with the original relation preserved in the note** — no
-   data loss, no silent pass-through, and the residual is countable rather
-   than invisible.
+   non-functional, **with the original relation preserved in a TYPED field —
+   `Edge.original_relation: str | None`, default `None`, written only by the
+   rewrite** (external round 1, F6: v2 said "preserved in the note", but the
+   note is free prose the extractor also writes into, so recovery would mean
+   parsing LLM text back out of LLM text; a typed field is mechanically
+   reversible and cannot be spoofed by note content) — no data loss, no
+   silent pass-through, and the residual is countable rather than
+   invisible.
 
 **The reserved member's RESIDENCY is structural, and v1 left it unpinned
 (internal M2).** Saying "a reserved registry member" without saying where it
@@ -199,8 +247,36 @@ against — the host's registry — and creates two live adversarial cells:
 | a host registry that OMITS `unclassified` | the fallback writes a relation that is not in the effective registry — **the spec's own mechanism violating X1** | `unclassified` is a MODULE CONSTANT on the `QUARANTINE_RELATION` pattern, **injected into every effective registry** at the boundary. Not optional, not removable |
 | a host defining `unclassified` as FUNCTIONAL | every unclassified triple becomes able to supersede — the exact data-loss outcome §4b refuses | a conflicting definition is **REFUSED at the boundary**, beside **X5**. The name is reserved; shadowing it is an error, not an override |
 
-This is the same shape as `QUARANTINE_RELATION`: a constant the system
-depends on cannot be a registry entry a host may redefine.
+This is the same shape as `QUARANTINE_RELATION` — **and the fold applies
+the rule TO `QUARANTINE_RELATION` itself** (external round 1, F1): a host
+registry omitting `third_party_claim` would send genuine hearsay down the
+off-vocabulary path. Both names are reserved members now.
+
+#### 4b-ii. The effective registry — construction order (external round 1, F3, blocking)
+
+v2 stated three properties (X5 refuses empty, X8 injects, X9 refuses
+shadowing) without an order, and two of them contradict: injection first
+makes an empty registry non-empty, so X5 could never fire. The
+construction, in order, all at the `ingest_event` boundary before any
+extraction:
+
+1. **Shape.** Every value must be a `Relation`, and every KEY must equal
+   its value's `.name` — a mismatched pair is REFUSED (the registry is
+   keyed by name everywhere it is read; a key/name split would make
+   membership and lookup disagree).
+2. **Empty.** The host registry AS SUPPLIED is tested; empty is REFUSED.
+   X5 is a statement about the host's dict BEFORE injection — that
+   resolves the X5/X8 contradiction.
+3. **Shadowing.** A host entry named `unclassified` or
+   `third_party_claim` is REFUSED (X9) — reserved names are errors, not
+   overrides, and refusal happens BEFORE injection so a shadow can never
+   transiently exist.
+4. **Injection.** Both reserved members are added (X8).
+5. **Snapshot.** The effective registry is DEEP-COPIED into an immutable
+   per-event snapshot (X11). A host mutating the dict it passed — or a
+   `Relation` object inside it — after the call cannot change the event's
+   classification mid-flight, and two concurrent events cannot see each
+   other's registries.
 
 **Why not refuse the triple.** Refusal destroys extracted content because
 the extractor picked a synonym. The cost lands on the user's memory, not
@@ -225,6 +301,16 @@ or the registry being too small for real corpora (retry cannot). §9's third
 uncertainty and **Q4** both turn on that split, and the development re-run
 needs it to attribute movement.
 
+**Every carrier of the counts, dispositioned (external round 1, F5 — v2
+named the keys and no surface):** the ingest result dict carries ALL THREE
+keys on EVERY path — `0` on an event with no off-vocabulary triples and on
+the unparseable-extraction path, because an absent key is not a zero;
+`Memory.remember` passes the dict through unchanged; the MCP surface
+STRIPS all three, consistent with its existing removal of the
+supersession/reinforcement counts; the CLI prints them with the existing
+counts; telemetry gains the three fields. The same carrier discipline as
+`0024` U7.
+
 A residual nobody can see is how 34.9% went unnoticed through every review
 this codebase has had.
 
@@ -245,11 +331,13 @@ this codebase has had.
 |---|---|---|
 | **X1** | every stored `Edge.relation` is a member of the registry in force at write time (the reserved member included) | `test_every_stored_relation_is_in_the_registry` — a property test over generated extractor output, including adversarial strings |
 | **X2** | the reserved member is NON-FUNCTIONAL, so an unclassified fact can never supersede | `test_reserved_relation_never_supersedes` |
-| **X3** | the original relation survives on any re-dispositioned triple | `test_offvocab_relation_is_preserved_in_the_note` |
+| **X3** | the original relation survives on any re-dispositioned triple, in the TYPED `Edge.original_relation` field — never only in note prose (external round 1, F6) | `test_offvocab_original_relation_survives_typed` |
 | **X4** | the off-vocabulary population is reported as **THREE counts, not one — `retried`, `recovered`, `residual`** (internal minor: the development re-run needs to attribute movement between "the retry worked" and "the registry was too small", and a lump sum cannot) | `test_offvocab_counts_are_reported_separately` — asserts all three keys and that they reconcile |
-| **X8** | `unclassified` is present in EVERY effective registry, injected structurally rather than expected — a host cannot remove it | `test_reserved_member_is_always_resident` (including a registry that omits it and one that is empty) |
-| **X9** | a host defining `unclassified` as functional, or otherwise shadowing the reserved name, is REFUSED at the boundary | `test_shadowing_the_reserved_member_is_refused` — the adversarial cell, not the happy path |
-| **X5** | the host registry is validated at the API boundary; an empty registry is REFUSED, not silently accepted | `test_empty_registry_is_refused` |
+| **X8** | BOTH reserved members — `unclassified` AND `third_party_claim` — are present in EVERY effective registry, injected structurally rather than expected; a host cannot remove either (external round 1, F1 extended the rule to the quarantine relation) | `test_reserved_members_are_always_resident` (including registries omitting each, and both) |
+| **X9** | a host shadowing EITHER reserved name — `unclassified` or `third_party_claim` — is REFUSED at the boundary, before injection | `test_shadowing_a_reserved_member_is_refused` — both names, functional and non-functional shadows; the adversarial cell, not the happy path |
+| **X10** | disclosure on a rewritten triple equals disclosure computed from the ORIGINAL relation — the rewrite runs strictly after `_disclosure_for` and its output never feeds it (external round 1, F1) | `test_rewrite_never_changes_disclosure` — includes the laundering cell: a hostile registry plus an off-vocabulary quarantine-shaped relation |
+| **X11** | the effective registry is an immutable per-event DEEP-COPY snapshot; mutating the host's dict or its `Relation` objects after the call changes nothing for that event | `test_registry_snapshot_is_immutable` |
+| **X5** | the host registry AS SUPPLIED is validated at the API boundary — shape, key == `Relation.name` for every entry, and non-empty — BEFORE reserved-member injection, so injection can never mask an empty or malformed registry (§4b-ii order; external round 1, F3) | `test_empty_registry_is_refused` — plus `test_mismatched_key_is_refused` |
 | **X6** | a store whose extractions are all in-vocabulary is byte-identical before and after | `test_in_vocabulary_corpus_is_byte_identical` |
 | **X7** | the polarity holds: adding a relation to the registry is what changes behaviour; NO code path stores an unvalidated relation | `test_no_unvalidated_relation_path` — an AST/call-graph sweep asserting the write site is reached only through the validator, the structural form `0004` W7 and `0023` N2 use |
 
@@ -271,10 +359,11 @@ this codebase has had.
 | carrier | change |
 |---|---|
 | `src/veracium/ingest.py` | the membership validation, the single retry, and the reserved-member fallback |
-| `src/veracium/schema.py` | the reserved registry member (non-functional) |
+| `src/veracium/schema.py` | both reserved registry members (non-functional), and the `Edge.original_relation` field |
 | `src/veracium/prompts.py` | non-normative tightening; the prompt already lists the registry |
-| the ingest result dict | one new count key. **Compatibility: hosts read this dict — the key is ADDITIVE and no existing key changes meaning**, the same discipline `0023` applied to its `quarantined` count |
-| tests | X1–X7 |
+| the ingest result dict | three new count keys, present on every path. **Compatibility: hosts read this dict — the keys are ADDITIVE and no existing key changes meaning**, the same discipline `0023` applied to its `quarantined` count |
+| `Memory.remember` / MCP / CLI / telemetry | pass-through / STRIPS the three counts (consistent with its existing count removal) / prints them / gains the three fields (§4c) |
+| tests | the §6 table's named tests — §6 is the ONE authoritative invariant list (the v2 range here had already drifted from it; same F3-class defect `0024` fixed in its §7a) |
 | docs / CHANGELOG | a behaviour-change entry: extracted relations are now constrained to the registry |
 
 ### 7b. Cross-spec carriers

@@ -23,7 +23,7 @@ measurement.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
+| **Version** | **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
@@ -96,7 +96,7 @@ model declining to use things the user plainly told it.
 |---|---|---|---|---|
 | `Provenance.disclosure` | written at ONE site (`ingest.py:181`) | `_disclosure_for(author, relation, derived_from)` decides it at ingest and nothing lowers or raises it afterwards | the gate, render, `proactive`, export, `0004`'s wiki rule, `0023`'s quarantine-at-birth | the FUNCTION's decision changes for one contradictory input class; **the single write site does not move and no second writer appears.** `0023` **N2** and `0004` W-series depend on that and are preserved |
 | `Edge.quarantined` | derived | `relation == QUARANTINE_RELATION or disclosure == QUARANTINED` (`schema.py:274`) | gate, render partitioning | **UNCHANGED as a formula.** Because it ORs on the relation, a re-dispositioned triple must not keep the relation — see §4's carrier note, which is the whole reason this is not a one-line change |
-| `Edge.relation` | written at ingest | the extractor's classification | supersession, absorption, `0025` | a triple that fails §4's coherence test is re-dispositioned, which means its RELATION changes too. Recorded in the note, never silently discarded |
+| `Edge.relation` | written at ingest | the extractor's classification | supersession, absorption, `0025` | a triple that fails §4's coherence test is re-dispositioned, which means its RELATION changes too. Recorded in the typed `Edge.original_relation` field (`0025` F6; one carrier for both specs), never silently discarded |
 | `Provenance.author_of_evidence` / `derived_from` | READ | who authored the evidence, and whether its content embeds lower-trust material | the cap (`0005`), the gate | **read EARLIER than today** — that is the entire change |
 
 ## 2c. Untrusted inputs — REQUIRED, blocking
@@ -257,7 +257,9 @@ The triple is **re-dispositioned, not dropped**:
    rather than "some fallback" is what makes the pair compose (§7b);
 2. its disclosure is decided by the author rules ALONE — the second and
    third branches of `_disclosure_for`, unchanged;
-3. **the original relation is preserved in the `note`**, so the
+3. **the original relation is preserved in the TYPED field
+   `Edge.original_relation`** (`0025` F6 moved this out of note prose for
+   both specs — one carrier, mechanically reversible), so the
    re-disposition is visible in the record and reversible by inspection.
    Nothing is silently rewritten.
 
