@@ -768,4 +768,56 @@ CLOSURES = [
      "$PY specs/evidence/0025/reference_enforcement.py  "
      "# vector_receipt_digest_crosses_eras — legacy dual-domain match, "
      "true mismatch still refused"),
+    # ---- 0024 (L1) external round 4 -------------------------------------
+    ("0024", "external", 4, "R4-1",
+     "the §3 matrix stated unconditional finals from author and relation — "
+     "false for a standing-revoked source (0023 N1) — and §4b said 'author "
+     "rules ALONE'",
+     "§3 (scope + the revocation row), §4b(2) base-vs-final language",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_revoked_source_floor_wins_over_coherence — the revoked "
+     "USER-authored third_party_claim cell the reviewer named"),
+    ("0024", "external", 4, "PAIR-R4-1",
+     "the published measurements did not reproduce from the shipped script",
+     "§1 (script-exact figures, rule stated), §2c-ii",
+     "grep -n '41.7%' specs/evidence/0025/corpus_counts.py "
+     "specs/0024-authorship-before-structural-quarantine.md  "
+     "# the recorded run and the spec cite ONE figure; the corpus is "
+     "local-only, the script runs where it lives"),
+    # ---- 0025 (L2) external round 4 -------------------------------------
+    ("0025", "external", 4, "R4-1",
+     "the reference invented its canonical third_party_claim gloss; the "
+     "real DEFAULT_RELATIONS was REFUSED, and the lossy acceptance vector "
+     "(desc dropped, empty accepted) could not catch it",
+     "§4b-ii (verbatim glosses), reference CANONICAL imports the product",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_the_shipped_default_registry_is_accepted — the ACTUAL "
+     "objects, desc asserted non-empty and equal"),
+    ("0025", "external", 4, "R4-2",
+     "the reference sorted the prompt while the product renders insertion "
+     "order — prompt bytes changed, X6 unestablishable, X11 stale",
+     "§4b-iv insertion order, X6, X11",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# the shipped-registry vector asserts rendered order == mapping order"),
+    ("0025", "external", 4, "R4-3",
+     "two three-count copies survived and retry_calls had no public "
+     "disposition",
+     "§4c (the only count carrier), §3b, X12",
+     "grep -n 'X12' specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 4, "R4-4",
+     "the cross-era receipt rule was not implementable: no durable field "
+     "definition, no failure matrix, no migration, dict-stored evidence "
+     "under invented domains",
+     "§4b-v, the completed 0014 header enumeration",
+     "$PY specs/evidence/0025/receipt_era_harness.py  "
+     "# real SQLite, SHIPPED digest+domain, every matrix row incl. the "
+     "fail-closed unknown-domain cell"),
+    ("0025", "external", 4, "PAIR-R4-1",
+     "the corpus script did not compute every retained claim, and the "
+     "near-synonym 2.6% rested on an unshipped semantic grouping",
+     "§1 sizing table (requalified), §2c-ii (script-exact), Q2",
+     "grep -n '48.1%' specs/evidence/0025/corpus_counts.py "
+     "specs/0025-relation-vocabulary-enforcement.md  "
+     "# the recorded run and the spec cite ONE figure; near-synonyms "
+     "requalified in both carriers"),
 ]

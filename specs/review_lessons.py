@@ -400,6 +400,29 @@ MECHANISM = {
     ("0025", 3, "R3-4"): ("domain", "spec",
         "the digest bump was verified against the writer, never against the "
         "stored-receipt reader on the failure path it exists for"),
+    # ---- the L-pair, external round 4 --------------------------------------
+    ("0024", 4, "R4-1"): ("second-copy", "spec",
+        "the matrix restated the pipeline minus its newest dimension — a "
+        "copy that did not move when the pipeline did"),
+    ("0024", 4, "PAIR-R4-1"): ("second-copy", "spec",
+        "published numbers and regenerable numbers were two copies of one "
+        "measurement, and only one could be executed"),
+    ("0025", 4, "R4-1"): ("self-assertion", "spec",
+        "the canonical gloss was AUTHORED from memory instead of read from "
+        "the product, and the vector was lossy in exactly the field that "
+        "would have caught it"),
+    ("0025", 4, "R4-2"): ("domain", "spec",
+        "'rendered as today' was never executed against today — sorted() "
+        "was an unexamined default over an order-bearing surface"),
+    ("0025", 4, "R4-3"): ("second-copy", "spec",
+        "the count appeared in prose twice more than in its inventory — "
+        "fourth round of the same class"),
+    ("0025", 4, "R4-4"): ("domain", "spec",
+        "the rule was stated over the happy rows only — no cell for "
+        "malformed, unknown, migration, or the durable field itself"),
+    ("0025", 4, "PAIR-R4-1"): ("second-copy", "spec",
+        "a number whose construction never shipped was carried as if "
+        "regenerable — the claim outlived its evidence"),
 }
 
 

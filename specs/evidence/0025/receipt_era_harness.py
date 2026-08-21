@@ -13,14 +13,21 @@ Run:  $PY specs/evidence/0025/receipt_era_harness.py
        named message otherwise)
 """
 import json
+import pathlib
 import sqlite3
 import sys
 
+# The SHIPPED source, from this tree — the same bootstrap the suite's
+# conftest uses, so the harness runs under any interpreter (the offline
+# venv does not pip-install the package).
+sys.path.insert(0, str(pathlib.Path(__file__).resolve()
+                       .parents[3] / "src"))
 try:
     from veracium.contribution import REQUEST_DIGEST_DOMAIN, request_digest
 except ImportError:
-    print("REFUSED: veracium not importable — this harness exists to "
-          "exercise the SHIPPED digest construction, not a stand-in")
+    print("REFUSED: veracium source not found beside this harness — it "
+          "exists to exercise the SHIPPED digest construction, not a "
+          "stand-in")
     sys.exit(2)
 
 # the v2 domain: same construction, the None-omission serialization era.
