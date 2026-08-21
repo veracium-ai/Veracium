@@ -5,6 +5,23 @@ Spec-Requires: 0006, 0007, 0013
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
+> **accepted — INTERFACE AMENDMENT (2026-08-21, authorized by Quentin as
+> co-owner under the interface-freeze protocol; driven by draft `0025`
+> R3-4):** the frozen raw-request receipt contract gains a **cross-era
+> rule** ahead of `0025`'s `Edge.original_relation` None-omission changing
+> complete-dump bytes. (1) The request-digest DOMAIN is versioned; new
+> receipts durably store the domain version beside `request_digest`.
+> (2) Phase-2 comparison for a receipt WITHOUT a stored version — every
+> pre-amendment receipt — is **dual-domain**: the stored digest is compared
+> against the digest computed under both the old and the new domain, and a
+> match under EITHER identifies the SAME request, so a legitimate
+> lost-response retry keeps replaying across the era boundary. (3) Stored
+> receipts are never migrated. (4) A true mismatch refuses exactly as
+> today. (5) Frozen vectors:
+> `specs/evidence/0025/reference_enforcement.py::vector_receipt_digest_crosses_eras`.
+> Nothing changes behaviour until `0025` lands — the amendment is recorded
+> now so the freeze moves by AUTHORIZATION, not by implementation drift.
+
 > **draft (v19, 2026-08-10) — round 15 folded (ONE bin-(a); R14-1's carrier binding held
 > in content but not at its boundaries):** the carrier verifier is STRICT and SHARED
 > (R15-1, class E found in R14-1's fix — the first verifier split on the FIRST marker
