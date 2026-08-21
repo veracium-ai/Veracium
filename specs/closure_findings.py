@@ -935,4 +935,29 @@ CLOSURES = [
      "v1-only comparison for migrated receipts",
      "the single consolidated 0014 header block",
      "grep -nF 'replace, never layer' specs/0014-maintenance-attribution.md"),
+    # ---- 0025 (L2) external round 9 -------------------------------------
+    ("0025", "external", 9, "R9-1",
+     "the phase-2 per-surface row omitted the pre-D2 precedence phase 1 "
+     "carried — a v3 receipt could reach domain/digest logic and still "
+     "pass the named test",
+     "§4b-v phase-2 row (outcome-version axis, boundary FIRST, exploding "
+     "sentinel), harness vector",
+     "$PY specs/evidence/0025/receipt_era_harness.py  "
+     "# vector_phase2_pre_d2_precedes_all_domain_logic — a poisoned domain "
+     "loses to the boundary at both live phases"),
+    ("0025", "external", 9, "R9-2",
+     "0014's 'verbatim' claim went stale the day X13 split — it lacked the "
+     "per-surface table and cited a singular test",
+     "the 0014 block (per-surface obligations + five test names), the "
+     "§4b-v pointer (verbatim phrasing retired)",
+     "grep -nF 'test_receipt_migration_states' "
+     "specs/0014-maintenance-attribution.md  "
+     "# the five names, in the co-owned carrier"),
+    ("0025", "external", 9, "R9-3",
+     "lexicographic prior-archive selection breaks at v10 and same-version "
+     "reseals were not excluded; the manifest's typed carrier count "
+     "survived the fifth carrier",
+     "seal_package._changed_from_previous (numeric key), the de-counted "
+     "manifest template",
+     "grep -nF 'no count typed here' specs/package/manifest_0024_0025.txt"),
 ]

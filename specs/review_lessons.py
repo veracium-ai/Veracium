@@ -474,6 +474,16 @@ MECHANISM = {
     ("0025", 8, "R8-3"): ("second-copy", "spec",
         "corrections APPENDED to the co-owned carrier instead of replacing "
         "it, leaving both versions of the rule live"),
+    # ---- the L-pair, external round 9 --------------------------------------
+    ("0025", 9, "R9-1"): ("domain", "spec",
+        "the per-surface split preserved every axis but one — the "
+        "precedence rule an ACCEPTED spec already required at both phases"),
+    ("0025", 9, "R9-2"): ("second-copy", "spec",
+        "a claim of verbatim carriage is itself a second copy to keep "
+        "true — and it drifted the day the thing it carried split"),
+    ("0025", 9, "R9-3"): ("second-copy", "packaging",
+        "a typed count and a lexicographic sort — both facts the artifacts "
+        "themselves already carry, restated and wrong"),
 }
 
 
