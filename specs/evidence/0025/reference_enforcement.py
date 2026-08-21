@@ -557,26 +557,36 @@ def vector_reserved_desc_drift_is_refused():
 
 
 def vector_receipt_digest_crosses_eras():
-    """Round 3, R3-4: the cross-era rule — a legacy receipt (digest stored
-    under the v1 domain, no version) must match its own retry under the new
-    code via dual-domain comparison; a true mismatch still refuses."""
+    """Round 3 R3-4, REPLACED round 5 (R5-1: the earlier form treated ANY
+    present domain value as v2 — the opposite of §4b-v's fail-closed cell
+    — and used invented domains). This vector now mirrors §4b-v's matrix;
+    the REAL construction on the shipped schema lives in
+    receipt_era_harness.py, which is the authoritative evidence."""
     import hashlib
+    V1 = b"veracium.supersession-request.v1"
+    V2 = b"veracium.supersession-request.v2"
+    CLOSED = {V1.decode(), V2.decode()}
     def digest(domain, payload: bytes) -> str:
-        return hashlib.sha256(domain + b"|" + payload).hexdigest()
-    V1, V2 = b"receipt.request.v1", b"receipt.request.v2"
+        return hashlib.sha256(domain + payload).hexdigest()
     payload = b'{"edge":"identical-bytes"}'
-    legacy_receipt = {"request_digest": digest(V1, payload)}   # no version
-    def same_request(receipt, new_payload):
-        d_new = digest(V2, new_payload)
-        if "digest_domain" in receipt:                # new-era receipt
-            return receipt["request_digest"] == d_new
-        return receipt["request_digest"] in (          # legacy: BOTH domains
-            digest(V1, new_payload), d_new)
-    assert same_request(legacy_receipt, payload)               # the retry
-    assert not same_request(legacy_receipt, b'{"edge":"other"}')  # refusal
-    new_receipt = {"request_digest": digest(V2, payload),
-                   "digest_domain": "v2"}
-    assert same_request(new_receipt, payload)
+    def same_request(stored_digest, stored_domain, new_payload):
+        if stored_domain is None:                      # legacy: BOTH domains
+            return stored_digest in (digest(V1, new_payload),
+                                     digest(V2, new_payload))
+        if stored_domain not in CLOSED:                # fail CLOSED
+            raise ValueError(f"uninterpretable domain: {stored_domain!r}")
+        return stored_digest == digest(stored_domain.encode(), new_payload)
+    legacy = digest(V1, payload)
+    assert same_request(legacy, None, payload)                 # the retry
+    assert not same_request(legacy, None, b'{"edge":"other"}') # refusal
+    assert same_request(digest(V2, payload), V2.decode(), payload)
+    assert not same_request(digest(V1, payload), V2.decode(), payload)
+    for bad in ("v2", "", "veracium.supersession-request.v9"):
+        try:
+            same_request(digest(V2, payload), bad, payload)
+            raise AssertionError(f"not refused: {bad!r}")
+        except ValueError:
+            pass
 
 
 def main() -> int:

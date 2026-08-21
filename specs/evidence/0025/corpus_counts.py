@@ -7,7 +7,10 @@ script is what a $0 pass over it consists of, and the manifest block it
 prints (entry count + file sha256) pins WHICH cache produced the numbers
 in 0025 §2c-ii and 0024 §1.
 
-Run:  $PY specs/evidence/0025/corpus_counts.py --cache <extractions.jsonl>
+Run:  $PY specs/evidence/0025/corpus_counts.py --aggregate specs/evidence/0025/corpus_aggregate.json
+      (the SHIPPED counts-only aggregate — independent verification of
+       every published count without the corpus; or --cache <extractions.jsonl>
+       on the measuring host, which emits identical output)
 
 Recorded output for the 2026-08-01 cache, RUN 2026-08-21 on the measuring
 host (the reviewer without the corpus verifies the SCRIPT, this manifest,
@@ -49,10 +52,22 @@ def default_relations() -> set:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", required=True)
+    ap.add_argument("--cache", help="the local extraction cache (jsonl)")
+    ap.add_argument("--aggregate", help="verify from a distributable "
+                    "aggregate instead of the local-only cache (round 5 "
+                    "package feedback: every published count independently "
+                    "recomputable without the corpus)")
+    ap.add_argument("--emit-aggregate", metavar="PATH",
+                    help="write the distributable counts-only aggregate "
+                    "(relation-frequency table + third_party_claim "
+                    "sub-counts + the cache manifest) after a --cache run")
     ap.add_argument("--registry", help="file of relation names, one per line "
                                        "(default: shipped DEFAULT_RELATIONS)")
     a = ap.parse_args()
+    if bool(a.cache) == bool(a.aggregate):
+        ap.error("exactly one of --cache / --aggregate")
+    if a.aggregate:
+        return report(json.load(open(a.aggregate)), None)
 
     registry = (set(open(a.registry).read().split())
                 if a.registry else default_relations())
@@ -91,6 +106,31 @@ def main() -> int:
                     if str(t.get("subject", "")).strip().casefold() == "user":
                         tpc_subject_user += 1
 
+    agg = dict(schema=1,
+               manifest=dict(entries=entries, sha256=sha.hexdigest(),
+                             unparseable=unparseable),
+               relation_counts=dict(rel_counter),
+               third_party_claim=dict(total=tpc, note_names_user=tpc_note_user,
+                                      subject_user=tpc_subject_user))
+    if a.emit_aggregate:
+        with open(a.emit_aggregate, "w") as fh:
+            json.dump(agg, fh, sort_keys=True, indent=1)
+        print(f"aggregate written  {a.emit_aggregate}")
+    return report(agg, registry)
+
+
+def report(agg, registry) -> int:
+    if registry is None:
+        registry = default_relations()
+        if not registry:
+            return 2
+    rel_counter = collections.Counter(agg["relation_counts"])
+    entries = agg["manifest"]["entries"]
+    unparseable = agg["manifest"]["unparseable"]
+    triples = sum(rel_counter.values())
+    tpc = agg["third_party_claim"]["total"]
+    tpc_note_user = agg["third_party_claim"]["note_names_user"]
+    tpc_subject_user = agg["third_party_claim"]["subject_user"]
     offvocab = sum(n for r, n in rel_counter.items() if r not in registry)
 
     # PAIR-R4-1: every numeric claim the specs retain is computed HERE.
@@ -108,7 +148,7 @@ def main() -> int:
 
     print("== cache manifest ==")
     print(f"entries        {entries:,}")
-    print(f"file sha256    {sha.hexdigest()}")
+    print(f"file sha256    {agg['manifest']['sha256']}")
     print("== corpus counts ==")
     print(f"unparseable    {unparseable:,} cache values (counted, skipped)")
     print(f"triples        {triples:,}")
