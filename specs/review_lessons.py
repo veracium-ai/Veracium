@@ -453,6 +453,17 @@ MECHANISM = {
     ("0025", 6, "PACKAGE-R6-1"): ("second-copy", "packaging",
         "a retired measurement survived in the header — the round-1 "
         "second-copy class, in the same carrier"),
+    # ---- the L-pair, external round 7 --------------------------------------
+    ("0025", 7, "R7-1"): ("second-copy", "spec",
+        "one contract grown across two subsections until they ruled the "
+        "same cell differently — and the co-owned carrier got neither"),
+    ("0025", 7, "R7-2"): ("domain", "spec",
+        "the site was claimed reached because ONE receipt shape reached "
+        "it; the branch with both digests — the one the fix exists for — "
+        "was never driven"),
+    ("0025", 7, "R7-3"): ("second-copy", "spec",
+        "the carrier sweep's own products drifted — labels, prints and "
+        "claims one round behind the construction they describe"),
 }
 
 

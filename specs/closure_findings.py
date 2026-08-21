@@ -887,4 +887,30 @@ CLOSURES = [
      "retired — the round-1 second-copy class in the same carrier",
      "specs/package/collected_header_0024_0025.txt (measurement removed)",
      "grep -n 'PACKAGE-R6-1' specs/package/collected_header_0024_0025.txt"),
+    # ---- 0025 (L2) external round 7 -------------------------------------
+    ("0025", "external", 7, "R7-1",
+     "the receipt contract diverged across its own two subsections — "
+     "stamping vs NULL rules, two owners for NULL, an unscoped writer "
+     "invariant — and the co-owned 0014 carrier had neither matrix nor "
+     "both sites",
+     "the consolidated §4b-v, the rewritten 0014 header blockquote",
+     "grep -nF 'NEW WRITES ONLY' specs/0025-relation-vocabulary-enforcement.md "
+     "specs/0014-maintenance-attribution.md  "
+     "# the scoped invariant, present in BOTH co-owned carriers"),
+    ("0025", "external", 7, "R7-2",
+     "the live phase-2 both-digests branch was untested, the matrix vector "
+     "bypassed the rows, and the matrix had no §6 acceptance invariant",
+     "receipt_era_harness.vector_live_phase2_replay_and_era_bite, the "
+     "row-read matrix vector, X13",
+     "$PY specs/evidence/0025/receipt_era_harness.py  "
+     "# the phase-2 replay and era bite via same-plan resubmission, live"),
+    ("0025", "external", 7, "R7-3",
+     "the round-6 carrier sweep left four inexact claims: a phase-2 label, "
+     "a stale harness description, a premature both-sites print, and a "
+     "no-fabricated-receipts overclaim",
+     "§4b-v evidence bullet, the harness docstring and print, the v9 "
+     "version row's qualification",
+     "grep -nF 'simulated by direct row edits' "
+     "specs/0025-relation-vocabulary-enforcement.md  "
+     "# the qualification, in the normative carrier"),
 ]
