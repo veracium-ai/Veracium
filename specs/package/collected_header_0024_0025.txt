@@ -19,8 +19,10 @@ WHAT EACH SPEC IS, in one sentence each:
   0024 (L1)  `_disclosure_for` tests the RELATION before the AUTHOR, so a
              user-authored event whose triple the extractor mislabels
              `third_party_claim` is quarantined as though a third party said
-             it — 3,945 corpus triples, the extractor's own note naming the
-             user as source on 41.5% of them. The fix removes the model's
+             it (the measured figures live in the spec's §1 and recompute
+             from specs/evidence/0025/corpus_aggregate.json — PACKAGE-R6-1
+             removed the duplicated number this header carried, the same
+             second-copy class as the round-1 counts). The fix removes the model's
              power to unilaterally demote user testimony; the genuinely
              third-party relay stays quarantined. The invariant list is
              §6's table IN THE SPEC — not restated here, where it drifted

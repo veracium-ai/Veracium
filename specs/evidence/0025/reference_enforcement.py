@@ -1,4 +1,7 @@
-"""Executable reference for the 0024/0025 v5 constructions — pre-implementation.
+"""Executable reference for the 0024/0025 constructions — pre-implementation.
+
+(No spec-version number here — round 6, R6-3: a version in a docstring is
+a second copy that drifts; the specs' own version rows are canonical.)
 
 Round 1 asked for the harness; round 2 found the v3 constructions
 contradicting each other and the shipped tree, so the v4 harness carries the
