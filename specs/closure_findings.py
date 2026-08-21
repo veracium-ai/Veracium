@@ -820,4 +820,42 @@ CLOSURES = [
      "specs/0025-relation-vocabulary-enforcement.md  "
      "# the recorded run and the spec cite ONE figure; near-synonyms "
      "requalified in both carriers"),
+    # ---- 0024 (L1) external round 5 -------------------------------------
+    ("0024", "external", 5, "R5-1",
+     "the THIRD_PARTY incoherent cell was changed by the matrix and declared "
+     "unchanged by §5, with U2 flooring where the matrix specified — two "
+     "green implementations could disagree",
+     "§5 (the ruled transition), U2 (exact output), §3 scope sentence",
+     "grep -n 'CHANGED for exactly the incoherent subset' "
+     "specs/0024-authorship-before-structural-quarantine.md  "
+     "# and the reference asserts USE_ONLY exactly: "
+     "vector_author_floor_holds_through_redisposition"),
+    # ---- 0025 (L2) external round 5 -------------------------------------
+    ("0025", "external", 5, "R5-1",
+     "the cross-era construction named a nonexistent receipts table, one "
+     "comparison site of two, a stand-in harness table, and a frozen vector "
+     "that treated any present domain as v2",
+     "§4b-v (shipped topology, both sites), the corrected 0014 enumeration",
+     "$PY specs/evidence/0025/receipt_era_harness.py  "
+     "# schema_version.py's own DDL, both comparison shapes, fail-closed "
+     "cells included"),
+    ("0025", "external", 5, "R5-2",
+     "X6/§5 claimed store-wide byte identity while the spec changes digests, "
+     "receipts, schema and the export header; §2 claimed old readers accept "
+     "the new export",
+     "X6 (two exact carriers + exclusions), §5 regime row, §2 portability",
+     "grep -n 'EXACTLY TWO carriers' specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 5, "R5-3",
+     "the §3 opening still stated the round-1 original-relation rule that "
+     "round 2 withdrew — in the section that motivated the withdrawal",
+     "§3 opening (post-coherence establishment + fallback retention)",
+     "grep -n 'ESTABLISHED after coherence processing' "
+     "specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 5, "R5-4",
+     "the §1 principal table kept the retired figures after the round-4 "
+     "carrier sweep claimed completeness",
+     "§1 (script-exact, including the derived 12,557)",
+     "grep -n '64,030 — 34.9% of 183,417' "
+     "specs/0025-relation-vocabulary-enforcement.md  "
+     "# the principal table carries the script-exact figure"),
 ]

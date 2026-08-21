@@ -423,6 +423,23 @@ MECHANISM = {
     ("0025", 4, "PAIR-R4-1"): ("second-copy", "spec",
         "a number whose construction never shipped was carried as if "
         "regenerable — the claim outlived its evidence"),
+    # ---- the L-pair, external round 5 --------------------------------------
+    ("0024", 5, "R5-1"): ("second-copy", "spec",
+        "the regime row restated a regime the matrix had moved past, and the "
+        "invariant floored where the matrix specified — a ruling hidden in "
+        "the gap between two carriers"),
+    ("0025", 5, "R5-1"): ("domain", "spec",
+        "the construction was written against an imagined schema and a "
+        "sampled comparison-site inventory — one site of two"),
+    ("0025", 5, "R5-2"): ("self-assertion", "spec",
+        "byte-identical was claimed over carriers the same spec was "
+        "changing"),
+    ("0025", 5, "R5-3"): ("second-copy", "spec",
+        "the withdrawn rule survived verbatim in the section that motivated "
+        "withdrawing it"),
+    ("0025", 5, "R5-4"): ("second-copy", "spec",
+        "the carrier sweep that claimed completeness missed the principal "
+        "table"),
 }
 
 
