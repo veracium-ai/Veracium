@@ -858,4 +858,31 @@ CLOSURES = [
      "grep -n '64,030 — 34.9% of 183,417' "
      "specs/0025-relation-vocabulary-enforcement.md  "
      "# the principal table carries the script-exact figure"),
+    # ---- 0025 (L2) external round 6 -------------------------------------
+    ("0025", "external", 6, "R6-1",
+     "the era harness fabricated an unreachable pre-D2 receipt and wrapped "
+     "its own matrix as both 'sites' — it never invoked the product paths "
+     "its REAL-construction claim named",
+     "specs/evidence/0025/receipt_era_harness.py (v4 — live paths)",
+     "$PY specs/evidence/0025/receipt_era_harness.py  "
+     "# a product-written v4 receipt, the live phase-1 replay, the era bite "
+     "raised by the shipped comparison, the snapshot-less outcome refusal"),
+    ("0025", "external", 6, "R6-2",
+     "the domain matrix was total over domains and not over receipt "
+     "states — the legal snapshot-less receipt had no cell",
+     "§4b-vi (writer invariant + the total three-axis matrix)",
+     "grep -nF 'non-NULL **iff**' specs/0025-relation-vocabulary-enforcement.md  "
+     "# and the live vector: vector_snapshotless_receipt_takes_the_outcome_path_live"),
+    ("0025", "external", 6, "R6-3",
+     "four receipt carriers were stale: a phase-2 label on the phase-1 "
+     "site, a phase-2-only inventory row, a pending-AND-authorized status, "
+     "a versioned docstring",
+     "§2 cell, §7a, §7b, reference_enforcement.py docstring",
+     "grep -n 'The one status, stated once' "
+     "specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 6, "PACKAGE-R6-1",
+     "the COLLECTED header duplicated the 41.5% measurement the specs had "
+     "retired — the round-1 second-copy class in the same carrier",
+     "specs/package/collected_header_0024_0025.txt (measurement removed)",
+     "grep -n 'PACKAGE-R6-1' specs/package/collected_header_0024_0025.txt"),
 ]

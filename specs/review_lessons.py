@@ -440,6 +440,19 @@ MECHANISM = {
     ("0025", 5, "R5-4"): ("second-copy", "spec",
         "the carrier sweep that claimed completeness missed the principal "
         "table"),
+    # ---- the L-pair, external round 6 --------------------------------------
+    ("0025", 6, "R6-1"): ("self-assertion", "spec",
+        "'REAL construction' was claimed while the harness fabricated an "
+        "unreachable receipt and named its own function twice as two sites"),
+    ("0025", 6, "R6-2"): ("domain", "spec",
+        "total over the axis the fix added, silent over the axis the "
+        "product already had — receipt states outran the domain matrix"),
+    ("0025", 6, "R6-3"): ("second-copy", "spec",
+        "the sweep's own labels drifted across four carriers — the fourth "
+        "receipt-carrier round running"),
+    ("0025", 6, "PACKAGE-R6-1"): ("second-copy", "packaging",
+        "a retired measurement survived in the header — the round-1 "
+        "second-copy class, in the same carrier"),
 }
 
 
