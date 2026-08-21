@@ -1,7 +1,17 @@
 # Feature spec: the user's own words are not third-party testimony (L1)
 
 Spec-Status: draft
-Spec-Requires: 0005
+Spec-Requires: 0005, 0025
+
+> **external round 1, F1 (blocking):** v2 declared independence while its
+> §4b rewrite target — `unclassified` — is DEFINED AND PROTECTED by 0025:
+> without 0025 the member is not registry-resident, and a host supplying a
+> FUNCTIONAL `unclassified` would let the rewritten fact supersede, against
+> §4b-i's own never-supersedes outcome. The dependency was real and the
+> declaration was wrong, so the declaration moves. One-way: 0024's
+> acceptance now waits on 0025's; the IMPLEMENTATION freezes remain
+> separate (0024's is a measurement constraint), which the reviewer
+> explicitly allows.
 
 *Found by dev during the L1 mechanism audit research commissioned
 (`veracium-research/longmemeval/L1-mechanism-audit-dev.md`, 2026-08-17),
@@ -284,8 +294,8 @@ extractor output is the shape this project keeps finding.
 | **U3** | a re-dispositioned triple does not keep `QUARANTINE_RELATION`, so `Edge.quarantined` reports false | `test_redispositioned_triple_is_not_quarantined_by_relation` — the check that would have failed on a fix that only reordered `_disclosure_for` |
 | **U4** | a store whose extractor never emits `third_party_claim` is byte-identical before and after | `test_no_quarantine_relation_is_byte_identical` |
 | **U5** | the original relation survives in the record | `test_redisposition_is_visible_in_the_note` |
-| **U7** | re-dispositions are COUNTED and returned, never silent — the symmetric form of `0025` **X4** applied to this spec's own rewrites | `test_redisposition_count_is_reported` |
 | **U6** | disclosure still has exactly ONE write site | `test_single_disclosure_write_site` — the AST sweep `0023` **N2** already specifies, extended to cover this change rather than duplicated |
+| **U7** | re-dispositions are COUNTED and returned, never silent — the symmetric form of `0025` **X4** applied to this spec's own rewrites. **The COUNT'S CARRIERS, enumerated (round 1, F3):** the ingest result dict gains `redispositioned` (present on EVERY path, 0 on the unparseable and no-hit paths — an absent key is not a zero); `Memory.remember` passes the dict through unchanged; the MCP surface STRIPS it (consistent with its existing removal of the supersession/reinforcement counts — operator counts are a library surface, not a tool-call surface); telemetry gains the field beside the existing ingest counts | `test_redisposition_count_is_reported` — asserts the key on all three paths, including both zeros |
 
 ## 7. Failure modes and reversibility
 
@@ -307,7 +317,7 @@ extractor output is the shape this project keeps finding.
 | `src/veracium/ingest.py` | `_disclosure_for` gains the coherence test; the call site and the write site do not move |
 | `src/veracium/schema.py` | the fallback relation for a re-dispositioned triple, if the registry has no suitable ordinary member — a registry addition, not a new mechanism |
 | `src/veracium/prompts.py` | **optional and non-normative**: tightening the claimant convention. Explicitly NOT the fix (§4c) |
-| tests | W1–W6 |
+| tests | the §6 table's named tests, U1–U7 — §6 is the ONE authoritative invariant list (external round 1, F3: this row said W1–W6, §6 listed U1–U7 out of order, and the package header hand-typed a range ending one past the real list — three versions of one surface; every other carrier now REFERENCES §6 rather than restating it) |
 | docs / CHANGELOG | a behaviour-change entry: some records that were quarantined are now assertable, with the matrix |
 
 ### 7b. Cross-spec carriers
@@ -324,9 +334,18 @@ extractor output is the shape this project keeps finding.
 
 **What we will say:**
 
-> **Provenance accuracy.** A statement you made in your own voice is
-> recorded as yours. Content a third party asserted — including something
-> you relayed — remains an unverified claim and is never asserted as fact.
+> **Provenance accuracy, in the cell the rule recognizes.** A statement you
+> made in your own voice — recorded with YOU as the literal claimant — is no
+> longer demoted to hearsay by an extractor mislabel. Content a third party
+> asserted, including something you relayed, remains an unverified claim and
+> is never asserted as fact.
+>
+> *(External round 1, F4: the earlier absolute form — "a statement in your
+> own voice is recorded as yours" — exceeded the rule. The mechanism
+> corrects the literal-user-subject cell, ~40.7% of the measured mislabel
+> population, PROSPECTIVELY; a user observation the extractor emits under
+> another claimant string stays quarantined, and this section may not imply
+> otherwise.)*
 
 **What this does NOT establish.**
 
