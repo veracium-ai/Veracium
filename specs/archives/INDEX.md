@@ -4,7 +4,7 @@
 
 # Review archives
 
-**218 archives, 393194 KB.** Each is the exact package sent for one
+**219 archives, 399475 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -243,6 +243,7 @@ existed rather than a way to check it.
 | `0024-0025-v7-20260821T1816Z.tar.gz` | 0024+0025 | v7 | 2026-08-21 18:16Z | 403 | 6272 KB | `5275d119831914ba…` |
 | `0024-0025-v8-20260821T1904Z.tar.gz` | 0024+0025 | v8 | 2026-08-21 19:04Z | 404 | 6275 KB | `3f6ed6f00453d212…` |
 | `0024-0025-v9-20260821T2210Z.tar.gz` | 0024+0025 | v9 | 2026-08-21 22:10Z | 406 | 6278 KB | `a3970517260624b6…` |
+| `0024-0025-v10-20260821T2249Z.tar.gz` | 0024+0025 | v10 | 2026-08-21 22:49Z | 407 | 6281 KB | `1e0c5104b3a2421f…` |
 
 **To verify a copy you were sent:**
 
