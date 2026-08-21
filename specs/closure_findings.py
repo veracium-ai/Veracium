@@ -963,4 +963,23 @@ CLOSURES = [
      "specs/package/manifest_0024_0025.txt  "
      "# round 10 replaced the de-count note with the generated list; the "
      "de-counting this finding demanded survives one construction deeper"),
+    # ---- 0025 (L2) external round 10 ------------------------------------
+    ("0025", "external", 10, "R10-1",
+     "the round-9 fix put the outcome-version axis on one surface of "
+     "three, and the harness claimed a sentinel it never installed over "
+     "a column the shipped accessor never reads",
+     "§4b-v READ + PHASE 1 rows (the cross-product), the counting "
+     "sentinel, the honest forward-looking scope bullet",
+     "$PY specs/evidence/0025/receipt_era_harness.py  "
+     "# vector_phase2_pre_d2_precedes_all_domain_logic — zero sentinel "
+     "invocations asserted at both live phases"),
+    ("0025", "external", 10, "R10-2",
+     "the de-counted manifest still hand-enumerated four carriers; the "
+     "sealer docstring said four; no regression covered the numeric "
+     "selection",
+     "the __LOOSE__ generation from LOOSE_CARRIERS + divergence guard, "
+     "the regression test",
+     "$PY -m pytest tests/test_spec_gate.py::"
+     "test_changed_from_previous_orders_numerically_and_skips_same_version "
+     "-q  # real tiny archives, v9/v10/v11, same-version excluded"),
 ]

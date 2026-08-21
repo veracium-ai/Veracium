@@ -484,6 +484,14 @@ MECHANISM = {
     ("0025", 9, "R9-3"): ("second-copy", "packaging",
         "a typed count and a lexicographic sort — both facts the artifacts "
         "themselves already carry, restated and wrong"),
+    # ---- the L-pair, external round 10 -------------------------------------
+    ("0025", 10, "R10-1"): ("domain", "spec",
+        "the fix covered the surface the finding named and not the two "
+        "beside it — and its evidence claimed a sentinel that was never "
+        "installed over a column never read"),
+    ("0025", 10, "R10-2"): ("second-copy", "packaging",
+        "the de-count left the enumeration; the enumeration drifted; the "
+        "authority is now the code's own tuple, guarded"),
 }
 
 
