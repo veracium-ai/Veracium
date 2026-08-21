@@ -7,21 +7,12 @@ Spec-Requires: 0006, 0007, 0013
 
 > **accepted — INTERFACE AMENDMENT (2026-08-21, authorized by Quentin as
 > co-owner under the interface-freeze protocol; driven by draft `0025`
-> R3-4):** the frozen raw-request receipt contract gains a **cross-era
-> rule** ahead of `0025`'s `Edge.original_relation` None-omission changing
-> complete-dump bytes. (1) The request-digest DOMAIN is versioned; new
-> receipts durably store the domain version beside `request_digest`.
-> (2) Phase-2 comparison for a receipt WITHOUT a stored version — every
-> pre-amendment receipt — is **dual-domain**: the stored digest is compared
-> against the digest computed under both the old and the new domain, and a
-> match under EITHER identifies the SAME request, so a legitimate
-> lost-response retry keeps replaying across the era boundary. (3) Stored
-> receipts are never migrated. (4) A true mismatch refuses exactly as
-> today. (5) Frozen vectors:
-> `specs/evidence/0025/reference_enforcement.py::vector_receipt_digest_crosses_eras`.
-> **The complete contract (consolidated under `0025` round 7, R7-1 —
-> earlier forms named one site, then split across two subsections that
-> diverged; the reviewer's confirmation waits on this text):** the
+> R3-4; text CONSOLIDATED round 8 — the earlier layered summaries, whose
+> phase-2-only dual-domain sentence contradicted the appended contract,
+> are REPLACED by this single block; corrections to a co-owned carrier
+> replace, never layer):** the frozen raw-request receipt contract gains
+> a **cross-era rule** ahead of `0025`'s `Edge.original_relation`
+> None-omission changing complete-dump bytes. The
 > durable field is `supersession_operations.request_digest_domain TEXT
 > NULL` (FULL domain string; closed set
 > {`veracium.supersession-request.v1`, `…​.v2`}). **`NULL` means "no

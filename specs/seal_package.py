@@ -178,6 +178,63 @@ def refuse_placeholders(*texts_and_names):
                   f"— round 5 shipped PLACEHOLDER_TS exactly this way")
 
 
+def _changed_from_previous(line: str, version: str,
+                           outbox: pathlib.Path) -> str:
+    """Member-level diff against the newest prior same-line archive found on
+    the sealing host (outbox). Emits prior name+sha and added/removed/changed
+    paths; the four always-regenerated loose carriers are listed under their
+    own heading so real tree changes stand out."""
+    import gzip as _gzip
+    import hashlib as _hashlib
+    import io as _io
+    priors = sorted(p for p in outbox.glob(f"{line}-v*.tar.gz")
+                    if p.name != f"{line}-{version}")
+    if not priors:
+        return ("No prior archive of this line was present on the sealing "
+                "host — diff SKIPPED, named here rather than omitted.\n")
+    prior = priors[-1]
+    prior_sha = _hashlib.sha256(prior.read_bytes()).hexdigest()
+
+    def member_hashes(tgz: pathlib.Path) -> dict:
+        out = {}
+        with tarfile.open(fileobj=_io.BytesIO(
+                _gzip.decompress(tgz.read_bytes()))) as tf:
+            for m in tf.getmembers():
+                if m.isfile():
+                    out[m.name.removeprefix("./")] = _hashlib.sha256(
+                        tf.extractfile(m).read()).hexdigest()
+        return out
+
+    old = member_hashes(prior)
+    # the CURRENT tree at HEAD + the loose carriers are hashed after build by
+    # the caller's verify step; here we hash the same inputs pre-build via
+    # git archive of HEAD
+    with tempfile.TemporaryDirectory() as td:
+        tp = pathlib.Path(td) / "h.tar"
+        _run(["git", "archive", "--format=tar", "--prefix=./", "HEAD",
+              "-o", str(tp)], cwd=ROOT)
+        new = {}
+        with tarfile.open(tp) as tf:
+            for m in tf.getmembers():
+                if m.isfile():
+                    new[m.name.removeprefix("./")] = _hashlib.sha256(
+                        tf.extractfile(m).read()).hexdigest()
+    LOOSE = {"COLLECTED.txt", "COLLECTED_pytest_rs.txt",
+             "PACKAGE_MANIFEST.txt", "CHANGED_FROM_PREVIOUS.txt",
+             evidence_transcript.REL_PATH}
+    added = sorted(k for k in new.keys() - old.keys() if k not in LOOSE)
+    removed = sorted(k for k in old.keys() - new.keys() if k not in LOOSE)
+    changed = sorted(k for k in new.keys() & old.keys()
+                     if new[k] != old[k] and k not in LOOSE)
+    lines = [f"PREVIOUS: {prior.name}", f"SHA256:   {prior_sha}", "",
+             f"CHANGED ({len(changed)}):"] + [f"  {k}" for k in changed]
+    lines += ["", f"ADDED ({len(added)}):"] + [f"  {k}" for k in added]
+    lines += ["", f"REMOVED ({len(removed)}):"] + [f"  {k}" for k in removed]
+    lines += ["", "Always-regenerated loose carriers (not diffed): "
+              + ", ".join(sorted(LOOSE)), ""]
+    return "\n".join(lines)
+
+
 def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
     """`git archive` of HEAD plus the loose files, with NO duplicate members."""
     dest = ARCHIVES / f"{name}.tar.gz"
@@ -675,12 +732,19 @@ def main() -> int:
                                 (guide, "specs/REVIEWER_GUIDE.md"))
 
         name = f"{'-'.join(specs)}-{a.version}-{ts}"
-        archive = build_archive(name, {
+        extra = {
             "COLLECTED.txt": collected,
             "COLLECTED_pytest_rs.txt": rs,
             "PACKAGE_MANIFEST.txt": manifest,
             evidence_transcript.REL_PATH: tpath.read_text(),
-        })
+        }
+        # Round 8 (L-line) package feedback: a machine-generated diff against
+        # the previous same-line archive, so regression review reads changed
+        # paths instead of re-walking 400 members. Non-normative carrier; a
+        # missing prior archive is a NAMED skip, never silent.
+        extra["CHANGED_FROM_PREVIOUS.txt"] = _changed_from_previous(
+            _line, a.version, a.outbox)
+        archive = build_archive(name, extra)
 
     digest = verify_archive(archive, specs)
     (ARCHIVES / f"{name}.tar.gz.sha256").write_text(
