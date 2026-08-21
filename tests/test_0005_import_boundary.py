@@ -635,6 +635,11 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0023 N8: the export→revoke→reimport sequence runs restore=True
+    # DELIBERATELY — the test's subject is that the destination-standing cap
+    # applies even when the operator asserts file-trust fidelity, because the
+    # cap is about THIS STORE's standing state, not the file's trust (§3b)
+    ("test_0023_inventory.py", "test_import_round_trip_requarantines"): "restore",
     # specs/0022 R18: the retired-episode round-trip imports into a FRESH
     # store on the default path — the test's subject is retirement state
     # surviving portability, and the default path is the one a host actually

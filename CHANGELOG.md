@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+- **0004 + 0022 + 0023 — SOURCE REVOCATION, THE COMPLETE SEAM** (accepted
+  atomically at external round 21 after twenty-one rounds; implemented
+  2026-08-20/21). A revoked trust decision now reaches everything derived
+  from it, and nothing revoked can re-enter:
+
+  - **0004**: a derived view must not outlive a revoked trust decision. The
+    wiki drop generalises into the sole `active=0` writer, keyed on a
+    RETAIN-set registry (an unrecognised reason drops, fail-closed); W1–W8.
+  - **0022**: `source_revocations` (SCHEMA v9) — an append-only ledger whose
+    standing state derives by append ordinal alone (a hostile clock orders
+    nothing). The R19 operation: allocate, re-read, plan, append, apply,
+    commit-or-rollback in ONE serialised write, failure outcomes total. The
+    sweep is the normative reference ported verbatim, transitively closed,
+    proven by a 20-vector differential corpus against the product store;
+    episodes gain retirement (JSON field + the sole read seam, no DDL) and
+    `revoked_source` retirements drop the wiki through 0004's registry.
+    Completeness statements are audit-event-only (Q6, approved).
+  - **0023**: non-revival. `Episode.assertable` — one derived predicate,
+    six consumers routed through it (the render fences rather than
+    suppresses); quarantine-at-birth for a standing-revoked source's writes
+    (no host refusal mode — Q1, both names; a lift never revisits the birth
+    floor — Q2); non-revival guards at reinforcement, absorption,
+    supersession (refusal recorded; the reverse still works), consolidation
+    (`partition_cold`), and import (the destination-standing cap applies in
+    BOTH modes — no flag on a file overrides this store's standing state);
+    N1–N15 with the spec's canonical test names, including the adversarial
+    inventory bite-test.
+  - ⚠️ Behaviour notes: episode disclosure is now SET AT INGEST (third-party
+    influence caps at USE_ONLY; legacy rows stay fenced via the subsuming
+    derived property); stores migrate v8→v9 additively.
+
 ## 0.12.0 — 2026-08-20
 
 **The principal boundary: scoped recall (0020) and scope under maintenance (0021).** A scope that recall enforces but derivation ignores is a boundary with an unlocked back door, so both halves land together — the read surfaces and the write/maintain surfaces.

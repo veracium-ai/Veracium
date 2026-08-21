@@ -447,6 +447,33 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             # (I2b) — trust of it is 0005's import boundary, applied first (I7).
             prov["origin"] = None
 
+    # (2d) specs/0023 N8 — THE DESTINATION-STANDING CAP, after identity has
+    # SETTLED (the strip/materialise/canonicalise rules above decide what each
+    # record's resolved identity IS; capping earlier would quarantine on an
+    # identity the gates were about to change). A record whose resolved
+    # identity stands revoked IN THE DESTINATION arrives QUARANTINED — in
+    # BOTH modes, restore included: the 0005 cap is about the FILE's trust and
+    # restore rightly skips it, but this cap is about THIS STORE's standing
+    # state, which no flag on an import file may override (§3b). Covers the
+    # export→revoke→reimport sequence into the same store: the come-home
+    # canonicalisation above maps the record back to the local identity the
+    # revocation named. QUARANTINED is a floor — never weakened, never
+    # widened; Q2: a later lift does not revisit it.
+    from .scope_linkage import identity_digest_of as _idg
+    _standing_cache: dict = {}
+    for rec in edge_recs + ep_recs:
+        prov = rec.get("provenance")
+        if not isinstance(prov, dict) or prov.get("source_id") is None:
+            continue                      # N11: no source_id, no digest, unreachable
+        uid = rec.get("user_id")
+        if uid not in _standing_cache:
+            _standing_cache[uid] = store.standing_revocations(uid)
+        if not _standing_cache[uid]:
+            continue
+        d = _idg(prov.get("origin"), prov["source_id"], store.local_origin())
+        if d is not None and d in _standing_cache[uid]:
+            prov["disclosure"] = Disclosure.QUARANTINED.value
+
     # (3) legacy-format outcome conversion (§4f-ii) OR v3 explicit-field check (H13).
     # Pinned to the OUTCOME-field format version (3, specs/0009), NOT FORMAT_VERSION: the
     # 0006 v3→v4 bump introduced source-identity fields, not outcome fields, so v3 AND v4
