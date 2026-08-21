@@ -34,7 +34,8 @@ def _ingest(store, source_id):
                         relations=DEFAULT_RELATIONS)
 
 
-def test_a_revoked_sources_writes_land_quarantined(tmp_path):
+def test_revoked_source_ingest_is_quarantined_at_birth(   # N1's canonical name
+tmp_path):
     s = SqliteStore(str(tmp_path / "q.db"))
     digest = identity_digest_of(None, "feed-1", s.local_origin())
     rv.revoke_source(s, U, digest, "revoke", "operator", AT)
@@ -62,7 +63,8 @@ def test_an_unrevoked_source_is_untouched(tmp_path):
     assert eps[0].provenance.disclosure == Disclosure.USE_ONLY
 
 
-def test_a_lift_does_not_unquarantine_birth_records(tmp_path):
+def test_lift_does_not_rewrite_existing_disclosure(      # N13's canonical name
+tmp_path):
     """Q2, ratified on the two-floors argument: the persisted disclosure is
     the MINIMUM of every floor that applied, the record does not carry which
     floor bound it, and re-deriving would relax another mechanism's floor as

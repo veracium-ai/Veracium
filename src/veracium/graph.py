@@ -253,6 +253,24 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                   if p.id != edge.id
                   and p.provenance.disclosure == edge.provenance.disclosure]
 
+    # 0023 N3–N5/N7: THE STANDING-REVOCATION GUARD, one predicate for all
+    # three branches below. Keyed on RESOLVED IDENTITY against the standing
+    # set — not on disclosure — because the quarantine floor is a read-side
+    # verdict and these branches decide what the store COMBINES. The fast
+    # path (`not standing`) is N12's byte-identity promise: a store with no
+    # standing revocation takes exactly the pre-0023 code path.
+    standing = store.standing_revocations(edge.user_id)
+
+    def _src_revoked(e) -> bool:
+        if not standing or not hasattr(store, "local_origin"):
+            return False
+        from .scope_linkage import identity_digest_of
+        d = identity_digest_of(e.provenance.origin, e.provenance.source_id,
+                               store.local_origin())
+        return d is not None and d in standing
+
+    inc_revoked = _src_revoked(edge)
+
     # Reinforcement (specs/0012 §4a, Design 1): an active same-class prior asserts the
     # same-or-subsuming value. The branch KEEPS its guard predicate and position (before
     # absorption, before the functional branch — deleting it would mis-route a SUBSUMED
@@ -265,6 +283,9 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     # (specs/0008 — only confirm() clears; the prior is not written at all, I4). The
     # persisted edge is the attribution of the contributing source (M9, I7).
     for prior in same_class:
+        if inc_revoked or _src_revoked(prior):
+            continue          # N3: a revoked source's restatement is not
+                              # COUNTED as reinforcement; it accumulates plain
         pk = _value_key(prior.object)
         if pk == same or _subsumes(pk, same):
             return SupersessionPlan(incoming_edge=edge, insert_incoming=True,
@@ -306,6 +327,14 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
     # concept and this decides what the store MERGES.
     same_scope = _absorption_scope_gate(store, edge)
     for prior in same_class:
+        if inc_revoked or _src_revoked(prior):
+            continue          # N4: neither side of an absorption may be a
+                              # revoked source — both records persist
+                              # separately. N7 rides on this refusal: the
+                              # max(observed_at)/max(confidence) inheritance
+                              # below is the ONE seam where currency survives
+                              # (M2: there is no renewal verb), so refusing
+                              # candidacy IS refusing renewal
         if _subsumes(same, _value_key(prior.object)) and same_scope(prior):
             incoming.valid_from = min(incoming.valid_from, prior.valid_from)
             incoming.provenance.observed_at = max(incoming.provenance.observed_at,
@@ -345,7 +374,19 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                 continue
             if _value_key(prior.object) == same:
                 continue
-            if authority.permitted(prior.provenance.author_of_evidence,
+            if inc_revoked:
+                # N5: a revoked-source incoming may not retire a standing
+                # record, WHATEVER its recorded authority says — the prior
+                # stays active and a durable content-free refusal is
+                # recorded. The REVERSE still works: `prior` being revoked
+                # changes nothing here, so a live incoming retires a
+                # revoked-source prior exactly as before.
+                refusals.append(SupersessionRefusalDraft(
+                    prior_edge_id=prior.id, incoming_edge_id=incoming.id,
+                    relation=edge.relation,
+                    prior_effective=authority.edge_effective(prior),
+                    incoming_effective=authority.edge_effective(incoming)))
+            elif authority.permitted(prior.provenance.author_of_evidence,
                                     prior.provenance.derived_from,
                                     incoming.provenance.author_of_evidence,
                                     incoming.provenance.derived_from):

@@ -156,8 +156,19 @@ def partition_cold(store, user_id: str, cold: list) -> list:
         # AttributeError.
         return [(SHARED_POOL_KEY, list(cold))] if cold else []
     resolver = MembershipResolver(store, user_id)
+    # 0023 N6: revoked-source records enter NO pool — excluded HERE, at the
+    # partition, so a pool that falls below threshold is a no-op rather than
+    # a partial merge, and no downstream step needs its own copy of the rule.
+    # Keyed on the standing set (empty set = the pre-0023 path, N12).
+    standing = store.standing_revocations(user_id)
     pools: dict = {}
     for e in cold:
+        if standing:
+            from .scope_linkage import identity_digest_of
+            d = identity_digest_of(e.provenance.origin, e.provenance.source_id,
+                                   store.local_origin())
+            if d is not None and d in standing:
+                continue                          # N6: no pool for the revoked
         evidence = resolver.evidence(e)
         if evidence == UNRESOLVED:
             continue                              # W9: no pool, ever
