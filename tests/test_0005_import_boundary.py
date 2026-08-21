@@ -635,6 +635,11 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0022 R18: the retired-episode round-trip imports into a FRESH
+    # store on the default path — the test's subject is retirement state
+    # surviving portability, and the default path is the one a host actually
+    # runs; nothing here touches restore-only semantics
+    ("test_0022_revoke_source.py", "test_retired_episode_round_trips"): "default",
     # specs/0019 U7: the forging matrix exercises BOTH paths deliberately
     # (default-path composition immunity; restore-path flag-keyed
     # eligibility grants — the documented §8 limit 6); the strip test is a
