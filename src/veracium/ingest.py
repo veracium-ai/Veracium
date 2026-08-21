@@ -160,6 +160,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         store.add_episode(Episode(
             id=_uid("ep"), user_id=user_id, date=date, summary=summary,
             provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
+                                  # 0023 §4a (internal S3): the episode's OWN disclosure is
+                                  # set at birth — third-party influence caps it at USE_ONLY
+                                  # exactly as _disclosure_for caps the edges; C4 adds the
+                                  # standing-revoked → QUARANTINED branch on this same field
+                                  disclosure=_disclosure_for(author, "", derived_from),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True,
                 "supersessions": 0, "reinforcements": 0}
@@ -171,6 +176,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         store.add_episode(Episode(
             id=_uid("ep"), user_id=user_id, date=date, summary=episode_text,
             provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
+                                  # 0023 §4a (internal S3): the episode's OWN disclosure is
+                                  # set at birth — third-party influence caps it at USE_ONLY
+                                  # exactly as _disclosure_for caps the edges; C4 adds the
+                                  # standing-revoked → QUARANTINED branch on this same field
+                                  disclosure=_disclosure_for(author, "", derived_from),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
 
     n_facts = n_quarantined = n_supersessions = n_reinforcements = 0

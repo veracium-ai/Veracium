@@ -207,7 +207,10 @@ def assemble(store, user_id: str, config, *, now: Optional[datetime] = None,
     if visible is not None:                      # specs/0020 §4f, same relation
         _episodes = visible(_episodes)
     for ep in _episodes:
-        if ep.kind == "outcome" or ep.provenance.third_party_influenced:
+        if ep.kind == "outcome" or not ep.assertable:
+            # 0023 §4a-iv: proactive assembly VOLUNTEERS content, so only the
+            # assertable set may feed it — fenced material must never be
+            # volunteered (the 0003 round-8 rule, now via the shared predicate)
             continue
         try:
             ep_date = _date.fromisoformat(ep.date)

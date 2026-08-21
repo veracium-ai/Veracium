@@ -73,11 +73,18 @@ DISPOSITIONS = {
    (W, "the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here", "observation",
     "✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5).",
     "`test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "d404ed9d101a"):
-   (W, "episode provenance (unparseable placeholder)", "observation",
+ # fp moved 2026-08-21 (0023 C2): both sites now SET the episode's own
+ # disclosure at birth via _disclosure_for — the S3 fix; USE_ONLY caps
+ # third-party influence, MENTIONABLE otherwise, and C4 adds the
+ # standing-revoked → QUARANTINED branch on the same field. The verdicts are
+ # unchanged: the write became MORE conservative, not differently shaped.
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "1be23672bde7"):
+   (W, "episode provenance (unparseable placeholder; disclosure set at birth)",
+    "observation",
     "clean — never retains raw event text", "`test_unparseable_extraction_degrades_gracefully`"),
- ("src/veracium/ingest.py", "ingest_event", "add_episode", "2513ea16a235"):
-   (W, "episode provenance", "observation", "clean — the origin of trust", "`test_third_party_text_never_moves_into_the_grounded_block`"),
+ ("src/veracium/ingest.py", "ingest_event", "add_episode", "9e0f6cba89f6"):
+   (W, "episode provenance (disclosure set at birth)", "observation",
+    "clean — the origin of trust", "`test_third_party_text_never_moves_into_the_grounded_block`"),
 
  # -- maintenance ------------------------------------------------------------
  ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"):
@@ -169,8 +176,8 @@ STATES = {
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "888fd4a4d703"): "open_moved",
   ("src/veracium/graph.py", "apply_supersession", "apply_supersession_plan", "e1ecd66351bd"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "d404ed9d101a"): "clean",
-  ("src/veracium/ingest.py", "ingest_event", "add_episode", "2513ea16a235"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "1be23672bde7"): "clean",
+  ("src/veracium/ingest.py", "ingest_event", "add_episode", "9e0f6cba89f6"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "52f316b93ba6"): "clean",
   ("src/veracium/lifecycle.py", "expire", "invalidate_edge", "b832f3d50c54"): "clean",
   ("src/veracium/lifecycle.py", "expire", "add_edge", "79eaf6e63a9c"): "open",

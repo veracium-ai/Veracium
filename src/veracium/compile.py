@@ -139,11 +139,11 @@ def _grounded_inputs(store, user_id: str, relations: dict[str, Relation]):
     # specs/0012 I8: the compiler INPUT collapses strictly-redundant duplicates —
     # N restatements feed the wiki once; the store keeps every edge.
     edges, _since = collapse_for_render(edges)
-    # Episodes are excluded by third-party *influence*, not authorship alone: a
-    # system-authored episode derived from third-party content (derived_from)
-    # carries that content verbatim and must not reach the assertable wiki.
-    episodes = [e for e in store.episodes(user_id)
-                if not e.provenance.third_party_influenced]
+    # 0023 §4a-iv (F1): the SHARED predicate, not an open-coded copy of the
+    # condition. assertable subsumes third-party influence AND the disclosure
+    # ingest now writes AND 0022's retirement axis — the wiki input is the
+    # assertable set, by the same rule every other consumer reads.
+    episodes = [e for e in store.episodes(user_id) if e.assertable]
     return edges, episodes
 
 

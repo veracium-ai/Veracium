@@ -61,8 +61,9 @@ def _asserted_today(record) -> bool:
     gate on two different fields, and this is where that asymmetry is stated
     ONCE: an `Edge` carries `assertable`; an `Episode` is grounded unless it
     is third-party-INFLUENCED (`partition_parts`' rule, not authorship)."""
-    if isinstance(record, Episode):
-        return not record.provenance.third_party_influenced
+    # 0023 §4a-iv (F1's ROOT CAUSE lived here: this docstring stated the
+    # two-field asymmetry as though it were a decision). ONE predicate name,
+    # both record kinds — each type derives its own `assertable`.
     return bool(record.assertable)
 
 

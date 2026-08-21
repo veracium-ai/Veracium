@@ -131,10 +131,12 @@ def partition_parts(edges: list[Edge], episodes: list[Episode]
     edge_lines = [s for s in (render_edges([e]) for e in edges if e.assertable) if s]
     claim_lines = [s for s in (render_edges([e]) for e in edges
                                if e.quarantined or (e.active and e.use_only)) if s]
-    ep_lines = [f"[{e.date}] {e.summary}" for e in episodes
-                if not e.provenance.third_party_influenced]
+    # 0023 §4a-iv: the grounded partition is the ASSERTABLE set; everything
+    # else routes to the fenced section — FENCED, not suppressed (Q5), so a
+    # quarantined claim stays visible as a claim rather than vanishing
+    ep_lines = [f"[{e.date}] {e.summary}" for e in episodes if e.assertable]
     tp_ep_lines = [f"[{e.date}] {e.summary}" for e in episodes
-                   if e.provenance.third_party_influenced]
+                   if not e.assertable]
     return edge_lines, ep_lines, claim_lines, tp_ep_lines
 
 

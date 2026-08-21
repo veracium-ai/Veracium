@@ -389,7 +389,14 @@ class Episode(BaseModel):
 
     @property
     def use_only(self) -> bool:
-        return self.provenance.disclosure == Disclosure.USE_ONLY
+        # SUBSUMES the legacy signal: pre-0023 episodes carry the DEFAULT
+        # disclosure (ingest never set one — S3's finding), so disclosure
+        # alone would read a stored third-party episode as assertable. The
+        # derived property is the floor of both carriers; disclosure is the
+        # forward carrier ingest now writes, and third_party_influenced keeps
+        # every legacy row fenced exactly as the open-coded sites fenced it.
+        return (self.provenance.disclosure == Disclosure.USE_ONLY
+                or self.provenance.third_party_influenced)
 
     @property
     def active(self) -> bool:
