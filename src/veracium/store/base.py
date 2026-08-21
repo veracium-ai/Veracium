@@ -122,6 +122,15 @@ def store_mutator(fn):
 
 
 class Store(ABC):
+    # --- specs/0023 §4a (quarantine-at-birth) --------------------------------
+    def standing_revocations(self, user_id: str) -> frozenset:
+        """The standing revoked identity-digest set (0022 §4a). Default: a
+        store without revocation support has NO standing revocations, so
+        ingest quarantines nothing — fail-open on breadth is correct here
+        because the EMPTY set is the true answer for such a store, not a
+        guess about one it cannot read."""
+        return frozenset()
+
     # -- edges -------------------------------------------------------------
     @store_mutator
     @abstractmethod

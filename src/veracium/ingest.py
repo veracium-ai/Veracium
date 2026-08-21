@@ -137,6 +137,19 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     # same failure the normalisation was added to fix.
     when = _event_dt(date)
     date = when.date().isoformat()
+
+    # 0023 §4a: ONE standing-state read per event, before any record is
+    # written, so the whole event gets one verdict (an event half-quarantined
+    # by a mid-ingest revocation would be worse than either whole answer).
+    # Q4 (dev, resolved here): the audit line carries the DIGEST — content-
+    # free, and it makes "which source is still writing" answerable from the
+    # audit sink alone; a bare count answers only "how much".
+    from .scope_linkage import identity_digest_of
+    _birth_digest = identity_digest_of(None, source_id, store.local_origin()) \
+        if source_id is not None and hasattr(store, "local_origin") else None
+    revoked_at_birth = (_birth_digest is not None
+                        and _birth_digest in store.standing_revocations(user_id))
+
     prompt = prompts.EXTRACT_PROMPT.format(
         date_context=prompts.date_context(date), author=author.value,
         event_text=event_text, relations=rel_names)
@@ -164,7 +177,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   # set at birth — third-party influence caps it at USE_ONLY
                                   # exactly as _disclosure_for caps the edges; C4 adds the
                                   # standing-revoked → QUARANTINED branch on this same field
-                                  disclosure=_disclosure_for(author, "", derived_from),
+                                  disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True,
                 "supersessions": 0, "reinforcements": 0}
@@ -180,7 +193,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   # set at birth — third-party influence caps it at USE_ONLY
                                   # exactly as _disclosure_for caps the edges; C4 adds the
                                   # standing-revoked → QUARANTINED branch on this same field
-                                  disclosure=_disclosure_for(author, "", derived_from),
+                                  disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
 
     n_facts = n_quarantined = n_supersessions = n_reinforcements = 0
@@ -189,6 +202,14 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             continue
         relation = str(t["relation"]).strip()
         disclosure = _disclosure_for(author, relation, derived_from)
+        if revoked_at_birth:
+            # 0023 §4a QUARANTINE-AT-BIRTH: the event's source is standing-
+            # revoked, so every edge of the event lands QUARANTINED whatever
+            # the relation says — the FLOOR of the two verdicts, never a
+            # substitute for them. Q1 (resolved, both names): no host-
+            # configurable refusal mode; Q2 (ratified): a later lift does NOT
+            # revisit this floor.
+            disclosure = Disclosure.QUARANTINED
         try:
             vol = Volatility(str(t.get("volatility", "durable")).strip().lower())
         except ValueError:

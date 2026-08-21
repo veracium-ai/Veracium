@@ -261,6 +261,12 @@ class SqliteStore(Store):
             self._conn.execute("DELETE FROM wiki WHERE user_id=?", (row[1],))
         return row[1]
 
+    def standing_revocations(self, user_id: str) -> frozenset:
+        """0022 §4a: latest action per identity digest, by seq alone."""
+        from .revocation import standing_revocations as _standing
+        with self._lock:
+            return _standing(self._conn, user_id)
+
     def _retire_episode_row(self, episode_id: str, at, reason: str) -> Optional[str]:
         """Retire one episode WITHOUT lock/bump/commit; returns its user_id or
         None. THE SOLE episode-retirement writer (specs/0022 R18, mirroring
