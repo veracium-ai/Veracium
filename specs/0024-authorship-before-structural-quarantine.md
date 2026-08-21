@@ -23,7 +23,7 @@ measurement.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
+| **Version** | **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
@@ -175,8 +175,16 @@ otherwise.
 
 ## 3b. Authorization and scope
 
-- **No new caller-facing surface.** No API, no flag, no config. The rule is
-  inside `_disclosure_for`, which no host can reach.
+- **Caller-facing surface, complete (external round 2, R2-3: v3 said "no
+  new surface" while U7 added three).** No new API, flag or config; the
+  rule is inside `_disclosure_for`, which no host can reach. But the
+  OBSERVATION surface grows: the ingest result dict gains
+  `redispositioned` (through `Memory.remember`, unchanged), the CLI prints
+  it, telemetry gains the field, and the MCP surface STRIPS it. The
+  telemetry field is governed by the accepted telemetry contract — added
+  to the event-field whitelist with a minimum schema version, named in the
+  consent text (version bumped), and covered by consent AND no-consent
+  tests; absent consent the field is never emitted.
 - **Per record, at write time.** Nothing existing is rewritten (§7).
 - **Does anything become visible to a principal who could not see it
   before?** **Yes — a quarantined record becomes assertable — and v1
@@ -256,7 +264,11 @@ The triple is **re-dispositioned, not dropped**:
    `Edge.quarantined` ORs on the relation — §2c-ii row 3), and naming it here
    rather than "some fallback" is what makes the pair compose (§7b);
 2. its disclosure is decided by the author rules ALONE — the second and
-   third branches of `_disclosure_for`, unchanged;
+   third branches of `_disclosure_for`, unchanged. **This is step 2 of the
+   combined pipeline `0025` §4b-iii states once for both specs** (external
+   round 2, R2-1: the coherence rewrite deliberately changes the semantic
+   state disclosure is computed FOR, which is why `0025` X10 is scoped to
+   the vocabulary fallback and does not constrain this step);
 3. **the original relation is preserved in the TYPED field
    `Edge.original_relation`** (`0025` F6 moved this out of note prose for
    both specs — one carrier, mechanically reversible), so the
@@ -313,9 +325,9 @@ extractor output is the shape this project keeps finding.
 | **U2** | no THIRD_PARTY-authored or THIRD_PARTY-derived record reaches `MENTIONABLE` by any relation/subject combination, **over the FULL `author × derived_from` product** (3 × 4, internal M1) | `test_author_floor_spans_the_author_domain` — enumerates the entire product against a separately-written oracle, so a cell cannot be overlooked the way SYSTEM/none was in v1 |
 | **U3** | a re-dispositioned triple does not keep `QUARANTINE_RELATION`, so `Edge.quarantined` reports false | `test_redispositioned_triple_is_not_quarantined_by_relation` — the check that would have failed on a fix that only reordered `_disclosure_for` |
 | **U4** | a store whose extractor never emits `third_party_claim` is byte-identical before and after | `test_no_quarantine_relation_is_byte_identical` |
-| **U5** | the original relation survives in the record | `test_redisposition_is_visible_in_the_note` |
+| **U5** | the original relation survives in the record, in the typed `Edge.original_relation` field | `test_redisposition_carries_the_original_relation` — renamed round 2 (R2-3): the old name promised the note, a carrier round 1 withdrew |
 | **U6** | disclosure still has exactly ONE write site | `test_single_disclosure_write_site` — the AST sweep `0023` **N2** already specifies, extended to cover this change rather than duplicated |
-| **U7** | re-dispositions are COUNTED and returned, never silent — the symmetric form of `0025` **X4** applied to this spec's own rewrites. **The COUNT'S CARRIERS, enumerated (round 1, F3):** the ingest result dict gains `redispositioned` (present on EVERY path, 0 on the unparseable and no-hit paths — an absent key is not a zero); `Memory.remember` passes the dict through unchanged; the MCP surface STRIPS it (consistent with its existing removal of the supersession/reinforcement counts — operator counts are a library surface, not a tool-call surface); telemetry gains the field beside the existing ingest counts | `test_redisposition_count_is_reported` — asserts the key on all three paths, including both zeros |
+| **U7** | re-dispositions are COUNTED and returned, never silent — the symmetric form of `0025` **X4** applied to this spec's own rewrites. **The COUNT'S CARRIERS, enumerated (round 1, F3):** the ingest result dict gains `redispositioned` (present on EVERY path, 0 on the unparseable and no-hit paths — an absent key is not a zero); `Memory.remember` passes the dict through unchanged; the MCP surface STRIPS it (consistent with its existing removal of the supersession/reinforcement counts — operator counts are a library surface, not a tool-call surface); telemetry gains the field beside the existing ingest counts. **Carrier ownership: `0025` §4c is the single authoritative disposition for the pair's counters; this row applies it to `redispositioned`, not restates it (round 2, R2-5)** | `test_redisposition_count_is_reported` — asserts the key on all three paths, including both zeros |
 
 ## 7. Failure modes and reversibility
 
@@ -323,8 +335,15 @@ extractor output is the shape this project keeps finding.
   mislabelled population): the residual stays quarantined, which is
   today's behaviour. **Failing narrow costs recall, never assertion.**
 - **If it were too broad** — the case to fear — a genuine relayed claim
-  would become assertable. **U1** is the test that fails first, and the
-  matrix in §3 is enumerated rather than sampled.
+  would become assertable. Two distinct doors, stated honestly (external
+  round 2, R2-2): a RULE that widened (a non-user claimant slipping the
+  predicate) is what **U1** catches, and the §3 matrix is enumerated rather
+  than sampled. But an EXTRACTOR that mis-emits a genuine relay with
+  `subject="user"` lands inside the first-person exception and NO invariant
+  here catches it — the rule reads what is recorded, not what was said.
+  That residual is bounded by the same fact §3b establishes: the extractor
+  could already grant assertability through an ordinary relation, so the
+  exception adds no power it lacked.
 - **Reversibility:** the rule is write-time, so reverting the code reverts
   the behaviour for all future writes. Records written under it keep the
   disclosure they were written with, which is the same asymmetry `0023`
@@ -337,6 +356,7 @@ extractor output is the shape this project keeps finding.
 | `src/veracium/ingest.py` | `_disclosure_for` gains the coherence test; the call site and the write site do not move |
 | `src/veracium/schema.py` | the fallback relation for a re-dispositioned triple, if the registry has no suitable ordinary member — a registry addition, not a new mechanism |
 | `src/veracium/prompts.py` | **optional and non-normative**: tightening the claimant convention. Explicitly NOT the fix (§4c) |
+| the ingest result dict / `Memory.remember` / MCP / CLI / telemetry | `redispositioned` on every path / passthrough / STRIPPED / printed / whitelisted field under the telemetry contract with consent gating (round 2, R2-3 — these carriers were governed by U7 but absent from this inventory) |
 | tests | the §6 table's named tests, U1–U7 — §6 is the ONE authoritative invariant list (external round 1, F3: this row said W1–W6, §6 listed U1–U7 out of order, and the package header hand-typed a range ending one past the real list — three versions of one surface; every other carrier now REFERENCES §6 rather than restating it) |
 | docs / CHANGELOG | a behaviour-change entry: some records that were quarantined are now assertable, with the matrix |
 
@@ -356,9 +376,16 @@ extractor output is the shape this project keeps finding.
 
 > **Provenance accuracy, in the cell the rule recognizes.** A statement you
 > made in your own voice — recorded with YOU as the literal claimant — is no
-> longer demoted to hearsay by an extractor mislabel. Content a third party
-> asserted, including something you relayed, remains an unverified claim and
-> is never asserted as fact.
+> longer demoted to hearsay by an extractor mislabel. A claim recorded with
+> a NON-USER claimant remains an unverified third-party claim and is never
+> asserted as fact.
+
+*(External round 2, R2-2: the earlier sentence promised relayed content "is
+never asserted as fact" — but a genuine relay the extractor mis-emits with
+`subject="user"` falls INSIDE the deliberate first-person exception and may
+become MENTIONABLE. U1 protects non-user claimants only and cannot catch
+that error. The guarantee is structural, about what is RECORDED, not about
+what was originally said; §7 states the residual risk honestly.)*
 >
 > *(External round 1, F4: the earlier absolute form — "a statement in your
 > own voice is recorded as yours" — exceeded the rule. The mechanism
@@ -391,7 +418,10 @@ reference of the v3 constructions — the §4b-ii registry order, the §4b(1)
 retry with its matching and no-op rules, X10's disclosure ordering (the
 laundering cell runs the WRONG order on purpose and shows the bite),
 X11's snapshot, and `0024`'s §4a predicate with its fail-closed odd-type
-cells. 13 vectors; the implementation will be differentially tested
+cells, and (round 2) the shipped-default-registry, duplicate-pair,
+snapshot-through-mutation, byte-identity and combined-pipeline vectors.
+The vector list is the file itself — no count here to drift; the
+implementation will be differentially tested
 against it, the `0022` vector-harness discipline.
 
 **What we are least sure of:**

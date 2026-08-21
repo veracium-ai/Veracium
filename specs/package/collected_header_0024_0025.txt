@@ -4,13 +4,16 @@ package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ)
 __CANDIDATES__
-                 The two specs are INDEPENDENT (Spec-Requires 0005 and 0012
-                 respectively) and are coupled in ONE archive for review
-                 economy only — per-spec verdicts requested. Their
-                 implementation freezes are SEPARATE by design: L1's is a
-                 measurement constraint (the paper-2 probe suite scores the
-                 conflation it fixes), so accepting one does not schedule
-                 the other.
+                 Dependency declarations, DERIVED at seal time from each
+                 spec's own header line (round 2 package correction — the
+                 previous hand-typed sentence drifted the day 0024's
+                 header changed):
+                 __REQUIRES__
+                 Coupled in ONE archive for review economy — per-spec
+                 verdicts requested; 0024's ACCEPTANCE waits on 0025's
+                 (its Spec-Requires names it) while the implementation
+                 freezes stay SEPARATE: L1's is a measurement constraint
+                 (the paper-2 probe suite scores the conflation it fixes).
 
 WHAT EACH SPEC IS, in one sentence each:
   0024 (L1)  `_disclosure_for` tests the RELATION before the AUTHOR, so a

@@ -636,7 +636,20 @@ def main() -> int:
                   f"specs/reviews.py but its version says round {round_no} "
                   f"(R16-1)")
 
+        def _requires_line(spec):
+            # Round 2 (L-pair): the header restated Spec-Requires by hand and
+            # drifted the day 0024's changed. DERIVED from the one canonical
+            # carrier — the spec file's own header line — or the seal fails.
+            txt = next(SPECS.glob(f"{spec}-*.md")).read_text()
+            for ln in txt.splitlines():
+                if ln.startswith("Spec-Requires:"):
+                    return f"{spec} Spec-Requires: {ln.split(':', 1)[1].strip()}"
+            _fail(f"{spec} has no Spec-Requires: header line to derive from")
+        requires_block = "\n                 ".join(
+            _requires_line(sp) for sp in specs)
+
         subs = {"__VERSION__": a.version, "__ROUND__": str(round_no),
+                "__REQUIRES__": requires_block,
                 "__PACKAGE__": pkg,
                 "__CANDIDATES__": _pid.render_candidate_field(_line, a.version),
                 "__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,

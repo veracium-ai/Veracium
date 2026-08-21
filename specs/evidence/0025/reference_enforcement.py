@@ -1,22 +1,20 @@
-"""Executable reference for the 0024/0025 v3 constructions — pre-implementation.
+"""Executable reference for the 0024/0025 v4 constructions — pre-implementation.
 
-External round 1 package feedback: *"a pre-implementation reference harness
-would help"* — and all three of 0025's blocking findings (F1 disclosure
-ordering, F2 the retry, F3 the registry construction) were constructions the
-spec described without making runnable. This file IS those constructions,
-verbatim from the v3 text, with vectors that bite: each vector states the
-wrong behaviour the amended text forbids, and several run the WRONG order on
-purpose to show what it produces.
+Round 1 asked for the harness; round 2 found the v3 constructions
+contradicting each other and the shipped tree, so the v4 harness carries the
+corrections AND the vectors round 2 named: the shipped default registry,
+duplicate-pair retry candidates, a retry answering with a reserved member,
+mutation THROUGH the snapshot, unaffected-edge byte identity under the
+None-omission rule, and the combined 0024-coherence/0025-vocabulary ordering.
 
 Run:  $PY specs/evidence/0025/reference_enforcement.py
-      (any Python >= 3.10; no dependencies, no product imports — this is the
-       reference the implementation will be differentially tested against,
-       the 0022 vector-harness discipline)
+      (dependency-free; the shipped-DEFAULT_RELATIONS vector imports the
+       product if available and reports a NAMED skip otherwise)
 
-Covers 0024 §4a (the coherence predicate) and 0025 §4b(1) (the retry),
-§4b-ii (the effective registry), §3/X10 (disclosure from the ORIGINAL
-relation), X11 (snapshot immutability), X4 (count reconciliation).
+Normative sources: 0025 §4b(1) retry, §4b-ii registry, §4b-iii combined
+pipeline, X6/X10/X11; 0024 §4a predicate, §4b re-disposition.
 """
+import json
 from dataclasses import dataclass
 from enum import Enum
 from types import MappingProxyType
@@ -27,9 +25,15 @@ RESERVED = (UNCLASSIFIED, QUARANTINE_RELATION)
 
 
 @dataclass(frozen=True)
-class Relation:
+class Relation:                 # stands in for the mutable pydantic model
     name: str
     functional: bool = False
+
+
+@dataclass(frozen=True)
+class FrozenRel:                # §4b-ii step 5: the snapshot's OWN records
+    name: str
+    functional: bool
 
 
 class Author(Enum):
@@ -48,15 +52,19 @@ class RegistryError(ValueError):
     pass
 
 
-# ---- 0024 §4a: the coherence predicate, mechanical -------------------------
+# ---- THE normalization (0025 §4b(1) — one rule, stated once) ---------------
+
+def norm(x) -> str:
+    return str(x).strip().casefold()
+
+
+# ---- 0024 §4a: the coherence predicate -------------------------------------
 
 def canonical_subject(subject) -> str:
-    """The SAME conversion the shipped write path applies (ingest.py:225)."""
-    return str(subject).strip()
+    return str(subject).strip()          # the shipped write-path conversion
 
 
 def incoherent(relation: str, subject) -> bool:
-    """Whole-string casefold equality. No substring, no synonyms, no note."""
     return (relation == QUARANTINE_RELATION
             and canonical_subject(subject).casefold() == "user")
 
@@ -64,25 +72,25 @@ def incoherent(relation: str, subject) -> bool:
 # ---- 0025 §4b-ii: the effective registry, five ordered steps ---------------
 
 def effective_registry(host: dict) -> MappingProxyType:
-    # 1. shape — every value a Relation, every key == its value's name
+    # 1. shape
     for k, v in host.items():
-        if not isinstance(v, Relation):
+        if not hasattr(v, "name") or not hasattr(v, "functional"):
             raise RegistryError(f"value for {k!r} is not a Relation")
         if k != v.name:
             raise RegistryError(f"key {k!r} != Relation.name {v.name!r}")
-    # 2. empty — tested AS SUPPLIED, before injection can mask it (X5)
+    # 2. empty — AS SUPPLIED, before injection (X5)
     if not host:
         raise RegistryError("empty registry refused")
-    # 3. shadowing — refused BEFORE injection, both reserved names (X9)
+    # 3. shadowing — CONFLICTING shadows only (round 2, R2-1: the shipped
+    #    DEFAULT_RELATIONS carries third_party_claim and must pass)
     for name in RESERVED:
-        if name in host:
-            raise RegistryError(f"reserved name shadowed: {name}")
-    # 4. injection — both reserved members, non-functional (X8)
-    eff = {k: Relation(v.name, v.functional) for k, v in host.items()}
+        if name in host and bool(host[name].functional):
+            raise RegistryError(f"reserved name conflictingly shadowed: {name}")
+    # 4. injection — any reserved member not already (canonically) present
+    eff = {k: FrozenRel(v.name, bool(v.functional)) for k, v in host.items()}
     for name in RESERVED:
-        eff[name] = Relation(name, False)
-    # 5. snapshot — the copies above ARE the deep copy (Relation is frozen);
-    #    the proxy refuses later key mutation (X11)
+        eff.setdefault(name, FrozenRel(name, False))
+    # 5. snapshot — frozen records, read-only mapping (X11)
     return MappingProxyType(eff)
 
 
@@ -96,81 +104,95 @@ def disclosure_for(author: Author, relation: str, derived_from) -> Disclosure:
     return Disclosure.MENTIONABLE
 
 
-# ---- the whole ingest decision for one event -------------------------------
+# ---- serialization: the None-omission rule (round 2, R2-3 / X6) ------------
+
+def serialize_edge(row: dict) -> bytes:
+    """`original_relation` is OMITTED when None — an unaffected edge is
+    byte-identical to its pre-0025 shape."""
+    out = {k: v for k, v in row.items()
+           if not (k == "original_relation" and v is None)}
+    out = {k: (v.value if isinstance(v, Enum) else v)
+           for k, v in sorted(out.items())}
+    return json.dumps(out, sort_keys=True).encode()
+
+
+# ---- 0025 §4b-iii: the combined pipeline, in order -------------------------
 
 def enforce(triples, host_registry, author, derived_from, retry=None):
-    """0025 §4b(1)+(2) with 0024 §4a composed in the ruled order.
-
-    `triples` — list of dicts with subject/relation/object (post the shipped
-    completeness check: falsy-free, str()-converted).
-    `retry` — a callable(failing_triples) -> list of triples or None, standing
-    in for the ONE provider call; None means "host without a provider".
-    Returns (stored, counts) where each stored row carries the decided
-    relation, disclosure, and original_relation.
-    """
+    """Returns (stored, counts). Disclosure is ESTABLISHED at step 2 and the
+    vocabulary fallback (step 3) never changes it — X10's whole scope."""
     reg = effective_registry(host_registry)
-    calls = 0
     stored, failing = [], []
 
-    def decide(t, relation, original):
-        # X10: disclosure from the ORIGINAL relation, computed before any
-        # rewrite and retained — the rewrite never feeds disclosure_for.
-        disc = disclosure_for(author, original, derived_from)
-        rel, orig_field = relation, None
-        if incoherent(original, t["subject"]):
-            # 0024 §4b: re-disposition — relation to the reserved member,
-            # disclosure by the author rules ALONE, original in the typed field
-            rel, orig_field = UNCLASSIFIED, original
-            disc = disclosure_for(author, "", derived_from)
-        elif relation != original:
-            orig_field = original      # 0025 rewrite: the typed carrier (F6)
-        return dict(t, relation=rel, disclosure=disc,
-                    original_relation=orig_field)
-
     for t in triples:
-        r = str(t["relation"]).strip()
-        if r in reg:
-            stored.append(decide(t, r, r))
+        original = str(t["relation"]).strip()
+        # step 1 — coherence (0024): deliberately changes the semantic state
+        if incoherent(original, t["subject"]):
+            relation, orig_field = UNCLASSIFIED, original
+            established = disclosure_for(author, "", derived_from)
         else:
-            failing.append(t)
+            relation, orig_field = original, None
+            established = disclosure_for(author, original, derived_from)
+        # step 2 — disclosure established for the post-coherence state
+        row = dict(t, relation=relation, disclosure=established,
+                   original_relation=orig_field)
+        # step 3 — vocabulary membership; failures queue for the retry
+        if relation in reg:
+            stored.append(row)
+        else:
+            failing.append(row)
 
-    retried = len(failing)
-    recovered = 0
+    counts = dict(invalid=len(failing), retried=0, recovered=0,
+                  residual=0, retry_calls=0)
+
     if failing and retry is not None:
-        calls += 1                     # exactly ONE call per event (F2)
+        counts["retried"] = len(failing)     # an ACTUAL retry ran (R2-2)
+        counts["retry_calls"] = 1            # exactly ONE call per event
         try:
-            replacements = retry(list(failing)) or []
+            replacements = retry([dict(f) for f in failing])
+            if not isinstance(replacements, list):
+                replacements = []
         except Exception:
-            replacements = []          # malformed retry output is a no-op
-        def key(t):
-            return (canonical_subject(t["subject"]).casefold(),
-                    str(t["object"]).strip().casefold())
-        by_key = {}
+            replacements = []                # degrade, recorded, never raised
+        # one-to-one multiset consumption in occurrence order (R2-2):
+        # a pool entry repairs at most one failing occurrence, and
+        # `recovered` requires the FINAL stored relation to be an ORDINARY
+        # member — a reserved answer is not a repair.
+        pool = []
         for rep in replacements:
-            if not isinstance(rep, dict):
-                continue
-            rrel = str(rep.get("relation", "")).strip()
-            if rrel in reg:            # the replacement must be a member
-                by_key.setdefault(key(rep), rrel)
-        still = []
-        for t in failing:
-            rrel = by_key.get(key(t))  # match on the content pair only
-            if rrel is not None:
-                recovered += 1
-                stored.append(decide(t, rrel, str(t["relation"]).strip()))
-            else:
-                still.append(t)
-        failing = still
-    for t in failing:                  # the residual → the reserved member
-        stored.append(decide(t, UNCLASSIFIED, str(t["relation"]).strip()))
+            if isinstance(rep, dict):
+                rrel = str(rep.get("relation", "")).strip()
+                if rrel in reg and rrel not in RESERVED:
+                    pool.append(((norm(rep.get("subject", "")),
+                                  norm(rep.get("object", ""))), rrel))
+        for f in failing:
+            key = (norm(f["subject"]), norm(f["object"]))
+            for i, (pkey, prel) in enumerate(pool):
+                if pkey == key:
+                    pool.pop(i)
+                    f["original_relation"] = f["relation"]
+                    f["relation"] = prel
+                    break
 
-    counts = dict(retried=retried, recovered=recovered,
-                  residual=retried - recovered, retry_calls=calls)
-    assert counts["retried"] == counts["recovered"] + counts["residual"]
+    for f in failing:                        # fallback for what remains
+        if f["relation"] in reg and f["relation"] not in RESERVED:
+            counts["recovered"] += 1
+        else:
+            counts["residual"] += 1
+            f["original_relation"] = f["relation"]
+            f["relation"] = UNCLASSIFIED
+        stored.append(f)
+
+    assert counts["invalid"] == counts["recovered"] + counts["residual"]
     return stored, counts
 
 
 # ============================ vectors ========================================
+
+HOST = {"works_as": Relation("works_as", True),
+        "works_on": Relation("works_on", False)}
+SKIPPED = []
+
 
 def _refuses(fn, needle):
     try:
@@ -179,10 +201,6 @@ def _refuses(fn, needle):
         assert needle in str(e), (needle, str(e))
         return
     raise AssertionError(f"not refused: {needle}")
-
-
-HOST = {"works_as": Relation("works_as", True),
-        "works_on": Relation("works_on", False)}
 
 
 def vector_construction_refuses_empty_as_supplied():
@@ -194,11 +212,29 @@ def vector_construction_refuses_mismatched_key():
              "!= Relation.name")
 
 
-def vector_construction_refuses_both_reserved_shadows():
+def vector_only_conflicting_reserved_shadows_are_refused():
+    """Round 2, R2-1: a FUNCTIONAL reserved entry is refused; an exactly
+    canonical one is accepted (the shipped default registry's case)."""
     for name in RESERVED:
-        for fn in (True, False):       # functional AND non-functional shadows
-            _refuses(lambda n=name, f=fn: effective_registry(
-                dict(HOST, **{n: Relation(n, f)})), "shadowed")
+        _refuses(lambda n=name: effective_registry(
+            dict(HOST, **{n: Relation(n, True)})), "conflictingly")
+        reg = effective_registry(dict(HOST, **{name: Relation(name, False)}))
+        assert reg[name].functional is False
+
+
+def vector_the_shipped_default_registry_is_accepted():
+    """Round 2, R2-1: v3's rule REFUSED DEFAULT_RELATIONS. Imports the
+    product when available; skips NAMED otherwise."""
+    try:
+        from veracium.schema import DEFAULT_RELATIONS
+    except ImportError:
+        SKIPPED.append("shipped_default_registry (veracium not importable)")
+        return
+    host = {k: Relation(v.name, bool(v.functional))
+            for k, v in DEFAULT_RELATIONS.items()}
+    reg = effective_registry(host)
+    assert QUARANTINE_RELATION in reg and UNCLASSIFIED in reg
+    assert len(reg) >= len(host)
 
 
 def vector_construction_injects_both_reserved_members():
@@ -207,49 +243,55 @@ def vector_construction_injects_both_reserved_members():
         assert name in reg and reg[name].functional is False
 
 
-def vector_snapshot_survives_host_mutation():
+def vector_snapshot_resists_mutation_through_itself():
+    """Round 2, R2-1: X11's test mutates THROUGH the snapshot, not only the
+    caller's registry."""
     host = dict(HOST)
     reg = effective_registry(host)
-    host.clear()                       # the host mutates its dict afterwards
-    assert "works_as" in reg and reg["works_as"].functional is True
+    host.clear()
+    assert reg["works_as"].functional is True
     try:
-        reg["injected"] = Relation("injected", True)
-        raise AssertionError("snapshot accepted a write")
+        reg["injected"] = FrozenRel("injected", True)
+        raise AssertionError("snapshot accepted a key write")
     except TypeError:
         pass
+    try:
+        reg["works_as"].functional = False  # type: ignore[misc]
+        raise AssertionError("snapshot member accepted a field write")
+    except AttributeError:
+        pass  # FrozenRel refuses — the through-mutation cell (X11)
 
 
-def vector_disclosure_is_computed_from_the_original_relation():
-    """THE LAUNDERING CELL (0025 F1). Host registry omits third_party_claim;
-    the extractor relays genuine hearsay. The WRONG order — rewrite first,
-    disclosure from the rewritten relation — asserts it. The reference, with
-    injection + X10, quarantines it."""
+def vector_combined_pipeline_ordering():
+    """Round 2, R2-1 (0024): the cross-spec vector. An incoherent triple's
+    coherence rewrite yields MENTIONABLE and that is CORRECT (the semantic
+    state changed at step 1); an off-vocabulary triple's fallback keeps its
+    established disclosure (X10's scope)."""
+    coherent_case = {"subject": " User ", "relation": QUARANTINE_RELATION,
+                     "object": "opening act"}
+    stored, _ = enforce([coherent_case], HOST, Author.USER, None)
+    assert stored[0]["relation"] == UNCLASSIFIED
+    assert stored[0]["disclosure"] is Disclosure.MENTIONABLE   # correct!
+    assert stored[0]["original_relation"] == QUARANTINE_RELATION
+    offvocab = {"subject": "the landlord", "relation": "ThirdPartyClaim",
+                "object": "user owes $500"}
+    stored, _ = enforce([offvocab], HOST, Author.THIRD_PARTY, None)
+    assert stored[0]["relation"] == UNCLASSIFIED
+    assert stored[0]["disclosure"] is Disclosure.USE_ONLY      # established
+    assert stored[0]["original_relation"] == "ThirdPartyClaim"
+
+
+def vector_genuine_hearsay_stays_quarantined():
+    """The laundering cell: third_party_claim is registry-resident (injected
+    or canonical), so genuine hearsay never reaches the fallback."""
     t = {"subject": "the landlord", "relation": QUARANTINE_RELATION,
          "object": "user owes $500"}
-    # the wrong order, run on purpose:
-    laundered = disclosure_for(Author.USER, UNCLASSIFIED, None)
-    assert laundered is Disclosure.MENTIONABLE      # the bite
-    stored, _ = enforce([t], HOST, Author.USER, None)
+    stored, counts = enforce([t], HOST, Author.USER, None)
     assert stored[0]["disclosure"] is Disclosure.QUARANTINED
-    assert stored[0]["relation"] == QUARANTINE_RELATION  # injected resident
-
-
-def vector_literal_user_subject_redispositions():
-    """0024 §4b: the coherence cell — relation says hearsay, claimant is the
-    user themself. Re-dispositioned, disclosure by author alone, original in
-    the TYPED field."""
-    t = {"subject": " User ", "relation": QUARANTINE_RELATION,
-         "object": "opening act was Whiskey Wanderers"}
-    stored, _ = enforce([t], HOST, Author.USER, None)
-    row = stored[0]
-    assert row["relation"] == UNCLASSIFIED
-    assert row["disclosure"] is Disclosure.MENTIONABLE
-    assert row["original_relation"] == QUARANTINE_RELATION
+    assert counts["invalid"] == 0
 
 
 def vector_odd_subject_types_fail_closed():
-    """0024 F2: a truthy non-string subject survives the shipped completeness
-    check str()-converted; the predicate misses it and quarantine holds."""
     for subject in (["user"], {"name": "user"}, 1):
         t = {"subject": str(subject).strip(),
              "relation": QUARANTINE_RELATION, "object": "x"}
@@ -258,59 +300,101 @@ def vector_odd_subject_types_fail_closed():
 
 
 def vector_author_floor_holds_through_redisposition():
-    """0024 U2: a THIRD_PARTY-authored incoherent triple lands USE_ONLY,
-    never MENTIONABLE — the floor is the author, not the rewrite."""
     t = {"subject": "user", "relation": QUARANTINE_RELATION, "object": "x"}
     stored, _ = enforce([t], HOST, Author.THIRD_PARTY, None)
     assert stored[0]["disclosure"] is Disclosure.USE_ONLY
 
 
-def vector_retry_is_one_call_and_matches_on_the_content_pair():
+def vector_retry_is_one_call_and_repairs_by_content_pair():
     ts = [{"subject": "user", "relation": "job", "object": "carpenter"},
           {"subject": "user", "relation": "hobby", "object": "chess"}]
     def retry(failing):
-        assert len(failing) == 2       # ONE call carries ALL failing triples
+        assert len(failing) == 2
         return [{"subject": "User", "relation": "works_as",
-                 "object": "carpenter "},          # repairs by content pair
+                 "object": "carpenter "},
                 {"subject": "user", "relation": "invented", "object": "new"}]
     stored, counts = enforce(ts, HOST, Author.USER, None, retry=retry)
-    assert counts == dict(retried=2, recovered=1, residual=1, retry_calls=1)
+    assert counts == dict(invalid=2, retried=2, recovered=1, residual=1,
+                          retry_calls=1)
     by_obj = {r["object"]: r for r in stored}
     assert by_obj["carpenter"]["relation"] == "works_as"
     assert by_obj["carpenter"]["original_relation"] == "job"
-    assert by_obj["chess"]["relation"] == UNCLASSIFIED   # unmatched → residual
-    assert all(r["object"] != "new" for r in stored)     # discards, never adds
+    assert by_obj["chess"]["relation"] == UNCLASSIFIED
+    assert all(r["object"] != "new" for r in stored)
 
 
-def vector_retry_replacement_must_be_a_member():
+def vector_duplicate_pairs_consume_one_to_one():
+    """Round 2, R2-2: two failing occurrences of one normalized pair; ONE
+    replacement repairs exactly one of them."""
+    ts = [{"subject": "user", "relation": "job", "object": "carpenter"},
+          {"subject": "User", "relation": "occupation", "object": "Carpenter"}]
+    stored, counts = enforce(ts, HOST, Author.USER, None,
+                             retry=lambda f: [{"subject": "user",
+                                               "relation": "works_as",
+                                               "object": "carpenter"}])
+    assert counts == dict(invalid=2, retried=2, recovered=1, residual=1,
+                          retry_calls=1)
+    rels = sorted(r["relation"] for r in stored)
+    assert rels == sorted(["works_as", UNCLASSIFIED])
+
+
+def vector_reserved_retry_answer_is_residual_not_recovered():
+    """Round 2, R2-2: a retry answering `unclassified` is NOT a recovery."""
     ts = [{"subject": "user", "relation": "job", "object": "carpenter"}]
     stored, counts = enforce(ts, HOST, Author.USER, None,
                              retry=lambda f: [{"subject": "user",
-                                               "relation": "occupation",
+                                               "relation": UNCLASSIFIED,
                                                "object": "carpenter"}])
-    assert counts["recovered"] == 0
+    assert counts == dict(invalid=1, retried=1, recovered=0, residual=1,
+                          retry_calls=1)
+    assert stored[0]["relation"] == UNCLASSIFIED
+    assert stored[0]["original_relation"] == "job"
+
+
+def vector_no_provider_means_retried_zero():
+    """Round 2, R2-2: `retried` may not count retries that never ran."""
+    ts = [{"subject": "user", "relation": "job", "object": "carpenter"}]
+    stored, counts = enforce(ts, HOST, Author.USER, None, retry=None)
+    assert counts == dict(invalid=1, retried=0, recovered=0, residual=1,
+                          retry_calls=0)
     assert stored[0]["relation"] == UNCLASSIFIED
 
 
-def vector_malformed_retry_output_is_a_noop():
+def vector_provider_failures_degrade_recorded_never_raised():
     ts = [{"subject": "user", "relation": "job", "object": "carpenter"}]
     for bad in (lambda f: (_ for _ in ()).throw(ValueError("bad json")),
                 lambda f: "not a list at all",
                 lambda f: None):
         stored, counts = enforce(ts, HOST, Author.USER, None, retry=bad)
-        assert counts == dict(retried=1, recovered=0, residual=1,
+        assert counts == dict(invalid=1, retried=1, recovered=0, residual=1,
                               retry_calls=1), bad
         assert stored[0]["relation"] == UNCLASSIFIED
 
 
+def vector_unaffected_edge_is_byte_identical():
+    """Round 2, R2-3 / X6: the None-omission rule makes an unaffected edge
+    byte-identical to its pre-0025 shape."""
+    old_shape = {"subject": "user", "relation": "works_as",
+                 "object": "carpenter", "disclosure": Disclosure.MENTIONABLE}
+    stored, counts = enforce([dict(subject="user", relation="works_as",
+                                   object="carpenter")],
+                             HOST, Author.USER, None)
+    assert counts == dict(invalid=0, retried=0, recovered=0, residual=0,
+                          retry_calls=0)
+    assert stored[0]["original_relation"] is None
+    assert serialize_edge(stored[0]) == serialize_edge(old_shape)
+    # and an AFFECTED edge serializes the field
+    affected = dict(stored[0], original_relation="job")
+    assert b"original_relation" in serialize_edge(affected)
+
+
 def vector_in_vocabulary_event_is_untouched():
-    """X6's shape: nothing off-vocabulary, nothing incoherent → no rewrite,
-    no retry call, zeros PRESENT (an absent key is not a zero)."""
     ts = [{"subject": "user", "relation": "works_as", "object": "carpenter"}]
     calls = []
     stored, counts = enforce(ts, HOST, Author.USER, None,
                              retry=lambda f: calls.append(1))
-    assert counts == dict(retried=0, recovered=0, residual=0, retry_calls=0)
+    assert counts == dict(invalid=0, retried=0, recovered=0, residual=0,
+                          retry_calls=0)
     assert not calls
     assert stored[0]["relation"] == "works_as"
     assert stored[0]["original_relation"] is None
@@ -322,7 +406,9 @@ def main() -> int:
     for v in vectors:
         v()
         print(f"ok  {v.__name__}")
-    print(f"{len(vectors)} vectors, all biting")
+    for s in SKIPPED:
+        print(f"SKIPPED  {s}")
+    print(f"{len(vectors)} vectors run, {len(SKIPPED)} named skip(s)")
     return 0
 
 
