@@ -103,8 +103,8 @@ model declining to use things the user plainly told it.
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| the extractor's `relation` — **PRODUCER: the LLM, whose output is not constrained today (`0025`)** | absent → the triple is already dropped by the shipped `subject/relation/object` completeness check (`ingest.py:178`) | non-str → same drop | a relation outside the registry → **out of scope here; `0025` owns it.** This spec changes only the `third_party_claim` cell | an extractor steered into labelling everything `third_party_claim` (a denial-of-assertion attack) | **U1** — the coherence test is structural, so mislabelling in EITHER direction is caught by the same rule |
-| the extractor's `subject` on a `third_party_claim` triple | empty → drop (shipped) | non-str → drop | a claimant name this store has never seen → **QUARANTINES, unchanged.** An unknown claimant is the ordinary case | **the apparent attack: text engineered to make the extractor emit `subject="user"` to ESCAPE quarantine** | **THE ATTACK IS VACUOUS, not merely bounded — see §3b.** A steered extractor never needed the subject: it could emit an ORDINARY relation and reach `MENTIONABLE` directly, today, with no coherence test in sight. **U2** additionally pins the author floor |
+| the extractor's `relation` — **PRODUCER: the LLM, whose output is not constrained today (`0025`)** | absent → the triple is already dropped by the shipped `subject/relation/object` completeness check (`ingest.py:178`) | truthy non-str → NOT dropped: str()-converted by the shipped path (`ingest.py:203`), and the converted oddity is a string outside the registry, which `0025` refuses (same F2 correction as the subject cell: the previous "drop" claim was not what shipped code does) | a relation outside the registry → **out of scope here; `0025` owns it.** This spec changes only the `third_party_claim` cell | an extractor steered into labelling everything `third_party_claim` (a denial-of-assertion attack) | **U1** — the coherence test is structural, so mislabelling in EITHER direction is caught by the same rule |
+| the extractor's `subject` on a `third_party_claim` triple | falsy → drop (shipped truthiness check, `ingest.py:201`) | truthy non-str → NOT dropped: str()-converted by the shipped write path (`ingest.py:225`), then misses the §4a predicate → stays QUARANTINED (external round 1, F2: this cell previously claimed a drop the shipped code does not perform) | a claimant name this store has never seen → **QUARANTINES, unchanged.** An unknown claimant is the ordinary case | **the apparent attack: text engineered to make the extractor emit `subject="user"` to ESCAPE quarantine** | **THE ATTACK IS VACUOUS, not merely bounded — see §3b.** A steered extractor never needed the subject: it could emit an ORDINARY relation and reach `MENTIONABLE` directly, today, with no coherence test in sight. **U2** additionally pins the author floor |
 | `author_of_evidence` | absent → the model rejects it (required field) | invalid enum → rejected by validation before this code | — | a host declaring THIRD_PARTY content as USER | **out of scope, and stated so:** a host that lies about authorship is outside this spec's threat model and outside the product's (0006 C2 — identity is namespacing, not authentication) |
 
 ### 2c-ii. Assertions about reach — REQUIRED
@@ -216,7 +216,25 @@ otherwise.
 ### 4a. The coherence test
 
 A triple is **incoherent** when `relation == QUARANTINE_RELATION` and the
-`subject` denotes the user themself. The extraction prompt states the
+**canonical subject** is exactly the user. Both halves are mechanical
+(external round 1, F2 — "denotes the user themself" named an intent, not a
+computation):
+
+- **Canonical subject** = `str(t["subject"]).strip()` — the SAME conversion
+  the shipped write path applies (`ingest.py:225`), computed ONCE and used
+  for both the test and the stored field, so the test can never disagree
+  with the subject the Edge actually carries.
+- **The predicate** = `canonical_subject.casefold() == "user"`. Whole-string
+  equality after casefold; nothing else — no substring match, no synonym
+  list, no note inspection.
+- **Odd types fail closed.** The shipped completeness check (`ingest.py:201`)
+  drops only FALSY subjects; a truthy non-string — `["user"]`,
+  `{"name": "user"}`, `1` — survives it and is str()-converted.
+  `str(["user"])` is `"['user']"`, which is not `"user"`, so every such
+  triple misses the predicate and stays QUARANTINED. A subject must arrive
+  as the literal string to be recognized; type games buy nothing.
+
+The extraction prompt states the
 claimant convention explicitly — *"Emit those ONLY as `{"relation":
 "third_party_claim", "subject": "<claimant>", ...}"`* (`prompts.py:38`) — so
 the subject slot of a third-party claim IS the claimant, and a claim whose
@@ -289,7 +307,7 @@ extractor output is the shape this project keeps finding.
 
 | # | invariant | check |
 |---|---|---|
-| **U1** | a `third_party_claim` whose subject is a CLAIMANT still quarantines, whatever the author | `test_relayed_third_party_claim_still_quarantines` |
+| **U1** | a `third_party_claim` whose canonical subject (§4a: str → strip → casefold) is anything OTHER than the exact string `user` — a named claimant, a str()-converted list or dict, an empty-after-strip string — quarantines, whatever the author. The complementary domain, so no cell is left to interpretation (external round 1, F2) | `test_relayed_third_party_claim_still_quarantines` |
 | **U2** | no THIRD_PARTY-authored or THIRD_PARTY-derived record reaches `MENTIONABLE` by any relation/subject combination, **over the FULL `author × derived_from` product** (3 × 4, internal M1) | `test_author_floor_spans_the_author_domain` — enumerates the entire product against a separately-written oracle, so a cell cannot be overlooked the way SYSTEM/none was in v1 |
 | **U3** | a re-dispositioned triple does not keep `QUARANTINE_RELATION`, so `Edge.quarantined` reports false | `test_redispositioned_triple_is_not_quarantined_by_relation` — the check that would have failed on a fix that only reordered `_disclosure_for` |
 | **U4** | a store whose extractor never emits `third_party_claim` is byte-identical before and after | `test_no_quarantine_relation_is_byte_identical` |
