@@ -58,6 +58,7 @@ PACKAGES = {
     # economy the 0004 triple used; per-spec verdicts requested.
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
+        "v2": (2, {"0024": "v3", "0025": "v3"}),
     },
 }
 
