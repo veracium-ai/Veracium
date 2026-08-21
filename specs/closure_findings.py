@@ -666,4 +666,61 @@ CLOSURES = [
      "grep -n 'original_relation' specs/0025-relation-vocabulary-enforcement.md "
      "specs/0024-authorship-before-structural-quarantine.md  "
      "# one typed carrier, both specs"),
+    # ---- 0024 (L1) external round 2 -------------------------------------
+    ("0024", "external", 2, "R2-1",
+     "two round-1 fixes contradicted when composed: X10 (disclosure from the "
+     "original relation) vs §4b (author-rules disclosure after the coherence "
+     "rewrite) — the reference implemented one and violated the other",
+     "0025 §4b-iii (the one pipeline), 0024 §4b(2), X10 narrowed",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_combined_pipeline_ordering — the cross-spec cell, both branches"),
+    ("0024", "external", 2, "R2-2",
+     "§8 promised relayed content is never asserted; a relay mis-emitted with "
+     "subject='user' lands inside the first-person exception and U1 cannot "
+     "catch it",
+     "§8 (recorded-claimant property), §7 (the two doors)",
+     "grep -n 'NON-USER claimant' specs/0024-authorship-before-structural-quarantine.md"),
+    ("0024", "external", 2, "R2-3",
+     "§3b claimed no new caller surface while U7 added three; U5's test name "
+     "promised the withdrawn note carrier; telemetry had no consent "
+     "disposition",
+     "§3b, §7a carriers row, U5, U7 ownership pointer",
+     "grep -n 'test_redisposition_carries_the_original_relation' "
+     "specs/0024-authorship-before-structural-quarantine.md"),
+    # ---- 0025 (L2) external round 2 -------------------------------------
+    ("0025", "external", 2, "R2-1",
+     "the round-1 shadow rule rejected the shipped DEFAULT_RELATIONS (it "
+     "contains third_party_claim) — ordinary ingestion could not start; and "
+     "the 'deep-copied immutable snapshot' wrapped mutable pydantic models",
+     "§4b-ii steps 3-5, X9, X11",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_the_shipped_default_registry_is_accepted + "
+     "vector_snapshot_resists_mutation_through_itself"),
+    ("0025", "external", 2, "R2-2",
+     "retry matching was not total: duplicate pairs double-recovered, a "
+     "reserved answer counted as recovery, two normalizations, retried "
+     "counted with no provider, §9 said per-triple, exceptions unspecified",
+     "§4b(1) rewritten, §9",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_duplicate_pairs_consume_one_to_one + "
+     "vector_reserved_retry_answer_is_residual_not_recovered + "
+     "vector_no_provider_means_retried_zero + "
+     "vector_provider_failures_degrade_recorded_never_raised"),
+    ("0025", "external", 2, "R2-3",
+     "Edge.original_relation broke the byte contracts: X6 false with None "
+     "serialized, receipt partition and pinned digest domain broken, "
+     "portability ungoverned",
+     "§2 field row (None-omission + receipts + FORMAT_VERSION), X6",
+     "$PY specs/evidence/0025/reference_enforcement.py  "
+     "# vector_unaffected_edge_is_byte_identical"),
+    ("0025", "external", 2, "R2-4",
+     "the §2c relation cell still claimed a truthy non-string is dropped — "
+     "the same cell round 1 corrected in 0024's twin matrix",
+     "§2c relation row",
+     "grep -n 'R2-4' specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 2, "R2-5",
+     "§3b said no new caller surface while counters and CLI/telemetry "
+     "changed; counter ownership was scattered across the pair",
+     "§3b, §4c (the single authority), 0024 U7 pointer",
+     "grep -n 'AUTHORITATIVE disposition' specs/0025-relation-vocabulary-enforcement.md"),
 ]

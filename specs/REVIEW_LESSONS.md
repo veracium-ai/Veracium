@@ -36,26 +36,24 @@ finding that does not exist, and so does a class with nothing in it.
 
 ## The classes
 
-**60 external findings, raised across 19 rounds, and 11 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
+**68 external findings, raised across 20 rounds, and 11 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
 
 | # | class | external | self-found | rounds it was raised in | recurred |
 |---|---|---|---|---|---|
-| 1 | **self-assertion** — A claim not produced by the thing it describes | 10 | 1 | 1, 4, 6, 8, 9, 12, 16 | **yes** |
+| 1 | **self-assertion** — A claim not produced by the thing it describes | 11 | 1 | 1, 2, 4, 6, 8, 9, 12, 16 | **yes** |
 | 2 | **proxy** — The check binds a stand-in, not the property | 14 | 0 | 1, 3, 5, 7, 10, 11, 18, 19, 20 | **yes** |
-| 3 | **second-copy** — The same fact stated twice | 16 | 0 | 1, 3, 4, 6, 7, 10, 13, 15, 16, 17 | **yes** |
-| 4 | **domain** — The rule's reach is not its domain | 15 | 6 | 1, 3, 4, 5, 6, 15, 17, 18, 19 | **yes** |
+| 3 | **second-copy** — The same fact stated twice | 19 | 0 | 1, 2, 3, 4, 6, 7, 10, 13, 15, 16, 17 | **yes** |
+| 4 | **domain** — The rule's reach is not its domain | 19 | 6 | 1, 2, 3, 4, 5, 6, 15, 17, 18, 19 | **yes** |
 | 5 | **self-reference** — The check reads what its own run produces | 0 | 3 | — | — |
 | 6 | **coercion** — A silent cast or default admits what the check meant to reject | 3 | 0 | 8, 13, 14 | **yes** |
 | 7 | **env-leak** — The producing environment leaked into the artifact | 2 | 0 | 10, 11 | **yes** |
 | 8 | **disclosure** — Behaviour that is correct but never stated to whoever must act on it | 0 | 1 | — | — |
 
-**The last finding that required a change to either specification was raised in round 6.** The 15 rounds that returned a verdict since (7–21) raised packaging and process findings only — 31 of the 71 findings here are spec-scoped, and every one of them is at or before round 6. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
+**The last finding that required a change to either specification was raised in round 6.** The 15 rounds that returned a verdict since (7–21) raised packaging and process findings only — 39 of the 79 findings here are spec-scoped, and every one of them is at or before round 6. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
 
 **6 of 8 classes recurred** — they were raised in more than one round, which means the first instance was fixed and the mechanism shipped again in another costume: `self-assertion`, `proxy`, `second-copy`, `domain`, `coercion`, `env-leak`. That is the finding this document exists for. It is derived from the rounds column, not asserted.
 
 **`self-reference`, `disclosure` were never raised by the reviewer** — they are the classes I found myself, while fixing something else. The previous hand-written version of this table attributed external finding ids to `self-reference`, which is how a document about second copies acquired one.
-
-**Gap in the source, derived not described:** round 2 was DISPATCHED and returned, and `specs/reviews.py` holds no verdict row for these specs — so a round that came back clean is indistinguishable from a round nobody recorded. The report is not in the repo (the reviewer asked that prior reports stay out of the package), so the row is not reconstructed here rather than guessed at. This sentence disappears when the gap is filled.
 
 <!-- /GENERATED:lessons-summary -->
 Each class, its rule, and what now catches it — the per-finding assignments

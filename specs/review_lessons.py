@@ -357,6 +357,30 @@ MECHANISM = {
     ("0025", 1, "F6"): ("proxy", "spec",
         "note prose stood in for a typed carrier of the original relation — "
         "spoofable and mechanically unrecoverable"),
+    # ---- the L-pair, external round 2 --------------------------------------
+    ("0024", 2, "R2-1"): ("domain", "spec",
+        "two round-1 fixes each proven in isolation were never composed over "
+        "the shared pipeline — the contradiction lived between the specs"),
+    ("0024", 2, "R2-2"): ("self-assertion", "spec",
+        "§8 restated an aspiration the construction does not prove — the "
+        "recurrence of round 1's F4, one door over"),
+    ("0024", 2, "R2-3"): ("second-copy", "spec",
+        "§3b's 'no new surface' and U5's test name both drifted from what "
+        "round 1's own fixes had made true"),
+    ("0025", 2, "R2-1"): ("domain", "spec",
+        "the shadow rule was never run against the shipped default registry — "
+        "the motivating adversary was checked, the ordinary input was not"),
+    ("0025", 2, "R2-2"): ("domain", "spec",
+        "the matching rule was total over the demo vectors, not over "
+        "duplicates, reserved answers, no-provider and exception cells"),
+    ("0025", 2, "R2-3"): ("domain", "spec",
+        "the typed-field fix enumerated spec carriers but not SERIALIZATION "
+        "carriers — bytes, digests, exports were all consumers"),
+    ("0025", 2, "R2-4"): ("second-copy", "spec",
+        "the same matrix cell was corrected in one spec and left in the twin"),
+    ("0025", 2, "R2-5"): ("second-copy", "spec",
+        "§3b contradicted §4c inside one spec, and counter ownership was "
+        "stated twice across the pair"),
 }
 
 
