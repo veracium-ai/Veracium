@@ -597,4 +597,73 @@ CLOSURES = [
      "against the closure ledger, with the table GENERATED from it), "
      "specs/REVIEW_LESSONS.md (counts and the duration removed from prose)",
      "$PY specs/review_lessons.py --check"),
+    # ---- 0024 (L1) external round 1 -------------------------------------
+    ("0024", "external", 1, "F1",
+     "the spec declared independence from 0025 while its rewrite target "
+     "`unclassified` is defined and protected there — without 0025 the member "
+     "is not registry-resident and a functional host shadow lets the rewrite "
+     "supersede",
+     "Spec-Requires header, the F1 blockquote",
+     "grep -n 'Spec-Requires' specs/0024-authorship-before-structural-quarantine.md  "
+     "# names 0005 AND 0025, with the coupling stated in the blockquote below it"),
+    ("0024", "external", 1, "F2",
+     "the coherence predicate was an intent, not a computation — the shipped "
+     "ingest str()-converts truthy non-strings, so subject=[\"user\"] survives "
+     "the completeness check and the predicate's domain was undefined over it",
+     "§4a, §2c (subject AND relation cells), U1",
+     "grep -n 'casefold' specs/0024-authorship-before-structural-quarantine.md  "
+     "# the canonical predicate, shared with the write site; odd types fail closed"),
+    ("0024", "external", 1, "F3",
+     "the invariant inventory existed in three drifted copies — §6 out of "
+     "order, §7a citing a W-range, the package header hand-typing a range one "
+     "past the real list",
+     "§6 (the ONE list), §7a tests row, collected_header_0024_0025.txt",
+     "grep -n 'ONE authoritative' specs/0024-authorship-before-structural-quarantine.md  "
+     "# and the header template now points at §6 instead of restating a count"),
+    ("0024", "external", 1, "F4",
+     "§8 claimed provenance accuracy in general; the rule corrects the "
+     "literal-user-subject cell (~40.7% of the measured mislabels), "
+     "prospectively, and the claim must not exceed it",
+     "§8",
+     "grep -n 'cell the rule recognizes' specs/0024-authorship-before-structural-quarantine.md"),
+    # ---- 0025 (L2) external round 1 -------------------------------------
+    ("0025", "external", 1, "F1",
+     "the rewrite could launder hearsay: a registry omitting "
+     "`third_party_claim` routes the extractor's quarantine relation through "
+     "the off-vocabulary path, and disclosure computed post-rewrite no longer "
+     "trips the quarantine test",
+     "§3 (the ordering), §4b-ii, X8/X9 widened, new X10",
+     "grep -n 'X10' specs/0025-relation-vocabulary-enforcement.md  "
+     "# disclosure from the ORIGINAL relation, before the rewrite, retained"),
+    ("0025", "external", 1, "F2",
+     "the retry was a description, not a construction — call count, prompt, "
+     "matching, episode and malformed-output behaviour all undefined",
+     "§4b(1)",
+     "grep -n 'exactly ONE provider call per EVENT' specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 1, "F3",
+     "X5 and X8 contradicted with no construction order (injection-first "
+     "makes the empty cell unreachable), key/name coherence was unstated, and "
+     "the registry could be mutated mid-event",
+     "§4b-ii, X5 restated, new X11",
+     "grep -n '4b-ii' specs/0025-relation-vocabulary-enforcement.md  "
+     "# five ordered steps, empty tested AS SUPPLIED, deep-copy snapshot"),
+    ("0025", "external", 1, "F4",
+     "the §3 matrix typed `prefers` non-functional 'by design'; shipped "
+     "schema.py:203 marks it functional=True — the matrix contradicted the "
+     "code it describes",
+     "§3 matrix",
+     "grep -n 'name=\"prefers\", functional=True' src/veracium/schema.py  "
+     "# the shipped flag the corrected row now states"),
+    ("0025", "external", 1, "F5",
+     "§2 said one new count while §4c and X4 said three, and no caller "
+     "surface (Memory/MCP/CLI/telemetry) was dispositioned",
+     "§2 result-dict row, §4c, §7a",
+     "grep -n 'STRIPS all three' specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 1, "F6",
+     "'preserved in the note' put the recovery carrier in free prose an LLM "
+     "also writes — unparseable back out and spoofable by note content",
+     "§4b(2), X3, §2 (`Edge.original_relation`), 0024 §4b(3)",
+     "grep -n 'original_relation' specs/0025-relation-vocabulary-enforcement.md "
+     "specs/0024-authorship-before-structural-quarantine.md  "
+     "# one typed carrier, both specs"),
 ]

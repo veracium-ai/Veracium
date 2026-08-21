@@ -80,7 +80,7 @@ finding that does not exist, and so does a class with nothing in it.
 ---
 
 ## The classes"""
-SPECS = ("0022", "0023")
+SPECS = ("0022", "0023", "0024", "0025")
 
 
 # key, title, the rule that follows from it, what mechanizes it now
@@ -326,6 +326,37 @@ MECHANISM = {
     ("0022", 14, "R14-2"): ("self-reference", "packaging",
         "R7-1's evidence selected the evidence RUNNER, whose nested child skips on "
         "the recursion marker, so half the command exercised nothing and exited 0"),
+    # ---- the L-pair, external round 1 --------------------------------------
+    ("0024", 1, "F1"): ("domain", "spec",
+        "the independence declaration was never checked against the rewrite's "
+        "actual dependency domain — the fallback member lives in 0025's registry"),
+    ("0024", 1, "F2"): ("proxy", "spec",
+        "'denotes the user themself' stood in for a computation, over a domain "
+        "the shipped str() conversion actually defines"),
+    ("0024", 1, "F3"): ("second-copy", "spec",
+        "the invariant list existed in three carriers and two drifted — "
+        "including a hand-typed count in the package header"),
+    ("0024", 1, "F4"): ("self-assertion", "spec",
+        "§8 asserted provenance accuracy in general while the rule corrects "
+        "one measured cell, prospectively"),
+    ("0025", 1, "F1"): ("domain", "spec",
+        "'orthogonal to trust' was not checked against the registry cell that "
+        "breaks it — a host dict omitting the quarantine relation"),
+    ("0025", 1, "F2"): ("self-assertion", "spec",
+        "'the shipped retry path' named a construction that existed nowhere — "
+        "no call count, matching, episode or malformed rule"),
+    ("0025", 1, "F3"): ("domain", "spec",
+        "three boundary properties were stated with no order over the "
+        "construction domain, and two of them contradict when injection runs first"),
+    ("0025", 1, "F4"): ("second-copy", "spec",
+        "the §3 matrix retyped DEFAULT_RELATIONS from memory and drifted from "
+        "the shipped functional flag"),
+    ("0025", 1, "F5"): ("second-copy", "spec",
+        "two in-spec carriers of the count contract disagreed (one key vs "
+        "three) and the caller surfaces were nowhere"),
+    ("0025", 1, "F6"): ("proxy", "spec",
+        "note prose stood in for a typed carrier of the original relation — "
+        "spoofable and mechanically unrecoverable"),
 }
 
 

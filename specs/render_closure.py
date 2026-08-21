@@ -224,7 +224,10 @@ def ledger_counts() -> dict:
     from closure_findings import CLOSURES
     import collections
     per = collections.Counter(c[0] for c in CLOSURES)
-    return {"total": len(CLOSURES), "per_spec": dict(sorted(per.items()))}
+    # "across the pair" names TRACKED — the ledger file now also carries other
+    # specs' rows (the L-line), and an unfiltered len() would claim them here.
+    return {"total": sum(per[s] for s in TRACKED),
+            "per_spec": dict(sorted(per.items()))}
 
 
 def main() -> int:
