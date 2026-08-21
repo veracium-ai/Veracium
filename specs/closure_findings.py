@@ -913,4 +913,26 @@ CLOSURES = [
      "grep -nF 'simulated by direct row edits' "
      "specs/0025-relation-vocabulary-enforcement.md  "
      "# the qualification, in the normative carrier"),
+    # ---- 0025 (L2) external round 8 -------------------------------------
+    ("0025", "external", 8, "R8-1",
+     "the §2 receipts cell survived three consolidations still directing a "
+     "write §4b-v refuses — the same document permitted and rejected "
+     "(NULL, v2)",
+     "§2 receipts cell (four-way summary + pointer, restating retired)",
+     "grep -nF 'SUMMARIZES and never restates' "
+     "specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 8, "R8-2",
+     "X13 demanded one test over a product its surfaces cannot express — "
+     "phase 1's unconditional snapshot, write-unreachable migrated states, "
+     "the snapshot-less read axis, pre-D2 never a new write",
+     "§4b-v per-surface reachability table, X13 restated as five tests",
+     "grep -nF 'named-unreachable' "
+     "specs/0025-relation-vocabulary-enforcement.md  "
+     "# the table names what each surface cannot reach"),
+    ("0025", "external", 8, "R8-3",
+     "0014's amendment stack was layered — the older phase-2-only summary "
+     "contradicted the appended both-sites contract, leaving phase 1 on "
+     "v1-only comparison for migrated receipts",
+     "the single consolidated 0014 header block",
+     "grep -nF 'replace, never layer' specs/0014-maintenance-attribution.md"),
 ]

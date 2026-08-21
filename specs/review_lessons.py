@@ -464,6 +464,16 @@ MECHANISM = {
     ("0025", 7, "R7-3"): ("second-copy", "spec",
         "the carrier sweep's own products drifted — labels, prints and "
         "claims one round behind the construction they describe"),
+    # ---- the L-pair, external round 8 --------------------------------------
+    ("0025", 8, "R8-1"): ("second-copy", "spec",
+        "the consolidation consolidated the section and left its §2 "
+        "restatement directing the forbidden write — one carrier out, again"),
+    ("0025", 8, "R8-2"): ("domain", "spec",
+        "the invariant quantified over a product its surfaces cannot "
+        "express — executability is part of an invariant's domain"),
+    ("0025", 8, "R8-3"): ("second-copy", "spec",
+        "corrections APPENDED to the co-owned carrier instead of replacing "
+        "it, leaving both versions of the rule live"),
 }
 
 
