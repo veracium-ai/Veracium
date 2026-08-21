@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.0 — 2026-08-21
 
 - **0004 + 0022 + 0023 — SOURCE REVOCATION, THE COMPLETE SEAM** (accepted
   atomically at external round 21 after twenty-one rounds; implemented
