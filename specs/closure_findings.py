@@ -871,7 +871,9 @@ CLOSURES = [
      "the domain matrix was total over domains and not over receipt "
      "states — the legal snapshot-less receipt had no cell",
      "§4b-vi (writer invariant + the total three-axis matrix)",
-     "grep -nF 'non-NULL **iff**' specs/0025-relation-vocabulary-enforcement.md  "
+     "grep -nF 'domain non-NULL iff digest non-NULL' "
+     "specs/0025-relation-vocabulary-enforcement.md  "
+     "# the invariant survives round 7's consolidation, scoped to new writes  "
      "# and the live vector: vector_snapshotless_receipt_takes_the_outcome_path_live"),
     ("0025", "external", 6, "R6-3",
      "four receipt carriers were stale: a phase-2 label on the phase-1 "

@@ -1,4 +1,4 @@
-"""The cross-era receipt contract through the LIVE product paths — 0025 §4b-v/§4b-vi.
+"""The cross-era receipt contract through the LIVE product paths — 0025 §4b-v (the consolidated contract).
 
 Round 5 (R5-1) moved this harness onto the shipped schema; round 6 (R6-1)
 found it still never REACHED either product comparison site — it fabricated
@@ -21,9 +21,10 @@ the REAL paths:
      STORE-level phase-2 OUTCOME comparison governs — which REFUSES the
      differing post-commit re-plan (the shipped identity-less semantics;
      the domain rule stays out of it, nothing double-applies);
-  5. the §4b-vi product matrix (stored digest × submitted snapshot ×
-     domain), run against the REAL migrated rows, including the writer
-     invariant's fail-closed cells.
+  5. the LIVE store-level phase-2 replay and era bite via same-plan
+     resubmission (round 7, R7-2 — the branch the reviewer drove first);
+  6. the §4b-v matrix over states READ BACK from real migrated rows,
+     including the read-side inconsistency cells.
 
 What this harness cannot do, stated plainly: the v2 comparison logic is
 0025's implementation and does not exist in the product yet, so cells that
@@ -73,11 +74,11 @@ def digest_under(domain: bytes, snapshot: dict) -> str:
 
 
 class EraRefusal(Exception):
-    """§4b-vi fail-closed: a receipt this code cannot interpret."""
+    """§4b-v fail-closed: a receipt this code cannot interpret."""
 
 
 def same_request(stored_digest, stored_domain, snapshot):
-    """The §4b-vi matrix over (request_digest, request_digest_domain, the
+    """The §4b-v matrix over (request_digest, request_digest_domain, the
     submitted snapshot) — the pre-D2 boundary and the outcome-only path
     are the shipped code's and PRECEDE/FOLLOW this rule (vectors 4-5 show
     them live). Returns True/False for a digest comparison; raises on the
@@ -171,7 +172,7 @@ def vector_snapshotless_receipt_takes_the_outcome_path_live():
     identity-less semantics, which here REFUSES because the post-commit
     re-plan is a different logical operation (exactly the limitation
     request identity exists to remove; 0014 R8-1). The domain rule plays
-    no part in this cell, no state is double-applied, and §4b-vi states
+    no part in this cell, no state is double-applied, and §4b-v states
     this behaviour rather than inventing a kinder one."""
     s, inc = live_store_with_committed_receipt()
     s._conn.execute("UPDATE supersession_operations SET request_digest=NULL "
@@ -194,35 +195,93 @@ def vector_snapshotless_receipt_takes_the_outcome_path_live():
     assert same_request(None, None, raw_request_snapshot(inc)) is None
 
 
+def vector_live_phase2_replay_and_era_bite():
+    """Round 7, R7-2 — the branch the reviewer drove first: the STORE-level
+    phase-2 comparison with BOTH digests present. The same plan resubmitted
+    directly to apply_supersession_plan() replays under v1; the stored
+    digest rewritten under the v2 domain makes the SAME resubmission raise
+    DIFFERENT request — the phase-2 era bite, live."""
+    from veracium.graph import _build_supersession_plan
+    s = SqliteStore(":memory:")
+    s.add_edge(_edge("e-prior", "chef", days_ago=200))
+    inc = _edge("e-inc", "carpenter")
+    plan, _ = _build_supersession_plan(s, inc, DEFAULT_RELATIONS,
+                                       f"sup-{inc.id}")
+    plan.raw_request = raw_request_snapshot(inc)
+    r1 = s.apply_supersession_plan(plan)          # commits, writes receipt
+    r2 = s.apply_supersession_plan(plan)          # SAME plan: lost-response
+    assert getattr(r2, "replayed", False) is True # phase 2 replay, LIVE
+    v2_digest = digest_under(DOMAIN_V2, raw_request_snapshot(inc))
+    s._conn.execute("UPDATE supersession_operations SET request_digest=? "
+                    "WHERE user_id=? AND operation_id=?",
+                    (v2_digest, U, f"sup-{inc.id}"))
+    s._conn.commit()
+    try:
+        s.apply_supersession_plan(plan)
+        raise AssertionError("phase 2 accepted a cross-era digest")
+    except SupersessionIntegrityError as e:
+        assert "DIFFERENT request" in str(e)      # phase 2 era bite, LIVE
+    # the proposed rule replays it: migrated NULL domain, dual-domain
+    assert same_request(v2_digest, None, raw_request_snapshot(inc)) is True
+
+
 def vector_the_product_matrix_on_real_migrated_rows():
-    """§4b-vi over the REAL migrated table: stored digest × submitted
+    """§4b-v over the REAL migrated table: stored digest × submitted
     snapshot × domain, including the writer invariant's fail-closed cells."""
     s, inc = live_store_with_committed_receipt()
     s._conn.execute(PROPOSED_ALTER)
     snap = raw_request_snapshot(inc)
-    rd, _, _ = fetch_receipt_row(s, f"sup-{inc.id}")
+    op = f"sup-{inc.id}"
+
+    def row_state(op_id):
+        # R7-2: the matrix consumes states READ BACK from the row, never
+        # literals passed around the store
+        return s._conn.execute(
+            "SELECT request_digest, request_digest_domain FROM "
+            "supersession_operations WHERE user_id=? AND operation_id=?",
+            (U, op_id)).fetchone()
+
+    def set_state(op_id, digest, domain):
+        s._conn.execute("UPDATE supersession_operations SET "
+                        "request_digest=?, request_digest_domain=? "
+                        "WHERE user_id=? AND operation_id=?",
+                        (digest, domain, U, op_id))
+        s._conn.commit()
+
     # digest present, domain NULL (post-migration legacy) → dual-domain
-    assert same_request(rd, None, snap) is True
-    assert same_request(rd, None, dict(snap, id="other")) is False
-    # digest present, valid domain → that domain only
-    assert same_request(digest_under(DOMAIN_V2, snap),
-                        DOMAIN_V2.decode(), snap) is True
-    assert same_request(digest_under(DOMAIN_V1, snap),
-                        DOMAIN_V2.decode(), snap) is False
-    # digest present, snapshot ABSENT → outcome-only (None), domain checked
-    assert same_request(rd, DOMAIN_V1.decode(), None) is None
+    rd, dom = row_state(op)
+    assert dom is None
+    assert same_request(rd, dom, snap) is True
+    assert same_request(rd, dom, dict(snap, id="other")) is False
+    # digest present, valid v2 domain → that domain only
+    set_state(op, digest_under(DOMAIN_V2, snap), DOMAIN_V2.decode())
+    rd, dom = row_state(op)
+    assert same_request(rd, dom, snap) is True
+    set_state(op, digest_under(DOMAIN_V1, snap), DOMAIN_V2.decode())
+    rd, dom = row_state(op)
+    assert same_request(rd, dom, snap) is False
+    # digest present, snapshot ABSENT → outcome-only; unknown domains refuse
+    set_state(op, digest_under(DOMAIN_V1, snap), DOMAIN_V1.decode())
+    rd, dom = row_state(op)
+    assert same_request(rd, dom, None) is None
     for bad in ("v2", "", "veracium.supersession-request.v9"):
+        set_state(op, digest_under(DOMAIN_V1, snap), bad)
+        rd, dom = row_state(op)
         try:
-            same_request(rd, bad, None)
+            same_request(rd, dom, None)
             raise AssertionError(f"not refused: {bad!r}")
         except EraRefusal:
             pass
     # digest ABSENT: domain NULL → outcome-only; domain present → refuse
-    assert same_request(None, None, snap) is None
-    for dom in (DOMAIN_V2.decode(), "garbage"):
+    set_state(op, None, None)
+    rd, dom = row_state(op)
+    assert same_request(rd, dom, snap) is None
+    for bad_dom in (DOMAIN_V2.decode(), "garbage"):
+        set_state(op, None, bad_dom)
+        rd, dom = row_state(op)
         try:
-            same_request(None, dom, snap)
-            raise AssertionError(f"not refused: digest-less + {dom!r}")
+            same_request(rd, dom, snap)
+            raise AssertionError(f"not refused: digest-less + {bad_dom!r}")
         except EraRefusal:
             pass
 
@@ -233,8 +292,9 @@ def main() -> int:
     for v in vectors:
         v()
         print(f"ok  {v.__name__}")
-    print(f"{len(vectors)} vectors through the LIVE paths — real store, "
-          f"product-written v4 receipts, both sites reached")
+    print(f"{len(vectors)} vectors: live phase-1 replay+bite, live "
+          f"phase-2 replay+bite (same-plan resubmission), snapshot-less "
+          f"outcome-refusal, and the §4b-v matrix over row-read states")
     return 0
 
 

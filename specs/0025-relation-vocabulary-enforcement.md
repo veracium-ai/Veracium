@@ -12,7 +12,7 @@ cache. Scheduled by Quentin 2026-08-17. Deliberately SEPARATE from `0024`
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v8** — external round 6 folded (2026-08-21): **R6-1** the era harness drives the LIVE product paths — a real store, a product-written version-4 receipt under the shipped v1 domain, the phase-1 replay, the era bite raised by the shipped comparison itself, the snapshot-less cell's honest outcome-refusal — no fabricated receipts, no wrapped stand-in sites; **R6-2** the §4b-vi receipt-state matrix is TOTAL (stored digest × submitted snapshot × domain) with the writer invariant (domain non-NULL iff digest non-NULL), the pre-D2 boundary preceding, and the shipped identity-less outcome semantics stated rather than softened; **R6-3** the phase labels, §7a both-sites row, the §7b single status, and the de-versioned reference docstring; **PACKAGE-R6-1** the header's duplicated measurement removed. *Prior:* **v7** — external round 5 folded (2026-08-21): **R5-1** the cross-era construction moved onto the SHIPPED topology — `supersession_operations.request_digest_domain` (no `receipts` table exists), the matrix applied INDEPENDENTLY at both comparison sites (public phase-1 `graph.py:149-151`, store phase-2), `supersession_receipt()` + the atomic INSERT carry the column, real schema/migration/manifest named, the era harness rebuilt on `schema_version.py`'s own DDL and both shapes, the wrong frozen reference vector replaced (it treated any present domain as v2 — the opposite of fail-closed); **R5-2** X6/§5 narrowed to the exactly-two preserved carriers (unaffected-edge JSON, prompt bytes) with receipts/schema/digests/export-bytes excluded honestly and the portability rule corrected (old readers REFUSE the new FORMAT_VERSION — the gate working); **R5-3** the §3 opening rewritten off the withdrawn original-relation rule onto post-coherence establishment + fallback retention; **R5-4** the §1 principal table moved to the script-exact figures (the one carrier round 4's sweep missed). *Prior:* **v6** — external round 4 folded (2026-08-21): **R4-1** the canonical reserved glosses stated VERBATIM (the shipped `third_party_claim` desc imported, never retyped; `unclassified`'s authored here), empty desc refused, the acceptance vector feeds the ACTUAL `DEFAULT_RELATIONS` objects; **R4-2** prompt renders in INSERTION order (sorting changed prompt bytes), X6 gains the exact-prompt-byte test, X11 moved to the three-field tuple; **R4-3** the last three-count copies retired, the public projection exact (new X12: `retry_calls` absent from the production result); **R4-4** the cross-era receipt contract construction-complete (§4b-v: field, closed value set, total decision matrix with fail-closed unknown domains, ADD-COLUMN migration, real-SQLite harness on the SHIPPED digest) and the `0014` amendment enumeration completed; **PAIR-R4-1** the corpus script computes every retained claim (48.1% combined reproduced exactly; the ~2.6% near-synonym figure requalified as unshipped semantic grouping — mechanical mass is 0). *Prior:* **v5** — external round 3 folded (2026-08-21): **R3-1** the snapshot freezes ALL prompt- and classification-bearing fields `(name, functional, desc)` and is the ONE registry for prompt, retry, membership and supersession; canonical reserved comparison covers the complete shipped form (desc drift refused, `DEFAULT_RELATIONS` still passes); **R3-2** §4c is THE counter inventory — five public keys incl. `0024`'s `redispositioned`, `retry_calls` reference-only, reconciliation statable publicly; **R3-3** `unclassified` is not extractor-selectable (§4b-iv) — the prompt renders the selectable set, a direct emission enters residual accounting; **R3-4** the receipt digest-domain bump gets a cross-era construction (durable domain version on new receipts, dual-domain comparison for legacy, no migration) and is BLOCKED on the accepted-`0014` co-owner interface-freeze amendment (§7b). `original_relation` defined once for the pair (0024 R3-2). *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** conflicting-shadow-only refusal (the shipped `DEFAULT_RELATIONS` passes — v3's rule rejected it) and the snapshot concretized as frozen `(name, functional)` extraction; **R2-2** retry totality — one-to-one multiset matching in occurrence order, ONE stated normalization (strip+casefold), recovered defined by the final stored relation, `invalid`/`retried` split so no-provider counts honestly, provider exceptions degrade recorded-never-raised, §9's per-triple sentence fixed; **R2-3** `Edge.original_relation` None-omission across every serialization, receipts partition + digest domain versioned, portability FORMAT_VERSION gated (X6 restated); **R2-4** the §2c relation cell corrected like `0024`'s; **R2-5** §3b surface complete, §4c the pair's single counter authority, telemetry under the consent contract. X10 narrowed to the vocabulary fallback (§4b-iii). *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** disclosure ordered before the rewrite (X10) and `third_party_claim` made a protected resident beside `unclassified` (X8/X9 widened); **F2** the retry constructed — one call per event, content-pair matching, discard rule, malformed no-op, reconciling counts; **F3** the effective-registry construction ordered (§4b-ii) with X5 pinned to the as-supplied dict and X11's immutable snapshot; **F4** the `prefers` matrix row corrected to shipped code; **F5** the three counts dispositioned on every caller surface; **F6** `Edge.original_relation` typed field replaces note prose (X3). *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **M2: the reserved member's RESIDENCY was unpinned, and that left the spec's own mechanism able to violate its own X1** — a host registry omitting `unclassified` would make the fallback write a non-member, and a host defining it as FUNCTIONAL would let every unclassified triple supersede. It is now a module constant on the `QUARANTINE_RELATION` pattern, injected into every effective registry and refused if shadowed (**X8**, **X9**). Also folded: **X4** splits into `retried`/`recovered`/`residual` so the re-run can attribute movement, and §7b states the pair composition. Ratified unchanged: the non-superseding ruling, polarity-first with X7, refuse-vs-remap, Q2's separation. |
+| **Version** | **v9** — external round 7 folded (2026-08-21): **R7-1** the receipt contract CONSOLIDATED into one §4b-v (the split §4b-v/§4b-vi had diverged: stamping vs NULL-domain rules, two owners for `NULL`, an unscoped writer invariant) — `NULL` means "no domain recorded" with one comparison rule branching on the DIGEST; the write rule scoped to digest-bearing new receipts; the writer invariant to NEW WRITES ONLY; the read-side inconsistency rule named; and the co-owned `0014` amendment now carries the complete contract verbatim, both sites and the full matrix; **R7-2** the live STORE-level phase-2 replay AND era bite via same-plan resubmission (the branch the reviewer drove first), the matrix vector consuming states READ BACK from rows, and new X13 — a table-driven acceptance invariant over the complete receipt-state product at write/read/phase-1/phase-2; **R7-3** the remaining labels fixed and the harness's claims made exact — v8's "no fabricated receipts" is qualified: cross-era states are simulated by direct row edits on product-written rows, stated as such. *Prior:* **v8** — external round 6 folded (2026-08-21): **R6-1** the era harness drives the LIVE product paths — a real store, a product-written version-4 receipt under the shipped v1 domain, the phase-1 replay, the era bite raised by the shipped comparison itself, the snapshot-less cell's honest outcome-refusal — no fabricated receipts, no wrapped stand-in sites; **R6-2** the §4b-vi receipt-state matrix is TOTAL (stored digest × submitted snapshot × domain) with the writer invariant (domain non-NULL iff digest non-NULL), the pre-D2 boundary preceding, and the shipped identity-less outcome semantics stated rather than softened; **R6-3** the phase labels, §7a both-sites row, the §7b single status, and the de-versioned reference docstring; **PACKAGE-R6-1** the header's duplicated measurement removed. *Prior:* **v7** — external round 5 folded (2026-08-21): **R5-1** the cross-era construction moved onto the SHIPPED topology — `supersession_operations.request_digest_domain` (no `receipts` table exists), the matrix applied INDEPENDENTLY at both comparison sites (public phase-1 `graph.py:149-151`, store phase-2), `supersession_receipt()` + the atomic INSERT carry the column, real schema/migration/manifest named, the era harness rebuilt on `schema_version.py`'s own DDL and both shapes, the wrong frozen reference vector replaced (it treated any present domain as v2 — the opposite of fail-closed); **R5-2** X6/§5 narrowed to the exactly-two preserved carriers (unaffected-edge JSON, prompt bytes) with receipts/schema/digests/export-bytes excluded honestly and the portability rule corrected (old readers REFUSE the new FORMAT_VERSION — the gate working); **R5-3** the §3 opening rewritten off the withdrawn original-relation rule onto post-coherence establishment + fallback retention; **R5-4** the §1 principal table moved to the script-exact figures (the one carrier round 4's sweep missed). *Prior:* **v6** — external round 4 folded (2026-08-21): **R4-1** the canonical reserved glosses stated VERBATIM (the shipped `third_party_claim` desc imported, never retyped; `unclassified`'s authored here), empty desc refused, the acceptance vector feeds the ACTUAL `DEFAULT_RELATIONS` objects; **R4-2** prompt renders in INSERTION order (sorting changed prompt bytes), X6 gains the exact-prompt-byte test, X11 moved to the three-field tuple; **R4-3** the last three-count copies retired, the public projection exact (new X12: `retry_calls` absent from the production result); **R4-4** the cross-era receipt contract construction-complete (§4b-v: field, closed value set, total decision matrix with fail-closed unknown domains, ADD-COLUMN migration, real-SQLite harness on the SHIPPED digest) and the `0014` amendment enumeration completed; **PAIR-R4-1** the corpus script computes every retained claim (48.1% combined reproduced exactly; the ~2.6% near-synonym figure requalified as unshipped semantic grouping — mechanical mass is 0). *Prior:* **v5** — external round 3 folded (2026-08-21): **R3-1** the snapshot freezes ALL prompt- and classification-bearing fields `(name, functional, desc)` and is the ONE registry for prompt, retry, membership and supersession; canonical reserved comparison covers the complete shipped form (desc drift refused, `DEFAULT_RELATIONS` still passes); **R3-2** §4c is THE counter inventory — five public keys incl. `0024`'s `redispositioned`, `retry_calls` reference-only, reconciliation statable publicly; **R3-3** `unclassified` is not extractor-selectable (§4b-iv) — the prompt renders the selectable set, a direct emission enters residual accounting; **R3-4** the receipt digest-domain bump gets a cross-era construction (durable domain version on new receipts, dual-domain comparison for legacy, no migration) and is BLOCKED on the accepted-`0014` co-owner interface-freeze amendment (§7b). `original_relation` defined once for the pair (0024 R3-2). *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** conflicting-shadow-only refusal (the shipped `DEFAULT_RELATIONS` passes — v3's rule rejected it) and the snapshot concretized as frozen `(name, functional)` extraction; **R2-2** retry totality — one-to-one multiset matching in occurrence order, ONE stated normalization (strip+casefold), recovered defined by the final stored relation, `invalid`/`retried` split so no-provider counts honestly, provider exceptions degrade recorded-never-raised, §9's per-triple sentence fixed; **R2-3** `Edge.original_relation` None-omission across every serialization, receipts partition + digest domain versioned, portability FORMAT_VERSION gated (X6 restated); **R2-4** the §2c relation cell corrected like `0024`'s; **R2-5** §3b surface complete, §4c the pair's single counter authority, telemetry under the consent contract. X10 narrowed to the vocabulary fallback (§4b-iii). *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** disclosure ordered before the rewrite (X10) and `third_party_claim` made a protected resident beside `unclassified` (X8/X9 widened); **F2** the retry constructed — one call per event, content-pair matching, discard rule, malformed no-op, reconciling counts; **F3** the effective-registry construction ordered (§4b-ii) with X5 pinned to the as-supplied dict and X11's immutable snapshot; **F4** the `prefers` matrix row corrected to shipped code; **F5** the three counts dispositioned on every caller surface; **F6** `Edge.original_relation` typed field replaces note prose (X3). *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **M2: the reserved member's RESIDENCY was unpinned, and that left the spec's own mechanism able to violate its own X1** — a host registry omitting `unclassified` would make the fallback write a non-member, and a host defining it as FUNCTIONAL would let every unclassified triple supersede. It is now a module constant on the `QUARANTINE_RELATION` pattern, injected into every effective registry and refused if shadowed (**X8**, **X9**). Also folded: **X4** splits into `retried`/`recovered`/`residual` so the re-run can attribute movement, and §7b states the pair composition. Ratified unchanged: the non-superseding ruling, polarity-first with X7, refuse-vs-remap, Q2's separation. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 moderate + minors), folded here |
 | **External review** | required — changes what reaches the supersession machinery |
@@ -399,96 +399,74 @@ its bucket.
   through the system's own fallback (this spec's §4b and `0024`'s
   re-disposition), which stays registry-resident under X1.
 
-#### 4b-v. The cross-era receipt contract — construction-complete (external round 4, R4-4, blocking)
+#### 4b-v. The receipt contract — ONE section, consolidated (external round 7, R7-1, blocking)
 
-Round 3 ruled the SHAPE (durable version, dual-domain legacy comparison,
-no migration); round 4 found it not implementable as written. The durable
-interface, exact:
+Rounds 4-6 grew this contract across two subsections that diverged:
+§4b-v said EVERY new receipt stamps a domain while §4b-vi ruled
+digest-less receipts domain-NULL, gave `NULL` two owners (pre-amendment
+vs snapshot-less) and left the writer invariant unscoped over migrated
+rows — an implementer following one subsection produced rows the other
+refused. Consolidated here; the old §4b-vi is merged and gone.
 
 - **Field:** `supersession_operations.request_digest_domain TEXT NULL`
-  (external round 5, R5-1, blocking: v6 named a `receipts` table that
-  does not exist — the shipped receipt carrier is
-  `supersession_operations`, `schema_version.py:208`, already ALTERed
-  once by the `0014` v6 migration). A new nullable column, added by
-  `ALTER TABLE supersession_operations ADD COLUMN request_digest_domain
-  TEXT` at the next `SCHEMA_VERSION` bump — the exact convention of the
-  three v6 ALTERs beside it (`schema_version.py:294-296`) — with the
-  schema manifest and its evidence regenerated in the same commit.
-- **Values:** the FULL domain string, self-describing — the closed set is
+  (round 5, R5-1: the shipped receipt carrier, `schema_version.py:208`),
+  added by `ALTER TABLE supersession_operations ADD COLUMN
+  request_digest_domain TEXT` at the next `SCHEMA_VERSION` bump — the v6
+  ALTER convention (`schema_version.py:294-296`) — with the schema
+  manifest and its evidence regenerated in the same commit.
+- **Values:** the FULL domain string; the closed set is
   `{"veracium.supersession-request.v1",
-  "veracium.supersession-request.v2"}` at this amendment; each future
-  domain amendment extends the set explicitly. The shipped v1 constant is
-  `contribution.py:147`; v2 is the same construction over the
-  None-omission serialization (§2).
-- **Write path:** every new receipt stamps the domain constant its digest
-  was computed under, in the SAME atomic INSERT that stores the digest —
-  which means `supersession_receipt()` (`store/sqlite.py:486`) returns
-  the column and the receipt-writing site includes it (R5-1: the writer
-  and reader are named surfaces, not implications).
-- **The decision matrix applies INDEPENDENTLY AT BOTH comparison sites
-  (R5-1: v6 said "phase-2" and mislabelled `graph.py`'s comparison —
-  request digests are compared in TWO product paths, and fixing only one
-  leaves a public retry raising "different request" at the other before
-  the dual-domain logic can run):**
-  1. the PUBLIC pre-plan phase-1 comparison (`graph.py:149-151`), and
-  2. the STORE-level phase-2 comparison (`store/sqlite.py`).
-  The matrix, total, the same at each site:
-
-| stored `request_digest_domain` | comparison |
-|---|---|
-| `NULL` (every pre-amendment receipt) | DUAL-DOMAIN: recompute under v1 AND v2; a match under EITHER identifies the SAME request → replay |
-| `"…request.v1"` | compare under v1 only |
-| `"…request.v2"` | compare under v2 only |
-| any other value (malformed, unknown future, empty string) | **FAIL CLOSED — a named refusal, like a forged snapshot: never replayed, never classified as a new request.** An unknown version is a receipt this code cannot interpret, and guessing either way risks a double-apply or a false conflict |
-
-- **Evidence is the REAL construction:**
-  `specs/evidence/0025/receipt_era_harness.py` builds the SHIPPED
-  `supersession_operations` table from `schema_version.py`'s own DDL,
-  inserts a legacy receipt using the SHIPPED
-  `contribution.request_digest` and `REQUEST_DIGEST_DOMAIN`, applies the
-  `ADD COLUMN` migration, and exercises every matrix row AT BOTH
-  comparison shapes — including the malformed-value refusal (R5-1: the
-  v6 harness's two-column stand-in table repeated, one level down, the
-  lossy-stand-in defect it existed to close). The implementation adds
-  phase-1 AND phase-2 tests for legacy/v1/v2/NULL/malformed/unknown/
-  true-mismatch.
-#### 4b-vi. The receipt-state matrix, total (external round 6, R6-2, blocking)
-
-§4b-v's matrix covered the DOMAIN axis and forgot the RECEIPT-STATE axis:
-current writers legally produce `(request_digest=NULL,
-outcome_digest_version=4, response=json)` — a snapshot-less receipt with
-no digest to stamp a domain for. The total rule:
-
-- **The writer invariant:** `request_digest_domain` is non-NULL **iff**
-  `request_digest` is non-NULL. A domain describes a digest; stamping one
-  on a digest-less receipt fabricates metadata, and a row violating this
-  is an uninterpretable receipt (fail closed, below).
+  "veracium.supersession-request.v2"}` at this amendment. The shipped v1
+  constant is `contribution.py:147`; v2 is the same construction over
+  the None-omission serialization (§2).
+- **What `NULL` MEANS: "no domain recorded"** — two legal origins, ONE
+  meaning (R7-1 dissolved the two-owners ambiguity): every pre-amendment
+  (migrated) receipt, digest-bearing or not; and every NEW digest-less
+  receipt (nothing to describe). The comparison column below branches on
+  the DIGEST, not on which origin produced the NULL.
+- **The write rule, scoped (R7-1):** a NEW receipt THAT CARRIES A DIGEST
+  stamps that digest's domain in the same atomic INSERT
+  (`supersession_receipt()` at `store/sqlite.py:486` returns the column;
+  the writing site includes it). A NEW digest-less receipt stores
+  `NULL`. **The writer invariant — domain non-NULL iff digest non-NULL —
+  governs NEW WRITES ONLY**; migrated rows legally hold a digest with a
+  `NULL` domain and are the dual-domain row below.
+- **The read-side inconsistency rule:** `(digest NULL, domain non-NULL)`
+  is produced by NO legal writer — not migration, not the new write rule
+  — and REFUSES on sight (fail closed).
 - **The pre-D2 boundary PRECEDES everything here:** a receipt with
   `outcome_digest_version < 4` refuses ON SIGHT (`0016` D2), before any
   domain or digest logic — unchanged.
-- **The full product matrix** (stored digest × submitted snapshot ×
-  stored domain), at both comparison sites:
+- **The decision matrix — stored digest × submitted snapshot × stored
+  domain — applies INDEPENDENTLY at BOTH comparison sites: the PUBLIC
+  phase-1 pre-plan comparison (`graph.py:149-151`) and the STORE-level
+  phase-2 comparison (`store/sqlite.py`). The same matrix at each:**
 
 | stored digest | submitted snapshot | stored domain | decision |
 |---|---|---|---|
-| present | present | `NULL` | dual-domain compare (v1 OR v2 → same request) |
+| present | present | `NULL` (migrated) | dual-domain compare: recompute under v1 AND v2; a match under EITHER is the SAME request → replay |
 | present | present | valid v1 / v2 | that domain only |
-| present | present | unknown/malformed | **REFUSE** (fail closed) |
+| present | present | unknown/malformed (incl. empty string) | **REFUSE** — fail closed, like a forged snapshot: never replayed, never classified as a new request |
 | present | absent | `NULL` / valid | the SHIPPED outcome comparison governs; the domain is not consulted |
-| present | absent | unknown/malformed | **REFUSE** — an uninterpretable receipt is refused uniformly, even when no digest comparison would run |
-| `NULL` | any | `NULL` | the SHIPPED outcome comparison governs (both the migrated-legacy and the new snapshot-less forms) — which may legitimately REFUSE a retry whose post-commit re-plan differs: the accepted identity-less semantics, stated here rather than softened |
-| `NULL` | any | non-NULL (any value) | **REFUSE** — the writer invariant is violated; the receipt is inconsistent |
+| present | absent | unknown/malformed | **REFUSE** — an uninterpretable receipt refuses uniformly, even when no digest comparison would run |
+| `NULL` | any | `NULL` | the SHIPPED outcome comparison governs (migrated-legacy and new snapshot-less alike) — which may legitimately REFUSE a retry whose post-commit re-plan differs: the accepted identity-less semantics, stated rather than softened |
+| `NULL` | any | non-NULL (any value) | **REFUSE** — the read-side inconsistency rule |
 
-The live harness drives the reachable rows through the ACTUAL
-`apply_supersession()` path (a product-written version-4 receipt, the
-phase-1 replay, the era bite, the snapshot-less outcome refusal) and the
-proposed rows against real migrated rows.
-
-- **The `0014` amendment enumerates every affected surface** — see its
-  header blockquote: the domain constant and digest function, the
-  complete-dump serializer against the None-omission rule, the receipts
-  DDL and `SCHEMA_VERSION` migration, `graph.py`'s phase-2 comparison,
-  the total field-partition test, and portability.
+- **The acceptance invariant is X13** (round 7, R7-2): a table-driven
+  test over this COMPLETE product at write, at read, at phase 1 and at
+  phase 2 — including malformed domains, the digest/domain inconsistency
+  row, and pre-D2 precedence.
+- **Evidence:** `specs/evidence/0025/receipt_era_harness.py` drives the
+  LIVE paths — a product-written version-4 receipt, the phase-1 replay
+  and phase-1 era bite, the STORE-level phase-2 replay and phase-2 era
+  bite via same-plan resubmission (round 7, R7-2: the reviewer drove
+  this branch first), the snapshot-less outcome-refusal — and the
+  proposed matrix rows against states read back from real migrated rows.
+  Cross-era states are simulated by direct row edits on product-written
+  rows, stated as such.
+- **The `0014` amendment carries THIS section verbatim** — the co-owned
+  contract includes the full matrix and both sites (R7-1: the round-6
+  amendment text still said phase-2-only and lacked the matrix).
 
 **Why not refuse the triple.** Refusal destroys extracted content because
 the extractor picked a synonym. The cost lands on the user's memory, not
@@ -579,6 +557,7 @@ this codebase has had.
 | **X8** | BOTH reserved members — `unclassified` AND `third_party_claim` — are present in EVERY effective registry, injected structurally rather than expected; a host cannot remove either (external round 1, F1 extended the rule to the quarantine relation) | `test_reserved_members_are_always_resident` (including registries omitting each, and both) |
 | **X9** | a host entry CONFLICTING with either reserved name's canonical definition is REFUSED at the boundary, before injection; an exactly-matching entry is accepted — the shipped `DEFAULT_RELATIONS` must pass (external round 2, R2-1) | `test_conflicting_reserved_shadow_is_refused` — both names, functional shadows refused, canonical matches accepted, AND the shipped default registry accepted verbatim |
 | **X10** | disclosure on a VOCABULARY-rewritten triple equals disclosure established BEFORE the vocabulary fallback ran — the fallback never changes an established disclosure (external round 2, R2-1: v3's "from the ORIGINAL relation" contradicted `0024` §4b, whose COHERENCE rewrite legitimately changes the semantic state disclosure is computed FOR; X10 is now scoped to the vocabulary fallback alone, and §4b-iii states the one combined pipeline) | `test_vocabulary_fallback_never_changes_disclosure` — includes the laundering cell AND the cross-spec ordering vector (an incoherent triple whose coherence rewrite yields MENTIONABLE is CORRECT; an off-vocabulary hearsay-shaped relation keeps its pre-fallback disclosure) |
+| **X13** | the receipt-state contract holds over the COMPLETE §4b-v product — stored digest × submitted snapshot × stored domain — at write, at read, at phase 1 and at phase 2, including malformed domains, the digest/domain inconsistency row, the new-writes-only scope of the writer invariant, and pre-D2 precedence (external round 7, R7-2: the matrix had no acceptance invariant, so its seams were unguarded) | `test_receipt_state_matrix_is_total` — table-driven over every cell, at all four surfaces |
 | **X12** | the production ingest result carries EXACTLY the §4c public counter keys — `retry_calls` (and any future reference-only counter) is ABSENT | `test_public_counter_projection_is_exact` — asserts the precise key delta between a pre-0025 result and a post-0025 result, both directions |
 | **X11** | the effective registry is an immutable per-event snapshot of frozen internal `(name, functional, desc)` records (round 4, R4-2: this row had not moved with §4b-ii's round-3 three-field rule); mutation of the host's dict, the host's `Relation` objects, OR anything reachable through the snapshot changes nothing for that event (round 2, R2-1: a read-only mapping around mutable values is not deeply immutable) | `test_registry_snapshot_is_immutable` — mutates THROUGH the snapshot, not only the caller's copy |
 | **X5** | the host registry AS SUPPLIED is validated at the API boundary — shape, key == `Relation.name` for every entry, and non-empty — BEFORE reserved-member injection, so injection can never mask an empty or malformed registry (§4b-ii order; external round 1, F3) | `test_empty_registry_is_refused` — plus `test_mismatched_key_is_refused` |
@@ -606,7 +585,7 @@ this codebase has had.
 | `src/veracium/schema.py` | both reserved registry members (non-functional), and the `Edge.original_relation` field |
 | `src/veracium/prompts.py` | non-normative tightening; the prompt already lists the registry |
 | the ingest result dict | the §4c public counters, present on every path. **Compatibility: hosts read this dict — the keys are ADDITIVE and no existing key changes meaning**, the same discipline `0023` applied to its `quarantined` count |
-| `src/veracium/contribution.py` / `store/schema_version.py` / `store/sqlite.py` / `graph.py` | the v2 digest domain constant; the `request_digest_domain` column + `SCHEMA_VERSION` migration; receipt write-path stamping; the §4b-v/§4b-vi decision matrix at BOTH sites — the public phase-1 comparison (`graph.py`) AND the store phase-2 — with the `0014` partition/migration tests for each (round 4 R4-4 added this row; round 6 R6-3 fixed its phase-2-only phrasing) |
+| `src/veracium/contribution.py` / `store/schema_version.py` / `store/sqlite.py` / `graph.py` | the v2 digest domain constant; the `request_digest_domain` column + `SCHEMA_VERSION` migration; receipt write-path stamping; the consolidated §4b-v receipt contract at BOTH sites — the public phase-1 comparison (`graph.py`) AND the store phase-2 — with X13's table-driven receipt-state test and the `0014` partition/migration tests (round 7 R7-1 consolidated the split sections this row used to cite) |
 | `Memory.remember` / MCP / CLI / telemetry | pass-through / STRIPS the §4c public counters (consistent with its existing count removal) / prints them / gains the fields (§4c, consent-gated) |
 | tests | the §6 table's named tests — §6 is the ONE authoritative invariant list (the v2 range here had already drifted from it; same F3-class defect `0024` fixed in its §7a) |
 | docs / CHANGELOG | a behaviour-change entry: extracted relations are now constrained to the registry |
@@ -616,7 +595,7 @@ this codebase has had.
 | spec | touchpoint | disposition |
 |---|---|---|
 | **`0024`** | the mislabelling of `third_party_claim`, **and its re-disposition target** | **COMPOSITION, STATED (internal M3): `0024`'s coherence test runs FIRST — `third_party_claim` is in the registry, so enforcement would pass it through untouched — and its fallback IS this spec's `unclassified`, so the rewrite is registry-resident under X1. A corrected user statement therefore becomes assertable but NON-SUPERSEDING, which `0024` §4b-i adopts as a chosen cell rather than inheriting as an accident. ORTHOGONAL, AND MUST NOT SHARE A FREEZE.** `third_party_claim` is IN the registry, so nothing here touches that defect, and `0024` does not reduce the off-vocabulary population. **The operative reason is measurement: a shared freeze makes the movement unattributable between two levers of very different size** (~35% vs one contradiction class) |
-| **`0014`** | the frozen raw-request receipt contract | **AMENDED. The one status, stated once (round 6, R6-3: this cell said "pending" and "authorized" in the same breath):** the amendment was AUTHORIZED by Quentin (co-owner) 2026-08-21 and is recorded in `0014`'s header blockquote, corrected to the shipped topology in round 5; the external reviewer has NOT yet CONFIRMED it — confirmation follows the R6-1/R6-2 construction being accepted. The `Edge.original_relation` None-omission changes the complete-dump bytes the receipt digest covers; the cross-era rule is the §4b-v/§4b-vi construction |
+| **`0014`** | the frozen raw-request receipt contract | **AMENDED. The one status, stated once (round 6, R6-3: this cell said "pending" and "authorized" in the same breath):** the amendment was AUTHORIZED by Quentin (co-owner) 2026-08-21 and is recorded in `0014`'s header blockquote, corrected to the shipped topology in round 5; the external reviewer has NOT yet CONFIRMED it — confirmation follows the R6-1/R6-2 construction being accepted. The `Edge.original_relation` None-omission changes the complete-dump bytes the receipt digest covers; the cross-era rule is the consolidated §4b-v construction |
 | **`0012`** | reinforcement and the independence condition | **`Spec-Requires`, because this spec changes WHICH edges reach the supersession path at all.** 0012's rule that a restatement transfers nothing is unchanged; what changes is that ~35% more triples are eligible to be considered in the first place |
 | **`0003`** | the supersession ladder and refusal records | CONSUMED unchanged. More edges reach the ladder; the ladder decides as it always has |
 | **`0019`** | the `ungrounded` flag | untouched — flagged at extraction, independent of relation |

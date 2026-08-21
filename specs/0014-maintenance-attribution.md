@@ -19,31 +19,43 @@ Spec-Requires: 0006, 0007, 0013
 > receipts are never migrated. (4) A true mismatch refuses exactly as
 > today. (5) Frozen vectors:
 > `specs/evidence/0025/reference_enforcement.py::vector_receipt_digest_crosses_eras`.
-> **Enumeration and matrix (corrected under `0025` round 5, R5-1 — the
-> round-4 form named a `receipts` table that does not exist and one
-> comparison site of two; the external reviewer marked the amendment NOT
-> CONFIRMED until this correction):** the durable field is
-> `supersession_operations.request_digest_domain TEXT NULL` storing the
-> FULL domain string from the closed set
-> {`veracium.supersession-request.v1`, `…​.v2`}; the affected surfaces,
-> all moving in the implementation commit: `contribution.py`'s domain
-> constant and `request_digest` (unchanged construction, second domain
-> constant), the raw-request complete-dump serializer against `0025`'s
-> None-omission rule, the `supersession_operations` `ADD COLUMN`
-> migration in the v6 ALTER convention + schema manifest/evidence
-> regeneration (`schema_version.py`), the decision matrix applied
-> INDEPENDENTLY at BOTH comparison sites — the public pre-plan phase-1
-> comparison (`graph.py:149-151`) and the store-level phase-2 comparison
-> (`store/sqlite.py`) — (NULL → dual-domain; a stored valid domain →
-> that domain only; malformed/unknown → FAIL-CLOSED named refusal, never
-> replayed, never a new request), `supersession_receipt()` and the
-> atomic receipt INSERT carrying the column, the total field-partition
-> test (`Edge.original_relation` classified), and portability's
-> FORMAT_VERSION gate. Real-schema evidence:
-> `specs/evidence/0025/receipt_era_harness.py` (the shipped
-> `supersession_operations` DDL, both comparison shapes). Nothing
-> changes behaviour until `0025` lands — the amendment is recorded now
-> so the freeze moves by AUTHORIZATION, not by implementation drift.
+> **The complete contract (consolidated under `0025` round 7, R7-1 —
+> earlier forms named one site, then split across two subsections that
+> diverged; the reviewer's confirmation waits on this text):** the
+> durable field is `supersession_operations.request_digest_domain TEXT
+> NULL` (FULL domain string; closed set
+> {`veracium.supersession-request.v1`, `…​.v2`}). **`NULL` means "no
+> domain recorded"** — every pre-amendment (migrated) receipt,
+> digest-bearing or not, and every NEW digest-less receipt. **Write
+> rule:** a new receipt THAT CARRIES A DIGEST stamps that digest's
+> domain in the same atomic INSERT; a new digest-less receipt stores
+> `NULL`; the writer invariant (domain non-NULL iff digest non-NULL)
+> governs NEW WRITES ONLY. **Read rule:** `(digest NULL, domain
+> non-NULL)` is produced by no legal writer and refuses on sight. **The
+> matrix — stored digest × submitted snapshot × stored domain — applies
+> INDEPENDENTLY at BOTH comparison sites** (the public pre-plan phase-1
+> comparison, `graph.py:149-151`, and the store-level phase-2
+> comparison, `store/sqlite.py`): digest+snapshot+NULL → dual-domain (a
+> match under either is the SAME request); +valid domain → that domain
+> only; +unknown/malformed → FAIL-CLOSED named refusal, never replayed,
+> never a new request; digest present + snapshot absent → the shipped
+> outcome comparison (domain not consulted; unknown domains still
+> refuse); digest NULL + domain NULL → the shipped identity-less
+> outcome semantics, which may legitimately refuse a differing
+> post-commit re-plan. The pre-D2 boundary (`0016` D2,
+> outcome_digest_version < 4 refuses on sight) PRECEDES all of it.
+> Affected surfaces, all moving in the implementation commit:
+> `contribution.py`'s second domain constant, the raw-request
+> complete-dump serializer against `0025`'s None-omission rule, the
+> `ADD COLUMN` migration in the v6 ALTER convention + schema
+> manifest/evidence regeneration, both comparison sites,
+> `supersession_receipt()` and the atomic INSERT, `0025` X13's
+> table-driven receipt-state test, the total field-partition test
+> (`Edge.original_relation` classified), and portability's
+> FORMAT_VERSION gate. Live-path evidence:
+> `specs/evidence/0025/receipt_era_harness.py`. Nothing changes
+> behaviour until `0025` lands — the amendment is recorded now so the
+> freeze moves by AUTHORIZATION, not by implementation drift.
 
 > **draft (v19, 2026-08-10) — round 15 folded (ONE bin-(a); R14-1's carrier binding held
 > in content but not at its boundaries):** the carrier verifier is STRICT and SHARED
