@@ -219,6 +219,8 @@ def _changed_from_previous(line: str, version: str,
                 if m.isfile():
                     new[m.name.removeprefix("./")] = _hashlib.sha256(
                         tf.extractfile(m).read()).hexdigest()
+    sys.path.insert(0, str(SPECS))
+    import evidence_transcript
     LOOSE = {"COLLECTED.txt", "COLLECTED_pytest_rs.txt",
              "PACKAGE_MANIFEST.txt", "CHANGED_FROM_PREVIOUS.txt",
              evidence_transcript.REL_PATH}
