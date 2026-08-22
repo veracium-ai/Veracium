@@ -183,7 +183,7 @@ def refuse_placeholders(*texts_and_names):
 # diff exclusion, manifest generation, and the extra dict.
 LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
                   "PACKAGE_MANIFEST.txt",
-                  "specs/evidence/live_transcript.jsonl",  # evidence_transcript.REL_PATH, asserted below
+                  "specs/generated/evidence_run.json",  # evidence_transcript.REL_PATH — asserted at seal time
                   "CHANGED_FROM_PREVIOUS.txt")
 
 
