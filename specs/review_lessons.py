@@ -492,6 +492,15 @@ MECHANISM = {
     ("0025", 10, "R10-2"): ("second-copy", "packaging",
         "the de-count left the enumeration; the enumeration drifted; the "
         "authority is now the code's own tuple, guarded"),
+    # ---- the L-pair, external round 11 -------------------------------------
+    ("0025", 11, "R11-1"): ("second-copy", "spec",
+        "the header announced a confirmation the body still denied"),
+    ("0025", 11, "PACKAGE-R11-1"): ("env-leak", "packaging",
+        "the regression assumed the sealing host's git checkout — the one "
+        "environment difference the review extraction is DEFINED by"),
+    ("0025", 11, "PACKAGE-R11-2"): ("second-copy", "packaging",
+        "the single-authority fix created a second authority one function "
+        "away"),
 }
 
 

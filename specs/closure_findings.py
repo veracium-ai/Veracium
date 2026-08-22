@@ -982,4 +982,26 @@ CLOSURES = [
      "$PY -m pytest tests/test_spec_gate.py::"
      "test_changed_from_previous_orders_numerically_and_skips_same_version "
      "-q  # real tiny archives, v9/v10/v11, same-version excluded"),
+    # ---- 0025 (L2) external round 11 ------------------------------------
+    ("0025", "external", 11, "R11-1",
+     "§7b still recorded the 0014 amendment as unconfirmed while the "
+     "spec's own header announced the round-10 confirmation",
+     "§7b (the confirmation recorded)",
+     "grep -nF 'CONFIRMED by the external reviewer in round 10' "
+     "specs/0025-relation-vocabulary-enforcement.md"),
+    ("0025", "external", 11, "PACKAGE-R11-1",
+     "the numeric-selector regression invoked git archive and crashed in "
+     "the reviewer's extraction (no .git), taking the closure-evidence "
+     "gate with it",
+     "seal_package._select_prior_archive (pure), the reshaped regression",
+     "$PY -m pytest tests/test_spec_gate.py::"
+     "test_changed_from_previous_orders_numerically_and_skips_same_version "
+     "-q  # runs on supplied paths — no git, extraction-safe"),
+    ("0025", "external", 11, "PACKAGE-R11-2",
+     "LOOSE and LOOSE_CARRIERS were two copies of the claimed single "
+     "authority",
+     "the module-level LOOSE_CARRIERS constant + the seal-time REL_PATH "
+     "assertion",
+     "grep -nF 'ONE authority for the loose-carrier names' "
+     "specs/seal_package.py"),
 ]
