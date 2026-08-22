@@ -178,6 +178,30 @@ def refuse_placeholders(*texts_and_names):
                   f"— round 5 shipped PLACEHOLDER_TS exactly this way")
 
 
+# ONE authority for the loose-carrier names (round 11, PACKAGE-R11-2: the
+# diff-exclusion set and the manifest/extra tuple were two copies): drives
+# diff exclusion, manifest generation, and the extra dict.
+LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
+                  "PACKAGE_MANIFEST.txt",
+                  "specs/evidence/live_transcript.jsonl",  # evidence_transcript.REL_PATH, asserted below
+                  "CHANGED_FROM_PREVIOUS.txt")
+
+
+def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
+    """PURE numeric prior-selection (round 11, PACKAGE-R11-1: the regression
+    must run in an EXTRACTED review package, where there is no .git — so the
+    selection logic owns no git call). Returns the newest archive of the
+    line with a numeric version strictly below `version`, or None."""
+    def _key(p: pathlib.Path):
+        m = re.match(rf"{re.escape(line)}-v(\d+)-(\d+T\d+Z)\.tar\.gz$",
+                     p.name)
+        return (int(m.group(1)), m.group(2)) if m else None
+    cur = int(version.lstrip("v"))
+    priors = sorted((p for p in outbox.glob(f"{line}-v*.tar.gz")
+                     if _key(p) and _key(p)[0] < cur), key=_key)
+    return priors[-1] if priors else None
+
+
 def _changed_from_previous(line: str, version: str,
                            outbox: pathlib.Path) -> str:
     """Member-level diff against the newest prior same-line archive found on
@@ -188,19 +212,10 @@ def _changed_from_previous(line: str, version: str,
     import gzip as _gzip
     import hashlib as _hashlib
     import io as _io
-    # Round 9 (R9-3): numeric version + timestamp ordering — lexicographic
-    # picked v9 over v10, and same-version reseals were not excluded.
-    def _key(p: pathlib.Path):
-        m = re.match(rf"{re.escape(line)}-v(\d+)-(\d+T\d+Z)\.tar\.gz$",
-                     p.name)
-        return (int(m.group(1)), m.group(2)) if m else None
-    cur = int(version.lstrip("v"))
-    priors = sorted((p for p in outbox.glob(f"{line}-v*.tar.gz")
-                     if _key(p) and _key(p)[0] < cur), key=_key)
-    if not priors:
+    prior = _select_prior_archive(line, version, outbox)
+    if prior is None:
         return ("No prior archive of this line was present on the sealing "
                 "host — diff SKIPPED, named here rather than omitted.\n")
-    prior = priors[-1]
     prior_sha = _hashlib.sha256(prior.read_bytes()).hexdigest()
 
     def member_hashes(tgz: pathlib.Path) -> dict:
@@ -227,11 +242,7 @@ def _changed_from_previous(line: str, version: str,
                 if m.isfile():
                     new[m.name.removeprefix("./")] = _hashlib.sha256(
                         tf.extractfile(m).read()).hexdigest()
-    sys.path.insert(0, str(SPECS))
-    import evidence_transcript
-    LOOSE = {"COLLECTED.txt", "COLLECTED_pytest_rs.txt",
-             "PACKAGE_MANIFEST.txt", "CHANGED_FROM_PREVIOUS.txt",
-             evidence_transcript.REL_PATH}
+    LOOSE = set(LOOSE_CARRIERS)
     added = sorted(k for k in new.keys() - old.keys() if k not in LOOSE)
     removed = sorted(k for k in old.keys() - new.keys() if k not in LOOSE)
     changed = sorted(k for k in new.keys() & old.keys()
@@ -730,12 +741,11 @@ def main() -> int:
             header = header.replace(k, v)
             manifest = manifest.replace(k, v)
 
-        # R10-2: ONE authority for the loose-carrier names — this tuple
-        # drives both the manifest's generated list and the extra dict
-        # below; a hand enumeration drifted twice.
-        LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
-                          "PACKAGE_MANIFEST.txt", evidence_transcript.REL_PATH,
-                          "CHANGED_FROM_PREVIOUS.txt")
+        # R10-2/R11-2: the module-level LOOSE_CARRIERS is the one authority;
+        # its hardcoded transcript path is asserted against the live module.
+        if evidence_transcript.REL_PATH not in LOOSE_CARRIERS:
+            _fail("LOOSE_CARRIERS does not carry evidence_transcript.REL_PATH "
+                  "— the one authority drifted from the module it names")
         loose_lines = "\n".join(f"  - {k}" for k in sorted(LOOSE_CARRIERS))
         header = header.replace("__LOOSE__", loose_lines)
         manifest = manifest.replace("__LOOSE__", loose_lines)
