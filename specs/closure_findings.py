@@ -1002,6 +1002,10 @@ CLOSURES = [
      "authority",
      "the module-level LOOSE_CARRIERS constant + the seal-time REL_PATH "
      "assertion",
-     "grep -nF 'ONE authority for the loose-carrier names' "
-     "specs/seal_package.py"),
+     "$PY -c \"import ast, sys; tree = ast.parse(open('specs/seal_package.py').read()); "
+     "names = [n.id for node in ast.walk(tree) if isinstance(node, ast.Assign) "
+     "for n in node.targets if isinstance(n, ast.Name) and n.id == 'LOOSE_CARRIERS']; "
+     "sys.exit(0 if len(names) == 1 else 1)\"  "
+     "# the reviewer's own round-12 check, adopted: exactly ONE assignment "
+     "PROVES the single authority — a grep only located its comment"),
 ]

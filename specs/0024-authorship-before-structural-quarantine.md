@@ -1,6 +1,6 @@
 # Feature spec: the user's own words are not third-party testimony (L1)
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0005, 0025
 
 > **external round 1, F1 (blocking):** v2 declared independence while its
@@ -27,7 +27,7 @@ measurement.*
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-22** — external round 12, on the frozen **U1–U7** invariant surface (package `0024-0025-v12`, sha `5a91e736…`, commit `68555fe`); simultaneous with its pair partner per the round-12 verdict. The `0014` interface-freeze confirmation stands separately |
 | **Path** | full |
 
 ---

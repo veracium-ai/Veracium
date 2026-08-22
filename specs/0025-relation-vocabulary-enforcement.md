@@ -1,6 +1,6 @@
 # Feature spec: the relation vocabulary is closed, or it is not a vocabulary (L2)
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0012
 
 *Found by dev while checking research's `prefers`-catch-all observation
@@ -16,7 +16,7 @@ cache. Scheduled by Quentin 2026-08-17. Deliberately SEPARATE from `0024`
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 moderate + minors), folded here |
 | **External review** | required — changes what reaches the supersession machinery |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-22** — external round 12, on the frozen **X1–X13** invariant surface (package `0024-0025-v12`, sha `5a91e736…`, commit `68555fe`); simultaneous with its pair partner per the round-12 verdict. The `0014` interface-freeze confirmation stands separately |
 | **Path** | full |
 
 ---
