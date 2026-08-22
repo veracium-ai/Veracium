@@ -133,10 +133,15 @@ FINDINGS = [
          # I9 is PlanStale). Verified still open in code: __init__.correct()
          # calls store.invalidate_edge + writes supersedes= directly.
     dict(id="M8-wiki", title="the wiki serves a revoked trust decision",
-         owner="0004", disposition="open", implementation="none",
-         release=None, advisory=None, test="0004 W1–W4",
+         owner="0004", disposition="resolved", implementation="shipped",
+         release="0.13.0", advisory=None, test="tests/test_0004_wiki_revocation.py (W1–W4)",
          released_defect="a cached wiki outlives the revocation of its inputs",
-         current_defect="no wiki drop on a trust-reducing invalidation"),
+         current_defect=None,
+         resolution="the 0004 W-series landed with 0022/0023 (0.13.0): a "
+                    "trust-reducing invalidation drops the wiki "
+                    "(WIKI_RETAINING_REASONS names the benign reasons that "
+                    "keep it); this row lagged the implementation by two "
+                    "days — caught in the 2026-08-22 spec-table audit"),
     dict(id="M6-import", title="`import_memory` has no trust boundary",
          owner="0005", disposition="resolved", implementation="shipped",
          release="0.9.0", advisory=None, test="tests/test_0005_import_boundary.py (P1–P16)",
