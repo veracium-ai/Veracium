@@ -18,7 +18,7 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           # full history: specs/render_index.py derives every spec's `updated`
           # column from `git log -1` on the file, and the STATUS gate compares
@@ -29,7 +29,7 @@ jobs:
           # spec-reference gate failed that push — correctly. Trailer carried
           # by the follow-up commit that added this note.)
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -51,10 +51,10 @@ jobs:
     name: pytest (pydantic==2.7.0 floor)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -76,8 +76,8 @@ jobs:
     name: build & twine check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -91,7 +91,7 @@ jobs:
     name: spec reference on trust-surface changes
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: "Check for Spec: trailers"
