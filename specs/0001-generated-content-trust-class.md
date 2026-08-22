@@ -352,7 +352,7 @@ because rendered text becomes model context and a new phrasing is a change to
 what the model reads. No assistant edge reaches the grounded block without
 `confirm()`.
 
-### 4b. Rendering — ⚠️ ONE OPEN DECISION
+### 4b. Rendering — the decision, RESOLVED (Q5) and partly shipped
 
 Attribution must survive into the rendered context, or the class is pointless:
 the whole finding from Workstream C is that a system with nowhere to *put*
@@ -433,9 +433,12 @@ fixture ever caught it because small stores never truncate.*
 - **Scale / density.** Assistant turns are the *most numerous* event type in a
   chat deployment — plausibly the majority of all events, where third-party mail
   is a minority. So this class arrives at a volume the third-party path never
-  reached, and it lands mostly in **mentionable**. The regime that matters is a
-  store where assistant edges dominate the subgraph budget
-  (`max_subgraph_edges`, default 40) and crowd out user facts by sheer count.
+  reached, and it lands entirely in **`use_only`** *(v4 carrier sweep: this
+  bullet still said "mostly mentionable")*. The regime that matters is a store
+  where assistant edges dominate the **unverified block's** share of the
+  rendered context and the subgraph budget (`max_subgraph_edges`, default 40),
+  crowding user facts by sheer count — a PROMPT-SURFACE load pattern, not an
+  assertion one, but the model still reads what the block carries.
   **This is a genuinely new load pattern for the ranker, and the pilot corpus
   will not show it** — LongMemEval items average ~1,700 facts with a balanced
   mix.
@@ -514,13 +517,17 @@ improving recall.
   `0007`, accepted and shipped in v0.5.0 — Q3 is struck as resolved.)*
 - **Partial failure.** No new multi-step operation; nothing to leave half-done.
   Permanent errors are not retried into a silent empty success (unchanged).
-- **New attack surface?** **Yes, and it is the point of the design.** This
-  admits a new class of externally-influenced content into `mentionable`.
-  The containment is that it is admitted **only for non-user subjects**, where
-  the assistant is the primary witness, and never for claims about the user.
-  Prompt injection that induces an assistant to state *"the deploy succeeded"*
-  will now be storable as mentionable. Injection inducing *"the user agreed to
-  X"* remains capped.
+- **New attack surface?** **No new assertion channel — that is v3/v4's whole
+  point** *(v4 carrier sweep: this cell still described the withdrawn v2
+  admission into `mentionable`)*. Every assistant edge is `use_only`; prompt
+  injection that induces an assistant statement gets an edge the gate never
+  asserts, whatever its subject. **The surface that DOES grow is the fenced
+  residual** (the 0023 §8 lesson, stated here so the reviewer meets it
+  pre-stated): `use_only` assistant text still enters model context in the
+  unverified block, attributed but present, at assistant-turn VOLUME — and
+  injection does not require assertion. The bound is §5's budget analysis
+  plus I6, not a fence around the prompt. `confirm()` remains the single
+  promotion path, and it is a user act on rendered-with-attribution text.
 
   **v1 claimed this was "bounded by the fact that such a claim was already
   reaching the user directly in the same turn". That bound is deleted — it does
@@ -545,22 +552,27 @@ improving recall.
   - It does **not** improve our LongMemEval score, and is **expected not to**:
     `184da446` and its class stay unanswered by design. Any post-change score
     movement is unattributed unless a frozen protocol says otherwise.
-  - It does **not** make assistant content trustworthy. It gives a hallucination
-    about a non-user subject a route to `mentionable` — a deliberate,
-    bounded trade, not a safety improvement.
+  - It does **not** make assistant content trustworthy, and it does **not**
+    make it groundable *(v4 carrier sweep: this bullet still described the
+    withdrawn mentionable route)*: a first-party assistant report ("the
+    deploy succeeded") stays unverified until the evidence-basis axis exists
+    to ground it on the TOOL's authority rather than the assistant's word.
+    What it buys is honest labelling — hosts stop calling assistant content
+    `SYSTEM`.
   - The 7/8-vs-8/8 abstention figure is **one question on an 8-item abstention
     subset from a single 44-item pilot run** (`20260730T174434`). It motivated
     the direction; it does not measure this change and cannot.
   - A passing injection ladder is *"no failures observed on the frozen suite"*,
     never "safe against prompt injection".
-  - **It admits a new class of externally-influenced content into
-    `mentionable`, and we have no bound on that exposure.** An assistant
-    induced to state something false about a non-user subject can have it
-    stored as assertable. We considered arguing this is limited because the
-    claim also reached the user live, and **withdrew that argument**: the turn
-    is ephemeral, the store is persistent and re-injected into contexts
-    increasingly distant from the one that would have made it suspicious. The
-    containment is the subject rule, not the utterance.
+  - **It does not bound the fenced residual** *(v4 carrier sweep: this bullet
+    still described the withdrawn mentionable exposure and its subject-rule
+    containment — both gone)*: `use_only` assistant text enters the prompt's
+    unverified block at assistant-turn volume, attributed but present, and
+    injection does not require assertion (0023 §8). The historical argument
+    stands and generalises — the turn is ephemeral, the store is persistent
+    and re-injected into contexts increasingly distant from the one that
+    would have made a false statement look suspicious. The containment is
+    the never-asserted gate plus the budget analysis, not a fence.
 - **Measurements cited:** LongMemEval V1-S pilot, run `20260730T174434`, arm C,
   commit `ce66282`; Arm T comparison from the same pilot. Neither run is
   decision-eligible under the current policy (no freeze artifact) — cited as
@@ -570,29 +582,46 @@ improving recall.
 
 ## 9. Brief for the external reviewer
 
-- **What we are least sure of.**
-  (1) **Subject-based disclosure routing.** `subject` was a rendering field and
-  now gates assertability; it is extractor-produced, so a mis-extracted subject
-  silently changes trust. Is that too much weight for a field we do not control?
-  (2) **`ASSISTANT × ASSISTANT` merging.** They share a disclosure class, so
-  today they merge. Two hallucinations reinforcing each other into higher
-  confidence is a plausible failure we have not designed against.
-  (3) Whether **`mentionable` is right at all** for first-party assistant
-  testimony, versus a stricter default with opt-in narrowing.
-- **Where we suspect we have overstated.** §7's claim that the injection
-  widening is "bounded by the fact that the claim already reached the user in
-  the same turn" — that is an argument, not a measurement, and it is doing a lot
-  of load-bearing work.
-- **What would change our minds.** Evidence that hosts cannot reliably attribute
-  turns (making the whole class noise); or a construction where an assistant
-  edge about a non-user subject launders into a claim about the user.
-- **Added after internal review — please look hardest here.**
-  **Self-corroboration.** Two assistant statements of the same fact now
-  *deduplicate* but must not refresh currency (§3.2 Q1), on the reasoning that
-  confidence takes `max` and so synthesises nothing, while `observed_at` would
-  otherwise let a model keep its own hallucination alive forever by repeating
-  it. If you have watched self-corroboration fail in another system, this is
-  the part of the design most likely to be naive.
+*(Rewritten for v4 — the v3 brief asked you to scrutinise three questions
+that no longer exist: subject routing was withdrawn with v2, Q1 resolved
+ASSISTANT×ASSISTANT, and the `mentionable` question is moot when nothing
+routes there. The old brief is in the git history; asking you to audit
+dissolved questions would waste the round.)*
+
+- **What we are least sure of, v4.**
+  (1) **The assistant authority rung (§2d.1).** 0003 pre-provisioned
+  `assistant` at rung 1 — above `third_party`, below `system` — and v4
+  ratifies it. The argument: an in-conversation identified source outranks
+  hearsay. The counter-argument we could not kill: a prompt-injected
+  assistant is an ATTACKER-INFLUENCED source, and rung 1 lets its edge
+  supersede a third-party-authored prior. Is "above third_party" right for
+  a class whose statements an attacker can shape in-band?
+  (2) **The origin label as model-visible text (§4b).** "assistant-generated"
+  in the unverified block tells the model these are its own prior claims.
+  Does naming the class invite self-conditioning — the model treating its
+  own past output as quotable precedent — in a way an unattributed fence
+  would not? (The alternative, suppressing attribution, failed review in
+  0022/0023: unlabelled fenced text is worse.)
+  (3) **The fenced residual at assistant-turn volume (§5, §7, §8).**
+  `use_only` assistant text enters the prompt's unverified block at the
+  highest event volume in the system. Injection does not require assertion.
+  The bound is a budget analysis (I6), not a fence — is that enough?
+- **Where we suspect we have overstated.** §2d.1's claim that ratifying the
+  pre-provisioned rung needs **no `RULE_VERSION` bump** because no existing
+  pair can flip. The argument is enumerative (old members' rungs untouched;
+  ASSISTANT pairs previously unconstructible) — please attack it; a missed
+  flip path re-opens 0011's historical-refusal re-evaluation concern.
+- **What would change our minds.** Evidence that hosts cannot reliably
+  attribute turns (making the whole class noise); a construction where a
+  `use_only` assistant edge reaches assertion without `confirm()` — through
+  the wiki compiler, consolidation's min-trust derivation, an import
+  round-trip, or any path §2d missed; or a demonstration that rung 1
+  composes badly with 0024's pending author/relation reordering.
+- **Standing from the v3 round.** Your one blocking amendment is closed in
+  shipped code (§12 annotation; §2c-ii carries the evidence commands). The
+  I10a self-corroboration design (dedup yes, currency refresh never) stands
+  unchanged from v3 — if you have watched self-corroboration fail in
+  another system, that remains the part most likely to be naive.
 - **Reviewer-safe copy:** not required — no competitive-audit detail or
   unpublished findings here.
 

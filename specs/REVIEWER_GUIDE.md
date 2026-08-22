@@ -227,6 +227,15 @@ nested garbage, force the escape, make cleanup raise, exercise the *other* carri
 value moves* and asserts a record still exists.
 
 ### What "green" means, precisely
+- **Since C-plus (2026-08-22), `COLLECTED.txt` is itself machine-verified**:
+  the archive carries `collected_header.json` — a structured record derived
+  from captured raw outputs (`RUNTIME_PROBE.json`, `LAUNCHER_TRANSCRIPT.txt`,
+  the `-rs` capture), validated against a code-owned field-policy registry
+  the record cannot downgrade — and `python specs/verify_extracted.py header`
+  recomputes the ENTIRE file byte-for-byte from record + template + inventory
+  and re-runs every field's witness, from your extraction. If you check one
+  thing by hand, check that this passes; everything below remains true and is
+  what the record binds.
 - **`COLLECTED.txt` is the authoritative expectation** — this guide carries NO frozen counts
   (R11-4/0014: a hardcoded count triple here drifted three releases behind the suite and
   contradicted the package it shipped in; counts live where they are measured). Each package's
