@@ -92,7 +92,8 @@ def render(spec: str) -> str:
     counts = ledger_counts()
     out.append(f"**Per-finding closure ledger — PROCESS §4a.** "
                f"**{counts['per_spec'].get(spec, 0)} finding(s) for `{spec}`; "
-               f"{counts['total']} across the pair** — every number here is "
+               f"{counts['total']} across the {len(TRACKED)} tracked specs** "
+               f"— every number here is "
                f"DERIVED from the rows below (external round 7, R7-1: the "
                f"manifest claimed 26 while the ledgers held 31, and 0023 said "
                f"9/9 above a 10-row table). Generated from "
@@ -224,8 +225,9 @@ def ledger_counts() -> dict:
     from closure_findings import CLOSURES
     import collections
     per = collections.Counter(c[0] for c in CLOSURES)
-    # "across the pair" names TRACKED — the ledger file now also carries other
-    # specs' rows (the L-line), and an unfiltered len() would claim them here.
+    # the total counts TRACKED — and the SENTENCE derives its own scope
+    # ("N tracked specs"), so growing TRACKED cannot strand a "pair" claim
+    # (which is exactly what happened when the L-pair joined at acceptance).
     return {"total": sum(per[s] for s in TRACKED),
             "per_spec": dict(sorted(per.items()))}
 
