@@ -2620,3 +2620,21 @@ def test_changed_from_previous_orders_numerically_and_skips_same_version():
         (outbox / "0024-0025-vX-garbage.tar.gz").write_bytes(b"x")
         assert pick("0024-0025", "v12", outbox).name.startswith(
             "0024-0025-v11-")
+
+
+def test_citation_version_matches_the_released_version():
+    """CITATION.cff sat at 0.2.4 through eleven releases — GitHub renders
+    it, so every citation carried the wrong version, and the Aug-1 TASKS
+    reconciliation had marked it done on PRESENCE alone. A rendered second
+    copy of the version needs a gate: this binds it to pyproject's, so a
+    release bump that forgets the citation fails the suite instead of
+    shipping."""
+    import pathlib, re
+    root = pathlib.Path(__file__).resolve().parent.parent
+    pyproject = (root / "pyproject.toml").read_text()
+    released = re.search(r'^version = "([^"]+)"', pyproject, re.M).group(1)
+    citation = (root / "CITATION.cff").read_text()
+    cited = re.search(r"^version: (\S+)$", citation, re.M).group(1)
+    assert cited == released, (
+        f"CITATION.cff says {cited}, pyproject says {released} — the "
+        f"citation is rendered by GitHub and must move with the release")
