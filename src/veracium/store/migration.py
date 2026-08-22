@@ -200,6 +200,32 @@ def _apply_forward(conn: sqlite3.Connection, base: int) -> None:
                 diff="the v7->v8 ALTER produced DDL that does not byte-match the "
                      "recorded evidence (0019 rider C2 / 0021 §7b) — the migration "
                      "or runtime is wrong; the expectation never moves")
+    # specs/0025 §4b-v (the confirmed 0014 amendment): crossing INTO v10
+    # ALTERs `supersession_operations` — the nullable cross-era domain
+    # column. Same shape as the v6/v8 blocks: the table's typed key exists
+    # in the base (v4+), its CHANGED DDL is invisible to the additive diff,
+    # and the ONE ADD COLUMN's measured result must byte-match a frozen
+    # expectation. TWO accepted expectations exist because v9 stores hold
+    # the table in two accepted DDL variants (fresh-constructor vs the
+    # v5->v6 ALTER path); the migration may not define its own destination.
+    # Migrated rows keep request_digest_domain NULL — §4b-v's dual-domain
+    # comparison row; the migration NEVER fabricates a domain.
+    if 4 <= base < 10 <= SCHEMA_VERSION:
+        from .schema_version import (ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
+                                     ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL,
+                                     ALTERS_V9_TO_V10)
+        for stmt in ALTERS_V9_TO_V10:
+            conn.execute(stmt)
+        stored = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' "
+            "AND name='supersession_operations'").fetchone()[0]
+        if stored not in (ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
+                          ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL):
+            raise StoreVersionError(
+                "", base, SCHEMA_VERSION, "unsupported-migration",
+                diff="the v9->v10 ALTER produced DDL matching NEITHER frozen "
+                     "expectation (0025 §4b-v) — the migration or runtime is "
+                     "wrong; the expectations never move")
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 

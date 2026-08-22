@@ -73,18 +73,22 @@ def test_consent_text_token_mention_matches_the_payload():
 
 
 def test_the_expected_token_fields_are_exactly_the_0017_eight():
-    """specs/0017 §2: the eight fields over the four (role, event) pairs —
-    no more, no fewer, at min consent version 3."""
+    """specs/0017 §2: the eight fields over the four (role, event) pairs at
+    min consent version 3 — plus, since specs/0025 (accepted), the retry
+    producer's pair at version 4. No more, no fewer."""
     from veracium.telemetry import FIELD_MIN_VERSION
     token_pairs = {(e, f) for e, fs in EVENT_FIELDS.items()
                    for f in fs if "tok" in f}
     assert token_pairs == {
         ("ingest", "distill_in_tok"), ("ingest", "distill_out_tok"),
+        ("ingest", "distill_retry_in_tok"),
+        ("ingest", "distill_retry_out_tok"),
         ("answer", "gate_in_tok"), ("answer", "gate_out_tok"),
         ("recall", "compile_in_tok"), ("recall", "compile_out_tok"),
         ("maintain", "compile_in_tok"), ("maintain", "compile_out_tok")}
     for pair in token_pairs:
-        assert FIELD_MIN_VERSION.get(pair) == 3, pair
+        want = 4 if "retry" in pair[1] else 3
+        assert FIELD_MIN_VERSION.get(pair) == want, pair
 
 
 def test_consent_text_claims_map_to_real_fields():

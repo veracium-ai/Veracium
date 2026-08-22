@@ -48,7 +48,12 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
 # specs/0019: v6 added the `ungrounded` flag (same refuse-don't-drop rule).
-FORMAT_VERSION = 7  # specs/0016 D2 (0019 rider A3): the source_type-less
+FORMAT_VERSION = 8  # specs/0025 §2: the Edge.original_relation era — the
+                    # field appears in exports only when non-None (the
+                    # None-omission rule keeps unaffected edge payloads
+                    # byte-identical); a v7 export imports absent→None; OLD
+                    # readers REFUSE v8 — the gate working, not a failure.
+                    # (v7: specs/0016 D2 / 0019 rider A3, the source_type-less
                     # file — a v7 export omits the deleted key entirely; an
                     # OLD build's Provenance REQUIRED source_type, so without
                     # the bump a new export died there as a pydantic error —

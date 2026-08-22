@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+- **0025 — THE RELATION VOCABULARY IS CLOSED** (accepted with 0024 at
+  external round 12 after twelve rounds; implemented 2026-08-22; 0024's
+  own mechanism remains measurement-frozen pending Research's baseline).
+  Extracted relations are now constrained to the registry: the host's
+  `relations` dict is validated at the `ingest_event` boundary (empty and
+  conflicting-reserved-shadow registries refuse with `RegistryError`), the
+  reserved members `unclassified` and `third_party_claim` are always
+  resident, and every stored relation is registry-resident. Off-vocabulary
+  relations take ONE re-extraction retry per event (its own `distill-retry`
+  usage role); the residual lands on `unclassified` with the original
+  relation in the new typed `Edge.original_relation` field — omitted from
+  every serialization when None, so unaffected edges stay byte-identical.
+  The ingest result gains five counters (`invalid`/`retried`/`recovered`/
+  `residual`/`redispositioned`, zeros present on every path); the MCP tool
+  result strips them; telemetry carries them at consent schema v4. SQLite
+  SCHEMA v10 adds `supersession_operations.request_digest_domain`: new
+  digest-bearing receipts stamp the v2 request-digest domain, migrated
+  receipts compare dual-domain — lost-response retries now replay across
+  the era boundary (the confirmed `0014` interface amendment) — and
+  uninterpretable domains refuse with `ReceiptDomainError`. Export
+  `FORMAT_VERSION` 8 (a v7 file imports absent→None; old readers refuse
+  v8).
+
 ## 0.13.0 — 2026-08-21
 
 - **0004 + 0022 + 0023 — SOURCE REVOCATION, THE COMPLETE SEAM** (accepted

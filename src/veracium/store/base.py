@@ -88,6 +88,15 @@ class SupersessionIntegrityError(Exception):
     caller integrity bug, not a race — so it raises rather than replaying or retrying."""
 
 
+class ReceiptDomainError(SupersessionIntegrityError):
+    """specs/0025 §4b-v, the fail-closed cells: a stored request-digest
+    domain this code cannot interpret (unknown/malformed value), or the
+    read-side inconsistency no legal writer produces (a domain stamped on a
+    digest-less receipt). Never replayed, never classified as a new
+    request — guessing either way risks a double-apply or a false
+    conflict."""
+
+
 class ReceiptSchemaBoundaryError(SupersessionIntegrityError):
     """specs/0016 D2 — the receipt ERA boundary (0003 §4f as amended). The
     stored receipt committed under a pre-D2 digest projection

@@ -488,14 +488,19 @@ class SqliteStore(Store):
         identity, projection version, and persisted effects, or None."""
         row = self._conn.execute(
             "SELECT logical_request_digest, status, request_digest, response, "
-            "outcome_digest_version FROM supersession_operations "
+            "outcome_digest_version, request_digest_domain "
+            "FROM supersession_operations "
             "WHERE user_id=? AND operation_id=?",
             (user_id, operation_id)).fetchone()
         if row is None:
             return None
         self.validate_receipt_state(row[2], row[4], row[3])   # flagged at read
+        # specs/0025 §4b-v read rule: a domain on a digest-less receipt is a
+        # row no legal writer produces — surfaced by the matrix at the
+        # comparison sites (ReceiptDomainError), carried through here.
         return {"logical_request_digest": row[0], "status": row[1],
                 "request_digest": row[2], "response": row[3],
+                "request_digest_domain": row[5],
                 "outcome_digest_version": row[4]}
 
     @staticmethod
@@ -508,7 +513,9 @@ class SqliteStore(Store):
         return SupersessionResult(**effects, replayed=True)
 
     def apply_supersession_plan(self, plan: SupersessionPlan):
-        from ..contribution import (effect_payload, request_digest,
+        from ..contribution import (CURRENT_DIGEST_DOMAIN, effect_payload,
+                                    receipt_request_matches,
+                                    request_digest_under,
                                     verify_snapshot_against_plan)
         inc = plan.incoming_edge
         user_id = inc.user_id
@@ -527,10 +534,11 @@ class SqliteStore(Store):
             #    always the v4 projection: the era gate admits no other stored version.
             row = self._conn.execute(
                 "SELECT logical_request_digest, request_digest, response, "
-                "outcome_digest_version FROM supersession_operations "
+                "outcome_digest_version, request_digest_domain "
+                "FROM supersession_operations "
                 "WHERE user_id=? AND operation_id=?", (user_id, plan.operation_id)).fetchone()
             if row is not None:
-                stored_outcome, stored_rd, stored_resp, stored_ver = row
+                stored_outcome, stored_rd, stored_resp, stored_ver, stored_dom = row
                 self.validate_receipt_state(stored_rd, stored_ver, stored_resp)
                 if stored_ver < 4:
                     raise ReceiptSchemaBoundaryError(
@@ -552,11 +560,20 @@ class SqliteStore(Store):
                     verify_snapshot_against_plan(plan.raw_request, plan)
                 except ValueError as e:
                     raise SupersessionIntegrityError(str(e)) from e
-                plan_rd = request_digest(plan.raw_request)
+                plan_rd = request_digest_under(CURRENT_DIGEST_DOMAIN,
+                                               plan.raw_request)
             digest = self._outcome_digest_v2(plan)
             if row is not None:
-                if stored_rd is not None and plan_rd is not None:
-                    if plan_rd == stored_rd:
+                # specs/0025 §4b-v: the cross-era matrix at the STORE site —
+                # the stored domain selects the comparison (NULL = migrated →
+                # dual-domain; a valid domain → that domain only; the
+                # fail-closed cells raise from the matrix). The pre-D2
+                # boundary above PRECEDES this — no digest logic for < 4.
+                matches = receipt_request_matches(
+                    stored_rd, stored_dom,
+                    plan.raw_request if plan.raw_request is not None else None)
+                if matches is not None:
+                    if matches:
                         return self._replay_from_effects(stored_resp)
                     raise SupersessionIntegrityError(
                         f"operation_id {plan.operation_id!r} already committed a "
@@ -670,9 +687,16 @@ class SqliteStore(Store):
                 self._conn.execute(
                     "INSERT INTO supersession_operations(user_id,operation_id,"
                     "logical_request_digest,status,request_digest,response,"
-                    "outcome_digest_version) VALUES(?,?,?,?,?,?,?)",
+                    "outcome_digest_version,request_digest_domain) "
+                    "VALUES(?,?,?,?,?,?,?,?)",
                     (user_id, plan.operation_id, digest, "applied",
-                     plan_rd, resp_json, 4))
+                     plan_rd, resp_json, 4,
+                     # specs/0025 §4b-v, the write rule: the domain is
+                     # stamped iff the receipt carries a digest — a NEW
+                     # digest-less receipt stores NULL/NULL (the writer
+                     # invariant, NEW WRITES ONLY).
+                     CURRENT_DIGEST_DOMAIN.decode() if plan_rd is not None
+                     else None))
                 self._bump(user_id)                   # a recall-bearing edge changed
                 # A live_refusal_contention transition — INTO it (this plan records a
                 # refusal) OR OUT of it (this plan retires an edge that a refusal row

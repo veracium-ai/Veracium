@@ -32,6 +32,11 @@ active_call: ContextVar = ContextVar("veracium_active_call", default=None)
 # membership let role="gate" pass during an ingest frame).
 PRODUCER_REGISTRY = (
     ("distill", "ingest", "src/veracium/ingest.py"),
+    # specs/0025 §4b(1): the ONE re-extraction retry per event — a second
+    # producer inside the same ingest frame, its own role so usage
+    # attribution can split extraction cost from retry cost (Q3's budget
+    # question is answered by exactly this attribution).
+    ("distill-retry", "ingest", "src/veracium/ingest.py"),
     ("gate", "answer", "src/veracium/gate.py"),
     ("compile", "recall", "src/veracium/compile.py"),
     ("compile", "maintain", "src/veracium/lifecycle.py"),
@@ -50,6 +55,7 @@ CONTEXT_ENTERING_OPERATIONS = frozenset(e for _, e, _ in PRODUCER_REGISTRY)
 #: maintain — internal F1: the consolidation compile is a producer too).
 ROLE_FIELDS = {
     "distill": ("distill_in_tok", "distill_out_tok"),
+    "distill-retry": ("distill_retry_in_tok", "distill_retry_out_tok"),
     "gate": ("gate_in_tok", "gate_out_tok"),
     "compile": ("compile_in_tok", "compile_out_tok"),
 }

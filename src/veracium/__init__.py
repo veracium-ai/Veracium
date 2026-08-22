@@ -339,6 +339,11 @@ class Memory:
                       "unparseable": 1 if r.get("unparseable") else 0,
                       "supersessions": r["supersessions"],
                       "reinforcements": r["reinforcements"],
+                      # specs/0025 §4c: the five public counters, telemetry
+                      # carrier — same consent gating as every ingest field.
+                      "invalid": r["invalid"], "retried": r["retried"],
+                      "recovered": r["recovered"], "residual": r["residual"],
+                      "redispositioned": r["redispositioned"],
                       "ms": int((time.perf_counter() - t0) * 1000)}
             fields.update(usage_finish())          # specs/0017: the terminal merge
             self._record("ingest", fields, user_id)

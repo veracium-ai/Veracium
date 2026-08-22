@@ -382,10 +382,64 @@ SCHEMA_V9 = SCHEMA_V8 + (
                  "ON source_revocations(user_id, identity_digest)", REBUILDABLE),
 )
 
-SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
-           6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8, 9: SCHEMA_V9}
+# v10 (specs/0025, accepted v13; the CONFIRMED 0014 interface amendment): ONE
+# nullable column on `supersession_operations` — `request_digest_domain TEXT`,
+# the cross-era receipt carrier (§4b-v). The write rule stamps it iff the
+# receipt carries a digest (NEW WRITES ONLY); migrated rows stay NULL — the
+# dual-domain comparison row. The fresh constructor carries it inline:
+SCHEMA_V10 = tuple(
+    o if o.name != "supersession_operations" else
+    SchemaObject("table", "supersession_operations", """CREATE TABLE supersession_operations (
+    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,
+    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,
+    request_digest TEXT, response TEXT,
+    outcome_digest_version INTEGER NOT NULL DEFAULT 1,
+    request_digest_domain TEXT,
+    PRIMARY KEY (user_id, operation_id)
+)""", REQUIRED)
+    for o in SCHEMA_V9
+)
 
-SCHEMA_VERSION = 9
+# The v9->v10 ALTER, in the v6 convention. The table exists at v9 in TWO
+# accepted DDL variants (fresh-constructor and the v5->v6 ALTER path), so the
+# ALTER's measured result is TWO frozen literals — both authored EMPIRICALLY
+# on the qualified SQLite 3.45.1 (columns appended at the end of the last
+# column line, BEFORE the table-level PRIMARY KEY; the 0014 round-13
+# discipline: the expectation is present in the reviewed tree, never derived
+# by the migration).
+ALTERS_V9_TO_V10 = (
+    "ALTER TABLE supersession_operations ADD COLUMN request_digest_domain TEXT",
+)
+ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL = (
+    "CREATE TABLE supersession_operations (\n"
+    "    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,\n"
+    "    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,\n"
+    "    request_digest TEXT, response TEXT,\n"
+    "    outcome_digest_version INTEGER NOT NULL DEFAULT 1,"
+    " request_digest_domain TEXT,\n"
+    "    PRIMARY KEY (user_id, operation_id)\n"
+    ")"
+)
+ALTER_PATH_V10_FROM_CONSTRUCTOR_SHA256 = \
+    "336b762fdcdac380e337785dfa8d693f4bcb7b7c7c8d9870424912c9f076c62b"
+ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL = (
+    "CREATE TABLE supersession_operations (\n"
+    "    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,\n"
+    "    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,"
+    " request_digest TEXT, response TEXT,"
+    " outcome_digest_version INTEGER NOT NULL DEFAULT 1,"
+    " request_digest_domain TEXT,\n"
+    "    PRIMARY KEY (user_id, operation_id)\n"
+    ")"
+)
+ALTER_PATH_V10_FROM_V6_ALTERPATH_SHA256 = \
+    "a788a8671946c5a99b311e4a0105da7fe5e867982e95d9f1be280ddddecacbe6"
+
+SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
+           6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8, 9: SCHEMA_V9,
+           10: SCHEMA_V10}
+
+SCHEMA_VERSION = 10
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

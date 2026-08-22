@@ -122,7 +122,7 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "Su
     # branches (R10-2). The snapshot is captured from the RAW submitted edge
     # BEFORE any planning; the digest construction is the store's own frozen
     # one (no caller assertion — R7-1).
-    from .contribution import raw_request_snapshot, request_digest
+    from .contribution import raw_request_snapshot, receipt_request_matches
     snapshot = raw_request_snapshot(edge)
     receipt = store.supersession_receipt(edge.user_id, op_id)
     if receipt is not None:
@@ -147,8 +147,15 @@ def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "Su
                 f"computed, a legitimate retry indistinguishable from a "
                 f"different request (specs/0016 D2; 0003 §4f as amended)")
         stored_rd = receipt.get("request_digest")
-        if stored_rd is not None:
-            if stored_rd == request_digest(snapshot):
+        # specs/0025 §4b-v: the cross-era decision matrix — the stored
+        # domain selects the comparison (NULL = migrated → dual-domain;
+        # a valid domain → that domain only; fail-closed cells raise
+        # ReceiptDomainError from the matrix itself). The pre-D2 boundary
+        # above PRECEDES this, so no digest is computed for stored_ver < 4.
+        matches = receipt_request_matches(
+            stored_rd, receipt.get("request_digest_domain"), snapshot)
+        if matches is not None:
+            if matches:
                 # branch 1: REPLAY — the recorded response stands in for the
                 # committed op; NO re-planning occurs (the post-commit re-plan
                 # is never computed, so no outcome comparison can reject a

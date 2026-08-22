@@ -69,6 +69,11 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
     # principal that cannot otherwise derive them. Never in the tool result.
     r.pop("supersessions", None)
     r.pop("reinforcements", None)
+    # specs/0025 §4c: the five public counters are a LIBRARY surface, not a
+    # tool-call surface — stripped here consistent with the two above.
+    for k in ("invalid", "retried", "recovered", "residual",
+              "redispositioned"):
+        r.pop(k, None)
     return r
 
 

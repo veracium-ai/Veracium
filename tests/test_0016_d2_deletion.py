@@ -213,9 +213,12 @@ def test_arbitrary_stored_source_type_dropped_post_d2(tmp_path):
     store.close()
 
 
-# -- FORMAT 7 -----------------------------------------------------------------
+# -- the export format (0016's deleted-key property) --------------------------
 
-def test_export_is_version_7_and_omits_the_key(tmp_path):
+def test_export_omits_the_deleted_key(tmp_path):
+    # renamed from test_export_is_version_7_...: 0016's own property is the
+    # deleted-key omission; the header version moved to 8 with specs/0025
+    # and its pin lives in the 0025/portability tests, not here.
     store = _store(tmp_path)
     store.add_edge(_edge(eid="e-x"))
     store.add_episode(Episode(
@@ -225,7 +228,7 @@ def test_export_is_version_7_and_omits_the_key(tmp_path):
     p = tmp_path / "e.jsonl"
     export_memory(store, "u1", p)
     lines = [json.loads(ln) for ln in p.read_text().splitlines()]
-    assert lines[0]["version"] == FORMAT_VERSION == 7
+    assert lines[0]["version"] == FORMAT_VERSION   # de-pinned; ≥7 since 0016
     assert "source_type" not in p.read_text()     # no residual key anywhere
     store.close()
 

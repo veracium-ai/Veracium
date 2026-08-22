@@ -60,7 +60,12 @@ EVENT_FIELDS: dict[str, set[str]] = {
                "supersessions", "reinforcements",
                # specs/0017 (accepted): the 2767a35 token fields RETURN, now
                # populated by the Metered listener path; consent-gated (min 3).
-               "distill_in_tok", "distill_out_tok"},
+               "distill_in_tok", "distill_out_tok",
+               # specs/0025 (accepted): the §4c public counters + the retry
+               # producer's token pair; consent-gated (min 4).
+               "invalid", "retried", "recovered", "residual",
+               "redispositioned",
+               "distill_retry_in_tok", "distill_retry_out_tok"},
     "recall": {"wiki_used", "subgraph_edges", "grounded_items", "unverified_items", "proactive",
                "trimmed", "ms",  # "trimmed" not "truncated": the content-free
                                  # guard rejects payloads containing "cat"
@@ -81,8 +86,10 @@ EVENT_FIELDS: dict[str, set[str]] = {
                   "supersession_n", "abstention_ok", "abstention_n"},
 }
 
-SCHEMA_VERSION = 3  # v3 (specs/0017): the token-usage fields join under the
-                    # 0015 consent machinery (v2 added the supersession counters)
+SCHEMA_VERSION = 4  # v4 (specs/0025): the vocabulary-enforcement counters +
+                    # the retry token pair join under the 0015 consent
+                    # machinery (v3 added the 0017 token fields; v2 the
+                    # supersession counters)
 
 # specs/0015 §4: fields gated on the CONSENTED schema version — a field is sent
 # only if it was RECORDED under a consent that admitted it (record-time gating).
@@ -96,7 +103,16 @@ FIELD_MIN_VERSION: dict[tuple, int] = {("ingest", "supersessions"): 2,
                                        ("recall", "compile_in_tok"): 3,
                                        ("recall", "compile_out_tok"): 3,
                                        ("maintain", "compile_in_tok"): 3,
-                                       ("maintain", "compile_out_tok"): 3}
+                                       ("maintain", "compile_out_tok"): 3,
+                                       # specs/0025: the enforcement counters
+                                       # + the retry token pair, all at 4
+                                       ("ingest", "invalid"): 4,
+                                       ("ingest", "retried"): 4,
+                                       ("ingest", "recovered"): 4,
+                                       ("ingest", "residual"): 4,
+                                       ("ingest", "redispositioned"): 4,
+                                       ("ingest", "distill_retry_in_tok"): 4,
+                                       ("ingest", "distill_retry_out_tok"): 4}
 
 # The tombstone sentinel (specs/0015 R10-1): equals NO valid persisted epoch
 # (epochs are positive ints); a tombstoned collector drops every record until a
@@ -401,8 +417,9 @@ def _post(endpoint: str, payload: dict) -> None:
 CONSENT_TEXT = """\
 veracium can send anonymous, content-free usage statistics once a week to help
 improve the library. It would share ONLY aggregate counters — how often facts are
-extracted, claims quarantined, values superseded or reinforced, and answers
-abstained; latency totals;
+extracted, claims quarantined, values superseded or reinforced, relations
+re-filed under the closed vocabulary (and how many a retry recovered), and
+answers abstained; latency totals;
 LLM token totals per operation kind, ONLY when you use the opt-in Metered
 wrapper with your own token counter (without one, nothing token-shaped exists
 to send); and

@@ -343,6 +343,53 @@ def build_version_artifact(strict: bool = True) -> dict:
                     "provenance": prov,
                     "digest": sv._digest_of_identity(alt, version),
                     "objects": alt})
+        # SCHEMA v10 (specs/0025 §4b-v; the CONFIRMED 0014 amendment): the ONE
+        # ADD COLUMN on `supersession_operations` makes the ops table's
+        # MIGRATED form differ from the fresh constructor at v10 — in TWO
+        # variants, because v9 stores already held the table in two accepted
+        # forms. Crossed with the ledger's persisting two forms, the reachable
+        # matrix is 2 × 2 migrated combinations + the fresh constructor:
+        #   ctor-base ops-ALTER  × ledger inline   — fresh v8/v9 base migrated;
+        #   v6-path  ops-ALTER   × ledger inline   — a v4/v5 base (ledger
+        #                                            created inline en route);
+        #   ctor-base ops-ALTER  × ALTER-v8 ledger — a v6/v7-born base;
+        #   v6-path  ops-ALTER   × ALTER-v8 ledger — a v6/v7 base that itself
+        #                                            arrived from ≤v5.
+        # Both ops entries are the FROZEN v10 constants (sha-checked), never
+        # produced by running the migration here — 0013 §4c.
+        if version == 10:
+            import copy
+            import hashlib as _h
+            for const, sha in ((sv.ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
+                                sv.ALTER_PATH_V10_FROM_CONSTRUCTOR_SHA256),
+                               (sv.ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL,
+                                sv.ALTER_PATH_V10_FROM_V6_ALTERPATH_SHA256)):
+                if _h.sha256(const.encode()).hexdigest() != sha:
+                    raise SystemExit("an ALTER_PATH_V10 constant does not "
+                                     "match its pinned sha256 (0025 §4b-v) — "
+                                     "refusing to emit evidence")
+            ctor = identity(manifest(c))
+            for ops_sql, ops_tag in (
+                    (sv.ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
+                     "v10 ALTER on the constructor base, sha 336b762f…"),
+                    (sv.ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL,
+                     "v10 ALTER on the v6 ALTER-path base, sha a788a867…")):
+                for ledger_alt, ledger_tag in (
+                        (False, "ledger inline"),
+                        (True, "ALTER-path ledger — 0019 rider C2, "
+                               "sha 027b5ca3…")):
+                    alt = copy.deepcopy(ctor)
+                    alt["table:supersession_operations"] = dict(
+                        alt["table:supersession_operations"], sql=ops_sql)
+                    if ledger_alt:
+                        alt["table:contribution_ledger"] = dict(
+                            alt["table:contribution_ledger"],
+                            sql=sv.ALTER_PATH_V8_SQL)
+                    accepted.append({
+                        "provenance": f"migrated->v10 (0025 §4b-v: {ops_tag}; "
+                                      f"{ledger_tag})",
+                        "digest": sv._digest_of_identity(alt, version),
+                        "objects": alt})
         c.close()
         # *(Historical: round 7's union across qualified runtimes. `0007` now
         # supports exactly one active build identity; this loop survives so the

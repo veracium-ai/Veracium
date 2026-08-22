@@ -101,7 +101,11 @@ def test_v5_to_v6_migrates_a_nonempty_receipt_table():
     assert rows == [("op1", None, None, 1), ("op2", None, None, 1)]
     stored = c.execute("SELECT sql FROM sqlite_master "
                        "WHERE name='supersession_operations'").fetchone()[0]
-    assert stored == ALTER_PATH_V6_SQL
+    # v10 head (specs/0025 §4b-v): the v5 base crosses the v6 ALTERs AND the
+    # v10 ALTER, landing on the frozen v10-from-v6-ALTER-path literal; the
+    # v6 constant remains the frozen INTERMEDIATE the migration byte-checks
+    # en route.
+    assert stored == sv.ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL
     assert c.execute("SELECT name FROM sqlite_master "
                      "WHERE name='contribution_ledger'").fetchone()
     # v8 head: the v5 base lands (receipts ALTER-path × ledger constructor) —
@@ -132,4 +136,7 @@ def test_deep_migration_v1_to_v6_lands_accepted():
     # v8 CONSTRUCTOR form — the constructor manifest
     assert digest(manifest(c), sv.SCHEMA_VERSION) in accepted_digests(sv.SCHEMA_VERSION)
     cols = [r[1] for r in c.execute("PRAGMA table_info(supersession_operations)")]
-    assert cols[-3:] == ["request_digest", "response", "outcome_digest_version"]
+    assert cols[-4:] == ["request_digest", "response",
+                         "outcome_digest_version",
+                         # specs/0025 §4b-v: the v10 cross-era column
+                         "request_digest_domain"]

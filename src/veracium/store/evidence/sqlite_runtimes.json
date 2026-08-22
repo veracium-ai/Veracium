@@ -10,7 +10,7 @@
         "xinfo_exposes_generated": true
       },
       "manifest_algorithm": 13,
-      "schema_version": 9,
+      "schema_version": 10,
       "constructor_digests": {
         "1": "910e49325716c1b599acb8efdeece10fe72cf2ffe2ae24e32cf6e910fa846299",
         "2": "15f606bb73c5ef5cb5f1c7100b53a6e0536acb3498e477b799c549b631328d83",
@@ -20,7 +20,8 @@
         "6": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
         "7": "34708aa71998c22413a98901067361ababd7bab5b910089db363e4531f079fa0",
         "8": "aa760c39300f64cb64a76440ea9e9676bbec9814eeaf3d8aa2062da9f74a40c2",
-        "9": "234a90dce4b811fa758c25d3f57ef294ccd48af42d6d6722d8ed1329602cc617"
+        "9": "234a90dce4b811fa758c25d3f57ef294ccd48af42d6d6722d8ed1329602cc617",
+        "10": "d175d3614a5925741e1f2af86c18cd927c8ad05aadc90c499095f1517e997295"
       },
       "manifestations": {
         "constructor v1": {
@@ -4102,6 +4103,695 @@
                 "INTEGER",
                 1,
                 "1",
+                0,
+                0
+              ]
+            ]
+          },
+          "table:supersession_refusals": {
+            "type": "table",
+            "table": "supersession_refusals",
+            "sql": "CREATE TABLE supersession_refusals (\n    refusal_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    prior_edge_id TEXT NOT NULL, incoming_edge_id TEXT NOT NULL, relation TEXT NOT NULL,\n    prior_effective INTEGER NOT NULL, incoming_effective INTEGER NOT NULL,\n    rule_version TEXT NOT NULL, created_at TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "refusal_id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "prior_edge_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "incoming_edge_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "relation",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "prior_effective",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "incoming_effective",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "rule_version",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "created_at",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:wiki": {
+            "type": "table",
+            "table": "wiki",
+            "sql": "CREATE TABLE wiki (\n    user_id TEXT PRIMARY KEY, text TEXT, store_version INTEGER\n)",
+            "columns": [
+              [
+                "user_id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "text",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "store_version",
+                "INTEGER",
+                0,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:write_counter": {
+            "type": "table",
+            "table": "write_counter",
+            "sql": "CREATE TABLE write_counter (\n    user_id TEXT PRIMARY KEY, n INTEGER NOT NULL\n)",
+            "columns": [
+              [
+                "user_id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "n",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          }
+        },
+        "constructor v10": {
+          "index:ix_confirmations_edge": {
+            "type": "index",
+            "table": "confirmations",
+            "sql": "CREATE INDEX ix_confirmations_edge ON confirmations(user_id, edge_id)"
+          },
+          "index:ix_consolidation_ops_user_state": {
+            "type": "index",
+            "table": "consolidation_ops",
+            "sql": "CREATE INDEX ix_consolidation_ops_user_state ON consolidation_ops(user_id, state)"
+          },
+          "index:ix_contribution_ledger_op_key": {
+            "type": "index",
+            "table": "contribution_ledger",
+            "sql": "CREATE UNIQUE INDEX ix_contribution_ledger_op_key ON contribution_ledger(op_key) WHERE op_key IS NOT NULL"
+          },
+          "index:ix_contribution_ledger_source": {
+            "type": "index",
+            "table": "contribution_ledger",
+            "sql": "CREATE INDEX ix_contribution_ledger_source ON contribution_ledger(user_id, identity_digest)"
+          },
+          "index:ix_contribution_ledger_survivor": {
+            "type": "index",
+            "table": "contribution_ledger",
+            "sql": "CREATE INDEX ix_contribution_ledger_survivor ON contribution_ledger(user_id, survivor_type, survivor_id)"
+          },
+          "index:ix_edges_subj_rel": {
+            "type": "index",
+            "table": "edges",
+            "sql": "CREATE INDEX ix_edges_subj_rel ON edges(user_id, subject, relation, active)"
+          },
+          "index:ix_edges_user_active": {
+            "type": "index",
+            "table": "edges",
+            "sql": "CREATE INDEX ix_edges_user_active ON edges(user_id, active)"
+          },
+          "index:ix_episodes_user": {
+            "type": "index",
+            "table": "episodes",
+            "sql": "CREATE INDEX ix_episodes_user ON episodes(user_id, date)"
+          },
+          "index:ix_source_revocations_user_digest": {
+            "type": "index",
+            "table": "source_revocations",
+            "sql": "CREATE INDEX ix_source_revocations_user_digest ON source_revocations(user_id, identity_digest)"
+          },
+          "index:ix_supersession_refusals_user": {
+            "type": "index",
+            "table": "supersession_refusals",
+            "sql": "CREATE INDEX ix_supersession_refusals_user ON supersession_refusals(user_id)"
+          },
+          "table:confirmations": {
+            "type": "table",
+            "table": "confirmations",
+            "sql": "CREATE TABLE confirmations (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL, edge_id TEXT NOT NULL,\n    confirmed_at TEXT NOT NULL, actor TEXT NOT NULL, call_path TEXT NOT NULL,\n    correlation_id TEXT NOT NULL, request_digest TEXT NOT NULL,\n    UNIQUE(user_id, correlation_id)\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "edge_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "confirmed_at",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "actor",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "call_path",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "correlation_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "request_digest",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:consolidation_ops": {
+            "type": "table",
+            "table": "consolidation_ops",
+            "sql": "CREATE TABLE consolidation_ops (\n    operation_id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    fence INTEGER NOT NULL, state TEXT NOT NULL, owner TEXT NOT NULL,\n    lease_duration INTEGER NOT NULL, lease_expires_at TEXT NOT NULL,\n    claimed_ids TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "operation_id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "fence",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "state",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "owner",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "lease_duration",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "lease_expires_at",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "claimed_ids",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:contribution_ledger": {
+            "type": "table",
+            "table": "contribution_ledger",
+            "sql": "CREATE TABLE contribution_ledger (\n    id TEXT NOT NULL PRIMARY KEY, user_id TEXT NOT NULL,\n    survivor_type TEXT NOT NULL, survivor_id TEXT NOT NULL,\n    site TEXT NOT NULL,\n    identity_digest TEXT, evidence_ref_digest TEXT,\n    payload TEXT NOT NULL, op_key TEXT,\n    created_at TEXT NOT NULL,\n    contributor_type TEXT, contributor_ref TEXT\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "survivor_type",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "survivor_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "site",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "identity_digest",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "evidence_ref_digest",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "payload",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "op_key",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "created_at",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "contributor_type",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "contributor_ref",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:edges": {
+            "type": "table",
+            "table": "edges",
+            "sql": "CREATE TABLE edges (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, subject TEXT, relation TEXT,\n    object TEXT, active INTEGER NOT NULL, quarantined INTEGER NOT NULL, json TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "subject",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "relation",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "object",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "active",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "quarantined",
+                "INTEGER",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "json",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:episodes": {
+            "type": "table",
+            "table": "episodes",
+            "sql": "CREATE TABLE episodes (\n    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, date TEXT, json TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "id",
+                "TEXT",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "date",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "json",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:source_revocations": {
+            "type": "table",
+            "table": "source_revocations",
+            "sql": "CREATE TABLE source_revocations (\n    user_id TEXT NOT NULL, seq INTEGER NOT NULL,\n    identity_digest TEXT NOT NULL,\n    action TEXT NOT NULL CHECK(action IN ('revoke','lift')),\n    at TEXT NOT NULL, reason TEXT NOT NULL,\n    PRIMARY KEY (user_id, seq)\n)",
+            "columns": [
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "seq",
+                "INTEGER",
+                1,
+                null,
+                2,
+                0
+              ],
+              [
+                "identity_digest",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "action",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "at",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "reason",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:store_identity": {
+            "type": "table",
+            "table": "store_identity",
+            "sql": "CREATE TABLE store_identity (\n    id INTEGER PRIMARY KEY CHECK(id = 1), origin TEXT NOT NULL\n)",
+            "columns": [
+              [
+                "id",
+                "INTEGER",
+                0,
+                null,
+                1,
+                0
+              ],
+              [
+                "origin",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ]
+            ]
+          },
+          "table:supersession_operations": {
+            "type": "table",
+            "table": "supersession_operations",
+            "sql": "CREATE TABLE supersession_operations (\n    user_id TEXT NOT NULL, operation_id TEXT NOT NULL,\n    logical_request_digest TEXT NOT NULL, status TEXT NOT NULL,\n    request_digest TEXT, response TEXT,\n    outcome_digest_version INTEGER NOT NULL DEFAULT 1,\n    request_digest_domain TEXT,\n    PRIMARY KEY (user_id, operation_id)\n)",
+            "columns": [
+              [
+                "user_id",
+                "TEXT",
+                1,
+                null,
+                1,
+                0
+              ],
+              [
+                "operation_id",
+                "TEXT",
+                1,
+                null,
+                2,
+                0
+              ],
+              [
+                "logical_request_digest",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "status",
+                "TEXT",
+                1,
+                null,
+                0,
+                0
+              ],
+              [
+                "request_digest",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "response",
+                "TEXT",
+                0,
+                null,
+                0,
+                0
+              ],
+              [
+                "outcome_digest_version",
+                "INTEGER",
+                1,
+                "1",
+                0,
+                0
+              ],
+              [
+                "request_digest_domain",
+                "TEXT",
+                0,
+                null,
                 0,
                 0
               ]

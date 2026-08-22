@@ -75,3 +75,20 @@ EXTRACT_SCHEMA = {
                 "volatility": {"type": "string"}}}},
         "episode": {"type": "string"}},
 }
+
+
+# specs/0025 §4b(1) — the ONE re-extraction retry per event. The prompt text
+# is non-normative; the CALL SHAPE is normative: one call, only the failing
+# triples, relations drawn from the registry, and the caller discards
+# anything that matches no failing (subject, object) pair.
+RETRY_PROMPT = """Some extracted triples used a relation outside the allowed
+list. Re-emit EXACTLY these triples — same subject and object — choosing the
+best-fitting relation from the list. Do not add, drop, or reword triples.
+
+Relations:
+{relations}
+
+Failing triples: {failing}
+
+Return JSON only: {{"triples": [{{"subject": "...", "relation": "...",
+"object": "..."}}]}}"""

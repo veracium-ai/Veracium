@@ -8,6 +8,7 @@ third-party-authored content is the attack surface.
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -18,7 +19,9 @@ from .graph import apply_supersession
 from .llm.base import Complete
 from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
                      Provenance, QUARANTINE_RELATION, Relation,
+                     RESERVED_RELATIONS, UNCLASSIFIED_RELATION,
                      Volatility, utcnow)
+from .registry import RegistryError, effective_registry, render_prompt_relations  # noqa: F401 (RegistryError is this boundary's named refusal)
 
 
 def _uid(prefix: str) -> str:
@@ -120,9 +123,14 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     LOCAL caller can never supply it (I2a); it stays absent and resolves to the
     store's `store_identity` singleton at read (§4 rule 6)."""
     evidence_ref = evidence_ref or _uid("ev")
-    rel_names = "\n".join(
-        f"- {name}: {rel.desc}" if rel.desc else f"- {name}"
-        for name, rel in relations.items())
+    # specs/0025 §4b-ii: the host registry is validated AS SUPPLIED and
+    # extracted into the ONE frozen per-event snapshot that feeds prompt
+    # rendering, retry validation, membership, and supersession. RegistryError
+    # propagates — an uninterpretable registry is the caller's error (X5/X9).
+    reg = effective_registry(relations)
+    # §4b-iv: the SELECTABLE set, insertion order — byte-identical to the
+    # pre-0025 rendering for the default registry (X6's second carrier).
+    rel_names = render_prompt_relations(reg)
     # Normalise ONCE, then pass the normalised value to every consumer.
     # Validating here and then handing the RAW string to date_context still left
     # two parsers: `date_context` calls `date.fromisoformat`, which rejects an
@@ -180,7 +188,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   disclosure=(Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, "", derived_from)),
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
         return {"episode": summary, "facts": 0, "quarantined": 0, "unparseable": True,
-                "supersessions": 0, "reinforcements": 0}
+                "supersessions": 0, "reinforcements": 0,
+                # §4c: zeros PRESENT on the unparseable path — an absent key
+                # is not a zero.
+                "invalid": 0, "retried": 0, "recovered": 0, "residual": 0,
+                "redispositioned": 0}
 
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.
@@ -197,11 +209,73 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                                   derived_from=derived_from, source_id=source_id, observed_at=when)))
 
     n_facts = n_quarantined = n_supersessions = n_reinforcements = 0
+    # ---- specs/0025 §4b(1): membership + the ONE retry per event ---------
+    # Pass 1 collects the parsed triples with their ORIGINAL relation and
+    # the disclosure ESTABLISHED from it (X10: the fallback below never
+    # feeds _disclosure_for). Off-vocabulary triples — including an
+    # extractor-emitted `unclassified`, which is not selectable (§4b-iv) —
+    # queue for one retry; the residual lands on the reserved member with
+    # the original in the typed field.
+    parsed = []
     for t in data.get("triples", []):
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
             continue
-        relation = str(t["relation"]).strip()
-        disclosure = _disclosure_for(author, relation, derived_from)
+        original = str(t["relation"]).strip()
+        parsed.append({"t": t, "relation": original, "original": original,
+                       "off": original not in reg or original == UNCLASSIFIED_RELATION})
+
+    failing = [row for row in parsed if row["off"]]
+    n_invalid = len(failing)
+    n_retried = n_recovered = 0
+    if failing and llm is not None:
+        n_retried = len(failing)
+        try:
+            raw = llm(prompts.RETRY_PROMPT.format(
+                relations=rel_names,
+                failing=json.dumps([{"subject": str(r["t"]["subject"]).strip(),
+                                     "relation": r["original"],
+                                     "object": str(r["t"]["object"]).strip()}
+                                    for r in failing], ensure_ascii=False)),
+                      system=prompts.EXTRACT_SYSTEM, role="distill-retry")
+            reps = extract_json(raw).get("triples", [])
+            if not isinstance(reps, list):
+                reps = []
+        except Exception:
+            reps = []          # malformed output / provider failure: a no-op,
+                               # visible as retried > 0, recovered = 0 — never
+                               # re-raised, never a second call (§4b(1))
+        def _norm(x):
+            return str(x).strip().casefold()
+        # one-to-one multiset consumption in occurrence order; a repair must
+        # be an ORDINARY member (reserved answers are not recoveries)
+        pool = []
+        for rep in reps:
+            if isinstance(rep, dict):
+                rrel = str(rep.get("relation", "")).strip()
+                if rrel in reg and rrel not in RESERVED_RELATIONS:
+                    pool.append(((_norm(rep.get("subject", "")),
+                                  _norm(rep.get("object", ""))), rrel))
+        for row in failing:
+            key = (_norm(row["t"]["subject"]), _norm(row["t"]["object"]))
+            for i, (pkey, prel) in enumerate(pool):
+                if pkey == key:
+                    pool.pop(i)
+                    row["relation"] = prel
+                    row["off"] = False
+                    n_recovered += 1
+                    break
+    n_residual = 0
+    for row in parsed:
+        if row["off"]:
+            row["relation"] = UNCLASSIFIED_RELATION
+            n_residual += 1
+
+    for row in parsed:
+        t = row["t"]
+        relation = row["relation"]
+        # X10: disclosure from the ORIGINAL relation, established before any
+        # rewrite and retained through it.
+        disclosure = _disclosure_for(author, row["original"], derived_from)
         if revoked_at_birth:
             # 0023 §4a QUARANTINE-AT-BIRTH: the event's source is standing-
             # revoked, so every edge of the event lands QUARANTINED whatever
@@ -224,6 +298,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         edge = Edge(
             id=_uid("e"), user_id=user_id, subject=str(t["subject"]).strip(),
             relation=relation, object=obj,
+            original_relation=(row["original"] if relation != row["original"]
+                               else None),
             note=str(t.get("note", "")).strip(), volatility=vol,
             ungrounded=flagged,
             provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
@@ -238,4 +314,10 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         else:
             n_facts += 1
     return {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
-            "supersessions": n_supersessions, "reinforcements": n_reinforcements}
+            "supersessions": n_supersessions, "reinforcements": n_reinforcements,
+            # specs/0025 §4c — THE counter inventory, present on every path;
+            # `redispositioned` is 0024's counter, carried at 0 until its
+            # (still measurement-frozen) mechanism lands.
+            "invalid": n_invalid, "retried": n_retried,
+            "recovered": n_recovered, "residual": n_residual,
+            "redispositioned": 0}

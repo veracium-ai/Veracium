@@ -145,12 +145,25 @@ def consolidation_op_key(operation_id: str, output_index: int,
 # exhaustive field partition (R7-1/R8-2/R9-3/R9-4/R10-1..3/R13-1 lineage).
 
 REQUEST_DIGEST_DOMAIN = b"veracium.supersession-request.v1"
+# specs/0025 §4b-v (the confirmed 0014 amendment): the None-omission era.
+# Same FROZEN construction, second domain; new digest-bearing receipts
+# compute and STAMP v2. The closed set is extended explicitly by any future
+# domain amendment — never inferred.
+REQUEST_DIGEST_DOMAIN_V2 = b"veracium.supersession-request.v2"
+CURRENT_DIGEST_DOMAIN = REQUEST_DIGEST_DOMAIN_V2
+ACCEPTED_DIGEST_DOMAINS = frozenset({REQUEST_DIGEST_DOMAIN.decode(),
+                                     REQUEST_DIGEST_DOMAIN_V2.decode()})
 
 # The partition over Edge.model_fields + Provenance.model_fields — TOTAL, and
 # pinned by test_raw_request_field_partition_is_total: a new model field breaks
 # the test until classified here.
 EXACT_EQUAL_EDGE_FIELDS = ("id", "user_id", "subject", "relation", "object",
-                           "note", "volatility", "needs_confirmation")
+                           "note", "volatility", "needs_confirmation",
+                           # specs/0025 (the confirmed 0014 amendment): the
+                           # typed re-disposition carrier — exact-equal, and
+                           # OMITTED from every dump when None, so the
+                           # comparison below reads both sides with .get()
+                           "original_relation")
 # specs/0016 D2 (the 0014 partition amendment): `source_type` is DELETED from
 # Provenance, so the partition loses it — the totality test forces the
 # constant and the model to move together. The digest collapse is the defined
@@ -197,6 +210,46 @@ def request_digest(snapshot: dict) -> str:
     return hashlib.sha256(REQUEST_DIGEST_DOMAIN + body.encode("utf-8")).hexdigest()
 
 
+def request_digest_under(domain: bytes, snapshot: dict) -> str:
+    """The SAME frozen construction under an explicit domain (0025 §4b-v)."""
+    body = json.dumps(snapshot, sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"), allow_nan=False)
+    return hashlib.sha256(domain + body.encode("utf-8")).hexdigest()
+
+
+def receipt_request_matches(stored_digest, stored_domain, snapshot):
+    """The §4b-v decision matrix — ONE rule, applied independently at the
+    public phase-1 site (graph.py) and the store phase-2 site (sqlite.py).
+    The pre-D2 boundary PRECEDES every call to this function.
+
+    Returns True (same request), False (a truly different request), or
+    None (no request comparison is possible — the shipped outcome
+    comparison governs). Raises ReceiptDomainError on the fail-closed
+    cells: an uninterpretable domain, or a domain stamped on a
+    digest-less receipt."""
+    from .store.base import ReceiptDomainError
+    if stored_domain is not None and stored_domain not in ACCEPTED_DIGEST_DOMAINS:
+        raise ReceiptDomainError(
+            f"uninterpretable request-digest domain {stored_domain!r} — "
+            f"refused on sight, never replayed, never a new request "
+            f"(specs/0025 §4b-v)")
+    if stored_digest is None:
+        if stored_domain is not None:
+            raise ReceiptDomainError(
+                "a request-digest domain stamped on a digest-less receipt — "
+                "no legal writer produces this row (specs/0025 §4b-v, the "
+                "writer invariant)")
+        return None                    # outcome comparison governs
+    if snapshot is None:
+        return None                    # no submitted identity: outcome-only
+    if stored_domain is None:          # migrated: BOTH domains, either matches
+        return stored_digest in (
+            request_digest_under(REQUEST_DIGEST_DOMAIN, snapshot),
+            request_digest_under(REQUEST_DIGEST_DOMAIN_V2, snapshot))
+    return stored_digest == request_digest_under(stored_domain.encode(),
+                                                 snapshot)
+
+
 def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
     """The store's snapshot verification (§4b) under the exhaustive partition —
     EXACT-EQUAL fields byte-equal the plan's incoming; RECOMPUTED fields (the
@@ -212,7 +265,10 @@ def verify_snapshot_against_plan(snapshot: dict, plan) -> None:
         raise ValueError(f"raw_request is not the COMPLETE dump — missing "
                          f"{sorted(missing)} (0014 §4b)")
     for f in EXACT_EQUAL_EDGE_FIELDS:
-        if snapshot.get(f) != inc[f]:
+        # .get on BOTH sides: `original_relation` is absent from a dump when
+        # None (0025 §2), symmetrically — absent==absent is equal; a forged
+        # snapshot omitting a field the incoming carries still refuses.
+        if snapshot.get(f) != inc.get(f):
             raise ValueError(f"raw_request.{f} differs from the plan's incoming "
                              f"(exact-equal class, 0014 §4b R8-2)")
     sprov, iprov = snapshot.get("provenance"), inc["provenance"]

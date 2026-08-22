@@ -266,8 +266,10 @@ def test_token_payload_covers_every_role_event_pair():
     for role, event in ATTRIBUTED_PAIRS:
         in_f, out_f = ROLE_FIELDS[role]
         assert in_f in T.EVENT_FIELDS[event] and out_f in T.EVENT_FIELDS[event]
-        assert T.FIELD_MIN_VERSION[(event, in_f)] == 3
-        assert T.FIELD_MIN_VERSION[(event, out_f)] == 3
+        # the 0017 producers entered at schema v3; 0025's retry producer at v4
+        want = 4 if role == "distill-retry" else 3
+        assert T.FIELD_MIN_VERSION[(event, in_f)] == want
+        assert T.FIELD_MIN_VERSION[(event, out_f)] == want
 
 
 def test_no_unpropagated_thread_fanout_in_operation_paths():

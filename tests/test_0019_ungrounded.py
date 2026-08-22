@@ -495,7 +495,7 @@ def test_version_gates_and_migration(tmp_path):
     from veracium.portability import FORMAT_VERSION
     from veracium.store import schema_version as sv
     from veracium.store.migration import migrate_store
-    assert FORMAT_VERSION == 7 and sv.SCHEMA_VERSION >= 8  # 0016 D2 + 0021 rider (head has since moved to 9, 0022)
+    assert FORMAT_VERSION == 8 and sv.SCHEMA_VERSION >= 8  # 0025 bumped FORMAT 7->8; SCHEMA head is 10
     # a v6-stamped store migrates (crossing the v8 ledger ALTERs en route) and
     # lands head-current
     import sqlite3

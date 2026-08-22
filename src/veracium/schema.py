@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, StrictBool
+from pydantic import BaseModel, Field, model_serializer, StrictBool
 
 
 def utcnow() -> datetime:
@@ -227,6 +227,23 @@ DEFAULT_RELATIONS: dict[str, Relation] = {
 
 QUARANTINE_RELATION = "third_party_claim"
 
+# specs/0025 (accepted v13) — the reserved registry members, module constants
+# on the QUARANTINE_RELATION pattern. `unclassified` is the NON-FUNCTIONAL
+# fallback every off-vocabulary relation lands on (§4b); its gloss is
+# spec-authored and it is NEVER extractor-selectable (§4b-iv — the prompt
+# renderer excludes it). `third_party_claim`'s canonical form IS the shipped
+# DEFAULT_RELATIONS entry above. A host entry bearing either name must match
+# the canonical form COMPLETELY (functional AND desc) or the boundary
+# refuses it (§4b-ii step 3); both are injected when absent (X8).
+UNCLASSIFIED_RELATION = "unclassified"
+RESERVED_RELATIONS = {
+    UNCLASSIFIED_RELATION: Relation(
+        name=UNCLASSIFIED_RELATION, functional=False,
+        desc="reserved fallback for off-vocabulary relations; "
+             "never extractor-selectable"),
+    QUARANTINE_RELATION: DEFAULT_RELATIONS[QUARANTINE_RELATION],
+}
+
 
 # --------------------------------------------------------------------------- #
 # Store-of-record units
@@ -281,7 +298,24 @@ class Edge(BaseModel):
     invalidated_at: Optional[datetime] = None
     invalidation_reason: Optional[str] = None  # "superseded" | "lapsed" | "decayed" | "disputed" | "corrected" | "absorbed_duplicate"
     supersedes: Optional[str] = None
+    # specs/0025 (accepted v13): the original relation for ANY structural
+    # re-disposition — written ONLY by the vocabulary fallback (and, when
+    # 0024 lands, its coherence rewrite; the pair's ONE definition, 0025 §2).
+    # None everywhere else, and OMITTED from every serialization when None
+    # (the field-level rule below) so an unaffected Edge's serialized JSON
+    # is byte-identical to its pre-0025 shape — X6's first preserved carrier.
+    original_relation: Optional[str] = None
     needs_confirmation: bool = False  # past its expected lifetime; may be stale
+
+    @model_serializer(mode="wrap")
+    def _omit_none_original_relation(self, handler):
+        # specs/0025 §2 (round 2, R2-3): an optional field still serializes
+        # its None and breaks every byte contract — so when None, the key is
+        # ABSENT from model_dump AND model_dump_json, at every call site.
+        d = handler(self)
+        if d.get("original_relation") is None:
+            d.pop("original_relation", None)
+        return d
     # specs/0019: "the specifics in this fact's object were not all grounded in
     # the event text it was extracted from" — a property of the EXTRACTION,
     # never of the fact's truth. Derived once at ingest (§4b); a STORED row's
