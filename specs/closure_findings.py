@@ -270,9 +270,12 @@ CLOSURES = [
      "after the code changed, and repeated the previous round's launcher "
      "result against a different test set",
      "specs/package/collected_header.txt, specs/seal_package.py (the sealer "
-     "RUNS the launcher and substitutes what it printed)",
+     "runs the launcher on the final tree; since C-plus the complete "
+     "stdout/stderr + exit status ship as a digested capture and the header "
+     "line DERIVES from that file)",
      "grep -q '__LAUNCHER__' specs/package/collected_header.txt && "
-     "grep -q 'the sealer RUNS the launcher' specs/seal_package.py"),
+     "grep -q 'launcher runs on the FINAL tree' specs/seal_package.py && "
+     "grep -q 'derive_launcher' specs/collected_record.py"),
     # ---- external round 8 -------------------------------------------------
     ("0022", "external", 8, "R8-1",
      "the structured closure had an ADMISSION HOLE: `raised` was read with "

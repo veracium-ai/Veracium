@@ -220,7 +220,31 @@ instance caught before it shipped:
 
 ## 8. Status
 
-Design **ruled and closed**; implementation unblocked and unscheduled — the
-0022/0023 review concluded at round 21, so C-plus targets the *next* package
-line (0024/0025, when their external sends are authorized). It ships in
-`specs/` so any future package carries its own packaging contract.
+Design **ruled and closed**; **IMPLEMENTED 2026-08-22** — every §5 piece:
+
+- `specs/collected_record.py` — the code-owned FIELD_POLICY registry (the
+  sole authority; blocking 1), the four closed axes, the derive-from-capture
+  functions (blocking 3), and the fixed witness implementations (moderate 4;
+  an unimplemented witness id refuses).
+- `specs/collected_render.py` — the whole-file equation (blocking 2): header
+  at byte zero, one inventory block, EOF after the final newline, byte
+  equality against the recomputed construction; static prose stays in the
+  template as data (ruling 3), token set closed both ways.
+- `specs/runtime_probe.py` — the captured measurement-context artifact
+  (moderate 5); also the one authority for the measurement argv/env.
+- `specs/seal_package.py` — main() restructured into the §5.3 order:
+  measure → capture (probe, launcher transcript with exit trailer, harness
+  stdouts) → derive `collected_header.json` from the captures → validate +
+  witness cross-check → render → whole-file equation → archive (three new
+  loose carriers) → §5.4 timestamp structure in verify_archive (basename/
+  record one canonical value; member mtimes ≤ declared seal time).
+- `specs/verify_extracted.py header` — the extraction re-runs all of it:
+  record conformance, template digest, whole-file recompute, witnesses.
+- `tests/test_collected_header.py` — the §5.1.7 mutation matrix GENERATED
+  from schema × registry (value mutations, validation downgrades, changed/
+  removed witness ids, redirected artifacts, extra/missing fields), the
+  seam injections, the derive-from-capture property, and the labelled
+  timestamp checks.
+
+It ships in `specs/`, so the next sealed package (whichever line it is)
+carries its own packaging contract and verifies it from the extraction.

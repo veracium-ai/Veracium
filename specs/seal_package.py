@@ -34,7 +34,6 @@ import pathlib
 import re
 import shutil
 import subprocess
-import sqlite3
 import sys
 import tarfile
 import tempfile
@@ -97,9 +96,14 @@ def measure(scratch: pathlib.Path) -> pathlib.Path:
     if stale.exists():
         stale.unlink()
     out = scratch / "pytest_rs.txt"
-    env = sealed_env(VERACIUM_FORBID_NETWORK="1", PYTHONPATH="src")
+    # C-plus: the argv and env are IMPORTED from the probe module, so the
+    # command the probe RECORDS and the command sealing RUNS are one
+    # authority (COLLECTED_HEADER_DESIGN §5.1.4).
+    sys.path.insert(0, str(SPECS))
+    import runtime_probe
+    env = sealed_env(**runtime_probe.MEASUREMENT_ENV)
     r = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", "tests", "-p", "no:randomly", "-rs"],
+        [sys.executable, *runtime_probe.MEASUREMENT_ARGV],
         cwd=ROOT, env=env, capture_output=True, text=True)
     out.write_text(r.stdout + r.stderr)
     if r.returncode != 0:
@@ -184,7 +188,13 @@ def refuse_placeholders(*texts_and_names):
 LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
                   "PACKAGE_MANIFEST.txt",
                   "specs/generated/evidence_run.json",  # evidence_transcript.REL_PATH — asserted at seal time
-                  "CHANGED_FROM_PREVIOUS.txt")
+                  "CHANGED_FROM_PREVIOUS.txt",
+                  # C-plus (COLLECTED_HEADER_DESIGN §5.1): the structured
+                  # record and the two captured raw artifacts it derives
+                  # from — names asserted against collected_record at seal.
+                  "collected_header.json",
+                  "RUNTIME_PROBE.json",
+                  "LAUNCHER_TRANSCRIPT.txt")
 
 
 def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
@@ -334,6 +344,11 @@ EXTRACTION_CHECKS = (
     # a reviewer can run it — rather than only in the tree that built it.
     ("package_identity.py (the record agrees with reviews.py)",
      [sys.executable, "specs/package_identity.py"]),
+    # C-plus: the header record conforms to the code-owned policy registry,
+    # COLLECTED.txt recomputes byte-for-byte as one whole file, and every
+    # field's required witness holds — all from the extraction.
+    ("verify_extracted.py header",
+     [sys.executable, "specs/verify_extracted.py", "header"]),
 )
 
 
@@ -515,6 +530,34 @@ def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
 
         for p in identity_problems(path.name, col, man, set(names)):
             _fail(p)
+
+        # C-plus §5.4: the archive basename and the record's ts field are
+        # copies of ONE variable — required equal and labelled consistency,
+        # not truth — and no member's mtime may postdate the declared seal
+        # time beyond the declared tolerance.
+        sys.path.insert(0, str(SPECS))
+        import calendar as _cal
+        import json as _json
+        import time as _time
+        import collected_record as _CR
+        rec_path = d / _CR.RECORD_CARRIER
+        if not rec_path.exists():
+            _fail(f"{_CR.RECORD_CARRIER} is not in the archive — a package "
+                  f"without its record cannot be verified")
+        rec = _json.loads(rec_path.read_text())
+        rec_ts = rec["fields"]["ts"]["value"]
+        base_ts = re.search(r"-(\d{8}T\d{4}Z)\.tar\.gz$", path.name)
+        if not base_ts or base_ts.group(1) != rec_ts:
+            _fail(f"the basename timestamp "
+                  f"{base_ts.group(1) if base_ts else 'absent'} and the "
+                  f"record's ts {rec_ts} are not one canonical value (§5.4)")
+        seal_epoch = _cal.timegm(_time.strptime(rec_ts, "%Y%m%dT%H%MZ"))
+        with tarfile.open(path) as tf:
+            late = [m.name for m in tf.getmembers()
+                    if m.mtime > seal_epoch + _CR.TS_FUTURE_TOLERANCE_S]
+        if late:
+            _fail(f"archive members postdate the declared seal time beyond "
+                  f"the {_CR.TS_FUTURE_TOLERANCE_S}s tolerance: {late[:5]}")
         ran = []
         for name, cmd in EXTRACTION_CHECKS:
             target = cmd[-1]
@@ -547,26 +590,35 @@ def main() -> int:
               "before the measurement, or the two carriers name different "
               "states:\n  " + dirty.replace("\n", "\n  "))
     commit = _run(["git", "rev-parse", "HEAD"], cwd=ROOT).stdout.strip()
-    ts = time.strftime("%Y%m%dT%H%MZ", time.gmtime())
 
     with tempfile.TemporaryDirectory() as td:
         scratch = pathlib.Path(td)
+        # C-plus §5.3 STEP 1: run the measurement and harness commands.
         rs_path = measure(scratch)
         rs = rs_path.read_text()
-        measured = re.search(r"\d+ passed[^\n]*", rs).group(0)
 
-        header = a.header.read_text()
-        # EXTERNAL ROUND 7, R7-2: the launcher result was PROSE, carried over
-        # from the previous round against a different test set. If the header
-        # asks for it, the sealer RUNS the launcher on the final tree and
-        # substitutes what it actually printed. A number nobody measured in
-        # this state cannot reach the carrier.
-        # EXTERNAL ROUND 8, R8-2: every one of these was TYPED into the header
-        # and went stale — the harness line said 17/17 against an 18/18
-        # executable, and "All 31" evidence commands described a 33-row ledger
-        # of which the test runs 32. Numbers a human maintains beside numbers a
-        # machine produces will disagree; these are produced.
-        harnesses = []
+        sys.path.insert(0, str(SPECS))
+        import collected_record as CR
+        import collected_render as CX
+        import evidence_transcript
+        import runtime_probe
+
+        # §5.3 STEP 2: capture immutable raw outputs — files, digested into
+        # the record at step 3, shipped in the archive. The record derives
+        # FROM these files, never from the in-memory values that produced
+        # them (blocking 3): agreement between record and render means
+        # something only because both descend from the captures.
+        probe_path = scratch / CR.PROBE_CARRIER
+        pr = _run([sys.executable, "specs/runtime_probe.py"], cwd=ROOT,
+                  env=sealed_env(**runtime_probe.MEASUREMENT_ENV))
+        if pr.returncode != 0:
+            _fail(f"the runtime probe failed (exit {pr.returncode}): "
+                  f"{pr.stderr.strip()[:300]}")
+        probe_path.write_text(pr.stdout)
+
+        # R8-2 carried forward: harness results are PRODUCED, never typed —
+        # now via capture files rather than in-memory strings.
+        harness_captures = []
         for h in ("vector_harness.py", "store_concurrency_harness.py"):
             hp = ROOT / "specs" / "evidence" / "0022" / h
             if not hp.exists():
@@ -574,86 +626,33 @@ def main() -> int:
             hr = _run([sys.executable, str(hp)], cwd=ROOT)
             if hr.returncode != 0:
                 _fail(f"{h} fails on the tree being sealed:\n{hr.stdout}")
-            harnesses.append(f"{h:<32} — {hr.stdout.strip().splitlines()[-1]}")
-        harness_block = "\n                 ".join(harnesses)
+            cap = scratch / f"harness_{h}.txt"
+            cap.write_text(hr.stdout)
+            harness_captures.append((str(hp.relative_to(ROOT)), cap))
 
-        # R10-1: the reviewer guide promises the exact command, environment,
-        # pytest version and node count. They were absent from COLLECTED, so
-        # the promise was carried by a document that could not keep it. They
-        # are MEASURED here and substituted.
-        probe_env = sealed_env(VERACIUM_FORBID_NETWORK="1", PYTHONPATH="src")
-        pv = subprocess.run([sys.executable, "-m", "pytest", "--version"],
-                            cwd=ROOT, capture_output=True, text=True,
-                            env=probe_env)
-        if pv.returncode != 0:
-            _fail(f"the pytest-version probe failed: {pv.stderr.strip()[:200]}")
-        collected_n = subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "tests", "--collect-only",
-             "-p", "no:randomly"], cwd=ROOT, capture_output=True, text=True,
-            env=probe_env)
-        if collected_n.returncode != 0:
-            _fail(f"the collection probe failed: "
-                  f"{collected_n.stderr.strip()[:200]}")
-        n_nodes = ""
-        for ln in reversed((collected_n.stdout or "").strip().splitlines()):
-            if "test" in ln and ("collected" in ln or "tests" in ln):
-                n_nodes = ln.strip()
-                break
-        if not n_nodes:
-            # R11-2: "collection unavailable" was a carrier shipping a shrug
-            _fail("the collection probe produced no count line")
-        import platform as _plat
-        context = (
-            f"command        VERACIUM_FORBID_NETWORK=1 PYTHONPATH=src "
-            f"{sys.executable} -m pytest -q tests -p no:randomly -rs\n"
-            f"                 cwd            {ROOT}  (the author's committed git "
-            f"checkout — R10-1: the ONE canonical measurement site)\n"
-            f"                 interpreter    {sys.executable}\n"
-            f"                 python         {sys.version.split()[0]} "
-            f"({_plat.machine()}, {_plat.system()} {_plat.release()})\n"
-            f"                 pytest         {(pv.stdout or pv.stderr).strip()}\n"
-            f"                 sqlite         {sqlite3.sqlite_version}\n"
-            f"                 collection     {n_nodes or 'unavailable'}")
+        # R7-2 carried forward: the launcher runs on the FINAL tree, and its
+        # complete stdout/stderr + exit status now ship as a digested
+        # artifact (moderate 5) — the header line derives from the file.
+        launcher_path = scratch / CR.LAUNCHER_CARRIER
+        lv = scratch / "launcher-venv"
+        lr = subprocess.run(
+            ["bash", "specs/evidence/offline/run_offline.sh"],
+            cwd=ROOT, capture_output=True, text=True,
+            env=sealed_env(VERACIUM_OFFLINE_VENV=str(lv)))
+        launcher_path.write_text(lr.stdout + lr.stderr
+                                 + f"\n--- LAUNCHER EXIT: {lr.returncode} ---\n")
+        if lr.returncode != 0:
+            _fail(f"the offline launcher did not succeed on the final tree "
+                  f"(exit {lr.returncode}); transcript kept at {launcher_path}")
 
-        sys.path.insert(0, str(SPECS))
-        import closure_findings
-        total_ev = len(closure_findings.CLOSURES)
-        launcher_ev = sum(1 for c in closure_findings.CLOSURES
-                          if "run_offline.sh" in c[6])
-        # R11-2: OBSERVED, from the transcript the evidence runner wrote
-        # during measure(). Reading an artifact costs nothing; the first
-        # version spawned another pytest to watch the runner print a number,
-        # and that duplication took the suite to 23 minutes.
-        sys.path.insert(0, str(SPECS))
-        import evidence_transcript
+        # R11-2: the evidence transcript the runner wrote during measure(),
+        # validated before anything derives from it.
         tpath = ROOT / evidence_transcript.REL_PATH
         tproblems = evidence_transcript.validate(tpath, SPECS)
         if tproblems:
             _fail("the evidence transcript does not validate:\n  "
                   + "\n  ".join(tproblems))
         import json as _json
-        observed = len(_json.loads(tpath.read_text())["commands"])
-        evidence_claim = (
-            f"{total_ev} closure-evidence commands: {observed} OBSERVED "
-            f"executing during this seal's measured run, each with its argv, "
-            f"cwd, exit status and output digest recorded in "
-            f"specs/generated/evidence_run.json (shipped), and {launcher_ev} "
-            f"(the launcher) run separately — the runner skips that one "
-            f"because it builds a venv and runs the whole suite")
-
-        launcher = "not requested"
-        if "__LAUNCHER__" in header:
-            lv = scratch / "launcher-venv"
-            lr = subprocess.run(
-                ["bash", "specs/evidence/offline/run_offline.sh"],
-                cwd=ROOT, capture_output=True, text=True,
-                env=sealed_env(VERACIUM_OFFLINE_VENV=str(lv)))
-            tail = (lr.stdout + lr.stderr).strip().splitlines()
-            line = next((l for l in reversed(tail) if "passed" in l or "REFUS" in l), "")
-            if lr.returncode != 0:
-                _fail(f"the offline launcher did not succeed on the final tree "
-                      f"(exit {lr.returncode}): {line}")
-            launcher = line.strip()
         # R16-1: PACKAGE IDENTITY IS DERIVED AND CROSS-CHECKED, not typed into
         # a template. `--version v16` produced an archive named v16 whose two
         # shipped carriers both still said v15/ROUND 15, because `version`
@@ -714,43 +713,59 @@ def main() -> int:
                   f"specs/reviews.py but its version says round {round_no} "
                   f"(R16-1)")
 
-        def _requires_line(spec):
-            # Round 2 (L-pair): the header restated Spec-Requires by hand and
-            # drifted the day 0024's changed. DERIVED from the one canonical
-            # carrier — the spec file's own header line — or the seal fails.
-            txt = next(SPECS.glob(f"{spec}-*.md")).read_text()
-            for ln in txt.splitlines():
-                if ln.startswith("Spec-Requires:"):
-                    return f"{spec} Spec-Requires: {ln.split(':', 1)[1].strip()}"
-            _fail(f"{spec} has no Spec-Requires: header line to derive from")
-        requires_block = "\n                 ".join(
-            _requires_line(sp) for sp in specs)
-
-        subs = {"__VERSION__": a.version, "__ROUND__": str(round_no),
-                "__REQUIRES__": requires_block,
-                "__PACKAGE__": pkg,
-                "__CANDIDATES__": _pid.render_candidate_field(_line, a.version),
-                "__COMMIT__": commit[:7], "__COMMIT_FULL__": commit,
-                "__TS__": ts, "__MEASURED__": measured, "__LAUNCHER__": launcher,
-                "__HARNESSES__": harness_block, "__EVIDENCE__": evidence_claim,
-                "__CONTEXT__": context,
-                "__EXTRACTED__": "\n                 ".join(
-                    f"{i+1}. {n}" for i, (n, _) in enumerate(EXTRACTION_CHECKS))}
-        manifest = a.manifest.read_text()
-        for k, v in subs.items():
-            header = header.replace(k, v)
-            manifest = manifest.replace(k, v)
-
         # R10-2/R11-2: the module-level LOOSE_CARRIERS is the one authority;
-        # its hardcoded transcript path is asserted against the live module.
+        # its hardcoded carrier names are asserted against the live modules.
         if evidence_transcript.REL_PATH not in LOOSE_CARRIERS:
             _fail("LOOSE_CARRIERS does not carry evidence_transcript.REL_PATH "
                   "— the one authority drifted from the module it names")
-        loose_lines = "\n".join(f"  - {k}" for k in sorted(LOOSE_CARRIERS))
-        header = header.replace("__LOOSE__", loose_lines)
-        manifest = manifest.replace("__LOOSE__", loose_lines)
+        for carrier in (CR.RECORD_CARRIER, CR.PROBE_CARRIER,
+                        CR.LAUNCHER_CARRIER):
+            if carrier not in LOOSE_CARRIERS:
+                _fail(f"LOOSE_CARRIERS does not carry {carrier} — the one "
+                      f"authority drifted from collected_record")
 
+        # §5.4: the DECLARED seal time is stamped after measurement and
+        # captures complete, so the ordering checks (ts after the probe's
+        # capture; archive-member mtimes not later than ts) can hold. One
+        # canonical value reaches the basename and the header from the
+        # record — consistency between copies of one variable, labelled as
+        # exactly that (design §4).
+        ts = time.strftime("%Y%m%dT%H%MZ", time.gmtime())
+
+        # §5.3 STEP 3: derive the structured record FROM THE CAPTURES.
+        record = CR.build_record(
+            ROOT, line=_line, version=a.version, round_no=round_no,
+            commit_full=commit, ts=ts, rs_path=rs_path,
+            probe_path=probe_path, launcher_path=launcher_path,
+            harness_captures=harness_captures, template_path=a.header)
+        for p in CR.validate_record(record):
+            _fail(f"the derived record does not conform to the code-owned "
+                  f"registry: {p}")
+
+        # §5.3 STEP 4: cross-check every witnessed field. The manifest is
+        # rendered from the same record first so the cross-carrier witnesses
+        # can read it; the captures are passed as overrides because the
+        # archive does not exist yet.
+        manifest = CX.render_manifest(record, a.manifest.read_text())
+        wp = CR.witness_problems(
+            record, ROOT, manifest_text=manifest,
+            overrides={"COLLECTED_pytest_rs.txt": rs_path,
+                       CR.PROBE_CARRIER: probe_path,
+                       CR.LAUNCHER_CARRIER: launcher_path})
+        if wp:
+            _fail("seal-time witness cross-check failed:\n  "
+                  + "\n  ".join(wp))
+
+        # §5.3 STEP 5: render COLLECTED.txt from the record, then require
+        # the whole-file equation of the BUILT text (blocking 2) before it
+        # may become a carrier.
+        template_text = a.header.read_text()
+        header = CX.render_header(record, template_text)
         collected = build_collected(rs_path, specs, a.version, header)
+        for p in CX.whole_file_problems(collected, record, template_text, rs):
+            _fail(f"the built COLLECTED.txt fails its own whole-file "
+                  f"equation: {p}")
+        record_json = _json.dumps(record, indent=2, sort_keys=True) + "\n"
         refuse_placeholders((collected, "COLLECTED.txt"),
                             (manifest, "PACKAGE_MANIFEST.txt"))
         guide = (ROOT / "specs" / "REVIEWER_GUIDE.md").read_text()
@@ -772,6 +787,11 @@ def main() -> int:
             # NAMED skip, never silent.
             "CHANGED_FROM_PREVIOUS.txt": _changed_from_previous(
                 _line, a.version, a.outbox),
+            # C-plus: the record and the two captures it derives from ship
+            # beside the carriers they witness (§5.1.4).
+            CR.RECORD_CARRIER: record_json,
+            CR.PROBE_CARRIER: probe_path.read_text(),
+            CR.LAUNCHER_CARRIER: launcher_path.read_text(),
         }
         if set(extra) != set(LOOSE_CARRIERS):
             _fail("the extra dict and LOOSE_CARRIERS diverged — the one "
@@ -792,7 +812,7 @@ def main() -> int:
     print(f"sealed  {name}.tar.gz")
     print(f"sha256  {digest}")
     print(f"commit  {commit[:7]}  (both carriers)")
-    print(f"measured {measured}")
+    print(f"measured {record['fields']['measured']['value']}")
     print(f"staged  {staged}")
     return 0
 

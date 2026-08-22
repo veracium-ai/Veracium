@@ -1493,6 +1493,10 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
         # from the extraction like every other generated carrier.
         "package_identity.py (the record agrees with reviews.py)":
             ("python", "specs/package_identity.py"),
+        # C-plus (COLLECTED_HEADER_DESIGN §5): the header record, the
+        # whole-file equation, and the witnesses — from the extraction.
+        "verify_extracted.py header":
+            ("python", "specs/verify_extracted.py", "header"),
     }
     got = {n: norm(c) for n, c in seal_package.EXTRACTION_CHECKS}
     assert set(got) == set(required), (

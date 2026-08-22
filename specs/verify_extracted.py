@@ -64,9 +64,62 @@ def reconcile_carrier() -> int:
     return 0
 
 
+def header_carrier() -> int:
+    """C-plus (COLLECTED_HEADER_DESIGN §5): the record conforms to the
+    code-owned policy registry, the template is digest-bound, COLLECTED.txt
+    is byte-identical to the recomputed whole-file construction, and every
+    field's required witness holds against the carriers IN THE EXTRACTION."""
+    sys.path.insert(0, str(HERE))
+    import hashlib
+    import json
+
+    import collected_record as CR
+    import collected_render as CX
+
+    rec_path = ROOT / CR.RECORD_CARRIER
+    if not rec_path.exists():
+        print(f"{CR.RECORD_CARRIER} is not in the extraction", file=sys.stderr)
+        raise SystemExit(2)
+    try:
+        record = json.loads(rec_path.read_text())
+    except ValueError as e:
+        print(f"the record does not parse: {e}", file=sys.stderr)
+        return 1
+
+    problems = CR.validate_record(record)
+    if not problems:
+        tpl_rel = record["template"]["path"]
+        tpl_path = (ROOT / tpl_rel).resolve()
+        if ROOT.resolve() not in tpl_path.parents:
+            problems.append(f"the template path {tpl_rel!r} escapes the "
+                            f"extraction")
+        elif not tpl_path.exists():
+            problems.append(f"the named template {tpl_rel!r} is not in the "
+                            f"extraction")
+        else:
+            tpl_bytes = tpl_path.read_bytes()
+            if hashlib.sha256(tpl_bytes).hexdigest() \
+                    != record["template"]["sha256"]:
+                problems.append(f"the template {tpl_rel!r} does not match "
+                                f"the record's digest")
+            else:
+                collected, rs = _carriers()
+                problems += CX.whole_file_problems(
+                    collected, record, tpl_bytes.decode(), rs)
+                problems += CR.witness_problems(record, ROOT)
+    if problems:
+        print("header verification FAILED:\n  " + "\n  ".join(problems),
+              file=sys.stderr)
+        return 1
+    print("header: PASS (record conforms, whole file recomputes, "
+          "witnesses hold)")
+    return 0
+
+
 VERBS = {
     "collected": verify_collected_carrier,
     "reconcile": reconcile_carrier,
+    "header": header_carrier,
 }
 
 
