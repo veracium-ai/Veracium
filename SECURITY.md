@@ -56,12 +56,12 @@ guarantees.
 
 ## Supported versions
 
-Veracium is pre-1.0. Only the **latest 0.1.x** release receives security fixes; please
+Veracium is pre-1.0. Only the **latest minor release** (the newest 0.x line) receives security fixes; please
 reproduce on the latest release before reporting.
 
 | Version | Supported |
 |---|---|
-| latest 0.1.x | ✅ |
+| latest minor (0.x) | ✅ |
 | older | ❌ |
 
 ## Scope notes
