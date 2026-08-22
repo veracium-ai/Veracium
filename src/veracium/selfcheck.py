@@ -118,30 +118,57 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
     uid = "sc"
 
     def snap():
+        # the WIKI row (fidelity pass F1): the compiled wiki is the derived,
+        # model-reaching carrier 0004 exists for — a post-revoke recompile
+        # pulling quarantined content would otherwise be invisible to every
+        # cell. In the snapshot it is byte-pinned across both attempts.
         return (
             {("edge", e.id): e.model_dump_json()
              for e in mem.store.edges(uid, active_only=False)}
             | {("ep", ep.id): ep.model_dump_json()
-               for ep in mem.store.episodes(uid, include_retired=True)})
+               for ep in mem.store.episodes(uid, include_retired=True)}
+            | {("wiki", uid): repr(mem.store.get_wiki(uid))})
 
     try:
-        # a fact from an identified third-party source enters normally
+        # a grounded user fact (the wiki needs grounded content to compile,
+        # and a bystander's state through the sweep is the right control),
+        # then a fact from an identified third-party source
+        mem.remember(uid, "USER: I have a cat named Mittens.",
+                     date="2026-04-01")
         mem.remember(uid, "Feed update: the user moved to Lisbon.",
                      author=EvidenceAuthor.THIRD_PARTY, event_type="feed",
                      source_id=SRC, date="2026-05-01")
         seed_edge_ids = {e.id for e in mem.store.edges(uid, active_only=False)}
         seed_ep_ids = {ep.id for ep in mem.store.episodes(uid)}
+        # compile the wiki so the F1 cell is non-vacuous: a wiki must EXIST
+        # for "revocation dropped it" to prove anything (a query-bearing
+        # recall is the compile path; the store-only briefing form is not)
+        mem.recall(uid, "what pets do I have")
+        wiki_existed = mem.store.get_wiki(uid) is not None
 
         # REVOKE — the 0022 R19 operation, sweep included, through the same
         # digest derivation ingest uses
         digest = identity_digest_of(None, SRC, mem.store.local_origin())
         revoke_source(mem.store, uid, digest, "revoke", "selfcheck",
                       "2026-05-02T00:00:00Z")
-        swept = (all(not e.active and e.invalidation_reason == "revoked_source"
-                     for e in mem.store.edges(uid, active_only=False)
-                     if e.id in seed_edge_ids)
-                 and not (seed_ep_ids
-                          & {ep.id for ep in mem.store.episodes(uid)}))
+        feed_edge_ids = {e.id for e in mem.store.edges(uid, active_only=False)
+                         if e.provenance.source_id == SRC}
+        swept = (bool(feed_edge_ids)
+                 and all(not e.active
+                         and e.invalidation_reason == "revoked_source"
+                         for e in mem.store.edges(uid, active_only=False)
+                         if e.id in feed_edge_ids)
+                 # the bystander user fact SURVIVES the sweep untouched
+                 and all(e.active for e in
+                         mem.store.edges(uid, active_only=False)
+                         if e.id in seed_edge_ids - feed_edge_ids)
+                 and not ({ep.id for ep in
+                           mem.store.episodes(uid, include_retired=True)
+                           if ep.provenance.source_id == SRC}
+                          & {ep.id for ep in mem.store.episodes(uid)})
+                 # F1: the 0004 registry seat fired — the compiled wiki that
+                 # existed is GONE, not serving revoked content
+                 and wiki_existed and mem.store.get_wiki(uid) is None)
         post_revoke = snap()
 
         # RE-ENTRY, both shapes: a restatement (reinforce/absorb/renew bait)
@@ -181,8 +208,16 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
         # nothing standing moved: whatever maintenance verb each attempt
         # reached, every record that predated it is byte-unchanged — the
         # second attempt's base includes the first's quarantined records, so
-        # a verb touching THOSE would also surface here
-        no_revival = (r1_untouched
+        # a verb touching THOSE would also surface here. NON-VACUITY WITNESS
+        # (fidelity pass F2): a no-change assertion is vacuously true if no
+        # verb ever fired, so both attempts must prove they reached one —
+        # the restatement was STORED-NOT-MERGED (a new edge landed while
+        # reinforcements stayed 0), and the challenger's refusal is in the
+        # durable 0003 inventory.
+        verbs_fired = (r1.get("reinforcements", 1) == 0
+                       and bool(new_edge_ids)
+                       and len(mem.store.refusals(uid)) >= 1)
+        no_revival = (verbs_fired and r1_untouched
                       and all(after[k] == v for k, v in mid.items()))
 
         # negative control: an UNREVOKED source is untouched by the standing
@@ -214,7 +249,11 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
         mem.export_memory(uid, export_path)
         mem2 = _mem(llm, tmp, "revocation-import", relations)
         try:
-            mem2.import_memory(export_path)
+            # restore=True (fidelity pass F3): the real backup-restore mode,
+            # where trust fields restore FAITHFULLY — the strongest form of
+            # the claim, because the floor must survive even when nothing is
+            # being capped
+            mem2.import_memory(export_path, restore=True)
             imp_edges = [e for e in mem2.store.edges(uid, active_only=False)
                          if e.provenance.source_id == SRC]
             imp_eps = [ep for ep in mem2.store.episodes(uid,
