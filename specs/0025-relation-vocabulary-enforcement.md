@@ -698,8 +698,8 @@ that 35% never got the chance to be considered.**
 | # | question | state |
 |---|---|---|
 | **Q1** | should existing stores be migrated — ad-hoc relations remapped into the registry? | `deferred` — a rewrite of stored records, with the same second-writer concern `0024` Q1 has. Needs its own argument, and probably its own spec |
-| **Q2** | should near-synonym canonicalisation (`has_benefit`/`benefits`/`benefit`) ship with this? | `pre-release` — round 4: the MECHANICAL mass is 0 (shipped script, stated rule); the ~2.6% (4,772) was a semantic grouping whose construction never shipped, so Q2 now ALSO owes that construction before its number can be believed. Against enforcement's ~35%. **Leaning: NO, separately** — it is a different mechanism (normalisation, not membership) and bundling it repeats the attributability mistake §7b refuses |
-| **Q3** | is one re-extraction retry the right budget? | `pre-release` — one is a guess. The residual count (**X4**) is the instrument that would answer it, which is an argument for shipping the count first |
+| **Q2** | should near-synonym canonicalisation (`has_benefit`/`benefits`/`benefit`) ship with this? | **RESOLVED 2026-08-22 (Quentin): NO — separately, if ever.** A different mechanism (normalisation, not membership); bundling repeats the attributability mistake §7b refuses; and since round 4 requalified the ~2.6% (mechanical mass 0, the semantic grouping unshipped), any future canonicalisation spec starts from a fresh measured construction, not this line's figure |
+| **Q3** | is one re-extraction retry the right budget? | **RESOLVED 2026-08-22 (Quentin): ship at ONE — the shipped counts ARE the instrument.** The implemented `invalid`/`retried`/`recovered`/`residual` counters (plus the `distill-retry` token pair) answer the budget question from production data; revisiting the budget is warranted only by what they show, and needs no spec change to observe |
 | **Q4** | should the registry grow, and on what evidence? | `post-v1` — 48.1% of triples on two relations suggests it should. The residual count makes it measurable rather than a matter of taste |
 
 ## Review closure

@@ -36,8 +36,8 @@ is the number that decides what can be built.
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-20 | 1 | 14 | 0 | 0 | 0 | — |
 | **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-08-22 | 4 | 21 | 5 | 0 | 0 | — |
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-08-22 | 3 | 21 | 4 | 0 | 0 | — |
-| **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-08-22 | 2 | 12 | 4 | 0 | 0 | — |
-| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-08-22 | 2 | 12 | 4 | 0 | 0 | — |
+| **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-08-22 | 2 | 12 | 2 | 0 | 0 | — |
+| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-08-22 | 2 | 12 | 2 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

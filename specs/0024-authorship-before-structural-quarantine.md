@@ -465,9 +465,9 @@ accurate for the cell it covers and silent about the rest.
 | # | question | state |
 |---|---|---|
 | **Q1** | should existing quarantined records be re-dispositioned retroactively? | `deferred` — it needs a SECOND disclosure writer, which breaks the single-write-site property `0004` and `0023` reason from. The same asymmetry `0023` §4i declares, for the same reason |
-| **Q2** | should the note signal be used as a SECOND, weaker test — flagging rather than re-dispositioning? | `pre-release` — it would surface the residual without acting on prose. Leaning: no for v1; a flag nobody consumes is a field, not a mechanism |
+| **Q2** | should the note signal be used as a SECOND, weaker test — flagging rather than re-dispositioning? | **RESOLVED 2026-08-22 (Quentin): NO for v1** — a flag nobody consumes is a field, not a mechanism. The note-as-agreement-evidence idea lives on in the queued label/value agreement check (dev task #107), which is its proper generalisation |
 | **Q4** | should a re-dispositioned triple ever recover a FUNCTIONAL relation, completing the restoration? | `post-v1` — it would need evidence about the RELATION, which this spec does not have and does not claim. Half-restoration (assertable, never superseding) is §4b-i's chosen cell |
-| **Q3** | should a `third_party_claim` with an EMPTY subject be treated as incoherent too? | `pre-release` — currently dropped by the shipped completeness check before this code sees it, so the cell may be unreachable. Verify before deciding |
+| **Q3** | should a `third_party_claim` with an EMPTY subject be treated as incoherent too? | **RESOLVED 2026-08-22 (Quentin, on the reachability check this row asked for): NO.** Measured on the live ingest: a LITERAL empty subject is dropped by the shipped completeness check (unreachable); a WHITESPACE subject survives, strips to an empty claimant, and stays QUARANTINED. An absent claimant is no evidence the user is the claimant — the conservative floor holds. Both cells pinned executable: `test_q3_empty_subject_cells_ruled_and_pinned` |
 
 ## Review closure
 

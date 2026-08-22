@@ -367,3 +367,24 @@ def test_no_unvalidated_relation_path():
     assert len(assigns) == 1
     v = assigns[0].value
     assert isinstance(v, ast.Subscript) and v.slice.value == "relation"
+
+
+def test_q3_empty_subject_cells_ruled_and_pinned():
+    """0024 Q3, RESOLVED 2026-08-22 (Quentin, with the reachability check
+    the question asked for): a LITERAL empty subject never reaches the
+    coherence code — the shipped completeness check drops the falsy value —
+    and a WHITESPACE subject (truthy) survives, strips to an empty
+    claimant, and stays QUARANTINED. The ruling: an absent claimant is NOT
+    incoherent — a blank slot is no evidence the user is the claimant, so
+    the conservative floor holds. This test pins both cells so the ruling
+    stays executable."""
+    llm = StubLLM(_main([{"subject": "", "relation": QUARANTINE_RELATION,
+                          "object": "dropped"}]))
+    s, r = _ingest(llm)
+    assert _edges(s) == [] and r["facts"] + r["quarantined"] == 0
+    llm = StubLLM(_main([{"subject": "   ", "relation": QUARANTINE_RELATION,
+                          "object": "kept"}]))
+    s, _ = _ingest(llm)
+    e = _edges(s)[0]
+    assert e.subject == "" and e.relation == QUARANTINE_RELATION
+    assert e.provenance.disclosure is Disclosure.QUARANTINED
