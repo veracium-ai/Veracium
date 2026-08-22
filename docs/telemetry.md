@@ -55,6 +55,12 @@ synthetic memory and scores them — it never touches real memory:
   reaches the grounded partition, and the gate refuses to assert it (`asserts` must
   be 0).
 - **abstention** — a question with no grounded support is declined, not confabulated.
+- **revocation** — revoking a source sweeps its records out of the read seam;
+  new writes from that source land quarantined at birth, with the audit digest
+  binding them to the standing revocation; restatements and challengers revive
+  nothing; consolidation pools exclude the source; the quarantine floor survives
+  export/import; and a lift restores exactly what the revocation took — the
+  birth floor is never revisited.
 
 It self-scores structurally (no LLM "judge"), so the numbers don't depend on a
 grader's mood.

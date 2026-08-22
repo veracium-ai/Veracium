@@ -171,6 +171,11 @@ _DISPOSITIONED = {
     "introspect.py",    # the provenance-inspection surface REPORTS records
                         # with their flags; suppressing there would hide the
                         # very state an operator audits
+    "selfcheck.py",     # the revocation check READS episode flags
+                        # (disclosure, assertable, retired state) to VERIFY
+                        # the quarantine floor holds — the instrument that
+                        # asserts on assertability cannot itself be routed
+                        # through it; no summary text reaches any prompt
     "store",            # the store package: persistence, not consumption
     "revocation.py", "revocation_sweep.py",   # 0022's sweep projects records
     "graph.py",         # renders EDGES; episode summary reads are outcome

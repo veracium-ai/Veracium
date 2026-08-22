@@ -32,6 +32,18 @@ class Provider:
         return "I don't know."
 
     def _extract(self, low):
+        if "lisbon" in low:
+            return {"triples": [{"subject": "user", "relation": "located_at",
+                                 "object": "Lisbon", "volatility": "slow"}],
+                    "episode": "a feed reported the user moved to Lisbon"}
+        if "porto" in low:
+            return {"triples": [{"subject": "user", "relation": "located_at",
+                                 "object": "Porto", "volatility": "slow"}],
+                    "episode": "a feed reported the user moved to Porto"}
+        if "adopted a cat" in low:
+            return {"triples": [{"subject": "user", "relation": "has_pet",
+                                 "object": "a cat", "volatility": "durable"}],
+                    "episode": "a feed reported the user adopted a cat"}
         if "globex" in low:
             return {"triples": [{"subject": "user", "relation": "works_as",
                                  "object": "Globex", "volatility": "slow"}],
@@ -75,14 +87,47 @@ def test_abstention_detector_accepts_natural_phrasings():
         assert not selfcheck._ABSTAINED.search(s), f"should NOT count as abstention: {s!r}"
 
 
-def test_run_scores_all_three_checks_on_a_correct_provider():
+def test_run_scores_all_four_checks_on_a_correct_provider():
     r = selfcheck.run(Provider())
-    assert r["total_n"] == 4
+    assert r["total_n"] == 12
     assert r["supersession_ok"] == 2          # current value + retained history
     assert r["injection_asserts"] == 0        # the scam never asserted
     assert r["abstention_ok"] == 1            # unknown → declined
-    assert r["total_ok"] == 4 and r["passed"] is True
+    assert r["revocation_ok"] == 8            # the full revoke→re-entry→lift walk
+    assert r["total_ok"] == 12 and r["passed"] is True
     assert r["errors"] == []
+    # every revocation cell individually true — a sum can hide which one
+    assert all(r["detail"]["revocation"].values()), r["detail"]["revocation"]
+
+
+def test_revocation_check_detects_a_broken_guarantee(monkeypatch):
+    """The check must be able to FAIL. A selfcheck that still passes when
+    revocation is switched off is a label, not a check — the product's own
+    argument, applied to its own instrument. Neuter revoke_source and the
+    walk must come apart across its cells."""
+    import veracium.store.revocation as rv
+    monkeypatch.setattr(rv, "revoke_source",
+                        lambda *a, **k: {"effects": [], "standing": False})
+    r = selfcheck.run(Provider())
+    d = r["detail"]["revocation"]
+    assert not d["revoke_swept_standing"]
+    assert not d["reentry_quarantined_at_birth"]
+    assert not d["audit_digest_binds"]
+    assert r["revocation_ok"] < r["revocation_n"]
+    assert r["passed"] is False
+
+
+def test_revocation_check_cells_are_the_proposed_walk():
+    """The check's cells ARE the agreed shape (research proposal 2026-08-22 +
+    the Q4 refinement): sweep, quarantine-at-birth with the binding digest,
+    non-revival, the negative control, pool exclusion, portability, exact
+    lift. Pinned by name so a cell cannot silently vanish from the walk."""
+    r = selfcheck.run(Provider())
+    assert set(r["detail"]["revocation"]) == {
+        "revoke_swept_standing", "reentry_quarantined_at_birth",
+        "audit_digest_binds", "no_revival_of_standing_state",
+        "unrevoked_source_clean", "consolidation_pool_excludes",
+        "import_preserves_floor", "lift_restores_only_what_revocation_took"}
 
 
 def test_result_is_content_free_through_the_collector():
@@ -91,10 +136,14 @@ def test_result_is_content_free_through_the_collector():
     c = T.Collector()
     c.record("selfcheck", r)
     snap = c.snapshot()["events"]["selfcheck"]["sums"]
-    assert snap["total_ok"] == 4.0 and snap["total_n"] == 4.0
+    assert snap["total_ok"] == 12.0 and snap["total_n"] == 12.0
     assert snap["injection_asserts"] == 0.0
+    # revocation_ok/_n are NOT whitelisted (a schema decision, specs/0017) —
+    # they reach telemetry only inside the totals
+    assert "revocation_ok" not in snap and "revocation_n" not in snap
     flat = json.dumps(c.snapshot())
-    for leak in ("Globex", "Acme", "4,200", "Mittens", "detail", "passed", "errors"):
+    for leak in ("Globex", "Acme", "4,200", "Mittens", "Lisbon", "Porto",
+                 "sc-feed", "detail", "passed", "errors"):
         assert leak not in flat
 
 
@@ -105,9 +154,9 @@ def test_memory_self_check_emits_selfcheck_event(tmp_path, monkeypatch):
                  config=MemoryConfig(db_path=str(tmp_path / "unused.db")))
     result = mem.self_check()
     mem.close()
-    assert result["total_n"] == 4
+    assert result["total_n"] == 12
     snap = coll.snapshot()["events"]["selfcheck"]["sums"]
-    assert snap["total_n"] == 4.0
+    assert snap["total_n"] == 12.0
     # the caller's own store was never used by the check
     assert "detail" not in json.dumps(coll.snapshot())
 

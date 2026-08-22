@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- **selfcheck: the revocation guarantee is now user-runnable.** `veracium
+  selfcheck` (and `Memory.self_check()`) gains a fourth check walking the
+  0022/0023 seam end to end on a throwaway store: revoke a source → its
+  standing records leave the read seam → re-entry attempts (a restatement
+  and a changed value) land **quarantined at birth** with
+  `birth_revocation_digest` binding them to the standing revocation → no
+  standing record moves (byte-checked) → an unrevoked source is untouched →
+  consolidation pools exclude the source → the floor survives
+  export/import → a lift restores exactly what the revocation took, never
+  the birth floor. Eight cells fold into the existing content-free
+  `total_ok`/`total_n`; the per-check counters are not telemetered
+  (whitelisting is a consent-schema decision).
+
 - **0025 — THE RELATION VOCABULARY IS CLOSED** (accepted with 0024 at
   external round 12 after twelve rounds; implemented 2026-08-22; 0024's
   own mechanism remains measurement-frozen pending Research's baseline).
