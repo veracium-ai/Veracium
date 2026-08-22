@@ -117,7 +117,12 @@ open while the deletion primitive is closed.
   table shows most are correctly OTHER (possessives: "user's mom",
   "user's sister"; work topics: "User interviews", "end user"); the
   genuinely self-denoting rows (`me`, `I`, `[User]`) total ≈30 triples ≈
-  **0.016%**. The floor costs nothing real, and the alias set has no
+  **0.016%** — HAND-CLASSIFIED from the recorded distinct-string table,
+  not a regex verdict: the raw regex family said 305, a 10× overstatement
+  ("user's mom" denotes the mom), so a future reader re-derives the
+  figure from the table rather than trusting it (the
+  classify-from-artifacts rule, earning its keep on a live design
+  decision). The floor costs nothing real, and the alias set has no
   measured constituency yet.
 
 ## 4. Behaviour — the constructions
