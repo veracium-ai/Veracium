@@ -248,3 +248,48 @@ Design **ruled and closed**; **IMPLEMENTED 2026-08-22** — every §5 piece:
 
 It ships in `specs/`, so the next sealed package (whichever line it is)
 carries its own packaging contract and verifies it from the extraction.
+
+---
+
+## 9. Implementation review — round 1 (2026-08-22): RETURNED, folded same-day
+
+The reviewer attacked the implementation using the live 0001-v3 specimen
+(two live seals had run clean by dispatch). Verdict: return for revision —
+two blocking, one moderate. Every finding was verified against the code and
+folded; each is the review's own recurring class, caught one level deeper:
+
+1. **F1 (blocking) — the record could claim MORE scrutiny than occurred.**
+   `validate_record` enforced a minimum where the ruled principle ("the
+   record may report the policy, it must never choose it") demands
+   exactness: `independent_cross_check` without an independent witness and
+   `signed_ci` without any signature both passed. **Folded: classifications
+   must EQUAL the registry's** — a stronger claim becomes admissible only
+   when a code-owned proof requirement for it exists (none does; `signed_ci`
+   needs its signature carrier, signer identity rules and verifier first).
+   The mutation generator had encoded the same one-directional assumption
+   (downgrades only) — it now generates BOTH rank directions and every
+   attestation value, and the two named escalations are pinned by name.
+2. **F2 (blocking) — the manifest was a partially-verified carrier.** A
+   forged 40-char commit sharing the 7-char prefix, appended contradictory
+   identity lines, and stale hand-maintained version prose all passed. This
+   is blocking 2's class on the OTHER carrier: the whole-file equation
+   existed for COLLECTED.txt while `render_manifest` output went unbound.
+   **Folded: `PACKAGE_MANIFEST.txt == render_manifest(record, template)`,
+   byte-for-byte, template digest-bound in the record (RECORD_VERSION 2:
+   `templates.{header,manifest}`), verified from the extraction; commits
+   compared on all 40 characters; identity lines required unique; dynamic
+   prose tokenised out of the manifest templates.**
+3. **F3 (moderate) — the mtime ordering was tolerance-weakened.** §5.4
+   promises member mtimes ≤ the declared seal time; the loose carriers
+   landed ~13s after it and passed under the 900s tolerance — one constant
+   serving two contracts. **Folded: `build_archive` stamps appended members
+   with the declared seal epoch; `verify_archive` enforces `mtime ≤
+   seal_epoch` exactly. The tolerance remains only where it belongs — the
+   verifier's-own-clock future check.**
+
+Survived the reviewer's attacks: the whole-file COLLECTED construction, the
+capture-before-record ordering, the clean-path verifications, and the
+launcher's runtime qualification (it refused their SQLite 3.53.1, which
+they correctly treated as the guard working). Queued from the round: a
+portable qualified runtime for independent full-suite reproduction (rides
+with the hashed no-ensurepip launcher bootstrap item).

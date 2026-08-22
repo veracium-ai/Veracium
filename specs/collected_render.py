@@ -98,6 +98,26 @@ def render_manifest(record: dict, manifest_template: str) -> str:
     return out
 
 
+def manifest_problems(man_text: str, record: dict,
+                      manifest_template: str) -> list:
+    """The manifest's own whole-file equation (impl-review round 1, F2):
+    PACKAGE_MANIFEST.txt == render_manifest(record, template), byte-for-byte.
+    The partial witness parsed two lines and left every other byte unowned —
+    forged trailing claims and hand-maintained dynamic prose both rode along.
+    Same rule as COLLECTED.txt: no bytes exist that no check owns."""
+    try:
+        expected = render_manifest(record, manifest_template)
+    except (RenderError, KeyError, TypeError) as e:
+        return [f"the manifest construction itself refuses: {e}"]
+    if man_text != expected:
+        i = next((k for k, (a, b) in enumerate(zip(man_text, expected))
+                  if a != b), min(len(man_text), len(expected)))
+        return [f"PACKAGE_MANIFEST.txt is not the recomputed construction — "
+                f"first divergence at byte {i} (have {man_text[i:i + 40]!r}, "
+                f"expected {expected[i:i + 40]!r}) (F2)"]
+    return []
+
+
 def compose(record: dict, template_text: str, rs_text: str) -> str:
     """The whole file, built the one way it may exist."""
     import skip_inventory as S

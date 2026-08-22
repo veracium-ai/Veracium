@@ -39,7 +39,9 @@ import time
 
 HERE = pathlib.Path(__file__).resolve().parent
 
-RECORD_VERSION = 1
+RECORD_VERSION = 2   # v2 (impl-review round 1, F2): the record binds BOTH
+                     # templates — header and manifest — and the manifest is
+                     # verified as a whole-file equation like COLLECTED.txt
 
 # ---------------------------------------------------------------------------
 # The four closed evidentiary axes (§5.2). VALIDATIONS and ATTESTATIONS are
@@ -144,7 +146,8 @@ FIELD_POLICY = {
 
 FIELD_KEYS = ("value", "source", "validation", "witness",
               "external_attestation", "witness_data")
-TOP_KEYS = ("record_version", "template", "fields")
+TOP_KEYS = ("record_version", "templates", "fields")
+TEMPLATES_KEYS = ("header", "manifest")
 TEMPLATE_KEYS = ("path", "sha256")
 
 TS_FORMAT = "%Y%m%dT%H%MZ"
@@ -312,6 +315,7 @@ def build_record(root: pathlib.Path, *, line: str, version: str,
                  launcher_path: pathlib.Path,
                  harness_captures: list[tuple[str, pathlib.Path]],
                  template_path: pathlib.Path,
+                 manifest_template_path: pathlib.Path,
                  transcript_path: pathlib.Path | None = None) -> dict:
     """Derive the record. Capture-backed fields come FROM the capture files;
     identity fields come from their own canonical carriers (package_identity,
@@ -334,8 +338,10 @@ def build_record(root: pathlib.Path, *, line: str, version: str,
     evidence_text, observed = derive_evidence(transcript_path, total_ev,
                                               launcher_ev)
     specs = line.split("-")
-    template_bytes = template_path.read_bytes()
-    rel_template = template_path.resolve().relative_to(root.resolve())
+
+    def _template_entry(path: pathlib.Path) -> dict:
+        return {"path": str(path.resolve().relative_to(root.resolve())),
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
 
     f = FIELD_POLICY
     fields = {
@@ -365,8 +371,8 @@ def build_record(root: pathlib.Path, *, line: str, version: str,
         "ts": _field(f["ts"], ts),
     }
     return {"record_version": RECORD_VERSION,
-            "template": {"path": str(rel_template),
-                         "sha256": hashlib.sha256(template_bytes).hexdigest()},
+            "templates": {"header": _template_entry(template_path),
+                          "manifest": _template_entry(manifest_template_path)},
             "fields": fields}
 
 
@@ -393,14 +399,22 @@ def validate_record(record) -> list:
     if record["record_version"] != RECORD_VERSION:
         p.append(f"record_version is {record['record_version']!r}, this "
                  f"verifier implements {RECORD_VERSION}")
-    t = record["template"]
-    if not isinstance(t, dict) or sorted(t) != sorted(TEMPLATE_KEYS):
-        p.append(f"template keys are "
-                 f"{sorted(t) if isinstance(t, dict) else type(t).__name__}, "
-                 f"expected exactly {sorted(TEMPLATE_KEYS)}")
-    elif not (isinstance(t["sha256"], str)
-              and re.fullmatch(r"[0-9a-f]{64}", t["sha256"])):
-        p.append("template.sha256 is not a lowercase sha256 hex digest")
+    ts_ = record["templates"]
+    if not isinstance(ts_, dict) or sorted(ts_) != sorted(TEMPLATES_KEYS):
+        p.append(f"templates keys are "
+                 f"{sorted(ts_) if isinstance(ts_, dict) else type(ts_).__name__},"
+                 f" expected exactly {sorted(TEMPLATES_KEYS)} (F2: the "
+                 f"manifest is a bound carrier, not a courtesy copy)")
+    else:
+        for which, t in ts_.items():
+            if not isinstance(t, dict) or sorted(t) != sorted(TEMPLATE_KEYS):
+                p.append(f"templates.{which} keys are "
+                         f"{sorted(t) if isinstance(t, dict) else type(t).__name__},"
+                         f" expected exactly {sorted(TEMPLATE_KEYS)}")
+            elif not (isinstance(t["sha256"], str)
+                      and re.fullmatch(r"[0-9a-f]{64}", t["sha256"])):
+                p.append(f"templates.{which}.sha256 is not a lowercase "
+                         f"sha256 hex digest")
 
     fields = record["fields"]
     if not isinstance(fields, dict):
@@ -424,7 +438,14 @@ def validate_record(record) -> list:
         if not isinstance(f["value"], str) or not f["value"]:
             p.append(f"{name}: value must be a non-empty string")
             continue
-        # the four axes, each against the registry (blocking 1)
+        # the four axes, each against the registry — EXACT, in BOTH rank
+        # directions (impl-review round 1, F1: a minimum-only rule let the
+        # record claim MORE scrutiny than occurred — `independent_cross_check`
+        # without an independent witness, `signed_ci` without a signature.
+        # False modesty and false confidence are the same defect: the record
+        # reporting a policy it did not run. A stronger classification
+        # becomes claimable only when a code-owned proof requirement for it
+        # exists; none does today, so exactness is the whole rule.)
         if f["source"] not in SOURCES:
             p.append(f"{name}: unknown source {f['source']!r}")
         elif f["source"] != pol.source:
@@ -432,11 +453,13 @@ def validate_record(record) -> list:
                      f"registry's {pol.source!r}")
         if f["validation"] not in VALIDATIONS:
             p.append(f"{name}: unknown validation {f['validation']!r}")
-        elif _rank(VALIDATIONS, f["validation"]) < _rank(VALIDATIONS,
-                                                         pol.min_validation):
-            p.append(f"{name}: validation {f['validation']!r} is BELOW the "
-                     f"registry minimum {pol.min_validation!r} — the record "
-                     f"cannot downgrade its own scrutiny (blocking 1)")
+        elif f["validation"] != pol.min_validation:
+            direction = ("BELOW" if _rank(VALIDATIONS, f["validation"])
+                         < _rank(VALIDATIONS, pol.min_validation)
+                         else "ABOVE, without a code-owned proof requirement")
+            p.append(f"{name}: validation {f['validation']!r} is {direction} "
+                     f"the registry's {pol.min_validation!r} — the record "
+                     f"reports the policy, it does not choose it (F1)")
         if f["witness"] not in WITNESSES:
             p.append(f"{name}: witness id {f['witness']!r} is not implemented "
                      f"— a refusal, not a skip (moderate 4)")
@@ -448,10 +471,12 @@ def validate_record(record) -> list:
         if f["external_attestation"] not in ATTESTATIONS:
             p.append(f"{name}: unknown external_attestation "
                      f"{f['external_attestation']!r}")
-        elif _rank(ATTESTATIONS, f["external_attestation"]) < \
-                _rank(ATTESTATIONS, pol.min_attestation):
-            p.append(f"{name}: external_attestation below the registry "
-                     f"minimum {pol.min_attestation!r}")
+        elif f["external_attestation"] != pol.min_attestation:
+            p.append(f"{name}: external_attestation "
+                     f"{f['external_attestation']!r} is not the registry's "
+                     f"{pol.min_attestation!r} — `signed_ci` is claimable "
+                     f"only when its signature carrier, signer identity "
+                     f"rules and verifier exist in code; they do not (F1)")
         wd = f["witness_data"]
         want = WITNESS_DATA_KEYS.get(f["witness"], None)
         if want is not None:
@@ -572,34 +597,43 @@ def witness_problems(record: dict, root: pathlib.Path,
             problems.append(f"package_manifest witness: {e}")
             man = None
         if man is not None:
-            mp = re.search(r"^PACKAGE:\s*(\S+)\s+—\s+external ROUND\s+(\d+)",
-                           man, re.M)
-            mc = re.search(r"^COMMIT:\s*([0-9a-f]{7,40})", man, re.M)
-            if not mp:
-                problems.append("package_manifest witness: the manifest has "
-                                "no PACKAGE identity line")
+            # F2: identity lines must be UNIQUE — the first-match read let a
+            # forged second PACKAGE:/COMMIT: line ride beside the true one
+            mps = re.findall(r"^PACKAGE:\s*(\S+)\s+—\s+external ROUND\s+(\d+)",
+                             man, re.M)
+            mcs = re.findall(r"^COMMIT:\s*([0-9a-f]+)\b", man, re.M)
+            if len(mps) != 1:
+                problems.append(f"package_manifest witness: {len(mps)} "
+                                f"PACKAGE identity lines, expected exactly "
+                                f"one (F2: a second line can contradict the "
+                                f"first)")
             else:
-                if active("package") and mp.group(1) != value("package"):
+                mp = mps[0]
+                if active("package") and mp[0] != value("package"):
                     problems.append(f"package: record {value('package')!r} vs "
-                                    f"manifest {mp.group(1)!r}")
-                if active("version") and not mp.group(1).endswith(
+                                    f"manifest {mp[0]!r}")
+                if active("version") and not mp[0].endswith(
                         f"-{value('version')}"):
                     problems.append(f"version: {value('version')!r} is not "
                                     f"the manifest package's version")
-                if active("round") and mp.group(2) != value("round"):
+                if active("round") and mp[1] != value("round"):
                     problems.append(f"round: record {value('round')!r} vs "
-                                    f"manifest {mp.group(2)!r}")
-            if not mc:
-                problems.append("package_manifest witness: the manifest has "
-                                "no COMMIT line")
+                                    f"manifest {mp[1]!r}")
+            if len(mcs) != 1:
+                problems.append(f"package_manifest witness: {len(mcs)} "
+                                f"COMMIT lines, expected exactly one (F2)")
             else:
-                for n in ("commit", "commit_full"):
-                    if active(n) and not (
-                            value(n).startswith(mc.group(1)[:7])
-                            or mc.group(1).startswith(value(n)[:7])):
-                        problems.append(f"{n}: record {value(n)!r} vs "
-                                        f"manifest {mc.group(1)!r} — round "
-                                        f"4's two-commit defect")
+                # F2: ALL FORTY characters — the 7-char comparison accepted a
+                # forged full commit sharing only the short prefix
+                if active("commit_full") and mcs[0] != value("commit_full"):
+                    problems.append(f"commit_full: record "
+                                    f"{value('commit_full')!r} vs manifest "
+                                    f"{mcs[0]!r} — compared exactly, all 40 "
+                                    f"(F2)")
+                if active("commit") and value("commit") != mcs[0][:7]:
+                    problems.append(f"commit: record {value('commit')!r} is "
+                                    f"not the manifest commit's 7-char "
+                                    f"prefix")
 
     # -- reviews_sent: the candidate field re-rendered from the identity
     #    record, which package_identity itself validates against reviews.py

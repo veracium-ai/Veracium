@@ -266,8 +266,16 @@ def _changed_from_previous(line: str, version: str,
     return "\n".join(lines)
 
 
-def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
-    """`git archive` of HEAD plus the loose files, with NO duplicate members."""
+def build_archive(name: str, extra: dict[str, str],
+                  seal_epoch: int | None = None) -> pathlib.Path:
+    """`git archive` of HEAD plus the loose files, with NO duplicate members.
+
+    `seal_epoch` (impl-review round 1, F3): appended members are stamped with
+    the DECLARED seal time, not the write time — C-plus §5.4 promises member
+    mtimes ≤ the declared seal time, and the loose carriers were landing ~13s
+    after it. Normalising at the source keeps the promise exact; verify
+    enforces it with NO tolerance (the 900s tolerance belongs to the
+    verifier's-own-clock check, a different contract)."""
     dest = ARCHIVES / f"{name}.tar.gz"
     with tempfile.TemporaryDirectory() as td:
         tar_path = pathlib.Path(td) / "p.tar"
@@ -295,7 +303,8 @@ def build_archive(name: str, extra: dict[str, str]) -> pathlib.Path:
                 info.uid = info.gid = 0
                 info.uname = info.gname = "root"
                 info.mode = 0o644
-                info.mtime = int(info.mtime)
+                info.mtime = (int(seal_epoch) if seal_epoch is not None
+                              else int(info.mtime))
                 with open(p, "rb") as fh:
                     tf.addfile(info, fh)
         data = tar_path.read_bytes()
@@ -554,12 +563,16 @@ def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
                   f"{base_ts.group(1) if base_ts else 'absent'} and the "
                   f"record's ts {rec_ts} are not one canonical value (§5.4)")
         seal_epoch = _cal.timegm(_time.strptime(rec_ts, "%Y%m%dT%H%MZ"))
+        # F3: EXACT — §5.4 promises mtime ≤ the declared seal time, and the
+        # sealer now stamps appended members with the seal epoch, so there is
+        # nothing for a tolerance to forgive. The 900s tolerance is the
+        # verifier's-own-clock contract and does not apply here.
         with tarfile.open(path) as tf:
             late = [m.name for m in tf.getmembers()
-                    if m.mtime > seal_epoch + _CR.TS_FUTURE_TOLERANCE_S]
+                    if m.mtime > seal_epoch]
         if late:
-            _fail(f"archive members postdate the declared seal time beyond "
-                  f"the {_CR.TS_FUTURE_TOLERANCE_S}s tolerance: {late[:5]}")
+            _fail(f"archive members postdate the declared seal time "
+                  f"(§5.4, exact — F3): {late[:5]}")
         ran = []
         for name, cmd in EXTRACTION_CHECKS:
             target = cmd[-1]
@@ -739,7 +752,8 @@ def main() -> int:
             ROOT, line=_line, version=a.version, round_no=round_no,
             commit_full=commit, ts=ts, rs_path=rs_path,
             probe_path=probe_path, launcher_path=launcher_path,
-            harness_captures=harness_captures, template_path=a.header)
+            harness_captures=harness_captures, template_path=a.header,
+            manifest_template_path=a.manifest)
         for p in CR.validate_record(record):
             _fail(f"the derived record does not conform to the code-owned "
                   f"registry: {p}")
@@ -749,6 +763,10 @@ def main() -> int:
         # can read it; the captures are passed as overrides because the
         # archive does not exist yet.
         manifest = CX.render_manifest(record, a.manifest.read_text())
+        for p in CX.manifest_problems(manifest, record,
+                                      a.manifest.read_text()):
+            _fail(f"the built manifest fails its own whole-file equation: "
+                  f"{p}")
         wp = CR.witness_problems(
             record, ROOT, manifest_text=manifest,
             overrides={"COLLECTED_pytest_rs.txt": rs_path,
@@ -798,7 +816,10 @@ def main() -> int:
         if set(extra) != set(LOOSE_CARRIERS):
             _fail("the extra dict and LOOSE_CARRIERS diverged — the one "
                   "authority split (R10-2)")
-        archive = build_archive(name, extra)
+        import calendar as _cal2
+        archive = build_archive(
+            name, extra,
+            seal_epoch=_cal2.timegm(time.strptime(ts, "%Y%m%dT%H%MZ")))
 
     digest = verify_archive(archive, specs)
     (ARCHIVES / f"{name}.tar.gz.sha256").write_text(

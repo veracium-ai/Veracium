@@ -47,7 +47,8 @@ TEMPLATE = (
     "harnesses: __HARNESSES__\nevidence: __EVIDENCE__\n"
     "extracted: __EXTRACTED__\nstatic prose the template owns\n")
 MANIFEST_TEMPLATE = ("PACKAGE: __PACKAGE__ — external ROUND __ROUND__\n"
-                     "COMMIT: __COMMIT_FULL__\nloose:\n__LOOSE__\n")
+                     "COMMIT: __COMMIT_FULL__\ncandidates:\n__CANDIDATES__\n"
+                     "loose:\n__LOOSE__\n")
 RS = ("...........\n1779 passed, 8 skipped, 25 warnings in 100.00s "
       "(0:01:40)\n")
 
@@ -83,7 +84,9 @@ def _record(tmp: pathlib.Path) -> dict:
     must ship from."""
     cap = _captures(tmp)
     tpl = ROOT / "specs" / "package" / ".test_cplus_template.txt"
+    mtpl = ROOT / "specs" / "package" / ".test_cplus_manifest.txt"
     tpl.write_text(TEMPLATE)
+    mtpl.write_text(MANIFEST_TEMPLATE)
     try:
         return CR.build_record(
             ROOT, line=LINE, version=VERSION, round_no=ROUND,
@@ -92,9 +95,11 @@ def _record(tmp: pathlib.Path) -> dict:
             rs_path=cap["rs"], probe_path=cap["probe"],
             launcher_path=cap["launcher"],
             harness_captures=cap["harnesses"],
-            template_path=tpl, transcript_path=cap["transcript"])
+            template_path=tpl, manifest_template_path=mtpl,
+            transcript_path=cap["transcript"])
     finally:
         tpl.unlink(missing_ok=True)
+        mtpl.unlink(missing_ok=True)
 
 
 def test_the_clean_construction_conforms_renders_and_recomputes(tmp_path):
@@ -115,11 +120,26 @@ def _mutations(record):
         m = copy.deepcopy(record)
         m["fields"][name]["value"] += " tampered"
         yield f"{name}: value mutated", name, m
-        for weaker in CR.VALIDATIONS[:CR.VALIDATIONS.index(
-                pol.min_validation)]:
+        # BOTH rank directions (impl-review round 1, F1: the downgrade-only
+        # generator encoded the same one-directional assumption as the
+        # minimum-only rule it tested — false confidence is the same defect
+        # as false modesty)
+        for other_v in CR.VALIDATIONS:
+            if other_v == pol.min_validation:
+                continue
             m = copy.deepcopy(record)
-            m["fields"][name]["validation"] = weaker
-            yield f"{name}: validation DOWNGRADED to {weaker}", name, m
+            m["fields"][name]["validation"] = other_v
+            way = ("DOWNGRADED" if CR.VALIDATIONS.index(other_v)
+                   < CR.VALIDATIONS.index(pol.min_validation)
+                   else "ESCALATED without proof")
+            yield f"{name}: validation {way} to {other_v}", name, m
+        for other_a in CR.ATTESTATIONS:
+            if other_a == pol.min_attestation:
+                continue
+            m = copy.deepcopy(record)
+            m["fields"][name]["external_attestation"] = other_a
+            yield (f"{name}: attestation claimed {other_a} without a "
+                   f"verifier"), name, m
         for other in CR.WITNESSES:
             if other == pol.witness:
                 continue
@@ -261,6 +281,68 @@ def test_capture_witnesses_bind_digests_and_content(tmp_path):
         m = copy.deepcopy(r)
         m["fields"][fname]["witness_data"]["artifact"] = "../outside.json"
         assert any("artifact" in p for p in CR.validate_record(m)), fname
+
+
+def test_impl_review_round1_regressions(tmp_path):
+    """The reviewer's four recommended regressions, each their exact attack
+    against the live specimen, done first:
+
+    F1: rank escalation and unearned attestation (in the generated matrix
+    now — asserted here by name so the cells cannot silently vanish).
+    F2: a forged full commit sharing the 7-char prefix; duplicate/trailing
+    identity claims; stale hand-maintained dynamic prose — all three fell
+    to the partial witness; the whole-manifest equation owns every byte.
+    F3: member mtimes exactly at the declared seal epoch."""
+    r = _record(tmp_path)
+    man = CX.render_manifest(r, MANIFEST_TEMPLATE)
+
+    # F1, by name: both escalations refuse at validation
+    m = copy.deepcopy(r)
+    m["fields"]["context"]["validation"] = "independent_cross_check"
+    assert any("ABOVE" in p for p in CR.validate_record(m))
+    m = copy.deepcopy(r)
+    m["fields"]["ts"]["external_attestation"] = "signed_ci"
+    assert any("signed_ci" in p for p in CR.validate_record(m))
+
+    # F2a: a forged 40-char commit sharing only the short prefix
+    m = copy.deepcopy(r)
+    forged = COMMIT[:7] + "f" * 33
+    m["fields"]["commit_full"]["value"] = forged
+    assert any("all 40" in p for p in CR.witness_problems(
+        m, ROOT, manifest_text=man, only={"commit_full"}))
+    # ...and the whole-manifest equation catches it from the other side
+    assert CX.manifest_problems(man, m, MANIFEST_TEMPLATE)
+
+    # F2b: duplicate/trailing identity claims — the first-match read is gone
+    forged_man = man + "PACKAGE: forged-v999 — external ROUND 999\n" \
+                 + "COMMIT: " + "0" * 40 + "\n"
+    assert any("expected exactly one" in p for p in CR.witness_problems(
+        r, ROOT, manifest_text=forged_man,
+        only={"package", "round", "commit_full"}))
+    assert CX.manifest_problems(forged_man, r, MANIFEST_TEMPLATE)
+
+    # F2c: stale dynamic prose — ANY byte the render does not produce refuses
+    assert CX.manifest_problems(
+        man.replace("candidates:", "candidates (draft v999):"), r,
+        MANIFEST_TEMPLATE)
+
+    # F3: appended members are STAMPED with the seal epoch and verified
+    # exactly — no tolerance
+    import calendar, tarfile, time as _t
+    epoch = calendar.timegm(_t.strptime(r["fields"]["ts"]["value"],
+                                        "%Y%m%dT%H%MZ"))
+    old_archives = sp.ARCHIVES
+    try:
+        sp.ARCHIVES = tmp_path
+        arc = sp.build_archive(".test-mtime", {"LOOSE_A.txt": "a\n"},
+                               seal_epoch=epoch)
+        with tarfile.open(arc) as tf:
+            loose = [m2 for m2 in tf.getmembers()
+                     if m2.name.endswith("LOOSE_A.txt")]
+        assert loose and all(m2.mtime == epoch for m2 in loose), (
+            "appended members must carry the DECLARED seal time exactly")
+    finally:
+        sp.ARCHIVES = old_archives
 
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):

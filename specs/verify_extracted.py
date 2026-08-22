@@ -88,31 +88,44 @@ def header_carrier() -> int:
 
     problems = CR.validate_record(record)
     if not problems:
-        tpl_rel = record["template"]["path"]
-        tpl_path = (ROOT / tpl_rel).resolve()
-        if ROOT.resolve() not in tpl_path.parents:
-            problems.append(f"the template path {tpl_rel!r} escapes the "
-                            f"extraction")
-        elif not tpl_path.exists():
-            problems.append(f"the named template {tpl_rel!r} is not in the "
-                            f"extraction")
-        else:
-            tpl_bytes = tpl_path.read_bytes()
-            if hashlib.sha256(tpl_bytes).hexdigest() \
-                    != record["template"]["sha256"]:
-                problems.append(f"the template {tpl_rel!r} does not match "
-                                f"the record's digest")
+        texts = {}
+        for which in ("header", "manifest"):
+            tpl_rel = record["templates"][which]["path"]
+            tpl_path = (ROOT / tpl_rel).resolve()
+            if ROOT.resolve() not in tpl_path.parents:
+                problems.append(f"the {which} template path {tpl_rel!r} "
+                                f"escapes the extraction")
+            elif not tpl_path.exists():
+                problems.append(f"the named {which} template {tpl_rel!r} is "
+                                f"not in the extraction")
             else:
-                collected, rs = _carriers()
-                problems += CX.whole_file_problems(
-                    collected, record, tpl_bytes.decode(), rs)
-                problems += CR.witness_problems(record, ROOT)
+                tpl_bytes = tpl_path.read_bytes()
+                if hashlib.sha256(tpl_bytes).hexdigest() \
+                        != record["templates"][which]["sha256"]:
+                    problems.append(f"the {which} template {tpl_rel!r} does "
+                                    f"not match the record's digest")
+                else:
+                    texts[which] = tpl_bytes.decode()
+        if not problems:
+            collected, rs = _carriers()
+            problems += CX.whole_file_problems(
+                collected, record, texts["header"], rs)
+            # F2: the manifest is the SAME kind of carrier — one whole-file
+            # equation, no bytes unowned
+            man_path = ROOT / "PACKAGE_MANIFEST.txt"
+            if not man_path.exists():
+                problems.append("PACKAGE_MANIFEST.txt is not in the "
+                                "extraction")
+            else:
+                problems += CX.manifest_problems(
+                    man_path.read_text(), record, texts["manifest"])
+            problems += CR.witness_problems(record, ROOT)
     if problems:
         print("header verification FAILED:\n  " + "\n  ".join(problems),
               file=sys.stderr)
         return 1
-    print("header: PASS (record conforms, whole file recomputes, "
-          "witnesses hold)")
+    print("header: PASS (record conforms; COLLECTED.txt AND "
+          "PACKAGE_MANIFEST.txt recompute byte-for-byte; witnesses hold)")
     return 0
 
 
