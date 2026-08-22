@@ -145,10 +145,14 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
         post_revoke = snap()
 
         # RE-ENTRY, both shapes: a restatement (reinforce/absorb/renew bait)
-        # and a changed value (supersession bait)
+        # and a changed value (supersession bait). Snapshotted PER ATTEMPT:
+        # one cumulative comparison would let a mutation the first attempt
+        # made and the second reversed cancel out.
         r1 = mem.remember(uid, "Feed update: the user moved to Lisbon.",
                           author=EvidenceAuthor.THIRD_PARTY, event_type="feed",
                           source_id=SRC, date="2026-05-03")
+        mid = snap()
+        r1_untouched = all(mid[k] == v for k, v in post_revoke.items())
         r2 = mem.remember(uid, "Feed update: the user moved to Porto.",
                           author=EvidenceAuthor.THIRD_PARTY, event_type="feed",
                           source_id=SRC, date="2026-05-04")
@@ -174,9 +178,12 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
         # the fact a paranoid adopter should want to verify
         digest_binds = (r1.get("birth_revocation_digest") == digest
                         and r2.get("birth_revocation_digest") == digest)
-        # nothing standing moved: whatever maintenance verb the restatement
-        # or challenger reached, every pre-existing record is byte-unchanged
-        no_revival = all(after[k] == v for k, v in post_revoke.items())
+        # nothing standing moved: whatever maintenance verb each attempt
+        # reached, every record that predated it is byte-unchanged — the
+        # second attempt's base includes the first's quarantined records, so
+        # a verb touching THOSE would also surface here
+        no_revival = (r1_untouched
+                      and all(after[k] == v for k, v in mid.items()))
 
         # negative control: an UNREVOKED source is untouched by the standing
         # revocation (third-party still caps, but never quarantines)
