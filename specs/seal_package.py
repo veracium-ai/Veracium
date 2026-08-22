@@ -383,9 +383,11 @@ def identity_problems(archive_name: str, col: str, man: str,
     if not mp:
         problems.append("PACKAGE_MANIFEST.txt has no `PACKAGE: <name> — "
                         "external ROUND <n>` identity line (R16-1)")
-    ch = re.search(r"COUPLED round-(\d+) external-review package \((v\d+)\)", col)
+    # `COUPLED` is optional: multi-spec lines say it, a single-spec line
+    # (0001 is the first) says nothing — the identity is the round+version.
+    ch = re.search(r"round-(\d+) external-review package \((v\d+)\)", col)
     if not ch:
-        problems.append("COLLECTED.txt has no `COUPLED round-<n> "
+        problems.append("COLLECTED.txt has no `round-<n> "
                         "external-review package (<version>)` line (R16-1)")
     if problems:
         return problems

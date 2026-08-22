@@ -56,6 +56,12 @@ PACKAGES = {
     # L1 (author-blind quarantine) + L2 (relation-vocabulary enforcement):
     # independent Spec-Requires, coupled as ONE review package for the same
     # economy the 0004 triple used; per-spec verdicts requested.
+    # 0001's rounds 1-2 (v2 reviewed 2026-07-31, v3 reviewed 2026-08-01) were
+    # document-only sends that predate this record and the sealer; the line
+    # enters the record at its first SEALED package, round 3.
+    "0001": {
+        "v3": (3, {"0001": "v4"}),
+    },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
         "v2": (2, {"0024": "v3", "0025": "v3"}),
@@ -73,7 +79,7 @@ PACKAGES = {
 }
 
 # per-line: the version each line's mechanism first governed
-FIRST_GOVERNED = {"0022-0023": 17, "0024-0025": 1}
+FIRST_GOVERNED = {"0022-0023": 17, "0024-0025": 1, "0001": 3}
 
 
 def _reviews():
@@ -112,7 +118,8 @@ def render_candidate_lines(line: str, version: str, indent: str = INDENT) -> str
     package was v17. A carrier that states a fact must be filled from the fact.
     """
     cands = candidates(line, version)
-    names = {"0022": "specs/0022-source-revocation.md",
+    names = {"0001": "specs/0001-generated-content-trust-class.md",
+             "0022": "specs/0022-source-revocation.md",
              "0023": "specs/0023-non-revival-under-maintenance.md",
              "0024": "specs/0024-authorship-before-structural-quarantine.md",
              "0025": "specs/0025-relation-vocabulary-enforcement.md"}

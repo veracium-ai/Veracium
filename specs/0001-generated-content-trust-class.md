@@ -1,10 +1,22 @@
 # Feature spec: generated-content trust class (`EvidenceAuthor.ASSISTANT`)
 
-Spec-Status: deferred
+Spec-Status: draft
+Spec-Requires: 0003, 0005
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **deferred** — external review 2026-07-31 deferred v2; v3 written and re-reviewed, amendments outstanding (see §13 and the v3 external review)
+> **draft (v4)** — re-entering review on Quentin's word, 2026-08-22. v2 was
+> deferred at external review 2026-07-31; v3 (the narrowed rewrite) was
+> re-reviewed 2026-08-01 and deferred on one blocking amendment — the render
+> marker keyed on `use_only` with hardcoded third-party text. **That gate
+> CLOSED in shipped code 2026-08-15** (`graph._ORIGIN_LABELS` keys on the
+> author, an unlabelled class fails safe to `unverified-origin`, and
+> `tests/test_render_origin.py` trips on any new author class without a
+> label — 6 passed on the tree this candidate ships from). v4 = v3's ruled
+> content with the gate closure recorded, every mechanical claim RE-EXECUTED
+> against v0.13.0+ (eleven releases of drift — §2/§2c-ii), the v2-form
+> carriers §13 missed rewritten in place (§14 lists them), and the five
+> specs that shipped consumers since v3 was written answered in §2d.
 
 *Fill this in **before** implementing. See `PROCESS.md`.*
 
@@ -14,8 +26,8 @@ Spec-Status: deferred
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — narrowed after external review deferred v2. §13 lists the changes. Previously v2 — (`spec-0001-research-review.md`); §11 lists the changes. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 was deferred at external review; **the assertability widening is withdrawn, not re-argued.** v3 narrows to `use_only` for every subject and has its own external review outstanding. |
+| **Version** | **v4** — the re-entry candidate: v3's ruled content, currency-passed and carrier-swept. §14 lists the changes; §13 lists v3's. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred (widening withdrawn, not re-argued); v3 deferred on the render-marker gate, since closed in shipped code (2026-08-15). v4 is the external candidate. |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -69,48 +81,51 @@ injected into recall. Nobody had enumerated who reads the field.*
 
 | field | read / written | its **documented** contract | every other consumer | does this change preserve the contract? |
 |---|---|---|---|---|
-| `Provenance.author_of_evidence` | written by `ingest`, read by 8 modules | "Who authored the evidence. The core injection-resistance signal." | `ingest` (`_disclosure_for`, `_source_type`), `lifecycle:101` **(episode consolidation — see below)**, `introspect`, `__init__`, `cli:299` **(hardcoded `choices=`)**, `mcp_server:26` (host string→enum map), `selfcheck`, plus 16 test files, 5 docs and 2 examples | **Yes — extended, not redefined.** No existing member changes meaning. **But the value set is no longer closed**, which is the contract change that matters: every consumer branching on it must be re-read, not assumed. |
+| `Provenance.author_of_evidence` | written by `ingest`, read by **18 src modules** *(re-enumerated 2026-08-22 — was 8 at v3; the growth is 0003/0005/0020–0022/0025 shipping, see §2d)* | "Who authored the evidence. The core injection-resistance signal." | `ingest` (`_disclosure_for`, `_source_type`), `authority` **(the 0003 supersession ladder — §2d.1)**, `portability` **(the 0005 import cap — §2d.2)**, `graph` **(`_ORIGIN_LABELS`, the closed v3 gate)**, `contribution`, `scope`, `scope_read`, `store/revocation`, `store/sqlite` **(consolidation min-trust at the fenced write — the old `lifecycle:101` defect's discharged home, see below)**, `lifecycle`, `introspect`, `__init__`, `compile`, `proactive`, `cli:410` **(hardcoded `choices=`, and `:414` `--derived-from` is a SECOND hardcoded list v3 predates)**, `mcp_server:38` (fail-closed host map — §2d.6), `selfcheck`, `schema`, plus **61 test files**, 5 docs and 2 examples | **Yes — extended, not redefined.** No existing member changes meaning. **But the value set is no longer closed**, which is the contract change that matters: every consumer branching on it must be re-read, not assumed — and at 18 modules that re-read is §2d, done per era. |
 | `Episode.provenance.author_of_evidence` | written by `ingest`, **rewritten by `lifecycle.consolidate`** | same field, on episodes | `gate` (via episode authorship), `graph` (episode rendering) | **NO — see the defect found below.** |
 | `Edge.subject` | written by `ingest`, read by `graph`, `compile` | the entity a fact is about; `"user"` is the reserved literal for the store owner (`graph.py:201`, `graph.py:295`) | `graph._cover`, `graph.render_edges`, `compile`, `introspect` | **Yes**, but it acquires a **second** load-bearing role: it now gates disclosure, not only rendering. Previously a wrong `subject` produced an odd sentence; now it can change assertability. Recorded as a real widening of that field's blast radius. |
 | `Provenance.disclosure` | written by `ingest._disclosure_for` | mentionable / use_only / quarantined | `Edge.assertable`, `gate`, `graph`, `proactive`, `introspect` | **Yes** — no new value; only a new way to arrive at `use_only`. |
-| export `version` (`portability.FORMAT_VERSION = 2`) | written on export, checked on import | "an export version newer than this library fails closed" | `portability.load` | **Changed deliberately → 3.** See §7: without the bump, an older library hits a pydantic `ValidationError` instead of our own message. |
+| export `version` (`portability.FORMAT_VERSION = 8` today — *was 2 when v3 was written; 0006/0014/0016/0019/0025 each bumped it*) | written on export, checked on import | "an export version newer than this library fails closed" | `portability.load` | **Changed deliberately → 9 at implementation.** See §7: without the bump, an older library hits a pydantic `ValidationError` instead of our own message. |
 
 **Consumers enumerated mechanically** (`grep -rn`, both `src/` and outside it —
 the `src/`-only form used previously misses tests and docs that encode the
 contract):
 
 ```
-$ grep -rln "author_of_evidence\|EvidenceAuthor" src/ tests/ docs/ examples/ README.md
-src/veracium/{schema,ingest,lifecycle,introspect,__init__,cli,mcp_server,selfcheck}.py
-tests/ (16 files)  docs/{api,concepts,design-rationale,recipes}.md  README.md
+$ grep -rln "author_of_evidence\|EvidenceAuthor" src/ tests/ docs/ examples/ README.md   # re-run 2026-08-22
+src/veracium/{schema,ingest,lifecycle,introspect,__init__,cli,mcp_server,selfcheck,
+              authority,compile,contribution,graph,portability,proactive,scope,
+              scope_read}.py  src/veracium/store/{revocation,sqlite}.py
+tests/ (61 files)  docs/{api,concepts,design-rationale,recipes}.md  README.md
 examples/{demo.ipynb,langchain_memory.py}
 ```
 
 **⚠️ I first wrote this table from memory and it was wrong in both directions,
 which is the rule earning itself on the first spec that used it.** I had listed
-`gate.py`, `graph.py` and `portability.py` as consumers: **they reference the
-enum zero times** — they branch on the *derived* `disclosure` field, so the
-author enum's blast radius is narrower than I assumed. And I had missed
-`cli.py`, `lifecycle.py`, `selfcheck.py`, two examples, two docs, and four test
-files. **The miss mattered more than the over-count**, because one of the files
-I missed contains a defect (below).
+`gate.py`, `graph.py` and `portability.py` as consumers when at v3 time they
+referenced the enum zero times. **Two of those three became true consumers
+after v3 was written** — `graph.py` via `_ORIGIN_LABELS` (the closed v3 gate)
+and `portability.py` via the 0005 import cap — which is its own lesson: a
+blast-radius enumeration is a DATED measurement, not a property of the design,
+and this spec's §2c-ii re-runs it at every version. `gate.py` still references
+it zero times (it branches on the derived `disclosure` field).
 
-**Two consumers need code changes that the memory-written list would have
-skipped:**
+**Consumers needing code changes, re-verified 2026-08-22:**
 
-- **`cli.py:299`** — `--author` carries `choices=["user","third_party","system"]`,
-  a hardcoded public CLI surface that silently rejects `assistant` until updated.
-- **`lifecycle.py:101` — a pre-existing trust-laundering path, and this change
-  makes it more reachable.** Episode consolidation builds the new episode's
-  provenance as `cold[0].provenance.model_copy(update={"author_of_evidence":
-  cold[0].provenance.author_of_evidence, ...})` — it inherits the **first**
-  episode's author across a whole cold set. The comment directly above says
-  *"consolidation is a system-authored derivation of the cold set"*, so **the
-  code and its own comment disagree**: a mixed cold set collapses to whichever
-  author happens to be first. Today that can already promote a third-party
-  episode to user-authored; adding a fourth class makes mixed sets more common.
-  Addressed as I10 rather than left as a note, because "we noticed it" is not a
-  control.
+- **`cli.py:410`** — `--author` carries `choices=["user","third_party","system"]`,
+  a hardcoded public CLI surface that silently rejects `assistant` until
+  updated. **And `cli.py:414` — `--derived-from` carries the SAME hardcoded
+  list**; it postdates v3 and must gain `assistant` in the same change (a
+  host relaying assistant-derived content is the `derived_from` case).
+- **`lifecycle.py:101` — the trust-laundering defect v3 recorded here is
+  DISCHARGED.** The whole-set-minimum-trust rule (INFERRED author, min
+  confidence, weakest disclosure, retained third-party influence) was the
+  0.4.4 security fix and now lives at the STORE's fenced write boundary —
+  `write_consolidation_output_if_current._derive_output_metadata`, required
+  there by 0010 X23 so derived fields are computed from the claimed set at
+  the write, not by the caller. I10's obligation survives as: the min-trust
+  derivation must treat `ASSISTANT` correctly in that store-side rule (an
+  assistant member caps the set at `use_only`).
 
 **Documentation stating the old meaning, updated in this change:**
 `docs/concepts.md`, `docs/api.md`, `README.md` trust-model table, the
@@ -124,15 +139,71 @@ skipped:**
 establishes it, not a statement that it was checked — **both prior versions of
 this spec failed on unverified assertions about what was reachable.***
 
+*(re-executed 2026-08-22 against the candidate tree; the v3-era results are
+struck where they moved)*
+
 | assertion | command | result |
 |---|---|---|
 | `EvidenceAuthor` has exactly 3 members today | `grep -A6 "class EvidenceAuthor" src/veracium/schema.py` | `USER`, `THIRD_PARTY`, `SYSTEM` |
-| a host can set the author via MCP | `grep -n "EvidenceAuthor" src/veracium/mcp_server.py` | `:26` maps host strings → enum |
-| the CLI `--author` list is hardcoded | `grep -n "choices" src/veracium/cli.py` | `:299` `["user","third_party","system"]` |
-| `import` is a shipped CLI verb with `--user` | `grep -n "add_parser" src/veracium/cli.py` | `:278` `import`, `:280` `--user` |
-| which combinations reach `use_only` | `_disclosure_for` over the enum product | user+3P · 3P+any · system+3P |
+| a host can set the author via MCP | `grep -n "EvidenceAuthor" src/veracium/mcp_server.py` | ~~`:26`~~ `:38` `_AUTHOR` maps **`user`/`third_party` ONLY** — `system` was deliberately removed and unknown authors now **raise** (fail-closed; the silent-fallback-to-USER path is gone). §2d.6 rules how `assistant` joins. |
+| the CLI `--author` list is hardcoded | `grep -n "choices" src/veracium/cli.py` | ~~`:299`~~ `:410` `["user","third_party","system"]` **and `:414` `--derived-from`, the same list — a second carrier v3 predates** |
+| `import` is a shipped CLI verb with `--user` | `grep -n '"import"' src/veracium/cli.py` | `:367` `import`; `--user` on the recall/import surfaces |
+| which combinations reach `use_only` | `_disclosure_for` over the enum product | user+3P · 3P+any · system+3P *(unchanged; the quarantine-relation clause precedes them — the 0024 seam, §2d.4)* |
 | an older library cannot load an `assistant` edge | `Provenance(author_of_evidence='assistant')` | `pydantic.ValidationError` |
+| the v3 render gate is closed | `grep -n "_ORIGIN_LABELS" src/veracium/graph.py && python -m pytest tests/test_render_origin.py -q` | `:633` author-keyed map, `:648` fail-safe `unverified-origin`; **6 passed** |
+| the authority ladder pre-provisions `assistant` | `grep -n "assistant" src/veracium/authority.py` | `:41` `_RUNGS = {"user": 3, "system": 2, "assistant": 1, "third_party": 0}` — placed there by 0003 naming this spec |
 | ~~no `PRAGMA user_version` guard exists~~ *(dated: true at spec time; `0007` shipped the guard in v0.5.0 — it lives in `store/schema_version.py` + `store/migration.py`, so this command still shows no match in `sqlite.py`)* | `grep -n "user_version" src/veracium/store/sqlite.py` | no match *(guard is in `store/schema_version.py` since `0007`)* |
+
+---
+
+## 2d. Consumers that did not exist when v3 was written — each answered
+
+*v3 is dated 2026-08-01. Since then 0003, 0005, 0020–0023 and 0025 shipped,
+and several of them branch on the author. A spec that opens this enum's value
+set owes each of them an answer, not a re-count.*
+
+1. **0003 — the supersession authority ladder (`authority.py`).**
+   `_RUNGS = {"user": 3, "system": 2, "assistant": 1, "third_party": 0}` —
+   0003 pre-provisioned the `assistant` rung, naming this spec in its comment.
+   **v4 RATIFIES rung 1**: the assistant's own claims outrank third-party
+   hearsay (it is at least an identified, in-conversation source) and rank
+   below both principals. **No `RULE_VERSION` bump is needed at
+   implementation**: adding a member the map already carries cannot flip any
+   pair over the existing members — `effective()` and `permitted()` over
+   USER/SYSTEM/THIRD_PARTY inputs are byte-unchanged. A pair involving
+   `ASSISTANT` was previously unconstructible, so no historical refusal
+   re-evaluates differently (the 0011 concern).
+2. **0005 — the import trust boundary (`portability.py`).** A non-restore
+   import caps every record: `author_of_evidence := THIRD_PARTY`. An exported
+   assistant edge therefore arrives THIRD_PARTY on ordinary import — authority
+   drops 1 → 0, disclosure stays `use_only` either way. **Conservative in the
+   right direction and ratified as-is**: the file's claim about who authored
+   a record is exactly what 0005 says an import may not assert. `restore=True`
+   (the operator's explicit opt-out) preserves `ASSISTANT` faithfully.
+3. **0022/0023 — source revocation.** Keyed on `source_id` identity digests,
+   author-orthogonal. An assistant-authored edge with a `source_id` revokes,
+   quarantines at birth, and lifts like any other; `QUARANTINED` is a stronger
+   floor than this spec's `use_only`. No interaction beyond stating it.
+4. **0024 — authorship before structural quarantine (accepted, implementation
+   frozen).** 0024 and this spec edit the SAME function: `_disclosure_for`.
+   0024 refines the author/relation precedence for `third_party_claim`
+   mislabels; this spec adds an `ASSISTANT → use_only` clause. **The two edits
+   are additive and commute** — both strengthen the min-trust rule, neither
+   touches the other's branch — but they must be sequenced consciously at
+   implementation (0024's fix lands first per its freeze protocol; this
+   spec's clause rebases on it).
+5. **0025 — relation-vocabulary enforcement.** Orthogonal: relations, not
+   authors. An off-vocabulary relation on an assistant event lands
+   `unclassified` carrying `ASSISTANT` unchanged; the reserved
+   `third_party_claim` convention is about content source, which
+   `derived_from` already expresses.
+6. **The MCP author surface (`mcp_server.py:38`).** Since v3, `system` was
+   deliberately REMOVED from the host map and unknown authors fail closed
+   (the silent fallback resolved typos to USER — the highest class).
+   **`assistant` JOINS the map**: unlike `system`, adding it is
+   self-*demotion*, not self-elevation — a host labelling model-generated
+   content `assistant` gets rung 1 and `use_only`, which is this spec's
+   entire purpose. `system` stays excluded.
 
 ---
 
@@ -248,11 +319,13 @@ not answer **which user is permitted to see it**.*
 - **Does this cross a user, tenant, or scope boundary?** No. Every edge is
   written under one `user_id` and every read is scoped to it; this change adds
   an author value and does not touch scoping.
-- **Who may see the affected state, and does this change that set?** Unchanged
-  set, **changed volume**: assistant edges about non-user subjects are now
-  `mentionable`, so material that a host previously routed to `THIRD_PARTY`
-  (never volunteered) may now appear in a proactive briefing with no user turn.
-  That is the intended effect and it is why `proactive.py` is in §6.
+- **Who may see the affected state, and does this change that set?**
+  **Unchanged set AND unchanged volume** *(v4 carrier sweep: the v2-form text
+  here still described the withdrawn widening)*: under v3/v4 every assistant
+  edge is `use_only`, which is never volunteered proactively and never
+  asserted. Relative to the honest alternative hosts use today
+  (`third_party`), nothing becomes more visible; relative to the dishonest
+  one (`system`), visibility strictly narrows — which is the point.
 - **Scope change (sharing, revocation, group join/leave)?** n/a — no sharing model.
 - **Anything visible to a principal who could not see it before?** No new
   principal. The **only** visibility widening is within one user's own store,
@@ -268,16 +341,16 @@ tool's `author` string (`"assistant"`).
 
 Observable difference, given the same text:
 
-| host says | before | after |
+| host says | before | after *(v4 carrier sweep: this table still showed the withdrawn v2 widening)* |
 |---|---|---|
-| `author="assistant"`, *"the deploy failed"* | not expressible; `system` → asserted, or `third_party` → `use_only` | **mentionable** — may be stated |
-| `author="assistant"`, *"you prefer dark mode"* | same bad choice | **`use_only`** — rendered in the UNVERIFIED block, never asserted, promotable by `confirm()` |
+| `author="assistant"`, *"the deploy failed"* | not expressible; `system` → asserted, or `third_party` → `use_only` | **`use_only`** — rendered in the unverified block with an honest origin label, never asserted; groundability of first-party tool results is the evidence-basis axis's question, not this spec's |
+| `author="assistant"`, *"you prefer dark mode"* | same bad choice | **`use_only`** — same block, promotable by `confirm()` |
 
-**Exact rendering change:** an assistant edge with a non-user subject renders in
-the normal grounded block with no new marker. An assistant edge about the user
-renders in the existing unverified block; **no new sentence form is
-introduced**, because rendered text becomes model context and a new phrasing is
-a change to what the model reads.
+**Exact rendering change:** every assistant edge renders in the existing
+unverified block, attributed per §4b; **no new sentence form is introduced**,
+because rendered text becomes model context and a new phrasing is a change to
+what the model reads. No assistant edge reaches the grounded block without
+`confirm()`.
 
 ### 4b. Rendering — ⚠️ ONE OPEN DECISION
 
@@ -322,17 +395,29 @@ elif author is ASSISTANT:                     " [assistant-generated; unverified
 else:                                         " [unverified origin]"   # fail closed
 ```
 
-**Q5 is resolved** — `(author, derived_from)` (research, 2026-08-01). The
-implementation blocker here is now this spec's `deferred` status, not Q5.
+**Q5 is resolved** — `(author, derived_from)` (research, 2026-08-01) — **and
+the mechanism SHIPPED 2026-08-15** as `graph._ORIGIN_LABELS` + `_origin_label`
+(the v3 release-gate fix): author-keyed today, with USER/SYSTEM mapping to
+"third-party-reported" because those classes reach `use_only` only via
+`derived_from=THIRD_PARTY`, and an unlabelled class failing safe to
+`unverified-origin` (tripwired by `tests/test_render_origin.py`). **The
+author-only shortcut is valid exactly as long as every `use_only` route
+implies third-party derivation — this spec ends that**, so implementation
+must key the pair as Q5 ruled: `assistant + derived_from=THIRD_PARTY` labels
+third-party-derived (the capping axis first), bare `assistant` labels
+assistant-generated. The tripwire already fails the build if `ASSISTANT`
+lands without a label; I12 makes the pair-keying itself the tested property.
 
 **Interfaces:** `EvidenceAuthor` gains a member (additive for callers that pass
 it; **not** additive for callers that exhaustively match on it). MCP `remember`
-gains `"assistant"` in its author map and tool description. **CLI changes
-additively**: `cli.py:299`'s `--author` `choices` must accept `assistant`, with
-help text, a parsing test and docs. *(v2 said "No CLI change" while §2 said the
-opposite — the external reviewer found the contradiction in my own document; §2
-was written later and I never reconciled them.)* Export
-`FORMAT_VERSION` 2 → 3.
+gains `"assistant"` in its fail-closed author map and tool description
+(§2d.6; `system` stays excluded). **CLI changes additively**: BOTH hardcoded
+lists — `cli.py:410` `--author` and `:414` `--derived-from` — must accept
+`assistant`, with help text, a parsing test and docs. *(v2 said "No CLI
+change" while §2 said the opposite — the external reviewer found the
+contradiction in my own document; §2 was written later and I never reconciled
+them.)* Export `FORMAT_VERSION` 8 → 9 *(was "2 → 3" when v3 was written;
+five specs have bumped it since)*.
 
 **Migration:** existing stores are untouched — no edge changes author, and no
 backfill runs. Nothing is unrecoverable **going forward**; the irreversible step
@@ -371,14 +456,16 @@ fixture ever caught it because small stores never truncate.*
 
 | invariant | executable check | where it runs |
 |---|---|---|
-| **I1** assistant + subject `"user"` → `use_only` | `test_assistant_about_user_is_use_only` | CI |
-| **I2** assistant + other subject → `mentionable` | `test_assistant_about_artifact_is_mentionable` | CI |
+| **I1** assistant + **ANY** subject → `use_only` *(v4 carrier sweep: I1/I2 still encoded the withdrawn v2 subject rule; I1 is now the every-subject form)* | `test_assistant_is_use_only_for_every_subject` (parametrized over user/other/assistant subjects) | CI |
+| ~~**I2**~~ *deleted in v4 — encoded the withdrawn v2 widening (assistant + non-user subject → `mentionable`). Not narrowed: DELETED, because under v3/v4 no subject yields `mentionable` and a struck-but-present rule is the 0002 defect class. I1's every-subject form is the replacement.* | — | — |
+| **I11** the disclosure rule FAILS CLOSED on the new member: `_disclosure_for` must route `author==ASSISTANT` or `derived_from==ASSISTANT` before the `mentionable` fallthrough — **without this edit the enum addition alone fails OPEN** (today's final return is `MENTIONABLE`) | `test_assistant_never_yields_mentionable` (asserts over the full author × derived_from product) | CI |
+| **I12** the origin label keys the `(author, derived_from)` PAIR: `assistant+THIRD_PARTY` labels third-party-derived, bare `assistant` labels assistant-generated, and no author class inherits another's label | `test_render_origin.py` extended (the shipped tripwire already fails an unlabelled class) | CI |
 | **I3** an assistant edge can never supersede, absorb, or reinforce a user edge | `test_assistant_cannot_touch_user_edge` (all three ops, both directions) | CI |
 | **I4** `derived_from=THIRD_PARTY` still caps an assistant edge to `use_only` | `test_assistant_derived_from_third_party_is_capped` | CI |
 | **I5** `confirm()` is the only promotion path; maintenance never promotes | `test_only_confirm_promotes_assistant` | CI |
 | **I3b** the paths §3.2 says are **allowed** actually work: a user edge *can* supersede and absorb an assistant prior | `test_user_can_correct_an_assistant_fact` | CI |
-| **I6** at 1,000 assistant edges, user-authored facts still reach the subgraph | `test_assistant_dominant_store_does_not_crowd_out_user` | CI |
-| **I10** consolidation-style provenance rules hold for the new class: a mixed cold set never yields an assistant-authored summary presented as grounded | `test_mixed_batch_with_assistant_declares_influence` | CI |
+| **I6** at 1,000 assistant edges, user-authored facts still reach the subgraph *(rescoped by v3/v4: the pressure point is the unverified block's budget share, not the grounded block — assistant edges never enter it)* | `test_assistant_dominant_store_does_not_crowd_out_user` | CI |
+| **I10** the store-side min-trust consolidation rule (`_derive_output_metadata`, its home since 0010 X23 — see §2) treats `ASSISTANT` correctly: any assistant member caps the derived output at `use_only`; a mixed set never yields output presented as grounded | `test_mixed_batch_with_assistant_declares_influence` | CI |
 | **I10a** assistant self-reinforcement dedups but **never advances `observed_at`** — no freshness-pinning by self-repetition | `test_assistant_restatement_does_not_refresh_currency` | CI |
 | **I7** an export containing assistant edges is rejected by an older reader **with our message, not a pydantic traceback** | `test_downgrade_export_fails_cleanly` | CI |
 | **I8** injection ladder unchanged; assistant authorship grants no new write authority | existing `bench --compare`, `engine.injection_asserts == 0` | bench gate |
@@ -599,7 +686,15 @@ shows a real expressive gap — we cannot say *"this may be discussed, but only 
 something the assistant previously claimed."* Sequencing dissolves it: v3 does
 not need the tier.
 
-**🔴 v3 RELEASE GATE, found by research in the render path and confirmed here.**
+**~~🔴~~ ✅ v3 RELEASE GATE — CLOSED IN SHIPPED CODE 2026-08-15** *(the
+paragraph below is the finding as recorded at review time; the fix is
+`graph._ORIGIN_LABELS` + `_origin_label` — author-keyed labels, fail-safe
+`unverified-origin` for an unlabelled class, `tests/test_render_origin.py`
+as the tripwire, 6 passed on this candidate's tree. The wider
+`gate.partition_parts` concern is addressed by §4b's pair-keyed labelling:
+the unverified block's members carry their origin inline, so three kinds of
+thing in one block are three LABELLED kinds. Found by research in the render
+path and confirmed here.)*
 `graph.py:305` is `tp = " [third-party-reported; unconfirmed]" if e.use_only` —
 the marker keys on **`use_only`**, not on `author_of_evidence`, and its text is
 **hardcoded**. Verified by construction: a `SYSTEM`-authored `use_only` edge
@@ -663,3 +758,43 @@ one source class, which interacts directly with §3.2's self-reinforcement rule.
    the guard shipped as `0007` in v0.5.0 — see the struck Q3 row.)*
 6. **Recorded before the fact:** v3 is **more conservative than current Arm C**,
    so it moves our LongMemEval score **down or nowhere, never up.**
+
+---
+
+## 14. Changes in v4 (the re-entry candidate, 2026-08-22)
+
+*No design change from v3. Everything here is closure-recording, currency,
+and the carrier sweep v3 owed itself.*
+
+1. **The v3 release gate is recorded CLOSED** (shipped 2026-08-15:
+   `graph._ORIGIN_LABELS`, fail-safe `unverified-origin`, the
+   `test_render_origin.py` tripwire — evidence in §2c-ii). §12's gate
+   paragraph annotated in place; the deferral note rewritten.
+2. **The v2-form carriers §13 missed are rewritten in place** — the same
+   defect class that deferred 0002 five times (the correction lived in the
+   changelog while the normative text kept the old rule): §4's
+   observable-difference table and rendering paragraph (assistant + non-user
+   subject no longer renders grounded), §3b's visibility bullet (no
+   widening remains — `use_only` is never volunteered), §6's I1/I2 (the
+   `mentionable` invariant is DELETED, replaced by the every-subject form).
+3. **Currency pass, every mechanical claim re-executed** (§2, §2c-ii):
+   consumers 8 → 18 src modules / 16 → 61 test files; `cli.py:299` → `:410`
+   plus the new second hardcoded list at `:414` (`--derived-from`);
+   `mcp_server` map moved to `:38`, now fail-closed with `system` removed;
+   `FORMAT_VERSION` 2 → 8 (this spec's bump becomes 8 → 9); the
+   `lifecycle:101` trust-laundering defect DISCHARGED to the store's fenced
+   write boundary by 0010 X23 (I10 restated against its real home).
+4. **§2d added — the five eras that shipped consumers after v3**, each
+   answered: the 0003 ladder's pre-provisioned `assistant` rung RATIFIED at
+   1 with the no-`RULE_VERSION`-bump argument; the 0005 import cap's
+   author-flattening ratified as conservative; 0022 orthogonal; the 0024
+   `_disclosure_for` co-edit sequenced (additive, commutes, 0024 first);
+   0025 orthogonal; the MCP map ruling (`assistant` joins — self-demotion,
+   not self-elevation; `system` stays out).
+5. **Two invariants added**: **I11** (fail-closed disclosure — without the
+   `_disclosure_for` edit the enum addition alone fails OPEN to
+   `mentionable`; the full product is asserted) and **I12** (pair-keyed
+   origin labels — the author-only shortcut dies with this spec, per Q5's
+   ruling).
+6. **Status: `deferred` → `draft`** on Quentin's word (2026-08-22) —
+   re-entering external review as the v4 candidate.

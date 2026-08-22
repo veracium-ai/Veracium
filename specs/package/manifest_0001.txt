@@ -1,0 +1,22 @@
+PACKAGE: __PACKAGE__ — external ROUND __ROUND__
+COMMIT: __COMMIT_FULL__
+BUILT: __TS__ (UTC)
+
+The 0001 line's first sealed package: the generated-content trust class
+(`EvidenceAuthor.ASSISTANT`), candidate draft v4, re-entering review after
+the v3 blocking amendment closed in shipped code. The candidate spec is
+specs/0001-generated-content-trust-class.md; its §14 lists exactly what
+changed since the version you deferred.
+
+measured: __MEASURED__
+
+Verification, from the extraction root (no network):
+  python specs/verify_extracted.py header      # the C-plus record: registry
+                                               # conformance, whole-file
+                                               # recompute, witnesses
+  python specs/verify_extracted.py collected
+  python specs/verify_extracted.py reconcile
+  python specs/package_identity.py
+
+Always-regenerated loose carriers (not diffed against the prior archive):
+__LOOSE__
