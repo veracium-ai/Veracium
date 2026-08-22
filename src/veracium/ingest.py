@@ -192,7 +192,10 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 # §4c: zeros PRESENT on the unparseable path — an absent key
                 # is not a zero.
                 "invalid": 0, "retried": 0, "recovered": 0, "residual": 0,
-                "redispositioned": 0}
+                "redispositioned": 0,
+                "quarantined_at_birth": (1 if revoked_at_birth else 0),
+                "birth_revocation_digest": (_birth_digest if revoked_at_birth
+                                            else None)}
 
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.
@@ -320,4 +323,13 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # (still measurement-frozen) mechanism lands.
             "invalid": n_invalid, "retried": n_retried,
             "recovered": n_recovered, "residual": n_residual,
-            "redispositioned": 0}
+            "redispositioned": 0,
+            # specs/0023 Q4 (RESOLVED 2026-08-22, per the recorded leaning):
+            # the quarantine-at-birth AUDIT facts — the content-free identity
+            # digest answers "which source is still writing" from the audit
+            # sink alone. ALWAYS present (an absent key is not a zero); the
+            # audit sink is the consumer, telemetry's whitelist drops them,
+            # the MCP surface strips them.
+            "quarantined_at_birth": (n_quarantined if revoked_at_birth else 0),
+            "birth_revocation_digest": (_birth_digest if revoked_at_birth
+                                        else None)}

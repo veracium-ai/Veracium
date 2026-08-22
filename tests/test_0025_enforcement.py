@@ -316,7 +316,11 @@ def test_public_counter_projection_is_exact():
     _, r = _ingest(llm)
     pre_0025 = {"episode", "facts", "quarantined", "supersessions",
                 "reinforcements"}
-    assert set(r) == pre_0025 | set(PUBLIC_COUNTERS)
+    # specs/0023 Q4 (resolved 2026-08-22): the two audit-only birth-
+    # quarantine facts also ride the result — always present, MCP-stripped,
+    # telemetry-dropped by the whitelist
+    q4_audit = {"quarantined_at_birth", "birth_revocation_digest"}
+    assert set(r) == pre_0025 | set(PUBLIC_COUNTERS) | q4_audit
     assert "retry_calls" not in r
 
 

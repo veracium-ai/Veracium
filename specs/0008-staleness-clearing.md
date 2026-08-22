@@ -18,7 +18,7 @@ Spec-Requires: 0007, 0013
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M3/§7b. **`0002` is a retrospective and must be closeable; this is a proposal and is not.** |
 | **Internal reviewers** | research — **R2** (fail-closed rule) and **R3** (strict; not temporary) |
 | **External review** | required — **counts are generated into `specs/STATUS.md` from `specs/reviews.py`; this row states none.** It said *"two rounds complete"* while `reviews.py` recorded three, in a project that built the generation to stop exactly that. |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-02, SCOPED** — external round 4: the clearing rule approved across all four rounds; the deferred surfaces (episode inputs, idempotency, storage/API shape, the `0007` interplay) moved to their owning specs rather than holding the rule. *(Row filled 2026-08-22 — the spec-table audit.)* |
 | **Path** | full |
 
 ---

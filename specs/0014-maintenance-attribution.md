@@ -379,7 +379,7 @@ Spec-Requires: 0006, 0007, 0013
 | **Status** | *canonical state is the `Spec-Status:` line at the top; this row states none of it.* |
 | **Internal reviewers** | dev · **research (finding owner) — reviewed 2026-08-08, decoupling CONFIRMED, invariant sharpened** (`proposals/0014-research-response.md`) |
 | **External review** | required (full — it will touch guarded files: `graph.py`, `lifecycle.py`, `store/sqlite.py`). Not yet sent. |
-| **Decision + date** | — (draft) |
+| **Decision + date** | **ACCEPTED 2026-08-10** — external round 16 (approved for acceptance; bin (a) empty; R15-1 closed). The frozen raw-request interface was AMENDED 2026-08-21/22 under the co-owner protocol (the cross-era receipt rule, `0025` §4b-v — authorized by Quentin, confirmed by the external reviewer round 10, implemented with 0025). *(Row corrected 2026-08-22 — it still said "draft" twelve days after acceptance.)* |
 | **Path** | full |
 
 ---

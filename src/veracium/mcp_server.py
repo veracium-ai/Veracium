@@ -72,7 +72,10 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
     # specs/0025 §4c: the five public counters are a LIBRARY surface, not a
     # tool-call surface — stripped here consistent with the two above.
     for k in ("invalid", "retried", "recovered", "residual",
-              "redispositioned"):
+              "redispositioned",
+              # specs/0023 Q4: trust-state audit facts — never in the
+              # tool result the model caller reads
+              "quarantined_at_birth", "birth_revocation_digest"):
         r.pop(k, None)
     return r
 

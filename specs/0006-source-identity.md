@@ -112,7 +112,7 @@ successor / `evidence-basis-design.md`), not a staleness rule's, and it is on no
 | **Status** | *see `Spec-Status:` — canonical.* Opened from `0002` R2; **deliberately not folded into `0002`**, which is being split precisely because it kept absorbing work. |
 | **Internal reviewers** | research — **ruled that this is needed and that it needs its own spec** |
 | **External review** | required — touches stored provenance; a minimal-DDL `SCHEMA_VERSION` v4→v5 (one `store_identity` singleton) + `FORMAT_VERSION` 3→4 bump. **5 external rounds → ACCEPTED 2026-08-09.** R1: return, 6 findings → v2. R2: return, R7–R11 → v3. R3: interface-freeze disposition, F1/F2 + 2 cleanups → v4 (point 4 re-ratified by research). R4: interface freeze reviewer-SIGNED, acceptance held for F3 → v5. R5: **acceptance PASS**, mechanical closure (C1 stale no-DDL wording, C2 UUID entropy, this Review closure) → v6 `accepted`. Full ledger: §11 + `specs/reviews.py`. |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-09** — external round 5 (acceptance pass; no further architectural blocker). *(Row filled 2026-08-22 — the spec-table audit found it empty.)* |
 | **Path** | full |
 
 ---

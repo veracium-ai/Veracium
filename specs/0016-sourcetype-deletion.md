@@ -11,7 +11,7 @@ Spec-Requires: 0003, 0013, 0014, 0018
 | **Internal reviewers** | research — stage-1 scope adjudicated 2026-08-11; **full-spec internal review PASSED 2026-08-11** (`proposals/0016-internal-review.md`; Q2 ruled, folded in v4) |
 | **Spec-Requires** | **`0018` (the round-14 split — D2 executes only through it; acceptance is ATOMIC with 0018's)**, `0003` (accepted — §4f gains the schema-conditioned third outcome by same-commit amendment), `0013` (accepted — the offline migration contract D2 rides), `0014` (accepted — `EXACT_EQUAL_PROV_FIELDS` loses the field at D2 by same-commit amendment) (F3) |
 | **External review** | required (full spec). **The complete carrier surface (F3):** `schema.py` · `ingest.py` · `__init__.py` · `store/sqlite.py` · `store/base.py` (the new exception) · `store/schema_version.py` (v7 + the declared no-op step) · `store/migration.py` (the D2 step) · `graph.py` + `contribution.py` (the partition + snapshot carriers) · `portability.py` (FORMAT 6) · `lifecycle.py` · the migration evidence artifacts (`schema_evidence` two-directory sweep) · same-commit amendments to accepted `0003` §4f, `0007` §4-i, `0013` and `0014` · ~~`run_release_migration` + the CLI migrate verb~~ **moved to 0018 by the round-14 split (§7a assigns them there)**. Round 1 (v4): 3 bin-(a) + 2 bin-(b) → v5 = the round-2 resubmission |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-13** — external round 15, v18, ATOMIC with `0018` v6 (one commit flipped both). *(Row filled 2026-08-22 — the spec-table audit.)* |
 | **Path** | full |
 
 ---

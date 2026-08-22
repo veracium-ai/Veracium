@@ -10,7 +10,7 @@ Spec-Requires: 0007, 0013, 0016
 | **Status** | *narrative only — canonical is the `Spec-Status:` line* |
 | **Internal reviewers** | research — round 1 RETURNED + folded (v2); re-review CLEARED 2026-08-13. *(v2 history: F1 readback reconciliation — refined by external R1-4; F2 sections inlined; F3 the `PreflightResolution` §2c row + reason-labeling pin.)* |
 | **External review** | **ROUND 4: APPROVED FOR ACCEPTANCE** (2026-08-13, package `0018-v5-20260813T2202Z.tar.gz` sha `107e7720…`) — findings 3(int)/7/9+1/5+1/0; the four closure obligations folded same-commit with the flip |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-13** — external round 4, under the finite-acceptance rule; the frozen surface is I13–I23; ATOMIC with `0016` v18 (commit `32faaa8`). *(Row filled 2026-08-22 — the audit also found this round's VERDICT was never recorded in `specs/reviews.py`; recorded now.)* |
 | **Path** | full |
 
 ---

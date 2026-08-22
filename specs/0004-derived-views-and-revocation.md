@@ -31,7 +31,7 @@ Spec-Status: accepted
 | **Status** | *see `Spec-Status:` — canonical.* Split from `0002` §M8/§11c, unchanged in substance. |
 | **Internal reviewers** | research — **found the defect**; round 1 PASS 2026-08-17 (R1/R2 + W-Q1 ruled), fix verified independently by both sessions |
 | **External review** | required — touches `compile.py` and the store write path |
-| **Decision + date** | — |
+| **Decision + date** | **ACCEPTED 2026-08-20** — external round 21, ATOMIC with `0022`/`0023` (Spec-Status flipped draft→accepted in the authorizing commit, per the reviewer's instruction). Implemented 2026-08-20/21; released 0.13.0. *(Row filled 2026-08-22 — the spec-table audit found it empty two days after acceptance.)* |
 | **Path** | full |
 
 > **Why this is its own spec.** It was filed in `0002` because that is where the

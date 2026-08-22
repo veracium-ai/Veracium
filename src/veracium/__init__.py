@@ -344,6 +344,10 @@ class Memory:
                       "invalid": r["invalid"], "retried": r["retried"],
                       "recovered": r["recovered"], "residual": r["residual"],
                       "redispositioned": r["redispositioned"],
+                      # specs/0023 Q4: audit-only facts — the AuditLog
+                      # records them; telemetry's whitelist drops them.
+                      "quarantined_at_birth": r["quarantined_at_birth"],
+                      "birth_revocation_digest": r["birth_revocation_digest"],
                       "ms": int((time.perf_counter() - t0) * 1000)}
             fields.update(usage_finish())          # specs/0017: the terminal merge
             self._record("ingest", fields, user_id)
