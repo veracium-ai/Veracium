@@ -17,7 +17,7 @@ Spec-Requires: 0005, 0024, 0025
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
-| **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; B02/B07 usage verified against their banked records; the census re-derived from the cache), folded in v2; round 2 same-day on the fold |
+| **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
 | **External review** | required — adds a disclosure floor on the ingest write path |
 | **Decision + date** | — |
 | **Path** | full |
@@ -60,10 +60,11 @@ BOTH directions:
   source ("price stated by user") — the note testifying against the
   label. *(Figures are the shipped script's exact output —
   `corpus_counts.py` over cache `654e336a`, re-run at internal round 1.
-  v1 carried 183,416 / 1,637 / 41.5%, pre-correction values that most
-  plausibly propagated from summary PROSE rather than the artifact —
-  the drift is this spec's thesis in miniature, so it is recorded here
-  rather than silently fixed; internal M-1.)* `0024`/A1 addresses the 40.7% whose SUBJECT slot is literally
+  v1 carried 183,416 / 1,637 / 41.5%: research's summary prose carried
+  the drifted value, and this spec CITED it without re-derivation — the
+  drift and the trusting citation are BOTH the failure mode this check
+  exists for, recorded rather than silently fixed; internal M-1, the
+  symmetric wording research's round 2 supplied.)* `0024`/A1 addresses the 40.7% whose SUBJECT slot is literally
   `user`; the note-only remainder stays quarantined with its
   disagreement unrecorded.
 - **The evidence bound.** Of the four genuine relays the A1 measurement
