@@ -1039,3 +1039,19 @@ offered one.*
    pointed at a renamed row; fixed, and the sweep lesson sharpened — a
    zero-survivor grep over RULE phrases does not cover row-NAME
    pointers; cross-references join the sweep list.
+6. **The candidate-patched branch, DELIVERED** (the reviewer's
+   thrice-asked artifact, authorized by the project owner):
+   `specs/evidence/0001/candidate-v8.patch` — inert data on the main
+   line, applied with `patch -p1` in an extracted tree. The named trio
+   runs REAL: 13 candidate tests green (I1, I5 at `gate.partition_parts`
+   with the assistant marker, I6 at BOTH coverage shares, I11's full
+   product, I12 pair keying, I13a-c with the five-manifestation
+   inheritance — the 0007 machinery itself demanded the runtime
+   re-record, which is that guard working — and the exact
+   StoreVersionError reason="newer" refusal). The full branch suite
+   measures the blast radius honestly: 11 failures, EVERY one a
+   §2/§2d-enumerated carrier (the FORMAT-9 pin family, the MCP message
+   pins, the 0018 head, the generated authority tables, the 0013 oracle
+   domain, the audit manifest) — the implementation obligations
+   acceptance authorises, now measured rather than asserted, and
+   deliberately NOT fixed on an evidence branch.
