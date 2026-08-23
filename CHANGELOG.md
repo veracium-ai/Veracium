@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+- **0024 — AUTHORSHIP BEFORE STRUCTURAL QUARANTINE** (accepted with 0025
+  at external round 12; implemented 2026-08-23 after Research banked the
+  live extraction baseline that sized it). A `third_party_claim` triple
+  whose canonical subject is exactly the user is a contradiction in the
+  extractor's own terms — the claimant slot naming the person whose
+  testimony it would demote. Such a triple is now **re-dispositioned, not
+  quarantined**: its relation moves to the reserved non-functional
+  `unclassified` (assertable, never superseding — the chosen
+  half-restoration), disclosure is established for the post-coherence
+  state by the author rules (a USER-authored statement lands MENTIONABLE;
+  every accepted floor, standing revocation included, still applies
+  after), and the original relation survives in `Edge.original_relation`.
+  The predicate is mechanical (whole-string casefold equality on the
+  canonical subject; odd types fail closed) and runs before vocabulary
+  enforcement (`0025` §4b-iii step 1). The `redispositioned` counter goes
+  live on its existing carriers (result dict on every path, telemetry
+  under consent, MCP still strips it). Sized by the post-0025 baseline:
+  1 of 16 quarantined records in live extraction moves (the A08 cell);
+  relay-laundering under concrete relations (B02/B07) is a distinct,
+  documented gap this fix does not touch. Stores that never see
+  `third_party_claim` are byte-identical (U4).
+
 - **selfcheck: the revocation guarantee is now user-runnable.** `veracium
   selfcheck` (and `Memory.self_check()`) gains a fourth check walking the
   0022/0023 seam end to end on a throwaway store: revoke a source → its
@@ -17,7 +39,8 @@
 
 - **0025 — THE RELATION VOCABULARY IS CLOSED** (accepted with 0024 at
   external round 12 after twelve rounds; implemented 2026-08-22; 0024's
-  own mechanism remains measurement-frozen pending Research's baseline).
+  own mechanism landed 2026-08-23 once Research's baseline was banked —
+  see its entry above).
   Extracted relations are now constrained to the registry: the host's
   `relations` dict is validated at the `ingest_event` boundary (empty and
   conflicting-reserved-shadow registries refuse with `RegistryError`), the
