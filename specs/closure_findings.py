@@ -40,6 +40,34 @@ CLOSURES = [
      "precede any record validation",
      "grep -n 'parse sentinel\\|parses == \\[\\]' "
      "specs/evidence/0001/candidate.patch"),
+    ("0001", "external", 9, "0001-R9-1",
+     "subgraph_for_query FILTERED the globally scored list instead of "
+     "constructing reserved + remainder — a low-ranked reserved assertable "
+     "record under a non-functional relation surfaced last, and every order "
+     "vector used functional works_as (top-ranked reserves), masking it",
+     "the output is CONSTRUCTED as reserved + remainder (both segments in "
+     "scored order); the reviewer's has_pet vector asserts the complete "
+     "ordered output and fails on the pre-fix filter; the dedup vector "
+     "asserts full order, closing the §20 claim",
+     "grep -n 'reserved + \\[e for _, e in scored' "
+     "specs/evidence/0001/candidate.patch  # the construction, in the patch"),
+
+    ("0001", "external", 9, "0001-R9-2",
+     "the candidate test module docstring still said candidate/0001-v8 — "
+     "one version carrier survived the R8-3 sweep",
+     "the module docstring is version-neutral; the sweep now greps the "
+     "whole patch",
+     "! grep -n '0001-v8' specs/evidence/0001/candidate.patch"),
+
+    ("0001", "external", 9, "0001-R9-3",
+     "the README's full-suite measurement was stale (16 failed/1797 vs the "
+     "extracted branch's 16 failed/1787/21 skipped) and carried no "
+     "environment",
+     "the measurement is re-run at packaging time and recorded with its "
+     "exact environment (python, platform, command)",
+     "grep -n 'measured 2026-08-23' specs/evidence/0001/candidate.patch  "
+     "# the environment-stamped measurement block, in the shipped patch"),
+
     ("0001", "external", 8, "0001-R8-3",
      "the modified patch still identified as candidate/0001-v8 while the "
      "draft moved to v9",

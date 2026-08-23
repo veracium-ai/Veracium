@@ -67,6 +67,7 @@ PACKAGES = {
         "v7": (7, {"0001": "v8"}),
         "v8": (8, {"0001": "v9"}),
         "v9": (9, {"0001": "v10"}),
+        "v10": (10, {"0001": "v11"}),
     },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
@@ -93,7 +94,8 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()   # cleared by the 0001-v9 sidecar commit (C8-1)
+IN_FLIGHT: tuple = ("0001-v10",)   # C8-1/C9-1: the ONE declared seal;
+                                   # cleared by the 0001-v10 sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -101,6 +103,26 @@ DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2236Z (C-plus round-2 specimen; superseded)",
     "0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)",
 )
+
+
+def strict_archive_re(line: str, version: str):
+    """C9-2: THE archive filename grammar, defined once. Predecessor
+    selection already required `{line}-{version}-{YYYYMMDD}T{HHMM}Z.tar.gz`
+    while lineage validation accepted any `\\S+.tar.gz`, so a
+    self-consistent sidecar with a malformed name passed one gate and was
+    invisible to the other. Every consumer parses archive names through
+    this one pattern."""
+    import re as _re
+    return _re.compile(_re.escape(line) + "-" + _re.escape(version)
+                       + r"-\d{8}T\d{4}Z\.tar\.gz")
+
+
+def strict_any_version_re(line: str):
+    """C9-2: the same grammar with the version and timestamp captured —
+    for consumers that enumerate a line's archives (prior selection)."""
+    import re as _re
+    return _re.compile(_re.escape(line)
+                       + r"-v(\d+)-(\d{8}T\d{4}Z)\.tar\.gz")
 
 
 def lineage_problems(archives_dir) -> list:
@@ -115,9 +137,36 @@ def lineage_problems(archives_dir) -> list:
     import re as _re
     problems = []
     d = _pl.Path(archives_dir)
+    # C9-1: the exemption channel is CONSTRAINED before it is honored —
+    # a singleton, naming a governed row of a known line, whose sidecar
+    # is genuinely absent. Round 9's attack widened IN_FLIGHT to cover a
+    # deleted committed witness beside the real seal; an unconstrained
+    # declaration was an exemption anyone could stretch.
+    if len(IN_FLIGHT) > 1:
+        problems.append(
+            f"IN_FLIGHT declares {len(IN_FLIGHT)} seals — the declaration "
+            f"is a singleton: one seal in flight, or none (C9-1)")
+    for entry in IN_FLIGHT:
+        parts = entry.rsplit("-v", 1)
+        if (len(parts) != 2 or parts[0] not in PACKAGES
+                or not _re.fullmatch(r"\d+", parts[1])):
+            problems.append(
+                f"IN_FLIGHT entry {entry!r} does not name a known governed "
+                f"line as `<line>-v<round>` (C9-1)")
+        elif f"v{parts[1]}" not in PACKAGES[parts[0]]:
+            problems.append(
+                f"IN_FLIGHT entry {entry!r} names no governed PACKAGES row "
+                f"— a declaration with no row is a dead exemption (C9-1)")
+        elif sorted(d.glob(f"{entry}-*.tar.gz.sha256")):
+            problems.append(
+                f"IN_FLIGHT entry {entry!r} already has a committed sidecar "
+                f"— the sidecar commit must clear the declaration; a stale "
+                f"declaration is a standing exemption (C9-1)")
+    claimed = set()
     for line, versions in PACKAGES.items():
         for v in sorted(versions, key=lambda x: int(x[1:])):
             side = sorted(d.glob(f"{line}-{v}-*.tar.gz.sha256"))
+            claimed.update(s.name for s in side)
             if not side and f"{line}-{v}" in IN_FLIGHT:
                 continue    # C8-1: the EXPLICITLY declared in-flight seal
             if len(side) != 1:
@@ -140,6 +189,30 @@ def lineage_problems(archives_dir) -> list:
                 problems.append(
                     f"{side[0].name}: declares target {m.group(2)!r}, its "
                     f"own name says {expected_target!r} (C8-1)")
+            elif not strict_archive_re(line, v).fullmatch(expected_target):
+                problems.append(
+                    f"{side[0].name}: archive name does not match the ONE "
+                    f"strict grammar `{line}-{v}-YYYYMMDDTHHMMZ.tar.gz` — "
+                    f"a name the predecessor selector cannot parse must not "
+                    f"stand as a lineage witness (C9-2)")
+    # C9-2 (completeness half): a sidecar that names a round INSIDE the
+    # governed domain — a known line at or past FIRST_GOVERNED — must be
+    # claimed by a PACKAGES row. Pre-governed seals and other lines are
+    # OUTSIDE the domain and draw no claim (C6-1: the record never infers
+    # beyond what it governs — the first draft of this sweep flagged the
+    # legitimate pre-governed 0022-0023 witnesses).
+    for s in sorted(d.glob("*.tar.gz.sha256")):
+        if s.name in claimed:
+            continue
+        for line in PACKAGES:
+            m = _re.match(_re.escape(line) + r"-v(\d+)-", s.name)
+            if m and int(m.group(1)) >= FIRST_GOVERNED.get(line, 10**9):
+                problems.append(
+                    f"{s.name}: sidecar names governed round "
+                    f"{line}-v{m.group(1)} but NO PACKAGES row claims it — "
+                    f"an unclaimed witness inside the governed domain "
+                    f"(C9-2)")
+                break
     return problems
 
 

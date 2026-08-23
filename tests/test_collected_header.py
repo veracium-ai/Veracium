@@ -587,6 +587,90 @@ def test_impl_review_round8_regressions(tmp_path):
         pid.IN_FLIGHT = real_flight
 
 
+def test_impl_review_round9_regressions(tmp_path):
+    """C9-1: the IN_FLIGHT exemption is CONSTRAINED — singleton, known
+    row, genuinely absent sidecar. C9-2: ONE archive-name grammar for
+    lineage witnesses, and unclaimed sidecars are flagged. C9-3: the
+    NO_PRIOR skip speaks about the governed record, not the host."""
+    real = pid.PACKAGES
+    real_flight = pid.IN_FLIGHT
+    real_first = pid.FIRST_GOVERNED
+    try:
+        pid.PACKAGES = {"9997": {"v1": (1, {}), "v2": (2, {})},
+                        "9998": {"v1": (1, {})}}
+        pid.FIRST_GOVERNED = {"9997": 1, "9998": 1}
+        pid.IN_FLIGHT = ()
+        d = tmp_path
+        for name, fill in (("9997-v1-20260823T0000Z", "0"),
+                           ("9997-v2-20260823T0100Z", "1"),
+                           ("9998-v1-20260823T0200Z", "2")):
+            (d / f"{name}.tar.gz.sha256").write_text(
+                fill * 64 + f"  {name}.tar.gz\n")
+        assert pid.lineage_problems(d) == []          # clean control
+        # --- C9-1, the reviewer's exact attack: delete a committed
+        # witness and WIDEN the declaration to cover it beside the real
+        # seal — the widened declaration itself must refuse
+        (d / "9997-v2-20260823T0100Z.tar.gz.sha256").unlink()
+        pid.IN_FLIGHT = ("9998-v1", "9997-v2")
+        assert any("singleton" in x for x in pid.lineage_problems(d)), (
+            "a widened IN_FLIGHT let one seal ride another's exemption")
+        # entry validity: unknown line, dead exemption, stale declaration
+        pid.IN_FLIGHT = ("bogus",)
+        assert any("known governed line" in x
+                   for x in pid.lineage_problems(d))
+        pid.IN_FLIGHT = ("9997-v9",)
+        assert any("dead exemption" in x for x in pid.lineage_problems(d))
+        pid.IN_FLIGHT = ("9997-v1",)      # v1's sidecar EXISTS -> stale
+        assert any("stale declaration" in x
+                   for x in pid.lineage_problems(d))
+        # the honest declaration is still honored
+        pid.IN_FLIGHT = ("9997-v2",)
+        assert pid.lineage_problems(d) == []
+        # --- C9-2: a SELF-CONSISTENT sidecar with a name the predecessor
+        # selector cannot parse must not stand as a lineage witness
+        pid.IN_FLIGHT = ()
+        (d / "9997-v2-z.tar.gz.sha256").write_text(
+            "1" * 64 + "  9997-v2-z.tar.gz\n")
+        probs = pid.lineage_problems(d)
+        assert any("C9-2" in x and "strict grammar" in x for x in probs), (
+            "the malformed-name witness passed lineage while selection "
+            "would ignore it — two grammars again")
+        (d / "9997-v2-z.tar.gz.sha256").unlink()
+        (d / "9997-v2-20260823T0100Z.tar.gz.sha256").write_text(
+            "1" * 64 + "  9997-v2-20260823T0100Z.tar.gz\n")
+        # ...and a sidecar naming a round INSIDE the governed domain
+        # that no PACKAGES row claims is flagged, never silently ignored
+        # — while a PRE-governed or foreign-line sidecar draws no claim
+        # (C6-1: the sweep's own domain is the governed record)
+        (d / "9997-v3-20260823T0300Z.tar.gz.sha256").write_text(
+            "3" * 64 + "  9997-v3-20260823T0300Z.tar.gz\n")
+        assert any("NO PACKAGES row claims" in x
+                   for x in pid.lineage_problems(d))
+        (d / "9997-v3-20260823T0300Z.tar.gz.sha256").unlink()
+        (d / "9996-v1-20260823T0000Z.tar.gz.sha256").write_text(
+            "3" * 64 + "  9996-v1-20260823T0000Z.tar.gz\n")
+        assert pid.lineage_problems(d) == [], (
+            "an unknown line is OUTSIDE the governed domain — no claim")
+        (d / "9996-v1-20260823T0000Z.tar.gz.sha256").unlink()
+        assert pid.lineage_problems(d) == []
+        # --- C9-3: the skip message claims the governed record, not the
+        # host's directory contents
+        txt = sp._changed_from_previous("9997", "v1", prior=sp.NO_PRIOR)
+        assert "SKIPPED" in txt and "governed record" in txt
+        assert "was present" not in txt, (
+            "the skip still speaks about host contents it never examined")
+        # --- C9-2 also holds at the selector: both consumers share the
+        # ONE grammar object
+        assert pid.strict_archive_re("9997", "v2").fullmatch(
+            "9997-v2-20260823T0100Z.tar.gz")
+        assert not pid.strict_archive_re("9997", "v2").fullmatch(
+            "9997-v2-z.tar.gz")
+    finally:
+        pid.PACKAGES = real
+        pid.IN_FLIGHT = real_flight
+        pid.FIRST_GOVERNED = real_first
+
+
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):
     r = _record(tmp_path)
     man = CX.render_manifest(r, MANIFEST_TEMPLATE)

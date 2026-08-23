@@ -449,3 +449,33 @@ reactivated the diff's internal fallback selector, which could consume an
 undeclared archive. **Folded:** the `NO_PRIOR` sentinel distinguishes
 "explicitly no predecessor" from an omitted argument; the diff function
 takes `prior` as a required keyword and performs NO selection, ever.
+
+## 17. Implementation review — round 9 (2026-08-23): C9-1/2/3 folded
+
+**C9-1 (blocking)** — the C8-1 `IN_FLIGHT` declaration was itself
+unconstrained: deleting a committed sidecar and WIDENING the declaration
+to name it beside the real seal made lineage validation pass while
+sealing the other package — the witness mechanism had become an
+exemption anyone could stretch. **Folded:** the declaration is a
+validated SINGLETON — at most one entry, naming a known governed row,
+whose sidecar is genuinely absent (a stale declaration over a committed
+sidecar refuses) — and the sealer enforces exact equality:
+`IN_FLIGHT == (current_package,)`, membership no longer suffices. The
+reviewer's widened-declaration attack is the regression.
+
+**C9-2 (moderate)** — lineage still had a second filename grammar: a
+self-consistent sidecar named `9997-v1-z.tar.gz.sha256` passed
+`lineage_problems()` although predecessor selection requires the strict
+timestamp form. **Folded:** ONE grammar, defined once
+(`package_identity.strict_archive_re` / `strict_any_version_re`) and
+consumed by lineage validation, predecessor selection, and the pure
+prior-selection helper alike; lineage additionally flags any sidecar in
+the archives directory claimed by NO governed row — an unclaimed
+witness is never silently ignored.
+
+**C9-3 (moderate)** — the `NO_PRIOR` sweep missed carriers: with an
+undeclared prior archive physically present, the skip message claimed
+"no prior archive was present", and docstrings still described a `None`
+return and newest-host-archive selection. **Folded:** the skip and both
+docstrings state the governed-domain truth — NO_PRIOR is a statement
+about the governed record, never about what the host directory holds.

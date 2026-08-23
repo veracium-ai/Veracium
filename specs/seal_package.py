@@ -208,8 +208,10 @@ def required_predecessor(line: str, round_no: int, outbox: pathlib.Path):
     Computes the maximum declared lower version from the identity record,
     requires an archive of EXACTLY that version in the outbox, selects the
     newest timestamp deterministically, and verifies its sha256 against the
-    COMMITTED sidecar in specs/archives. Returns None (no prior declared),
-    a pathlib.Path (the verified predecessor), or a str (the refusal)."""
+    COMMITTED sidecar in specs/archives. Returns NO_PRIOR (no lower version
+    DECLARED in the governed record — a statement about the record, never
+    about archives physically present on the host, C9-3), a pathlib.Path
+    (the verified predecessor), or a str (the refusal)."""
     sys.path.insert(0, str(SPECS))
     import package_identity as pid
     lower = sorted(int(v[1:]) for v in pid.PACKAGES.get(line, {})
@@ -217,14 +219,15 @@ def required_predecessor(line: str, round_no: int, outbox: pathlib.Path):
     if not lower:
         return NO_PRIOR
     want = f"v{lower[-1]}"
-    # C7-2: STRICT name grammar — the loose glob admitted a malformed-name
-    # decoy (9999-v5-z.tar.gz) that the diff's own stricter parser then
-    # ignored, so the verified archive and the diff base could DIVERGE.
-    # One selector, one grammar, one returned Path consumed everywhere.
+    # C7-2/C9-2: STRICT name grammar — the loose glob admitted a
+    # malformed-name decoy (9999-v5-z.tar.gz) that the diff's own stricter
+    # parser then ignored, so the verified archive and the diff base could
+    # DIVERGE. One selector, ONE grammar (package_identity's — the same
+    # pattern lineage validation enforces), one returned Path everywhere.
+    strict = pid.strict_archive_re(line, want)
     cands = sorted(
         p_ for p_ in outbox.glob(f"{line}-{want}-*.tar.gz")
-        if re.fullmatch(rf"{re.escape(line)}-{re.escape(want)}"
-                        rf"-\d{{8}}T\d{{4}}Z\.tar\.gz", p_.name))
+        if strict.fullmatch(p_.name))
     if not cands:
         present = sorted({m.group(1) for p_ in outbox.glob(
             f"{line}-v*.tar.gz")
@@ -253,9 +256,11 @@ def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
     must run in an EXTRACTED review package, where there is no .git — so the
     selection logic owns no git call). Returns the newest archive of the
     line with a numeric version strictly below `version`, or None."""
+    sys.path.insert(0, str(SPECS))
+    import package_identity as pid
+    rx = pid.strict_any_version_re(line)   # C9-2: the ONE grammar
     def _key(p: pathlib.Path):
-        m = re.match(rf"{re.escape(line)}-v(\d+)-(\d+T\d+Z)\.tar\.gz$",
-                     p.name)
+        m = rx.fullmatch(p.name)
         return (int(m.group(1)), m.group(2)) if m else None
     cur = int(version.lstrip("v"))
     priors = sorted((p for p in outbox.glob(f"{line}-v*.tar.gz")
@@ -264,11 +269,13 @@ def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
 
 
 def _changed_from_previous(line: str, version: str, *, prior) -> str:
-    """Member-level diff against the newest prior same-line archive found on
-    the sealing host (outbox). Emits prior name+sha and added/removed/changed
-    paths; the always-regenerated loose carriers (the LOOSE set below — one
-    authority, no typed count) are listed under their own heading so real
-    tree changes stand out."""
+    """Member-level diff against the caller-verified predecessor — the
+    `prior` Path decided by required_predecessor, never selected here
+    (C9-3 retired the "newest archive found on the sealing host" language:
+    this function makes no claims about what the host holds). Emits prior
+    name+sha and added/removed/changed paths; the always-regenerated loose
+    carriers (the LOOSE set below — one authority, no typed count) are
+    listed under their own heading so real tree changes stand out."""
     import gzip as _gzip
     import hashlib as _hashlib
     import io as _io
@@ -277,8 +284,10 @@ def _changed_from_previous(line: str, version: str, *, prior) -> str:
     # (the first-governed-round boundary reselected an undeclared,
     # unwitnessed archive through the old None fallback).
     if prior is NO_PRIOR:
-        return ("No prior archive of this line was present on the sealing "
-                "host — diff SKIPPED, named here rather than omitted.\n")
+        return ("No predecessor is DECLARED in the governed record for this "
+                "line (NO_PRIOR) — diff SKIPPED, named here rather than "
+                "omitted. This is a statement about the governed record, not "
+                "about archives physically present on the host (C9-3).\n")
     prior_sha = _hashlib.sha256(prior.read_bytes()).hexdigest()
 
     def member_hashes(tgz: pathlib.Path) -> dict:
@@ -857,10 +866,14 @@ def main() -> int:
         # committed sidecar — "some lower version" let v3 stand in for v5
         # as v6's comparison source.
         # C8-1: only the EXPLICITLY declared in-flight version may seal
-        if f"{_line}-{a.version}" not in _pid.IN_FLIGHT:
-            _fail(f"{_line}-{a.version} is not declared IN_FLIGHT in "
-                  f"specs/package_identity.py — declare the seal before "
-                  f"running it (C8-1)")
+        # C9-1: EXACT singleton equality, not membership — a widened
+        # declaration must not let one seal ride another's exemption
+        # (the round-9 attack: delete a committed sidecar, add its row
+        # to IN_FLIGHT beside the real seal, and lineage still passes).
+        if _pid.IN_FLIGHT != (f"{_line}-{a.version}",):
+            _fail(f"IN_FLIGHT must be exactly ({_line}-{a.version},) to "
+                  f"seal this package; it is {_pid.IN_FLIGHT!r} — one seal "
+                  f"in flight, declared alone (C8-1/C9-1)")
         pred = required_predecessor(_line, round_no, a.outbox)
         if isinstance(pred, str):
             _fail(pred)

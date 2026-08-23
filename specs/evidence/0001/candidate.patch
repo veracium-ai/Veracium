@@ -1,9 +1,9 @@
 diff --git a/CANDIDATE_README.md b/CANDIDATE_README.md
 new file mode 100644
-index 0000000..aa684e1
+index 0000000..ea2ad44
 --- /dev/null
 +++ b/CANDIDATE_README.md
-@@ -0,0 +1,49 @@
+@@ -0,0 +1,64 @@
 +# candidate/0001 — the reviewer's executable branch (NEVER MERGED)
 +
 +*(R8-3: no version literals live here — the candidate draft version is
@@ -30,15 +30,30 @@ index 0000000..aa684e1
 +- exact `StoreVersionError(reason="newer")` refusal; FORMAT_VERSION 9
 +- MCP/CLI author surfaces extended (self-demotion; `system` stays out)
 +
-+`tests/test_0001_candidate.py`: 19 passed (the round-7 fold: the §4b
-+label order verbatim with the complete matrix, the exact five-shape
-+migration tests from the authority's object records, the real
-+`test_downgrade_export_fails_cleanly`, the four I6 composition vectors
++`tests/test_0001_candidate.py`: 20 passed (the round-9 fold adds the
++R9-1 non-functional placement vector — the one assertable record
++globally last-ranked under `has_pet`, complete ordered output asserted,
++proven to FAIL against the pre-fix filter-shaped selection — and the
++dedup vector now asserts the complete order; the round-7/8 set stands:
++the §4b label order verbatim with the complete matrix, the exact
++five-shape migration tests from the authority's object records, the
++real `test_downgrade_export_fails_cleanly`, the I6 composition vectors
 +with exact-ID/order assertions).
 +
 +## The measured blast radius (NOT fixed here — deliberately)
 +
-+Full suite on this branch: 16 failed, 1797 passed. Five are NEW
++Full suite on this branch, measured at packaging (R9-3 — the number
++is re-run, never carried; a differing pass/skip split in another
++environment is expected, the FAILURE set is the claim):
++
++    measured 2026-08-23: 16 failed, 1798 passed, 9 skipped
++    environment: CPython 3.12.3, Linux-7.0.0-1010-aws-x86_64-glibc2.39
++    command: PYTHONPATH=src python -m pytest tests/ -q
++    base: main @ 9257e85 + this branch's patch
++
++(The reviewer's extracted sandbox measured the SAME 16 failures at
++1787 passed / 21 skipped — the pass/skip delta is optional-dependency
++availability, not behaviour.) Five of the 16 are NEW
 +carriers of the round-7 §4b label fix — the three `test_render_origin`
 +pins (NOTE: the verbatim decision order CHANGES the rendered label for
 +existing user+3P/system+3P edges from "third-party-reported" to
@@ -133,10 +148,10 @@ index b794757..0404228 100644
      rm.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
  
 diff --git a/src/veracium/graph.py b/src/veracium/graph.py
-index 970186a..520ee2a 100644
+index 970186a..cbf7af5 100644
 --- a/src/veracium/graph.py
 +++ b/src/veracium/graph.py
-@@ -534,14 +534,30 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
+@@ -534,14 +534,36 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
      surfaced, _info = collapse_for_render([e for _, e in scored])
      surfaced_ids = {e.id for e in surfaced}
      scored = [(sc, e) for sc, e in scored if e.id in surfaced_ids]
@@ -158,8 +173,14 @@ index 970186a..520ee2a 100644
 +        rest = _cover(rest_scored, max_edges - len(reserved),
 +                      coverage_share,
 +                      seed_days={e.valid_from.date() for e in reserved})
-+        keep = rid | {e.id for e in rest}
-+        ordered = [e for _, e in scored if e.id in keep]
++        # R9-1: the output is CONSTRUCTED as reserved + remainder — the
++        # previous filter over the globally scored list preserved global
++        # rank, so with a NON-functional relation (no authority
++        # permutation to mask it) a reserved assertable record surfaced
++        # last, violating "reserved records are placed first". Both
++        # segments keep their scored order internally.
++        rest_ids = {e.id for e in rest}
++        ordered = reserved + [e for _, e in scored if e.id in rest_ids]
      # authority permutation WITHIN functional-contention groups; unrelated order unchanged
      return _permute_contention_groups(ordered, relations)
  
@@ -170,7 +191,7 @@ index 970186a..520ee2a 100644
      """Fill most of the budget by pure relevance, reserve the tail for time
      coverage.
  
-@@ -580,7 +596,8 @@ def _cover(scored: list[tuple[int, Edge]], max_edges: int,
+@@ -580,7 +602,8 @@ def _cover(scored: list[tuple[int, Edge]], max_edges: int,
      reserve = int(max_edges * coverage_share)
      head, tail = max_edges - reserve, []
      chosen = [e for _, e in scored[:head]]
@@ -180,7 +201,7 @@ index 970186a..520ee2a 100644
      rest = scored[head:]
      # first pass: highest-scoring candidate from each period not yet present
      for _, e in rest:
-@@ -630,17 +647,25 @@ def _outcome_note(e: Edge) -> str:
+@@ -630,17 +653,25 @@ def _outcome_note(e: Edge) -> str:
  # mislabelling assistant content. `_ORIGIN_LABELS` has no entry for a new author
  # class, and `tests/test_render_origin.py` fails loudly if one appears without
  # one. That converts a note in a deferred spec into a tripwire.
@@ -4517,14 +4538,15 @@ index 29256e5..2034358 100644
  v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
 diff --git a/tests/test_0001_candidate.py b/tests/test_0001_candidate.py
 new file mode 100644
-index 0000000..0f96e58
+index 0000000..dc54417
 --- /dev/null
 +++ b/tests/test_0001_candidate.py
-@@ -0,0 +1,397 @@
+@@ -0,0 +1,429 @@
 +"""specs/0001 CANDIDATE branch — the reviewer's named trio, executable with
 +REAL `ASSISTANT` records (no stand-ins). This file exists ONLY on the
-+`candidate/0001-v8` branch / patch; the spec is not accepted and nothing
-+here ships until it is.
++candidate branch / patch (version-neutral — R8-3/R9-2: the identity is
++the branch's own git history, never a typed version string); the spec is
++not accepted and nothing here ships until it is.
 +
 +Covers: I1, I5 (partition + render + marker), I6 (the exact 1,000+1
 +fixture at BOTH coverage shares), I11 (the full author×derived product),
@@ -4889,8 +4911,8 @@ index 0000000..0f96e58
 +                   disclosure=Disclosure.USE_ONLY, days_ago=15)
 +    s.add_edge(twin_a)
 +    s.add_edge(twin_b)
-+    for i in range(8):
-+        _mk(s, f"f{i}", assertable=False, day=40 + i)
++    fs = [_mk(s, f"f{i}", assertable=False, day=40 + i)
++          for i in range(8)]
 +    picked = _pick(s, share=0.25)
 +    # R8-1: the PRECISE dedup survivor — collapse_for_render's survivor
 +    # order decides; assert which twin lives and that the loser is absent
@@ -4898,8 +4920,39 @@ index 0000000..0f96e58
 +    assert len(surfaced) == 1
 +    survivor, loser = surfaced[0].id, (
 +        twin_b.id if surfaced[0].id == twin_a.id else twin_a.id)
-+    assert survivor in picked, "the collapse survivor must be selectable"
 +    assert loser not in picked, "the suppressed twin must never surface"
++    # R9-1: the COMPLETE ordered output, not survivor membership — §20
++    # claims every vector asserts the full order, so this one does too:
++    # reserved [a1] first, then the rank-ordered head (survivor, f0..f4),
++    # then the one coverage slot (f5, the highest-ranked unseen day)
++    expected = [a1.id, survivor] + [f.id for f in fs[:5]] + [fs[5].id]
++    assert picked == expected, (picked, expected)
++
++
++def test_i6_reserved_low_rank_is_placed_first_nonfunctional():
++    """(e) R9-1, the reviewer's construction: the ONE assertable record
++    ranks LAST globally and sits under a NON-functional relation
++    (has_pet), so no authority permutation can mask output order. The
++    contract is CONSTRUCTION — reserved + remainder — and the complete
++    ordered output is asserted: the reserved record is FIRST despite
++    being the store's worst-ranked candidate. The pre-fix filter over
++    the globally scored list returned it fourth of four."""
++    s = SqliteStore(":memory:")
++    highs = []
++    for i in range(4):
++        e = _edge(f"topic h{i}", author=EvidenceAuthor.THIRD_PARTY,
++                  disclosure=Disclosure.USE_ONLY, rel="has_diet",
++                  days_ago=10 + i)
++        s.add_edge(e)
++        highs.append(e)
++    low = _edge("topic", author=EvidenceAuthor.USER, rel="has_pet",
++                days_ago=30)          # assertable; oldest -> globally last
++    s.add_edge(low)
++    picked = _pick(s, share=0.25, max_edges=4)
++    # reserve ceil(4/4)=1 -> [low]; rest budget 3, coverage int(3*0.25)=0
++    # -> head = the three newest highs by recency tiebreak
++    expected = [low.id] + [h.id for h in highs[:3]]
++    assert picked == expected, (picked, expected)
 +
 +
 +def test_i6_composition_underfill_backfills_by_rank_deterministically():
