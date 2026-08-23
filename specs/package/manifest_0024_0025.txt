@@ -1,26 +1,26 @@
 PACKAGE: __PACKAGE__ — external ROUND __ROUND__
-SEALED:  __TS__ (UTC)
-COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
-MEASURED: __MEASURED__
+COMMIT: __COMMIT_FULL__
+BUILT: __TS__ (UTC)
 
-One archive, per-spec verdicts requested — the external round is stated
-ONCE, in the PACKAGE line above (C-plus R2-1: each dynamic fact exactly
-once, from the record; this paragraph's second round token was removed
-when the line first sealed under the accepted C-plus construction). The
-dependency lines below are DERIVED at seal time:
-__REQUIRES__
+The authorship/vocabulary pair, one archive, per-spec verdicts requested.
+The candidate revisions are stated ONCE, rendered from the identity
+record (no version or history facts live in this prose — the C-plus
+rules this line now seals under):
+__CANDIDATES__
+__HISTORY__
+__CHANGES__
+
+measured: __MEASURED__
+
 Prior review reports are omitted per the reviewer's standing instruction.
-The archive
-is the full committed tree at the commit above plus the loose carriers
-(the list below is GENERATED from the sealer's own LOOSE set — round 10,
-R10-2: round 9 de-counted the count and left the hand enumeration, which
-still omitted the fifth carrier):
-__LOOSE__
 
-Verification machinery a reviewer can run from the extraction is listed in
-COLLECTED.txt and generated from the sealer's own registry. The packaging
-constructions this archive uses are the ones the 0022/0023 review hardened
-over twenty-one rounds: produced-not-typed identity across all five
-carriers, the candidate field as one rendered artifact, byte-verified
-generated blocks, a closed evidence-transcript schema, and an offline
-launcher that refuses an unqualified runtime or a reused venv.
+Verification, from the extraction root (no network):
+  python specs/verify_extracted.py header      # the C-plus record: registry
+                                               # conformance, whole-file
+                                               # recompute, witnesses
+  python specs/verify_extracted.py collected
+  python specs/verify_extracted.py reconcile
+  python specs/package_identity.py
+
+Always-regenerated loose carriers (not diffed against the prior archive):
+__LOOSE__
