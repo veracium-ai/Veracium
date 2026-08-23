@@ -5,9 +5,9 @@ MEASURED: __MEASURED__
 
 One archive, per-spec verdicts requested — the external round is stated
 ONCE, in the PACKAGE line above (C-plus R2-1: each dynamic fact exactly
-once, from the record; this paragraph's second __ROUND__ token was
-removed when the line first sealed under the accepted C-plus
-construction). The dependency lines below are DERIVED at seal time:
+once, from the record; this paragraph's second round token was removed
+when the line first sealed under the accepted C-plus construction). The
+dependency lines below are DERIVED at seal time:
 __REQUIRES__
 Prior review reports are omitted per the reviewer's standing instruction.
 The archive
