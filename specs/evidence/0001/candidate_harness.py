@@ -1,5 +1,7 @@
-"""specs/0001 v7 candidate harness (round-3 standing ask; version kept
-current per R5-5 — this line is a version carrier).
+"""specs/0001 CURRENT-CANDIDATE harness (round-3 standing ask). Version
+literals were themselves the R5-5 defect — the spec's Version row is the
+ONE carrier; this file states none (R6 lesson: a version carrier that
+must be hand-bumped every round WILL go stale).
 
 Runnable, self-contained, offline. Each vector MEASURES the shipped
 behaviour the v5 contracts are written against, and states beside it the
@@ -200,6 +202,15 @@ def vector_the_1000_edge_selection_today():
     picked = subgraph_for_query(s, U, "works fact", max_edges=40,
                                 coverage_share=0.0,
                                 relations=DEFAULT_RELATIONS)
+    # R6-4: the POSITIVE-coverage path measured too — the reserve/coverage
+    # composition (reserved records seed covered-day state; the coverage
+    # budget computes over the post-reserve remainder) must hold under the
+    # supported non-zero share, not only at 0.0
+    picked_cov = subgraph_for_query(s, U, "works fact", max_edges=40,
+                                    coverage_share=0.25,
+                                    relations=DEFAULT_RELATIONS)
+    print(f"    (coverage 0.25: user edge selected = "
+          f"{user_edge.id in {e.id for e in picked_cov}})")
     ids = {e.id for e in picked}
     assert len(ids) <= 40
     print(f"    (today: user edge selected = {user_edge.id in ids} — "

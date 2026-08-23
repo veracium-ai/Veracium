@@ -25,6 +25,40 @@ description, which is the defect this field exists to prevent:
 
 # (spec, round_kind, round_no, finding, summary, closed_in, evidence)
 CLOSURES = [
+    # ---- 0001 external round 6 (2026-08-23) — the round-6 fold, v8 --------
+    ("0001", "external", 6, "0001-R6-1",
+     "I13b/c undercounted the v10 domain: five accepted manifestations, "
+     "'both routes' lost three",
+     "I13b/c parameterized over every accepted shape; the count derived, "
+     "not typed",
+     "grep -n 'EVERY accepted v10 manifestation\\|inherits_every_v10_shape' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 6, "0001-R6-2",
+     "the 0018 attestation internals were undispositioned: migration_digest "
+     "from ALTERS_V7_TO_V8, ladder diagnostics hard-coding v5/v6-era bases",
+     "I13d: edge-indexed step registry, empty-step-set digest, generated "
+     "diagnostics, bases 1-10",
+     "grep -n 'edge-indexed migration-step registry' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 6, "0001-R6-3",
+     "I5 named collapse_for_render while the design said it neither "
+     "partitions nor renders",
+     "I5 names gate.partition_parts + rendering; collapse retained only "
+     "as the no-collapse assertion",
+     "grep -n 'asserted at .gate.partition_parts' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 6, "0001-R6-4",
+     "the reserve/coverage composition was untested beyond share=0.0",
+     "the composition defined; the harness measures the positive-coverage "
+     "path",
+     "grep -n 'coverage_share=0.25' specs/evidence/0001/candidate_harness.py"),
+    ("0001", "external", 6, "0001-R6-5",
+     "a live cross-ref said 'the confirm() row' — the sweep grepped rule "
+     "phrases, not row names",
+     "fixed; cross-references join the sweep list",
+     "! grep -n 'see the .confirm(). row' "
+     "specs/0001-generated-content-trust-class.md"),
+
     # ---- 0001 external round 5 (2026-08-23) — the round-5 fold, v7 --------
     ("0001", "external", 5, "0001-R5-1",
      "three confirm() carriers survived two claimed-complete sweeps — the "
@@ -57,9 +91,17 @@ CLOSURES = [
      "current-version carriers disagreed: Status row, the §9 label, the "
      "harness self-id",
      "swept; version carriers join the pre-send sweep",
-     "grep -n 'v7 is the round-6 external candidate' "
-     "specs/0001-generated-content-trust-class.md && "
-     "grep -n 'v7 candidate harness' specs/evidence/0001/candidate_harness.py"),
+     "$PY -c \"import re, pathlib; "
+     "s = pathlib.Path('specs/0001-generated-content-trust-class.md')"
+     ".read_text(); "
+     "ver = re.search(r'[*][*]Version[*][*] . [*][*](v\\\\d+)[*][*]', s)"
+     ".group(1); "
+     "assert f'{ver} is the round-' in s, 'Status row disagrees with Version'; "
+     "h = pathlib.Path('specs/evidence/0001/candidate_harness.py')"
+     ".read_text(); "
+     "assert not re.search(r'v\\\\d+ candidate harness', h), "
+     "'harness carries a version literal'; "
+     "print('version carriers consistent, no hand-bumped literals')\""),
 
     # ---- 0001 external round 4 (2026-08-23) — the round-4 fold, v6 --------
     ("0001", "external", 4, "0001-R4-1",
