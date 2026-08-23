@@ -4,7 +4,7 @@
 
 # Review archives
 
-**229 archives, 463308 KB.** Each is the exact package sent for one
+**230 archives, 469741 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -254,6 +254,7 @@ existed rather than a way to check it.
 | `0024-0025-v11-20260821T2335Z.tar.gz` | 0024+0025 | v11 | 2026-08-21 23:35Z | 408 | 6284 KB | `9e5fd437cd2bf53f…` |
 | `0024-0025-v12-20260822T0037Z.tar.gz` | 0024+0025 | v12 | 2026-08-22 00:37Z | 409 | 6285 KB | `5a91e7363bd5c310…` |
 | `0024-0025-v13-20260823T2131Z.tar.gz` | 0024+0025 | v13 | 2026-08-23 21:31Z | 437 | 6431 KB | `a0171fcd0dcf6731…` |
+| `0024-0025-v13-20260823T2156Z.tar.gz` | 0024+0025 | v13 | 2026-08-23 21:56Z | 437 | 6433 KB | `ec2950b82e71615e…` |
 
 **To verify a copy you were sent:**
 
@@ -316,7 +317,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0024-0025 | v10 | 10 | `0024-0025-v10-20260821T2249Z.tar.gz` | `1e0c5104b3a2421f…` |
 | 0024-0025 | v11 | 11 | `0024-0025-v11-20260821T2335Z.tar.gz` | `9e5fd437cd2bf53f…` |
 | 0024-0025 | v12 | 12 | `0024-0025-v12-20260822T0037Z.tar.gz` | `5a91e7363bd5c310…` |
-| 0024-0025 | v13 | 13 | **0 sidecars — LINEAGE GAP** | — |
+| 0024-0025 | v13 | 13 | `0024-0025-v13-20260823T2156Z.tar.gz` | `ec2950b82e71615e…` |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 
