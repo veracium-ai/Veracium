@@ -25,6 +25,42 @@ description, which is the defect this field exists to prevent:
 
 # (spec, round_kind, round_no, finding, summary, closed_in, evidence)
 CLOSURES = [
+    # ---- 0001 external round 4 (2026-08-23) — the round-4 fold, v6 --------
+    ("0001", "external", 4, "0001-R4-1",
+     "the confirm() correction was unswept across five more normative "
+     "carriers — the third partial sweep this spec has recorded",
+     "§3.1/§3.2/§4/§7/§9 swept with the three-way terminology",
+     "! grep -n 'Promotion remains' "
+     "specs/0001-generated-content-trust-class.md && "
+     "grep -c 'AFFIRMATION\\|affirmation' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 4, "0001-R4-2",
+     "same-value affirmation does not render-collapse: collapse groups per "
+     "trust envelope, so the spec claimed a collapse 0012 forbids",
+     "the separate-partitions truth stated; the harness measures the "
+     "RENDERED result",
+     "$PY specs/evidence/0001/candidate_harness.py  "
+     "# vector_affirmation_makes_the_fact_assertable asserts "
+     "collapse_for_render surfaced_count=2, both partitions"),
+    ("0001", "external", 4, "0001-R4-3",
+     "I6 claimed scope runs upstream — false against shipped 0020: scope "
+     "filters AFTER selection, and a principal's edge was starved at cap 1",
+     "I6 scoped to unscoped recall; the scoped limitation in §8; the 0020 "
+     "amendment at Q6",
+     "grep -n 'scoped to UNSCOPED recall' "
+     "specs/0001-generated-content-trust-class.md && "
+     "grep -n 'Q6' specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 4, "0001-R4-4",
+     "the v10->v11 contract was incomplete: wrong precedent, missing "
+     "0013/0018 dependencies, the release orchestrator undispositioned, "
+     "the refusal untyped, the Q3 carrier contradicting I13",
+     "§7 completed; I13 exact; the harness asserts "
+     "StoreVersionError(reason=newer)",
+     "grep -n 'SCHEMA_V7 = SCHEMA_V6\\|StoreVersionError' "
+     "specs/0001-generated-content-trust-class.md && "
+     "$PY specs/evidence/0001/candidate_harness.py  "
+     "# vector_old_reader_refuses_a_newer_store_at_open"),
+
     # ---- 0001 historical rounds (retrofitted at TRACKED-entry, 2026-08-23:
     # per-finding texts live in the spec's own §11/§12/§13 narrative) -------
     ("0001", "internal", 1, "0001-INT1",
@@ -107,8 +143,9 @@ CLOSURES = [
      "Spec-Requires named 0003/0005 while the design depends on "
      "0007/0008/0012/0016 and explicitly sequences after 0024",
      "the header line, complete",
-     "grep -n 'Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024' "
-     "specs/0001-generated-content-trust-class.md"),
+     "grep -n 'Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024' "
+     "specs/0001-generated-content-trust-class.md  "
+     "# grown again by R4-4 (+0013 +0018); the closure tracks the CURRENT list"),
 
     # ---- 0022 -----------------------------------------------------------
     ("0022", "external", 1, "F2",

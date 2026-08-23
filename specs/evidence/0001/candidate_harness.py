@@ -74,7 +74,8 @@ def vector_affirmation_makes_the_fact_assertable():
     """R3-1: the v5 affirmation contract, BOTH shapes, measured. Same
     value: the user edge becomes the ASSERTABLE carrier and the use_only
     prior persists un-asserted (nothing to supersede — the value did not
-    change; render collapse handles the redundancy). Different value: the
+    change; R4-2: the two records RENDER IN SEPARATE PARTITIONS, measured
+    below). Different value: the
     ladder retires the prior. ASSISTANT slots in at rung 1; the same
     paths hold."""
     # shape 1: same value — assertable via the user edge, prior persists
@@ -86,6 +87,16 @@ def vector_affirmation_makes_the_fact_assertable():
     by_id = {e.id: e for e in s.edges(U)}
     assert by_id[affirmation.id].assertable, "the affirmed fact must ground"
     assert not by_id[prior.id].assertable, "the prior must stay un-asserted"
+    # R4-2, the RENDERED result (the reviewer measured what storage-state
+    # assertions had stood in for): collapse groups by (subject, relation,
+    # disclosure, author, derived_from), so the two records surface in
+    # SEPARATE trust partitions — 0012's envelope isolation, preserved.
+    from veracium.graph import collapse_for_render
+    surfaced, _info = collapse_for_render(list(by_id.values()))
+    assert len(surfaced) == 2, "cross-class records must NOT collapse"
+    assert {e.provenance.disclosure for e in surfaced} == {
+        Disclosure.MENTIONABLE, Disclosure.USE_ONLY}, (
+        "each record renders in its own partition (R4-2)")
     # shape 2: different value — the ladder retires the prior
     s2 = SqliteStore(":memory:")
     prior2 = _use_only_edge("carpenter")
@@ -145,8 +156,11 @@ def vector_old_reader_refuses_a_newer_store_at_open():
             SqliteStore(db)
             raise AssertionError("an old reader opened a newer store")
         except Exception as err:                 # noqa: BLE001
-            assert "ValidationError" not in type(err).__name__, (
-                "the refusal must happen at OPEN, not as edge validation")
+            # R4-4: EXACT — the shipped refusal, not merely "some exception
+            # that is not ValidationError"
+            assert type(err).__name__ == "StoreVersionError", type(err)
+            assert getattr(err, "reason", None) == "newer", (
+                f"expected reason='newer', got {getattr(err, 'reason', None)!r}")
 
 
 def vector_the_1000_edge_selection_today():

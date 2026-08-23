@@ -1,11 +1,13 @@
 # Feature spec: generated-content trust class (`EvidenceAuthor.ASSISTANT`)
 
 Spec-Status: draft
-Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024
+Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v5)** — the round-3 fold, 2026-08-23. Round 3 (the line's first
+> **draft (v6)** — the round-4 fold, 2026-08-23 (see §16; the v5 note below stands as history).
+>
+> v5 — Round 3 (the line's first
 > SEALED round) returned SIX blocking findings, every one an executed
 > collision between this spec's promises and a contract that SHIPPED while
 > it sat deferred: `confirm_edge` refuses the promotion v4 promised (0008),
@@ -39,7 +41,7 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v5** — the round-3 fold: every shipped-contract collision the reviewer executed, corrected against the code (§15). §14 lists v4's changes; §13 lists v3's. *Re-read before editing; quote the version you approve.* |
+| **Version** | **v6** — the round-4 fold (§16): the confirm() sweep completed across five more carriers, the render honesty (separate partitions), I6 scoped against shipped 0020, the migration contract completed. §15/§14/§13 list the earlier folds. *Re-read before editing; quote the version you approve.* |
 | **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred on the render-marker gate (closed in code 2026-08-15); v4 returned at round 3 for shipped-contract collisions; **v5 is the round-4 external candidate.** |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
@@ -250,8 +252,12 @@ subject at all.**
 | `ASSISTANT` | `THIRD_PARTY` | `use_only` (existing cap; unchanged) |
 | `ASSISTANT` | relation == quarantine | `quarantined` (unchanged) |
 
-**One rule, no subject inspection, no new predicate.** Promotion remains
-`confirm()` — a user act — exactly as v1 proposed and research accepted.
+**One rule, no subject inspection, no new predicate.** Promotion is
+AFFIRMATION — new USER evidence via `remember(author=USER)` (§3.2's row;
+v5/R4-1 terminology: *affirmation* creates user evidence; *confirmation*
+(`confirm_edge`, 0008) clears staleness on an already-assertable edge and
+refuses everything else; a non-assertable assistant edge is NEVER promoted
+in place).
 
 **What this gives up, stated plainly:** the *"the test suite passed"* case stays
 `use_only`, so an assistant's first-party report of its own action is not
@@ -279,7 +285,7 @@ third; the reviewer executed all three.)*
 | **supersession** (functional relation) | **refused by the AUTHORITY LADDER** (rung 1 < rung 3; durable content-free refusal recorded, 0003 §4b) — not the disclosure guard | **allowed by the ladder** (rung 3 ≥ 1): the user's new evidence retires the assistant prior — THE AFFIRMATION PATH (see the `confirm()` row) | allowed (equal rung); same-value handling per 0012 — see the restatement row | never | ladder governs; disclosure does not block cross-class supersession |
 | **T1 absorption** (subset) | **blocked** — the equal-disclosure-class restriction (0.4.1 guard) | **blocked — the SAME guard, v5 correction**: `mentionable` user evidence cannot absorb a `use_only` assistant edge; both records persist, and the functional case is handled by supersession above. *(v4 claimed "allowed; winner is the user edge" — measured false: both stay active. Cross-class absorption would also inherit max confidence and `observed_at`, letting assistant metadata alter the user survivor — the exact laundering 0.4.1 exists to stop.)* | allowed when same class | never | only within class |
 | **restatement** (identical fact, same class) | n/a (cross-class — see supersession) | n/a | **the incoming restatement PERSISTS UNTOUCHED (0012): no merge, no mutation of the prior — the currency-refresh hazard Q1 named is structurally absent**, and the read path collapses strict redundancy at render (0012 §4c). *(v4 said "merge allowed, refresh blocked" — 0012's shipped model is persist-and-collapse, which delivers Q1's intent without a store-side merge.)* | never | only within class |
-| **affirmation** (was: `confirm()`) | n/a | **a user affirmation is NEW USER EVIDENCE**: the host ingests it (`remember(author=USER)`). Same value: the user edge becomes the ASSERTABLE carrier; the assistant prior persists un-asserted (nothing to supersede) and render collapse handles the redundancy. Different value: the ladder retires the prior — full supersession, audit and retry semantics for free. *(Both shapes measured: `candidate_harness.py`.)* **`confirm_edge` (0008) is NOT this path and refuses every non-assertable edge by contract — this spec PRESERVES 0008 unamended** *(v5, R3-1: v4 promised a promotion `confirm_edge` refuses; the reviewer executed the refusal)* | n/a | never — nothing elevates quarantined | affirmation supersedes it; nothing flips it in place |
+| **affirmation** (was: `confirm()`) | n/a | **a user affirmation is NEW USER EVIDENCE**: the host ingests it (`remember(author=USER)`). Same value: the user edge becomes the ASSERTABLE carrier; the assistant prior persists un-asserted (nothing to supersede) — **and the two records RENDER IN SEPARATE TRUST PARTITIONS** (v5/R4-2, measured: `collapse_for_render` groups by `(subject, relation, disclosure, author, derived_from)`, so cross-class records can never share a group — 0012's trust-envelope isolation, PRESERVED deliberately; a cross-class presentation rule would weaken it and is out of scope). The grounded block carries the user's fact; the unverified block still shows the attributed assistant claim. Different value: the ladder retires the prior — full supersession, audit and retry semantics for free. *(Both shapes measured: `candidate_harness.py`.)* **`confirm_edge` (0008) is NOT this path and refuses every non-assertable edge by contract — this spec PRESERVES 0008 unamended** *(v5, R3-1: v4 promised a promotion `confirm_edge` refuses; the reviewer executed the refusal)* | n/a | never — nothing elevates quarantined | affirmation supersedes it; nothing flips it in place |
 
 **Q1 resolved — `ASSISTANT × ASSISTANT`: allow the merge, block the currency
 refresh.** I had proposed blocking the merge outright on a
@@ -321,8 +327,9 @@ storage; no laundering.
 - **Can non-user content gain user-grade authority, confidence, or currency?**
   Only through `confirm()`, which requires a user act. `derived_from` still
   cannot raise trust.
-- **Can it clear `needs_confirmation`?** Only `confirm()`, unchanged. Dedup and
-  maintenance still never clear it.
+- **Can it clear `needs_confirmation`?** Only 0008's confirmation on an
+  already-assertable edge, unchanged (v5/R4-1: distinct from affirmation).
+  Dedup and maintenance still never clear it.
 - **Does it merge, drop, or overwrite provenance?** No new path. Blocked merges
   leave both edges intact and dated, which is the additive-noise side of the
   asymmetry we prefer.
@@ -370,13 +377,14 @@ Observable difference, given the same text:
 | host says | before | after *(v4 carrier sweep: this table still showed the withdrawn v2 widening)* |
 |---|---|---|
 | `author="assistant"`, *"the deploy failed"* | not expressible; `system` → asserted, or `third_party` → `use_only` | **`use_only`** — rendered in the unverified block with an honest origin label, never asserted; groundability of first-party tool results is the evidence-basis axis's question, not this spec's |
-| `author="assistant"`, *"you prefer dark mode"* | same bad choice | **`use_only`** — same block, promotable by `confirm()` |
+| `author="assistant"`, *"you prefer dark mode"* | same bad choice | **`use_only`** — same block; a user AFFIRMATION creates the assertable user edge (§3.2; v5/R4-1: nothing promotes in place) |
 
 **Exact rendering change:** every assistant edge renders in the existing
 unverified block, attributed per §4b; **no new sentence form is introduced**,
 because rendered text becomes model context and a new phrasing is a change to
-what the model reads. No assistant edge reaches the grounded block without
-`confirm()`.
+what the model reads. No assistant edge EVER reaches the grounded block —
+the grounded carrier a user affirmation creates is a USER edge, and the
+assistant record stays in its own partition (v5/R4-1/R4-2).
 
 ### 4b. Rendering — the decision, RESOLVED (Q5) and partly shipped
 
@@ -492,9 +500,9 @@ fixture ever caught it because small stores never truncate.*
 | **I13** *(v5, R3-2)* the on-disk guard is ACTIVATED: `SCHEMA_VERSION` 10 → 11 (semantic, no-DDL; stamp-only migration), and a reader predating `ASSISTANT` refuses a v11 store AT OPEN via 0007's adoption check — never a `ValidationError` mid-read | `test_old_reader_refuses_v11_at_open` (v11-stamped store + a reader pinned to 10 → the 0007 refusal, before any edge loads) | CI |
 | **I3** an assistant edge can never supersede, absorb, or reinforce a user edge | `test_assistant_cannot_touch_user_edge` (all three ops, both directions) | CI |
 | **I4** `derived_from=THIRD_PARTY` still caps an assistant edge to `use_only` | `test_assistant_derived_from_third_party_is_capped` | CI |
-| **I5** affirmation-as-new-USER-evidence is the ONLY promotion path (0008 PRESERVED: `confirm_edge` refuses every non-assertable edge by contract), and maintenance never promotes | `test_affirmation_grounds_and_confirm_edge_refuses` — asserts all three: same-value affirmation makes the fact assertable via the user edge (prior persists un-asserted), a differing user value retires the prior via the ladder, and `confirm_edge` on the assistant edge raises with 0008's message *(v5, R3-1)* | CI |
+| **I5** affirmation-as-new-USER-evidence is the ONLY promotion path (0008 PRESERVED: `confirm_edge` refuses every non-assertable edge by contract), and maintenance never promotes | `test_affirmation_grounds_and_confirm_edge_refuses` — asserts all four: same-value affirmation makes the fact assertable via the user edge (prior persists un-asserted), **the RENDERED result puts each record in its own trust partition** (the actual `collapse_for_render` output, per R4-2 — not the storage state standing in for it), a differing user value retires the prior via the ladder, and `confirm_edge` on the assistant edge raises with 0008's message *(v5, R3-1/R4-2)* | CI |
 | **I3b** the path §3.2 says is **allowed** actually works: user evidence SUPERSEDES an assistant prior via the authority ladder *(v5, R3-3: absorption is NOT the allowed path — cross-class absorption stays blocked by the 0.4.1 guard, and v4's claim that it worked was measured false)* | `test_user_can_correct_an_assistant_fact` (supersession, both the retire and the refusal-free path) | CI |
-| **I6** THE SELECTION RULE *(v5, R3-4: v4 named a test with no rule — the reviewer measured `selected=40 user_selected=[]` under the natural fixture)*: when any query-relevant ASSERTABLE edge exists, subgraph selection reserves `min(count_relevant_assertable, ceil(max_subgraph_edges / 4))` slots for the highest-ranked assertable edges; remaining slots fill by rank regardless of class. Protected class = ASSERTABLE (not author-keyed: assistant edges are never assertable, so this protects grounded evidence without a second author branch). Applied after relevance ranking, before token budgeting; contention ordering and scope filters run upstream and are unaffected. FIXTURE, exact: 1,000 equally-relevant `use_only` assistant edges + 1 equally-relevant older assertable user edge, `max_subgraph_edges=40` → the user edge IS selected (reserve ≥ 1) and the other 39 slots are the top-ranked assistant edges | `test_assistant_dominant_store_does_not_crowd_out_user` (the exact fixture; asserts the user edge id in the selection) | CI |
+| **I6** THE SELECTION RULE, **scoped to UNSCOPED recall** *(v5, R4-3: v5's first form said scope filters "run upstream and are unaffected" — FALSE against shipped 0020: `Memory._recall` runs `subgraph_for_query` (cap included) BEFORE `view.scoped`, its own comments record that out-of-scope records consume slots, and the reviewer measured a principal's edge lost to an out-of-scope winner at cap 1. Applying the reserve inside `subgraph_for_query` would preserve that failure, so this invariant does not pretend otherwise)*: on UNSCOPED recall, when any query-relevant ASSERTABLE edge exists, selection reserves `min(count_relevant_assertable, ceil(max_subgraph_edges / 4))` slots for the highest-ranked assertable edges; remaining slots fill by rank regardless of class. Protected class = ASSERTABLE. COMPOSITION: the reserve is taken from the post-`_cover` ranked pool; `subgraph_coverage_share` constraints apply first and coverage wins on conflict, with the shortfall observable in the selection; token budgeting runs after. **The SCOPED path's limitation is STATED, not fixed here** (§8): scope filtering after selection can starve a principal's edges regardless of any reserve — fixing it means moving scope ahead of ranking, which is a 0020 amendment (§10 Q6, its own round). FIXTURE, exact (unscoped): 1,000 equally-relevant `use_only` assistant edges + 1 equally-relevant older assertable user edge, `max_subgraph_edges=40` → the user edge IS selected and the other 39 slots are the top-ranked assistant edges | `test_assistant_dominant_store_does_not_crowd_out_user` (the exact fixture, unscoped; asserts the user edge id in the selection) | CI |
 | **I10** the store-side min-trust consolidation rule (`_derive_output_metadata`, its home since 0010 X23 — see §2) treats `ASSISTANT` correctly: any assistant member caps the derived output at `use_only`; a mixed set never yields output presented as grounded | `test_mixed_batch_with_assistant_declares_influence` | CI |
 | **I10a** an assistant restatement PERSISTS UNTOUCHED per 0012 — the prior is byte-unchanged (no `observed_at` refresh is structurally possible), both records present, render collapses strict redundancy *(v5, R3-3: v4 promised a store-side merge 0012 does not perform)* | `test_assistant_restatement_does_not_refresh_currency` (prior byte-equality + persist + render collapse) | CI |
 | **I7** an export containing assistant edges is rejected by an older reader **with our message, not a pydantic traceback** | `test_downgrade_export_fails_cleanly` | CI |
@@ -539,13 +547,24 @@ improving recall.
   "export version is newer than this library" message instead of a stack
   trace. **For the STORE, the 0007 guard exists but only fires when a newer
   store is actually STAMPED — so this spec BUMPS `SCHEMA_VERSION` 10 → 11
-  as a semantic, no-DDL version step** (the 0006 v4→v5 precedent: the SQL
-  shape is unchanged; the JSON inside it is not), with the v10→v11
-  migration a stamp-only step in `store/migration.py` and the accepted-
-  digest evidence regenerated per the 0007/0013 convention. An old reader
-  then refuses AT OPEN — 0007's adoption check — before any edge
-  validates; **I13** proves the refusal happens at open, not as a
-  `ValidationError` mid-read. *(v5, R3-2: v4 said "nothing 0001-specific
+  as a semantic, no-DDL version step** (the exact precedent is 0019's
+  `SCHEMA_V7 = SCHEMA_V6` — byte-identical schema, semantic bump; v5's
+  first citation of 0006 v4→v5 was wrong, that migration ADDS the
+  `store_identity` table — R4-4), with `SCHEMA_V11 = SCHEMA_V10`
+  declared, the v10→v11 migration a stamp-only step in
+  `store/migration.py`, and the accepted-digest evidence regenerated per
+  the 0007/0013 convention (`Spec-Requires` carries 0013 — R4-4). **The
+  release orchestrator is a DISPOSITIONED CONSUMER** (R4-4): 0018's
+  `release_migration.py` derives `_HEAD = SCHEMA_VERSION`, `_MINT_BASE =
+  _HEAD - 1` and the supported-base window from the constant, so the bump
+  moves all three — the 0018 mint/preflight evidence regenerates with the
+  release, and `Spec-Requires` carries 0018. An old reader then refuses AT
+  OPEN with **exactly `StoreVersionError(reason="newer")`** (the shipped
+  refusal, `store/schema_version.py`) — never a `ValidationError`
+  mid-read; **I13** asserts the exact type and reason. NEW-reader
+  postconditions: `migrate_store` takes a v10 store to v11 with byte-
+  identical SQL shape, the stamp the only change, and the v11 accepted-
+  manifest digest recorded in the store evidence. *(v5, R3-2: v4 said "nothing 0001-specific
   remains" of Q3 — false as measured by the reviewer: disk=10, reader=10,
   `ValidationError`. 0007 only refuses what a version bump tells it to.)*
 - **Partial failure.** No new multi-step operation; nothing to leave half-done.
@@ -554,7 +573,8 @@ improving recall.
   point** *(v4 carrier sweep: this cell still described the withdrawn v2
   admission into `mentionable`)*. Every assistant edge is `use_only`; prompt
   injection that induces an assistant statement gets an edge the gate never
-  asserts, whatever its subject. **The surface that DOES grow is the fenced
+  asserts, whatever its subject (promotion exists only as user AFFIRMATION —
+  new user evidence; v5/R4-1). **The surface that DOES grow is the fenced
   residual** (the 0023 §8 lesson, stated here so the reviewer meets it
   pre-stated): `use_only` assistant text still enters model context in the
   unverified block, attributed but present, at assistant-turn VOLUME — and
@@ -600,6 +620,11 @@ improving recall.
     the direction; it does not measure this change and cannot.
   - A passing injection ladder is *"no failures observed on the frozen suite"*,
     never "safe against prompt injection".
+  - **The I6 reserve does not protect SCOPED recall** (v5, R4-3): shipped
+    0020 filters scope AFTER subgraph selection, so out-of-scope records can
+    consume selection slots ahead of a principal's own evidence — measured
+    at cap 1. Fixing that ordering is a 0020 amendment (§10 Q6), not this
+    spec's rider.
   - **It does not bound the fenced residual** *(v4 carrier sweep: this bullet
     still described the withdrawn mentionable exposure and its subject-rule
     containment — both gone)*: `use_only` assistant text enters the prompt's
@@ -649,7 +674,8 @@ dissolved questions would waste the round.)*
   flip path re-opens 0011's historical-refusal re-evaluation concern.
 - **What would change our minds.** Evidence that hosts cannot reliably
   attribute turns (making the whole class noise); a construction where a
-  `use_only` assistant edge reaches assertion without `confirm()` — through
+  `use_only` assistant edge reaches assertion without a user affirmation —
+  through
   the wiki compiler, consolidation's min-trust derivation, an import
   round-trip, or any path §2d missed; or a demonstration that rung 1
   composes badly with 0024's pending author/relation reordering.
@@ -670,7 +696,8 @@ dissolved questions would waste the round.)*
 | ~~**Q5**~~ | **RULED 0001-Q5 (research, 2026-08-01 20:06): `(author, derived_from)`.** Author-only mislabels `system+third_party` and omits `user+third_party` — the two commonest `use_only` shapes after plain third-party. **Stale here for 16 hours** while the answer sat in COORDINATION; see the reconciliation check. | resolved | research | — |
 | ~~**Q1**~~ | ~~Should `ASSISTANT × ASSISTANT` merges be blocked?~~ **ANSWERED 2026-07-31 (research):** do not block the merge; block the `observed_at` refresh. The hazard is currency, not confidence. See §3.2 and I10a. | ~~blocking~~ **resolved** | research | done |
 | **Q2** | Does an assistant *restating* user testimony reinforce the user's edge instead of creating an assistant edge? The elegant fix; blocked by the same-disclosure-class rule; would remove most of §8's stated cost. | `deferred` | research | own design round |
-| ~~**Q3**~~ | **RESOLVED by `0007` (accepted; shipped in v0.5.0, 2026-08-07): the store-level version guard is exactly 0007's contract** — `PRAGMA user_version` stamped + shape-verified adoption; an old build refuses a newer store rather than misreading it. Nothing 0001-specific remains. *(Struck 2026-08-13; the question predated 0007's existence.)* | resolved | dev | — |
+| **Q6** | *(v5, R4-3)* Should 0020's recall ordering move scope filtering AHEAD of subgraph ranking/reservation, so scoped principals get the I6 guarantee? Requires a 0020 amendment with its own review (the filter-after-selection ordering is 0020's shipped contract, and its comments record the slot-consumption behaviour as known). | `deferred` | dev + research | own design round, post-acceptance |
+| ~~**Q3**~~ | **RESOLVED by `0007` (accepted; shipped in v0.5.0): the guard MECHANISM is 0007's contract** — but *(corrected v5, R4-4: the earlier strike said "nothing 0001-specific remains", which I13 contradicts)* the guard only fires when a newer store is STAMPED, so the 0001-specific remainder is exactly the `SCHEMA_VERSION` 10→11 bump §7 specifies. The strike stands for the mechanism; the activation is this spec's. | resolved | dev | — |
 | ~~**Q4**~~ | **MOOT (v5, R3-5): `0016` deleted `SourceType`, `Provenance.source_type` and `ingest._source_type` outright — the field this question asks about does not exist.** The v4 currency pass re-executed §2c-ii's commands but never verified every NAME in the consumer table still resolves; the reviewer did. | resolved | — | — |
 
 ---
@@ -907,7 +934,7 @@ offered one.*
    blast-radius cell, §3b's fourth bullet, §8's public-claim sentence
    ("may be used directly"). §14's completed-sweep claim corrected by
    this section's existence.
-7. **R3-7 — `Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024`**
+7. **R3-7 — `Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024`**
    (0024 is an explicit ordering dependency on the `_disclosure_for`
    co-edit; the rest are contracts this design now composes with by
    name).
@@ -917,3 +944,34 @@ offered one.*
    1,000-edge selection vector — measured TODAY-state, with the candidate
    deltas stated beside each); the no-`ensurepip` offline bootstrap is in
    the launcher.
+
+---
+
+## 16. Changes in v6 (the round-4 fold, 2026-08-23)
+
+1. **R4-1 — the confirm() sweep COMPLETED** across the five carriers v5
+   missed (§3.1, §3.2's four-questions, §4 twice, §7, §9), with the
+   three-way terminology fixed everywhere: *affirmation* (new USER evidence
+   via `remember`) · *confirmation* (0008's staleness-clearing on an
+   already-assertable edge) · a non-assertable assistant edge is NEVER
+   promoted in place. The v5 sweep was itself partial — the third partial
+   sweep this spec has recorded, which is the strongest argument the
+   reviewer's execute-everything method has made yet.
+2. **R4-2 — render honesty**: same-value affirmation does NOT collapse
+   (`collapse_for_render` groups per trust envelope; measured
+   `surfaced_count=2`); the spec now states the two records render in
+   SEPARATE partitions, 0012's isolation preserved deliberately; I5 asserts
+   the actual rendered result; the harness measures it.
+3. **R4-3 — I6 scoped to UNSCOPED recall** against shipped 0020 (scope
+   filters run AFTER selection; the reviewer measured a principal's edge
+   starved at cap 1); the scoped limitation stated in §8; the ordering fix
+   named as a 0020 amendment (§10 Q6, deferred to its own round);
+   composition with `_cover`/`subgraph_coverage_share` specified.
+4. **R4-4 — the migration contract completed**: the precedent corrected to
+   0019's `SCHEMA_V7 = SCHEMA_V6` (0006 v4→v5 adds a table); `SCHEMA_V11 =
+   SCHEMA_V10` declared; the 0018 release orchestrator dispositioned as a
+   consumer (`_HEAD`/`_MINT_BASE`/base-window all derive from the
+   constant); the refusal exact (`StoreVersionError(reason="newer")`, I13
+   and the harness assert type and reason); new-reader postconditions
+   stated; `Spec-Requires` gains 0013 and 0018; the struck Q3 carrier's
+   "nothing 0001-specific remains" corrected.
