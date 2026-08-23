@@ -25,14 +25,37 @@ description, which is the defect this field exists to prevent:
 
 # (spec, round_kind, round_no, finding, summary, closed_in, evidence)
 CLOSURES = [
+    # ---- 0001 external round 8 (2026-08-23) — the round-8 fold, v10 -------
+    ("0001", "external", 8, "0001-R8-1",
+     "the I6 vectors asserted membership, not order — a reversed selection "
+     "passed all four",
+     "exact ordered-ID equality in every vector, incl. the collapse-derived "
+     "dedup survivor",
+     "grep -c 'assert picked' specs/evidence/0001/candidate.patch  "
+     "# ordered equality, all vectors"),
+    ("0001", "external", 8, "0001-R8-2",
+     "the downgrade test could not detect a version-check-after-parsing "
+     "regression (its enum still knew ASSISTANT)",
+     "the parse sentinel: Edge/Episode.model_validate trapped; refusal must "
+     "precede any record validation",
+     "grep -n 'parse sentinel\\|parses == \\[\\]' "
+     "specs/evidence/0001/candidate.patch"),
+    ("0001", "external", 8, "0001-R8-3",
+     "the modified patch still identified as candidate/0001-v8 while the "
+     "draft moved to v9",
+     "version-neutral artifact (candidate.patch); the Version row is the "
+     "one carrier",
+     "! grep -rn 'candidate/0001-v8' specs/evidence/0001/candidate.patch "
+     "|| ! ls specs/evidence/0001/candidate-v8.patch 2>/dev/null"),
+
     # ---- 0001 external round 7 (2026-08-23) — the round-7 fold, v9 --------
     ("0001", "external", 7, "0001-R7-1",
      "the candidate patch implemented and tested the WRONG I12 label; "
      "USER/SYSTEM inherited a label",
      "the §4b decision order verbatim; the complete matrix tested",
-     "grep -n 'third-party-derived' specs/evidence/0001/candidate-v8.patch "
+     "grep -n 'third-party-derived' specs/evidence/0001/candidate.patch "
      "&& grep -n 'test_i12_the_complete_label_matrix' "
-     "specs/evidence/0001/candidate-v8.patch"),
+     "specs/evidence/0001/candidate.patch"),
     ("0001", "external", 7, "0001-R7-2",
      "the five-manifestation tests were proxies: routes not shapes, "
      "v11-vs-v11, count-only inheritance, a hardcoded 5, a fabricated "
@@ -40,21 +63,21 @@ CLOSURES = [
      "shapes from the authority's own object records; digest-level "
      "inheritance; the qualified head-10 reader",
      "grep -n 'test_i13b_stamp_only_across_every_accepted_v10_shape' "
-     "specs/evidence/0001/candidate-v8.patch && grep -n "
+     "specs/evidence/0001/candidate.patch && grep -n "
      "'test_i13c_v11_inherits_by_digest_not_count' "
-     "specs/evidence/0001/candidate-v8.patch"),
+     "specs/evidence/0001/candidate.patch"),
     ("0001", "external", 7, "0001-R7-3",
      "I7's test was a constant assertion; the spec-named downgrade test "
      "was absent",
      "test_downgrade_export_fails_cleanly, real, both import modes",
      "grep -n 'def test_downgrade_export_fails_cleanly' "
-     "specs/evidence/0001/candidate-v8.patch"),
+     "specs/evidence/0001/candidate.patch"),
     ("0001", "external", 7, "0001-R7-4",
      "the four I6 composition branches were never executed",
      "four vectors with exact-ID/order assertions, all green against the "
      "unchanged reserve implementation",
      "grep -c 'def test_i6_composition_' "
-     "specs/evidence/0001/candidate-v8.patch  # 4"),
+     "specs/evidence/0001/candidate.patch  # 4"),
 
     # ---- 0001 external round 6 (2026-08-23) — the round-6 fold, v8 --------
     ("0001", "external", 6, "0001-R6-1",

@@ -292,6 +292,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0001 | v6 | 6 | `0001-v6-20260823T1108Z.tar.gz` | `111ba84f49090ef5…` |
 | 0001 | v7 | 7 | `0001-v7-20260823T1233Z.tar.gz` | `1af498c0986c2af2…` |
 | 0001 | v8 | 8 | `0001-v8-20260823T1342Z.tar.gz` | `f8f9f55e529241a3…` |
+| 0001 | v9 | 9 | **0 sidecars — LINEAGE GAP** | — |
 | 0022-0023 | v17 | 17 | `0022-0023-v17-20260819T0252Z.tar.gz` | `1dc88d304c81e558…` |
 | 0022-0023 | v18 | 18 | `0022-0023-v18-20260819T1247Z.tar.gz` | `7fc80f5de08d05f2…` |
 | 0022-0023 | v19 | 19 | `0022-0023-v19-20260820T0032Z.tar.gz` | `67d823fe4a0ff5e3…` |

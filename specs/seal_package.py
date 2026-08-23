@@ -197,6 +197,11 @@ LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
                   "LAUNCHER_TRANSCRIPT.txt")
 
 
+NO_PRIOR = object()   # C8-2: "explicitly no predecessor declared" — distinct
+                      # from an omitted argument, so the diff can never fall
+                      # back to its own selection
+
+
 def required_predecessor(line: str, round_no: int, outbox: pathlib.Path):
     """C6-2: the IMMEDIATE predecessor, or the refusal string.
 
@@ -210,7 +215,7 @@ def required_predecessor(line: str, round_no: int, outbox: pathlib.Path):
     lower = sorted(int(v[1:]) for v in pid.PACKAGES.get(line, {})
                    if int(v[1:]) < round_no)
     if not lower:
-        return None
+        return NO_PRIOR
     want = f"v{lower[-1]}"
     # C7-2: STRICT name grammar — the loose glob admitted a malformed-name
     # decoy (9999-v5-z.tar.gz) that the diff's own stricter parser then
@@ -258,9 +263,7 @@ def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
     return priors[-1] if priors else None
 
 
-def _changed_from_previous(line: str, version: str,
-                           outbox: pathlib.Path,
-                           prior: pathlib.Path | None = None) -> str:
+def _changed_from_previous(line: str, version: str, *, prior) -> str:
     """Member-level diff against the newest prior same-line archive found on
     the sealing host (outbox). Emits prior name+sha and added/removed/changed
     paths; the always-regenerated loose carriers (the LOOSE set below — one
@@ -269,13 +272,11 @@ def _changed_from_previous(line: str, version: str,
     import gzip as _gzip
     import hashlib as _hashlib
     import io as _io
-    # C7-2: when the sealer verified a predecessor, THAT exact Path is the
-    # diff base — reselection here is prohibited (two selectors diverged:
-    # a witnessed decoy satisfied the gate while the diff consumed an
-    # unwitnessed canonical).
-    if prior is None:
-        prior = _select_prior_archive(line, version, outbox)
-    if prior is None:
+    # C7-2/C8-2: the base arrives DECIDED — either the verified Path or
+    # the explicit NO_PRIOR sentinel. No selection happens here, ever
+    # (the first-governed-round boundary reselected an undeclared,
+    # unwitnessed archive through the old None fallback).
+    if prior is NO_PRIOR:
         return ("No prior archive of this line was present on the sealing "
                 "host — diff SKIPPED, named here rather than omitted.\n")
     prior_sha = _hashlib.sha256(prior.read_bytes()).hexdigest()
@@ -855,8 +856,13 @@ def main() -> int:
         # IMMEDIATE PREDECESSOR's archive must be present AND match its
         # committed sidecar — "some lower version" let v3 stand in for v5
         # as v6's comparison source.
+        # C8-1: only the EXPLICITLY declared in-flight version may seal
+        if f"{_line}-{a.version}" not in _pid.IN_FLIGHT:
+            _fail(f"{_line}-{a.version} is not declared IN_FLIGHT in "
+                  f"specs/package_identity.py — declare the seal before "
+                  f"running it (C8-1)")
         pred = required_predecessor(_line, round_no, a.outbox)
-        if pred is not None and isinstance(pred, str):
+        if isinstance(pred, str):
             _fail(pred)
         # C7-1: the full governed lineage must be hash-witnessed before a
         # new package may point its history at it
@@ -873,7 +879,7 @@ def main() -> int:
             # against the previous same-line archive; a missing prior is a
             # NAMED skip, never silent.
             "CHANGED_FROM_PREVIOUS.txt": _changed_from_previous(
-                _line, a.version, a.outbox, prior=pred),
+                _line, a.version, prior=pred),
             # C-plus: the record and the two captures it derives from ship
             # beside the carriers they witness (§5.1.4).
             CR.RECORD_CARRIER: record_json,

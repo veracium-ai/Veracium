@@ -532,11 +532,59 @@ def test_impl_review_round6_regressions(tmp_path):
             _h.sha256(b"the archive").hexdigest() + f"  {p5.name}\n")
         r = sp.required_predecessor("9999", 6, outbox)
         assert r == p5, r
-        # no prior declared (round 3 is the line's first): None
-        assert sp.required_predecessor("9999", 3, outbox) is None
+        # no prior declared (round 3 is the line's first): the EXPLICIT
+        # sentinel, never None (C8-2 — None reactivated the diff's
+        # internal fallback selector)
+        assert sp.required_predecessor("9999", 3, outbox) is sp.NO_PRIOR
+        # ...and the diff, given the sentinel, emits the named skip and
+        # SELECTS NOTHING even with an undeclared archive present
+        (outbox / "9999-v2-20260823T0000Z.tar.gz").write_bytes(b"undeclared")
+        txt = sp._changed_from_previous("9999", "v3", prior=sp.NO_PRIOR)
+        assert "SKIPPED" in txt or "no prior" in txt.lower()
+        assert "9999-v2" not in txt, (
+            "the diff consumed an undeclared archive (C8-2)")
     finally:
         pid.PACKAGES = real
         sp.ARCHIVES = old_archives
+
+
+def test_impl_review_round8_regressions(tmp_path):
+    """C8-1: the lineage validates RECORDS — malformed content and a
+    deleted non-in-flight witness both refuse. The in-flight exemption is
+    the explicit declaration only."""
+    real = pid.PACKAGES
+    real_flight = pid.IN_FLIGHT
+    try:
+        pid.PACKAGES = {"9997": {"v1": (1, {}), "v2": (2, {})}}
+        pid.IN_FLIGHT = ()
+        d = tmp_path
+        (d / "9997-v1-20260823T0000Z.tar.gz.sha256").write_text(
+            "0" * 64 + "  9997-v1-20260823T0000Z.tar.gz\n")
+        (d / "9997-v2-20260823T0100Z.tar.gz.sha256").write_text(
+            "1" * 64 + "  9997-v2-20260823T0100Z.tar.gz\n")
+        assert pid.lineage_problems(d) == []          # clean control
+        # the reviewer's malformed-record mutation
+        (d / "9997-v1-20260823T0000Z.tar.gz.sha256").write_text(
+            "not-a-digest  wrong-target.tar.gz\n")
+        assert any("C8-1" in x for x in pid.lineage_problems(d))
+        # self-inconsistent target
+        (d / "9997-v1-20260823T0000Z.tar.gz.sha256").write_text(
+            "0" * 64 + "  some-other.tar.gz\n")
+        assert any("its\n" not in x and "own name" in x
+                   for x in pid.lineage_problems(d))
+        # the reviewer's frontier-deletion mutation: v2's witness gone and
+        # NOT declared in flight -> refuse
+        (d / "9997-v1-20260823T0000Z.tar.gz.sha256").write_text(
+            "0" * 64 + "  9997-v1-20260823T0000Z.tar.gz\n")
+        (d / "9997-v2-20260823T0100Z.tar.gz.sha256").unlink()
+        assert any("expected exactly one" in x
+                   for x in pid.lineage_problems(d))
+        # ...and permitted ONLY via the explicit declaration
+        pid.IN_FLIGHT = ("9997-v2",)
+        assert pid.lineage_problems(d) == []
+    finally:
+        pid.PACKAGES = real
+        pid.IN_FLIGHT = real_flight
 
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):

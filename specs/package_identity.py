@@ -66,6 +66,7 @@ PACKAGES = {
         "v6": (6, {"0001": "v7"}),
         "v7": (7, {"0001": "v8"}),
         "v8": (8, {"0001": "v9"}),
+        "v9": (9, {"0001": "v10"}),
     },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
@@ -87,6 +88,13 @@ PACKAGES = {
 # archive is the one its round's verdict quotes, witnessed by the ONE
 # committed sidecar; earlier seals of the same version are named here so
 # their absence from the sidecar set is a disclosure, never a gap.
+# C8-1: the ONE row permitted a missing sidecar — the seal in flight,
+# DECLARED here (explicit, diffable) rather than inferred from being the
+# newest (the frontier exemption let the newest witness be deleted
+# silently). The sealer refuses to seal any version not named here, and
+# the sidecar commit that lands the witness also clears this.
+IN_FLIGHT: tuple = ("0001-v9",)
+
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
     "0001-v3-20260822T2159Z (C-plus round-1 specimen; superseded)",
@@ -104,20 +112,34 @@ def lineage_problems(archives_dir) -> list:
     cycles). A lost package must be disclosed in DISCARDED_PRE_ROUND or
     a LOST entry, never silently absent."""
     import pathlib as _pl
+    import re as _re
     problems = []
     d = _pl.Path(archives_dir)
     for line, versions in PACKAGES.items():
-        ordered = sorted(versions, key=lambda x: int(x[1:]))
-        for v in ordered:
-            n = len(list(d.glob(f"{line}-{v}-*.tar.gz.sha256")))
-            if n == 0 and v == ordered[-1]:
-                continue    # the FRONTIER row: declared for the seal in
-                            # flight; its sidecar lands with that seal
-            if n != 1:
+        for v in sorted(versions, key=lambda x: int(x[1:])):
+            side = sorted(d.glob(f"{line}-{v}-*.tar.gz.sha256"))
+            if not side and f"{line}-{v}" in IN_FLIGHT:
+                continue    # C8-1: the EXPLICITLY declared in-flight seal
+            if len(side) != 1:
                 problems.append(
-                    f"governed row {line}-{v} has {n} committed sidecars, "
-                    f"expected exactly one — the lineage the history field "
-                    f"points at is incomplete (C7-1)")
+                    f"governed row {line}-{v} has {len(side)} committed "
+                    f"sidecars, expected exactly one — the lineage the "
+                    f"history field points at is incomplete (C7-1/C8-1)")
+                continue
+            # C8-1: the RECORD is validated, not just the filename — a
+            # sidecar reading `not-a-digest  wrong-target` passed the
+            # count check
+            body = side[0].read_text().strip()
+            m = _re.fullmatch(r"([0-9a-f]{64})\s+(\S+\.tar\.gz)", body)
+            expected_target = side[0].name[: -len(".sha256")]
+            if not m:
+                problems.append(
+                    f"{side[0].name}: sidecar body is not "
+                    f"`<64-hex>  <name>.tar.gz` (C8-1)")
+            elif m.group(2) != expected_target:
+                problems.append(
+                    f"{side[0].name}: declares target {m.group(2)!r}, its "
+                    f"own name says {expected_target!r} (C8-1)")
     return problems
 
 

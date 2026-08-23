@@ -433,3 +433,19 @@ unwitnessed canonical. **Folded:** ONE strict selector
 (`required_predecessor`, exact-grammar filename match), and the verified
 Path it returns is passed INTO `_changed_from_previous` — reselection
 prohibited.
+
+## 16. Implementation review — round 8 (2026-08-23): C8-1 + C8-2 folded
+
+**C8-1 (blocking)** — the lineage check counted FILENAMES: malformed
+sidecar content and a deleted frontier witness both passed. **Folded:**
+the sidecar RECORD is validated (`<64-hex>  <name>.tar.gz`, target equal
+to the sidecar's own stem); the in-flight exemption is an EXPLICIT
+declaration (`IN_FLIGHT` in package_identity — diffable, cleared by the
+sidecar commit) and the sealer refuses to seal any version not named
+there; render/suite checks are strict over everything else.
+
+**C8-2 (blocking)** — `None` from a line's first governed round
+reactivated the diff's internal fallback selector, which could consume an
+undeclared archive. **Folded:** the `NO_PRIOR` sentinel distinguishes
+"explicitly no predecessor" from an omitted argument; the diff function
+takes `prior` as a required keyword and performs NO selection, ever.

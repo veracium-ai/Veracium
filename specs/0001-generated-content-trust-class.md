@@ -5,7 +5,7 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v9)** — the round-7 fold, 2026-08-23 (see §19; earlier notes stand as history).
+> **draft (v10)** — the round-8 fold, 2026-08-23 (see §20). Round 8 found NO new trust-model defect and named four narrow evidence items as the last gate: *"Once those narrow items close, I would recommend finite acceptance of 0001 v9 without reopening the frozen architecture."*
 >
 > v5 — Round 3 (the line's first
 > SEALED round) returned SIX blocking findings, every one an executed
@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v9** — the round-7 fold (§19). Earlier folds: §18 (round 6), §17, §16, §15, §14, §13. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; **v9 is the round-8 external candidate.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
+| **Version** | **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); **v10 is the round-9 external candidate.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -67,8 +67,8 @@ Mem0's "State of AI Agent Memory 2026" report (triaged in
 here from the scan record, not quoted — the verbatim sentence was not
 re-verifiable at fold time) reads the category leader naming actor-aware
 memory — separating user-stated facts from agent-generated inferences —
-as a first-class need, with Sentra's founder essay putting provenance in
-episodic grounding the same week. Neither ships an enforcement mechanism:
+as a first-class need, with Sentra's founder essay (Apr 2026 per its
+public page) putting provenance in episodic grounding. Neither ships an enforcement mechanism:
 Mem0's is a retrieval-time filter (represent-not-enforce, in this repo's
 terms). The class is therefore field-named; **this spec's contribution is
 the mechanism difference — enforce at ASSERTION with the `use_only`
@@ -1054,7 +1054,7 @@ offered one.*
    pointers; cross-references join the sweep list.
 6. **The candidate-patched branch, DELIVERED** (the reviewer's
    thrice-asked artifact, authorized by the project owner):
-   `specs/evidence/0001/candidate-v8.patch` — inert data on the main
+   `specs/evidence/0001/candidate.patch` — inert data on the main
    line, applied with `patch -p1` in an extracted tree. The named trio
    runs REAL: 13 candidate tests green (I1, I5 at `gate.partition_parts`
    with the assistant marker, I6 at BOTH coverage shares, I11's full
@@ -1112,3 +1112,33 @@ itself asked for, which the reviewer credits with exposing them.*
    PACKAGES↔INDEX↔sidecar correspondence enforced at render and seal,
    discarded seals disclosed by name, and ONE strict predecessor selector
    whose verified Path is the diff's only input.
+
+---
+
+## 20. Changes in v10 (the round-8 fold, 2026-08-23)
+
+*Round 8's closing sentence: finite acceptance recommended once these
+narrow items close. All closed; nothing architectural moved.*
+
+1. **R8-1 — the I6 vectors assert EXACT ORDERED IDs** (the reviewer's
+   mutation — reversing the selection order — left the old four green):
+   every vector now computes its expected ordered list by construction
+   and asserts equality, including the precise dedup survivor (taken from
+   `collapse_for_render`'s own survivor order) and the exact ranked
+   backfill.
+2. **R8-2 — the downgrade regression BITES**: a parse sentinel on
+   `Edge`/`Episode.model_validate` proves no record validates before the
+   newer-format refusal — the reviewer's version-check-after-parsing
+   mutation now fails the test instead of passing silently.
+3. **R8-3 — version-neutral candidate identity**: the artifact is
+   `specs/evidence/0001/candidate.patch` (no version literal), the README
+   and test module carry none, and the spec's Version row remains the ONE
+   version carrier, per the standing R5-5 rule.
+4. **The Sentra timing corrected**: "the same week" was not recoverable
+   from the public page (which shows Apr 2026) — the claim now states
+   exactly what the source shows.
+5. **Package machinery (C8-1/C8-2, design note §16)**: sidecar RECORDS
+   validated (digest syntax + self-consistent target), the in-flight seal
+   EXPLICITLY declared (`IN_FLIGHT`) instead of frontier-inferred, and
+   the predecessor boundary closed with the `NO_PRIOR` sentinel — the
+   diff receives its base decided, never selecting internally.

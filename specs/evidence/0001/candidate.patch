@@ -1,16 +1,19 @@
 diff --git a/CANDIDATE_README.md b/CANDIDATE_README.md
 new file mode 100644
-index 0000000..e76bb28
+index 0000000..aa684e1
 --- /dev/null
 +++ b/CANDIDATE_README.md
-@@ -0,0 +1,46 @@
-+# candidate/0001-v8 — the reviewer's executable branch (NEVER MERGED)
+@@ -0,0 +1,49 @@
++# candidate/0001 — the reviewer's executable branch (NEVER MERGED)
++
++*(R8-3: no version literals live here — the candidate draft version is
++stated ONCE, in the spec's Version row; this branch tracks it.)*
 +
 +Authorized by the project owner 2026-08-23 as review evidence for the
 +0001 rounds. The spec is NOT accepted; nothing here ships. Apply the
 +patch in an extracted review tree:
 +
-+    patch -p1 < specs/evidence/0001/candidate-v8.patch
++    patch -p1 < specs/evidence/0001/candidate.patch
 +    PYTHONPATH=src python -m pytest tests/test_0001_candidate.py -q -p no:randomly
 +
 +## What is implemented (the named trio, real)
@@ -4514,10 +4517,10 @@ index 29256e5..2034358 100644
  v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
 diff --git a/tests/test_0001_candidate.py b/tests/test_0001_candidate.py
 new file mode 100644
-index 0000000..e78ee5d
+index 0000000..0f96e58
 --- /dev/null
 +++ b/tests/test_0001_candidate.py
-@@ -0,0 +1,375 @@
+@@ -0,0 +1,397 @@
 +"""specs/0001 CANDIDATE branch — the reviewer's named trio, executable with
 +REAL `ASSISTANT` records (no stand-ins). This file exists ONLY on the
 +`candidate/0001-v8` branch / patch; the spec is not accepted and nothing
@@ -4792,11 +4795,26 @@ index 0000000..e78ee5d
 +               for x in s2r.edges(U, active_only=False)), (
 +        "restore=True must carry ASSISTANT faithfully")
 +    s2r.close()
-+    # the OLD importer refuses cleanly
++    # the OLD importer refuses cleanly — WITH the parse sentinel (R8-2):
++    # the refusal must fire BEFORE any record validates, or a real old
++    # enum would hit pydantic instead of our message. The prior form let
++    # a version-check-after-parsing regression pass silently.
 +    monkeypatch.setattr(port, "FORMAT_VERSION", 8)
++    from veracium import schema as _schema
++    parses = []
++    for cls_name in ("Edge", "Episode"):
++        cls = getattr(_schema, cls_name)
++        real = cls.model_validate
++        def boom(*a, _n=cls_name, **k):
++            parses.append(_n)
++            raise AssertionError(
++                f"{_n} validated BEFORE the newer-format refusal (R8-2)")
++        monkeypatch.setattr(cls, "model_validate", classmethod(
++            lambda c, *a, _b=boom, **k: _b(*a, **k)))
 +    s3 = SqliteStore(str(tmp_path / "c.db"))
 +    with pytest.raises(ValueError, match="newer"):
 +        port.import_memory(s3, out)
++    assert parses == [], "records parsed before the version refusal"
 +    s3.close()
 +    s.close()
 +
@@ -4832,12 +4850,13 @@ index 0000000..e78ee5d
 +    d_other = [_mk(s, f"d{i}", assertable=False, day=20 + i, rank_boost=0)
 +               for i in range(3)]
 +    picked = _pick(s, share=0.25)
-+    assert len(picked) == 8
-+    assert a1.id in picked and a2.id in picked          # the reserve
-+    # the coverage tail must include at least one non-day-10 record even
-+    # though every day-10 candidate outranks them — day 10 was SEEDED
-+    assert any(d.id in picked for d in d_other), (
-+        "reserved-day overlap must push coverage to unseen days")
++    # R8-1: the EXACT ORDERED expectation, computed by construction —
++    # reserve (a1, a2 by rank) first in rank order, then the head by rank,
++    # then the coverage tail on unseen days by rank. Rest budget 6, cover
++    # reserve int(6*0.25)=1 -> head 5 = h0..h4, tail 1 = d0 (day 20,
++    # highest-ranked unseen-day candidate).
++    expected = [a1.id, a2.id] + [h.id for h in highs[:5]] + [d_other[0].id]
++    assert picked == expected, (picked, expected)
 +
 +
 +def test_i6_composition_distinct_reserved_days():
@@ -4851,11 +4870,12 @@ index 0000000..e78ee5d
 +    same_day_low = _mk(s, "sd", assertable=False, day=11, rank_boost=0)
 +    new_day_low = _mk(s, "nd", assertable=False, day=30, rank_boost=0)
 +    picked = _pick(s, share=0.25)
-+    assert a1.id in picked and a2.id in picked
-+    # the single coverage slot must prefer the NEW day over the seeded one
-+    assert new_day_low.id in picked
-+    assert same_day_low.id not in picked, (
-+        "a seeded day must not be re-covered ahead of an unseen day")
++    # R8-1 exact order: reserve a1,a2; head 5 = highs h0..h4; the single
++    # coverage slot takes the NEW-day candidate (day 30) over the
++    # seeded-day one (day 11), by construction
++    expected = [a1.id, a2.id] + [h.id for h in highs[:5]] + [new_day_low.id]
++    assert picked == expected, (picked, expected)
++    assert same_day_low.id not in picked
 +
 +
 +def test_i6_composition_dedup_across_reserve_and_coverage():
@@ -4872,8 +4892,14 @@ index 0000000..e78ee5d
 +    for i in range(8):
 +        _mk(s, f"f{i}", assertable=False, day=40 + i)
 +    picked = _pick(s, share=0.25)
-+    assert not ({twin_a.id, twin_b.id} <= set(picked)), (
-+        "both twins selected — collapse must run before the reserve")
++    # R8-1: the PRECISE dedup survivor — collapse_for_render's survivor
++    # order decides; assert which twin lives and that the loser is absent
++    surfaced, _ = collapse_for_render([twin_a, twin_b])
++    assert len(surfaced) == 1
++    survivor, loser = surfaced[0].id, (
++        twin_b.id if surfaced[0].id == twin_a.id else twin_a.id)
++    assert survivor in picked, "the collapse survivor must be selectable"
++    assert loser not in picked, "the suppressed twin must never surface"
 +
 +
 +def test_i6_composition_underfill_backfills_by_rank_deterministically():
@@ -4888,8 +4914,7 @@ index 0000000..e78ee5d
 +    picked1 = _pick(s, share=0.25)
 +    picked2 = _pick(s, share=0.25)
 +    assert picked1 == picked2, "backfill must be deterministic"
-+    assert len(picked1) == 8
-+    # exact expectation: both reserved + the six top-ranked rest, in rank
-+    # order — the coverage tail found no new day and backfilled by rank
-+    rest_ids = [r.id for r in rest[:6]]
-+    assert set(picked1) == {a1.id, a2.id, *rest_ids}
++    # R8-1: the EXACT ORDERED list — reserve, then the rank-ordered head,
++    # then the rank-ordered backfill (no new day existed to cover)
++    expected = [a1.id, a2.id] + [r.id for r in rest[:6]]
++    assert picked1 == expected, (picked1, expected)
