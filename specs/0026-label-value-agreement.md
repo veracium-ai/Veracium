@@ -15,9 +15,9 @@ Spec-Requires: 0005, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v1** — the design (2026-08-23). Motivated by three measured artifacts: the corpus disagreement census (L1 audit), the live laundering pair (B02/B07), and the A1 movers' half-empty notes. Invariants **V1–V7**; the one disposition change is a restrict-only floor |
+| **Version** | **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
-| **Internal reviewers** | research — requested (they proposed the check; the D_EXTENSION §VII rule is theirs to hold this spec against) |
+| **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; B02/B07 usage verified against their banked records; the census re-derived from the cache), folded in v2; round 2 same-day on the fold |
 | **External review** | required — adds a disclosure floor on the ingest write path |
 | **Decision + date** | — |
 | **Path** | full |
@@ -54,11 +54,16 @@ BOTH directions:
   and `0025`'s vocabulary enforcement makes it MORE likely a relay
   lands on a concrete registry relation. The post-A1 paired run
   confirmed the same two cells unchanged.
-- **The demotion direction (the L1 census).** Of **183,416** cached
-  triples, **3,945 (2.15%)** carry `third_party_claim`; on **1,637
-  (41.5%)** of those the extractor's own note names the USER as the
+- **The demotion direction (the L1 census).** Of **183,417** cached
+  triples, **3,945 (2.15%)** carry `third_party_claim`; on **1,644
+  (41.7%)** of those the extractor's own note names the USER as the
   source ("price stated by user") — the note testifying against the
-  label. `0024`/A1 addresses the 40.7% whose SUBJECT slot is literally
+  label. *(Figures are the shipped script's exact output —
+  `corpus_counts.py` over cache `654e336a`, re-run at internal round 1.
+  v1 carried 183,416 / 1,637 / 41.5%, pre-correction values that most
+  plausibly propagated from summary PROSE rather than the artifact —
+  the drift is this spec's thesis in miniature, so it is recorded here
+  rather than silently fixed; internal M-1.)* `0024`/A1 addresses the 40.7% whose SUBJECT slot is literally
   `user`; the note-only remainder stays quarantined with its
   disagreement unrecorded.
 - **The evidence bound.** Of the four genuine relays the A1 measurement
@@ -91,7 +96,7 @@ is honored by construction, unlike the cell 0024 v7 had to defend.)
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
 | the extractor's `note` | absent/empty → NO evidence (never agreement — the 2/4 empty-note movers) | any prose → scanned by the closed marker lexicon only | text outside the lexicon → no match, no claim | note crafted to AVOID markers ("relay hiding") | **V2**: absence of a marker is absence of evidence; the check widens no assertion path, so hiding buys the attacker nothing they lack today |
-| the extractor's `object` text | — | same lexicon scan | same | object crafted to EMBED markers on a genuinely-own fact ("my own view, as I told my doctor") | **V3**: a false relay match FLOORS at USE_ONLY — recall cost, bounded, measured before acceptance (§6a); never an integrity cost |
+| the extractor's `object` text | — | same lexicon scan | same | object crafted to EMBED inbound markers on a genuinely-own fact ("my own view — but as my doctor said, rest matters"); the OUTBOUND phrasing ("as I told my doctor") is a directional non-match by contract (§3a) | **V3**: a false relay match FLOORS at USE_ONLY — recall cost, bounded, measured before acceptance (§6a); never an integrity cost |
 | the marker lexicon itself | empty lexicon REFUSED at load (a vacuous checker that passes everything is the presumed-faking rule's target) | a malformed entry refuses at load — closed, versioned, code-owned (the `0025` registry pattern) | — | a host supplying a custom lexicon | **V4**: the lexicon is NOT host-configurable in v1 — one code-owned surface, one measured false-positive rate |
 
 ## 3. Behaviour
@@ -107,17 +112,27 @@ consumes the SAME canonical strings the write path stores. It makes no
 LLM call — the check must not ask the component under suspicion to
 audit itself (the presumed-faking rule applied to the checker).
 
+**The lexicon contract carries NAMED DIRECTIONAL cells, blocking-grade
+(internal round 1, Q1 ruling): inbound attribution ("my doctor said…",
+"according to the vet", "as stated by the vet") MATCHES;
+first-person-OUTBOUND phrasing ("I told my doctor…", "as I said to…")
+must NEVER match — the user recounting what they said is first-person
+testimony, and §6a's 2% false-positive bar will be won or lost on
+exactly this distinction.** The directional cells are part of the
+lexicon's own test surface (V1), not left to lexicon-entry judgement.
+
 ### 3b. The laundering floor (V3) — the one disposition change
 
-At ingest, after the `0024`/`0025` pipeline has established disclosure
-and before the accepted floors: **a triple whose relation is a CONCRETE
-(non-reserved) registry member and whose value evidence carries a relay
+At ingest: **a triple whose relation is a CONCRETE (non-reserved)
+registry member and whose value evidence carries an inbound relay
 marker naming a non-user source is FLOORED at `USE_ONLY`** — may
-inform, never assert; the marker set is recorded in the note-adjacent
-typed field `Edge.agreement` (§3d). This runs as one more accepted
-floor in `0025` §4b-iii step 3 (floors only lower; the single
-write-site discipline `0023` N2 pins is untouched — the floor is inside
-the same establishment path). B02 and B07 are the named regression
+inform, never assert; the marker set is recorded in the typed field
+`Edge.agreement` (§3d). The floor runs as ONE MORE MEMBER of `0025`
+§4b-iii step 3's accepted-floor set — and because floors only LOWER,
+order WITHIN the floor set is irrelevant by monotonicity (internal
+round 1, m-3: v1 described the position two ways; this is the one
+description). The single write-site discipline `0023` N2 pins is
+untouched — the floor is inside the same establishment path. B02 and B07 are the named regression
 vectors, verbatim from the baseline records.
 
 ### 3c. The demotion-direction RECORD (V5) — no disposition change
@@ -136,7 +151,10 @@ counter is consumed by telemetry from day one.)
 
 `Edge.agreement: frozenset[str] | None` — None-omitted from every
 serialization exactly like `original_relation` (`0025` F6's pattern), so
-unaffected edges stay byte-identical. The ingest result gains
+unaffected edges stay byte-identical. **The field TRAVELS in export
+(`0005`/`0014` portability): Q5's future evidence corpus must survive a
+store migration, so the record is a portable fact, not a local one
+(internal round 1, Q3 ruling's rider).** The ingest result gains
 `agreement_floored` and `agreement_recorded` counters, present on every
 path (zeros included — an absent key is not a zero); `Memory.remember`
 passes through; the MCP surface STRIPS them with the other operator
@@ -167,7 +185,7 @@ counts; telemetry whitelists them under the consent contract.
 
 | # | invariant | check |
 |---|---|---|
-| **V1** | the detector is pure, total over (None/empty/any-str)², and lexicon-closed — no LLM call, no network, no host input | `test_relay_detector_is_pure_and_total` |
+| **V1** | the detector is pure, total over (None/empty/any-str)², lexicon-closed — no LLM call, no network, no host input — and DIRECTIONAL: the §3a inbound cells match, the first-person-outbound cells never match (blocking-grade, internal round 1) | `test_relay_detector_is_pure_and_total` — the directional cells enumerated |
 | **V2** | marker ABSENCE never changes anything: empty/absent note+object → no floor, no record, byte-identical edge | `test_absence_is_no_evidence` |
 | **V3** | the B02/B07 class floors at USE_ONLY — the two baseline vectors verbatim; and the floor NEVER raises (a quarantined edge stays quarantined) | `test_laundered_relay_floors_use_only` |
 | **V4** | an empty or malformed lexicon refuses at load; the lexicon has exactly one definition site | `test_lexicon_is_closed_and_refuses_vacuous` |
@@ -182,7 +200,11 @@ MEASURED on the existing extraction cache (research's corpus, counts
 only — the cache never ships): the share of GENUINELY-OWN facts the
 lexicon would floor. The spec pre-commits: **if that rate exceeds 2%
 of grounded first-person triples, the lexicon narrows before v1
-ships** — the recall cost is bounded by measurement, not hope. And per
+ships** — the recall cost is bounded by measurement, not hope. The
+same run reports the false-positive count SPLIT BY DIRECTION (the
+inbound/outbound cells of §3a — internal round 1, Q2: the bar will be
+won or lost on the directional distinction) and the M-2 coverage
+denominator; research co-verifies the run (their standing offer). And per
 the presumed-faking rule, the check itself graduates by CATCHING: B02/
 B07 are planted passes (mechanism); its bite claim waits for a catch
 nobody planted, and §8 may not say otherwise.
@@ -200,12 +222,18 @@ nobody planted, and §8 may not say otherwise.
 
 ## 8. Claims and limits
 
-We will say: *a relayed claim that names its source in the extractor's
-own words is never asserted as the user's fact, whatever relation it
-was filed under.* We will NOT say the check catches relays that name
-nothing (the 2/4 empty-note movers bound that honestly), will not call
-it extractor correctness, and will not claim bite before an unplanted
-catch (§6a).
+We will say: *a relayed claim whose note or value matches the
+versioned marker lexicon is never asserted as the user's fact, whatever
+relation it was filed under* — the promise is scoped to the LEXICON, a
+mechanical surface, not to "names its source" as a semantic judgement
+(internal round 1, M-2: a lexical mechanism may not carry a semantic
+promise). The claim ships WITH ITS DENOMINATOR: the §6a measurement run
+also reports the lexicon's coverage over the cache's source-naming note
+population, so "matches the lexicon" is a measured fraction of the
+naming population, not an implied whole. We will NOT say the check
+catches relays that name nothing (the 2/4 empty-note movers bound that
+honestly), will not call it extractor correctness, and will not claim
+bite before an unplanted catch (§6a).
 
 ## 9. Brief for the internal reviewer (research)
 
@@ -226,5 +254,5 @@ catch (§6a).
 
 | # | question | state |
 |---|---|---|
-| **V-Q1** | should the answer surface RENDER the attribution for floored records ("per the vet: …") rather than the generic use-only treatment? | design — the L3 qualified-answer lever's territory; needs the gate's owner |
+| **V-Q1** | should the answer surface RENDER the attribution for floored records ("per the vet: …") rather than the generic use-only treatment? | design — the L3 qualified-answer lever's territory; needs the gate's owner. Prior evidence when that round runs (internal round 1, m-4): the baseline's B02 answer already rendered content-derived attribution ("as reported by their doctor") while the edge sat MENTIONABLE — the floor plus existing prose attribution may be most of the answer |
 | **V-Q2** | does the agreement record ever feed `0024` Q5's assertion completion, and under what evidence standard? | deferred to Q5's own round, by A1's design |
