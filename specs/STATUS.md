@@ -4,7 +4,7 @@
 
 # Spec status
 
-**25 specs · 22 accepted · 263 external review
+**25 specs · 22 accepted · 264 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
@@ -13,7 +13,7 @@ is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
-| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `draft` | 2026-08-22 | 1 | 3 | 2 | 0 | 0 | — |
+| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `draft` | 2026-08-23 | 1 | 4 | 1 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-22 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-08-22 | 1 | 3 | 1 | 0 | 1 | 1/1 |
@@ -34,10 +34,10 @@ is the number that decides what can be built.
 | **0019** | the `ungrounded` flag — evidence-grounding at ingest | `accepted` | 2026-08-16 | 1 | 4 | 0 | 0 | 0 | — |
 | **0020** | scoped recall — the principal boundary (S1) | `accepted` | 2026-08-16 | 2 | 14 | 0 | 0 | 0 | — |
 | **0021** | scope under derivation and consolidation (S2) | `accepted` | 2026-08-20 | 1 | 14 | 0 | 0 | 0 | — |
-| **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-08-22 | 4 | 21 | 5 | 0 | 0 | — |
-| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-08-22 | 3 | 21 | 3 | 0 | 0 | — |
-| **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-08-22 | 2 | 12 | 2 | 0 | 0 | — |
-| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-08-22 | 2 | 12 | 2 | 0 | 0 | — |
+| **0022** | source revocation — the standing state and the sweep (A3a) | `accepted` | 2026-08-23 | 4 | 21 | 5 | 0 | 0 | — |
+| **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-08-23 | 3 | 21 | 3 | 0 | 0 | — |
+| **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-08-23 | 2 | 12 | 2 | 0 | 0 | — |
+| **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-08-23 | 2 | 12 | 2 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

@@ -1,11 +1,24 @@
 # Feature spec: generated-content trust class (`EvidenceAuthor.ASSISTANT`)
 
 Spec-Status: draft
-Spec-Requires: 0003, 0005
+Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v4)** — re-entering review on Quentin's word, 2026-08-22. v2 was
+> **draft (v5)** — the round-3 fold, 2026-08-23. Round 3 (the line's first
+> SEALED round) returned SIX blocking findings, every one an executed
+> collision between this spec's promises and a contract that SHIPPED while
+> it sat deferred: `confirm_edge` refuses the promotion v4 promised (0008),
+> the on-disk guard was never activated (SCHEMA 10→11 now specified, I13),
+> two operation-matrix cells were measured false against 0012/the 0.4.1
+> guard, I6 named a test with no rule (the reserve rule is now exact), Q4
+> rode a field 0016 deleted, and three more v2-form carriers survived the
+> v4 sweep. §15 maps each finding to its fix. Earlier: v2 deferred
+> 2026-07-31 (widening withdrawn); v3 deferred 2026-08-01 on the render-
+> marker gate, closed in shipped code 2026-08-15; v4 (§14) recorded the
+> closure, ran the currency pass, and answered the five post-v3 eras
+> (§2d). The v4 lesson, now twice-learned: a currency pass must verify
+> every NAME it carries still resolves, not only re-run its commands.
 > deferred at external review 2026-07-31; v3 (the narrowed rewrite) was
 > re-reviewed 2026-08-01 and deferred on one blocking amendment — the render
 > marker keyed on `use_only` with hardcoded third-party text. **That gate
@@ -26,8 +39,8 @@ Spec-Requires: 0003, 0005
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — the re-entry candidate: v3's ruled content, currency-passed and carrier-swept. §14 lists the changes; §13 lists v3's. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred (widening withdrawn, not re-argued); v3 deferred on the render-marker gate, since closed in shipped code (2026-08-15). v4 is the external candidate. |
+| **Version** | **v5** — the round-3 fold: every shipped-contract collision the reviewer executed, corrected against the code (§15). §14 lists v4's changes; §13 lists v3's. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred on the render-marker gate (closed in code 2026-08-15); v4 returned at round 3 for shipped-contract collisions; **v5 is the round-4 external candidate.** |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -81,9 +94,9 @@ injected into recall. Nobody had enumerated who reads the field.*
 
 | field | read / written | its **documented** contract | every other consumer | does this change preserve the contract? |
 |---|---|---|---|---|
-| `Provenance.author_of_evidence` | written by `ingest`, read by **18 src modules** *(re-enumerated 2026-08-22 — was 8 at v3; the growth is 0003/0005/0020–0022/0025 shipping, see §2d)* | "Who authored the evidence. The core injection-resistance signal." | `ingest` (`_disclosure_for`, `_source_type`), `authority` **(the 0003 supersession ladder — §2d.1)**, `portability` **(the 0005 import cap — §2d.2)**, `graph` **(`_ORIGIN_LABELS`, the closed v3 gate)**, `contribution`, `scope`, `scope_read`, `store/revocation`, `store/sqlite` **(consolidation min-trust at the fenced write — the old `lifecycle:101` defect's discharged home, see below)**, `lifecycle`, `introspect`, `__init__`, `compile`, `proactive`, `cli:410` **(hardcoded `choices=`, and `:414` `--derived-from` is a SECOND hardcoded list v3 predates)**, `mcp_server:38` (fail-closed host map — §2d.6), `selfcheck`, `schema`, plus **61 test files**, 5 docs and 2 examples | **Yes — extended, not redefined.** No existing member changes meaning. **But the value set is no longer closed**, which is the contract change that matters: every consumer branching on it must be re-read, not assumed — and at 18 modules that re-read is §2d, done per era. |
+| `Provenance.author_of_evidence` | written by `ingest`, read by **18 src modules** *(re-enumerated 2026-08-22 — was 8 at v3; the growth is 0003/0005/0020–0022/0025 shipping, see §2d)* | "Who authored the evidence. The core injection-resistance signal." | `ingest` (`_disclosure_for`), `authority` **(the 0003 supersession ladder — §2d.1)**, `portability` **(the 0005 import cap — §2d.2)**, `graph` **(`_ORIGIN_LABELS`, the closed v3 gate)**, `contribution`, `scope`, `scope_read`, `store/revocation`, `store/sqlite` **(consolidation min-trust at the fenced write — the old `lifecycle:101` defect's discharged home, see below)**, `lifecycle`, `introspect`, `__init__`, `compile`, `proactive`, `cli:410` **(hardcoded `choices=`, and `:414` `--derived-from` is a SECOND hardcoded list v3 predates)**, `mcp_server:38` (fail-closed host map — §2d.6), `selfcheck`, `schema`, plus **61 test files**, 5 docs and 2 examples | **Yes — extended, not redefined.** No existing member changes meaning. **But the value set is no longer closed**, which is the contract change that matters: every consumer branching on it must be re-read, not assumed — and at 18 modules that re-read is §2d, done per era. |
 | `Episode.provenance.author_of_evidence` | written by `ingest`, **rewritten by `lifecycle.consolidate`** | same field, on episodes | `gate` (via episode authorship), `graph` (episode rendering) | **NO — see the defect found below.** |
-| `Edge.subject` | written by `ingest`, read by `graph`, `compile` | the entity a fact is about; `"user"` is the reserved literal for the store owner (`graph.py:201`, `graph.py:295`) | `graph._cover`, `graph.render_edges`, `compile`, `introspect` | **Yes**, but it acquires a **second** load-bearing role: it now gates disclosure, not only rendering. Previously a wrong `subject` produced an odd sentence; now it can change assertability. Recorded as a real widening of that field's blast radius. |
+| `Edge.subject` | written by `ingest`, read by `graph`, `compile` | the entity a fact is about; `"user"` is the reserved literal for the store owner (`graph.py:201`, `graph.py:295`) | `graph._cover`, `graph.render_edges`, `compile`, `introspect` | **Yes — unchanged in role** *(v5, R3-6: this cell still described v2's subject routing; under the every-subject rule the subject gates NOTHING — disclosure is author-derived, a mis-extracted subject changes rendering only)*. |
 | `Provenance.disclosure` | written by `ingest._disclosure_for` | mentionable / use_only / quarantined | `Edge.assertable`, `gate`, `graph`, `proactive`, `introspect` | **Yes** — no new value; only a new way to arrive at `use_only`. |
 | export `version` (`portability.FORMAT_VERSION = 8` today — *was 2 when v3 was written; 0006/0014/0016/0019/0025 each bumped it*) | written on export, checked on import | "an export version newer than this library fails closed" | `portability.load` | **Changed deliberately → 9 at implementation.** See §7: without the bump, an older library hits a pydantic `ValidationError` instead of our own message. |
 
@@ -253,12 +266,20 @@ channel opens. **That was always the majority of the value.**
 
 ### 3.2 Operations, both directions
 
+*(v5, R3-1/R3-3: this table is rewritten against the SHIPPED contracts it
+must compose with — the 0003 authority ladder governs cross-class functional
+supersession (not the 0.4.1 same-disclosure guard, which governs absorption
+and reinforcement), 0012 governs same-class restatements, and 0008's
+`confirm_edge` refuses every non-assertable edge BY CONTRACT. The v4 table
+promised two cells the code refuses and named the wrong mechanism for a
+third; the reviewer executed all three.)*
+
 | operation | prior=USER, incoming=ASSISTANT | prior=ASSISTANT, incoming=USER | ASSISTANT × ASSISTANT | involving quarantined | involving `use_only` |
 |---|---|---|---|---|---|
-| **supersession** (functional relation) | **blocked** — differing disclosure class (0.4.1 guard) | **allowed** — user supersedes assistant; trust rises via new user evidence, not via merge | allowed when same disclosure class | never | only within class |
-| **T1 absorption** (subset) | **blocked** — same guard | **allowed**; winner is the user edge | allowed when same class | never | only within class |
-| **reinforcement** (identical fact) | **blocked** | **blocked** — see below | **merge allowed; `observed_at` refresh BLOCKED** — Q1, resolved | never | only within class |
-| **`confirm()`** | n/a | **this is the promotion path**: user affirmation flips an assistant `use_only` edge to assertable | n/a | never — `confirm()` has never elevated quarantined | this is what it is for |
+| **supersession** (functional relation) | **refused by the AUTHORITY LADDER** (rung 1 < rung 3; durable content-free refusal recorded, 0003 §4b) — not the disclosure guard | **allowed by the ladder** (rung 3 ≥ 1): the user's new evidence retires the assistant prior — THE AFFIRMATION PATH (see the `confirm()` row) | allowed (equal rung); same-value handling per 0012 — see the restatement row | never | ladder governs; disclosure does not block cross-class supersession |
+| **T1 absorption** (subset) | **blocked** — the equal-disclosure-class restriction (0.4.1 guard) | **blocked — the SAME guard, v5 correction**: `mentionable` user evidence cannot absorb a `use_only` assistant edge; both records persist, and the functional case is handled by supersession above. *(v4 claimed "allowed; winner is the user edge" — measured false: both stay active. Cross-class absorption would also inherit max confidence and `observed_at`, letting assistant metadata alter the user survivor — the exact laundering 0.4.1 exists to stop.)* | allowed when same class | never | only within class |
+| **restatement** (identical fact, same class) | n/a (cross-class — see supersession) | n/a | **the incoming restatement PERSISTS UNTOUCHED (0012): no merge, no mutation of the prior — the currency-refresh hazard Q1 named is structurally absent**, and the read path collapses strict redundancy at render (0012 §4c). *(v4 said "merge allowed, refresh blocked" — 0012's shipped model is persist-and-collapse, which delivers Q1's intent without a store-side merge.)* | never | only within class |
+| **affirmation** (was: `confirm()`) | n/a | **a user affirmation is NEW USER EVIDENCE**: the host ingests it (`remember(author=USER)`). Same value: the user edge becomes the ASSERTABLE carrier; the assistant prior persists un-asserted (nothing to supersede) and render collapse handles the redundancy. Different value: the ladder retires the prior — full supersession, audit and retry semantics for free. *(Both shapes measured: `candidate_harness.py`.)* **`confirm_edge` (0008) is NOT this path and refuses every non-assertable edge by contract — this spec PRESERVES 0008 unamended** *(v5, R3-1: v4 promised a promotion `confirm_edge` refuses; the reviewer executed the refusal)* | n/a | never — nothing elevates quarantined | affirmation supersedes it; nothing flips it in place |
 
 **Q1 resolved — `ASSISTANT × ASSISTANT`: allow the merge, block the currency
 refresh.** I had proposed blocking the merge outright on a
@@ -271,11 +292,14 @@ its own hallucination would keep it fresh **indefinitely** — freshness-pinning
 by self-repetition, which is the manufactured-freshness failure the T2 debate
 settled, one trust class down.
 
-**Rule: an assistant restating itself is deduplication, not evidence.**
-Absorption proceeds (§5's crowd-out analysis positively wants it); reinforcement
-must not advance `observed_at`. Checked by **I10a**. The consequence is that
-assistant edges **age out normally**, which is correct on its own terms: a
-statement about an action is point-in-time, not a persistent state.
+**Rule: an assistant restating itself is deduplication, not evidence** —
+and 0012 delivers this structurally: the restatement persists as its own
+record, the prior is byte-untouched (no `observed_at` refresh is possible
+because no mutation happens), and the render path collapses strict
+redundancy. **I10a asserts the prior's byte-equality**, which is Q1's
+intent expressed against the shipped mechanism. Assistant edges **age out
+normally**: a statement about an action is point-in-time, not a
+persistent state.
 
 **Reinforcement across classes is blocked in *both* directions and that is
 deliberate.** A user
@@ -328,8 +352,10 @@ not answer **which user is permitted to see it**.*
   one (`system`), visibility strictly narrows — which is the point.
 - **Scope change (sharing, revocation, group join/leave)?** n/a — no sharing model.
 - **Anything visible to a principal who could not see it before?** No new
-  principal. The **only** visibility widening is within one user's own store,
-  and only for subjects that are not that user.
+  principal, and **no visibility widening at all** *(v5, R3-6: this bullet
+  still carried v2's subject-scoped widening)* — every assistant edge is
+  `use_only`, never volunteered, never asserted without `confirm()`-class
+  user action (§3.2's affirmation contract).
 
 ---
 
@@ -463,13 +489,14 @@ fixture ever caught it because small stores never truncate.*
 | ~~**I2**~~ *deleted in v4 — encoded the withdrawn v2 widening (assistant + non-user subject → `mentionable`). Not narrowed: DELETED, because under v3/v4 no subject yields `mentionable` and a struck-but-present rule is the 0002 defect class. I1's every-subject form is the replacement.* | — | — |
 | **I11** the disclosure rule FAILS CLOSED on the new member: `_disclosure_for` must route `author==ASSISTANT` or `derived_from==ASSISTANT` before the `mentionable` fallthrough — **without this edit the enum addition alone fails OPEN** (today's final return is `MENTIONABLE`) | `test_assistant_never_yields_mentionable` (asserts over the full author × derived_from product) | CI |
 | **I12** the origin label keys the `(author, derived_from)` PAIR: `assistant+THIRD_PARTY` labels third-party-derived, bare `assistant` labels assistant-generated, and no author class inherits another's label | `test_render_origin.py` extended (the shipped tripwire already fails an unlabelled class) | CI |
+| **I13** *(v5, R3-2)* the on-disk guard is ACTIVATED: `SCHEMA_VERSION` 10 → 11 (semantic, no-DDL; stamp-only migration), and a reader predating `ASSISTANT` refuses a v11 store AT OPEN via 0007's adoption check — never a `ValidationError` mid-read | `test_old_reader_refuses_v11_at_open` (v11-stamped store + a reader pinned to 10 → the 0007 refusal, before any edge loads) | CI |
 | **I3** an assistant edge can never supersede, absorb, or reinforce a user edge | `test_assistant_cannot_touch_user_edge` (all three ops, both directions) | CI |
 | **I4** `derived_from=THIRD_PARTY` still caps an assistant edge to `use_only` | `test_assistant_derived_from_third_party_is_capped` | CI |
-| **I5** `confirm()` is the only promotion path; maintenance never promotes | `test_only_confirm_promotes_assistant` | CI |
-| **I3b** the paths §3.2 says are **allowed** actually work: a user edge *can* supersede and absorb an assistant prior | `test_user_can_correct_an_assistant_fact` | CI |
-| **I6** at 1,000 assistant edges, user-authored facts still reach the subgraph *(rescoped by v3/v4: the pressure point is the unverified block's budget share, not the grounded block — assistant edges never enter it)* | `test_assistant_dominant_store_does_not_crowd_out_user` | CI |
+| **I5** affirmation-as-new-USER-evidence is the ONLY promotion path (0008 PRESERVED: `confirm_edge` refuses every non-assertable edge by contract), and maintenance never promotes | `test_affirmation_grounds_and_confirm_edge_refuses` — asserts all three: same-value affirmation makes the fact assertable via the user edge (prior persists un-asserted), a differing user value retires the prior via the ladder, and `confirm_edge` on the assistant edge raises with 0008's message *(v5, R3-1)* | CI |
+| **I3b** the path §3.2 says is **allowed** actually works: user evidence SUPERSEDES an assistant prior via the authority ladder *(v5, R3-3: absorption is NOT the allowed path — cross-class absorption stays blocked by the 0.4.1 guard, and v4's claim that it worked was measured false)* | `test_user_can_correct_an_assistant_fact` (supersession, both the retire and the refusal-free path) | CI |
+| **I6** THE SELECTION RULE *(v5, R3-4: v4 named a test with no rule — the reviewer measured `selected=40 user_selected=[]` under the natural fixture)*: when any query-relevant ASSERTABLE edge exists, subgraph selection reserves `min(count_relevant_assertable, ceil(max_subgraph_edges / 4))` slots for the highest-ranked assertable edges; remaining slots fill by rank regardless of class. Protected class = ASSERTABLE (not author-keyed: assistant edges are never assertable, so this protects grounded evidence without a second author branch). Applied after relevance ranking, before token budgeting; contention ordering and scope filters run upstream and are unaffected. FIXTURE, exact: 1,000 equally-relevant `use_only` assistant edges + 1 equally-relevant older assertable user edge, `max_subgraph_edges=40` → the user edge IS selected (reserve ≥ 1) and the other 39 slots are the top-ranked assistant edges | `test_assistant_dominant_store_does_not_crowd_out_user` (the exact fixture; asserts the user edge id in the selection) | CI |
 | **I10** the store-side min-trust consolidation rule (`_derive_output_metadata`, its home since 0010 X23 — see §2) treats `ASSISTANT` correctly: any assistant member caps the derived output at `use_only`; a mixed set never yields output presented as grounded | `test_mixed_batch_with_assistant_declares_influence` | CI |
-| **I10a** assistant self-reinforcement dedups but **never advances `observed_at`** — no freshness-pinning by self-repetition | `test_assistant_restatement_does_not_refresh_currency` | CI |
+| **I10a** an assistant restatement PERSISTS UNTOUCHED per 0012 — the prior is byte-unchanged (no `observed_at` refresh is structurally possible), both records present, render collapses strict redundancy *(v5, R3-3: v4 promised a store-side merge 0012 does not perform)* | `test_assistant_restatement_does_not_refresh_currency` (prior byte-equality + persist + render collapse) | CI |
 | **I7** an export containing assistant edges is rejected by an older reader **with our message, not a pydantic traceback** | `test_downgrade_export_fails_cleanly` | CI |
 | **I8** injection ladder unchanged; assistant authorship grants no new write authority | existing `bench --compare`, `engine.injection_asserts == 0` | bench gate |
 | **I9** trust canaries unchanged | existing `engine.trust_canary_failures == 0` | bench gate |
@@ -505,16 +532,22 @@ improving recall.
   the library restores prior behaviour for **new** writes. **Backward: NOT
   reversible.** Verified — an older library loading an `assistant` edge raises
   `pydantic.ValidationError: Input should be 'user', 'third_party' or 'system'`.
-  A store or export containing assistant edges **cannot be read by a pre-0.5.0
-  veracium at all.** This is the first genuinely one-way schema change we have
-  shipped and it is the reason `FORMAT_VERSION` goes to 3: `portability.load`
-  then fails with our own "export version is newer than this library" message
-  instead of a stack trace. **The SQLite store has no equivalent guard** —
-  there is no `PRAGMA user_version` — so an old library opening a new `.db`
-  still fails at pydantic. Adding a store version guard is **out of scope here
-  and filed as §10 Q3**, because it is a portability change deserving its own
-  spec rather than a rider on this one. *(Update 2026-08-13: that own-spec is
-  `0007`, accepted and shipped in v0.5.0 — Q3 is struck as resolved.)*
+  A store or export containing assistant edges **cannot be read by ANY
+  veracium predating `ASSISTANT`** *(v5, R3-2: "pre-0.5.0" was wrong — the
+  boundary is this spec's own release, not an old one)*. For EXPORTS,
+  `FORMAT_VERSION` 8 → 9 makes `portability.load` fail with our own
+  "export version is newer than this library" message instead of a stack
+  trace. **For the STORE, the 0007 guard exists but only fires when a newer
+  store is actually STAMPED — so this spec BUMPS `SCHEMA_VERSION` 10 → 11
+  as a semantic, no-DDL version step** (the 0006 v4→v5 precedent: the SQL
+  shape is unchanged; the JSON inside it is not), with the v10→v11
+  migration a stamp-only step in `store/migration.py` and the accepted-
+  digest evidence regenerated per the 0007/0013 convention. An old reader
+  then refuses AT OPEN — 0007's adoption check — before any edge
+  validates; **I13** proves the refusal happens at open, not as a
+  `ValidationError` mid-read. *(v5, R3-2: v4 said "nothing 0001-specific
+  remains" of Q3 — false as measured by the reviewer: disk=10, reader=10,
+  `ValidationError`. 0007 only refuses what a version bump tells it to.)*
 - **Partial failure.** No new multi-step operation; nothing to leave half-done.
   Permanent errors are not retried into a silent empty success (unchanged).
 - **New attack surface?** **No new assertion channel — that is v3/v4's whole
@@ -544,10 +577,13 @@ improving recall.
 ## 8. Claims and limits
 
 - **What we will say**, exactly: *"veracium models assistant-generated content
-  as its own evidence class. Assistant statements about the user are held as
-  unverified until the user confirms them; assistant statements about its own
-  actions may be used directly. Configuration may narrow what is assertable,
-  never widen it."*
+  as its own evidence class. Every assistant statement — about the user or
+  anything else — is held as unverified context, honestly attributed; a user
+  affirmation creates user evidence that supersedes it. Configuration may
+  narrow what is assertable, never widen it."* *(v5, R3-6: the previous
+  sentence promised direct use of first-party assistant reports — the
+  withdrawn v2 widening, surviving in the one carrier that faces the
+  public.)*
 - **What this does NOT establish.**
   - It does **not** improve our LongMemEval score, and is **expected not to**:
     `184da446` and its class stay unanswered by design. Any post-change score
@@ -635,7 +671,7 @@ dissolved questions would waste the round.)*
 | ~~**Q1**~~ | ~~Should `ASSISTANT × ASSISTANT` merges be blocked?~~ **ANSWERED 2026-07-31 (research):** do not block the merge; block the `observed_at` refresh. The hazard is currency, not confidence. See §3.2 and I10a. | ~~blocking~~ **resolved** | research | done |
 | **Q2** | Does an assistant *restating* user testimony reinforce the user's edge instead of creating an assistant edge? The elegant fix; blocked by the same-disclosure-class rule; would remove most of §8's stated cost. | `deferred` | research | own design round |
 | ~~**Q3**~~ | **RESOLVED by `0007` (accepted; shipped in v0.5.0, 2026-08-07): the store-level version guard is exactly 0007's contract** — `PRAGMA user_version` stamped + shape-verified adoption; an old build refuses a newer store rather than misreading it. Nothing 0001-specific remains. *(Struck 2026-08-13; the question predated 0007's existence.)* | resolved | dev | — |
-| **Q4** | Does `_source_type` return `STATED` or `INFERRED` for a non-chat assistant event? Currently non-`USER` non-chat → `INFERRED`, which is probably right but is inherited rather than chosen. | `pre-release` | dev | before implementation lands |
+| ~~**Q4**~~ | **MOOT (v5, R3-5): `0016` deleted `SourceType`, `Provenance.source_type` and `ingest._source_type` outright — the field this question asks about does not exist.** The v4 currency pass re-executed §2c-ii's commands but never verified every NAME in the consumer table still resolves; the reviewer did. | resolved | — | — |
 
 ---
 
@@ -827,3 +863,57 @@ and the carrier sweep v3 owed itself.*
    ruling).
 6. **Status: `deferred` → `draft`** on Quentin's word (2026-08-22) —
    re-entering external review as the v4 candidate.
+
+---
+
+## 15. Changes in v5 (the round-3 fold, 2026-08-23)
+
+*Every item is a reviewer-executed collision with a shipped contract; none
+is a design reversal. The recommended option was taken wherever the verdict
+offered one.*
+
+1. **R3-1 — affirmation replaces promotion-via-`confirm()`.** 0008 is
+   PRESERVED unamended: `confirm_edge` refuses every non-assertable edge by
+   contract (the reviewer executed the refusal). A user affirmation is NEW
+   USER EVIDENCE — ingested via `remember(author=USER)`, superseding the
+   assistant prior through the 0003 ladder with full audit/retry
+   semantics. §3.2's row, I5, §3b, §7 and §8's public claim all rewritten;
+   `Spec-Requires` gains 0008.
+2. **R3-2 — the on-disk guard is ACTIVATED.** `SCHEMA_VERSION` 10 → 11,
+   semantic no-DDL stamp (the 0006 v4→v5 precedent), migration
+   stamp-only step + regenerated accepted-digest evidence; a pre-ASSISTANT
+   reader refuses a v11 store AT OPEN (I13). §7's "pre-0.5.0" boundary
+   corrected to "any reader predating ASSISTANT"; the residual
+   `FORMAT_VERSION → 3` sentence corrected to → 9.
+3. **R3-3 — the operation matrix rewritten against shipped mechanisms.**
+   Cross-class functional supersession is governed by the AUTHORITY LADDER
+   (0003), not the 0.4.1 disclosure guard; cross-class absorption stays
+   BLOCKED in both directions (v4's user-absorbs-assistant cell was
+   measured false, and allowing it would launder assistant metadata into
+   the user survivor); the assistant restatement PERSISTS UNTOUCHED per
+   0012 (no store-side merge exists), which delivers Q1's currency intent
+   structurally — I3b and I10a restated accordingly.
+4. **R3-4 — I6 is a RULE, not a test name.** Reserve
+   `min(count_relevant_assertable, ceil(max_subgraph_edges/4))` slots for
+   the highest-ranked assertable edges; protected class = ASSERTABLE (no
+   second author branch); exact 1,000+1 fixture with the expected
+   selection stated.
+5. **R3-5 — the deleted-field citation removed.** `ingest._source_type`
+   and `SourceType` were deleted by 0016; the consumer row is corrected
+   and Q4 is struck as moot. The v4 currency pass re-ran commands but
+   never verified every cited NAME still resolves — recorded as the
+   pass's own defect class.
+6. **R3-6 — three more v2 carriers swept**: §2's `Edge.subject`
+   blast-radius cell, §3b's fourth bullet, §8's public-claim sentence
+   ("may be used directly"). §14's completed-sweep claim corrected by
+   this section's existence.
+7. **R3-7 — `Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024`**
+   (0024 is an explicit ordering dependency on the `_disclosure_for`
+   co-edit; the rest are contracts this design now composes with by
+   name).
+8. **The reviewer's standing asks:** the runnable candidate-behavior
+   harness ships at `specs/evidence/0001/candidate_harness.py`
+   (confirmation refusal, the matrix cells, old-reader refusal, the
+   1,000-edge selection vector — measured TODAY-state, with the candidate
+   deltas stated beside each); the no-`ensurepip` offline bootstrap is in
+   the launcher.

@@ -25,6 +25,91 @@ description, which is the defect this field exists to prevent:
 
 # (spec, round_kind, round_no, finding, summary, closed_in, evidence)
 CLOSURES = [
+    # ---- 0001 historical rounds (retrofitted at TRACKED-entry, 2026-08-23:
+    # per-finding texts live in the spec's own §11/§12/§13 narrative) -------
+    ("0001", "internal", 1, "0001-INT1",
+     "research's v1->v2 amendment set, folded directly into the spec before "
+     "the per-finding discipline existed",
+     "§11 (changes in v2), the collective record",
+     "grep -n '## 11. Changes in v2' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 1, "0001-R1-SUBJECT",
+     "the subject rule cannot work: no entity resolution, no display name; "
+     "19,096 distinct subjects, 39.4% the literal 'user'",
+     "withdrawn in v3 — use_only for EVERY subject, no subject inspection",
+     "grep -n 'One rule, no subject inspection' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 1, "0001-R1-WITNESS",
+     "subject identity does not establish evidence authority — speaker is "
+     "not witness; 'the deploy failed' proves nothing about who deployed",
+     "conceded in v3; groundability routed to the evidence-basis axis",
+     "grep -n 'Speaker . witness, conceded' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 2, "0001-R2-MARKER",
+     "the render marker keyed on use_only with hardcoded third-party text — "
+     "every assistant edge would carry an affirmatively false origin",
+     "closed in shipped code 2026-08-15: author-keyed _ORIGIN_LABELS, "
+     "fail-safe unverified-origin, the tripwire test",
+     "$PY -c \"import sys; sys.path.insert(0,'src'); "
+     "from veracium.graph import _origin_label, _ORIGIN_LABELS; "
+     "from veracium.schema import EvidenceAuthor as A; "
+     "assert all(a in _ORIGIN_LABELS for a in "
+     "(A.USER, A.SYSTEM, A.THIRD_PARTY)); "
+     "print('author-keyed, fail-safe wired')\""),
+
+    # ---- 0001 external round 3 (2026-08-23) — the round-3 fold, v5 --------
+    ("0001", "external", 3, "0001-R3-1",
+     "confirm_edge (0008) refuses every non-assertable edge by contract, so "
+     "the promotion v4 promised cannot exist; affirmation is NEW USER "
+     "evidence — same value grounds via the user edge, differing value "
+     "retires via the ladder",
+     "§3.2 affirmation row, I5, §7, §8; both shapes measured",
+     "$PY specs/evidence/0001/candidate_harness.py  "
+     "# vector_confirm_edge_refuses_non_assertable + "
+     "vector_affirmation_makes_the_fact_assertable"),
+    ("0001", "external", 3, "0001-R3-2",
+     "the on-disk guard was never activated: disk=10 reader=10 gives "
+     "ValidationError mid-read, not a refusal — 0007 only refuses what a "
+     "version bump tells it to",
+     "§7 (SCHEMA 10->11 semantic bump), I13 refusal-at-open",
+     "grep -n 'SCHEMA_VERSION. 10 . 11\\|I13' "
+     "specs/0001-generated-content-trust-class.md && "
+     "$PY specs/evidence/0001/candidate_harness.py  "
+     "# vector_old_reader_refuses_a_newer_store_at_open"),
+    ("0001", "external", 3, "0001-R3-3",
+     "two matrix cells measured false (cross-class absorption stays "
+     "blocked; 0012 persists restatements untouched) and the supersession "
+     "rationale named the wrong mechanism",
+     "§3.2 rewritten against the ladder/0012/0.4.1 as shipped; I3b, I10a",
+     "$PY specs/evidence/0001/candidate_harness.py  "
+     "# vector_cross_class_absorption_stays_blocked + "
+     "vector_same_class_restatement_persists_untouched"),
+    ("0001", "external", 3, "0001-R3-4",
+     "I6 named a test with no selection rule — selected=40 user_selected=[] "
+     "under the natural fixture",
+     "I6: the reserve rule (min(count_relevant_assertable, ceil(budget/4))) "
+     "with the exact 1,000+1 fixture",
+     "grep -n 'THE SELECTION RULE' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 3, "0001-R3-5",
+     "Q4 rode ingest._source_type, deleted by 0016 — the currency pass "
+     "re-ran commands but never verified cited names resolve",
+     "Q4 struck as moot; the consumer row corrected",
+     "! grep -rn '_source_type' src/veracium/ingest.py && "
+     "grep -n 'MOOT (v5, R3-5)' specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 3, "0001-R3-6",
+     "three more v2-form carriers survived the v4 sweep: the Edge.subject "
+     "blast-radius cell, §3b bullet 4, §8's public claim",
+     "§2/§3b/§8 rewritten; §14's completed-sweep claim corrected by §15",
+     "grep -c 'v5, R3-6' specs/0001-generated-content-trust-class.md  "
+     "# all three carriers annotated at the fix site"),
+    ("0001", "external", 3, "0001-R3-7",
+     "Spec-Requires named 0003/0005 while the design depends on "
+     "0007/0008/0012/0016 and explicitly sequences after 0024",
+     "the header line, complete",
+     "grep -n 'Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0016, 0024' "
+     "specs/0001-generated-content-trust-class.md"),
+
     # ---- 0022 -----------------------------------------------------------
     ("0022", "external", 1, "F2",
      "the standing state ordered by (at, seq) with a HOST-SUPPLIED `at`, so a "
