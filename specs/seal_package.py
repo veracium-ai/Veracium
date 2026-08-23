@@ -472,43 +472,27 @@ def identity_problems(archive_name: str, col: str, man: str,
     # the identity record, required to be the file's ONLY `specs:` field, and
     # required to sit exactly where that field sits.
     field = pid.render_candidate_field(line, version)
-    labels = [m.start() for m in re.finditer(r"(?m)^specs:", col)]
-    if len(labels) != 1:
-        problems.append(
-            f"COLLECTED.txt carries {len(labels)} `specs:` fields, expected "
-            f"exactly one — a second one can contradict the first (R20-1)")
-        return problems
+    # C3-1: the position-and-label binding is the SHARED helper — one
+    # implementation for COLLECTED and the manifest, per the reviewer's
+    # requirement (the manifest's copy was presence-bound and fell).
+    shared = pid.candidate_field_problems(col, field, "COLLECTED.txt")
+    if shared:
+        return problems + shared
     # ...and in the HEADER, where a reviewer reads it. "Unique expected header
     # position" is enforced against the inventory marker rather than a line
     # number, so the template can grow without the rule going stale.
     sys.path.insert(0, str(SPECS))
     import skip_inventory as _si
     body_at = col.find(_si.BEGIN_MARKER)
-    if body_at != -1 and labels[0] > body_at:
+    label_at = col.find("\nspecs:") + 1 if "\nspecs:" in col else \
+        (0 if col.startswith("specs:") else -1)
+    if body_at != -1 and label_at > body_at:
         problems.append(
             f"COLLECTED.txt's `specs:` field sits BELOW the generated "
             f"inventory block — the identity a reviewer reads is in the "
             f"header, and a field relocated out of it is not that field "
             f"(R20-1)")
         return problems
-    if not col.startswith(field, labels[0]):
-        got = col[labels[0]:labels[0] + len(field)].split("\n")[0]
-        problems.append(
-            f"COLLECTED.txt's `specs:` field is not the rendered candidate "
-            f"field for {version}. Found: {got!r}. Expected the field to BEGIN "
-            f"at that position with:\n{field}\n(R20-1: the block appearing "
-            f"somewhere in the file is not the field stating it)")
-        return problems
-
-    # nothing of that shape anywhere else — an exact field says nothing about
-    # what the rest of the carrier claims. The regex is package_identity's
-    # (R2-1: one authority, shared with the manifest sweep).
-    outside = re.findall(pid.CANDIDATE_LINE_RE, col.replace(field, "", 1))
-    if outside:
-        problems.append(
-            f"COLLECTED.txt carries candidate line(s) OUTSIDE its verified "
-            f"field: {outside} — a carrier that states the same fact twice can "
-            f"disagree with itself (R18-1/R19-1)")
 
     # AND EVERY DECLARED PATH MUST BE IN THE ARCHIVE. A field that matches the
     # generator perfectly still misdirects if the generator names a file the

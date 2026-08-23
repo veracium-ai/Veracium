@@ -48,24 +48,45 @@ if [ -e "$VENV" ]; then
   exit 2
 fi
 
-# ROUND-1 L-PAIR PACKAGE NOTE: the reviewer's /usr/bin/python3 lacked
-# ensurepip, so `python -m venv` left a PARTIAL environment (no pip) that a
-# rerun then refused — the refusal machinery punishing the wrong actor.
-# Detect the capability BEFORE creating anything, and name the fix.
-if ! "$PY" -c "import ensurepip" 2>/dev/null; then
-  echo "REFUSED: $(command -v "$PY") has no ensurepip, so it cannot build a venv." >&2
-  echo "  On Debian/Ubuntu: install python3-venv, or set VERACIUM_PYTHON to an" >&2
-  echo "  interpreter that carries ensurepip. Nothing was created." >&2
-  exit 2
-fi
-
+# NO-ENSUREPIP BOOTSTRAP (impl-review rounds 1+3 standing ask; previously a
+# refusal). A qualified interpreter without ensurepip — the reviewer's
+# /usr/bin/python3, twice — now gets a HASH-LOCKED NO-PIP environment: venv
+# --without-pip, every wheel verified against the lock's sha256 set, then
+# unpacked by stdlib zipfile. Same wheels, same hashes, no pip anywhere.
 echo "== creating the venv (no network) =="
 echo "  interpreter : $(command -v "$PY")"
-"$PY" -m venv "$VENV"
-command -v "$PY" > "$VENV/.created-by"
-"$VENV/bin/pip" install --quiet --no-index \
-    --find-links "$HERE" --require-hashes -r "$HERE/requirements-test.lock"
-echo "  installed from $HERE with --require-hashes"
+if "$PY" -c "import ensurepip" 2>/dev/null; then
+  "$PY" -m venv "$VENV"
+  command -v "$PY" > "$VENV/.created-by"
+  "$VENV/bin/pip" install --quiet --no-index \
+      --find-links "$HERE" --require-hashes -r "$HERE/requirements-test.lock"
+  echo "  installed from $HERE with --require-hashes"
+else
+  echo "  no ensurepip: hash-locked no-pip bootstrap"
+  "$PY" -m venv --without-pip "$VENV"
+  command -v "$PY" > "$VENV/.created-by"
+  "$VENV/bin/python" - "$HERE" <<'PYB'
+import hashlib, pathlib, re, sys, sysconfig, zipfile
+here = pathlib.Path(sys.argv[1])
+lock = (here / "requirements-test.lock").read_text()
+locked = set(re.findall(r"--hash=sha256:([0-9a-f]{64})", lock))
+n_reqs = len([l for l in lock.splitlines() if "==" in l])
+site = pathlib.Path(sysconfig.get_paths()["purelib"])
+wheels = sorted(here.glob("*.whl"))
+used = []
+for w in wheels:
+    d = hashlib.sha256(w.read_bytes()).hexdigest()
+    if d not in locked:
+        sys.exit(f"REFUSED: {w.name} does not match any lock hash")
+    with zipfile.ZipFile(w) as z:
+        z.extractall(site)
+    used.append(w.name)
+if len(used) < n_reqs:
+    sys.exit(f"REFUSED: {len(used)} wheels for {n_reqs} locked requirements "
+             f"— the pinned set is incomplete on disk")
+print(f"  unpacked {len(used)} hash-verified wheels into {site}")
+PYB
+fi
 
 echo "== qualifying the runtime (specs/0007's predicate, not a version floor) =="
 cd "$ROOT"

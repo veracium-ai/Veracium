@@ -126,26 +126,14 @@ def manifest_problems(man_text: str, record: dict,
         return [f"PACKAGE_MANIFEST.txt is not the recomputed construction — "
                 f"first divergence at byte {i} (have {man_text[i:i + 40]!r}, "
                 f"expected {expected[i:i + 40]!r}) (F2)"]
-    # R2-1: the candidate-field discipline COLLECTED.txt has, SHARED — the
-    # equation proves the text came from the bound template, and this proves
-    # the template did not smuggle a candidate claim of its own: the record's
-    # rendered field appears exactly once, and nothing candidate-shaped
-    # exists outside it.
+    # R2-1/C3-1: the candidate-field discipline, POSITION-AND-LABEL-bound
+    # and SHARED with COLLECTED.txt via package_identity — presence-bound
+    # checking accepted `specs: none` on the real label with the true field
+    # rendered behind a `backup:` prefix.
     import package_identity as pid
-    field = record["fields"]["candidates"]["value"]
-    problems = []
-    if man_text.count(field) != 1:
-        problems.append(
-            f"PACKAGE_MANIFEST.txt carries the rendered candidate field "
-            f"{man_text.count(field)} times, expected exactly once (R2-1)")
-    outside = re.findall(pid.CANDIDATE_LINE_RE,
-                         man_text.replace(field, "", 1))
-    if outside:
-        problems.append(
-            f"PACKAGE_MANIFEST.txt carries candidate-shaped claim(s) "
-            f"OUTSIDE the verified field: {outside} — a digest-bound "
-            f"template is still a policy source (R2-1)")
-    return problems
+    return pid.candidate_field_problems(
+        man_text, record["fields"]["candidates"]["value"],
+        "PACKAGE_MANIFEST.txt")
 
 
 def compose(record: dict, template_text: str, rs_text: str) -> str:

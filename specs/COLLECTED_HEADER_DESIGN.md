@@ -327,3 +327,24 @@ Confirmed closed by the round: both F1 escalation directions, false
 `signed_ci`, forged 40-char commits, output-only manifest edits, duplicate
 identity lines, zero post-seal members with exact epoch stamps, and the
 `seal_epoch + 1` repack refusal.
+
+## 11. Implementation review — round 3 (2026-08-23): F1/F3 hold; C3-1 folded
+
+**C3-1 (blocking) — the manifest candidate field was PRESENCE-bound, not
+position-and-label-bound.** The reviewer's relocation attack: a static
+`specs: none` line on the real label with the correct rendered field behind
+a `backup:` prefix — template digest updated, manifest re-rendered, all 422
+members exact — passed the whole extraction workflow. R20-1's lesson,
+verbatim, on the second carrier. **Folded:** the position-and-label binding
+is ONE shared implementation, `package_identity.candidate_field_problems`
+(exactly one `specs:` label; the record-rendered field begins at its
+offset; nothing candidate-shaped outside), consumed by BOTH
+`seal_package.identity_problems` (COLLECTED) and
+`collected_render.manifest_problems` (manifest). The regression is the
+reviewer's exact relocation, full-repack shape.
+
+Also confirmed by the round: the round-2 timestamp helpers and the
+required-token omission/duplication checks hold. The no-`ensurepip`
+launcher bootstrap requested at rounds 1 and 3 is DELIVERED (hash-locked
+no-pip venv: `--without-pip`, every wheel sha256-verified against the lock,
+stdlib unzip — the refusal path is gone for qualified interpreters).

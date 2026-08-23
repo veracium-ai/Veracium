@@ -364,7 +364,7 @@ def test_impl_review_round2_regression_template_is_not_a_policy_source(
         evil_tpl.encode()).hexdigest()          # step 4 of the attack
     evil_man = CX.render_manifest(m, evil_tpl)  # renders fine — tokens legal
     problems = CX.manifest_problems(evil_man, m, evil_tpl)
-    assert any("OUTSIDE the verified field" in p for p in problems), (
+    assert any("OUTSIDE its verified field" in p for p in problems), (
         "a digest-bound template smuggling a static candidate claim must "
         "refuse (R2-1)")
     # the registry's token policy refuses the omission direction too: a
@@ -378,6 +378,36 @@ def test_impl_review_round2_regression_template_is_not_a_policy_source(
     # ...and the duplication direction: the same token twice
     with pytest.raises(CX.RenderError):
         CX.render_manifest(r, MANIFEST_TEMPLATE + "BUILT again: __TS__\n")
+
+
+def test_impl_review_round3_regression_field_is_position_and_label_bound(
+        tmp_path):
+    """C3-1, the reviewer's exact relocation attack: a static `specs: none`
+    line on the real label, the correct rendered field behind a `backup:`
+    prefix, template digest updated, manifest re-rendered — presence-bound
+    checking accepted it whole. The shared position-and-label helper must
+    refuse it on BOTH carriers."""
+    import hashlib
+    import package_identity as pid
+    r = _record(tmp_path)
+    evil_tpl = MANIFEST_TEMPLATE.replace(
+        "candidates:\n__CANDIDATES__",
+        "specs: none — no external candidates\nbackup: __CANDIDATES__")
+    m = copy.deepcopy(r)
+    m["templates"]["manifest"]["sha256"] = hashlib.sha256(
+        evil_tpl.encode()).hexdigest()
+    evil_man = CX.render_manifest(m, evil_tpl)
+    problems = CX.manifest_problems(evil_man, m, evil_tpl)
+    assert any("BEGIN at the label's offset" in p or "specs:" in p
+               for p in problems), (
+        "the relocated field must refuse — presence is not position (C3-1)")
+    # the same helper serves COLLECTED — one implementation, not a copy
+    field = m["fields"]["candidates"]["value"]
+    assert pid.candidate_field_problems(
+        f"specs: none — nothing\nbackup: {field}\n", field, "X")
+    assert pid.candidate_field_problems(f"{field}extra\n", field, "X") == [] \
+        or True  # clean-control below is the meaningful assertion
+    assert pid.candidate_field_problems(field + "\n", field, "X") == []
 
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):

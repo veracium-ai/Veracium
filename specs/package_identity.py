@@ -61,6 +61,7 @@ PACKAGES = {
     # enters the record at its first SEALED package, round 3.
     "0001": {
         "v3": (3, {"0001": "v4"}),
+        "v4": (4, {"0001": "v5"}),
     },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
@@ -110,6 +111,37 @@ INDENT = " " * len(LABEL)
 # refuses candidate-shaped claims outside the verified field must be shared
 # by every carrier — COLLECTED.txt and PACKAGE_MANIFEST.txt — not copied).
 CANDIDATE_LINE_RE = r"specs/\S+\.md — draft v\d+(?:\.\d+)? \(external candidate\)"
+
+
+def candidate_field_problems(text: str, field: str, carrier: str) -> list:
+    """POSITION-AND-LABEL binding of the candidate field, shared by every
+    carrier (C3-1: the manifest check was presence-bound — `specs: none`
+    on the real label with the correct field rendered behind a `backup:`
+    prefix passed everything. R20-1's lesson, verbatim, on the other
+    carrier): exactly one line begins `specs:`, the record-rendered field
+    begins EXACTLY at that label's offset, and nothing candidate-shaped
+    exists outside the field."""
+    import re as _re
+    problems = []
+    labels = [m.start() for m in _re.finditer(r"(?m)^specs:", text)]
+    if len(labels) != 1:
+        problems.append(
+            f"{carrier} carries {len(labels)} `specs:` fields, expected "
+            f"exactly one — a second one can contradict the first (R20-1)")
+        return problems
+    if not text.startswith(field, labels[0]):
+        got = text[labels[0]:labels[0] + len(field)].split("\n")[0]
+        problems.append(
+            f"{carrier}'s `specs:` field is not the rendered candidate "
+            f"field. Found: {got!r}. The field must BEGIN at the label's "
+            f"offset (C3-1: presence elsewhere is not the field stating it)")
+        return problems
+    outside = _re.findall(CANDIDATE_LINE_RE, text.replace(field, "", 1))
+    if outside:
+        problems.append(
+            f"{carrier} carries candidate-shaped claim(s) OUTSIDE its "
+            f"verified field: {outside} (R18-1/R19-1)")
+    return problems
 
 
 def render_candidate_field(line: str, version: str) -> str:
