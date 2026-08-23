@@ -106,6 +106,12 @@ LABEL = "specs:" + " " * 11
 INDENT = " " * len(LABEL)
 
 
+# ONE authority for what a candidate claim LOOKS like (R2-1: the sweep that
+# refuses candidate-shaped claims outside the verified field must be shared
+# by every carrier — COLLECTED.txt and PACKAGE_MANIFEST.txt — not copied).
+CANDIDATE_LINE_RE = r"specs/\S+\.md — draft v\d+(?:\.\d+)? \(external candidate\)"
+
+
 def render_candidate_field(line: str, version: str) -> str:
     """The COLLECTED `specs:` field, whole — the unit that gets verified."""
     return LABEL + render_candidate_lines(line, version)

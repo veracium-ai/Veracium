@@ -293,3 +293,37 @@ launcher's runtime qualification (it refused their SQLite 3.53.1, which
 they correctly treated as the guard working). Queued from the round: a
 portable qualified runtime for independent full-suite reproduction (rides
 with the hashed no-ensurepip launcher bootstrap item).
+
+## 10. Implementation review — round 2 (2026-08-23): F1/F3 CLOSED; F2 one layer deeper
+
+**R2-1 (blocking) — the digest-bound manifest template was itself an
+unchecked policy source.** The reviewer's full-repack attack: keep the
+legitimate `__CANDIDATES__` token, plant a static `draft v999` candidate
+claim IN THE TEMPLATE, update `templates.manifest.sha256`, re-render —
+every check recomputed perfectly, because the equation proves the output
+came from the bound template and nothing proved the template's dynamic
+claims came from the record. Recursive carrier completeness, one layer
+below round 1's fix. **Folded:** the registry now carries `in_manifest` —
+seven required dynamic facts (package, round, commit_full, ts, candidates,
+measured, loose) whose tokens the manifest template must carry EXACTLY
+once (`render_manifest` refuses omission and duplication), and the
+candidate-field discipline COLLECTED.txt has is SHARED with the manifest
+via `package_identity.CANDIDATE_LINE_RE` (one authority): the record's
+rendered field exactly once, candidate-shaped claims outside it refused.
+The regression is the reviewer's own attack — template + digest + rendered
+manifest mutated together.
+
+**R2-2 (moderate/package-blocking) — the F3 regression could not run from
+an extraction.** It called `build_archive` → `git archive`, and review
+packages carry no `.git`; the reviewer's advertised-command run failed,
+meaning the named check never executed on their artifact and a qualified
+launcher would fail rather than reconcile. **Folded:** the mtime transform
+and the §5.4 predicate are pure helpers (`stamp_loose_member`,
+`member_mtime_problems`) — the builder and verifier call them, the
+regression tests them git-free, and the `seal_epoch + 1` injection the
+reviewer asked for is asserted to refuse.
+
+Confirmed closed by the round: both F1 escalation directions, false
+`signed_ci`, forged 40-char commits, output-only manifest edits, duplicate
+identity lines, zero post-seal members with exact epoch stamps, and the
+`seal_epoch + 1` repack refusal.

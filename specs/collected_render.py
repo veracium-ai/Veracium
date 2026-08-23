@@ -76,15 +76,26 @@ def render_header(record: dict, template_text: str) -> str:
 
 def render_manifest(record: dict, manifest_template: str) -> str:
     """PACKAGE_MANIFEST.txt from the same record — unknown tokens refused,
-    no residue. The manifest is outside the whole-file equation (it is not
-    COLLECTED.txt) but its values come from the one record, so the two
-    carriers cannot be filled from different variables again (R16-1)."""
+    no residue, and (R2-1) the REGISTRY's required manifest facts must each
+    be present as a token EXACTLY ONCE. The template is digest-bound, but
+    the digest binds whatever the sealer was given — without this policy
+    the template itself is an unchecked policy source: a static version
+    claim planted in it recomputes perfectly."""
     fields = record["fields"]
     unknown = sorted(set(TOKEN_RE.findall(manifest_template))
                      - {token_of(f) for f in FIELD_POLICY})
     if unknown:
         raise RenderError(f"the manifest template carries unknown tokens: "
                           f"{unknown}")
+    for f, pol in FIELD_POLICY.items():
+        if not pol.in_manifest:
+            continue
+        n = manifest_template.count(token_of(f))
+        if n != 1:
+            raise RenderError(
+                f"the manifest template carries {token_of(f)} {n} times — "
+                f"the registry requires each dynamic fact stated exactly "
+                f"once, from the record (R2-1)")
     out = manifest_template
     for name in FIELD_POLICY:
         value = fields[name]["value"]
@@ -115,7 +126,26 @@ def manifest_problems(man_text: str, record: dict,
         return [f"PACKAGE_MANIFEST.txt is not the recomputed construction — "
                 f"first divergence at byte {i} (have {man_text[i:i + 40]!r}, "
                 f"expected {expected[i:i + 40]!r}) (F2)"]
-    return []
+    # R2-1: the candidate-field discipline COLLECTED.txt has, SHARED — the
+    # equation proves the text came from the bound template, and this proves
+    # the template did not smuggle a candidate claim of its own: the record's
+    # rendered field appears exactly once, and nothing candidate-shaped
+    # exists outside it.
+    import package_identity as pid
+    field = record["fields"]["candidates"]["value"]
+    problems = []
+    if man_text.count(field) != 1:
+        problems.append(
+            f"PACKAGE_MANIFEST.txt carries the rendered candidate field "
+            f"{man_text.count(field)} times, expected exactly once (R2-1)")
+    outside = re.findall(pid.CANDIDATE_LINE_RE,
+                         man_text.replace(field, "", 1))
+    if outside:
+        problems.append(
+            f"PACKAGE_MANIFEST.txt carries candidate-shaped claim(s) "
+            f"OUTSIDE the verified field: {outside} — a digest-bound "
+            f"template is still a policy source (R2-1)")
+    return problems
 
 
 def compose(record: dict, template_text: str, rs_text: str) -> str:

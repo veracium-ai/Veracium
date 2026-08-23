@@ -266,6 +266,30 @@ def _changed_from_previous(line: str, version: str,
     return "\n".join(lines)
 
 
+def stamp_loose_member(info, seal_epoch: int | None):
+    """R2-2: the mtime transformation as a PURE helper on TarInfo, so the
+    adversarial regression executes in an EXTRACTION (no git) — the previous
+    regression called build_archive, which needs `git archive`, so the named
+    F3 check never ran on the reviewer's artifact. build_archive calls THIS,
+    and the test tests THIS: one code path, testable anywhere."""
+    info.uid = info.gid = 0
+    info.uname = info.gname = "root"
+    info.mode = 0o644
+    info.mtime = (int(seal_epoch) if seal_epoch is not None
+                  else int(info.mtime))
+    return info
+
+
+def member_mtime_problems(members, seal_epoch: int) -> list:
+    """R2-2/F3: the §5.4 ordering as a pure predicate over (name, mtime)
+    pairs — verify_archive consumes it, and the regression injects
+    `seal_epoch + 1` and watches it refuse, without an archive or a git
+    checkout."""
+    late = [name for name, mtime in members if mtime > seal_epoch]
+    return ([f"archive members postdate the declared seal time "
+             f"(§5.4, exact — F3): {late[:5]}"] if late else [])
+
+
 def build_archive(name: str, extra: dict[str, str],
                   seal_epoch: int | None = None) -> pathlib.Path:
     """`git archive` of HEAD plus the loose files, with NO duplicate members.
@@ -299,12 +323,9 @@ def build_archive(name: str, extra: dict[str, str],
                 # that cannot restore uid 1000 — the reviewer needed
                 # --no-same-owner to open the package at all. Normalise so the
                 # archive extracts with the ordinary command.
-                info = tf.gettarinfo(str(p), arcname=member)
-                info.uid = info.gid = 0
-                info.uname = info.gname = "root"
-                info.mode = 0o644
-                info.mtime = (int(seal_epoch) if seal_epoch is not None
-                              else int(info.mtime))
+                info = stamp_loose_member(tf.gettarinfo(str(p),
+                                                        arcname=member),
+                                          seal_epoch)
                 with open(p, "rb") as fh:
                     tf.addfile(info, fh)
         data = tar_path.read_bytes()
@@ -480,9 +501,9 @@ def identity_problems(archive_name: str, col: str, man: str,
         return problems
 
     # nothing of that shape anywhere else — an exact field says nothing about
-    # what the rest of the carrier claims
-    CAND_RE = r"specs/\S+\.md — draft v\d+(?:\.\d+)? \(external candidate\)"
-    outside = re.findall(CAND_RE, col.replace(field, "", 1))
+    # what the rest of the carrier claims. The regex is package_identity's
+    # (R2-1: one authority, shared with the manifest sweep).
+    outside = re.findall(pid.CANDIDATE_LINE_RE, col.replace(field, "", 1))
     if outside:
         problems.append(
             f"COLLECTED.txt carries candidate line(s) OUTSIDE its verified "
@@ -564,15 +585,13 @@ def verify_archive(path: pathlib.Path, specs: list[str]) -> str:
                   f"record's ts {rec_ts} are not one canonical value (§5.4)")
         seal_epoch = _cal.timegm(_time.strptime(rec_ts, "%Y%m%dT%H%MZ"))
         # F3: EXACT — §5.4 promises mtime ≤ the declared seal time, and the
-        # sealer now stamps appended members with the seal epoch, so there is
-        # nothing for a tolerance to forgive. The 900s tolerance is the
-        # verifier's-own-clock contract and does not apply here.
+        # sealer stamps appended members with the seal epoch, so there is
+        # nothing for a tolerance to forgive. The predicate is the pure
+        # helper the regression exercises (R2-2).
         with tarfile.open(path) as tf:
-            late = [m.name for m in tf.getmembers()
-                    if m.mtime > seal_epoch]
-        if late:
-            _fail(f"archive members postdate the declared seal time "
-                  f"(§5.4, exact — F3): {late[:5]}")
+            pairs = [(m.name, m.mtime) for m in tf.getmembers()]
+        for p_ in member_mtime_problems(pairs, seal_epoch):
+            _fail(p_)
         ran = []
         for name, cmd in EXTRACTION_CHECKS:
             target = cmd[-1]

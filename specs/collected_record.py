@@ -80,15 +80,21 @@ def _rank(axis, value):
 
 class _P:
     __slots__ = ("source", "min_validation", "witness", "min_attestation",
-                 "in_header")
+                 "in_header", "in_manifest")
 
     def __init__(self, source, min_validation, witness, in_header,
-                 min_attestation="none"):
+                 min_attestation="none", in_manifest=False):
         self.source = source
         self.min_validation = min_validation
         self.witness = witness
         self.min_attestation = min_attestation
         self.in_header = in_header
+        # R2-1: the manifest template is DIGEST-BOUND but the digest binds
+        # whatever the sealer was given — the template itself is a policy
+        # source, so the REGISTRY names which dynamic facts it must carry
+        # (each token exactly once). A template may add static prose; it may
+        # not omit a required fact or state one statically.
+        self.in_manifest = in_manifest
 
 
 # ---------------------------------------------------------------------------
@@ -108,21 +114,21 @@ class _P:
 # ---------------------------------------------------------------------------
 FIELD_POLICY = {
     "package":     _P("package_identity", "independent_cross_check",
-                      "package_manifest", in_header=False),
+                      "package_manifest", in_header=False, in_manifest=True),
     "version":     _P("package_identity", "independent_cross_check",
                       "package_manifest", in_header=True),
     "round":       _P("package_identity", "independent_cross_check",
-                      "package_manifest", in_header=True),
+                      "package_manifest", in_header=True, in_manifest=True),
     "candidates":  _P("package_identity", "independent_cross_check",
-                      "reviews_sent", in_header=True),
+                      "reviews_sent", in_header=True, in_manifest=True),
     "commit":      _P("git", "independent_cross_check",
                       "package_manifest", in_header=True),
     "commit_full": _P("git", "independent_cross_check",
-                      "package_manifest", in_header=False),
+                      "package_manifest", in_header=False, in_manifest=True),
     "requires":    _P("spec_header", "independent_cross_check",
                       "spec_header", in_header=True),
     "measured":    _P("measurement_output", "independent_cross_check",
-                      "pytest_rs", in_header=True),
+                      "pytest_rs", in_header=True, in_manifest=True),
     "harnesses":   _P("harness_run", "independent_cross_check",
                       "harness_rerun", in_header=True),
     "evidence":    _P("evidence_transcript", "independent_cross_check",
@@ -130,7 +136,7 @@ FIELD_POLICY = {
     "extracted":   _P("registry", "independent_cross_check",
                       "extraction_registry", in_header=True),
     "loose":       _P("registry", "independent_cross_check",
-                      "extraction_registry", in_header=False),
+                      "extraction_registry", in_header=False, in_manifest=True),
     # context and launcher are CAPTURED from the sealing execution (moderate
     # 5): stronger than prose, weaker than independent — the capture and the
     # value share the sealing host. internal_consistency is the honest floor.
@@ -141,7 +147,7 @@ FIELD_POLICY = {
     # The timestamp's wall-clock truth is externally unattested AND THE
     # RECORD SAYS SO (§5.4, ruling 2): witness `none`, attestation `none`,
     # structural checks in witness_problems().
-    "ts":          _P("clock", "syntax", "none", in_header=True),
+    "ts":          _P("clock", "syntax", "none", in_header=True, in_manifest=True),
 }
 
 FIELD_KEYS = ("value", "source", "validation", "witness",

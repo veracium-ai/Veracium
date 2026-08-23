@@ -47,7 +47,8 @@ TEMPLATE = (
     "harnesses: __HARNESSES__\nevidence: __EVIDENCE__\n"
     "extracted: __EXTRACTED__\nstatic prose the template owns\n")
 MANIFEST_TEMPLATE = ("PACKAGE: __PACKAGE__ — external ROUND __ROUND__\n"
-                     "COMMIT: __COMMIT_FULL__\ncandidates:\n__CANDIDATES__\n"
+                     "COMMIT: __COMMIT_FULL__\nBUILT: __TS__\n"
+                     "measured: __MEASURED__\ncandidates:\n__CANDIDATES__\n"
                      "loose:\n__LOOSE__\n")
 RS = ("...........\n1779 passed, 8 skipped, 25 warnings in 100.00s "
       "(0:01:40)\n")
@@ -326,23 +327,57 @@ def test_impl_review_round1_regressions(tmp_path):
         man.replace("candidates:", "candidates (draft v999):"), r,
         MANIFEST_TEMPLATE)
 
-    # F3: appended members are STAMPED with the seal epoch and verified
-    # exactly — no tolerance
+    # F3 via the PURE helpers (R2-2: the first regression called
+    # build_archive → `git archive`, so it could not run from a reviewer's
+    # extraction — the named check never executed on their artifact. The
+    # helpers ARE the builder's and verifier's code paths, git-free.)
     import calendar, tarfile, time as _t
     epoch = calendar.timegm(_t.strptime(r["fields"]["ts"]["value"],
                                         "%Y%m%dT%H%MZ"))
-    old_archives = sp.ARCHIVES
-    try:
-        sp.ARCHIVES = tmp_path
-        arc = sp.build_archive(".test-mtime", {"LOOSE_A.txt": "a\n"},
-                               seal_epoch=epoch)
-        with tarfile.open(arc) as tf:
-            loose = [m2 for m2 in tf.getmembers()
-                     if m2.name.endswith("LOOSE_A.txt")]
-        assert loose and all(m2.mtime == epoch for m2 in loose), (
-            "appended members must carry the DECLARED seal time exactly")
-    finally:
-        sp.ARCHIVES = old_archives
+    info = tarfile.TarInfo("./LOOSE_A.txt")
+    info.mtime = epoch + 999                     # write-time drift, as live
+    stamped = sp.stamp_loose_member(info, epoch)
+    assert stamped.mtime == epoch and stamped.uid == 0 \
+        and stamped.mode == 0o644, (
+        "the stamp must land EXACTLY on the declared seal epoch")
+    assert sp.member_mtime_problems([("./a", epoch), ("./b", epoch - 5)],
+                                    epoch) == []
+    # the reviewer's injection: one second late must REFUSE, no tolerance
+    assert sp.member_mtime_problems([("./late", epoch + 1)], epoch), (
+        "seal_epoch + 1 must refuse — F3 is exact, not tolerance-bounded")
+
+
+def test_impl_review_round2_regression_template_is_not_a_policy_source(
+        tmp_path):
+    """R2-1, the reviewer's exact full-repack attack: keep the legitimate
+    __CANDIDATES__ token, plant a static `draft v999` candidate claim in the
+    TEMPLATE, update the record's template digest, re-render the manifest —
+    every prior check recomputes perfectly. The registry's manifest token
+    policy plus the shared candidate-field sweep must refuse it anyway."""
+    import hashlib
+    r = _record(tmp_path)
+    evil_tpl = MANIFEST_TEMPLATE + (
+        "also shipping: specs/0001-generated-content-trust-class.md — "
+        "draft v999 (external candidate)\n")
+    m = copy.deepcopy(r)
+    m["templates"]["manifest"]["sha256"] = hashlib.sha256(
+        evil_tpl.encode()).hexdigest()          # step 4 of the attack
+    evil_man = CX.render_manifest(m, evil_tpl)  # renders fine — tokens legal
+    problems = CX.manifest_problems(evil_man, m, evil_tpl)
+    assert any("OUTSIDE the verified field" in p for p in problems), (
+        "a digest-bound template smuggling a static candidate claim must "
+        "refuse (R2-1)")
+    # the registry's token policy refuses the omission direction too: a
+    # template that drops a required dynamic fact cannot render at all
+    for f, pol in CR.FIELD_POLICY.items():
+        if not pol.in_manifest:
+            continue
+        broken = MANIFEST_TEMPLATE.replace(CX.token_of(f), "static-claim")
+        with pytest.raises(CX.RenderError):
+            CX.render_manifest(r, broken)
+    # ...and the duplication direction: the same token twice
+    with pytest.raises(CX.RenderError):
+        CX.render_manifest(r, MANIFEST_TEMPLATE + "BUILT again: __TS__\n")
 
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):
