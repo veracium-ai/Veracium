@@ -62,6 +62,7 @@ PACKAGES = {
     "0001": {
         "v3": (3, {"0001": "v4"}),
         "v4": (4, {"0001": "v5"}),
+        "v5": (5, {"0001": "v6"}),
     },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
@@ -136,6 +137,17 @@ def candidate_field_problems(text: str, field: str, carrier: str) -> list:
             f"field. Found: {got!r}. The field must BEGIN at the label's "
             f"offset (C3-1: presence elsewhere is not the field stating it)")
         return problems
+    # C4-1: END-bound too — start-bound alone accepted the canonical field
+    # with a same-line contradiction appended ("… — withdrawn; no external
+    # candidate is under review"). The byte after the field must be a
+    # newline or EOF.
+    end = labels[0] + len(field)
+    if end < len(text) and text[end] != "\n":
+        problems.append(
+            f"{carrier}'s candidate field carries trailing bytes on its "
+            f"final line ({text[end:end + 60]!r}) — the field must END at a "
+            f"line boundary (C4-1: a start-bound field can still be "
+            f"contradicted on its own line)")
     outside = _re.findall(CANDIDATE_LINE_RE, text.replace(field, "", 1))
     if outside:
         problems.append(

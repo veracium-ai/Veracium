@@ -405,9 +405,74 @@ def test_impl_review_round3_regression_field_is_position_and_label_bound(
     field = m["fields"]["candidates"]["value"]
     assert pid.candidate_field_problems(
         f"specs: none — nothing\nbackup: {field}\n", field, "X")
-    assert pid.candidate_field_problems(f"{field}extra\n", field, "X") == [] \
-        or True  # clean-control below is the meaningful assertion
+    # C4-1: END-bound. The prior form of this assertion was neutralized by
+    # an `or True` tautology — the reviewer found the missing regression BY
+    # the tautology. Their exact contradiction, refused:
+    assert any("END at a line boundary" in p for p in
+               pid.candidate_field_problems(
+                   field + " — withdrawn; no external candidate is under "
+                   "review\n", field, "X"))
     assert pid.candidate_field_problems(field + "\n", field, "X") == []
+    assert pid.candidate_field_problems(field, field, "X") == []   # EOF form
+    # ...and through the manifest carrier in full-repack shape: template
+    # digest updated, manifest re-rendered with the trailing contradiction
+    evil_tpl2 = MANIFEST_TEMPLATE.replace(
+        "__CANDIDATES__",
+        "__CANDIDATES__ — withdrawn; no external candidate is under review")
+    m2 = copy.deepcopy(r)
+    m2["templates"]["manifest"]["sha256"] = hashlib.sha256(
+        evil_tpl2.encode()).hexdigest()
+    evil_man2 = CX.render_manifest(m2, evil_tpl2)
+    assert any("END at a line boundary" in p
+               for p in CX.manifest_problems(evil_man2, m2, evil_tpl2))
+
+
+def test_impl_review_round4_regression_wheelset_is_exact(tmp_path):
+    """C4-2, the reviewer's exact mutation: remove a locked wheel, stand in
+    a renamed duplicate of another locked wheel — count parity held and
+    every digest appeared 'somewhere in the lock', so the first bootstrap
+    ACCEPTED it. The verifier now binds each requirement to its own digest
+    set via wheel METADATA and requires exact set equality."""
+    import importlib.util
+    import zipfile
+    spec = importlib.util.spec_from_file_location(
+        "verify_wheelset",
+        ROOT / "specs" / "evidence" / "offline" / "verify_wheelset.py")
+    vw = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(vw)
+
+    def wheel(dirp, name, version, fname=None):
+        p = dirp / (fname or f"{name}-{version}-py3-none-any.whl")
+        with zipfile.ZipFile(p, "w") as z:
+            z.writestr(f"{name}-{version}.dist-info/METADATA",
+                       f"Name: {name}\nVersion: {version}\n")
+        return p
+
+    wa = wheel(tmp_path, "pkg-a", "1.0")
+    wb = wheel(tmp_path, "pkg-b", "2.0")
+    import hashlib as _h
+    lock = tmp_path / "req.lock"
+    lock.write_text(
+        f"pkg-a==1.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n"
+        f"pkg-b==2.0 --hash=sha256:{_h.sha256(wb.read_bytes()).hexdigest()}\n")
+    assert vw.verify(tmp_path, lock) == []          # the clean control
+
+    # THE MUTATION: pkg-b's wheel removed, a renamed copy of pkg-a's stands
+    # in — count parity holds, every digest is 'in the lock'
+    wb.unlink()
+    (tmp_path / "pkg-b-2.0-py3-none-any.whl").write_bytes(wa.read_bytes())
+    problems = vw.verify(tmp_path, lock)
+    assert any("duplicate" in p for p in problems), problems
+    assert any("NO wheel on disk" in p for p in problems), problems
+
+    # digest bound to the RIGHT requirement: pkg-b restored with pkg-a's
+    # hash listed under pkg-b refuses too
+    (tmp_path / "pkg-b-2.0-py3-none-any.whl").unlink()
+    wb2 = wheel(tmp_path, "pkg-b", "2.0")
+    lock.write_text(
+        f"pkg-a==1.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n"
+        f"pkg-b==2.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n")
+    assert any("permitted hashes" in p for p in vw.verify(tmp_path, lock))
 
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):

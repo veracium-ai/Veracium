@@ -65,26 +65,21 @@ else
   echo "  no ensurepip: hash-locked no-pip bootstrap"
   "$PY" -m venv --without-pip "$VENV"
   command -v "$PY" > "$VENV/.created-by"
+  # C4-2: EXACT set verification first — each requirement bound to ITS OWN
+  # digest set via wheel METADATA, no duplicates, no absences (the first
+  # form accepted a renamed duplicate of another locked wheel standing in
+  # for a removed one). Refusal happens BEFORE anything unpacks.
+  "$VENV/bin/python" "$HERE/verify_wheelset.py" "$HERE" \
+      "$HERE/requirements-test.lock"
   "$VENV/bin/python" - "$HERE" <<'PYB'
-import hashlib, pathlib, re, sys, sysconfig, zipfile
+import pathlib, sys, sysconfig, zipfile
 here = pathlib.Path(sys.argv[1])
-lock = (here / "requirements-test.lock").read_text()
-locked = set(re.findall(r"--hash=sha256:([0-9a-f]{64})", lock))
-n_reqs = len([l for l in lock.splitlines() if "==" in l])
 site = pathlib.Path(sysconfig.get_paths()["purelib"])
 wheels = sorted(here.glob("*.whl"))
-used = []
 for w in wheels:
-    d = hashlib.sha256(w.read_bytes()).hexdigest()
-    if d not in locked:
-        sys.exit(f"REFUSED: {w.name} does not match any lock hash")
     with zipfile.ZipFile(w) as z:
         z.extractall(site)
-    used.append(w.name)
-if len(used) < n_reqs:
-    sys.exit(f"REFUSED: {len(used)} wheels for {n_reqs} locked requirements "
-             f"— the pinned set is incomplete on disk")
-print(f"  unpacked {len(used)} hash-verified wheels into {site}")
+print(f"  unpacked {len(wheels)} exact-set-verified wheels into {site}")
 PYB
 fi
 

@@ -348,3 +348,22 @@ required-token omission/duplication checks hold. The no-`ensurepip`
 launcher bootstrap requested at rounds 1 and 3 is DELIVERED (hash-locked
 no-pip venv: `--without-pip`, every wheel sha256-verified against the lock,
 stdlib unzip — the refusal path is gone for qualified interpreters).
+
+## 12. Implementation review — round 4 (2026-08-23): C4-1 + C4-2 folded
+
+**C4-1 (blocking) — start-bound but not end-bound**: the canonical field
+with a same-line contradiction appended ("… — withdrawn; no external
+candidate is under review") passed. The reviewer found the missing
+regression BY ITS TAUTOLOGY — the test's end-bound assertion was
+neutralized with `or True`. **Folded:** the byte after the rendered field
+must be newline or EOF (`candidate_field_problems`, both carriers); the
+tautology is replaced by the reviewer's exact contradiction, exercised
+through the manifest in full-repack shape.
+
+**C4-2 (moderate) — the no-pip bootstrap verified membership, not the
+SET**: a locked wheel removed and a renamed duplicate of another locked
+wheel standing in passed (digest-in-lock + count parity). **Folded:**
+`verify_wheelset.py` — each requirement bound to ITS OWN digest set, wheel
+identity read from METADATA, exact bijection required (duplicates,
+absences, and wrong-requirement digests all refuse); the launcher runs it
+before anything unpacks; the reviewer's exact mutation is the regression.
