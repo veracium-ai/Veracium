@@ -22,5 +22,5 @@ Verification, from the extraction root (no network):
   python specs/verify_extracted.py reconcile
   python specs/package_identity.py
 
-Always-regenerated loose carriers (not diffed against the prior archive):
+Always-regenerated loose carriers, GENERATED from the sealer's own LOOSE set (not diffed against the prior archive):
 __LOOSE__
