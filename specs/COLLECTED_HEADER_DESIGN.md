@@ -410,3 +410,26 @@ verifies its sha256 against the COMMITTED sidecar; older-only,
 wrong-version and wrong-hash all refuse (tested). The committed
 specs/archives INDEX + sidecars serve as the hash-witnessed lineage index
 the round asked for; both ship in every git archive.
+
+## 15. Implementation review — round 7 (2026-08-23): C7-1 + C7-2 folded
+
+**C7-1 (blocking) — the hash-witnessed lineage was incomplete, and the
+wound was self-inflicted**: the v3/v4 sidecars of DISPATCHED packages had
+been deleted by the reseal workflow's own discard step, so C6-1's
+governed-domain history pointed at witnesses that did not exist — one
+false carrier claim replaced by another. **Folded:** the dispatched
+sidecars RESTORED from git history (their digests match the shas the
+round-3/4 verdicts quote); a generated LINEAGE table in the archives
+INDEX with EXACT PACKAGES↔sidecar correspondence, enforced by
+`lineage_problems` at every render, every suite `--check`, and every
+seal; discarded/superseded seals disclosed BY NAME
+(`DISCARDED_PRE_ROUND`); and the workflow rule inverted — dispatched
+sidecars are never deleted.
+
+**C7-2 (blocking) — two predecessor selectors could diverge**: the
+verification glob was looser than the diff's parser, so a witnessed
+malformed-name decoy could satisfy the gate while the diff consumed an
+unwitnessed canonical. **Folded:** ONE strict selector
+(`required_predecessor`, exact-grammar filename match), and the verified
+Path it returns is passed INTO `_changed_from_previous` — reselection
+prohibited.

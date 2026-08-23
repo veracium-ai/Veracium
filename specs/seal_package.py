@@ -212,7 +212,14 @@ def required_predecessor(line: str, round_no: int, outbox: pathlib.Path):
     if not lower:
         return None
     want = f"v{lower[-1]}"
-    cands = sorted(outbox.glob(f"{line}-{want}-*.tar.gz"))
+    # C7-2: STRICT name grammar — the loose glob admitted a malformed-name
+    # decoy (9999-v5-z.tar.gz) that the diff's own stricter parser then
+    # ignored, so the verified archive and the diff base could DIVERGE.
+    # One selector, one grammar, one returned Path consumed everywhere.
+    cands = sorted(
+        p_ for p_ in outbox.glob(f"{line}-{want}-*.tar.gz")
+        if re.fullmatch(rf"{re.escape(line)}-{re.escape(want)}"
+                        rf"-\d{{8}}T\d{{4}}Z\.tar\.gz", p_.name))
     if not cands:
         present = sorted({m.group(1) for p_ in outbox.glob(
             f"{line}-v*.tar.gz")
@@ -252,7 +259,8 @@ def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
 
 
 def _changed_from_previous(line: str, version: str,
-                           outbox: pathlib.Path) -> str:
+                           outbox: pathlib.Path,
+                           prior: pathlib.Path | None = None) -> str:
     """Member-level diff against the newest prior same-line archive found on
     the sealing host (outbox). Emits prior name+sha and added/removed/changed
     paths; the always-regenerated loose carriers (the LOOSE set below — one
@@ -261,7 +269,12 @@ def _changed_from_previous(line: str, version: str,
     import gzip as _gzip
     import hashlib as _hashlib
     import io as _io
-    prior = _select_prior_archive(line, version, outbox)
+    # C7-2: when the sealer verified a predecessor, THAT exact Path is the
+    # diff base — reselection here is prohibited (two selectors diverged:
+    # a witnessed decoy satisfied the gate while the diff consumed an
+    # unwitnessed canonical).
+    if prior is None:
+        prior = _select_prior_archive(line, version, outbox)
     if prior is None:
         return ("No prior archive of this line was present on the sealing "
                 "host — diff SKIPPED, named here rather than omitted.\n")
@@ -845,6 +858,10 @@ def main() -> int:
         pred = required_predecessor(_line, round_no, a.outbox)
         if pred is not None and isinstance(pred, str):
             _fail(pred)
+        # C7-1: the full governed lineage must be hash-witnessed before a
+        # new package may point its history at it
+        for lp in _pid.lineage_problems(ARCHIVES):
+            _fail(lp)
 
         name = f"{'-'.join(specs)}-{a.version}-{ts}"
         extra = {
@@ -856,7 +873,7 @@ def main() -> int:
             # against the previous same-line archive; a missing prior is a
             # NAMED skip, never silent.
             "CHANGED_FROM_PREVIOUS.txt": _changed_from_previous(
-                _line, a.version, a.outbox),
+                _line, a.version, a.outbox, prior=pred),
             # C-plus: the record and the two captures it derives from ship
             # beside the carriers they witness (§5.1.4).
             CR.RECORD_CARRIER: record_json,

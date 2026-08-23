@@ -280,3 +280,39 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 * Artifacts that moved:
   * `specs/evidence/0020/reference_scope.py` — accepted `2a6ab277a04cdb1c…` → now `e71c0237e32c55ce…`
   * `specs/evidence/0020/vectors.json` — accepted `9da681c9e6505a21…` → now `ace258d8c44e79d5…`
+
+## Lineage (generated: PACKAGES x committed sidecars — C7-1)
+
+| line | version | round | dispatched archive | sha256 |
+|---|---|---|---|---|
+| 0001 | v3 | 3 | `0001-v3-20260823T0028Z.tar.gz` | `668815f809a4831e…` |
+| 0001 | v4 | 4 | `0001-v4-20260823T0218Z.tar.gz` | `df0ed14c28f598bd…` |
+| 0001 | v5 | 5 | `0001-v5-20260823T0509Z.tar.gz` | `4809e0de91313a03…` |
+| 0001 | v6 | 6 | `0001-v6-20260823T1108Z.tar.gz` | `111ba84f49090ef5…` |
+| 0001 | v7 | 7 | `0001-v7-20260823T1233Z.tar.gz` | `1af498c0986c2af2…` |
+| 0001 | v8 | 8 | **0 sidecars — LINEAGE GAP** | — |
+| 0022-0023 | v17 | 17 | `0022-0023-v17-20260819T0252Z.tar.gz` | `1dc88d304c81e558…` |
+| 0022-0023 | v18 | 18 | `0022-0023-v18-20260819T1247Z.tar.gz` | `7fc80f5de08d05f2…` |
+| 0022-0023 | v19 | 19 | `0022-0023-v19-20260820T0032Z.tar.gz` | `67d823fe4a0ff5e3…` |
+| 0022-0023 | v20 | 20 | `0022-0023-v20-20260820T0140Z.tar.gz` | `f5a3da0df1d684a2…` |
+| 0022-0023 | v21 | 21 | `0022-0023-v21-20260820T1029Z.tar.gz` | `ec8cdb8f54c70650…` |
+| 0024-0025 | v1 | 1 | `0024-0025-v1-20260821T0452Z.tar.gz` | `16024eeba284ac24…` |
+| 0024-0025 | v2 | 2 | `0024-0025-v2-20260821T0630Z.tar.gz` | `09f48f999dcc677f…` |
+| 0024-0025 | v3 | 3 | `0024-0025-v3-20260821T1100Z.tar.gz` | `588c761e9ae885f6…` |
+| 0024-0025 | v4 | 4 | `0024-0025-v4-20260821T1308Z.tar.gz` | `c10b73410329a5a0…` |
+| 0024-0025 | v5 | 5 | `0024-0025-v5-20260821T1520Z.tar.gz` | `b557698bff92b452…` |
+| 0024-0025 | v6 | 6 | `0024-0025-v6-20260821T1724Z.tar.gz` | `ac0434d973c05983…` |
+| 0024-0025 | v7 | 7 | `0024-0025-v7-20260821T1816Z.tar.gz` | `5275d119831914ba…` |
+| 0024-0025 | v8 | 8 | `0024-0025-v8-20260821T1904Z.tar.gz` | `3f6ed6f00453d212…` |
+| 0024-0025 | v9 | 9 | `0024-0025-v9-20260821T2210Z.tar.gz` | `a3970517260624b6…` |
+| 0024-0025 | v10 | 10 | `0024-0025-v10-20260821T2249Z.tar.gz` | `1e0c5104b3a2421f…` |
+| 0024-0025 | v11 | 11 | `0024-0025-v11-20260821T2335Z.tar.gz` | `9e5fd437cd2bf53f…` |
+| 0024-0025 | v12 | 12 | `0024-0025-v12-20260822T0037Z.tar.gz` | `5a91e7363bd5c310…` |
+
+Superseded/discarded seals (disclosed, deliberately un-witnessed):
+
+- 0001-v3-20260822T2144Z (sealed, discarded unsent)
+- 0001-v3-20260822T2159Z (C-plus round-1 specimen; superseded)
+- 0001-v3-20260822T2236Z (C-plus round-2 specimen; superseded)
+- 0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)
+

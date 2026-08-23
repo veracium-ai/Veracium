@@ -1,9 +1,9 @@
 diff --git a/CANDIDATE_README.md b/CANDIDATE_README.md
 new file mode 100644
-index 0000000..181f38e
+index 0000000..e76bb28
 --- /dev/null
 +++ b/CANDIDATE_README.md
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,46 @@
 +# candidate/0001-v8 — the reviewer's executable branch (NEVER MERGED)
 +
 +Authorized by the project owner 2026-08-23 as review evidence for the
@@ -27,11 +27,22 @@ index 0000000..181f38e
 +- exact `StoreVersionError(reason="newer")` refusal; FORMAT_VERSION 9
 +- MCP/CLI author surfaces extended (self-demotion; `system` stays out)
 +
-+`tests/test_0001_candidate.py`: 13 passed.
++`tests/test_0001_candidate.py`: 19 passed (the round-7 fold: the §4b
++label order verbatim with the complete matrix, the exact five-shape
++migration tests from the authority's object records, the real
++`test_downgrade_export_fails_cleanly`, the four I6 composition vectors
++with exact-ID/order assertions).
 +
 +## The measured blast radius (NOT fixed here — deliberately)
 +
-+Full suite on this branch: 11 failed, 1796 passed. Every failure is a
++Full suite on this branch: 16 failed, 1797 passed. Five are NEW
++carriers of the round-7 §4b label fix — the three `test_render_origin`
++pins (NOTE: the verbatim decision order CHANGES the rendered label for
++existing user+3P/system+3P edges from "third-party-reported" to
++"third-party-derived" — a disclosed rendering behaviour change at
++implementation), the 0005 import-callsite manifest (this file's own new
++calls), and the historical R2-MARKER closure pinning the old label map.
++The original eleven stand. Every failure is a
 +CARRIER the spec's §2/§2d enumerates, now measured by execution rather
 +than asserted: the FORMAT-9 pin family (0006/0014/0019/S7), the MCP
 +author-message pins, the 0018 preflight matrix head, the generated
@@ -119,7 +130,7 @@ index b794757..0404228 100644
      rm.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
  
 diff --git a/src/veracium/graph.py b/src/veracium/graph.py
-index 970186a..7fc9be1 100644
+index 970186a..520ee2a 100644
 --- a/src/veracium/graph.py
 +++ b/src/veracium/graph.py
 @@ -534,14 +534,30 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
@@ -166,11 +177,21 @@ index 970186a..7fc9be1 100644
      rest = scored[head:]
      # first pass: highest-scoring candidate from each period not yet present
      for _, e in rest:
-@@ -636,11 +653,19 @@ _ORIGIN_LABELS: dict[EvidenceAuthor, str] = {
-     # claim is a third party's and the author is relaying it
-     EvidenceAuthor.USER: "third-party-reported",
-     EvidenceAuthor.SYSTEM: "third-party-reported",
-+    # specs/0001 I12 (candidate): bare assistant authorship
+@@ -630,17 +647,25 @@ def _outcome_note(e: Edge) -> str:
+ # mislabelling assistant content. `_ORIGIN_LABELS` has no entry for a new author
+ # class, and `tests/test_render_origin.py` fails loudly if one appears without
+ # one. That converts a note in a deferred spec into a tripwire.
++# specs/0001 I12 (candidate, R7-1): the §4b DECISION ORDER verbatim — the
++# capping axis first, no author class inheriting another's label. The
++# round-7 review executed the divergence: the first patch returned
++# "third-party-reported" for the derived case the spec spells
++# "third-party-derived", and kept USER/SYSTEM inheriting a label.
+ _ORIGIN_LABELS: dict[EvidenceAuthor, str] = {
+     EvidenceAuthor.THIRD_PARTY: "third-party-reported",
+-    # USER/SYSTEM only reach use_only via derived_from=THIRD_PARTY, i.e. the
+-    # claim is a third party's and the author is relaying it
+-    EvidenceAuthor.USER: "third-party-reported",
+-    EvidenceAuthor.SYSTEM: "third-party-reported",
 +    EvidenceAuthor.ASSISTANT: "assistant-generated",
  }
  
@@ -183,7 +204,7 @@ index 970186a..7fc9be1 100644
 +    capping axis first. assistant+derived_from=THIRD_PARTY is a third
 +    party's claim relayed by the assistant, and must say so."""
 +    if e.provenance.derived_from == EvidenceAuthor.THIRD_PARTY:
-+        return "third-party-reported"
++        return "third-party-derived"
      label = _ORIGIN_LABELS.get(e.provenance.author_of_evidence)
      if label is None:
          # Fail SAFE, not confidently: an unlabelled author class must not
@@ -4493,10 +4514,10 @@ index 29256e5..2034358 100644
  v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed
 diff --git a/tests/test_0001_candidate.py b/tests/test_0001_candidate.py
 new file mode 100644
-index 0000000..a590da8
+index 0000000..e78ee5d
 --- /dev/null
 +++ b/tests/test_0001_candidate.py
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,375 @@
 +"""specs/0001 CANDIDATE branch — the reviewer's named trio, executable with
 +REAL `ASSISTANT` records (no stand-ins). This file exists ONLY on the
 +`candidate/0001-v8` branch / patch; the spec is not accepted and nothing
@@ -4610,15 +4631,26 @@ index 0000000..a590da8
 +
 +# ---- I12: pair-keyed origin labels -----------------------------------------
 +
-+def test_i12_pair_keyed_labels():
++def test_i12_the_complete_label_matrix():
++    """R7-1: the §4b decision order verbatim, over the COMPLETE
++    author x derived-from product — no author class inherits another's
++    label, and the fail-safe holds for every unlabellable cell."""
 +    from veracium.graph import _origin_label
-+    bare = _assistant_edge("x")
-+    relay = _edge("y", author=EvidenceAuthor.ASSISTANT,
-+                  derived=EvidenceAuthor.THIRD_PARTY,
-+                  disclosure=Disclosure.USE_ONLY)
-+    assert _origin_label(bare) == "assistant-generated"
-+    assert _origin_label(relay) == "third-party-reported", (
-+        "the capping axis keys first — Q5's ruling")
++    A = EvidenceAuthor
++    for author in A:
++        for derived in [None, *A]:
++            e = _edge("x", author=author, derived=derived,
++                      disclosure=Disclosure.USE_ONLY)
++            got = _origin_label(e)
++            if derived == A.THIRD_PARTY:
++                want = "third-party-derived"
++            elif author == A.THIRD_PARTY:
++                want = "third-party-reported"
++            elif author == A.ASSISTANT:
++                want = "assistant-generated"
++            else:
++                want = "unverified-origin"
++            assert got == want, (author, derived, got)
 +
 +
 +# ---- I6: the exact fixture, BOTH shares ------------------------------------
@@ -4647,75 +4679,86 @@ index 0000000..a590da8
 +    assert sv.SCHEMA_VERSION == 11
 +
 +
-+def _v10_store(path, route):
-+    """Construct a v10-form store by ROUTE, yielding distinct accepted
-+    manifestations (the migrated shapes materialise via the real
-+    migrations)."""
++def _accepted_v10_records():
++    """The EXACT five accepted v10 manifestations, from the executable
++    authority's own records (objects included) — never a route proxy
++    (R7-2)."""
++    rec = sv.version_records()["10"]["accepted"]
++    assert all("objects" in a for a in rec)
++    return rec
++
++
++def _store_from_objects(path, objects, version):
 +    conn = sqlite3.connect(path)
-+    if route == "constructor-v10":
-+        for o in sv.SCHEMA_V10:
-+            conn.execute(o.ddl)
-+        conn.execute("PRAGMA user_version = 10")
-+    elif route == "v6-base":
-+        for o in sv.SCHEMA_V6:
-+            conn.execute(o.ddl)
-+        conn.execute("PRAGMA user_version = 6")
-+    elif route == "v9-base":
-+        for o in sv.SCHEMA_V9:
-+            conn.execute(o.ddl)
-+        conn.execute("PRAGMA user_version = 9")
++    # tables before the indexes/triggers that reference them
++    for _name, obj in sorted(objects.items(),
++                             key=lambda kv: (0 if kv[0].startswith("table")
++                                             else 1, kv[0])):
++        conn.execute(obj["sql"] if isinstance(obj, dict) else obj.sql)
++    conn.execute(f"PRAGMA user_version = {version}")
 +    conn.commit()
 +    conn.close()
 +
 +
-+@pytest.mark.parametrize("route", ["constructor-v10", "v6-base", "v9-base"])
-+def test_i13b_migration_to_v11_is_stamp_only_past_v10(route, tmp_path):
-+    """Whatever route reaches v10 form, the v10->v11 EDGE is stamp-only:
-+    the schema dump is byte-identical across that edge and the store lands
-+    accepted at 11."""
-+    db = str(tmp_path / f"{route}.db")
-+    _v10_store(db, route)
++@pytest.mark.parametrize("idx", range(5))
++def test_i13b_stamp_only_across_every_accepted_v10_shape(idx, tmp_path):
++    """R7-2: the FIVE-manifestation matrix, exact — each accepted v10
++    shape is constructed FROM the authority's own object record, dumped
++    AT v10, migrated, and the v10-vs-v11 dumps compared (not v11-vs-v11);
++    the landing digest must be v11-accepted."""
++    recs = _accepted_v10_records()
++    assert idx < len(recs)
++    objects = recs[idx]["objects"]
++    db = str(tmp_path / f"shape{idx}.db")
++    _store_from_objects(db, objects, 10)
++    conn = sqlite3.connect(db)
++    dump_v10 = sorted(r[0] or "" for r in conn.execute(
++        "SELECT sql FROM sqlite_master").fetchall())
++    conn.close()
 +    migrate_store(db)
 +    conn = sqlite3.connect(db)
 +    assert conn.execute("PRAGMA user_version").fetchone()[0] == 11
-+    dump = sorted(r[0] or "" for r in conn.execute(
++    dump_v11 = sorted(r[0] or "" for r in conn.execute(
 +        "SELECT sql FROM sqlite_master").fetchall())
 +    conn.close()
-+    # the same route stopped at 10 (simulated by re-running the pre-11
-+    # construction) must dump identically: the 10->11 edge added nothing
-+    db10 = str(tmp_path / f"{route}-at10.db")
-+    _v10_store(db10, route)
-+    if route != "constructor-v10":
-+        # drive the legacy base up THROUGH v10 by the real migration, then
-+        # compare shapes — migrate_store now lands at 11 with the same SQL
-+        migrate_store(db10)
-+    c2 = sqlite3.connect(db10)
-+    dump10 = sorted(r[0] or "" for r in c2.execute(
-+        "SELECT sql FROM sqlite_master").fetchall())
-+    c2.close()
-+    assert dump == dump10, f"{route}: the v10->v11 edge changed SQL shape"
-+    # and the result is ACCEPTED at 11
-+    s = SqliteStore(db)
++    assert dump_v11 == dump_v10, (
++        f"shape {idx} ({recs[idx]['provenance'][:40]}…): the v10->v11 "
++        f"edge changed SQL — the stamp-only promise broke")
++    s = SqliteStore(db)      # opens accepted at 11
 +    s.close()
 +
 +
-+def test_i13c_v11_inherits_every_v10_manifestation():
-+    v10 = sv.accepted_digests(10)
++def test_i13c_v11_inherits_by_digest_not_count():
++    """R7-2: inheritance asserted at DIGEST level — five unrelated v11
++    records must NOT pass. The count is derived, never typed; and the
++    five inherited shapes INCLUDE the constructor (five total, not
++    five-plus-one)."""
++    recs = _accepted_v10_records()
++    inherited = {sv._digest_of_identity(r["objects"], 11) for r in recs}
 +    v11 = sv.accepted_digests(11)
-+    # DERIVED, never typed: the v11 set is exactly as large as v10's —
-+    # the same five-shape construction digested at 11
-+    assert len(v10) == 5, "the v10 domain moved; re-derive this test"
-+    assert len(v11) == len(v10), (
-+        "v11 must inherit EVERY accepted v10 manifestation")
++    assert inherited == v11, (
++        "accepted_digests(11) must be EXACTLY the v10 shapes re-digested "
++        "at 11")
++    assert len(v11) == len(sv.accepted_digests(10))
 +
 +
-+def test_i13_old_reader_refuses_exactly(tmp_path):
-+    db = str(tmp_path / "future.db")
++def test_i13_pre_assistant_reader_refuses_a_v11_store(tmp_path,
++                                                      monkeypatch):
++    """R7-2: the REAL boundary — a reader whose head is 10 (pre-ASSISTANT)
++    opening a v11 store that CONTAINS assistant data refuses at open with
++    exactly reason='newer', before any edge validates."""
++    import veracium.store.sqlite as sq
++    db = str(tmp_path / "v11.db")
 +    s = SqliteStore(db)
-+    s.add_edge(_edge("x", author=EvidenceAuthor.USER))
-+    s._conn.execute(f"PRAGMA user_version = {sv.SCHEMA_VERSION + 1}")
-+    s._conn.commit()
++    s.add_edge(_assistant_edge("model claim"))
 +    s.close()
++    monkeypatch.setattr(sv, "SCHEMA_VERSION", 10)
++    monkeypatch.setattr(sq, "SCHEMA_VERSION", 10, raising=False)
++    # the simulated old reader carries a VALID runtime record for ITS OWN
++    # head (a real pre-ASSISTANT tree does); only the version boundary is
++    # under test here — the reviewer's two-tree probe measured the same
++    # refusal with no simulation at all
++    monkeypatch.setattr(sv, "runtime_supported", lambda: True)
 +    with pytest.raises(sv.StoreVersionError) as ei:
 +        SqliteStore(db)
 +    assert ei.value.reason == "newer"
@@ -4723,6 +4766,130 @@ index 0000000..a590da8
 +
 +# ---- I7: the export era ----------------------------------------------------
 +
-+def test_i7_format_version_is_9_and_assistant_round_trips(tmp_path):
-+    from veracium.portability import FORMAT_VERSION
-+    assert FORMAT_VERSION == 9
++def test_downgrade_export_fails_cleanly(tmp_path, monkeypatch):
++    """R7-3: the spec-named test, REAL — an export carrying an assistant
++    record round-trips at 9, and an OLDER importer (head 8) refuses with
++    our message, never a pydantic traceback."""
++    import veracium.portability as port
++    assert port.FORMAT_VERSION == 9
++    s = SqliteStore(str(tmp_path / "a.db"))
++    e = _assistant_edge("model claim")
++    s.add_edge(e)
++    out = tmp_path / "export.jsonl"
++    port.export_memory(s, U, out)
++    # same-era round trip: the DEFAULT import applies the ratified 0005
++    # cap (§2d.2) — the assistant record arrives THIRD_PARTY, authority
++    # 1 -> 0, conservative; restore=True is the faithful mode
++    s2 = SqliteStore(str(tmp_path / "b.db"))
++    port.import_memory(s2, out)
++    assert any(x.provenance.author_of_evidence == EvidenceAuthor.THIRD_PARTY
++               for x in s2.edges(U, active_only=False)), (
++        "the 0005 cap must flatten the imported author (ratified, §2d.2)")
++    s2.close()
++    s2r = SqliteStore(str(tmp_path / "br.db"))
++    port.import_memory(s2r, out, restore=True)
++    assert any(x.provenance.author_of_evidence == EvidenceAuthor.ASSISTANT
++               for x in s2r.edges(U, active_only=False)), (
++        "restore=True must carry ASSISTANT faithfully")
++    s2r.close()
++    # the OLD importer refuses cleanly
++    monkeypatch.setattr(port, "FORMAT_VERSION", 8)
++    s3 = SqliteStore(str(tmp_path / "c.db"))
++    with pytest.raises(ValueError, match="newer"):
++        port.import_memory(s3, out)
++    s3.close()
++    s.close()
++
++
++# ---- I6 composition (R7-4): the four named branches, exact IDs -------------
++
++def _mk(s, obj, *, assertable, day, rank_boost=0):
++    """A controlled-rank edge: `obj` carries the query token; rank_boost
++    adds extra matching tokens; `day` fixes valid_from's date."""
++    author = EvidenceAuthor.USER if assertable else EvidenceAuthor.THIRD_PARTY
++    disc = None if assertable else Disclosure.USE_ONLY
++    e = _edge(f"topic {'topic ' * rank_boost}{obj}", author=author,
++              disclosure=disc, days_ago=day)
++    s.add_edge(e)
++    return e
++
++
++def _pick(s, share, max_edges=8):
++    return [e.id for e in subgraph_for_query(
++        s, U, "topic", max_edges=max_edges, coverage_share=share,
++        relations=DEFAULT_RELATIONS)]
++
++
++def test_i6_composition_reserved_day_overlap():
++    """(a) reserved records share their day with the top-ranked rest:
++    the seeded covered-day state makes the coverage tail spend on OTHER
++    days — asserted by exact selection."""
++    s = SqliteStore(":memory:")
++    a1 = _mk(s, "a1", assertable=True, day=10, rank_boost=5)
++    a2 = _mk(s, "a2", assertable=True, day=10, rank_boost=5)
++    highs = [_mk(s, f"h{i}", assertable=False, day=10, rank_boost=3)
++             for i in range(6)]
++    d_other = [_mk(s, f"d{i}", assertable=False, day=20 + i, rank_boost=0)
++               for i in range(3)]
++    picked = _pick(s, share=0.25)
++    assert len(picked) == 8
++    assert a1.id in picked and a2.id in picked          # the reserve
++    # the coverage tail must include at least one non-day-10 record even
++    # though every day-10 candidate outranks them — day 10 was SEEDED
++    assert any(d.id in picked for d in d_other), (
++        "reserved-day overlap must push coverage to unseen days")
++
++
++def test_i6_composition_distinct_reserved_days():
++    """(b) reserved records on DISTINCT days both seed coverage; the tail
++    then only spends on genuinely new days."""
++    s = SqliteStore(":memory:")
++    a1 = _mk(s, "a1", assertable=True, day=10, rank_boost=5)
++    a2 = _mk(s, "a2", assertable=True, day=11, rank_boost=5)
++    highs = [_mk(s, f"h{i}", assertable=False, day=10, rank_boost=3)
++             for i in range(5)]
++    same_day_low = _mk(s, "sd", assertable=False, day=11, rank_boost=0)
++    new_day_low = _mk(s, "nd", assertable=False, day=30, rank_boost=0)
++    picked = _pick(s, share=0.25)
++    assert a1.id in picked and a2.id in picked
++    # the single coverage slot must prefer the NEW day over the seeded one
++    assert new_day_low.id in picked
++    assert same_day_low.id not in picked, (
++        "a seeded day must not be re-covered ahead of an unseen day")
++
++
++def test_i6_composition_dedup_across_reserve_and_coverage():
++    """(c) strictly-redundant duplicates collapse BEFORE the reserve, so
++    neither the reserve nor coverage can select a suppressed twin."""
++    s = SqliteStore(":memory:")
++    a1 = _mk(s, "a1", assertable=True, day=10, rank_boost=5)
++    twin_a = _edge("topic twin", author=EvidenceAuthor.THIRD_PARTY,
++                   disclosure=Disclosure.USE_ONLY, days_ago=15)
++    twin_b = _edge("topic twin", author=EvidenceAuthor.THIRD_PARTY,
++                   disclosure=Disclosure.USE_ONLY, days_ago=15)
++    s.add_edge(twin_a)
++    s.add_edge(twin_b)
++    for i in range(8):
++        _mk(s, f"f{i}", assertable=False, day=40 + i)
++    picked = _pick(s, share=0.25)
++    assert not ({twin_a.id, twin_b.id} <= set(picked)), (
++        "both twins selected — collapse must run before the reserve")
++
++
++def test_i6_composition_underfill_backfills_by_rank_deterministically():
++    """(d) when every remaining candidate shares the seeded day, coverage
++    UNDERFILLS and the tail backfills BY RANK — asserted on the exact
++    ordered selection, twice (determinism)."""
++    s = SqliteStore(":memory:")
++    a1 = _mk(s, "a1", assertable=True, day=10, rank_boost=5)
++    a2 = _mk(s, "a2", assertable=True, day=10, rank_boost=5)
++    rest = [_mk(s, f"r{i}", assertable=False, day=10, rank_boost=6 - i)
++            for i in range(7)]
++    picked1 = _pick(s, share=0.25)
++    picked2 = _pick(s, share=0.25)
++    assert picked1 == picked2, "backfill must be deterministic"
++    assert len(picked1) == 8
++    # exact expectation: both reserved + the six top-ranked rest, in rank
++    # order — the coverage tail found no new day and backfilled by rank
++    rest_ids = [r.id for r in rest[:6]]
++    assert set(picked1) == {a1.id, a2.id, *rest_ids}

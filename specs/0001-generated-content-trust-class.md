@@ -5,7 +5,7 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v8)** — the round-6 fold, 2026-08-23 (see §18; earlier notes stand as history).
+> **draft (v9)** — the round-7 fold, 2026-08-23 (see §19; earlier notes stand as history).
 >
 > v5 — Round 3 (the line's first
 > SEALED round) returned SIX blocking findings, every one an executed
@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v8** — the round-6 fold (§18). Earlier folds: §17 (round 5), §16, §15, §14, §13. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; **v8 is the round-7 external candidate.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
+| **Version** | **v9** — the round-7 fold (§19). Earlier folds: §18 (round 6), §17, §16, §15, §14, §13. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; **v9 is the round-8 external candidate.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -60,6 +60,19 @@ cost of each: benchmark Arm T, which treats assistant turns as system-authored,
 scored **7/8 on abstention where Arm C scored 8/8** (LongMemEval pilot, run
 `20260730T174434`), and Arm C's capping produces **4 of 9 answer-misses**,
 including `184da446`.
+
+**Field demand, reported (2026-08-23):** Research's competitive scan of
+Mem0's "State of AI Agent Memory 2026" report (triaged in
+`veracium-research/scans/KNOWN_IDS.md` + the MEM0_DOSSIER; paraphrased
+here from the scan record, not quoted — the verbatim sentence was not
+re-verifiable at fold time) reads the category leader naming actor-aware
+memory — separating user-stated facts from agent-generated inferences —
+as a first-class need, with Sentra's founder essay putting provenance in
+episodic grounding the same week. Neither ships an enforcement mechanism:
+Mem0's is a retrieval-time filter (represent-not-enforce, in this repo's
+terms). The class is therefore field-named; **this spec's contribution is
+the mechanism difference — enforce at ASSERTION with the `use_only`
+floor, not filter at retrieval.**
 
 **If we do nothing:** every host embedding veracium in an assistant loop — which
 is the primary deployment — makes this choice itself, silently, with no
@@ -503,7 +516,7 @@ fixture ever caught it because small stores never truncate.*
 | **I13** *(v5, R3-2)* the on-disk guard is ACTIVATED: a reader predating `ASSISTANT` refuses a v11 store AT OPEN with exactly `StoreVersionError(reason="newer")` — never a `ValidationError` mid-read | `test_old_reader_refuses_v11_at_open` (asserts type AND reason, before any edge loads) | CI |
 | **I13a** *(v7, R5-4)* `SCHEMA_V11 == SCHEMA_V10` — the bump is semantic, byte-identical schema (the 0019 `SCHEMA_V7 = SCHEMA_V6` precedent, asserted not cited) | `test_schema_v11_is_byte_identical_to_v10` (object-list equality) | CI |
 | **I13b** *(v8, R6-1)* the v10→v11 migration is STAMP-ONLY across **EVERY accepted v10 manifestation** — the executable schema authority accepts FIVE (constructor · constructor→v10 ledger-inline · constructor→v10 ledger-alter · v6→v10 ledger-inline · v6→v10 ledger-alter), and a no-DDL stamp must preserve each: schema dump byte-identical before/after, `user_version` 11 | `test_v10_to_v11_migration_is_stamp_only` **parameterized over all five shapes** | CI |
-| **I13c** *(v8, R6-1)* v11 acceptance is **EXACT INHERITANCE**: `accepted_digests(11)` carries a v11 record for EVERY accepted v10 manifestation (all five) plus the v11 constructor, each with v11 provenance/digests, regenerated per the 0007/0013 convention — 'both routes' undercounted a five-shape domain | `test_v11_accepted_manifest_inherits_every_v10_shape` (parameterized; the count is derived from `accepted_digests(10)`, not typed) | CI |
+| **I13c** *(v9, R7 correction)* v11 acceptance is **EXACT INHERITANCE**: `accepted_digests(11)` is precisely the accepted v10 manifestations re-digested at 11 — **five total; the five INCLUDE the constructor** (v8's 'plus the v11 constructor' double-counted it), each with v11 provenance, regenerated per the 0007/0013 convention | `test_i13c_v11_inherits_by_digest_not_count` (digest-level set equality, count derived — a count-only check would pass five unrelated records, R7-2) | CI |
 | **I13d** *(v8, R6-2)* the 0018 orchestrator FOLLOWS the bump **including its stale attestation internals**: `migration_digest` currently derives from `ALTERS_V7_TO_V8` and the ladder diagnostics hard-code bases v5/v6 with migrate-to-v6/v7 instructions (at head 10, base 8 is diagnosed as resolving to v6 — measured by the reviewer). Updating `_HEAD`/`_MINT_BASE`/the window alone does NOT fix those carriers: the implementation moves to an **edge-indexed migration-step registry** (the v10→v11 digest derives from its actual EMPTY step set) and diagnostics GENERATE from the real release ladder | `test_release_migration_derives_from_the_bumped_head` + `test_ladder_diagnostics_generate_from_the_registry` (bases 1–10 exercised, all public authority fields asserted) | CI |
 | **I3** an assistant edge can never supersede, absorb, or reinforce a user edge | `test_assistant_cannot_touch_user_edge` (all three ops, both directions) | CI |
 | **I4** `derived_from=THIRD_PARTY` still caps an assistant edge to `use_only` | `test_assistant_derived_from_third_party_is_capped` | CI |
@@ -1055,3 +1068,47 @@ offered one.*
    domain, the audit manifest) — the implementation obligations
    acceptance authorises, now measured rather than asserted, and
    deliberately NOT fixed on an evidence branch.
+
+---
+
+## 19. Changes in v9 (the round-7 fold, 2026-08-23)
+
+*Round 7 found no new trust-model architectural defect — every finding was
+executable-evidence quality, mostly in the candidate patch the round
+itself asked for, which the reviewer credits with exposing them.*
+
+1. **R7-1 — the patch implemented the wrong I12 label**: the derived case
+   returned "third-party-reported" where §4b spells "third-party-derived",
+   and USER/SYSTEM inherited a label. The patch now implements the §4b
+   decision order VERBATIM (derived→derived-label first, then bare-3P,
+   then bare-assistant, else the fail-safe) and tests the complete
+   author × derived-from matrix.
+2. **R7-2 — the five-manifestation matrix, exact**: the patch's tests now
+   construct each accepted v10 shape FROM the authority's own object
+   records (never route proxies), compare v10-vs-v11 dumps (not
+   v11-vs-v11), assert I13c at DIGEST level with derived counts, and test
+   a head-10 reader (runtime-qualified, version-boundary isolated) against
+   a v11 store containing real assistant data.
+3. **R7-3 — `test_downgrade_export_fails_cleanly` exists and is real**:
+   an assistant record round-trips at FORMAT 9 (the default import
+   applying the ratified 0005 cap, restore=True faithful — both asserted),
+   and a head-8 importer refuses with our message.
+4. **R7-4 — the four I6 composition branches are executed**: reserved-day
+   overlap, distinct reserved days, dedup-before-reserve, and
+   underfill-with-deterministic-rank-backfill, each with exact-ID (and for
+   backfill, exact-order twice-run) assertions. All four passed against
+   the reserve implementation unchanged — the composition semantics match
+   R6-4's definition as written.
+5. **I13c's count corrected**: five total, the constructor included (v8
+   double-counted it).
+6. **§1 gains the field-demand paragraph** (Research's competitive-scan
+   input, attributed as reported-by-scan — the verbatim quote was not
+   re-verifiable at fold time and is therefore paraphrased, per the
+   verify-before-citing rule).
+7. **Package machinery this round (C7-1/C7-2, recorded in the design
+   note §15)**: the deleted dispatched sidecars RESTORED from git history
+   (my own reseal workflow had destroyed the witnesses the history field
+   pointed at), the generated LINEAGE table with exact
+   PACKAGES↔INDEX↔sidecar correspondence enforced at render and seal,
+   discarded seals disclosed by name, and ONE strict predecessor selector
+   whose verified Path is the diff's only input.

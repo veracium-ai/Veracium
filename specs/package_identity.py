@@ -65,6 +65,7 @@ PACKAGES = {
         "v5": (5, {"0001": "v6"}),
         "v6": (6, {"0001": "v7"}),
         "v7": (7, {"0001": "v8"}),
+        "v8": (8, {"0001": "v9"}),
     },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
@@ -81,6 +82,68 @@ PACKAGES = {
         "v12": (12, {"0024": "v7", "0025": "v13"}),
     },
 }
+
+# C7-1: superseded/discarded seals, DISCLOSED — a governed row's canonical
+# archive is the one its round's verdict quotes, witnessed by the ONE
+# committed sidecar; earlier seals of the same version are named here so
+# their absence from the sidecar set is a disclosure, never a gap.
+DISCARDED_PRE_ROUND = (
+    "0001-v3-20260822T2144Z (sealed, discarded unsent)",
+    "0001-v3-20260822T2159Z (C-plus round-1 specimen; superseded)",
+    "0001-v3-20260822T2236Z (C-plus round-2 specimen; superseded)",
+    "0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)",
+)
+
+
+def lineage_problems(archives_dir) -> list:
+    """C7-1: EXACT correspondence between the governed domain and the
+    hash witnesses — every PACKAGES row must have exactly ONE committed
+    sidecar. The history field points here; a pointer at witnesses that
+    do not exist is a false carrier claim (the round-7 finding: v3/v4
+    sidecars of DISPATCHED packages had been deleted during reseal
+    cycles). A lost package must be disclosed in DISCARDED_PRE_ROUND or
+    a LOST entry, never silently absent."""
+    import pathlib as _pl
+    problems = []
+    d = _pl.Path(archives_dir)
+    for line, versions in PACKAGES.items():
+        ordered = sorted(versions, key=lambda x: int(x[1:]))
+        for v in ordered:
+            n = len(list(d.glob(f"{line}-{v}-*.tar.gz.sha256")))
+            if n == 0 and v == ordered[-1]:
+                continue    # the FRONTIER row: declared for the seal in
+                            # flight; its sidecar lands with that seal
+            if n != 1:
+                problems.append(
+                    f"governed row {line}-{v} has {n} committed sidecars, "
+                    f"expected exactly one — the lineage the history field "
+                    f"points at is incomplete (C7-1)")
+    return problems
+
+
+def render_lineage(archives_dir) -> str:
+    """The machine-checkable LINEAGE table for INDEX.md — generated from
+    PACKAGES x the committed sidecars, discarded seals disclosed."""
+    import pathlib as _pl
+    d = _pl.Path(archives_dir)
+    rows = ["## Lineage (generated: PACKAGES x committed sidecars — C7-1)",
+            "", "| line | version | round | dispatched archive | sha256 |",
+            "|---|---|---|---|---|"]
+    for line in sorted(PACKAGES):
+        for v in sorted(PACKAGES[line], key=lambda x: int(x[1:])):
+            side = sorted(d.glob(f"{line}-{v}-*.tar.gz.sha256"))
+            if len(side) == 1:
+                sha, name = side[0].read_text().split()
+                rows.append(f"| {line} | {v} | {PACKAGES[line][v][0]} | "
+                            f"`{name}` | `{sha[:16]}…` |")
+            else:
+                rows.append(f"| {line} | {v} | {PACKAGES[line][v][0]} | "
+                            f"**{len(side)} sidecars — LINEAGE GAP** | — |")
+    rows += ["", "Superseded/discarded seals (disclosed, deliberately "
+             "un-witnessed):", ""]
+    rows += [f"- {x}" for x in DISCARDED_PRE_ROUND]
+    return "\n".join(rows) + "\n"
+
 
 # per-line: the version each line's mechanism first governed
 FIRST_GOVERNED = {"0022-0023": 17, "0024-0025": 1, "0001": 3}
