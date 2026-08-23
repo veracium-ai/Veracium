@@ -1,4 +1,5 @@
-"""specs/0001 v5 — the candidate-behavior harness (round-3 standing ask).
+"""specs/0001 v7 candidate harness (round-3 standing ask; version kept
+current per R5-5 — this line is a version carrier).
 
 Runnable, self-contained, offline. Each vector MEASURES the shipped
 behaviour the v5 contracts are written against, and states beside it the
@@ -94,9 +95,25 @@ def vector_affirmation_makes_the_fact_assertable():
     from veracium.graph import collapse_for_render
     surfaced, _info = collapse_for_render(list(by_id.values()))
     assert len(surfaced) == 2, "cross-class records must NOT collapse"
-    assert {e.provenance.disclosure for e in surfaced} == {
-        Disclosure.MENTIONABLE, Disclosure.USE_ONLY}, (
-        "each record renders in its own partition (R4-2)")
+    # R5-3: the REAL surface — collapse alone neither partitions nor
+    # renders. gate.partition_parts is what recall's renderer consumes:
+    # the user record must appear ONLY in the grounded edge lines, the
+    # assistant-class record ONLY in the unverified block, origin marker
+    # present, no cross-partition leakage.
+    from veracium.gate import partition_parts
+    edge_lines, ep_lines, claim_lines, tp_ep_lines = partition_parts(
+        surfaced, [])
+    grounded = "\n".join(edge_lines)
+    unverified = "\n".join(claim_lines)
+    assert "carpenter" in grounded, "the affirmed user fact must ground"
+    assert "carpenter" in unverified, (
+        "the assistant-class record must surface in the unverified block")
+    assert "third-party-reported" in unverified, (
+        "the origin marker must be present on the unverified record")
+    assert "third-party-reported" not in grounded, (
+        "no origin marker may leak into the grounded block")
+    assert not any(l in edge_lines for l in claim_lines), (
+        "no line may appear in both partitions")
     # shape 2: different value — the ladder retires the prior
     s2 = SqliteStore(":memory:")
     prior2 = _use_only_edge("carpenter")
@@ -177,7 +194,11 @@ def vector_the_1000_edge_selection_today():
     for i in range(1000):
         s.add_edge(_use_only_edge(f"assistant fact {i}",
                                   rel="works_as", days_ago=1))
+    # R5-2: coverage_share is pinned to the SHIPPED MemoryConfig default
+    # (0.0) — the function default of 0.25 masked the reviewer's measured
+    # failure in the earlier form of this vector.
     picked = subgraph_for_query(s, U, "works fact", max_edges=40,
+                                coverage_share=0.0,
                                 relations=DEFAULT_RELATIONS)
     ids = {e.id for e in picked}
     assert len(ids) <= 40
@@ -191,7 +212,7 @@ def main() -> int:
     for v in vectors:
         v()
         print(f"ok  {v.__name__}")
-    print(f"{len(vectors)} vectors — the shipped contracts the v5 text is "
+    print(f"{len(vectors)} vectors — the shipped contracts the CURRENT candidate is "
           f"written against; candidate deltas stated per vector")
     return 0
 

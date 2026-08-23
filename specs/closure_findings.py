@@ -25,6 +25,42 @@ description, which is the defect this field exists to prevent:
 
 # (spec, round_kind, round_no, finding, summary, closed_in, evidence)
 CLOSURES = [
+    # ---- 0001 external round 5 (2026-08-23) — the round-5 fold, v7 --------
+    ("0001", "external", 5, "0001-R5-1",
+     "three confirm() carriers survived two claimed-complete sweeps — the "
+     "scripted replacements silently no-opped on wrapped text",
+     "all three replaced; folds refuse needle misses; zero survivors "
+     "grep-verified",
+     "! grep -n 'Only through .confirm()' "
+     "specs/0001-generated-content-trust-class.md && "
+     "! grep -n 'confirm()..-class' "
+     "specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 5, "0001-R5-2",
+     "I6's post-_cover reserve was impossible — truncation precedes it; "
+     "assertable_selected 0 measured at the shipped coverage_share=0.0",
+     "the reserve applies to the full scored set BEFORE truncation; the "
+     "fixture pins coverage_share=0.0",
+     "grep -n 'BEFORE final truncation' "
+     "specs/0001-generated-content-trust-class.md && "
+     "grep -n 'coverage_share=0.0' specs/evidence/0001/candidate_harness.py"),
+    ("0001", "external", 5, "0001-R5-3",
+     "I5 tested collapse_for_render, which neither partitions nor renders",
+     "the harness drives gate.partition_parts and asserts grounded-only / "
+     "unverified-only / origin marker / no leakage",
+     "$PY specs/evidence/0001/candidate_harness.py  "
+     "# vector_affirmation_makes_the_fact_assertable, the partition block"),
+    ("0001", "external", 5, "0001-R5-4",
+     "the v10->v11 contract was prose-only in the new-reader direction",
+     "I13a-d name the executable checks",
+     "grep -c 'I13[abcd]' specs/0001-generated-content-trust-class.md"),
+    ("0001", "external", 5, "0001-R5-5",
+     "current-version carriers disagreed: Status row, the §9 label, the "
+     "harness self-id",
+     "swept; version carriers join the pre-send sweep",
+     "grep -n 'v7 is the round-6 external candidate' "
+     "specs/0001-generated-content-trust-class.md && "
+     "grep -n 'v7 candidate harness' specs/evidence/0001/candidate_harness.py"),
+
     # ---- 0001 external round 4 (2026-08-23) — the round-4 fold, v6 --------
     ("0001", "external", 4, "0001-R4-1",
      "the confirm() correction was unswept across five more normative "

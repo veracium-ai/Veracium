@@ -5,7 +5,7 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
-> **draft (v6)** — the round-4 fold, 2026-08-23 (see §16; the v5 note below stands as history).
+> **draft (v7)** — the round-5 fold, 2026-08-23 (see §17; earlier notes stand as history).
 >
 > v5 — Round 3 (the line's first
 > SEALED round) returned SIX blocking findings, every one an executed
@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v6** — the round-4 fold (§16): the confirm() sweep completed across five more carriers, the render honesty (separate partitions), I6 scoped against shipped 0020, the migration contract completed. §15/§14/§13 list the earlier folds. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred on the render-marker gate (closed in code 2026-08-15); v4 returned at round 3 for shipped-contract collisions; **v5 is the round-4 external candidate.** |
+| **Version** | **v7** — the round-5 fold (§17). Earlier folds: §16 (round 4), §15 (round 3), §14 (v4), §13 (v3). *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; **v7 is the round-6 external candidate.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -325,8 +325,10 @@ storage; no laundering.
   on a new author class is exactly the kind of thing that survives review by
   looking obviously fine.
 - **Can non-user content gain user-grade authority, confidence, or currency?**
-  Only through `confirm()`, which requires a user act. `derived_from` still
-  cannot raise trust.
+  Never in place: only a user AFFIRMATION — new USER evidence carrying its
+  own authority, never transferring any (v6→v7, R5-1: the third surviving
+  carrier of the withdrawn rule, finally executed dead). `derived_from`
+  still cannot raise trust.
 - **Can it clear `needs_confirmation`?** Only 0008's confirmation on an
   already-assertable edge, unchanged (v5/R4-1: distinct from affirmation).
   Dedup and maintenance still never clear it.
@@ -361,8 +363,9 @@ not answer **which user is permitted to see it**.*
 - **Anything visible to a principal who could not see it before?** No new
   principal, and **no visibility widening at all** *(v5, R3-6: this bullet
   still carried v2's subject-scoped widening)* — every assistant edge is
-  `use_only`, never volunteered, never asserted without `confirm()`-class
-  user action (§3.2's affirmation contract).
+  `use_only`, never volunteered, never asserted; the only route to an
+  assertable statement of the fact is a user AFFIRMATION creating its own
+  USER edge (§3.2; R5-1 sweep).
 
 ---
 
@@ -497,12 +500,16 @@ fixture ever caught it because small stores never truncate.*
 | ~~**I2**~~ *deleted in v4 — encoded the withdrawn v2 widening (assistant + non-user subject → `mentionable`). Not narrowed: DELETED, because under v3/v4 no subject yields `mentionable` and a struck-but-present rule is the 0002 defect class. I1's every-subject form is the replacement.* | — | — |
 | **I11** the disclosure rule FAILS CLOSED on the new member: `_disclosure_for` must route `author==ASSISTANT` or `derived_from==ASSISTANT` before the `mentionable` fallthrough — **without this edit the enum addition alone fails OPEN** (today's final return is `MENTIONABLE`) | `test_assistant_never_yields_mentionable` (asserts over the full author × derived_from product) | CI |
 | **I12** the origin label keys the `(author, derived_from)` PAIR: `assistant+THIRD_PARTY` labels third-party-derived, bare `assistant` labels assistant-generated, and no author class inherits another's label | `test_render_origin.py` extended (the shipped tripwire already fails an unlabelled class) | CI |
-| **I13** *(v5, R3-2)* the on-disk guard is ACTIVATED: `SCHEMA_VERSION` 10 → 11 (semantic, no-DDL; stamp-only migration), and a reader predating `ASSISTANT` refuses a v11 store AT OPEN via 0007's adoption check — never a `ValidationError` mid-read | `test_old_reader_refuses_v11_at_open` (v11-stamped store + a reader pinned to 10 → the 0007 refusal, before any edge loads) | CI |
+| **I13** *(v5, R3-2)* the on-disk guard is ACTIVATED: a reader predating `ASSISTANT` refuses a v11 store AT OPEN with exactly `StoreVersionError(reason="newer")` — never a `ValidationError` mid-read | `test_old_reader_refuses_v11_at_open` (asserts type AND reason, before any edge loads) | CI |
+| **I13a** *(v7, R5-4)* `SCHEMA_V11 == SCHEMA_V10` — the bump is semantic, byte-identical schema (the 0019 `SCHEMA_V7 = SCHEMA_V6` precedent, asserted not cited) | `test_schema_v11_is_byte_identical_to_v10` (object-list equality) | CI |
+| **I13b** *(v7, R5-4)* the v10→v11 migration is STAMP-ONLY: `migrate_store` on a clean v10 store changes `PRAGMA user_version` and NOTHING else — the full SQL schema dump is byte-identical before and after | `test_v10_to_v11_migration_is_stamp_only` (sqlite_master dump equality + user_version 11) | CI |
+| **I13c** *(v7, R5-4)* the v11 accepted-manifest evidence EXISTS: `accepted_digests(11)` carries the migrated-from-v10 record and the constructor record, regenerated per the 0007/0013 convention | `test_v11_accepted_manifest_records_both_routes` | CI |
+| **I13d** *(v7, R5-4)* the 0018 orchestrator FOLLOWS the bump: `_HEAD == SCHEMA_VERSION == 11`, `_MINT_BASE == 10`, the supported-base window shifts accordingly, and the preflight/mint evidence regenerates with the release | `test_release_migration_derives_from_the_bumped_head` | CI |
 | **I3** an assistant edge can never supersede, absorb, or reinforce a user edge | `test_assistant_cannot_touch_user_edge` (all three ops, both directions) | CI |
 | **I4** `derived_from=THIRD_PARTY` still caps an assistant edge to `use_only` | `test_assistant_derived_from_third_party_is_capped` | CI |
 | **I5** affirmation-as-new-USER-evidence is the ONLY promotion path (0008 PRESERVED: `confirm_edge` refuses every non-assertable edge by contract), and maintenance never promotes | `test_affirmation_grounds_and_confirm_edge_refuses` — asserts all four: same-value affirmation makes the fact assertable via the user edge (prior persists un-asserted), **the RENDERED result puts each record in its own trust partition** (the actual `collapse_for_render` output, per R4-2 — not the storage state standing in for it), a differing user value retires the prior via the ladder, and `confirm_edge` on the assistant edge raises with 0008's message *(v5, R3-1/R4-2)* | CI |
 | **I3b** the path §3.2 says is **allowed** actually works: user evidence SUPERSEDES an assistant prior via the authority ladder *(v5, R3-3: absorption is NOT the allowed path — cross-class absorption stays blocked by the 0.4.1 guard, and v4's claim that it worked was measured false)* | `test_user_can_correct_an_assistant_fact` (supersession, both the retire and the refusal-free path) | CI |
-| **I6** THE SELECTION RULE, **scoped to UNSCOPED recall** *(v5, R4-3: v5's first form said scope filters "run upstream and are unaffected" — FALSE against shipped 0020: `Memory._recall` runs `subgraph_for_query` (cap included) BEFORE `view.scoped`, its own comments record that out-of-scope records consume slots, and the reviewer measured a principal's edge lost to an out-of-scope winner at cap 1. Applying the reserve inside `subgraph_for_query` would preserve that failure, so this invariant does not pretend otherwise)*: on UNSCOPED recall, when any query-relevant ASSERTABLE edge exists, selection reserves `min(count_relevant_assertable, ceil(max_subgraph_edges / 4))` slots for the highest-ranked assertable edges; remaining slots fill by rank regardless of class. Protected class = ASSERTABLE. COMPOSITION: the reserve is taken from the post-`_cover` ranked pool; `subgraph_coverage_share` constraints apply first and coverage wins on conflict, with the shortfall observable in the selection; token budgeting runs after. **The SCOPED path's limitation is STATED, not fixed here** (§8): scope filtering after selection can starve a principal's edges regardless of any reserve — fixing it means moving scope ahead of ranking, which is a 0020 amendment (§10 Q6, its own round). FIXTURE, exact (unscoped): 1,000 equally-relevant `use_only` assistant edges + 1 equally-relevant older assertable user edge, `max_subgraph_edges=40` → the user edge IS selected and the other 39 slots are the top-ranked assistant edges | `test_assistant_dominant_store_does_not_crowd_out_user` (the exact fixture, unscoped; asserts the user edge id in the selection) | CI |
+| **I6** THE SELECTION RULE, **scoped to UNSCOPED recall** *(v5, R4-3: v5's first form said scope filters "run upstream and are unaffected" — FALSE against shipped 0020: `Memory._recall` runs `subgraph_for_query` (cap included) BEFORE `view.scoped`, its own comments record that out-of-scope records consume slots, and the reviewer measured a principal's edge lost to an out-of-scope winner at cap 1. Applying the reserve inside `subgraph_for_query` would preserve that failure, so this invariant does not pretend otherwise)*: on UNSCOPED recall, when any query-relevant ASSERTABLE edge exists, selection reserves `min(count_relevant_assertable, ceil(max_subgraph_edges / 4))` slots for the highest-ranked assertable edges; remaining slots fill by rank regardless of class. Protected class = ASSERTABLE. COMPOSITION *(corrected v7, R5-2: the post-`_cover` form was IMPOSSIBLE — `_cover` truncates to `max_edges` before any downstream reserve could act, and with the shipped `MemoryConfig.subgraph_coverage_share=0.0` the reviewer measured `assertable_selected 0`; a reserve cannot recover a record already discarded)*: **the reserve is applied to the FULL scored, post-collapse candidate set BEFORE final truncation** — the reserved assertable records are placed first, the remaining slots fill by rank, and only then does the `max_edges` cut happen; `subgraph_coverage_share` constrains WITHIN the non-reserved remainder; token budgeting runs after. The fixture pins `coverage_share=0.0` explicitly (the shipped config default — the function default of 0.25 masked the failure in the earlier harness). **The SCOPED path's limitation is STATED, not fixed here** (§8): scope filtering after selection can starve a principal's edges regardless of any reserve — fixing it means moving scope ahead of ranking, which is a 0020 amendment (§10 Q6, its own round). FIXTURE, exact (unscoped): 1,000 equally-relevant `use_only` assistant edges + 1 equally-relevant older assertable user edge, `max_subgraph_edges=40` → the user edge IS selected and the other 39 slots are the top-ranked assistant edges | `test_assistant_dominant_store_does_not_crowd_out_user` (the exact fixture, unscoped; asserts the user edge id in the selection) | CI |
 | **I10** the store-side min-trust consolidation rule (`_derive_output_metadata`, its home since 0010 X23 — see §2) treats `ASSISTANT` correctly: any assistant member caps the derived output at `use_only`; a mixed set never yields output presented as grounded | `test_mixed_batch_with_assistant_declares_influence` | CI |
 | **I10a** an assistant restatement PERSISTS UNTOUCHED per 0012 — the prior is byte-unchanged (no `observed_at` refresh is structurally possible), both records present, render collapses strict redundancy *(v5, R3-3: v4 promised a store-side merge 0012 does not perform)* | `test_assistant_restatement_does_not_refresh_currency` (prior byte-equality + persist + render collapse) | CI |
 | **I7** an export containing assistant edges is rejected by an older reader **with our message, not a pydantic traceback** | `test_downgrade_export_fails_cleanly` | CI |
@@ -579,8 +586,9 @@ improving recall.
   pre-stated): `use_only` assistant text still enters model context in the
   unverified block, attributed but present, at assistant-turn VOLUME — and
   injection does not require assertion. The bound is §5's budget analysis
-  plus I6, not a fence around the prompt. `confirm()` remains the single
-  promotion path, and it is a user act on rendered-with-attribution text.
+  plus I6, not a fence around the prompt. AFFIRMATION remains the single
+  promotion path — a user act on rendered-with-attribution text that
+  creates new USER evidence; nothing promotes in place (R5-1 sweep).
 
   **v1 claimed this was "bounded by the fact that such a claim was already
   reaching the user directly in the same turn". That bound is deleted — it does
@@ -649,7 +657,7 @@ ASSISTANT×ASSISTANT, and the `mentionable` question is moot when nothing
 routes there. The old brief is in the git history; asking you to audit
 dissolved questions would waste the round.)*
 
-- **What we are least sure of, v4.**
+- **What we are least sure of** *(refreshed each round; last: v7/round 5)*.
   (1) **The assistant authority rung (§2d.1).** 0003 pre-provisioned
   `assistant` at rung 1 — above `third_party`, below `system` — and v4
   ratifies it. The argument: an in-conversation identified source outranks
@@ -975,3 +983,32 @@ offered one.*
    and the harness assert type and reason); new-reader postconditions
    stated; `Spec-Requires` gains 0013 and 0018; the struck Q3 carrier's
    "nothing 0001-specific remains" corrected.
+
+---
+
+## 17. Changes in v7 (the round-5 fold, 2026-08-23)
+
+1. **R5-1 — the terminology sweep, finally executed dead**: the three
+   surviving `confirm()` carriers (§3.2's authority question, §3b's
+   "confirm()-class", §7's "single promotion path") replaced — and the
+   fold process itself corrected: every scripted replacement now REFUSES
+   on a needle miss and the swept phrases are grep-verified zero before
+   commit (two prior sweeps silently no-opped on wrapped text).
+2. **R5-2 — I6's ordering made possible**: the reserve applies to the FULL
+   scored post-collapse candidate set BEFORE final truncation (the
+   post-`_cover` form was impossible — a truncated record cannot be
+   recovered downstream); the fixture pins `coverage_share=0.0`, the
+   shipped config default the earlier harness masked with the function
+   default.
+3. **R5-3 — I5 and the harness drive the REAL surface**:
+   `gate.partition_parts` + the rendered lines — the user record only in
+   grounded output, the assistant-class record only in the unverified
+   block with its origin marker, no cross-partition leakage.
+   `collapse_for_render` alone neither partitions nor renders.
+4. **R5-4 — the migration contract is executable**: I13a–I13d name the
+   tests for `SCHEMA_V11 == SCHEMA_V10`, the stamp-only migration
+   (schema-dump byte equality), the v11 accepted-manifest evidence, and
+   the 0018 orchestrator's derived constants + regenerated evidence.
+5. **R5-5 — the version carriers swept**: the Status row, §9's brief
+   label, and the harness's self-identification now state the current
+   version; version carriers join the pre-send sweep list.
