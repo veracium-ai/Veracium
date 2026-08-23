@@ -40,6 +40,29 @@ CLOSURES = [
      "precede any record validation",
      "grep -n 'parse sentinel\\|parses == \\[\\]' "
      "specs/evidence/0001/candidate.patch"),
+    ("0001", "external", 10, "0001-R10-1",
+     "the I6 reserve protected ELIGIBILITY, not relevance — every "
+     "assertable in the scored set was reservable, and user-subject edges "
+     "sit there at baseline score with zero query overlap; the reviewer's "
+     "executed counterexample reserved an unrelated 'bananas' fact first "
+     "and dropped a relevant one",
+     "the relevance bit is carried FROM scoring (relevant_ids) and the "
+     "reserve takes query-relevant assertables only; the exact bananas "
+     "vector added and proven to fail pre-fix; the I6 cell says "
+     "query-RELEVANT explicitly",
+     "grep -n 'relevant_ids' specs/evidence/0001/candidate.patch  "
+     "# the bit carried from scoring into the reserve"),
+
+    ("0001", "external", 10, "0001-R10-2",
+     "the opening block still read 'draft (v10)' with a §20 pointer "
+     "beside the v11 Version row — the third version-carrier strike",
+     "the opening block carries NO revision; the Version row is "
+     "structurally the one carrier; the sweep greps '(v' forms",
+     "! sed -n '1,20p' specs/0001-generated-content-trust-class.md "
+     "| grep 'draft (v'  # the opening block carries no revision "
+     "(the §22 changelog QUOTES the old defect, so the sweep is scoped "
+     "to the block)"),
+
     ("0001", "external", 9, "0001-R9-1",
      "subgraph_for_query FILTERED the globally scored list instead of "
      "constructing reserved + remainder — a low-ranked reserved assertable "

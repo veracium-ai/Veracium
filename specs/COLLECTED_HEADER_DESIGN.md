@@ -220,7 +220,12 @@ instance caught before it shipped:
 
 ## 8. Status
 
-Design **ruled and closed**; **IMPLEMENTED 2026-08-22** — every §5 piece:
+Design **ruled and closed**; **IMPLEMENTED 2026-08-22**; **ACCEPTED by the
+external reviewer 2026-08-23 at implementation-review round 10** (§18) —
+ten RETURN rounds folded same-day (§§9–17), verdict verbatim: *"approve
+the C-plus implementation"*, with the widened, unknown, dead, stale,
+malformed-name, and unclaimed-sidecar attacks all refusing. Every §5
+piece:
 
 - `specs/collected_record.py` — the code-owned FIELD_POLICY registry (the
   sole authority; blocking 1), the four closed axes, the derive-from-capture
@@ -479,3 +484,20 @@ undeclared prior archive physically present, the skip message claimed
 return and newest-host-archive selection. **Folded:** the skip and both
 docstrings state the governed-domain truth — NO_PRIOR is a statement
 about the governed record, never about what the host directory holds.
+
+## 18. Implementation review — round 10 (2026-08-23): ACCEPTED
+
+All three C9 findings verified closed by the reviewer:
+
+- `IN_FLIGHT` validated as a known, genuinely missing SINGLETON, with the
+  sealer requiring exact equality with the current package;
+- lineage and predecessor selection share the ONE strict archive-name
+  grammar;
+- `NO_PRIOR` and its docstrings describe governed-record state.
+
+*"The widened, unknown, dead, stale, malformed-name, and
+unclaimed-sidecar attacks all refuse. … Verdict: approve the C-plus
+implementation."* C-plus focused suite at acceptance: 16/16. The
+construction remains under its own regression matrix in the ordinary
+suite; future findings against it would be new rounds, not a reopening
+of this acceptance.
