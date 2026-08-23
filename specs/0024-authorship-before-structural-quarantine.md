@@ -525,10 +525,15 @@ paired baseline against it same-day (`veracium-research/baselines/
 0024-conflation/RESULTS_POSTFIX.md`, corrections note `f8d5a0a0`):
 
 - cell A (must move): moved exactly as specified — A08 restored with
-  `original_relation` preserved. **1/16** of the quarantined population;
+  `original_relation` preserved. **1/16 of the probe set — cell A's
+  entire quarantined membership (1 of 1)**;
 - cell B (must not move): **4/16 genuine relays de-quarantined to
   MENTIONABLE** — boss/accountant/professor/trainer, every one a real
-  relay the extractor filed with `subject == "user"`. B06's note reads
+  relay the extractor filed with `subject == "user"` (witnessed by the
+  re-disposition marker: all four carry `original_relation =
+  'third_party_claim'` + `relation = 'unclassified'`, which the
+  mechanism produces only when the canonical-subject predicate fired —
+  the instrument did not sample subjects directly, disclosed). B06's note reads
   "Claim made by user's boss" while the subject predicate fires; 2 of
   the 4 movers carry EMPTY notes (note-based repair is half-blind);
 - relay floor on the probe set: 14/16 → 10/16; blast radius assertion +

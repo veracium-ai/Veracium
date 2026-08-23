@@ -11,9 +11,9 @@ Spec-Status: draft
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — the design (2026-08-22, authorized by Quentin's "Proceed with 0011"): E-Q2 and E-Q3 RULED (both dev-owned; derived-at-read and explicit threading — the accepted stack's own disciplines), E-Q1 dispatched to research with a decision frame and a provisional floor, the six inherited findings turned into §4's constructions and §6's invariants, and the open `M7-correct` finding adopted as this spec's motivating live defect. *Prior:* v1, the scope-holder from the `0003` split |
+| **Version** | **v3** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS): **M-2/E-Q4 RULED YES** — the acting principal (`0020`) joins the E5 tuple as the fifth element, verified in-transaction (E5 authenticates CORRECTORS, not just corrections; S4 gains the replay-across-principals cell); **M-3** §4b keeps the NARROW refusal cell for v1 with a measurement RIDER (count refusal rows by cell post-ship; broad revisits on an operator's numbers — the E-Q1 pattern); **M-1** currency + references (0024 cited at its SPEC surface with the predicate-not-disposition statement for the A1 divergence; the S7 pointer fixed; sections renumbered §3a/§3b); minors m-4 (historical motivation marked), m-5 (symbol not line), m-6 (`derived(from_class)` closed domain, unknown fails to the THIRD_PARTY floor). Ratified untouched: E-Q2, E-Q3, the conservation argument, absence-as-positive-capability, S1–S7's shape, and research's purpose-scoping non-foreclosure lens (passes by construction). *Prior:* **v2** — the design (2026-08-22, authorized by Quentin's "Proceed with 0011"): E-Q2 and E-Q3 RULED (both dev-owned; derived-at-read and explicit threading — the accepted stack's own disciplines), E-Q1 dispatched to research with a decision frame and a provisional floor, the six inherited findings turned into §4's constructions and §6's invariants, and the open `M7-correct` finding adopted as this spec's motivating live defect. *Prior:* v1, the scope-holder from the `0003` split |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0003`'s deferred scope. **Nothing here blocks `0003`.** |
-| **Internal reviewers** | — |
+| **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (3 moderates + 3 minors, both §9 questions answered, E-Q4 ruled), folded in v3; round 2 same-day |
 | **External review** | required |
 | **Decision + date** | — |
 | **Path** | full |
@@ -33,10 +33,12 @@ relation registry, and **a relation cannot tell you whose fact it is**:
 different classes. Making it work needs subject identity, alias canonicalisation
 and a total classifier — **a design, not an amendment.**
 
-**Meanwhile the reported defect is unfixed after two review rounds.** Third-party
-content can still retire a user fact at `graph.py:139`. **So `0003` narrows to
-that, and the breadth lands here** rather than holding a guard hostage to an
-entitlement model.
+**At the time of the split (2026-08-02) the reported defect was unfixed
+after two review rounds** — third-party content could still retire a user
+fact (then `graph.py:139`). **So `0003` narrowed to that, and the breadth
+landed here** rather than holding a guard hostage to an entitlement model.
+(`0003` has since shipped, v0.6.0 — the sentence above is the historical
+motivation, not a live defect; internal round 1, m-4.)
 
 ---
 
@@ -70,16 +72,16 @@ open while the deletion primitive is closed.
 
 ---
 
-## 2c. Untrusted inputs — REQUIRED, blocking
+## 3a. Untrusted inputs — REQUIRED, blocking
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| the extractor's `subject` string | falsy → dropped by the shipped completeness check (`ingest.py`); whitespace → survives, strips to an empty claimant (the `0024` Q3 measured cell) | truthy non-str → str()-converted by the shipped path | an entity ref this store has never seen → class **OTHER** (the default IS the conservative class) | text engineered to make the extractor emit `subject="user"` so a third-party fact rides the SELF class | **E1**: the classifier is TOTAL with OTHER as default; and SELF grants nothing to the *content* — it gates only which ENTITLEMENT rules apply to retirement, never disclosure (`0024` owns disclosure; §3b states the non-interaction) |
-| the caller's `actor` on `correct()` | absent → the shipped default `"user"` — **the M7 defect's second face: a string DEFAULT is not an authorisation** | any string passes today | — | a tool-driven caller invoking `correct()` with `actor="user"` | **E5**: the authorisation capability is UNFORGEABLE and bound to *(store origin, prior id, replacement value, kind)* — a string names nobody |
+| the extractor's `subject` string | falsy → dropped by the shipped completeness check (`ingest.py`); whitespace → survives, strips to an empty claimant (the cell `0024` Q3 RULED conservative — its pinned tests return at 0024's landing; internal round 1, M-1: post-revert they are not on main) | truthy non-str → str()-converted by the shipped path | an entity ref this store has never seen → class **OTHER** (the default IS the conservative class) | text engineered to make the extractor emit `subject="user"` so a third-party fact rides the SELF class | **E1**: the classifier is TOTAL with OTHER as default; and SELF grants nothing to the *content* — it gates only which ENTITLEMENT rules apply to retirement, never disclosure (`0024` owns disclosure; **S7** states the non-interaction). **This spec consumes `0024`'s PREDICATE (§4a canonical subject), never its DISPOSITION** — amendment A1 (0024 v8) moves the disposition to uniform USE_ONLY and nothing here moves with it (M-1: stated so the divergence cannot read as drift) |
+| the caller's `actor` on `correct()` | absent → the shipped default `"user"` — **the M7 defect's second face: a string DEFAULT is not an authorisation** | any string passes today | — | a tool-driven caller invoking `correct()` with `actor="user"` | **E5**: the authorisation capability is UNFORGEABLE and bound to *(store origin, prior id, replacement value, kind, **acting principal** — the `0020` element, internal round 1 M-2/E-Q4)* — a string names nobody, and without the principal ANY caller reaching `correct()` minted a valid capability: the binding closed forge/replay of a DIFFERENT correction, not an unauthorised caller minting a fresh one |
 | the host's ingress declaration (`derived_from=None`) | absence is the TRUSTED claim today — safe only if positively established | — | — | a persistence-site caller replaying content with `derived_from` omitted | **E4**: absence must be a POSITIVE capability, not a missing argument |
 | a second active value on a functional relation | — | — | — | an attacker holding one side of a contention to keep a stale value live | **E3**: `CONTESTED` is DERIVED at read (E-Q2 ruling) — no writer can pin it, no reader can miss it |
 
-## 3c. The rulings (E-Q2, E-Q3) and the provisional floor (E-Q1)
+## 3b. The rulings (E-Q2, E-Q3) and the provisional floor (E-Q1)
 
 - **E-Q2 — RULED (dev, 2026-08-22): `CONTESTED` is DERIVED at read, never
   stored.** A functional relation with two or more ACTIVE same-disclosure-
@@ -131,7 +133,7 @@ open while the deletion primitive is closed.
 
 `subject_class(user_id, subject) -> SELF | OTHER` — TOTAL, with **OTHER
 the default**: SELF iff the canonical subject equals the user under the
-`0024` predicate (§3c's floor; research's E-Q1 answer widens it behind the
+`0024` predicate (§3b's floor; research's E-Q1 answer widens it behind the
 same interface). The classifier consumes the STORED subject — the
 str()-converted, stripped slot with a stated contract — never the note,
 never the relation (§1: a relation cannot tell you whose fact it is).
@@ -149,6 +151,16 @@ author product stops being the whole decision procedure, and the refusal
 lands as a `supersession_refusals` row exactly like the ladder's own
 (same carrier, `rule_version` bumped — no new table).
 
+**The narrowness is v1's, held with a MEASUREMENT RIDER (internal round
+1, M-3 ruling):** "sole authority is self-assertion" closes the reviewed
+attack without pushing routine user corrections of their own third-party
+entries into authorisation friction — and the broad form ("ANY
+user-authored retirement of an OTHER-subject sourced fact refuses
+pending confirmation") has no measured constituency. The rider is a
+design obligation, not a hope: the §4b refusal rows are COUNTED BY CELL
+post-release, and the broad form is revisited on an operator's numbers,
+never by taste — the E-Q1 pattern applied to this spec's own knob.
+
 ### 4c. `CONTESTED` at every reader (E3, per the E-Q2 ruling)
 
 Derived: `contested(user_id, subject, relation)` is true while a
@@ -165,7 +177,11 @@ supersession by an entitled author, `correct()` under E5, or `confirm()`.
 `derived_from=None` stops being trusted-by-omission: `ingest_event`
 gains an explicit `EvidenceContext` (E-Q3: a constructor argument)
 carrying the host's POSITIVE declaration — `direct` (the host attests
-first-party capture) or `derived(from_class)`. Absence of the context is
+first-party capture) or `derived(from_class)`. **`from_class` is a
+CLOSED domain, validated at construction (internal round 1, m-6 — the
+week's validator lesson): an enum the constructor refuses unknowns of;
+an unknown or malformed value fails CLOSED to the `derived(THIRD_PARTY)`
+floor, never open.** Absence of the context is
 the conservative cell: treated as `derived(THIRD_PARTY)`, never as
 direct. The context is a value object the persistence site cannot mint
 implicitly; hosts that never construct one get exactly today's
@@ -173,18 +189,26 @@ worst-case flooring, so the change is refusal-conservative.
 
 ### 4e. `correct()` through the ladder, authorised (E5 — closes `M7-correct`)
 
-The live defect (`findings.py M7-correct`, `__init__.py:1362`):
+The live defect (`findings.py M7-correct`, at the symbol `Memory.correct` — cited by name, not line; internal round 1, m-5):
 `correct()` calls `invalidate_edge` + `add_edge` directly — no ladder, no
 receipt, no refusal record, and `actor` is an unauthenticated string
 defaulting to `"user"`. The construction: `correct()` builds a
 replacement edge and submits it through `apply_supersession`'s atomic
 plan machinery with a **`CorrectionAuthorisation`** bound to
-*(store origin, prior edge id, replacement value digest, kind)* — the
-`0014` snapshot-verification shape: the store verifies the binding
-INSIDE the transaction (a forged or replayed authorisation aborts), the
-receipt row records the correction like any supersession, and the
-subject-entitlement rule of §4b applies to corrections exactly as to
-extractor-driven supersession. `record_outcome` stays fact-untouching.
+*(store origin, prior edge id, replacement value digest, kind, **acting
+principal**)* — the fifth element is `0020`'s principal (internal round
+1, M-2/E-Q4 RULED YES): E5 as a four-tuple authenticated CORRECTIONS but
+not CORRECTORS — `Memory.correct` mints the authorisation itself on the
+interactive path, so any caller who reached it obtained a valid
+capability, and the §3a adversarial cell was closed only against
+forge/replay of a different correction. With the principal bound and
+verified INSIDE the transaction like the rest (the `0014`
+snapshot-verification shape): hosts can scope `correct()` per-principal
+with the STORE enforcing consistency, the receipt row records WHO, a
+forged, replayed, rebound, or cross-principal-replayed authorisation
+aborts, and the subject-entitlement rule of §4b applies to corrections
+exactly as to extractor-driven supersession. `record_outcome` stays
+fact-untouching.
 
 ### 4f. The history partition (E6)
 
@@ -213,8 +237,8 @@ block whose meaning is *present grounded fact*.
 | **S1** | `subject_class` is TOTAL with OTHER as default — every subject string classifies, and only the canonical-predicate cell is SELF | `test_subject_class_is_total` — property test over adversarial strings, the `0024` predicate cells included |
 | **S2** | a USER self-assertion never retires an OTHER-subject sourced fact; the refusal lands as a `supersession_refusals` row | `test_self_assertion_cannot_retire_other_subject` — the E2 cell, plus the refusal-row assertion |
 | **S3** | `CONTESTED` is derived — NO stored carrier exists, and every reader (recall, gate, maintain) handles the contested cell | `test_contested_is_derived_and_total_over_readers` — an AST sweep for stored writes plus per-reader behaviour cells |
-| **S4** | `correct()` reaches storage ONLY through the atomic plan machinery with a verified `CorrectionAuthorisation`; a forged, replayed, or unbound authorisation aborts inside the transaction | `test_correct_requires_bound_authorisation` — the M7 regression, forge/replay/rebind cells |
-| **S5** | absent `EvidenceContext` floors at `derived(THIRD_PARTY)` — absence is never the trusted cell | `test_absent_context_floors_conservative` |
+| **S4** | `correct()` reaches storage ONLY through the atomic plan machinery with a verified `CorrectionAuthorisation`; a forged, replayed, unbound, or **cross-principal** authorisation aborts inside the transaction (M-2: a capability minted under one principal replayed under another is the named new cell) | `test_correct_requires_bound_authorisation` — the M7 regression, forge/replay/rebind cells **+ the replay-across-principals cell** |
+| **S5** | absent `EvidenceContext` floors at `derived(THIRD_PARTY)` — absence is never the trusted cell — **and so does an unknown or malformed `from_class` (m-6): the domain is closed; validators refuse the unknown, not just cover the known** | `test_absent_context_floors_conservative` — plus the unknown-value cell |
 | **S6** | the partition labels are derived and total — every edge lands in exactly one of the three | `test_history_partition_is_total` — enumeration over the field product |
 | **S7** | disclosure is UNTOUCHED — no rule here reads or writes `Provenance.disclosure` (the `0024`/`0025` pipeline owns it) | `test_no_disclosure_interaction` — the N2-style single-writer sweep extended, not duplicated |
 
@@ -255,16 +279,18 @@ stored.
    discipline; if you think a stored member with enumerated writers is
    safer, that reverses three accepted precedents and we should argue it
    before design review.
-2. **The E5 binding** — is *(store origin, prior id, replacement digest,
-   kind)* the right tuple, or does it need the acting principal
-   (`0020`'s) as a fifth element?
-3. **The §4b refusal cell** — is "sole authority is self-assertion"
-   the right narrowness, or should ANY user-authored retirement of an
-   OTHER-subject sourced fact refuse pending confirmation?
+2. **The E5 binding** — RULED at internal round 1 (M-2/E-Q4): the
+   acting principal IS the fifth element. Kept here for the external
+   reviewer: attack the in-transaction verification and the
+   cross-principal replay cell.
+3. **The §4b refusal cell** — RULED at internal round 1 (M-3): narrow
+   for v1, with the measurement rider in §4b. For the external reviewer:
+   attack the rider's cell taxonomy — are refusal rows countable by the
+   cells an operator would actually decide from?
 
 ## 10. Open questions
 
 | # | question | class | who | by when |
 |---|---|---|---|---|
-| **E-Q1** | How is the user's own subject identity canonicalised? | **RESOLVED for v1 (2026-08-22)** — the predicate floor ships; the identity-relation option rejected blocking-grade; the alias-set extension point named and priced at ≈0.016% measured constituency (§3c) | research + dev, jointly | — |
-| **E-Q4** | should the E5 authorisation tuple carry the acting principal (`0020`) as a fifth element? | design | dev + internal review | design review |
+| **E-Q1** | How is the user's own subject identity canonicalised? | **RESOLVED for v1 (2026-08-22)** — the predicate floor ships; the identity-relation option rejected blocking-grade; the alias-set extension point named and priced at ≈0.016% measured constituency (§3b) | research + dev, jointly | — |
+| **E-Q4** | should the E5 authorisation tuple carry the acting principal (`0020`) as a fifth element? | **RESOLVED (internal round 1, 2026-08-23): YES** — E5 as drafted bound the arguments, not the actor; under `0020` the principal IS what distinguishes callers. Fifth element, verified in-transaction, receipt records WHO, S4 gains the cross-principal replay cell (§4e) | dev + internal review | — |

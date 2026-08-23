@@ -316,7 +316,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0024-0025 | v10 | 10 | `0024-0025-v10-20260821T2249Z.tar.gz` | `1e0c5104b3a2421f…` |
 | 0024-0025 | v11 | 11 | `0024-0025-v11-20260821T2335Z.tar.gz` | `9e5fd437cd2bf53f…` |
 | 0024-0025 | v12 | 12 | `0024-0025-v12-20260822T0037Z.tar.gz` | `5a91e7363bd5c310…` |
-| 0024-0025 | v13 | 13 | `0024-0025-v13-20260823T2131Z.tar.gz` | `a0171fcd0dcf6731…` |
+| 0024-0025 | v13 | 13 | **0 sidecars — LINEAGE GAP** | — |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 
@@ -324,4 +324,5 @@ Superseded/discarded seals (disclosed, deliberately un-witnessed):
 - 0001-v3-20260822T2159Z (C-plus round-1 specimen; superseded)
 - 0001-v3-20260822T2236Z (C-plus round-2 specimen; superseded)
 - 0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)
+- 0024-0025-v13-20260823T2131Z (sealed, discarded unsent — research's §11 fidelity pass added the marker-witness note and the cell-A denominator fix before dispatch)
 
