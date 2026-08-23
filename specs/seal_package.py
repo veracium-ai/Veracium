@@ -560,7 +560,11 @@ def identity_problems(archive_name: str, col: str, man: str,
     # generator perfectly still misdirects if the generator names a file the
     # package does not carry.
     normalised = {m[2:] if m.startswith("./") else m for m in members}
-    for path in re.findall(r"(specs/\S+\.md) — draft", field):
+    # PACKAGE-R13-1: the extraction is STATUS-AGNOSTIC — anchoring on the
+    # old "— draft" literal made this loop extract nothing once statuses
+    # were derived, and an empty loop passes vacuously (the gate's own
+    # R19-1 regression caught it)
+    for path in re.findall(r"(specs/\S+\.md) — [a-z][a-z -]* v\d+", field):
         if path not in normalised:
             problems.append(
                 f"COLLECTED.txt directs the reviewer to {path}, which is NOT a "

@@ -2179,7 +2179,7 @@ def test_the_packages_three_identity_carriers_must_agree():
     #                              the 0024-0025 send opened a second line
     V = max(pid.PACKAGES[LINE], key=lambda v: int(v[1:]))
     MEMBERS = {"./" + m for m in re.findall(
-        r"(specs/\S+\.md) — draft", pid.render_candidate_lines(LINE, V))}
+        r"(specs/\S+\.md) — [a-z][a-z -]* v", pid.render_candidate_lines(LINE, V))}
     RND = pid.PACKAGES[LINE][V][0]
     STALE = f"v{RND - 1}"
     NAME = f"0022-0023-{V}-20260819T0136Z.tar.gz"
@@ -2339,7 +2339,7 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # rendered paths so the fixture cannot drift from what the generator emits.
     def _members(v):
         return {"./" + m for m in re.findall(
-            r"(specs/\S+\.md) — draft",
+            r"(specs/\S+\.md) — [a-z][a-z -]* v",
             pid.render_candidate_lines("0022-0023", v))}
 
     LINE = "0022-0023"
@@ -2360,8 +2360,11 @@ def test_the_package_identity_record_governs_every_candidate_carrier():
     # own revision is an identity carrier, so each must be able to fail alone.
     for spec, rev in sorted(cands.items()):
         stale = col.replace(f"{spec}-", f"{spec}-", 1)
-        stale = re.sub(rf"(specs/{spec}-\S+\.md — draft )v\d+", r"\g<1>v1", col)
-        assert stale != col, f"could not mutate {spec}'s draft line"
+        # PACKAGE-R13-1: the status word is DERIVED from Spec-Status now,
+        # so the mutation matches any status, not the old draft literal
+        stale = re.sub(rf"(specs/{spec}-\S+\.md — [a-z][a-z -]* )v\d+",
+                       r"\g<1>v1", col)
+        assert stale != col, f"could not mutate {spec}'s candidate line"
         assert identity_problems(name, stale, man, MEMBERS), (
             f"a stale `draft vN` on {spec} ALONE was accepted — R17-1 exactly")
 

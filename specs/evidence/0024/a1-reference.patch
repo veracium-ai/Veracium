@@ -1,5 +1,5 @@
 diff --git a/specs/evidence/0025/reference_enforcement.py b/specs/evidence/0025/reference_enforcement.py
-index 53aac2d..4e86e29 100644
+index 53aac2d..fcc5bb2 100644
 --- a/specs/evidence/0025/reference_enforcement.py
 +++ b/specs/evidence/0025/reference_enforcement.py
 @@ -201,7 +201,10 @@ def enforce(triples, host_registry, author, derived_from, retry=None,
@@ -41,7 +41,7 @@ index 53aac2d..4e86e29 100644
  def vector_author_floor_holds_through_redisposition():
 +    # under A1 the uniform disposition and the author floor COINCIDE in
 +    # this cell (round-5 R5-1's ruled transition is outcome-unchanged);
-+    # the USER-author cell is asserted by the amended ordering vector
++    # the exhaustive oracle vector below spans the whole product
      t = {"subject": "user", "relation": QUARANTINE_RELATION, "object": "x"}
      stored, _ = enforce([t], HOST, Author.THIRD_PARTY, None)
      assert stored[0]["disclosure"] is Disclosure.USE_ONLY
@@ -50,3 +50,38 @@ index 53aac2d..4e86e29 100644
  
  
  def vector_retry_is_one_call_and_repairs_by_content_pair():
+@@ -507,9 +515,32 @@ def vector_revoked_source_floor_wins_over_coherence():
+                              source_revoked=True)
+     assert all(r["disclosure"] is Disclosure.QUARANTINED for r in stored)
+     assert counts["redispositioned"] == 1     # the rewrite still happened
+-    # and WITHOUT the floor the incoherent triple is mentionable — the bite
++    # and WITHOUT the floor the incoherent triple sits at A1's uniform
++    # USE_ONLY — the floor's bite is USE_ONLY -> QUARANTINED (round 13,
++    # A1-R13-2: this control pinned the pre-A1 MENTIONABLE and failed)
+     stored2, _ = enforce([incoh], HOST, Author.USER, None)
+-    assert stored2[0]["disclosure"] is Disclosure.MENTIONABLE
++    assert stored2[0]["disclosure"] is Disclosure.USE_ONLY
++
++
++def vector_a1_u2_oracle_exhaustive():
++    """Round 13, A1-R13-2: the COMPLETE U2 domain, enumerated — every
++    author x derived_from cell of the incoherent triple, non-revoked
++    (all USE_ONLY under A1's uniform oracle) AND revoked (QUARANTINED).
++    Enumeration has no cell to overlook; a sampled product is how two
++    green implementations disagreed at round 5."""
++    t = {"subject": "user", "relation": QUARANTINE_RELATION, "object": "x"}
++    authors = [Author.USER, Author.THIRD_PARTY, Author.SYSTEM]
++    for author in authors:
++        for derived in [None, *authors]:
++            stored, counts = enforce([t], HOST, author, derived)
++            assert len(stored) == 1, (author, derived)
++            assert stored[0]["disclosure"] is Disclosure.USE_ONLY, (
++                author, derived, stored[0]["disclosure"])
++            assert counts["redispositioned"] == 1, (author, derived)
++            stored_r, _ = enforce([t], HOST, author, derived,
++                                  source_revoked=True)
++            assert stored_r[0]["disclosure"] is Disclosure.QUARANTINED, (
++                author, derived)
+ 
+ 
+ def vector_direct_unclassified_emission_is_residual():

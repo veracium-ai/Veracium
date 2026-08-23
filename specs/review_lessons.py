@@ -501,6 +501,20 @@ MECHANISM = {
     ("0025", 11, "PACKAGE-R11-2"): ("second-copy", "packaging",
         "the single-authority fix created a second authority one function "
         "away"),
+    # ---- the A1 amendment, external round 13 -------------------------------
+    ("0024", 13, "A1-R13-1"): ("self-assertion", "spec",
+        "§11 claimed 'every carrier' while five consequence passages and "
+        "two 0025 passages still carried the v7 outcome — a completeness "
+        "claim made by the author of the sweep, not derived from a sweep "
+        "of the consequence words"),
+    ("0024", 13, "A1-R13-2"): ("proxy", "packaging",
+        "'verified green' was true of the pytest wrapper, not the "
+        "reference file's own runner the reviewer executes — the wrapper "
+        "reaches 20 of the 22 vectors and misses the pinned control"),
+    ("0024", 13, "PACKAGE-R13-1"): ("second-copy", "packaging",
+        "the candidate line's status word was a renderer literal beside "
+        "the canonical Spec-Status — accepted 0025 and in-review 0024 "
+        "both shipped described as draft"),
 }
 
 

@@ -40,6 +40,36 @@ CLOSURES = [
      "precede any record validation",
      "grep -n 'parse sentinel\\|parses == \\[\\]' "
      "specs/evidence/0001/candidate.patch"),
+    ("0024", "external", 13, "A1-R13-1",
+     "the A1 amendment was not carrier-complete while §11 claimed 'every "
+     "carrier' — five passages still described the v7 assertable outcome, "
+     "and the co-owned 0025 inventory named one passage of three",
+     "the consequence-word sweep ('assertable', 'user's own statement') "
+     "executed across BOTH specs; §7b carries THREE verbatim 0025 "
+     "replacements; §11 records the lesson in place of the claim",
+     "grep -c 'becomes assertable' "
+     "specs/0024-authorship-before-structural-quarantine.md  "
+     "# every survivor is a quotation of the defect in §11/§12/§7b"),
+
+    ("0024", "external", 13, "A1-R13-2",
+     "the candidate patch did not run green (the revoked vector's control "
+     "pinned pre-A1 MENTIONABLE) while §11 claimed verified-green — dev "
+     "had verified with the pytest wrapper, not the reference's own runner",
+     "the control pins USE_ONLY; vector_a1_u2_oracle_exhaustive covers the "
+     "complete author×derived product + revoked; 23/23 under "
+     "python reference_enforcement.py itself",
+     "grep -n 'vector_a1_u2_oracle_exhaustive' "
+     "specs/evidence/0024/a1-reference.patch"),
+
+    ("0024", "external", 13, "PACKAGE-R13-1",
+     "package carriers described both specs as draft candidates while the "
+     "canonical statuses are in-review/accepted; the 0025 r13 ledger row "
+     "overstated 'no file edit, status untouched'",
+     "candidate lines DERIVE the status word from each spec's Spec-Status "
+     "line, fail-closed; the ledger row states no-design-change precisely",
+     "grep -n '_spec_status' specs/package_identity.py  "
+     "# the derived status, refusing an unreadable Spec-Status"),
+
     ("0001", "external", 10, "0001-R10-1",
      "the I6 reserve protected ELIGIBILITY, not relevance — every "
      "assertable in the scored set was reservable, and user-subject edges "

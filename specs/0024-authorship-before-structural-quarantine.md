@@ -23,7 +23,7 @@ measurement.*
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v8 — AMENDMENT A1, in review (2026-08-23)**: the incoherent cell's re-disposition disclosure moves from the author rules to **uniform USE_ONLY** (the standing-revocation floor unchanged). Motivation is MEASURED, not argued: Research's post-implementation probe-paired run (2026-08-23, main @ `1b542b9`, `veracium-research/baselines/0024-conflation/RESULTS_POSTFIX.md`) sized §7's disclosed too-broad door at **4/16 relay probes DE-QUARANTINED vs 1/16 correct restoration** — B06's note literally reads "Claim made by user's boss" while the subject predicate fires, and 2 of the 4 movers carry EMPTY notes, so note-based repair cannot see half the class. The coherence test proves the LABEL self-contradictory; it does not prove the content is the user's own words, so the honest disposition for the ambiguous population is may-inform-never-assert. A1 keeps v7's core (the extractor can no longer demote user testimony below USABLE) and withholds the half the evidence does not support (assertion). U2's oracle becomes UNIFORM; §11 carries the complete delta; the v7 mechanism was implemented, measured, and REVERTED from main (`9257e85`) pending this amendment. *Prior:* **v7** — external round 5 folded (2026-08-21): **R5-1** the THIRD_PARTY-authored incoherent cell's QUARANTINED → USE_ONLY transition RULED INTENDED and stated in §5 (was "unchanged in every cell" — false), U2 upgraded to EXACT OUTPUT over the full product (a floor-only check let two implementations disagree while green), the §3 scope wording fixed (the revoked row is the stated exception). *Prior:* **v6** — external round 4 folded (2026-08-21): **R4-1** the §3 matrix scoped to non-revoked sources with the revocation dimension as its own row (N1 wins over every column) and "author rules ALONE" retired for base-vs-final disclosure language; **PAIR-R4-1** every measured figure is the shipped script's exact output (183,417; note rule 1,644 = 41.7%). *Prior:* **v5** — external round 3 folded (2026-08-21): **R3-1** the combined pipeline gains the standing-revocation floor as an explicit step (`0025` §4b-iii step 3) and §5's "unchanged under 0023" claim corrected — accepted N1 wins over the coherence rewrite, with revoked-source vectors; **R3-2** `Edge.original_relation` defined ONCE at `0025` §2 with both writers enumerated, §5's registry claim and §7a's schema row de-staled. *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
+| **Version** | **v9 — A1 round 13 folded (2026-08-23, §12)**: A1-R13-1 the consequence-word carrier sweep completed across BOTH specs (five stale assertable/MENTIONABLE passages here; the co-owned `0025` inventory grown to THREE verbatim replacements — §4b-iii steps 1+2 and §7b's row); A1-R13-2 the candidate patch's revoked-vector control moved to A1's USE_ONLY and the EXHAUSTIVE U2 oracle vector added (full author×derived product + revoked; 23 vectors green under the reference file's OWN runner — the round-13 lesson: the pytest wrapper was the wrong verifier); PACKAGE-R13-1 carriers derive status from `Spec-Status:`. *Prior:* **v8 — AMENDMENT A1, in review (2026-08-23)**: the incoherent cell's re-disposition disclosure moves from the author rules to **uniform USE_ONLY** (the standing-revocation floor unchanged). Motivation is MEASURED, not argued: Research's post-implementation probe-paired run (2026-08-23, main @ `1b542b9`, `veracium-research/baselines/0024-conflation/RESULTS_POSTFIX.md`) sized §7's disclosed too-broad door at **4/16 relay probes DE-QUARANTINED vs 1/16 correct restoration** — B06's note literally reads "Claim made by user's boss" while the subject predicate fires, and 2 of the 4 movers carry EMPTY notes, so note-based repair cannot see half the class. The coherence test proves the LABEL self-contradictory; it does not prove the content is the user's own words, so the honest disposition for the ambiguous population is may-inform-never-assert. A1 keeps v7's core (the extractor can no longer demote user testimony below USABLE) and withholds the half the evidence does not support (assertion). U2's oracle becomes UNIFORM; §11 carries the complete delta; the v7 mechanism was implemented, measured, and REVERTED from main (`9257e85`) pending this amendment. *Prior:* **v7** — external round 5 folded (2026-08-21): **R5-1** the THIRD_PARTY-authored incoherent cell's QUARANTINED → USE_ONLY transition RULED INTENDED and stated in §5 (was "unchanged in every cell" — false), U2 upgraded to EXACT OUTPUT over the full product (a floor-only check let two implementations disagree while green), the §3 scope wording fixed (the revoked row is the stated exception). *Prior:* **v6** — external round 4 folded (2026-08-21): **R4-1** the §3 matrix scoped to non-revoked sources with the revocation dimension as its own row (N1 wins over every column) and "author rules ALONE" retired for base-vs-final disclosure language; **PAIR-R4-1** every measured figure is the shipped script's exact output (183,417; note rule 1,644 = 41.7%). *Prior:* **v5** — external round 3 folded (2026-08-21): **R3-1** the combined pipeline gains the standing-revocation floor as an explicit step (`0025` §4b-iii step 3) and §5's "unchanged under 0023" claim corrected — accepted N1 wins over the coherence rewrite, with revoked-source vectors; **R3-2** `Edge.original_relation` defined ONCE at `0025` §2 with both writers enumerated, §5's registry claim and §7a's schema row de-staled. *Prior:* **v4** — external round 2 folded (2026-08-21): **R2-1** the combined pipeline with `0025` stated once (`0025` §4b-iii) — coherence first, disclosure established for the post-coherence state, vocabulary fallback never changes it; **R2-2** §8 narrowed to the recorded-claimant property and §7 states the two doors honestly (a mis-emitted relay with subject="user" is outside every invariant here, bounded by §3b's vacuity argument); **R2-3** §3b/§7a carry the observation surface (result key, MCP strip, CLI, telemetry under the consent contract) and U5's test renamed off the withdrawn note carrier. *Prior:* **v3** — external round 1 folded (2026-08-21): **F1** `Spec-Requires: 0005, 0025` (the independence declaration was the defect); **F2** the coherence predicate made mechanical (§4a: canonical subject shared with the write site, whole-string casefold equality, odd types fail closed; §2c corrected to shipped str() behaviour; U1 restated over the complementary domain); **F3** §6 made the ONE invariant list with U7's count carriers dispositioned; **F4** §8 narrowed to the literal-user-subject cell, prospective only. Original-relation carrier moved to the typed field with `0025` F6. *Prior:* **v2** — internal round 1 folded (research, 2026-08-17). **The ruling this spec asked for is ADJUDICATED: the door OPENS, and the argument is stronger than v1's** — the steered-extractor attack is VACUOUS, not bounded (an ordinary relation already reaches MENTIONABLE), so `third_party_claim` was never a boundary against the extractor; what the fix removes is the model's power to unilaterally DEMOTE user testimony. Also folded: M1 (the §3 matrix sampled the author domain and missed the LIVE `SYSTEM`/no-`derived_from` cell), M3's pair composition, and the symmetric re-disposition count. Invariants renamed **W→U** so the prefix does not collide with `0004`'s. |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing. |
 | **Internal reviewers** | research — round 1 RETURN 2026-08-17 (1 adjudication + 2 moderates + minors), folded here |
 | **External review** | required — changes a disclosure decision on the ingest write path |
@@ -83,9 +83,15 @@ away for recall.
 a genuine third-party claim: *"my landlord says I owe $500."* That IS
 third-party testimony, the user is merely the courier, and quarantining it
 is correct. **The defect is the CONFLATION of "user relays someone else's
-assertion" with "user states their own observation", and any fix that
-cannot tell them apart is not a fix.** §4 turns that distinction into a
-structural test rather than a matter of extractor judgement.
+assertion" with "user states their own observation" — and A1 concedes,
+on measurement, that the §4a predicate CANNOT tell them apart (4 of the
+16 relay probes fired it). So the fix's obligation is narrower and
+stated honestly: a mechanism that cannot make the distinction must
+never GRANT what only the distinction could license. Re-disposition
+under A1 lifts the record out of quarantine into
+may-inform-never-assert — it never asserts.** §4 turns the label
+contradiction into a structural test rather than a matter of extractor
+judgement; assertion waits for content evidence (Q5).
 
 **What happens if we do nothing.** The store keeps mislabelling a fraction
 of first-person memory as hearsay. The cost is invisible in normal use —
@@ -202,10 +208,11 @@ which this spec does not have and no longer pretends to.
   tests; absent consent the field is never emitted.
 - **Per record, at write time.** Nothing existing is rewritten (§7).
 - **Does anything become visible to a principal who could not see it
-  before?** **Yes — a quarantined record becomes assertable — and v1
-  described that as a BOUNDED DOOR. It is not a door at all, and the
-  stronger argument is now stated here rather than left for the external
-  reviewer to find (internal round 1).**
+  before?** **Yes — a quarantined record becomes USABLE (A1: USE_ONLY —
+  it may inform answers and is never asserted) — and v1 described the
+  then-assertable form as a BOUNDED DOOR. It is not a door at all, and
+  the stronger argument is now stated here rather than left for the
+  external reviewer to find (internal round 1).**
 
   **The attack cell is VACUOUS.** v1 worried about an extractor steered into
   emitting `subject="user"` to escape quarantine. But the extractor chooses
@@ -223,13 +230,17 @@ which this spec does not have and no longer pretends to.
   floored by the author. What changes is its power to unilaterally **DEMOTE**
   the user's own testimony, which this spec takes away.
 
-  **That is why this is not an un-cap.** An un-cap raises a record above what
-  the TRUSTED inputs license. Here the trusted inputs — `author_of_evidence`
-  and `derived_from`, both supplied by the host, neither chosen by the model —
-  already license `MENTIONABLE`, and the UNTRUSTED input demoted it. **The
-  rule restores the trusted inputs' decision after an untrusted one
-  contradicted it.** `0005`'s C1 forbids granting past a floor; no floor is
-  crossed here, and **U2** pins that over the full author domain.
+  **That is why this is not an un-cap.** An un-cap raises a record above
+  what the TRUSTED inputs license. Here the trusted inputs —
+  `author_of_evidence` and `derived_from`, host-supplied, neither chosen
+  by the model — would license `MENTIONABLE`, and the UNTRUSTED input
+  demoted it. **A1 deliberately restores LESS than the trusted inputs
+  license: USE_ONLY, because the untrusted input's slot-filling is also
+  what made the population ambiguous (4 relays per 1 self-statement,
+  measured) — the rule un-does the demotion's assertion-lockout without
+  granting assertion.** `0005`'s C1 forbids granting past a floor; A1
+  grants nothing at all above use, and **U2** pins the uniform value over
+  the full author domain.
 - Under `0020`, scoped principals see no more than the policy already allows.
 - **Existing records are NOT re-dispositioned** (§7). This is a write-time
   rule; a retroactive sweep is `Q1`.
@@ -318,7 +329,7 @@ extractor output is the shape this project keeps finding.
 |---|---|
 | is the fallback relation registry-resident? | **yes** — `unclassified` is `0025`'s reserved member, injected structurally into every registry, so this spec's rewrite cannot violate `0025` **X1** |
 | which rule runs first? | **the coherence test (this spec), then vocabulary enforcement (`0025`).** `third_party_claim` is IN the registry, so enforcement would pass it through untouched; the coherence test is the only rule that can see the contradiction |
-| **is a corrected user statement then able to SUPERSEDE?** | **NO — and this is a CHOSEN cell, not an accident.** `unclassified` is non-functional, so a re-dispositioned triple becomes assertable but never supersedes a prior. **Half-restoration is the honest outcome — and A1 applies the same argument to DISCLOSURE**: the coherence test establishes that the extractor's TRUST label was self-contradictory; it establishes nothing about which RELATION the fact belonged under, and (measured) nothing about whether the content is the user's own words. Guessing a functional relation in order to complete the restoration would file a fact under semantics nobody derived, and a wrong guess retires an unrelated record — `0025` §4b refuses exactly that trade for the same reason |
+| **is a corrected user statement then able to SUPERSEDE?** | **NO — and this is a CHOSEN cell, not an accident.** `unclassified` is non-functional and A1 caps the disclosure, so a re-dispositioned triple becomes USABLE — never assertable, never superseding. **Half-restoration is the honest outcome — and A1 applies the same argument to DISCLOSURE**: the coherence test establishes that the extractor's TRUST label was self-contradictory; it establishes nothing about which RELATION the fact belonged under, and (measured) nothing about whether the content is the user's own words. Guessing a functional relation in order to complete the restoration would file a fact under semantics nobody derived, and a wrong guess retires an unrelated record — `0025` §4b refuses exactly that trade for the same reason |
 | could a future spec complete it? | yes, and it would need evidence about the relation, not about the author. Recorded as **Q4** |
 
 ### 4c. What is deliberately NOT done
@@ -401,7 +412,7 @@ extractor output is the shape this project keeps finding.
 | **`0004`** | the wiki drop | **nothing to add.** This spec does not invalidate; it changes what a new record may assert |
 | **`0023`** | quarantine-at-birth and **N2**'s single-writer AST pin | this spec keeps the single write site, which **N2** requires. If both land, **N2**'s sweep covers this change too — one pin, not two |
 | **`0020`** | scoped read | unchanged; policy decides visibility, this decides assertability |
-| **`0025` §4b-iii step 2 (co-owned pipeline text) — AMENDED BY A1, verbatim, the `0014` precedent: carried here and folded into `0025` only on acceptance** | the step-2 sentence | REPLACEMENT TEXT: *"2. **Disclosure is established** for the post-coherence semantic state — **USE_ONLY for a re-dispositioned triple (`0024` §4b as amended by A1: the label's collapse licenses use, not assertion)**, the relation-then-author rules otherwise. It is computed once and RETAINED."* Nothing else in §4b-iii moves; steps 1, 3 and 4 are byte-unchanged |
+| **`0025` co-owned text — THREE passages AMENDED BY A1, verbatim, the `0014` precedent: carried here and folded into `0025` only on acceptance (round 13, A1-R13-1 completed this inventory)** | `0025` §4b-iii step 1; §4b-iii step 2; §7b's `0024` row | REPLACEMENT 1 (§4b-iii step 1, the "becomes the user's own statement" clause): *"1. **Coherence (`0024` §4a/§4b).** An incoherent `third_party_claim` is re-dispositioned; this DELIBERATELY changes the semantic state — the record stops being RELIABLY CLASSIFIED as hearsay. The label's self-contradiction licenses use; it is NOT a finding that the content is the user's own statement (`0024` A1, measured)."* REPLACEMENT 2 (§4b-iii step 2): *"2. **Disclosure is established** for the post-coherence semantic state — **USE_ONLY for a re-dispositioned triple (`0024` §4b as amended by A1: the label's collapse licenses use, not assertion)**, the relation-then-author rules otherwise. It is computed once and RETAINED."* REPLACEMENT 3 (`0025` §7b, the `0024` row's consequence clause "A corrected user statement therefore becomes assertable but NON-SUPERSEDING"): *"A re-dispositioned record is therefore USABLE — never assertable, never superseding (`0024` A1) — which `0024` §4b-i adopts as a chosen cell rather than inheriting as an accident."* Steps 3 and 4 of §4b-iii are byte-unchanged |
 
 ## 8. Claims and limits
 
@@ -417,9 +428,11 @@ extractor output is the shape this project keeps finding.
 
 *(External round 2, R2-2: the earlier sentence promised relayed content "is
 never asserted as fact" — but a genuine relay the extractor mis-emits with
-`subject="user"` falls INSIDE the deliberate first-person exception and may
-become MENTIONABLE. U1 protects non-user claimants only and cannot catch
-that error. The guarantee is structural, about what is RECORDED, not about
+`subject="user"` falls INSIDE the deliberate first-person exception and,
+under the v7 disposition this annotation was written against, could
+become MENTIONABLE — the risk the A1 measurement then CONFIRMED at 4/16
+and the reason the cell is now capped at USE_ONLY. U1 protects non-user
+claimants only and cannot catch that error. The guarantee is structural, about what is RECORDED, not about
 what was originally said; §7 states the residual risk honestly.)*
 >
 > *(External round 1, F4: the earlier absolute form — "a statement in your
@@ -544,7 +557,14 @@ Quentin ruled (2026-08-23): hold v7's mechanism out of the release
 (reverted, `9257e85`), amend to USE_ONLY as the destination. This
 section is that amendment.
 
-**The delta, enumerated (every carrier):**
+**The delta, enumerated. (Round 13, A1-R13-1: the first version of
+this table said "every carrier" while five normative passages — §1's
+"is not a fix", §3b's assertable/license-MENTIONABLE claims, §4b-i's
+"becomes assertable", §8's historical annotation, and two further
+`0025` passages — still described the v7 outcome. The claim of
+completeness was itself the finding; this revision swept the
+CONSEQUENCE words — "assertable", "user's own statement" — across BOTH
+specs, not just the cells the disposition value lives in.)**
 
 | carrier | change |
 |---|---|
@@ -552,7 +572,7 @@ section is that amendment.
 | §4b item 2 | disposition = USE_ONLY as the step-2 BASE; floors may only lower |
 | **U2 (the ONE frozen-surface change)** | exact oracle becomes the two-branch constant: revoked → QUARANTINED, else USE_ONLY |
 | U1, U3–U7 | **unchanged** — the predicate, the re-dispositioned relation, the typed original, byte-identity, the single write site, the counter all stand |
-| `0025` §4b-iii step 2 (co-owned) | the one-sentence replacement, VERBATIM in §7b (the `0014` precedent: carried here, folded into `0025` on acceptance) |
+| `0025` §4b-iii steps 1+2 AND §7b's `0024` row (co-owned) | THREE replacements, VERBATIM in §7b below (round 13, A1-R13-1: the first inventory carried only step 2 while step 1 still said the record "becomes the user's own statement" and `0025` §7b still said a "corrected user statement… becomes assertable" — exactly the claims the measurement rejects) |
 | `specs/evidence/0025/reference_enforcement.py` | amended EXECUTABLY by the INERT candidate patch `specs/evidence/0024/a1-reference.patch` (applies clean; the vector suite runs green with it applied — verified — and the file itself is untouched until acceptance) |
 | implementation (on re-acceptance) | the reverted `1b542b9` mechanism returns with one line changed: the re-dispositioned branch establishes `Disclosure.USE_ONLY` instead of calling the author rules; U6's single-establishment AST pin still holds |
 | release gating | Research re-runs the paired baseline against the amended implementation before it ships (their standing same-day commitment) |
@@ -571,7 +591,7 @@ or executable. The round-by-round ledger below is GENERATED from
 
 <!-- GENERATED:review-closure -->
 
-**2 internal round(s) and 12 external round(s) with a returned VERDICT are recorded for `0024`; 13 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**2 internal round(s) and 13 external round(s) with a returned VERDICT are recorded for `0024`; 14 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -602,11 +622,16 @@ or executable. The round-by-round ledger below is GENERATED from
 | external 12 (SENT) | 2026-08-22 | — | SENT (package `0024-0025-v12`; per-spec verdicts requested; sealed AFTER this row, sha pinned on return; prior reports omitted per standing instruction). 0024 UNCHANGED at v7 — sixth consecutive dependency-only return; the reviewer states both specs are final-disposition candidates after round 11's … |
 | external 12 (verdict) | 2026-08-22 | 0 | 🏁 ACCEPTED on the frozen U1-U7 invariant surface (sha 5a91e7363bd5c310 verified by the reviewer; byte-identical to v11), following the SIMULTANEOUS acceptance of required 0025; prerequisite 0005 already accepted; the 0014 interface-freeze confirmation remains in force. Six final rounds dependency-on… |
 | external 13 (SENT) | 2026-08-23 | — | SENT (package `0024-0025-v13` — AMENDMENT A1; 0025 rides unchanged at its accepted v13, the co-owned §4b-iii step-2 sentence carried VERBATIM in 0024 §7b per the 0014 precedent). The post-acceptance measurement round: v7's mechanism was implemented (1b542b9, U1-U7 green), Research's frozen 48-probe … |
+| external 13 (verdict) | 2026-08-23 | 3 | RETURN FOR AMENDMENT (package `0024-0025-v13`, sha ec2950b8 verified; 0025 REMAINS ACCEPTED on X1-X13 — no basis found to reopen; the USE_ONLY direction well supported, no competing disposition requested; 'suitable for a narrow confirmation round' once corrected). A1-R13-1 (blocking): the amendment … |
+| external 14 (SENT) | 2026-08-23 | — | SENT (package `0024-0025-v14` — the A1 narrow confirmation round; candidate v9, §12 maps the findings). A1-R13-1: the consequence-word sweep executed across BOTH specs ('assertable', 'user's own statement' — five passages rewritten here; the co-owned 0025 inventory grown to THREE verbatim replacemen… |
 
-**Per-finding closure ledger — PROCESS §4a.** **12 finding(s) for `0024`; 152 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **15 finding(s) for `0024`; 155 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
+| **A1-R13-1** | external 13 | the A1 amendment was not carrier-complete while §11 claimed 'every carrier' — five passages still described the v7 assertable outcome, and the co-owned 0025 inventory named one passage of three | the consequence-word sweep ('assertable', 'user's own statement') executed across BOTH specs; §7b carries THREE verbatim 0025 replacements; §11 records the lesson in place of the claim | `grep -c 'becomes assertable' specs/0024-authorship-before-structural-quarantine.md  # every survivor is a quotation of the defect in §11/§12/§7b` |
+| **A1-R13-2** | external 13 | the candidate patch did not run green (the revoked vector's control pinned pre-A1 MENTIONABLE) while §11 claimed verified-green — dev had verified with the pytest wrapper, not the reference's own runner | the control pins USE_ONLY; vector_a1_u2_oracle_exhaustive covers the complete author×derived product + revoked; 23/23 under python reference_enforcement.py itself | `grep -n 'vector_a1_u2_oracle_exhaustive' specs/evidence/0024/a1-reference.patch` |
+| **PACKAGE-R13-1** | external 13 | package carriers described both specs as draft candidates while the canonical statuses are in-review/accepted; the 0025 r13 ledger row overstated 'no file edit, status untouched' | candidate lines DERIVE the status word from each spec's Spec-Status line, fail-closed; the ledger row states no-design-change precisely | `grep -n '_spec_status' specs/package_identity.py  # the derived status, refusing an unreadable Spec-Status` |
 | **F1** | external 1 | the spec declared independence from 0025 while its rewrite target `unclassified` is defined and protected there — without 0025 the member is not registry-resident and a functional host shadow lets the rewrite supersede | Spec-Requires header, the F1 blockquote | `grep -n 'Spec-Requires' specs/0024-authorship-before-structural-quarantine.md  # names 0005 AND 0025, with the coupling stated in the blockquote below it` |
 | **F2** | external 1 | the coherence predicate was an intent, not a computation — the shipped ingest str()-converts truthy non-strings, so subject=["user"] survives the completeness check and the predicate's domain was undefined over it | §4a, §2c (subject AND relation cells), U1 | `grep -n 'casefold' specs/0024-authorship-before-structural-quarantine.md  # the canonical predicate, shared with the write site; odd types fail closed` |
 | **F3** | external 1 | the invariant inventory existed in three drifted copies — §6 out of order, §7a citing a W-range, the package header hand-typing a range one past the real list | §6 (the ONE list), §7a tests row, collected_header_0024_0025.txt | `grep -n 'ONE authoritative' specs/0024-authorship-before-structural-quarantine.md  # and the header template now points at §6 instead of restating a count` |
@@ -621,3 +646,35 @@ or executable. The round-by-round ledger below is GENERATED from
 | **R5-1** | external 5 | the THIRD_PARTY incoherent cell was changed by the matrix and declared unchanged by §5, with U2 flooring where the matrix specified — two green implementations could disagree | §5 (the ruled transition), U2 (exact output), §3 scope sentence | `grep -n 'CHANGED for exactly the incoherent subset' specs/0024-authorship-before-structural-quarantine.md  # and the reference asserts USE_ONLY exactly: vector_author_floor_holds_through_redisposition` |
 
 <!-- /GENERATED:review-closure -->
+
+## 12. Changes in v9 (the A1 round-13 fold, 2026-08-23)
+
+1. **A1-R13-1 — the amendment was not carrier-complete, and §11 claimed
+   it was.** Five normative passages still described the v7 outcome
+   (§1's "is not a fix", §3b's assertable + license-MENTIONABLE
+   claims, §4b-i's "becomes assertable", §8's historical annotation),
+   and the co-owned `0025` inventory named one passage where three
+   exist (§4b-iii step 1's "becomes the user's own statement";
+   §7b's "corrected user statement… becomes assertable"). All are
+   rewritten around the narrower measured fact: the label is
+   self-contradictory, so the record may inform — it is neither proven
+   to be the user's own statement nor assertable. The sweep now greps
+   the CONSEQUENCE words ("assertable", "user's own statement") across
+   both specs, and §11 records the lesson in place of the false claim.
+2. **A1-R13-2 — the candidate evidence did not run green, against
+   §11's claim that it did.** `vector_revoked_source_floor_wins_over_
+   coherence`'s non-revoked control pinned the pre-A1 MENTIONABLE;
+   I had verified with the pytest wrapper (20 tests) instead of the
+   reference file's OWN runner (all `vector_*`), which is the runner
+   the reviewer uses. The control now pins A1's USE_ONLY, a new
+   `vector_a1_u2_oracle_exhaustive` enumerates the COMPLETE U2 domain
+   (author × derived_from, non-revoked all-USE_ONLY plus revoked
+   QUARANTINED), and the patched suite runs 23/23 under
+   `python reference_enforcement.py` itself — the verification §11 now
+   cites is the one the reviewer will re-run.
+3. **PACKAGE-R13-1 — package carriers now DERIVE status.** The
+   candidate lines in COLLECTED/manifest read status from each spec's
+   canonical `Spec-Status:` line (0024 `in review`, 0025 `accepted`)
+   instead of a hardcoded "draft"; the 0025 round-13 ledger row states
+   the truth precisely — no X1–X13 design change, rather than no file
+   or status change (v12→v13 changed both).

@@ -711,7 +711,7 @@ or executable. The round-by-round ledger below is GENERATED from
 
 <!-- GENERATED:review-closure -->
 
-**2 internal round(s) and 12 external round(s) with a returned VERDICT are recorded for `0025`; 13 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**2 internal round(s) and 12 external round(s) with a returned VERDICT are recorded for `0025`; 14 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -741,9 +741,10 @@ or executable. The round-by-round ledger below is GENERATED from
 | external 11 (verdict) | 2026-08-22 | 3 | RETURN FOR A NARROW CARRIER/PACKAGE AMENDMENT (sha 9e5fd437 pinned; the prior substantive design blocker CLOSED; NO new X1-X13 architectural defect; the 0014 confirmation stands; the reviewer states both specs should be ready for FINAL DISPOSITION after these three corrections and a green extracted-… |
 | external 12 (SENT) | 2026-08-22 | — | SENT (package `0024-0025-v12`). 0025 at v13, the FINAL-DISPOSITION candidate: all three round-11 corrections folded — §7b records the 0014 confirmation (R11-1); the numeric prior-selection is a PURE helper whose regression runs on supplied paths, extraction-safe (PACKAGE-R11-1); one module-level LOO… |
 | external 12 (verdict) | 2026-08-22 | 0 | 🏁 ACCEPTED on the frozen X1-X13 invariant surface (sha 5a91e7363bd5c310 verified by the reviewer). All v11 corrections verified: §7b records the 0014 confirmation; the pure prior-selection helper's regression AND the closure-evidence runner pass from the extracted archive; LOOSE_CARRIERS has exactly… |
-| external 13 (SENT) | 2026-08-23 | — | SENT (package `0024-0025-v13`). 0025 RIDES UNCHANGED at its ACCEPTED v13 — no file edit, no X1-X13 change, status untouched. The one 0025-owned sentence A1 amends (§4b-iii step 2's disposition for a re-dispositioned triple) is carried VERBATIM in 0024 §7b and folds into this spec ONLY on A1's accept… |
+| external 13 (SENT) | 2026-08-23 | — | SENT (package `0024-0025-v13`). 0025 RIDES at its ACCEPTED v13 — NO X1-X13 DESIGN CHANGE this round (PACKAGE-R13-1 corrected this row: v12→v13 of the package DID change the 0025 file — the draft→accepted status flip and its closure material — so 'no file edit, status untouched' was false; the accura… |
+| external 14 (SENT) | 2026-08-23 | — | SENT (package `0024-0025-v14`). 0025 remains ACCEPTED on X1-X13 (round-13 verdict: no basis to reopen) and rides with NO design change; its candidate line now reads its status from Spec-Status per PACKAGE-R13-1. The co-owned A1 inventory it will absorb on acceptance is now THREE verbatim passages (0… |
 
-**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 152 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 155 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

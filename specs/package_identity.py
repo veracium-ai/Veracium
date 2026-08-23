@@ -84,6 +84,7 @@ PACKAGES = {
         "v11": (11, {"0024": "v7", "0025": "v12"}),
         "v12": (12, {"0024": "v7", "0025": "v13"}),
         "v13": (13, {"0024": "v8", "0025": "v13"}),
+        "v14": (14, {"0024": "v9", "0025": "v13"}),
     },
 }
 
@@ -96,7 +97,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()   # cleared by the 0024-0025-v13 sidecar commit (C8-1/C9-1)
+IN_FLIGHT: tuple = ("0024-0025-v14",)   # C8-1/C9-1: the ONE declared seal
+                                        # (A1 confirmation round); cleared
+                                        # by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -275,7 +278,8 @@ INDENT = " " * len(LABEL)
 # ONE authority for what a candidate claim LOOKS like (R2-1: the sweep that
 # refuses candidate-shaped claims outside the verified field must be shared
 # by every carrier — COLLECTED.txt and PACKAGE_MANIFEST.txt — not copied).
-CANDIDATE_LINE_RE = r"specs/\S+\.md — draft v\d+(?:\.\d+)? \(external candidate\)"
+CANDIDATE_LINE_RE = (r"specs/\S+\.md — [a-z][a-z -]{2,30} v\d+(?:\.\d+)?"
+                     r" \(external candidate\)")
 
 
 def candidate_field_problems(text: str, field: str, carrier: str) -> list:
@@ -325,11 +329,28 @@ def render_candidate_field(line: str, version: str) -> str:
     return LABEL + render_candidate_lines(line, version)
 
 
+def _spec_status(name: str) -> str:
+    """PACKAGE-R13-1: the candidate line's status word is DERIVED from the
+    spec's ONE canonical `Spec-Status:` line, never typed here — the v13
+    package described accepted 0025 and in-review 0024 both as `draft`
+    because the word was a literal in the renderer. Fails closed: a spec
+    file without a readable status line refuses the render."""
+    import re as _re
+    path = HERE.parent / name
+    m = _re.search(r"^Spec-Status:\s*(\S[^\n]*?)\s*$",
+                   path.read_text(), _re.M)
+    if not m:
+        raise ValueError(f"{name}: no Spec-Status line — the candidate "
+                         f"carrier cannot state a status it cannot read")
+    return m.group(1)
+
+
 def render_candidate_lines(line: str, version: str, indent: str = INDENT) -> str:
     """The COLLECTED `specs:` block, generated from the record.
 
     R17-1: these two lines were template literals reading `draft v16` while the
     package was v17. A carrier that states a fact must be filled from the fact.
+    PACKAGE-R13-1: the STATUS word is a fact too — derived per spec.
     """
     cands = candidates(line, version)
     names = {"0001": "specs/0001-generated-content-trust-class.md",
@@ -342,7 +363,8 @@ def render_candidate_lines(line: str, version: str, indent: str = INDENT) -> str
         if spec not in names:
             raise KeyError(f"no filename known for spec {spec!r}")
         out.append(f"{'' if i == 0 else indent}{names[spec]} — "
-                   f"draft {cands[spec]} (external candidate)")
+                   f"{_spec_status(names[spec])} {cands[spec]} "
+                   f"(external candidate)")
     return "\n".join(out)
 
 
