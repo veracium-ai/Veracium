@@ -3,10 +3,11 @@ SEALED:  __TS__ (UTC)
 COMMIT:  __COMMIT_FULL__   (the same commit COLLECTED.txt names)
 MEASURED: __MEASURED__
 
-One archive, per-spec verdicts requested — external ROUND __ROUND__ (the
-round number above and the dependency lines below are DERIVED at seal
-time; round 3 caught this paragraph still hand-claiming independence and
-a first round):
+One archive, per-spec verdicts requested — the external round is stated
+ONCE, in the PACKAGE line above (C-plus R2-1: each dynamic fact exactly
+once, from the record; this paragraph's second __ROUND__ token was
+removed when the line first sealed under the accepted C-plus
+construction). The dependency lines below are DERIVED at seal time:
 __REQUIRES__
 Prior review reports are omitted per the reviewer's standing instruction.
 The archive
