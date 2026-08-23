@@ -389,3 +389,24 @@ strict logical-line grammar (name==version + hash options ONLY; direct
 references, markers, options, duplicates, orphan continuations all
 refuse), parse problems surfaced through `verify()`, the reviewer's
 appended line as the regression.
+
+## 14. Implementation review — round 6 (2026-08-23): C6-1 + C6-2 folded
+
+**C6-1 (blocking) — the generated history inferred beyond its domain.**
+`derive_line_history` claimed "document-only" for every round before the
+registry's first entry — FALSE for 0022-0023, whose v3-v16 sidecars sit
+committed in specs/archives. The registry defines the generator's governed
+DOMAIN; absence from it is not evidence about the world. **Folded:** the
+history states governed rounds only and points earlier rounds at the
+committed sidecar index without characterising them; the regression sweeps
+EVERY line in the registry, 0022-0023 included.
+
+**C6-2 (blocking) — "some lower version" is not the predecessor.** With
+v3/v4/v5 in the ledger, a directory holding only v3 satisfied the prior
+check for v6 and seeded the diff. **Folded:** `required_predecessor`
+computes the maximum declared lower version, requires an archive of
+EXACTLY that version, selects the newest timestamp deterministically, and
+verifies its sha256 against the COMMITTED sidecar; older-only,
+wrong-version and wrong-hash all refuse (tested). The committed
+specs/archives INDEX + sidecars serve as the hash-witnessed lineage index
+the round asked for; both ship in every git archive.

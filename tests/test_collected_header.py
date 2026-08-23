@@ -493,6 +493,52 @@ def test_impl_review_round4_regression_wheelset_is_exact(tmp_path):
                for p in vw.verify(tmp_path, lock))
 
 
+def test_impl_review_round6_regressions(tmp_path):
+    """C6-1: history claims ONLY the governed domain — for every line,
+    including 0022-0023 whose pre-record rounds are sealed (sidecars
+    v3-v16), no 'document-only' inference survives. C6-2: the predecessor
+    must be the IMMEDIATE one, sidecar-hash-verified — older-only,
+    wrong-version, and wrong-hash all refuse."""
+    for line, versions in pid.PACKAGES.items():
+        for v in versions:
+            h = CR.derive_line_history(line, v, pid.PACKAGES)
+            assert "document-only" not in h, (line, v)
+            assert "OUTSIDE this record's domain" in h, (line, v)
+            assert "makes no claim" in h, (line, v)
+
+    # C6-2 with a synthetic line: ledger v3/v4/v5, sealing round 6
+    fake = {"9999": {"v3": (3, {}), "v4": (4, {}), "v5": (5, {})}}
+    real = pid.PACKAGES
+    old_archives = sp.ARCHIVES
+    try:
+        pid.PACKAGES = {**real, **fake}
+        sp.ARCHIVES = tmp_path / "archives"
+        sp.ARCHIVES.mkdir()
+        outbox = tmp_path / "outbox"
+        outbox.mkdir()
+        # older-only: v3 present, v5 (the immediate predecessor) absent
+        (outbox / "9999-v3-20260801T0000Z.tar.gz").write_bytes(b"x")
+        r = sp.required_predecessor("9999", 6, outbox)
+        assert isinstance(r, str) and "immediate predecessor" in r, r
+        # wrong-hash: v5 present but sidecar disagrees
+        p5 = outbox / "9999-v5-20260823T0000Z.tar.gz"
+        p5.write_bytes(b"the archive")
+        (sp.ARCHIVES / f"{p5.name}.sha256").write_text("0" * 64 + f"  {p5.name}\n")
+        r = sp.required_predecessor("9999", 6, outbox)
+        assert isinstance(r, str) and "sidecar" in r, r
+        # clean: sidecar matches → the Path comes back
+        import hashlib as _h
+        (sp.ARCHIVES / f"{p5.name}.sha256").write_text(
+            _h.sha256(b"the archive").hexdigest() + f"  {p5.name}\n")
+        r = sp.required_predecessor("9999", 6, outbox)
+        assert r == p5, r
+        # no prior declared (round 3 is the line's first): None
+        assert sp.required_predecessor("9999", 3, outbox) is None
+    finally:
+        pid.PACKAGES = real
+        sp.ARCHIVES = old_archives
+
+
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):
     r = _record(tmp_path)
     man = CX.render_manifest(r, MANIFEST_TEMPLATE)

@@ -197,6 +197,45 @@ LOOSE_CARRIERS = ("COLLECTED.txt", "COLLECTED_pytest_rs.txt",
                   "LAUNCHER_TRANSCRIPT.txt")
 
 
+def required_predecessor(line: str, round_no: int, outbox: pathlib.Path):
+    """C6-2: the IMMEDIATE predecessor, or the refusal string.
+
+    Computes the maximum declared lower version from the identity record,
+    requires an archive of EXACTLY that version in the outbox, selects the
+    newest timestamp deterministically, and verifies its sha256 against the
+    COMMITTED sidecar in specs/archives. Returns None (no prior declared),
+    a pathlib.Path (the verified predecessor), or a str (the refusal)."""
+    sys.path.insert(0, str(SPECS))
+    import package_identity as pid
+    lower = sorted(int(v[1:]) for v in pid.PACKAGES.get(line, {})
+                   if int(v[1:]) < round_no)
+    if not lower:
+        return None
+    want = f"v{lower[-1]}"
+    cands = sorted(outbox.glob(f"{line}-{want}-*.tar.gz"))
+    if not cands:
+        present = sorted({m.group(1) for p_ in outbox.glob(
+            f"{line}-v*.tar.gz")
+            for m in [re.match(rf"{re.escape(line)}-(v\d+)-", p_.name)]
+            if m})
+        return (f"the immediate predecessor {line}-{want} is not in "
+                f"{outbox} (present: {present or 'none'}) — an OLDER "
+                f"archive must not stand in for the true predecessor "
+                f"(C6-2); restore {want} before sealing")
+    pred = cands[-1]                      # deterministic: newest timestamp
+    sidecar = ARCHIVES / f"{pred.name}.sha256"
+    if not sidecar.exists():
+        return (f"the predecessor {pred.name} has no committed sidecar in "
+                f"specs/archives — its hash cannot be witnessed (C6-2)")
+    want_sha = sidecar.read_text().split()[0]
+    got = hashlib.sha256(pred.read_bytes()).hexdigest()
+    if got != want_sha:
+        return (f"the predecessor {pred.name} does not match its committed "
+                f"sidecar ({got[:16]}… != {want_sha[:16]}…) — a tampered or "
+                f"stale prior must not seed the diff (C6-2)")
+    return pred
+
+
 def _select_prior_archive(line: str, version: str, outbox: pathlib.Path):
     """PURE numeric prior-selection (round 11, PACKAGE-R11-1: the regression
     must run in an EXTRACTED review package, where there is no .git — so the
@@ -799,18 +838,13 @@ def main() -> int:
                                 # rounds while the guard read only two files
                                 (guide, "specs/REVIEWER_GUIDE.md"))
 
-        # C5-1: if the ledger proves a prior sealed send exists, its archive
-        # must be PRESENT to diff against — the named skip let a package
-        # sail while its history prose claimed "first sealed".
-        _prior_versions = [v for v in _pid.PACKAGES.get(_line, {})
-                           if int(v[1:]) < round_no]
-        if _prior_versions and _select_prior_archive(
-                _line, a.version, a.outbox) is None:
-            _fail(f"the ledger records prior sealed round(s) "
-                  f"{sorted(_prior_versions)} for line {_line} but no prior "
-                  f"archive is present in {a.outbox} — restore it before "
-                  f"sealing; a package must not ship without its true "
-                  f"predecessor diff (C5-1)")
+        # C5-1/C6-2: if the ledger proves a prior sealed send exists, THE
+        # IMMEDIATE PREDECESSOR's archive must be present AND match its
+        # committed sidecar — "some lower version" let v3 stand in for v5
+        # as v6's comparison source.
+        pred = required_predecessor(_line, round_no, a.outbox)
+        if pred is not None and isinstance(pred, str):
+            _fail(pred)
 
         name = f"{'-'.join(specs)}-{a.version}-{ts}"
         extra = {

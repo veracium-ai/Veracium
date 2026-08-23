@@ -396,19 +396,25 @@ def build_record(root: pathlib.Path, *, line: str, version: str,
 
 
 def derive_line_history(line: str, version: str, packages: dict) -> str:
-    """C5-1: the line's sealed history, FROM the ledger. States what the
-    record can prove and nothing more."""
+    """C5-1/C6-1: the line's sealed history — GOVERNED ROUNDS ONLY. The
+    first form inferred "document-only" for every round before the
+    registry's first entry, which was FALSE for 0022-0023 (sealed sidecars
+    v3-v16 sit in specs/archives; they predate the identity record, not
+    the sealer). Absence from PACKAGES is absence from this record's
+    DOMAIN, never evidence about the world. Earlier rounds are pointed at
+    their committed carrier (the archives sidecar index) without a claim
+    about their nature."""
     cur = int(version[1:])
     sealed = sorted(int(v[1:]) for v in packages.get(line, {})
                     if int(v[1:]) <= cur)
-    if len(sealed) == 1:
-        return (f"line history: this is the line's FIRST sealed round "
-                f"(round {sealed[0]}); any earlier rounds were "
-                f"document-only sends predating the sealer")
-    return (f"line history: sealed rounds {sealed[0]}-{sealed[-1]} "
-            f"(packages v{sealed[0]}-v{sealed[-1]}, this one v{cur}); "
-            f"rounds before v{sealed[0]} were document-only sends "
-            f"predating the sealer")
+    span = (f"round {sealed[0]}" if len(sealed) == 1
+            else f"rounds {sealed[0]}-{sealed[-1]} "
+                 f"(packages v{sealed[0]}-v{sealed[-1]}, this one v{cur})")
+    return (f"line history (this record's governed domain): sealed {span}. "
+            f"Rounds before v{sealed[0]}, if any, are OUTSIDE this "
+            f"record's domain — specs/archives/INDEX.md and its committed "
+            f"sidecars are their carrier; this line makes no claim about "
+            f"them (C6-1)")
 
 
 def derive_changes_pointer(round_no: int, packages: dict, line: str) -> str:
