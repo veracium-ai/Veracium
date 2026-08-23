@@ -367,3 +367,25 @@ wheel standing in passed (digest-in-lock + count parity). **Folded:**
 identity read from METADATA, exact bijection required (duplicates,
 absences, and wrong-requirement digests all refuse); the launcher runs it
 before anything unpacks; the reviewer's exact mutation is the regression.
+
+## 13. Implementation review — round 5 (2026-08-23): C5-1 + C5-2 folded
+
+**C5-1 (blocking) — authenticated-but-false history.** The line templates
+said "first sealed package / first live seal" on the line's THIRD sealed
+round, and CHANGED_FROM_PREVIOUS skipped because the sealing host had
+deleted the prior archives — the disclosed template limitation, landed.
+**Folded:** `history` and `changes` are DERIVED record fields
+(`derive_line_history` / `derive_changes_pointer`, from the
+review/package ledger), rendered via tokens, re-derived by the witness at
+extraction; the stale static prose is deleted from both templates; and
+the sealer now REFUSES to seal when the ledger records a prior sealed
+round whose archive is absent from the outbox — the named skip is
+reserved for genuine first packages. Workflow change: prior archives are
+KEPT in the outbox as the diff base.
+
+**C5-2 (moderate) — the lock parser failed open.** An appended
+direct-reference requirement sat outside the computed set. **Folded:**
+strict logical-line grammar (name==version + hash options ONLY; direct
+references, markers, options, duplicates, orphan continuations all
+refuse), parse problems surfaced through `verify()`, the reviewer's
+appended line as the regression.

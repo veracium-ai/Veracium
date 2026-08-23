@@ -25,22 +25,47 @@ def _norm(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def parse_lock(lock_text: str) -> dict:
-    """{(normalised name, version): set(sha256 hex)} from a pip lock file
-    (`name==version --hash=sha256:... [\\ --hash=...]` continuation form)."""
+def parse_lock(lock_text: str) -> tuple:
+    """({(normalised name, version): set(sha256)}, [problems]) — STRICT
+    (C5-2: the first parser silently ignored unsupported lines, so a
+    direct-reference requirement APPENDED to the lock sat outside the
+    computed set and the verifier accepted the lock anyway). Every
+    non-blank, non-comment LOGICAL line must be exactly
+    `name==version` followed by one or more `--hash=sha256:<64hex>`
+    options; anything else — direct references, markers, other options,
+    duplicates, orphan continuations — REFUSES."""
+    problems: list = []
     reqs: dict = {}
-    current = None
+    # join continuation lines into logical lines first
+    logical: list = []
+    buf = ""
     for raw in lock_text.splitlines():
-        line = raw.strip().rstrip("\\").strip()
-        m = re.match(r"^([A-Za-z0-9_.\-]+)==([^\s;]+)", line)
-        if m:
-            current = (_norm(m.group(1)), m.group(2))
-            reqs.setdefault(current, set())
-        for h in re.findall(r"--hash=sha256:([0-9a-f]{64})", line):
-            if current is None:
-                return {("<error>", "orphan-hash"): set()}
-            reqs[current].add(h)
-    return reqs
+        s = raw.rstrip()
+        if s.endswith("\\"):
+            buf += s[:-1] + " "
+            continue
+        logical.append(buf + s)
+        buf = ""
+    if buf.strip():
+        problems.append(f"orphan continuation at EOF: {buf.strip()[:60]!r}")
+    line_re = re.compile(
+        r"^([A-Za-z0-9][A-Za-z0-9_.\-]*)==([A-Za-z0-9_.!+\-]+)"
+        r"((?:\s+--hash=sha256:[0-9a-f]{64})+)\s*$")
+    for ln in logical:
+        s = ln.strip()
+        if not s or s.startswith("#"):
+            continue
+        m = line_re.match(s)
+        if not m:
+            problems.append(f"unsupported lock grammar (C5-2): {s[:80]!r}")
+            continue
+        key = (_norm(m.group(1)), m.group(2))
+        if key in reqs:
+            problems.append(f"duplicate declaration: {key[0]}=={key[1]}")
+            continue
+        reqs[key] = set(re.findall(r"--hash=sha256:([0-9a-f]{64})",
+                                   m.group(3)))
+    return reqs, problems
 
 
 def wheel_identity(wheel: pathlib.Path) -> tuple:
@@ -61,8 +86,9 @@ def wheel_identity(wheel: pathlib.Path) -> tuple:
 
 def verify(wheels_dir: pathlib.Path, lock_path: pathlib.Path) -> list:
     """Every problem that makes this wheelset NOT the locked set."""
-    problems = []
-    reqs = parse_lock(lock_path.read_text())
+    reqs, problems = parse_lock(lock_path.read_text())
+    if problems:
+        return [f"{lock_path.name}: {p}" for p in problems]
     if not reqs:
         return [f"{lock_path.name}: no requirements parsed"]
     seen: dict = {}

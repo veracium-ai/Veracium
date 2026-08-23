@@ -4,25 +4,15 @@ package built:   __TS__ (UTC)
 source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
                  sealer REFUSES if they differ)
 __CANDIDATES__
-                 Rounds 1-2 of this line (v2 reviewed 2026-07-31, v3 reviewed
-                 2026-08-01) were document-only sends predating the sealer;
-                 this is the line's FIRST SEALED package and the first live
-                 seal under the C-plus header construction (the record you
-                 can verify: collected_header.json, whole-file recompute via
-                 `python specs/verify_extracted.py header`).
+                 __HISTORY__
+                 (C5-1: history and the what-changed pointer are DERIVED
+                 from the review/package ledger and re-derived at
+                 extraction — static prose here once claimed "first sealed
+                 package" on the line's third sealed round, byte-perfectly
+                 authenticated. Verify: collected_header.json +
+                 `python specs/verify_extracted.py header`.)
 
-WHAT MOVED SINCE THE v3 REVIEW — your one blocking amendment, closed in code:
-  The render marker keyed on `use_only` with hardcoded third-party text.
-  Shipped 2026-08-15: `graph._ORIGIN_LABELS` keys on the AUTHOR, an
-  unlabelled class fails safe to `unverified-origin`, and
-  tests/test_render_origin.py trips on any new class without a label.
-  v4 additionally: rewrites the v2-form carriers §13 missed (§4, §3b, §6
-  I1/I2 — the appended-correction defect class), re-executes every
-  mechanical claim after eleven releases of drift, answers the five specs
-  that shipped author-consumers since v3 (§2d — the 0003 ladder's
-  pre-provisioned assistant rung ratified, the 0005 import cap, 0022, the
-  0024 co-edit sequencing, 0025, the MCP fail-closed map), and adds I11
-  (fail-closed disclosure) + I12 (pair-keyed origin labels).
+__CHANGES__
 
 MEASUREMENT CONTEXT — GENERATED from the captured runtime probe
 (RUNTIME_PROBE.json ships; the record derives from the file):

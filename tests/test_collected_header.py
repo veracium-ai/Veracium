@@ -42,7 +42,8 @@ COMMIT = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"
 # every required header token once, plus static prose around them
 TEMPLATE = (
     "PKG __VERSION__ round __ROUND__ at __TS__ commit __COMMIT__\n"
-    "__CANDIDATES__\nrequires: __REQUIRES__\nmeasured: __MEASURED__\n"
+    "__CANDIDATES__\n__HISTORY__\n__CHANGES__\n"
+    "requires: __REQUIRES__\nmeasured: __MEASURED__\n"
     "context:\n  __CONTEXT__\nlauncher: __LAUNCHER__\n"
     "harnesses: __HARNESSES__\nevidence: __EVIDENCE__\n"
     "extracted: __EXTRACTED__\nstatic prose the template owns\n")
@@ -473,6 +474,23 @@ def test_impl_review_round4_regression_wheelset_is_exact(tmp_path):
         f"pkg-a==1.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n"
         f"pkg-b==2.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n")
     assert any("permitted hashes" in p for p in vw.verify(tmp_path, lock))
+
+    # C5-2: the lock GRAMMAR fails closed — an appended direct-reference
+    # requirement sat outside the computed set and the first parser
+    # silently ignored it
+    lock.write_text(
+        f"pkg-a==1.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n"
+        f"pkg-b==2.0 --hash=sha256:{_h.sha256(wb2.read_bytes()).hexdigest()}\n"
+        "extra-package @ file:///tmp/extra.whl --hash=sha256:" + "0" * 64
+        + "\n")
+    assert any("unsupported lock grammar" in p
+               for p in vw.verify(tmp_path, lock))
+    # duplicates and orphan continuations refuse too
+    lock.write_text(
+        f"pkg-a==1.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n"
+        f"pkg-a==1.0 --hash=sha256:{_h.sha256(wa.read_bytes()).hexdigest()}\n")
+    assert any("duplicate declaration" in p
+               for p in vw.verify(tmp_path, lock))
 
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):

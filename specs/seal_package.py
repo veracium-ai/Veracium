@@ -799,6 +799,19 @@ def main() -> int:
                                 # rounds while the guard read only two files
                                 (guide, "specs/REVIEWER_GUIDE.md"))
 
+        # C5-1: if the ledger proves a prior sealed send exists, its archive
+        # must be PRESENT to diff against — the named skip let a package
+        # sail while its history prose claimed "first sealed".
+        _prior_versions = [v for v in _pid.PACKAGES.get(_line, {})
+                           if int(v[1:]) < round_no]
+        if _prior_versions and _select_prior_archive(
+                _line, a.version, a.outbox) is None:
+            _fail(f"the ledger records prior sealed round(s) "
+                  f"{sorted(_prior_versions)} for line {_line} but no prior "
+                  f"archive is present in {a.outbox} — restore it before "
+                  f"sealing; a package must not ship without its true "
+                  f"predecessor diff (C5-1)")
+
         name = f"{'-'.join(specs)}-{a.version}-{ts}"
         extra = {
             "COLLECTED.txt": collected,

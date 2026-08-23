@@ -148,6 +148,14 @@ FIELD_POLICY = {
     # RECORD SAYS SO (§5.4, ruling 2): witness `none`, attestation `none`,
     # structural checks in witness_problems().
     "ts":          _P("clock", "syntax", "none", in_header=True, in_manifest=True),
+    # C5-1: package history and the what-changed pointer are DERIVED from
+    # the review/package ledger and witnessed there — static template prose
+    # claimed "first sealed package" on the line's third sealed round, and
+    # byte-perfect recomputation authenticated the falsehood.
+    "history":     _P("package_identity", "independent_cross_check",
+                      "reviews_sent", in_header=True),
+    "changes":     _P("package_identity", "independent_cross_check",
+                      "reviews_sent", in_header=True),
 }
 
 FIELD_KEYS = ("value", "source", "validation", "witness",
@@ -375,11 +383,46 @@ def build_record(root: pathlib.Path, *, line: str, version: str,
                             "sha256": launcher_sha,
                             "exit": launcher_exit}),
         "ts": _field(f["ts"], ts),
+        "history": _field(f["history"],
+                          derive_line_history(line, version, pid.PACKAGES)),
+        "changes": _field(f["changes"],
+                          derive_changes_pointer(round_no, pid.PACKAGES,
+                                                 line)),
     }
     return {"record_version": RECORD_VERSION,
             "templates": {"header": _template_entry(template_path),
                           "manifest": _template_entry(manifest_template_path)},
             "fields": fields}
+
+
+def derive_line_history(line: str, version: str, packages: dict) -> str:
+    """C5-1: the line's sealed history, FROM the ledger. States what the
+    record can prove and nothing more."""
+    cur = int(version[1:])
+    sealed = sorted(int(v[1:]) for v in packages.get(line, {})
+                    if int(v[1:]) <= cur)
+    if len(sealed) == 1:
+        return (f"line history: this is the line's FIRST sealed round "
+                f"(round {sealed[0]}); any earlier rounds were "
+                f"document-only sends predating the sealer")
+    return (f"line history: sealed rounds {sealed[0]}-{sealed[-1]} "
+            f"(packages v{sealed[0]}-v{sealed[-1]}, this one v{cur}); "
+            f"rounds before v{sealed[0]} were document-only sends "
+            f"predating the sealer")
+
+
+def derive_changes_pointer(round_no: int, packages: dict, line: str) -> str:
+    """C5-1: the what-changed pointer, from the predecessor/current pair —
+    never a hand-written section number."""
+    prior = sorted(int(v[1:]) for v in packages.get(line, {})
+                   if int(v[1:]) < round_no)
+    if not prior:
+        return ("what changed: first sealed round — the candidate's own "
+                "changes sections carry the pre-seal history")
+    return (f"what changed: this candidate folds the round-{prior[-1]} "
+            f"verdict; the candidate spec's NEWEST changes section maps "
+            f"each finding to its fix, and the reviews ledger row for "
+            f"round {prior[-1]} records the verdict text")
 
 
 def render_extracted_list(sp) -> str:
@@ -661,6 +704,27 @@ def witness_problems(record: dict, root: pathlib.Path,
                         f"{value('version')} (R17-1)")
         except Exception as e:            # noqa: BLE001 — the reason matters
             problems.append(f"candidates: reviews_sent witness failed: {e}")
+
+    # -- reviews_sent (history/changes): re-derived from the shipped ledger
+    for hname, deriver in (("history", None), ("changes", None)):
+        if not active(hname):
+            continue
+        sys.path.insert(0, str(root / "specs"))
+        try:
+            import package_identity as pid
+            if hname == "history":
+                want = derive_line_history(
+                    value("package")[: -len(value("version")) - 1],
+                    value("version"), pid.PACKAGES)
+            else:
+                want = derive_changes_pointer(
+                    int(value("round")), pid.PACKAGES,
+                    value("package")[: -len(value("version")) - 1])
+            if want != value(hname):
+                problems.append(f"{hname}: the record's text does not "
+                                f"re-derive from the ledger (C5-1)")
+        except Exception as e:            # noqa: BLE001 — the reason matters
+            problems.append(f"{hname}: {e}")
 
     # -- spec_header: the requires block re-derived from the spec files
     if active("requires"):
