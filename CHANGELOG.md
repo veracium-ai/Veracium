@@ -2,27 +2,22 @@
 
 ## Unreleased
 
-- **0024 — AUTHORSHIP BEFORE STRUCTURAL QUARANTINE** (accepted with 0025
-  at external round 12; implemented 2026-08-23 after Research banked the
-  live extraction baseline that sized it). A `third_party_claim` triple
-  whose canonical subject is exactly the user is a contradiction in the
-  extractor's own terms — the claimant slot naming the person whose
-  testimony it would demote. Such a triple is now **re-dispositioned, not
-  quarantined**: its relation moves to the reserved non-functional
-  `unclassified` (assertable, never superseding — the chosen
-  half-restoration), disclosure is established for the post-coherence
-  state by the author rules (a USER-authored statement lands MENTIONABLE;
-  every accepted floor, standing revocation included, still applies
-  after), and the original relation survives in `Edge.original_relation`.
-  The predicate is mechanical (whole-string casefold equality on the
-  canonical subject; odd types fail closed) and runs before vocabulary
-  enforcement (`0025` §4b-iii step 1). The `redispositioned` counter goes
-  live on its existing carriers (result dict on every path, telemetry
-  under consent, MCP still strips it). Sized by the post-0025 baseline:
-  1 of 16 quarantined records in live extraction moves (the A08 cell);
-  relay-laundering under concrete relations (B02/B07) is a distinct,
-  documented gap this fix does not touch. Stores that never see
-  `third_party_claim` are byte-identical (U4).
+- **0024 (authorship before structural quarantine): accepted, implemented,
+  measured — and HELD from this release.** The coherence mechanism landed
+  on main (`1b542b9`, all U1–U7 checks green) and Research's probe-paired
+  measurement then sized the spec's §8 residual at 4/16: four genuine
+  relays whose extracted triple subject was `"user"` lost their structural
+  quarantine and became assertable, against 1/16 correctly restored
+  (relay floor 14/16 → 10/16 on the probe set). The disclosed,
+  externally-accepted residual measured four times the gain, so the
+  implementation is reverted from this release rather than shipped; the
+  `redispositioned` counter remains present-at-zero on every carrier. The
+  destination is a narrow amendment (re-disposition to `use_only` — keep
+  the never-assert floor on the ambiguous population) through external
+  review, with the note/label agreement check as its companion. Records:
+  the paired run is banked in the research workspace; the implementation
+  and its 16 tests live in git history at `1b542b9` for the amended
+  return.
 
 - **selfcheck: the revocation guarantee is now user-runnable.** `veracium
   selfcheck` (and `Memory.self_check()`) gains a fourth check walking the
@@ -39,8 +34,8 @@
 
 - **0025 — THE RELATION VOCABULARY IS CLOSED** (accepted with 0024 at
   external round 12 after twelve rounds; implemented 2026-08-22; 0024's
-  own mechanism landed 2026-08-23 once Research's baseline was banked —
-  see its entry above).
+  own mechanism was implemented, measured, and HELD — see its entry
+  above).
   Extracted relations are now constrained to the registry: the host's
   `relations` dict is validated at the `ingest_event` boundary (empty and
   conflicting-reserved-shadow registries refuse with `RegistryError`), the
