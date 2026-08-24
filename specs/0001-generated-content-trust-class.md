@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11** with one mechanical evidence-carrier correction (R11-1); **v13 is the round-12 external candidate — the status flip follows the reviewer's confirmation of this reseal.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
+| **Version** | **v14** — the round-12 fold (§24): R12-1 the results record is validated against a CLOSED, exactly typed schema — every claimed field, not the four the first checker's author happened to bind (the reviewer passed forty-zero base + python 0.0.0, and a duplicated failure entry, through the old projection); `failure_set` sorted/unique/node-id-shaped/cardinality-equal; the commands IMPORTED from the generator; and the base made INDEPENDENTLY REPRODUCIBLE — `measure_candidate.py --verify` regenerates the complete record from the declared base and the SEALER refuses on any field difference. *Prior:* **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11**; v13 returned at round 12 for one mechanical evidence amendment (R12-1) with **the finite acceptance STANDING and the architecture frozen on the complete §6 surface**; **v14 is the round-13 external candidate — the status flip follows the reviewer's confirmation of this reseal.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -1218,3 +1218,46 @@ What returned was one mechanical evidence-carrier defect:
    predates 0024's landing and the gate work, which is exactly why the
    number had to be re-run rather than adjusted. The R9-3 closure
    evidence, which grepped a measurement DATE, now runs this binding.
+
+## 24. Changes in v14 (the round-12 fold, 2026-08-24)
+
+**Finite design acceptance STANDS** — round 12 found no semantic,
+trust-boundary, migration or selection defect, confirmed the executable
+candidate byte-identical to v11 apart from its README hunk, and
+reconciled its own 1807/21 offline run exactly with the sealed 1820/8
+through 13 declared environment-dependent transitions. One mechanical
+evidence amendment:
+
+1. **R12-1 — the checker bound a PROJECTION, not the record.** It
+   validated patch hash, README focused count, README triple and
+   failure-list LENGTH, while `candidate_results.json` claims base
+   commit, environment, commands, focused outcome and a sorted failure
+   set. The reviewer walked through both gaps: `base_commit` set to
+   forty zeroes with Python `0.0.0` (README still stating the real
+   ones) exited 0, and replacing one failure with a duplicate — 16
+   entries, 15 unique — exited 0. The declared mutation matrix passed
+   because it exercised only the four bound projections. Corrected:
+   * the record is validated against a **closed, exactly typed
+     schema** — every key required at every level, no extra key
+     tolerated (a record that grows a field without a check is a red
+     run), every value range-checked;
+   * `failure_set` must be **sorted, unique, node-id shaped** and
+     cardinality-equal to `full_suite.failed`;
+   * the recorded commands are **imported from `measure_candidate`**,
+     never retyped, so the record cannot describe a command it did not
+     run; the README inside the patch is bound on focused count, full
+     triple, base commit **and** Python version;
+   * the mutation matrix now covers **every schema field** — each key
+     deleted, an unknown key added at every level, each value corrupted
+     per its type, both reviewer counterexamples verbatim, and all four
+     README bindings;
+   * the base is **independently reproducible**:
+     `measure_candidate.py --base <committish>` materialises that tree,
+     applies the shipped patch and re-runs both suites, and `--verify`
+     regenerates the COMPLETE record from the base the record declares
+     and refuses on any field difference. The **sealer runs it**, so a
+     record that cannot be reproduced from its own declared base cannot
+     be packaged. It bit on its first run: the shipped record declared
+     kernel `1010-aws` and the host had moved to `1011-aws`, so the
+     record was regenerated at the release commit `48cc833` (focused
+     21, full 16F/1814P/20S) rather than the drift being excused.

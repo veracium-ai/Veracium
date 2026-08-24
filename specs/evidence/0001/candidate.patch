@@ -1,6 +1,6 @@
 diff --git a/CANDIDATE_README.md b/CANDIDATE_README.md
 new file mode 100644
-index 0000000..703b043
+index 0000000..db653f6
 --- /dev/null
 +++ b/CANDIDATE_README.md
 @@ -0,0 +1,75 @@
@@ -55,10 +55,10 @@ index 0000000..703b043
 +record, the patch's own bytes and this file — in the sealer's
 +extraction checks, so a stale count cannot reach a package:
 +
-+    measured 2026-08-24: 16 failed, 1813 passed, 20 skipped
-+    environment: CPython 3.12.3, Linux-7.0.0-1010-aws-x86_64-glibc2.39
++    measured 2026-08-24: 16 failed, 1814 passed, 20 skipped
++    environment: CPython 3.12.3, Linux-7.0.0-1011-aws-x86_64-glibc2.39
 +    command: python -m pytest tests/ -q
-+    base: main @ 59cd1cf + this branch's patch
++    base: main @ 48cc833 + this branch's patch
 +
 +(The split moves with main: it was 1798/9 on 2026-08-23 at `9257e85`,
 +before 0024's mechanism, the P1/P4 gates and the A1 evidence work

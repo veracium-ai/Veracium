@@ -672,31 +672,32 @@ def test_impl_review_round9_regressions(tmp_path):
 
 
 def test_candidate_results_record_binds_the_measurement(tmp_path):
-    """P1's matrix for measure_candidate.py + check_candidate_results.py
-    (0001 R11-1: a carried focused count of 20 shipped while the branch
-    ran 21). Every property the binding claims is exercised by a mutant
-    violating exactly that property: a drifted focused count, a drifted
-    full-suite triple, a record bound to a DIFFERENT patch, and a
-    failure set whose size contradicts its own count. The pristine tree
-    passes."""
-    import json, shutil, subprocess, sys as _sys
+    """P1's matrix for the candidate-results binding, rebuilt at 0001
+    R12-1: the first version exercised four PROJECTIONS and the
+    reviewer walked through the gaps — a forty-zero base_commit with
+    python 0.0.0 exited 0, and a duplicated failure entry (16 listed,
+    15 unique) exited 0. The matrix now covers EVERY schema field:
+    each key deleted, each key added, each value corrupted per its
+    type, plus both counterexamples verbatim and the sortedness and
+    cardinality claims."""
+    import copy, json, shutil, subprocess, sys as _sys
     checker = ROOT / "specs" / "check_candidate_results.py"
     rec_path = ROOT / "specs" / "evidence" / "0001" / "candidate_results.json"
     patch_path = ROOT / "specs" / "evidence" / "0001" / "candidate.patch"
     if not (rec_path.exists() and patch_path.exists()):
         import pytest as _pytest
         _pytest.skip("candidate folded or absent — binding not applicable")
+    pristine = json.loads(rec_path.read_text())
 
-    def run(tree):
-        return subprocess.run([_sys.executable, str(tree / "specs"
-                                                    / checker.name)],
-                              capture_output=True, text=True).returncode
-
-    def tree_with(mutate_record=None, mutate_patch=None):
+    def run(mutate_record=None, mutate_patch=None):
         w = tmp_path / f"t{len(list(tmp_path.iterdir()))}"
         (w / "specs" / "evidence" / "0001").mkdir(parents=True)
         shutil.copy2(checker, w / "specs" / checker.name)
-        rec = json.loads(rec_path.read_text())
+        shutil.copy2(ROOT / "specs" / "evidence" / "0001"
+                     / "measure_candidate.py",
+                     w / "specs" / "evidence" / "0001"
+                     / "measure_candidate.py")
+        rec = copy.deepcopy(pristine)
         if mutate_record:
             mutate_record(rec)
         (w / "specs" / "evidence" / "0001"
@@ -706,23 +707,89 @@ def test_candidate_results_record_binds_the_measurement(tmp_path):
             text = mutate_patch(text)
         (w / "specs" / "evidence" / "0001"
          / "candidate.patch").write_text(text)
-        return w
+        return subprocess.run(
+            [_sys.executable, str(w / "specs" / checker.name)],
+            capture_output=True, text=True).returncode
 
-    assert run(tree_with()) == 0, "the pristine binding must pass"
-    # the round-11 defect itself: the README's focused count drifts
-    assert run(tree_with(mutate_patch=lambda s: s.replace(
-        "**21 passed**", "**20 passed**", 1))) != 0, (
-        "a drifted README focused count passed — the R11-1 defect")
-    # the full-suite triple drifts
-    assert run(tree_with(mutate_record=lambda r: r["full_suite"].update(
-        {"passed": r["full_suite"]["passed"] + 1}))) != 0, (
-        "a drifted full-suite triple passed")
-    # the record binds a DIFFERENT patch (bytes changed after measuring)
-    assert run(tree_with(mutate_patch=lambda s: s + "\n# drift\n")) != 0, (
+    assert run() == 0, "the pristine binding must pass"
+
+    # --- the reviewer's two counterexamples, verbatim ---
+    def zero_base(r):
+        r["base_commit"] = "0" * 40
+        r["environment"]["python"] = "0.0.0"
+    assert run(zero_base) != 0, (
+        "forty-zero base + python 0.0.0 passed while the README states "
+        "the real ones (R12-1 counterexample 1)")
+
+    def duplicate_failure(r):
+        r["failure_set"] = sorted(r["failure_set"][:-1]
+                                  + [r["failure_set"][0]])
+    assert run(duplicate_failure) != 0, (
+        "a duplicated failure entry passed — 16 listed, 15 unique "
+        "(R12-1 counterexample 2)")
+
+    # --- EVERY top-level key: deleted, and an unknown one added ---
+    for key in sorted(pristine):
+        assert run(lambda r, k=key: r.pop(k)) != 0, (
+            f"a record missing {key!r} passed — the schema is not total")
+    assert run(lambda r: r.update({"extra_field": 1})) != 0, (
+        "an UNKNOWN field passed — the schema must be closed, so a "
+        "record that grows a field without a check is a red run")
+
+    # --- every nested key of every sub-object ---
+    for obj in ("focused_suite", "full_suite", "environment"):
+        for key in sorted(pristine[obj]):
+            assert run(lambda r, o=obj, k=key: r[o].pop(k)) != 0, (
+                f"{obj} missing {key!r} passed")
+        assert run(lambda r, o=obj: r[o].update({"extra": 1})) != 0, (
+            f"{obj} with an unknown key passed")
+
+    # --- per-value corruptions, typed ---
+    corruptions = [
+        ("generated_by", lambda r: r.update({"generated_by": "hand-typed"})),
+        ("base_commit non-hex",
+         lambda r: r.update({"base_commit": "not-a-commit"})),
+        ("patch_sha256 wrong",
+         lambda r: r.update({"patch_sha256": "f" * 64})),
+        ("focused path", lambda r: r["focused_suite"].update(
+            {"path": "tests/test_other.py"})),
+        ("focused failed>0", lambda r: r["focused_suite"].update(
+            {"failed": 1})),
+        ("focused passed 0", lambda r: r["focused_suite"].update(
+            {"passed": 0})),
+        ("full passed as str", lambda r: r["full_suite"].update(
+            {"passed": "1814"})),
+        ("full negative", lambda r: r["full_suite"].update({"skipped": -1})),
+        ("python shape", lambda r: r["environment"].update(
+            {"python": "3.12"})),
+        ("platform empty", lambda r: r["environment"].update(
+            {"platform": "   "})),
+        ("command_full rewritten", lambda r: r["environment"].update(
+            {"command_full": "python -m pytest tests/ -q --lf"})),
+        ("failure_set unsorted", lambda r: r.update(
+            {"failure_set": list(reversed(r["failure_set"]))})),
+        ("failure_set short", lambda r: r["failure_set"].pop()),
+        ("failure_set not node ids", lambda r: r.update(
+            {"failure_set": sorted(["just a sentence"] * 1
+                                   + r["failure_set"][1:])})),
+    ]
+    for label, mut in corruptions:
+        assert run(mut) != 0, f"corruption passed: {label}"
+
+    # --- the README-side bindings, all four ---
+    assert run(mutate_patch=lambda s: s.replace(
+        "**21 passed**", "**20 passed**", 1)) != 0, "README focused drift"
+    assert run(mutate_patch=lambda s: s.replace(
+        "16 failed, 1814 passed", "16 failed, 1813 passed", 1)) != 0, (
+        "README triple drift")
+    assert run(mutate_patch=lambda s: s.replace(
+        "base: main @ 48cc833", "base: main @ deadbee", 1)) != 0, (
+        "README base drift")
+    assert run(mutate_patch=lambda s: s.replace(
+        "CPython 3.12.3", "CPython 3.11.9", 1)) != 0, "README python drift"
+    # and the patch's own bytes changing after the record was written
+    assert run(mutate_patch=lambda s: s + "\n# drift\n") != 0, (
         "a record bound to different patch bytes passed")
-    # the failure set contradicts its own count
-    assert run(tree_with(mutate_record=lambda r: r["failure_set"].pop())) != 0, (
-        "a failure set smaller than its count passed — the SET is the claim")
 
 
 def test_terminus_proposal_is_an_archive_member():

@@ -275,6 +275,20 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 12, "0001-R12-1",
+     "the checker bound a PROJECTION — patch hash, README count, README "
+     "triple, failure LENGTH — while the record claims base commit, "
+     "environment, commands, focused outcome and a sorted failure set; "
+     "a forty-zero base with python 0.0.0, and a duplicated failure "
+     "entry, both exited 0",
+     "a closed exactly-typed schema validating every claimed field; "
+     "failure_set sorted/unique/node-id/cardinality-equal; commands "
+     "imported not retyped; the matrix across every field; and the base "
+     "independently reproducible by a sealer-run complete-record replay",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_candidate_results_record_binds_the_measurement "
+     "-q -p no:randomly"),
+
     ("0001", "external", 11, "0001-R11-1",
      "the candidate README stated a focused count of 20 while the branch "
      "ran 21 — carried from v10 and incremented by inference, inside a "

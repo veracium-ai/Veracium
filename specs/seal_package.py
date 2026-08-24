@@ -893,6 +893,18 @@ def main() -> int:
             _fail(f"IN_FLIGHT must be exactly ({_line}-{a.version},) to "
                   f"seal this package; it is {_pid.IN_FLIGHT!r} — one seal "
                   f"in flight, declared alone (C8-1/C9-1)")
+        # 0001 R12-1: the candidate record must REPLAY from the base it
+        # declares — a git-requiring step, so it runs here in the repo
+        # rather than in the extraction checks. Two typed copies of a
+        # hash prove nothing; regenerating the complete record does.
+        _mc = SPECS / "evidence" / "0001" / "measure_candidate.py"
+        if _mc.exists() and (SPECS / "evidence" / "0001"
+                             / "candidate_results.json").exists():
+            _r = _run([sys.executable, str(_mc), "--verify"], cwd=ROOT)
+            if _r.returncode != 0:
+                _fail(f"the candidate results record does not replay from "
+                      f"its declared base:\n{_r.stdout}{_r.stderr}")
+            print(f"  replay  {_r.stdout.strip().splitlines()[-1]}")
         pred = required_predecessor(_line, round_no, a.outbox)
         if isinstance(pred, str):
             _fail(pred)
