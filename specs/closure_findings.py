@@ -75,13 +75,26 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 18, "A1-R18-1",
+     "the round-17 fix scoped the search to §4b-i but matched the "
+     "fragment ANYWHERE in the section — the obsolete row restored with "
+     "the live fragment in an HTML comment passed; and the carriers "
+     "typed 'five mutants' while six were invoked",
+     "the check anchors to an actual table row with comments STRIPPED "
+     "before matching (the line-anchored-in-comment variant pre-empted); "
+     "both shadow mutants join the matrix; count carriers enumerate, "
+     "never type",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
     ("0024", "external", 17, "A1-R17-1",
      "the carrier checker searched the whole file for the §4b-i header "
      "phrase, which the generated ledger quotes — the ledger-shadow "
      "mutant (obsolete header restored, ledger untouched) exited 0",
      "the check isolates §4b-i and asserts the exact table row at the "
      "site; the requested adversarial mutation matrix ships in the "
-     "suite, pristine + five mutants each biting",
+     "suite, pristine + the enumerated mutants each biting (counts "
+     "never typed - round-18 editorial)",
      "$PY -m pytest tests/test_collected_header.py::"
      "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
 

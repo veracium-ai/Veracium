@@ -672,12 +672,15 @@ def test_impl_review_round9_regressions(tmp_path):
 
 
 def test_a1_carrier_checker_mutation_matrix(tmp_path):
-    """A1-R17-1's requested artifact: the adversarial mutation matrix
-    for check_a1_carriers — every property it claims is exercised by a
-    mutant that violates exactly that property, INCLUDING the reviewer's
-    ledger-shadow mutant (the obsolete §4b-i header restored while the
-    live phrase survives as a quotation in a ledger-like block; the
-    whole-file search this matrix exists to forbid passed it)."""
+    """A1-R17-1's requested artifact, grown at A1-R18-1: the adversarial
+    mutation matrix for check_a1_carriers — every property it claims is
+    exercised by a mutant violating exactly that property. The cells are
+    ENUMERATED here, never counted (round 18's editorial: a typed count
+    of the cells drifted the day it was written): three §9 target
+    removals, the restored singular form, the ledger-shadow (round 17),
+    the plain obsolete-header restore, and the same-section
+    comment-shadow (round 18 — the live fragment inside an HTML comment
+    while the obsolete row stands)."""
     import re, subprocess, sys as _sys
     import check_a1_carriers as cac
     spec_text = cac.SPEC.read_text()
@@ -719,6 +722,32 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
         live_row,
         "| **is a corrected user statement then able to SUPERSEDE?**", 1)
     assert run(plain) != 0, "the plain obsolete-header restore passed"
+
+    # A1-R18-1's comment-shadow mutant, verbatim: the obsolete row stands
+    # while the live fragment survives only inside an HTML comment IN the
+    # same §4b-i section — mention is not use
+    comment_shadow = spec_text.replace(
+        live_row,
+        "| **is a corrected user statement then able to SUPERSEDE?**"
+        "\n<!-- is a re-dispositioned record then able to SUPERSEDE? "
+        "| **is a re-dispositioned record then able to SUPERSEDE?** -->",
+        1)
+    assert run(comment_shadow) != 0, (
+        "the same-section comment-shadow mutant passed — substring "
+        "matching survived inside the right section (A1-R18-1)")
+    # ...and the LINE-ANCHORED variant of the same shadow: a multi-line
+    # comment can put the row fragment at a line start, so the checker
+    # strips comments before matching (the property, recursed rather
+    # than awaited)
+    anchored_shadow = spec_text.replace(
+        live_row,
+        "| **is a corrected user statement then able to SUPERSEDE?**"
+        "\n<!--\n| **is a re-dispositioned record then able to "
+        "SUPERSEDE?**\n-->",
+        1)
+    assert run(anchored_shadow) != 0, (
+        "the line-anchored comment-shadow passed — the anchor alone was "
+        "not the property")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():

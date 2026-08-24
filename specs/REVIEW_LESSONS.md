@@ -36,12 +36,12 @@ finding that does not exist, and so does a class with nothing in it.
 
 ## The classes
 
-**115 external findings, raised across 20 rounds, and 11 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
+**116 external findings, raised across 20 rounds, and 11 found internally — every one classified below, exactly once.** Counts are DERIVED from `MECHANISM` in `specs/review_lessons.py`, which is checked total against the closure ledger: a finding that is not classified fails the build, and so does a class with nothing in it. Nothing in this section is a hand-kept number — R15-2 was exactly that.
 
 | # | class | external | self-found | rounds it was raised in | recurred |
 |---|---|---|---|---|---|
 | 1 | **self-assertion** — A claim not produced by the thing it describes | 16 | 1 | 1, 2, 4, 5, 6, 8, 9, 12, 13, 15, 16 | **yes** |
-| 2 | **proxy** — The check binds a stand-in, not the property | 19 | 0 | 1, 3, 5, 7, 10, 11, 13, 15, 16, 17, 18, 19, 20 | **yes** |
+| 2 | **proxy** — The check binds a stand-in, not the property | 20 | 0 | 1, 3, 5, 7, 10, 11, 13, 15, 16, 17, 18, 19, 20 | **yes** |
 | 3 | **second-copy** — The same fact stated twice | 40 | 0 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 16, 17 | **yes** |
 | 4 | **domain** — The rule's reach is not its domain | 32 | 6 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15, 17, 18, 19 | **yes** |
 | 5 | **self-reference** — The check reads what its own run produces | 0 | 3 | — | — |
@@ -49,7 +49,7 @@ finding that does not exist, and so does a class with nothing in it.
 | 7 | **env-leak** — The producing environment leaked into the artifact | 4 | 0 | 10, 11, 15 | **yes** |
 | 8 | **disclosure** — Behaviour that is correct but never stated to whoever must act on it | 0 | 1 | — | — |
 
-**The last finding that required a change to either specification was raised in round 17.** The 4 rounds that returned a verdict since (18–21) raised packaging and process findings only — 75 of the 126 findings here are spec-scoped, and every one of them is at or before round 17. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
+**The last finding that required a change to either specification was raised in round 18.** The 3 rounds that returned a verdict since (19–21) raised packaging and process findings only — 76 of the 127 findings here are spec-scoped, and every one of them is at or before round 18. Derived from the `scope` field on each classification; nothing in this paragraph is typed.
 
 **6 of 8 classes recurred** — they were raised in more than one round, which means the first instance was fixed and the mechanism shipped again in another costume: `self-assertion`, `proxy`, `second-copy`, `domain`, `coercion`, `env-leak`. That is the finding this document exists for. It is derived from the rounds column, not asserted.
 

@@ -516,6 +516,12 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 18 -------------------------------
+    ("0024", 18, "A1-R18-1"): ("proxy", "spec",
+        "scoped-to-the-section still matched the fragment in an HTML "
+        "comment — mention is not use, one recursion below round 17's "
+        "fix; and the matrix's typed count ('five') drifted the day it "
+        "was written, six invoked"),
     # ---- the A1 amendment, external round 17 -------------------------------
     ("0024", 17, "A1-R17-1"): ("proxy", "spec",
         "the carrier checker matched the header phrase anywhere in the "

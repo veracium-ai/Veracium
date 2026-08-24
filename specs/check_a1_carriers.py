@@ -18,7 +18,10 @@ presence-somewhere stood in for presence-at-the-site, the proxy class):
      quotes it so this grep stays honest);
   3. §4b-i ITSELF opens its supersession question with the
      re-dispositioned-record row — asserted inside the isolated §4b-i
-     section, never against the whole file.
+     section AND anchored to the start of an actual Markdown table row
+     (round 18, A1-R18-1: a substring match within the section accepted
+     the live fragment inside an HTML COMMENT while the obsolete row
+     stood — mention is not use, the sealer's own placeholder lesson).
 
 Takes an optional path argument so the adversarial mutation matrix can
 run it against mutated COPIES (the reviewer's requested artifact).
@@ -54,13 +57,23 @@ def main(argv: list[str] | None = None) -> int:
     mb = re.search(r"^#### 4b-i\..*?(?=^#{2,4} )", text, re.M | re.S)
     if not mb:
         problems.append("§4b-i not found")
-    elif ("| **is a re-dispositioned record then able to SUPERSEDE?**"
-          not in mb.group(0)):
+        section_b = ""
+    else:
+        # comments are stripped BEFORE matching: the round-18 fix anchored
+        # to a line-start table row, and a multi-line HTML comment can put
+        # the fragment at a line start — recursing the property rather
+        # than waiting for that round
+        section_b = re.sub(r"<!--.*?-->", "", mb.group(0), flags=re.S)
+    if mb and not re.search(
+            r"^\| \*\*is a re-dispositioned record then able to "
+            r"SUPERSEDE\?\*\*",
+            section_b, re.M):
         problems.append(
-            "§4b-i's supersession question row is not the "
-            "re-dispositioned form AT THE SITE — a quotation of the "
-            "phrase elsewhere (the generated ledger carries one) does "
-            "not count (A1-R17-1's ledger-shadow mutant)")
+            "§4b-i does not open an ACTUAL table row (line-anchored "
+            "`| **…`) with the re-dispositioned question — a quotation "
+            "elsewhere (A1-R17-1's ledger shadow) or the fragment inside "
+            "a comment in the section (A1-R18-1's comment shadow) does "
+            "not count; mention is not use")
     if problems:
         print("check_a1_carriers: FAILED\n  " + "\n  ".join(problems),
               file=sys.stderr)
