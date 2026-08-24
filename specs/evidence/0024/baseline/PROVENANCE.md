@@ -17,6 +17,16 @@ RESULTS_POSTFIX.md + postfix_records.jsonl (post-fix, main @ `1b542b9`,
 probe-paired). `probes.jsonl` is the frozen 48-probe matrix;
 `run_baseline.py`/`run_postfix.py` are the harness.
 
+Canary-subject records (added at round 15, EVIDENCE-R15-1): the
+canary floor is artifact-verified BY THE SHIPPED 2026-08-24 records
+(`canary_subject_records.jsonl`; chain and the one disclosed benign
+drift in `CANARY_SUBJECTS.md`, research repo `fd3a6170`). The
+2026-08-23 subject re-run printed to stdout and persisted nothing — it
+is corroborating history in the research session transcript, NOT
+shipped evidence; the fresh run agrees with it on every subject.
+`validate_baseline.py` (also added this round) recomputes the summaries
+and the five load-bearing movements from the shipped JSONL offline.
+
 Figure-correction note: RESULTS.md and EXPECTATIONS.md carry research's
 dated correction (`6f548f09`, 2026-08-24) moving the motivating L1
 census citation to the script's exact output (1,644 = 41.7%) — the same

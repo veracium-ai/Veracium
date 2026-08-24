@@ -427,6 +427,11 @@ EXTRACTION_CHECKS = (
     # mismatch (A1-R13-2). Skips visibly when no patch ships.
     ("verify_a1_patch.py (apply + own-runner the A1 candidate)",
      [sys.executable, "specs/verify_a1_patch.py"]),
+    # Round-15 reviewer suggestion: the baseline measurement is
+    # independently checkable from the archive — summaries and the five
+    # load-bearing movements recomputed from the shipped JSONL.
+    ("validate_baseline.py (recompute the 4:1 result offline)",
+     [sys.executable, "specs/evidence/0024/baseline/validate_baseline.py"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",

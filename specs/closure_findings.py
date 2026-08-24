@@ -75,6 +75,38 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 15, "A1-R15-1",
+     "the R14-1 closure evidence proved only half the finding — no "
+     "command examined §9; restoring its obsolete singular summary alone "
+     "passed both commands",
+     "the evidence section-scopes §9 itself: three replacement targets "
+     "present, the singular form rejected, the §4b-i header live",
+     "awk '/^## 9\\./,/^## 10\\./' "
+     "specs/0024-authorship-before-structural-quarantine.md | grep -c "
+     "'§4b-iii step'  # the §9-scoped inventory the evidence now binds"),
+
+    ("0024", "external", 15, "PACKAGE-R15-1",
+     "verify_a1_patch accepted a skipped vector — only the reference was "
+     "copied, and dev's installed veracium masked the empty src/ path "
+     "locally (env-leak)",
+     "a complete tree is constructed, the exact zero-skip tail required, "
+     "and import provenance witnessed (veracium must resolve from inside "
+     "the constructed tree); the incomplete-tree refusal is a tested cell",
+     "grep -n 'copy_src=False' tests/test_collected_header.py  "
+     "# the refusal regression"),
+
+    ("0024", "external", 15, "EVIDENCE-R15-1",
+     "the 'whole evidentiary chain' claim was too broad — the canary "
+     "subject re-run behind 'artifact-verified' was never persisted, so "
+     "nothing shipped supported it",
+     "fresh persisted canary_subject_records.jsonl + CANARY_SUBJECTS.md "
+     "ship digest-bound; §11/PROVENANCE state shipped-records-verify vs "
+     "stdout-run-is-history exactly",
+     "(cd specs/evidence/0024/baseline && sha256sum --quiet -c "
+     "DIGESTS.sha256 && grep -q canary_subject_records "
+     "DIGESTS.sha256)  # digests verify FROM the bundle dir and the "
+     "canary records are bound"),
+
     ("0024", "external", 14, "A1-R14-1",
      "two consequence carriers survived the round-13 sweep — §4b-i's "
      "question header still said 'corrected user statement' and §9's "
@@ -83,8 +115,18 @@ CLOSURES = [
      "the §4b-i header asks about a re-dispositioned record; §9 "
      "enumerates all three 0025 replacements with the R14-1 note; the "
      "A1-R13-1 evidence strengthened to assert both",
-     "grep -n 'is a re-dispositioned record then able to SUPERSEDE' "
-     "specs/0024-authorship-before-structural-quarantine.md"),
+     "test \"$(awk '/^## 9\\./,/^## 10\\./' "
+     "specs/0024-authorship-before-structural-quarantine.md | grep -o -e "
+     "'§4b-iii step 1' -e '§4b-iii step 2' -e \"§7b's\" | sort -u | "
+     "wc -l)\" -ge 3 && ! awk '/^## 9\\./,/^## 10\\./' "
+     "specs/0024-authorship-before-structural-quarantine.md | grep -q "
+     "'one-sentence' && grep -q "
+     "'is a re-dispositioned record then able to SUPERSEDE' "
+     "specs/0024-authorship-before-structural-quarantine.md  "
+     "# A1-R15-1: §9 ITSELF is checked — all three replacement targets "
+     "present, the singular step-2 form rejected, and the §4b-i header "
+     "still live (the round-15 attack: restoring §9's obsolete summary "
+     "alone now fails this command)"),
 
     ("0001", "external", 10, "0001-R10-1",
      "the I6 reserve protected ELIGIBILITY, not relevance — every "

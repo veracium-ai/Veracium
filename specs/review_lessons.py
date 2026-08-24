@@ -516,6 +516,18 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 15 -------------------------------
+    ("0024", 15, "A1-R15-1"): ("proxy", "spec",
+        "the closure evidence bound the §4b-i header and §7b's markers — "
+        "stand-ins for the finding's actual site, §9, which no command "
+        "examined"),
+    ("0024", 15, "PACKAGE-R15-1"): ("env-leak", "packaging",
+        "the patch verifier passed locally because dev's installed "
+        "veracium supplied the import a clean extraction cannot — the "
+        "environment vouched for a tree that was not there"),
+    ("0024", 15, "EVIDENCE-R15-1"): ("self-assertion", "packaging",
+        "'artifact-verified' was claimed for a re-run that persisted no "
+        "artifact — the gap-closure had its own instrument gap"),
     ("0024", 14, "A1-R14-1"): ("domain", "spec",
         "the consequence sweep's needle list ('assertable', \"user's own "
         "statement\") was narrower than the consequence vocabulary — "

@@ -671,6 +671,46 @@ def test_impl_review_round9_regressions(tmp_path):
         pid.FIRST_GOVERNED = real_first
 
 
+def test_a1_patch_verifier_refuses_an_incomplete_tree():
+    """PACKAGE-R15-1: the verifier accepted `1 named skip(s)` because it
+    copied only the reference file and dev's installed veracium masked
+    the hole (env-leak). Both cells are pinned: without the product tree
+    the import-provenance witness refuses; with it the exact zero-skip
+    result passes with veracium resolved from INSIDE the constructed
+    tree."""
+    import verify_a1_patch as vap
+    assert vap.run_verification(copy_src=False) != 0, (
+        "an incomplete tree must REFUSE — a skipped or masked vector is "
+        "an unverified vector")
+    assert vap.run_verification(copy_src=True) == 0
+
+
+def test_baseline_validator_bites_on_a_planted_mutation(tmp_path):
+    """Research's §VII condition on trusting the validator's green: a
+    component that has not refused data it should refuse is presumed to
+    be faking. A copy of the shipped bundle with ONE movement record's
+    disclosure flipped must fail; the pristine copy must pass."""
+    import json, shutil, subprocess, sys as _sys
+    src = ROOT / "specs" / "evidence" / "0024" / "baseline"
+    work = tmp_path / "baseline"
+    shutil.copytree(src, work, ignore=shutil.ignore_patterns("__pycache__"))
+    r = subprocess.run([_sys.executable, str(work / "validate_baseline.py")],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, f"pristine copy must pass: {r.stderr}"
+    rec_path = work / "postfix_records.jsonl"
+    rows = [json.loads(l) for l in rec_path.read_text().splitlines()]
+    for row in rows:
+        if row["probe_id"] == "b24-A08":
+            for e in row["edges"]:
+                if e.get("original_relation") == "third_party_claim":
+                    e["disclosure"] = "quarantined"     # un-move A08
+    rec_path.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    r = subprocess.run([_sys.executable, str(work / "validate_baseline.py")],
+                       capture_output=True, text=True)
+    assert r.returncode != 0, (
+        "the planted mutation survived — the validator is faking (§VII)")
+
+
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):
     r = _record(tmp_path)
     man = CX.render_manifest(r, MANIFEST_TEMPLATE)

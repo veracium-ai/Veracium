@@ -1485,6 +1485,9 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
         # runner — the wrapper-vs-runner mismatch, mechanically closed.
         "verify_a1_patch.py (apply + own-runner the A1 candidate)":
             ("python", "specs/verify_a1_patch.py"),
+        "validate_baseline.py (recompute the 4:1 result offline)":
+            ("python",
+             "specs/evidence/0024/baseline/validate_baseline.py"),
         "render_closure.py --check":
             ("python", "specs/render_closure.py", "--check"),
         "render_operation.py --check":
