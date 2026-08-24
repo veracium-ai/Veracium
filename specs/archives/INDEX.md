@@ -323,7 +323,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0024-0025 | v13 | 13 | `0024-0025-v13-20260823T2156Z.tar.gz` | `ec2950b82e71615e…` |
 | 0024-0025 | v14 | 14 | `0024-0025-v14-20260823T2308Z.tar.gz` | `041693c24b1210db…` |
 | 0024-0025 | v15 | 15 | `0024-0025-v15-20260824T0018Z.tar.gz` | `11fdccf1b054dd91…` |
-| 0024-0025 | v16 | 16 | `0024-0025-v16-20260824T0102Z.tar.gz` | `4a9c141a001cad16…` |
+| 0024-0025 | v16 | 16 | **0 sidecars — LINEAGE GAP** | — |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 
@@ -332,4 +332,5 @@ Superseded/discarded seals (disclosed, deliberately un-witnessed):
 - 0001-v3-20260822T2236Z (C-plus round-2 specimen; superseded)
 - 0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)
 - 0024-0025-v13-20260823T2131Z (sealed, discarded unsent — research's §11 fidelity pass added the marker-witness note and the cell-A denominator fix before dispatch)
+- 0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's validator co-check found the canary file unchecked; the validator grew unknown-member refusal + the canary check before dispatch)
 

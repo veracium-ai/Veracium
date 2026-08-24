@@ -710,6 +710,35 @@ def test_baseline_validator_bites_on_a_planted_mutation(tmp_path):
     assert r.returncode != 0, (
         "the planted mutation survived — the validator is faking (§VII)")
 
+    # research's co-check cells (2026-08-24), plant-verified before riding:
+    # (b) a canary-only mutation must bite — the first validator predated
+    # the canary file and this exact mutation passed silently
+    work2 = tmp_path / "baseline2"
+    shutil.copytree(src, work2, ignore=shutil.ignore_patterns("__pycache__"))
+    cpath = work2 / "canary_subject_records.jsonl"
+    rows = [json.loads(l) for l in cpath.read_text().splitlines()]
+    for row in rows:
+        if row["probe_id"] == "b24-C04":
+            for e in row["edges"]:
+                e["subject"] = "user"
+    cpath.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    r = subprocess.run([_sys.executable, str(work2 / "validate_baseline.py")],
+                       capture_output=True, text=True)
+    assert r.returncode != 0 and "canonicalizes" in r.stderr, (
+        "the C04 user-subject mutation survived (research's co-check cell)")
+    # (a) an unknown digest-bound data file must refuse, not ride
+    work3 = tmp_path / "baseline3"
+    shutil.copytree(src, work3, ignore=shutil.ignore_patterns("__pycache__"))
+    (work3 / "extra_measurements.jsonl").write_text('{"x": 1}\n')
+    dig = work3 / "DIGESTS.sha256"
+    dig.write_text(dig.read_text()
+                   + "0" * 64 + "  extra_measurements.jsonl\n")
+    r = subprocess.run([_sys.executable, str(work3 / "validate_baseline.py")],
+                       capture_output=True, text=True)
+    assert r.returncode != 0 and "NO validator check" in r.stderr, (
+        "an unchecked bundle addition rode silently (closure over the "
+        "unknown)")
+
 
 def test_manifest_witness_catches_cross_carrier_disagreement(tmp_path):
     r = _record(tmp_path)

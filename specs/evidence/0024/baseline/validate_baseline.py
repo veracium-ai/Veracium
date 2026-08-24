@@ -19,7 +19,18 @@ Checks, all hard failures:
      (original_relation=third_party_claim, relation=unclassified,
      disclosure=mentionable) — is EXACTLY one cell-A probe (A08) and
      four cell-B probes (B06/B08/B10/B14): the 4:1 result;
-  3. the relay floor moves 14/16 -> 10/16 (cell B tpc_all_quarantined).
+  3. the relay floor moves 14/16 -> 10/16 (cell B tpc_all_quarantined);
+  4. the frozen probe matrix is coherent with the paired runs (48
+     probes; the runs' probe ids equal the matrix's; cells agree);
+  5. the canary-subject records support the claim they ship for:
+     exactly 8, ids == the matrix's cell-C ids, NO edge subject
+     canonicalizes to 'user', every third_party_claim edge QUARANTINED,
+     and CANARY_SUBJECTS.md names the records file (research co-check,
+     2026-08-24: the first validator predated this file and a
+     canary-only mutation passed silently);
+  6. CLOSURE OVER THE UNKNOWN: every digest-bound *.json/*.jsonl data
+     file must be one this validator has a check for — a future bundle
+     addition without a check is a red run, not a silent pass.
 """
 from __future__ import annotations
 
@@ -59,9 +70,33 @@ def _summarise(recs: list[dict]) -> dict:
     return cells
 
 
+DATA_CHECKED = {
+    "baseline_main_records.jsonl", "postfix_records.jsonl",
+    "baseline_main_summary.json", "postfix_summary.json",
+    "probes.jsonl", "canary_subject_records.jsonl",
+}
+# prose and harness files carry no recomputable data claim — enumerated,
+# not inferred, so a new data file cannot hide among them
+NON_DATA = {".md", ".py"}
+
+
 def main() -> int:
     problems = []
     runs = {}
+
+    # 6 — unknown-member refusal, driven by the digest manifest itself
+    for line in (HERE / "DIGESTS.sha256").read_text().splitlines():
+        name = line.split(None, 1)[1].strip() if line.strip() else ""
+        if not name:
+            continue
+        suffix = pathlib.Path(name).suffix
+        if suffix in NON_DATA or name == "DIGESTS.sha256":
+            continue
+        if name not in DATA_CHECKED:
+            problems.append(
+                f"{name}: digest-bound data file with NO validator check "
+                f"— coverage must grow with the bundle (research co-check "
+                f"2026-08-24: the canary file rode one round unchecked)")
     for rec_name, sum_name in (
             ("baseline_main_records.jsonl", "baseline_main_summary.json"),
             ("postfix_records.jsonl", "postfix_summary.json")):
@@ -108,13 +143,53 @@ def main() -> int:
         problems.append(f"relay floor moved {floor_pre} -> {floor_post}, "
                         f"expected 14 -> 10")
 
+    # 4 — the frozen matrix coheres with the paired runs
+    probes = _records("probes.jsonl")
+    if len(probes) != 48:
+        problems.append(f"probes.jsonl holds {len(probes)}, expected 48")
+    matrix = {pr["probe_id"]: pr["cell"] for pr in probes}
+    if set(matrix) != set(pre):
+        problems.append("the paired runs' probe ids differ from the matrix")
+    else:
+        bad = [pid for pid in pre if pre[pid]["cell"] != matrix[pid]]
+        if bad:
+            problems.append(f"cells disagree with the matrix for {bad}")
+
+    # 5 — the canary-subject records support their claim
+    canaries = _records("canary_subject_records.jsonl")
+    c_ids = sorted(pid for pid, c in matrix.items() if c == "C")
+    if sorted(r["probe_id"] for r in canaries) != c_ids or len(canaries) != 8:
+        problems.append(
+            f"canary records are {sorted(r['probe_id'] for r in canaries)}, "
+            f"expected exactly the matrix's cell-C ids {c_ids}")
+    md = (HERE / "CANARY_SUBJECTS.md").read_text()
+    if "canary_subject_records.jsonl" not in md:
+        problems.append("CANARY_SUBJECTS.md does not name the records file "
+                        "it chains to")
+    for r in canaries:
+        for e in r["edges"]:
+            if str(e.get("subject", "")).strip().casefold() == "user":
+                problems.append(
+                    f"{r['probe_id']}: a canary edge subject canonicalizes "
+                    f"to 'user' — the exact state this file ships to prove "
+                    f"absent")
+            if (e.get("relation") == "third_party_claim"
+                    and e.get("disclosure") != "quarantined"):
+                problems.append(
+                    f"{r['probe_id']}: a third_party_claim canary edge is "
+                    f"{e.get('disclosure')!r}, not quarantined")
+
+
     if problems:
         print("validate_baseline: FAILED\n  " + "\n  ".join(problems),
               file=sys.stderr)
         return 1
     print(f"validate_baseline: summaries recomputed and equal; movement "
           f"set == {expect} (A:1, B:4 — the 4:1 result); relay floor "
-          f"14 -> 10. All from the shipped JSONL, no model run.")
+          f"14 -> 10; matrix coherent (48); canary records support their "
+          f"claim (8/8, no user-subject, all tpc quarantined); every "
+          f"digest-bound data file checked. All from the shipped JSONL, "
+          f"no model run.")
     return 0
 
 

@@ -99,7 +99,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()   # cleared by the 0024-0025-v16 sidecar commit (C8-1/C9-1)
+IN_FLIGHT: tuple = ("0024-0025-v16",)   # C8-1/C9-1: the RESEAL after the
+                                        # validator co-check; cleared by
+                                        # its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -109,6 +111,9 @@ DISCARDED_PRE_ROUND = (
     "0024-0025-v13-20260823T2131Z (sealed, discarded unsent — research's "
     "§11 fidelity pass added the marker-witness note and the cell-A "
     "denominator fix before dispatch)",
+    "0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's "
+    "validator co-check found the canary file unchecked; the validator "
+    "grew unknown-member refusal + the canary check before dispatch)",
 )
 
 
