@@ -682,8 +682,11 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     (round 18 — the live fragment inside an HTML comment while the
     obsolete row stands), round 19's pair (the outside-the-table stray
     line; the contradictory second row), round 20's pair (the malformed
-    delimiter; the triple-backtick fenced table), and round 21's
-    fence-grammar pair (the tilde fence; the four-backtick fence)."""
+    delimiter; the triple-backtick fenced table), round 21's
+    fence-grammar pair (the tilde fence; the four-backtick fence), and
+    round 22's context cells (multi-word info string; four-space
+    indented code; the self-added shallow-fence and dead-fence indent
+    boundary, one failing and one passing control)."""
     import re, subprocess, sys as _sys
     import check_a1_carriers as cac
     spec_text = cac.SPEC.read_text()
@@ -808,6 +811,35 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     assert run(four_fenced) != 0, (
         "a four-backtick-fenced table passed as a table "
         "(A1-R21-1 mutant 2)")
+
+    # A1-R22-1's context pair. (1) a multi-word info string is a valid
+    # fence opener
+    info_fenced = spec_text.replace(
+        tbl, "```text example\n" + tbl + "```\n", 1)
+    assert run(info_fenced) != 0, (
+        "a fence with a multi-word info string passed as a table "
+        "(A1-R22-1 mutant 1)")
+    # (2) a four-space-indented table renders as an indented CODE block
+    indented = spec_text.replace(
+        tbl, "".join("    " + ln + "\n" for ln in tbl.splitlines()), 1)
+    assert run(indented) != 0, (
+        "a four-space-indented (code-rendered) table passed as a table "
+        "(A1-R22-1 mutant 2)")
+    # self-exhausted same-class cells (P5, item 9 — the next mutants,
+    # written now): a fence opener up to three spaces deep is STILL a
+    # fence and must hide the table...
+    shallow_fence = spec_text.replace(
+        tbl, "  ```\n" + tbl + "  ```\n", 1)
+    assert run(shallow_fence) != 0, (
+        "a 2-space-indented fence was not honored as a fence")
+    # ...while a FOUR-space-indented marker is code, not a fence — the
+    # unindented table between such markers is real, and the checker
+    # must still PASS (the positive control for the indent boundary)
+    dead_fence = spec_text.replace(
+        tbl, "    ```\n" + tbl + "    ```\n", 1)
+    assert run(dead_fence) == 0, (
+        "a 4-space-indented marker was honored as a fence — the indent "
+        "boundary is wrong in the strict direction")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():

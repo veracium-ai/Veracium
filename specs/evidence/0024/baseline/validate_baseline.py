@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Mutation-Matrix: tests/test_collected_header.py::test_baseline_validator_bites_on_a_planted_mutation
 """Recompute the baseline summaries AND the five load-bearing movements
 from the shipped JSONL records — offline, no model, no network.
 

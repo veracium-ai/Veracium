@@ -516,6 +516,12 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 22 -------------------------------
+    ("0024", 22, "A1-R22-1"): ("proxy", "spec",
+        "a one-token info-string shape and an any-indent row classifier "
+        "stood in for CommonMark's actual context rules — the eighth "
+        "rung of one ladder, and the round the P1/P4 gates and the "
+        "terminus proposal shipped against the class itself"),
     # ---- the A1 amendment, external round 21 -------------------------------
     ("0024", 21, "A1-R21-1"): ("proxy", "spec",
         "a regex for one literal fence form stood in for the fence "

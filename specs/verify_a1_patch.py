@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Mutation-Matrix: tests/test_collected_header.py::test_a1_patch_verifier_refuses_an_incomplete_tree
 """Apply a1-reference.patch to a TEMPORARY COMPLETE tree and run the
 patched file's OWN vector runner — one command, no manual steps.
 

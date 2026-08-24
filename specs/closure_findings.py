@@ -75,6 +75,17 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 22, "A1-R22-1",
+     "two valid Markdown contexts misclassified: a multi-word fence "
+     "info string was not an opener, and a four-space-indented table "
+     "(rendered as code) was classified as a table",
+     "arbitrary fence-info text accepted (backtick-info-no-backticks "
+     "per CommonMark); fences AND table rows bounded at three leading "
+     "spaces; the reviewer's two mutants plus the self-exhausted "
+     "indent-boundary cells (item 9) in the matrix",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
     ("0024", "external", 21, "A1-R21-1",
      "the fence strip removed exactly triple-backtick fences — tilde "
      "and four-backtick fences still rendered the table as code while "

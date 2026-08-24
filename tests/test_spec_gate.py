@@ -1966,6 +1966,88 @@ def test_no_closure_evidence_reads_an_artifact_the_runner_produces():
         + "\n  ".join(problems))
 
 
+def test_every_evidence_artifact_declares_a_mutation_matrix():
+    """P1 (adopted 2026-08-24, from the A1 rounds 15-22 analysis): no
+    unmutated checker ships. Seven consecutive external rounds were the
+    reviewer mutation-testing ONE evidence script at one mutant per
+    round — the most expensive way to test a parser. Every evidence
+    artifact (specs/check_*.py, specs/verify_*.py, validate_*.py under
+    specs/) must carry a `# Mutation-Matrix:` pointer at a NAMED pytest
+    test that (a) exists and (b) references the artifact by filename —
+    so an artifact cannot ship before its adversarial matrix, and a
+    stale pointer at an unrelated test refuses."""
+    import pathlib, re
+    root = pathlib.Path(__file__).resolve().parent.parent
+    # pre-rule artifacts, each covered by an ACCEPTED review surface
+    # with its own regressions; enumerated so a NEW file is never
+    # silently grandfathered
+    GRANDFATHERED = {
+        "check_spec_reference.py",   # the CI citation gate; its own
+                                     # tests in this file predate P1
+        "verify_extracted.py",       # the accepted C-plus extraction
+                                     # surface (COLLECTED_HEADER_DESIGN)
+    }
+    candidates = sorted(
+        list((root / "specs").glob("check_*.py"))
+        + list((root / "specs").glob("verify_*.py"))
+        + list((root / "specs").rglob("validate_*.py")))
+    assert candidates, "the artifact domain is unexpectedly empty"
+    for f in candidates:
+        if f.name in GRANDFATHERED:
+            continue
+        text = f.read_text()
+        m = re.search(r"^# Mutation-Matrix:\s*(tests/\S+?\.py)::(\w+)\s*$",
+                      text, re.M)
+        assert m, (
+            f"{f.name} declares no `# Mutation-Matrix: tests/<file>.py::"
+            f"<test>` pointer — no unmutated checker ships (P1)")
+        tf, tname = m.group(1), m.group(2)
+        tpath = root / tf
+        assert tpath.exists(), f"{f.name}: matrix file {tf} does not exist"
+        ttext = tpath.read_text()
+        assert f"def {tname}(" in ttext, (
+            f"{f.name}: matrix test {tname} not found in {tf}")
+        assert f.name in ttext or f.stem in ttext, (
+            f"{f.name}: {tname}'s file never references the artifact by "
+            f"filename or module name — the pointer binds an unrelated "
+            f"test (the proxy class, at the gate itself)")
+
+
+def test_new_closure_evidence_is_behavioral():
+    """P4 (adopted 2026-08-24): closure evidence for NEW findings runs a
+    named script or pytest test, never an inline lexical command — a
+    grep for a diagnostic string is satisfied by a no-op artifact
+    containing the string (EVIDENCE-R17-1, verbatim). DECLARED DOMAIN:
+    rows BEYOND the per-line round cutoffs frozen at adoption; the
+    historical rows keep their evidence as dispatched. Growing a cutoff
+    is a visible diff, never silent."""
+    import pathlib, sys
+    root = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root / "specs"))
+    import importlib
+    import closure_findings
+    importlib.reload(closure_findings)
+    CUTOFFS = {
+        ("0001", "external"): 10, ("0001", "internal"): 1,
+        ("0022", "external"): 20, ("0022", "internal"): 21,
+        ("0023", "external"): 6, ("0023", "internal"): 2,
+        ("0024", "external"): 22,   # A1-R22-1 is the last pre-P4 row
+        ("0025", "external"): 11,
+    }
+    offenders = []
+    for row in closure_findings.CLOSURES:
+        spec, kind, rnd, fid = row[0], row[1], row[2], row[3]
+        evidence = row[6]
+        if rnd <= CUTOFFS.get((spec, kind), 0):
+            continue
+        if not evidence.lstrip().startswith("$PY"):
+            offenders.append(f"{spec} {kind} {rnd} {fid}: {evidence[:60]!r}")
+    assert not offenders, (
+        "closure evidence past the P4 cutoff must run a named script or "
+        "pytest test ($PY ...), never an inline lexical command:\n  "
+        + "\n  ".join(offenders))
+
+
 def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():
     """External round 15, R15-2. `specs/REVIEW_LESSONS.md` was hand-written: it
     said 39 external findings collapsed into six classes while the six headings

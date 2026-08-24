@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Mutation-Matrix: tests/test_collected_header.py::test_a1_carrier_checker_mutation_matrix
 """The ONE checker for the A1 consequence-carrier closures — shared by
 the A1-R14-1 and A1-R15-1 ledger rows (round 16, A1-R16-1: the R15-1
 row's inline grep printed `1` and exited happily, establishing none of
@@ -50,16 +51,22 @@ SPEC = (pathlib.Path(__file__).resolve().parent
 
 
 def _strip_fenced(text: str) -> str:
-    """A1-R21-1: fence-state parsing over the FULL fence grammar —
-    an opener is three-or-more backticks OR tildes at line start
-    (leading whitespace allowed); the region closes only at a marker of
-    the SAME character, at least as long, alone on its line. A regex
-    for one literal fence form is a proxy for the grammar."""
+    """A1-R21-1 + A1-R22-1: fence-state parsing per CommonMark —
+    an opener is three-or-more backticks OR tildes with AT MOST THREE
+    leading spaces (four spaces is an indented code line, not a fence),
+    followed by an ARBITRARY info string (multi-word allowed; a
+    backtick-fence info string may not itself contain a backtick); the
+    region closes only at a same-character marker at least as long,
+    alone on its line, again at most three spaces deep. A regex for one
+    literal fence form — or one info-string shape — is a proxy for the
+    grammar."""
     import re as _re
     out = []
     fence_char, fence_len = None, 0
     for line in text.splitlines():
-        m = _re.match(r"\s*(`{3,}|~{3,})\s*\S*\s*$", line)
+        m = _re.match(r" {0,3}(`{3,}|~{3,})(.*)$", line)
+        if m and m.group(1)[0] == "`" and "`" in m.group(2):
+            m = None                      # backtick info may not hold `
         if fence_char is None:
             if m:
                 fence_char = m.group(1)[0]
@@ -69,7 +76,7 @@ def _strip_fenced(text: str) -> str:
         else:
             if (m and m.group(1)[0] == fence_char
                     and len(m.group(1)) >= fence_len
-                    and _re.fullmatch(r"\s*(`{3,}|~{3,})\s*", line)):
+                    and not m.group(2).strip()):
                 fence_char = None
             # every line inside the fence is dropped
     return "\n".join(out)
@@ -105,7 +112,10 @@ def main(argv: list[str] | None = None) -> int:
         section_b = _strip_fenced(section_b)
         blocks, cur = [], []
         for line in section_b.splitlines():
-            if line.lstrip().startswith("|"):
+            # A1-R22-1: a table row has AT MOST THREE leading spaces —
+            # four-space indentation is an indented CODE block, which
+            # renders as code, not a table
+            if re.match(r" {0,3}\|", line):
                 cur.append(line.strip())
             else:
                 if cur:

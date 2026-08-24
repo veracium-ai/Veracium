@@ -889,7 +889,7 @@ or executable. *The round-by-round ledger below is GENERATED from `specs/reviews
 | external 21 (verdict) | 2026-08-20 | 0 | 🏁 ACCEPTED on the frozen invariant surface N1–N15 — atomic with 0022; see the 0022 round-21 row for the full disposition. Pre-implementation: Q1 and Q4 must be resolved before release as stated |
 | external 21 (SENT) | 2026-08-20 | — | SENT (the coupled round-21 package `0022-0023-v21`). 0023 at v22: no semantic change required |
 
-**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 167 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **10 finding(s) for `0023`; 168 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|
