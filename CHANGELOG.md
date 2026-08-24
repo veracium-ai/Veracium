@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **0024 as amended by A1 — AUTHORSHIP BEFORE STRUCTURAL QUARANTINE,
+  live at last** (A1 accepted at external round 24, 2026-08-24, on the
+  frozen U1–U7 surface with revised U2 — twelve amendment rounds after
+  the paired measurement held the v7 mechanism out of 0.14.0). An
+  extractor-emitted `third_party_claim` whose canonical subject is
+  exactly the user is re-dispositioned: relation → the reserved
+  non-functional `unclassified`, the original preserved in
+  `Edge.original_relation`, and disclosure set to **uniform USE_ONLY —
+  may inform answers, never asserted as fact** (the A1 change: the
+  measured population behind the self-contradictory label is 4 genuine
+  relays per 1 genuine self-statement, so the label's collapse licenses
+  use, not assertion; v7's author-rules disposition made those relays
+  assertable and was reverted before 0.14.0 shipped). Every accepted
+  floor still applies after — a standing-revoked source's records land
+  QUARANTINED regardless. The `redispositioned` counter goes live on
+  its pre-wired carriers. U2's executable oracle is the two-branch
+  constant (revoked → QUARANTINED, else USE_ONLY); assertion for this
+  cell awaits content evidence (0024 Q5 → the 0026 agreement check).
+  Stores that never see `third_party_claim` are byte-identical (U4).
+
 ## 0.14.0 — 2026-08-23
 
 - **0024 (authorship before structural quarantine): accepted, implemented,

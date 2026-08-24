@@ -224,8 +224,32 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         if not (isinstance(t, dict) and t.get("subject") and t.get("relation") and t.get("object")):
             continue
         original = str(t["relation"]).strip()
+        # specs/0024 §4a: the canonical subject is computed ONCE and used for
+        # both the coherence test and the stored Edge, so the test can never
+        # disagree with the subject the record carries.
         parsed.append({"t": t, "relation": original, "original": original,
+                       "subject": str(t["subject"]).strip(),
                        "off": original not in reg or original == UNCLASSIFIED_RELATION})
+
+    # ---- specs/0024 §4a/§4b: authorship before structural quarantine -----
+    # Step 1 of the combined pipeline (specs/0025 §4b-iii): the coherence
+    # test runs BEFORE vocabulary enforcement — `third_party_claim` is
+    # registry-resident, so enforcement alone would pass the contradiction
+    # through. The predicate is mechanical: whole-string casefold equality
+    # on the canonical subject; odd types fail closed (str(["user"]) is
+    # "['user']", not "user"). An incoherent triple is re-dispositioned,
+    # not dropped: its relation becomes the reserved NON-FUNCTIONAL member
+    # (USABLE — never assertable, never superseding; A1's chosen cell),
+    # the original survives in Edge.original_relation, and the rewrite
+    # targets a registry-resident relation so it never enters the
+    # vocabulary fallback below.
+    n_redispositioned = 0
+    for row in parsed:
+        if (row["relation"] == QUARANTINE_RELATION
+                and row["subject"].casefold() == "user"):
+            row["relation"] = UNCLASSIFIED_RELATION
+            row["redisposition"] = True
+            n_redispositioned += 1
 
     failing = [row for row in parsed if row["off"]]
     n_invalid = len(failing)
@@ -276,9 +300,18 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     for row in parsed:
         t = row["t"]
         relation = row["relation"]
-        # X10: disclosure from the ORIGINAL relation, established before any
-        # rewrite and retained through it.
-        disclosure = _disclosure_for(author, row["original"], derived_from)
+        # 0025 §4b-iii step 2: disclosure is established for the POST-
+        # COHERENCE semantic state — USE_ONLY for a re-dispositioned
+        # triple (0024 §4b as amended by A1, ACCEPTED round 24: the
+        # label's collapse licenses use, not assertion — the measured
+        # population behind the label is 4 genuine relays per 1 genuine
+        # self-statement), the ORIGINAL relation otherwise (X10 is
+        # scoped to the VOCABULARY fallback, which never feeds this
+        # call). Established once, retained; the accepted floors below
+        # only lower.
+        disclosure = (Disclosure.USE_ONLY if row.get("redisposition")
+                      else _disclosure_for(author, row["original"],
+                                           derived_from))
         if revoked_at_birth:
             # 0023 §4a QUARANTINE-AT-BIRTH: the event's source is standing-
             # revoked, so every edge of the event lands QUARANTINED whatever
@@ -299,7 +332,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # demoted, never re-derived (§4d: immutable for the record's life).
         flagged = grounding.ungrounded(obj, event_text, date)
         edge = Edge(
-            id=_uid("e"), user_id=user_id, subject=str(t["subject"]).strip(),
+            id=_uid("e"), user_id=user_id, subject=row["subject"],
             relation=relation, object=obj,
             original_relation=(row["original"] if relation != row["original"]
                                else None),
@@ -319,11 +352,11 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     return {"episode": episode_text, "facts": n_facts, "quarantined": n_quarantined,
             "supersessions": n_supersessions, "reinforcements": n_reinforcements,
             # specs/0025 §4c — THE counter inventory, present on every path;
-            # `redispositioned` is 0024's counter, carried at 0 until its
-            # (still measurement-frozen) mechanism lands.
+            # `redispositioned` is 0024's counter (U7): live on this path,
+            # 0 on the unparseable path — an absent key is not a zero.
             "invalid": n_invalid, "retried": n_retried,
             "recovered": n_recovered, "residual": n_residual,
-            "redispositioned": 0,
+            "redispositioned": n_redispositioned,
             # specs/0023 Q4 (RESOLVED 2026-08-22, per the recorded leaning):
             # the quarantine-at-birth AUDIT facts — the content-free identity
             # digest answers "which source is still writing" from the audit
