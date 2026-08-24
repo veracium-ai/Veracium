@@ -41,7 +41,17 @@ claims.
   text ("Friday" → a real date), so pass an accurate value for historical or dated
   content. See [concepts → A note on dates](concepts.md#a-note-on-dates).
 - `event_type` — `"chat"`, `"email"`, etc. Informational; affects source-type tagging.
-- Returns `{"episode": str, "facts": int, "quarantined": int}`.
+- Returns a summary dict for logging/telemetry. The counters are all
+  present on **every** path (an absent key is never a zero):
+  `episode` (str) · `facts` · `quarantined` · `supersessions` ·
+  `reinforcements` · the vocabulary-enforcement counters `invalid` /
+  `retried` / `recovered` / `residual` (specs/0025) ·
+  `redispositioned` (specs/0024 — triples whose `third_party_claim`
+  label contradicted its own claimant slot and were re-dispositioned to
+  `unclassified` at `use_only`) · and the trust-state audit facts
+  `quarantined_at_birth` / `birth_revocation_digest` (specs/0023).
+  **The MCP tool surface strips the operator counters** — they are a
+  library surface, not a tool-call surface.
 
 ```python
 mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.")

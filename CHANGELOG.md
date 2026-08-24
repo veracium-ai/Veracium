@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.15.0 — 2026-08-24
 
 - **0024 as amended by A1 — AUTHORSHIP BEFORE STRUCTURAL QUARANTINE,
   live at last** (A1 accepted at external round 24, 2026-08-24, on the

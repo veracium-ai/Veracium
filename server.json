@@ -7,12 +7,12 @@
     "source": "github"
   },
   "websiteUrl": "https://docs.veracium.ai",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "veracium",
-      "version": "0.14.0",
+      "version": "0.15.0",
       "transport": {
         "type": "stdio"
       },
