@@ -41,6 +41,8 @@ ROOT = HERE.parent.parent.parent
 PATCH = HERE / "candidate.patch"
 RECORD = HERE / "candidate_results.json"
 FOCUSED = "tests/test_0001_candidate.py"
+COMMAND_FOCUSED = f"python -m pytest {FOCUSED} -q -p no:randomly"
+COMMAND_FULL = "python -m pytest tests/ -q"
 
 _TAIL = re.compile(
     r"(?:(?P<failed>\d+) failed, )?(?P<passed>\d+) passed"
@@ -61,16 +63,19 @@ def _tail(output: str) -> dict:
             "skipped": int(m.group("skipped") or 0)}
 
 
-def measure() -> dict:
+def measure(base: str | None = None) -> dict:
+    """Measure at `base` (any committish) or at HEAD. R12-1: the base is
+    a PARAMETER so the record can be REPLAYED against the base it
+    declares — comparing two typed copies of a hash proves nothing."""
     if not PATCH.exists():
         raise SystemExit("measure_candidate: no candidate.patch to measure")
-    base = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+    base = subprocess.run(["git", "rev-parse", base or "HEAD"], cwd=ROOT,
                           capture_output=True, text=True, check=True
                           ).stdout.strip()
     with tempfile.TemporaryDirectory() as td:
         work = pathlib.Path(td) / "tree"
         work.mkdir()
-        tar = subprocess.run(["git", "archive", "--format=tar", "HEAD"],
+        tar = subprocess.run(["git", "archive", "--format=tar", base],
                              cwd=ROOT, capture_output=True, check=True)
         subprocess.run(["tar", "-x"], cwd=work, input=tar.stdout, check=True)
         patch_copy = work / "candidate.patch"
@@ -102,16 +107,53 @@ def measure() -> dict:
             "environment": {
                 "python": platform.python_version(),
                 "platform": platform.platform(),
-                "command_focused": f"python -m pytest {FOCUSED} -q "
-                                   f"-p no:randomly",
-                "command_full": "python -m pytest tests/ -q",
+                "command_focused": COMMAND_FOCUSED,
+                "command_full": COMMAND_FULL,
             },
         }
 
 
+def replay_matches_record() -> list:
+    """R12-1's requested artifact: regenerate the COMPLETE record from
+    the base the record DECLARES and diff every field. Run by the
+    sealer (it needs git); the extraction-safe half is
+    check_candidate_results.py. Environment fields are compared too —
+    a replay on a different interpreter is a REAL difference and says
+    so rather than being excused."""
+    if not RECORD.exists():
+        return []
+    shipped = json.loads(RECORD.read_text())
+    base = shipped.get("base_commit")
+    if not isinstance(base, str) or not re.fullmatch(r"[0-9a-f]{40}", base):
+        return [f"the record's base_commit {base!r} is not a commit id — "
+                f"nothing to replay against"]
+    fresh = measure(base)
+    problems = []
+    for key in sorted(set(shipped) | set(fresh)):
+        if shipped.get(key) != fresh.get(key):
+            problems.append(
+                f"REPLAY DIFFERS at {key!r}: record has "
+                f"{json.dumps(shipped.get(key))[:120]}, replaying the "
+                f"declared base {base[:8]}… produced "
+                f"{json.dumps(fresh.get(key))[:120]}")
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    rec = measure()
+    if "--verify" in argv:
+        problems = replay_matches_record()
+        if problems:
+            print("measure_candidate --verify: FAILED\n  "
+                  + "\n  ".join(problems), file=sys.stderr)
+            return 1
+        print("measure_candidate --verify: the shipped record REPLAYS "
+              "exactly from its declared base — every field identical")
+        return 0
+    base = None
+    if "--base" in argv:
+        base = argv[argv.index("--base") + 1]
+    rec = measure(base)
     text = json.dumps(rec, indent=1, sort_keys=True) + "\n"
     if "--write" in argv:
         RECORD.write_text(text)

@@ -1,9 +1,9 @@
 {
- "base_commit": "59cd1cf1624d3de051442327a73160775befc895",
+ "base_commit": "48cc833629c3d627235afd4d6eb8596488441814",
  "environment": {
   "command_focused": "python -m pytest tests/test_0001_candidate.py -q -p no:randomly",
   "command_full": "python -m pytest tests/ -q",
-  "platform": "Linux-7.0.0-1010-aws-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-1011-aws-x86_64-with-glibc2.39",
   "python": "3.12.3"
  },
  "failure_set": [
@@ -32,7 +32,7 @@
  },
  "full_suite": {
   "failed": 16,
-  "passed": 1813,
+  "passed": 1814,
   "skipped": 20
  },
  "generated_by": "specs/evidence/0001/measure_candidate.py",
