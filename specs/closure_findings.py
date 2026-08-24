@@ -275,6 +275,19 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 13, "0001-R13-1",
+     "the seal-time replay was sound but UNPROTECTED — a planted "
+     "`if False` on its call left the named matrix and the whole spec "
+     "gate green, so the only guard that catches type-valid "
+     "fabrications could be removed silently",
+     "the enforcement is a named injectable seam and the comparison a "
+     "pure function; a sealer-boundary regression binds reachability "
+     "(if-False and deletion both planted and both failing), refusal on "
+     "a failing replay with a pristine control, and discrimination "
+     "including failure-identity replacement",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_sealer_enforces_the_candidate_replay -q -p no:randomly"),
+
     ("0001", "external", 12, "0001-R12-1",
      "the checker bound a PROJECTION — patch hash, README count, README "
      "triple, failure LENGTH — while the record claims base commit, "

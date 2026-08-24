@@ -459,6 +459,34 @@ EXTRACTION_CHECKS = (
 )
 
 
+def enforce_candidate_replay(run=None) -> None:
+    """0001 R12-1/R13-1: the candidate record must REPLAY from the base
+    it declares, and that enforcement must itself be REGRESSION-BOUND.
+
+    The replay is a git-requiring step, so it runs here in the repo
+    rather than in the extraction checks — two typed copies of a hash
+    prove nothing, regenerating the complete record does. Round 13
+    found the deeper problem: the call was inline in `main()`, so a
+    planted `if False` removed the only decisive guard while every
+    declared check stayed green. It is a NAMED function now, `run` is
+    injectable, and `tests/test_collected_header.py::
+    test_the_sealer_enforces_the_candidate_replay` proves BOTH that
+    `main()` still calls it on a reachable path AND that a failing
+    replay aborts the seal.
+    """
+    run = run or _run
+    mc = SPECS / "evidence" / "0001" / "measure_candidate.py"
+    record = SPECS / "evidence" / "0001" / "candidate_results.json"
+    if not (mc.exists() and record.exists()):
+        return                      # candidate folded or absent
+    r = run([sys.executable, str(mc), "--verify"], cwd=ROOT)
+    if r.returncode != 0:
+        _fail(f"the candidate results record does not replay from its "
+              f"declared base:\n{r.stdout}{r.stderr}")
+    tail = (r.stdout.strip().splitlines() or ["(no output)"])[-1]
+    print(f"  replay  {tail}")
+
+
 def identity_problems(archive_name: str, col: str, man: str,
                       members: set) -> list:
     """R16-1. Return the ways the package's THREE identity carriers disagree.
@@ -893,18 +921,7 @@ def main() -> int:
             _fail(f"IN_FLIGHT must be exactly ({_line}-{a.version},) to "
                   f"seal this package; it is {_pid.IN_FLIGHT!r} — one seal "
                   f"in flight, declared alone (C8-1/C9-1)")
-        # 0001 R12-1: the candidate record must REPLAY from the base it
-        # declares — a git-requiring step, so it runs here in the repo
-        # rather than in the extraction checks. Two typed copies of a
-        # hash prove nothing; regenerating the complete record does.
-        _mc = SPECS / "evidence" / "0001" / "measure_candidate.py"
-        if _mc.exists() and (SPECS / "evidence" / "0001"
-                             / "candidate_results.json").exists():
-            _r = _run([sys.executable, str(_mc), "--verify"], cwd=ROOT)
-            if _r.returncode != 0:
-                _fail(f"the candidate results record does not replay from "
-                      f"its declared base:\n{_r.stdout}{_r.stderr}")
-            print(f"  replay  {_r.stdout.strip().splitlines()[-1]}")
+        enforce_candidate_replay()
         pred = required_predecessor(_line, round_no, a.outbox)
         if isinstance(pred, str):
             _fail(pred)

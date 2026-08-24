@@ -127,7 +127,15 @@ def replay_matches_record() -> list:
     if not isinstance(base, str) or not re.fullmatch(r"[0-9a-f]{40}", base):
         return [f"the record's base_commit {base!r} is not a commit id — "
                 f"nothing to replay against"]
-    fresh = measure(base)
+    return record_differences(shipped, measure(base), base)
+
+
+def record_differences(shipped: dict, fresh: dict, base: str = "") -> list:
+    """The comparison, PURE and separately testable (R13-1: the
+    replay's discrimination must be provable without paying for two
+    suite runs, so the expensive measurement and the decision about it
+    are separate functions). Every key on either side is compared — a
+    field the record grew is a difference, not an omission."""
     problems = []
     for key in sorted(set(shipped) | set(fresh)):
         if shipped.get(key) != fresh.get(key):

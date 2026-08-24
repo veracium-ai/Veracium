@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v14** — the round-12 fold (§24): R12-1 the results record is validated against a CLOSED, exactly typed schema — every claimed field, not the four the first checker's author happened to bind (the reviewer passed forty-zero base + python 0.0.0, and a duplicated failure entry, through the old projection); `failure_set` sorted/unique/node-id-shaped/cardinality-equal; the commands IMPORTED from the generator; and the base made INDEPENDENTLY REPRODUCIBLE — `measure_candidate.py --verify` regenerates the complete record from the declared base and the SEALER refuses on any field difference. *Prior:* **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11**; v13 returned at round 12 for one mechanical evidence amendment (R12-1) with **the finite acceptance STANDING and the architecture frozen on the complete §6 surface**; **v14 is the round-13 external candidate — the status flip follows the reviewer's confirmation of this reseal.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
+| **Version** | **v15** — the round-13 fold (§25): R13-1 the seal-time replay was sound but UNPROTECTED — a planted `if False` on its call left the named matrix and the whole spec gate green, so the only decisive guard could be removed silently. The enforcement is a NAMED, injectable seam now (`enforce_candidate_replay`) and a regression at the SEALER BOUNDARY binds three properties: `main()` calls it on a REACHABLE path (both the reviewer's `if False` and outright deletion fail the test — verified by planting each), a FAILING replay aborts the seal with a pristine control, and the comparison catches the type-valid fabrications the extraction checker deliberately cannot, including failure-IDENTITY replacement. *Prior:* **v14** — the round-12 fold (§24): R12-1 the results record is validated against a CLOSED, exactly typed schema — every claimed field, not the four the first checker's author happened to bind (the reviewer passed forty-zero base + python 0.0.0, and a duplicated failure entry, through the old projection); `failure_set` sorted/unique/node-id-shaped/cardinality-equal; the commands IMPORTED from the generator; and the base made INDEPENDENTLY REPRODUCIBLE — `measure_candidate.py --verify` regenerates the complete record from the declared base and the SEALER refuses on any field difference. *Prior:* **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11**; v13 returned at round 12 (R12-1) and v14 at round 13 (R13-1), the finite acceptance STANDING throughout and the architecture frozen on the complete §6 surface; **v15 is the round-14 external candidate — the status flip follows the reviewer's confirmation of this reseal.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -1261,3 +1261,35 @@ evidence amendment:
      kernel `1010-aws` and the host had moved to `1011-aws`, so the
      record was regenerated at the release commit `48cc833` (focused
      21, full 16F/1814P/20S) rather than the drift being excused.
+
+## 25. Changes in v15 (the round-13 fold, 2026-08-24)
+
+**Finite design acceptance remains in force** — round 13 found no new
+semantic or trust-model defect and called the complete-record replay's
+implementation sound. The finding was about its PROTECTION:
+
+1. **R13-1 — the decisive guard was not regression-bound.** The
+   extraction checker deliberately accepts some type-valid
+   fabrications (`focused_suite.skipped` 0→1, an arbitrary nonempty
+   `platform`, a failure replaced by a different validly-shaped node
+   id); catching those is the REPLAY's job. But the named mutation
+   matrix never invoked the replay — it tested only the extraction
+   checker — so the reviewer planted `if False` on the sealer's call
+   and watched the named test (1 passed) and the entire spec gate
+   (88 passed, 4 skipped) stay green. The replay could have been
+   removed or bypassed while every declared guard agreed, silently
+   restoring R12-1. Corrected:
+   * the enforcement is a NAMED function, `enforce_candidate_replay`,
+     with its runner injectable — it was inline in `main()`, which is
+     what made it untestable and therefore unprotected;
+   * the comparison is a PURE function, `record_differences`, so the
+     replay's discrimination is provable without paying for two suite
+     runs;
+   * `test_the_sealer_enforces_the_candidate_replay` binds three
+     properties: **(a)** `main()` calls the enforcement on a REACHABLE
+     path — the reviewer's `if False` and outright deletion were both
+     PLANTED and both fail the test; **(b)** a failing replay aborts
+     the seal (`SystemExit`), with a passing run as the pristine
+     control; **(c)** the comparison catches every fabrication the
+     extraction checker cannot — skipped 0→1, arbitrary platform,
+     a swapped base sha, and failure-IDENTITY replacement.
