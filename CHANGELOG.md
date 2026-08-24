@@ -22,6 +22,27 @@
   cell awaits content evidence (0024 Q5 → the 0026 agreement check).
   Stores that never see `third_party_claim` are byte-identical (U4).
 
+  **Measured on the frozen 48-probe paired instrument** (research, main
+  @ `984dee8`, scored against pre-registered expectations; dev
+  independently recomputed the figures below from the shipped records):
+  the over-quarantine defect stays fixed (A08 leaves quarantine) while
+  **no probe anywhere moves from quarantined to assertable** — the
+  amendment's whole point. The relay floor in the bait cell returns to
+  its pre-fix level, **14 of 16 non-assertable** (the v7 mechanism had
+  degraded it to 10/16; A1 restores it). It is NOT 16/16: the two
+  remaining are the pre-existing B02/B07 shape where the extractor
+  files a relay under a CONCRETE relation and never reaches the
+  quarantine branch at all — untouched by this fix by construction, and
+  the subject of the queued label/value agreement check (`0026`).
+  *Instrument note, standing across three runs:* this probe set's
+  extraction is not bit-stable at temperature 0, so per-probe RELATION
+  identity is advisory; DISCLOSURE and the assert/hedge outcome are the
+  load-bearing comparisons. Two canary probes drifted at extraction in
+  this run (one to a concrete relation floored USE_ONLY by the ordinary
+  author rules with no re-disposition, one producing a conservative
+  edge where earlier runs produced none); neither is a floor
+  regression, and both answers still decline to assert.
+
 ## 0.14.0 — 2026-08-23
 
 - **0024 (authorship before structural quarantine): accepted, implemented,
