@@ -515,6 +515,13 @@ MECHANISM = {
         "the candidate line's status word was a renderer literal beside "
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
+    # ---- the A1 amendment, external round 14 -------------------------------
+    ("0024", 14, "A1-R14-1"): ("domain", "spec",
+        "the consequence sweep's needle list ('assertable', \"user's own "
+        "statement\") was narrower than the consequence vocabulary — "
+        "'corrected user statement' survived in a question header, and "
+        "§9's summary of the three-replacement inventory rotted as a "
+        "second copy the sweep never covered"),
 }
 
 

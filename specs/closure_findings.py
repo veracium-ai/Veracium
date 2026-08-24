@@ -47,9 +47,14 @@ CLOSURES = [
      "the consequence-word sweep ('assertable', 'user's own statement') "
      "executed across BOTH specs; §7b carries THREE verbatim 0025 "
      "replacements; §11 records the lesson in place of the claim",
-     "grep -c 'becomes assertable' "
-     "specs/0024-authorship-before-structural-quarantine.md  "
-     "# every survivor is a quotation of the defect in §11/§12/§7b"),
+     "grep -q 'is a re-dispositioned record then able to SUPERSEDE' "
+     "specs/0024-authorship-before-structural-quarantine.md && test "
+     "\"$(grep -o 'REPLACEMENT [0-9] (' "
+     "specs/0024-authorship-before-structural-quarantine.md | wc -l)\" "
+     "-ge 3  # R14-1 strengthened: the live §4b-i header uses the "
+     "re-dispositioned form AND the three-replacement inventory is "
+     "counted per OCCURRENCE (grep -c counts lines; the three markers "
+     "share the §7b table row)"),
 
     ("0024", "external", 13, "A1-R13-2",
      "the candidate patch did not run green (the revoked vector's control "
@@ -69,6 +74,17 @@ CLOSURES = [
      "line, fail-closed; the ledger row states no-design-change precisely",
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
+
+    ("0024", "external", 14, "A1-R14-1",
+     "two consequence carriers survived the round-13 sweep — §4b-i's "
+     "question header still said 'corrected user statement' and §9's "
+     "brief still said 'one-sentence step-2 replacement' after the "
+     "inventory grew to three; the closure evidence could detect neither",
+     "the §4b-i header asks about a re-dispositioned record; §9 "
+     "enumerates all three 0025 replacements with the R14-1 note; the "
+     "A1-R13-1 evidence strengthened to assert both",
+     "grep -n 'is a re-dispositioned record then able to SUPERSEDE' "
+     "specs/0024-authorship-before-structural-quarantine.md"),
 
     ("0001", "external", 10, "0001-R10-1",
      "the I6 reserve protected ELIGIBILITY, not relevance — every "

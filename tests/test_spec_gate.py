@@ -1480,6 +1480,11 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
             ("python", "specs/verify_extracted.py", "reconcile"),
         "evidence_transcript.py (validate the shipped transcript)":
             ("python", "specs/evidence_transcript.py"),
+        # Round-14 standing feedback (A1): the candidate patch verified by
+        # applying to a temp copy and running the patched file's OWN
+        # runner — the wrapper-vs-runner mismatch, mechanically closed.
+        "verify_a1_patch.py (apply + own-runner the A1 candidate)":
+            ("python", "specs/verify_a1_patch.py"),
         "render_closure.py --check":
             ("python", "specs/render_closure.py", "--check"),
         "render_operation.py --check":

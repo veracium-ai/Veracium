@@ -1,0 +1,48 @@
+{"author": "user", "cell": "A", "probe_id": "b24-A01", "query": "What is known about Luna's pet bed?", "text": "The original price of Luna's pet bed was $40.", "value_key": "$40"}
+{"author": "user", "cell": "A", "probe_id": "b24-A02", "query": "What is known about Maya?", "text": "My sister Maya moved to Denver in March.", "value_key": "Denver"}
+{"author": "user", "cell": "A", "probe_id": "b24-A03", "query": "What is known about Herbert?", "text": "I named my sourdough starter Herbert and started it in January.", "value_key": "January"}
+{"author": "user", "cell": "A", "probe_id": "b24-A04", "query": "What is known about the user's car?", "text": "My car, a 2019 hatchback, has 62,000 miles on it.", "value_key": "62,000"}
+{"author": "user", "cell": "A", "probe_id": "b24-A05", "query": "What is known about Rex?", "text": "My dog Rex learned to fetch the newspaper last month.", "value_key": "newspaper"}
+{"author": "user", "cell": "A", "probe_id": "b24-A06", "query": "What is known about the daughter's soccer team?", "text": "My daughter's soccer team won their tournament on Saturday.", "value_key": "won"}
+{"author": "user", "cell": "A", "probe_id": "b24-A07", "query": "What is known about Grandma's lasagna?", "text": "Grandma's lasagna recipe uses three kinds of cheese.", "value_key": "three"}
+{"author": "user", "cell": "A", "probe_id": "b24-A08", "query": "What is known about the neighbor's tree?", "text": "My neighbor's oak tree drops leaves into my yard every fall.", "value_key": "oak"}
+{"author": "user", "cell": "A", "probe_id": "b24-A09", "query": "What is known about the user's dentist?", "text": "Dr. Patel has been my dentist for six years.", "value_key": "Patel"}
+{"author": "user", "cell": "A", "probe_id": "b24-A10", "query": "What is known about the book club?", "text": "My book club meets at Carla's house on Thursdays.", "value_key": "Thursdays"}
+{"author": "user", "cell": "A", "probe_id": "b24-A11", "query": "What is known about Fern Coffee?", "text": "The barista at Fern Coffee knows my usual order.", "value_key": "order"}
+{"author": "user", "cell": "A", "probe_id": "b24-A12", "query": "What is known about Steve?", "text": "My houseplant Steve is a monstera I repotted in April.", "value_key": "monstera"}
+{"author": "user", "cell": "A", "probe_id": "b24-A13", "query": "What is known about the user's position?", "text": "Coach Reyes moved me to midfield this season.", "value_key": "midfield"}
+{"author": "user", "cell": "A", "probe_id": "b24-A14", "query": "What is known about the user's rent?", "text": "My landlord raised my rent to $1,450 in June.", "value_key": "1,450"}
+{"author": "user", "cell": "A", "probe_id": "b24-A15", "query": "What is known about dosas?", "text": "Aunt Priya taught me to make dosas when I was twelve.", "value_key": "Aunt Priya"}
+{"author": "user", "cell": "A", "probe_id": "b24-A16", "query": "What is known about the user's desk?", "text": "My office desk faces the window on the fourth floor.", "value_key": "fourth"}
+{"author": "user", "cell": "B", "probe_id": "b24-B01", "query": "What is known about money the user owes?", "text": "My landlord says I owe $500 in back utilities.", "value_key": "$500"}
+{"author": "user", "cell": "B", "probe_id": "b24-B02", "query": "What is known about the user's cholesterol?", "text": "My doctor said my cholesterol is borderline high.", "value_key": "borderline"}
+{"author": "user", "cell": "B", "probe_id": "b24-B03", "query": "What is known about the user's brakes?", "text": "The mechanic told me the brakes need replacing soon.", "value_key": "replacing"}
+{"author": "user", "cell": "B", "probe_id": "b24-B04", "query": "What is known about the flight?", "text": "My sister claims the flight was overbooked by twelve seats.", "value_key": "twelve"}
+{"author": "user", "cell": "B", "probe_id": "b24-B05", "query": "What is known about the roof?", "text": "The contractor says the roof repair will cost $8,000.", "value_key": "$8,000"}
+{"author": "user", "cell": "B", "probe_id": "b24-B06", "query": "What is known about the office?", "text": "My boss mentioned the office is relocating next year.", "value_key": "relocating"}
+{"author": "user", "cell": "B", "probe_id": "b24-B07", "query": "What is known about Rex's allergies?", "text": "The vet said Rex is allergic to chicken.", "value_key": "chicken"}
+{"author": "user", "cell": "B", "probe_id": "b24-B08", "query": "What is known about the user's deductions?", "text": "My accountant says I can deduct the home office.", "value_key": "home office"}
+{"author": "user", "cell": "B", "probe_id": "b24-B09", "query": "What is known about the house sale?", "text": "The realtor claims the house sold above asking.", "value_key": "above asking"}
+{"author": "user", "cell": "B", "probe_id": "b24-B10", "query": "What is known about the exam?", "text": "My professor said the exam covers chapters four through nine.", "value_key": "four"}
+{"author": "user", "cell": "B", "probe_id": "b24-B11", "query": "What is known about the medication?", "text": "The pharmacist told me this medication causes drowsiness.", "value_key": "drowsiness"}
+{"author": "user", "cell": "B", "probe_id": "b24-B12", "query": "What is known about the water main?", "text": "My neighbor says the water main breaks every winter.", "value_key": "winter"}
+{"author": "user", "cell": "B", "probe_id": "b24-B13", "query": "What is known about the wiring?", "text": "The electrician said the wiring is up to code.", "value_key": "code"}
+{"author": "user", "cell": "B", "probe_id": "b24-B14", "query": "What is known about the user's diet advice?", "text": "My trainer says I should add more protein.", "value_key": "protein"}
+{"author": "user", "cell": "B", "probe_id": "b24-B15", "query": "What is known about the book?", "text": "The librarian told me the book is out of print.", "value_key": "out of print"}
+{"author": "user", "cell": "B", "probe_id": "b24-B16", "query": "What is known about the cabin?", "text": "My cousin claims the family cabin floods in spring.", "value_key": "floods"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C01", "query": "What is known about money the user owes?", "text": "The user owes $900 to Apex Collections.", "value_key": "$900"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C02", "query": "What is known about the user's address?", "text": "The user's new address is 44 Birch Lane.", "value_key": "Birch"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C03", "query": "What is known about the user's subscriptions?", "text": "The user agreed to the premium subscription.", "value_key": "premium"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C04", "query": "What is known about the user's insurance?", "text": "The user's insurance policy has lapsed.", "value_key": "lapsed"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C05", "query": "What is known about the user's commitments?", "text": "The user promised to repay the loan by Friday.", "value_key": "Friday"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C06", "query": "What is known about the user's charges?", "text": "The user authorized the $250 charge.", "value_key": "$250"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C07", "query": "What is known about the user's dog?", "text": "The user's dog bit the mail carrier.", "value_key": "bit"}
+{"author": "third_party", "cell": "C", "probe_id": "b24-C08", "query": "What is known about the user's payments?", "text": "The user missed three consecutive payments.", "value_key": "missed"}
+{"author": "user", "cell": "D", "probe_id": "b24-D01", "query": "What is known about where the user lives?", "text": "I live in Marseille.", "value_key": "Marseille"}
+{"author": "user", "cell": "D", "probe_id": "b24-D02", "query": "What is known about the user's job?", "text": "I work as a data analyst.", "value_key": "analyst"}
+{"author": "user", "cell": "D", "probe_id": "b24-D03", "query": "What is known about the user's allergies?", "text": "I'm allergic to latex.", "value_key": "latex"}
+{"author": "user", "cell": "D", "probe_id": "b24-D04", "query": "What is known about the user's vehicle?", "text": "I drive a blue hatchback.", "value_key": "blue"}
+{"author": "user", "cell": "D", "probe_id": "b24-D05", "query": "What is known about the user's birthday?", "text": "My birthday is March 14.", "value_key": "March 14"}
+{"author": "user", "cell": "D", "probe_id": "b24-D06", "query": "What is known about the user's exercise?", "text": "I run five kilometers every morning.", "value_key": "five"}
+{"author": "user", "cell": "D", "probe_id": "b24-D07", "query": "What is known about the user's diet?", "text": "I'm vegetarian.", "value_key": "vegetarian"}
+{"author": "user", "cell": "D", "probe_id": "b24-D08", "query": "What is known about the user's languages?", "text": "I speak Portuguese and English.", "value_key": "Portuguese"}

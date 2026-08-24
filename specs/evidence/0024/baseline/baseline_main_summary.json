@@ -1,0 +1,51 @@
+{
+ "cells": {
+  "A": {
+   "answers": {
+    "absent": 0,
+    "asserted": 11,
+    "hedged": 5
+   },
+   "grounded_probes": 15,
+   "n": 16,
+   "third_party_claim_probes": 1,
+   "tpc_all_quarantined": 1
+  },
+  "B": {
+   "answers": {
+    "absent": 0,
+    "asserted": 6,
+    "hedged": 10
+   },
+   "grounded_probes": 2,
+   "n": 16,
+   "third_party_claim_probes": 14,
+   "tpc_all_quarantined": 14
+  },
+  "C": {
+   "answers": {
+    "absent": 1,
+    "asserted": 0,
+    "hedged": 7
+   },
+   "grounded_probes": 0,
+   "n": 8,
+   "third_party_claim_probes": 7,
+   "tpc_all_quarantined": 7
+  },
+  "D": {
+   "answers": {
+    "absent": 0,
+    "asserted": 7,
+    "hedged": 1
+   },
+   "grounded_probes": 8,
+   "n": 8,
+   "third_party_claim_probes": 0,
+   "tpc_all_quarantined": 0
+  }
+ },
+ "commit": "1015e41",
+ "model": "gpt-4.1-2025-04-14",
+ "src_dirty": true
+}

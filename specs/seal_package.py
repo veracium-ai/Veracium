@@ -421,6 +421,12 @@ EXTRACTION_CHECKS = (
      [sys.executable, "specs/verify_extracted.py", "reconcile"]),
     ("evidence_transcript.py (validate the shipped transcript)",
      [sys.executable, "specs/evidence_transcript.py"]),
+    # Round-14 standing feedback: the A1 candidate patch is verified by
+    # applying it to a TEMP copy and running the patched file's OWN
+    # runner — the mechanical closure of the wrapper-vs-own-runner
+    # mismatch (A1-R13-2). Skips visibly when no patch ships.
+    ("verify_a1_patch.py (apply + own-runner the A1 candidate)",
+     [sys.executable, "specs/verify_a1_patch.py"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
