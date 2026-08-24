@@ -75,6 +75,26 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 17, "A1-R17-1",
+     "the carrier checker searched the whole file for the §4b-i header "
+     "phrase, which the generated ledger quotes — the ledger-shadow "
+     "mutant (obsolete header restored, ledger untouched) exited 0",
+     "the check isolates §4b-i and asserts the exact table row at the "
+     "site; the requested adversarial mutation matrix ships in the "
+     "suite, pristine + five mutants each biting",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
+    ("0024", "external", 17, "EVIDENCE-R17-1",
+     "the EVIDENCE-R16-1 closure row cited the diagnostic string's "
+     "lexical presence — a no-op validator containing it would satisfy "
+     "the command",
+     "the row runs the WORKING deleted/None regression the reviewer "
+     "verified sound",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_baseline_validator_bites_on_a_planted_mutation "
+     "-q -p no:randomly"),
+
     ("0024", "external", 16, "A1-R16-1",
      "the A1-R15-1 ledger row's own closure command was underpowered — "
      "its grep printed 1 and exited 0, establishing none of the three "
@@ -89,8 +109,13 @@ CLOSURES = [
      "the subject must be present, string-typed and nonempty after "
      "canonicalization before the 'user' test; deletion and None mutants "
      "are planted regressions",
-     "grep -n 'ABSENCE IS NOT EVIDENCE' "
-     "specs/evidence/0024/baseline/validate_baseline.py"),
+     "$PY -m pytest "
+     "tests/test_collected_header.py::"
+     "test_baseline_validator_bites_on_a_planted_mutation "
+     "-q -p no:randomly  # EVIDENCE-R17-1: the WORKING regression (the "
+     "deleted/None mutants must fail the validator), not the lexical "
+     "presence of its diagnostic — a no-op validator containing the "
+     "string satisfied the old grep"),
 
     ("0024", "external", 15, "A1-R15-1",
      "the R14-1 closure evidence proved only half the finding — no "

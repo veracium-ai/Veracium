@@ -516,6 +516,16 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 17 -------------------------------
+    ("0024", 17, "A1-R17-1"): ("proxy", "spec",
+        "the carrier checker matched the header phrase anywhere in the "
+        "file, and the generated ledger quotes it — presence-somewhere "
+        "stood in for presence-at-the-site, one level below the row-16 "
+        "fix of the same class"),
+    ("0024", 17, "EVIDENCE-R17-1"): ("proxy", "packaging",
+        "the closure row bound the diagnostic STRING, not the behaviour "
+        "— a no-op validator containing the message would have closed "
+        "the finding about validators that do nothing"),
     # ---- the A1 amendment, external round 16 -------------------------------
     ("0024", 16, "A1-R16-1"): ("proxy", "spec",
         "the closure row ABOUT the closure fix carried its own weaker "

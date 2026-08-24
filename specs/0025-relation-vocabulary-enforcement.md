@@ -711,7 +711,7 @@ or executable. The round-by-round ledger below is GENERATED from
 
 <!-- GENERATED:review-closure -->
 
-**2 internal round(s) and 12 external round(s) with a returned VERDICT are recorded for `0025`; 17 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
+**2 internal round(s) and 12 external round(s) with a returned VERDICT are recorded for `0025`; 18 package(s) were dispatched** — counted from `specs/reviews.py`, which is the source this block is generated from. A round appearing here and not there, or the reverse, is impossible by construction. **SENT rows are dispatch records, not outcomes**, and are labelled below so the two are never summed.
 
 | round | date | findings raised (from `raised=`) | verdict (compressed) |
 |---|---|---|---|
@@ -746,8 +746,9 @@ or executable. The round-by-round ledger below is GENERATED from
 | external 15 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v15`). 0025 remains ACCEPTED on X1-X13, riding with no design change; the three-passage co-owned A1 inventory unchanged from v14 |
 | external 16 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v16`). 0025 remains ACCEPTED on X1-X13; the co-owned three-passage interface was CONFIRMED at round 15 and rides unchanged |
 | external 17 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v17`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged |
+| external 18 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v18`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged |
 
-**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 161 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 163 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

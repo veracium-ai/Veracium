@@ -671,6 +671,56 @@ def test_impl_review_round9_regressions(tmp_path):
         pid.FIRST_GOVERNED = real_first
 
 
+def test_a1_carrier_checker_mutation_matrix(tmp_path):
+    """A1-R17-1's requested artifact: the adversarial mutation matrix
+    for check_a1_carriers — every property it claims is exercised by a
+    mutant that violates exactly that property, INCLUDING the reviewer's
+    ledger-shadow mutant (the obsolete §4b-i header restored while the
+    live phrase survives as a quotation in a ledger-like block; the
+    whole-file search this matrix exists to forbid passed it)."""
+    import re, subprocess, sys as _sys
+    import check_a1_carriers as cac
+    spec_text = cac.SPEC.read_text()
+
+    def run(mutated: str) -> int:
+        f = tmp_path / "spec.md"
+        f.write_text(mutated)
+        return subprocess.run(
+            [_sys.executable, str(ROOT / "specs" / "check_a1_carriers.py"),
+             str(f)], capture_output=True, text=True).returncode
+
+    assert run(spec_text) == 0, "the pristine spec must pass"
+    live_row = "| **is a re-dispositioned record then able to SUPERSEDE?**"
+    assert live_row in spec_text
+
+    sec9 = re.search(r"^## 9\..*?(?=^## 10\.)", spec_text, re.M | re.S)
+    assert sec9
+    for target in ("§4b-iii step 1", "§4b-iii step 2", "§7b's"):
+        mutated = spec_text.replace(
+            sec9.group(0), sec9.group(0).replace(target, "REDACTED"))
+        assert run(mutated) != 0, f"removing {target!r} from §9 passed"
+    mutated = spec_text.replace(
+        sec9.group(0),
+        sec9.group(0) + "\n(the one-sentence step-2 replacement)\n")
+    assert run(mutated) != 0, "restoring the singular form in §9 passed"
+
+    # the ledger-shadow mutant, verbatim: the §4b-i row goes obsolete
+    # while a ledger-like block elsewhere still QUOTES the live phrase
+    shadow = spec_text.replace(
+        live_row,
+        "| **is a corrected user statement then able to SUPERSEDE?**", 1)
+    shadow += ("\n| ledger row | the §4b-i header now reads 'is a "
+               "re-dispositioned record then able to SUPERSEDE?' |\n")
+    assert run(shadow) != 0, (
+        "the ledger-shadow mutant passed — presence-somewhere stood in "
+        "for presence-at-the-site again (A1-R17-1)")
+    # and the plain restore, no shadow
+    plain = spec_text.replace(
+        live_row,
+        "| **is a corrected user statement then able to SUPERSEDE?**", 1)
+    assert run(plain) != 0, "the plain obsolete-header restore passed"
+
+
 def test_a1_patch_verifier_refuses_an_incomplete_tree():
     """PACKAGE-R15-1: the verifier accepted `1 named skip(s)` because it
     copied only the reference file and dev's installed veracium masked

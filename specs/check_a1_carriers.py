@@ -6,13 +6,22 @@ the three properties its prose claimed; a closure command maintained
 per-row is a second copy of the check, and this file replaces both with
 one named script per the R11-1 named-scripts rule).
 
-Checks, all hard failures:
+Checks, all hard failures — each SCOPED to the section that carries
+the property (round 17, A1-R17-1: the first version searched the whole
+file for the §4b-i header, and the generated closure ledger QUOTES that
+phrase — restoring the obsolete header while leaving the ledger passed;
+presence-somewhere stood in for presence-at-the-site, the proxy class):
   1. §9 names ALL THREE co-owned `0025` replacement targets
      (§4b-iii step 1, §4b-iii step 2, §7b's row);
   2. §9 does NOT carry the obsolete singular summary (the literal
      'one-sentence' — §9's note deliberately describes rather than
      quotes it so this grep stays honest);
-  3. the §4b-i question header is the re-dispositioned form.
+  3. §4b-i ITSELF opens its supersession question with the
+     re-dispositioned-record row — asserted inside the isolated §4b-i
+     section, never against the whole file.
+
+Takes an optional path argument so the adversarial mutation matrix can
+run it against mutated COPIES (the reviewer's requested artifact).
 """
 from __future__ import annotations
 
@@ -24,8 +33,10 @@ SPEC = (pathlib.Path(__file__).resolve().parent
         / "0024-authorship-before-structural-quarantine.md")
 
 
-def main() -> int:
-    text = SPEC.read_text()
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    spec = pathlib.Path(argv[0]) if argv else SPEC
+    text = spec.read_text()
     m = re.search(r"^## 9\..*?(?=^## 10\.)", text, re.M | re.S)
     problems = []
     if not m:
@@ -40,9 +51,16 @@ def main() -> int:
     if "one-sentence" in section:
         problems.append("§9 carries the obsolete singular summary "
                         "('one-sentence') — the round-14 defect restored")
-    if "is a re-dispositioned record then able to SUPERSEDE" not in text:
-        problems.append("the §4b-i question header is not the "
-                        "re-dispositioned form")
+    mb = re.search(r"^#### 4b-i\..*?(?=^#{2,4} )", text, re.M | re.S)
+    if not mb:
+        problems.append("§4b-i not found")
+    elif ("| **is a re-dispositioned record then able to SUPERSEDE?**"
+          not in mb.group(0)):
+        problems.append(
+            "§4b-i's supersession question row is not the "
+            "re-dispositioned form AT THE SITE — a quotation of the "
+            "phrase elsewhere (the generated ledger carries one) does "
+            "not count (A1-R17-1's ledger-shadow mutant)")
     if problems:
         print("check_a1_carriers: FAILED\n  " + "\n  ".join(problems),
               file=sys.stderr)
