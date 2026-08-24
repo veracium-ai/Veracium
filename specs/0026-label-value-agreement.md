@@ -1,7 +1,7 @@
 # Feature spec: label/value agreement check
 
 Spec-Status: draft
-Spec-Requires: 0005, 0024, 0025
+Spec-Requires: 0005, 0023, 0024, 0025
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
 
@@ -15,7 +15,7 @@ Spec-Requires: 0005, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
+| **Version** | **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
 | **External review** | required — adds a disclosure floor on the ingest write path |
@@ -99,6 +99,49 @@ is honored by construction, unlike the cell 0024 v7 had to defend.)
 | the extractor's `note` | absent/empty → NO evidence (never agreement — the 2/4 empty-note movers) | any prose → scanned by the closed marker lexicon only | text outside the lexicon → no match, no claim | note crafted to AVOID markers ("relay hiding") | **V2**: absence of a marker is absence of evidence; the check widens no assertion path, so hiding buys the attacker nothing they lack today |
 | the extractor's `object` text | — | same lexicon scan | same | object crafted to EMBED inbound markers on a genuinely-own fact ("my own view — but as my doctor said, rest matters"); the OUTBOUND phrasing ("as I told my doctor") is a directional non-match by contract (§3a) | **V3**: a false relay match FLOORS at USE_ONLY — recall cost, bounded, measured before acceptance (§6a); never an integrity cost |
 | the marker lexicon itself | empty lexicon REFUSED at load (a vacuous checker that passes everything is the presumed-faking rule's target) | a malformed entry refuses at load — closed, versioned, code-owned (the `0025` registry pattern) | — | a host supplying a custom lexicon | **V4**: the lexicon is NOT host-configurable in v1 — one code-owned surface, one measured false-positive rate |
+
+### 2c-ii. Assertions about reach — REQUIRED
+
+**Every command was RUN in this repository on 2026-08-24 and the result
+column records its real output.**
+
+| assertion | command | result (RUN 2026-08-24) |
+|---|---|---|
+| **the laundering mechanism is real in the shipped code**: a CONCRETE relation never reaches the quarantine branch, so a relay filed under one is grounded by the author rules alone | `python -c "from veracium.ingest import _disclosure_for; from veracium.schema import EvidenceAuthor as A; print(_disclosure_for(A.USER,'has_diet',None), _disclosure_for(A.USER,'third_party_claim',None))"` | `mentionable` · `quarantined` — B07's exact shape: `has_diet` grounds, the quarantine label would not have |
+| **`Edge.agreement` does not exist today** — §3d is a construction, and its None-omitted pattern has a shipped precedent in `original_relation` | `python -c "from veracium.schema import Edge; print([f for f in Edge.model_fields if 'agree' in f])"` | `[]` |
+| **`note` is unconstrained free text** — the channel §2 refuses to let RAISE anything | `python -c "from veracium.schema import Edge; print(Edge.model_fields['note'].annotation)"` | `<class 'str'>` — no validator, no vocabulary |
+| **`0024`'s mechanism is SHIPPED as amended, and it is orthogonal to this check** — the floor added here composes with a live pipeline, not a planned one | `grep 'Disclosure.USE_ONLY if row.get("redisposition")' src/veracium/ingest.py` | present — A1's uniform disposition, landed 2026-08-24 |
+| **the B02/B07 cells survived `0024`'s landing unchanged**, so this check's motivating population is still there | dev's recomputation of research's A1 paired records (`a1_records.jsonl`) | B02 `health_state`/mentionable, B07 `has_diet`+`has_pet`/mentionable — the only two cell-B probes still assertable; cell B non-assertable 14/16 |
+| **the demotion-direction population is measured, from the script, not recalled** | `corpus_counts.py` over cache `654e336a` | 183,417 triples; 3,945 `third_party_claim`; **1,644 (41.7%)** whose note names the user as source |
+
+*(The first row is the whole spec in one line: the trust decision that
+should have quarantined B07 was never consulted, because the extractor
+chose a relation that routes around it. Nothing in `0024` or `0025`
+reaches that path — one checks the label's coherence, the other its
+membership; neither checks whether the VALUE agrees with either.)*
+
+## 2d. Trust-class matrix — REQUIRED, blocking
+
+**Scope:** rows state the FINAL disclosure for a triple whose value
+evidence carries an INBOUND relay marker naming a non-user source
+(§3a's directional contract; outbound first-person phrasing is a
+non-match by contract and appears as its own row). The floor added
+here only ever LOWERS (§2), so every accepted floor still applies
+after — the standing-revocation row is the case that matters.
+
+| relation | value evidence | author | today | after | why |
+|---|---|---|---|---|---|
+| CONCRETE (registry, non-reserved) | inbound marker, non-user source | USER | MENTIONABLE — asserted | **USE_ONLY** | **the B02/B07 class, and the reason this spec exists.** The extractor's own words name a third-party source while the relation launders it |
+| CONCRETE | inbound marker | THIRD_PARTY / derived | USE_ONLY | **USE_ONLY** | unchanged — the author floor already reached the same place; no cell moves |
+| CONCRETE | **outbound** first-person ("as I told my doctor") | USER | MENTIONABLE | **MENTIONABLE** | the directional contract: the user recounting what they said is first-person testimony. §6a's false-positive bar lives here |
+| CONCRETE | no marker (empty or unmatched note+object) | any | per author rules | **unchanged** | **V2**: absence of a marker is absence of evidence — never agreement |
+| `third_party_claim` | note names the USER as source | any | QUARANTINED | **QUARANTINED**, disagreement RECORDED + counted | §3c: the demotion direction changes no disposition; the record is Q5's evidence corpus |
+| `unclassified` (a `0024` re-disposition) | any | any | USE_ONLY (A1) | **USE_ONLY** | already at the floor this check can impose; no interaction |
+| any | any | any, **source standing-revoked** | QUARANTINED | **QUARANTINED** | `0023` N1 wins over everything; this floor may only lower, never lift |
+
+**No cell in this table raises a disclosure**, which is `0005` C1
+honoured by construction rather than by argument — the property `0024`
+had to defend at length is unavailable here by design.
 
 ## 3. Behaviour
 
@@ -236,14 +279,23 @@ catches relays that name nothing (the 2/4 empty-note movers bound that
 honestly), will not call it extractor correctness, and will not claim
 bite before an unplanted catch (§6a).
 
-## 9. Brief for the internal reviewer (research)
+## 9. Brief for the external reviewer
+
+*(Internal review is complete: research — who proposed this check —
+ran two rounds, round 1 PASS WITH AMENDMENTS with all three questions
+ruled and round 2 PASS with no new findings, both folded. The questions
+below are what we most want you to attack; research's rulings on them
+are recorded in the Version row and are themselves fair game.)*
 
 1. **The asymmetry argument (§2)** — is restrict-only sufficient to
    make prose a safe input, or does even a lowering rule on an
    unconstrained channel create a denial lever (an attacker floors the
-   user's own facts by seeding marker-shaped text)? We think the §2c
-   adversarial row bounds it (the attacker could already write the fact
-   AS a relay); attack that.
+   user's own facts by seeding marker-shaped text)? Research ratified
+   the bound with a dominance argument (§2c's row: any position that
+   reaches the value channel of a grounded triple already writes
+   user-authored event text and can already assert, which strictly
+   dominates flooring). Attack that dominance claim — it is the load
+   the whole spine rests on.
 2. **The lexicon as instrument** — §VII demands components pass unseen
    data. Is §6a's measurement gate the right graduation, and is 2% the
    right pre-commitment?
