@@ -16,12 +16,15 @@ presence-somewhere stood in for presence-at-the-site, the proxy class):
   2. §9 does NOT carry the obsolete singular summary (the literal
      'one-sentence' — §9's note deliberately describes rather than
      quotes it so this grep stays honest);
-  3. §4b-i ITSELF opens its supersession question with the
-     re-dispositioned-record row — asserted inside the isolated §4b-i
-     section AND anchored to the start of an actual Markdown table row
-     (round 18, A1-R18-1: a substring match within the section accepted
-     the live fragment inside an HTML COMMENT while the obsolete row
-     stood — mention is not use, the sealer's own placeholder lesson).
+  3. §4b-i's question TABLE is PARSED (round 19, A1-R19-1: anchoring
+     a phrase to a pipe-prefixed line proved neither table membership
+     nor exclusivity — an isolated pipe line outside the table, or a
+     second contradictory row, both passed). The parsed properties:
+     exactly ONE question/answer table in the section; exactly ONE
+     supersession-question row in its body; that row uses the
+     re-dispositioned wording; NO row carries the obsolete
+     corrected-user-statement question. Comments are stripped first
+     (round 18's shadow class).
 
 Takes an optional path argument so the adversarial mutation matrix can
 run it against mutated COPIES (the reviewer's requested artifact).
@@ -57,23 +60,49 @@ def main(argv: list[str] | None = None) -> int:
     mb = re.search(r"^#### 4b-i\..*?(?=^#{2,4} )", text, re.M | re.S)
     if not mb:
         problems.append("§4b-i not found")
-        section_b = ""
     else:
-        # comments are stripped BEFORE matching: the round-18 fix anchored
-        # to a line-start table row, and a multi-line HTML comment can put
-        # the fragment at a line start — recursing the property rather
-        # than waiting for that round
+        # comments stripped first (A1-R18-1's shadow class), then the
+        # question table is PARSED — membership and exclusivity, not
+        # phrase anchoring (A1-R19-1)
         section_b = re.sub(r"<!--.*?-->", "", mb.group(0), flags=re.S)
-    if mb and not re.search(
-            r"^\| \*\*is a re-dispositioned record then able to "
-            r"SUPERSEDE\?\*\*",
-            section_b, re.M):
-        problems.append(
-            "§4b-i does not open an ACTUAL table row (line-anchored "
-            "`| **…`) with the re-dispositioned question — a quotation "
-            "elsewhere (A1-R17-1's ledger shadow) or the fragment inside "
-            "a comment in the section (A1-R18-1's comment shadow) does "
-            "not count; mention is not use")
+        blocks, cur = [], []
+        for line in section_b.splitlines():
+            if line.lstrip().startswith("|"):
+                cur.append(line.strip())
+            else:
+                if cur:
+                    blocks.append(cur)
+                cur = []
+        if cur:
+            blocks.append(cur)
+        tables = [b for b in blocks
+                  if b and re.fullmatch(r"\|\s*question\s*\|\s*answer"
+                                        r"\s*\|", b[0])]
+        if len(tables) != 1:
+            problems.append(
+                f"§4b-i holds {len(tables)} question/answer table(s), "
+                f"expected exactly one — an isolated pipe-prefixed line "
+                f"is not the table (A1-R19-1)")
+        else:
+            body = [row for row in tables[0][2:]]     # header + separator
+            firsts = [row.split("|")[1].strip() if row.count("|") >= 2
+                      else "" for row in body]
+            sup = [f for f in firsts if "able to SUPERSEDE" in f]
+            if len(sup) != 1:
+                problems.append(
+                    f"the question table holds {len(sup)} supersession-"
+                    f"question row(s), expected exactly one — "
+                    f"contradictory carriers are not a live header "
+                    f"(A1-R19-1)")
+            elif "re-dispositioned record" not in sup[0]:
+                problems.append(
+                    "the ONE supersession-question row does not use the "
+                    "re-dispositioned wording")
+            if any("corrected user statement" in f for f in firsts):
+                problems.append(
+                    "an obsolete corrected-user-statement question row "
+                    "exists in the table — exclusivity violated "
+                    "(A1-R19-1)")
     if problems:
         print("check_a1_carriers: FAILED\n  " + "\n  ".join(problems),
               file=sys.stderr)

@@ -678,9 +678,10 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     ENUMERATED here, never counted (round 18's editorial: a typed count
     of the cells drifted the day it was written): three §9 target
     removals, the restored singular form, the ledger-shadow (round 17),
-    the plain obsolete-header restore, and the same-section
-    comment-shadow (round 18 — the live fragment inside an HTML comment
-    while the obsolete row stands)."""
+    the plain obsolete-header restore, the same-section comment-shadow
+    (round 18 — the live fragment inside an HTML comment while the
+    obsolete row stands), and round 19's pair: the outside-the-table
+    stray line and the contradictory second row."""
     import re, subprocess, sys as _sys
     import check_a1_carriers as cac
     spec_text = cac.SPEC.read_text()
@@ -748,6 +749,32 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     assert run(anchored_shadow) != 0, (
         "the line-anchored comment-shadow passed — the anchor alone was "
         "not the property")
+
+    # A1-R19-1's two mutants, verbatim. (1) outside-the-table: the
+    # obsolete row stands IN the table; the live phrase sits on an
+    # isolated pipe-prefixed line separated from it by prose
+    live_line = None
+    for line in spec_text.splitlines():
+        if line.startswith(live_row):
+            live_line = line
+            break
+    assert live_line is not None
+    obsolete_line = live_line.replace(
+        "is a re-dispositioned record then able to SUPERSEDE?",
+        "is a corrected user statement then able to SUPERSEDE?", 1)
+    outside = spec_text.replace(live_line, obsolete_line, 1).replace(
+        "### 4c.",
+        live_line + "\n\nprose separating the stray row\n\n### 4c.", 1)
+    assert run(outside) != 0, (
+        "an isolated pipe-prefixed live line outside the table passed as "
+        "table membership (A1-R19-1 mutant 1)")
+    # (2) contradictory carriers: the obsolete row ADDED above the live
+    # one — two supersession-question rows in one table
+    contradictory = spec_text.replace(
+        live_line, obsolete_line + "\n" + live_line, 1)
+    assert run(contradictory) != 0, (
+        "two contradictory supersession rows passed as a live header "
+        "(A1-R19-1 mutant 2)")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():

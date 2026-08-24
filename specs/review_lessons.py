@@ -516,6 +516,13 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 19 -------------------------------
+    ("0024", 19, "A1-R19-1"): ("proxy", "spec",
+        "a pipe-prefixed line stood in for table membership and one "
+        "matching row stood in for exclusivity — the terminal form of "
+        "the class is parsing the structure, not anchoring the phrase; "
+        "and the parser's first run caught the spec quoting its own "
+        "defect phrasing in the live row"),
     # ---- the A1 amendment, external round 18 -------------------------------
     ("0024", 18, "A1-R18-1"): ("proxy", "spec",
         "scoped-to-the-section still matched the fragment in an HTML "

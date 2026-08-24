@@ -75,6 +75,18 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 19, "A1-R19-1",
+     "pipe-line anchoring proved neither table membership nor "
+     "exclusivity — an isolated pipe-prefixed live line outside the "
+     "table, and a contradictory second row, both exited 0",
+     "the check PARSES the question table: exactly one table, exactly "
+     "one supersession row, re-dispositioned wording, no obsolete row; "
+     "both mutants in the matrix; the live row's annotation describes "
+     "rather than quotes (the check's first run caught the spec's own "
+     "quotation)",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
     ("0024", "external", 18, "A1-R18-1",
      "the round-17 fix scoped the search to §4b-i but matched the "
      "fragment ANYWHERE in the section — the obsolete row restored with "
