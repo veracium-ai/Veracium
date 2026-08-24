@@ -75,6 +75,16 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 21, "A1-R21-1",
+     "the fence strip removed exactly triple-backtick fences — tilde "
+     "and four-backtick fences still rendered the table as code while "
+     "the checker passed",
+     "fence removal is a state parser over the full grammar (backtick "
+     "or tilde, length >=3, compatible same-character closer); both "
+     "fence-form mutants in the matrix",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
     ("0024", "external", 20, "A1-R20-1",
      "the round-19 parser accepted any consecutive pipe lines as a "
      "table — a malformed delimiter row and a fenced code-rendered "

@@ -516,6 +516,11 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 21 -------------------------------
+    ("0024", 21, "A1-R21-1"): ("proxy", "spec",
+        "a regex for one literal fence form stood in for the fence "
+        "grammar — tilde and longer-backtick fences are fences the "
+        "renderer honors and the strip did not"),
     # ---- the A1 amendment, external round 20 -------------------------------
     ("0024", 20, "A1-R20-1"): ("proxy", "spec",
         "consecutive pipe lines stood in for a Markdown table — the "

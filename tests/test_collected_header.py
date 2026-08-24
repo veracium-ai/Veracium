@@ -681,8 +681,9 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     the plain obsolete-header restore, the same-section comment-shadow
     (round 18 — the live fragment inside an HTML comment while the
     obsolete row stands), round 19's pair (the outside-the-table stray
-    line; the contradictory second row), and round 20's pair (the
-    malformed delimiter; the fenced code-rendered table)."""
+    line; the contradictory second row), round 20's pair (the malformed
+    delimiter; the triple-backtick fenced table), and round 21's
+    fence-grammar pair (the tilde fence; the four-backtick fence)."""
     import re, subprocess, sys as _sys
     import check_a1_carriers as cac
     spec_text = cac.SPEC.read_text()
@@ -797,6 +798,16 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     assert run(fenced) != 0, (
         "a fenced (code-rendered) table passed as a table "
         "(A1-R20-1 mutant 2)")
+    # A1-R21-1's fence-grammar pair: tilde and four-backtick fences are
+    # fences too — the regex for one literal form was a proxy for the
+    # grammar
+    tilde_fenced = spec_text.replace(tbl, "~~~\n" + tbl + "~~~\n", 1)
+    assert run(tilde_fenced) != 0, (
+        "a tilde-fenced table passed as a table (A1-R21-1 mutant 1)")
+    four_fenced = spec_text.replace(tbl, "````\n" + tbl + "````\n", 1)
+    assert run(four_fenced) != 0, (
+        "a four-backtick-fenced table passed as a table "
+        "(A1-R21-1 mutant 2)")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():

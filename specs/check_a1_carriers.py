@@ -29,7 +29,12 @@ presence-somewhere stood in for presence-at-the-site, the proxy class):
      a candidate block is a table only with a valid two-column
      Markdown DELIMITER row (round 20, A1-R20-1: consecutive pipe
      lines with an ordinary row where the delimiter belongs are not a
-     Markdown table).
+     Markdown table). Fence removal is a STATE PARSER over the full
+     fence grammar — backtick OR tilde markers of length >= 3, closed
+     by a compatible marker of the same character at least as long
+     (round 21, A1-R21-1: the regex removed exactly triple-backtick
+     fences, and a tilde or four-backtick fence still rendered the
+     table as code while passing).
 
 Takes an optional path argument so the adversarial mutation matrix can
 run it against mutated COPIES (the reviewer's requested artifact).
@@ -42,6 +47,32 @@ import sys
 
 SPEC = (pathlib.Path(__file__).resolve().parent
         / "0024-authorship-before-structural-quarantine.md")
+
+
+def _strip_fenced(text: str) -> str:
+    """A1-R21-1: fence-state parsing over the FULL fence grammar —
+    an opener is three-or-more backticks OR tildes at line start
+    (leading whitespace allowed); the region closes only at a marker of
+    the SAME character, at least as long, alone on its line. A regex
+    for one literal fence form is a proxy for the grammar."""
+    import re as _re
+    out = []
+    fence_char, fence_len = None, 0
+    for line in text.splitlines():
+        m = _re.match(r"\s*(`{3,}|~{3,})\s*\S*\s*$", line)
+        if fence_char is None:
+            if m:
+                fence_char = m.group(1)[0]
+                fence_len = len(m.group(1))
+                continue
+            out.append(line)
+        else:
+            if (m and m.group(1)[0] == fence_char
+                    and len(m.group(1)) >= fence_len
+                    and _re.fullmatch(r"\s*(`{3,}|~{3,})\s*", line)):
+                fence_char = None
+            # every line inside the fence is dropped
+    return "\n".join(out)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -71,8 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         # code), then the question table is PARSED — membership and
         # exclusivity, not phrase anchoring (A1-R19-1)
         section_b = re.sub(r"<!--.*?-->", "", mb.group(0), flags=re.S)
-        section_b = re.sub(r"^\s*```.*?^\s*```\s*$", "", section_b,
-                           flags=re.M | re.S)
+        section_b = _strip_fenced(section_b)
         blocks, cur = [], []
         for line in section_b.splitlines():
             if line.lstrip().startswith("|"):
