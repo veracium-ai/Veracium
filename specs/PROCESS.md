@@ -341,3 +341,26 @@ discipline as the code they check.
 - Corollary (checklist item 9): a check over a rich format uses a real
   parser, constrains the artifact to a trivial grammar, or checks a
   GENERATED carrier — data to data, never re-derived prose semantics.
+
+**Re-derive, do not recall — and hardest when the number favours you**
+(adopted 2026-08-24 on three instances in one week, dev+research):
+
+1. research's summary prose carried a drifted census value; the `0026`
+   draft CITED it without re-derivation (caught by research
+   re-deriving from the cache at internal round 1) — drifted AGAINST us;
+2. the A1 amendment claimed "every carrier" swept while seven passages
+   still carried the old outcome (caught by the external reviewer) —
+   a completeness claim by the author of the sweep;
+3. the A1 paired run's summary said the relay floor reached "16/16
+   non-assertable" while its own records and its own results-file row
+   said 14/16 (caught by dev recomputing from the shipped records
+   instead of reading the summary) — drifted IN OUR FAVOUR.
+
+**The rule:** any quantitative or completeness claim that will be
+carried into a spec, a package, a changelog, or an outward-facing note
+is RE-DERIVED from the artifact by whoever carries it — never quoted
+from a summary, including one's own. The favourable direction gets the
+same treatment as the unfavourable one, because nobody double-checks a
+number that flatters them: (3) reached a CHANGELOG draft and would have
+reached release notes. The artifacts in all three cases were correct
+throughout; only the prose about them drifted.
