@@ -310,7 +310,7 @@ default is off and §8 says so. **Flipping an experimental default to on is
 itself a change requiring a spec, and that spec's §5 must reach the regime** —
 otherwise the split becomes a two-step route to shipping untested behaviour.
 
-## Evidence artifacts — the P1/P4 gates (adopted 2026-08-24)
+## Evidence artifacts — the P1/P4 gates (adopted 2026-08-24, Quentin; recorded ae3b8f1, trailer corrected in the follow-up)
 
 From the 0024/0025 A1 amendment analysis (rounds 13–23: fifteen
 findings, nine of them one proxy-class descent on a single checker,
