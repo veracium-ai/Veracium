@@ -57,13 +57,20 @@ def _strip_fenced(text: str) -> str:
     followed by an ARBITRARY info string (multi-word allowed; a
     backtick-fence info string may not itself contain a backtick); the
     region closes only at a same-character marker at least as long,
-    alone on its line, again at most three spaces deep. A regex for one
-    literal fence form — or one info-string shape — is a proxy for the
+    followed by SPACES OR TABS ONLY (A1-R23-1: Unicode whitespace such
+    as U+00A0 does not close a fence), again at most three spaces deep.
+    A regex for one literal fence form — or one info-string shape, or a
+    wider-than-CommonMark whitespace class — is a proxy for the
     grammar."""
     import re as _re
     out = []
     fence_char, fence_len = None, 0
-    for line in text.splitlines():
+    # split on TRUE line boundaries only — str.splitlines() also breaks
+    # on \v, \f, U+2028 etc., which CommonMark does not treat as line
+    # endings, so a \v-suffixed pseudo-closer would parse as a clean
+    # closer line here while the renderer keeps the fence open (found
+    # by the A1-R23-1 oracle's vertical-tab cell on its first run)
+    for line in text.split("\n"):
         m = _re.match(r" {0,3}(`{3,}|~{3,})(.*)$", line)
         if m and m.group(1)[0] == "`" and "`" in m.group(2):
             m = None                      # backtick info may not hold `
@@ -76,7 +83,11 @@ def _strip_fenced(text: str) -> str:
         else:
             if (m and m.group(1)[0] == fence_char
                     and len(m.group(1)) >= fence_len
-                    and not m.group(2).strip()):
+                    and _re.fullmatch(r"[ \t]*", m.group(2))):
+                # A1-R23-1: CommonMark permits ONLY spaces or tabs after
+                # a closing fence — Python's strip() also removes U+00A0
+                # and other Unicode whitespace, so a NBSP-suffixed line
+                # is NOT a closer and the fence stays open
                 fence_char = None
             # every line inside the fence is dropped
     return "\n".join(out)
@@ -111,7 +122,8 @@ def main(argv: list[str] | None = None) -> int:
         section_b = re.sub(r"<!--.*?-->", "", mb.group(0), flags=re.S)
         section_b = _strip_fenced(section_b)
         blocks, cur = [], []
-        for line in section_b.splitlines():
+        for line in section_b.split("\n"):   # true newlines only (see
+                                              # _strip_fenced's note)
             # A1-R22-1: a table row has AT MOST THREE leading spaces —
             # four-space indentation is an indented CODE block, which
             # renders as code, not a table

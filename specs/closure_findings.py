@@ -75,6 +75,40 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 23, "A1-R23-1",
+     "the fence closer used Python strip() — U+00A0 and other Unicode "
+     "whitespace closed a fence CommonMark keeps open; and the oracle's "
+     "vertical-tab cell then exposed str.splitlines() breaking on "
+     "\\v/\\f where CommonMark does not",
+     "the closer requires spaces/tabs exactly; the parser splits on "
+     "true newlines only; the five-suffix whitespace oracle + tab "
+     "positive control are matrix cells",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
+    ("0024", "external", 23, "PROCESS-R23-1",
+     "both new gates accepted their prohibited proxies: P1 searched the "
+     "whole test file for the artifact name; P4's startswith blessed "
+     "$PY -c 'pass'; PROCESS.md was unchanged despite the adoption",
+     "P1 binds inside the named test's AST body; P4 requires a real "
+     "pytest/named-script invocation; both planted mutants are in-gate "
+     "self-tests; PROCESS.md records the rules",
+     "$PY -m pytest "
+     "tests/test_spec_gate.py::"
+     "test_every_evidence_artifact_declares_a_mutation_matrix "
+     "tests/test_spec_gate.py::test_new_closure_evidence_is_behavioral "
+     "-q -p no:randomly"),
+
+    ("0024", "external", 23, "PACKAGE-R23-1",
+     "the terminus proposal was claimed to accompany the package while "
+     "it traveled by a side channel that never arrived — a promised "
+     "companion absent from the archive and its inventory",
+     "the proposal is the archive member "
+     "specs/evidence/0024/A1-CHECKER-TERMINUS-PROPOSAL.md; the "
+     "v23-era claims corrected in place",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_terminus_proposal_is_an_archive_member -q -p no:randomly"),
+
     ("0024", "external", 22, "A1-R22-1",
      "two valid Markdown contexts misclassified: a multi-word fence "
      "info string was not an opener, and a four-space-indented table "

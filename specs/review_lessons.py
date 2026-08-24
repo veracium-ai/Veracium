@@ -516,6 +516,18 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 23 -------------------------------
+    ("0024", 23, "A1-R23-1"): ("domain", "spec",
+        "Python's whitespace class stood in for CommonMark's — strip() "
+        "and splitlines() both reach wider than the grammar, and the "
+        "oracle's own first run caught the second of the pair"),
+    ("0024", 23, "PROCESS-R23-1"): ("proxy", "packaging",
+        "the anti-proxy gates bound proxies: file-wide search for a "
+        "body-level property, and a prefix for an invocation"),
+    ("0024", 23, "PACKAGE-R23-1"): ("self-assertion", "packaging",
+        "a companion artifact was claimed to accompany the package "
+        "while traveling by a side channel that never arrived — the "
+        "promise was in the archive, the promised thing was not"),
     # ---- the A1 amendment, external round 22 -------------------------------
     ("0024", 22, "A1-R22-1"): ("proxy", "spec",
         "a one-token info-string shape and an any-indent row classifier "

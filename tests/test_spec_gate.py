@@ -1966,6 +1966,35 @@ def test_no_closure_evidence_reads_an_artifact_the_runner_produces():
         + "\n  ".join(problems))
 
 
+def _p1_binding_problems(root, artifact, test_file, test_name):
+    """P1's binding, PROCESS-R23-1 form: the artifact must be referenced
+    INSIDE the named test's own body (AST source segment) — a mention
+    anywhere else in the file is the proxy the gate exists to refuse."""
+    import ast
+    problems = []
+    tpath = root / test_file
+    if not tpath.exists():
+        return [f"matrix file {test_file} does not exist"]
+    ttext = tpath.read_text()
+    try:
+        tree = ast.parse(ttext)
+    except SyntaxError as e:
+        return [f"matrix file {test_file} does not parse: {e}"]
+    fn = next((n for n in ast.walk(tree)
+               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and n.name == test_name), None)
+    if fn is None:
+        return [f"matrix test {test_name} not found in {test_file}"]
+    body = ast.get_source_segment(ttext, fn) or ""
+    if artifact.name not in body and artifact.stem not in body:
+        problems.append(
+            f"{test_name}'s BODY never references the artifact by "
+            f"filename or module name — the pointer binds an unrelated "
+            f"test (PROCESS-R23-1: a mention elsewhere in the file is "
+            f"the proxy this binding refuses)")
+    return problems
+
+
 def test_every_evidence_artifact_declares_a_mutation_matrix():
     """P1 (adopted 2026-08-24, from the A1 rounds 15-22 analysis): no
     unmutated checker ships. Seven consecutive external rounds were the
@@ -2002,15 +2031,42 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
             f"{f.name} declares no `# Mutation-Matrix: tests/<file>.py::"
             f"<test>` pointer — no unmutated checker ships (P1)")
         tf, tname = m.group(1), m.group(2)
-        tpath = root / tf
-        assert tpath.exists(), f"{f.name}: matrix file {tf} does not exist"
-        ttext = tpath.read_text()
-        assert f"def {tname}(" in ttext, (
-            f"{f.name}: matrix test {tname} not found in {tf}")
-        assert f.name in ttext or f.stem in ttext, (
-            f"{f.name}: {tname}'s file never references the artifact by "
-            f"filename or module name — the pointer binds an unrelated "
-            f"test (the proxy class, at the gate itself)")
+        problems = _p1_binding_problems(root, f, tf, tname)
+        assert not problems, f"{f.name}: " + "; ".join(problems)
+
+    # PROCESS-R23-1's planted mutant, as a self-test: a checker whose
+    # pointer names an unrelated test, with the filename mentioned
+    # ELSEWHERE in the test file, must refuse — the first gate searched
+    # the whole file and passed it
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        troot = pathlib.Path(td)
+        (troot / "specs").mkdir()
+        (troot / "tests").mkdir()
+        art = troot / "specs" / "check_planted.py"
+        art.write_text("# Mutation-Matrix: tests/test_x.py::test_unrelated\n")
+        (troot / "tests" / "test_x.py").write_text(
+            "# check_planted.py is mentioned here, outside any test\n"
+            "def test_unrelated():\n    assert True\n")
+        probs = _p1_binding_problems(troot, art, "tests/test_x.py",
+                                     "test_unrelated")
+        assert probs, (
+            "the planted unrelated-matrix mutant passed — the binding "
+            "reads the file, not the test body (PROCESS-R23-1)")
+
+
+def _p4_evidence_problem(evidence: str):
+    """P4's grammar, PROCESS-R23-1 form: the evidence must INVOKE a
+    named pytest test or a named specs/ script — `startswith("$PY")`
+    blessed `$PY -c "pass"`, an inline no-op wearing the prefix."""
+    import re
+    e = evidence.strip()
+    if re.match(r"\$PY\s+-m\s+pytest\s+tests/\S+::\w+", e):
+        return None
+    if re.match(r"\$PY\s+specs/[\w/.-]+\.py(\s|$)", e):
+        return None
+    return ("must invoke `$PY -m pytest tests/<file>::<test>` or "
+            "`$PY specs/<script>.py`")
 
 
 def test_new_closure_evidence_is_behavioral():
@@ -2040,12 +2096,27 @@ def test_new_closure_evidence_is_behavioral():
         evidence = row[6]
         if rnd <= CUTOFFS.get((spec, kind), 0):
             continue
-        if not evidence.lstrip().startswith("$PY"):
-            offenders.append(f"{spec} {kind} {rnd} {fid}: {evidence[:60]!r}")
+        if _p4_evidence_problem(evidence):
+            offenders.append(f"{spec} {kind} {rnd} {fid}: "
+                             f"{_p4_evidence_problem(evidence)} — "
+                             f"{evidence[:60]!r}")
     assert not offenders, (
         "closure evidence past the P4 cutoff must run a named script or "
-        "pytest test ($PY ...), never an inline lexical command:\n  "
+        "pytest test, never an inline command:\n  "
         + "\n  ".join(offenders))
+
+    # PROCESS-R23-1's planted mutant, as a self-test: `$PY -c "pass"`
+    # starts with $PY and does nothing — the first gate's startswith
+    # accepted it
+    assert _p4_evidence_problem('$PY -c "pass"'), (
+        "the planted $PY -c mutant passed (PROCESS-R23-1)")
+    assert _p4_evidence_problem("$PY -m timeit 1+1"), (
+        "a non-pytest -m module passed")
+    assert not _p4_evidence_problem(
+        "$PY -m pytest tests/test_x.py::test_y -q -p no:randomly"), (
+        "a legitimate pytest invocation was refused")
+    assert not _p4_evidence_problem("$PY specs/check_a1_carriers.py"), (
+        "a legitimate named script was refused")
 
 
 def test_the_lessons_taxonomy_is_total_and_its_counts_are_generated():

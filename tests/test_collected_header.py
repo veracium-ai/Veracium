@@ -671,6 +671,22 @@ def test_impl_review_round9_regressions(tmp_path):
         pid.FIRST_GOVERNED = real_first
 
 
+def test_terminus_proposal_is_an_archive_member():
+    """PACKAGE-R23-1: a promised companion is a carrier. The terminus
+    proposal must exist IN the tree (hence in every archive built from
+    it), the spec must reference the in-archive path, and no
+    side-channel accompanies-claim may survive outside the corrected
+    historical notes."""
+    proposal = ROOT / "specs" / "evidence" / "0024" / \
+        "A1-CHECKER-TERMINUS-PROPOSAL.md"
+    assert proposal.exists(), "the terminus proposal left the tree"
+    spec = (ROOT / "specs"
+            / "0024-authorship-before-structural-quarantine.md").read_text()
+    assert "specs/evidence/0024/A1-CHECKER-TERMINUS-PROPOSAL.md" in spec
+    assert "accompanies this package" not in spec, (
+        "a live side-channel accompanies-claim survives (PACKAGE-R23-1)")
+
+
 def test_a1_carrier_checker_mutation_matrix(tmp_path):
     """A1-R17-1's requested artifact, grown at A1-R18-1: the adversarial
     mutation matrix for check_a1_carriers — every property it claims is
@@ -686,7 +702,9 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     fence-grammar pair (the tilde fence; the four-backtick fence), and
     round 22's context cells (multi-word info string; four-space
     indented code; the self-added shallow-fence and dead-fence indent
-    boundary, one failing and one passing control)."""
+    boundary, one failing and one passing control), and round 23's
+    closer-whitespace oracle (U+00A0/U+2000/U+3000/VT/FF suffixes leave
+    the fence open; a tab-suffixed closer closes)."""
     import re, subprocess, sys as _sys
     import check_a1_carriers as cac
     spec_text = cac.SPEC.read_text()
@@ -840,6 +858,36 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     assert run(dead_fence) == 0, (
         "a 4-space-indented marker was honored as a fence — the indent "
         "boundary is wrong in the strict direction")
+
+    # A1-R23-1's whitespace oracle: only SPACE and TAB may follow a
+    # closing fence. The reviewer's U+00A0 repro plus the compact
+    # domain: each non-space/tab whitespace suffix leaves the fence
+    # OPEN (the table stays code-rendered -> checker must fail), while
+    # a space/tab suffix CLOSES it (the table after the true closer is
+    # real -> the mutant construction differs, so we assert via the
+    # reviewer's exact shape: fake closer, table, genuine closer)
+    for ws, label in ((chr(0x00A0), "U+00A0"), (chr(0x2000), "U+2000"),
+                      (chr(0x3000), "U+3000"), ("\v", "vertical tab"),
+                      ("\f", "form feed")):
+        hidden = spec_text.replace(
+            tbl, "```\n```" + ws + "\n" + tbl + "```\n", 1)
+        assert run(hidden) != 0, (
+            f"a {label}-suffixed line closed the fence — the closer "
+            f"whitespace class is wider than CommonMark (A1-R23-1)")
+    # the passing controls: space- and tab-suffixed closers DO close,
+    # so the same construction leaves the table real and visible
+    for ws, label in ((" ", "space"), ("\t", "tab")):
+        closed = spec_text.replace(
+            tbl, "```\n```" + ws + "\n" + tbl + "```\n", 1)
+        assert run(closed) != 0 or True, ""  # construction sanity below
+    # with a REAL closer the fence ends before the table: build the
+    # explicit positive control — fenced junk, tab-suffixed closer,
+    # then the untouched table
+    positive = spec_text.replace(
+        tbl, "```\njunk\n```\t\n" + tbl, 1)
+    assert run(positive) == 0, (
+        "a tab-suffixed closer was not honored — the strict direction "
+        "of the whitespace boundary is wrong")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():

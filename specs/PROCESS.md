@@ -309,3 +309,28 @@ by default):* may ship with the regime stated as untested in §8, provided the
 default is off and §8 says so. **Flipping an experimental default to on is
 itself a change requiring a spec, and that spec's §5 must reach the regime** —
 otherwise the split becomes a two-step route to shipping untested behaviour.
+
+## Evidence artifacts — the P1/P4 gates (adopted 2026-08-24)
+
+From the 0024/0025 A1 amendment analysis (rounds 13–23: fifteen
+findings, nine of them one proxy-class descent on a single checker,
+zero design): checks are product too, and they ship under the same
+discipline as the code they check.
+
+- **P1 — no unmutated checker ships.** Every evidence artifact
+  (`specs/check_*.py`, `specs/verify_*.py`, `validate_*.py` under
+  `specs/`) declares a `# Mutation-Matrix:` pointer at a named pytest
+  test; the gate (`test_every_evidence_artifact_declares_a_mutation_
+  matrix`) requires the test to exist and to reference the artifact
+  INSIDE its own body. Pre-rule artifacts are enumerated grandfathers.
+- **P4 — closure evidence is behavior.** A closure-ledger row past the
+  frozen per-line cutoffs must invoke `$PY -m pytest tests/<f>::<t>` or
+  `$PY specs/<script>.py` — never an inline lexical command (a grep for
+  a diagnostic string is satisfied by a no-op containing the string).
+  Gate: `test_new_closure_evidence_is_behavioral`.
+- Both gates carry their prohibited proxies as PLANTED SELF-TESTS
+  (PROCESS-R23-1: the first versions accepted an unrelated-matrix
+  pointer and `$PY -c "pass"`).
+- Corollary (checklist item 9): a check over a rich format uses a real
+  parser, constrains the artifact to a trivial grammar, or checks a
+  GENERATED carrier — data to data, never re-derived prose semantics.

@@ -94,6 +94,7 @@ PACKAGES = {
         "v21": (21, {"0024": "v16", "0025": "v13"}),
         "v22": (22, {"0024": "v17", "0025": "v13"}),
         "v23": (23, {"0024": "v18", "0025": "v13"}),
+        "v24": (24, {"0024": "v19", "0025": "v13"}),
     },
 }
 
@@ -106,7 +107,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()   # cleared by the 0024-0025-v23 sidecar commit (C8-1/C9-1)
+IN_FLIGHT: tuple = ("0024-0025-v24",)   # C8-1/C9-1: the ONE declared seal
+                                        # (A1 round-23 fold); cleared by
+                                        # its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
