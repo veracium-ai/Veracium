@@ -23,8 +23,10 @@ Checks, all hard failures:
   4. the frozen probe matrix is coherent with the paired runs (48
      probes; the runs' probe ids equal the matrix's; cells agree);
   5. the canary-subject records support the claim they ship for:
-     exactly 8, ids == the matrix's cell-C ids, NO edge subject
-     canonicalizes to 'user', every third_party_claim edge QUARANTINED,
+     exactly 8, ids == the matrix's cell-C ids, every edge subject
+     PRESENT, string-typed and nonempty after canonicalization (round
+     16, EVIDENCE-R16-1: absence is not evidence), NO subject
+     canonicalizing to 'user', every third_party_claim edge QUARANTINED,
      and CANARY_SUBJECTS.md names the records file (research co-check,
      2026-08-24: the first validator predated this file and a
      canary-only mutation passed silently);
@@ -168,7 +170,15 @@ def main() -> int:
                         "it chains to")
     for r in canaries:
         for e in r["edges"]:
-            if str(e.get("subject", "")).strip().casefold() == "user":
+            subj = e.get("subject")
+            if not isinstance(subj, str) or not subj.strip():
+                problems.append(
+                    f"{r['probe_id']}: a canary edge subject is absent, "
+                    f"non-string, or empty after canonicalization — "
+                    f"ABSENCE IS NOT EVIDENCE of a non-user claiming voice "
+                    f"(round 16, EVIDENCE-R16-1: a silent '' default "
+                    f"admitted exactly what this check exists to reject)")
+            elif subj.strip().casefold() == "user":
                 problems.append(
                     f"{r['probe_id']}: a canary edge subject canonicalizes "
                     f"to 'user' — the exact state this file ships to prove "

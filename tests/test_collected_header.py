@@ -726,6 +726,29 @@ def test_baseline_validator_bites_on_a_planted_mutation(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode != 0 and "canonicalizes" in r.stderr, (
         "the C04 user-subject mutation survived (research's co-check cell)")
+    # EVIDENCE-R16-1 (the reviewer's deleted-subject mutant): an absent
+    # or None subject must REFUSE — e.get("subject", "") silently
+    # coerced absence into passing evidence
+    for mutate in ("delete", "none"):
+        workx = tmp_path / f"baseline_{mutate}"
+        shutil.copytree(src, workx,
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        cpx = workx / "canary_subject_records.jsonl"
+        rowsx = [json.loads(l) for l in cpx.read_text().splitlines()]
+        for row in rowsx:
+            if row["probe_id"] == "b24-C04":
+                for e in row["edges"]:
+                    if mutate == "delete":
+                        e.pop("subject", None)
+                    else:
+                        e["subject"] = None
+        cpx.write_text("\n".join(json.dumps(r) for r in rowsx) + "\n")
+        r = subprocess.run(
+            [_sys.executable, str(workx / "validate_baseline.py")],
+            capture_output=True, text=True)
+        assert r.returncode != 0 and "ABSENCE IS NOT EVIDENCE" in r.stderr, (
+            f"an {mutate}d canary subject passed as evidence "
+            f"(EVIDENCE-R16-1)")
     # (a) an unknown digest-bound data file must refuse, not ride
     work3 = tmp_path / "baseline3"
     shutil.copytree(src, work3, ignore=shutil.ignore_patterns("__pycache__"))

@@ -516,6 +516,16 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 16 -------------------------------
+    ("0024", 16, "A1-R16-1"): ("proxy", "spec",
+        "the closure row ABOUT the closure fix carried its own weaker "
+        "inline evidence — a grep that printed 1 and exited 0 — while the "
+        "complete command sat one row away; per-row evidence is a second "
+        "copy of the check"),
+    ("0024", 16, "EVIDENCE-R16-1"): ("coercion", "packaging",
+        "a silent '' default for an absent canary subject satisfied the "
+        "no-user-subject check — absence admitted as the evidence the "
+        "check exists to demand"),
     # ---- the A1 amendment, external round 15 -------------------------------
     ("0024", 15, "A1-R15-1"): ("proxy", "spec",
         "the closure evidence bound the §4b-i header and §7b's markers — "

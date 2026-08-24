@@ -75,15 +75,32 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 16, "A1-R16-1",
+     "the A1-R15-1 ledger row's own closure command was underpowered — "
+     "its grep printed 1 and exited 0, establishing none of the three "
+     "properties the row claimed",
+     "both consequence-carrier rows run the ONE named checker; per-row "
+     "inline evidence retired as a second copy of the check",
+     "$PY specs/check_a1_carriers.py"),
+
+    ("0024", "external", 16, "EVIDENCE-R16-1",
+     "e.get('subject','') coerced an ABSENT canary subject into passing "
+     "the no-user-subject check — the deleted-subject mutant exited zero",
+     "the subject must be present, string-typed and nonempty after "
+     "canonicalization before the 'user' test; deletion and None mutants "
+     "are planted regressions",
+     "grep -n 'ABSENCE IS NOT EVIDENCE' "
+     "specs/evidence/0024/baseline/validate_baseline.py"),
+
     ("0024", "external", 15, "A1-R15-1",
      "the R14-1 closure evidence proved only half the finding — no "
      "command examined §9; restoring its obsolete singular summary alone "
      "passed both commands",
      "the evidence section-scopes §9 itself: three replacement targets "
      "present, the singular form rejected, the §4b-i header live",
-     "awk '/^## 9\\./,/^## 10\\./' "
-     "specs/0024-authorship-before-structural-quarantine.md | grep -c "
-     "'§4b-iii step'  # the §9-scoped inventory the evidence now binds"),
+     "$PY specs/check_a1_carriers.py  # A1-R16-1: the row's first "
+     "inline grep printed 1 and exited 0, proving none of its three "
+     "claims — both rows now share the one named checker"),
 
     ("0024", "external", 15, "PACKAGE-R15-1",
      "verify_a1_patch accepted a skipped vector — only the reference was "
@@ -115,18 +132,9 @@ CLOSURES = [
      "the §4b-i header asks about a re-dispositioned record; §9 "
      "enumerates all three 0025 replacements with the R14-1 note; the "
      "A1-R13-1 evidence strengthened to assert both",
-     "test \"$(awk '/^## 9\\./,/^## 10\\./' "
-     "specs/0024-authorship-before-structural-quarantine.md | grep -o -e "
-     "'§4b-iii step 1' -e '§4b-iii step 2' -e \"§7b's\" | sort -u | "
-     "wc -l)\" -ge 3 && ! awk '/^## 9\\./,/^## 10\\./' "
-     "specs/0024-authorship-before-structural-quarantine.md | grep -q "
-     "'one-sentence' && grep -q "
-     "'is a re-dispositioned record then able to SUPERSEDE' "
-     "specs/0024-authorship-before-structural-quarantine.md  "
-     "# A1-R15-1: §9 ITSELF is checked — all three replacement targets "
-     "present, the singular step-2 form rejected, and the §4b-i header "
-     "still live (the round-15 attack: restoring §9's obsolete summary "
-     "alone now fails this command)"),
+     "$PY specs/check_a1_carriers.py  # A1-R16-1: ONE shared named "
+     "checker for both consequence-carrier rows — three §9 targets, the "
+     "singular form rejected, the §4b-i header live"),
 
     ("0001", "external", 10, "0001-R10-1",
      "the I6 reserve protected ELIGIBILITY, not relevance — every "

@@ -325,6 +325,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0024-0025 | v14 | 14 | `0024-0025-v14-20260823T2308Z.tar.gz` | `041693c24b1210db…` |
 | 0024-0025 | v15 | 15 | `0024-0025-v15-20260824T0018Z.tar.gz` | `11fdccf1b054dd91…` |
 | 0024-0025 | v16 | 16 | `0024-0025-v16-20260824T0126Z.tar.gz` | `8f58dd49016d4add…` |
+| 0024-0025 | v17 | 17 | **0 sidecars — LINEAGE GAP** | — |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 
