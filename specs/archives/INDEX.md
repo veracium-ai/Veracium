@@ -333,6 +333,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0024-0025 | v18 | 18 | `0024-0025-v18-20260824T0427Z.tar.gz` | `440b4e7a3360ad9f…` |
 | 0024-0025 | v19 | 19 | `0024-0025-v19-20260824T1036Z.tar.gz` | `80f86d8793ed9e4e…` |
 | 0024-0025 | v20 | 20 | `0024-0025-v20-20260824T1138Z.tar.gz` | `abd4388e237c31cc…` |
+| 0024-0025 | v21 | 21 | **0 sidecars — LINEAGE GAP** | — |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 

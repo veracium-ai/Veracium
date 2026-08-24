@@ -516,6 +516,11 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 20 -------------------------------
+    ("0024", 20, "A1-R20-1"): ("proxy", "spec",
+        "consecutive pipe lines stood in for a Markdown table — the "
+        "delimiter row and the fenced-code context are part of what "
+        "'table' means, and the parser had encoded neither"),
     # ---- the A1 amendment, external round 19 -------------------------------
     ("0024", 19, "A1-R19-1"): ("proxy", "spec",
         "a pipe-prefixed line stood in for table membership and one "

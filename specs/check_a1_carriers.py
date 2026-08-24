@@ -23,8 +23,13 @@ presence-somewhere stood in for presence-at-the-site, the proxy class):
      exactly ONE question/answer table in the section; exactly ONE
      supersession-question row in its body; that row uses the
      re-dispositioned wording; NO row carries the obsolete
-     corrected-user-statement question. Comments are stripped first
-     (round 18's shadow class).
+     corrected-user-statement question. Comments AND fenced code
+     regions are stripped first (rounds 18 and 20: a comment can carry
+     the phrase, and a fenced block renders as code, not a table), and
+     a candidate block is a table only with a valid two-column
+     Markdown DELIMITER row (round 20, A1-R20-1: consecutive pipe
+     lines with an ordinary row where the delimiter belongs are not a
+     Markdown table).
 
 Takes an optional path argument so the adversarial mutation matrix can
 run it against mutated COPIES (the reviewer's requested artifact).
@@ -61,10 +66,13 @@ def main(argv: list[str] | None = None) -> int:
     if not mb:
         problems.append("§4b-i not found")
     else:
-        # comments stripped first (A1-R18-1's shadow class), then the
-        # question table is PARSED — membership and exclusivity, not
-        # phrase anchoring (A1-R19-1)
+        # comments stripped first (A1-R18-1's shadow class), then
+        # FENCED CODE regions (A1-R20-1: a fenced table renders as
+        # code), then the question table is PARSED — membership and
+        # exclusivity, not phrase anchoring (A1-R19-1)
         section_b = re.sub(r"<!--.*?-->", "", mb.group(0), flags=re.S)
+        section_b = re.sub(r"^\s*```.*?^\s*```\s*$", "", section_b,
+                           flags=re.M | re.S)
         blocks, cur = [], []
         for line in section_b.splitlines():
             if line.lstrip().startswith("|"):
@@ -75,9 +83,12 @@ def main(argv: list[str] | None = None) -> int:
                 cur = []
         if cur:
             blocks.append(cur)
+        delim = re.compile(r"\|\s*:?-{3,}:?\s*\|\s*:?-{3,}:?\s*\|")
         tables = [b for b in blocks
-                  if b and re.fullmatch(r"\|\s*question\s*\|\s*answer"
-                                        r"\s*\|", b[0])]
+                  if len(b) >= 2
+                  and re.fullmatch(r"\|\s*question\s*\|\s*answer"
+                                   r"\s*\|", b[0])
+                  and delim.fullmatch(b[1])]
         if len(tables) != 1:
             problems.append(
                 f"§4b-i holds {len(tables)} question/answer table(s), "

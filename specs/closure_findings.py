@@ -75,6 +75,16 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0024", "external", 20, "A1-R20-1",
+     "the round-19 parser accepted any consecutive pipe lines as a "
+     "table — a malformed delimiter row and a fenced code-rendered "
+     "table both exited 0",
+     "a table requires a valid two-column delimiter row; fenced code "
+     "regions are stripped before locating tables; both mutants in the "
+     "matrix",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
     ("0024", "external", 19, "A1-R19-1",
      "pipe-line anchoring proved neither table membership nor "
      "exclusivity — an isolated pipe-prefixed live line outside the "

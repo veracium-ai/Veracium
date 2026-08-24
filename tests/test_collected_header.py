@@ -680,8 +680,9 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     removals, the restored singular form, the ledger-shadow (round 17),
     the plain obsolete-header restore, the same-section comment-shadow
     (round 18 — the live fragment inside an HTML comment while the
-    obsolete row stands), and round 19's pair: the outside-the-table
-    stray line and the contradictory second row."""
+    obsolete row stands), round 19's pair (the outside-the-table stray
+    line; the contradictory second row), and round 20's pair (the
+    malformed delimiter; the fenced code-rendered table)."""
     import re, subprocess, sys as _sys
     import check_a1_carriers as cac
     spec_text = cac.SPEC.read_text()
@@ -775,6 +776,27 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
     assert run(contradictory) != 0, (
         "two contradictory supersession rows passed as a live header "
         "(A1-R19-1 mutant 2)")
+
+    # A1-R20-1's two mutants, verbatim. (1) the delimiter row replaced
+    # by an ordinary two-cell row — consecutive pipe lines, but not a
+    # Markdown table
+    table_head = "| question | answer |\n|---|---|"
+    assert table_head in spec_text
+    no_delim = spec_text.replace(
+        table_head, "| question | answer |\n| not | a delimiter |", 1)
+    assert run(no_delim) != 0, (
+        "a pipe block without a valid delimiter row passed as a table "
+        "(A1-R20-1 mutant 1)")
+    # (2) the whole table wrapped in a fenced code block — rendered as
+    # code, not a table
+    sec_b = re.search(r"^#### 4b-i\..*?(?=^#{2,4} )", spec_text,
+                      re.M | re.S).group(0)
+    tbl = re.search(r"^\| question \| answer \|\n(?:^\|.*\n)+",
+                    sec_b, re.M).group(0)
+    fenced = spec_text.replace(tbl, "```\n" + tbl + "```\n", 1)
+    assert run(fenced) != 0, (
+        "a fenced (code-rendered) table passed as a table "
+        "(A1-R20-1 mutant 2)")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():
