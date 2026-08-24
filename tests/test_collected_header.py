@@ -874,20 +874,34 @@ def test_a1_carrier_checker_mutation_matrix(tmp_path):
         assert run(hidden) != 0, (
             f"a {label}-suffixed line closed the fence — the closer "
             f"whitespace class is wider than CommonMark (A1-R23-1)")
-    # the passing controls: space- and tab-suffixed closers DO close,
-    # so the same construction leaves the table real and visible
+    # EVIDENCE-M24-1: the space/tab positive controls are EXPLICIT
+    # `== 0` assertions (the first form was `!= 0 or True` — a tautology
+    # the reviewer proved could not fail by breaking the grammar under
+    # it): fenced junk, a space- or tab-suffixed closer, then the
+    # untouched table — the closer must close, the table must be real
     for ws, label in ((" ", "space"), ("\t", "tab")):
-        closed = spec_text.replace(
-            tbl, "```\n```" + ws + "\n" + tbl + "```\n", 1)
-        assert run(closed) != 0 or True, ""  # construction sanity below
-    # with a REAL closer the fence ends before the table: build the
-    # explicit positive control — fenced junk, tab-suffixed closer,
-    # then the untouched table
-    positive = spec_text.replace(
-        tbl, "```\njunk\n```\t\n" + tbl, 1)
-    assert run(positive) == 0, (
-        "a tab-suffixed closer was not honored — the strict direction "
-        "of the whitespace boundary is wrong")
+        positive = spec_text.replace(
+            tbl, "```\njunk\n```" + ws + "\n" + tbl, 1)
+        assert run(positive) == 0, (
+            f"a {label}-suffixed closer was not honored — the strict "
+            f"direction of the whitespace boundary is wrong")
+    # ...and the reviewer's exact grammar mutant is PLANTED: a checker
+    # whose closer class drops the space ([\t]* for [ \t]*) must FAIL
+    # the space-positive control — proving the control can fail
+    checker_src = (ROOT / "specs" / "check_a1_carriers.py").read_text()
+    assert 'r"[ \\t]*"' in checker_src
+    mutated = checker_src.replace('r"[ \\t]*"', 'r"[\\t]*"', 1)
+    mchk = tmp_path / "mutated_checker.py"
+    mchk.write_text(mutated)
+    space_positive = spec_text.replace(
+        tbl, "```\njunk\n``` \n" + tbl, 1)
+    sf = tmp_path / "space_spec.md"
+    sf.write_text(space_positive)
+    r = subprocess.run([_sys.executable, str(mchk), str(sf)],
+                       capture_output=True, text=True)
+    assert r.returncode != 0, (
+        "the [\\t]* grammar mutant passed the space-positive control — "
+        "the control is still tautological (EVIDENCE-M24-1)")
 
 
 def test_a1_patch_verifier_refuses_an_incomplete_tree():
@@ -898,10 +912,17 @@ def test_a1_patch_verifier_refuses_an_incomplete_tree():
     result passes with veracium resolved from INSIDE the constructed
     tree."""
     import verify_a1_patch as vap
-    assert vap.run_verification(copy_src=False) != 0, (
-        "an incomplete tree must REFUSE — a skipped or masked vector is "
-        "an unverified vector")
-    assert vap.run_verification(copy_src=True) == 0
+    if vap.PATCH.exists():
+        assert vap.run_verification(copy_src=False) != 0, (
+            "an incomplete tree must REFUSE — a skipped or masked vector "
+            "is an unverified vector")
+        assert vap.run_verification(copy_src=True) == 0
+    else:
+        # A1 accepted (round 24): the patch is FOLDED into the reference
+        # and removed; the verifier's contract is the VISIBLE skip —
+        # exit 0 either way, with the absence named
+        assert vap.run_verification(copy_src=False) == 0
+        assert vap.run_verification(copy_src=True) == 0
 
 
 def test_baseline_validator_bites_on_a_planted_mutation(tmp_path):

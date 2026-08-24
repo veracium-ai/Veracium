@@ -317,13 +317,20 @@ findings, nine of them one proxy-class descent on a single checker,
 zero design): checks are product too, and they ship under the same
 discipline as the code they check.
 
-- **P1 — no unmutated checker ships.** Every evidence artifact
+- **P1 — every checker declares and binds its mutation matrix.**
+  (PROCESS-M24-1 narrowed this claim to what the gate establishes: P1
+  enforces the POINTER CONVENTION — a declared matrix test that exists
+  and references the artifact in its body. The KILL evidence is the
+  matrix tests themselves, which CI runs; P1 cannot prove a matrix
+  kills, only that one is declared and bound.) Every evidence artifact
   (`specs/check_*.py`, `specs/verify_*.py`, `validate_*.py` under
   `specs/`) declares a `# Mutation-Matrix:` pointer at a named pytest
   test; the gate (`test_every_evidence_artifact_declares_a_mutation_
   matrix`) requires the test to exist and to reference the artifact
   INSIDE its own body. Pre-rule artifacts are enumerated grandfathers.
-- **P4 — closure evidence is behavior.** A closure-ledger row past the
+- **P4 — closure evidence invokes a named test or script.**
+  (PROCESS-M24-1: P4 checks the INVOCATION SHAPE — it cannot prove the
+  invoked test is sound; that is the suite's job.) A closure-ledger row past the
   frozen per-line cutoffs must invoke `$PY -m pytest tests/<f>::<t>` or
   `$PY specs/<script>.py` — never an inline lexical command (a grep for
   a diagnostic string is satisfied by a no-op containing the string).

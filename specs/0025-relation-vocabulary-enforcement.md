@@ -291,10 +291,14 @@ which both specs now cite and neither restates:
 
 1. **Coherence (`0024` §4a/§4b).** An incoherent `third_party_claim` is
    re-dispositioned; this DELIBERATELY changes the semantic state — the
-   record stops being hearsay and becomes the user's own statement.
+   record stops being RELIABLY CLASSIFIED as hearsay. The label's
+   self-contradiction licenses use; it is NOT a finding that the content
+   is the user's own statement (`0024` A1, measured).
 2. **Disclosure is established** for the post-coherence semantic state —
-   the author rules for a re-dispositioned triple, the relation-then-author
-   rules otherwise. It is computed once and RETAINED.
+   **USE_ONLY for a re-dispositioned triple (`0024` §4b as amended by A1:
+   the label's collapse licenses use, not assertion)**, the
+   relation-then-author rules otherwise. It is computed once and
+   RETAINED.
 3. **Every ACCEPTED disclosure floor applies — the standing-revocation
    floor named explicitly (external round 3, R3-1, blocking: the v4
    pipeline composed the PAIR and forgot the stack it lands on — a
@@ -622,7 +626,7 @@ this codebase has had.
 
 | spec | touchpoint | disposition |
 |---|---|---|
-| **`0024`** | the mislabelling of `third_party_claim`, **and its re-disposition target** | **COMPOSITION, STATED (internal M3): `0024`'s coherence test runs FIRST — `third_party_claim` is in the registry, so enforcement would pass it through untouched — and its fallback IS this spec's `unclassified`, so the rewrite is registry-resident under X1. A corrected user statement therefore becomes assertable but NON-SUPERSEDING, which `0024` §4b-i adopts as a chosen cell rather than inheriting as an accident. ORTHOGONAL, AND MUST NOT SHARE A FREEZE.** `third_party_claim` is IN the registry, so nothing here touches that defect, and `0024` does not reduce the off-vocabulary population. **The operative reason is measurement: a shared freeze makes the movement unattributable between two levers of very different size** (~35% vs one contradiction class) |
+| **`0024`** | the mislabelling of `third_party_claim`, **and its re-disposition target** | **COMPOSITION, STATED (internal M3): `0024`'s coherence test runs FIRST — `third_party_claim` is in the registry, so enforcement would pass it through untouched — and its fallback IS this spec's `unclassified`, so the rewrite is registry-resident under X1. A re-dispositioned record is therefore USABLE — never assertable, never superseding (`0024` A1) — which `0024` §4b-i adopts as a chosen cell rather than inheriting as an accident. ORTHOGONAL, AND MUST NOT SHARE A FREEZE.** `third_party_claim` is IN the registry, so nothing here touches that defect, and `0024` does not reduce the off-vocabulary population. **The operative reason is measurement: a shared freeze makes the movement unattributable between two levers of very different size** (~35% vs one contradiction class) |
 | **`0014`** | the frozen raw-request receipt contract | **AMENDED. The one status, stated once (round 6, R6-3: this cell said "pending" and "authorized" in the same breath):** the amendment was AUTHORIZED by Quentin (co-owner) 2026-08-21, recorded in `0014`'s header blockquote, corrected to the shipped topology in round 5, consolidated to one block in round 8 — and **CONFIRMED by the external reviewer in round 10** (round 11, R11-1: this cell had not recorded the confirmation its own header announced). The `Edge.original_relation` None-omission changes the complete-dump bytes the receipt digest covers; the cross-era rule is the consolidated §4b-v construction |
 | **`0012`** | reinforcement and the independence condition | **`Spec-Requires`, because this spec changes WHICH edges reach the supersession path at all.** 0012's rule that a restatement transfers nothing is unchanged; what changes is that ~35% more triples are eligible to be considered in the first place |
 | **`0003`** | the supersession ladder and refusal records | CONSUMED unchanged. More edges reach the ladder; the ladder decides as it always has |
@@ -754,7 +758,7 @@ or executable. The round-by-round ledger below is GENERATED from
 | external 23 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v23`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged |
 | external 24 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v24`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged |
 
-**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 171 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 173 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

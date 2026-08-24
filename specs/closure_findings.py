@@ -64,7 +64,9 @@ CLOSURES = [
      "complete author×derived product + revoked; 23/23 under "
      "python reference_enforcement.py itself",
      "grep -n 'vector_a1_u2_oracle_exhaustive' "
-     "specs/evidence/0024/a1-reference.patch"),
+     "specs/evidence/0025/reference_enforcement.py  # the patch was "
+     "FOLDED into the reference at A1's acceptance (round 24); the "
+     "oracle lives in the accepted file now"),
 
     ("0024", "external", 13, "PACKAGE-R13-1",
      "package carriers described both specs as draft candidates while the "
@@ -74,6 +76,28 @@ CLOSURES = [
      "line, fail-closed; the ledger row states no-design-change precisely",
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
+
+    ("0024", "external", 24, "EVIDENCE-M24-1",
+     "the space-positive control was a tautology ('!= 0 or True') — the "
+     "reviewer broke the closer grammar to [\\t]* and the complete "
+     "advertised matrix still passed",
+     "explicit == 0 assertions for space AND tab positives; the "
+     "reviewer's [\\t]* grammar mutant planted as a self-test proving "
+     "the control can fail",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_a1_carrier_checker_mutation_matrix -q -p no:randomly"),
+
+    ("0024", "external", 24, "PROCESS-M24-1",
+     "P1/P4 claimed 'no unmutated checker ships' while establishing a "
+     "pointer convention and an invocation shape — a docstring-only "
+     "reference and '$PY script && grep' both passed",
+     "the documented claims narrowed to what the gates establish "
+     "(convention + shape; the kill evidence is the matrix tests CI "
+     "runs) in PROCESS.md and the gate docstrings",
+     "$PY -m pytest "
+     "tests/test_spec_gate.py::"
+     "test_every_evidence_artifact_declares_a_mutation_matrix "
+     "-q -p no:randomly"),
 
     ("0024", "external", 23, "A1-R23-1",
      "the fence closer used Python strip() — U+00A0 and other Unicode "

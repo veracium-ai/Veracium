@@ -516,6 +516,16 @@ MECHANISM = {
         "the canonical Spec-Status — accepted 0025 and in-review 0024 "
         "both shipped described as draft"),
     # ---- the A1 amendment, external round 14 -------------------------------
+    # ---- the A1 amendment, external round 24 (acceptance) ------------------
+    ("0024", 24, "EVIDENCE-M24-1"): ("proxy", "spec",
+        "an assertion that cannot fail ('!= 0 or True') advertised a "
+        "positive control it did not perform — the reviewer proved it by "
+        "breaking the grammar underneath and watching the matrix stay "
+        "green"),
+    ("0024", 24, "PROCESS-M24-1"): ("self-assertion", "packaging",
+        "the gates' documentation claimed a guarantee ('no unmutated "
+        "checker ships') their mechanism does not establish — narrowed "
+        "to the convention and shape they actually check"),
     # ---- the A1 amendment, external round 23 -------------------------------
     ("0024", 23, "A1-R23-1"): ("domain", "spec",
         "Python's whitespace class stood in for CommonMark's — strip() "

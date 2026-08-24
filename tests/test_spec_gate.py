@@ -1996,8 +1996,11 @@ def _p1_binding_problems(root, artifact, test_file, test_name):
 
 
 def test_every_evidence_artifact_declares_a_mutation_matrix():
-    """P1 (adopted 2026-08-24, from the A1 rounds 15-22 analysis): no
-    unmutated checker ships. Seven consecutive external rounds were the
+    """P1 (adopted 2026-08-24; claim narrowed at PROCESS-M24-1): every
+    checker declares and BINDS its mutation matrix — this gate enforces
+    the pointer convention (the matrix test exists and references the
+    artifact in its body); the kill evidence is the matrix tests
+    themselves, which CI runs. Seven consecutive external rounds were the
     reviewer mutation-testing ONE evidence script at one mutant per
     round — the most expensive way to test a parser. Every evidence
     artifact (specs/check_*.py, specs/verify_*.py, validate_*.py under
