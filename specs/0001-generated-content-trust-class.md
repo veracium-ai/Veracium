@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); **v12 is the round-11 external candidate.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
+| **Version** | **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11** with one mechanical evidence-carrier correction (R11-1); **v13 is the round-12 external candidate — the status flip follows the reviewer's confirmation of this reseal.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -1188,3 +1188,33 @@ narrow items close. All closed; nothing architectural moved.*
    carries NO revision — the Version row is structurally the one
    carrier, instead of merely by claim. (Third strike for this class:
    R5-5, R9-2, R10-2 — the sweep now greps `(v` forms as well.)
+
+## 23. Changes in v13 (the round-11 fold, 2026-08-24)
+
+**Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12**:
+R10-1 closed (query relevance carried explicitly via `relevant_ids`;
+the candidate suite 21/21; restoring the exact eligibility-only defect
+produces 20 passed / 1 failed, the sole failure being the bananas
+counterexample) and R10-2 closed (the opening block carries no
+revision carrier). The trust-model architecture is not to be reopened.
+What returned was one mechanical evidence-carrier defect:
+
+1. **R11-1 — a carried measurement inside a "never carried" claim.**
+   `CANDIDATE_README.md` said the focused suite was 20 passed while the
+   branch ran 21: carried forward from v10 and incremented by
+   inference, in the same paragraph claiming the measurement was
+   re-run. Both figures now have exactly ONE producer.
+   `specs/evidence/0001/measure_candidate.py` materialises the tree at
+   the base commit, applies THE SHIPPED PATCH by its own bytes, runs
+   the focused and full suites, and writes `candidate_results.json` —
+   patch sha256, base commit, both measurements, the sorted FAILURE
+   SET, and the environment. `specs/check_candidate_results.py`
+   refuses any disagreement between that record, the patch's bytes and
+   the README's stated figures, and runs in the sealer's extraction
+   checks, so a stale count cannot reach a package (the reviewer's
+   "so future count drift fails sealing", mechanised). Re-measured,
+   not incremented: focused **21 passed**; full **16 failed / 1813
+   passed / 20 skipped** at base `59cd1cf` — the old 1798/9 split
+   predates 0024's landing and the gate work, which is exactly why the
+   number had to be re-run rather than adjusted. The R9-3 closure
+   evidence, which grepped a measurement DATE, now runs this binding.

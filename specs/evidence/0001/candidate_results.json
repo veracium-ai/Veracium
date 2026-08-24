@@ -1,0 +1,40 @@
+{
+ "base_commit": "59cd1cf1624d3de051442327a73160775befc895",
+ "environment": {
+  "command_focused": "python -m pytest tests/test_0001_candidate.py -q -p no:randomly",
+  "command_full": "python -m pytest tests/ -q",
+  "platform": "Linux-7.0.0-1010-aws-x86_64-with-glibc2.39",
+  "python": "3.12.3"
+ },
+ "failure_set": [
+  "tests/test_0005_import_boundary.py::test_import_memory_callsites_all_carry_a_disposition",
+  "tests/test_0006_source_identity.py::test_export_materialises_and_import_roundtrips_source_id_and_origin",
+  "tests/test_0013_presend_gates.py::test_migration_result_matches_the_independent_oracle",
+  "tests/test_0014_portability.py::test_an_older_importer_refuses_a_v5_export",
+  "tests/test_0014_portability.py::test_export_omits_none_and_carries_present_indices",
+  "tests/test_0018_orchestrator.py::test_preflight_matrix_total",
+  "tests/test_0019_ungrounded.py::test_version_gates_and_migration",
+  "tests/test_mcp.py::test_an_unrecognised_author_fails_closed_not_to_user",
+  "tests/test_mcp.py::test_the_mcp_surface_refuses_system_authorship",
+  "tests/test_render_origin.py::test_every_author_reaching_use_only_has_a_label",
+  "tests/test_render_origin.py::test_output_is_unchanged_for_every_author_reachable_today[system-third_party]",
+  "tests/test_render_origin.py::test_output_is_unchanged_for_every_author_reachable_today[user-third_party]",
+  "tests/test_spec_gate.py::test_every_closure_evidence_command_actually_runs",
+  "tests/test_spec_gate.py::test_every_store_mutation_site_carries_a_verdict",
+  "tests/test_spec_gate.py::test_the_authority_tables_are_generated_from_the_ladder",
+  "tests/test_store_versioning.py::test_s7_export_format_version_is_independent"
+ ],
+ "focused_suite": {
+  "failed": 0,
+  "passed": 21,
+  "path": "tests/test_0001_candidate.py",
+  "skipped": 0
+ },
+ "full_suite": {
+  "failed": 16,
+  "passed": 1813,
+  "skipped": 20
+ },
+ "generated_by": "specs/evidence/0001/measure_candidate.py",
+ "patch_sha256": "631840d513eeeb65f9fd0da2b7898e092e0e5f56d49cd7d0d73970e1cdd74197"
+}

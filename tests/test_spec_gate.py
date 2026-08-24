@@ -1488,6 +1488,8 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
         "validate_baseline.py (recompute the 4:1 result offline)":
             ("python",
              "specs/evidence/0024/baseline/validate_baseline.py"),
+        "check_candidate_results.py (record binds patch + README figures)":
+            ("python", "specs/check_candidate_results.py"),
         "render_closure.py --check":
             ("python", "specs/render_closure.py", "--check"),
         "render_operation.py --check":

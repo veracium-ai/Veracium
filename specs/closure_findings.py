@@ -275,6 +275,15 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 11, "0001-R11-1",
+     "the candidate README stated a focused count of 20 while the branch "
+     "ran 21 — carried from v10 and incremented by inference, inside a "
+     "paragraph claiming the measurement was re-run",
+     "both figures are GENERATED into candidate_results.json by running "
+     "the shipped patch, and bound to the patch's bytes and the README's "
+     "text by a checker in the sealer's extraction checks",
+     "$PY specs/check_candidate_results.py"),
+
     ("0001", "external", 10, "0001-R10-1",
      "the I6 reserve protected ELIGIBILITY, not relevance — every "
      "assertable in the scored set was reservable, and user-subject edges "
@@ -323,8 +332,10 @@ CLOSURES = [
      "environment",
      "the measurement is re-run at packaging time and recorded with its "
      "exact environment (python, platform, command)",
-     "grep -n 'measured 2026-08-23' specs/evidence/0001/candidate.patch  "
-     "# the environment-stamped measurement block, in the shipped patch"),
+     "$PY specs/check_candidate_results.py  # R11-1 terminal form: the "
+     "environment-stamped measurement is GENERATED into "
+     "candidate_results.json and bound to the patch's own bytes and "
+     "the README's figures — a stale date or count refuses"),
 
     ("0001", "external", 8, "0001-R8-3",
      "the modified patch still identified as candidate/0001-v8 while the "

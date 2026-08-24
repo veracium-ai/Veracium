@@ -432,6 +432,10 @@ EXTRACTION_CHECKS = (
     # load-bearing movements recomputed from the shipped JSONL.
     ("validate_baseline.py (recompute the 4:1 result offline)",
      [sys.executable, "specs/evidence/0024/baseline/validate_baseline.py"]),
+    # 0001 round 11: the candidate figures are GENERATED and BOUND — a
+    # stale count cannot reach a package.
+    ("check_candidate_results.py (record binds patch + README figures)",
+     [sys.executable, "specs/check_candidate_results.py"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",

@@ -1,9 +1,9 @@
 diff --git a/CANDIDATE_README.md b/CANDIDATE_README.md
 new file mode 100644
-index 0000000..ea2ad44
+index 0000000..703b043
 --- /dev/null
 +++ b/CANDIDATE_README.md
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,75 @@
 +# candidate/0001 — the reviewer's executable branch (NEVER MERGED)
 +
 +*(R8-3: no version literals live here — the candidate draft version is
@@ -30,7 +30,9 @@ index 0000000..ea2ad44
 +- exact `StoreVersionError(reason="newer")` refusal; FORMAT_VERSION 9
 +- MCP/CLI author surfaces extended (self-demotion; `system` stays out)
 +
-+`tests/test_0001_candidate.py`: 20 passed (the round-9 fold adds the
++`tests/test_0001_candidate.py`: **21 passed** (the round-10 fold adds
++the R10-1 bananas vector — an unrelated assertable must not displace a
++relevant fact; the round-9 fold added the
 +R9-1 non-functional placement vector — the one assertable record
 +globally last-ranked under `has_pet`, complete ordered output asserted,
 +proven to FAIL against the pre-fix filter-shaped selection — and the
@@ -42,18 +44,27 @@ index 0000000..ea2ad44
 +
 +## The measured blast radius (NOT fixed here — deliberately)
 +
-+Full suite on this branch, measured at packaging (R9-3 — the number
-+is re-run, never carried; a differing pass/skip split in another
-+environment is expected, the FAILURE set is the claim):
++Full suite on this branch — **GENERATED, not typed** (R11-1: these
++figures were carried forward and incremented by inference while this
++very paragraph claimed they were re-run; they now have exactly ONE
++producer). Every figure in this file is written from
++`specs/evidence/0001/candidate_results.json`, which
++`specs/evidence/0001/measure_candidate.py` produces by applying THIS
++patch to a clean tree at the base commit and running both suites;
++`specs/check_candidate_results.py` refuses any disagreement between the
++record, the patch's own bytes and this file — in the sealer's
++extraction checks, so a stale count cannot reach a package:
 +
-+    measured 2026-08-23: 16 failed, 1798 passed, 9 skipped
++    measured 2026-08-24: 16 failed, 1813 passed, 20 skipped
 +    environment: CPython 3.12.3, Linux-7.0.0-1010-aws-x86_64-glibc2.39
-+    command: PYTHONPATH=src python -m pytest tests/ -q
-+    base: main @ 9257e85 + this branch's patch
++    command: python -m pytest tests/ -q
++    base: main @ 59cd1cf + this branch's patch
 +
-+(The reviewer's extracted sandbox measured the SAME 16 failures at
-+1787 passed / 21 skipped — the pass/skip delta is optional-dependency
-+availability, not behaviour.) Five of the 16 are NEW
++(The split moves with main: it was 1798/9 on 2026-08-23 at `9257e85`,
++before 0024's mechanism, the P1/P4 gates and the A1 evidence work
++landed; the reviewer's sandbox saw the same 16 failures at a different
++split again, which is optional-dependency availability, not behaviour.
++The FAILURE SET is the claim, and the record carries it item by item.) Five of the 16 are NEW
 +carriers of the round-7 §4b label fix — the three `test_render_origin`
 +pins (NOTE: the verbatim decision order CHANGES the rendered label for
 +existing user+3P/system+3P edges from "third-party-reported" to

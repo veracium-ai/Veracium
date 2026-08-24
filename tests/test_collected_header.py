@@ -671,6 +671,60 @@ def test_impl_review_round9_regressions(tmp_path):
         pid.FIRST_GOVERNED = real_first
 
 
+def test_candidate_results_record_binds_the_measurement(tmp_path):
+    """P1's matrix for measure_candidate.py + check_candidate_results.py
+    (0001 R11-1: a carried focused count of 20 shipped while the branch
+    ran 21). Every property the binding claims is exercised by a mutant
+    violating exactly that property: a drifted focused count, a drifted
+    full-suite triple, a record bound to a DIFFERENT patch, and a
+    failure set whose size contradicts its own count. The pristine tree
+    passes."""
+    import json, shutil, subprocess, sys as _sys
+    checker = ROOT / "specs" / "check_candidate_results.py"
+    rec_path = ROOT / "specs" / "evidence" / "0001" / "candidate_results.json"
+    patch_path = ROOT / "specs" / "evidence" / "0001" / "candidate.patch"
+    if not (rec_path.exists() and patch_path.exists()):
+        import pytest as _pytest
+        _pytest.skip("candidate folded or absent — binding not applicable")
+
+    def run(tree):
+        return subprocess.run([_sys.executable, str(tree / "specs"
+                                                    / checker.name)],
+                              capture_output=True, text=True).returncode
+
+    def tree_with(mutate_record=None, mutate_patch=None):
+        w = tmp_path / f"t{len(list(tmp_path.iterdir()))}"
+        (w / "specs" / "evidence" / "0001").mkdir(parents=True)
+        shutil.copy2(checker, w / "specs" / checker.name)
+        rec = json.loads(rec_path.read_text())
+        if mutate_record:
+            mutate_record(rec)
+        (w / "specs" / "evidence" / "0001"
+         / "candidate_results.json").write_text(json.dumps(rec, indent=1))
+        text = patch_path.read_text()
+        if mutate_patch:
+            text = mutate_patch(text)
+        (w / "specs" / "evidence" / "0001"
+         / "candidate.patch").write_text(text)
+        return w
+
+    assert run(tree_with()) == 0, "the pristine binding must pass"
+    # the round-11 defect itself: the README's focused count drifts
+    assert run(tree_with(mutate_patch=lambda s: s.replace(
+        "**21 passed**", "**20 passed**", 1))) != 0, (
+        "a drifted README focused count passed — the R11-1 defect")
+    # the full-suite triple drifts
+    assert run(tree_with(mutate_record=lambda r: r["full_suite"].update(
+        {"passed": r["full_suite"]["passed"] + 1}))) != 0, (
+        "a drifted full-suite triple passed")
+    # the record binds a DIFFERENT patch (bytes changed after measuring)
+    assert run(tree_with(mutate_patch=lambda s: s + "\n# drift\n")) != 0, (
+        "a record bound to different patch bytes passed")
+    # the failure set contradicts its own count
+    assert run(tree_with(mutate_record=lambda r: r["failure_set"].pop())) != 0, (
+        "a failure set smaller than its count passed — the SET is the claim")
+
+
 def test_terminus_proposal_is_an_archive_member():
     """PACKAGE-R23-1: a promised companion is a carrier. The terminus
     proposal must exist IN the tree (hence in every archive built from
