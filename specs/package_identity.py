@@ -101,9 +101,7 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ("0024-0025-v18",)   # C8-1/C9-1: the ONE declared seal
-                                        # (A1 round-17 fold); cleared by
-                                        # its sidecar commit
+IN_FLIGHT: tuple = ()   # cleared by the 0024-0025-v18 sidecar commit (C8-1/C9-1)
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
