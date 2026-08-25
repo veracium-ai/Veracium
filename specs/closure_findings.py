@@ -275,6 +275,17 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 15, "0001-R15-1",
+     "the chain was tested link by link but never at the join — dropping "
+     "--verify from the argv ran the helper's default measure-and-print "
+     "mode, which exits 0 without comparing, with the whole gate green",
+     "the exact invocation and cwd are asserted; the --verify branch is "
+     "proven to discriminate on a planted difference with an identical "
+     "control; the default mode's exit-0 is documented by assertion; "
+     "three connection-breaking mutants planted and each failing",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_sealer_enforces_the_candidate_replay -q -p no:randomly"),
+
     ("0001", "external", 14, "0001-R14-1",
      "reachability was proved syntactically — an AST search rejecting "
      "only a literal constant-false guard, so `if a.version == 'v0'` "

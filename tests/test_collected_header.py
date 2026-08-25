@@ -760,11 +760,61 @@ def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
     class _R:
         def __init__(self, rc):
             self.returncode, self.stdout, self.stderr = rc, "planted", ""
-    if (ROOT / "specs" / "evidence" / "0001"
-            / "candidate_results.json").exists():
+    record_path = (ROOT / "specs" / "evidence" / "0001"
+                   / "candidate_results.json")
+    if record_path.exists():
         with pytest.raises(SystemExit):
             real_enforce(run=lambda *a, **k: _R(1))
         real_enforce(run=lambda *a, **k: _R(0))           # control
+
+        # --- R15-1: bind the CONNECTION, not just the two ends. Every
+        # link was tested separately — main() reaches the enforcement,
+        # the enforcement aborts on nonzero, --verify compares records —
+        # while the join was free: dropping "--verify" from the argv
+        # runs measure_candidate in its default measure-and-print mode,
+        # which exits 0 WITHOUT comparing, and every declared check
+        # stayed green. So the exact invocation is asserted.
+        seen = {}
+
+        def _capture(cmd, **kw):
+            seen["cmd"] = list(cmd)
+            seen["cwd"] = kw.get("cwd")
+            return _R(0)
+
+        real_enforce(run=_capture)
+        mc_path = str(ROOT / "specs" / "evidence" / "0001"
+                      / "measure_candidate.py")
+        assert seen["cmd"] == [sys.executable, mc_path, "--verify"], (
+            f"the enforcement invoked {seen['cmd']!r} — it must run "
+            f"measure_candidate.py with --verify; the default mode exits "
+            f"0 without comparing anything (R15-1)")
+        assert seen["cwd"] == sp.ROOT, (
+            f"the enforcement ran in {seen['cwd']!r}, not the repo root — "
+            f"the replay needs git there")
+
+        # ...and --verify must actually DISCRIMINATE. The expensive
+        # measurement is stubbed (it is covered separately); what is
+        # bound here is that the --verify branch compares the shipped
+        # record against a fresh one and returns nonzero on a
+        # difference — with the default mode proven NOT to, which is
+        # exactly why the argv above must be exact.
+        import copy, json as _json
+        shipped = _json.loads(record_path.read_text())
+        differing = copy.deepcopy(shipped)
+        differing["full_suite"]["passed"] += 1
+        monkeypatch.setattr(mc, "measure", lambda base=None: differing)
+        assert mc.main(["--verify"]) != 0, (
+            "--verify returned success while the replayed record DIFFERED "
+            "from the shipped one (R15-1)")
+        monkeypatch.setattr(mc, "measure",
+                            lambda base=None: copy.deepcopy(shipped))
+        assert mc.main(["--verify"]) == 0, (
+            "--verify failed on an identical replay — the pristine control")
+        monkeypatch.setattr(mc, "measure", lambda base=None: differing)
+        assert mc.main([]) == 0, (
+            "the DEFAULT mode was expected to exit 0 without comparing — "
+            "that it does is why the --verify argv binding above is "
+            "load-bearing, and this assertion documents the bypass")
 
     # --- and the comparison catches the type-valid fabrications the
     # extraction checker deliberately cannot ---
