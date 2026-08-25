@@ -689,6 +689,21 @@ def test_the_terminus_note_is_an_archive_member():
     references it, and the reference is checked."""
     note = ROOT / "specs" / "evidence" / "0001" / "TERMINUS-NOTE.md"
     assert note.exists(), "the terminus note left the tree"
+    # this test's NAME claims archive MEMBERSHIP, so assert membership and
+    # not merely existence (checklist item 8 — the label must be the
+    # behaviour). The sealer builds the archive with `git archive` of HEAD
+    # plus the loose carriers, so an untracked note would exist here and
+    # be absent from every package — exactly the side-channel failure this
+    # test was written to prevent, wearing a green tick.
+    import subprocess as _sp
+    tracked = _sp.run(
+        ["git", "ls-files", "--error-unmatch",
+         "specs/evidence/0001/TERMINUS-NOTE.md"],
+        cwd=ROOT, capture_output=True, text=True)
+    assert tracked.returncode == 0, (
+        "the terminus note is NOT git-tracked, so `git archive` of HEAD "
+        "would not carry it — the note would ride no package while this "
+        "test stayed green: " + tracked.stderr.strip())
     spec = (ROOT / "specs"
             / "0001-generated-content-trust-class.md").read_text()
     assert "specs/evidence/0001/TERMINUS-NOTE.md" in spec, (
