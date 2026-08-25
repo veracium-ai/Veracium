@@ -689,21 +689,35 @@ def test_the_terminus_note_is_an_archive_member():
     references it, and the reference is checked."""
     note = ROOT / "specs" / "evidence" / "0001" / "TERMINUS-NOTE.md"
     assert note.exists(), "the terminus note left the tree"
-    # this test's NAME claims archive MEMBERSHIP, so assert membership and
-    # not merely existence (checklist item 8 — the label must be the
-    # behaviour). The sealer builds the archive with `git archive` of HEAD
-    # plus the loose carriers, so an untracked note would exist here and
-    # be absent from every package — exactly the side-channel failure this
-    # test was written to prevent, wearing a green tick.
-    import subprocess as _sp
-    tracked = _sp.run(
-        ["git", "ls-files", "--error-unmatch",
-         "specs/evidence/0001/TERMINUS-NOTE.md"],
-        cwd=ROOT, capture_output=True, text=True)
-    assert tracked.returncode == 0, (
-        "the terminus note is NOT git-tracked, so `git archive` of HEAD "
-        "would not carry it — the note would ride no package while this "
-        "test stayed green: " + tracked.stderr.strip())
+    # this test's NAME claims archive MEMBERSHIP, so it asserts membership
+    # and not merely existence (checklist item 8 — the label must be the
+    # behaviour). Membership has TWO proofs, and which one is available
+    # depends on where this suite is running:
+    #
+    #   in the SOURCE TREE  — the archive does not exist yet, so the only
+    #     available proof is predictive: the sealer builds it with
+    #     `git archive` of HEAD, therefore tracked ⇒ member. An untracked
+    #     note would exist on disk and ride no package.
+    #   in an EXTRACTION    — the archive is what we are standing in, so
+    #     the proof is direct and already made above: the file's presence
+    #     at this path IS its membership.
+    #
+    # EVIDENCE PACKAGE-M18-1: the first version ran `git ls-files`
+    # unconditionally. An extracted review package carries no `.git`, so
+    # the one environment where membership is a FACT was the one where the
+    # test errored — it failed in the reviewer's pristine run while
+    # passing here. A test that can only run where its subject does not
+    # exist is checking the wrong thing.
+    if (ROOT / ".git").exists():
+        import subprocess as _sp
+        tracked = _sp.run(
+            ["git", "ls-files", "--error-unmatch",
+             "specs/evidence/0001/TERMINUS-NOTE.md"],
+            cwd=ROOT, capture_output=True, text=True)
+        assert tracked.returncode == 0, (
+            "the terminus note is NOT git-tracked, so `git archive` of "
+            "HEAD would not carry it — the note would ride no package "
+            "while this test stayed green: " + tracked.stderr.strip())
     spec = (ROOT / "specs"
             / "0001-generated-content-trust-class.md").read_text()
     assert "specs/evidence/0001/TERMINUS-NOTE.md" in spec, (
@@ -875,7 +889,7 @@ def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
     sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
     import measure_candidate as mc
 
-    real_enforce = sp.enforce_candidate_replay      # captured BEFORE the patch
+    _real_enforce = sp.enforce_candidate_replay     # captured BEFORE the patch
     line = "0001"
     version = sorted(pid.PACKAGES[line], key=lambda v: int(v[1:]))[-1]
 
@@ -928,17 +942,73 @@ def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
         pytest.fail("main() returned without executing the replay "
                     "enforcement at all")
 
-    # --- the enforcement itself: a failing replay ABORTS, a passing one
-    # returns quietly (the pristine control) ---
+    # --- the enforcement itself. EVIDENCE-M18-1 INVERTED THE SEMANTICS:
+    # the probe perturbs the record in one field and requires --verify to
+    # CONTRADICT it there and nowhere else. So agreement (exit 0) is now
+    # the failure — a measurement that agrees with a number it should have
+    # disagreed with is reading the record, not running anything — and the
+    # pass condition is a difference at exactly the perturbed field. ---
     class _R:
-        def __init__(self, rc):
-            self.returncode, self.stdout, self.stderr = rc, "planted", ""
+        def __init__(self, rc, out=""):
+            self.returncode, self.stdout, self.stderr = rc, out, ""
+
+    DIFFERS = "REPLAY DIFFERS at 'full_suite': record has 1, produced 2"
     record_path = (ROOT / "specs" / "evidence" / "0001"
                    / "candidate_results.json")
     if record_path.exists():
+        # the probe is exercised against a THROWAWAY COPY, never the tracked
+        # record: it leaves whatever it perturbs wrong until it restores it,
+        # and a tracked file that is briefly wrong is exactly the flake that
+        # put this suite red on CI for four consecutive seals.
+        probe_record = tmp_path / "candidate_results.json"
+        probe_record.write_bytes(record_path.read_bytes())
+        pristine_bytes = probe_record.read_bytes()
+        tracked_before = record_path.read_bytes()
+
+        def real_enforce(run, record=probe_record):
+            return _real_enforce(run=run, record=record)
+
+        # the honest shape: contradicted at exactly the perturbed field
+        real_enforce(run=lambda *a, **k: _R(1, DIFFERS))
+        assert probe_record.read_bytes() == pristine_bytes, (
+            "the enforcement did not restore the record after the probe")
+
+        # EVIDENCE-M18-1 itself: the producer reads the record, so the
+        # comparison is record-against-itself and cannot disagree. Under
+        # the old agreement form this exited 0 and the seal proceeded.
         with pytest.raises(SystemExit):
-            real_enforce(run=lambda *a, **k: _R(1))
-        real_enforce(run=lambda *a, **k: _R(0))           # control
+            real_enforce(run=lambda *a, **k: _R(0, "replays exactly"))
+        assert probe_record.read_bytes() == pristine_bytes, (
+            "the record was left perturbed after the FAILING path — "
+            "cleanup must hold on the escape, not only the happy path")
+
+        # a difference at the wrong field means the shipped record
+        # disagrees with a fresh measurement beyond the perturbation
+        with pytest.raises(SystemExit):
+            real_enforce(run=lambda *a, **k: _R(
+                1, "REPLAY DIFFERS at 'base_commit': record has x"))
+        # ...and extra fields alongside the right one are equally fatal
+        with pytest.raises(SystemExit):
+            real_enforce(run=lambda *a, **k: _R(
+                1, DIFFERS + "\nREPLAY DIFFERS at 'failure_set': x"))
+        # nonzero with NO reported difference is not discrimination
+        # either — it is any other kind of crash wearing a pass
+        with pytest.raises(SystemExit):
+            real_enforce(run=lambda *a, **k: _R(1, "Traceback: boom"))
+        assert probe_record.read_bytes() == pristine_bytes
+        assert record_path.read_bytes() == tracked_before, (
+            "the PRODUCTION record was touched by a test — the probe must "
+            "only ever perturb its own copy")
+
+        # the perturbation is pure and lands where it says
+        import json as _j
+        pert, field = sp.perturb_record(pristine_bytes)
+        assert field == "full_suite"
+        a, b = _j.loads(pristine_bytes), _j.loads(pert)
+        assert b["full_suite"]["passed"] == a["full_suite"]["passed"] + 1
+        assert all(a[k] == b[k] for k in a if k != "full_suite"), (
+            "the probe perturbed more than the one field it names, so a "
+            "difference elsewhere would be the probe's own doing")
 
         # --- R15-1: bind the CONNECTION, not just the two ends. Every
         # link was tested separately — main() reaches the enforcement,
@@ -952,7 +1022,7 @@ def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
         def _capture(cmd, **kw):
             seen["cmd"] = list(cmd)
             seen["cwd"] = kw.get("cwd")
-            return _R(0)
+            return _R(1, DIFFERS)
 
         real_enforce(run=_capture)
         mc_path = str(ROOT / "specs" / "evidence" / "0001"
@@ -1016,6 +1086,49 @@ def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
         assert mc.record_differences(fake, pristine), (
             f"the replay comparison missed a type-valid fabrication the "
             f"extraction checker cannot catch: {label}")
+
+def test_the_production_path_cannot_fabricate_without_its_commands():
+    """EVIDENCE-M18-1, the fast half: the PRODUCTION entry point, reached
+    with NO injection at all, must DEPEND on its external commands.
+
+    The reviewer defeated every machinery test at once by branching on
+    the runner's identity — return the shipped record when the runner IS
+    `subprocess.run`, measure honestly otherwise. Each test injects a
+    runner, so each one took the honest branch; production took the
+    other, and `--verify` compared the record with itself and agreed.
+
+    Injecting anything here would re-enter the same trap, so this test
+    injects nothing. It runs the script the way the sealer does, in an
+    environment where the external commands CANNOT be found, and
+    requires it to FAIL. A producer that derives its numbers by running
+    git and pytest has nothing to report when they are absent; a
+    producer that reads the record is indifferent to their absence and
+    exits 0 with a full result.
+
+    HONEST SCOPE: this catches the unguarded form. A mutant that also
+    checks whether git is reachable would pass here — that one is caught
+    at seal time, where `enforce_candidate_replay` perturbs the record
+    and requires the replay to CONTRADICT it, which no record-reading
+    implementation can do. The two are complementary and neither is
+    sufficient alone; that is why both exist.
+    """
+    import os as _os
+    import subprocess as _sp
+    mc_path = ROOT / "specs" / "evidence" / "0001" / "measure_candidate.py"
+    if not mc_path.exists():
+        pytest.skip("candidate folded — no producer to bind")
+    blind = dict(_os.environ)
+    blind["PATH"] = str(ROOT / "specs" / "does-not-exist")
+    for argv, mode in (([], "default measure-and-print"),
+                       (["--verify"], "--verify")):
+        r = _sp.run([sys.executable, str(mc_path), *argv], cwd=ROOT,
+                    capture_output=True, text=True, env=blind)
+        assert r.returncode != 0, (
+            f"the producer's {mode} mode SUCCEEDED with no git and no tar "
+            f"on PATH. It cannot have measured anything, so the numbers it "
+            f"reported came from somewhere other than a run — which is "
+            f"EVIDENCE-M18-1 exactly. Output:\n{r.stdout[:400]}")
+
 
 def test_candidate_results_record_binds_the_measurement(tmp_path):
     """P1's matrix for the candidate-results binding, rebuilt at 0001

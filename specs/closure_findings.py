@@ -77,6 +77,44 @@ CLOSURES = [
      "grep -n '_spec_status' specs/package_identity.py  "
      "# the derived status, refusing an unreadable Spec-Status"),
 
+    ("0001", "external", 18, "EVIDENCE-M18-1",
+     "the production/test-double divergence survived R17-1: the "
+     "implementation was only ever CALLED with an injected runner, so a "
+     "branch keyed on the runner's identity sent every test down the "
+     "honest path and production down a read of the shipped record — "
+     "and --verify agreed, because agreement is a question a record can "
+     "answer about itself",
+     "the seal-time enforcement perturbs the record in exactly one field "
+     "and REQUIRES the replay to contradict it there and nowhere else, "
+     "which no record-reading implementation can do; plus an "
+     "injection-free regression running the producer with its external "
+     "commands unreachable, which must FAIL rather than report. Both "
+     "mutants planted — the reviewer's exact form caught by both gates, "
+     "the git-guarded form by the seal-time probe",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_sealer_enforces_the_candidate_replay "
+     "tests/test_collected_header.py::"
+     "test_the_production_path_cannot_fabricate_without_its_commands "
+     "-q -p no:randomly"),
+
+    ("0001", "external", 18, "PACKAGE-M18-1",
+     "the archive-membership test required git metadata, so it FAILED in "
+     "the extracted package — the one environment where membership is a "
+     "fact rather than a prediction; and the reason no gate caught it is "
+     "0022 R9-1 recurring in the carrier that fix did not reach: the "
+     "launcher, the only check running the whole qualified suite, ran at "
+     "cwd=ROOT and measured the build tree while the header presented "
+     "that number as the package's",
+     "the membership test is extraction-aware (tracked-implies-member in "
+     "the tree, presence-IS-membership in an extraction) and the "
+     "qualified suite is now the last EXTRACTION_CHECKS entry, run "
+     "inside the extracted archive, where a red run REFUSES THE SEAL",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_terminus_note_is_an_archive_member "
+     "tests/test_spec_gate.py::"
+     "test_the_extraction_check_list_matches_the_sealer_registry "
+     "-q -p no:randomly"),
+
     ("0024", "external", 24, "EVIDENCE-M24-1",
      "the space-positive control was a tautology ('!= 0 or True') — the "
      "reviewer broke the closer grammar to [\\t]* and the complete "

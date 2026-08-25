@@ -23,7 +23,17 @@ Spec-Requires (derived from the spec headers, not restated):
 
 REPRODUCTION — a launcher, and it REFUSES rather than reporting:
   bash specs/evidence/offline/run_offline.sh
-  LAUNCHER RESULT ON THIS PACKAGE'S FINAL STATE: __LAUNCHER__
+  LAUNCHER RESULT, MEASURED IN THE SEALED CHECKOUT: __LAUNCHER__
+  (that run is taken in the tree being sealed, which still carries
+  its version-control metadata and build residue — so it is NOT by
+  itself evidence about YOUR copy, and this line no longer says it
+  is. The qualified suite is ALSO run inside the EXTRACTED archive,
+  as the last of the extraction checks listed above, and a red run
+  there REFUSES THE SEAL. That second run cannot be transcribed in
+  here — it is a run OF this file's own archive — which is exactly
+  why it is a gate rather than a number: no package reaches you
+  with a failing extracted suite. Reproduce it with the launcher
+  command above.)
   (complete transcript + exit status ship as LAUNCHER_TRANSCRIPT.txt,
   digest-bound in collected_header.json)
 

@@ -4,16 +4,16 @@
 
 # Spec status
 
-**26 specs · 22 accepted · 302 external review
+**26 specs · 23 accepted · 302 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **22 of 26 are accepted**, which
+review is required to reach it. **23 of 26 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
-| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `draft` | 2026-08-25 | 1 | 18 | 2 | 0 | 0 | — |
+| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-08-25 | 1 | 18 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-22 | 2 | 8 | 0 | 0 | 10 | 8/10 |
 | **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-08-22 | 1 | 3 | 1 | 0 | 1 | 1/1 |

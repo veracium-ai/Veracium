@@ -30,7 +30,17 @@ REPRODUCTION — a launcher, and it REFUSES rather than reporting:
   that behaviour a round after the code changed. The description is now taken
   from the script that exists.
 
-  LAUNCHER RESULT ON THIS PACKAGE'S FINAL STATE: __LAUNCHER__
+  LAUNCHER RESULT, MEASURED IN THE SEALED CHECKOUT: __LAUNCHER__
+  (that run is taken in the tree being sealed, which still carries
+  its version-control metadata and build residue — so it is NOT by
+  itself evidence about YOUR copy, and this line no longer says it
+  is. The qualified suite is ALSO run inside the EXTRACTED archive,
+  as the last of the extraction checks listed above, and a red run
+  there REFUSES THE SEAL. That second run cannot be transcribed in
+  here — it is a run OF this file's own archive — which is exactly
+  why it is a gate rather than a number: no package reaches you
+  with a failing extracted suite. Reproduce it with the launcher
+  command above.)
   Measured after the archive's test set was frozen, not carried over from a
   previous round — round 7 caught v7 repeating v6's "1656 passed, 8 skipped"
   against a different test set.

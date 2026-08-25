@@ -1464,7 +1464,13 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
     # `python -c "pass # verify_collected COLLECTED"` passed it. Every entry
     # now ends in a FILE whose behaviour is fixed by its own source.
     def norm(cmd):
-        return ("python",) + tuple(cmd[1:])
+        # the interpreter is part of what the label promises: an entry run
+        # by the shell is a different thing from one run by python, and
+        # collapsing both to "python" would let a registry entry advertise
+        # a command it does not run. (PACKAGE-M18-1 added the first
+        # non-python entry — the launcher, which is a bash script.)
+        head = "python" if cmd[0] == sys.executable else cmd[0]
+        return (head,) + tuple(cmd[1:])
 
     names = [n for n, _ in seal_package.EXTRACTION_CHECKS]
     assert len(names) == len(set(names)), f"duplicate check names: {names}"
@@ -1507,6 +1513,14 @@ def test_the_extraction_check_list_matches_the_sealer_registry():
         # whole-file equation, and the witnesses — from the extraction.
         "verify_extracted.py header":
             ("python", "specs/verify_extracted.py", "header"),
+        # PACKAGE-M18-1: the qualified suite runs where the REVIEWER runs
+        # it — inside the extracted archive — and a red run refuses the
+        # seal. This is 0022 R9-1 (the finding this very test was written
+        # for) recurring in the one carrier that fix did not reach: the
+        # launcher ran at cwd=ROOT, measuring the build tree, while the
+        # header presented the number as the package's.
+        "the qualified suite, from the EXTRACTED archive (PACKAGE-M18-1)":
+            ("bash", "specs/evidence/offline/run_offline.sh"),
     }
     got = {n: norm(c) for n, c in seal_package.EXTRACTION_CHECKS}
     assert set(got) == set(required), (

@@ -53,6 +53,14 @@ INVENTORY = [
     # skip reasons at all. The reconciler added alongside this list is the
     # real fix; these entries are what it needs to reconcile against.
     ("tests/test_collected_header.py", "skip",
+     "candidate folded — no producer to bind",
+     "package-artifact",
+     "1 test. EVIDENCE-M18-1's injection-free production-path binding: it "
+     "runs the producer with its external commands unreachable and requires "
+     "a failure. Once 0001 is implemented and the candidate patch folds into "
+     "the product there is no producer left to bind, so it skips rather than "
+     "passing vacuously — the same retirement the terminus note names"),
+    ("tests/test_collected_header.py", "skip",
      "candidate folded or absent",
      "package-artifact",
      "1 test. The 0001 candidate-results binding (R11-1) applies only "

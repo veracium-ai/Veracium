@@ -1,6 +1,6 @@
 # Feature spec: generated-content trust class (`EvidenceAuthor.ASSISTANT`)
 
-Spec-Status: draft
+Spec-Status: accepted
 Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 
 *<!-- canonical machine-readable state; the header table below carries the narrative. Only `accepted` authorises implementation. -->*
@@ -41,8 +41,8 @@ Spec-Requires: 0003, 0005, 0007, 0008, 0012, 0013, 0016, 0018, 0024
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v20** — the round-17 fold plus the TERMINUS QUESTION (§29, §30): the fold is unchanged from v19; this revision adds `specs/evidence/0001/TERMINUS-NOTE.md` as an ARCHIVE MEMBER (not a side-channel companion — the A1 PACKAGE-R23-1 lesson applied at birth), asking how the evidence-machinery series should close. It contests no finding. *Prior:* **v19** — the round-17 fold (§29): R17-1 the PRODUCTION path is bound to the tested one — the runner was optional, so the injected path and the production path were different paths and only the injected one was bound; a branch returning the shipped record whenever no runner was supplied left every test green while production `--verify` compared the record with itself. The runner is REQUIRED now (`_measure_with_runner(base, run)`) and `measure(base)` is a delegation and nothing else, with a regression proving it reaches the implementation carrying the requested base and the PRODUCTION runner. Three production-path mutants planted and each verified failing. *Prior:* **v18** — the round-16 fold (§28): R16-1 the PRODUCER is bound — every consumer of the results record was tested while `measure()` itself was not, so replacing its body with a read of the record made the verifier compare the shipped record with ITSELF, report exact replay in a non-git extraction, and leave the whole gate green. `measure()` now takes an injectable subprocess seam and a behavioural regression drives it with canned outputs deliberately unlike the shipped record's: the declared base must be materialised, the shipped patch applied, both exact suite commands run INSIDE the built tree, and every number and node id in the record derived from those outputs. Three producer-collapse mutants planted and each verified failing. *Prior:* **v17** — the round-15 fold (§27): R15-1 the CONNECTION from enforcement to `--verify` is bound — every link was tested separately (main() reaches the enforcement; the enforcement aborts on nonzero; `--verify` compares records) while the join was free, so dropping `--verify` from the argv ran the helper in its default measure-and-print mode, exiting 0 without comparing, with the whole gate green. The regression now asserts the EXACT invocation and working directory, proves the `--verify` branch returns nonzero on a planted record difference (with an identical-replay control), and documents by assertion that the default mode exits 0 without comparing — which is why the argv binding is load-bearing. Three connection-breaking mutants planted and each verified failing. *Prior:* **v16** — the round-14 fold (§26): R14-1 reachability is proved BEHAVIORALLY, not syntactically — the round-13 test searched main()'s AST and rejected only a literal constant-false guard, so the reviewer's `if a.version == "v0"` read as an ordinary call, disabled replay for every real package, and left both replay tests and the whole spec gate green. The test now EXECUTES main() with the current package identity, monkeypatches the enforcement to raise a sentinel and REQUIRES that sentinel to be reached, with a second sentinel on the measurement that names a bypass directly; the call itself is now an UNCONDITIONAL fail-fast precondition ahead of the measurement, so there is no condition left to falsify — only deletion, which the test also catches. Three bypass shapes planted and each verified failing. *Prior:* **v15** — the round-13 fold (§25): R13-1 the seal-time replay was sound but UNPROTECTED — a planted `if False` on its call left the named matrix and the whole spec gate green, so the only decisive guard could be removed silently. The enforcement is a NAMED, injectable seam now (`enforce_candidate_replay`) and a regression at the SEALER BOUNDARY binds three properties: `main()` calls it on a REACHABLE path (both the reviewer's `if False` and outright deletion fail the test — verified by planting each), a FAILING replay aborts the seal with a pristine control, and the comparison catches the type-valid fabrications the extraction checker deliberately cannot, including failure-IDENTITY replacement. *Prior:* **v14** — the round-12 fold (§24): R12-1 the results record is validated against a CLOSED, exactly typed schema — every claimed field, not the four the first checker's author happened to bind (the reviewer passed forty-zero base + python 0.0.0, and a duplicated failure entry, through the old projection); `failure_set` sorted/unique/node-id-shaped/cardinality-equal; the commands IMPORTED from the generator; and the base made INDEPENDENTLY REPRODUCIBLE — `measure_candidate.py --verify` regenerates the complete record from the declared base and the SEALER refuses on any field difference. *Prior:* **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
-| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11**; v13–v18 returned at rounds 12–17 (R12-1, R13-1, R14-1, R15-1, R16-1, R17-1) — the finite acceptance STANDING throughout, the architecture frozen on the complete §6 surface, and every return in the evidence layer; **v20 is the round-18 external candidate — the status flip follows the reviewer's confirmation of this reseal, which also carries the terminus note.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
+| **Version** | **v21** — ACCEPTED at round 18 with evidence-maintenance status; this revision folds the two maintenance items the acceptance carried (§31): EVIDENCE-M18-1, the seal-time replay now asks a question the record cannot answer about itself (perturb one field, require a contradiction there and nowhere else) plus an injection-free production-path regression — both mutants planted, the reviewer's exact form caught by both gates and the git-guarded form by the seal-time probe; and PACKAGE-M18-1, the membership test made extraction-aware and, the larger half, the qualified suite moved INTO the extracted archive as a seal gate (0022 R9-1 recurring in the one carrier that fix did not reach — the launcher measured the build tree while the header called it the package's). *Prior:* **v20** — the round-17 fold plus the TERMINUS QUESTION (§29, §30): the fold is unchanged from v19; this revision adds `specs/evidence/0001/TERMINUS-NOTE.md` as an ARCHIVE MEMBER (not a side-channel companion — the A1 PACKAGE-R23-1 lesson applied at birth), asking how the evidence-machinery series should close. It contests no finding. *Prior:* **v19** — the round-17 fold (§29): R17-1 the PRODUCTION path is bound to the tested one — the runner was optional, so the injected path and the production path were different paths and only the injected one was bound; a branch returning the shipped record whenever no runner was supplied left every test green while production `--verify` compared the record with itself. The runner is REQUIRED now (`_measure_with_runner(base, run)`) and `measure(base)` is a delegation and nothing else, with a regression proving it reaches the implementation carrying the requested base and the PRODUCTION runner. Three production-path mutants planted and each verified failing. *Prior:* **v18** — the round-16 fold (§28): R16-1 the PRODUCER is bound — every consumer of the results record was tested while `measure()` itself was not, so replacing its body with a read of the record made the verifier compare the shipped record with ITSELF, report exact replay in a non-git extraction, and leave the whole gate green. `measure()` now takes an injectable subprocess seam and a behavioural regression drives it with canned outputs deliberately unlike the shipped record's: the declared base must be materialised, the shipped patch applied, both exact suite commands run INSIDE the built tree, and every number and node id in the record derived from those outputs. Three producer-collapse mutants planted and each verified failing. *Prior:* **v17** — the round-15 fold (§27): R15-1 the CONNECTION from enforcement to `--verify` is bound — every link was tested separately (main() reaches the enforcement; the enforcement aborts on nonzero; `--verify` compares records) while the join was free, so dropping `--verify` from the argv ran the helper in its default measure-and-print mode, exiting 0 without comparing, with the whole gate green. The regression now asserts the EXACT invocation and working directory, proves the `--verify` branch returns nonzero on a planted record difference (with an identical-replay control), and documents by assertion that the default mode exits 0 without comparing — which is why the argv binding is load-bearing. Three connection-breaking mutants planted and each verified failing. *Prior:* **v16** — the round-14 fold (§26): R14-1 reachability is proved BEHAVIORALLY, not syntactically — the round-13 test searched main()'s AST and rejected only a literal constant-false guard, so the reviewer's `if a.version == "v0"` read as an ordinary call, disabled replay for every real package, and left both replay tests and the whole spec gate green. The test now EXECUTES main() with the current package identity, monkeypatches the enforcement to raise a sentinel and REQUIRES that sentinel to be reached, with a second sentinel on the measurement that names a bypass directly; the call itself is now an UNCONDITIONAL fail-fast precondition ahead of the measurement, so there is no condition left to falsify — only deletion, which the test also catches. Three bypass shapes planted and each verified failing. *Prior:* **v15** — the round-13 fold (§25): R13-1 the seal-time replay was sound but UNPROTECTED — a planted `if False` on its call left the named matrix and the whole spec gate green, so the only decisive guard could be removed silently. The enforcement is a NAMED, injectable seam now (`enforce_candidate_replay`) and a regression at the SEALER BOUNDARY binds three properties: `main()` calls it on a REACHABLE path (both the reviewer's `if False` and outright deletion fail the test — verified by planting each), a FAILING replay aborts the seal with a pristine control, and the comparison catches the type-valid fabrications the extraction checker deliberately cannot, including failure-IDENTITY replacement. *Prior:* **v14** — the round-12 fold (§24): R12-1 the results record is validated against a CLOSED, exactly typed schema — every claimed field, not the four the first checker's author happened to bind (the reviewer passed forty-zero base + python 0.0.0, and a duplicated failure entry, through the old projection); `failure_set` sorted/unique/node-id-shaped/cardinality-equal; the commands IMPORTED from the generator; and the base made INDEPENDENTLY REPRODUCIBLE — `measure_candidate.py --verify` regenerates the complete record from the declared base and the SEALER refuses on any field difference. *Prior:* **v13** — the round-11 fold (§23): R11-1 the candidate figures are GENERATED and BOUND — `measure_candidate.py` applies the shipped patch to a clean tree and runs both suites into `candidate_results.json` (focused 21; full 16F/1813P/20S with its failure set), `check_candidate_results.py` refuses any disagreement between record, patch bytes and the README's figures, and it runs in the sealer's extraction checks so a stale count cannot reach a package. **Round 11's verdict is FINITE DESIGN ACCEPTANCE for draft v12** — R10-1 and R10-2 verified closed, the trust-model architecture not to be reopened; this package carries the mechanical evidence-carrier correction it asked for. *Prior:* **v12** — the round-10 fold (§22): R10-1 the I6 reserve restricted to query-RELEVANT assertables (the relevance bit carried from scoring; the bananas counterexample is the regression), R10-2 the opening block carries no revision. *Prior:* **v11** — the round-9 fold (§21): R9-1 the I6 implementation CONSTRUCTED, not filtered (reserved + remainder, the non-functional placement vector, full-order dedup), R9-2 the last version carrier purged, R9-3 the measurement re-run and environment-stamped. *Prior:* **v10** — the round-8 fold (§20): the four narrow evidence items the reviewer named as the last gate before recommending FINITE ACCEPTANCE. *Re-read before editing; quote the version you approve.* |
+| **Status** | *see `Spec-Status:` at the top — canonical.* v2 deferred; v3 deferred (render-marker gate, closed in code); v4 returned round 3; v5 returned round 4; v6 returned round 5; v7 returned round 6; v8 returned round 7; v9 returned round 8 (narrow); v10 returned round 9 (the acceptance candidate — R9-1 found the I6 construction defect the order vectors' own shape had masked); v11 returned round 10 (R10-1 relevance vs eligibility; C-plus ACCEPTED that round); v12 received **FINITE DESIGN ACCEPTANCE at round 11**; v13–v18 returned at rounds 12–17 (R12-1, R13-1, R14-1, R15-1, R16-1, R17-1) — the finite acceptance STANDING throughout, the architecture frozen on the complete §6 surface, and every return in the evidence layer; **v21 is the round-18 fold of the two maintenance items the acceptance carried (§31). v20 was ACCEPTED at round 18 (2026-08-25) — ACCEPT WITH EVIDENCE-MAINTENANCE STATUS. The finite design acceptance granted at round 11 stands; implementation and this status flip may proceed; no further blocking specification round is warranted. The terminus question was granted under its option (a): defects in the temporary evidence scaffold are MAINTENANCE and do not reopen the accepted design. Two bounded maintenance items came back with the acceptance — EVIDENCE-M18-1 and PACKAGE-M18-1 — and are closed at §31.** *(R5-5: this row is a version CARRIER and is now part of the pre-send sweep.)* |
 | **Internal reviewers** | **research — reviewed 2026-07-31, accepted with amendments** · workflow-platform *(MCP surface changes)* — pending |
 | **External review** | **returned 2026-07-31 — defer / major amendment.** Response: `proposals/spec-0001-external-review-response.md` |
 | **Decision + date** | — |
@@ -1434,8 +1434,11 @@ The note observes that those seven findings share a generator — bind a
 thing, and the join to that thing becomes the next finding — and that
 two facts bear on the disposition: the machinery under review exists
 only to evidence a spec that is not yet implemented and is already
-built to retire when the candidate folds (every component carries an
-explicit absent-not-broken path), and the sixteen carrier failures that
+built to retire when the candidate folds (the SEALING PATH skips it —
+the extraction checker reports absent-not-broken and the replay
+precondition returns early; the note states this narrowly and so does
+this sentence, because the producer itself REFUSES when asked by hand
+to measure a patch that is not there), and the sixteen carrier failures that
 acceptance authorises are real product work that cannot start until the
 status flips. It offers three ways to close — acceptance with
 evidence-maintenance status under the standing P1/P4 gates (the
@@ -1443,3 +1446,77 @@ reviewer's own A1 round-24 disposition), a statement of the remaining
 threat model so the class closes in one round, or ruling the scaffold
 out of scope for acceptance — and states plainly that if the reviewer
 judges otherwise, we keep folding without asking again.
+
+## 31. Accepted at round 18 — and the two maintenance items that came with it (v21, 2026-08-25)
+
+Round 18 **ACCEPTED 0001 with evidence-maintenance status**. The finite
+design acceptance granted at round 11 stands, the status flip and
+implementation may proceed, and no further blocking specification round
+is warranted. The terminus question was granted under its **option
+(a)**: defects in this temporary evidence scaffold are maintenance and
+do not reopen the accepted design.
+
+The verdict also carried two bounded maintenance items. Both are closed
+here, and in each case the named defect was the smaller half.
+
+**EVIDENCE-M18-1 — the production/test-double divergence outlived the
+fix that was supposed to close it.** R17-1 made the runner REQUIRED so
+that production and test would be one path. They still were not:
+`_measure_with_runner` was only ever *called* with an injected runner,
+so a branch keyed on the runner's IDENTITY — return the shipped record
+when the runner IS the production one, measure honestly otherwise —
+sent every test down the honest branch and production down the other.
+All four machinery tests and the whole gate stayed green while
+production `--verify` accepted the record in a non-git extraction.
+
+The root cause is not the branch; it is the QUESTION. `--verify` asked
+whether the record AGREES with a replay, and agreement is a question a
+record can answer about itself: an implementation that reads the record
+can never disagree with it. So the seal-time enforcement now asks a
+question the record cannot answer about itself. It perturbs the record
+in exactly one field and requires the replay to **contradict it there
+and nowhere else**. One run decides both halves — the disagreement
+proves the numbers were measured rather than read, and the silence
+everywhere else proves every other field still matches a fresh
+measurement, which is all the old form checked. No new parameter was
+added: a `--record` flag would simply be the next thing a mutant could
+branch on. The record is restored from bytes held in memory and the
+restoration is VERIFIED on both the passing and the failing path.
+
+A second, **injection-free** regression runs the producer the way the
+sealer does with its external commands unreachable, and requires it to
+FAIL. A producer that derives numbers by running git and pytest has
+nothing to report when they are absent; one that reads the record is
+indifferent to their absence.
+
+Both mutants were planted and measured. The reviewer's exact form is
+caught by both gates. The harder **git-guarded** form — fabricate only
+when git IS reachable — passes the injection-free test and is caught by
+the seal-time probe. Neither gate is sufficient alone, which is why
+both exist, and the test says so rather than implying coverage it does
+not have.
+
+**PACKAGE-M18-1 — the membership test required git metadata, and the
+launcher measured the wrong tree.** The named defect: a test asserting
+archive membership via `git ls-files` failed in the extracted package,
+the one environment where membership is a FACT rather than a
+prediction. It is extraction-aware now — tracked-implies-member in the
+source tree, presence-IS-membership in an extraction.
+
+The larger half is why no gate here caught it, and it is **0022 R9-1
+recurring in the carrier that fix did not reach**. R9-1 found the
+verifiers running against the BUILD TREE while the carrier claimed the
+extraction, and moved them into the extraction. The offline launcher —
+the only check that runs the whole qualified suite — was left behind at
+`cwd=ROOT`. So the suite was measured in a tree that still has its
+version-control metadata and build residue, and the header presented
+that number as the package's. A clean export is not a stand-in either:
+measured, it gives 1813 passed/19 skipped where the true extraction
+gives 1810/21, because the loose carriers are part of what ships.
+
+The qualified suite is now the last entry in `EXTRACTION_CHECKS`, run
+inside the extracted archive, and **a red run there refuses the seal**.
+The header no longer presents the checkout measurement as the
+package's; it names where that number was taken and points at the gate.
+The reviewer's own run is a gate now — which is the only durable answer
+to a finding of this shape.
