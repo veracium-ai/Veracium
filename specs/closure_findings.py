@@ -275,6 +275,17 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 14, "0001-R14-1",
+     "reachability was proved syntactically — an AST search rejecting "
+     "only a literal constant-false guard, so `if a.version == 'v0'` "
+     "disabled replay for every real package with the whole gate green",
+     "the test EXECUTES main() and requires a sentinel to be reached, "
+     "with a second sentinel naming the bypass; the call is an "
+     "unconditional fail-fast precondition; three bypass shapes planted "
+     "and each verified failing",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_sealer_enforces_the_candidate_replay -q -p no:randomly"),
+
     ("0001", "external", 13, "0001-R13-1",
      "the seal-time replay was sound but UNPROTECTED — a planted "
      "`if False` on its call left the named matrix and the whole spec "

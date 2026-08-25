@@ -671,56 +671,103 @@ def test_impl_review_round9_regressions(tmp_path):
         pid.FIRST_GOVERNED = real_first
 
 
-def test_the_sealer_enforces_the_candidate_replay(tmp_path):
-    """0001 R13-1: the replay was implemented soundly and left
-    UNPROTECTED — the reviewer planted `if False` on the sealer's call
-    and the named matrix (1 passed) and the whole spec gate (88 passed)
-    stayed green, so the only decisive guard could be removed while
-    every declared check agreed. Three properties are bound here:
+class _ReplayReached(Exception):
+    """Sentinel: main() executed the replay enforcement."""
 
-      1. `main()` CALLS the enforcement on a REACHABLE path — a
-         constant-false guard around it, or its removal, fails;
-      2. a FAILING replay ABORTS the seal (SystemExit), and a passing
-         one returns quietly — the pristine control;
-      3. the replay's comparison catches the type-valid fabrications
-         the extraction checker deliberately cannot, including
-         failure-IDENTITY replacement (a different, unique, validly
-         shaped node id).
+
+class _MeasureReached(Exception):
+    """Sentinel: main() got as far as the MEASUREMENT — which means it
+    passed the replay enforcement WITHOUT executing it (R14-1's
+    bypass), because the enforcement is a precondition ahead of it."""
+
+
+def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
+    """0001 R13-1 then R14-1: the seal-time replay must be BEHAVIORALLY
+    bound to the real sealing path.
+
+    R13-1 bound it syntactically — an AST search for the call, rejecting
+    a literal `if False`. R14-1 walked through that with
+    `if a.version == "v0":`, which reads as an ordinary call and is
+    false for every real package: both replay tests and the whole spec
+    gate stayed green while replay was disabled for every seal that
+    matters. So AST inspection no longer stands in for execution.
+
+    This test RUNS `main()` with the current package identity, with the
+    enforcement monkeypatched to raise a sentinel, and REQUIRES the
+    sentinel to be reached. A second sentinel on `measure` catches the
+    bypass shape directly: if control reaches the measurement without
+    the enforcement having fired, the guard was skipped, and the test
+    says so rather than timing out in a real suite run.
     """
-    import ast, sys as _sys
-    _sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
+    sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
     import measure_candidate as mc
 
-    # --- 1: the call exists in main() and is not unreachable ---
-    src = (ROOT / "specs" / "seal_package.py").read_text()
-    tree = ast.parse(src)
-    main_fn = next(n for n in ast.walk(tree)
-                   if isinstance(n, ast.FunctionDef) and n.name == "main")
-    def _calls(node):
-        return [c for c in ast.walk(node)
-                if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)
-                and c.func.id == "enforce_candidate_replay"]
-    assert _calls(main_fn), (
-        "main() no longer calls enforce_candidate_replay — the decisive "
-        "guard can be removed with every other check green (R13-1)")
-    for node in ast.walk(main_fn):
-        if isinstance(node, ast.If) and isinstance(node.test, ast.Constant) \
-                and not node.test.value:
-            assert not any(_calls(b) for b in node.body), (
-                "the replay call sits under a constant-false guard — the "
-                "reviewer's planted `if False` (R13-1)")
+    real_enforce = sp.enforce_candidate_replay      # captured BEFORE the patch
+    line = "0001"
+    version = sorted(pid.PACKAGES[line], key=lambda v: int(v[1:]))[-1]
 
-    # --- 2: a failing replay REFUSES the seal; a passing one does not ---
+    def _replay_sentinel(*a, **k):
+        raise _ReplayReached()
+
+    def _measure_sentinel(*a, **k):
+        raise _MeasureReached()
+
+    # main()'s first precondition is a clean tree; this test runs while
+    # the tree is mid-edit, so ONLY that probe is stubbed — every other
+    # subprocess call still runs for real, so main()'s control flow to
+    # the enforcement is the real one.
+    _real_run = sp._run
+
+    def _run_stub(cmd, **kw):
+        if cmd[:3] == ["git", "status", "--porcelain"]:
+            class _Clean:
+                stdout, stderr, returncode = "", "", 0
+            return _Clean()
+        return _real_run(cmd, **kw)
+
+    monkeypatch.setattr(sp, "_run", _run_stub)
+    monkeypatch.setattr(sp, "enforce_candidate_replay", _replay_sentinel)
+    monkeypatch.setattr(sp, "measure", _measure_sentinel)
+    monkeypatch.setattr(pid, "IN_FLIGHT", (f"{line}-{version}",))
+    monkeypatch.setattr(sys, "argv", [
+        "seal_package.py", "--specs", line, "--version", version,
+        "--manifest", str(ROOT / "specs" / "package" / "manifest_0001.txt"),
+        "--header",
+        str(ROOT / "specs" / "package" / "collected_header_0001.txt"),
+        "--outbox", str(tmp_path)])
+
+    try:
+        sp.main()
+    except _ReplayReached:
+        pass                                    # the guard EXECUTED
+    except _MeasureReached:
+        pytest.fail(
+            "main() reached the MEASUREMENT without executing the replay "
+            "enforcement — the guard is present but bypassed on the real "
+            "sealing path (R14-1: `if a.version == \"v0\"` reads as a "
+            "call and never runs)")
+    except SystemExit as e:
+        pytest.fail(
+            f"main() aborted at {e} before reaching the replay "
+            f"enforcement — the guard is unreachable on the real sealing "
+            f"path for the current package identity")
+    else:
+        pytest.fail("main() returned without executing the replay "
+                    "enforcement at all")
+
+    # --- the enforcement itself: a failing replay ABORTS, a passing one
+    # returns quietly (the pristine control) ---
     class _R:
         def __init__(self, rc):
             self.returncode, self.stdout, self.stderr = rc, "planted", ""
     if (ROOT / "specs" / "evidence" / "0001"
             / "candidate_results.json").exists():
         with pytest.raises(SystemExit):
-            sp.enforce_candidate_replay(run=lambda *a, **k: _R(1))
-        sp.enforce_candidate_replay(run=lambda *a, **k: _R(0))  # control
+            real_enforce(run=lambda *a, **k: _R(1))
+        real_enforce(run=lambda *a, **k: _R(0))           # control
 
-    # --- 3: the comparison catches type-valid fabrications ---
+    # --- and the comparison catches the type-valid fabrications the
+    # extraction checker deliberately cannot ---
     import copy, json as _json
     rec_path = ROOT / "specs" / "evidence" / "0001" / "candidate_results.json"
     if not rec_path.exists():

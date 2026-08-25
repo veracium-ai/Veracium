@@ -758,7 +758,7 @@ or executable. The round-by-round ledger below is GENERATED from
 | external 23 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v23`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged |
 | external 24 (SENT) | 2026-08-24 | — | SENT (package `0024-0025-v24`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged |
 
-**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 176 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
+**Per-finding closure ledger — PROCESS §4a.** **42 finding(s) for `0025`; 177 across the 5 tracked specs** — every number here is DERIVED from the rows below (external round 7, R7-1: the manifest claimed 26 while the ledgers held 31, and 0023 said 9/9 above a 10-row table). Generated from `specs/closure_findings.py` and validated against `specs/reviews.py` on `(spec, kind, round, id)` EXACTLY — extras, duplicates, wrong rounds and empty evidence all fail the build.
 
 | finding | round | what it was | closed in | evidence (runnable) |
 |---|---|---|---|---|

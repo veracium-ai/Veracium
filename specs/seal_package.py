@@ -718,6 +718,17 @@ def main() -> int:
               "states:\n  " + dirty.replace("\n", "\n  "))
     commit = _run(["git", "rev-parse", "HEAD"], cwd=ROOT).stdout.strip()
 
+    # 0001 R13-1/R14-1: the candidate record must REPLAY from the base it
+    # declares. This is a PRECONDITION, checked before the measurement
+    # rather than after it — unconditionally, on the one path every seal
+    # takes. Round 14 bypassed a syntactically-present call with
+    # `if a.version == "v0":`, so there is no condition here to make
+    # false: the only way past this line is to delete it, and
+    # test_the_sealer_enforces_the_candidate_replay executes main() to
+    # prove the line is reached. Failing fast also means a record that
+    # cannot replay costs seconds, not a full suite run.
+    enforce_candidate_replay()
+
     with tempfile.TemporaryDirectory() as td:
         scratch = pathlib.Path(td)
         # C-plus §5.3 STEP 1: run the measurement and harness commands.
@@ -921,7 +932,6 @@ def main() -> int:
             _fail(f"IN_FLIGHT must be exactly ({_line}-{a.version},) to "
                   f"seal this package; it is {_pid.IN_FLIGHT!r} — one seal "
                   f"in flight, declared alone (C8-1/C9-1)")
-        enforce_candidate_replay()
         pred = required_predecessor(_line, round_no, a.outbox)
         if isinstance(pred, str):
             _fail(pred)
