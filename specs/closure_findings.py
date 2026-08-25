@@ -275,6 +275,19 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 17, "0001-R17-1",
+     "the injected path was bound and the PRODUCTION path was not — an "
+     "optional runner made them two paths, so a no-runner branch "
+     "returning the shipped record passed every test while production "
+     "--verify compared the record with itself",
+     "the runner is REQUIRED on the implementation and measure() is a "
+     "delegation and nothing else; a sentinel regression proves the "
+     "wrapper reaches the implementation with the requested base and "
+     "subprocess.run; three production-path mutants planted and failing",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_production_measure_delegates_to_the_implementation "
+     "-q -p no:randomly"),
+
     ("0001", "external", 16, "0001-R16-1",
      "the PRODUCER was unbound — every consumer was tested while "
      "measure() was only ever monkeypatched, so a body of "

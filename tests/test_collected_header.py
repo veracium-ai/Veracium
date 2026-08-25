@@ -681,6 +681,48 @@ class _MeasureReached(Exception):
     bypass), because the enforcement is a precondition ahead of it."""
 
 
+def test_the_production_measure_delegates_to_the_implementation(monkeypatch):
+    """0001 R17-1: the PRODUCTION entry point must reach the
+    implementation the producer test binds.
+
+    Round 16 bound `measure()` through an injected runner — and every
+    test injected one, so a branch that returned the shipped record
+    whenever the runner was absent left all of them green while
+    production `--verify` compared the record with itself. The injected
+    implementation was well tested; the join from production to it was
+    free.
+
+    The runner is REQUIRED now, so there is no default path to diverge,
+    and this test proves the wrapper delegates: with the implementation
+    replaced by a sentinel, calling `measure(base)` must reach it, with
+    the base it was asked for and with the PRODUCTION runner —
+    `subprocess.run`, not a stand-in."""
+    import subprocess as _subprocess
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
+    import measure_candidate as mc
+
+    BASE = "c" * 40
+    seen = {}
+
+    def _sentinel(base, run):
+        seen["base"], seen["run"] = base, run
+        return {"sentinel": True}
+
+    monkeypatch.setattr(mc, "_measure_with_runner", _sentinel)
+    out = mc.measure(BASE)
+
+    assert out == {"sentinel": True}, (
+        "measure() did not return what the implementation produced — it "
+        "has logic of its own, or bypasses the implementation entirely "
+        "(R17-1: a production-only self-copy lives exactly there)")
+    assert seen.get("base") == BASE, (
+        f"the implementation was called with {seen.get('base')!r}, not "
+        f"the requested base — production would measure the wrong tree")
+    assert seen.get("run") is _subprocess.run, (
+        "the implementation was not handed the PRODUCTION runner; "
+        "production and the tested path must be the same code path")
+
 def test_the_measure_producer_derives_the_record_from_real_commands():
     """0001 R16-1: the PRODUCER must be bound too.
 
@@ -730,7 +772,7 @@ def test_the_measure_producer_derives_the_record_from_real_commands():
                 "2 failed, 13 passed, 4 skipped in 9.00s\n")
         return _Res()
 
-    rec = mc.measure(BASE, run=fake_run)
+    rec = mc._measure_with_runner(BASE, fake_run)
 
     # --- the record is DERIVED from those outputs, not copied ---
     assert rec["base_commit"] == BASE, (

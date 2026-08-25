@@ -63,15 +63,37 @@ def _tail(output: str) -> dict:
             "skipped": int(m.group("skipped") or 0)}
 
 
-def measure(base: str | None = None, run=None) -> dict:
-    """Measure at `base` (any committish) or at HEAD. R12-1: the base is
-    a PARAMETER so the record can be REPLAYED against the base it
-    declares — comparing two typed copies of a hash proves nothing.
+def measure(base: str | None = None) -> dict:
+    """The PRODUCTION entry point — and nothing but a delegation.
 
-    R16-1: `run` is an INJECTABLE subprocess seam. Every consumer of
-    this record was bound while the PRODUCER was not, so replacing this
-    body with `return json.loads(RECORD.read_text())` — the record
-    comparing itself — passed every declared check. The seam lets
+    R17-1: when the runner was an optional parameter, the injected path
+    and the production path were different paths, and only the injected
+    one was bound. A branch returning the shipped record whenever no
+    runner was supplied left every test green — they all inject one —
+    while production `--verify`, which calls this with no runner,
+    compared the record against itself and reported exact replay in a
+    non-git extraction. (The defect branch is described, not quoted, so
+    a sweep for it stays honest.)
+
+    So there is no longer a default to diverge: the implementation takes
+    a REQUIRED runner, and this wrapper's only job is to hand it the
+    production one. It holds no logic, so there is nothing here for a
+    mutation to hide behind, and
+    `test_the_production_measure_delegates_to_the_implementation` proves
+    the delegation happens with the requested base and
+    `subprocess.run`."""
+    return _measure_with_runner(base, subprocess.run)
+
+
+def _measure_with_runner(base: str | None, run) -> dict:
+    """Measure at `base` (any committish) or at HEAD, driving every
+    external command through `run` — which is REQUIRED, so the
+    behaviour under test and the behaviour in production are the same
+    code path (R17-1).
+
+    R12-1: the base is a PARAMETER so the record can be REPLAYED
+    against the base it declares — comparing two typed copies of a hash
+    proves nothing. R16-1: the seam lets
     `test_the_measure_producer_derives_the_record_from_real_commands`
     prove behaviourally that the declared base is materialised, the
     shipped patch applied, the exact suite commands run, and the
@@ -79,7 +101,6 @@ def measure(base: str | None = None, run=None) -> dict:
     real suite runs."""
     if not PATCH.exists():
         raise SystemExit("measure_candidate: no candidate.patch to measure")
-    run = run or subprocess.run
     base = run(["git", "rev-parse", base or "HEAD"], cwd=ROOT,
                capture_output=True, text=True, check=True).stdout.strip()
     with tempfile.TemporaryDirectory() as td:
