@@ -63,35 +63,45 @@ def _tail(output: str) -> dict:
             "skipped": int(m.group("skipped") or 0)}
 
 
-def measure(base: str | None = None) -> dict:
+def measure(base: str | None = None, run=None) -> dict:
     """Measure at `base` (any committish) or at HEAD. R12-1: the base is
     a PARAMETER so the record can be REPLAYED against the base it
-    declares — comparing two typed copies of a hash proves nothing."""
+    declares — comparing two typed copies of a hash proves nothing.
+
+    R16-1: `run` is an INJECTABLE subprocess seam. Every consumer of
+    this record was bound while the PRODUCER was not, so replacing this
+    body with `return json.loads(RECORD.read_text())` — the record
+    comparing itself — passed every declared check. The seam lets
+    `test_the_measure_producer_derives_the_record_from_real_commands`
+    prove behaviourally that the declared base is materialised, the
+    shipped patch applied, the exact suite commands run, and the
+    returned numbers DERIVED from their output, without paying for two
+    real suite runs."""
     if not PATCH.exists():
         raise SystemExit("measure_candidate: no candidate.patch to measure")
-    base = subprocess.run(["git", "rev-parse", base or "HEAD"], cwd=ROOT,
-                          capture_output=True, text=True, check=True
-                          ).stdout.strip()
+    run = run or subprocess.run
+    base = run(["git", "rev-parse", base or "HEAD"], cwd=ROOT,
+               capture_output=True, text=True, check=True).stdout.strip()
     with tempfile.TemporaryDirectory() as td:
         work = pathlib.Path(td) / "tree"
         work.mkdir()
-        tar = subprocess.run(["git", "archive", "--format=tar", base],
-                             cwd=ROOT, capture_output=True, check=True)
-        subprocess.run(["tar", "-x"], cwd=work, input=tar.stdout, check=True)
+        tar = run(["git", "archive", "--format=tar", base],
+                  cwd=ROOT, capture_output=True, check=True)
+        run(["tar", "-x"], cwd=work, input=tar.stdout, check=True)
         patch_copy = work / "candidate.patch"
         shutil.copy2(PATCH, patch_copy)
-        applied = subprocess.run(["git", "apply", str(patch_copy)], cwd=work,
-                                 capture_output=True, text=True)
+        applied = run(["git", "apply", str(patch_copy)], cwd=work,
+                      capture_output=True, text=True)
         if applied.returncode != 0:
             raise SystemExit(f"measure_candidate: the shipped patch does "
                              f"not apply to HEAD:\n{applied.stderr}")
         env = {"PYTHONPATH": str(work / "src"), "PATH": "/usr/bin:/bin",
                "HOME": str(work)}
-        focused = subprocess.run(
+        focused = run(
             [sys.executable, "-m", "pytest", FOCUSED, "-q", "-p",
              "no:randomly"], cwd=work, capture_output=True, text=True,
             env=env)
-        full = subprocess.run(
+        full = run(
             [sys.executable, "-m", "pytest", "tests/", "-q"],
             cwd=work, capture_output=True, text=True, env=env)
         failures = sorted(

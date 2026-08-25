@@ -275,6 +275,19 @@ CLOSURES = [
      "checker for both consequence-carrier rows — three §9 targets, the "
      "singular form rejected, the §4b-i header live"),
 
+    ("0001", "external", 16, "0001-R16-1",
+     "the PRODUCER was unbound — every consumer was tested while "
+     "measure() was only ever monkeypatched, so a body of "
+     "`return json.loads(RECORD.read_text())` made the verifier compare "
+     "the record with itself and pass in a non-git extraction",
+     "measure() takes an injectable subprocess seam; a behavioural "
+     "regression proves the record is DERIVED from canned command "
+     "output unlike the shipped figures, the declared base materialised "
+     "and the patch applied; three collapse mutants planted and failing",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_the_measure_producer_derives_the_record_from_real_commands "
+     "-q -p no:randomly"),
+
     ("0001", "external", 15, "0001-R15-1",
      "the chain was tested link by link but never at the join — dropping "
      "--verify from the argv ran the helper's default measure-and-print "

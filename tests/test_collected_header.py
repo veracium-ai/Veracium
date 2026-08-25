@@ -681,6 +681,92 @@ class _MeasureReached(Exception):
     bypass), because the enforcement is a precondition ahead of it."""
 
 
+def test_the_measure_producer_derives_the_record_from_real_commands():
+    """0001 R16-1: the PRODUCER must be bound too.
+
+    Every consumer of the results record was bound — the sealer reaches
+    the enforcement, the enforcement invokes `--verify` with an exact
+    argv, `--verify` refuses a differing record, the nonzero aborts the
+    seal. The producer was not: replacing `measure()` with
+    `return json.loads(RECORD.read_text())` made the verifier compare
+    the shipped record with ITSELF, reported exact replay in a non-git
+    extraction, and left every declared check green. An "independent
+    producer" that can collapse into a copy of its input is not one.
+
+    So this test drives `measure()` through an INJECTED subprocess seam
+    (no real suite runs) and asserts the RECORD IS DERIVED FROM THE
+    COMMANDS: the declared base is materialised, the shipped patch is
+    applied, the exact focused/full commands execute in the built tree,
+    and every number and node id in the record comes from those
+    outputs. The canned figures are deliberately unlike the shipped
+    record's, so a self-copy cannot satisfy them."""
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
+    import measure_candidate as mc
+
+    BASE = "a" * 40
+    issued = []
+
+    class _Res:
+        def __init__(self, stdout="", returncode=0):
+            self.stdout, self.returncode, self.stderr = stdout, returncode, ""
+
+    def fake_run(cmd, **kw):
+        issued.append((list(cmd), kw.get("cwd")))
+        if cmd[:2] == ["git", "rev-parse"]:
+            return _Res(BASE + "\n")
+        if cmd[:2] == ["git", "archive"]:
+            return _Res(b"")                      # bytes: tar input
+        if cmd[0] == "tar":
+            return _Res()
+        if cmd[:2] == ["git", "apply"]:
+            return _Res()
+        if "pytest" in cmd:
+            if any(str(c).endswith("test_0001_candidate.py") for c in cmd):
+                return _Res("....\n7 passed in 1.00s\n")
+            return _Res(
+                "FAILED tests/test_alpha.py::test_one - boom\n"
+                "FAILED tests/test_beta.py::test_two - boom\n"
+                "2 failed, 13 passed, 4 skipped in 9.00s\n")
+        return _Res()
+
+    rec = mc.measure(BASE, run=fake_run)
+
+    # --- the record is DERIVED from those outputs, not copied ---
+    assert rec["base_commit"] == BASE, (
+        "the record does not carry the base it was asked to measure")
+    assert rec["focused_suite"]["passed"] == 7, (
+        "the focused count was not read from the focused run's output — "
+        "a producer that returns a copy of the shipped record cannot "
+        "produce 7 (R16-1)")
+    assert (rec["full_suite"]["failed"], rec["full_suite"]["passed"],
+            rec["full_suite"]["skipped"]) == (2, 13, 4), (
+        "the full-suite triple was not read from the full run's output")
+    assert rec["failure_set"] == ["tests/test_alpha.py::test_one",
+                                 "tests/test_beta.py::test_two"], (
+        "the failure set was not derived from the run's FAILED lines")
+
+    # --- and the commands that produce it actually ran ---
+    cmds = [c for c, _ in issued]
+    assert ["git", "archive", "--format=tar", BASE] in cmds, (
+        "the DECLARED BASE was never materialised — the measurement did "
+        "not happen at the base the record claims")
+    assert any(c[:2] == ["git", "apply"] for c in cmds), (
+        "the shipped patch was never applied — the measurement is of an "
+        "unpatched tree")
+    pytest_cmds = [c for c in cmds if "pytest" in c]
+    assert len(pytest_cmds) == 2, (
+        f"expected the focused and full suites to run, saw "
+        f"{len(pytest_cmds)} pytest invocations")
+    assert any(c[-3:] == ["-q", "-p", "no:randomly"] for c in pytest_cmds)
+    assert any(c[-2:] == ["tests/", "-q"] for c in pytest_cmds)
+    # every suite command ran INSIDE the built tree, never the repo
+    for cmd, cwd in issued:
+        if "pytest" in cmd:
+            assert cwd is not None and pathlib.Path(cwd) != ROOT, (
+                "a suite ran in the repo root instead of the tree built "
+                "from the declared base")
+
 def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
     """0001 R13-1 then R14-1: the seal-time replay must be BEHAVIORALLY
     bound to the real sealing path.
