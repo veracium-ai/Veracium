@@ -1,5 +1,16 @@
 # 0001 evidence machinery — a terminus question (dev, 2026-08-25)
 
+> **ANSWERED at round 18 (2026-08-25): option (a) granted.** 0001 is
+> accepted with EVIDENCE-MAINTENANCE STATUS — subsequent defects in this
+> scaffold are maintenance and do not reopen the accepted design. The
+> question below is kept as the record of what was asked and on what
+> grounds, not as an open request. The acceptance carried two
+> maintenance items, both closed at §31 of the spec; one of them,
+> PACKAGE-M18-1, was a defect in this very note's own membership test,
+> which is the eighth seam the note hoped to avoid discovering — and it
+> was found by the reviewer, in the extraction, exactly where the note
+> argued the machinery was already sound.
+
 This note asks a scheduling question, not a technical one. **We are not
 contesting any finding.** Rounds 11–17 each identified a real bypass in
 our evidence machinery, each was reproduced here before fixing, and
