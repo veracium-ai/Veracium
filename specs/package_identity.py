@@ -75,7 +75,7 @@ PACKAGES = {
         "v15": (15, {"0001": "v16"}),
         "v16": (16, {"0001": "v17"}),
         "v17": (17, {"0001": "v18"}),
-        "v18": (18, {"0001": "v19"}),
+        "v18": (18, {"0001": "v20"}),
     },
     "0024-0025": {
         "v1": (1, {"0024": "v2", "0025": "v2"}),
@@ -114,9 +114,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ("0001-v18",)   # C8-1/C9-1: the ONE declared seal
-                                   # (0001 round-17 fold); cleared by its
-                                   # sidecar commit
+IN_FLIGHT: tuple = ("0001-v18",)   # C8-1/C9-1: the RESEAL of v18
+                                   # (round-17 fold + the terminus note);
+                                   # cleared by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -129,6 +129,9 @@ DISCARDED_PRE_ROUND = (
     "0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's "
     "validator co-check found the canary file unchecked; the validator "
     "grew unknown-member refusal + the canary check before dispatch)",
+    "0001-v18-20260825T2101Z (sealed, discarded unsent — the terminus "
+    "note was added in-archive so it ships WITH the package that asks "
+    "its question, rather than following it by a side channel)",
 )
 
 

@@ -681,6 +681,36 @@ class _MeasureReached(Exception):
     bypass), because the enforcement is a precondition ahead of it."""
 
 
+def test_the_terminus_note_is_an_archive_member():
+    """The A1 PACKAGE-R23-1 lesson, applied at birth: a note the package
+    PROMISES is a carrier of that promise. The C-plus terminus proposal
+    was claimed to accompany its package while travelling by a side
+    channel that never arrived; this one ships inside the thing that
+    references it, and the reference is checked."""
+    note = ROOT / "specs" / "evidence" / "0001" / "TERMINUS-NOTE.md"
+    assert note.exists(), "the terminus note left the tree"
+    spec = (ROOT / "specs"
+            / "0001-generated-content-trust-class.md").read_text()
+    assert "specs/evidence/0001/TERMINUS-NOTE.md" in spec, (
+        "the spec does not point at the in-archive note path")
+    # the note's load-bearing claim is that the SEALING PATH retires when
+    # the candidate folds; if that stops being true the note becomes a
+    # false claim. (The first draft claimed every component skips
+    # gracefully — this test caught that: the producer correctly REFUSES
+    # when asked by hand to measure a patch that is not there.)
+    checker = (ROOT / "specs" / "check_candidate_results.py").read_text()
+    assert "absent, not broken" in checker, (
+        "the extraction checker no longer reports absent-not-broken")
+    sealer = (ROOT / "specs" / "seal_package.py").read_text()
+    assert "candidate folded or absent" in sealer, (
+        "the sealer's replay precondition no longer returns early when "
+        "the candidate is gone — the note's retirement claim would be "
+        "false and a folded candidate would BLOCK sealing")
+    producer = (ROOT / "specs" / "evidence" / "0001"
+                / "measure_candidate.py").read_text()
+    assert "if not RECORD.exists():" in producer, (
+        "the replay comparison no longer short-circuits without a record")
+
 def test_the_production_measure_delegates_to_the_implementation(monkeypatch):
     """0001 R17-1: the PRODUCTION entry point must reach the
     implementation the producer test binds.

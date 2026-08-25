@@ -363,4 +363,5 @@ Superseded/discarded seals (disclosed, deliberately un-witnessed):
 - 0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)
 - 0024-0025-v13-20260823T2131Z (sealed, discarded unsent — research's §11 fidelity pass added the marker-witness note and the cell-A denominator fix before dispatch)
 - 0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's validator co-check found the canary file unchecked; the validator grew unknown-member refusal + the canary check before dispatch)
+- 0001-v18-20260825T2101Z (sealed, discarded unsent — the terminus note was added in-archive so it ships WITH the package that asks its question, rather than following it by a side channel)
 
