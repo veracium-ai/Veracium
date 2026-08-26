@@ -1658,7 +1658,7 @@ CLOSURES = [
      "unknown, do not merely cover the known)",
      "the domain is CLOSED and validated at construction, failing closed to "
      "the derived(THIRD_PARTY) floor, with S5 carrying the unknown-value cell",
-     "grep -n 'CLOSED domain, validated at construction' specs/0011-subject-scoped-entitlement.md"),
+     "$PY specs/evidence/0011/check_round1_fold.py  # m-6 asked for a CLOSED domain validated at construction; external R1-4 then found that §4d named TWO outcomes for a malformed value and rewrote the passage, which broke this row's original grep. The property is unchanged and is now checked structurally — one outcome, absence kept distinct, every invalid cell enumerated — rather than by a sentence a later fold can reword"),
 
     # ---- 0026 internal round 1 (research, 2026-08-24).
     ("0026", "internal", 1, "0026-I1-M1",
@@ -1704,4 +1704,74 @@ CLOSURES = [
      "that quotes the old figures deliberately, which this command allows "
      "for by name rather than by pretending the string is gone",
      "! grep -n '183,416' specs/0026-label-value-agreement.md | grep -v 'v1 carried'"),
+
+    # ---- 0011 external round 1 (2026-08-26). The spec is a DRAFT: the
+    # artifact carrying each fold is its own text, except PACKAGE-R1-1 whose
+    # fold is a runnable script and is checked by running it.
+    ("0011", "external", 1, "0011-R1-1",
+     "the central entitlement cell was not representable — `sourced`, "
+     "`self-assertion` and 'confirmation, a higher rung' had no runtime "
+     "predicate; §4b's condition omitted the sourced term, contradicting "
+     "§3c; and the measurement rider could not measure the broad rule's "
+     "constituency, which produces no refusal row at all",
+     "closed predicates over state that exists today, a TOTAL policy "
+     "function, every absence case stated, the over-inclusion pointed in "
+     "the refusing direction, the 0008 phrase withdrawn, the basis-aware "
+     "form deferred rather than unfreezing 0016, and the rider made "
+     "measurable with a counts-only counter for the allowed-but-broad-"
+     "refusing cell",
+     '$PY specs/evidence/0011/check_round1_fold.py  # checks the policy block is TOTAL and carries the sourced term v4 omitted, both predicates are DEFINED not merely used, and the rider has the allowed-cell counter that makes it measurable'),
+
+    ("0011", "external", 1, "0011-R1-2",
+     "E5 was claimed to be unforgeable and to authenticate CORRECTORS; 0020 "
+     "states the principal is host-supplied, forgeable and unauthenticated, "
+     "and correct() mints the authorisation from caller-controlled values, "
+     "so a fresh impersonation passes the in-transaction check",
+     "the claim is WITHDRAWN in every carrier that made it; the binding is "
+     "integrity and attribution; correct() is a protected host API with the "
+     "host's authentication and intent obligations stated",
+     '$PY specs/evidence/0011/check_round1_fold.py  # checks the unforgeable/authentication claim is gone from EVERY carrier that made it and the host-obligation table exists — the finding was a claim in three places, not one sentence'),
+
+    ("0011", "external", 1, "0011-R1-3",
+     "E3 defined contention as two active same-class edges, which is FALSE "
+     "against accepted 0012 — it persists same-value restatements as "
+     "separate active edges and calls them uncontested; the reviewer "
+     "executed the test that proves it",
+     "contention requires >=2 DISTINCT normalised _value_key values, using "
+     "0012's own normalisation; composition with 0003/0012 stated; the "
+     "maintain claim narrowed so per-edge expiry is not suspended; 0012 "
+     "added to Spec-Requires and lifecycle.py to the consumer list",
+     "$PY specs/evidence/0011/check_contention_rule.py  # the fold checked against 0012's OWN _value_key, runnable under the reviewer's bare offline interpreter; the shipped behaviour it must not contradict is tests/test_0012_currency_renewal.py::test_a_same_value_restatement_produces_no_contention_artifacts"),
+
+    ("0011", "external", 1, "0011-R1-4",
+     "§4d named TWO different observable outcomes for one input — a "
+     "malformed from_class both refused by the constructor and floored to "
+     "derived(THIRD_PARTY)",
+     "one outcome: it RAISES and nothing is written; ABSENCE is a distinct "
+     "input that keeps the floor; the complete direct/derived grammar "
+     "enumerated with every cell reachable",
+     '$PY specs/evidence/0011/check_round1_fold.py  # checks ONE outcome for malformed input, the contradictory flooring sentence absent, absence kept distinct, and all four RAISES cells enumerated'),
+
+    ("0011", "external", 1, "0011-R1-5",
+     "S6's three labels were neither total (a quarantined, grounded, "
+     "uncontested edge matched ZERO) nor exclusive (a mentionable, "
+     "grounded, contested edge matched TWO), and the premise was false: no "
+     "shipped reader interleaves history with present fact",
+     "a five-row FIRST-MATCH precedence table — total by catch-all, "
+     "exclusive by ordering — with QUARANTINED_CLAIM and CONTESTED_CURRENT "
+     "added; the invariant asserted over the cross-product; E6 re-motivated "
+     "and the false premise retracted in place",
+     '$PY specs/evidence/0011/check_round1_fold.py  # checks a 5-row first-match table ending in a catch-all and carrying QUARANTINED_CLAIM and CONTESTED_CURRENT — the two labels whose absence made an edge match zero'),
+
+    ("0011", "external", 1, "0011-PACKAGE-R1-1",
+     "the deciding SELF-floor measurement had NO evidence artifact — the "
+     "archive could not re-derive 72,253 passes, 305 candidates, ~30 "
+     "self-denoting rows or the 0.016% conclusion; 0025's aggregate "
+     "supports corpus size, not subject classification",
+     "subject_census.py plus a counts-only aggregate digest-bound to the "
+     "same cache sha as 0025's census, and the masked distinct-string "
+     "candidate table the classification was made over; the load-bearing "
+     "figure reproduces exactly and the two that did not are RETIRED",
+     "$PY specs/evidence/0011/subject_census.py --aggregate "
+     "specs/evidence/0011/subject_aggregate.json"),
 ]
