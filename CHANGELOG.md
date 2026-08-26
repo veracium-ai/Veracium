@@ -12,6 +12,15 @@
   **`USE_ONLY`: it may inform an answer and is never asserted as
   fact.**
 
+  **Upgrade recommendation — consumers ingesting third-party content
+  should take this release.** Before it, a record authored by the user
+  or the system but derived from a third party was rendered to the model
+  as `third-party-reported`, which names the RELAY as the reporter. That
+  is an inaccurate provenance claim about unverified material, on the
+  surface the model actually reads. It is corrected here, and the
+  fail-safe added alongside means an unlabelled author can no longer
+  inherit another class's origin string at all.
+
   **BREAKING — rendered provenance labels.** Origin labels are now
   keyed on the PAIR `(author, derived_from)` with the capping axis read
   first, so a record DERIVED FROM a third party is described as a
