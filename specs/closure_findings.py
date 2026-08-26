@@ -492,8 +492,7 @@ CLOSURES = [
      "a live cross-ref said 'the confirm() row' — the sweep grepped rule "
      "phrases, not row names",
      "fixed; cross-references join the sweep list",
-     "! grep -n 'see the .confirm(). row' "
-     "specs/0001-generated-content-trust-class.md"),
+     "! sed '/GENERATED:review-closure/,$d' specs/0001-generated-content-trust-class.md | grep -n 'see the .confirm(). row'"),
 
     # ---- 0001 external round 5 (2026-08-23) — the round-5 fold, v7 --------
     ("0001", "external", 5, "0001-R5-1",
@@ -501,10 +500,7 @@ CLOSURES = [
      "scripted replacements silently no-opped on wrapped text",
      "all three replaced; folds refuse needle misses; zero survivors "
      "grep-verified",
-     "! grep -n 'Only through .confirm()' "
-     "specs/0001-generated-content-trust-class.md && "
-     "! grep -n 'confirm()..-class' "
-     "specs/0001-generated-content-trust-class.md"),
+     "! sed '/GENERATED:review-closure/,$d' specs/0001-generated-content-trust-class.md | grep -n 'Only through .confirm()' && ! sed '/GENERATED:review-closure/,$d' specs/0001-generated-content-trust-class.md | grep -n 'confirm()..-class'"),
     ("0001", "external", 5, "0001-R5-2",
      "I6's post-_cover reserve was impossible — truncation precedes it; "
      "assertable_selected 0 measured at the shipped coverage_share=0.0",
@@ -531,10 +527,7 @@ CLOSURES = [
      "the confirm() correction was unswept across five more normative "
      "carriers — the third partial sweep this spec has recorded",
      "§3.1/§3.2/§4/§7/§9 swept with the three-way terminology",
-     "! grep -n 'Promotion remains' "
-     "specs/0001-generated-content-trust-class.md && "
-     "grep -c 'AFFIRMATION\\|affirmation' "
-     "specs/0001-generated-content-trust-class.md"),
+     "! sed '/GENERATED:review-closure/,$d' specs/0001-generated-content-trust-class.md | grep -n 'Promotion remains' && sed '/GENERATED:review-closure/,$d' specs/0001-generated-content-trust-class.md | grep -c 'AFFIRMATION\\|affirmation'"),
     ("0001", "external", 4, "0001-R4-2",
      "same-value affirmation does not render-collapse: collapse groups per "
      "trust envelope, so the spec claimed a collapse 0012 forbids",
