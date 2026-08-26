@@ -660,8 +660,10 @@ REVIEWS = [
          "on the extraction cache, pre-committed to narrow the lexicon if "
          "it exceeds 2% of grounded first-person triples — is an "
          "ACCEPTANCE precondition, not a claim this package makes. "
-         "Research co-verifies that run. Sealed AFTER this row, sha pinned "
-         "on return", findings=0),
+         "Research co-verifies that run. Sealed as "
+         "`0026-v1-20260826T1130Z` at commit 26a8721, sha256 "
+         "71da9c233be224950f0cf3156e7f9cc4c4598f174e1a0da1504388a577ff2b9d",
+         findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
