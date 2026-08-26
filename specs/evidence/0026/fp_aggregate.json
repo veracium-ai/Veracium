@@ -1,0 +1,51 @@
+{
+ "coverage": {
+  "matched_by_lexicon": 138,
+  "third_party_claim_triples": 3945,
+  "with_nonempty_note": 3898
+ },
+ "grounded_first_person": {
+  "fires": 415,
+  "markers": {
+   "according to": 31,
+   "confirmed": 3,
+   "confirmed by": 1,
+   "informed": 59,
+   "informs": 1,
+   "mentioned": 91,
+   "mentions": 16,
+   "per": 78,
+   "reported": 2,
+   "reports": 23,
+   "said": 7,
+   "says": 6,
+   "stated": 57,
+   "states": 29,
+   "tells": 1,
+   "told": 19
+  },
+  "suppressed_by_direction_only": 211,
+  "suppressed_markers": {
+   "confirmed": 5,
+   "confirms": 7,
+   "informed": 13,
+   "mentioned": 42,
+   "mentions": 13,
+   "reported": 9,
+   "reports": 61,
+   "said": 2,
+   "says": 1,
+   "stated": 16,
+   "states": 41,
+   "tells": 1
+  },
+  "total": 68479
+ },
+ "lexicon_version": "0026-lex-2",
+ "manifest": {
+  "entries": 52359,
+  "sha256": "654e336addaf600ca0363fa40933ae92a38d26f23143e5aa0a780f3fbc011df3",
+  "unparseable": 6
+ },
+ "schema": 1
+}

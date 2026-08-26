@@ -1,0 +1,98 @@
+# 0026 §6a — the acceptance measurement (dev, 2026-08-26)
+
+**Result: the gate is CLEARED. 0.61% against a 2% bar — and that figure is
+an UPPER BOUND, not an estimate.**
+
+§6a pre-commits that if the lexicon's false-positive rate exceeds 2% of
+grounded first-person triples, the lexicon narrows before v1 ships. It did
+exceed it on the first pass, the lexicon narrowed, and this records both
+passes rather than only the one that passed.
+
+## What was measured, and against what
+
+| | |
+|---|---|
+| cache | `extractions.jsonl`, 52,359 entries, sha256 `654e336a…`, 6 unparseable rows counted and skipped |
+| population | 68,479 **grounded first-person triples** — an in-registry relation with canonical subject `user`. This is the denominator §6a's 2% is a share *of*. |
+| detector | `relay_lexicon.py`, run by `measure_false_positives.py`; counts-only aggregate in `fp_aggregate.json` |
+
+The cache is byte-identical to the one behind 0025's published census (same
+sha256), so these figures sit in the same frame as the 183,417 / 41.7% ones.
+
+## Both passes
+
+| | lex-1 | lex-2 |
+|---|---|---|
+| fires on grounded first-person | 5,618 = **8.20%** | 415 = **0.61%** |
+| vs the 2% gate | **OVER** | **UNDER** |
+| suppressed by the directional rule | **0** | 211 |
+| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = **3.5%** |
+
+## Why lex-1 failed, which is the useful part
+
+Both causes were found by reading the fires, not by looking at the rate.
+
+**It carried the ADVICE class.** `recommended`, `suggested` and `advised`
+produced 4,445 of 5,618 fires — 79% — on constructions like *"recommended
+brand"* and *"recommended time management tool"*. Recommending is a speech
+act; it attributes nothing to a named source. §3a's own list is attribution:
+said / told / stated / according to / confirmed by / per ⟨entity⟩. lex-2 is
+that class and nothing wider.
+
+**Its directional rule was written in the wrong grammar, and this is a
+finding about the SPEC, not only about the lexicon.** §3a states its
+directional cells in the first person — *"I told my doctor…" must never
+match*. This extractor narrates the user in the **third person**: *"user
+confirmed no dietary restrictions"*. The first-person form suppressed
+**exactly 0 of 68,479 triples**, while the third-person form was read as
+INBOUND — the user's own word treated as somebody else's claim, which is the
+precise failure the bar exists to prevent. The rule that matters is whether
+the attributing subject **is the user**, however the extractor names them.
+The pronoun was never the point. §3a should say so.
+
+A third defect never reached the corpus: lex-1 read the possessive in *"my
+doctor said"* as first-person and suppressed it, which would have hidden the
+commonest relay shape there is. The named cell caught it before any run.
+
+## What the 0.61% is, and is not
+
+It is the share of grounded first-person triples the detector **fires on**.
+Every fire is a *candidate* false positive, so the true rate cannot exceed
+it. "Genuinely own" is a property of the content, and using the detector to
+decide which of its own fires are false would be the self-assertion failure
+this project already has a name for — so the bound is reported instead, and
+it clears the gate on its own.
+
+A 10-fire sample was labelled by hand to characterise the residual. Roughly
+3 in 10 are genuine relays (*"mechanic said brake pads are getting worn
+out"*), putting the true rate near **0.4%**. The rest fall into four named
+classes, none of which the gate requires fixing:
+
+1. **verb/noun homographs** — *"park reports"*, *"creating reports"*
+2. **agentless participles** — *"no diet mentioned"*
+3. **passive agent after the verb** — *"project mentioned by user"* (the
+   direction scan looks backward only)
+4. **non-entity objects of a frame** — *"according to parse rules"*
+
+## The M-2 coverage denominator, stated honestly
+
+The lexicon matches **138 of 3,898** `third_party_claim` triples carrying a
+non-empty note — **3.5%**. §8's claim ships with that number rather than an
+implied whole, which is what M-2 asked for.
+
+One caveat the figure carries: M-2 asks for the share of **source-naming**
+notes matched, and identifying that subset independently would require
+labelling the whole note population. The denominator here is *all* non-empty
+`third_party_claim` notes, and source-naming notes are a subset of it — so
+3.5% is a **lower bound** on the quantity M-2 names. It is reported as the
+computable one, not as the one asked for.
+
+Narrowing bought this at a cost: coverage fell 13.8% → 3.5% while the fire
+rate fell 8.20% → 0.61%. That trade is the gate's whole purpose, and the
+reviewer can see both halves of it.
+
+## Standing
+
+Dev's half of §6a is done. Research co-verifies the run — the script, the
+aggregate and the cache manifest are all here, and `--cache` reproduces
+every number on the measuring host.
