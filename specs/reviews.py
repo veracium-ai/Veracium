@@ -640,6 +640,29 @@ REVIEWS = [
          "sentence is scoped to the lexicon now and §6a reports the "
          "coverage denominator with it. Q1/Q2/Q3 ratified",
          findings=5),
+    dict(spec="0026", round=1, kind="external", date="2026-08-26",
+         verdict="SENT (package `0026-v1`, candidate draft v3 — the LINE'S "
+         "FIRST SEALED PACKAGE; no predecessor, so the NO_PRIOR path applies "
+         "and the what-changed diff is skipped and SAID to be skipped). The "
+         "label/value agreement check: a relayed claim whose note or value "
+         "matches the versioned marker lexicon is never asserted as the "
+         "user's fact, whatever relation it was filed under. Both internal "
+         "rounds closed before this send — round 1 (research, PASS WITH "
+         "AMENDMENTS: M-1 the §1 census carried pre-correction figures, "
+         "which is this spec's own thesis in miniature — a value that "
+         "drifted from its artifact and was then consumed by label; M-2 §8 "
+         "promised a SEMANTIC property delivered by a LEXICAL mechanism, so "
+         "the sentence is scoped to the lexicon and §6a now reports the "
+         "coverage denominator with it; plus three minors, and Q1/Q2/Q3 "
+         "ratified) and round 2 (PASS, diff-verified fold @ e60206e). All "
+         "five findings carry closure rows. NOT YET MEASURED and stated as "
+         "such: §6a's acceptance gate — the lexicon's false-positive rate "
+         "on the extraction cache, pre-committed to narrow the lexicon if "
+         "it exceeds 2% of grounded first-person triples — is an "
+         "ACCEPTANCE precondition, not a claim this package makes. "
+         "Research co-verifies that run. Sealed AFTER this row, sha pinned "
+         "on return", findings=0),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

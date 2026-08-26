@@ -52,6 +52,11 @@ PACKAGES = {
     "0011": {
         "v1": (1, {"0011": "v4"}),
     },
+    # 0026 label/value agreement — first external round, same shape as 0011:
+    # both internal rounds recorded, governed from v1.
+    "0026": {
+        "v1": (1, {"0026": "v3"}),
+    },
     "0022-0023": {
         "v17": (17, {"0022": "v18", "0023": "v18"}),
         "v18": (18, {"0022": "v19", "0023": "v19"}),
@@ -120,7 +125,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
+IN_FLIGHT: tuple = ("0026-v1",)   # C8-1/C9-1: the ONE declared seal
+                                   # (0026 first external round);
+                                   # cleared by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -278,7 +285,7 @@ def render_lineage(archives_dir) -> str:
 FIRST_GOVERNED = {"0022-0023": 17, "0024-0025": 1, "0001": 3,
                   # governed from their first seal — these lines have
                   # no pre-governance history to exempt
-                  "0011": 1}
+                  "0011": 1, "0026": 1}
 
 
 def _reviews():
