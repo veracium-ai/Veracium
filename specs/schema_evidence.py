@@ -357,7 +357,10 @@ def build_version_artifact(strict: bool = True) -> dict:
         #                                            arrived from ≤v5.
         # Both ops entries are the FROZEN v10 constants (sha-checked), never
         # produced by running the migration here — 0013 §4c.
-        if version == 10:
+        if version in (10, 11):   # specs/0001 I13c (candidate): v11
+            # inherits EVERY accepted v10 manifestation BY CONSTRUCTION —
+            # the same 2x2 object manipulation, digested at 11 (SCHEMA_V11
+            # is SCHEMA_V10, so exact inheritance is the same code path)
             import copy
             import hashlib as _h
             for const, sha in ((sv.ALTER_PATH_V10_FROM_CONSTRUCTOR_SQL,
@@ -386,8 +389,9 @@ def build_version_artifact(strict: bool = True) -> dict:
                             alt["table:contribution_ledger"],
                             sql=sv.ALTER_PATH_V8_SQL)
                     accepted.append({
-                        "provenance": f"migrated->v10 (0025 §4b-v: {ops_tag}; "
-                                      f"{ledger_tag})",
+                        "provenance": f"migrated->v{version} (0025 §4b-v: {ops_tag}; "
+                                      f"{ledger_tag})"
+                                      + (" [v10 shape inherited at v11 — specs/0001 I13c]" if version == 11 else ""),
                         "digest": sv._digest_of_identity(alt, version),
                         "objects": alt})
         c.close()

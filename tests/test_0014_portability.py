@@ -90,7 +90,7 @@ def test_export_omits_none_and_carries_present_indices(tmp_path):
     path = tmp_path / "x.jsonl"
     P.export_memory(store, "u1", path)
     lines = [json.loads(l) for l in path.read_text().splitlines()]
-    assert lines[0]["version"] == 8           # specs/0025 bumped 7->8 (0016 D2: 6->7)
+    assert lines[0]["version"] == 9           # specs/0001 bumped 8->9 (0025: 7->8; 0016 D2: 6->7)
     eps = [l for l in lines if l.get("record") == "episode"]
     plain = [l for l in eps if not l.get("lineage")]
     outs = [l for l in eps if l.get("lineage")]
@@ -105,10 +105,14 @@ def test_an_older_importer_refuses_a_v5_export(tmp_path):
     P.export_memory(store, "u1", path)
     lines = path.read_text().splitlines()
     header = json.loads(lines[0])
-    assert header["version"] == 8 > 4          # an importer with FORMAT<=5 refuses
+    assert header["version"] == 9 > 4          # an importer with FORMAT<=5 refuses
     dest = _store(tmp_path, "d.db")
     bad = tmp_path / "newer.jsonl"
-    header["version"] = 9                       # simulate a NEWER-than-us file (head FORMAT is 8, specs/0025)
+    # DERIVED, not pinned: this number's job is to be one greater than
+    # whatever head is, and as a literal it silently became EQUAL to head
+    # when 0001 bumped FORMAT to 9 — the test would then have asserted
+    # that importing a current-version file is refused as "newer".
+    header["version"] = P.FORMAT_VERSION + 1     # simulate a NEWER-than-us file
     bad.write_text("\n".join([json.dumps(header)] + lines[1:]) + "\n")
     with pytest.raises(ValueError, match="newer"):
         P.import_memory(dest, bad)

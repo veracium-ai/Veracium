@@ -671,43 +671,31 @@ def test_impl_review_round9_regressions(tmp_path):
         pid.FIRST_GOVERNED = real_first
 
 
-class _ReplayReached(Exception):
-    """Sentinel: main() executed the replay enforcement."""
 
 
-class _MeasureReached(Exception):
-    """Sentinel: main() got as far as the MEASUREMENT — which means it
-    passed the replay enforcement WITHOUT executing it (R14-1's
-    bypass), because the enforcement is a precondition ahead of it."""
 
 
 def test_the_terminus_note_is_an_archive_member():
     """The A1 PACKAGE-R23-1 lesson, applied at birth: a note the package
     PROMISES is a carrier of that promise. The C-plus terminus proposal
     was claimed to accompany its package while travelling by a side
-    channel that never arrived; this one ships inside the thing that
-    references it, and the reference is checked."""
+    channel that never arrived; this one shipped inside the thing that
+    references it, and the reference is checked.
+
+    The note asked whether the evidence-machinery series should close.
+    Round 18 answered it — option (a), accept with evidence-maintenance
+    status — so what this test guards has changed shape: the note's
+    load-bearing claim WAS that the machinery would retire when the
+    candidate folded, and the candidate has now folded. That claim is no
+    longer a promise to check; it is a fact to verify, so this asserts
+    the retirement actually happened rather than that the code which
+    would perform it still exists.
+    """
     note = ROOT / "specs" / "evidence" / "0001" / "TERMINUS-NOTE.md"
     assert note.exists(), "the terminus note left the tree"
-    # this test's NAME claims archive MEMBERSHIP, so it asserts membership
-    # and not merely existence (checklist item 8 — the label must be the
-    # behaviour). Membership has TWO proofs, and which one is available
-    # depends on where this suite is running:
-    #
-    #   in the SOURCE TREE  — the archive does not exist yet, so the only
-    #     available proof is predictive: the sealer builds it with
-    #     `git archive` of HEAD, therefore tracked ⇒ member. An untracked
-    #     note would exist on disk and ride no package.
-    #   in an EXTRACTION    — the archive is what we are standing in, so
-    #     the proof is direct and already made above: the file's presence
-    #     at this path IS its membership.
-    #
-    # EVIDENCE PACKAGE-M18-1: the first version ran `git ls-files`
-    # unconditionally. An extracted review package carries no `.git`, so
-    # the one environment where membership is a FACT was the one where the
-    # test errored — it failed in the reviewer's pristine run while
-    # passing here. A test that can only run where its subject does not
-    # exist is checking the wrong thing.
+    # membership, by whichever proof this environment can offer (see
+    # PACKAGE-M18-1): predictive in the source tree, direct in an
+    # extraction, where presence at this path IS membership.
     if (ROOT / ".git").exists():
         import subprocess as _sp
         tracked = _sp.run(
@@ -716,540 +704,33 @@ def test_the_terminus_note_is_an_archive_member():
             cwd=ROOT, capture_output=True, text=True)
         assert tracked.returncode == 0, (
             "the terminus note is NOT git-tracked, so `git archive` of "
-            "HEAD would not carry it — the note would ride no package "
-            "while this test stayed green: " + tracked.stderr.strip())
+            "HEAD would not carry it: " + tracked.stderr.strip())
     spec = (ROOT / "specs"
             / "0001-generated-content-trust-class.md").read_text()
     assert "specs/evidence/0001/TERMINUS-NOTE.md" in spec, (
         "the spec does not point at the in-archive note path")
-    # the note's load-bearing claim is that the SEALING PATH retires when
-    # the candidate folds; if that stops being true the note becomes a
-    # false claim. (The first draft claimed every component skips
-    # gracefully — this test caught that: the producer correctly REFUSES
-    # when asked by hand to measure a patch that is not there.)
-    checker = (ROOT / "specs" / "check_candidate_results.py").read_text()
-    assert "absent, not broken" in checker, (
-        "the extraction checker no longer reports absent-not-broken")
+    # the note records its own answer, so it cannot be read later as an
+    # open request
+    assert "ANSWERED at round 18" in note.read_text(), (
+        "the note no longer carries the verdict that answered it")
+    # THE RETIREMENT HAPPENED. Each of these existed only to evidence a
+    # spec that was not yet implemented; 0001 is accepted and implemented,
+    # so they are gone. If one comes back, this test is the place that
+    # says the note's account of the end state stopped being true.
+    for retired in ("specs/evidence/0001/candidate.patch",
+                    "specs/evidence/0001/candidate_results.json",
+                    "specs/evidence/0001/measure_candidate.py",
+                    "specs/evidence/0001/candidate_harness.py",
+                    "specs/check_candidate_results.py"):
+        assert not (ROOT / retired).exists(), (
+            f"{retired} is back. The candidate folded into the product at "
+            f"acceptance — an evidence scaffold for an accepted, "
+            f"implemented spec has nothing left to evidence")
+    # ...and the sealer no longer carries the enforcement that guarded it
     sealer = (ROOT / "specs" / "seal_package.py").read_text()
-    assert "candidate folded or absent" in sealer, (
-        "the sealer's replay precondition no longer returns early when "
-        "the candidate is gone — the note's retirement claim would be "
-        "false and a folded candidate would BLOCK sealing")
-    producer = (ROOT / "specs" / "evidence" / "0001"
-                / "measure_candidate.py").read_text()
-    assert "if not RECORD.exists():" in producer, (
-        "the replay comparison no longer short-circuits without a record")
-
-def test_the_production_measure_delegates_to_the_implementation(monkeypatch):
-    """0001 R17-1: the PRODUCTION entry point must reach the
-    implementation the producer test binds.
-
-    Round 16 bound `measure()` through an injected runner — and every
-    test injected one, so a branch that returned the shipped record
-    whenever the runner was absent left all of them green while
-    production `--verify` compared the record with itself. The injected
-    implementation was well tested; the join from production to it was
-    free.
-
-    The runner is REQUIRED now, so there is no default path to diverge,
-    and this test proves the wrapper delegates: with the implementation
-    replaced by a sentinel, calling `measure(base)` must reach it, with
-    the base it was asked for and with the PRODUCTION runner —
-    `subprocess.run`, not a stand-in."""
-    import subprocess as _subprocess
-    import sys as _sys
-    _sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
-    import measure_candidate as mc
-
-    BASE = "c" * 40
-    seen = {}
-
-    def _sentinel(base, run):
-        seen["base"], seen["run"] = base, run
-        return {"sentinel": True}
-
-    monkeypatch.setattr(mc, "_measure_with_runner", _sentinel)
-    out = mc.measure(BASE)
-
-    assert out == {"sentinel": True}, (
-        "measure() did not return what the implementation produced — it "
-        "has logic of its own, or bypasses the implementation entirely "
-        "(R17-1: a production-only self-copy lives exactly there)")
-    assert seen.get("base") == BASE, (
-        f"the implementation was called with {seen.get('base')!r}, not "
-        f"the requested base — production would measure the wrong tree")
-    assert seen.get("run") is _subprocess.run, (
-        "the implementation was not handed the PRODUCTION runner; "
-        "production and the tested path must be the same code path")
-
-def test_the_measure_producer_derives_the_record_from_real_commands():
-    """0001 R16-1: the PRODUCER must be bound too.
-
-    Every consumer of the results record was bound — the sealer reaches
-    the enforcement, the enforcement invokes `--verify` with an exact
-    argv, `--verify` refuses a differing record, the nonzero aborts the
-    seal. The producer was not: replacing `measure()` with
-    `return json.loads(RECORD.read_text())` made the verifier compare
-    the shipped record with ITSELF, reported exact replay in a non-git
-    extraction, and left every declared check green. An "independent
-    producer" that can collapse into a copy of its input is not one.
-
-    So this test drives `measure()` through an INJECTED subprocess seam
-    (no real suite runs) and asserts the RECORD IS DERIVED FROM THE
-    COMMANDS: the declared base is materialised, the shipped patch is
-    applied, the exact focused/full commands execute in the built tree,
-    and every number and node id in the record comes from those
-    outputs. The canned figures are deliberately unlike the shipped
-    record's, so a self-copy cannot satisfy them."""
-    import sys as _sys
-    _sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
-    import measure_candidate as mc
-
-    BASE = "a" * 40
-    issued = []
-
-    class _Res:
-        def __init__(self, stdout="", returncode=0):
-            self.stdout, self.returncode, self.stderr = stdout, returncode, ""
-
-    def fake_run(cmd, **kw):
-        issued.append((list(cmd), kw.get("cwd")))
-        if cmd[:2] == ["git", "rev-parse"]:
-            return _Res(BASE + "\n")
-        if cmd[:2] == ["git", "archive"]:
-            return _Res(b"")                      # bytes: tar input
-        if cmd[0] == "tar":
-            return _Res()
-        if cmd[:2] == ["git", "apply"]:
-            return _Res()
-        if "pytest" in cmd:
-            if any(str(c).endswith("test_0001_candidate.py") for c in cmd):
-                return _Res("....\n7 passed in 1.00s\n")
-            return _Res(
-                "FAILED tests/test_alpha.py::test_one - boom\n"
-                "FAILED tests/test_beta.py::test_two - boom\n"
-                "2 failed, 13 passed, 4 skipped in 9.00s\n")
-        return _Res()
-
-    rec = mc._measure_with_runner(BASE, fake_run)
-
-    # --- the record is DERIVED from those outputs, not copied ---
-    assert rec["base_commit"] == BASE, (
-        "the record does not carry the base it was asked to measure")
-    assert rec["focused_suite"]["passed"] == 7, (
-        "the focused count was not read from the focused run's output — "
-        "a producer that returns a copy of the shipped record cannot "
-        "produce 7 (R16-1)")
-    assert (rec["full_suite"]["failed"], rec["full_suite"]["passed"],
-            rec["full_suite"]["skipped"]) == (2, 13, 4), (
-        "the full-suite triple was not read from the full run's output")
-    assert rec["failure_set"] == ["tests/test_alpha.py::test_one",
-                                 "tests/test_beta.py::test_two"], (
-        "the failure set was not derived from the run's FAILED lines")
-
-    # --- and the commands that produce it actually ran ---
-    cmds = [c for c, _ in issued]
-    assert ["git", "archive", "--format=tar", BASE] in cmds, (
-        "the DECLARED BASE was never materialised — the measurement did "
-        "not happen at the base the record claims")
-    assert any(c[:2] == ["git", "apply"] for c in cmds), (
-        "the shipped patch was never applied — the measurement is of an "
-        "unpatched tree")
-    pytest_cmds = [c for c in cmds if "pytest" in c]
-    assert len(pytest_cmds) == 2, (
-        f"expected the focused and full suites to run, saw "
-        f"{len(pytest_cmds)} pytest invocations")
-    assert any(c[-3:] == ["-q", "-p", "no:randomly"] for c in pytest_cmds)
-    assert any(c[-2:] == ["tests/", "-q"] for c in pytest_cmds)
-    # every suite command ran INSIDE the built tree, never the repo
-    for cmd, cwd in issued:
-        if "pytest" in cmd:
-            assert cwd is not None and pathlib.Path(cwd) != ROOT, (
-                "a suite ran in the repo root instead of the tree built "
-                "from the declared base")
-
-def test_the_sealer_enforces_the_candidate_replay(tmp_path, monkeypatch):
-    """0001 R13-1 then R14-1: the seal-time replay must be BEHAVIORALLY
-    bound to the real sealing path.
-
-    R13-1 bound it syntactically — an AST search for the call, rejecting
-    a literal `if False`. R14-1 walked through that with
-    `if a.version == "v0":`, which reads as an ordinary call and is
-    false for every real package: both replay tests and the whole spec
-    gate stayed green while replay was disabled for every seal that
-    matters. So AST inspection no longer stands in for execution.
-
-    This test RUNS `main()` with the current package identity, with the
-    enforcement monkeypatched to raise a sentinel, and REQUIRES the
-    sentinel to be reached. A second sentinel on `measure` catches the
-    bypass shape directly: if control reaches the measurement without
-    the enforcement having fired, the guard was skipped, and the test
-    says so rather than timing out in a real suite run.
-    """
-    sys.path.insert(0, str(ROOT / "specs" / "evidence" / "0001"))
-    import measure_candidate as mc
-
-    _real_enforce = sp.enforce_candidate_replay     # captured BEFORE the patch
-    line = "0001"
-    version = sorted(pid.PACKAGES[line], key=lambda v: int(v[1:]))[-1]
-
-    def _replay_sentinel(*a, **k):
-        raise _ReplayReached()
-
-    def _measure_sentinel(*a, **k):
-        raise _MeasureReached()
-
-    # main()'s first precondition is a clean tree; this test runs while
-    # the tree is mid-edit, so ONLY that probe is stubbed — every other
-    # subprocess call still runs for real, so main()'s control flow to
-    # the enforcement is the real one.
-    _real_run = sp._run
-
-    def _run_stub(cmd, **kw):
-        if cmd[:3] == ["git", "status", "--porcelain"]:
-            class _Clean:
-                stdout, stderr, returncode = "", "", 0
-            return _Clean()
-        return _real_run(cmd, **kw)
-
-    monkeypatch.setattr(sp, "_run", _run_stub)
-    monkeypatch.setattr(sp, "enforce_candidate_replay", _replay_sentinel)
-    monkeypatch.setattr(sp, "measure", _measure_sentinel)
-    monkeypatch.setattr(pid, "IN_FLIGHT", (f"{line}-{version}",))
-    monkeypatch.setattr(sys, "argv", [
-        "seal_package.py", "--specs", line, "--version", version,
-        "--manifest", str(ROOT / "specs" / "package" / "manifest_0001.txt"),
-        "--header",
-        str(ROOT / "specs" / "package" / "collected_header_0001.txt"),
-        "--outbox", str(tmp_path)])
-
-    try:
-        sp.main()
-    except _ReplayReached:
-        pass                                    # the guard EXECUTED
-    except _MeasureReached:
-        pytest.fail(
-            "main() reached the MEASUREMENT without executing the replay "
-            "enforcement — the guard is present but bypassed on the real "
-            "sealing path (R14-1: `if a.version == \"v0\"` reads as a "
-            "call and never runs)")
-    except SystemExit as e:
-        pytest.fail(
-            f"main() aborted at {e} before reaching the replay "
-            f"enforcement — the guard is unreachable on the real sealing "
-            f"path for the current package identity")
-    else:
-        pytest.fail("main() returned without executing the replay "
-                    "enforcement at all")
-
-    # --- the enforcement itself. EVIDENCE-M18-1 INVERTED THE SEMANTICS:
-    # the probe perturbs the record in one field and requires --verify to
-    # CONTRADICT it there and nowhere else. So agreement (exit 0) is now
-    # the failure — a measurement that agrees with a number it should have
-    # disagreed with is reading the record, not running anything — and the
-    # pass condition is a difference at exactly the perturbed field. ---
-    class _R:
-        def __init__(self, rc, out=""):
-            self.returncode, self.stdout, self.stderr = rc, out, ""
-
-    DIFFERS = "REPLAY DIFFERS at 'full_suite': record has 1, produced 2"
-    record_path = (ROOT / "specs" / "evidence" / "0001"
-                   / "candidate_results.json")
-    if record_path.exists():
-        # the probe is exercised against a THROWAWAY COPY, never the tracked
-        # record: it leaves whatever it perturbs wrong until it restores it,
-        # and a tracked file that is briefly wrong is exactly the flake that
-        # put this suite red on CI for four consecutive seals.
-        probe_record = tmp_path / "candidate_results.json"
-        probe_record.write_bytes(record_path.read_bytes())
-        pristine_bytes = probe_record.read_bytes()
-        tracked_before = record_path.read_bytes()
-
-        def real_enforce(run, record=probe_record):
-            return _real_enforce(run=run, record=record)
-
-        # the honest shape: contradicted at exactly the perturbed field
-        real_enforce(run=lambda *a, **k: _R(1, DIFFERS))
-        assert probe_record.read_bytes() == pristine_bytes, (
-            "the enforcement did not restore the record after the probe")
-
-        # EVIDENCE-M18-1 itself: the producer reads the record, so the
-        # comparison is record-against-itself and cannot disagree. Under
-        # the old agreement form this exited 0 and the seal proceeded.
-        with pytest.raises(SystemExit):
-            real_enforce(run=lambda *a, **k: _R(0, "replays exactly"))
-        assert probe_record.read_bytes() == pristine_bytes, (
-            "the record was left perturbed after the FAILING path — "
-            "cleanup must hold on the escape, not only the happy path")
-
-        # a difference at the wrong field means the shipped record
-        # disagrees with a fresh measurement beyond the perturbation
-        with pytest.raises(SystemExit):
-            real_enforce(run=lambda *a, **k: _R(
-                1, "REPLAY DIFFERS at 'base_commit': record has x"))
-        # ...and extra fields alongside the right one are equally fatal
-        with pytest.raises(SystemExit):
-            real_enforce(run=lambda *a, **k: _R(
-                1, DIFFERS + "\nREPLAY DIFFERS at 'failure_set': x"))
-        # nonzero with NO reported difference is not discrimination
-        # either — it is any other kind of crash wearing a pass
-        with pytest.raises(SystemExit):
-            real_enforce(run=lambda *a, **k: _R(1, "Traceback: boom"))
-        assert probe_record.read_bytes() == pristine_bytes
-        assert record_path.read_bytes() == tracked_before, (
-            "the PRODUCTION record was touched by a test — the probe must "
-            "only ever perturb its own copy")
-
-        # the perturbation is pure and lands where it says
-        import json as _j
-        pert, field = sp.perturb_record(pristine_bytes)
-        assert field == "full_suite"
-        a, b = _j.loads(pristine_bytes), _j.loads(pert)
-        assert b["full_suite"]["passed"] == a["full_suite"]["passed"] + 1
-        assert all(a[k] == b[k] for k in a if k != "full_suite"), (
-            "the probe perturbed more than the one field it names, so a "
-            "difference elsewhere would be the probe's own doing")
-
-        # --- R15-1: bind the CONNECTION, not just the two ends. Every
-        # link was tested separately — main() reaches the enforcement,
-        # the enforcement aborts on nonzero, --verify compares records —
-        # while the join was free: dropping "--verify" from the argv
-        # runs measure_candidate in its default measure-and-print mode,
-        # which exits 0 WITHOUT comparing, and every declared check
-        # stayed green. So the exact invocation is asserted.
-        seen = {}
-
-        def _capture(cmd, **kw):
-            seen["cmd"] = list(cmd)
-            seen["cwd"] = kw.get("cwd")
-            return _R(1, DIFFERS)
-
-        real_enforce(run=_capture)
-        mc_path = str(ROOT / "specs" / "evidence" / "0001"
-                      / "measure_candidate.py")
-        assert seen["cmd"] == [sys.executable, mc_path, "--verify"], (
-            f"the enforcement invoked {seen['cmd']!r} — it must run "
-            f"measure_candidate.py with --verify; the default mode exits "
-            f"0 without comparing anything (R15-1)")
-        assert seen["cwd"] == sp.ROOT, (
-            f"the enforcement ran in {seen['cwd']!r}, not the repo root — "
-            f"the replay needs git there")
-
-        # ...and --verify must actually DISCRIMINATE. The expensive
-        # measurement is stubbed (it is covered separately); what is
-        # bound here is that the --verify branch compares the shipped
-        # record against a fresh one and returns nonzero on a
-        # difference — with the default mode proven NOT to, which is
-        # exactly why the argv above must be exact.
-        import copy, json as _json
-        shipped = _json.loads(record_path.read_text())
-        differing = copy.deepcopy(shipped)
-        differing["full_suite"]["passed"] += 1
-        monkeypatch.setattr(mc, "measure", lambda base=None: differing)
-        assert mc.main(["--verify"]) != 0, (
-            "--verify returned success while the replayed record DIFFERED "
-            "from the shipped one (R15-1)")
-        monkeypatch.setattr(mc, "measure",
-                            lambda base=None: copy.deepcopy(shipped))
-        assert mc.main(["--verify"]) == 0, (
-            "--verify failed on an identical replay — the pristine control")
-        monkeypatch.setattr(mc, "measure", lambda base=None: differing)
-        assert mc.main([]) == 0, (
-            "the DEFAULT mode was expected to exit 0 without comparing — "
-            "that it does is why the --verify argv binding above is "
-            "load-bearing, and this assertion documents the bypass")
-
-    # --- and the comparison catches the type-valid fabrications the
-    # extraction checker deliberately cannot ---
-    import copy, json as _json
-    rec_path = ROOT / "specs" / "evidence" / "0001" / "candidate_results.json"
-    if not rec_path.exists():
-        return
-    pristine = _json.loads(rec_path.read_text())
-    assert mc.record_differences(pristine, pristine) == [], (
-        "the pristine control must show no differences")
-    fabrications = {
-        "focused skipped 0 -> 1":
-            lambda r: r["focused_suite"].update({"skipped": 1}),
-        "arbitrary but nonempty platform":
-            lambda r: r["environment"].update({"platform": "SomeOS-9"}),
-        "failure IDENTITY replaced by a valid unique node":
-            lambda r: r.__setitem__("failure_set", sorted(
-                r["failure_set"][:-1]
-                + ["tests/test_elsewhere.py::test_not_really_failing"])),
-        "base commit swapped for another real-shaped sha":
-            lambda r: r.update({"base_commit": "b" * 40}),
-    }
-    for label, mutate in fabrications.items():
-        fake = copy.deepcopy(pristine)
-        mutate(fake)
-        assert mc.record_differences(fake, pristine), (
-            f"the replay comparison missed a type-valid fabrication the "
-            f"extraction checker cannot catch: {label}")
-
-def test_the_production_path_cannot_fabricate_without_its_commands():
-    """EVIDENCE-M18-1, the fast half: the PRODUCTION entry point, reached
-    with NO injection at all, must DEPEND on its external commands.
-
-    The reviewer defeated every machinery test at once by branching on
-    the runner's identity — return the shipped record when the runner IS
-    `subprocess.run`, measure honestly otherwise. Each test injects a
-    runner, so each one took the honest branch; production took the
-    other, and `--verify` compared the record with itself and agreed.
-
-    Injecting anything here would re-enter the same trap, so this test
-    injects nothing. It runs the script the way the sealer does, in an
-    environment where the external commands CANNOT be found, and
-    requires it to FAIL. A producer that derives its numbers by running
-    git and pytest has nothing to report when they are absent; a
-    producer that reads the record is indifferent to their absence and
-    exits 0 with a full result.
-
-    HONEST SCOPE: this catches the unguarded form. A mutant that also
-    checks whether git is reachable would pass here — that one is caught
-    at seal time, where `enforce_candidate_replay` perturbs the record
-    and requires the replay to CONTRADICT it, which no record-reading
-    implementation can do. The two are complementary and neither is
-    sufficient alone; that is why both exist.
-    """
-    import os as _os
-    import subprocess as _sp
-    mc_path = ROOT / "specs" / "evidence" / "0001" / "measure_candidate.py"
-    if not mc_path.exists():
-        pytest.skip("candidate folded — no producer to bind")
-    blind = dict(_os.environ)
-    blind["PATH"] = str(ROOT / "specs" / "does-not-exist")
-    for argv, mode in (([], "default measure-and-print"),
-                       (["--verify"], "--verify")):
-        r = _sp.run([sys.executable, str(mc_path), *argv], cwd=ROOT,
-                    capture_output=True, text=True, env=blind)
-        assert r.returncode != 0, (
-            f"the producer's {mode} mode SUCCEEDED with no git and no tar "
-            f"on PATH. It cannot have measured anything, so the numbers it "
-            f"reported came from somewhere other than a run — which is "
-            f"EVIDENCE-M18-1 exactly. Output:\n{r.stdout[:400]}")
-
-
-def test_candidate_results_record_binds_the_measurement(tmp_path):
-    """P1's matrix for the candidate-results binding, rebuilt at 0001
-    R12-1: the first version exercised four PROJECTIONS and the
-    reviewer walked through the gaps — a forty-zero base_commit with
-    python 0.0.0 exited 0, and a duplicated failure entry (16 listed,
-    15 unique) exited 0. The matrix now covers EVERY schema field:
-    each key deleted, each key added, each value corrupted per its
-    type, plus both counterexamples verbatim and the sortedness and
-    cardinality claims."""
-    import copy, json, shutil, subprocess, sys as _sys
-    checker = ROOT / "specs" / "check_candidate_results.py"
-    rec_path = ROOT / "specs" / "evidence" / "0001" / "candidate_results.json"
-    patch_path = ROOT / "specs" / "evidence" / "0001" / "candidate.patch"
-    if not (rec_path.exists() and patch_path.exists()):
-        import pytest as _pytest
-        _pytest.skip("candidate folded or absent — binding not applicable")
-    pristine = json.loads(rec_path.read_text())
-
-    def run(mutate_record=None, mutate_patch=None):
-        w = tmp_path / f"t{len(list(tmp_path.iterdir()))}"
-        (w / "specs" / "evidence" / "0001").mkdir(parents=True)
-        shutil.copy2(checker, w / "specs" / checker.name)
-        shutil.copy2(ROOT / "specs" / "evidence" / "0001"
-                     / "measure_candidate.py",
-                     w / "specs" / "evidence" / "0001"
-                     / "measure_candidate.py")
-        rec = copy.deepcopy(pristine)
-        if mutate_record:
-            mutate_record(rec)
-        (w / "specs" / "evidence" / "0001"
-         / "candidate_results.json").write_text(json.dumps(rec, indent=1))
-        text = patch_path.read_text()
-        if mutate_patch:
-            text = mutate_patch(text)
-        (w / "specs" / "evidence" / "0001"
-         / "candidate.patch").write_text(text)
-        return subprocess.run(
-            [_sys.executable, str(w / "specs" / checker.name)],
-            capture_output=True, text=True).returncode
-
-    assert run() == 0, "the pristine binding must pass"
-
-    # --- the reviewer's two counterexamples, verbatim ---
-    def zero_base(r):
-        r["base_commit"] = "0" * 40
-        r["environment"]["python"] = "0.0.0"
-    assert run(zero_base) != 0, (
-        "forty-zero base + python 0.0.0 passed while the README states "
-        "the real ones (R12-1 counterexample 1)")
-
-    def duplicate_failure(r):
-        r["failure_set"] = sorted(r["failure_set"][:-1]
-                                  + [r["failure_set"][0]])
-    assert run(duplicate_failure) != 0, (
-        "a duplicated failure entry passed — 16 listed, 15 unique "
-        "(R12-1 counterexample 2)")
-
-    # --- EVERY top-level key: deleted, and an unknown one added ---
-    for key in sorted(pristine):
-        assert run(lambda r, k=key: r.pop(k)) != 0, (
-            f"a record missing {key!r} passed — the schema is not total")
-    assert run(lambda r: r.update({"extra_field": 1})) != 0, (
-        "an UNKNOWN field passed — the schema must be closed, so a "
-        "record that grows a field without a check is a red run")
-
-    # --- every nested key of every sub-object ---
-    for obj in ("focused_suite", "full_suite", "environment"):
-        for key in sorted(pristine[obj]):
-            assert run(lambda r, o=obj, k=key: r[o].pop(k)) != 0, (
-                f"{obj} missing {key!r} passed")
-        assert run(lambda r, o=obj: r[o].update({"extra": 1})) != 0, (
-            f"{obj} with an unknown key passed")
-
-    # --- per-value corruptions, typed ---
-    corruptions = [
-        ("generated_by", lambda r: r.update({"generated_by": "hand-typed"})),
-        ("base_commit non-hex",
-         lambda r: r.update({"base_commit": "not-a-commit"})),
-        ("patch_sha256 wrong",
-         lambda r: r.update({"patch_sha256": "f" * 64})),
-        ("focused path", lambda r: r["focused_suite"].update(
-            {"path": "tests/test_other.py"})),
-        ("focused failed>0", lambda r: r["focused_suite"].update(
-            {"failed": 1})),
-        ("focused passed 0", lambda r: r["focused_suite"].update(
-            {"passed": 0})),
-        ("full passed as str", lambda r: r["full_suite"].update(
-            {"passed": "1814"})),
-        ("full negative", lambda r: r["full_suite"].update({"skipped": -1})),
-        ("python shape", lambda r: r["environment"].update(
-            {"python": "3.12"})),
-        ("platform empty", lambda r: r["environment"].update(
-            {"platform": "   "})),
-        ("command_full rewritten", lambda r: r["environment"].update(
-            {"command_full": "python -m pytest tests/ -q --lf"})),
-        ("failure_set unsorted", lambda r: r.update(
-            {"failure_set": list(reversed(r["failure_set"]))})),
-        ("failure_set short", lambda r: r["failure_set"].pop()),
-        ("failure_set not node ids", lambda r: r.update(
-            {"failure_set": sorted(["just a sentence"] * 1
-                                   + r["failure_set"][1:])})),
-    ]
-    for label, mut in corruptions:
-        assert run(mut) != 0, f"corruption passed: {label}"
-
-    # --- the README-side bindings, all four ---
-    assert run(mutate_patch=lambda s: s.replace(
-        "**21 passed**", "**20 passed**", 1)) != 0, "README focused drift"
-    assert run(mutate_patch=lambda s: s.replace(
-        "16 failed, 1814 passed", "16 failed, 1813 passed", 1)) != 0, (
-        "README triple drift")
-    assert run(mutate_patch=lambda s: s.replace(
-        "base: main @ 48cc833", "base: main @ deadbee", 1)) != 0, (
-        "README base drift")
-    assert run(mutate_patch=lambda s: s.replace(
-        "CPython 3.12.3", "CPython 3.11.9", 1)) != 0, "README python drift"
-    # and the patch's own bytes changing after the record was written
-    assert run(mutate_patch=lambda s: s + "\n# drift\n") != 0, (
-        "a record bound to different patch bytes passed")
-
+    assert "def enforce_candidate_replay" not in sealer, (
+        "the candidate replay enforcement is back in the sealer with no "
+        "candidate to replay")
 
 def test_terminus_proposal_is_an_archive_member():
     """PACKAGE-R23-1: a promised companion is a carrier. The terminus

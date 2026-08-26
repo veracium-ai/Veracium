@@ -103,9 +103,17 @@ def test_the_mcp_surface_refuses_system_authorship():
     import tempfile
     from veracium import Memory, MemoryConfig
     from veracium.mcp_server import _AUTHOR, remember_impl
+    from veracium.schema import EvidenceAuthor
 
     assert "system" not in _AUTHOR
-    assert set(_AUTHOR) == {"user", "third_party"}
+    # 0001 §2d.6 at implementation: "assistant" JOINS the surface, and does
+    # not weaken this test's claim. The rule is about ELEVATION — a party
+    # must not be able to declare itself into a class above its own — and
+    # ASSISTANT is rung 1, BELOW both members already here. A model naming
+    # itself as the author is a self-DEMOTION, and the honest one; what
+    # stays unavailable is "system", which is the elevation.
+    assert set(_AUTHOR) == {"user", "third_party", "assistant"}
+    assert _AUTHOR["assistant"] is EvidenceAuthor.ASSISTANT
 
     with tempfile.TemporaryDirectory() as d:
         mem = Memory(llm=None, config=MemoryConfig(db_path=f"{d}/m.db",
@@ -127,9 +135,52 @@ def test_an_unrecognised_author_fails_closed_not_to_user():
     with tempfile.TemporaryDirectory() as d:
         mem = Memory(llm=None, config=MemoryConfig(db_path=f"{d}/m.db",
                                                    wiki_recompile_after_writes=0))
-        for bad in ("system", "assistant", "admin", "", "USER"):
+        # "assistant" moved OUT of this list when 0001 landed — it is an
+        # accepted self-demotion now, exercised positively below. "system"
+        # stays: it is the elevation the surface refuses.
+        for bad in ("system", "admin", "", "USER", "Assistant", "user "):
             with pytest.raises(ValueError):
                 remember_impl(mem, "u", "x", author=bad)
         with pytest.raises(ValueError, match="derived_from"):
             remember_impl(mem, "u", "x", author="user", derived_from="system")
+        # ...and the fail-closed property the docstring is about: an
+        # unrecognised author must not RESOLVE to anything, least of all to
+        # the highest-authority class. Asserted on the message rather than
+        # inferred from the raise, so a future silent default is visible.
+        with pytest.raises(ValueError, match="not accepted here"):
+            remember_impl(mem, "u", "x", author="system")
+        mem.close()
+
+
+def test_the_assistant_author_is_accepted_as_a_self_demotion(tmp_path):
+    """0001 §2d.6: the model may declare its own output as ASSISTANT.
+
+    This is the positive half of the surface change — the rung-1 class is
+    reachable, and what it produces is held at USE_ONLY rather than being
+    treated as the user's word. Without this the refusal test above would
+    pass just as well if "assistant" had simply been left out.
+    """
+    from veracium import Memory, MemoryConfig
+    from veracium.schema import Disclosure, EvidenceAuthor
+
+    mem = Memory(llm=Fake([
+        {"triples": [{"subject": "user", "relation": "deployed",
+                      "object": "the release", "volatility": "durable"}],
+         "episode": "The assistant reported the deploy succeeded."},
+    ]), config=MemoryConfig(
+        db_path=f"{tmp_path}/m.db", wiki_recompile_after_writes=0))
+    try:
+        r = remember_impl(mem, "u", "the deploy succeeded",
+                          author="assistant")
+        assert r is not None
+        edges = list(mem.store.edges("u"))
+        assert edges, "the assistant record did not reach the store"
+        assert all(e.provenance.author_of_evidence is EvidenceAuthor.ASSISTANT
+                   for e in edges), (
+            "the assistant surface wrote some other author class")
+        assert all(e.provenance.disclosure is Disclosure.USE_ONLY
+                   for e in edges), (
+            "assistant-authored material must be held at use_only — it may "
+            "inform, never assert")
+    finally:
         mem.close()

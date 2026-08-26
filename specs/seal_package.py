@@ -432,10 +432,6 @@ EXTRACTION_CHECKS = (
     # load-bearing movements recomputed from the shipped JSONL.
     ("validate_baseline.py (recompute the 4:1 result offline)",
      [sys.executable, "specs/evidence/0024/baseline/validate_baseline.py"]),
-    # 0001 round 11: the candidate figures are GENERATED and BOUND — a
-    # stale count cannot reach a package.
-    ("check_candidate_results.py (record binds patch + README figures)",
-     [sys.executable, "specs/check_candidate_results.py"]),
     ("render_closure.py --check",
      [sys.executable, "specs/render_closure.py", "--check"]),
     ("render_operation.py --check",
@@ -480,105 +476,8 @@ EXTRACTION_CHECKS = (
 )
 
 
-def perturb_record(original: bytes) -> tuple:
-    """Return (perturbed_bytes, field_name) — ONE field made wrong.
-
-    Pure, so the sealer's discrimination probe can be regression-tested
-    without paying for a real measurement (R13-1's separation). The
-    field chosen is `full_suite`, whose passed-count is incremented: a
-    difference no honest replay of the same tree can reproduce.
-    """
-    import json as _j
-    rec = _j.loads(original.decode())
-    if "full_suite" not in rec or "passed" not in rec.get("full_suite", {}):
-        raise SystemExit("perturb_record: the record has no full_suite."
-                         "passed to perturb — the probe cannot be built")
-    rec["full_suite"] = dict(rec["full_suite"])
-    rec["full_suite"]["passed"] = rec["full_suite"]["passed"] + 1
-    return (_j.dumps(rec, indent=1, sort_keys=True) + "\n").encode(), "full_suite"
 
 
-def enforce_candidate_replay(run=None, record=None) -> None:
-    """0001 R12-1/R13-1: the candidate record must REPLAY from the base
-    it declares, and that enforcement must itself be REGRESSION-BOUND.
-
-    The replay is a git-requiring step, so it runs here in the repo
-    rather than in the extraction checks — two typed copies of a hash
-    prove nothing, regenerating the complete record does. Round 13
-    found the deeper problem: the call was inline in `main()`, so a
-    planted `if False` removed the only decisive guard while every
-    declared check stayed green. It is a NAMED function now, `run` is
-    injectable, and `tests/test_collected_header.py::
-    test_the_sealer_enforces_the_candidate_replay` proves BOTH that
-    `main()` still calls it on a reachable path AND that a failing
-    replay aborts the seal.
-
-    EVIDENCE-M18-1 made the agreement form of this check insufficient.
-    Asking "does the record AGREE with a replay" is a question a record
-    can answer about ITSELF: the reviewer replaced the producer's body
-    with a read of the shipped record, and `--verify` compared the
-    record with itself, agreed, and exited 0 — in a non-git extraction,
-    with every machinery test green. An implementation that reads the
-    record can never disagree with it.
-
-    So the enforcement asks a question a record CANNOT answer about
-    itself. The record is perturbed in exactly ONE field, `--verify` is
-    run against the perturbation, and the seal requires it to report a
-    difference at THAT FIELD AND NOWHERE ELSE. One run, and it decides
-    two things at once:
-
-      * it DISAGREED where truth and the record differ — so the numbers
-        came from running something, not from reading the file; and
-      * it agreed everywhere else — so every other field of the shipped
-        record matches a fresh measurement, which is what the old form
-        checked and all this one still checks.
-
-    No new parameter and no new seam: a `--record` flag would just be
-    the next thing a mutant could branch on. The file is restored from
-    bytes held in memory and the restoration is VERIFIED, because a
-    cleanup that silently fails would leave a perturbed record in the
-    tree (checklist item 4 — do not trust cleanup on the failure path).
-    """
-    run = run or _run
-    mc = SPECS / "evidence" / "0001" / "measure_candidate.py"
-    # `record` is the PRODUCTION record by default. It is a parameter only so
-    # the regression can probe a throwaway COPY: the probe necessarily leaves
-    # the record wrong for as long as a real measurement takes, and a tracked
-    # file that is briefly wrong is the "one test reads what another writes"
-    # flake that put this suite red on CI for four seals. Nothing about the
-    # measurement's honesty depends on this path — the producer reads its own
-    # production record either way, and the argv the enforcement invokes is
-    # pinned by assertion — so there is no branch here worth mutating.
-    record = record or (SPECS / "evidence" / "0001" / "candidate_results.json")
-    if not (mc.exists() and record.exists()):
-        return                      # candidate folded or absent
-    original = record.read_bytes()
-    perturbed, field = perturb_record(original)
-    try:
-        record.write_bytes(perturbed)
-        r = run([sys.executable, str(mc), "--verify"], cwd=ROOT)
-        out = r.stdout + r.stderr
-    finally:
-        record.write_bytes(original)
-        if record.read_bytes() != original:
-            _fail("the candidate record was NOT restored after the replay "
-                  "probe — the tree is left perturbed; restore it from git "
-                  "before sealing again")
-    if r.returncode == 0:
-        _fail(f"the replay AGREED with a record perturbed at {field!r}. A "
-              f"real measurement cannot agree with a number that is wrong, "
-              f"so the producer is not measuring — it is reading the record "
-              f"(EVIDENCE-M18-1):\n{out}")
-    differing = sorted(set(re.findall(r"REPLAY DIFFERS at '([^']+)'", out)))
-    if differing != [field]:
-        _fail(f"the perturbed replay should differ at exactly [{field!r}] "
-              f"and it reported {differing}. More fields means the shipped "
-              f"record disagrees with a fresh measurement beyond the "
-              f"deliberate perturbation; fewer means the probe did not "
-              f"land:\n{out}")
-    print(f"  replay  DISCRIMINATED: perturbing {field!r} produced a "
-          f"difference at exactly that field and nowhere else — the record "
-          f"is measured, and agrees everywhere it was not perturbed")
 
 
 def identity_problems(archive_name: str, col: str, man: str,
@@ -841,7 +740,11 @@ def main() -> int:
     # test_the_sealer_enforces_the_candidate_replay executes main() to
     # prove the line is reached. Failing fast also means a record that
     # cannot replay costs seconds, not a full suite run.
-    enforce_candidate_replay()
+    # (0001's seal-time candidate replay lived here. The candidate folded
+    # into the product at acceptance — there is no patch to re-apply and no
+    # record to replay — so the enforcement retired with the artifacts it
+    # guarded, exactly as the terminus note said it would. The extracted
+    # qualified suite is the general gate that outlived it.)
 
     with tempfile.TemporaryDirectory() as td:
         scratch = pathlib.Path(td)

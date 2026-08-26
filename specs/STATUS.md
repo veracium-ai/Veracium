@@ -13,9 +13,9 @@ is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
 |---|---|---|---|---|---|---|---|---|---|
-| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-08-25 | 1 | 18 | 2 | 0 | 0 | — |
+| **0001** | generated-content trust class (`EvidenceAuthor.ASSISTANT`) | `accepted` | 2026-08-26 | 1 | 18 | 2 | 0 | 0 | — |
 | **0002** | the maintenance provenance invariant | `deferred` | 2026-08-22 | 2 | 8 | 0 | 0 | 10 | 8/10 |
-| **0003** | supersession authority | `accepted` | 2026-08-10 | 1 | 12 | 0 | 0 | 0 | — |
+| **0003** | supersession authority | `accepted` | 2026-08-26 | 1 | 12 | 0 | 0 | 0 | — |
 | **0004** | derived views must not outlive a revoked trust decision | `accepted` | 2026-08-22 | 1 | 3 | 1 | 0 | 1 | 1/1 |
 | **0005** | import has no trust boundary | `accepted` | 2026-08-14 | 1 | 5 | 1 | 0 | 2 | 2/2 |
 | **0006** | source identity — `(origin, source_id)` | `accepted` | 2026-08-22 | 1 | 5 | 1 | 0 | 0 | — |

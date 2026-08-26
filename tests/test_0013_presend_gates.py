@@ -1618,8 +1618,17 @@ def _result_oracle(outcome, ch, co, state, ver):
     if not (ver is None or type(ver) is int):    # bools are not versions
         return False
     if outcome == "unsupported-base":
+        # The §4e law, not a snapshot of it: a base is unsupported when it
+        # is at least two releases behind head, since the preflight passes
+        # ONLY head-1 to minting. The literal set (1..6) was written when
+        # head was 8 and silently became wrong at head 11 — the exhaustive
+        # enumeration caught the one cell that moved (base 9), which is
+        # what this gate is for. Stated from `sv.SCHEMA_VERSION` so it
+        # follows head; deliberately NOT imported from the production
+        # constant, which would make the oracle a mirror instead of a
+        # second opinion.
         return (ch is False and co is False and state == "source"
-                and ver in (1, 2, 3, 4, 5, 6))
+                and isinstance(ver, int) and 1 <= ver <= _RM_FROM - 1)
     if outcome in ("mint-contention", "migration-audit-unavailable",
                    "migration-audit-state-unknown"):
         return (ch, co, state, ver) == (False, False, "unknown", None)

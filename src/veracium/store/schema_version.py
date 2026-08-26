@@ -435,11 +435,17 @@ ALTER_PATH_V10_FROM_V6_ALTERPATH_SQL = (
 ALTER_PATH_V10_FROM_V6_ALTERPATH_SHA256 = \
     "a788a8671946c5a99b311e4a0105da7fe5e867982e95d9f1be280ddddecacbe6"
 
+# specs/0001 I13a (candidate): the v11 bump is SEMANTIC — byte-identical
+# schema (the 0019 SCHEMA_V7 = SCHEMA_V6 precedent); the stamp activates
+# 0007's refusal for pre-ASSISTANT readers.
+SCHEMA_V11 = SCHEMA_V10
+
 SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
            6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8, 9: SCHEMA_V9,
-           10: SCHEMA_V10}
+           10: SCHEMA_V10,
+           11: SCHEMA_V11}
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

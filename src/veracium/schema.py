@@ -42,6 +42,8 @@ class EvidenceAuthor(str, Enum):
     USER = "user"                # user-authored: chat, sent mail
     THIRD_PARTY = "third_party"  # received mail, external docs — untrusted
     SYSTEM = "system"            # the agent's own observations / consolidation
+    ASSISTANT = "assistant"      # model-generated (specs/0001 candidate):
+                                 # use_only for EVERY subject, rung 1
 
 
 class Disclosure(str, Enum):

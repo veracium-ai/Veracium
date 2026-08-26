@@ -101,6 +101,12 @@ def _disclosure_for(author: EvidenceAuthor, relation: str,
     if (author == EvidenceAuthor.THIRD_PARTY
             or derived_from == EvidenceAuthor.THIRD_PARTY):
         return Disclosure.USE_ONLY
+    # specs/0001 I11 (candidate): ASSISTANT — author or content source —
+    # is use_only for EVERY subject; without this clause the enum addition
+    # alone fails OPEN to mentionable.
+    if (author == EvidenceAuthor.ASSISTANT
+            or derived_from == EvidenceAuthor.ASSISTANT):
+        return Disclosure.USE_ONLY
     return Disclosure.MENTIONABLE
 
 

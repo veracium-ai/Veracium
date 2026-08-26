@@ -657,6 +657,15 @@ _CALLSITE_DISPOSITIONS = {
     ("test_0016_d2_deletion.py", "test_v6_import_drops_the_key_and_keeps_the_record"): "restore",
     ("test_0016_d2_deletion.py", "test_a_7_file_round_trips"): "restore",
     ("test_0016_d2_deletion.py", "test_a_newer_file_is_refused_by_the_version_gate"): "default",
+    # specs/0001 §2d.2: the downgrade test exercises BOTH paths on purpose —
+    # the DEFAULT import must flatten an ASSISTANT record to THIRD_PARTY
+    # (authority 1 -> 0, the ratified 0005 cap: an imported file cannot
+    # carry its own trust), and the RESTORE path must preserve the author
+    # exactly, which is what makes the cap a deliberate choice rather than
+    # a lossy round-trip. Asserting only one path would leave the other
+    # free to be wrong.
+    ("test_0001_generated_content_trust.py",
+     "test_downgrade_export_fails_cleanly"): "both",
     ("test_0005_import_boundary.py", "test_default_import_caps_every_record"): "default",
     ("test_0005_import_boundary.py", "test_restore_preserves_trust_fields_exactly"): "restore",
     ("test_0005_import_boundary.py", "test_restore_of_a_finalized_output_export"): "restore",

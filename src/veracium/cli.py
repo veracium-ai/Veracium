@@ -407,11 +407,11 @@ def main(argv=None) -> int:
     rm = sub.add_parser("remember", help="ingest one event into a user's memory (needs the provider)")
     rm.add_argument("text", help="the event text, or '-' to read stdin")
     rm.add_argument("--user", required=True, help="user id to remember for")
-    rm.add_argument("--author", default="user", choices=["user", "third_party", "system"],
+    rm.add_argument("--author", default="user", choices=["user", "third_party", "system", "assistant"],
                     help="who authored the evidence (third_party quarantines its claims)")
     rm.add_argument("--event-type", default="chat", help="event type (chat, email, document, ...)")
     rm.add_argument("--date", default=None, help="ISO date the event occurred (default: today)")
-    rm.add_argument("--derived-from", default=None, choices=["user", "third_party", "system"],
+    rm.add_argument("--derived-from", default=None, choices=["user", "third_party", "system", "assistant"],
                     help="lowest-trust party whose content the event embeds (caps trust)")
     rm.add_argument("--db", default="veracium.db", help="SQLite store path (default: veracium.db)")
 

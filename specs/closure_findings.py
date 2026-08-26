@@ -31,15 +31,13 @@ CLOSURES = [
      "passed all four",
      "exact ordered-ID equality in every vector, incl. the collapse-derived "
      "dedup survivor",
-     "grep -c 'assert picked' specs/evidence/0001/candidate.patch  "
-     "# ordered equality, all vectors"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i6_composition_reserved_day_overlap tests/test_0001_generated_content_trust.py::test_i6_composition_distinct_reserved_days tests/test_0001_generated_content_trust.py::test_i6_composition_dedup_across_reserve_and_coverage tests/test_0001_generated_content_trust.py::test_i6_composition_underfill_backfills_by_rank_deterministically -q -p no:randomly'),
     ("0001", "external", 8, "0001-R8-2",
      "the downgrade test could not detect a version-check-after-parsing "
      "regression (its enum still knew ASSISTANT)",
      "the parse sentinel: Edge/Episode.model_validate trapped; refusal must "
      "precede any record validation",
-     "grep -n 'parse sentinel\\|parses == \\[\\]' "
-     "specs/evidence/0001/candidate.patch"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i13_pre_assistant_reader_refuses_a_v11_store -q -p no:randomly'),
     ("0024", "external", 13, "A1-R13-1",
      "the A1 amendment was not carrier-complete while §11 claimed 'every "
      "carrier' — five passages still described the v7 assertable outcome, "
@@ -91,11 +89,7 @@ CLOSURES = [
      "commands unreachable, which must FAIL rather than report. Both "
      "mutants planted — the reviewer's exact form caught by both gates, "
      "the git-guarded form by the seal-time probe",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_the_sealer_enforces_the_candidate_replay "
-     "tests/test_collected_header.py::"
-     "test_the_production_path_cannot_fabricate_without_its_commands "
-     "-q -p no:randomly"),
+     '$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # the discrimination probe and the injection-free production binding RETIRED with the candidate they guarded when 0001 was implemented; this asserts that retirement actually happened, which is the only claim about them that can still be true'),
 
     ("0001", "external", 18, "PACKAGE-M18-1",
      "the archive-membership test required git metadata, so it FAILED in "
@@ -322,9 +316,7 @@ CLOSURES = [
      "delegation and nothing else; a sentinel regression proves the "
      "wrapper reaches the implementation with the requested base and "
      "subprocess.run; three production-path mutants planted and failing",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_the_production_measure_delegates_to_the_implementation "
-     "-q -p no:randomly"),
+     "$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # this finding was closed against the candidate-measurement machinery, which RETIRED when 0001 was implemented and the candidate folded into the product; the surviving checkable claim is that the retirement happened, which is what this asserts. The fix itself is recorded above and in the spec's review history."),
 
     ("0001", "external", 16, "0001-R16-1",
      "the PRODUCER was unbound — every consumer was tested while "
@@ -335,9 +327,7 @@ CLOSURES = [
      "regression proves the record is DERIVED from canned command "
      "output unlike the shipped figures, the declared base materialised "
      "and the patch applied; three collapse mutants planted and failing",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_the_measure_producer_derives_the_record_from_real_commands "
-     "-q -p no:randomly"),
+     "$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # this finding was closed against the candidate-measurement machinery, which RETIRED when 0001 was implemented and the candidate folded into the product; the surviving checkable claim is that the retirement happened, which is what this asserts. The fix itself is recorded above and in the spec's review history."),
 
     ("0001", "external", 15, "0001-R15-1",
      "the chain was tested link by link but never at the join — dropping "
@@ -347,8 +337,7 @@ CLOSURES = [
      "proven to discriminate on a planted difference with an identical "
      "control; the default mode's exit-0 is documented by assertion; "
      "three connection-breaking mutants planted and each failing",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_the_sealer_enforces_the_candidate_replay -q -p no:randomly"),
+     "$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # this finding was closed against the candidate-measurement machinery, which RETIRED when 0001 was implemented and the candidate folded into the product; the surviving checkable claim is that the retirement happened, which is what this asserts. The fix itself is recorded above and in the spec's review history."),
 
     ("0001", "external", 14, "0001-R14-1",
      "reachability was proved syntactically — an AST search rejecting "
@@ -358,8 +347,7 @@ CLOSURES = [
      "with a second sentinel naming the bypass; the call is an "
      "unconditional fail-fast precondition; three bypass shapes planted "
      "and each verified failing",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_the_sealer_enforces_the_candidate_replay -q -p no:randomly"),
+     "$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # this finding was closed against the candidate-measurement machinery, which RETIRED when 0001 was implemented and the candidate folded into the product; the surviving checkable claim is that the retirement happened, which is what this asserts. The fix itself is recorded above and in the spec's review history."),
 
     ("0001", "external", 13, "0001-R13-1",
      "the seal-time replay was sound but UNPROTECTED — a planted "
@@ -371,8 +359,7 @@ CLOSURES = [
      "(if-False and deletion both planted and both failing), refusal on "
      "a failing replay with a pristine control, and discrimination "
      "including failure-identity replacement",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_the_sealer_enforces_the_candidate_replay -q -p no:randomly"),
+     "$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # this finding was closed against the candidate-measurement machinery, which RETIRED when 0001 was implemented and the candidate folded into the product; the surviving checkable claim is that the retirement happened, which is what this asserts. The fix itself is recorded above and in the spec's review history."),
 
     ("0001", "external", 12, "0001-R12-1",
      "the checker bound a PROJECTION — patch hash, README count, README "
@@ -384,9 +371,7 @@ CLOSURES = [
      "failure_set sorted/unique/node-id/cardinality-equal; commands "
      "imported not retyped; the matrix across every field; and the base "
      "independently reproducible by a sealer-run complete-record replay",
-     "$PY -m pytest tests/test_collected_header.py::"
-     "test_candidate_results_record_binds_the_measurement "
-     "-q -p no:randomly"),
+     "$PY -m pytest tests/test_collected_header.py::test_the_terminus_note_is_an_archive_member -q -p no:randomly  # this finding was closed against the candidate-measurement machinery, which RETIRED when 0001 was implemented and the candidate folded into the product; the surviving checkable claim is that the retirement happened, which is what this asserts. The fix itself is recorded above and in the spec's review history."),
 
     ("0001", "external", 11, "0001-R11-1",
      "the candidate README stated a focused count of 20 while the branch "
@@ -395,7 +380,7 @@ CLOSURES = [
      "both figures are GENERATED into candidate_results.json by running "
      "the shipped patch, and bound to the patch's bytes and the README's "
      "text by a checker in the sealer's extraction checks",
-     "$PY specs/check_candidate_results.py"),
+     "$PY -m pytest tests/test_spec_gate.py::test_the_extraction_check_list_matches_the_sealer_registry -q -p no:randomly  # the candidate README, its generator and its results record RETIRED when the candidate folded into the product at acceptance; the property they enforced — a package's figures are MEASURED from the artifact, never typed — is carried now by the extracted-suite gate in the sealer registry, which this binds. (P4 governs this row, so it names one test and runs under the reviewer's bare offline interpreter.)"),
 
     ("0001", "external", 10, "0001-R10-1",
      "the I6 reserve protected ELIGIBILITY, not relevance — every "
@@ -407,8 +392,7 @@ CLOSURES = [
      "reserve takes query-relevant assertables only; the exact bananas "
      "vector added and proven to fail pre-fix; the I6 cell says "
      "query-RELEVANT explicitly",
-     "grep -n 'relevant_ids' specs/evidence/0001/candidate.patch  "
-     "# the bit carried from scoring into the reserve"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i6_no_relevant_assertable_reserves_nothing -q -p no:randomly'),
 
     ("0001", "external", 10, "0001-R10-2",
      "the opening block still read 'draft (v10)' with a §20 pointer "
@@ -429,15 +413,14 @@ CLOSURES = [
      "scored order); the reviewer's has_pet vector asserts the complete "
      "ordered output and fails on the pre-fix filter; the dedup vector "
      "asserts full order, closing the §20 claim",
-     "grep -n 'reserved + \\[e for _, e in scored' "
-     "specs/evidence/0001/candidate.patch  # the construction, in the patch"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i6_reserved_low_rank_is_placed_first_nonfunctional tests/test_0001_generated_content_trust.py::test_i6_composition_dedup_across_reserve_and_coverage -q -p no:randomly'),
 
     ("0001", "external", 9, "0001-R9-2",
      "the candidate test module docstring still said candidate/0001-v8 — "
      "one version carrier survived the R8-3 sweep",
      "the module docstring is version-neutral; the sweep now greps the "
      "whole patch",
-     "! grep -n '0001-v8' specs/evidence/0001/candidate.patch"),
+     "! grep -nE 'candidate/0001-v[0-9]+' tests/test_0001_generated_content_trust.py"),
 
     ("0001", "external", 9, "0001-R9-3",
      "the README's full-suite measurement was stale (16 failed/1797 vs the "
@@ -445,49 +428,38 @@ CLOSURES = [
      "environment",
      "the measurement is re-run at packaging time and recorded with its "
      "exact environment (python, platform, command)",
-     "$PY specs/check_candidate_results.py  # R11-1 terminal form: the "
-     "environment-stamped measurement is GENERATED into "
-     "candidate_results.json and bound to the patch's own bytes and "
-     "the README's figures — a stale date or count refuses"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py -q -p no:randomly'),
 
     ("0001", "external", 8, "0001-R8-3",
      "the modified patch still identified as candidate/0001-v8 while the "
      "draft moved to v9",
      "version-neutral artifact (candidate.patch); the Version row is the "
      "one carrier",
-     "! grep -rn 'candidate/0001-v8' specs/evidence/0001/candidate.patch "
-     "|| ! ls specs/evidence/0001/candidate-v8.patch 2>/dev/null"),
+     "! grep -nE 'candidate/0001-v[0-9]+' tests/test_0001_generated_content_trust.py"),
 
     # ---- 0001 external round 7 (2026-08-23) — the round-7 fold, v9 --------
     ("0001", "external", 7, "0001-R7-1",
      "the candidate patch implemented and tested the WRONG I12 label; "
      "USER/SYSTEM inherited a label",
      "the §4b decision order verbatim; the complete matrix tested",
-     "grep -n 'third-party-derived' specs/evidence/0001/candidate.patch "
-     "&& grep -n 'test_i12_the_complete_label_matrix' "
-     "specs/evidence/0001/candidate.patch"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i12_the_complete_label_matrix tests/test_render_origin.py -q -p no:randomly'),
     ("0001", "external", 7, "0001-R7-2",
      "the five-manifestation tests were proxies: routes not shapes, "
      "v11-vs-v11, count-only inheritance, a hardcoded 5, a fabricated "
      "reader",
      "shapes from the authority's own object records; digest-level "
      "inheritance; the qualified head-10 reader",
-     "grep -n 'test_i13b_stamp_only_across_every_accepted_v10_shape' "
-     "specs/evidence/0001/candidate.patch && grep -n "
-     "'test_i13c_v11_inherits_by_digest_not_count' "
-     "specs/evidence/0001/candidate.patch"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i13b_stamp_only_across_every_accepted_v10_shape tests/test_0001_generated_content_trust.py::test_i13c_v11_inherits_by_digest_not_count -q -p no:randomly'),
     ("0001", "external", 7, "0001-R7-3",
      "I7's test was a constant assertion; the spec-named downgrade test "
      "was absent",
      "test_downgrade_export_fails_cleanly, real, both import modes",
-     "grep -n 'def test_downgrade_export_fails_cleanly' "
-     "specs/evidence/0001/candidate.patch"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_downgrade_export_fails_cleanly -q -p no:randomly'),
     ("0001", "external", 7, "0001-R7-4",
      "the four I6 composition branches were never executed",
      "four vectors with exact-ID/order assertions, all green against the "
      "unchanged reserve implementation",
-     "grep -c 'def test_i6_composition_' "
-     "specs/evidence/0001/candidate.patch  # 4"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i6_composition_reserved_day_overlap tests/test_0001_generated_content_trust.py::test_i6_composition_distinct_reserved_days tests/test_0001_generated_content_trust.py::test_i6_composition_dedup_across_reserve_and_coverage tests/test_0001_generated_content_trust.py::test_i6_composition_underfill_backfills_by_rank_deterministically -q -p no:randomly'),
 
     # ---- 0001 external round 6 (2026-08-23) — the round-6 fold, v8 --------
     ("0001", "external", 6, "0001-R6-1",
@@ -515,7 +487,7 @@ CLOSURES = [
      "the reserve/coverage composition was untested beyond share=0.0",
      "the composition defined; the harness measures the positive-coverage "
      "path",
-     "grep -n 'coverage_share=0.25' specs/evidence/0001/candidate_harness.py"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i6_composition_reserved_day_overlap tests/test_0001_generated_content_trust.py::test_i6_composition_distinct_reserved_days -q -p no:randomly'),
     ("0001", "external", 6, "0001-R6-5",
      "a live cross-ref said 'the confirm() row' — the sweep grepped rule "
      "phrases, not row names",
@@ -538,15 +510,12 @@ CLOSURES = [
      "assertable_selected 0 measured at the shipped coverage_share=0.0",
      "the reserve applies to the full scored set BEFORE truncation; the "
      "fixture pins coverage_share=0.0",
-     "grep -n 'BEFORE final truncation' "
-     "specs/0001-generated-content-trust-class.md && "
-     "grep -n 'coverage_share=0.0' specs/evidence/0001/candidate_harness.py"),
+     "grep -n 'BEFORE final truncation' specs/0001-generated-content-trust-class.md && PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i6_reserve_guarantees_the_user_edge -q -p no:randomly"),
     ("0001", "external", 5, "0001-R5-3",
      "I5 tested collapse_for_render, which neither partitions nor renders",
      "the harness drives gate.partition_parts and asserts grounded-only / "
      "unverified-only / origin marker / no leakage",
-     "$PY specs/evidence/0001/candidate_harness.py  "
-     "# vector_affirmation_makes_the_fact_assertable, the partition block"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i5_affirmation_grounds_and_partitions_and_confirm_refuses -q -p no:randomly'),
     ("0001", "external", 5, "0001-R5-4",
      "the v10->v11 contract was prose-only in the new-reader direction",
      "I13a-d name the executable checks",
@@ -555,17 +524,7 @@ CLOSURES = [
      "current-version carriers disagreed: Status row, the §9 label, the "
      "harness self-id",
      "swept; version carriers join the pre-send sweep",
-     "$PY -c \"import re, pathlib; "
-     "s = pathlib.Path('specs/0001-generated-content-trust-class.md')"
-     ".read_text(); "
-     "ver = re.search(r'[*][*]Version[*][*] . [*][*](v\\\\d+)[*][*]', s)"
-     ".group(1); "
-     "assert f'{ver} is the round-' in s, 'Status row disagrees with Version'; "
-     "h = pathlib.Path('specs/evidence/0001/candidate_harness.py')"
-     ".read_text(); "
-     "assert not re.search(r'v\\\\d+ candidate harness', h), "
-     "'harness carries a version literal'; "
-     "print('version carriers consistent, no hand-bumped literals')\""),
+     '$PY -c "import re, pathlib; s = pathlib.Path(\'specs/0001-generated-content-trust-class.md\').read_text(); ver = re.search(r\'[*][*]Version[*][*] . [*][*](v\\\\d+)[*][*]\', s).group(1); assert f\'{ver} is the round-\' in s, \'Status row disagrees with Version\'; h = pathlib.Path(\'tests/test_0001_generated_content_trust.py\').read_text(); assert not re.search(r\'v\\\\d+ candidate harness\', h), \'the shipped suite carries a version literal\'; print(\'version carriers consistent, no hand-bumped literals\')"'),
 
     # ---- 0001 external round 4 (2026-08-23) — the round-4 fold, v6 --------
     ("0001", "external", 4, "0001-R4-1",
@@ -581,9 +540,7 @@ CLOSURES = [
      "trust envelope, so the spec claimed a collapse 0012 forbids",
      "the separate-partitions truth stated; the harness measures the "
      "RENDERED result",
-     "$PY specs/evidence/0001/candidate_harness.py  "
-     "# vector_affirmation_makes_the_fact_assertable asserts "
-     "collapse_for_render surfaced_count=2, both partitions"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i5_affirmation_grounds_and_partitions_and_confirm_refuses -q -p no:randomly'),
     ("0001", "external", 4, "0001-R4-3",
      "I6 claimed scope runs upstream — false against shipped 0020: scope "
      "filters AFTER selection, and a principal's edge was starved at cap 1",
@@ -598,10 +555,7 @@ CLOSURES = [
      "the refusal untyped, the Q3 carrier contradicting I13",
      "§7 completed; I13 exact; the harness asserts "
      "StoreVersionError(reason=newer)",
-     "grep -n 'SCHEMA_V7 = SCHEMA_V6\\|StoreVersionError' "
-     "specs/0001-generated-content-trust-class.md && "
-     "$PY specs/evidence/0001/candidate_harness.py  "
-     "# vector_old_reader_refuses_a_newer_store_at_open"),
+     "grep -n 'StoreVersionError' specs/0001-generated-content-trust-class.md && PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i13_pre_assistant_reader_refuses_a_v11_store -q -p no:randomly"),
 
     # ---- 0001 historical rounds (retrofitted at TRACKED-entry, 2026-08-23:
     # per-finding texts live in the spec's own §11/§12/§13 narrative) -------
@@ -609,8 +563,7 @@ CLOSURES = [
      "research's v1->v2 amendment set, folded directly into the spec before "
      "the per-finding discipline existed",
      "§11 (changes in v2), the collective record",
-     "grep -n '## 11. Changes in v2' "
-     "specs/0001-generated-content-trust-class.md"),
+     "grep -n '## 11. Review history — changes in v2' specs/0001-generated-content-trust-class.md"),
     ("0001", "external", 1, "0001-R1-SUBJECT",
      "the subject rule cannot work: no entity resolution, no display name; "
      "19,096 distinct subjects, 39.4% the literal 'user'",
@@ -628,12 +581,7 @@ CLOSURES = [
      "every assistant edge would carry an affirmatively false origin",
      "closed in shipped code 2026-08-15: author-keyed _ORIGIN_LABELS, "
      "fail-safe unverified-origin, the tripwire test",
-     "$PY -c \"import sys; sys.path.insert(0,'src'); "
-     "from veracium.graph import _origin_label, _ORIGIN_LABELS; "
-     "from veracium.schema import EvidenceAuthor as A; "
-     "assert all(a in _ORIGIN_LABELS for a in "
-     "(A.USER, A.SYSTEM, A.THIRD_PARTY)); "
-     "print('author-keyed, fail-safe wired')\""),
+     "PYTHONPATH=src $PY -m pytest tests/test_render_origin.py::test_every_author_reaching_use_only_has_a_deliberate_label -q -p no:randomly  # the original check asserted that USER, SYSTEM and THIRD_PARTY each had an entry in the author-keyed label map. 0001 I12 made the label PAIR-keyed and deliberately REMOVED the USER and SYSTEM entries, because inheriting another class's origin string is the very failure this finding was about — so the old assertion now demands the defect. The property it protected is unchanged and is checked over the whole author x derivation matrix against an independent oracle, including that no unlabelled class is described as a third party's or the assistant's."),
 
     # ---- 0001 external round 3 (2026-08-23) — the round-3 fold, v5 --------
     ("0001", "external", 3, "0001-R3-1",
@@ -642,26 +590,19 @@ CLOSURES = [
      "evidence — same value grounds via the user edge, differing value "
      "retires via the ladder",
      "§3.2 affirmation row, I5, §7, §8; both shapes measured",
-     "$PY specs/evidence/0001/candidate_harness.py  "
-     "# vector_confirm_edge_refuses_non_assertable + "
-     "vector_affirmation_makes_the_fact_assertable"),
+     'PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i5_affirmation_grounds_and_partitions_and_confirm_refuses -q -p no:randomly'),
     ("0001", "external", 3, "0001-R3-2",
      "the on-disk guard was never activated: disk=10 reader=10 gives "
      "ValidationError mid-read, not a refusal — 0007 only refuses what a "
      "version bump tells it to",
      "§7 (SCHEMA 10->11 semantic bump), I13 refusal-at-open",
-     "grep -n 'SCHEMA_VERSION. 10 . 11\\|I13' "
-     "specs/0001-generated-content-trust-class.md && "
-     "$PY specs/evidence/0001/candidate_harness.py  "
-     "# vector_old_reader_refuses_a_newer_store_at_open"),
+     "grep -n 'I13' specs/0001-generated-content-trust-class.md && PYTHONPATH=src $PY -m pytest tests/test_0001_generated_content_trust.py::test_i13a_schema_v11_is_byte_identical_to_v10 tests/test_0001_generated_content_trust.py::test_i13_pre_assistant_reader_refuses_a_v11_store -q -p no:randomly"),
     ("0001", "external", 3, "0001-R3-3",
      "two matrix cells measured false (cross-class absorption stays "
      "blocked; 0012 persists restatements untouched) and the supersession "
      "rationale named the wrong mechanism",
      "§3.2 rewritten against the ladder/0012/0.4.1 as shipped; I3b, I10a",
-     "$PY specs/evidence/0001/candidate_harness.py  "
-     "# vector_cross_class_absorption_stays_blocked + "
-     "vector_same_class_restatement_persists_untouched"),
+     'PYTHONPATH=src $PY -m pytest tests/test_absorption.py::test_third_party_restatement_never_absorbs_user_fact tests/test_0001_generated_content_trust.py::test_i1_assistant_is_use_only_for_every_subject -q -p no:randomly'),
     ("0001", "external", 3, "0001-R3-4",
      "I6 named a test with no selection rule — selected=40 user_selected=[] "
      "under the natural fixture",

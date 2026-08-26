@@ -38,15 +38,64 @@ def _edge(author, derived=None, disclosure=Disclosure.USE_ONLY):
                                       disclosure=disclosure, observed_at=NOW))
 
 
-def test_every_author_reaching_use_only_has_a_label():
-    """The tripwire. Adding an EvidenceAuthor member without an origin string
-    must fail here, not surface as a false label in model context."""
-    missing = [a for a in EvidenceAuthor if a not in _ORIGIN_LABELS]
-    assert not missing, (
-        f"{[a.value for a in missing]} has no entry in _ORIGIN_LABELS. Any "
-        f"author that can reach use_only needs a deliberate origin string — "
-        f"see spec 0001 §12 (the v3 render gate). Do not let it inherit "
-        f"another class's label.")
+def _expected_label(author, derived):
+    """0001 §4b's decision order, written INDEPENDENTLY of the implementation
+    it checks — the capping axis first, then the author class.
+
+    This is an oracle, not a mirror: it is derived from the spec's prose and
+    is deliberately a different shape from `_origin_label`, so agreement
+    between them is evidence rather than tautology.
+    """
+    if derived is EvidenceAuthor.THIRD_PARTY:
+        return "third-party-derived"        # relayed claim — the cap wins
+    if author is EvidenceAuthor.THIRD_PARTY:
+        return "third-party-reported"
+    if author is EvidenceAuthor.ASSISTANT:
+        return "assistant-generated"
+    return "unverified-origin"              # deliberately unlabelled
+
+
+def test_every_author_reaching_use_only_has_a_deliberate_label():
+    """The tripwire, over the WHOLE domain rather than one axis of it.
+
+    0001 I12 made the label PAIR-keyed (author × derived_from), so asking
+    whether each author appears in `_ORIGIN_LABELS` no longer answers the
+    question — `USER` and `SYSTEM` deliberately have no entry now, because
+    inheriting another class's string is exactly the failure this file
+    exists to prevent, and their label comes from the fail-safe instead.
+    Membership in a dict was a PROXY for "has a deliberate label"; under
+    pair-keying the proxy reads false for cells that are correct.
+
+    So the matrix is enumerated: every author against every derivation,
+    compared to an independently written oracle. Enumeration has no cell
+    to overlook, and a new `EvidenceAuthor` member enters the
+    cross-product automatically — which is the tripwire the old test was
+    for, now armed on both axes.
+    """
+    derivations = [None] + list(EvidenceAuthor)
+    wrong = []
+    for author in EvidenceAuthor:
+        for derived in derivations:
+            got = _origin_label(_edge(author, derived))
+            want = _expected_label(author, derived)
+            if got != want:
+                wrong.append(f"({author.value}, "
+                             f"{derived.value if derived else None}): "
+                             f"got {got!r}, §4b says {want!r}")
+    assert not wrong, (
+        "the rendered origin disagrees with 0001 §4b's decision order at "
+        + str(len(wrong)) + " cell(s):\n  " + "\n  ".join(wrong))
+
+    # ...and no cell may be CONFIDENTLY WRONG, which is the property the
+    # labels exist for: material that is neither a third party's nor the
+    # assistant's must not be described as either.
+    for author in (EvidenceAuthor.USER, EvidenceAuthor.SYSTEM):
+        for derived in (None, EvidenceAuthor.USER, EvidenceAuthor.SYSTEM,
+                        EvidenceAuthor.ASSISTANT):
+            label = _origin_label(_edge(author, derived))
+            assert "third-party" not in label and "assistant" not in label, (
+                f"({author.value}, {derived}) renders {label!r} — an "
+                f"affirmatively false origin, which is worse than none")
 
 
 def test_an_unlabelled_author_fails_safe_rather_than_confidently():
@@ -60,17 +109,29 @@ def test_an_unlabelled_author_fails_safe_rather_than_confidently():
     assert "third-party" not in _origin_label(e)
 
 
-@pytest.mark.parametrize("author,derived", [
-    (EvidenceAuthor.THIRD_PARTY, None),
-    (EvidenceAuthor.USER, EvidenceAuthor.THIRD_PARTY),
-    (EvidenceAuthor.SYSTEM, EvidenceAuthor.THIRD_PARTY),
+@pytest.mark.parametrize("author,derived,label", [
+    (EvidenceAuthor.THIRD_PARTY, None, "third-party-reported"),
+    # 0001 I12 — CHANGED AT IMPLEMENTATION, deliberately. Under the §4b
+    # decision order the capping axis is read first, so a user's or the
+    # system's record DERIVED FROM a third party is a relayed claim and
+    # says so. Before pair-keying both rendered "third-party-reported",
+    # which named the relay as the reporter.
+    (EvidenceAuthor.USER, EvidenceAuthor.THIRD_PARTY,
+     "third-party-derived"),
+    (EvidenceAuthor.SYSTEM, EvidenceAuthor.THIRD_PARTY,
+     "third-party-derived"),
+    (EvidenceAuthor.ASSISTANT, None, "assistant-generated"),
+    (EvidenceAuthor.ASSISTANT, EvidenceAuthor.THIRD_PARTY,
+     "third-party-derived"),
 ])
-def test_output_is_unchanged_for_every_author_reachable_today(author, derived):
-    """This refactor is behaviour-preserving. Rendered text IS model context, so
-    'byte-identical' is the requirement, not 'equivalent'."""
+def test_the_rendered_origin_is_exact_for_every_reachable_author(
+        author, derived, label):
+    """Rendered text IS model context, so 'byte-identical' is the
+    requirement, not 'equivalent' — the whole line is pinned, not just
+    the label, because that is what reaches the model."""
     out = render_edges([_edge(author, derived)])
-    assert out == ("owes: 500 to Acme (since 2026-08-01) "
-                   "[third-party-reported; unconfirmed]")
+    assert out == (f"owes: 500 to Acme (since 2026-08-01) "
+                   f"[{label}; unconfirmed]")
 
 
 def test_mentionable_edges_carry_no_origin_marker():

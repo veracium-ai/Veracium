@@ -173,5 +173,28 @@
     "index:ix_contribution_ledger_op_key": "required",
     "table:source_revocations": "required",
     "index:ix_source_revocations_user_digest": "rebuildable"
+  },
+  "11": {
+    "table:edges": "required",
+    "index:ix_edges_user_active": "rebuildable",
+    "index:ix_edges_subj_rel": "rebuildable",
+    "table:episodes": "required",
+    "index:ix_episodes_user": "rebuildable",
+    "table:wiki": "required",
+    "table:write_counter": "required",
+    "table:confirmations": "required",
+    "index:ix_confirmations_edge": "rebuildable",
+    "table:consolidation_ops": "required",
+    "index:ix_consolidation_ops_user_state": "rebuildable",
+    "table:supersession_refusals": "required",
+    "index:ix_supersession_refusals_user": "rebuildable",
+    "table:supersession_operations": "required",
+    "table:store_identity": "required",
+    "table:contribution_ledger": "required",
+    "index:ix_contribution_ledger_survivor": "rebuildable",
+    "index:ix_contribution_ledger_source": "rebuildable",
+    "index:ix_contribution_ledger_op_key": "required",
+    "table:source_revocations": "required",
+    "index:ix_source_revocations_user_digest": "rebuildable"
   }
 }

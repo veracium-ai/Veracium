@@ -36,7 +36,10 @@ from .schema import EvidenceAuthor
 # An unrecognised value raises rather than defaulting — failing closed, because a
 # silent fallback to USER would be the worst possible default here.
 _AUTHOR = {"user": EvidenceAuthor.USER,
-           "third_party": EvidenceAuthor.THIRD_PARTY}
+           "third_party": EvidenceAuthor.THIRD_PARTY,
+           # specs/0001 §2d.6 (candidate): self-DEMOTION, not elevation —
+           # rung 1, use_only; "system" stays deliberately unavailable
+           "assistant": EvidenceAuthor.ASSISTANT}
 
 
 # -- tool implementations (testable; no MCP/LLM dependency of their own) ------

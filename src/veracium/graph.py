@@ -513,8 +513,15 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     relations = relations if relations is not None else DEFAULT_RELATIONS
     q = _tokens(query)
     scored: list[tuple[int, Edge]] = []
+    # specs/0001 I6 (candidate, R10-1): the relevance bit is carried FROM
+    # scoring — a user-subject edge is ELIGIBLE at baseline score with
+    # zero overlap, and eligibility is not relevance; the reserve below
+    # protects only query-RELEVANT assertable records
+    relevant_ids: set[str] = set()
     for e in store.edges(user_id, active_only=False):
         overlap = len(_tokens(f"{e.subject} {e.relation} {e.object} {e.note}") & q)
+        if overlap:
+            relevant_ids.add(e.id)
         if e.subject == "user":
             base = 1 + 2 * overlap      # eligible always; ranked by relevance
         else:
@@ -534,14 +541,42 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     surfaced, _info = collapse_for_render([e for _, e in scored])
     surfaced_ids = {e.id for e in surfaced}
     scored = [(sc, e) for sc, e in scored if e.id in surfaced_ids]
-    ordered = ([e for _, e in scored] if len(scored) <= max_edges
-               else _cover(scored, max_edges, coverage_share))
+    if len(scored) <= max_edges:
+        ordered = [e for _, e in scored]
+    else:
+        # specs/0001 I6 (candidate): reserve assertable slots on the FULL
+        # scored post-collapse set BEFORE truncation — a record _cover has
+        # already discarded cannot be recovered downstream (R5-2). Reserved
+        # records seed covered-day state; the coverage budget runs over the
+        # post-reserve remainder; backfill stays deterministic (R6-4).
+        # R10-1: the reserved set is the query-RELEVANT assertable
+        # records (spec: count_relevant_assertable) — an assertable edge
+        # seated only by user-subject eligibility must not displace a
+        # relevant record (the reviewer's executed counterexample:
+        # 'bananas' reserved first, a relevant fact dropped)
+        assertable = [e for _, e in scored
+                      if e.assertable and e.id in relevant_ids]
+        reserve_n = min(len(assertable), -(-max_edges // 4))
+        reserved = assertable[:reserve_n]
+        rid = {e.id for e in reserved}
+        rest_scored = [(sc, e) for sc, e in scored if e.id not in rid]
+        rest = _cover(rest_scored, max_edges - len(reserved),
+                      coverage_share,
+                      seed_days={e.valid_from.date() for e in reserved})
+        # R9-1: the output is CONSTRUCTED as reserved + remainder — the
+        # previous filter over the globally scored list preserved global
+        # rank, so with a NON-functional relation (no authority
+        # permutation to mask it) a reserved assertable record surfaced
+        # last, violating "reserved records are placed first". Both
+        # segments keep their scored order internally.
+        rest_ids = {e.id for e in rest}
+        ordered = reserved + [e for _, e in scored if e.id in rest_ids]
     # authority permutation WITHIN functional-contention groups; unrelated order unchanged
     return _permute_contention_groups(ordered, relations)
 
 
 def _cover(scored: list[tuple[int, Edge]], max_edges: int,
-           coverage_share: float) -> list[Edge]:
+           coverage_share: float, seed_days: set | None = None) -> list[Edge]:
     """Fill most of the budget by pure relevance, reserve the tail for time
     coverage.
 
@@ -580,7 +615,8 @@ def _cover(scored: list[tuple[int, Edge]], max_edges: int,
     reserve = int(max_edges * coverage_share)
     head, tail = max_edges - reserve, []
     chosen = [e for _, e in scored[:head]]
-    seen_days = {e.valid_from.date() for e in chosen}
+    # specs/0001 I6 (candidate): reserved records count as covered days
+    seen_days = {e.valid_from.date() for e in chosen} | (seed_days or set())
     rest = scored[head:]
     # first pass: highest-scoring candidate from each period not yet present
     for _, e in rest:
@@ -630,17 +666,25 @@ def _outcome_note(e: Edge) -> str:
 # mislabelling assistant content. `_ORIGIN_LABELS` has no entry for a new author
 # class, and `tests/test_render_origin.py` fails loudly if one appears without
 # one. That converts a note in a deferred spec into a tripwire.
+# specs/0001 I12 (candidate, R7-1): the §4b DECISION ORDER verbatim — the
+# capping axis first, no author class inheriting another's label. The
+# round-7 review executed the divergence: the first patch returned
+# "third-party-reported" for the derived case the spec spells
+# "third-party-derived", and kept USER/SYSTEM inheriting a label.
 _ORIGIN_LABELS: dict[EvidenceAuthor, str] = {
     EvidenceAuthor.THIRD_PARTY: "third-party-reported",
-    # USER/SYSTEM only reach use_only via derived_from=THIRD_PARTY, i.e. the
-    # claim is a third party's and the author is relaying it
-    EvidenceAuthor.USER: "third-party-reported",
-    EvidenceAuthor.SYSTEM: "third-party-reported",
+    EvidenceAuthor.ASSISTANT: "assistant-generated",
 }
 
 
 def _origin_label(e: Edge) -> str:
-    """Who this unverified material came from, in the model's words."""
+    """Who this unverified material came from, in the model's words.
+
+    specs/0001 I12 (candidate, Q5's ruling): the PAIR keys the label — the
+    capping axis first. assistant+derived_from=THIRD_PARTY is a third
+    party's claim relayed by the assistant, and must say so."""
+    if e.provenance.derived_from == EvidenceAuthor.THIRD_PARTY:
+        return "third-party-derived"
     label = _ORIGIN_LABELS.get(e.provenance.author_of_evidence)
     if label is None:
         # Fail SAFE, not confidently: an unlabelled author class must not

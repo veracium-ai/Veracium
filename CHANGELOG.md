@@ -1,5 +1,59 @@
 # Changelog
 
+## Unreleased
+
+- **0001 — THE GENERATED-CONTENT TRUST CLASS IS LIVE** (accepted at
+  external round 18, 2026-08-25, after eighteen rounds; implemented
+  2026-08-26). Assistant-authored material is now a first-class
+  evidence class rather than something a host must remember not to
+  mislabel: `EvidenceAuthor.ASSISTANT` sits at **rung 1** on the
+  supersession ladder — below `USER` (3) and `SYSTEM` (2), above
+  `THIRD_PARTY` (0) — and everything it authors is held at
+  **`USE_ONLY`: it may inform an answer and is never asserted as
+  fact.**
+
+  **BREAKING — rendered provenance labels.** Origin labels are now
+  keyed on the PAIR `(author, derived_from)` with the capping axis read
+  first, so a record DERIVED FROM a third party is described as a
+  relayed claim whoever carried it. Two label strings change for
+  material that already exists:
+
+  | author | `derived_from` | before | now |
+  |---|---|---|---|
+  | `user` | `third_party` | `third-party-reported` | `third-party-derived` |
+  | `system` | `third_party` | `third-party-reported` | `third-party-derived` |
+  | `assistant` | — | *(unreachable)* | `assistant-generated` |
+  | `user` / `system` | — | `third-party-reported` | `unverified-origin` |
+
+  Rendered text IS model context, so this is a behaviour change and not
+  a cosmetic one: the old string named the RELAY as the reporter. An
+  author with no deliberate label now fails safe to `unverified-origin`
+  rather than inheriting another class's string — **a confidently wrong
+  provenance is worse than a missing one**, because nothing downstream
+  can discount it.
+
+  **Store schema 10 → 11, stamp-only.** `SCHEMA_V11` is byte-identical
+  to `SCHEMA_V10`; the bump exists so a pre-`ASSISTANT` reader REFUSES a
+  v11 store at open with a typed `StoreVersionError(reason="newer")`
+  instead of failing mid-read on a value its enum does not know. v11
+  inherits all five accepted v10 manifestations by digest. Migration is
+  a stamp across the constructor, v6 and v9 routes; no data moves.
+
+  **Export FORMAT_VERSION 8 → 9.** A v9 export round-trips; an importer
+  at FORMAT ≤ 8 refuses it as newer with our message rather than a
+  validation traceback. On the DEFAULT import path an `ASSISTANT`
+  record arrives capped to `THIRD_PARTY` (the ratified 0005 boundary —
+  an imported file cannot carry its own trust); `restore=True`
+  preserves the author exactly.
+
+  **MCP/CLI author surfaces.** `remember(author="assistant")` is
+  accepted — a self-DEMOTION to rung 1, which is the honest declaration
+  for model-authored text. `"system"` remains deliberately unavailable
+  through those surfaces: it denotes veracium's own maintenance output,
+  and a trust-bearing field must not be settable by the party whose
+  trust it describes. An unrecognised author still fails CLOSED rather
+  than resolving to the highest-authority class.
+
 ## 0.15.0 — 2026-08-24
 
 - **0024 as amended by A1 — AUTHORSHIP BEFORE STRUCTURAL QUARANTINE,

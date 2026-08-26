@@ -239,19 +239,26 @@ provenance, never raised by it** · supersession by an equal-or-better-entitled
 party, never a lesser one.
 
 <!-- GENERATED:matrix -->
-`USER 3 > SYSTEM 2 > THIRD_PARTY 0`
+`USER 3 > SYSTEM 2 > ASSISTANT 1 > THIRD_PARTY 0`
 
 | prior | incoming | result | |
 |---|---|---|---|
 | `user` | `user` | allow | same class |
 | `user` | `third_party` | **BLOCK** |  |
 | `user` | `system` | **BLOCK** |  |
+| `user` | `assistant` | **BLOCK** |  |
 | `third_party` | `user` | allow |  |
 | `third_party` | `third_party` | allow | same class |
 | `third_party` | `system` | allow |  |
+| `third_party` | `assistant` | allow |  |
 | `system` | `user` | allow |  |
 | `system` | `third_party` | **BLOCK** |  |
 | `system` | `system` | allow | same class |
+| `system` | `assistant` | **BLOCK** |  |
+| `assistant` | `user` | allow |  |
+| `assistant` | `third_party` | **BLOCK** |  |
+| `assistant` | `system` | allow |  |
+| `assistant` | `assistant` | allow | same class |
 <!-- /GENERATED:matrix -->
 
 **Generated from `specs/ladder.py`.** v1 wrote this table by hand and inverted
@@ -260,18 +267,18 @@ direction, which would have let assistant-generated content retire a
 third-party record. **The document it was transcribed from had all four right.**
 
 <!-- GENERATED:coverage -->
-**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 144 rows over the shipped enum, not 9.** **26 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 26 have the cap absent on both sides.
+**The rule reads `min(author, derived_from)`, so the matrix is over the full product: 400 rows over the shipped enum, not 16.** **80 of them give a different answer than authorship alone.** Those are the decisions that *depend on* the derivation cap: omitting `derived_from` collapses them toward the author-only result — verified, **zero** of the 80 have the cap absent on both sides.
 
 | prior author/derived | incoming author/derived | result | |
 |---|---|---|---|
 | `user`/`—` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
 | `user`/`—` | `user`/`system` | **BLOCK** | differs from the author-only answer |
+| `user`/`—` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
 | `user`/`user` | `user`/`third_party` | **BLOCK** | differs from the author-only answer |
 | `user`/`user` | `user`/`system` | **BLOCK** | differs from the author-only answer |
-| `user`/`third_party` | `third_party`/`—` | allow | differs from the author-only answer |
-| `user`/`third_party` | `third_party`/`user` | allow | differs from the author-only answer |
+| `user`/`user` | `user`/`assistant` | **BLOCK** | differs from the author-only answer |
 
-*(first 6 of 26; the test enumerates all 144)*
+*(first 6 of 80; the test enumerates all 400)*
 <!-- /GENERATED:coverage -->
 
 **The nine non-`ASSISTANT` pairs were measured against the running code.**
@@ -493,14 +500,24 @@ states the existing gate already separates them — the incoming edge is
 `use_only` or `quarantined` and routes to the unverified block.
 
 <!-- GENERATED:contention -->
-**44 of the 144 states are refused. 8 of those put both edges in the SAME read partition** — the cases a reader sees as two competing values. The rest are already separated by the existing gate.
+**140 of the 400 states are refused. 56 of those put both edges in the SAME read partition** — the cases a reader sees as two competing values. The rest are already separated by the existing gate.
 
 | author shape | states | partition |
 |---|---|---|
-| `user` → `system` | 6 | both `mentionable` |
-| `user` → `user` | 2 | both `mentionable` |
+| `assistant` → `third_party` | 20 | both `mentionable` |
+| `user` → `system` | 7 | both `mentionable` |
+| `user` → `third_party` | 5 | both `mentionable` |
+| `system` → `third_party` | 5 | both `mentionable` |
+| `assistant` → `user` | 4 | both `mentionable` |
+| `assistant` → `system` | 4 | both `mentionable` |
+| `assistant` → `assistant` | 4 | both `mentionable` |
+| `user` → `user` | 3 | both `mentionable` |
+| `user` → `assistant` | 1 | both `mentionable` |
+| `system` → `user` | 1 | both `mentionable` |
+| `system` → `system` | 1 | both `mentionable` |
+| `system` → `assistant` | 1 | both `mentionable` |
 
-**Derived from the SHIPPED enum** (`user, third_party, system`) and the **production** `_disclosure_for`. v5 hard-coded four classes including `assistant`, which does not exist in `EvidenceAuthor`, and reimplemented disclosure — so its 256 extra states modelled a rule the runtime cannot execute. **When `0001` lands and the enum gains `ASSISTANT`, these tables regenerate with no edit here.**
+**Derived from the SHIPPED enum** (`user, third_party, system, assistant`) and the **production** `_disclosure_for`. v5 hard-coded four classes including `assistant`, which does not exist in `EvidenceAuthor`, and reimplemented disclosure — so its 0 extra states modelled a rule the runtime cannot execute. **When `0001` lands and the enum gains `ASSISTANT`, these tables regenerate with no edit here.**
 <!-- /GENERATED:contention -->
 
 **In those same-partition cases recall renders every distinct contested value**, the

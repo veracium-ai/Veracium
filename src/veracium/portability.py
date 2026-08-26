@@ -48,7 +48,7 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
 # specs/0019: v6 added the `ungrounded` flag (same refuse-don't-drop rule).
-FORMAT_VERSION = 8  # specs/0025 §2: the Edge.original_relation era — the
+FORMAT_VERSION = 9  # specs/0001 (candidate): the ASSISTANT era —  # specs/0025 §2: the Edge.original_relation era — the
                     # field appears in exports only when non-None (the
                     # None-omission rule keeps unaffected edge payloads
                     # byte-identical); a v7 export imports absent→None; OLD

@@ -24,8 +24,17 @@ from veracium.store import release_migration as rm
 from veracium.store import schema_version as sv
 from veracium.store.schema_version import PackageConsistencyError
 
-HEAD = sv.SCHEMA_VERSION            # 8
-MINT_BASE = HEAD - 1                # 7
+HEAD = sv.SCHEMA_VERSION
+MINT_BASE = HEAD - 1                # the ordinary one-step migration base
+
+# specs/0001 I13a: v11 is a STAMP-ONLY bump — SCHEMA_V11 is SCHEMA_V10 —
+# so "head stamp over the previous version's shape" stopped being a
+# mismatch and became, correctly, `current`. A shape-mismatch fixture has
+# to use a base whose SHAPE actually differs from head, and pinning that
+# to a literal would only defer the same breakage to the next stamp-only
+# bump. Derived from the schema table instead, so it follows the shapes.
+SHAPE_BASE = max(v for v in sv.SCHEMAS
+                 if v < HEAD and sv.SCHEMAS[v] != sv.SCHEMAS[HEAD])
 
 ATT = rm.MigrationAttestation(quiesced=True, backup_ref="backup-1")
 _OP = "op-00000000-0000-4000-8000-000000000000"
@@ -252,8 +261,9 @@ def test_preflight_matrix_total():
     assert tuple(r)[:5] == ("invalid-version", False, False, "unaccepted",
                             None)
 
-    # stamped-shape-mismatch, head-stamped: v8 stamp over a v7 shape
-    p = _store_at(MINT_BASE)
+    # stamped-shape-mismatch, head-stamped: a HEAD stamp over an older
+    # SHAPE (not merely an older version — see SHAPE_BASE above)
+    p = _store_at(SHAPE_BASE)
     c = sqlite3.connect(p)
     c.execute(f"PRAGMA user_version = {HEAD}")
     c.commit()
