@@ -696,8 +696,10 @@ REVIEWS = [
          "which 31 = 0.017%. Spec-Requires gains 0008, 0012 and 0016. "
          "STILL OUTSTANDING and disclosed: the executable reference/vector "
          "model over subject x basis x source-presence x authority x "
-         "contention x principal is NOT in this package. Sealed AFTER this "
-         "row, sha pinned on return", findings=0),
+         "contention x principal is NOT in this package. Sealed as "
+         "`0011-v2-20260826T2255Z` at commit 6410efb, sha256 "
+         "cb5cdb3fa5df8f6ec292db38362d72992b97af30691ba559d38db34909f5998a",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
