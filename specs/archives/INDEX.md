@@ -4,7 +4,7 @@
 
 # Review archives
 
-**251 archives, 606261 KB.** Each is the exact package sent for one
+**250 archives, 599716 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -275,7 +275,6 @@ existed rather than a way to check it.
 | `0024-0025-v22-20260824T1238Z.tar.gz` | 0024+0025 | v22 | 2026-08-24 12:38Z | 465 | 6489 KB | `b07dd2c88efe1a82…` |
 | `0024-0025-v23-20260824T1429Z.tar.gz` | 0024+0025 | v23 | 2026-08-24 14:29Z | 466 | 6493 KB | `920fc792d04300c1…` |
 | `0024-0025-v24-20260824T1517Z.tar.gz` | 0024+0025 | v24 | 2026-08-24 15:17Z | 468 | 6500 KB | `63bfcc2a8108f1e5…` |
-| `0026-v1-20260826T1130Z.tar.gz` | 0026 | v1 | 2026-08-26 11:30Z | 481 | 6545 KB | `71da9c233be22495…` |
 
 **To verify a copy you were sent:**
 
@@ -358,7 +357,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0024-0025 | v22 | 22 | `0024-0025-v22-20260824T1238Z.tar.gz` | `b07dd2c88efe1a82…` |
 | 0024-0025 | v23 | 23 | `0024-0025-v23-20260824T1429Z.tar.gz` | `920fc792d04300c1…` |
 | 0024-0025 | v24 | 24 | `0024-0025-v24-20260824T1517Z.tar.gz` | `63bfcc2a8108f1e5…` |
-| 0026 | v1 | 1 | `0026-v1-20260826T1130Z.tar.gz` | `71da9c233be22495…` |
+| 0026 | v1 | 1 | **0 sidecars — LINEAGE GAP** | — |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 
@@ -368,5 +367,6 @@ Superseded/discarded seals (disclosed, deliberately un-witnessed):
 - 0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)
 - 0024-0025-v13-20260823T2131Z (sealed, discarded unsent — research's §11 fidelity pass added the marker-witness note and the cell-A denominator fix before dispatch)
 - 0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's validator co-check found the canary file unchecked; the validator grew unknown-member refusal + the canary check before dispatch)
+- 0026-v1-20260826T1130Z (sealed, discarded unsent — §6a's acceptance gate was MEASURED an hour later, and the measurement amended §3a; a package whose dispatch row said the gate was unmeasured would have understated what it carries)
 - 0001-v18-20260825T2101Z (sealed, discarded unsent — the terminus note was added in-archive so it ships WITH the package that asks its question, rather than following it by a side channel)
 

@@ -55,7 +55,7 @@ PACKAGES = {
     # 0026 label/value agreement — first external round, same shape as 0011:
     # both internal rounds recorded, governed from v1.
     "0026": {
-        "v1": (1, {"0026": "v3"}),
+        "v1": (1, {"0026": "v4"}),
     },
     "0022-0023": {
         "v17": (17, {"0022": "v18", "0023": "v18"}),
@@ -125,7 +125,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
+IN_FLIGHT: tuple = ("0026-v1",)   # C8-1/C9-1: the ONE declared seal
+                                   # (0026 reseal, measurement aboard);
+                                   # cleared by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -138,6 +140,10 @@ DISCARDED_PRE_ROUND = (
     "0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's "
     "validator co-check found the canary file unchecked; the validator "
     "grew unknown-member refusal + the canary check before dispatch)",
+    "0026-v1-20260826T1130Z (sealed, discarded unsent — §6a's acceptance "
+    "gate was MEASURED an hour later, and the measurement amended §3a; a "
+    "package whose dispatch row said the gate was unmeasured would have "
+    "understated what it carries)",
     "0001-v18-20260825T2101Z (sealed, discarded unsent — the terminus "
     "note was added in-archive so it ships WITH the package that asks "
     "its question, rather than following it by a side channel)",

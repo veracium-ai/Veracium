@@ -15,7 +15,7 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
+| **Version** | **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
 | **External review** | required — adds a disclosure floor on the ingest write path |
@@ -158,12 +158,39 @@ audit itself (the presumed-faking rule applied to the checker).
 
 **The lexicon contract carries NAMED DIRECTIONAL cells, blocking-grade
 (internal round 1, Q1 ruling): inbound attribution ("my doctor said…",
-"according to the vet", "as stated by the vet") MATCHES;
-first-person-OUTBOUND phrasing ("I told my doctor…", "as I said to…")
-must NEVER match — the user recounting what they said is first-person
-testimony, and §6a's 2% false-positive bar will be won or lost on
-exactly this distinction.** The directional cells are part of the
-lexicon's own test surface (V1), not left to lexicon-entry judgement.
+"according to the vet", "as stated by the vet") MATCHES; OUTBOUND
+phrasing — the user as the one doing the attributing — must NEVER
+match, because the user recounting what they said is first-person
+testimony, and §6a's false-positive bar is won or lost on exactly this
+distinction.**
+
+**The test is WHOSE SPEECH IS BEING REPORTED, not which pronoun carries
+it (§6a measurement, 2026-08-26).** The outbound cells were first
+written in the first person alone — *"I told my doctor…"*, *"as I said
+to…"* — and measured against the extraction cache that form suppressed
+**exactly 0 of 68,479 grounded first-person triples**, because the
+extractor does not write in the user's voice. It narrates them:
+*"user confirmed no dietary restrictions"*, *"project mentioned by
+user"*. Every one of those was being read as INBOUND — the user's own
+word treated as somebody else's claim, which is the failure the bar
+exists to prevent, and it would have been shipped as a clean result.
+So the outbound cells are stated over the SUBJECT rather than the
+pronoun:
+
+| outbound cell | example | why |
+|---|---|---|
+| first-person subject | "I told my doctor…" | the user speaking |
+| **the user in the third person** | **"user confirmed no allergies"** | **the extractor's actual voice** |
+| the user named in a frame | "according to the user…" | same, framed |
+| first-person self-possessive | "in my own words…" | same, possessive |
+| **no subject at all** | **"recommended brand", "no diet mentioned"** | **a bare participle attributes nothing to anyone** |
+
+A possessive attached to a THIRD PARTY stays inbound — *"my doctor
+said"* is the commonest relay shape there is, and reading `my` as a
+first-person signal would suppress it.
+
+The directional cells are part of the lexicon's own test surface (V1),
+not left to lexicon-entry judgement.
 
 ### 3b. The laundering floor (V3) — the one disposition change
 
@@ -239,8 +266,26 @@ counts; telemetry whitelists them under the consent contract.
 
 ### 6a. The acceptance measurement gate
 
-Before this spec is accepted, the lexicon's false-positive rate is
-MEASURED on the existing extraction cache (research's corpus, counts
+**MEASURED 2026-08-26 — THE GATE IS CLEARED at 0.61% against the 2%
+bar, and the pre-commitment fired on the way there.** The first lexicon
+came in at **8.20%** of grounded first-person triples, so it NARROWED,
+which is what this section says happens. Both passes are recorded, not
+only the one that passed: `specs/evidence/0026/FP-MEASUREMENT.md`, with
+the runnable pass (`measure_false_positives.py`), the detector
+(`relay_lexicon.py`), its adversarial cell matrix
+(`validate_lexicon.py`) and a counts-only aggregate carrying the cache
+manifest, so every figure recomputes without the corpus. 0.61% is an
+UPPER BOUND, not an estimate — every fire is a *candidate* false
+positive, and deciding which of its own fires are false with the
+detector would be self-assertion; hand-labelling a sample puts the true
+rate near 0.4%. The M-2 coverage denominator is 138 of 3,898
+`third_party_claim` notes = **3.5%**, itself a lower bound on the
+source-naming share M-2 names, since that subset cannot be identified
+without labelling the whole population. Research co-verifies the run.
+
+The standing rule, unchanged: before this spec is accepted, the
+lexicon's false-positive rate is MEASURED on the existing extraction
+cache (research's corpus, counts
 only — the cache never ships): the share of GENUINELY-OWN facts the
 lexicon would floor. The spec pre-commits: **if that rate exceeds 2%
 of grounded first-person triples, the lexicon narrows before v1
