@@ -23,7 +23,7 @@ is the number that decides what can be built.
 | **0008** | what may clear `needs_confirmation` | `accepted` | 2026-08-22 | 0 | 4 | 0 | 0 | 1 | 1/1 |
 | **0009** | outcome authorship is append-only history | `accepted` | 2026-08-16 | 0 | 5 | 0 | 0 | 1 | 1/1 |
 | **0010** | crash-safe consolidation | `accepted` | 2026-08-07 | 0 | 7 | 0 | 0 | 2 | 2/2 |
-| **0011** | subject-scoped entitlement | `draft` | 2026-08-24 | 0 | 0 | 0 | 0 | 1 | 0/1 |
+| **0011** | subject-scoped entitlement | `draft` | 2026-08-24 | 2 | 0 | 0 | 0 | 1 | 0/1 |
 | **0012** | who may renew a fact's currency | `accepted` | 2026-08-10 | 1 | 14 | 0 | 0 | 1 | 1/1 |
 | **0013** | on-disk store migrations | `accepted` | 2026-08-07 | 0 | 29 | 0 | 0 | 0 | — |
 | **0014** | maintenance attribution — a consumed contributor must leave a recoverable record | `accepted` | 2026-08-22 | 0 | 16 | 0 | 0 | 0 | — |
@@ -38,7 +38,7 @@ is the number that decides what can be built.
 | **0023** | non-revival under maintenance — a revoked source cannot re-enter (A3b) | `accepted` | 2026-08-25 | 3 | 21 | 3 | 0 | 0 | — |
 | **0024** | the user's own words are not third-party testimony (L1) | `accepted` | 2026-08-25 | 2 | 24 | 3 | 0 | 0 | — |
 | **0025** | the relation vocabulary is closed, or it is not a vocabulary (L2) | `accepted` | 2026-08-25 | 2 | 24 | 2 | 0 | 0 | — |
-| **0026** | label/value agreement check | `draft` | 2026-08-24 | 0 | 0 | 2 | 0 | 0 | — |
+| **0026** | label/value agreement check | `draft` | 2026-08-24 | 2 | 0 | 2 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.

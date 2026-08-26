@@ -2145,6 +2145,21 @@ def test_new_closure_evidence_is_behavioral():
         ("0023", "external"): 6, ("0023", "internal"): 2,
         ("0024", "external"): 22,   # A1-R22-1 is the last pre-P4 row
         ("0025", "external"): 11,
+        # 0011 and 0026 are DRAFTS — accepted-but-unimplemented is not their
+        # state; they are not implemented at all. P4 exists because a grep
+        # for a diagnostic string can be satisfied by a no-op artifact
+        # CONTAINING that string, which is a real substitution when there is
+        # behaviour the evidence could have run instead. For a spec whose
+        # folds live only in its own text, the document IS the artifact and
+        # reading it is the evidence, not a proxy for it.
+        #
+        # Bounded deliberately at the rounds that exist: internal 1-2 on each
+        # line (0011's round 1 predates P4's 2026-08-24 adoption outright).
+        # Round 3 onward is governed, and so is every external round — which
+        # is where these specs are going next, and where behaviour will exist
+        # to point at. Growing a cutoff is meant to be a visible diff.
+        ("0011", "internal"): 2,
+        ("0026", "internal"): 2,
     }
     offenders = []
     for row in closure_findings.CLOSURES:

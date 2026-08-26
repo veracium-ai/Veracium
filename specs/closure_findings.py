@@ -1609,4 +1609,99 @@ CLOSURES = [
      "sys.exit(0 if len(names) == 1 else 1)\"  "
      "# the reviewer's own round-12 check, adopted: exactly ONE assignment "
      "PROVES the single authority — a grep only located its comment"),
+
+    # ---- 0011 internal round 1 (research, 2026-08-23). The spec is NOT
+    # implemented, so the artifact that carries each fold is the spec text
+    # itself; the evidence reads it. Where the fold cites the finding by
+    # name, the command anchors on that citation.
+    ("0011", "internal", 1, "0011-I1-M1",
+     "§2c cited 0024 Q3 cells that are NOT on main post-revert, and pointed "
+     "at a §3b the spec did not have (its sections ran §1, §2, §3, §2c, §3c)",
+     "the citation names the ACCEPTED surface as amended by A1 rather than "
+     "shipped tests, and the section ordering is repaired so §3b exists and "
+     "the reference resolves",
+     "grep -n 'as amended by A1, landed' specs/0011-subject-scoped-entitlement.md && "
+     "grep -nE '^## 3b\\.' specs/0011-subject-scoped-entitlement.md"),
+
+    ("0011", "internal", 1, "0011-I1-M2",
+     "E5 bound the correction's ARGUMENTS but not the ACTOR, so any caller "
+     "reaching correct() obtained a valid capability and §2c's adversarial "
+     "cell was closed only against forge/replay of a DIFFERENT correction",
+     "E-Q4 ruled YES: the acting principal is the fifth tuple element, "
+     "verified inside the transaction like the rest",
+     "grep -n \"E5's fifth element\" specs/0011-subject-scoped-entitlement.md"),
+
+    ("0011", "internal", 1, "0011-I1-M3",
+     "§9.3's broad form (any user-authored retirement of other-subject "
+     "sourced fact refuses pending confirmation) had no measured "
+     "constituency",
+     "keep the NARROW cell for v1 and add a measurement rider to §4b, so "
+     "counting the refusal rows post-release is a design obligation rather "
+     "than a hope",
+     "grep -n 'MEASUREMENT RIDER' specs/0011-subject-scoped-entitlement.md"),
+
+    ("0011", "internal", 1, "0011-I1-m4",
+     "§1 quoted the 2026-08-02 split-date defect state in the present tense, "
+     "though 0003 shipped in v0.6.0 — a cold reader would file a live defect",
+     "marked as the historical motivation, at the time of the split",
+     "grep -n 'At the time of the split' specs/0011-subject-scoped-entitlement.md"),
+
+    ("0011", "internal", 1, "0011-I1-m5",
+     "the M7 site was cited by line number, which had already moved",
+     "cited by SYMBOL instead, which does not drift",
+     "grep -n 'at the symbol .Memory.correct' specs/0011-subject-scoped-entitlement.md && "
+     "! grep -n '__init__.py:1362' specs/0011-subject-scoped-entitlement.md"),
+
+    ("0011", "internal", 1, "0011-I1-m6",
+     "§4d's derived(from_class) had an OPEN domain — an unknown or malformed "
+     "value had no defined behaviour (the week's validator lesson: refuse the "
+     "unknown, do not merely cover the known)",
+     "the domain is CLOSED and validated at construction, failing closed to "
+     "the derived(THIRD_PARTY) floor, with S5 carrying the unknown-value cell",
+     "grep -n 'CLOSED domain, validated at construction' specs/0011-subject-scoped-entitlement.md"),
+
+    # ---- 0026 internal round 1 (research, 2026-08-24).
+    ("0026", "internal", 1, "0026-I1-M1",
+     "§1's census figures were the PRE-correction values (183,416 / 1,637 / "
+     "41.5%); the shipped script over the cache says 183,417 / 1,644 / 41.7% "
+     "— a value that drifted from its source artifact and was consumed by "
+     "label, which is this spec's own thesis in miniature",
+     "exact script output in both carriers, with the drift itself recorded "
+     "as the provenance note",
+     "grep -c '183,417' specs/0026-label-value-agreement.md && grep -c '41.7' specs/0026-label-value-agreement.md"),
+
+    ("0026", "internal", 1, "0026-I1-M2",
+     "§8 promised a SEMANTIC property — a relayed claim that names its "
+     "source is never asserted — delivered by a LEXICAL mechanism, so a note "
+     "reading 'the vet mentioned this' falsifies the claim while every "
+     "V-invariant stays green",
+     "the §8 sentence is scoped to the lexicon (a mechanical surface) and "
+     "§6a's run reports the coverage denominator, so the claim ships as a "
+     "measured fraction of the naming population rather than an implied whole",
+     "grep -n 'the promise is scoped to the LEXICON' specs/0026-label-value-agreement.md && "
+     "grep -n 'coverage denominator' specs/0026-label-value-agreement.md"),
+
+    ("0026", "internal", 1, "0026-I1-m3",
+     "§3b described the floor's position two ways (after the pipeline and "
+     "before the accepted floors, versus as one more accepted floor in step "
+     "3), reading as two different positions",
+     "monotonicity dissolves it — floors only LOWER, so order within the "
+     "floor set is irrelevant; the spec says that and picks one description",
+     "grep -n 'floors only LOWER' specs/0026-label-value-agreement.md"),
+
+    ("0026", "internal", 1, "0026-I1-m4",
+     "a POINTER, not a defect: when the L3 round takes the render question, "
+     "research's baseline records are prior evidence — B02's answer already "
+     "rendered attribution from content while the edge sat MENTIONABLE",
+     "recorded against V-Q1 so the L3 round starts from the existing "
+     "evidence; no spec change was required and none was made",
+     "grep -n 'V-Q1' specs/0026-label-value-agreement.md"),
+
+    ("0026", "internal", 1, "0026-I1-m5",
+     "the stale 183,416 appeared once more in the demotion bullet — the M-1 "
+     "sweep had to catch EVERY carrier, not the first",
+     "swept; the only surviving occurrences are inside the provenance note "
+     "that quotes the old figures deliberately, which this command allows "
+     "for by name rather than by pretending the string is gone",
+     "! grep -n '183,416' specs/0026-label-value-agreement.md | grep -v 'v1 carried'"),
 ]

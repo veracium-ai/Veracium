@@ -573,4 +573,57 @@ REVIEWS = [
     dict(spec="0024", round=24, kind="external", date="2026-08-24", verdict="SENT (package `0024-0025-v24` — candidate v19, §22 maps the fold; the TERMINUS PROPOSAL is now an archive member). A1-R23-1: the closer requires [ \\t]* exactly, and the compact whitespace oracle (five failing suffixes + the tab positive control) joined the matrix — its vertical-tab cell immediately caught the second same-class discrepancy (str.splitlines() breaks on \\v/\\f; CommonMark does not; the parser splits on true newlines only) BEFORE it could become a round. PROCESS-R23-1: P1 binds the artifact reference inside the named test's AST body, P4 requires an actual pytest/named-script invocation refusing -c, both with the reviewer's planted mutants as in-gate self-tests; PROCESS.md records the adopted rules. PACKAGE-R23-1: specs/evidence/0024/A1-CHECKER-TERMINUS-PROPOSAL.md ships in-archive, inventoried; the v23 accompanies-claims corrected in place. Sealed AFTER this row, sha pinned on return", findings=0),
     dict(spec="0025", round=24, kind="external", date="2026-08-24", verdict="SENT (package `0024-0025-v24`). 0025 remains ACCEPTED on X1-X13; the confirmed co-owned interface rides unchanged", findings=0),
     dict(spec="0024", round=24, kind="external", date="2026-08-24", raised=["EVIDENCE-M24-1", "PROCESS-M24-1"], verdict="🏁 A1 ACCEPTED (package `0024-0025-v24`, sha 63bfcc2a verified) — 0024 approved on the frozen U1-U7 surface incl. revised U2; THE FINITE-ACCEPTANCE BOUNDARY: subsequent checker defects are evidence maintenance and do not reopen the design. Terminus ruling: proposal 2 (accept with evidence maintenance), resting on the long-stable architecture and executable U-surface, not on P1/P4 being airtight. The three co-owned 0025 replacements folded ATOMICALLY with the status change per instruction. All round-23 findings closed. Two NONBLOCKING maintenance findings, folded under the maintenance regime: EVIDENCE-M24-1 the space-positive control was a tautology ('!= 0 or True' — the reviewer's [\\t]* grammar mutant left the full matrix green); PROCESS-M24-1 P1/P4 are convention checks, not the claimed guarantee (a docstring-only reference and '$PY script && grep' both passed) — the documented claims narrowed to what the gates establish. Twelve amendment rounds (13-24) from A1's first send to acceptance; twenty-four rounds lifetime on the line", findings=2),
+    # ---- 0011 subject-scoped entitlement: the internal rounds, recorded.
+    # These happened in the research session and were never entered here, so
+    # the line had NO review history in the source the package identity is
+    # derived from — which is why it could not be sealed. The round-1 record
+    # is `proposals/spec-0011-internal-review-r1.md` (shared area).
+    dict(spec="0011", round=1, kind="internal", date="2026-08-23",
+         raised=["0011-I1-M1", "0011-I1-M2", "0011-I1-M3",
+                 "0011-I1-m4", "0011-I1-m5", "0011-I1-m6"],
+         verdict="PASS WITH AMENDMENTS (research) — the design is right; "
+         "three moderates, three minors, both §9 questions answered and "
+         "E-Q4 ruled. Method was a full read plus code verification on main "
+         "@ 83d84c9: the M7-correct defect confirmed live, the ingest "
+         "completeness check and the canonical-subject helper both confirmed "
+         "present. M-1 currency and a broken internal reference (§2c cited "
+         "0024 Q3 cells that post-revert are NOT on main, and pointed at a "
+         "§3b this spec did not then have). M-2 E-Q4 RULED YES — the acting "
+         "principal is E5's fifth element: the authorisation bound the "
+         "arguments but not the ACTOR, so any caller reaching correct() "
+         "obtained a valid capability and the §2c adversarial cell was "
+         "closed only against forge/replay of a DIFFERENT correction. M-3 "
+         "§9.3 RULED keep the narrow cell for v1 with a measurement rider — "
+         "ship narrow, COUNT the §4b refusal rows post-release, revisit "
+         "broad on an operator's numbers rather than on taste",
+         findings=6),
+    dict(spec="0011", round=2, kind="internal", date="2026-08-24",
+         verdict="PASS (research) — diff-verified fold of round 1, no new "
+         "findings. External-ready", findings=0),
+
+    # ---- 0026 label/value agreement: same situation, same remedy.
+    # Round-1 record: `proposals/spec-0026-internal-review-r1.md`.
+    dict(spec="0026", round=1, kind="internal", date="2026-08-24",
+         raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
+                 "0026-I1-m4", "0026-I1-m5"],
+         verdict="PASS WITH AMENDMENTS (research) — the design is right and "
+         "honours every discipline it inherits; two moderates, three minors, "
+         "all three §9 questions ruled. The census was RE-DERIVED from the "
+         "cache with the shipped script rather than recognised. M-1: §1's "
+         "figures were the pre-correction values (183,416 / 1,637 / 41.5% "
+         "against the script's 183,417 / 1,644 / 41.7%) — and the "
+         "provenance of the error is this spec's own thesis in miniature, a "
+         "value that drifted from its source artifact and was then consumed "
+         "by label. M-2: §8 promised a SEMANTIC property (a relayed claim "
+         "that names its source is never asserted) delivered by a LEXICAL "
+         "mechanism, so a note reading 'the vet mentioned this' would "
+         "falsify the claim while every V-invariant stayed green — the "
+         "sentence is scoped to the lexicon now and §6a reports the "
+         "coverage denominator with it. Q1/Q2/Q3 ratified",
+         findings=5),
+    dict(spec="0026", round=2, kind="internal", date="2026-08-24",
+         verdict="PASS (research) — diff-verified fold @ e60206e, no new "
+         "findings; the provenance note took research's symmetric wording "
+         "(both the drift and the trusting citation named as the failure "
+         "mode). External-ready", findings=0),
 ]
