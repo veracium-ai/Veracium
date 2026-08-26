@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.16.0 — 2026-08-26
 
 - **0001 — THE GENERATED-CONTENT TRUST CLASS IS LIVE** (accepted at
   external round 18, 2026-08-25, after eighteen rounds; implemented
@@ -45,6 +45,24 @@
   record arrives capped to `THIRD_PARTY` (the ratified 0005 boundary —
   an imported file cannot carry its own trust); `restore=True`
   preserves the author exactly.
+
+  **Measured** (`bench/run_bench.py --live`, then `--compare`: no
+  regressions). Eval 5/5 with **injection asserts 0**; robustness over
+  the 20k sample — 0 internal crashes, 0 cross-user leaks, 0 injection
+  leaks, 0 malformed edges. The engine tier carries a **real ~6% cost
+  on the write paths** and it is stated rather than absorbed into the
+  1.5× flag it comfortably clears: `remember` 12.732 → 13.576 ms p50
+  (×1.066) and `record_outcome` 12.869 → 13.648 ms (×1.061) against
+  0.15.0's quiet baseline. Read paths are flat (`recall` ×1.019,
+  `recall_budgeted` ×0.955). The write cost is where the work landed —
+  pair-keyed label derivation, the widened author enum on the
+  supersession ladder, and v11 stamp handling.
+
+  Both engine records ship. 0.15.0's release bench was contaminated by a
+  concurrent test run and read 46% high, so this release re-measured the
+  engine tier a second time with the load sampled either side; the two
+  runs agree within 1.3%, which is what establishes the 6% as product
+  cost and not contention. Trust canary failures: 0.
 
   **MCP/CLI author surfaces.** `remember(author="assistant")` is
   accepted — a self-DEMOTION to rung 1, which is the honest declaration
