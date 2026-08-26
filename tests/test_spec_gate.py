@@ -762,6 +762,45 @@ def test_a_spec_claiming_a_test_is_measured_today_must_have_it():
     assert not bad, "\n".join(bad)
 
 
+def test_the_sdist_excludes_every_locally_excluded_file():
+    """A file kept out of the REPO must also be kept out of the RELEASE.
+
+    hatchling builds the sdist from the working tree and honours
+    `.gitignore`, but NOT `.git/info/exclude`. So a file that is
+    deliberately untracked via the local exclude list is invisible to
+    `git status`, absent from GitHub, and STILL SHIPPED to PyPI — where a
+    version cannot be withdrawn and re-cut.
+
+    Caught during the 0.16.0 release: `CLAUDE.md` (internal multi-session
+    workflow, explicitly local-only) was in a built, twine-checked sdist,
+    one command short of being published.
+
+    The two lists are therefore bound: anything `.git/info/exclude` keeps
+    out of the repo must appear in the sdist's exclude list.
+    """
+    import re
+    root = Path(__file__).resolve().parent.parent
+    exclude_file = root / ".git" / "info" / "exclude"
+    if not exclude_file.exists():          # a plain export, not a checkout
+        pytest.skip("no .git/info/exclude — not a git checkout")
+    local = [l.strip() for l in exclude_file.read_text().splitlines()
+             if l.strip() and not l.strip().startswith("#")]
+    if not local:
+        return
+    pyproject = (root / "pyproject.toml").read_text()
+    m = re.search(r"\[tool\.hatch\.build\.targets\.sdist\](.*?)(?=\n\[|\Z)",
+                  pyproject, re.S)
+    assert m, ("pyproject declares no [tool.hatch.build.targets.sdist] "
+               "section, so nothing constrains what the release tarball "
+               "carries — and `.git/info/exclude` lists " + str(local))
+    declared = set(re.findall(r'"([^"]+)"', m.group(1)))
+    missing = [pat for pat in local if pat not in declared]
+    assert not missing, (
+        f"these are excluded from the REPO but not from the SDIST, so they "
+        f"would be published to PyPI: {missing}. Add them to "
+        f"[tool.hatch.build.targets.sdist] exclude in pyproject.toml.")
+
+
 def test_no_spec_names_a_module_or_script_that_does_not_exist():
     """A spec that cites `specs/<name>.py` must cite one that is there.
 

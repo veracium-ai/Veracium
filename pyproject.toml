@@ -33,3 +33,16 @@ veracium-mcp = "veracium.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/veracium"]
+
+# The sdist is the whole repo, and hatchling honours `.gitignore` but NOT
+# `.git/info/exclude` — so a file kept out of the repo by the LOCAL exclude
+# list still lands in the published tarball. `CLAUDE.md` is exactly that: it
+# is internal multi-session workflow, deliberately untracked, and it was on
+# its way to PyPI, where a release cannot be withdrawn and re-cut.
+#
+# Keep this list in step with `.git/info/exclude` —
+# `test_the_sdist_excludes_every_locally_excluded_file` fails if they drift.
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "CLAUDE.md",
+]
