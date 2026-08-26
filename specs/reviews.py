@@ -677,7 +677,8 @@ REVIEWS = [
          "Research co-verifies the run. The 1130Z seal of this same "
          "version is disclosed discarded-unsent — it predated the "
          "measurement by an hour and its row said the gate was unmeasured. "
-         "Sealed AFTER this row, sha pinned on return",
+         "Sealed as `0026-v1-20260826T1432Z` at commit 738007f, sha256 "
+         "87f10c896c93e8fa4b715fd30a3600020cdca4e0a25e75b8e51204c90a982596",
          findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
