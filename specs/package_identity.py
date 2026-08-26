@@ -385,19 +385,35 @@ def render_candidate_lines(line: str, version: str, indent: str = INDENT) -> str
     PACKAGE-R13-1: the STATUS word is a fact too — derived per spec.
     """
     cands = candidates(line, version)
-    names = {"0001": "specs/0001-generated-content-trust-class.md",
-             "0022": "specs/0022-source-revocation.md",
-             "0023": "specs/0023-non-revival-under-maintenance.md",
-             "0024": "specs/0024-authorship-before-structural-quarantine.md",
-             "0025": "specs/0025-relation-vocabulary-enforcement.md"}
     out = []
     for i, spec in enumerate(sorted(cands)):
-        if spec not in names:
-            raise KeyError(f"no filename known for spec {spec!r}")
-        out.append(f"{'' if i == 0 else indent}{names[spec]} — "
-                   f"{_spec_status(names[spec])} {cands[spec]} "
+        name = _spec_filename(spec)
+        out.append(f"{'' if i == 0 else indent}{name} — "
+                   f"{_spec_status(name)} {cands[spec]} "
                    f"(external candidate)")
     return "\n".join(out)
+
+
+def _spec_filename(spec: str) -> str:
+    """The spec's path, DERIVED from the tree rather than recalled.
+
+    This was a hand-maintained dict of five entries, and it refused the
+    first seal of a sixth line with `no filename known` — after the suite
+    was measured and the archive built, because nothing before that point
+    consults it. A list of filenames maintained beside the files it names
+    drifts the moment a file is added; the tree already knows.
+
+    Strict on purpose: exactly one `specs/NNNN-*.md` must match. Zero means
+    the packaged spec does not exist; more than one means the id is
+    ambiguous and a carrier would have to guess, which is the failure this
+    function exists to avoid.
+    """
+    hits = sorted(HERE.glob(f"{spec}-*.md"))
+    if len(hits) != 1:
+        raise KeyError(
+            f"spec {spec!r} matches {len(hits)} files in specs/ "
+            f"({[h.name for h in hits]}) — exactly one is required")
+    return f"specs/{hits[0].name}"
 
 
 def validate() -> list:
