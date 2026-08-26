@@ -611,8 +611,10 @@ REVIEWS = [
          "rider, plus three minors) and round 2 (PASS, diff-verified, no "
          "new findings). All six findings carry closure rows. v4 also "
          "folds dev's own pre-send audit (2026-08-24), which is why the "
-         "candidate is v4 and not the v3 the queue recorded. Sealed AFTER "
-         "this row, sha pinned on return", findings=0),
+         "candidate is v4 and not the v3 the queue recorded. Sealed as "
+         "`0011-v1-20260826T1103Z` at commit 0120c93, sha256 "
+         "05c23952b9cd7d62bb822a2872ed38181922f0a656aebd7ea560e2939245e3ae",
+         findings=0),
 
     dict(spec="0011", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold of round 1, no new "
