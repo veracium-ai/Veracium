@@ -1,0 +1,64 @@
+0026 label/value agreement check — round-__ROUND__ external-review package (__VERSION__)
+========================================================================================
+package built:   __TS__ (UTC)
+source commit:   __COMMIT__   (PACKAGE_MANIFEST.txt names the same one; the
+                 sealer REFUSES if they differ)
+__CANDIDATES__
+                 __HISTORY__
+                 (C5-1: history and the what-changed pointer are DERIVED
+                 from the review/package ledger and re-derived at
+                 extraction — static prose here once claimed "first sealed
+                 package" on the line's third sealed round, byte-perfectly
+                 authenticated. Verify: collected_header.json +
+                 `python specs/verify_extracted.py header`.)
+
+__CHANGES__
+
+THE FIRST SEALED PACKAGE ON THIS LINE. There is no predecessor archive, so
+the sealer takes its NO_PRIOR path and the what-changed diff is SKIPPED and
+said to be skipped, rather than being quietly absent. Both internal review
+rounds ARE recorded in the ledger this header derives from, so the history
+line below is the line's real history and not an empty default.
+
+The spec: a relayed claim whose note or value matches the versioned marker lexicon is never asserted as the user's fact, whatever relation it was filed under. Internal rounds 1-2 closed (research); the five round-1 findings are in the closure ledger.
+
+MEASUREMENT CONTEXT — GENERATED from the captured runtime probe
+(RUNTIME_PROBE.json ships; the record derives from the file):
+                 __CONTEXT__
+
+Spec-Requires (derived from the spec headers, not restated):
+                 __REQUIRES__
+
+REPRODUCTION — a launcher, and it REFUSES rather than reporting:
+  bash specs/evidence/offline/run_offline.sh
+  LAUNCHER RESULT, MEASURED IN THE SEALED CHECKOUT: __LAUNCHER__
+  (that run is taken in the tree being sealed, which still carries
+  its version-control metadata and build residue — so it is NOT by
+  itself evidence about YOUR copy, and this line no longer says it
+  is. The qualified suite is ALSO run inside the EXTRACTED archive,
+  as the last of the extraction checks listed above, and a red run
+  there REFUSES THE SEAL. That second run cannot be transcribed in
+  here — it is a run OF this file's own archive — which is exactly
+  why it is a gate rather than a number: no package reaches you
+  with a failing extracted suite. Reproduce it with the launcher
+  command above.)
+  (complete transcript + exit status ship as LAUNCHER_TRANSCRIPT.txt,
+  digest-bound in collected_header.json)
+
+measured line:   __MEASURED__ (exit 0)
+                 Measured FIRST, in the committed tree at the commit above;
+                 this file is built from that run afterwards. Verified from
+                 the EXTRACTED archive before staging — the list below is
+                 GENERATED from the sealer's registry and the sealer aborts
+                 if it runs anything else:
+                 __EXTRACTED__
+                 The full -rs output ships as COLLECTED_pytest_rs.txt and the
+                 inventory below is COMPUTED FROM IT.
+
+harnesses:       __HARNESSES__
+                 (the standing store-level harnesses; run by the sealer on
+                 the tree being sealed and re-run from the extraction)
+
+evidence:        __EVIDENCE__
+
+ENVIRONMENT-CONDITIONAL SKIP INVENTORY — GENERATED from specs/skip_inventory.py:

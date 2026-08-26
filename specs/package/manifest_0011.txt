@@ -1,0 +1,25 @@
+PACKAGE: __PACKAGE__ — external ROUND __ROUND__
+COMMIT: __COMMIT_FULL__
+BUILT: __TS__ (UTC)
+
+The spec: a user's authority over their OWN subject does not extend to retiring sourced evidence about ANOTHER subject. Internal rounds 1-2 closed (research); the six round-1 findings are in the closure ledger.
+
+The
+candidate revision is stated ONCE, rendered from the identity record (no
+version or history facts live in this prose — F2/C5-1):
+__CANDIDATES__
+__HISTORY__
+__CHANGES__
+
+measured: __MEASURED__
+
+Verification, from the extraction root (no network):
+  python specs/verify_extracted.py header      # the C-plus record: registry
+                                               # conformance, whole-file
+                                               # recompute, witnesses
+  python specs/verify_extracted.py collected
+  python specs/verify_extracted.py reconcile
+  python specs/package_identity.py
+
+Always-regenerated loose carriers (not diffed against the prior archive):
+__LOOSE__

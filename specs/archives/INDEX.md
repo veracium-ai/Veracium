@@ -326,6 +326,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0001 | v16 | 16 | `0001-v16-20260825T0248Z.tar.gz` | `6dced06be6fb73b4…` |
 | 0001 | v17 | 17 | `0001-v17-20260825T0325Z.tar.gz` | `fa1f51b22fae45b9…` |
 | 0001 | v18 | 18 | `0001-v18-20260825T2140Z.tar.gz` | `afeea5b57c34cba5…` |
+| 0011 | v1 | 1 | **0 sidecars — LINEAGE GAP** | — |
 | 0022-0023 | v17 | 17 | `0022-0023-v17-20260819T0252Z.tar.gz` | `1dc88d304c81e558…` |
 | 0022-0023 | v18 | 18 | `0022-0023-v18-20260819T1247Z.tar.gz` | `7fc80f5de08d05f2…` |
 | 0022-0023 | v19 | 19 | `0022-0023-v19-20260820T0032Z.tar.gz` | `67d823fe4a0ff5e3…` |

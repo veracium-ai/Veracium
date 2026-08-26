@@ -597,6 +597,23 @@ REVIEWS = [
          "ship narrow, COUNT the §4b refusal rows post-release, revisit "
          "broad on an operator's numbers rather than on taste",
          findings=6),
+    dict(spec="0011", round=1, kind="external", date="2026-08-26",
+         verdict="SENT (package `0011-v1`, candidate draft v4 — the LINE'S "
+         "FIRST SEALED PACKAGE; no predecessor, so the sealer's NO_PRIOR "
+         "path applies and the what-changed diff is skipped and SAID to be "
+         "skipped). Subject-scoped entitlement: a user's authority over "
+         "their OWN subject does not extend to retiring sourced evidence "
+         "about ANOTHER subject. Both internal rounds closed before this "
+         "send — round 1 (research, PASS WITH AMENDMENTS: M-1 currency and "
+         "a broken §3b reference, M-2 the acting principal ruled to be E5's "
+         "fifth element after the authorisation was found to bind arguments "
+         "but not the actor, M-3 §9.3 kept narrow for v1 with a measurement "
+         "rider, plus three minors) and round 2 (PASS, diff-verified, no "
+         "new findings). All six findings carry closure rows. v4 also "
+         "folds dev's own pre-send audit (2026-08-24), which is why the "
+         "candidate is v4 and not the v3 the queue recorded. Sealed AFTER "
+         "this row, sha pinned on return", findings=0),
+
     dict(spec="0011", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold of round 1, no new "
          "findings. External-ready", findings=0),
