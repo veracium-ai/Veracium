@@ -207,6 +207,13 @@ ROW_CONTRADICTIONS = (
     ("| existing `correct()` callers |", "can no longer forge",
      "§5 claims callers can no longer forge; they can still name a "
      "principal they are not (R1-2)"),
+    # CARRIER-R5-1: the withdrawal was found "elsewhere" while a LIVE §3c
+    # contract row still said "with the measurement rider" — the file-wide
+    # search satisfied itself on §4b's deferral text. The withdrawal is
+    # bound to the ROW that carried the promise.
+    ("| USER (sole authority: self-assertion) |", "with the measurement rider",
+     "§3c's contract row still promises the rider; R3-2 withdrew it, and a "
+     "deferral stated in §4b does not un-promise a different row"),
 )
 
 

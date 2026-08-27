@@ -897,6 +897,45 @@ REVIEWS = [
          "48982518283a0ea1fa56479aec75f4393bc30fa8b810e70dbecd9d2efee72aae",
          findings=0),
 
+    dict(spec="0011", round=5, kind="external", date="2026-08-27",
+         raised=["0011-EVIDENCE-R5-1", "0011-CARRIER-R5-1"],
+         verdict="RETURN EXACT v5 FOR TWO MECHANICAL AMENDMENTS before the "
+         "status flip — FINITE DESIGN ACCEPTANCE REMAINS IN FORCE, no "
+         "architectural defect found (package `0011-v5`, sha 48982518 "
+         "verified; 499 members; policy mutation suite 5 passed; extracted "
+         "suite 1841/22; 1,863 collected reconcile with the sealed 1855/8). "
+         "Round-4 disposition: both attacks closed, full-edge and "
+         "production-import execution present and passing, the lineage "
+         "contradiction closed. EVIDENCE-R5-1: cell COUNT does not prove "
+         "domain COVERAGE — replacing one cell with a duplicate of another "
+         "kept 1,440 rows while a source/origin combination vanished, "
+         "problems() returned nothing, and the truncated-stream test cannot "
+         "catch cardinality-preserving replacement. CARRIER-R5-1: §3c's "
+         "LIVE contract row still described the refusal as 'with the "
+         "measurement rider'; the fold checker exited 0 by finding the "
+         "deferral text elsewhere in the file rather than binding the "
+         "withdrawal to the row that made the promise. Requested: an exact "
+         "generated cell-key manifest or equivalent key-set self-test",
+         findings=2),
+
+    dict(spec="0011", round=6, kind="external", date="2026-08-27",
+         verdict="SENT (package `0011-v6`, candidate draft v9 — the round-5 "
+         "fold; §15 maps both findings; the finite acceptance stands). "
+         "EVIDENCE-R5-1: the oracle constructs the EXACT expected Cartesian "
+         "key set independently of the emitter and requires emitted keys to "
+         "EQUAL it — missing and alien keys are named by the set "
+         "difference, and duplicates are rejected SEPARATELY so the "
+         "replacement is named rather than hiding behind the missing-key "
+         "report it causes. The reviewer's duplicate-for-missing replay and "
+         "an alien-key variant are standing tests beside the round-4 "
+         "attacks (the requested key-set self-test, in-oracle rather than "
+         "as a manifest file that could itself go stale). CARRIER-R5-1: "
+         "§3c's row is swept and the withdrawal is BOUND TO THE ROW in the "
+         "checker — anchored on the row itself, planted-back promise "
+         "verified biting — since a deferral stated in §4b does not "
+         "un-promise a different row. Sealed AFTER this row, sha pinned on "
+         "return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

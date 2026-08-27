@@ -139,10 +139,35 @@ def problems(stream=None) -> list:
     bad = []
     seen = list(cells() if stream is None else stream)
 
-    expected = (len(AUTHORS) * len(DERIVED) * len(SUBJECTS)
-                * len(SOURCES) ** 2 * len(ORIGINS) ** 2)
-    if len(seen) != expected:
-        bad.append(f"emitted {len(seen)} cells, expected {expected}")
+    # EVIDENCE-R5-1: a COUNT does not prove COVERAGE. The previous check
+    # required 1,440 rows, and replacing one cell with a duplicate of
+    # another kept the count while a source/origin combination silently
+    # vanished — cardinality-preserving omission. So the EXACT expected
+    # Cartesian key set is constructed independently and the emitted keys
+    # must equal it: set equality catches a missing key and an alien key,
+    # and the separate duplicate check catches the replacement itself
+    # (with plain set equality alone, a duplicate would hide behind the
+    # missing-key report it causes).
+    expected_keys = {
+        (a, d, ("SELF" if subj == "user" else "OTHER"), si, sp, oi, op)
+        for a in AUTHORS for d in DERIVED for subj in SUBJECTS
+        for si in SOURCES for sp in SOURCES
+        for oi in ORIGINS for op in ORIGINS}
+    emitted_keys = [row[:-1] for row in seen]
+    dupes = {k for k in emitted_keys if emitted_keys.count(k) > 1}
+    if dupes:
+        k = sorted(map(str, dupes))[0]
+        bad.append(f"{len(dupes)} cell key(s) emitted MORE THAN ONCE, e.g. "
+                   f"{k} — a duplicate is how a missing cell hides at "
+                   f"constant cardinality")
+    missing = expected_keys - set(emitted_keys)
+    alien = set(emitted_keys) - expected_keys
+    if missing:
+        bad.append(f"{len(missing)} expected cell key(s) NEVER EMITTED, "
+                   f"e.g. {sorted(map(str, missing))[0]}")
+    if alien:
+        bad.append(f"{len(alien)} emitted key(s) outside the declared "
+                   f"domain, e.g. {sorted(map(str, alien))[0]}")
     if any(row[-1] not in ("REFUSE", "ALLOW") for row in seen):
         bad.append("a cell decided neither REFUSE nor ALLOW")
 

@@ -54,6 +54,35 @@ def test_a_variance_planted_in_the_emission_is_caught():
                for b in bad), bad
 
 
+def test_a_duplicate_hiding_a_missing_cell_is_caught():
+    """The round-5 attack, standing: replace one emitted cell with a
+    duplicate of another. The COUNT stays 1,440 while a source/origin
+    combination silently vanishes — cardinality-preserving omission. The
+    oracle compares the emitted key set to the exact expected Cartesian
+    set and rejects duplicates separately, so both halves of the swap are
+    named."""
+    rows = list(PM.cells())
+    mutated = rows[:]
+    mutated[7] = mutated[3]
+    assert len(mutated) == len(rows), "the attack must preserve cardinality"
+    bad = PM.problems(stream=mutated)
+    assert any("MORE THAN ONCE" in b for b in bad), (
+        "a duplicated cell key was not reported (EVIDENCE-R5-1)")
+    assert any("NEVER EMITTED" in b for b in bad), (
+        "the cell the duplicate displaced was not reported missing "
+        "(EVIDENCE-R5-1)")
+
+
+def test_an_alien_cell_key_is_caught():
+    """A key outside the declared domain is neither missing nor duplicate —
+    it is an emission the domain never promised, and it must be named."""
+    rows = list(PM.cells())
+    a, d, sc, si, sp, oi, op, out = rows[0]
+    rows[0] = (a, d, sc, "a-source-no-domain-declares", sp, oi, op, out)
+    bad = PM.problems(stream=rows)
+    assert any("outside the declared domain" in b for b in bad)
+
+
 def test_a_truncated_stream_is_caught():
     """Dropping cells silently narrows the domain — the count is checked."""
     partial = list(PM.cells())[:100]

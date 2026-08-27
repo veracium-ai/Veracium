@@ -1943,4 +1943,30 @@ CLOSURES = [
      "governed record",
      "$PY -m pytest tests/test_collected_header.py::"
      "test_no_template_hand_asserts_lineage -q -p no:randomly"),
+
+    # ---- 0011 external round 5 (2026-08-27) — two mechanical amendments
+    # under the standing finite acceptance.
+    ("0011", "external", 5, "0011-EVIDENCE-R5-1",
+     "cell COUNT did not prove domain COVERAGE: replacing one emitted cell "
+     "with a duplicate of another kept 1,440 rows while a source/origin "
+     "combination silently vanished — cardinality-preserving omission, "
+     "invisible to the count check and to the truncated-stream test",
+     "the oracle constructs the EXACT expected Cartesian key set "
+     "independently of the emitter and requires emitted keys to equal it; "
+     "duplicates are rejected separately so the replacement is named rather "
+     "than hiding behind the missing-key report it causes",
+     "$PY -m pytest tests/test_0011_policy_matrix.py::"
+     "test_a_duplicate_hiding_a_missing_cell_is_caught "
+     "tests/test_0011_policy_matrix.py::"
+     "test_an_alien_cell_key_is_caught -q -p no:randomly"),
+
+    ("0011", "external", 5, "0011-CARRIER-R5-1",
+     "§3c's LIVE contract row still described the OTHER-subject refusal as "
+     "'with the measurement rider' after R3-2 withdrew it; the fold checker "
+     "exited 0 by finding the deferral text elsewhere in the file",
+     "the row is swept and the withdrawal is BOUND TO THE ROW: the checker "
+     "anchors on §3c's row and refuses the promise there specifically — a "
+     "deferral stated in §4b does not un-promise a different row",
+     "$PY specs/evidence/0011/check_round1_fold.py  # the row-bound rider "
+     "check, planted-back promise verified biting"),
 ]
