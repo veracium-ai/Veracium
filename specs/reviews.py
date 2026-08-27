@@ -892,8 +892,10 @@ REVIEWS = [
          "deliberately does not use, with a bite-proving test. The "
          "template's own C5-1 note had recorded this exact defect from the "
          "0022 line seven lines above where it was reintroduced; lineage "
-         "facts now have exactly one source, the governed record. Sealed "
-         "AFTER this row, sha pinned on return", findings=0),
+         "facts now have exactly one source, the governed record. Sealed as "
+         "`0011-v5-20260827T2156Z` at commit 706036c, sha256 "
+         "48982518283a0ea1fa56479aec75f4393bc30fa8b810e70dbecd9d2efee72aae",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
