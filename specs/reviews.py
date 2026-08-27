@@ -835,7 +835,10 @@ REVIEWS = [
          "commit-phase telemetry/consent harness (deferred with the rider) "
          "and a whole-corpus subject-frequency record (declined — it would "
          "put 12,000+ corpus strings in a public archive to bind one "
-         "number). Sealed AFTER this row, sha pinned on return", findings=0),
+         "number). Sealed as `0011-v4-20260827T1034Z` at commit b485060, "
+         "sha256 "
+         "73e3a6d82b041776a00b7f6c7fe617fbb09d2850deb48dfc021293472b684f59",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
