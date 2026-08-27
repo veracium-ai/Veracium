@@ -224,8 +224,10 @@ Both are defined here, closed and total, over state that EXISTS
 today.**
 
 ```
-self_assertion(e) := (e.provenance.author_of_evidence is USER
-                      and e.provenance.derived_from is None)
+self_assertion(e) := effective(author_of_evidence, derived_from)
+                    == effective(USER, None)
+                    # "the chain carries nothing but the user's own
+                    #  authority", computed by 0003's own effective()
 
 policy(incoming, prior) :=
     REFUSE   if  subject_class(prior) == OTHER
@@ -234,6 +236,68 @@ policy(incoming, prior) :=
 
 # THE RULE READS NO source_id. That is the point, not an omission.
 ```
+
+**THE PREDICATE IS DEFINED OVER THE AUTHORITY CHAIN, NOT OVER A MARKER'S
+PRESENCE (external round 3, R3-1).** v6 said `derived_from is None`, and
+`EvidenceContext.derived(USER)` is valid and reachable, so:
+
+| incoming provenance | effective authority | v6 |
+|---|---|---|
+| `USER`, `derived_from=None` | 3 | REFUSE |
+| `USER`, `derived_from=USER` | **3 — identical** | **ALLOW** |
+
+A marker supplying no independent authority bought permission to retire an
+OTHER-subject fact. That is the SAME DEFECT as R2-1 one field over, and
+both were mine: each round replaced one unauthenticated marker with
+another and inherited the class. **The common defect is keying on the
+presence or absence of a marker instead of on authority**, so the
+predicate now asks production `effective()` — 0003's own function —
+whether the chain carries anything but the user. Enumerated against it,
+exactly two chains qualify, and R3-1's cell is inside the refusal set BY
+CONSTRUCTION rather than by patch.
+
+**§6 acceptance surface — `specs/evidence/0011/policy_matrix.py`, 240
+cells, executable.** It enumerates author × derived_from × subject class ×
+source presence × origin and asserts: totality; the named R3-1 cell; the
+GENERAL property that equal effective authority decides equally (which is
+the class, not the instance); invariance under source identity and origin
+(0006's GROUP-never-GRANT, proved rather than asserted); that
+`derived_from` never RAISES authority; and that a SELF-subject prior is
+never refused. Both defects that actually shipped were planted against it
+and both are caught.
+
+**The decision table, GENERATED from that matrix:**
+
+| author | derived_from | effective | subject OTHER | subject SELF |
+|---|---|---|---|---|
+| `user` | `None` | 3 | **REFUSE** | ALLOW |
+| `user` | `user` | 3 | **REFUSE** | ALLOW |
+| `user` | `third_party` | 0 | **ALLOW** | ALLOW |
+| `user` | `system` | 2 | **ALLOW** | ALLOW |
+| `user` | `assistant` | 1 | **ALLOW** | ALLOW |
+| `third_party` | `None` | 0 | **ALLOW** | ALLOW |
+| `third_party` | `user` | 0 | **ALLOW** | ALLOW |
+| `third_party` | `third_party` | 0 | **ALLOW** | ALLOW |
+| `third_party` | `system` | 0 | **ALLOW** | ALLOW |
+| `third_party` | `assistant` | 0 | **ALLOW** | ALLOW |
+| `system` | `None` | 2 | **ALLOW** | ALLOW |
+| `system` | `user` | 2 | **ALLOW** | ALLOW |
+| `system` | `third_party` | 0 | **ALLOW** | ALLOW |
+| `system` | `system` | 2 | **ALLOW** | ALLOW |
+| `system` | `assistant` | 1 | **ALLOW** | ALLOW |
+| `assistant` | `None` | 1 | **ALLOW** | ALLOW |
+| `assistant` | `user` | 1 | **ALLOW** | ALLOW |
+| `assistant` | `third_party` | 0 | **ALLOW** | ALLOW |
+| `assistant` | `system` | 1 | **ALLOW** | ALLOW |
+| `assistant` | `assistant` | 1 | **ALLOW** | ALLOW |
+
+**The laundering cells, decided rather than defaulted (R3-1 asked).**
+`derived_from` CAPS authority — it is a `min`, never a raise — so
+`SYSTEM`/`ASSISTANT` evidence marked `derived_from=USER` keeps its own
+class and is not the user's self-assertion. The matrix asserts both
+halves: those cells are not self-assertions, and the marker does not
+raise their authority. A lower class cannot launder upward through a
+derivation marker, which is why they ALLOW here and the ladder decides.
 
 **`sourced` IS GONE, AND `source_id` IS NOT READ ANYWHERE IN THIS
 DECISION (external round 2, R2-1).** v5 defined both predicates from

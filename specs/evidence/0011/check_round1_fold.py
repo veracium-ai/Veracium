@@ -207,10 +207,38 @@ def check_carriers(t: str) -> list:
     return bad
 
 
+def check_decision_table(t: str) -> list:
+    """§4b's decision table must BE the matrix's output.
+
+    A table transcribed by hand drifts from the function it describes, and
+    the drift is invisible for exactly as long as nobody re-runs the
+    generator. So the rows are compared to `policy_matrix.render()` —
+    data against data, no phrase to miss.
+    """
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    try:
+        import policy_matrix
+    except Exception as exc:                       # noqa: BLE001
+        return [f"policy_matrix is not importable ({exc}) — §4b's table "
+                f"has no generator to be checked against"]
+    rows = [l for l in policy_matrix.render().splitlines()
+            if l.startswith("| `")]
+    missing = [r for r in rows if r not in t]
+    if missing:
+        return [f"§4b's decision table is STALE against policy_matrix: "
+                f"{len(missing)} of {len(rows)} generated rows absent, "
+                f"first is {missing[0]!r}"]
+    if policy_matrix.problems():
+        return ["policy_matrix itself FAILS — the table the spec carries is "
+                "generated from a matrix that does not hold"]
+    return []
+
+
 def main() -> int:
     t = SPEC.read_text()
     bad = (check_r1_1(t) + check_r1_2(t) + check_r1_4(t) + check_r1_5(t)
-           + check_carriers(t) + check_s6_count(t))
+           + check_carriers(t) + check_s6_count(t)
+           + check_decision_table(t))
     if bad:
         print("0011 round-1 fold INCOMPLETE:\n  " + "\n  ".join(bad),
               file=sys.stderr)
