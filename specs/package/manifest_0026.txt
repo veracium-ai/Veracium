@@ -2,7 +2,7 @@ PACKAGE: __PACKAGE__ — external ROUND __ROUND__
 COMMIT: __COMMIT_FULL__
 BUILT: __TS__ (UTC)
 
-The spec: a relayed claim whose note or value matches the versioned marker lexicon is never asserted as the user's fact, whatever relation it was filed under. Internal rounds 1-2 closed (research); the five round-1 findings are in the closure ledger.
+The spec: a relayed claim whose note or value matches the versioned marker lexicon is never asserted as the user's fact, whatever relation it was filed under. (Review history is DERIVED — the round count, the findings and their closures come from the ledger this carrier is filled from, never from this static text.)
 
 The
 candidate revision is stated ONCE, rendered from the identity record (no

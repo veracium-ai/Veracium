@@ -675,6 +675,41 @@ def test_impl_review_round9_regressions(tmp_path):
 
 
 
+def test_no_template_hand_asserts_lineage():
+    """PACKAGE-R4-1 (0011 round 4): a template carried a static
+    first-package paragraph, so by the line's FOURTH seal the built header
+    asserted first-package and rounds-1-4 in one file, beside a
+    CHANGED_FROM_PREVIOUS that inventoried the v3 delta — and every header
+    check passed. The header's own C5-1 note, seven lines above the
+    paragraph, already recorded this exact defect from the 0022 line.
+
+    Two halves: every shipped template is clean of lineage-asserting static
+    text, and the seal-time ban BITES on both banned shapes — a gate that
+    cannot fail establishes nothing."""
+    import re
+    templates = sorted((ROOT / "specs" / "package").glob("*.txt"))
+    assert templates, "no templates found"
+    lineage_pats = [(pat, why) for pat, why in sp.WITHDRAWN_CLAIMS
+                    if "FIRST SEALED PACKAGE" in pat or "rounds" in pat]
+    assert len(lineage_pats) == 2, (
+        f"expected the two PACKAGE-R4-1 bans, found {len(lineage_pats)}")
+    for f in templates:
+        text = f.read_text()
+        for pat, why in lineage_pats:
+            assert not re.search(pat, text), (
+                f"{f.name} hand-asserts lineage ({pat!r}) — {why}")
+    # the ban bites: each banned shape, planted, refuses the seal
+    for planted in ("THE FIRST SEALED PACKAGE ON THIS LINE. There is no",
+                    "Internal rounds 1-2 closed (research); the six"):
+        with pytest.raises(SystemExit):
+            sp.refuse_withdrawn_claims((planted, "planted-carrier"))
+    # ...and the sealer's own DERIVED wording must never trip it
+    derived = ("No predecessor is DECLARED in the governed record for this "
+               "line (NO_PRIOR) — diff SKIPPED, named here rather than "
+               "omitted.")
+    sp.refuse_withdrawn_claims((derived, "derived-no-prior"))
+
+
 def test_the_terminus_note_is_an_archive_member():
     """The A1 PACKAGE-R23-1 lesson, applied at birth: a note the package
     PROMISES is a carrier of that promise. The C-plus terminus proposal

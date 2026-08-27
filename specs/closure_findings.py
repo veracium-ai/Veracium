@@ -1897,4 +1897,50 @@ CLOSURES = [
      "to be verifiable",
      "$PY specs/evidence/0011/subject_census.py --aggregate "
      "specs/evidence/0011/subject_aggregate.json"),
+
+    # ---- 0011 external round 4 (2026-08-27) — FINITE DESIGN ACCEPTANCE for
+    # the core; three mechanical items gate the status flip.
+    ("0011", "external", 4, "0011-EVIDENCE-R4-1",
+     "the 240-cell oracle had DECORATIVE dimensions: source and origin were "
+     "enumerated but never passed to policy(), the invariance check "
+     "re-called the function instead of comparing the EMITTED cells (a "
+     "planted source-conditional ALLOW exited 0), the import-flattened cell "
+     "never invoked portability, and the fold checker's definition map was "
+     "last-definition-wins so a shadowed dangerous helper passed",
+     "the oracle is FULL-EDGE (1,440 cells over two real Edge provenances "
+     "with independent source/origin), every check consumes the one emitted "
+     "stream, the import cell runs production portability.import_memory in "
+     "both modes, and the dependency closure carries EVERY definition of a "
+     "name; both reviewer attacks are standing mutation tests",
+     "$PY -m pytest tests/test_0011_policy_matrix.py::"
+     "test_a_variance_planted_in_the_emission_is_caught "
+     "tests/test_0011_policy_matrix.py::"
+     "test_the_fold_checker_refuses_a_shadowed_helper "
+     "tests/test_0011_policy_matrix.py::"
+     "test_the_import_cell_runs_the_production_adapter -q -p no:randomly"),
+
+    ("0011", "external", 4, "0011-CARRIER-R4-1",
+     "five current carriers still stated the NARROW rule or the LIVE rider: "
+     "§4's claim, S2, §4b's pointer at the rider, §9's ask to attack the "
+     "rider's taxonomy, and S5's unclosed editing fragment",
+     "all five swept to the broadened rule and the withdrawn-rider "
+     "disposition; §9 redirects the reviewer at the deferral itself; "
+     "obsolete wording survives only as marked history",
+     "$PY specs/evidence/0011/check_round1_fold.py  # the row-scoped and "
+     "closure-based checks over the swept carriers, with the shadowing "
+     "attack now refused"),
+
+    ("0011", "external", 4, "0011-PACKAGE-R4-1",
+     "the generated header asserted 'sealed rounds 1-4' and 'THE FIRST "
+     "SEALED PACKAGE ON THIS LINE' in the same file, beside a "
+     "CHANGED_FROM_PREVIOUS inventorying the v3 delta, and every header "
+     "check passed — a hand-written template paragraph reintroduced the "
+     "exact defect the header's own C5-1 note records, seven lines below it",
+     "the static paragraph and the static round-count sentence are DELETED "
+     "from every template on both lines; seal_package.WITHDRAWN_CLAIMS "
+     "refuses both shapes at seal time in wording the derived NO_PRIOR text "
+     "deliberately does not use; lineage facts have exactly one source, the "
+     "governed record",
+     "$PY -m pytest tests/test_collected_header.py::"
+     "test_no_template_hand_asserts_lineage -q -p no:randomly"),
 ]

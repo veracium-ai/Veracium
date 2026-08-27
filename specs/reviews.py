@@ -840,6 +840,61 @@ REVIEWS = [
          "73e3a6d82b041776a00b7f6c7fe617fbb09d2850deb48dfc021293472b684f59",
          findings=0),
 
+    dict(spec="0011", round=4, kind="external", date="2026-08-27",
+         raised=["0011-EVIDENCE-R4-1", "0011-CARRIER-R4-1",
+                 "0011-PACKAGE-R4-1"],
+         verdict="🏁 FINITE DESIGN ACCEPTANCE FOR DRAFT v7'S CORE "
+         "CONSTRUCTION — the authority-chain design need not be reopened — "
+         "with THIS EXACT v4 PACKAGE RETURNED for mechanical amendments "
+         "before the status flip (package `0011-v4`, sha 73e3a6d8 verified; "
+         "extracted suite 1835/22; 1,857 collected reconcile with the "
+         "sealed 1849/8; 0022 vectors 60/60, concurrency 18/18, 0025 "
+         "references 23/23). Round-3 closure: R3-1 closed with the "
+         "absence-based mutant killed; R3-2 substantively closed; "
+         "EVIDENCE-R3-1 closed; CARRIER-R3-1's exact helper attack closed. "
+         "EVIDENCE-R4-1: the 240-cell oracle had DECORATIVE dimensions — "
+         "source and origin enumerated but never passed to policy(), and "
+         "the invariance check re-called the function instead of comparing "
+         "the EMITTED cells, so a planted source-conditional ALLOW in the "
+         "emission exited 0 while the oracle printed invariance; the "
+         "import-flattened cell never invoked portability; and the fold "
+         "checker's definition map was last-definition-wins, so a dangerous "
+         "sourced() shadowed by a benign redefinition passed. "
+         "CARRIER-R4-1: five current carriers still stated the narrow rule "
+         "or the live rider (§4, S2, §4b, §9, S5's unclosed fragment). "
+         "PACKAGE-R4-1: the generated header asserted 'sealed rounds 1-4' "
+         "and 'THE FIRST SEALED PACKAGE ON THIS LINE' in the same file, "
+         "beside a CHANGED_FROM_PREVIOUS inventorying the v3 delta — and "
+         "verify_extracted.py header passed. Requested: a mutation-tested "
+         "full-edge entitlement oracle including both edge provenances and "
+         "the production import adapter", findings=3),
+
+    dict(spec="0011", round=5, kind="external", date="2026-08-27",
+         verdict="SENT (package `0011-v5`, candidate draft v8 — the round-4 "
+         "fold; §14 maps every finding; the FINITE ACCEPTANCE stands and "
+         "the core construction is untouched). EVIDENCE-R4-1: the oracle is "
+         "FULL-EDGE — two real Edge objects with independent source and "
+         "origin values on each side (1,440 cells), every check consuming "
+         "the ONE emitted stream, and the import-flattened cell run through "
+         "production portability.import_memory in both modes (default "
+         "flattens and the decision follows; restore preserves and the "
+         "refusal returns). The reviewer's both attacks are STANDING "
+         "mutation tests, replayed exactly: the planted emitted-cell "
+         "variance bites, and the dependency closure now carries EVERY "
+         "definition of a helper name so the shadowing attack bites too. "
+         "CARRIER-R4-1: all five swept — §4 and S2 state the broadened "
+         "rule, §4b and §9 state the withdrawn rider (§9 redirects the "
+         "reviewer at the deferral), S5's fragment repaired. "
+         "PACKAGE-R4-1: the static first-package paragraph and the static "
+         "round-count sentence are DELETED from every template on both "
+         "lines, and seal_package.WITHDRAWN_CLAIMS refuses both shapes at "
+         "seal time — in wording the sealer's derived NO_PRIOR text "
+         "deliberately does not use, with a bite-proving test. The "
+         "template's own C5-1 note had recorded this exact defect from the "
+         "0022 line seven lines above where it was reintroduced; lineage "
+         "facts now have exactly one source, the governed record. Sealed "
+         "AFTER this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

@@ -12,7 +12,7 @@ Spec-Requires: 0003, 0005, 0006, 0008, 0012, 0014, 0015, 0016, 0020, 0023, 0024,
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v7** — the ROUND-3 FOLD (2026-08-27; §13 maps every finding). R3-1: the predicate is defined over the AUTHORITY CHAIN via production `effective()`, so a marker carrying no authority cannot move the decision — the executable 240-cell policy matrix asserts the CLASS (equal authority decides equally), not the two named instances. R3-2: the measurement rider is WITHDRAWN — 0015 defers refusal counters to a consent discussion this spec cannot hold, so v1 ships with the constituency unmeasured and says so. CARRIER-R3-1: five more contradictions swept and the checker bound to the predicate's TRANSITIVE DEPENDENCIES, closing the helper-in-another-fence bypass. EVIDENCE-R3-1: `schema == 1` required, the predicate cross-checked against 0025 on the shared subset, and every figure labelled by what backs it — including the two that are RECORDED ONLY. *Prior:* **v6** — the ROUND-2 FOLD (2026-08-27; §12 maps every finding). R2-1: **`source_id` is no longer read by the entitlement decision at all** — `0006` says it may GROUP, never GRANT, and v5 made it a capability in both directions (omission stripped protection, a caller-supplied value bought retirement). The `sourced` term is GONE, the rule refuses on subject class + self-assertion alone, the narrowing is deferred to `0016`'s frozen carrier, and a source-identity INVARIANCE matrix is owed. R2-2: `would_refuse_broad` DELETED as constant-true; the rider adds no stored state, so §7's claim holds again. R2-3: contention is `0003`'s REFUSAL-scoped notion — the shipped one — not a second contract. CARRIER-R2-1: seven contradictory authoritative statements swept, and the checker rebuilt to bind each assertion to its NAMED ROW, with S6 compared count-to-count. EVIDENCE-R2-1: the census aggregate has a closed typed schema and is cross-checked against 0025's independently-derived artifact. *Prior:* **v5** — the ROUND-1 FOLD (2026-08-26; §11 maps every finding). R1-1: the entitlement rule is REPRESENTABLE — `sourced` and `self_assertion` defined as closed predicates over state that exists today, a TOTAL policy function replacing v4's condition (which omitted the sourced term and contradicted §3c), the over-inclusion named in the refusing direction, the withdrawn 'confirmation is a higher rung' phrase retired against 0008, the basis-aware form deferred to 0016 rather than unfreezing it, and the measurement rider made MEASURABLE (it could not have measured anything: the deciding population produces no refusal row). R1-2: E5 is an INTEGRITY BINDING, not authentication — the claim is withdrawn, `correct()` is a protected host API with the host's obligations stated. R1-3: contention requires ≥2 DISTINCT `_value_key` values (v4's rule was false against accepted 0012, executed). R1-4: one outcome for a malformed `from_class` — RAISES, no write — with the complete grammar. R1-5: a first-match precedence table, total and exclusive, and E6 re-motivated after its premise was measured false. PACKAGE-R1-1: the census is GENERATED and digest-bound; two unreproducible figures retired. *Prior:* **v4** — the pre-send audit (2026-08-24, dev; nothing from a reviewer — these are the findings this spec would otherwise have paid a round for): **`Spec-Requires` declared for the first time** (0003, 0014, 0020, 0023, 0024, 0025 — the F1 class 0024 paid a round-1 finding for: a spec that consumes another's mechanism must say so); §3a-ii **Assertions about reach** and §3c **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §3a `0024` Q3 currency line corrected (it said the pinned tests were absent post-revert — true when research wrote it, stale within the day when 0024 landed as amended); the §9 brief addressed to the EXTERNAL reviewer with the internal rounds recorded; section order fixed to 3a → 3a-ii → 3b → 3c (internal M-1b). Every command in §3a-ii was RUN and its real output recorded. *Prior:* **v3** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS): **M-2/E-Q4 RULED YES** — the acting principal (`0020`) joins the E5 tuple as the fifth element, verified in-transaction (E5 authenticates CORRECTORS, not just corrections; S4 gains the replay-across-principals cell); **M-3** §4b keeps the NARROW refusal cell for v1 with a measurement RIDER (count refusal rows by cell post-ship; broad revisits on an operator's numbers — the E-Q1 pattern); **M-1** currency + references (0024 cited at its SPEC surface with the predicate-not-disposition statement for the A1 divergence; the S7 pointer fixed; sections renumbered §3a/§3b); minors m-4 (historical motivation marked), m-5 (symbol not line), m-6 (`derived(from_class)` closed domain, unknown fails to the THIRD_PARTY floor). Ratified untouched: E-Q2, E-Q3, the conservation argument, absence-as-positive-capability, S1–S7's shape, and research's purpose-scoping non-foreclosure lens (passes by construction). *Prior:* **v2** — the design (2026-08-22, authorized by Quentin's "Proceed with 0011"): E-Q2 and E-Q3 RULED (both dev-owned; derived-at-read and explicit threading — the accepted stack's own disciplines), E-Q1 dispatched to research with a decision frame and a provisional floor, the six inherited findings turned into §4's constructions and §6's invariants, and the open `M7-correct` finding adopted as this spec's motivating live defect. *Prior:* v1, the scope-holder from the `0003` split |
+| **Version** | **v8** — the ROUND-4 FOLD (2026-08-27; §14 maps every finding). **Round 4's verdict is FINITE DESIGN ACCEPTANCE for the v7 core construction — the authority-chain design is not to be reopened; this revision closes the three mechanical items the acceptance named as the gate to the status flip.** EVIDENCE-R4-1: the oracle is FULL-EDGE now — source and origin are real decision inputs on real Edge objects, every check consumes the ONE emitted stream (1,440 cells), the import-flattened cell runs through production `portability.import_memory` in both modes, and both of the reviewer's attacks (emitted-cell variance; helper shadowing) are standing mutation tests. CARRIER-R4-1: five more carriers swept to the broadened rule and the withdrawn-rider disposition. PACKAGE-R4-1: the static first-package paragraph is DELETED from every template and the seal now REFUSES static lineage claims — the defect the header's own C5-1 note already recorded, reintroduced seven lines below it. *Prior:* **v7** — the ROUND-3 FOLD (2026-08-27; §13 maps every finding). R3-1: the predicate is defined over the AUTHORITY CHAIN via production `effective()`, so a marker carrying no authority cannot move the decision — the executable 240-cell policy matrix asserts the CLASS (equal authority decides equally), not the two named instances. R3-2: the measurement rider is WITHDRAWN — 0015 defers refusal counters to a consent discussion this spec cannot hold, so v1 ships with the constituency unmeasured and says so. CARRIER-R3-1: five more contradictions swept and the checker bound to the predicate's TRANSITIVE DEPENDENCIES, closing the helper-in-another-fence bypass. EVIDENCE-R3-1: `schema == 1` required, the predicate cross-checked against 0025 on the shared subset, and every figure labelled by what backs it — including the two that are RECORDED ONLY. *Prior:* **v6** — the ROUND-2 FOLD (2026-08-27; §12 maps every finding). R2-1: **`source_id` is no longer read by the entitlement decision at all** — `0006` says it may GROUP, never GRANT, and v5 made it a capability in both directions (omission stripped protection, a caller-supplied value bought retirement). The `sourced` term is GONE, the rule refuses on subject class + self-assertion alone, the narrowing is deferred to `0016`'s frozen carrier, and a source-identity INVARIANCE matrix is owed. R2-2: `would_refuse_broad` DELETED as constant-true; the rider adds no stored state, so §7's claim holds again. R2-3: contention is `0003`'s REFUSAL-scoped notion — the shipped one — not a second contract. CARRIER-R2-1: seven contradictory authoritative statements swept, and the checker rebuilt to bind each assertion to its NAMED ROW, with S6 compared count-to-count. EVIDENCE-R2-1: the census aggregate has a closed typed schema and is cross-checked against 0025's independently-derived artifact. *Prior:* **v5** — the ROUND-1 FOLD (2026-08-26; §11 maps every finding). R1-1: the entitlement rule is REPRESENTABLE — `sourced` and `self_assertion` defined as closed predicates over state that exists today, a TOTAL policy function replacing v4's condition (which omitted the sourced term and contradicted §3c), the over-inclusion named in the refusing direction, the withdrawn 'confirmation is a higher rung' phrase retired against 0008, the basis-aware form deferred to 0016 rather than unfreezing it, and the measurement rider made MEASURABLE (it could not have measured anything: the deciding population produces no refusal row). R1-2: E5 is an INTEGRITY BINDING, not authentication — the claim is withdrawn, `correct()` is a protected host API with the host's obligations stated. R1-3: contention requires ≥2 DISTINCT `_value_key` values (v4's rule was false against accepted 0012, executed). R1-4: one outcome for a malformed `from_class` — RAISES, no write — with the complete grammar. R1-5: a first-match precedence table, total and exclusive, and E6 re-motivated after its premise was measured false. PACKAGE-R1-1: the census is GENERATED and digest-bound; two unreproducible figures retired. *Prior:* **v4** — the pre-send audit (2026-08-24, dev; nothing from a reviewer — these are the findings this spec would otherwise have paid a round for): **`Spec-Requires` declared for the first time** (0003, 0014, 0020, 0023, 0024, 0025 — the F1 class 0024 paid a round-1 finding for: a spec that consumes another's mechanism must say so); §3a-ii **Assertions about reach** and §3c **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §3a `0024` Q3 currency line corrected (it said the pinned tests were absent post-revert — true when research wrote it, stale within the day when 0024 landed as amended); the §9 brief addressed to the EXTERNAL reviewer with the internal rounds recorded; section order fixed to 3a → 3a-ii → 3b → 3c (internal M-1b). Every command in §3a-ii was RUN and its real output recorded. *Prior:* **v3** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS): **M-2/E-Q4 RULED YES** — the acting principal (`0020`) joins the E5 tuple as the fifth element, verified in-transaction (E5 authenticates CORRECTORS, not just corrections; S4 gains the replay-across-principals cell); **M-3** §4b keeps the NARROW refusal cell for v1 with a measurement RIDER (count refusal rows by cell post-ship; broad revisits on an operator's numbers — the E-Q1 pattern); **M-1** currency + references (0024 cited at its SPEC surface with the predicate-not-disposition statement for the A1 divergence; the S7 pointer fixed; sections renumbered §3a/§3b); minors m-4 (historical motivation marked), m-5 (symbol not line), m-6 (`derived(from_class)` closed domain, unknown fails to the THIRD_PARTY floor). Ratified untouched: E-Q2, E-Q3, the conservation argument, absence-as-positive-capability, S1–S7's shape, and research's purpose-scoping non-foreclosure lens (passes by construction). *Prior:* **v2** — the design (2026-08-22, authorized by Quentin's "Proceed with 0011"): E-Q2 and E-Q3 RULED (both dev-owned; derived-at-read and explicit threading — the accepted stack's own disciplines), E-Q1 dispatched to research with a decision frame and a provisional floor, the six inherited findings turned into §4's constructions and §6's invariants, and the open `M7-correct` finding adopted as this spec's motivating live defect. *Prior:* v1, the scope-holder from the `0003` split |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0003`'s deferred scope. **Nothing here blocks `0003`.** |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (3 moderates + 3 minors, both §9 questions answered, E-Q4 ruled), folded in v3; **round 2 PASS 2026-08-23 (diff-verified 83d84c9..36eb177, zero stale refs, no new findings) — READY FOR EXTERNAL, send at Quentin's discretion** |
 | **External review** | required |
@@ -235,8 +235,10 @@ The `0003` ladder (`authority.py`, `supersession-authority-v1`) remains
 the AUTHOR axis; this spec adds the SUBJECT axis as a REFUSAL widening
 only (§3's conservation argument): a retirement permitted by the author
 ladder is additionally refused when the POLICY FUNCTION below returns
-`REFUSE` — a user statement on their own authority cannot retire sourced
-evidence about someone else.
+`REFUSE` — a user statement on their own authority cannot retire ANY
+OTHER-subject prior, sourced or not (R2-1 removed the sourced qualifier:
+`0006` forbids the distinction's only carrier from granting, so the rule
+is broader than the attack that motivated it, and says so).
 
 **v4's condition was `subject_class(prior) == OTHER` AND "sole
 authority", and it OMITTED the sourced predicate — contradicting §3c's
@@ -347,8 +349,10 @@ untouched. Without a trustworthy carrier for that distinction the
 narrowing cannot be expressed, so the rule REFUSES MORE: any bare user
 self-assertion retiring an OTHER-subject prior is refused, sourced or
 not. A refusal is a recorded row and a confirmable path, never data
-loss — but it is friction on a real workflow, and the rider below now
-has to measure exactly that.
+loss — but it is friction on a real workflow, and v1 CANNOT measure how
+much: the rider that would have counted it is WITHDRAWN (R3-2 — `0015`
+defers refusal counters to a consent discussion this spec cannot hold),
+so the cost is stated as unquantified rather than promised a number.
 
 **When the distinction returns.** `0016`'s `evidence_basis` is the
 authenticated carrier this rule wants and it is FROZEN; v1 does not
@@ -704,10 +708,10 @@ they are the ones v4 got wrong.
 | # | invariant | check |
 |---|---|---|
 | **S1** | `subject_class` is TOTAL with OTHER as default — every subject string classifies, and only the canonical-predicate cell is SELF | `test_subject_class_is_total` — property test over adversarial strings, the `0024` predicate cells included |
-| **S2** | a USER self-assertion never retires an OTHER-subject sourced fact; the refusal lands as a `supersession_refusals` row | `test_self_assertion_cannot_retire_other_subject` — the E2 cell, plus the refusal-row assertion |
+| **S2** | a USER self-assertion never retires ANY OTHER-subject prior — sourced or not (the R2-1 broadening; sourced was the motivating case, not the rule) | `test_self_assertion_cannot_retire_other_subject` — the E2 cell over BOTH source states, plus the refusal-row assertion |
 | **S3** | `CONTESTED` is derived — NO stored carrier exists, and every reader (recall, gate, maintain) handles the contested cell | `test_contested_is_derived_and_total_over_readers` — an AST sweep for stored writes plus per-reader behaviour cells |
 | **S4** | `correct()` reaches storage ONLY through the atomic plan machinery with a verified `CorrectionAuthorisation`; a forged, replayed, unbound, or **cross-principal** authorisation aborts inside the transaction (M-2: a capability minted under one principal replayed under another is the named new cell) | `test_correct_requires_bound_authorisation` — the M7 regression, forge/replay/rebind cells **+ the replay-across-principals cell** |
-| **S5** | absent `EvidenceContext` floors at `derived(THIRD_PARTY)` — absence is never the trusted cell — **and an unknown or malformed `from_class` RAISES with no write — a DIFFERENT outcome, settled at R1-4 (absence declares nothing; garbage declares something untrue)** (was: floored too (m-6): the domain is closed; validators refuse the unknown, not just cover the known** | `test_absent_context_floors_conservative` — plus the unknown-value cell |
+| **S5** | absent `EvidenceContext` floors at `derived(THIRD_PARTY)` — absence is never the trusted cell — **and an unknown or malformed `from_class` RAISES with no write — a DIFFERENT outcome, settled at R1-4 (absence declares nothing; garbage declares something untrue)** — the domain is closed and validators refuse the unknown, not just cover the known (m-6) | `test_absent_context_floors_conservative` — plus the unknown-value cell |
 | **S6** | the partition labels are derived and total — every edge lands in exactly one of `labels=5` — the labels of §4f's first-match precedence table (R1-5/CARRIER-R2-1: v5 said three, which was neither total nor exclusive, and said it in a row a phrase-search did not reach) | `test_history_partition_is_total` — enumeration over the field product |
 | **S7** | disclosure is never WRITTEN here — the `0024`/`0025` pipeline owns it. **§4f's partition READS it** (`quarantined`, `use_only`) to place a label, which v5 denied (R2-1/CARRIER-R2-1); reading to render is not writing to decide, and the distinction is the invariant | `test_no_disclosure_interaction` — the N2-style single-writer sweep extended, not duplicated |
 
@@ -760,9 +764,12 @@ attack.)*
    reviewer: attack the in-transaction verification and the
    cross-principal replay cell.
 3. **The §4b refusal cell** — RULED at internal round 1 (M-3): narrow
-   for v1, with the measurement rider in §4b. For the external reviewer:
-   attack the rider's cell taxonomy — are refusal rows countable by the
-   cells an operator would actually decide from?
+   for v1. The measurement rider is WITHDRAWN (R3-2): `0015` defers
+   refusal counters to a consent discussion this spec cannot hold, so
+   the narrow/broad question ships UNMEASURED and stated as such. For
+   the external reviewer: attack the deferral instead — is anything in
+   v1 quietly depending on a number this spec has no mechanism to
+   produce?
 
 ## 10. Open questions
 
@@ -1007,3 +1014,53 @@ longer implies it does: every figure is labelled by what backs it, and
 marked **RECORDED ONLY**, reproducible with `--cache` on the measuring
 host and not from the archive alone. A reader without the corpus is
 trusting dev for those two, which is stated rather than papered over.
+
+## 14. Changes in v8 — the round-4 fold (2026-08-27)
+
+**Round 4 granted FINITE DESIGN ACCEPTANCE for v7's core construction:
+the authority-chain design need not be reopened.** Three mechanical
+findings gate the status flip; all three are closed here.
+
+**EVIDENCE-R4-1 — the 240-cell oracle had decorative dimensions.** Source
+and origin were enumerated in `cells()` and never passed to `policy()`,
+and the invariance check re-called the function instead of comparing the
+EMITTED cells — the reviewer flipped one emitted cell to a
+source-conditional ALLOW and the oracle exited 0 while printing that
+source identity was invariant. An oracle that does not consume its own
+output certifies its inputs, not its subject. The oracle is FULL-EDGE
+now: the decision's inputs are two real `Edge` objects whose provenances
+carry independent source and origin values (1,440 cells), every check
+derives from the one emitted stream, and the import-flattened cell runs
+through production `portability.import_memory` in both modes — the
+default cap flattens the author and the decision follows it; restore
+preserves the author and the refusal returns. Separately, the fold
+checker's dependency closure kept only the LAST definition of a helper
+name, so a dangerous `sourced()` shadowed by a benign redefinition
+passed; the closure now carries EVERY definition of a name, and a read in
+any copy is a read. Both attacks are standing mutation tests in
+`tests/test_0011_policy_matrix.py`, replayed exactly as the reviewer ran
+them.
+
+**CARRIER-R4-1 — the round-3 sweep was still incomplete.** Five carriers
+swept: §4's claim and S2 now state the BROADENED rule (any OTHER-subject
+prior, sourced or not — R2-1 removed the qualifier's only carrier); §4b's
+pointer at "the rider below" and §9's reviewer ask both now state the
+rider is WITHDRAWN, and §9 redirects the reviewer at the deferral itself;
+S5's unclosed editing fragment is repaired. Historical sections keep the
+old wording as history.
+
+**PACKAGE-R4-1 — the built header contradicted the package's own
+lineage.** The line's templates carried a hand-written "THE FIRST SEALED
+PACKAGE ON THIS LINE" paragraph from the line's creation, so v4's header
+asserted first-package and "sealed rounds 1–4" in the same file, beside a
+CHANGED_FROM_PREVIOUS inventorying the v3 delta — and every header check
+passed. The sharpest part: the template's own C5-1 note, SEVEN LINES
+ABOVE the paragraph, already records this exact defect from the 0022
+line ("static prose here once claimed first sealed package on the line's
+third sealed round"). The paragraph — and a second static claim, the
+round-count sentence — are deleted from every template on both lines, and
+`seal_package.WITHDRAWN_CLAIMS` now REFUSES both shapes at seal time, in
+wording the sealer's own derived NO_PRIOR text deliberately does not use.
+`test_no_template_hand_asserts_lineage` proves the ban bites and that the
+derived wording never trips it. Lineage facts now have exactly one
+source: the governed record.

@@ -145,6 +145,21 @@ WITHDRAWN_CLAIMS = (
                                   "withdrawn (R10-1)"),
     (r'"QUOTED VERBATIM" IS WITHDRAWN', "§4e-i is generated from the "
                                         "executable; the withdrawal is stale"),
+    # PACKAGE-R4-1 (0011 round 4): a hand-written template carried a static
+    # first-package paragraph, and by the line's FOURTH seal the built header
+    # asserted first-package and rounds-1-4 in the same file, with
+    # CHANGED_FROM_PREVIOUS inventorying the v3 delta beside it. The header's
+    # own C5-1 note — seven lines above the paragraph — already recorded this
+    # exact defect from the 0022 line. Lineage facts come ONLY from the
+    # governed record: the sealer's NO_PRIOR path says "No predecessor is
+    # DECLARED", in different words on purpose, so this ban cannot collide
+    # with the derived text.
+    (r"THE FIRST SEALED PACKAGE ON THIS LINE",
+     "first-package status is DERIVED (NO_PRIOR), never asserted by a "
+     "template"),
+    (r"[Ii]nternal rounds \d+[-–]\d+ closed",
+     "round counts are DERIVED from the ledger; a static count is stale by "
+     "the next round"),
 )
 
 

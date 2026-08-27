@@ -42,7 +42,15 @@ def _dependency_closure(spec: str, block: str) -> str:
             start = m.start()
             nxt = re.search(r"^\w+\s*\([^)]*\)\s*:?=", f[m.end():], re.M)
             end = m.end() + (nxt.start() if nxt else len(f) - m.end())
-            defs[m.group(1)] = f[start:end]
+            name, body = m.group(1), f[start:end]
+            # EVIDENCE-R4-1: last-definition-wins let a dangerous helper be
+            # SHADOWED by a benign redefinition — the reviewer defined
+            # `sourced()` reading source_id, then redefined it as False, and
+            # the closure analysed only the second. Two definitions of one
+            # name is an ambiguity the spec must not contain, so instead of
+            # choosing either, the closure carries BOTH bodies — any read in
+            # either copy is a read.
+            defs[name] = (defs[name] + "\n" + body) if name in defs else body
     seen, frontier, out = set(), [_strip_comments(block)], []
     while frontier:
         body = frontier.pop()
