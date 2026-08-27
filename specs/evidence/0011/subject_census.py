@@ -104,7 +104,13 @@ def main() -> int:
     if bool(a.cache) == bool(a.aggregate):
         ap.error("exactly one of --cache / --aggregate")
     if a.aggregate:
-        return report(json.loads(pathlib.Path(a.aggregate).read_text()))
+        agg = json.loads(pathlib.Path(a.aggregate).read_text())
+        problems = validate_aggregate(agg)
+        if problems:
+            print("aggregate REFUSED:\n  " + "\n  ".join(problems),
+                  file=sys.stderr)
+            return 1
+        return report(agg)
 
     sha = hashlib.sha256()
     entries = unparseable = triples = passes = 0
@@ -152,6 +158,90 @@ def _masked_table(counter) -> dict:
     for s, n in counter.items():
         out[mask_names(s)] = out.get(mask_names(s), 0) + n
     return {s: out[s] for s in sorted(out)}
+
+
+# The 0025 aggregate ships in this same archive and was derived from the
+# SAME cache by a different script. It is the independent side of every
+# cross-check below.
+_PEER = (pathlib.Path(__file__).resolve().parents[1]
+         / "0025" / "corpus_aggregate.json")
+
+
+def validate_aggregate(agg) -> list:
+    """EVIDENCE-R2-1: aggregate mode TRUSTED its input.
+
+    The reviewer supplied a one-entry aggregate with an all-zero digest and
+    this script printed the claimed measurement and exited 0. A verifier
+    that accepts a fabrication verifies nothing — 0001's R12-1 in a second
+    place, which is where that lesson should have arrived before this
+    artifact shipped.
+
+    So: a CLOSED typed schema (missing AND unknown keys refused), and every
+    figure the aggregate asserts about the cache cross-checked against the
+    0025 aggregate, which was derived from the same cache by a different
+    script and ships beside this one. A fabricated manifest now has to
+    agree with an artifact the fabricator does not control.
+    """
+    out = []
+    TOP = {"schema": int, "manifest": dict, "triples": int,
+           "predicate_passes": int, "candidate_table": dict}
+    missing = sorted(set(TOP) - set(agg))
+    unknown = sorted(set(agg) - set(TOP))
+    if missing:
+        out.append(f"missing key(s): {missing}")
+    if unknown:
+        out.append(f"unknown key(s): {unknown} — the schema is CLOSED")
+    for k, ty in TOP.items():
+        if k in agg and type(agg[k]) is not ty:
+            out.append(f"{k}: {type(agg[k]).__name__}, expected {ty.__name__}")
+    if out:
+        return out
+
+    MAN = {"entries": int, "sha256": str, "unparseable": int}
+    man = agg["manifest"]
+    if sorted(man) != sorted(MAN):
+        out.append(f"manifest keys {sorted(man)} != {sorted(MAN)}")
+    else:
+        for k, ty in MAN.items():
+            if type(man[k]) is not ty:
+                out.append(f"manifest.{k}: expected {ty.__name__}")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(man.get("sha256", ""))):
+        out.append("manifest.sha256 is not a sha256 digest")
+    for s, n in agg["candidate_table"].items():
+        if type(s) is not str or type(n) is not int or n < 1:
+            out.append(f"candidate_table[{s!r}] = {n!r} is not a positive "
+                       f"count")
+            break
+    if out:
+        return out
+
+    # --- the independent side -------------------------------------------
+    if not _PEER.exists():
+        out.append(f"{_PEER.name} is absent — the cross-check cannot run, "
+                   f"and an uncrossed aggregate is the defect this "
+                   f"function exists for")
+        return out
+    peer = json.loads(_PEER.read_text())
+    pm = peer["manifest"]
+    if man["sha256"] != pm["sha256"]:
+        out.append(f"cache sha256 {man['sha256'][:16]}… does not match the "
+                   f"0025 aggregate's {pm['sha256'][:16]}… — these figures "
+                   f"were not derived from the same cache")
+    if man["entries"] != pm["entries"]:
+        out.append(f"manifest.entries {man['entries']:,} != 0025's "
+                   f"{pm['entries']:,}")
+    if man["unparseable"] != pm["unparseable"]:
+        out.append(f"manifest.unparseable {man['unparseable']} != 0025's "
+                   f"{pm['unparseable']}")
+    # the triple total DERIVED independently, from 0025's relation counts
+    derived = sum(peer["relation_counts"].values())
+    if agg["triples"] != derived:
+        out.append(f"triples {agg['triples']:,} != {derived:,} derived by "
+                   f"summing 0025's relation_counts — the total is not "
+                   f"taken on trust")
+    if not 0 <= agg["predicate_passes"] <= agg["triples"]:
+        out.append("predicate_passes is not within [0, triples]")
+    return out
 
 
 def report(agg) -> int:

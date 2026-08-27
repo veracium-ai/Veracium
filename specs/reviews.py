@@ -701,6 +701,73 @@ REVIEWS = [
          "cb5cdb3fa5df8f6ec292db38362d72992b97af30691ba559d38db34909f5998a",
          findings=0),
 
+    dict(spec="0011", round=2, kind="external", date="2026-08-27",
+         raised=["0011-R2-1", "0011-R2-2", "0011-R2-3",
+                 "0011-CARRIER-R2-1", "0011-EVIDENCE-R2-1"],
+         verdict="RETURN v2 / DRAFT v5 FOR MAJOR AMENDMENT (package "
+         "`0011-v2`, sha cb5cdb3f verified; archive structure and v1 "
+         "lineage valid; extracted suite 1835 passed/22 skipped reconciling "
+         "through 14 declared transitions; collected-header 21 passed; spec "
+         "gate 88 passed. R1-3's same-value defect confirmed CLOSED). FOUR "
+         "OF FIVE FINDINGS WERE DEFECTS IN ROUND 1'S OWN FIXES. R2-1: the "
+         "round-1 predicates made `source_id` an ENTITLEMENT CAPABILITY — "
+         "executed, omitting the prior's source_id ALLOWED the retirement "
+         "and adding any source_id to the incoming assertion ALLOWED it "
+         "too; accepted 0006 says source_id may GROUP never GRANT and was "
+         "not even a declared prerequisite. R2-2: the rider was not a "
+         "construction (no schema/migration/erasure/telemetry surface "
+         "named, contradicting §7's no-stored-state claim) and "
+         "`would_refuse_broad` is CONSTANT TRUE because broad is a strict "
+         "superset of narrow — it measures nothing. R2-3: the contention "
+         "checker validated a standalone function; two active same-class "
+         "distinct-value edges in a real store are contested under the "
+         "draft and NOT contested under the shipped Recall.contested (0 "
+         "groups, 0 exposed), and the draft carried two contracts at once. "
+         "CARRIER-R2-1: SEVEN contradictory authoritative statements passed "
+         "the pristine fold checker, which searched narrow phrases across "
+         "the whole file instead of binding each assertion to its named "
+         "row. EVIDENCE-R2-1: aggregate mode trusted its input — a "
+         "fabricated one-entry aggregate with an all-zero digest printed "
+         "the claimed measurement and exited 0. Additional artifacts "
+         "requested: a policy truth-table harness over source "
+         "absence/forgery/import, a store-level contention integration "
+         "harness, and a schema/telemetry migration record. Archive layout "
+         "and hash coverage need no structural change", findings=5),
+
+    dict(spec="0011", round=3, kind="external", date="2026-08-27",
+         verdict="SENT (package `0011-v3`, candidate draft v6 — the round-2 "
+         "fold; §12 maps every finding). R2-1: the decision READS NO "
+         "source_id — `sourced` is deleted, the rule refuses on subject "
+         "class plus self-assertion alone, 0005/0006/0015 join "
+         "Spec-Requires, and the cost is stated rather than absorbed: "
+         "without a trustworthy carrier the narrowing cannot be expressed, "
+         "so the rule REFUSES MORE and the deferral to 0016's frozen "
+         "evidence_basis is the reason. A source-identity INVARIANCE matrix "
+         "is specified (presence, absence, arbitrary value, foreign origin, "
+         "import-flattened author — decision unchanged in every cell). "
+         "R2-2: `would_refuse_broad` DELETED as constant-true; the rider "
+         "adds NO stored state — counters on 0015's existing carrier, no "
+         "column, no migration, nothing to erase — so §7's claim holds and "
+         "0013 is not a prerequisite. R2-3: contention IS 0003's "
+         "refusal-scoped notion, adopted rather than redefined, with E3 "
+         "governing its rendering across Recall.contested/gate/maintain/"
+         "import/direct-store; the checker drives a REAL store and asserts "
+         "the reviewer's own cell (direct distinct-value pair → NOT "
+         "contested) beside a positive control (live refusal → contested). "
+         "CARRIER-R2-1: all seven swept and each assertion bound to its "
+         "NAMED ROW; S6 is compared COUNT-TO-COUNT via a `labels=5` token, "
+         "which came from this fix's own first failure — it searched for "
+         "'three labels' and the row said 'one of the three'. "
+         "EVIDENCE-R2-1: closed typed schema plus cross-checks against "
+         "0025's independently-derived aggregate, including a triple total "
+         "summed from its relation counts; seven fabrications refused, the "
+         "real aggregate still verifies. STILL OUTSTANDING and disclosed: "
+         "the executable reference/vector model over subject x basis x "
+         "source-presence x authority x contention x principal, and the "
+         "policy truth-table harness — the invariance matrix is SPECIFIED "
+         "in §4b but not yet executable. Sealed AFTER this row, sha pinned "
+         "on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

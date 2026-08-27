@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-"""0011 §4c — the contention rule, checked against SHIPPED 0012 behaviour.
+"""0011 §4c — contention, checked against the SHIPPED SURFACE.
 
-External round 1, R1-3: v4 defined contention as ">=2 active same-class
-edges" and that is FALSE against accepted 0012, which deliberately persists
-a same-VALUE restatement as a separate active edge and calls the pair
-uncontested. The reviewer executed
-`test_a_same_value_restatement_produces_no_contention_artifacts` to show it.
+External round 2, R2-3: the previous version of this file validated a
+standalone value-list function — a REIMPLEMENTATION of the rule, not the
+rule as any reader sees it. The reviewer inserted two active, same-class,
+distinct-value edges into a real store and got draft-v5 CONTESTED against
+the shipped `Recall.contested`'s **0 groups, 0 exposed members**. A checker
+that agrees with its own restatement can do that indefinitely.
 
-This script checks the FOLD: the rule now requires >=2 distinct normalised
-values, using 0012's OWN `_value_key` so the two notions cannot drift apart.
-It runs under the reviewer's bare offline interpreter — it puts `src` on the
-path itself rather than needing the package installed, which is why it is a
-named script rather than a pytest invocation.
+So this drives a REAL store and asserts the shipped predicate:
+`_live_refusal_contention_edge_ids` — a refusal record exists, both edges
+are active and distinct, the relation is functional. That is 0003's
+refusal-scoped notion (`compile.py`: "REFUSAL-scoped (Option B), not every
+contention"), and §4c now adopts it rather than defining a second one.
+
+Runs under the reviewer's bare offline interpreter — it puts `src` on the
+path itself rather than needing the package installed.
 
 Run:  $PY specs/evidence/0011/check_contention_rule.py
 """
@@ -19,48 +23,79 @@ from __future__ import annotations
 
 import pathlib
 import sys
+import tempfile
+from datetime import datetime, timezone
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[3] / "src"))
 
-from veracium.graph import _value_key                        # noqa: E402
+from veracium.compile import _live_refusal_contention_edge_ids   # noqa: E402
+from veracium.schema import (Disclosure, Edge, EvidenceAuthor,    # noqa: E402
+                             Provenance, DEFAULT_RELATIONS,
+                             SupersessionPlan, SupersessionRefusalDraft)
+from veracium.store.sqlite import SqliteStore                     # noqa: E402
+from veracium.authority import effective, scope_fingerprint       # noqa: E402
+
+U, NOW = "u", datetime(2026, 5, 1, tzinfo=timezone.utc)
 
 
-def contested(values) -> bool:
-    """§4c as folded: >=2 active same-class edges carrying >=2 DISTINCT
-    normalised values. `values` are the objects of the active same-class set."""
-    return len(values) >= 2 and len({_value_key(v) for v in values}) >= 2
-
-
-CELLS = (
-    # (name, active same-class object values, expected)
-    ("same_value_restatement_is_NOT_contention",
-     ["cat named Minerva", "cat named Minerva"], False),
-    ("same_value_after_normalisation_is_NOT_contention",
-     ["cat named Minerva", "  Cat Named Minerva  "], False),
-    ("two_distinct_values_ARE_contention", ["cat", "dog"], True),
-    ("three_values_two_distinct_ARE_contention", ["cat", "cat", "dog"], True),
-    ("a_single_edge_is_NOT_contention", ["cat"], False),
-    ("no_edges_is_NOT_contention", [], False),
-)
+def _edge(eid, author, obj, disclosure=Disclosure.MENTIONABLE):
+    return Edge(id=eid, user_id=U, subject="user", relation="works_as",
+                object=obj, valid_from=NOW, active=True,
+                provenance=Provenance(author_of_evidence=author,
+                                      evidence_ref=f"r-{eid}", observed_at=NOW,
+                                      disclosure=disclosure))
 
 
 def main() -> int:
     bad = []
-    for name, values, want in CELLS:
-        got = contested(values)
-        if got != want:
-            bad.append(f"{name}: contested={got}, expected {want}")
-    # the normalisation must be 0012's, not a second one: if these ever
-    # disagree the rule has drifted from the spec it composes with
-    if _value_key("Cat Named Minerva") != _value_key("cat named minerva"):
-        bad.append("0012's _value_key no longer normalises case/space — the "
-                   "rule's 'distinct value' notion has drifted from 0012's")
+    with tempfile.TemporaryDirectory() as td:
+        # CELL 1 — the reviewer's exact scenario: two active, same-class,
+        # DISTINCT-value edges inserted directly. No refusal exists, so the
+        # shipped surface reports nothing, and §4c must agree.
+        s = SqliteStore(f"{td}/direct.db")
+        s.add_edge(_edge("d1", EvidenceAuthor.USER, "CFO at Acme"))
+        s.add_edge(_edge("d2", EvidenceAuthor.USER, "CTO at Globex"))
+        direct = _live_refusal_contention_edge_ids(s, U, DEFAULT_RELATIONS)
+        if direct:
+            bad.append(f"direct insertion reported contention {direct} — the "
+                       f"shipped surface is REFUSAL-scoped and v5's "
+                       f"any-distinct-pair rule is what R2-3 rejected")
+        s.close()
+
+        # CELL 2 — a GENUINE refusal: the shipped surface must report it,
+        # which is what makes cell 1 a real distinction and not a checker
+        # that simply never fires.
+        s2 = SqliteStore(f"{td}/refused.db")
+        prior = _edge("p1", EvidenceAuthor.USER, "CFO at Acme")
+        s2.add_edge(prior)
+        inc = _edge("i1", EvidenceAuthor.THIRD_PARTY, "unemployed",
+                    Disclosure.QUARANTINED)
+        s2.apply_supersession_plan(SupersessionPlan(
+            incoming_edge=inc, insert_incoming=True, operation_id="op-1",
+            expected_state=scope_fingerprint(
+                s2.edges(U, subject="user", relation="works_as",
+                         active_only=True, include_quarantined=True)),
+            refusals=[SupersessionRefusalDraft(
+                prior_edge_id=prior.id, incoming_edge_id=inc.id,
+                relation="works_as",
+                prior_effective=effective(
+                    prior.provenance.author_of_evidence, None),
+                incoming_effective=effective(
+                    inc.provenance.author_of_evidence, None))]))
+        live = _live_refusal_contention_edge_ids(s2, U, DEFAULT_RELATIONS)
+        if {"p1", "i1"} - live:
+            bad.append(f"a LIVE refusal reported contention {live}, missing "
+                       f"one or both edges — if this cell cannot fire, cell "
+                       f"1 proves nothing")
+        s2.close()
+
     if bad:
-        print("0011 §4c contention rule FAILED:\n  " + "\n  ".join(bad),
-              file=sys.stderr)
+        print("0011 §4c contention FAILED against the shipped surface:\n  "
+              + "\n  ".join(bad), file=sys.stderr)
         return 1
-    print(f"0011 §4c: {len(CELLS)} cells agree, over 0012's own _value_key — "
-          f"same-value restatements are agreement, not contention")
+    print("0011 §4c: contention is 0003's REFUSAL-scoped notion — a direct "
+          "distinct-value pair is NOT contested (the reviewer's cell), a live "
+          "refusal IS, both measured on a real store")
     return 0
 
 

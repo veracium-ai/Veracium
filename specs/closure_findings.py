@@ -1774,4 +1774,74 @@ CLOSURES = [
      "figure reproduces exactly and the two that did not are RETIRED",
      "$PY specs/evidence/0011/subject_census.py --aggregate "
      "specs/evidence/0011/subject_aggregate.json"),
+
+    # ---- 0011 external round 2 (2026-08-27). Four of five were defects in
+    # round 1's own fixes; the evidence runs, it does not grep.
+    ("0011", "external", 2, "0011-R2-1",
+     "the round-1 predicates made `source_id` an ENTITLEMENT CAPABILITY in "
+     "both directions — omitting the prior's source_id ALLOWED the "
+     "retirement, adding any source_id to the incoming assertion ALLOWED it "
+     "too — against accepted 0006, which says it may GROUP never GRANT and "
+     "was not even declared as a prerequisite",
+     "`sourced` is DELETED and the decision reads no source_id at all; the "
+     "rule refuses on subject class plus self-assertion; 0005/0006/0015 "
+     "join Spec-Requires; the lost narrowness is stated as a cost and "
+     "deferred to 0016's frozen carrier; an invariance matrix is specified",
+     "$PY specs/evidence/0011/check_round1_fold.py"
+     "  # asserts the policy block CONTAINS NO source_id (comments "
+     "stripped, so the sentence denying the read cannot satisfy it), that "
+     "0006's constraint is quoted as the reason, and that the invariance "
+     "matrix exists"),
+
+    ("0011", "external", 2, "0011-R2-2",
+     "`would_refuse_broad` is CONSTANT TRUE — broad is a strict superset of "
+     "narrow, so a narrow refusal is always a broad one; and the rider "
+     "proposed store columns while §7a named no schema/migration/erasure/"
+     "telemetry surface and §7 claimed no stored state",
+     "the flag is DELETED; the rider adds no stored state at all — counters "
+     "on 0015's existing carrier, no column, no migration, nothing to "
+     "erase — so §7 is true again and 0013 is not a prerequisite",
+     "$PY specs/evidence/0011/check_round1_fold.py"
+     "  # asserts the rider names the allowed-but-broad-refusing "
+     "counter rather than the vacuous flag; the checker previously REQUIRED "
+     "that flag, pinning the defect in place"),
+
+    ("0011", "external", 2, "0011-R2-3",
+     "the checker validated a standalone value-list function, and the "
+     "shipped surface disagreed with it: two active same-class "
+     "distinct-value edges in a real store are contested under the draft "
+     "and NOT contested under Recall.contested (0 groups, 0 exposed)",
+     "contention IS 0003's refusal-scoped notion, adopted rather than "
+     "redefined; E3 governs its rendering across the named surfaces; the "
+     "checker drives a REAL store",
+     "$PY specs/evidence/0011/check_contention_rule.py  # the reviewer's "
+     "own cell (direct distinct-value pair -> NOT contested) beside a "
+     "positive control (a live refusal -> contested), both on a real store, "
+     "so the check cannot pass by never firing"),
+
+    ("0011", "external", 2, "0011-CARRIER-R2-1",
+     "SEVEN contradictory authoritative statements passed the pristine fold "
+     "checker, which searched narrow phrases across the whole file — so a "
+     "withdrawal written in §4e satisfied it while §3a still asserted the "
+     "opposite",
+     "all seven swept; each assertion BOUND TO ITS NAMED ROW so a "
+     "withdrawal elsewhere cannot satisfy it; S6 compared COUNT-TO-COUNT "
+     "against §4f's table via a `labels=5` token",
+     "$PY specs/evidence/0011/check_round1_fold.py"
+     "  # row-scoped contradiction checks plus the count comparison; "
+     "the count check exists because the first fix searched for 'three "
+     "labels' while the row said 'one of the three', so the contradiction "
+     "survived twice"),
+
+    ("0011", "external", 2, "0011-EVIDENCE-R2-1",
+     "the census aggregate mode TRUSTED its input — a fabricated one-entry "
+     "aggregate with an all-zero digest printed the claimed measurement and "
+     "exited 0",
+     "a CLOSED typed schema (missing and unknown keys both refused) plus "
+     "cross-checks against 0025's independently-derived aggregate, "
+     "including a triple total summed from its relation counts, so a "
+     "fabricated manifest must agree with an artifact its author does not "
+     "control",
+     "$PY specs/evidence/0011/subject_census.py --aggregate "
+     "specs/evidence/0011/subject_aggregate.json"),
 ]

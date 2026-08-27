@@ -29,7 +29,11 @@ def check_r1_1(t: str) -> list:
                   if "policy(incoming, prior)" in b), None)
     if block is None:
         return ["R1-1: no policy function block"]
-    for term in ("REFUSE", "ALLOW", "sourced(prior)",
+    # NOTE: `sourced(prior)` was round 1's answer and round 2 REMOVED it —
+    # 0006 forbids source_id from granting, so the rule must not read it.
+    # A checker that still demanded the term would pin the defect in place,
+    # which is what this line did until R2-1 was folded.
+    for term in ("REFUSE", "ALLOW",
                  "self_assertion(incoming)", "subject_class(prior) == OTHER"):
         if term not in block:
             bad.append(f"R1-1: the policy block omits {term!r}")
@@ -37,13 +41,36 @@ def check_r1_1(t: str) -> list:
         bad.append("R1-1: the policy block has no catch-all — a policy "
                    "function that is not total is v4's defect again")
     # the predicates must be DEFINED, not merely used
-    for pred in (r"sourced\(e\)\s*:=", r"self_assertion\(e\)\s*:="):
-        if not re.search(pred, t):
-            bad.append(f"R1-1: {pred} is used but never defined")
-    # and the rider must have the counter that makes it measurable
-    if "would_refuse_broad" not in t:
-        bad.append("R1-1: the rider has no allowed-cell counter, so the "
-                   "broad rule's constituency is still unmeasurable")
+    if not re.search(r"self_assertion\(e\)\s*:=", t):
+        bad.append("R1-1: self_assertion is used but never defined")
+    # R2-1: the decision must READ NO source_id. Checked on the block, not
+    # on the prose about it — prose can claim anything.
+    # strip COMMENT lines before looking for a read: the block's own
+    # comment says the rule reads no source_id, and a naive search for the
+    # token is satisfied by the sentence denying it — the same
+    # describe-don't-quote trap this project keeps meeting.
+    code = "\n".join(l for l in block.splitlines()
+                      if not l.lstrip().startswith("#"))
+    if "source_id" in code:
+        bad.append("R2-1: the policy block reads `source_id`. 0006 says it "
+                   "may GROUP, never GRANT — omission would strip "
+                   "protection and a caller-supplied value would buy it")
+    # whitespace-tolerant: the quotation is line-wrapped in the spec, and a
+    # literal match would fail on a reflow that changes nothing
+    if not re.search(r"may GROUP,\s+never\s+GRANT", t):
+        bad.append("R2-1: 0006's constraint is not quoted as the reason")
+    if "decision unchanged" not in t:
+        bad.append("R2-1: no source-identity invariance matrix — the claim "
+                   "that the rule ignores source_id is untested")
+    # the rider must have the counter that makes it measurable. NOT
+    # `would_refuse_broad`, which R2-2 deleted as constant-true — this
+    # check required it, so the checker was pinning a vacuous field in
+    # place. The load-bearing artifact is the allowed-but-broad-refusing
+    # counter, which is the only one that can vary.
+    if "would have REFUSED" not in t:
+        bad.append("R1-1: the rider has no allowed-but-broad-refusing "
+                   "counter, so the broad rule's constituency is still "
+                   "unmeasurable")
     return bad
 
 
@@ -104,9 +131,86 @@ def check_r1_5(t: str) -> list:
     return bad
 
 
+# CARRIER-R2-1: each assertion is bound to its NAMED ROW. v5's checker
+# searched narrow phrases across the whole file, so withdrawing a claim in
+# §4e while §3a still asserted it PASSED — seven contradictory authoritative
+# statements survived a green check. A row-scoped check cannot be satisfied
+# by a withdrawal written somewhere else.
+#
+# (anchor that locates the row, substring that must NOT appear in it, why)
+ROW_CONTRADICTIONS = (
+    ("| the caller's `actor` on `correct()` |", "UNFORGEABLE",
+     "§3a's adversarial row claims an unforgeable authorisation; §4e "
+     "withdrew that claim (R1-2)"),
+    # S6 is checked DATA-TO-DATA below, not by phrase — see check_s6_count.
+    # A forbidden-substring check missed it entirely: the row says "one of
+    # the three", never "three labels", so the guard looked for wording the
+    # spec had never used. That is CARRIER-R2-1's own failure repeated
+    # inside the fix for CARRIER-R2-1.
+    ("| **S7**", "no rule here reads",
+     "S7 denies reading disclosure; §4f's partition reads `quarantined` "
+     "and `use_only` to place a label"),
+    ("| **E-Q1** |", "0.016%",
+     "E-Q1 still states the RETIRED figure as authoritative "
+     "(PACKAGE-R1-1)"),
+    ("| USER (with other authority", "confirmation, a higher rung",
+     "§3c grants confirmation a rung; 0008 grants it none (R1-1)"),
+    ("| existing `correct()` callers |", "can no longer forge",
+     "§5 claims callers can no longer forge; they can still name a "
+     "principal they are not (R1-2)"),
+)
+
+
+_NUMBER = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+           "six": 6, "seven": 7}
+
+
+def check_s6_count(t: str) -> list:
+    """S6 states HOW MANY labels the partition has; §4f IS the partition.
+    Compare the two rather than searching for a phrase — the count is data
+    on both sides, so no wording can hide a disagreement."""
+    m = re.search(r"\| # \| condition \| label \|\n\|[-| ]+\|\n((?:\|.*\n)+)", t)
+    if not m:
+        return ["S6: no precedence table to count"]
+    actual = len([r for r in m.group(1).strip().splitlines()
+                  if r.startswith("|")])
+    i = t.find("| **S6**")
+    if i < 0:
+        return ["S6: the invariant row is gone"]
+    row = t[i:t.index("\n", i)]
+    # the row carries the count as a TOKEN. Parsing an English number out of
+    # prose read "exactly ONE of the five" as a claim of one — the number
+    # that matters has to be unambiguous, so the carrier states it as data.
+    m2 = re.search(r"`labels=(\d+)`", row)
+    if not m2:
+        return ["S6: the row carries no `labels=N` token, so its claim "
+                "cannot be compared with §4f's table"]
+    claimed = int(m2.group(1))
+    if claimed != actual:
+        return [f"S6 claims {claimed} labels; §4f's precedence table has "
+                f"{actual}"]
+    return []
+
+
+def check_carriers(t: str) -> list:
+    bad = []
+    for anchor, forbidden, why in ROW_CONTRADICTIONS:
+        i = t.find(anchor)
+        if i < 0:
+            bad.append(f"CARRIER: the row anchored at {anchor!r} is GONE — "
+                       f"a renamed row silently drops its own check")
+            continue
+        row = t[i:t.index("\n", i)]
+        if forbidden in row:
+            bad.append(f"CARRIER: {why} — the row still says "
+                       f"{forbidden!r}")
+    return bad
+
+
 def main() -> int:
     t = SPEC.read_text()
-    bad = (check_r1_1(t) + check_r1_2(t) + check_r1_4(t) + check_r1_5(t))
+    bad = (check_r1_1(t) + check_r1_2(t) + check_r1_4(t) + check_r1_5(t)
+           + check_carriers(t) + check_s6_count(t))
     if bad:
         print("0011 round-1 fold INCOMPLETE:\n  " + "\n  ".join(bad),
               file=sys.stderr)
