@@ -765,8 +765,10 @@ REVIEWS = [
          "the executable reference/vector model over subject x basis x "
          "source-presence x authority x contention x principal, and the "
          "policy truth-table harness — the invariance matrix is SPECIFIED "
-         "in §4b but not yet executable. Sealed AFTER this row, sha pinned "
-         "on return", findings=0),
+         "in §4b but not yet executable. Sealed as "
+         "`0011-v3-20260827T0155Z` at commit 8cd61ea, sha256 "
+         "6261af6df33716933840f9e486caf425a3ca4d44ce65c2022ed76c54bc142c5f",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
