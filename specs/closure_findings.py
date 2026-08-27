@@ -1844,4 +1844,57 @@ CLOSURES = [
      "control",
      "$PY specs/evidence/0011/subject_census.py --aggregate "
      "specs/evidence/0011/subject_aggregate.json"),
+
+    # ---- 0011 external round 3 (2026-08-27). Three of four were again
+    # defects in the previous round's fixes.
+    ("0011", "external", 3, "0011-R3-1",
+     "an EQUIVALENT authority bypass through `derived_from`: "
+     "EvidenceContext.derived(USER) is valid and reachable, and "
+     "USER/derived_from=USER carries the SAME effective authority (3) as "
+     "USER/None, yet v6 refused one and allowed the other — a marker "
+     "supplying no independent authority bought permission",
+     "the predicate is defined over the AUTHORITY CHAIN via production "
+     "effective(), so exactly two chains qualify and the bypass cell is in "
+     "the refusal set by construction; the 240-cell executable matrix "
+     "asserts the CLASS (equal authority decides equally), not the instances",
+     "$PY specs/evidence/0011/policy_matrix.py  # both defects that shipped "
+     "were planted against it and both are caught; the absence-based one "
+     "trips the GENERALISED equal-authority check as well as its named cell"),
+
+    ("0011", "external", 3, "0011-R3-2",
+     "the telemetry rider contradicted accepted 0015, which DEFERS refusal "
+     "counters to a new consent discussion, requires consent-version gating "
+     "for new payload fields, and counts only from a fresh commit — "
+     "decision-time increments would overcount aborted and PLAN_STALE "
+     "attempts",
+     "the rider is WITHDRAWN: v1 ships with the broad rule's constituency "
+     "unmeasured and says so, leaving the consent question and the telemetry "
+     "construction to 0015's own round",
+     "$PY specs/evidence/0011/check_round1_fold.py  # asserts the deferral "
+     "and that the spec states the constituency is unmeasured; this check "
+     "previously REQUIRED the counter, pinning in place what the next round "
+     "removed"),
+
+    ("0011", "external", 3, "0011-CARRIER-R3-1",
+     "five more contradictions survived the claimed sweep, and the "
+     "no-source_id check was SYNTACTIC — the reviewer moved the read behind "
+     "a helper defined in a separate fence and every fold check passed",
+     "all five swept, and the check follows the predicate's TRANSITIVE "
+     "DEPENDENCIES across fences, so a read one or two indirections away is "
+     "still a read",
+     "$PY specs/evidence/0011/check_round1_fold.py  # the reviewer's exact "
+     "bypass and a deeper two-hop version were both replayed against it and "
+     "both are refused"),
+
+    ("0011", "external", 3, "0011-EVIDENCE-R3-1",
+     "the census's deciding figures remained forgeable: `schema` was typed "
+     "but never valued, so schema=999 with predicate_passes=0 and a one-row "
+     "candidate table returned no findings",
+     "schema == 1 required; the PREDICATE ITSELF cross-checked against "
+     "0025's independently-derived subject_user on the shared subset; and "
+     "every figure labelled by what backs it, with the whole-corpus count "
+     "and the table's completeness marked RECORDED ONLY rather than implied "
+     "to be verifiable",
+     "$PY specs/evidence/0011/subject_census.py --aggregate "
+     "specs/evidence/0011/subject_aggregate.json"),
 ]

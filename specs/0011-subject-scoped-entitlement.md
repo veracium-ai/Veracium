@@ -12,7 +12,7 @@ Spec-Requires: 0003, 0005, 0006, 0008, 0012, 0014, 0015, 0016, 0020, 0023, 0024,
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v6** — the ROUND-2 FOLD (2026-08-27; §12 maps every finding). R2-1: **`source_id` is no longer read by the entitlement decision at all** — `0006` says it may GROUP, never GRANT, and v5 made it a capability in both directions (omission stripped protection, a caller-supplied value bought retirement). The `sourced` term is GONE, the rule refuses on subject class + self-assertion alone, the narrowing is deferred to `0016`'s frozen carrier, and a source-identity INVARIANCE matrix is owed. R2-2: `would_refuse_broad` DELETED as constant-true; the rider adds no stored state, so §7's claim holds again. R2-3: contention is `0003`'s REFUSAL-scoped notion — the shipped one — not a second contract. CARRIER-R2-1: seven contradictory authoritative statements swept, and the checker rebuilt to bind each assertion to its NAMED ROW, with S6 compared count-to-count. EVIDENCE-R2-1: the census aggregate has a closed typed schema and is cross-checked against 0025's independently-derived artifact. *Prior:* **v5** — the ROUND-1 FOLD (2026-08-26; §11 maps every finding). R1-1: the entitlement rule is REPRESENTABLE — `sourced` and `self_assertion` defined as closed predicates over state that exists today, a TOTAL policy function replacing v4's condition (which omitted the sourced term and contradicted §3c), the over-inclusion named in the refusing direction, the withdrawn 'confirmation is a higher rung' phrase retired against 0008, the basis-aware form deferred to 0016 rather than unfreezing it, and the measurement rider made MEASURABLE (it could not have measured anything: the deciding population produces no refusal row). R1-2: E5 is an INTEGRITY BINDING, not authentication — the claim is withdrawn, `correct()` is a protected host API with the host's obligations stated. R1-3: contention requires ≥2 DISTINCT `_value_key` values (v4's rule was false against accepted 0012, executed). R1-4: one outcome for a malformed `from_class` — RAISES, no write — with the complete grammar. R1-5: a first-match precedence table, total and exclusive, and E6 re-motivated after its premise was measured false. PACKAGE-R1-1: the census is GENERATED and digest-bound; two unreproducible figures retired. *Prior:* **v4** — the pre-send audit (2026-08-24, dev; nothing from a reviewer — these are the findings this spec would otherwise have paid a round for): **`Spec-Requires` declared for the first time** (0003, 0014, 0020, 0023, 0024, 0025 — the F1 class 0024 paid a round-1 finding for: a spec that consumes another's mechanism must say so); §3a-ii **Assertions about reach** and §3c **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §3a `0024` Q3 currency line corrected (it said the pinned tests were absent post-revert — true when research wrote it, stale within the day when 0024 landed as amended); the §9 brief addressed to the EXTERNAL reviewer with the internal rounds recorded; section order fixed to 3a → 3a-ii → 3b → 3c (internal M-1b). Every command in §3a-ii was RUN and its real output recorded. *Prior:* **v3** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS): **M-2/E-Q4 RULED YES** — the acting principal (`0020`) joins the E5 tuple as the fifth element, verified in-transaction (E5 authenticates CORRECTORS, not just corrections; S4 gains the replay-across-principals cell); **M-3** §4b keeps the NARROW refusal cell for v1 with a measurement RIDER (count refusal rows by cell post-ship; broad revisits on an operator's numbers — the E-Q1 pattern); **M-1** currency + references (0024 cited at its SPEC surface with the predicate-not-disposition statement for the A1 divergence; the S7 pointer fixed; sections renumbered §3a/§3b); minors m-4 (historical motivation marked), m-5 (symbol not line), m-6 (`derived(from_class)` closed domain, unknown fails to the THIRD_PARTY floor). Ratified untouched: E-Q2, E-Q3, the conservation argument, absence-as-positive-capability, S1–S7's shape, and research's purpose-scoping non-foreclosure lens (passes by construction). *Prior:* **v2** — the design (2026-08-22, authorized by Quentin's "Proceed with 0011"): E-Q2 and E-Q3 RULED (both dev-owned; derived-at-read and explicit threading — the accepted stack's own disciplines), E-Q1 dispatched to research with a decision frame and a provisional floor, the six inherited findings turned into §4's constructions and §6's invariants, and the open `M7-correct` finding adopted as this spec's motivating live defect. *Prior:* v1, the scope-holder from the `0003` split |
+| **Version** | **v7** — the ROUND-3 FOLD (2026-08-27; §13 maps every finding). R3-1: the predicate is defined over the AUTHORITY CHAIN via production `effective()`, so a marker carrying no authority cannot move the decision — the executable 240-cell policy matrix asserts the CLASS (equal authority decides equally), not the two named instances. R3-2: the measurement rider is WITHDRAWN — 0015 defers refusal counters to a consent discussion this spec cannot hold, so v1 ships with the constituency unmeasured and says so. CARRIER-R3-1: five more contradictions swept and the checker bound to the predicate's TRANSITIVE DEPENDENCIES, closing the helper-in-another-fence bypass. EVIDENCE-R3-1: `schema == 1` required, the predicate cross-checked against 0025 on the shared subset, and every figure labelled by what backs it — including the two that are RECORDED ONLY. *Prior:* **v6** — the ROUND-2 FOLD (2026-08-27; §12 maps every finding). R2-1: **`source_id` is no longer read by the entitlement decision at all** — `0006` says it may GROUP, never GRANT, and v5 made it a capability in both directions (omission stripped protection, a caller-supplied value bought retirement). The `sourced` term is GONE, the rule refuses on subject class + self-assertion alone, the narrowing is deferred to `0016`'s frozen carrier, and a source-identity INVARIANCE matrix is owed. R2-2: `would_refuse_broad` DELETED as constant-true; the rider adds no stored state, so §7's claim holds again. R2-3: contention is `0003`'s REFUSAL-scoped notion — the shipped one — not a second contract. CARRIER-R2-1: seven contradictory authoritative statements swept, and the checker rebuilt to bind each assertion to its NAMED ROW, with S6 compared count-to-count. EVIDENCE-R2-1: the census aggregate has a closed typed schema and is cross-checked against 0025's independently-derived artifact. *Prior:* **v5** — the ROUND-1 FOLD (2026-08-26; §11 maps every finding). R1-1: the entitlement rule is REPRESENTABLE — `sourced` and `self_assertion` defined as closed predicates over state that exists today, a TOTAL policy function replacing v4's condition (which omitted the sourced term and contradicted §3c), the over-inclusion named in the refusing direction, the withdrawn 'confirmation is a higher rung' phrase retired against 0008, the basis-aware form deferred to 0016 rather than unfreezing it, and the measurement rider made MEASURABLE (it could not have measured anything: the deciding population produces no refusal row). R1-2: E5 is an INTEGRITY BINDING, not authentication — the claim is withdrawn, `correct()` is a protected host API with the host's obligations stated. R1-3: contention requires ≥2 DISTINCT `_value_key` values (v4's rule was false against accepted 0012, executed). R1-4: one outcome for a malformed `from_class` — RAISES, no write — with the complete grammar. R1-5: a first-match precedence table, total and exclusive, and E6 re-motivated after its premise was measured false. PACKAGE-R1-1: the census is GENERATED and digest-bound; two unreproducible figures retired. *Prior:* **v4** — the pre-send audit (2026-08-24, dev; nothing from a reviewer — these are the findings this spec would otherwise have paid a round for): **`Spec-Requires` declared for the first time** (0003, 0014, 0020, 0023, 0024, 0025 — the F1 class 0024 paid a round-1 finding for: a spec that consumes another's mechanism must say so); §3a-ii **Assertions about reach** and §3c **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §3a `0024` Q3 currency line corrected (it said the pinned tests were absent post-revert — true when research wrote it, stale within the day when 0024 landed as amended); the §9 brief addressed to the EXTERNAL reviewer with the internal rounds recorded; section order fixed to 3a → 3a-ii → 3b → 3c (internal M-1b). Every command in §3a-ii was RUN and its real output recorded. *Prior:* **v3** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS): **M-2/E-Q4 RULED YES** — the acting principal (`0020`) joins the E5 tuple as the fifth element, verified in-transaction (E5 authenticates CORRECTORS, not just corrections; S4 gains the replay-across-principals cell); **M-3** §4b keeps the NARROW refusal cell for v1 with a measurement RIDER (count refusal rows by cell post-ship; broad revisits on an operator's numbers — the E-Q1 pattern); **M-1** currency + references (0024 cited at its SPEC surface with the predicate-not-disposition statement for the A1 divergence; the S7 pointer fixed; sections renumbered §3a/§3b); minors m-4 (historical motivation marked), m-5 (symbol not line), m-6 (`derived(from_class)` closed domain, unknown fails to the THIRD_PARTY floor). Ratified untouched: E-Q2, E-Q3, the conservation argument, absence-as-positive-capability, S1–S7's shape, and research's purpose-scoping non-foreclosure lens (passes by construction). *Prior:* **v2** — the design (2026-08-22, authorized by Quentin's "Proceed with 0011"): E-Q2 and E-Q3 RULED (both dev-owned; derived-at-read and explicit threading — the accepted stack's own disciplines), E-Q1 dispatched to research with a decision frame and a provisional floor, the six inherited findings turned into §4's constructions and §6's invariants, and the open `M7-correct` finding adopted as this spec's motivating live defect. *Prior:* v1, the scope-holder from the `0003` split |
 | **Status** | *see `Spec-Status:` — canonical.* Holds `0003`'s deferred scope. **Nothing here blocks `0003`.** |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (3 moderates + 3 minors, both §9 questions answered, E-Q4 ruled), folded in v3; **round 2 PASS 2026-08-23 (diff-verified 83d84c9..36eb177, zero stale refs, no new findings) — READY FOR EXTERNAL, send at Quentin's discretion** |
 | **External review** | required |
@@ -159,6 +159,29 @@ attach to.)*
   The conclusion is unchanged and marginally stronger: 0.017% rather
   than 0.016%.
 
+  **WHAT THE ARCHIVE CAN CHECK, AND WHAT IT CANNOT (external round 3,
+  EVIDENCE-R3-1).** Round 2 added a closed schema and manifest
+  cross-checks, and the reviewer showed the DECIDING figures were still
+  self-asserted: keeping the peer manifest and triple total but setting
+  `schema = 999`, `predicate_passes = 0` and a one-row candidate table
+  produced no findings. `schema` was typed and never valued. The
+  validator now requires `schema == 1`, and each figure is labelled by
+  what actually backs it:
+
+  | figure | backing |
+  |---|---|
+  | cache manifest, entries, unparseable, 183,417 triples | **cross-checked** against 0025's aggregate — same cache, different script |
+  | the PREDICATE itself, on the `third_party_claim` subset: 1,606 of 3,945 | **cross-checked** against 0025's independently-derived `subject_user`. It does not bind the whole-corpus count, but it proves this predicate IS 0025's, on 1,600+ real rows |
+  | candidate rows (337), classified SELF (31) | **derived** from the shipped table — recomputable from the archive alone |
+  | `predicate_passes` over the whole corpus (**72,253**), and the candidate table's COMPLETENESS | **RECORDED ONLY.** 0025 carries no whole-corpus subject data, so these reproduce with `--cache` on the measuring host and NOT from the archive alone |
+
+  That last row is a limitation of this package, stated rather than
+  papered over: a reader without the corpus is trusting dev for 72,253
+  and for the claim that no candidate was omitted. The narrowing is the
+  honest option the round offered, and the alternative — shipping a
+  whole-corpus subject-frequency table — would put 12,000+ corpus
+  strings in a public archive to bind one number.
+
   The classification stays a HUMAN judgement and is now auditable as
   one: `SELF_DENOTING` in the script lists the strings judged
   self-denoting, the candidate table ships every row that judgement was
@@ -220,8 +243,7 @@ authority", and it OMITTED the sourced predicate — contradicting §3c's
 own unchanged row, which says the refusal keys on displacing SOURCED
 evidence and not on subject class alone (external round 1, R1-1). Worse,
 neither "sourced" nor "self-assertion" had a runtime predicate at all.
-Both are defined here, closed and total, over state that EXISTS
-today.**
+`self_assertion` is defined here over the AUTHORITY CHAIN; `sourced` was REMOVED at R2-1 and is not a term of this decision.**
 
 ```
 self_assertion(e) := effective(author_of_evidence, derived_from)
@@ -349,7 +371,7 @@ a stronger claim than "we don't use it" and is testable —
 
 | term | absent case | why this reading |
 |---|---|---|
-| `source_id` | `None` → NOT sourced | 0023 already treats a record with no `source_id` as having no source identity (N11: no digest, no match). One meaning of absence across both specs, not two. |
+| ~~`source_id`~~ | **NOT A TERM (R2-1)** | removed from the decision entirely: `0006` says it may GROUP, never GRANT. Kept in this table as a struck row so a reader who remembers it finds its removal rather than its absence |
 | `derived_from` | `None` → not relayed | **and this is the known soft spot, named rather than hidden.** Today `None` means both "genuinely first-party" and "the host said nothing" — which is precisely the ambiguity §4d's `EvidenceContext` exists to remove. Until a host supplies one, `self_assertion` is over-inclusive: it will be TRUE for user edges whose provenance was merely unstated. |
 | `author_of_evidence` | never absent | a required field on `Provenance` |
 
@@ -388,32 +410,46 @@ refusals could never find the broad form's constituency. It would have
 returned zero for the wrong reason, and zero is what "no measured
 constituency" already claims — the rider would have confirmed itself.
 
-**R2-2 found the v5 rider was not a construction, and that one of its
-two fields could not vary.** `would_refuse_broad` is CONSTANT TRUE: the
-broad predicate is a strict superset of the narrow one, so anything the
-narrow rule refuses the broad rule refuses too. It was a column that
-could only ever hold one value — a field carrying no information, which
-is the same defect class as the rider it was added to repair. It is
-DELETED. Only the allowed-but-broad-refusing counter ever carried new
-information, and the reviewer said so.
+**THE RIDER IS DEFERRED. IT CANNOT BE BUILT ON ANOTHER SPEC'S DEFERRED
+CONSENT SURFACE (external round 3, R3-2).**
 
-v5 also proposed two new columns on `supersession_refusals` while §7a
-named no store-schema, migration, erasure or telemetry surface, and §7
-claimed there was "no stored state to unwind". Three statements, two of
-them false if the columns shipped. **So the rider adds NO STORED STATE
-AT ALL**, which is the version §7 was already describing:
+Round 2 rewrote the rider as counters on `0015`'s existing carrier,
+incremented at decision time under the existing consent posture. Accepted
+`0015` says the opposite of every clause of that:
 
-| | |
+| `0015` says | v6 assumed |
 |---|---|
-| carrier | `0015`'s existing supersession-telemetry counters — counts only, no ids, no values, no new table and no new column |
-| what is counted | one counter per POLICY CELL, incremented at decision time, plus the decisive one: **ALLOW from `policy()` where the broad predicate would have REFUSED** (`subject_class(prior) == OTHER and author(incoming) is USER and not self_assertion(incoming)`) |
-| schema / migration | **none** — no column, so no version bump, no backfill, no default, no closed domain to define |
-| erasure / export / retention | **none** — a counter holds no per-record data, so there is nothing to erase, export or retain |
-| consent | `0015`'s existing telemetry posture governs; this adds counters to a carrier that already has one |
-| prerequisites | `0015` joins `Spec-Requires`. `0013` does NOT — there is no migration, because there is no schema change |
+| refusal counters are **explicitly deferred to a new consent discussion** | they can be added now |
+| new payload fields require **consent-version gating and updated consent text** | the existing posture covers them |
+| counters derive **only from a fresh commit** | increment at decision time |
+| replays, stale attempts and refusal-only outcomes **do not count** | every decision counts |
 
-That counter is the constituency, and it is the ONLY thing the rider
-claims. §7's "no stored state to unwind" is true again.
+Decision-time increments would also overcount aborted and `PLAN_STALE`
+attempts, and the rider named no field names, cell taxonomy, consent
+version, visibility rules or multi-prior cardinality. **This is the third
+round in which I asserted a rule over another spec's contract without
+checking that contract's domain** — after `0006` at R2-1 and `0012` at
+R1-3 — and it is the same error each time.
+
+So the rider is WITHDRAWN from v1 rather than specified around:
+
+* **v1 ships with the broad rule's constituency UNMEASURED, and says so.**
+  The narrow/broad question is not resolved by this spec and cannot be
+  resolved by it, because the only honest way to count the deciding
+  population is a telemetry surface whose consent question `0015` has
+  deferred.
+* Revisiting the broad form therefore waits on **`0015`'s consent
+  discussion**, and on a complete telemetry construction — field names, a
+  closed cell taxonomy, consent version and text, host/MCP visibility, and
+  fresh-commit semantics that exclude replays and stale attempts. That is
+  `0015`'s round to hold, not this spec's to pre-empt.
+* What v1 keeps is the NARROWNESS ITSELF as a stated, deliberate choice
+  with its cost named (§4b: the rule refuses more than a
+  perfectly-informed rule would), rather than a promise to measure that it
+  has no mechanism to keep.
+
+`0015` remains in `Spec-Requires` — this spec still depends on its
+supersession counters existing — but nothing here adds to its payload.
 
 ### 4c. `CONTESTED` at every reader (E3, per the E-Q2 ruling)
 
@@ -658,7 +694,7 @@ they are the ones v4 got wrong.
 | regime | behaviour |
 |---|---|
 | a store with only user-self facts | byte-identical decisions — SELF-on-SELF entitlement is today's ladder |
-| third-party/org facts, no contention | unchanged until a USER self-assertion attempts to retire an OTHER-subject sourced fact — then a NEW refusal row |
+| third-party/org facts, no contention | unchanged until a USER self-assertion attempts to retire ANY OTHER-subject fact — sourced or not (R2-1 removed the sourced qualifier, so this widened) — then a NEW refusal row |
 | a functional relation in genuine contention | today: silent both-active; after: derived `CONTESTED` at every reader, gate asserts the contention |
 | existing `correct()` callers | same signature; the authorisation is minted by `Memory.correct` itself for the interactive path — the CHANGE is that tool-driven and replayed invocations can no longer TAMPER WITH or REPLAY (they can still name a principal they are not — R1-2) it |
 | hosts that never construct `EvidenceContext` | floored at `derived(THIRD_PARTY)` — strictly more conservative than today |
@@ -671,7 +707,7 @@ they are the ones v4 got wrong.
 | **S2** | a USER self-assertion never retires an OTHER-subject sourced fact; the refusal lands as a `supersession_refusals` row | `test_self_assertion_cannot_retire_other_subject` — the E2 cell, plus the refusal-row assertion |
 | **S3** | `CONTESTED` is derived — NO stored carrier exists, and every reader (recall, gate, maintain) handles the contested cell | `test_contested_is_derived_and_total_over_readers` — an AST sweep for stored writes plus per-reader behaviour cells |
 | **S4** | `correct()` reaches storage ONLY through the atomic plan machinery with a verified `CorrectionAuthorisation`; a forged, replayed, unbound, or **cross-principal** authorisation aborts inside the transaction (M-2: a capability minted under one principal replayed under another is the named new cell) | `test_correct_requires_bound_authorisation` — the M7 regression, forge/replay/rebind cells **+ the replay-across-principals cell** |
-| **S5** | absent `EvidenceContext` floors at `derived(THIRD_PARTY)` — absence is never the trusted cell — **and so does an unknown or malformed `from_class` (m-6): the domain is closed; validators refuse the unknown, not just cover the known** | `test_absent_context_floors_conservative` — plus the unknown-value cell |
+| **S5** | absent `EvidenceContext` floors at `derived(THIRD_PARTY)` — absence is never the trusted cell — **and an unknown or malformed `from_class` RAISES with no write — a DIFFERENT outcome, settled at R1-4 (absence declares nothing; garbage declares something untrue)** (was: floored too (m-6): the domain is closed; validators refuse the unknown, not just cover the known** | `test_absent_context_floors_conservative` — plus the unknown-value cell |
 | **S6** | the partition labels are derived and total — every edge lands in exactly one of `labels=5` — the labels of §4f's first-match precedence table (R1-5/CARRIER-R2-1: v5 said three, which was neither total nor exclusive, and said it in a row a phrase-search did not reach) | `test_history_partition_is_total` — enumeration over the field product |
 | **S7** | disclosure is never WRITTEN here — the `0024`/`0025` pipeline owns it. **§4f's partition READS it** (`quarantined`, `use_only`) to place a label, which v5 denied (R2-1/CARRIER-R2-1); reading to render is not writing to decide, and the distinction is the invariant | `test_no_disclosure_interaction` — the N2-style single-writer sweep extended, not duplicated |
 
@@ -696,7 +732,7 @@ they are the ones v4 got wrong.
 | `src/veracium/ingest.py` | the explicit `EvidenceContext` parameter (E-Q3) |
 | `src/veracium/compile.py` / `gate.py` / `introspect.py` | contested handling + the §4f partition labels |
 | `src/veracium/lifecycle.py` | **added at R1-3.** §4c claims contention does NOT suspend `0012`'s per-edge expiry; that is a claim about this module and v4 named neither |
-| `src/veracium/portability.py` | **added at R1-1.** If source identity participates in the entitlement predicate, the import boundary decides what a record's source IS on arrival (`0006`), so the predicate's inputs are settled here |
+| `src/veracium/portability.py` | **retained, on NARROWER grounds (R3-1).** R1-1 listed this because source identity participated in the predicate; it no longer does. What remains is real: the `0005` import cap FLATTENS an imported record's author, and the decision is a function of author and derivation — so the import boundary decides which authority chain the predicate sees. The matrix asserts the import-flattened cell |
 | tests | the §6 table's named tests — §6 is the ONE authoritative list |
 
 ## 8. Claims and limits
@@ -901,3 +937,73 @@ fabricated manifest must now agree with an artifact its author does not
 control. Seven fabrications tested, all refused; the real aggregate still
 verifies. This is `0001`'s R12-1 arriving in a second place, again after
 the fact rather than before.
+
+## 13. Changes in v7 — the round-3 fold (2026-08-27)
+
+Round 3 returned v6 for major amendment. Three of the four findings were
+again defects in the previous round's fixes, and the shape had become a
+pattern worth naming rather than folding past.
+
+**0011-R3-1 — `derived(USER)` bypassed the rule, exactly as `source_id`
+had.** `EvidenceContext.derived(USER)` is valid and reachable, and
+`USER/derived_from=USER` carries effective authority **3 — identical to
+`USER/None`** — yet v6 refused one and allowed the other. A marker
+supplying no independent authority bought permission to retire an
+OTHER-subject fact.
+
+That is R2-1 one field over. R1 defined the rule over `source_id`; R2
+found `source_id` grants and it moved to `derived_from is None`; R3 found
+`derived_from` grants. **Each round replaced one unauthenticated marker
+with another and inherited the class**: the defect was never the field,
+it was keying on a marker's PRESENCE rather than on AUTHORITY.
+
+The predicate is now `effective(author, derived_from) == effective(USER,
+None)` — the chain carries nothing but the user's own authority, computed
+by `0003`'s own function. Enumerated against production authority exactly
+two chains qualify, so R3-1's cell sits in the refusal set BY
+CONSTRUCTION. `specs/evidence/0011/policy_matrix.py` is the §6 acceptance
+surface: 240 cells over author × derived_from × subject class × source
+presence × origin, asserting totality, the named cell, **the general
+property that equal effective authority decides equally**, invariance
+under source identity and origin, that `derived_from` never raises
+authority, and that a SELF-subject prior is never refused. Both defects
+that actually shipped were planted against it and both are caught — the
+absence-based one by the generalised check, which is the property that
+would have ended this at round 2. §4b's decision table is GENERATED from
+the matrix and bound to it.
+
+**0011-R3-2 — the rider assumed another spec's deferred consent
+surface.** `0015` defers refusal counters to a new consent discussion,
+requires consent-version gating for new payload fields, and counts only
+from a fresh commit — excluding replays and stale attempts. v6's rider
+contradicted all of it and would have overcounted aborted and
+`PLAN_STALE` attempts. **This was the third round in which I asserted a
+rule over another spec's contract without checking that contract's
+domain**, after `0006` and `0012`. The rider is WITHDRAWN: v1 ships with
+the broad rule's constituency unmeasured, states that plainly, and leaves
+both the consent question and the telemetry construction to `0015`'s own
+round.
+
+**CARRIER-R3-1 — the sweep was still incomplete and the check was
+syntactic.** Five more contradictions survived: S5's doubled
+malformed-input outcome, §4b claiming `sourced` is defined here after its
+removal, the term table still listing `source_id`, the regime row scoped
+to sourced priors when unsourced ones now refuse too, and §7a justifying
+portability on a participation that no longer exists. All five swept. And
+the reviewer defeated the no-`source_id` check by moving the read behind a
+helper defined in a SEPARATE FENCE — every check still passed. The check
+now follows the predicate's TRANSITIVE DEPENDENCIES across fences: both
+the reviewer's bypass and a deeper two-hop version are closed.
+
+**EVIDENCE-R3-1 — the deciding figures were still self-asserted.**
+`schema` was typed and never valued, so `schema = 999` with
+`predicate_passes = 0` produced no findings. `schema == 1` is required
+now. More usefully, `0025` turns out to carry subject data for one
+subpopulation — `subject_user` over `third_party_claim` — so **the
+predicate itself is cross-checked: 1,606 of 3,945, two scripts, same
+answer**. That does not bind the whole-corpus count, and the package no
+longer implies it does: every figure is labelled by what backs it, and
+`predicate_passes` (72,253) plus the candidate table's completeness are
+marked **RECORDED ONLY**, reproducible with `--cache` on the measuring
+host and not from the archive alone. A reader without the corpus is
+trusting dev for those two, which is stated rather than papered over.

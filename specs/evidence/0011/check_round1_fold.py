@@ -20,6 +20,40 @@ SPEC = (pathlib.Path(__file__).resolve().parents[3]
         / "specs" / "0011-subject-scoped-entitlement.md")
 
 
+def _strip_comments(code: str) -> str:
+    return "\n".join(l for l in code.splitlines()
+                      if not l.lstrip().startswith("#"))
+
+
+def _dependency_closure(spec: str, block: str) -> str:
+    """Every fenced definition the policy block reaches, transitively.
+
+    CARRIER-R3-1: a check on the policy block's own text is satisfied by
+    moving the read one indirection away — `sourced(e)` defined in another
+    fence, called from the policy. So the closure follows the calls: collect
+    every `name(...) :=` definition in every fence, then expand from the
+    policy block until nothing new is pulled in. Comments are stripped, so
+    prose ABOUT a read is not mistaken for one.
+    """
+    fences = re.findall(r"```\n(.*?)```", spec, re.S)
+    defs = {}
+    for f in fences:
+        for m in re.finditer(r"^(\w+)\s*\([^)]*\)\s*:?=", f, re.M):
+            start = m.start()
+            nxt = re.search(r"^\w+\s*\([^)]*\)\s*:?=", f[m.end():], re.M)
+            end = m.end() + (nxt.start() if nxt else len(f) - m.end())
+            defs[m.group(1)] = f[start:end]
+    seen, frontier, out = set(), [_strip_comments(block)], []
+    while frontier:
+        body = frontier.pop()
+        out.append(body)
+        for name in set(re.findall(r"\b(\w+)\s*\(", body)):
+            if name in defs and name not in seen:
+                seen.add(name)
+                frontier.append(_strip_comments(defs[name]))
+    return "\n".join(out)
+
+
 def check_r1_1(t: str) -> list:
     """The policy function must be TOTAL and must include the sourced term
     v4 omitted — the omission was the finding, not the wording."""
@@ -45,16 +79,15 @@ def check_r1_1(t: str) -> list:
         bad.append("R1-1: self_assertion is used but never defined")
     # R2-1: the decision must READ NO source_id. Checked on the block, not
     # on the prose about it — prose can claim anything.
-    # strip COMMENT lines before looking for a read: the block's own
-    # comment says the rule reads no source_id, and a naive search for the
-    # token is satisfied by the sentence denying it — the same
-    # describe-don't-quote trap this project keeps meeting.
-    code = "\n".join(l for l in block.splitlines()
-                      if not l.lstrip().startswith("#"))
-    if "source_id" in code:
-        bad.append("R2-1: the policy block reads `source_id`. 0006 says it "
-                   "may GROUP, never GRANT — omission would strip "
-                   "protection and a caller-supplied value would buy it")
+    # R3-1/CARRIER-R3-1: check the predicate's TRANSITIVE DEPENDENCIES, not
+    # the policy block's literal text. The reviewer defeated the syntactic
+    # version by moving the source read behind a helper defined in a
+    # SEPARATE FENCE — every check still passed. A rule is what it calls.
+    if "source_id" in _dependency_closure(t, block):
+        bad.append("R2-1: the decision READS `source_id`, directly or "
+                   "through a helper it calls. 0006 says it may GROUP, "
+                   "never GRANT — omission would strip protection and a "
+                   "caller-supplied value would buy it")
     # whitespace-tolerant: the quotation is line-wrapped in the spec, and a
     # literal match would fail on a reflow that changes nothing
     if not re.search(r"may GROUP,\s+never\s+GRANT", t):
@@ -67,10 +100,18 @@ def check_r1_1(t: str) -> list:
     # check required it, so the checker was pinning a vacuous field in
     # place. The load-bearing artifact is the allowed-but-broad-refusing
     # counter, which is the only one that can vary.
-    if "would have REFUSED" not in t:
-        bad.append("R1-1: the rider has no allowed-but-broad-refusing "
-                   "counter, so the broad rule's constituency is still "
-                   "unmeasurable")
+    # R3-2: the rider is DEFERRED. 0015 defers refusal counters to a consent
+    # discussion this spec cannot hold, so v1 ships with the constituency
+    # unmeasured and says so. This check previously REQUIRED the counter —
+    # the third time a guard here pinned in place the very thing the next
+    # round removed, which is why it now asserts the deferral and its reason
+    # rather than a mechanism.
+    if "THE RIDER IS DEFERRED" not in t:
+        bad.append("R3-2: the rider is neither deferred nor built — it may "
+                   "not assume 0015's deferred consent surface")
+    if "UNMEASURED, and says so" not in t:
+        bad.append("R3-2: the deferral does not state that v1 ships with "
+                   "the broad rule's constituency unmeasured")
     return bad
 
 

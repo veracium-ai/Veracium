@@ -114,6 +114,7 @@ def main() -> int:
 
     sha = hashlib.sha256()
     entries = unparseable = triples = passes = 0
+    tpc_total = tpc_passes = 0
     candidates = collections.Counter()
     with open(a.cache, "rb") as fh:
         for raw in fh:
@@ -131,10 +132,19 @@ def main() -> int:
                     continue
                 triples += 1
                 subj = t.get("subject", "")
-                if self_predicate(subj):
+                hit = self_predicate(subj)
+                if hit:
                     passes += 1
                 elif is_candidate(str(subj)):
                     candidates[str(subj).strip()] += 1
+                # the ONE subpopulation 0025 measured independently: the
+                # predicate restricted to third_party_claim. Cross-checking
+                # it proves 0011's predicate IS 0025's, on real rows,
+                # without needing the corpus.
+                if str(t.get("relation", "")).strip() == "third_party_claim":
+                    tpc_total += 1
+                    if hit:
+                        tpc_passes += 1
 
     agg = dict(
         schema=1,
@@ -143,6 +153,7 @@ def main() -> int:
         triples=triples,
         predicate_passes=passes,
         candidate_table=_masked_table(candidates),
+        third_party_claim=dict(total=tpc_total, predicate_passes=tpc_passes),
     )
     if a.emit_aggregate:
         pathlib.Path(a.emit_aggregate).write_text(
@@ -184,7 +195,8 @@ def validate_aggregate(agg) -> list:
     """
     out = []
     TOP = {"schema": int, "manifest": dict, "triples": int,
-           "predicate_passes": int, "candidate_table": dict}
+           "predicate_passes": int, "candidate_table": dict,
+           "third_party_claim": dict}
     missing = sorted(set(TOP) - set(agg))
     unknown = sorted(set(agg) - set(TOP))
     if missing:
@@ -241,6 +253,24 @@ def validate_aggregate(agg) -> list:
                    f"taken on trust")
     if not 0 <= agg["predicate_passes"] <= agg["triples"]:
         out.append("predicate_passes is not within [0, triples]")
+    # EVIDENCE-R3-1: `schema` was typed but never VALUED — 999 passed.
+    if agg["schema"] != 1:
+        out.append(f"schema {agg['schema']} is not 1 — this validator "
+                   f"knows one version and must not read another")
+    # ...and the predicate itself is cross-checked on the one subpopulation
+    # 0025 measured independently. This does not bind the full count, but it
+    # proves 0011's predicate IS 0025's on 1,600+ real rows.
+    tpc = agg["third_party_claim"]
+    if sorted(tpc) != ["predicate_passes", "total"]:
+        out.append(f"third_party_claim keys {sorted(tpc)} unexpected")
+    elif tpc["total"] != peer["third_party_claim"]["total"]:
+        out.append(f"third_party_claim total {tpc['total']:,} != 0025's "
+                   f"{peer['third_party_claim']['total']:,}")
+    elif tpc["predicate_passes"] != peer["third_party_claim"]["subject_user"]:
+        out.append(f"the subject predicate passes {tpc['predicate_passes']:,} "
+                   f"of third_party_claim; 0025's independently-derived "
+                   f"subject_user is {peer['third_party_claim']['subject_user']:,} "
+                   f"— the two scripts do not agree on the same predicate")
     return out
 
 
@@ -264,6 +294,22 @@ def report(agg) -> int:
           f"strings in SELF_DENOTING)")
     print(f"  classified OTHER {cand_rows - self_rows:,} — possessives, "
           f"work topics, roles")
+    tpc = agg.get("third_party_claim", {})
+    print()
+    print("  PROVENANCE OF EACH FIGURE (EVIDENCE-R3-1 — what the archive can "
+          "check, and what it cannot):")
+    print(f"    cross-checked vs 0025   cache manifest, entries, unparseable, "
+          f"triples ({triples:,})")
+    print(f"    cross-checked vs 0025   the PREDICATE itself on the "
+          f"third_party_claim subset: {tpc.get('predicate_passes', 0):,} of "
+          f"{tpc.get('total', 0):,} — two scripts, same answer")
+    print(f"    derived from the table  candidate rows ({cand_rows:,}), "
+          f"classified SELF ({self_rows:,}) — recomputable here")
+    print(f"    RECORDED ONLY           predicate_passes over the WHOLE "
+          f"corpus ({passes:,}), and the candidate table's COMPLETENESS. "
+          f"0025 carries no whole-corpus subject data, so these reproduce "
+          f"with --cache on the measuring host and NOT from the archive "
+          f"alone.")
     top = sorted(table.items(), key=lambda kv: -kv[1])[:8]
     print(f"  heaviest candidates {[(s, n, classify(s)) for s, n in top]}")
     return 0

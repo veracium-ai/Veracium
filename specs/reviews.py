@@ -770,6 +770,73 @@ REVIEWS = [
          "6261af6df33716933840f9e486caf425a3ca4d44ce65c2022ed76c54bc142c5f",
          findings=0),
 
+    dict(spec="0011", round=3, kind="external", date="2026-08-27",
+         raised=["0011-R3-1", "0011-R3-2", "0011-CARRIER-R3-1",
+                 "0011-EVIDENCE-R3-1"],
+         verdict="RETURN v3 / DRAFT v6 FOR MAJOR AMENDMENT (package "
+         "`0011-v3`, sha 6261af6d verified; v2 lineage valid; extracted "
+         "suite 1835 passed/22 skipped; collected-header 21; spec gate 88). "
+         "CLOSED from round 2: source_id presence no longer changes the "
+         "policy, 0005/0006/0015 declared, would_refuse_broad and the store "
+         "columns gone, the direct-store contention counterexample now "
+         "agrees with the shipped refusal-scoped contract, and the harness "
+         "exercises a real pair plus a live-refusal control. R3-1: an "
+         "EQUIVALENT authority bypass through `derived_from` — "
+         "EvidenceContext.derived(USER) is valid and reachable, and "
+         "USER/derived_from=USER carries the SAME effective authority (3) "
+         "as USER/None yet the draft refused one and allowed the other; a "
+         "marker supplying no independent authority bought permission. "
+         "R3-2: the telemetry rider contradicts accepted 0015, which defers "
+         "refusal counters to a new consent discussion, requires "
+         "consent-version gating, and counts only from a fresh commit — "
+         "decision-time increments would overcount aborted and PLAN_STALE "
+         "attempts. CARRIER-R3-1: the claimed seven-carrier sweep remains "
+         "incomplete (five more contradictions) and the no-source_id check "
+         "is SYNTACTIC — the reviewer put the read behind a helper defined "
+         "in a separate fence and every fold check passed. EVIDENCE-R3-1: "
+         "the census's deciding figures remain forgeable — schema=999 with "
+         "predicate_passes=0 and a one-row candidate table returned no "
+         "findings. Requested: an executable provenance-authority policy "
+         "matrix, a commit-phase telemetry/consent harness, and a "
+         "reproducible privacy-safe subject-frequency record", findings=4),
+
+    dict(spec="0011", round=4, kind="external", date="2026-08-27",
+         verdict="SENT (package `0011-v4`, candidate draft v7 — the round-3 "
+         "fold; §13 maps every finding). R3-1: the predicate is defined over "
+         "the AUTHORITY CHAIN — `effective(author, derived_from) == "
+         "effective(USER, None)`, computed by 0003's own function — so a "
+         "marker carrying no authority cannot move a decision that is a "
+         "function of authority; exactly two chains qualify and R3-1's cell "
+         "is in the refusal set BY CONSTRUCTION. The requested matrix SHIPS "
+         "as specs/evidence/0011/policy_matrix.py: 240 cells over author x "
+         "derived_from x subject class x source presence x origin, asserting "
+         "totality, the named cell, THE GENERAL PROPERTY that equal "
+         "effective authority decides equally, invariance under source "
+         "identity and origin, that derived_from never raises authority, and "
+         "that a SELF-subject prior is never refused; both defects that "
+         "shipped were planted and both are caught, the absence-based one by "
+         "the generalised check. §4b's decision table is GENERATED from it "
+         "and drift-checked. R3-2: the rider is WITHDRAWN rather than "
+         "specified around — 0015 defers refusal counters to a consent "
+         "discussion this spec cannot hold, so v1 ships with the "
+         "constituency UNMEASURED and says so; the telemetry construction "
+         "and the consent question are left to 0015's round. "
+         "CARRIER-R3-1: all five swept, and the check now follows the "
+         "predicate's TRANSITIVE DEPENDENCIES across fences — the "
+         "helper-in-another-fence bypass and a two-hop version are both "
+         "closed. EVIDENCE-R3-1: schema == 1 required; the PREDICATE ITSELF "
+         "cross-checked against 0025's independently-derived subject_user "
+         "(1,606 of 3,945, two scripts, same answer); and every figure "
+         "labelled by what backs it — cross-checked, derived, or RECORDED "
+         "ONLY. The whole-corpus 72,253 and the candidate table's "
+         "completeness are marked RECORDED ONLY: a reader without the corpus "
+         "is trusting dev for those two, and the package says so rather than "
+         "implying otherwise. STILL OUTSTANDING and disclosed: the "
+         "commit-phase telemetry/consent harness (deferred with the rider) "
+         "and a whole-corpus subject-frequency record (declined — it would "
+         "put 12,000+ corpus strings in a public archive to bind one "
+         "number). Sealed AFTER this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

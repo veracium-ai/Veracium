@@ -102,5 +102,9 @@
  },
  "predicate_passes": 72253,
  "schema": 1,
+ "third_party_claim": {
+  "predicate_passes": 1606,
+  "total": 3945
+ },
  "triples": 183417
 }
