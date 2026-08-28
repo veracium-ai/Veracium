@@ -23,7 +23,22 @@ EVID = ROOT / "specs" / "evidence" / "0011"
 
 sys.path.insert(0, str(EVID))
 import policy_matrix as PM
-import mutant_registry as MR                                   # noqa: E402
+import mutant_registry as MR
+
+def record_kill(*ids):
+    """The kill reporter lives HERE, in the checking side, on purpose
+    (PROCESS-R10-1): an in-artifact reporter was rewritten to look up each
+    id's node from the registry itself, and a swapped registry then
+    self-verified. This writer emits BARE IDS only — the node half of every
+    pair is supplied by the runner, which executes each node in isolation
+    and labels the run with the node it invoked."""
+    import os
+    path = os.environ.get("VERACIUM_MUTANT_KILL_LOG")
+    if path:
+        with open(path, "a") as fh:
+            for i in ids:
+                fh.write(i + "\n")
+                                   # noqa: E402
 
 
 def test_the_oracle_is_clean_on_the_shipped_predicate():
@@ -54,7 +69,7 @@ def test_a_variance_planted_in_the_emission_is_caught():
                  "again (EVIDENCE-R4-1)")
     assert any("equal authority" in b or "uniformly REFUSE" in b
                for b in bad), bad
-    MR.record_kill('R4A')
+    record_kill('R4A')
 
 
 def test_a_duplicate_hiding_a_missing_cell_is_caught():
@@ -74,7 +89,7 @@ def test_a_duplicate_hiding_a_missing_cell_is_caught():
     assert any("NEVER EMITTED" in b for b in bad), (
         "the cell the duplicate displaced was not reported missing "
         "(EVIDENCE-R5-1)")
-    MR.record_kill('R5A')
+    record_kill('R5A')
 
 
 def test_an_alien_cell_key_is_caught():
@@ -92,7 +107,7 @@ def test_a_truncated_stream_is_caught():
     partial = list(PM.cells())[:100]
     assert PM.problems(stream=partial), (
         "a 100-cell stream passed a 1440-cell domain")
-    MR.record_kill('M4')
+    record_kill('M4')
 
 
 def test_the_fold_checker_refuses_a_shadowed_helper(tmp_path):
@@ -118,7 +133,7 @@ def test_the_fold_checker_refuses_a_shadowed_helper(tmp_path):
         "dependency closure (EVIDENCE-R4-1)")
     # the pristine control
     assert not any("source_id" in b for b in CF.check_r1_1(spec))
-    MR.record_kill('R4B')
+    record_kill('R4B')
 
 
 def test_problems_actually_reaches_the_import_adapter(monkeypatch):
@@ -142,7 +157,7 @@ def test_problems_actually_reaches_the_import_adapter(monkeypatch):
         raise AssertionError(
             "problems() completed without invoking import_flattened_cells — "
             "the import cell is being asserted, not measured (M5)")
-    MR.record_kill('M5')
+    record_kill('M5')
 
 
 def test_narrowed_dimensions_are_refused(monkeypatch):
@@ -157,7 +172,7 @@ def test_narrowed_dimensions_are_refused(monkeypatch):
         bad = PM.problems()
         monkeypatch.undo()
         assert bad, f"narrowing {attr} to {narrowed!r} passed the oracle"
-    MR.record_kill('M1', 'M2', 'M3')
+    record_kill('M1', 'M2', 'M3')
 
 
 def test_the_import_cell_runs_the_production_adapter():
@@ -230,4 +245,4 @@ def test_contention_checker_cells_cannot_vanish(monkeypatch):
     bad, _ = K.run_cells()
     assert any("LIVE refusal" in b for b in bad), (
         "the positive-control cell cannot fail — its assertion is dead (K2)")
-    MR.record_kill('K1', 'K2')
+    record_kill('K1', 'K2')

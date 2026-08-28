@@ -25,6 +25,22 @@ import policy_matrix as PM
 import mutant_registry as MR                                    # noqa: E402
 import subject_census as SC                                   # noqa: E402
 
+
+def record_kill(*ids):
+    """The kill reporter lives HERE, in the checking side, on purpose
+    (PROCESS-R10-1): an in-artifact reporter was rewritten to look up each
+    id's node from the registry itself, and a swapped registry then
+    self-verified. This writer emits BARE IDS only — the node half of every
+    pair is supplied by the runner, which executes each node in isolation
+    and labels the run with the node it invoked."""
+    import os
+    path = os.environ.get("VERACIUM_MUTANT_KILL_LOG")
+    if path:
+        with open(path, "a") as fh:
+            for i in ids:
+                fh.write(i + "\n")
+
+
 SPEC = (ROOT / "specs" / "0011-subject-scoped-entitlement.md").read_text()
 AGG = json.loads((EVID / "subject_aggregate.json").read_text())
 
@@ -45,21 +61,21 @@ def test_indented_helper_definition_is_followed():
     t = _attacked("sourced(prior)",
                   "```\n    sourced(e) := e.provenance.source_id is not None\n```")
     assert any("source_id" in b for b in CF.check_r1_1(t)), "F1 regressed"
-    MR.record_kill('F1')
+    record_kill('F1')
 
 
 def test_parenless_binding_is_followed():
     t = _attacked("srcflag",
                   "```\nsrcflag := prior.provenance.source_id is not None\n```")
     assert any("source_id" in b for b in CF.check_r1_1(t)), "F2 regressed"
-    MR.record_kill('F2')
+    record_kill('F2')
 
 
 def test_info_string_fence_is_scanned():
     t = _attacked("sourced(prior)",
                   "```text\nsourced(e) := e.provenance.source_id is not None\n```")
     assert any("source_id" in b for b in CF.check_r1_1(t)), "F3 regressed"
-    MR.record_kill('F3')
+    record_kill('F3')
 
 
 def test_extra_table_row_is_refused():
@@ -68,7 +84,7 @@ def test_extra_table_row_is_refused():
                      "| `user` | `user` | 3 | **ALLOW** | ALLOW |", 1)
     assert CF.check_decision_table(t), "F4 regressed"
     assert not CF.check_decision_table(SPEC), "pristine control"
-    MR.record_kill('F4')
+    record_kill('F4')
 
 
 # ---- the reviewer's round-5 carrier attack ---------------------------------
@@ -83,7 +99,7 @@ def test_rider_promise_in_the_row_is_refused():
         "rider |" + SPEC[j:]
     assert any("measurement rider" in b for b in CF.check_carriers(t)), (
         "the row-bound rider check regressed (CARRIER-R5-1)")
-    MR.record_kill('R5B')
+    record_kill('R5B')
 
 
 # ---- C1–C4: the census figure bindings -------------------------------------
@@ -93,14 +109,14 @@ def test_inflated_aggregate_figure_is_refused():
     m["predicate_passes"] = 99_999
     assert any("drifted from its artifact" in b
                for b in CF.check_census_figures(SPEC, agg=m)), "C1 regressed"
-    MR.record_kill('C1')
+    record_kill('C1')
 
 
 def test_gutted_candidate_table_is_refused():
     m = copy.deepcopy(AGG)
     m["candidate_table"] = {"me": 31}
     assert CF.check_census_figures(SPEC, agg=m), "C2 regressed"
-    MR.record_kill('C2')
+    record_kill('C2')
 
 
 def test_unmasked_name_in_aggregate_is_refused():
@@ -112,7 +128,7 @@ def test_unmasked_name_in_aggregate_is_refused():
     assert any("unmasked" in b for b in SC.validate_aggregate(m)), (
         "C3 regressed — subject_census accepts an unmasked name")
     assert not SC.validate_aggregate(AGG), "pristine control"
-    MR.record_kill('C3')
+    record_kill('C3')
 
 
 def test_spec_figure_drift_is_refused():
@@ -121,7 +137,7 @@ def test_spec_figure_drift_is_refused():
     assert t != SPEC, "the drift failed to apply"
     assert CF.check_census_figures(t, agg=AGG), "C4 regressed"
     assert not CF.check_census_figures(SPEC, agg=AGG), "pristine control"
-    MR.record_kill('C4')
+    record_kill('C4')
 
 
 # ---- R6-1 and the neutered-check hole --------------------------------------
@@ -139,7 +155,7 @@ def test_narrowed_enum_dimension_is_refused(monkeypatch):
                         [a for a in PM.A if a is not PM.A.SYSTEM])
     assert any("AUTHORS" in b for b in PM.problems()), (
         "the AUTHORS axis can still self-narrow")
-    MR.record_kill('R6A')
+    record_kill('R6A')
 
 
 def test_every_fold_check_is_reached(monkeypatch):
@@ -169,7 +185,7 @@ def test_every_fold_check_is_reached(monkeypatch):
             raise AssertionError(
                 f"main() returned without invoking {name}")
         monkeypatch.undo()
-    MR.record_kill('R6B')
+    record_kill('R6B')
 
 
 # ---- PROCESS-R7-1: the ledger itself ---------------------------------------
@@ -290,21 +306,29 @@ def test_a_swapped_registry_fails_through_the_real_execution():
         "is self-asserting (PROCESS-R9-1)")
 
 
+class _CheckResult:
+    def __init__(self, code, err):
+        self.returncode, self.stderr = code, err
+
+
 def _run_main_against(record_text):
-    import os
-    import subprocess
+    """EVIDENCE-M10-1: corrupt operands are exercised through the INTERNAL
+    helper on a copy — the command entry point is pinned to RECORD and
+    takes no selector, environmental or otherwise."""
+    import io
+    import contextlib
     import tempfile
     with tempfile.NamedTemporaryFile("w", suffix=".json",
                                      delete=False) as fh:
         fh.write(record_text)
-        path = fh.name
-    env = dict(os.environ, VERACIUM_MUTANT_RECORD=path)
+        path = pathlib.Path(fh.name)
+    err = io.StringIO()
     try:
-        return subprocess.run(
-            [sys.executable, str(EVID / "mutant_registry.py")],
-            capture_output=True, text=True, env=env, cwd=ROOT)
+        with contextlib.redirect_stderr(err):
+            code = MR.run_check(path)
     finally:
-        pathlib.Path(path).unlink()
+        path.unlink()
+    return _CheckResult(code, err.getvalue())
 
 
 def test_corrupt_records_are_refused_by_main_itself():
@@ -348,8 +372,48 @@ def test_non_canonical_bytes_are_refused_by_main():
     raw = (EVID / "mutant_results.json").read_text()
     r = _run_main_against(json.dumps(json.loads(raw), sort_keys=True) + "\n")
     assert r.returncode == 1
-    assert "canonical writer" in r.stderr
+    # refused BEFORE any recomputation (EVIDENCE-M10-1's ordering fix):
+    # canonical form is a property of the bytes themselves
+    assert "canonical serialisation of their own content" in r.stderr
 
-    # the control: the shipped bytes themselves pass
-    r = _run_main_against(raw)
-    assert r.returncode == 0, r.stderr[-300:]
+    # the control: the REAL entry point, no operand, no selector — the
+    # shipped record passes through the pinned path
+    import subprocess
+    r = subprocess.run([sys.executable, str(EVID / "mutant_registry.py")],
+                       capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 0, (r.stdout + r.stderr)[-300:]
+    assert "VERACIUM_MUTANT_RECORD" not in (
+        EVID / "mutant_registry.py").read_text(), (
+        "the environment selector is back (EVIDENCE-M10-1)")
+
+
+def test_a_swapped_on_disk_registry_fails_the_real_execution(tmp_path):
+    """PROCESS-R10-1, the coordinated attack as the regression: round 10
+    swapped R4A/F1 in the ON-DISK registry and rewrote the in-artifact
+    reporter to self-assert nodes from ENTRIES — the earlier regression's
+    LOCAL swap then reversed the on-disk one, and everything stayed green.
+
+    This writes the swapped registry to disk as its own module and drives
+    it through the REAL per-node execution. The reporter cannot coordinate
+    any more — it lives in the test files and emits bare ids, and the node
+    half of every pair comes from the runner's own invocation — so the
+    swapped declaration must mismatch what actually runs."""
+    import importlib.util
+    src = (EVID / "mutant_registry.py").read_text()
+    # the source stores nodes as f-strings; swap the SOURCE fragments
+    n1 = 'f"{T1}::test_a_variance_planted_in_the_emission_is_caught"'
+    n2 = 'f"{T2}::test_indented_helper_definition_is_followed"'
+    assert n1 in src and n2 in src
+    swapped = src.replace(n1, "@@TMP@@").replace(n2, n1).replace("@@TMP@@", n2)
+    mod_path = tmp_path / "mutant_registry_swapped.py"
+    mod_path.write_text(swapped)
+    spec = importlib.util.spec_from_file_location("mr_swapped", mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    # only the two affected nodes need to run — the join is per-entry
+    sub = tuple(e for e in mod.ENTRIES
+                if e[4] in (n1, n2) or e[0] in ("R4A", "F1"))
+    killed, _code, _passed = mod.execute(sub)
+    assert mod.binding_problems(sub, killed), (
+        "a node-swapped ON-DISK registry passed its own real execution — "
+        "attribution has moved back inside the artifact (PROCESS-R10-1)")

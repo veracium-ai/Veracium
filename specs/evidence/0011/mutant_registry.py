@@ -103,23 +103,14 @@ ENTRIES = (
 )
 
 
-def record_kill(*ids) -> None:
-    """Called by a standing test AFTER its assertions succeed. A no-op in
-    an ordinary suite run; under the runner, the kill log is the executed
-    side of the binding.
-
-    PROCESS-R8-1(1): the log records (node, id) PAIRS, with the node taken
-    from pytest's own PYTEST_CURRENT_TEST — a global bag of ids proved only
-    that every id appeared SOMEWHERE, so swapping two entries' nodes changed
-    nothing. The caller cannot misdeclare its node, because it does not
-    supply it."""
-    path = os.environ.get(KILL_ENV)
-    if not path:
-        return
-    node = os.environ.get("PYTEST_CURRENT_TEST", "?").split(" ")[0]
-    with open(path, "a") as fh:
-        for i in ids:
-            fh.write(f"{node}\t{i}\n")
+# NOTE (PROCESS-R10-1): there is deliberately NO record_kill here. Round 10
+# rewrote the in-artifact reporter to look up each id's node from ENTRIES
+# itself, and a node-swapped on-disk registry then self-verified through
+# --write, --check and the whole focused suite. The reporter is a 4-line
+# id-only writer in the TEST files now — the artifact cannot influence
+# attribution it does not perform — and the NODE half of every kill pair is
+# supplied by the RUNNER below, which executes each node in isolation and
+# labels everything from that run with the node IT invoked.
 
 
 FOUND_BY = ("reviewer", "dev")           # closed: EVIDENCE-R9-1 planted
@@ -240,32 +231,35 @@ def validate_entries(entries=None) -> list:
 
 
 def execute(entries=None) -> tuple:
-    """One pytest run over the registry's nodes, kills read from the log.
-    Returns (killed_ids_sorted, exit_code, passed_count)."""
+    """Per-node ISOLATED runs; the runner owns attribution (PROCESS-R10-1).
+
+    Each distinct node runs in its own pytest invocation with its own kill
+    log; tests report bare mutant ids; every id from that run is joined to
+    the node THE RUNNER invoked. A self-asserting reporter has nothing left
+    to assert — it cannot name a node, and an id it emits from the wrong
+    test lands joined to that test's node and mismatches the registry.
+    Returns (killed_pairs_sorted, worst_exit, passed_total)."""
     entries = ENTRIES if entries is None else entries
-    nodes = sorted({e[4] for e in entries})
-    with tempfile.NamedTemporaryFile("r", suffix=".kills",
-                                     delete=False) as fh:
-        log = fh.name
-    env = dict(os.environ, **{KILL_ENV: log})
-    r = subprocess.run(
-        [sys.executable, "-m", "pytest", *nodes, "-q", "-p", "no:randomly"],
-        cwd=ROOT, capture_output=True, text=True, env=env)
-    killed = sorted(tuple(l.split("\t")) for l in
-                    pathlib.Path(log).read_text().splitlines() if l)
-    pathlib.Path(log).unlink(missing_ok=True)
-    # PROCESS-R9-1: attribution must come from the RUN, not the registry —
-    # any reported node the runner did not invoke is a fabricated join
-    alien = sorted({n for n, _i in killed} - set(nodes))
-    if alien:
-        killed.append(("<runner>", f"ALIEN-NODE:{alien[0]}"))
-    tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
-    passed = 0
-    for tok in tail.split():
-        if tok.isdigit():
-            passed = int(tok)
-            break
-    return killed, r.returncode, passed
+    by_node = sorted({e[4] for e in entries})
+    killed, worst, passed_total = [], 0, 0
+    for node in by_node:
+        with tempfile.NamedTemporaryFile("r", suffix=".kills",
+                                         delete=False) as fh:
+            log = fh.name
+        env = dict(os.environ, **{KILL_ENV: log})
+        r = subprocess.run(
+            [sys.executable, "-m", "pytest", node, "-q", "-p", "no:randomly"],
+            cwd=ROOT, capture_output=True, text=True, env=env)
+        ids = [l for l in pathlib.Path(log).read_text().split() if l]
+        pathlib.Path(log).unlink(missing_ok=True)
+        killed.extend((node, i) for i in ids)
+        worst = worst or r.returncode
+        tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
+        for tok in tail.split():
+            if tok.isdigit():
+                passed_total += int(tok)
+                break
+    return sorted(killed), worst, passed_total
 
 
 def binding_problems(entries, killed) -> list:
@@ -307,30 +301,40 @@ def build_record(entries, killed, exit_code, passed) -> dict:
 
 def main() -> int:
     write = "--write" in sys.argv
-    bad = validate_entries()
-    if bad:
-        print("mutant registry INVALID:\n  " + "\n  ".join(bad),
-              file=sys.stderr)
-        return 1
-    killed, exit_code, passed = execute()
-    bad = binding_problems(ENTRIES, killed)
-    if exit_code != 0:
-        bad.append(f"the campaign's pytest run FAILED (exit {exit_code})")
-    if bad:
-        print("mutant registry FAILED:\n  " + "\n  ".join(bad),
-              file=sys.stderr)
-        return 1
-    record = build_record(ENTRIES, killed, exit_code, passed)
     if write:
+        bad = validate_entries()
+        if bad:
+            print("mutant registry INVALID:\n  " + "\n  ".join(bad),
+                  file=sys.stderr)
+            return 1
+        killed, exit_code, passed = execute()
+        bad = binding_problems(ENTRIES, killed)
+        if exit_code != 0:
+            bad.append(f"the campaign's pytest run FAILED "
+                       f"(exit {exit_code})")
+        if bad:
+            print("mutant registry FAILED:\n  " + "\n  ".join(bad),
+                  file=sys.stderr)
+            return 1
+        record = build_record(ENTRIES, killed, exit_code, passed)
         RECORD.write_text(json.dumps(record, indent=1, sort_keys=True) + "\n")
         print(f"mutant registry: {record['totals']['all']} entries, every "
               f"one REPORTED KILLED by its executed test; record WRITTEN")
         return 0
-    # CHECK mode (default): grammar FIRST — a corrupt file refuses before
-    # any recomputation runs — then the shipped RAW BYTES must equal the
-    # canonical writer's output for the recomputed record exactly.
-    record_path = pathlib.Path(os.environ.get("VERACIUM_MUTANT_RECORD",
-                                              str(RECORD)))
+    return run_check(RECORD)
+
+
+def run_check(record_path: pathlib.Path) -> int:
+    """The whole check, over an explicit operand. `main()` pins it to
+    RECORD — EVIDENCE-M10-1: an environment selector introduced for
+    testing let the reviewer point the 'shipped record' at a pristine
+    alternate file; tests exercise corrupt operands through THIS helper
+    on copies, and the command entry point takes no selector at all.
+
+    Order (grammar FIRST, for real this time): parse strictly, validate
+    the closed schema, require the raw bytes to BE the canonical
+    serialisation of what they parse to — all before the campaign runs —
+    and only then recompute and require equality with reality."""
     if not record_path.exists():
         print("mutant_results.json is MISSING — nothing to check",
               file=sys.stderr)
@@ -346,6 +350,22 @@ def main() -> int:
         print("shipped record REFUSED by the grammar:\n  "
               + "\n  ".join(gram), file=sys.stderr)
         return 1
+    if raw != canonical_bytes(shipped):
+        print("shipped bytes are not the canonical serialisation of their "
+              "own content — refused before any recomputation",
+              file=sys.stderr)
+        return 1
+    # only a well-formed, canonically-serialised record earns a campaign run
+    bad = validate_entries()
+    killed, exit_code, passed = execute()
+    bad += binding_problems(ENTRIES, killed)
+    if exit_code != 0:
+        bad.append(f"the campaign's pytest run FAILED (exit {exit_code})")
+    if bad:
+        print("mutant registry FAILED:\n  " + "\n  ".join(bad),
+              file=sys.stderr)
+        return 1
+    record = build_record(ENTRIES, killed, exit_code, passed)
     # PROCESS-R8-1(2): dict equality COERCES — False == 0, True == 1 — so a
     # boolean smuggled into an int field claimed an exact match. Canonical
     # SERIALIZED BYTES are compared instead ("false" is not "0"), after a
@@ -355,8 +375,8 @@ def main() -> int:
             if (json.dumps(shipped.get(k), sort_keys=True)
                     != json.dumps(record.get(k), sort_keys=True)):
                 print(f"shipped record DIVERGES at {k!r}", file=sys.stderr)
-        print("shipped bytes are not the canonical writer's bytes for the "
-              "recomputed record", file=sys.stderr)
+        print("shipped record does not match the RECOMPUTED campaign",
+              file=sys.stderr)
         return 1
     print(f"mutant registry: {record['totals']['all']} entries "
           f"({record['totals'].get('reviewer', 0)} reviewer + "

@@ -1133,6 +1133,55 @@ REVIEWS = [
          "`0011-v10-20260828T1421Z` at commit d3defad, sha256 "
          "1ee6af693304abf6ba28d0b9ae46a920af30957c46b6e746290384aa9d146205", findings=0),
 
+    dict(spec="0011", round=10, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R10-1", "0011-EVIDENCE-M10-1"],
+         verdict="RETURN EXACT v10 FOR ONE BLOCKING PROCESS AMENDMENT (plus "
+         "one nonblocking maintenance item) — finite design acceptance "
+         "stands; no policy, authorization, contention or trust-model "
+         "defect (package `0011-v10`, sha 1ee6af69 verified; focused 31 "
+         "passed; extracted suite 1867/22; 1,889 reconcile with the sealed "
+         "1881/8; the R9-1 schema-3/duplicate-key/typed-schema/"
+         "canonical-byte corrections otherwise close; no defect found in "
+         "the concurrent 0023 C5 change). PROCESS-R10-1: per-node "
+         "provenance REMAINS SELF-ASSERTABLE — the round-9 integration "
+         "test swaps a LOCAL entries copy while the child imports the "
+         "on-disk registry, so the coordinated attack (on-disk swap of "
+         "R4A/F1 plus a reporter that looks up nodes from ENTRIES) passed "
+         "--write, --check and all 31 tests: the local swap reversed the "
+         "on-disk one while the child self-reported from the mutated "
+         "module, and the alien-node check cannot help because the swap "
+         "preserves the invoked-node set. EVIDENCE-M10-1 (nonblocking): "
+         "the shipped-record operand is environment-selectable via the "
+         "testing-only VERACIUM_MUTANT_RECORD (the sealer's allowlist "
+         "strips it, so the sealed package is not defeated), and the check "
+         "runs the full campaign before parsing despite claiming grammar "
+         "first. Requested: runner-owned attribution with per-node "
+         "invocation, the coordinated on-disk mutation as the regression, "
+         "a pinned operand, and parse-before-execute", findings=2),
+
+    dict(spec="0011", round=11, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v11`, candidate draft v14 — the "
+         "round-10 fold; §20 maps both items; the finite acceptance "
+         "stands). PROCESS-R10-1 closed by REMOVING what the attack "
+         "needs: the artifact no longer performs attribution at all — the "
+         "reporter is a 4-line id-only writer in the TEST files, the "
+         "runner executes each distinct node in an isolated pytest "
+         "invocation and joins every reported id to the node IT invoked, "
+         "so a self-asserting reporter cannot name a node and an id from "
+         "the wrong test lands joined to that test's node and mismatches. "
+         "The coordinated on-disk mutation is the standing regression: "
+         "the swapped registry written to disk as a real module and "
+         "driven through its own real execution, required to fail — "
+         "replayed against the shipped code first (check exit 1 with no "
+         "reporter left to coordinate with). EVIDENCE-M10-1: the operand "
+         "is PINNED (the selector is gone and a standing test asserts its "
+         "absence from the source); corrupt operands exercise an internal "
+         "helper on copies; and the order is genuinely grammar-first — "
+         "parse, closed schema, canonical-form of the bytes THEMSELVES, "
+         "all before any campaign, so non-canonical serialisation refuses "
+         "without a recomputation. Sealed AFTER this row, sha pinned on "
+         "return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

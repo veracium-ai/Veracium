@@ -2062,4 +2062,33 @@ CLOSURES = [
      "test_corrupt_records_are_refused_by_main_itself "
      "tests/test_0011_mutant_registry.py::"
      "test_non_canonical_bytes_are_refused_by_main -q -p no:randomly"),
+
+    # ---- 0011 external round 10 (2026-08-28) — attribution leaves the artifact.
+    ("0011", "external", 10, "0011-PROCESS-R10-1",
+     "per-node provenance remained self-assertable: the round-9 regression "
+     "swapped a LOCAL entries copy while the child imported the ON-DISK "
+     "registry, so the coordinated attack — on-disk node swap plus an "
+     "in-artifact reporter reading ENTRIES — passed --write, --check and "
+     "all 31 focused tests",
+     "the artifact performs no attribution: the reporter is an id-only "
+     "writer in the TEST files, and the runner executes each node in an "
+     "isolated invocation, joining every reported id to the node IT "
+     "invoked; the coordinated on-disk mutation is the standing regression, "
+     "driven through the real execution",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_a_swapped_on_disk_registry_fails_the_real_execution "
+     "-q -p no:randomly"),
+
+    ("0011", "external", 10, "0011-EVIDENCE-M10-1",
+     "the shipped-record operand was environment-selectable via a "
+     "testing-only variable, and the check ran the full campaign before "
+     "parsing despite claiming grammar first",
+     "the entry point is pinned to the shipped record with no selector (a "
+     "standing test asserts the variable's absence from the source); "
+     "corrupt operands exercise an internal helper on copies; the order is "
+     "parse -> closed schema -> canonical-form-of-the-bytes -> campaign",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_non_canonical_bytes_are_refused_by_main "
+     "tests/test_0011_mutant_registry.py::"
+     "test_corrupt_records_are_refused_by_main_itself -q -p no:randomly"),
 ]
