@@ -314,7 +314,7 @@ def check_decision_table(t: str) -> list:
     return []
 
 
-def check_census_figures(t: str) -> list:
+def check_census_figures(t: str, agg=None) -> list:
     """§3b's figure table must EQUAL the shipped aggregate (C1/C2/C4, own
     campaign — the 0025 PAIR-R4-1 drift class). The spec's census table was
     hand-transcribed: a drifted spec figure, an inflated recorded-only
@@ -322,12 +322,13 @@ def check_census_figures(t: str) -> list:
     the prose to the artifact. Data against data now: the counts the spec
     states are read from the table and required to equal the aggregate's."""
     import json
-    agg_path = (pathlib.Path(__file__).resolve().parent
-                / "subject_aggregate.json")
-    if not agg_path.exists():
-        return ["subject_aggregate.json is gone — §3b's figures have no "
-                "artifact to be checked against"]
-    agg = json.loads(agg_path.read_text())
+    if agg is None:                        # injectable so the standing tests
+        agg_path = (pathlib.Path(__file__).resolve().parent   # can feed a
+                    / "subject_aggregate.json")               # fabrication
+        if not agg_path.exists():
+            return ["subject_aggregate.json is gone — §3b's figures have "
+                    "no artifact to be checked against"]
+        agg = json.loads(agg_path.read_text())
     table = agg["candidate_table"]
     facts = {
         "triples": (agg["triples"], r"\| triples \| ([\d,]+)"),

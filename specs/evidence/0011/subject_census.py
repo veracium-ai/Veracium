@@ -1,3 +1,4 @@
+# Mutation-Matrix: tests/test_0011_mutant_registry.py::test_unmasked_name_in_aggregate_is_refused
 """0011 §3b — the SELF-floor census, runnable and digest-bound.
 
 PACKAGE-R1-1 (external round 1): the deciding count was reported in prose —

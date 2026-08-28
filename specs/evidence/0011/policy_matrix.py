@@ -154,6 +154,18 @@ def problems(stream=None) -> list:
     # domain quietly narrows. The enum-derived dimensions grow legitimately
     # with the enum; the HAND-PICKED ones are pinned here as literals, with
     # the members the checks depend on named.
+    # EVIDENCE-R6-1: "enum-derived, grows legitimately" was HALF the truth
+    # — it also SHRINKS silently, because both the emitter and the expected
+    # key set read the module constants. Removing THIRD_PARTY from DERIVED
+    # narrowed the claimed domain from 1,440 to 1,152 cells with exit 0.
+    # The enum dimensions are pinned to THE ENUM ITSELF, which the mutable
+    # constants cannot narrow.
+    if tuple(AUTHORS) != tuple(A):
+        bad.append(f"AUTHORS {AUTHORS!r} is not the EvidenceAuthor enum — "
+                   f"the author dimension narrowed or reordered")
+    if tuple(DERIVED) != (None, *tuple(A)):
+        bad.append(f"DERIVED {DERIVED!r} is not (None, *EvidenceAuthor) — "
+                   f"the derivation dimension narrowed or reordered")
     if len(SOURCES) != 3 or None not in SOURCES or not any(
             s and "caller" in s for s in SOURCES if s):
         bad.append(f"SOURCES narrowed to {SOURCES!r} — the declared domain "
@@ -165,9 +177,12 @@ def problems(stream=None) -> list:
     if subj_classes != {"SELF", "OTHER"}:
         bad.append(f"SUBJECTS {SUBJECTS!r} no longer covers both subject "
                    f"classes — every refusal cell would vanish with OTHER")
+    # built from THE ENUM, not from the emitter's constants (R6-1): the
+    # enum axes cannot be narrowed by editing this module, and the
+    # hand-picked axes are pinned by the literals above.
     expected_keys = {
         (a, d, ("SELF" if subj == "user" else "OTHER"), si, sp, oi, op)
-        for a in AUTHORS for d in DERIVED for subj in SUBJECTS
+        for a in A for d in (None, *tuple(A)) for subj in SUBJECTS
         for si in SOURCES for sp in SOURCES
         for oi in ORIGINS for op in ORIGINS}
     emitted_keys = [row[:-1] for row in seen]

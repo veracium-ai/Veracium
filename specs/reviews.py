@@ -958,6 +958,54 @@ REVIEWS = [
          "b5476dbe632a030ca5142a83946388b3217ed3e5554d2520fd49f6a5f59638a6",
          findings=0),
 
+    dict(spec="0011", round=6, kind="external", date="2026-08-28",
+         raised=["0011-EVIDENCE-R6-1", "0011-PROCESS-R6-1"],
+         verdict="RETURN EXACT v6 FOR TWO MECHANICAL EVIDENCE AMENDMENTS — "
+         "finite design acceptance remains in force; the status flip is "
+         "blocked only by evidence machinery (package `0011-v6`, sha "
+         "b5476dbe verified; 501 members; policy/campaign suite 10 passed; "
+         "extracted suite 1846/22; 1,868 reconcile with the sealed 1860/8; "
+         "round-5 closures confirmed: duplicate-for-missing closed, the "
+         "rider carrier closed with the row-bound failure reproducing). "
+         "EVIDENCE-R6-1: an ENUM-DERIVED dimension still self-narrows — "
+         "removing THIRD_PARTY from DERIVED changed the claimed domain from "
+         "1,440 to 1,152 cells with exit 0, because both the emitter and "
+         "the expected key set read the same constants and the round-5 "
+         "dimension test mutates only SOURCES/ORIGINS/SUBJECTS. "
+         "PROCESS-R6-1: the campaign is PROSE, not an executable campaign — "
+         "nine mutants (F1-F4, C1-C4, the row-unbound withdrawal) have no "
+         "planted tests, neutering the entire check_census_figures binding "
+         "left 10/10 green, subject_census.py remains outside P1 because "
+         "the recursive domain still selects by filename, and the totals "
+         "are hand arithmetic that does not add up (4+9+6=19, the record "
+         "says 15). Requested: an executable mutant registry with a "
+         "generated result record", findings=2),
+
+    dict(spec="0011", round=7, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v7`, candidate draft v10 — the "
+         "round-6 fold; §16 maps both findings; the finite acceptance "
+         "stands). EVIDENCE-R6-1: the enum axes are pinned TO THE ENUM "
+         "(AUTHORS == tuple(EvidenceAuthor); DERIVED == (None, "
+         "*EvidenceAuthor)) and the expected key set is built from the enum "
+         "rather than the mutable constants; the narrowed-DERIVED mutant "
+         "and a narrowed-AUTHORS sibling are standing tests. "
+         "PROCESS-R6-1: the requested registry SHIPS — mutant_registry.py "
+         "binds every campaign id to its artifact, mutation and pytest "
+         "node, EXECUTES all of them in one pytest invocation, and writes "
+         "mutant_results.json with totals DERIVED from what ran: 21 "
+         "entries, 6 reviewer-found + 15 dev-found, over 18 distinct "
+         "nodes, all biting. The nine previously-untested mutants plant "
+         "their attacks IN MEMORY as standing tests; every fold check is "
+         "sentinel-proven REACHED by main() so a dropped check is loud; "
+         "the census-figure binding takes an injectable aggregate; and "
+         "subject_census.py enters P1 through an explicit artifact "
+         "registry supplementing the filename convention, with full "
+         "registry-over-convention named as the escalation if the list "
+         "grows. The prose record is corrected to state the GENERATED "
+         "record is authoritative — a narrative about tests is not tests, "
+         "and hand-typed totals drift like any other hand-carried figure. "
+         "Sealed AFTER this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

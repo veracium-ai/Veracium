@@ -2085,10 +2085,24 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
     # reviewer was actively mutation-testing carried no matrix pointer and
     # nothing demanded one — the gate covered the artifacts nobody was
     # attacking and missed the ones under attack.
+    # PROCESS-R6-1: the filename convention is a PROXY for "is a checker",
+    # and subject_census.py — a validator that had already produced findings
+    # in three consecutive rounds — sat outside it because of its name. The
+    # convention stays for discovery, and this EXPLICIT registry carries the
+    # checkers the convention cannot see; a checker added under any name
+    # belongs here or under a matching name, and the reviewer's alternative
+    # (a full registry replacing the convention) is the escalation path if
+    # this list grows.
+    EXPLICIT_ARTIFACTS = [
+        root / "specs" / "evidence" / "0011" / "subject_census.py",
+    ]
+    for f in EXPLICIT_ARTIFACTS:
+        assert f.exists(), f"EXPLICIT_ARTIFACTS names a missing file: {f}"
     candidates = sorted(
         list((root / "specs").rglob("check_*.py"))
         + list((root / "specs").rglob("verify_*.py"))
-        + list((root / "specs").rglob("validate_*.py")))
+        + list((root / "specs").rglob("validate_*.py"))
+        + EXPLICIT_ARTIFACTS)
     assert candidates, "the artifact domain is unexpectedly empty"
     for f in candidates:
         if f.name in GRANDFATHERED:

@@ -83,3 +83,31 @@ them.
 
 Final state: **15 mutants, 15 caught** (4 reviewer attacks standing + 9
 first-pass + 6 extension, with K2 counted once); pristine artifacts clean.
+
+
+## Round-6 correction: this record was prose, and its own claims failed audit
+
+PROCESS-R6-1 found this document claiming "every fix carries a standing
+test" while F1–F4, C1–C4 and the row-unbound withdrawal had NO planted
+tests — they were verified by ad-hoc shell plants that died with the
+session. Neutering the entire `check_census_figures()` binding left every
+test green. And the totals were hand arithmetic that did not add up: 4
+reviewer + 9 first-pass + 6 extension is 19, and the record said 15.
+
+The record is superseded on both counts by the EXECUTABLE registry:
+
+* **`mutant_registry.py`** binds every campaign id to its artifact, its
+  mutation, and the pytest node that plants it, EXECUTES all of them in
+  one pytest invocation, and writes **`mutant_results.json`** with the
+  totals DERIVED from what ran. No hand counting remains in the loop.
+* Standing tests now exist for every id — the previously-untested nine
+  live in `tests/test_0011_mutant_registry.py`, planting their attacks in
+  memory (attacked spec text, fabricated aggregates, patched constants).
+* The current derived totals: **21 entries — 6 reviewer-found, 15
+  dev-found** — over 18 distinct nodes. The generated record, not this
+  sentence, is authoritative; if they ever disagree, this sentence is the
+  one that is wrong.
+
+This is the same lesson as every other finding in this file, applied to
+the file itself: a narrative ABOUT tests is not tests, and totals typed by
+hand drift exactly like any other hand-carried figure.

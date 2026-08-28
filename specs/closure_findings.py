@@ -1969,4 +1969,32 @@ CLOSURES = [
      "deferral stated in §4b does not un-promise a different row",
      "$PY specs/evidence/0011/check_round1_fold.py  # the row-bound rider "
      "check, planted-back promise verified biting"),
+
+    # ---- 0011 external round 6 (2026-08-28) — evidence machinery only;
+    # the finite acceptance stands.
+    ("0011", "external", 6, "0011-EVIDENCE-R6-1",
+     "an enum-derived dimension still self-narrowed: removing THIRD_PARTY "
+     "from DERIVED changed the oracle's claimed domain from 1,440 to 1,152 "
+     "cells with exit 0 — the emitter and the expected key set read the "
+     "same constants, and the round-5 pins covered only the hand-picked "
+     "dimensions",
+     "the enum axes are pinned TO THE ENUM and the expected key set is "
+     "built from the enum rather than the mutable constants; the "
+     "narrowed-DERIVED mutant and a narrowed-AUTHORS sibling are standing",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_narrowed_enum_dimension_is_refused -q -p no:randomly"),
+
+    ("0011", "external", 6, "0011-PROCESS-R6-1",
+     "the campaign record was PROSE and false twice over: nine mutants had "
+     "no planted tests (their verification died with the session), "
+     "neutering the whole census-figure binding left 10/10 green, "
+     "subject_census.py sat outside P1's filename convention, and the "
+     "hand-typed totals did not add up",
+     "the campaign is EXECUTABLE: mutant_registry.py binds every id to its "
+     "artifact, mutation and node, runs them in one pytest invocation, and "
+     "derives the totals into a generated record; the nine untested "
+     "mutants are standing in-memory tests; every fold check is "
+     "sentinel-proven reached; subject_census.py enters P1 via an explicit "
+     "artifact registry",
+     "$PY specs/evidence/0011/mutant_registry.py"),
 ]
