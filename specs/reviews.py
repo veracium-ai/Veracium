@@ -1333,8 +1333,14 @@ REVIEWS = [
          "identity and campaign share ONE apply function, so "
          "digested and executed bytes are the same computation "
          "(order-dependent bundles well-defined, proven "
-         "behaviorally on a dependent bundle). Sealed AFTER this "
-         "row, sha pinned on return", findings=0),
+         "behaviorally on a dependent bundle). Research re-verified at "
+         "befb8a1 — atomic per-artifact application (no partial "
+         "state exists), unconditional finally-restore at both "
+         "sites, ONE apply implementation, all prior faces closed "
+         "under the one identity: SEAL STANDS. Sealed as "
+         "0011-v14-20260828T2300Z.tar.gz, sha256 "
+         "45323d1611f9272d5948de09f487df369f6e0c9fd79c7811f3dd7c06"
+         "45babeaf, commit befb8a1", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
