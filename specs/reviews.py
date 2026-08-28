@@ -1091,6 +1091,47 @@ REVIEWS = [
          "3063cd700e268e213bfb3fd7bf942f5b740fa1175c55c872c21f72c26967c401",
          findings=0),
 
+    dict(spec="0011", round=9, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R9-1", "0011-EVIDENCE-R9-1"],
+         verdict="RETURN EXACT v9 FOR TWO MECHANICAL EVIDENCE AMENDMENTS — "
+         "finite design acceptance stands; the three v8 attacks closed in "
+         "the pristine implementation; no design or trust-model defect "
+         "(package `0011-v9`, sha 3063cd70 verified; focused 28 passed; "
+         "extracted suite 1864/22; 1,886 reconcile with the sealed "
+         "1878/8). PROCESS-R9-1: per-node provenance is not BEHAVIORALLY "
+         "bound — a reporter that looks up each id's node from ENTRIES "
+         "itself, plus a node swap, passed --write, --check and the whole "
+         "focused suite; the regressions exercised binding_problems() with "
+         "hand-built kills, never the production join. EVIDENCE-R9-1: the "
+         "record lacks a closed canonical grammar — a prepended duplicate "
+         "'schema: false' vanished in json.loads (last value wins); "
+         "found_by 'banana' regenerated cleanly with totals carrying an "
+         "ungoverned partition; deleting the refusal branches left all 28 "
+         "tests green; and the schema stayed 2 across the killed-shape "
+         "change. Requested: duplicate-key rejection at parse, raw-bytes "
+         "canonical comparison, a recursive exactly-typed schema with the "
+         "closed found_by partition, a schema bump, and behavioral main() "
+         "refusal of each corrupt record", findings=2),
+
+    dict(spec="0011", round=10, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v10`, candidate draft v13 — the "
+         "round-9 fold; §19 maps both findings; the finite acceptance "
+         "stands). PROCESS-R9-1: the join is bound at the EXECUTION — an "
+         "integration regression sends the node-swapped registry through "
+         "the real pytest run and requires binding failure, which a "
+         "self-asserting reporter cannot satisfy (it would make the "
+         "swapped registry PASS, failing the test); the runner also "
+         "refuses any reported node it did not invoke. EVIDENCE-R9-1: "
+         "duplicate keys refuse AT PARSE via object_pairs_hook; a "
+         "recursive exactly-typed CLOSED schema governs every level "
+         "(found_by in {reviewer, dev}, closed totals keys, type(x) is "
+         "int so bool never passes); the check compares shipped RAW BYTES "
+         "to the canonical writer's exact output; schema bumped to 3 for "
+         "the killed-shape change; and the corrupt-record family is "
+         "refused BY MAIN ITSELF in standing subprocess regressions with "
+         "the shipped record as the passing control. Sealed AFTER this "
+         "row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

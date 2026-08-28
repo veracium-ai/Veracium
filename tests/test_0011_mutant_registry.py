@@ -265,3 +265,91 @@ def test_a_corrupted_shipped_record_diverges():
     tampered2 = copy.deepcopy(shipped)
     tampered2["entries"][0]["mutation"] = "something else"
     assert tampered2 != rebuilt
+
+
+# ---- PROCESS-R9-1 / EVIDENCE-R9-1: the ledger's join and grammar ----------
+
+def test_a_swapped_registry_fails_through_the_real_execution():
+    """PROCESS-R9-1: the earlier swap regression fed binding_problems()
+    HONEST kills built by hand — so a reporter rewritten to look up each
+    id's node from ENTRIES ITSELF would reproduce whatever the registry
+    declares, and only in-memory checks would stay green. This one goes
+    through the PRODUCTION join: a real pytest run, attribution taken from
+    pytest's own environment, against a node-swapped registry. If
+    record_kill ever self-asserts from the registry, the swapped registry
+    passes this execution and the test FAILS."""
+    E = list(MR.ENTRIES)
+    i1 = next(i for i, e in enumerate(E) if e[0] == "R4A")
+    i2 = next(i for i, e in enumerate(E) if e[0] == "F1")
+    a, f = E[i1], E[i2]
+    E[i1] = (a[0], a[1], a[2], a[3], f[4])
+    E[i2] = (f[0], f[1], f[2], f[3], a[4])
+    killed, code, _passed = MR.execute(tuple(E))
+    assert MR.binding_problems(tuple(E), killed), (
+        "a node-swapped registry PASSED the real execution — the reporter "
+        "is self-asserting (PROCESS-R9-1)")
+
+
+def _run_main_against(record_text):
+    import os
+    import subprocess
+    import tempfile
+    with tempfile.NamedTemporaryFile("w", suffix=".json",
+                                     delete=False) as fh:
+        fh.write(record_text)
+        path = fh.name
+    env = dict(os.environ, VERACIUM_MUTANT_RECORD=path)
+    try:
+        return subprocess.run(
+            [sys.executable, str(EVID / "mutant_registry.py")],
+            capture_output=True, text=True, env=env, cwd=ROOT)
+    finally:
+        pathlib.Path(path).unlink()
+
+
+def test_corrupt_records_are_refused_by_main_itself():
+    """EVIDENCE-R9-1: removing the refusal branches left every in-memory
+    test green — the checks were exercised as functions, never as the
+    behavior main() actually runs. These invoke main() against each
+    corrupt record and require refusal, so a deleted branch is a failing
+    test. Grammar refusals happen BEFORE recomputation, so these are
+    fast; only the control and the whitespace case pay for a real run."""
+    raw = (EVID / "mutant_results.json").read_text()
+    rec = json.loads(raw)
+
+    # duplicate key: json.loads would keep the LAST value silently
+    r = _run_main_against('{\n "schema": false,' + raw[1:])
+    assert r.returncode == 1 and "duplicate JSON key" in r.stderr
+
+    # ungoverned found_by, REGENERATED so totals carry the alien partition
+    rec2 = json.loads(raw)
+    rec2["entries"][6]["found_by"] = "banana"
+    r = _run_main_against(json.dumps(rec2, indent=1, sort_keys=True) + "\n")
+    assert r.returncode == 1 and "governed partition" in r.stderr
+
+    # bool-for-int on schema; the old bare-id killed shape; alien totals key
+    for mutate, needle in (
+            (lambda d: d.__setitem__("schema", True), "schema"),
+            (lambda d: d.__setitem__("killed",
+                                     [k[1] for k in d["killed"]]),
+             "[node, id] string pairs"),
+            (lambda d: d["totals"].__setitem__("banana", 1),
+             "closed set")):
+        d = json.loads(raw)
+        mutate(d)
+        r = _run_main_against(json.dumps(d, indent=1, sort_keys=True) + "\n")
+        assert r.returncode == 1, needle
+        assert needle in r.stderr, (needle, r.stderr[:200])
+
+
+def test_non_canonical_bytes_are_refused_by_main():
+    """Same CONTENT, different whitespace: a parse-normalise round trip
+    would bless it; the raw-bytes comparison must not."""
+    raw = (EVID / "mutant_results.json").read_text()
+    r = _run_main_against(json.dumps(json.loads(raw), sort_keys=True) + "\n")
+    assert r.returncode == 1
+    assert "canonical writer" in r.stderr
+
+    # the control: the shipped bytes themselves pass
+    r = _run_main_against(raw)
+    assert r.returncode == 0, r.stderr[-300:]

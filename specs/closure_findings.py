@@ -2034,4 +2034,32 @@ CLOSURES = [
      "test_type_coerced_record_is_refused "
      "tests/test_0011_mutant_registry.py::"
      "test_artifact_outside_the_package_is_refused -q -p no:randomly"),
+
+    # ---- 0011 external round 9 (2026-08-28) — the ledger's join and grammar.
+    ("0011", "external", 9, "0011-PROCESS-R9-1",
+     "per-node provenance was not behaviorally bound: a reporter looking up "
+     "each id's node from the registry itself, plus a node swap, passed "
+     "--write, --check and the whole focused suite — the regressions fed "
+     "binding_problems() hand-built kills, never the production join",
+     "an integration regression sends the node-swapped registry through the "
+     "REAL execution and requires binding failure (a self-asserting "
+     "reporter makes the swapped registry pass, failing the test); the "
+     "runner refuses any reported node it did not invoke",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_a_swapped_registry_fails_through_the_real_execution "
+     "-q -p no:randomly"),
+
+    ("0011", "external", 9, "0011-EVIDENCE-R9-1",
+     "the record lacked a closed canonical grammar: duplicate JSON keys "
+     "vanished at parse, found_by was an open vocabulary whose alien value "
+     "regenerated cleanly, deleting the refusal branches left every test "
+     "green, and the schema stayed 2 across the killed-shape change",
+     "duplicates refuse AT PARSE; a recursive exactly-typed closed schema "
+     "governs every level; shipped RAW BYTES must equal the canonical "
+     "writer's output; schema 3; and each corrupt record is refused BY "
+     "MAIN ITSELF in standing subprocess regressions",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_corrupt_records_are_refused_by_main_itself "
+     "tests/test_0011_mutant_registry.py::"
+     "test_non_canonical_bytes_are_refused_by_main -q -p no:randomly"),
 ]

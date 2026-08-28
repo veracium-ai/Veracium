@@ -122,6 +122,85 @@ def record_kill(*ids) -> None:
             fh.write(f"{node}\t{i}\n")
 
 
+FOUND_BY = ("reviewer", "dev")           # closed: EVIDENCE-R9-1 planted
+                                          # "banana" and the totals grew a
+                                          # partition the round never governed
+
+
+def _no_dup_pairs(pairs):
+    """EVIDENCE-R9-1(1): `json.loads` keeps the LAST of duplicate keys, so a
+    prepended `"schema": false` vanished in parsing and canonicalisation
+    then blessed the file. Duplicates refuse at PARSE."""
+    seen = set()
+    for k, _v in pairs:
+        if k in seen:
+            raise ValueError(f"duplicate JSON key {k!r}")
+        seen.add(k)
+    return dict(pairs)
+
+
+def strict_parse(raw: str) -> dict:
+    return json.loads(raw, object_pairs_hook=_no_dup_pairs)
+
+
+def canonical_bytes(record: dict) -> str:
+    """THE writer. Check mode compares the shipped file's RAW BYTES to this
+    exact serialisation, so nothing survives a parse-normalise round trip."""
+    return json.dumps(record, indent=1, sort_keys=True) + "\n"
+
+
+def validate_record(rec) -> list:
+    """Recursive, exactly typed, CLOSED — unknown and missing keys refuse at
+    every level, bool never passes as int (bool is an int subclass), and
+    found_by is the governed two-value partition."""
+    bad = []
+
+    def is_int(x):
+        return type(x) is int
+
+    if type(rec) is not dict:
+        return ["record is not an object"]
+    if sorted(rec) != ["entries", "executed", "killed", "schema", "totals"]:
+        return [f"top-level keys {sorted(rec)} != the closed set"]
+    if rec["schema"] != 3 or not is_int(rec["schema"]):
+        bad.append(f"schema {rec['schema']!r} is not 3 (the killed field "
+                   f"became (node, id) pairs — that shape change is a "
+                   f"version, EVIDENCE-R9-1)")
+    if type(rec["entries"]) is not list or not rec["entries"]:
+        bad.append("entries is not a non-empty list")
+    else:
+        for e in rec["entries"]:
+            if type(e) is not dict or sorted(e) != [
+                    "artifact", "found_by", "id", "mutation", "node"]:
+                bad.append(f"entry keys {sorted(e) if type(e) is dict else e}"
+                           f" != the closed set")
+                break
+            if any(type(e[k]) is not str for k in e):
+                bad.append(f"entry {e.get('id')!r} carries a non-string")
+                break
+            if e["found_by"] not in FOUND_BY:
+                bad.append(f"entry {e['id']!r} found_by {e['found_by']!r} is "
+                           f"outside the governed partition {FOUND_BY}")
+                break
+    if (type(rec["killed"]) is not list
+            or any(type(k) is not list or len(k) != 2
+                   or any(type(x) is not str for x in k)
+                   for k in rec["killed"])):
+        bad.append("killed is not a list of [node, id] string pairs")
+    t_ = rec["totals"]
+    if type(t_) is not dict or sorted(t_) != ["all", "dev", "distinct_nodes",
+                                              "reviewer"]:
+        bad.append(f"totals keys != the closed set (got "
+                   f"{sorted(t_) if type(t_) is dict else t_})")
+    elif not all(is_int(v) for v in t_.values()):
+        bad.append("a totals value is not an exact int")
+    ex = rec["executed"]
+    if type(ex) is not dict or sorted(ex) != ["exit", "passed"] or \
+            not all(is_int(v) for v in ex.values()):
+        bad.append("executed is not {exit: int, passed: int}")
+    return bad
+
+
 def validate_entries(entries=None) -> list:
     """Structural validity, independent of any run: unique ids, real
     artifact paths, non-empty mutations, plausibly-formed nodes."""
@@ -131,7 +210,10 @@ def validate_entries(entries=None) -> list:
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
         bad.append(f"duplicate registry id(s): {sorted(dupes)}")
-    for i, _by, art, mut, node in entries:
+    for i, by, art, mut, node in entries:
+        if by not in FOUND_BY:
+            bad.append(f"{i}: found_by {by!r} outside the governed "
+                       f"partition {FOUND_BY}")
         # PROCESS-R8-1(3): `ROOT / "/etc/passwd"` IS "/etc/passwd" —
         # pathlib discards the left side when the right is absolute, so an
         # artifact anywhere on the host validated. Paths must be relative,
@@ -172,6 +254,11 @@ def execute(entries=None) -> tuple:
     killed = sorted(tuple(l.split("\t")) for l in
                     pathlib.Path(log).read_text().splitlines() if l)
     pathlib.Path(log).unlink(missing_ok=True)
+    # PROCESS-R9-1: attribution must come from the RUN, not the registry —
+    # any reported node the runner did not invoke is a fabricated join
+    alien = sorted({n for n, _i in killed} - set(nodes))
+    if alien:
+        killed.append(("<runner>", f"ALIEN-NODE:{alien[0]}"))
     tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
     passed = 0
     for tok in tail.split():
@@ -208,7 +295,7 @@ def build_record(entries, killed, exit_code, passed) -> dict:
     for e in entries:
         by_finder[e[1]] = by_finder.get(e[1], 0) + 1
     return dict(
-        schema=2,
+        schema=3,
         entries=[dict(id=i, found_by=f, artifact=a, mutation=m, node=n)
                  for i, f, a, m, n in entries],
         killed=[list(k) for k in killed],
@@ -239,34 +326,37 @@ def main() -> int:
         print(f"mutant registry: {record['totals']['all']} entries, every "
               f"one REPORTED KILLED by its executed test; record WRITTEN")
         return 0
-    # CHECK mode (default): the shipped record must equal the recomputation
-    if not RECORD.exists():
+    # CHECK mode (default): grammar FIRST — a corrupt file refuses before
+    # any recomputation runs — then the shipped RAW BYTES must equal the
+    # canonical writer's output for the recomputed record exactly.
+    record_path = pathlib.Path(os.environ.get("VERACIUM_MUTANT_RECORD",
+                                              str(RECORD)))
+    if not record_path.exists():
         print("mutant_results.json is MISSING — nothing to check",
               file=sys.stderr)
         return 1
-    shipped = json.loads(RECORD.read_text())
+    raw = record_path.read_text()
+    try:
+        shipped = strict_parse(raw)
+    except ValueError as exc:
+        print(f"shipped record REFUSED at parse: {exc}", file=sys.stderr)
+        return 1
+    gram = validate_record(shipped)
+    if gram:
+        print("shipped record REFUSED by the grammar:\n  "
+              + "\n  ".join(gram), file=sys.stderr)
+        return 1
     # PROCESS-R8-1(2): dict equality COERCES — False == 0, True == 1 — so a
     # boolean smuggled into an int field claimed an exact match. Canonical
     # SERIALIZED BYTES are compared instead ("false" is not "0"), after a
     # typed sanity pass on the fields coercion can reach.
-    for path_, val in (("executed.exit", shipped.get("executed", {})
-                        .get("exit")),
-                       ("executed.passed", shipped.get("executed", {})
-                        .get("passed")),
-                       ("schema", shipped.get("schema")),
-                       ("totals.all", shipped.get("totals", {})
-                        .get("all"))):
-        if type(val) is not int:            # bool is an int SUBCLASS; the
-            print(f"shipped record: {path_} is "  # check is on the exact type
-                  f"{type(val).__name__}, required int", file=sys.stderr)
-            return 1
-    a = json.dumps(shipped, sort_keys=True, separators=(",", ":"))
-    b = json.dumps(record, sort_keys=True, separators=(",", ":"))
-    if a != b:
+    if raw != canonical_bytes(record):
         for k in sorted(set(shipped) | set(record)):
             if (json.dumps(shipped.get(k), sort_keys=True)
                     != json.dumps(record.get(k), sort_keys=True)):
                 print(f"shipped record DIVERGES at {k!r}", file=sys.stderr)
+        print("shipped bytes are not the canonical writer's bytes for the "
+              "recomputed record", file=sys.stderr)
         return 1
     print(f"mutant registry: {record['totals']['all']} entries "
           f"({record['totals'].get('reviewer', 0)} reviewer + "
