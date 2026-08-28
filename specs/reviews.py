@@ -1179,8 +1179,9 @@ REVIEWS = [
          "helper on copies; and the order is genuinely grammar-first — "
          "parse, closed schema, canonical-form of the bytes THEMSELVES, "
          "all before any campaign, so non-canonical serialisation refuses "
-         "without a recomputation. Sealed AFTER this row, sha pinned on "
-         "return", findings=0),
+         "without a recomputation. Sealed as 0011-v11-20260828T1543Z.tar.gz, "
+         "sha256 76ea68a8f4e03759309298484dde168e0dcf20b1eeaf287af1"
+         "0945c9b7cffc8a, commit 3ae22e2", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
