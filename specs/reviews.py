@@ -953,8 +953,9 @@ REVIEWS = [
          "failability); P1's domain is recursive now. 15 mutants, 15 "
          "caught; the record in-archive (MUTANT-CAMPAIGN.md). The 2333Z and "
          "0137Z seals of this version are disclosed discarded-unsent — a package whose checks "
-         "are known-bypassable should not ask for a round. Sealed AFTER this "
-         "row, sha pinned on return",
+         "are known-bypassable should not ask for a round. Sealed as "
+         "`0011-v6-20260828T0211Z` at commit 7cb19b7, sha256 "
+         "b5476dbe632a030ca5142a83946388b3217ed3e5554d2520fd49f6a5f59638a6",
          findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
