@@ -273,6 +273,89 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
         finally:
             mem2.close()
 
+        # C5 / 0023 N8 — `import_destination_cap` (research co-sign
+        # 2026-08-27). `import_preserves_floor` above cannot reach the cap:
+        # it exports records ALREADY quarantined in the source, so the floor
+        # arrives because the file carries it. This cell lands the SAME
+        # CLEAN BYTES in two fresh destinations. D1 holds a standing
+        # revocation of the FOREIGN pair — the file's own materialised
+        # origin; 0023 §3b: a foreign origin matches only if the destination
+        # revoked THAT pair — and D2 holds none. restore=True on purpose:
+        # the file actively asserts "clean", so only THIS STORE's standing
+        # state can quarantine (§3b — no flag on an import file overrides
+        # it). THE CLAIM IS THE CONTRAST, in one pass condition per the
+        # co-sign ruling: a blanket import floor turns D2 quarantined and
+        # fails; a mispaired revocation leaves D1 clean and fails; a
+        # pre-seeded destination skips instead of inserting and fails.
+        # its own tiny source, so the corpus carries TWO sourced identities:
+        # the one D1 revokes, and an unrevoked control that must arrive
+        # CLEAN in D1 — without it, "quarantine anything sourced whenever
+        # any revocation stands" is indistinguishable from the cap (found
+        # by this cell's own mutant #4 during implementation). Exported
+        # while CLEAN: no revocation has ever run in this store.
+        c5src = _mem(llm, tmp, "revocation-c5-src", relations)
+        try:
+            c5src.remember(uid, "USER: I have a cat named Mittens.",
+                           date="2026-04-01")
+            c5src.remember(uid, "Feed update: the user moved to Lisbon.",
+                           author=EvidenceAuthor.THIRD_PARTY,
+                           event_type="feed", source_id=SRC,
+                           date="2026-04-02")
+            c5src.remember(uid, "Feed update: the user works at Acme.",
+                           author=EvidenceAuthor.THIRD_PARTY,
+                           event_type="feed", source_id=OTHER,
+                           date="2026-04-03")
+            c5_export = f"{tmp}/revocation-c5-clean.json"
+            c5src.export_memory(uid, c5_export)
+            c5_src_origin = c5src.store.local_origin()
+        finally:
+            c5src.close()
+
+        def _c5_land(name, revoke_foreign_pair):
+            dst = _mem(llm, tmp, name, relations)
+            try:
+                if revoke_foreign_pair:
+                    revoke_source(
+                        dst.store, uid,
+                        identity_digest_of(c5_src_origin, SRC,
+                                           dst.store.local_origin()),
+                        "revoke", "selfcheck", "2026-05-03T00:00:00Z")
+                res = dst.import_memory(c5_export, restore=True)
+                disc, by_src = {}, {}
+                for e in dst.store.edges(uid, active_only=False):
+                    disc[("e", e.id)] = e.provenance.disclosure
+                    by_src.setdefault(e.provenance.source_id,
+                                      set()).add(("e", e.id))
+                for ep in dst.store.episodes(uid, include_retired=True):
+                    disc[("ep", ep.id)] = ep.provenance.disclosure
+                    by_src.setdefault(ep.provenance.source_id,
+                                      set()).add(("ep", ep.id))
+                return res, disc, by_src
+            finally:
+                dst.close()
+
+        d1_res, d1_disc, d1_by = _c5_land("revocation-c5-d1", True)
+        d2_res, d2_disc, _d2_by = _c5_land("revocation-c5-d2", False)
+        d1_src, d1_other = d1_by.get(SRC, set()), d1_by.get(OTHER, set())
+        non_revoked = set(d1_disc) - d1_src
+        dest_cap = (
+            # non-vacuity (the F2 lesson): genuinely INSERTED, not skipped
+            d1_res.get("skipped", 1) == 0 and d2_res.get("skipped", 1) == 0
+            and bool(d1_src) and bool(d1_other)
+            and set(d1_disc) == set(d2_disc)
+            # D1: every record of the REVOKED identity arrives QUARANTINED
+            and all(d1_disc[k] == Disclosure.QUARANTINED for k in d1_src)
+            # ...the file did NOT carry that floor: the same bytes in D2
+            # arrive unquarantined, which makes D1 attributable to the CAP
+            and all(d2_disc[k] != Disclosure.QUARANTINED for k in d1_src)
+            # ...the UNREVOKED sourced identity arrives CLEAN in D1 — the
+            # cap keys on the revoked pair, not on "sourced while any
+            # revocation stands" (the mutant this conjunct exists to kill)
+            and all(d1_disc[k] != Disclosure.QUARANTINED for k in d1_other)
+            # ...and every non-revoked record lands IDENTICALLY in D1 and
+            # D2 — same bytes, same outcome, whatever that outcome is
+            and all(d1_disc[k] == d2_disc[k] for k in non_revoked))
+
         # LIFT — restores exactly what the revocation took: the seed records
         # return to the seam whole, the birth floor is NOT revisited (Q2)
         revoke_source(mem.store, uid, digest, "lift", "selfcheck",
@@ -295,6 +378,7 @@ def _check_revocation(llm, tmp, relations) -> tuple[int, int, dict]:
               "unrevoked_source_clean": control_clean,
               "consolidation_pool_excludes": pool_excludes,
               "import_preserves_floor": import_holds,
+              "import_destination_cap": dest_cap,
               "lift_restores_only_what_revocation_took": lift_exact}
     ok = sum(map(int, detail.values()))
     return ok, len(detail), detail

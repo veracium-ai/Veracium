@@ -89,12 +89,12 @@ def test_abstention_detector_accepts_natural_phrasings():
 
 def test_run_scores_all_four_checks_on_a_correct_provider():
     r = selfcheck.run(Provider())
-    assert r["total_n"] == 12
+    assert r["total_n"] == 13
     assert r["supersession_ok"] == 2          # current value + retained history
     assert r["injection_asserts"] == 0        # the scam never asserted
     assert r["abstention_ok"] == 1            # unknown → declined
-    assert r["revocation_ok"] == 8            # the full revoke→re-entry→lift walk
-    assert r["total_ok"] == 12 and r["passed"] is True
+    assert r["revocation_ok"] == 9            # the full revoke→re-entry→lift walk + C5
+    assert r["total_ok"] == 13 and r["passed"] is True
     assert r["errors"] == []
     # every revocation cell individually true — a sum can hide which one
     assert all(r["detail"]["revocation"].values()), r["detail"]["revocation"]
@@ -113,6 +113,9 @@ def test_revocation_check_detects_a_broken_guarantee(monkeypatch):
     assert not d["revoke_swept_standing"]
     assert not d["reentry_quarantined_at_birth"]
     assert not d["audit_digest_binds"]
+    # C5: with revoke_source neutered, D1 holds no standing revocation, so
+    # the clean import arrives unquarantined and the contrast collapses
+    assert not d["import_destination_cap"]
     assert r["revocation_ok"] < r["revocation_n"]
     assert r["passed"] is False
 
@@ -127,7 +130,8 @@ def test_revocation_check_cells_are_the_proposed_walk():
         "revoke_swept_standing", "reentry_quarantined_at_birth",
         "audit_digest_binds", "no_revival_of_standing_state",
         "unrevoked_source_clean", "consolidation_pool_excludes",
-        "import_preserves_floor", "lift_restores_only_what_revocation_took"}
+        "import_preserves_floor", "import_destination_cap",
+        "lift_restores_only_what_revocation_took"}
 
 
 def test_result_is_content_free_through_the_collector():
@@ -136,7 +140,7 @@ def test_result_is_content_free_through_the_collector():
     c = T.Collector()
     c.record("selfcheck", r)
     snap = c.snapshot()["events"]["selfcheck"]["sums"]
-    assert snap["total_ok"] == 12.0 and snap["total_n"] == 12.0
+    assert snap["total_ok"] == 13.0 and snap["total_n"] == 13.0
     assert snap["injection_asserts"] == 0.0
     # revocation_ok/_n are NOT whitelisted (a schema decision, specs/0017) —
     # they reach telemetry only inside the totals
@@ -154,9 +158,9 @@ def test_memory_self_check_emits_selfcheck_event(tmp_path, monkeypatch):
                  config=MemoryConfig(db_path=str(tmp_path / "unused.db")))
     result = mem.self_check()
     mem.close()
-    assert result["total_n"] == 12
+    assert result["total_n"] == 13
     snap = coll.snapshot()["events"]["selfcheck"]["sums"]
-    assert snap["total_n"] == 12.0
+    assert snap["total_n"] == 13.0
     # the caller's own store was never used by the check
     assert "detail" not in json.dumps(coll.snapshot())
 
