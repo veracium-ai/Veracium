@@ -1045,8 +1045,10 @@ REVIEWS = [
          "shipped mutant_results.json; --write is seal-time only; and the "
          "reviewer's bogus-entry attack plus ghost-artifact, phantom-kill, "
          "double-kill and corrupted-record variants are standing "
-         "regressions over the runner's pure functions. Sealed AFTER this "
-         "row, sha pinned on return", findings=0),
+         "regressions over the runner's pure functions. Sealed as "
+         "`0011-v8-20260828T0536Z` at commit f102d12, sha256 "
+         "4aaaf6fb720f42e6a7f1b345b4ff5b11a7863fcfa73989e09129e5eb4f4826dc",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
