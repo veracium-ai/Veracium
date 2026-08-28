@@ -2013,8 +2013,10 @@ CLOSURES = [
      "$PY specs/evidence/0011/mutant_registry.py  # CHECK mode: re-runs the "
      "campaign, verifies the one-to-one kill binding, and requires the "
      "shipped record to equal the recomputation; the attack regressions are "
-     "tests/test_0011_mutant_registry.py::test_a_bogus_registry_entry_is_refused "
-     "and ::test_a_corrupted_shipped_record_diverges"),
+     "tests/test_0011_mutant_registry.py::test_missing_observations_fail_coverage "
+     "and ::test_the_shipped_record_recomputes_and_diverges_on_tamper"),
+     # ^ successors after the round-11 schema-4 redesign: the bogus-entry
+     #   and corrupted-record regressions live on under observed-kill names
 
     # ---- 0011 external round 8 (2026-08-28) — the ledger's binding.
     ("0011", "external", 8, "0011-PROCESS-R8-1",
@@ -2029,9 +2031,9 @@ CLOSURES = [
      "artifact paths must be relative, contained and regular files — all "
      "three attacks standing at the real checker boundary",
      "$PY -m pytest tests/test_0011_mutant_registry.py::"
-     "test_a_swapped_node_binding_is_refused "
+     "test_a_swapped_on_disk_registry_survives_and_is_refused "
      "tests/test_0011_mutant_registry.py::"
-     "test_type_coerced_record_is_refused "
+     "test_type_coerced_kill_exit_is_refused "
      "tests/test_0011_mutant_registry.py::"
      "test_artifact_outside_the_package_is_refused -q -p no:randomly"),
 
@@ -2046,7 +2048,7 @@ CLOSURES = [
      "reporter makes the swapped registry pass, failing the test); the "
      "runner refuses any reported node it did not invoke",
      "$PY -m pytest tests/test_0011_mutant_registry.py::"
-     "test_a_swapped_registry_fails_through_the_real_execution "
+     "test_a_swapped_on_disk_registry_survives_and_is_refused "
      "-q -p no:randomly"),
 
     ("0011", "external", 9, "0011-EVIDENCE-R9-1",
@@ -2076,8 +2078,10 @@ CLOSURES = [
      "invoked; the coordinated on-disk mutation is the standing regression, "
      "driven through the real execution",
      "$PY -m pytest tests/test_0011_mutant_registry.py::"
-     "test_a_swapped_on_disk_registry_fails_the_real_execution "
-     "-q -p no:randomly"),
+     "test_a_swapped_on_disk_registry_survives_and_is_refused "
+     "-q -p no:randomly"),   # renamed in the round-11 fold: the
+                             # regression now observes SURVIVAL
+                             # (schema 4), same attack, same seat
 
     ("0011", "external", 10, "0011-EVIDENCE-M10-1",
      "the shipped-record operand was environment-selectable via a "
@@ -2091,4 +2095,26 @@ CLOSURES = [
      "test_non_canonical_bytes_are_refused_by_main "
      "tests/test_0011_mutant_registry.py::"
      "test_corrupt_records_are_refused_by_main_itself -q -p no:randomly"),
+    # ---- 0011 external round 11 (2026-08-28) — the claim protocol removed.
+    ("0011", "external", 11, "0011-PROCESS-R11-1",
+     "the round-10 regression was fail-open (its copied module derived "
+     "ROOT from /tmp, pytest exited 4, and the empty kill list produced "
+     "the expected mismatch — it passed while executing nothing), and the "
+     "id half of every kill was still a test-side claim: a reporter "
+     "deriving ids from the registry, coordinated with a swapped on-disk "
+     "registry, passed --write, --check and the focused suite",
+     "schema 4 removes the claim protocol: entries carry their mutations "
+     "as text hunks, the runner applies them and OBSERVES the kill (clean "
+     "pass + mutated exit-1 failure, counts parsed, artifacts restored "
+     "byte-identically verified), leave-one-out proves each hunk of a "
+     "multi-hunk entry load-bearing, a dead subprocess is a named ERROR "
+     "at the real root, judge-targeting hunks refuse at validation, "
+     "concurrent campaigns refuse on an exclusive lock, and no reporter, "
+     "kill log or pytest-side attribution exists (standing absence test)",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_a_dead_subprocess_is_an_error_not_a_defense "
+     "tests/test_0011_mutant_registry.py::"
+     "test_a_swapped_on_disk_registry_survives_and_is_refused "
+     "tests/test_0011_mutant_registry.py::"
+     "test_no_kill_claim_protocol_remains -q -p no:randomly"),
 ]

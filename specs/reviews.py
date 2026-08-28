@@ -1183,6 +1183,56 @@ REVIEWS = [
          "sha256 76ea68a8f4e03759309298484dde168e0dcf20b1eeaf287af1"
          "0945c9b7cffc8a, commit 3ae22e2", findings=0),
 
+    dict(spec="0011", round=11, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R11-1"],
+         verdict="RETURN EXACT v11 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; no policy or trust-model defect "
+         "(package `0011-v11`, sha 76ea68a8 verified; focused 32 passed; "
+         "collected-header 22; spec gate 88/5; selfcheck 8; extracted "
+         "suite 1868/22, its 1,890 reconciling exactly with the sealed "
+         "1882/8; archive safety and v10 lineage pass; EVIDENCE-M10-1 "
+         "confirmed CLOSED: pinned operand, duplicate-key refusal even "
+         "with the old variable pointing at a pristine alternate, genuine "
+         "grammar-first ordering). PROCESS-R11-1: the new provenance "
+         "regression is FAIL-OPEN — the copied module derives ROOT from "
+         "its temporary location, pytest exits 4 with the named tests "
+         "unavailable there, _code and _passed are ignored, and killed=[] "
+         "produces the expected binding mismatch (adding assert _code==0 "
+         "yields AssertionError: (4, 0, [], PosixPath('/tmp'))). And the "
+         "coordinated attack REMAINS VIABLE: swap R4A/F1 on disk and "
+         "change both test-side record_kill() functions to ignore their "
+         "arguments and emit whatever ids the swapped registry assigns to "
+         "the current test — --write exit 0, --check exit 0, focused "
+         "32/32: the runner owns the node label but the ID half is still "
+         "circularly self-reported from the registry. Required: run the "
+         "copied mutation against the actual root; require exit 0, "
+         "expected passed count and nonempty kills before the binding; "
+         "the coordinated registry-plus-reporter mutation as a standing "
+         "refusal; reporters bound to explicit arguments or one tested "
+         "helper", findings=1),
+
+    dict(spec="0011", round=12, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v12`, candidate draft v15 — the "
+         "round-11 fold; §21 maps the finding; the finite acceptance "
+         "stands). PROCESS-R11-1 closed by REMOVING the kill-claim "
+         "protocol: schema-4 entries carry their mutations as text hunks, "
+         "the runner applies them and OBSERVES kills (clean pass + "
+         "mutated exit-1 failure, restores byte-verified), leave-one-out "
+         "proves each hunk of a multi-hunk entry load-bearing, and no "
+         "reporter, kill log or pytest-side attribution exists (standing "
+         "absence test). The reviewer's coordinated attack replayed "
+         "against the SHIPPED file refuses in both modes. Research's "
+         "pre-dispatch red-team pass folded before sealing (the C5 batch "
+         "discipline): proxy-kill hunks refuse outside the entry's named "
+         "ast-located defense span, the clean gate refuses skip/xfail "
+         "laundering, the subprocess env is scrubbed with a private "
+         "bytecode namespace per run (a live mtime+size pyc collision had "
+         "R5A reporting a false survival), and the campaign runs in a "
+         "PRIVATE SNAPSHOT — the live tree is read-only to it by "
+         "construction, closing the crash window and every "
+         "concurrent-reader hazard at once. Sealed AFTER this row, "
+         "sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

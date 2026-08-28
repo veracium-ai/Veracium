@@ -1,248 +1,486 @@
 {
  "entries": [
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "reviewer",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "seen = list(cells())",
+     "old": "seen = list(cells() if stream is None else stream)"
+    }
+   ],
    "id": "R4A",
-   "mutation": "source-conditional ALLOW planted in the emitted stream",
+   "mutation": "the oracle judges its own recomputation instead of the injected stream \u2014 the round-4 certifying-its-inputs defect",
    "node": "tests/test_0011_policy_matrix.py::test_a_variance_planted_in_the_emission_is_caught"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "_dependency_closure",
    "found_by": "reviewer",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "defs[name] = body",
+     "old": "defs[name] = (defs[name] + \"\\n\" + body) if name in defs else body"
+    }
+   ],
    "id": "R4B",
-   "mutation": "dangerous helper shadowed by a benign redefinition",
+   "mutation": "dependency closure regresses to last-definition-wins \u2014 a dangerous helper shadowed by a benign redefinition disappears",
    "node": "tests/test_0011_policy_matrix.py::test_the_fold_checker_refuses_a_shadowed_helper"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "reviewer",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "emitted_keys.count(k) > 2",
+     "old": "emitted_keys.count(k) > 1"
+    }
+   ],
    "id": "R5A",
-   "mutation": "one cell replaced by a duplicate \u2014 cardinality-preserving omission",
+   "mutation": "duplicate-key detection neutered \u2014 a cardinality-preserving replacement is invisible on the duplicate side",
    "node": "tests/test_0011_policy_matrix.py::test_a_duplicate_hiding_a_missing_cell_is_caught"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "ROW_CONTRADICTIONS",
    "found_by": "reviewer",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "(\"| USER (sole authority: self-assertion) |\", \"with the measurement rider NEVER SAID\",",
+     "old": "(\"| USER (sole authority: self-assertion) |\", \"with the measurement rider\","
+    }
+   ],
    "id": "R5B",
-   "mutation": "the withdrawn rider re-promised in \u00a73c's live row",
+   "mutation": "the row-bound rider contradiction blunted \u2014 \u00a73c may re-promise the withdrawn measurement rider",
    "node": "tests/test_0011_mutant_registry.py::test_rider_promise_in_the_row_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "reviewer",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if tuple(DERIVED) != tuple(DERIVED):",
+     "old": "if tuple(DERIVED) != (None, *tuple(A)):"
+    }
+   ],
    "id": "R6A",
-   "mutation": "THIRD_PARTY removed from DERIVED \u2014 enum axis self-narrows",
+   "mutation": "the DERIVED enum-identity pin neutered \u2014 the derivation axis can self-narrow (its NAMED complaint dies; coverage complaints do not carry the axis name the standing test requires)",
    "node": "tests/test_0011_mutant_registry.py::test_narrowed_enum_dimension_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "main",
    "found_by": "reviewer",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "+ check_decision_table(t))",
+     "old": "+ check_decision_table(t) + check_census_figures(t))"
+    }
+   ],
    "id": "R6B",
-   "mutation": "check_census_figures dropped from main()'s aggregation",
+   "mutation": "check_census_figures dropped from main()'s aggregation \u2014 a whole check family unreachable",
    "node": "tests/test_0011_mutant_registry.py::test_every_fold_check_is_reached"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if False:",
+     "old": "if len(SOURCES) != 3 or None not in SOURCES or not any(\n            s and \"caller\" in s for s in SOURCES if s):"
+    }
+   ],
    "id": "M1",
-   "mutation": "SOURCES narrowed",
+   "mutation": "the SOURCES literal pin neutered \u2014 the hand-picked source axis can narrow while emitter and expectation shrink together",
    "node": "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if False:",
+     "old": "if len(ORIGINS) != 2 or None not in ORIGINS:"
+    }
+   ],
    "id": "M2",
-   "mutation": "ORIGINS narrowed",
+   "mutation": "the ORIGINS literal pin neutered \u2014 the origin axis can narrow",
    "node": "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if subj_classes != subj_classes:",
+     "old": "if subj_classes != {\"SELF\", \"OTHER\"}:"
+    },
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if emitted(A.USER, None, \"OTHER\") - {\"REFUSE\", \"ALLOW\"}:",
+     "old": "if emitted(A.USER, None, \"OTHER\") != {\"REFUSE\"}:"
+    },
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if emitted(A.USER, A.USER, \"OTHER\") - {\"REFUSE\", \"ALLOW\"}:",
+     "old": "if emitted(A.USER, A.USER, \"OTHER\") != {\"REFUSE\"}:"
+    },
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "if emitted(low, A.USER, \"OTHER\") - {\"ALLOW\"}:",
+     "old": "if emitted(low, A.USER, \"OTHER\") != {\"ALLOW\"}:"
+    }
+   ],
    "id": "M3",
-   "mutation": "the OTHER subject dropped",
+   "mutation": "the OTHER subject dropped \u2014 takes FOUR simultaneous neuters (the subject-class pin, both named REFUSE cells, and the low-authority derived check's empty-set tolerance): measured defense depth 4",
    "node": "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "missing = expected_keys - expected_keys",
+     "old": "missing = expected_keys - set(emitted_keys)"
+    }
+   ],
    "id": "M4",
-   "mutation": "stream truncated / judged elsewhere",
-   "node": "tests/test_0011_policy_matrix.py::test_a_truncated_stream_is_caught"
+   "mutation": "the NEVER-EMITTED (missing-key) defense neutered \u2014 the displaced half of a duplicate swap, and any truncation the named cells miss, pass the coverage layer",
+   "node": "tests/test_0011_policy_matrix.py::test_a_duplicate_hiding_a_missing_cell_is_caught"
   },
   {
-   "artifact": "specs/evidence/0011/policy_matrix.py",
+   "defends": "problems",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/policy_matrix.py",
+     "new": "imp = [(\"default\", A.THIRD_PARTY, \"ALLOW\"), (\"restore\", A.USER, \"REFUSE\")]",
+     "old": "imp = import_flattened_cells()"
+    }
+   ],
    "id": "M5",
-   "mutation": "import cells fabricated in problems()",
+   "mutation": "import cells fabricated in problems() \u2014 the production adapter is never reached and the value checks are satisfied by fiction",
    "node": "tests/test_0011_policy_matrix.py::test_problems_actually_reaches_the_import_adapter"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "_dependency_closure",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "r\"^(\\w+)\\s*(?:\\([^)]*\\))?\\s*:?=\", f, re.M):",
+     "old": "r\"^\\s*(\\w+)\\s*(?:\\([^)]*\\))?\\s*:?=\", f, re.M):"
+    }
+   ],
    "id": "F1",
-   "mutation": "helper definition indented",
+   "mutation": "definition anchor loses its indent tolerance \u2014 an indented helper definition is invisible to the closure",
    "node": "tests/test_0011_mutant_registry.py::test_indented_helper_definition_is_followed"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "_dependency_closure",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "r\"^\\s*(\\w+)\\s*(?:\\([^)]*\\))\\s*:?=\", f, re.M):",
+     "old": "r\"^\\s*(\\w+)\\s*(?:\\([^)]*\\))?\\s*:?=\", f, re.M):"
+    }
+   ],
    "id": "F2",
-   "mutation": "parenless binding, bare-name read",
+   "mutation": "definition parens made mandatory \u2014 a parenless binding is never a definition, so a read hidden in one is never followed",
    "node": "tests/test_0011_mutant_registry.py::test_parenless_binding_is_followed"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "_dependency_closure",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "fences = re.findall(r\"```\\n(.*?)```\", spec, re.S)",
+     "old": "fences = re.findall(r\"```[\\w-]*[ \\t]*\\n(.*?)```\", spec, re.S)"
+    }
+   ],
    "id": "F3",
-   "mutation": "helper in an info-string fence",
+   "mutation": "fence grammar regresses to bare fences \u2014 an info-string fence (```text) hides its contents entirely",
    "node": "tests/test_0011_mutant_registry.py::test_info_string_fence_is_scanned"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "check_decision_table",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "if sorted(spec_rows) != sorted(spec_rows):",
+     "old": "if sorted(spec_rows) != sorted(rows):"
+    }
+   ],
    "id": "F4",
-   "mutation": "extra contradicting table row",
+   "mutation": "multiset equality over the spec's table block neutered \u2014 an extra contradicting hand-written row sits beside the generated rows",
    "node": "tests/test_0011_mutant_registry.py::test_extra_table_row_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "check_census_figures",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "\"predicate passes\": (72253,",
+     "old": "\"predicate passes\": (agg[\"predicate_passes\"],"
+    }
+   ],
    "id": "C1",
-   "mutation": "recorded-only census figure inflated in the aggregate",
+   "mutation": "the recorded-only census figure read from a CONSTANT instead of the aggregate \u2014 an inflated aggregate agrees with everything",
    "node": "tests/test_0011_mutant_registry.py::test_inflated_aggregate_figure_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "check_census_figures",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "\"candidate rows\": (337,",
+     "old": "\"candidate rows\": (sum(table.values()),"
+    },
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "\"distinct strings\": (94, r\"over \\*\\*([\\d,]+) distinct\"),",
+     "old": "\"distinct strings\": (len(table), r\"over \\*\\*([\\d,]+) distinct\"),"
+    }
+   ],
    "id": "C2",
-   "mutation": "candidate table gutted, SELF total kept",
+   "mutation": "both candidate-table bindings hardcoded \u2014 a gutted table keeps its published totals: measured defense depth 2",
    "node": "tests/test_0011_mutant_registry.py::test_gutted_candidate_table_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/subject_census.py",
+   "defends": "validate_aggregate",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/subject_census.py",
+     "new": "if False and _NAME_AFTER.search(s):",
+     "old": "if _NAME_AFTER.search(s):"
+    }
+   ],
    "id": "C3",
-   "mutation": "unmasked name-shaped key in the aggregate",
+   "mutation": "the aggregate-side name-mask refusal neutered \u2014 an unmasked name-shaped key validates",
    "node": "tests/test_0011_mutant_registry.py::test_unmasked_name_in_aggregate_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/check_round1_fold.py",
+   "defends": "check_census_figures",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_round1_fold.py",
+     "new": "stated = actual",
+     "old": "stated = int(m.group(1).replace(\",\", \"\"))"
+    }
+   ],
    "id": "C4",
-   "mutation": "spec \u00a73b figure drifted by one",
+   "mutation": "the spec-side figure never parsed \u2014 stated is defined as actual, so \u00a73b prose can drift freely from its artifact",
    "node": "tests/test_0011_mutant_registry.py::test_spec_figure_drift_is_refused"
   },
   {
-   "artifact": "specs/evidence/0011/check_contention_rule.py",
+   "defends": "run_cells",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_contention_rule.py",
+     "new": "if fn is None:\n                ran.append(name)\n                continue",
+     "old": "if fn is None:\n                bad.append(f\"registry names {name} and no such cell exists\")\n                continue"
+    }
+   ],
    "id": "K1",
-   "mutation": "positive-control cell deleted",
+   "mutation": "a deleted cell silently counted as ran \u2014 the registry mismatch and the no-such-cell complaint both vanish",
    "node": "tests/test_0011_policy_matrix.py::test_contention_checker_cells_cannot_vanish"
   },
   {
-   "artifact": "specs/evidence/0011/check_contention_rule.py",
+   "defends": "cell_direct_pair_not_contested",
    "found_by": "dev",
+   "hunks": [
+    {
+     "artifact": "specs/evidence/0011/check_contention_rule.py",
+     "new": "if direct is None:",
+     "old": "if direct:"
+    }
+   ],
    "id": "K2",
-   "mutation": "cell assertion neutered while the cell still runs",
+   "mutation": "the direct-pair cell's assertion made unfireable while the cell still runs \u2014 reachability without failability",
    "node": "tests/test_0011_policy_matrix.py::test_contention_checker_cells_cannot_vanish"
   }
  ],
- "executed": {
-  "exit": 0,
-  "passed": 18
- },
- "killed": [
-  [
-   "tests/test_0011_mutant_registry.py::test_every_fold_check_is_reached",
-   "R6B"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_extra_table_row_is_refused",
-   "F4"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_gutted_candidate_table_is_refused",
-   "C2"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_indented_helper_definition_is_followed",
-   "F1"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_inflated_aggregate_figure_is_refused",
-   "C1"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_info_string_fence_is_scanned",
-   "F3"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_narrowed_enum_dimension_is_refused",
-   "R6A"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_parenless_binding_is_followed",
-   "F2"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_rider_promise_in_the_row_is_refused",
-   "R5B"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_spec_figure_drift_is_refused",
-   "C4"
-  ],
-  [
-   "tests/test_0011_mutant_registry.py::test_unmasked_name_in_aggregate_is_refused",
-   "C3"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_a_duplicate_hiding_a_missing_cell_is_caught",
-   "R5A"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_a_truncated_stream_is_caught",
-   "M4"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_a_variance_planted_in_the_emission_is_caught",
-   "R4A"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_contention_checker_cells_cannot_vanish",
-   "K1"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_contention_checker_cells_cannot_vanish",
-   "K2"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused",
-   "M1"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused",
-   "M2"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused",
-   "M3"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_problems_actually_reaches_the_import_adapter",
-   "M5"
-  ],
-  [
-   "tests/test_0011_policy_matrix.py::test_the_fold_checker_refuses_a_shadowed_helper",
-   "R4B"
-  ]
- ],
- "schema": 3,
+ "schema": 4,
  "totals": {
   "all": 21,
   "dev": 15,
-  "distinct_nodes": 18,
+  "distinct_nodes": 17,
+  "hunks": 25,
   "reviewer": 6
+ },
+ "verified": {
+  "clean": {
+   "tests/test_0011_mutant_registry.py::test_every_fold_check_is_reached": 1,
+   "tests/test_0011_mutant_registry.py::test_extra_table_row_is_refused": 1,
+   "tests/test_0011_mutant_registry.py::test_gutted_candidate_table_is_refused": 1,
+   "tests/test_0011_mutant_registry.py::test_indented_helper_definition_is_followed": 1,
+   "tests/test_0011_mutant_registry.py::test_inflated_aggregate_figure_is_refused": 1,
+   "tests/test_0011_mutant_registry.py::test_info_string_fence_is_scanned": 1,
+   "tests/test_0011_mutant_registry.py::test_narrowed_enum_dimension_is_refused": 1,
+   "tests/test_0011_mutant_registry.py::test_parenless_binding_is_followed": 1,
+   "tests/test_0011_mutant_registry.py::test_rider_promise_in_the_row_is_refused": 1,
+   "tests/test_0011_mutant_registry.py::test_spec_figure_drift_is_refused": 1,
+   "tests/test_0011_mutant_registry.py::test_unmasked_name_in_aggregate_is_refused": 1,
+   "tests/test_0011_policy_matrix.py::test_a_duplicate_hiding_a_missing_cell_is_caught": 1,
+   "tests/test_0011_policy_matrix.py::test_a_variance_planted_in_the_emission_is_caught": 1,
+   "tests/test_0011_policy_matrix.py::test_contention_checker_cells_cannot_vanish": 1,
+   "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused": 1,
+   "tests/test_0011_policy_matrix.py::test_problems_actually_reaches_the_import_adapter": 1,
+   "tests/test_0011_policy_matrix.py::test_the_fold_checker_refuses_a_shadowed_helper": 1
+  },
+  "kills": [
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "C1"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "C2"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "C3"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "C4"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "F1"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "F2"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "F3"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "F4"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "K1"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "K2"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "M1"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "M2"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "M3"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "M4"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "M5"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "R4A"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "R4B"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "R5A"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "R5B"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "R6A"
+   },
+   {
+    "exit": 1,
+    "failed": 1,
+    "id": "R6B"
+   }
+  ],
+  "leave_one_out": [
+   {
+    "dropped": 0,
+    "exit": 0,
+    "id": "C2"
+   },
+   {
+    "dropped": 1,
+    "exit": 0,
+    "id": "C2"
+   },
+   {
+    "dropped": 0,
+    "exit": 0,
+    "id": "M3"
+   },
+   {
+    "dropped": 1,
+    "exit": 0,
+    "id": "M3"
+   },
+   {
+    "dropped": 2,
+    "exit": 0,
+    "id": "M3"
+   },
+   {
+    "dropped": 3,
+    "exit": 0,
+    "id": "M3"
+   }
+  ]
  }
 }

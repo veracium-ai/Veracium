@@ -61,6 +61,7 @@ PACKAGES = {
         "v9": (9, {"0011": "v12"}),
         "v10": (10, {"0011": "v13"}),
         "v11": (11, {"0011": "v14"}),
+        "v12": (12, {"0011": "v15"}),
     },
     # 0026 label/value agreement — first external round, same shape as 0011:
     # both internal rounds recorded, governed from v1.
@@ -135,9 +136,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
-                                   # (0011-v11 sealed 20260828T1543Z,
-                                   # sidecar committed)
+IN_FLIGHT: tuple = ("0011-v12",)  # C8-1/C9-1: the ONE declared seal
+                                   # (0011 round-11 fold);
+                                   # cleared by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
