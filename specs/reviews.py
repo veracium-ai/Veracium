@@ -1129,8 +1129,9 @@ REVIEWS = [
          "to the canonical writer's exact output; schema bumped to 3 for "
          "the killed-shape change; and the corrupt-record family is "
          "refused BY MAIN ITSELF in standing subprocess regressions with "
-         "the shipped record as the passing control. Sealed AFTER this "
-         "row, sha pinned on return", findings=0),
+         "the shipped record as the passing control. Sealed as "
+         "`0011-v10-20260828T1421Z` at commit d3defad, sha256 "
+         "1ee6af693304abf6ba28d0b9ae46a920af30957c46b6e746290384aa9d146205", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
