@@ -1086,8 +1086,10 @@ REVIEWS = [
          "ROOT/'/etc/passwd' equal '/etc/passwd'. All three attacks are "
          "standing regressions at the real checker boundary, and the "
          "shipped record is regenerated under the new pair schema and "
-         "verified by the non-mutating check. Sealed AFTER this row, sha "
-         "pinned on return", findings=0),
+         "verified by the non-mutating check. Sealed as "
+         "`0011-v9-20260828T1143Z` at commit 847f827, sha256 "
+         "3063cd700e268e213bfb3fd7bf942f5b740fa1175c55c872c21f72c26967c401",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",

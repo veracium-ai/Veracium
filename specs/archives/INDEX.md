@@ -4,7 +4,7 @@
 
 # Review archives
 
-**258 archives, 652504 KB.** Each is the exact package sent for one
+**259 archives, 659138 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -108,6 +108,7 @@ existed rather than a way to check it.
 | `0011-v6-20260828T0211Z.tar.gz` | 0011 | v6 | 2026-08-28 02:11Z | 501 | 6615 KB | `b5476dbe632a030c…` |
 | `0011-v7-20260828T0303Z.tar.gz` | 0011 | v7 | 2026-08-28 03:03Z | 505 | 6623 KB | `4c32346bdf314973…` |
 | `0011-v8-20260828T0536Z.tar.gz` | 0011 | v8 | 2026-08-28 05:36Z | 506 | 6629 KB | `4aaaf6fb720f42e6…` |
+| `0011-v9-20260828T1143Z.tar.gz` | 0011 | v9 | 2026-08-28 11:43Z | 507 | 6634 KB | `3063cd700e268e21…` |
 | `0012-v3-20260809T1532Z.tar.gz` | 0012 | v3 | 2026-08-09 15:32Z | 279 | 2073 KB | `cf76c120385dfec4…` |
 | `0012-v4-20260809T1616Z.tar.gz` | 0012 | v4 | 2026-08-09 16:16Z | 279 | 2085 KB | `756756eefa98b6c6…` |
 | `0012-v5-20260809T1648Z.tar.gz` | 0012 | v5 | 2026-08-09 16:48Z | 280 | 2087 KB | `925bebb5cfde8a6a…` |
@@ -343,7 +344,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0011 | v6 | 6 | `0011-v6-20260828T0211Z.tar.gz` | `b5476dbe632a030c…` |
 | 0011 | v7 | 7 | `0011-v7-20260828T0303Z.tar.gz` | `4c32346bdf314973…` |
 | 0011 | v8 | 8 | `0011-v8-20260828T0536Z.tar.gz` | `4aaaf6fb720f42e6…` |
-| 0011 | v9 | 9 | **0 sidecars — LINEAGE GAP** | — |
+| 0011 | v9 | 9 | `0011-v9-20260828T1143Z.tar.gz` | `3063cd700e268e21…` |
 | 0022-0023 | v17 | 17 | `0022-0023-v17-20260819T0252Z.tar.gz` | `1dc88d304c81e558…` |
 | 0022-0023 | v18 | 18 | `0022-0023-v18-20260819T1247Z.tar.gz` | `7fc80f5de08d05f2…` |
 | 0022-0023 | v19 | 19 | `0022-0023-v19-20260820T0032Z.tar.gz` | `67d823fe4a0ff5e3…` |
