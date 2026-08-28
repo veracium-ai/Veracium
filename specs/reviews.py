@@ -933,8 +933,10 @@ REVIEWS = [
          "§3c's row is swept and the withdrawal is BOUND TO THE ROW in the "
          "checker — anchored on the row itself, planted-back promise "
          "verified biting — since a deferral stated in §4b does not "
-         "un-promise a different row. Sealed AFTER this row, sha pinned on "
-         "return", findings=0),
+         "un-promise a different row. Sealed as "
+         "`0011-v6-20260827T2333Z` at commit e8f0ecb, sha256 "
+         "d2e52ca7c57649c6e7f360ddb5cc3085510c09675ac6cfae2ffeea496de7d844",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
