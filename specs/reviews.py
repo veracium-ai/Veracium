@@ -1235,8 +1235,9 @@ REVIEWS = [
          "PASS and one residual, closed before seal: the mutable-"
          "artifact set flipped from deny-list to the closed four-"
          "file MUTABLE_ARTIFACTS allowlist, membership first, "
-         "widening reviewed. Sealed AFTER this row, sha pinned "
-         "on return", findings=0),
+         "widening reviewed. Sealed as 0011-v12-20260828T1759Z.tar.gz, "
+         "sha256 9655cd3a756518a0fc02e0ebd52514a9e4f63670560254dde3"
+         "4d75bf95ff9823, commit f6b329e", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
