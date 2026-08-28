@@ -1239,6 +1239,51 @@ REVIEWS = [
          "sha256 9655cd3a756518a0fc02e0ebd52514a9e4f63670560254dde3"
          "4d75bf95ff9823, commit f6b329e", findings=0),
 
+    dict(spec="0011", round=12, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R12-1"],
+         verdict="RETURN EXACT v12 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; PROCESS-R11-1 confirmed "
+         "substantively closed (reporter protocol gone, baselines require "
+         "collection and passes, exit-4/empty runs refused, the R4A/F1 "
+         "swap yields two SURVIVED and exit 1, snapshots isolate, the "
+         "selector absent); no policy or trust-model defect (package "
+         "`0011-v12`, sha 9655cd3a verified; focused 35; collected-header "
+         "22; spec gate 88/5; selfcheck 8; extracted 1871/22 reconciling "
+         "exactly with sealed 1885/8). PROCESS-R12-1: duplicate mutations "
+         "inflate the observed ledger — R5A duplicated under a fresh "
+         "DUPR5A id passed validate_entries, --write (22 entries), "
+         "--check and the 35-test focused suite, and the totals reported "
+         "a dev mutant that is a second label for a reviewer's; "
+         "coverage-by-observation cannot see it because every duplicate "
+         "receives a genuine observed failure (R7-1's fictitious entry in "
+         "the new protocol). Required: a canonical mutation identity from "
+         "the normalized hunk bundle, duplicate identities refused "
+         "regardless of id/description/finder/node/order, and the "
+         "R5A/DUPR5A case at the real --write/--check boundary rather "
+         "than an in-memory analog", findings=1),
+
+    dict(spec="0011", round=13, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v13`, candidate draft v16 — the "
+         "round-12 fold; §22 maps the finding). PROCESS-R12-1 closed at "
+         "the identity carrier, twice in one day: mutation_identity is "
+         "the sorted bundle of MINIMAL-DIFF hunk identities — common "
+         "prefix/suffix stripped between old and new, whitespace "
+         "folded, pinned to the edit's absolute position — after "
+         "research's pre-seal pass broke the full-text form with a "
+         "slid context window (three exactly-once in-span old-texts "
+         "of one edit = three bundles, one defense probed thrice). "
+         "Duplicates refuse on BOTH carriers whatever the id, "
+         "finder, node, hunk order or window, "
+         "run_check fails fast on entry problems so the refusal lands at "
+         "the real --check boundary before any campaign subprocess, "
+         "--write refuses without writing, and the DUPR5A regression "
+         "drives both boundaries on disk with a latency assertion. The "
+         "class enumerated past the named cell: order/whitespace variants "
+         "fold, cross-node/finder duplicates refuse, subset inflation was "
+         "already refused by leave-one-out, and the undecidable "
+         "semantic-variant boundary is NAMED and visible as record data. "
+         "Sealed AFTER this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

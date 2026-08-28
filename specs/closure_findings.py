@@ -2117,4 +2117,24 @@ CLOSURES = [
      "test_a_swapped_on_disk_registry_survives_and_is_refused "
      "tests/test_0011_mutant_registry.py::"
      "test_no_kill_claim_protocol_remains -q -p no:randomly"),
+    # ---- 0011 external round 12 (2026-08-28) — identity follows the carrier.
+    ("0011", "external", 12, "0011-PROCESS-R12-1",
+     "duplicate mutations inflate the observed ledger: R5A duplicated "
+     "under a fresh id passed validation, --write, --check and the "
+     "focused suite — schema 4 moved the mutant's identity to the hunk "
+     "bundle and uniqueness stayed on the id string, so every "
+     "observation was genuine and only the totals lied",
+     "mutation_identity — the sorted bundle of minimal-diff hunk "
+     "identities (common prefix/suffix stripped, whitespace folded, "
+     "pinned to the edit's absolute position; the full-text form was "
+     "context-window slidable, research pre-seal) — is canonical; "
+     "duplicates refuse on both carriers regardless of id, finder, "
+     "node, hunk order or window; run_check fails "
+     "fast on entry problems so the refusal precedes any campaign run; "
+     "--write refuses without writing; the DUPR5A case is driven "
+     "through both real boundaries on disk",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_a_duplicate_mutation_is_refused_at_the_real_boundary "
+     "tests/test_0011_mutant_registry.py::"
+     "test_mutation_identity_is_minimal_diff_plus_position -q -p no:randomly"),
 ]

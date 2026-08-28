@@ -71,6 +71,53 @@ CK = "specs/evidence/0011/check_contention_rule.py"
 # widens this set.
 MUTABLE_ARTIFACTS = frozenset({PM, CF, SC, CK})
 
+
+def _hunk_identity(art, old, new) -> tuple:
+    """The canonical identity of ONE hunk: (artifact, edit position,
+    minimal old core, minimal new core).
+
+    PROCESS-R12-1 face two (research, pre-seal pass on the fix): the
+    full-text bundle is CONTEXT-WINDOW SLIDABLE — "emitted_keys.count(k)
+    > 1", "keys.count(k) > 1" and "count(k) > 1" are three exactly-once,
+    in-span old-texts for the SAME single edit to "> 2", so the same
+    mutation re-slices into "distinct" bundles. The identity is anchored
+    to what actually changes: strip the common prefix and suffix between
+    old and new (the minimal diff — window-invariant), and pin it to the
+    edit's absolute position in the artifact (so the same edit text on a
+    DIFFERENT line stays a genuinely different mutant). Whitespace runs
+    are folded in the cores. The undecidable boundary is unchanged: a
+    semantically-equivalent, textually-distinct EDIT remains possible in
+    principle and remains visible — hunks ship in the record as data."""
+    pre = 0
+    while pre < min(len(old), len(new)) and old[pre] == new[pre]:
+        pre += 1
+    suf = 0
+    while (suf < min(len(old), len(new)) - pre
+           and old[len(old) - 1 - suf] == new[len(new) - 1 - suf]):
+        suf += 1
+    core_old = old[pre:len(old) - suf]
+    core_new = new[pre:len(new) - suf]
+    pos = None
+    full = ROOT / art
+    if full.is_file():
+        src = full.read_text()
+        if src.count(old) == 1:
+            pos = src.index(old) + pre
+    return (art, pos, " ".join(core_old.split()),
+            " ".join(core_new.split()))
+
+
+def mutation_identity(hunks) -> tuple:
+    """PROCESS-R12-1: the canonical identity of a MUTATION is the sorted
+    bundle of its hunks' minimal-diff identities — never the id string
+    (face one: a fresh id relabeled R5A and inflated the totals while
+    every observation stayed genuine) and never the full old/new text
+    (face two: the context window slides). A subset bundle riding a
+    killer hunk is refused elsewhere: leave-one-out already fails an
+    entry whose extra hunk is not load-bearing; and within one entry a
+    second slice of the same site fails exactly-once at application."""
+    return tuple(sorted(_hunk_identity(a, o, n) for a, o, n in hunks))
+
 # (id, found_by, mutation, node, defends, hunks)
 #   defends: the top-level function (or module constant) in the mutated
 #   artifact that IS the defense under test — every hunk's old text must
@@ -323,6 +370,22 @@ def validate_record(rec) -> list:
                 bad.append(f"entry {e['id']!r} hunks are not a non-empty "
                            f"list of {{artifact, new, old}} strings")
                 break
+    if type(rec["entries"]) is list:
+        keys = {}
+        for e in rec["entries"]:
+            if type(e) is not dict or type(e.get("hunks")) is not list:
+                break
+            try:
+                key = mutation_identity([(h["artifact"], h["old"], h["new"])
+                                         for h in e["hunks"]])
+            except (TypeError, KeyError):
+                break
+            if key in keys:
+                bad.append(f"record entries {keys[key]!r} and "
+                           f"{e.get('id')!r} carry the same normalized "
+                           f"hunk bundle (PROCESS-R12-1)")
+                break
+            keys[key] = e.get("id")
     v = rec["verified"]
     if type(v) is not dict or sorted(v) != ["clean", "kills",
                                             "leave_one_out"]:
@@ -390,6 +453,17 @@ def validate_entries(entries=None) -> list:
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
         bad.append(f"duplicate registry id(s): {sorted(dupes)}")
+    seen_mut = {}
+    for e in entries:
+        key = mutation_identity(e[5])
+        if key in seen_mut:
+            bad.append(f"duplicate mutation: {e[0]} carries the same "
+                       f"normalized hunk bundle as {seen_mut[key]} — a "
+                       f"second label for one mutant inflates the ledger "
+                       f"whatever its id, finder, node or hunk order "
+                       f"(PROCESS-R12-1)")
+        else:
+            seen_mut[key] = e[0]
     for i, by, mut, node, defends, hunks in entries:
         if by not in FOUND_BY:
             bad.append(f"{i}: found_by {by!r} outside the governed "
@@ -754,10 +828,17 @@ def run_check(record_path: pathlib.Path) -> int:
               "own content — refused before any recomputation",
               file=sys.stderr)
         return 1
-    # only a well-formed, canonically-serialised record earns a campaign run
+    # only a well-formed, canonically-serialised record earns a campaign
+    # run — and only a VALID registry does (PROCESS-R12-1: the duplicate
+    # refusal must land at this boundary, cheaply, before ~45 subprocess
+    # runs are spent on a ledger already known to lie)
     problems = validate_entries()
+    if problems:
+        print("mutant registry FAILED:\n  " + "\n  ".join(problems),
+              file=sys.stderr)
+        return 1
     verified, run_problems = execute()
-    problems += run_problems + coverage_problems(ENTRIES, verified)
+    problems = run_problems + coverage_problems(ENTRIES, verified)
     if problems:
         print("mutant registry FAILED:\n  " + "\n  ".join(problems),
               file=sys.stderr)

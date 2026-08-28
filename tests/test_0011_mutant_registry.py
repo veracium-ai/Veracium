@@ -495,3 +495,90 @@ def test_a_hunk_outside_its_defense_is_refused():
     assert any("names no top-level function" in b
                for b in MR.validate_entries(ghostname))
     assert not MR.validate_entries(MR.ENTRIES), "pristine control"
+
+
+def test_a_duplicate_mutation_is_refused_at_the_real_boundary(tmp_path,
+                                                              monkeypatch):
+    """PROCESS-R12-1: R5A duplicated under a fresh DUPR5A id — unique-ids
+    passed, --write produced 22 entries, --check exited 0, and the totals
+    reported a dev mutant that was a second label for a reviewer's. The
+    mutant's identity carrier moved to the hunk bundle in schema 4 and
+    uniqueness stayed on the ids. This drives the DUP registry through the
+    REAL boundaries on disk (the R11 lesson: not an in-memory analog):
+    run_check refuses BEFORE any campaign spends a subprocess, and --write
+    refuses without writing."""
+    import importlib.util
+    src = (EVID / "mutant_registry.py").read_text()
+    needle = "ENTRIES = ("
+    assert src.count(needle) == 1
+    dup_entry = (
+        '    ("DUPR5A", "dev",\n'
+        '     "a second label for R5A\'s mutation",\n'
+        '     f"{T1}::test_a_duplicate_hiding_a_missing_cell_is_caught",\n'
+        '     "problems",\n'
+        '     ((PM, "emitted_keys.count(k) > 1",'
+        ' "emitted_keys.count(k) > 2"),)),\n')
+    dupped = src.replace(needle, needle + "\n" + dup_entry, 1)
+    mod_path = tmp_path / "mutant_registry_dup.py"
+    mod_path.write_text(dupped)
+    spec = importlib.util.spec_from_file_location("mr_dup", mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert len(mod.ENTRIES) == 22
+    # the unit surface names it (no file access — root-independent)
+    assert any("duplicate mutation" in b and "DUPR5A" in b
+               for b in mod.validate_entries())
+    # --check boundary: refuses at validation, BEFORE any campaign run
+    import io
+    import contextlib
+    import time
+    err = io.StringIO()
+    t0 = time.monotonic()
+    with contextlib.redirect_stderr(err):
+        code = mod.run_check(MR.RECORD)
+    assert code == 1 and "duplicate mutation" in err.getvalue()
+    assert time.monotonic() - t0 < 5, (
+        "the duplicate refusal must precede the campaign, not follow it")
+    # --write boundary: refuses and writes NOTHING
+    monkeypatch.setattr(mod.sys, "argv", ["mutant_registry.py", "--write"])
+    err2 = io.StringIO()
+    with contextlib.redirect_stderr(err2):
+        code = mod.main()
+    assert code == 1 and "duplicate mutation" in err2.getvalue()
+    assert not mod.RECORD.exists(), (
+        "--write on a duplicate-carrying registry wrote a record")
+
+
+def test_mutation_identity_is_minimal_diff_plus_position():
+    """PROCESS-R12-1 face two (research): the full-text bundle is
+    context-window SLIDABLE — the same single edit under a wider or
+    narrower exactly-once window re-slices into 'distinct' bundles, each
+    in-span, each genuinely killed, inflating the count with re-probes of
+    one defense. The identity is the minimal diff (common prefix/suffix
+    stripped, whitespace folded) pinned to the edit's absolute position:
+    window-invariant, and same-edit-on-a-different-line stays distinct."""
+    pm = "specs/evidence/0011/policy_matrix.py"
+    # research's three planted slices of R5A's edit collapse to ONE
+    slices = [("emitted_keys.count(k) > 1", "emitted_keys.count(k) > 2"),
+              ("keys.count(k) > 1", "keys.count(k) > 2"),
+              ("count(k) > 1", "count(k) > 2")]
+    ids = {MR._hunk_identity(pm, o, n) for o, n in slices}
+    assert len(ids) == 1 and next(iter(ids))[1] is not None, ids
+    # a genuinely different edit at the same site stays distinct
+    assert MR._hunk_identity(pm, "count(k) > 1", "count(k) >= 2") not in ids
+    # hunk order folds at the bundle level; a different edit does not
+    m3 = next(e for e in MR.ENTRIES if e[0] == "M3")
+    assert MR.mutation_identity(m3[5]) == MR.mutation_identity(
+        tuple(reversed(m3[5])))
+    # a window-slid re-probe entry is refused whatever its id and finder
+    r5a = next(e for e in MR.ENTRIES if e[0] == "R5A")
+    slid = MR.ENTRIES + (("SLID", "reviewer", "re-slice", r5a[3], r5a[4],
+                          ((pm, "count(k) > 1", "count(k) > 2"),)),)
+    assert any("duplicate mutation" in b for b in MR.validate_entries(slid))
+    # the record-side carrier enforces the same closure (both carriers)
+    shipped = json.loads((EVID / "mutant_results.json").read_text())
+    d = json.loads(json.dumps(shipped))
+    d["entries"].append(dict(d["entries"][2], id="DUPX"))
+    assert any("same normalized hunk bundle" in b
+               for b in MR.validate_record(d))
+    assert not MR.validate_record(shipped), "pristine control"
