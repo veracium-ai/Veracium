@@ -941,12 +941,20 @@ REVIEWS = [
          "expectation, fabricated import cells never reaching the adapter, "
          "indented and parenless and info-string-fenced helper definitions, "
          "and an extra contradicting table row beside the generated rows. "
-         "All six fixed with standing tests, re-run to 9/9, the campaign "
-         "record in-archive (MUTANT-CAMPAIGN.md). The 2333Z seal of this "
-         "version is disclosed discarded-unsent — a package whose checks "
-         "are known-bypassable should not ask for a round. Sealed as "
-         "`0011-v6-20260828T0137Z` at commit a0baeb7, sha256 "
-         "fbd0481db7e1cec324971262fd568df3f6f62e0956161241cb5ebc7593cc83ad",
+         "All six fixed with standing tests, re-run to 9/9 — and the "
+         "campaign was then EXTENDED the same day to the two artifacts the "
+         "first pass did not cover, the census (the line's most-hit "
+         "artifact) and the contention checker: six more mutants, ZERO "
+         "caught on the first run, both checkers found to sit entirely "
+         "OUTSIDE P1's glob. All six fixed (spec figures bound data-to-data "
+         "to the aggregate; the mask enforced at validate; the checker's "
+         "cells a registry, each proven REACHABLE and proven ABLE TO FAIL — "
+         "K2 survived the first fix because reachability is not "
+         "failability); P1's domain is recursive now. 15 mutants, 15 "
+         "caught; the record in-archive (MUTANT-CAMPAIGN.md). The 2333Z and "
+         "0137Z seals of this version are disclosed discarded-unsent — a package whose checks "
+         "are known-bypassable should not ask for a round. Sealed AFTER this "
+         "row, sha pinned on return",
          findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",

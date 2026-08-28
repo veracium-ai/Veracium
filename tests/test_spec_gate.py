@@ -2071,10 +2071,23 @@ def test_every_evidence_artifact_declares_a_mutation_matrix():
                                      # tests in this file predate P1
         "verify_extracted.py",       # the accepted C-plus extraction
                                      # surface (COLLECTED_HEADER_DESIGN)
+        # pre-rule artifacts of ACCEPTED lines, pulled in when the glob
+        # widened (0011 own campaign, 2026-08-28): 0020's package verifier
+        # ships its own selftest (verify_package_selftest.py IS its
+        # matrix), and the wheelset check is the offline launcher's
+        # bootstrap guard with the launcher's own transcript as evidence
+        "verify_package.py",
+        "verify_package_selftest.py",
+        "verify_wheelset.py",
     }
+    # RECURSIVE on purpose (0011 own campaign): check_* under specs/evidence/
+    # was OUTSIDE this domain, so two evidence checkers on a line the
+    # reviewer was actively mutation-testing carried no matrix pointer and
+    # nothing demanded one — the gate covered the artifacts nobody was
+    # attacking and missed the ones under attack.
     candidates = sorted(
-        list((root / "specs").glob("check_*.py"))
-        + list((root / "specs").glob("verify_*.py"))
+        list((root / "specs").rglob("check_*.py"))
+        + list((root / "specs").rglob("verify_*.py"))
         + list((root / "specs").rglob("validate_*.py")))
     assert candidates, "the artifact domain is unexpectedly empty"
     for f in candidates:

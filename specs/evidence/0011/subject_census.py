@@ -224,6 +224,15 @@ def validate_aggregate(agg) -> list:
             out.append(f"candidate_table[{s!r}] = {n!r} is not a positive "
                        f"count")
             break
+        # C3 (own campaign): the validator accepted an aggregate carrying an
+        # UNMASKED name — the mask ran at emit time only, so a hand-edited
+        # or fabricated aggregate could ship a given name. The same pattern
+        # that masks at emit refuses at validate.
+        if _NAME_AFTER.search(s):
+            out.append(f"candidate_table key {s!r} carries an unmasked "
+                       f"name-shaped segment — the table is privacy-safe by "
+                       f"contract, masked at emit AND refused here")
+            break
     if out:
         return out
 

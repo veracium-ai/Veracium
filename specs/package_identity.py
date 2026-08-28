@@ -130,7 +130,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
+IN_FLIGHT: tuple = ("0011-v6",)   # C8-1/C9-1: the RESEAL of v6
+                                   # (extension-hardened artifacts);
+                                   # cleared by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -143,6 +145,10 @@ DISCARDED_PRE_ROUND = (
     "0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's "
     "validator co-check found the canary file unchecked; the validator "
     "grew unknown-member refusal + the canary check before dispatch)",
+    "0011-v6-20260828T0137Z (sealed, discarded unsent — the campaign "
+    "EXTENSION to the census and contention checkers found six more "
+    "mutants all missed and both checkers outside P1's domain; the "
+    "reseal carries those fixes too)",
     "0011-v6-20260827T2333Z (sealed, discarded unsent — the dispatch was "
     "HELD for dev's own mutant campaign against the evidence artifacts, "
     "which found six of nine mutants MISSED; the reseal carries the "

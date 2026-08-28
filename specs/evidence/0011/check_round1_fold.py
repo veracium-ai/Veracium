@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Mutation-Matrix: tests/test_0011_policy_matrix.py::test_the_fold_checker_refuses_a_shadowed_helper
 """0011 — the round-1 fold, checked STRUCTURALLY rather than by substring.
 
 P4 refuses closure evidence that greps for a diagnostic string, because a
@@ -313,11 +314,50 @@ def check_decision_table(t: str) -> list:
     return []
 
 
+def check_census_figures(t: str) -> list:
+    """§3b's figure table must EQUAL the shipped aggregate (C1/C2/C4, own
+    campaign — the 0025 PAIR-R4-1 drift class). The spec's census table was
+    hand-transcribed: a drifted spec figure, an inflated recorded-only
+    count, or a gutted candidate table all passed, because nothing compared
+    the prose to the artifact. Data against data now: the counts the spec
+    states are read from the table and required to equal the aggregate's."""
+    import json
+    agg_path = (pathlib.Path(__file__).resolve().parent
+                / "subject_aggregate.json")
+    if not agg_path.exists():
+        return ["subject_aggregate.json is gone — §3b's figures have no "
+                "artifact to be checked against"]
+    agg = json.loads(agg_path.read_text())
+    table = agg["candidate_table"]
+    facts = {
+        "triples": (agg["triples"], r"\| triples \| ([\d,]+)"),
+        "predicate passes": (agg["predicate_passes"],
+                             r"\| predicate passes \| \*\*([\d,]+)"),
+        "candidate rows": (sum(table.values()),
+                           r"\| candidate rows \| \*\*([\d,]+)"),
+        "distinct strings": (len(table), r"over \*\*([\d,]+) distinct"),
+    }
+    bad = []
+    for name, (actual, pat) in facts.items():
+        m = re.search(pat, t)
+        if not m:
+            bad.append(f"§3b no longer states {name} in the bound form — "
+                       f"an unstated figure cannot drift, but neither can "
+                       f"it be checked; restate it")
+            continue
+        stated = int(m.group(1).replace(",", ""))
+        if stated != actual:
+            bad.append(f"§3b states {name} = {stated:,}; the shipped "
+                       f"aggregate says {actual:,} — the prose has drifted "
+                       f"from its artifact (the PAIR-R4-1 class)")
+    return bad
+
+
 def main() -> int:
     t = SPEC.read_text()
     bad = (check_r1_1(t) + check_r1_2(t) + check_r1_4(t) + check_r1_5(t)
            + check_carriers(t) + check_s6_count(t)
-           + check_decision_table(t))
+           + check_decision_table(t) + check_census_figures(t))
     if bad:
         print("0011 round-1 fold INCOMPLETE:\n  " + "\n  ".join(bad),
               file=sys.stderr)

@@ -13,6 +13,7 @@ test_0026_relay_lexicon.py precedent).
 """
 from __future__ import annotations
 
+import importlib
 import pathlib
 import subprocess
 import sys
@@ -162,3 +163,63 @@ def test_the_import_cell_runs_the_production_adapter():
     assert by_mode["default"][1] == "ALLOW"
     assert by_mode["restore"][0] is PM.A.USER
     assert by_mode["restore"][1] == "REFUSE"
+
+
+def test_contention_checker_cells_cannot_vanish(monkeypatch):
+    """K1/K2 (own campaign): deleting the positive control outright, and
+    guarding the reviewer's cell behind `if False`, both exited 0 — the
+    checker's cells were inline prose in main(), so their absence was
+    invisible. The cells are a REGISTRY now, run_cells() returns what RAN,
+    and this test proves each named cell is genuinely reached (the R14-1
+    sentinel, per cell) and that the clean run runs them all."""
+    import check_contention_rule as K
+    importlib.reload(K)
+
+    bad, ran = K.run_cells()
+    assert bad == [] and ran == list(K.CELLS), (bad, ran)
+    assert len(K.CELLS) >= 2, "both the negative cell and the control exist"
+
+    for name in K.CELLS:
+        class _Reached(Exception):
+            pass
+
+        def _sentinel(td, _r=_Reached):
+            raise _r()
+
+        monkeypatch.setattr(K, name, _sentinel)
+        try:
+            K.run_cells()
+        except _Reached:
+            pass                              # the cell is genuinely reached
+        else:
+            raise AssertionError(f"{name} was never executed by run_cells()")
+        monkeypatch.undo()
+        importlib.reload(K)
+
+    # a cell REMOVED from the module is a registry mismatch, not a silence
+    monkeypatch.delattr(K, K.CELLS[1])
+    bad, _ran = K.run_cells()
+    assert any("no such cell" in b for b in bad), (
+        "a deleted cell vanished silently (K1)")
+    monkeypatch.undo()
+    importlib.reload(K)
+
+    # K2's second face: reachability is not FAILABILITY — `if False and
+    # direct:` keeps the cell running while its assertion can never fire.
+    # So each cell is fed a WORLD IN WHICH IT MUST COMPLAIN, by lying to it
+    # through the shipped surface it reads:
+    #   the direct-pair cell, told the surface reports contention, must say so
+    monkeypatch.setattr(K, "_live_refusal_contention_edge_ids",
+                        lambda *a, **k: {"d1", "d2"})
+    bad, _ = K.run_cells()
+    assert any("direct insertion reported contention" in b for b in bad), (
+        "the direct-pair cell cannot fail — its assertion is dead (K2)")
+    monkeypatch.undo()
+    importlib.reload(K)
+    #   the control cell, told the surface reports NOTHING for a live
+    #   refusal, must say so
+    monkeypatch.setattr(K, "_live_refusal_contention_edge_ids",
+                        lambda *a, **k: set())
+    bad, _ = K.run_cells()
+    assert any("LIVE refusal" in b for b in bad), (
+        "the positive-control cell cannot fail — its assertion is dead (K2)")

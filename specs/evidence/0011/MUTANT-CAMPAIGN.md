@@ -1,4 +1,4 @@
-# 0011 evidence artifacts — dev's own mutant campaign (2026-08-28)
+# 0011 evidence artifacts — dev's own mutant campaign (2026-08-28, extended the same day)
 
 **Run before dispatching round 6, at Quentin's direction, because rounds 4–5
 were the reviewer mutation-testing these artifacts at one class per round —
@@ -47,3 +47,39 @@ instead of containment.
 Reproduce: the mutants are scripted plants over the shipped artifacts; each
 fix's standing test is in `tests/test_0011_policy_matrix.py` and the fold
 checker's own row-scoped checks.
+
+
+## The extension (same day): the two artifacts the first pass did not cover
+
+The first campaign was scoped to the oracle and the fold checker. The
+census — **the most-hit artifact on the line** (EVIDENCE-R2-1 and
+EVIDENCE-R3-1 were both census findings, each a defect in the previous
+round's census fix) — and the contention checker went un-campaigned. The
+extension ran six more mutants. **Zero of six were caught**, and both
+evidence-directory checkers turned out to sit entirely OUTSIDE P1's glob,
+so no mutation matrix had ever been demanded of them: the gate covered the
+artifacts nobody was attacking and missed the ones under attack.
+
+| id | attack | first run | after fixes | fix |
+|---|---|---|---|---|
+| C1 | inflate the recorded-only whole-corpus count in the aggregate | **MISSED** | CAUGHT | §3b's figure table is bound DATA-TO-DATA to the shipped aggregate in the fold checker — a fabricated aggregate now disagrees with the spec beside it |
+| C2 | gut the candidate table, keeping the SELF total | **MISSED** | CAUGHT | same binding: candidate rows and distinct-string count are bound figures |
+| C3 | an UNMASKED name-shaped key accepted into the aggregate | **MISSED** | CAUGHT | the emit-time mask pattern also REFUSES at validate |
+| C4 | drift a §3b figure in the SPEC (72,253 → 72,254) | **MISSED** | CAUGHT | the same binding, from the other side — the PAIR-R4-1 drift class, now mechanical |
+| K1 | delete the contention checker's positive-control cell | **MISSED** | CAUGHT | the cells are a REGISTRY; run_cells() returns what ran, and a missing cell is a mismatch |
+| K2 | neuter a cell's assertion with `if False and …` — the cell runs, reachability checks pass | **MISSED**, twice: it survived the registry restructure too | CAUGHT | reachability is not FAILABILITY: the standing test feeds each cell a world in which it must complain, by lying to it through the shipped surface it reads |
+
+K2 deserves its own line: it was missed, fixed with a registry + sentinel,
+and **missed again** — the sentinel proves a cell is reached, not that its
+assertion is alive. The second fix is the general one: every cell is
+proven able to FAIL.
+
+## Process consequence
+
+P1's domain is now RECURSIVE (`rglob`) over `specs/`, with the three
+pre-rule artifacts of accepted lines grandfathered by name. Both 0011
+checkers carry `# Mutation-Matrix:` pointers at the tests that attack
+them.
+
+Final state: **15 mutants, 15 caught** (4 reviewer attacks standing + 9
+first-pass + 6 extension, with K2 counted once); pristine artifacts clean.
