@@ -21,7 +21,8 @@ EVID = ROOT / "specs" / "evidence" / "0011"
 sys.path.insert(0, str(EVID))
 
 import check_round1_fold as CF                                # noqa: E402
-import policy_matrix as PM                                    # noqa: E402
+import policy_matrix as PM
+import mutant_registry as MR                                    # noqa: E402
 import subject_census as SC                                   # noqa: E402
 
 SPEC = (ROOT / "specs" / "0011-subject-scoped-entitlement.md").read_text()
@@ -44,18 +45,21 @@ def test_indented_helper_definition_is_followed():
     t = _attacked("sourced(prior)",
                   "```\n    sourced(e) := e.provenance.source_id is not None\n```")
     assert any("source_id" in b for b in CF.check_r1_1(t)), "F1 regressed"
+    MR.record_kill('F1')
 
 
 def test_parenless_binding_is_followed():
     t = _attacked("srcflag",
                   "```\nsrcflag := prior.provenance.source_id is not None\n```")
     assert any("source_id" in b for b in CF.check_r1_1(t)), "F2 regressed"
+    MR.record_kill('F2')
 
 
 def test_info_string_fence_is_scanned():
     t = _attacked("sourced(prior)",
                   "```text\nsourced(e) := e.provenance.source_id is not None\n```")
     assert any("source_id" in b for b in CF.check_r1_1(t)), "F3 regressed"
+    MR.record_kill('F3')
 
 
 def test_extra_table_row_is_refused():
@@ -64,6 +68,7 @@ def test_extra_table_row_is_refused():
                      "| `user` | `user` | 3 | **ALLOW** | ALLOW |", 1)
     assert CF.check_decision_table(t), "F4 regressed"
     assert not CF.check_decision_table(SPEC), "pristine control"
+    MR.record_kill('F4')
 
 
 # ---- the reviewer's round-5 carrier attack ---------------------------------
@@ -78,6 +83,7 @@ def test_rider_promise_in_the_row_is_refused():
         "rider |" + SPEC[j:]
     assert any("measurement rider" in b for b in CF.check_carriers(t)), (
         "the row-bound rider check regressed (CARRIER-R5-1)")
+    MR.record_kill('R5B')
 
 
 # ---- C1–C4: the census figure bindings -------------------------------------
@@ -87,12 +93,14 @@ def test_inflated_aggregate_figure_is_refused():
     m["predicate_passes"] = 99_999
     assert any("drifted from its artifact" in b
                for b in CF.check_census_figures(SPEC, agg=m)), "C1 regressed"
+    MR.record_kill('C1')
 
 
 def test_gutted_candidate_table_is_refused():
     m = copy.deepcopy(AGG)
     m["candidate_table"] = {"me": 31}
     assert CF.check_census_figures(SPEC, agg=m), "C2 regressed"
+    MR.record_kill('C2')
 
 
 def test_unmasked_name_in_aggregate_is_refused():
@@ -104,6 +112,7 @@ def test_unmasked_name_in_aggregate_is_refused():
     assert any("unmasked" in b for b in SC.validate_aggregate(m)), (
         "C3 regressed — subject_census accepts an unmasked name")
     assert not SC.validate_aggregate(AGG), "pristine control"
+    MR.record_kill('C3')
 
 
 def test_spec_figure_drift_is_refused():
@@ -112,6 +121,7 @@ def test_spec_figure_drift_is_refused():
     assert t != SPEC, "the drift failed to apply"
     assert CF.check_census_figures(t, agg=AGG), "C4 regressed"
     assert not CF.check_census_figures(SPEC, agg=AGG), "pristine control"
+    MR.record_kill('C4')
 
 
 # ---- R6-1 and the neutered-check hole --------------------------------------
@@ -129,6 +139,7 @@ def test_narrowed_enum_dimension_is_refused(monkeypatch):
                         [a for a in PM.A if a is not PM.A.SYSTEM])
     assert any("AUTHORS" in b for b in PM.problems()), (
         "the AUTHORS axis can still self-narrow")
+    MR.record_kill('R6A')
 
 
 def test_every_fold_check_is_reached(monkeypatch):
@@ -158,3 +169,58 @@ def test_every_fold_check_is_reached(monkeypatch):
             raise AssertionError(
                 f"main() returned without invoking {name}")
         monkeypatch.undo()
+    MR.record_kill('R6B')
+
+
+# ---- PROCESS-R7-1: the ledger itself ---------------------------------------
+
+def test_a_bogus_registry_entry_is_refused():
+    """The reviewer appended a fictitious entry riding an already-listed
+    passing node: 22 entries over 18 nodes, exit 0. The binding is
+    one-to-one now — an id no executed test reports killing is named."""
+    bogus = MR.ENTRIES + (("BOGUS", "dev",
+                           "specs/evidence/0011/policy_matrix.py",
+                           "no real mutation", MR.ENTRIES[0][4]),)
+    killed = sorted(e[0] for e in MR.ENTRIES)     # what a real run reports
+    bad = MR.binding_problems(bogus, killed)
+    assert any("BOGUS" in b and "NO EXECUTED TEST" in b for b in bad), bad
+    assert not MR.binding_problems(MR.ENTRIES, killed), "pristine control"
+
+
+def test_registry_structural_validity_is_enforced():
+    dup = MR.ENTRIES + (MR.ENTRIES[0],)
+    assert any("duplicate" in b for b in MR.validate_entries(dup))
+    ghost = MR.ENTRIES + (("G1", "dev", "does_not_exist.py", "x",
+                           MR.ENTRIES[0][4]),)
+    assert any("does not exist" in b for b in MR.validate_entries(ghost))
+    assert not MR.validate_entries(MR.ENTRIES), "pristine control"
+
+
+def test_an_unknown_or_double_kill_is_refused():
+    declared = sorted(e[0] for e in MR.ENTRIES)
+    assert any("does not declare" in b
+               for b in MR.binding_problems(MR.ENTRIES,
+                                            declared + ["PHANTOM"]))
+    assert any("more than once" in b
+               for b in MR.binding_problems(MR.ENTRIES,
+                                            declared + [declared[0]]))
+
+
+def test_a_corrupted_shipped_record_diverges():
+    """The record was WRITE-ONLY: overwritten by every run, read by
+    nothing, so a stale or tampered record survived review. Check mode
+    compares the shipped record to the recomputation; this test proves
+    the comparison is equality on the WHOLE record, not a count."""
+    import copy
+    shipped = json.loads((EVID / "mutant_results.json").read_text())
+    killed = shipped["killed"]
+    rebuilt = MR.build_record(MR.ENTRIES, killed,
+                              shipped["executed"]["exit"],
+                              shipped["executed"]["passed"])
+    assert rebuilt == shipped, "the shipped record does not recompute"
+    tampered = copy.deepcopy(shipped)
+    tampered["totals"]["all"] = 99
+    assert tampered != rebuilt
+    tampered2 = copy.deepcopy(shipped)
+    tampered2["entries"][0]["mutation"] = "something else"
+    assert tampered2 != rebuilt

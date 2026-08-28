@@ -1997,4 +1997,22 @@ CLOSURES = [
      "sentinel-proven reached; subject_census.py enters P1 via an explicit "
      "artifact registry",
      "$PY specs/evidence/0011/mutant_registry.py"),
+
+    # ---- 0011 external round 7 (2026-08-28) — the ledger itself.
+    ("0011", "external", 7, "0011-PROCESS-R7-1",
+     "registry entries were not bound to executed mutants: success derived "
+     "from the distinct pytest nodes, so a fictitious entry riding an "
+     "already-listed passing node inflated the total with exit 0; artifact "
+     "paths were unvalidated; and the result record was WRITE-ONLY — "
+     "overwritten by every run, read by nothing",
+     "the binding comes from the executed side: each standing test reports "
+     "the id(s) it kills, and the runner requires reported kills to equal "
+     "the declared ids exactly; artifacts validated, duplicates refused; "
+     "the default invocation is a non-mutating check requiring whole-record "
+     "equality with the shipped record; --write is seal-time only",
+     "$PY specs/evidence/0011/mutant_registry.py  # CHECK mode: re-runs the "
+     "campaign, verifies the one-to-one kill binding, and requires the "
+     "shipped record to equal the recomputation; the attack regressions are "
+     "tests/test_0011_mutant_registry.py::test_a_bogus_registry_entry_is_refused "
+     "and ::test_a_corrupted_shipped_record_diverges"),
 ]

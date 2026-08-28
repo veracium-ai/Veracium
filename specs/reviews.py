@@ -1008,6 +1008,46 @@ REVIEWS = [
          "4c32346bdf31497359c2fc586dfac06a4b5522d3aad3a659eb3280f56aa0fdec",
          findings=0),
 
+    dict(spec="0011", round=7, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R7-1"],
+         verdict="RETURN EXACT v7 FOR ONE MECHANICAL EVIDENCE AMENDMENT — "
+         "finite design acceptance stands; the enum correction is sound; "
+         "the remaining defect is confined to the new mutant registry "
+         "(package `0011-v7`, sha 4c32346b verified; focused 21 passed; "
+         "collected-header 22; spec gate 88; extracted suite 1857/22; "
+         "1,879 reconcile with the sealed 1871/8; round-6 closures "
+         "confirmed: narrowing DERIVED fails with an explicit enum error "
+         "and 288 missing-key errors, the nine tests present, "
+         "subject_census in P1, the accounting authoritative at 21). "
+         "PROCESS-R7-1: registry entries are NOT BOUND to executed mutants "
+         "— success derives from the distinct pytest nodes, so a "
+         "fictitious entry (id BOGUS, nonexistent artifact, no mutation, "
+         "an already-listed passing node) made 22 entries over the same 18 "
+         "nodes with exit 0; artifact paths and mutation descriptions are "
+         "never validated; and mutant_results.json is WRITE-ONLY — the "
+         "runner overwrites it and no checker validates the shipped "
+         "record. Requested: explicit killed-id one-to-one set equality, "
+         "artifact validation, a non-mutating --check mode, seal-time-only "
+         "writing, and regressions for a bogus entry and a corrupted "
+         "record", findings=1),
+
+    dict(spec="0011", round=8, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v8`, candidate draft v11 — the "
+         "round-7 fold; §17 maps the finding; the finite acceptance "
+         "stands). PROCESS-R7-1 closed exactly as prescribed: the binding "
+         "comes from the EXECUTED side — every standing test reports the "
+         "id(s) it kills into a kill log the runner owns, and the runner "
+         "requires reported kills to equal the declared ids EXACTLY, with "
+         "an unkilled entry, a phantom kill and a double report all named; "
+         "artifact paths validated and duplicate ids refused; the default "
+         "invocation is a NON-MUTATING check that re-runs the campaign, "
+         "rebuilds the record and requires whole-record equality with the "
+         "shipped mutant_results.json; --write is seal-time only; and the "
+         "reviewer's bogus-entry attack plus ghost-artifact, phantom-kill, "
+         "double-kill and corrupted-record variants are standing "
+         "regressions over the runner's pure functions. Sealed AFTER this "
+         "row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

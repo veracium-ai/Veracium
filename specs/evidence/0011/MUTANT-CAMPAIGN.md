@@ -111,3 +111,22 @@ The record is superseded on both counts by the EXECUTABLE registry:
 This is the same lesson as every other finding in this file, applied to
 the file itself: a narrative ABOUT tests is not tests, and totals typed by
 hand drift exactly like any other hand-carried figure.
+
+
+## Round-7 correction: the ledger itself was not independently checkable
+
+PROCESS-R7-1: the first registry derived success from the DISTINCT PYTEST
+NODES, not from the mutants — a fictitious entry riding an already-listed
+node inflated the total with exit 0, artifact paths were never validated,
+and `mutant_results.json` was write-only: overwritten by every run, read
+by nothing. Corrected:
+
+* every standing test, after its assertions succeed, REPORTS the id(s) it
+  killed via `record_kill()`; the runner requires reported kills to equal
+  the declared ids exactly — one-to-one, unknowns and doubles refused;
+* artifact paths are validated to exist and duplicate ids refused;
+* the default invocation is a non-mutating **`--check`** that recomputes
+  the whole record and requires equality with the shipped one; `--write`
+  is seal-time only;
+* the bogus-entry, ghost-artifact, phantom-kill, double-kill and
+  corrupted-record attacks are standing regressions.

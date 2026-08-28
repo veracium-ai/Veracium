@@ -1,147 +1,147 @@
 {
  "entries": [
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "reviewer",
    "id": "R4A",
    "mutation": "source-conditional ALLOW planted in the emitted stream",
    "node": "tests/test_0011_policy_matrix.py::test_a_variance_planted_in_the_emission_is_caught"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "reviewer",
    "id": "R4B",
    "mutation": "dangerous helper shadowed by a benign redefinition",
    "node": "tests/test_0011_policy_matrix.py::test_the_fold_checker_refuses_a_shadowed_helper"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "reviewer",
    "id": "R5A",
    "mutation": "one cell replaced by a duplicate \u2014 cardinality-preserving omission",
    "node": "tests/test_0011_policy_matrix.py::test_a_duplicate_hiding_a_missing_cell_is_caught"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "reviewer",
    "id": "R5B",
    "mutation": "the withdrawn rider re-promised in \u00a73c's live row",
    "node": "tests/test_0011_mutant_registry.py::test_rider_promise_in_the_row_is_refused"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "reviewer",
    "id": "R6A",
    "mutation": "THIRD_PARTY removed from DERIVED \u2014 enum axis self-narrows",
    "node": "tests/test_0011_mutant_registry.py::test_narrowed_enum_dimension_is_refused"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "reviewer",
    "id": "R6B",
    "mutation": "check_census_figures dropped from main()'s aggregation",
    "node": "tests/test_0011_mutant_registry.py::test_every_fold_check_is_reached"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "dev",
    "id": "M1",
    "mutation": "SOURCES narrowed",
    "node": "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "dev",
    "id": "M2",
    "mutation": "ORIGINS narrowed",
    "node": "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "dev",
    "id": "M3",
    "mutation": "the OTHER subject dropped",
    "node": "tests/test_0011_policy_matrix.py::test_narrowed_dimensions_are_refused"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "dev",
    "id": "M4",
    "mutation": "stream truncated / judged elsewhere",
    "node": "tests/test_0011_policy_matrix.py::test_a_truncated_stream_is_caught"
   },
   {
-   "artifact": "policy_matrix.py",
+   "artifact": "specs/evidence/0011/policy_matrix.py",
    "found_by": "dev",
    "id": "M5",
    "mutation": "import cells fabricated in problems()",
    "node": "tests/test_0011_policy_matrix.py::test_problems_actually_reaches_the_import_adapter"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "F1",
    "mutation": "helper definition indented",
    "node": "tests/test_0011_mutant_registry.py::test_indented_helper_definition_is_followed"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "F2",
    "mutation": "parenless binding, bare-name read",
    "node": "tests/test_0011_mutant_registry.py::test_parenless_binding_is_followed"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "F3",
    "mutation": "helper in an info-string fence",
    "node": "tests/test_0011_mutant_registry.py::test_info_string_fence_is_scanned"
   },
   {
-   "artifact": "check_round1_fold.py",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "F4",
    "mutation": "extra contradicting table row",
    "node": "tests/test_0011_mutant_registry.py::test_extra_table_row_is_refused"
   },
   {
-   "artifact": "subject_census.py / fold binding",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "C1",
-   "mutation": "recorded-only figure inflated in the aggregate",
+   "mutation": "recorded-only census figure inflated in the aggregate",
    "node": "tests/test_0011_mutant_registry.py::test_inflated_aggregate_figure_is_refused"
   },
   {
-   "artifact": "subject_census.py / fold binding",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "C2",
    "mutation": "candidate table gutted, SELF total kept",
    "node": "tests/test_0011_mutant_registry.py::test_gutted_candidate_table_is_refused"
   },
   {
-   "artifact": "subject_census.py",
+   "artifact": "specs/evidence/0011/subject_census.py",
    "found_by": "dev",
    "id": "C3",
    "mutation": "unmasked name-shaped key in the aggregate",
    "node": "tests/test_0011_mutant_registry.py::test_unmasked_name_in_aggregate_is_refused"
   },
   {
-   "artifact": "spec \u00a73b / fold binding",
+   "artifact": "specs/evidence/0011/check_round1_fold.py",
    "found_by": "dev",
    "id": "C4",
-   "mutation": "spec figure drifted by one",
+   "mutation": "spec \u00a73b figure drifted by one",
    "node": "tests/test_0011_mutant_registry.py::test_spec_figure_drift_is_refused"
   },
   {
-   "artifact": "check_contention_rule.py",
+   "artifact": "specs/evidence/0011/check_contention_rule.py",
    "found_by": "dev",
    "id": "K1",
    "mutation": "positive-control cell deleted",
    "node": "tests/test_0011_policy_matrix.py::test_contention_checker_cells_cannot_vanish"
   },
   {
-   "artifact": "check_contention_rule.py",
+   "artifact": "specs/evidence/0011/check_contention_rule.py",
    "found_by": "dev",
    "id": "K2",
    "mutation": "cell assertion neutered while the cell still runs",
@@ -150,9 +150,32 @@
  ],
  "executed": {
   "exit": 0,
-  "tail": "18 passed in 2.83s"
+  "passed": 18
  },
- "schema": 1,
+ "killed": [
+  "C1",
+  "C2",
+  "C3",
+  "C4",
+  "F1",
+  "F2",
+  "F3",
+  "F4",
+  "K1",
+  "K2",
+  "M1",
+  "M2",
+  "M3",
+  "M4",
+  "M5",
+  "R4A",
+  "R4B",
+  "R5A",
+  "R5B",
+  "R6A",
+  "R6B"
+ ],
+ "schema": 2,
  "totals": {
   "all": 21,
   "dev": 15,
