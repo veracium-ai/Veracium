@@ -1003,8 +1003,10 @@ REVIEWS = [
          "registry-over-convention named as the escalation if the list "
          "grows. The prose record is corrected to state the GENERATED "
          "record is authoritative — a narrative about tests is not tests, "
-         "and hand-typed totals drift like any other hand-carried figure. "
-         "Sealed AFTER this row, sha pinned on return", findings=0),
+         "and hand-typed totals drift like any other hand-carried figure. Sealed as "
+         "`0011-v7-20260828T0303Z` at commit 4745e07, sha256 "
+         "4c32346bdf31497359c2fc586dfac06a4b5522d3aad3a659eb3280f56aa0fdec",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
