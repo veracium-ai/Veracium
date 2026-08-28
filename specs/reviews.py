@@ -933,9 +933,19 @@ REVIEWS = [
          "§3c's row is swept and the withdrawal is BOUND TO THE ROW in the "
          "checker — anchored on the row itself, planted-back promise "
          "verified biting — since a deferral stated in §4b does not "
-         "un-promise a different row. Sealed as "
-         "`0011-v6-20260827T2333Z` at commit e8f0ecb, sha256 "
-         "d2e52ca7c57649c6e7f360ddb5cc3085510c09675ac6cfae2ffeea496de7d844",
+         "un-promise a different row. HELD BEFORE DISPATCH for dev's own "
+         "mutant campaign (checklist item 10 — rounds 4-5 were one "
+         "evidence-class per round, the A1 ladder): nine mutants designed "
+         "against the oracle and the fold checker, SIX MISSED on the first "
+         "run — narrowed dimension constants shared by emitter and "
+         "expectation, fabricated import cells never reaching the adapter, "
+         "indented and parenless and info-string-fenced helper definitions, "
+         "and an extra contradicting table row beside the generated rows. "
+         "All six fixed with standing tests, re-run to 9/9, the campaign "
+         "record in-archive (MUTANT-CAMPAIGN.md). The 2333Z seal of this "
+         "version is disclosed discarded-unsent — a package whose checks "
+         "are known-bypassable should not ask for a round. Sealed AFTER this "
+         "row, sha pinned on return",
          findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",

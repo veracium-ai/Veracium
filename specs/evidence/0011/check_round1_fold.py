@@ -35,27 +35,34 @@ def _dependency_closure(spec: str, block: str) -> str:
     policy block until nothing new is pulled in. Comments are stripped, so
     prose ABOUT a read is not mistaken for one.
     """
-    fences = re.findall(r"```\n(.*?)```", spec, re.S)
+    # F3 (own campaign): the fence pattern required a newline IMMEDIATELY
+    # after the backticks, so ```text hid its contents entirely — the A1
+    # info-string rung, reintroduced here. Any info string now matches.
+    fences = re.findall(r"```[\w-]*[ \t]*\n(.*?)```", spec, re.S)
     defs = {}
     for f in fences:
-        for m in re.finditer(r"^(\w+)\s*\([^)]*\)\s*:?=", f, re.M):
+        # F1: the definition anchor was ^ so an INDENTED definition was
+        # invisible. F2: a PARENLESS binding (`name := ...`) was never a
+        # definition, so a read hidden in one was never followed. Both
+        # shapes are collected now.
+        for m in re.finditer(
+                r"^\s*(\w+)\s*(?:\([^)]*\))?\s*:?=", f, re.M):
             start = m.start()
-            nxt = re.search(r"^\w+\s*\([^)]*\)\s*:?=", f[m.end():], re.M)
+            nxt = re.search(r"^\s*\w+\s*(?:\([^)]*\))?\s*:?=",
+                            f[m.end():], re.M)
             end = m.end() + (nxt.start() if nxt else len(f) - m.end())
             name, body = m.group(1), f[start:end]
-            # EVIDENCE-R4-1: last-definition-wins let a dangerous helper be
-            # SHADOWED by a benign redefinition — the reviewer defined
-            # `sourced()` reading source_id, then redefined it as False, and
-            # the closure analysed only the second. Two definitions of one
-            # name is an ambiguity the spec must not contain, so instead of
-            # choosing either, the closure carries BOTH bodies — any read in
-            # either copy is a read.
+            # last-definition-wins let a shadowed dangerous helper pass
+            # (round 4); the closure carries EVERY definition of a name.
             defs[name] = (defs[name] + "\n" + body) if name in defs else body
     seen, frontier, out = set(), [_strip_comments(block)], []
     while frontier:
         body = frontier.pop()
         out.append(body)
-        for name in set(re.findall(r"\b(\w+)\s*\(", body)):
+        # F2: a reference need not carry parens — `and srcflag` reads a
+        # parenless binding. Any known definition name appearing as a word
+        # is followed.
+        for name in set(re.findall(r"\b(\w+)\b", body)):
             if name in defs and name not in seen:
                 seen.add(name)
                 frontier.append(_strip_comments(defs[name]))
@@ -284,6 +291,22 @@ def check_decision_table(t: str) -> list:
         return [f"§4b's decision table is STALE against policy_matrix: "
                 f"{len(missing)} of {len(rows)} generated rows absent, "
                 f"first is {missing[0]!r}"]
+    # F4 (own campaign): presence of every generated row is not equality —
+    # an EXTRA hand-written row saying the opposite sat beside them and
+    # passed. The spec's table block is extracted and its data rows must
+    # equal the generated rows exactly, as a multiset.
+    m = re.search(r"\| author \| derived_from \| effective \|[^\n]*\n"
+                  r"\|[-| ]+\|\n((?:\| `[^\n]*\n)+)", t)
+    if not m:
+        return ["§4b's decision table block is not extractable — the "
+                "header row moved or the rows no longer follow it"]
+    spec_rows = [l for l in m.group(1).strip().splitlines()]
+    if sorted(spec_rows) != sorted(rows):
+        extra = [r for r in spec_rows if r not in rows]
+        return [f"§4b's table has {len(spec_rows)} rows where the generator "
+                f"emits {len(rows)} — "
+                + (f"extra/foreign row(s), first is {extra[0]!r}" if extra
+                   else "rows repeated or reordered beyond the generator")]
     if policy_matrix.problems():
         return ["policy_matrix itself FAILS — the table the spec carries is "
                 "generated from a matrix that does not hold"]

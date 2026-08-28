@@ -115,6 +115,43 @@ def test_the_fold_checker_refuses_a_shadowed_helper(tmp_path):
     assert not any("source_id" in b for b in CF.check_r1_1(spec))
 
 
+def test_problems_actually_reaches_the_import_adapter(monkeypatch):
+    """M5 (own campaign): fabricating the import cells inside `problems()`
+    passed everything — the value checks were satisfied by values nobody
+    measured. The R14-1 sentinel pattern: replace the adapter function and
+    require `problems()` to REACH it, so the call site cannot be bypassed
+    while the checks stay green."""
+    class _Reached(Exception):
+        pass
+
+    def _sentinel():
+        raise _Reached()
+
+    monkeypatch.setattr(PM, "import_flattened_cells", _sentinel)
+    try:
+        PM.problems()
+    except _Reached:
+        pass                                # the adapter path EXECUTED
+    else:
+        raise AssertionError(
+            "problems() completed without invoking import_flattened_cells — "
+            "the import cell is being asserted, not measured (M5)")
+
+
+def test_narrowed_dimensions_are_refused(monkeypatch):
+    """M1/M2/M3 (own campaign): narrowing a hand-picked dimension constant
+    shrank the emitter AND the expected key set together, so exact set
+    equality stayed green while the domain quietly narrowed. The pins are
+    literals, independent of the constants."""
+    for attr, narrowed in (("SOURCES", (None, "feed-a")),
+                           ("ORIGINS", (None,)),
+                           ("SUBJECTS", ("user",))):
+        monkeypatch.setattr(PM, attr, narrowed)
+        bad = PM.problems()
+        monkeypatch.undo()
+        assert bad, f"narrowing {attr} to {narrowed!r} passed the oracle"
+
+
 def test_the_import_cell_runs_the_production_adapter():
     """The import-flattened cell is measured, not asserted: the default
     path flattens the author (0005) and the decision follows it; restore

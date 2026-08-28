@@ -4,7 +4,7 @@
 
 # Review archives
 
-**256 archives, 639245 KB.** Each is the exact package sent for one
+**255 archives, 632637 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -105,7 +105,6 @@ existed rather than a way to check it.
 | `0011-v3-20260827T0155Z.tar.gz` | 0011 | v3 | 2026-08-27 01:55Z | 495 | 6586 KB | `6261af6df3371693…` |
 | `0011-v4-20260827T1034Z.tar.gz` | 0011 | v4 | 2026-08-27 10:34Z | 497 | 6598 KB | `73e3a6d82b041776…` |
 | `0011-v5-20260827T2156Z.tar.gz` | 0011 | v5 | 2026-08-27 21:56Z | 499 | 6604 KB | `48982518283a0ea1…` |
-| `0011-v6-20260827T2333Z.tar.gz` | 0011 | v6 | 2026-08-27 23:33Z | 500 | 6608 KB | `d2e52ca7c57649c6…` |
 | `0012-v3-20260809T1532Z.tar.gz` | 0012 | v3 | 2026-08-09 15:32Z | 279 | 2073 KB | `cf76c120385dfec4…` |
 | `0012-v4-20260809T1616Z.tar.gz` | 0012 | v4 | 2026-08-09 16:16Z | 279 | 2085 KB | `756756eefa98b6c6…` |
 | `0012-v5-20260809T1648Z.tar.gz` | 0012 | v5 | 2026-08-09 16:48Z | 280 | 2087 KB | `925bebb5cfde8a6a…` |
@@ -338,7 +337,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0011 | v3 | 3 | `0011-v3-20260827T0155Z.tar.gz` | `6261af6df3371693…` |
 | 0011 | v4 | 4 | `0011-v4-20260827T1034Z.tar.gz` | `73e3a6d82b041776…` |
 | 0011 | v5 | 5 | `0011-v5-20260827T2156Z.tar.gz` | `48982518283a0ea1…` |
-| 0011 | v6 | 6 | `0011-v6-20260827T2333Z.tar.gz` | `d2e52ca7c57649c6…` |
+| 0011 | v6 | 6 | **0 sidecars — LINEAGE GAP** | — |
 | 0022-0023 | v17 | 17 | `0022-0023-v17-20260819T0252Z.tar.gz` | `1dc88d304c81e558…` |
 | 0022-0023 | v18 | 18 | `0022-0023-v18-20260819T1247Z.tar.gz` | `7fc80f5de08d05f2…` |
 | 0022-0023 | v19 | 19 | `0022-0023-v19-20260820T0032Z.tar.gz` | `67d823fe4a0ff5e3…` |
@@ -378,6 +377,7 @@ Superseded/discarded seals (disclosed, deliberately un-witnessed):
 - 0001-v7-20260823T1217Z (sealed pre-candidate-patch, discarded unsent)
 - 0024-0025-v13-20260823T2131Z (sealed, discarded unsent — research's §11 fidelity pass added the marker-witness note and the cell-A denominator fix before dispatch)
 - 0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's validator co-check found the canary file unchecked; the validator grew unknown-member refusal + the canary check before dispatch)
+- 0011-v6-20260827T2333Z (sealed, discarded unsent — the dispatch was HELD for dev's own mutant campaign against the evidence artifacts, which found six of nine mutants MISSED; the reseal carries the hardened artifacts and the campaign record, since a package whose checks are known-bypassable should not ask for a review round)
 - 0026-v1-20260826T1130Z (sealed, discarded unsent — §6a's acceptance gate was MEASURED an hour later, and the measurement amended §3a; a package whose dispatch row said the gate was unmeasured would have understated what it carries)
 - 0001-v18-20260825T2101Z (sealed, discarded unsent — the terminus note was added in-archive so it ships WITH the package that asks its question, rather than following it by a side channel)
 

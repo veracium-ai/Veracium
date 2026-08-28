@@ -130,7 +130,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
+IN_FLIGHT: tuple = ("0011-v6",)   # C8-1/C9-1: the RESEAL of v6
+                                   # (campaign-hardened artifacts);
+                                   # cleared by its sidecar commit
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -143,6 +145,11 @@ DISCARDED_PRE_ROUND = (
     "0024-0025-v16-20260824T0102Z (sealed, discarded unsent — research's "
     "validator co-check found the canary file unchecked; the validator "
     "grew unknown-member refusal + the canary check before dispatch)",
+    "0011-v6-20260827T2333Z (sealed, discarded unsent — the dispatch was "
+    "HELD for dev's own mutant campaign against the evidence artifacts, "
+    "which found six of nine mutants MISSED; the reseal carries the "
+    "hardened artifacts and the campaign record, since a package whose "
+    "checks are known-bypassable should not ask for a review round)",
     "0026-v1-20260826T1130Z (sealed, discarded unsent — §6a's acceptance "
     "gate was MEASURED an hour later, and the measurement amended §3a; a "
     "package whose dispatch row said the gate was unmeasured would have "

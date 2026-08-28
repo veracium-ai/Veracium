@@ -148,6 +148,23 @@ def problems(stream=None) -> list:
     # and the separate duplicate check catches the replacement itself
     # (with plain set equality alone, a duplicate would hide behind the
     # missing-key report it causes).
+    # M1/M2 (own campaign, 2026-08-28): the expected key set is built from
+    # the SAME dimension constants as the emitter, so narrowing a constant
+    # shrinks both sides together and set equality stays green while the
+    # domain quietly narrows. The enum-derived dimensions grow legitimately
+    # with the enum; the HAND-PICKED ones are pinned here as literals, with
+    # the members the checks depend on named.
+    if len(SOURCES) != 3 or None not in SOURCES or not any(
+            s and "caller" in s for s in SOURCES if s):
+        bad.append(f"SOURCES narrowed to {SOURCES!r} — the declared domain "
+                   f"is 3 states incl. absent and a caller-chosen value")
+    if len(ORIGINS) != 2 or None not in ORIGINS:
+        bad.append(f"ORIGINS narrowed to {ORIGINS!r} — the declared domain "
+                   f"is 2 states incl. absent")
+    subj_classes = {("SELF" if s == "user" else "OTHER") for s in SUBJECTS}
+    if subj_classes != {"SELF", "OTHER"}:
+        bad.append(f"SUBJECTS {SUBJECTS!r} no longer covers both subject "
+                   f"classes — every refusal cell would vanish with OTHER")
     expected_keys = {
         (a, d, ("SELF" if subj == "user" else "OTHER"), si, sp, oi, op)
         for a in AUTHORS for d in DERIVED for subj in SUBJECTS
