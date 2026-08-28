@@ -183,7 +183,8 @@ def test_registry_structural_validity_is_enforced():
     hunk = ("specs/evidence/0011/policy_matrix.py", "SOURCES", "X")
     ghost = E + (("G1", "dev", "x", E[0][3], "problems",
                   (("does_not_exist.py", "a", "b"),)),)
-    assert any("not a regular file" in b for b in MR.validate_entries(ghost))
+    assert any("OUTSIDE the closed mutable set" in b
+               for b in MR.validate_entries(ghost))
     empty = E + (("G2", "dev", "x", E[0][3], "problems", ()),)
     assert any("no hunks" in b for b in MR.validate_entries(empty))
     noop = E + (("G3", "dev", "x", E[0][3], "problems",
@@ -199,16 +200,39 @@ def test_registry_structural_validity_is_enforced():
     assert not MR.validate_entries(E), "pristine control"
 
 
-def test_a_hunk_aimed_at_the_judge_is_refused():
-    """A mutation targeting a TEST file (or the registry itself) would
-    manufacture its own kill by breaking the judge instead of the subject —
-    the one self-reference the hunk design would otherwise reintroduce."""
-    for art in ("tests/test_0011_policy_matrix.py",
-                "specs/evidence/0011/mutant_registry.py"):
+def test_the_mutable_artifact_set_is_inclusion_defined():
+    """Research F-B residual: 'not tests/, not the registry' was a
+    DENY-LIST — the polarity this arc exists to refuse. It silently
+    admitted a future conftest.py (judge-side infrastructure pytest will
+    load) and any off-path src function (a genuine kill of an unrelated
+    defense, inflating the depth metric). The campaign is entitled to
+    mutate exactly MUTABLE_ARTIFACTS; everything else refuses by
+    membership, including files that exist and functions that are real."""
+    assert MR.MUTABLE_ARTIFACTS == frozenset({
+        "specs/evidence/0011/policy_matrix.py",
+        "specs/evidence/0011/check_round1_fold.py",
+        "specs/evidence/0011/subject_census.py",
+        "specs/evidence/0011/check_contention_rule.py"}), (
+        "widening the mutable set is a REVIEWED edit — update this test "
+        "with the review that authorizes it")
+    for art in ("tests/test_0011_policy_matrix.py",       # the judge
+                "specs/evidence/0011/mutant_registry.py",  # the runner
+                "conftest.py",                             # future judge infra
+                "src/veracium/authority.py"):              # off-path, real
         g = MR.ENTRIES + (("J1", "dev", "x", MR.ENTRIES[0][3],
                            "problems", ((art, "import", "IMPORT"),)),)
-        assert any("judge" in b or "test file" in b
+        assert any("OUTSIDE the closed mutable set" in b
                    for b in MR.validate_entries(g)), art
+    # research (round-11 pass, forward note): the allowlist is hand-
+    # maintained and must track what ENTRIES actually target — set
+    # equality BOTH ways, so a fifth legitimate artifact with a stale
+    # allowlist, and an allowlist member no entry mutates any more, each
+    # fail with the other named (the bundle-digest closure shape).
+    targeted = {h[0] for e in MR.ENTRIES for h in e[5]}
+    assert targeted == MR.MUTABLE_ARTIFACTS, (
+        f"entries target {sorted(targeted)} but MUTABLE_ARTIFACTS is "
+        f"{sorted(MR.MUTABLE_ARTIFACTS)} — grow or shrink the allowlist "
+        f"WITH the entries, as a reviewed edit")
 
 
 def test_artifact_outside_the_package_is_refused():

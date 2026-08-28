@@ -61,6 +61,16 @@ CF = "specs/evidence/0011/check_round1_fold.py"
 SC = "specs/evidence/0011/subject_census.py"
 CK = "specs/evidence/0011/check_contention_rule.py"
 
+# Research F-B residual (round-11 pre-seal pass): the mutable-artifact set
+# is defined by INCLUSION. A deny-list ("not tests/, not this registry")
+# is the polarity this whole arc exists to refuse — it silently admitted a
+# future conftest.py (judge-side infrastructure) and any off-path src
+# function (defense-depth inflation: a genuine kill of a function that has
+# nothing to do with the 0011 checker). The campaign is ENTITLED to mutate
+# exactly these artifacts, and nothing else, ever, until a reviewed edit
+# widens this set.
+MUTABLE_ARTIFACTS = frozenset({PM, CF, SC, CK})
+
 # (id, found_by, mutation, node, defends, hunks)
 #   defends: the top-level function (or module constant) in the mutated
 #   artifact that IS the defense under test — every hunk's old text must
@@ -395,10 +405,23 @@ def validate_entries(entries=None) -> list:
                        f"only 'survive' or fake a kill")
             continue
         for n, (art, old, new) in enumerate(hunks):
-            # PROCESS-R8-1(3): `ROOT / "/etc/passwd"` IS "/etc/passwd" —
-            # pathlib discards the left side when the right is absolute.
-            # Paths must be relative, resolve INSIDE the tree, and be
-            # regular files.
+            # INCLUSION, not exclusion (research F-B residual): membership
+            # in the closed allowlist comes FIRST, so a test file, a future
+            # conftest.py, this registry, or any off-path src function —
+            # mutating the judge, or inflating the depth metric with a
+            # genuine kill of an unrelated defense — refuses by polarity,
+            # not by enumeration.
+            if art not in MUTABLE_ARTIFACTS:
+                bad.append(f"{i}.h{n}: artifact {art!r} is OUTSIDE the "
+                           f"closed mutable set "
+                           f"{sorted(MUTABLE_ARTIFACTS)} — mutating the "
+                           f"judge or off-path code manufactures or "
+                           f"inflates the verdict; widening this set is a "
+                           f"reviewed edit")
+                continue
+            # PROCESS-R8-1(3), kept as depth behind the allowlist:
+            # `ROOT / "/etc/passwd"` IS "/etc/passwd" — pathlib discards
+            # the left side when the right is absolute.
             ap = pathlib.PurePosixPath(art)
             if ap.is_absolute() or ".." in ap.parts:
                 bad.append(f"{i}.h{n}: artifact {art!r} is not a plain "
@@ -414,12 +437,6 @@ def validate_entries(entries=None) -> list:
             if not full.is_file():
                 bad.append(f"{i}.h{n}: artifact {art!r} is not a regular "
                            f"file in the package")
-                continue
-            if art.startswith("tests/") or art == \
-                    "specs/evidence/0011/mutant_registry.py":
-                bad.append(f"{i}.h{n}: artifact {art!r} is a test file or "
-                           f"this registry — mutating the judge "
-                           f"manufactures the verdict")
                 continue
             if old == new:
                 bad.append(f"{i}.h{n}: old and new text are identical")
@@ -538,7 +555,11 @@ def _snapshot(root) -> str:
     ledger commands CONCURRENTLY, so sibling commands read artifacts
     mid-mutation. A snapshot makes every reader of the real tree safe by
     construction, a crash costs a temp dir, and concurrent campaigns
-    cannot see each other at all."""
+    cannot see each other at all. Symlinks are DEREFERENCED by the
+    copy (research, round-11 pass): a link's target content lands in the
+    snapshot as a regular file, so a hunk writes to the snapshot copy,
+    never through a link to the live tree — the dereference is the
+    protection."""
     import shutil
     import tempfile
     snap = tempfile.mkdtemp(prefix="veracium-mutant-tree-")

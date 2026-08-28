@@ -1337,7 +1337,19 @@ crash window, the concurrent-campaign hazard, and the
 closure-evidence gate's concurrent ledger commands (which read the
 artifacts while a sibling command runs the campaign) all vanish rather
 than being individually guarded. Two campaigns running concurrently
-while the live artifact stays byte-identical is the standing test. Three were built: **F-B, the proxy-kill** — an observed
+while the live artifact stays byte-identical is the standing test.
+Research's executable pass against the pushed fold (`cf06440`) then
+confirmed every planted attack refuses — shadow-copy, comment
+relocation, dead code, path escapes, symlink-through-the-snapshot (the
+copy DEREFERENCES, so a hunk writes to the snapshot regular file, never
+through a link) — and returned one residual, closed before seal: the
+mutable-artifact set was a DENY-list ("not tests/, not the registry"),
+the polarity this arc exists to refuse — it silently admitted a future
+conftest.py and off-path src functions (a genuine kill of an unrelated
+defense would inflate the depth metric). The set is now
+inclusion-defined: `MUTABLE_ARTIFACTS` is the closed four-file
+allowlist the campaign is entitled to mutate, membership is checked
+FIRST, and widening it is a reviewed edit pinned by a standing test. Three were built: **F-B, the proxy-kill** — an observed
 failure proves the test NOTICED the hunk, not that the hunk touched the
 defense, so every entry now names the top-level function or constant it
 `defends` and validation locates that span by ast and refuses any hunk

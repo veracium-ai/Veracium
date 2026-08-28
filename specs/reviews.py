@@ -1230,8 +1230,13 @@ REVIEWS = [
          "R5A reporting a false survival), and the campaign runs in a "
          "PRIVATE SNAPSHOT — the live tree is read-only to it by "
          "construction, closing the crash window and every "
-         "concurrent-reader hazard at once. Sealed AFTER this row, "
-         "sha pinned on return", findings=0),
+         "concurrent-reader hazard at once. Research's executable "
+         "pass against the pushed fold found NO reachable false "
+         "PASS and one residual, closed before seal: the mutable-"
+         "artifact set flipped from deny-list to the closed four-"
+         "file MUTABLE_ARTIFACTS allowlist, membership first, "
+         "widening reviewed. Sealed AFTER this row, sha pinned "
+         "on return", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
