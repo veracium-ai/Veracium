@@ -2136,5 +2136,25 @@ CLOSURES = [
      "$PY -m pytest tests/test_0011_mutant_registry.py::"
      "test_a_duplicate_mutation_is_refused_at_the_real_boundary "
      "tests/test_0011_mutant_registry.py::"
-     "test_mutation_identity_is_minimal_diff_plus_position -q -p no:randomly"),
+     "test_mutation_identity_is_the_resulting_transformation -q -p no:randomly"),  # renamed in the round-13 fold (face four)
+    # ---- 0011 external round 13 (2026-08-28) — identity with nothing left to slide.
+    ("0011", "external", 13, "0011-PROCESS-R13-1",
+     "hunk partitioning defeated mutation uniqueness: C2's two edits "
+     "merged into one wider hunk produced byte-identical mutated "
+     "artifacts under a distinct identity, and a constant-cardinality "
+     "replacement hid a vanished mutant behind a double-counted one — "
+     "face four of the identity ladder (id, full text, minimal diff, "
+     "partitioning), each fix normalizing a richer description while "
+     "identity stayed a function of the description",
+     "the canonical identity is the resulting artifact transformation "
+     "(per-artifact sha256 of the bytes the complete bundle produces "
+     "from pristine), so no representation remains to vary; duplicates "
+     "refuse on both carriers pre-campaign; both reviewer attacks are "
+     "standing regressions at the real on-disk boundaries with the "
+     "copied module pinned to the real root",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_partitioned_duplicates_are_refused_at_the_real_boundary "
+     "tests/test_0011_mutant_registry.py::"
+     "test_mutation_identity_is_the_resulting_transformation "
+     "-q -p no:randomly"),
 ]

@@ -43,6 +43,7 @@ what the runner did and saw, and --check recompares it byte-for-byte.
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import os
 import pathlib
@@ -72,62 +73,77 @@ CK = "specs/evidence/0011/check_contention_rule.py"
 MUTABLE_ARTIFACTS = frozenset({PM, CF, SC, CK})
 
 
-def _hunk_identity(art, old, new) -> tuple:
-    """The canonical identity of ONE hunk: (artifact, edit position,
-    minimal old core, minimal new core).
-
-    PROCESS-R12-1 face two (research, pre-seal pass on the fix): the
-    full-text bundle is CONTEXT-WINDOW SLIDABLE — "emitted_keys.count(k)
-    > 1", "keys.count(k) > 1" and "count(k) > 1" are three exactly-once,
-    in-span old-texts for the SAME single edit to "> 2", so the same
-    mutation re-slices into "distinct" bundles. The identity is anchored
-    to what actually changes: strip the common prefix and suffix between
-    old and new (the minimal diff — window-invariant), and pin it to the
-    edit's absolute position in the artifact (so the same edit text on a
-    DIFFERENT line stays a genuinely different mutant). Whitespace runs
-    are folded in the cores. The undecidable boundary is unchanged: a
-    semantically-equivalent, textually-distinct EDIT remains possible in
-    principle and remains visible — hunks ship in the record as data."""
-    pre = 0
-    while pre < min(len(old), len(new)) and old[pre] == new[pre]:
-        pre += 1
-    suf = 0
-    while (suf < min(len(old), len(new)) - pre
-           and old[len(old) - 1 - suf] == new[len(new) - 1 - suf]):
-        suf += 1
-    core_old = old[pre:len(old) - suf]
-    core_new = new[pre:len(new) - suf]
-    pos = None
-    full = ROOT / art
-    if full.is_file():
-        src = full.read_text()
-        if src.count(old) == 1:
-            pos = src.index(old) + pre
-    return (art, pos, " ".join(core_old.split()),
-            " ".join(core_new.split()))
-
-
 def mutation_identity(hunks) -> tuple:
-    """PROCESS-R12-1: the canonical identity of a MUTATION is the sorted
-    bundle of its hunks' minimal-diff identities — never the id string
-    (face one: a fresh id relabeled R5A and inflated the totals while
-    every observation stayed genuine) and never the full old/new text
-    (face two: the context window slides). A subset bundle riding a
-    killer hunk is refused elsewhere: leave-one-out already fails an
-    entry whose extra hunk is not load-bearing; and within one entry a
-    second slice of the same site fails exactly-once at application."""
-    return tuple(sorted(_hunk_identity(a, o, n) for a, o, n in hunks))
+    """PROCESS-R12-1/R13-1: the canonical identity of a MUTATION is the
+    RESULTING ARTIFACT TRANSFORMATION — per artifact, the sha256 of the
+    bytes produced by applying the entry's complete bundle to the
+    pristine file — never any description of how to produce it.
 
-# (id, found_by, mutation, node, defends, hunks)
-#   defends: the top-level function (or module constant) in the mutated
-#   artifact that IS the defense under test — every hunk's old text must
-#   fall inside its source span, so a hunk cannot buy a kill by mutating
-#   a fixture, helper or anything else on the test's execution path
-#   (research F-B: an observed failure proves the test NOTICED the hunk,
-#   not that the hunk touched the defense).
-#   hunks: ((artifact RELPATH, old text, new text), ...) — the old text
-#   must occur EXACTLY ONCE in the artifact; the mutant is ALL hunks
-#   applied together; each hunk alone must NOT be enough (leave-one-out).
+    This is the terminal rung of a four-face ladder, each face a
+    representation the previous fix still depended on: (1) the id string
+    (a fresh id relabeled R5A); (2) the full old/new text (the context
+    window slides); (3) the minimal diff plus position (round 13: the
+    hunk PARTITIONING slides — C2's two edits merged into one wider hunk
+    yield byte-identical mutated artifacts under a distinct identity,
+    and dropping C1 beside the merged duplicate held the totals constant
+    while one mutant vanished and another counted twice). Hashing the
+    OUTCOME has no representation left to vary: any decomposition that
+    produces the same mutated bytes is the same mutation.
+
+    The named boundary moves with it, honestly: whitespace variants of
+    the INSERTED text produce distinct resulting bytes, so they sit with
+    the semantically-equivalent-program class — undecidable in general,
+    visible as data (hunks ship in the record). The whitespace-folded
+    digest screen in validate_entries refuses the cheapest of those too.
+    Entries whose bundle cannot apply cleanly identify by their raw
+    hunks and are refused by the application checks elsewhere."""
+    return _identity(hunks, fold_ws=False)
+
+
+def _apply_hunks_to_text(text, pairs):
+    """THE apply path — the identity and the campaign share this one
+    function BY CONSTRUCTION (research, round-13 pre-seal): "the bytes
+    the bundle produces" is only well-defined if identity and execution
+    apply the same way in the same order. Today's bundles are pairwise
+    disjoint, so order happens not to matter; the day an entry carries
+    ORDER-DEPENDENT hunks (one hunk's new text creating or destroying
+    another's old text), a digest computed by any OTHER path could
+    disagree with what actually ran — the same mutation under two
+    identities, face four one level down. Sharing the function makes
+    same-executed-bytes imply same-digest definitionally, so
+    order-dependence is well-defined rather than forbidden.
+
+    Returns (text_or_None, problems); refuses at the first hunk whose
+    old text is not exactly-once in the CURRENT text."""
+    problems = []
+    for o, n in pairs:
+        if text is None or text.count(o) != 1:
+            problems.append(f"hunk old text occurs "
+                            f"{0 if text is None else text.count(o)} "
+                            f"times at application — refused")
+            return None, problems
+        text = text.replace(o, n, 1)
+    return text, problems
+
+
+def _identity(hunks, fold_ws) -> tuple:
+    per_art = {}
+    for a, o, n in hunks:
+        per_art.setdefault(a, []).append((o, n))
+    out = []
+    for art in sorted(per_art):
+        full = ROOT / art
+        pristine = full.read_text() if full.is_file() else None
+        applied, _probs = _apply_hunks_to_text(pristine, per_art[art])
+        if applied is None:
+            out.append((art, None, tuple(sorted(per_art[art]))))
+        else:
+            text = " ".join(applied.split()) if fold_ws else applied
+            out.append((art,
+                        hashlib.sha256(text.encode()).hexdigest()))
+    return tuple(out)
+
+
 ENTRIES = (
     ("R4A", "reviewer",
      "the oracle judges its own recomputation instead of the injected "
@@ -453,17 +469,24 @@ def validate_entries(entries=None) -> list:
     dupes = {i for i in ids if ids.count(i) > 1}
     if dupes:
         bad.append(f"duplicate registry id(s): {sorted(dupes)}")
-    seen_mut = {}
+    seen_mut, seen_ws = {}, {}
     for e in entries:
         key = mutation_identity(e[5])
+        wskey = _identity(e[5], fold_ws=True)
         if key in seen_mut:
-            bad.append(f"duplicate mutation: {e[0]} carries the same "
-                       f"normalized hunk bundle as {seen_mut[key]} — a "
-                       f"second label for one mutant inflates the ledger "
-                       f"whatever its id, finder, node or hunk order "
-                       f"(PROCESS-R12-1)")
+            bad.append(f"duplicate mutation: {e[0]} produces the same "
+                       f"resulting artifact bytes as {seen_mut[key]} — a "
+                       f"second label for one transformation inflates the "
+                       f"ledger whatever its id, finder, node, hunk "
+                       f"partitioning or window (PROCESS-R12-1/R13-1)")
+        elif wskey in seen_ws:
+            bad.append(f"duplicate mutation: {e[0]} and {seen_ws[wskey]} "
+                       f"differ only in whitespace of the mutated result "
+                       f"— the cheapest semantically-equivalent variant, "
+                       f"refused for human review (PROCESS-R12-1)")
         else:
             seen_mut[key] = e[0]
+            seen_ws[wskey] = e[0]
     for i, by, mut, node, defends, hunks in entries:
         if by not in FOUND_BY:
             bad.append(f"{i}: found_by {by!r} outside the governed "
@@ -547,17 +570,23 @@ class _Restorer:
         self.root, self.originals = root, {}
 
     def apply(self, hunks) -> list:
+        """Grouped per artifact IN ENTRY ORDER and routed through
+        _apply_hunks_to_text — the same function, in the same order, the
+        identity digests. Executed bytes and digested bytes cannot
+        disagree, because they are the same computation."""
         bad = []
+        per_art = {}
         for art, old, new in hunks:
+            per_art.setdefault(art, []).append((old, new))
+        for art, pairs in per_art.items():
             p = self.root / art
             src = p.read_text()
             if art not in self.originals:
                 self.originals[art] = src
-            if src.count(old) != 1:
-                bad.append(f"hunk old text occurs {src.count(old)} times "
-                           f"in {art} at application — refused")
-                continue
-            p.write_text(src.replace(old, new, 1))
+            applied, probs = _apply_hunks_to_text(src, pairs)
+            bad.extend(f"{art}: {b}" for b in probs)
+            if applied is not None:
+                p.write_text(applied)
         return bad
 
     def restore(self) -> list:

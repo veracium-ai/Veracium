@@ -549,32 +549,34 @@ def test_a_duplicate_mutation_is_refused_at_the_real_boundary(tmp_path,
         "--write on a duplicate-carrying registry wrote a record")
 
 
-def test_mutation_identity_is_minimal_diff_plus_position():
-    """PROCESS-R12-1 face two (research): the full-text bundle is
-    context-window SLIDABLE — the same single edit under a wider or
-    narrower exactly-once window re-slices into 'distinct' bundles, each
-    in-span, each genuinely killed, inflating the count with re-probes of
-    one defense. The identity is the minimal diff (common prefix/suffix
-    stripped, whitespace folded) pinned to the edit's absolute position:
-    window-invariant, and same-edit-on-a-different-line stays distinct."""
+def test_mutation_identity_is_the_resulting_transformation():
+    """PROCESS-R12-1/R13-1, faces two through four: identity is the
+    sha256 of the artifact bytes the bundle PRODUCES, so every
+    representation-slide collapses — window (three exactly-once
+    old-texts of one edit), partitioning (C2's two hunks merged into one
+    wider hunk), order — while genuinely different transformations stay
+    distinct. The whitespace-folded screen refuses the cheapest
+    semantically-equivalent variant for human review."""
     pm = "specs/evidence/0011/policy_matrix.py"
-    # research's three planted slices of R5A's edit collapse to ONE
     slices = [("emitted_keys.count(k) > 1", "emitted_keys.count(k) > 2"),
               ("keys.count(k) > 1", "keys.count(k) > 2"),
               ("count(k) > 1", "count(k) > 2")]
-    ids = {MR._hunk_identity(pm, o, n) for o, n in slices}
-    assert len(ids) == 1 and next(iter(ids))[1] is not None, ids
-    # a genuinely different edit at the same site stays distinct
-    assert MR._hunk_identity(pm, "count(k) > 1", "count(k) >= 2") not in ids
-    # hunk order folds at the bundle level; a different edit does not
+    ids = {MR.mutation_identity(((pm, o, n),)) for o, n in slices}
+    assert len(ids) == 1, ids
+    assert MR.mutation_identity(((pm, "count(k) > 1",
+                                  "count(k) >= 2"),)) not in ids
     m3 = next(e for e in MR.ENTRIES if e[0] == "M3")
     assert MR.mutation_identity(m3[5]) == MR.mutation_identity(
         tuple(reversed(m3[5])))
-    # a window-slid re-probe entry is refused whatever its id and finder
+    c2 = next(e for e in MR.ENTRIES if e[0] == "C2")
+    assert MR.mutation_identity(c2[5]) == MR.mutation_identity(
+        (_merged_c2_hunk(),))
     r5a = next(e for e in MR.ENTRIES if e[0] == "R5A")
-    slid = MR.ENTRIES + (("SLID", "reviewer", "re-slice", r5a[3], r5a[4],
-                          ((pm, "count(k) > 1", "count(k) > 2"),)),)
-    assert any("duplicate mutation" in b for b in MR.validate_entries(slid))
+    ws = MR.ENTRIES + (("WSV", "dev", "x", r5a[3], r5a[4],
+                        ((pm, "emitted_keys.count(k) > 1",
+                          "emitted_keys.count(k) >  2"),)),)
+    assert any("whitespace of the mutated result" in b
+               for b in MR.validate_entries(ws))
     # the record-side carrier enforces the same closure (both carriers)
     shipped = json.loads((EVID / "mutant_results.json").read_text())
     d = json.loads(json.dumps(shipped))
@@ -582,3 +584,102 @@ def test_mutation_identity_is_minimal_diff_plus_position():
     assert any("same normalized hunk bundle" in b
                for b in MR.validate_record(d))
     assert not MR.validate_record(shipped), "pristine control"
+
+
+def _merged_c2_hunk():
+    """C2's two edits as ONE wider hunk spanning both sites — the
+    round-13 partitioning attack, byte-identical in effect."""
+    c2 = next(e for e in MR.ENTRIES if e[0] == "C2")
+    art = c2[5][0][0]
+    src = (ROOT / art).read_text()
+    i = src.index('"candidate rows"')
+    j = src.index('distinct"),') + len('distinct"),')
+    old_b = src[i:j]
+    new_b = old_b
+    for _a, o, n in c2[5]:
+        assert o in new_b
+        new_b = new_b.replace(o, n, 1)
+    return (art, old_b, new_b)
+
+
+def test_partitioned_duplicates_are_refused_at_the_real_boundary(tmp_path):
+    """PROCESS-R13-1 at the real boundary: (a) DUPC2 as the merged
+    single hunk beside the original C2; (b) the constant-cardinality
+    replacement — C1 removed, the merged duplicate kept — 21 entries,
+    finder totals unchanged, one mutant gone and another counted twice.
+    Both refuse at --check fast (before any campaign subprocess) and at
+    --write without writing."""
+    import importlib.util
+    import io
+    import contextlib
+    import time
+    src = (EVID / "mutant_registry.py").read_text()
+    # pin the copied module to the REAL root — its own derivation would
+    # point at tmp_path and every identity would degrade (the R11
+    # fail-open lesson, applied to this test itself)
+    root_line = "ROOT = pathlib.Path(__file__).resolve().parents[3]"
+    assert src.count(root_line) == 1
+    src = src.replace(root_line,
+                      f"ROOT = pathlib.Path({str(MR.ROOT)!r})")
+    entry = ("DUPC2", "dev", "merged single-hunk relabel of C2",
+             next(e for e in MR.ENTRIES if e[0] == "C2")[3],
+             "check_census_figures", (_merged_c2_hunk(),))
+    needle = "ENTRIES = ("
+    dupped = src.replace(needle, needle + "\n    " + repr(entry) + ",", 1)
+    ci = dupped.index('    ("C1", "dev",')
+    cj = dupped.index('    ("C2", "dev",')
+    card = dupped[:ci] + dupped[cj:]
+    for name, text, n_expected in (("dup", dupped, 22), ("card", card, 21)):
+        mod_path = tmp_path / f"mutant_registry_{name}.py"
+        mod_path.write_text(text)
+        spec = importlib.util.spec_from_file_location(f"mr_{name}", mod_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        assert len(mod.ENTRIES) == n_expected, name
+        err = io.StringIO()
+        t0 = time.monotonic()
+        with contextlib.redirect_stderr(err):
+            code = mod.run_check(MR.RECORD)
+        assert code == 1 and "duplicate mutation" in err.getvalue(), (
+            name, err.getvalue()[:300])
+        assert time.monotonic() - t0 < 5, (
+            f"{name}: the refusal must precede the campaign")
+        mod.sys.argv = ["mutant_registry.py", "--write"]
+        err2 = io.StringIO()
+        with contextlib.redirect_stderr(err2):
+            code = mod.main()
+        assert code == 1 and "duplicate mutation" in err2.getvalue(), name
+        assert not mod.RECORD.exists(), (
+            f"{name}: --write on a duplicate-carrying registry wrote")
+
+
+def test_digested_bytes_are_executed_bytes_even_for_dependent_hunks(
+        tmp_path, monkeypatch):
+    """Research, round-13 pre-seal: 'the bytes the bundle produces' is
+    well-defined only if identity and execution share one apply path.
+    This proves it BEHAVIORALLY on an ORDER-DEPENDENT bundle (the second
+    hunk's old text exists only after the first applies): the identity's
+    digest equals the sha256 of the file bytes the campaign's own
+    _Restorer leaves behind — same function, same order, by
+    construction — while the reversed bundle degrades instead of
+    silently digesting something that would never run."""
+    import hashlib
+    art_dir = tmp_path / "specs" / "evidence" / "0011"
+    art_dir.mkdir(parents=True)
+    art = "specs/evidence/0011/fake_artifact.py"
+    (tmp_path / art).write_text("alpha = 1\nbeta = 2\n")
+    dependent = ((art, "alpha = 1", "alpha = 1  # W1"),
+                 (art, "1  # W1\nbeta", "1  # W1\nbeta_renamed"))
+    monkeypatch.setattr(MR, "ROOT", tmp_path)
+    ident = MR.mutation_identity(dependent)
+    assert len(ident) == 1 and ident[0][1] is not None, ident
+    rest = MR._Restorer(tmp_path)
+    assert rest.apply(dependent) == []
+    executed = (tmp_path / art).read_text()
+    assert hashlib.sha256(executed.encode()).hexdigest() == ident[0][1], (
+        "identity digested bytes the campaign did not execute")
+    assert rest.restore() == []
+    # the reversed bundle cannot apply from pristine: it degrades loudly
+    rev = tuple(reversed(dependent))
+    assert MR.mutation_identity(rev)[0][1] is None, (
+        "an unappliable order digested as if it ran")

@@ -1289,6 +1289,53 @@ REVIEWS = [
          "897edcb74b083718c96d05f4938ef02ef3268e4c614fc323203f2593"
          "f66c86d7, commit c462e09", findings=0),
 
+    dict(spec="0011", round=13, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R13-1"],
+         verdict="RETURN EXACT v13 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; R12-1's exact-duplicate and "
+         "context-window attacks confirmed closed; no policy or "
+         "trust-model defect (package `0011-v13`, sha 897edcb7 verified; "
+         "focused 37; collected-header 22; spec gate 88/5; selfcheck 8; "
+         "extracted 1873/22 reconciling exactly with sealed 1887/8). "
+         "PROCESS-R13-1: mutation identity remains "
+         "REPRESENTATION-DEPENDENT — the sorted per-hunk identities vary "
+         "with the hunk PARTITIONING: C2's two edits merged into one "
+         "wider hunk produce the same mutated check_round1_fold.py bytes "
+         "under a distinct identity (validate_entries empty; --write 22 "
+         "entries exit 0; --check exit 0; focused 37/37), and the "
+         "constant-cardinality replacement (C1 removed, merged duplicate "
+         "kept) holds 21 entries and unchanged finder totals while one "
+         "mutant disappears and another is represented twice. Required: "
+         "identity from the resulting artifact transformation — sorted "
+         "(artifact, resulting-bytes digest) over the complete bundle "
+         "applied to pristine bytes — with both attacks at the real "
+         "write/check boundary", findings=1),
+
+    dict(spec="0011", round=14, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v14`, candidate draft v17 — the "
+         "round-13 fold; §23 maps the finding). PROCESS-R13-1 closed at "
+         "the terminal rung of the four-face identity ladder (id → full "
+         "text → minimal diff+position → partitioning): the canonical "
+         "identity is the RESULTING TRANSFORMATION — per artifact, the "
+         "sha256 of the bytes the complete bundle produces from the "
+         "pristine file — so any decomposition producing the same "
+         "mutated bytes is the same mutation and no description remains "
+         "to slide. Duplicates refuse on both carriers; run_check still "
+         "fails fast pre-campaign; --write refuses without writing; the "
+         "merged-C2 duplicate AND the constant-cardinality replacement "
+         "ride as standing regressions at the real on-disk boundaries, "
+         "with the copied module pinned to the real root (the R11 "
+         "fail-open lesson applied to the new test itself). The "
+         "ws-folded digest screen refuses the cheapest "
+         "semantically-equivalent variant; the undecidable boundary "
+         "stays named and visible as record data. Research's "
+         "pre-seal pass closed the one seam in 'the bytes': "
+         "identity and campaign share ONE apply function, so "
+         "digested and executed bytes are the same computation "
+         "(order-dependent bundles well-defined, proven "
+         "behaviorally on a dependent bundle). Sealed AFTER this "
+         "row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],
