@@ -1282,7 +1282,12 @@ REVIEWS = [
          "fold, cross-node/finder duplicates refuse, subset inflation was "
          "already refused by leave-one-out, and the undecidable "
          "semantic-variant boundary is NAMED and visible as record data. "
-         "Sealed AFTER this row, sha pinned on return", findings=0),
+         "Research re-verified the shipped identity at c462e09 (the "
+         "three slices collapse, the slid re-probe refuses, the "
+         "None-position boundary holds at membership): SEAL STANDS. "
+         "Sealed as 0011-v13-20260828T1922Z.tar.gz, sha256 "
+         "897edcb74b083718c96d05f4938ef02ef3268e4c614fc323203f2593"
+         "f66c86d7, commit c462e09", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
