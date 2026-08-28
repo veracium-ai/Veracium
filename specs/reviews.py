@@ -944,8 +944,9 @@ REVIEWS = [
          "All six fixed with standing tests, re-run to 9/9, the campaign "
          "record in-archive (MUTANT-CAMPAIGN.md). The 2333Z seal of this "
          "version is disclosed discarded-unsent — a package whose checks "
-         "are known-bypassable should not ask for a round. Sealed AFTER this "
-         "row, sha pinned on return",
+         "are known-bypassable should not ask for a round. Sealed as "
+         "`0011-v6-20260828T0137Z` at commit a0baeb7, sha256 "
+         "fbd0481db7e1cec324971262fd568df3f6f62e0956161241cb5ebc7593cc83ad",
          findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
