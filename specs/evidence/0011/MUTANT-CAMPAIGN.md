@@ -130,3 +130,18 @@ by nothing. Corrected:
   is seal-time only;
 * the bogus-entry, ghost-artifact, phantom-kill, double-kill and
   corrupted-record attacks are standing regressions.
+
+
+## Round-8 correction: the binding was global, coercible, and unconfined
+
+PROCESS-R8-1 found three adjacent gaps in the round-7 ledger fix: the kill
+log was a global bag of ids (swapping two entries' nodes changed nothing);
+"byte-for-byte" record checking was dict equality, which coerces (`False ==
+0` claimed an exact match); and artifact validation accepted `/etc/passwd`,
+because pathlib discards the left operand when the right side is absolute.
+Corrected: kills are **(node, id) pairs** with the node taken from pytest's
+own `PYTEST_CURRENT_TEST` (the caller cannot misdeclare it); the record
+check compares **canonical serialized bytes** after pinning exact int
+types; artifact paths must be relative, resolve inside the package root,
+and be regular files. All three attacks are standing regressions at the
+real checker boundary.

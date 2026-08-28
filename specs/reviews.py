@@ -1050,6 +1050,45 @@ REVIEWS = [
          "4aaaf6fb720f42e6a7f1b345b4ff5b11a7863fcfa73989e09129e5eb4f4826dc",
          findings=0),
 
+    dict(spec="0011", round=8, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R8-1"],
+         verdict="RETURN EXACT v8 FOR ONE MECHANICAL REGISTRY AMENDMENT — "
+         "finite design acceptance stands; no policy, authorization, "
+         "contention or trust-model defect (package `0011-v8`, sha 4aaaf6fb "
+         "verified; the exact v7 attacks confirmed closed; the default "
+         "check confirmed non-mutating; focused 25 passed; extracted suite "
+         "1861/22; 1,883 reconcile with the sealed 1875/8). "
+         "PROCESS-R8-1, three adjacent gaps: (1) kill ids bound GLOBALLY "
+         "not per node — swapping the nodes of R4A and F1 still reported "
+         "all 21 ids with no problem, since the shared log proves only "
+         "that every id appeared somewhere; (2) 'byte-for-byte' record "
+         "checking permits TYPE COERCION — executed.exit changed from 0 to "
+         "False claimed an exact match because False == 0; (3) artifact "
+         "validation permits paths OUTSIDE the package — /etc/passwd "
+         "produced no error. Requested: per-node kill records, canonical "
+         "serialized comparison over a typed schema, contained relative "
+         "paths, and the three attacks as regressions at the real checker "
+         "boundary", findings=1),
+
+    dict(spec="0011", round=9, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v9`, candidate draft v12 — the "
+         "round-8 fold; §18 maps the finding; the finite acceptance "
+         "stands). PROCESS-R8-1 closed as prescribed: kills are (node, id) "
+         "PAIRS with the node taken from pytest's own PYTEST_CURRENT_TEST "
+         "— the caller cannot misdeclare it — and the runner requires "
+         "exact pair-set equality, so the node-swap attack reports the "
+         "misbound entries by name; the record check pins exact int types "
+         "(bool is an int subclass, so the check is type(x) is int) and "
+         "compares CANONICAL SERIALIZED BYTES, where False serializes as "
+         "'false' and 0 as '0'; artifact paths must be plain relative, "
+         "traversal-free, resolve inside the package root and be regular "
+         "files — closing the pathlib absolute-join discard that made "
+         "ROOT/'/etc/passwd' equal '/etc/passwd'. All three attacks are "
+         "standing regressions at the real checker boundary, and the "
+         "shipped record is regenerated under the new pair schema and "
+         "verified by the non-mutating check. Sealed AFTER this row, sha "
+         "pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

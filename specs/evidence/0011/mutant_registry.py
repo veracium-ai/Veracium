@@ -106,13 +106,20 @@ ENTRIES = (
 def record_kill(*ids) -> None:
     """Called by a standing test AFTER its assertions succeed. A no-op in
     an ordinary suite run; under the runner, the kill log is the executed
-    side of the one-to-one binding."""
+    side of the binding.
+
+    PROCESS-R8-1(1): the log records (node, id) PAIRS, with the node taken
+    from pytest's own PYTEST_CURRENT_TEST — a global bag of ids proved only
+    that every id appeared SOMEWHERE, so swapping two entries' nodes changed
+    nothing. The caller cannot misdeclare its node, because it does not
+    supply it."""
     path = os.environ.get(KILL_ENV)
     if not path:
         return
+    node = os.environ.get("PYTEST_CURRENT_TEST", "?").split(" ")[0]
     with open(path, "a") as fh:
         for i in ids:
-            fh.write(i + "\n")
+            fh.write(f"{node}\t{i}\n")
 
 
 def validate_entries(entries=None) -> list:
@@ -125,8 +132,24 @@ def validate_entries(entries=None) -> list:
     if dupes:
         bad.append(f"duplicate registry id(s): {sorted(dupes)}")
     for i, _by, art, mut, node in entries:
-        if not (ROOT / art).exists():
-            bad.append(f"{i}: artifact {art!r} does not exist")
+        # PROCESS-R8-1(3): `ROOT / "/etc/passwd"` IS "/etc/passwd" —
+        # pathlib discards the left side when the right is absolute, so an
+        # artifact anywhere on the host validated. Paths must be relative,
+        # resolve INSIDE the tree, and be regular files.
+        ap = pathlib.PurePosixPath(art)
+        if ap.is_absolute() or ".." in ap.parts:
+            bad.append(f"{i}: artifact {art!r} is not a plain relative "
+                       f"path inside the package")
+            continue
+        full = (ROOT / art)
+        try:
+            full.resolve().relative_to(ROOT.resolve())
+        except ValueError:
+            bad.append(f"{i}: artifact {art!r} escapes the package root")
+            continue
+        if not full.is_file():
+            bad.append(f"{i}: artifact {art!r} is not a regular file in "
+                       f"the package")
         if not mut.strip():
             bad.append(f"{i}: empty mutation description")
         if "::" not in node or not node.startswith("tests/"):
@@ -146,7 +169,8 @@ def execute(entries=None) -> tuple:
     r = subprocess.run(
         [sys.executable, "-m", "pytest", *nodes, "-q", "-p", "no:randomly"],
         cwd=ROOT, capture_output=True, text=True, env=env)
-    killed = sorted(pathlib.Path(log).read_text().split())
+    killed = sorted(tuple(l.split("\t")) for l in
+                    pathlib.Path(log).read_text().splitlines() if l)
     pathlib.Path(log).unlink(missing_ok=True)
     tail = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
     passed = 0
@@ -158,24 +182,24 @@ def execute(entries=None) -> tuple:
 
 
 def binding_problems(entries, killed) -> list:
-    """PROCESS-R7-1's core: declared ids and reported kills must be the
-    SAME MULTISET. An entry nothing kills, a kill nothing declares, and a
-    double-report are all named."""
-    declared = sorted(e[0] for e in entries)
+    """PROCESS-R7-1 + R8-1(1): declared (node, id) PAIRS and reported
+    (node, id) pairs must be the SAME MULTISET. A global id-bag proved only
+    that every id appeared somewhere — swapping two entries' nodes changed
+    nothing — so the binding is per-pair: an entry whose OWN node never
+    reports its id is named, whichever other node happens to."""
+    declared = sorted((e[4], e[0]) for e in entries)
     bad = []
     unkilled = sorted(set(declared) - set(killed))
     unknown = sorted(set(killed) - set(declared))
     if unkilled:
-        bad.append(f"registry id(s) NO EXECUTED TEST REPORTS KILLING: "
-                   f"{unkilled} — an entry that nothing kills is prose "
-                   f"wearing a ledger")
+        bad.append(f"registry pair(s) whose OWN node never reports the "
+                   f"kill: {unkilled} — an id reported by a different node "
+                   f"is a misbound entry, not a kill")
     if unknown:
-        bad.append(f"kill(s) reported for id(s) the registry does not "
-                   f"declare: {unknown}")
+        bad.append(f"kill pair(s) the registry does not declare: {unknown}")
     over = sorted({k for k in killed if killed.count(k) > 1})
     if over:
-        bad.append(f"id(s) reported killed more than once in one run: "
-                   f"{over}")
+        bad.append(f"pair(s) reported more than once in one run: {over}")
     return bad
 
 
@@ -187,7 +211,7 @@ def build_record(entries, killed, exit_code, passed) -> dict:
         schema=2,
         entries=[dict(id=i, found_by=f, artifact=a, mutation=m, node=n)
                  for i, f, a, m, n in entries],
-        killed=killed,
+        killed=[list(k) for k in killed],
         totals=dict(**by_finder, all=len(entries),
                     distinct_nodes=len({e[4] for e in entries})),
         executed=dict(exit=exit_code, passed=passed),
@@ -221,9 +245,27 @@ def main() -> int:
               file=sys.stderr)
         return 1
     shipped = json.loads(RECORD.read_text())
-    if shipped != record:
+    # PROCESS-R8-1(2): dict equality COERCES — False == 0, True == 1 — so a
+    # boolean smuggled into an int field claimed an exact match. Canonical
+    # SERIALIZED BYTES are compared instead ("false" is not "0"), after a
+    # typed sanity pass on the fields coercion can reach.
+    for path_, val in (("executed.exit", shipped.get("executed", {})
+                        .get("exit")),
+                       ("executed.passed", shipped.get("executed", {})
+                        .get("passed")),
+                       ("schema", shipped.get("schema")),
+                       ("totals.all", shipped.get("totals", {})
+                        .get("all"))):
+        if type(val) is not int:            # bool is an int SUBCLASS; the
+            print(f"shipped record: {path_} is "  # check is on the exact type
+                  f"{type(val).__name__}, required int", file=sys.stderr)
+            return 1
+    a = json.dumps(shipped, sort_keys=True, separators=(",", ":"))
+    b = json.dumps(record, sort_keys=True, separators=(",", ":"))
+    if a != b:
         for k in sorted(set(shipped) | set(record)):
-            if shipped.get(k) != record.get(k):
+            if (json.dumps(shipped.get(k), sort_keys=True)
+                    != json.dumps(record.get(k), sort_keys=True)):
                 print(f"shipped record DIVERGES at {k!r}", file=sys.stderr)
         return 1
     print(f"mutant registry: {record['totals']['all']} entries "

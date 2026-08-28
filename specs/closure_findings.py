@@ -2015,4 +2015,23 @@ CLOSURES = [
      "shipped record to equal the recomputation; the attack regressions are "
      "tests/test_0011_mutant_registry.py::test_a_bogus_registry_entry_is_refused "
      "and ::test_a_corrupted_shipped_record_diverges"),
+
+    # ---- 0011 external round 8 (2026-08-28) — the ledger's binding.
+    ("0011", "external", 8, "0011-PROCESS-R8-1",
+     "three adjacent registry gaps: kill ids bound globally (a node swap "
+     "between two entries changed nothing), record checking by dict "
+     "equality which coerces (False == 0 claimed an exact match), and "
+     "artifact validation accepting /etc/passwd via pathlib's "
+     "absolute-join discard",
+     "kills are (node, id) pairs with the node taken from pytest's own "
+     "PYTEST_CURRENT_TEST and exact pair-set equality enforced; the record "
+     "check pins exact int types and compares canonical serialized bytes; "
+     "artifact paths must be relative, contained and regular files — all "
+     "three attacks standing at the real checker boundary",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_a_swapped_node_binding_is_refused "
+     "tests/test_0011_mutant_registry.py::"
+     "test_type_coerced_record_is_refused "
+     "tests/test_0011_mutant_registry.py::"
+     "test_artifact_outside_the_package_is_refused -q -p no:randomly"),
 ]

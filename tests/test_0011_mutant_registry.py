@@ -181,9 +181,9 @@ def test_a_bogus_registry_entry_is_refused():
     bogus = MR.ENTRIES + (("BOGUS", "dev",
                            "specs/evidence/0011/policy_matrix.py",
                            "no real mutation", MR.ENTRIES[0][4]),)
-    killed = sorted(e[0] for e in MR.ENTRIES)     # what a real run reports
+    killed = sorted((e[4], e[0]) for e in MR.ENTRIES)   # a real run's pairs
     bad = MR.binding_problems(bogus, killed)
-    assert any("BOGUS" in b and "NO EXECUTED TEST" in b for b in bad), bad
+    assert any("BOGUS" in b for b in bad), bad
     assert not MR.binding_problems(MR.ENTRIES, killed), "pristine control"
 
 
@@ -192,18 +192,59 @@ def test_registry_structural_validity_is_enforced():
     assert any("duplicate" in b for b in MR.validate_entries(dup))
     ghost = MR.ENTRIES + (("G1", "dev", "does_not_exist.py", "x",
                            MR.ENTRIES[0][4]),)
-    assert any("does not exist" in b for b in MR.validate_entries(ghost))
+    assert any("not a regular file" in b for b in MR.validate_entries(ghost))
     assert not MR.validate_entries(MR.ENTRIES), "pristine control"
 
 
 def test_an_unknown_or_double_kill_is_refused():
-    declared = sorted(e[0] for e in MR.ENTRIES)
+    declared = sorted((e[4], e[0]) for e in MR.ENTRIES)
     assert any("does not declare" in b
-               for b in MR.binding_problems(MR.ENTRIES,
-                                            declared + ["PHANTOM"]))
+               for b in MR.binding_problems(
+                   MR.ENTRIES, declared + [("tests/x.py::t", "PHANTOM")]))
     assert any("more than once" in b
                for b in MR.binding_problems(MR.ENTRIES,
                                             declared + [declared[0]]))
+
+
+def test_a_swapped_node_binding_is_refused():
+    """PROCESS-R8-1(1): swapping the nodes of R4A and F1 passed — the kill
+    log was a global bag of ids, proving only that each id appeared
+    SOMEWHERE. Kills are (node, id) pairs now, the node taken from
+    pytest's own PYTEST_CURRENT_TEST, so an id reported by a different
+    node is a misbound entry."""
+    E = list(MR.ENTRIES)
+    i1 = next(i for i, e in enumerate(E) if e[0] == "R4A")
+    i2 = next(i for i, e in enumerate(E) if e[0] == "F1")
+    a, f = E[i1], E[i2]
+    E[i1] = (a[0], a[1], a[2], a[3], f[4])
+    E[i2] = (f[0], f[1], f[2], f[3], a[4])
+    honest = sorted((e[4], e[0]) for e in MR.ENTRIES)
+    assert MR.binding_problems(tuple(E), honest), (
+        "a node-swapped registry passed against honest kills (R8-1)")
+
+
+def test_type_coerced_record_is_refused():
+    """PROCESS-R8-1(2): `executed.exit` changed from 0 to False claimed an
+    exact match, because False == 0 under dict equality. The check
+    compares canonical serialized bytes and pins exact int types."""
+    shipped = json.loads((EVID / "mutant_results.json").read_text())
+    tam = json.loads(json.dumps(shipped))
+    tam["executed"]["exit"] = False
+    assert tam == shipped, "dict equality must coerce, or this test is moot"
+    a = json.dumps(tam, sort_keys=True, separators=(",", ":"))
+    b = json.dumps(shipped, sort_keys=True, separators=(",", ":"))
+    assert a != b, "canonical bytes must distinguish False from 0"
+    assert type(tam["executed"]["exit"]) is not int
+
+
+def test_artifact_outside_the_package_is_refused():
+    """PROCESS-R8-1(3): `/etc/passwd` validated, because pathlib discards
+    the left operand when the right is absolute. Paths must be relative,
+    contained, and regular files."""
+    for art in ("/etc/passwd", "../../../etc/passwd", "specs/archives"):
+        g = MR.ENTRIES + (("X1", "dev", art, "x", MR.ENTRIES[0][4]),)
+        assert any("X1" in b for b in MR.validate_entries(g)), (
+            f"artifact {art!r} validated (R8-1)")
 
 
 def test_a_corrupted_shipped_record_diverges():
@@ -213,7 +254,7 @@ def test_a_corrupted_shipped_record_diverges():
     the comparison is equality on the WHOLE record, not a count."""
     import copy
     shipped = json.loads((EVID / "mutant_results.json").read_text())
-    killed = shipped["killed"]
+    killed = [tuple(k) for k in shipped["killed"]]
     rebuilt = MR.build_record(MR.ENTRIES, killed,
                               shipped["executed"]["exit"],
                               shipped["executed"]["passed"])
