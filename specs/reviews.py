@@ -1445,7 +1445,13 @@ REVIEWS = [
          "bounded — now pinned by-construction with explicit "
          "--rootdir/--confcutdir; hard links git-uncarriable; "
          "ROOT-symlink and FIFO/device environmental, scoped out in "
-         "§25). Sealed AFTER this row, sha pinned on return", findings=0),
+         "§25). Research re-verified at 193aef7 — copy-root check "
+         "before is_dir/walk, config-carrier refusal incl. broken "
+         "links, rootdir/confcutdir pinned: SEAL STANDS, the full "
+         "seven-face pre-seal arc closed. Sealed as "
+         "0011-v16-20260829T0155Z.tar.gz, sha256 "
+         "ddbb674d49416ac4d8d7118dc85f9d1b1765f4d4ae85691f71575a57"
+         "4fd5a8ad, commit 193aef7", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
