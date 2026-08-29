@@ -1754,8 +1754,10 @@ REVIEWS = [
          "the adjudication surface on the fifth hunt) with two "
          "forward notes recorded in §6a (confidence bound over point "
          "estimate if adjudication goes live; the sample's "
-         "self-report trust boundary). Sealed AFTER this row, sha "
-         "pinned on return", findings=0),
+         "self-report trust boundary). Sealed as "
+         "0026-v4-20260829T1926Z.tar.gz, sha256 "
+         "a122aaa3d3661a9d5154c788cbb1b492315bd519a59ede5ab5be407c"
+         "dd367b62, commit 279793d", findings=0),
 
     dict(spec="0026", round=5, kind="internal", date="2026-08-29",
          raised=["0026-I5-1"],
