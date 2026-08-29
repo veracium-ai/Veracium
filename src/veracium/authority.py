@@ -43,7 +43,11 @@ _RUNGS: dict[str, int] = {"user": 3, "system": 2, "assistant": 1, "third_party":
 # `rule_version` stamps WHICH policy refused, so specs/0011 can re-evaluate historical
 # refusals. It names the WHOLE policy — the ladder AND the min-capping. Any change that
 # could flip whether a pair is allowed or refused REQUIRES a new value (§4f).
-RULE_VERSION = "supersession-authority-v1"
+# v2 (specs/0011 §4b): the SUBJECT axis joined the policy — a USER
+# self-assertion is additionally refused from retiring any OTHER-subject
+# prior. A refusal-widening flips pairs from allowed to refused, which is
+# exactly the change class this constant exists to version.
+RULE_VERSION = "supersession-authority-v2"
 
 
 def effective(author: EvidenceAuthor, derived_from: Optional[EvidenceAuthor]) -> int:
@@ -59,6 +63,18 @@ def permitted(prior_author: EvidenceAuthor, prior_from: Optional[EvidenceAuthor]
               inc_author: EvidenceAuthor, inc_from: Optional[EvidenceAuthor]) -> bool:
     """A retirement is permitted only by an equal-or-better-entitled party (§4a)."""
     return effective(inc_author, inc_from) >= effective(prior_author, prior_from)
+
+
+def self_assertion(author: EvidenceAuthor,
+                   derived_from: Optional[EvidenceAuthor]) -> bool:
+    """specs/0011 §4b: the chain carries nothing but the user's own
+    authority — computed by THIS module's `effective()`, never by the
+    presence or absence of a marker (round 3, R3-1: `derived_from is
+    None` let `derived(USER)` — identical authority — buy permission;
+    keying on authority makes exactly two chains qualify, (USER, None)
+    and (USER, USER), by construction rather than enumeration)."""
+    return effective(author, derived_from) == effective(
+        EvidenceAuthor.USER, None)
 
 
 def edge_effective(edge: "Edge") -> int:

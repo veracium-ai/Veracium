@@ -69,6 +69,19 @@ class SupersessionCounts:
     replayed: bool = False
 
 
+def subject_class(user_id: str, subject) -> str:
+    """specs/0011 §4a (E1): "SELF" | "OTHER" — TOTAL, with OTHER the
+    default. SELF iff the canonical subject equals the user under the
+    0024 §4a predicate (whole-string strip().casefold() equality with
+    the canonical "user" slot). Consumes the STORED subject — the
+    str()-converted slot — never the note, never the relation (a
+    relation cannot tell you whose fact it is). `user_id` is unused by
+    the v1 predicate and part of the interface: research's E-Q1
+    widening (aliases, entity refs) lands behind it without a signature
+    change."""
+    return "SELF" if str(subject).strip().casefold() == "user" else "OTHER"
+
+
 def apply_supersession(store, edge: Edge, relations: dict[str, Relation]) -> "SupersessionCounts":
     """Persist a new edge with supersession, reinforcement, and absorption:
 
@@ -388,6 +401,22 @@ def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                 # recorded. The REVERSE still works: `prior` being revoked
                 # changes nothing here, so a live incoming retires a
                 # revoked-source prior exactly as before.
+                refusals.append(SupersessionRefusalDraft(
+                    prior_edge_id=prior.id, incoming_edge_id=incoming.id,
+                    relation=edge.relation,
+                    prior_effective=authority.edge_effective(prior),
+                    incoming_effective=authority.edge_effective(incoming)))
+            elif (subject_class(edge.user_id, prior.subject) == "OTHER"
+                  and authority.self_assertion(
+                      incoming.provenance.author_of_evidence,
+                      incoming.provenance.derived_from)):
+                # specs/0011 §4b (E2): the SUBJECT axis, a refusal
+                # WIDENING over the author ladder — a user statement on
+                # their own authority cannot retire ANY OTHER-subject
+                # prior, sourced or not (R2-1: the rule reads no
+                # source_id; that is the point, not an omission). Both
+                # edges stay visible; the refusal row is durable, and
+                # rule_version v2 stamps which policy refused.
                 refusals.append(SupersessionRefusalDraft(
                     prior_edge_id=prior.id, incoming_edge_id=incoming.id,
                     relation=edge.relation,
