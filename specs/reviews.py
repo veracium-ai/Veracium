@@ -1747,8 +1747,15 @@ REVIEWS = [
          "candidate's §6a figures to the aggregate at the verify entry "
          "point (217 re-derived to 220; bite standing-tested). "
          "PACKAGE-R3-1 closed: §9's round count derives from the "
-         "ledger, standing-tested. Sealed AFTER this row, sha pinned on "
-         "return", findings=0),
+         "ledger, standing-tested. Research's pre-seal pass CLEARED the "
+         "seal (all five verified at code; the artifact split safe by "
+         "construction — no FN homograph in the set, the own-gate is "
+         "the operative boundary; the signature defect NOT FOUND at "
+         "the adjudication surface on the fifth hunt) with two "
+         "forward notes recorded in §6a (confidence bound over point "
+         "estimate if adjudication goes live; the sample's "
+         "self-report trust boundary). Sealed AFTER this row, sha "
+         "pinned on return", findings=0),
 
     dict(spec="0026", round=5, kind="internal", date="2026-08-29",
          raised=["0026-I5-1"],

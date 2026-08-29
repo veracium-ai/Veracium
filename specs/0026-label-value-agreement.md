@@ -447,6 +447,17 @@ archive-local number measures. A laundering-recall probe joins the
 evidence when a labelled corpus for that population exists; until
 then, nobody may read 5.6% as "the check catches 5.6% of relays".**
 
+**Forward inheritance for the adjudication path (research, round-3
+pre-seal pass — recorded, not carried silently; both moot while the
+path is dormant at 0.64%):** (1) the adjudicated rate is a POINT
+ESTIMATE (bound × labelled-FP share); if adjudication ever becomes the
+live acceptance basis, the gate moves to an UPPER CONFIDENCE BOUND of
+the FP share, not the point estimate. (2) The labelled sample's counts
+and digest are self-reported at validate time (the sample never ships);
+integrity rests on the labelling actually happening and the sample
+being retained for the digest-pointed audit — a stated trust boundary,
+by design.
+
 The standing rule, unchanged: before this spec is accepted, the
 lexicon's false-positive rate is MEASURED on the existing extraction
 cache (research's corpus, counts
