@@ -2173,4 +2173,20 @@ CLOSURES = [
      "witness in the standing regression at the real entry point",
      "$PY -m pytest tests/test_0011_mutant_registry.py::"
      "test_out_of_tree_paths_refuse_before_any_read -q -p no:randomly"),
+    # ---- 0011 external round 15 (2026-08-29) — the property's base case.
+    ("0011", "external", 15, "0011-PROCESS-R15-1",
+     "the snapshot pre-scan proved no-symlinks for every node BENEATH "
+     "the copied roots and not for src/tests/specs themselves — "
+     "is_dir() follows links, os.walk walks a symlinked top, copytree "
+     "dereferences it wholesale (executed: top-level tests as a link to "
+     "an external dir, sentinel copied in); a symlinked conftest.py was "
+     "silently omitted rather than refused",
+     "each copy root is is_symlink-checked BEFORE is_dir or any walk; "
+     "symlinked and broken-symlink configuration carriers refuse with "
+     "the error posture; the standing regression drives all three "
+     "top-level roots plus both carrier shapes with an external "
+     "sentinel proving nothing is copied",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_a_symlinked_copy_root_or_config_carrier_refuses "
+     "-q -p no:randomly"),
 ]

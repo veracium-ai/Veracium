@@ -769,3 +769,37 @@ def test_a_symlink_in_the_campaign_tree_refuses_before_any_copy(tmp_path):
     verified, problems = MR.execute((MR.ENTRIES[0],), root=tmp_path)
     assert any("symlink in the campaign tree" in p and "archives" in p
                for p in problems), problems
+
+
+def test_a_symlinked_copy_root_or_config_carrier_refuses(tmp_path):
+    """PROCESS-R15-1: the pre-scan checked every node BENEATH the copied
+    roots and not the roots themselves — is_dir() follows symlinks,
+    os.walk() walks a symlinked top even with followlinks=False, and
+    copytree then dereferences it wholesale (the reviewer's executed
+    counterexample: top-level tests → external dir, sentinel copied in).
+    The recursion-base case of the round-14 property. Each copy root is
+    is_symlink-checked BEFORE is_dir/walk; a symlinked (or
+    broken-symlink) config carrier likewise REFUSES rather than being
+    silently omitted, since omission would quietly change what the
+    campaign's pytest runs under."""
+    ext = tmp_path / "external"
+    ext.mkdir()
+    (ext / "SENTINEL.py").write_text("EXTERNAL = 1\n")
+    for d in ("src", "tests", "specs"):
+        root = tmp_path / f"root_{d}"
+        root.mkdir()
+        (root / d).symlink_to(ext)
+        verified, problems = MR.execute((MR.ENTRIES[0],), root=root)
+        assert verified == dict(clean={}, kills=[], leave_one_out=[]), d
+        assert any("symlink in the campaign tree" in p and f"root_{d}" in p
+                   for p in problems), (d, problems)
+        assert any("before any copy" in p for p in problems), (d, problems)
+    # config carriers: linked and BROKEN-linked both refuse, never omit
+    for target in ("/etc/passwd", "/nonexistent-target"):
+        root = tmp_path / f"root_cfg_{target.strip('/').replace('/', '_')}"
+        root.mkdir()
+        (root / "conftest.py").symlink_to(target)
+        verified, problems = MR.execute((MR.ENTRIES[0],), root=root)
+        assert verified["kills"] == []
+        assert any("configuration carrier" in p for p in problems), (
+            target, problems)

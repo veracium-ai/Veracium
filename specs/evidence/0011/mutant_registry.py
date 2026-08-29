@@ -655,9 +655,16 @@ def _run_node(node, root) -> tuple:
     cache = tempfile.mkdtemp(prefix="veracium-mutant-pyc-")
     env["PYTHONPYCACHEPREFIX"] = cache
     try:
+        # research (round-15 pass): pytest's default rootdir/confcutdir
+        # resolution DOES land at the snapshot and bounds conftest
+        # discovery there — verified empirically with a planted parent
+        # conftest — but that closure is by-configuration. Pinning both
+        # makes it by-construction, the arc's own standard against
+        # agreement by coincidence (a parent-dir conftest would be code
+        # execution, not just a read).
         r = subprocess.run(
             [sys.executable, "-m", "pytest", node, "-q", "-p",
-             "no:randomly"],
+             "no:randomly", f"--rootdir={root}", f"--confcutdir={root}"],
             cwd=root, capture_output=True, text=True, env=env)
     finally:
         shutil.rmtree(cache, ignore_errors=True)
@@ -708,6 +715,18 @@ def _snapshot(root) -> str:
     # before any copy, so nothing is read through it.
     for d in ("src", "tests", "specs"):
         base = rp / d
+        # PROCESS-R15-1: the ROOT of each copied dir is a node of the
+        # scanned tree too — is_dir() follows symlinks, os.walk() walks a
+        # symlinked top even with followlinks=False, and copytree then
+        # dereferences it, so a symlinked src/tests/specs was an
+        # unguarded read of an entire external tree. The recursion-base
+        # case of the round-14 property, checked BEFORE is_dir/walk.
+        if base.is_symlink():
+            raise RuntimeError(
+                f"symlink in the campaign tree: {base} — a symlinked "
+                f"copy root would be dereferenced wholesale (reading an "
+                f"external tree); a symlink here is anomalous and "
+                f"refuses")
         if not base.is_dir():
             continue
         for dirpath, dirnames, filenames in _os.walk(base,
@@ -732,7 +751,15 @@ def _snapshot(root) -> str:
     for name in ("conftest.py", "pyproject.toml", "pytest.ini",
                  "setup.cfg", "setup.py"):
         f = rp / name
-        if f.is_file() and not f.is_symlink():
+        # PROCESS-R15-1: a symlinked (or broken-symlink) config carrier
+        # REFUSES rather than being silently omitted — silent omission
+        # would quietly change what the campaign's pytest runs under
+        if f.is_symlink():
+            raise RuntimeError(
+                f"symlink in the campaign tree: {f} — a symlinked "
+                f"configuration carrier refuses rather than being "
+                f"silently dropped from the snapshot")
+        if f.is_file():
             shutil.copy2(f, snap)
     for d in ("src", "tests", "specs"):
         f = rp / d

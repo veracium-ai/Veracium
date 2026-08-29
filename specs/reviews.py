@@ -1404,6 +1404,49 @@ REVIEWS = [
          "134ac687427d12f386659443642bc2e3abd74560db2af46527b99d3c"
          "4727926c, commit be16daa", findings=0),
 
+    dict(spec="0011", round=15, kind="external", date="2026-08-29",
+         raised=["0011-PROCESS-R15-1"],
+         verdict="RETURN EXACT v15 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; PROCESS-R14-1 confirmed closed "
+         "on its requested surface (named refusals, no traceback, no "
+         "campaign, both carriers; _identity degrades without reading; "
+         "both amendment tests pass); no policy or trust-model defect "
+         "(package `0011-v15`, sha 134ac687 verified; archive safety 513 "
+         "members; focused 41; collected-header 22; spec gate 88/5; "
+         "selfcheck 8; extracted 1877/22 reconciling with sealed 1891/8 "
+         "over 1,899 tests; 225-command transcript). PROCESS-R15-1: the "
+         "snapshot pre-scan misses SYMLINKED COPY ROOTS — it checks "
+         "beneath src/tests/specs but not the directories themselves; "
+         "is_dir() follows symlinks and os.walk(top, followlinks=False) "
+         "still walks a symlink supplied as its root, so copytree "
+         "dereferences it. Executed: top-level tests → external dir, not "
+         "refused, external sentinel copied; same for src; the shipped "
+         "regression passes because it plants only descendant links. "
+         "Required: base.is_symlink() before is_dir() and before walk "
+         "for each copied root; symlinked or broken-symlink config "
+         "carriers refuse rather than silently omit; the standing "
+         "regression extended to all three top-level roots requiring "
+         "refusal before snapshot creation or target access",
+         findings=1),
+
+    dict(spec="0011", round=16, kind="external", date="2026-08-29",
+         verdict="SENT (package `0011-v16`, candidate draft v19 — the "
+         "round-15 fold; §25 maps the finding). PROCESS-R15-1 closed as "
+         "the recursion-base case of the round-14 property: each copy "
+         "root is is_symlink-checked BEFORE is_dir or any walk, and a "
+         "symlinked or broken-symlink configuration carrier REFUSES "
+         "(error posture, round 14's) instead of being silently omitted "
+         "— omission would quietly change what the campaign's pytest "
+         "runs under. The standing regression drives all three top-level "
+         "roots as links to an external sentinel directory (refusal "
+         "before snapshot creation, sentinel never copied) plus linked "
+         "and broken-linked config carriers. Research confirmed the "
+         "node-class enumeration complete (parent-conftest discovery "
+         "bounded — now pinned by-construction with explicit "
+         "--rootdir/--confcutdir; hard links git-uncarriable; "
+         "ROOT-symlink and FIFO/device environmental, scoped out in "
+         "§25). Sealed AFTER this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],
