@@ -1,0 +1,13 @@
+{
+ "schema": 4,
+ "lexicon_version": "0026-lex-10",
+ "fires": 120,
+ "sealed_archive": "0026-v0-20260101T0000Z.tar.gz",
+ "sample": {
+  "size": 120,
+  "seed": 139668162341203
+ },
+ "verdict": "accept",
+ "aggregate_sha256": "b4d1e6293de76f5736e0d00b193c2fd45e8b3737c0f0295aaa8665c45e63eeb4",
+ "sample_sha256": "9caeb6449cfe690b41ea5c43af6aee1f0e91a4eeeca1b6e11670f5c4bea34c1b"
+}

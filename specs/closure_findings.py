@@ -2495,7 +2495,8 @@ CLOSURES = [
      "decision used a point estimate",
      "schema 3 is RECORD-BOUND, data to data: the aggregate ships "
      "fire_digests (a content-free digest per fire), the labelled "
-     "sample is a shipped manifest whose bytes are hashed against "
+     "sample is an on-disk record-bound manifest (live only over-gate; "
+     "a worked synthetic example ships) whose bytes are hashed against "
      "sample_sha256, membership and uniqueness are checked against the "
      "population, the counts are DERIVED by counting labels (no count "
      "carriers exist to lie), and accept requires bound x Wilson-95 "
@@ -2558,4 +2559,56 @@ CLOSURES = [
      "renderings",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_renderers_agree_with_independent_oracles -q -p no:randomly"),
+    ("0026", "external", 5, "0026-EVIDENCE-R5-1",
+     "the 'canonical' seed hashed the ENTIRE host-produced aggregate, "
+     "so a decision-irrelevant field was a NONCE: varying only "
+     "suppressed_by_direction_only swung the draw from 167/500 FP "
+     "(accepted) to 232/500 (refused) — seed-shopping survived, face "
+     "seven of the selection-freedom class",
+     "the seed basis LEAVES the aggregate: external and "
+     "post-commitment, derived from the sealed archive's committed "
+     "sha256 sidecar (schema 4: sealed_archive joins the record; name "
+     "grammar checked before any path is built; the aggregate-archive "
+     "pairing is the reviewer's extraction check, stated as protocol); "
+     "nonce-invariance, missing-witness and traversal-name cells stand",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 5, "0026-R5-1",
+     "render_2c_row hard-coded its text BESIDE the matrix while the "
+     "spec claimed both carriers were generated from it — a mutated "
+     "matrix regenerated §3d, §2c stayed contradictory, the binder "
+     "returned clean (the name-vs-behavior class)",
+     "every mode-dependent §2c clause is PROJECTED from the matrix "
+     "rows' own operative text; the source-level mutation test drives "
+     "a changed outcome through BOTH renderings and both binder halves",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_import_matrix_carriers_move_together -q -p no:randomly"),
+    ("0026", "external", 5, "0026-PACKAGE-R5-1",
+     "the spec and ledger said the adjudication manifest was SHIPPED "
+     "and 'now EXISTS' while the archive contained neither artifact — "
+     "no live adjudication can exist under-gate; the claim overstated "
+     "a dormant path",
+     "every carrier corrected VISIBLY (the construction ships; live "
+     "artifacts materialize over-gate), and the worked clearly-"
+     "synthetic end-to-end example ships in adjudication_example/ and "
+     "is validated from disk by a standing test",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_worked_adjudication_example_validates_from_disk "
+     "-q -p no:randomly"),
+    ("0026", "external", 5, "0026-EVIDENCE-R5-2",
+     "doc_problems hard-coded the 3,898 coverage denominator — a "
+     "9,999 denominator (internally valid, spec block regenerated) "
+     "validated clean everywhere while the doc still said 3,898",
+     "the doc needle derives numerator, denominator AND percentage "
+     "from the aggregate; the reviewer's denominator mutation is a "
+     "standing cell",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 5, "0026-EVIDENCE-R5-3",
+     "a correctly hash-bound manifest containing invalid UTF-8 raised "
+     "an uncaught UnicodeDecodeError instead of a structured refusal",
+     "both adjudication files return structured refusals on decode "
+     "failure, with a standing cell for each",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
 ]

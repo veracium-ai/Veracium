@@ -63,6 +63,9 @@ def main() -> int:
     ap.add_argument("--aggregate", metavar="PATH",
                     help="VERIFY a shipped aggregate instead of measuring")
     ap.add_argument("--emit-aggregate", metavar="PATH")
+    ap.add_argument("--archive", default=None,
+                    help="sealed archive name whose committed sidecar "
+                         "sha seeds the labelling draw (--sample)")
     ap.add_argument("--sample", type=int, default=0,
                     help="draw N fires for labelling (printed, never written "
                          "to the aggregate — they are corpus content)")
@@ -197,13 +200,23 @@ def main() -> int:
     report(agg)
 
     if a.sample and sample_pool:
+        if not a.archive:
+            print("\n--sample needs --archive <sealed 0026 archive "
+                  "name>: the seed is POST-COMMITMENT, derived from the "
+                  "sealed archive's committed sha256 sidecar "
+                  "(0026-EVIDENCE-R5-1) — measure, seal, then draw")
+            return 1
         size = canonical_size(fires)
-        seed = canonical_seed(agg)
-        drawn = canonical_draw(agg, size)
+        seed, prob = seed_from_archive(a.archive)
+        if prob:
+            print(prob, file=sys.stderr)
+            return 1
+        drawn = canonical_draw(agg, size, seed)
         kind = "CENSUS" if size == fires else "draw"
         print(f"\n--- the CANONICAL {size}-fire {kind} for LABELLING "
-              f"(size and seed both derived, neither choosable); "
-              f"corpus content, never written ---")
+              f"(size derived; seed {seed} from {a.archive}'s witnessed "
+              f"sha — neither choosable); corpus content, never "
+              f"written ---")
         for rel, note, obj, hits, digest in [
                 t for t in sample_pool if t[4] in drawn]:
             print(f"  [{','.join(hits)}] rel={rel} fire={digest}")
@@ -217,18 +230,49 @@ def main() -> int:
 _PEER = HERE.parent / "0011" / "subject_aggregate.json"
 
 
-def canonical_seed(agg) -> int:
-    """0026-I7-1 (research's round-4 pre-seal BLOCKING find): the sample
-    DRAW must not be host-choosable. Wilson-95 bounds a RANDOM sample;
-    over a hand-SELECTED one it guarantees nothing — a host could ship
-    any >=50 real fires it liked, label the cleanest honestly, and void
-    the gate. The seed is CANONICAL now — derived from the aggregate's
-    own canonical bytes — so neither the draw nor the seed admits
-    shopping: the validator re-draws and requires the manifest to label
-    EXACTLY the drawn set. After this, the residual trust boundary is
-    the per-fire LABELS, which is where it belongs."""
-    agg_bytes = (json.dumps(agg, sort_keys=True, indent=1) + "\n").encode()
-    return int(hashlib.sha256(agg_bytes).hexdigest()[:12], 16)
+_ARCHIVE_NAME = re.compile(r"0026-v\d+-\d{8}T\d{4}Z\.tar\.gz")
+_ARCHIVES_DIR = HERE.parents[1] / "archives"
+
+
+def seed_from_archive(sealed_archive: str, archives_dir=None):
+    """0026-EVIDENCE-R5-1 (the selection-freedom class, face seven): the
+    round-4 'canonical' seed hashed the ENTIRE host-produced aggregate,
+    so any field the decision never reads — the reviewer drove
+    suppressed_by_direction_only — was a NONCE: vary it, hold the
+    population and labels fixed, and shop the draw (167/500 FP accepted
+    vs 232/500 refused, executed). The lesson generalizes: any
+    host-produced byte in the seed basis is a nonce.
+
+    The seed is EXTERNAL and POST-COMMITMENT now: it derives from the
+    committed sha256 sidecar of the SEALED ARCHIVE that first shipped
+    this aggregate. That value does not exist until the package is
+    sealed (so it cannot be iterated during measurement), and resealing
+    to shop it is a ledgered, witnessed act — IN_FLIGHT declares it,
+    the INDEX and the reviewer's lineage check see it. The validator
+    binds what is mechanically bindable in-repo: the name grammar, the
+    sidecar's existence, and seed == the witnessed sha; that the named
+    archive really contained THIS aggregate is the reviewer's
+    extraction check at re-review, stated in §6a as protocol.
+
+    Returns (seed, problem): exactly one is None. Name grammar is
+    checked BEFORE any path is built (membership-first — the 0011
+    round-14 lesson: no filesystem access for an out-of-grammar name).
+    """
+    if (type(sealed_archive) is not str
+            or not _ARCHIVE_NAME.fullmatch(sealed_archive)):
+        return None, (f"sealed_archive {sealed_archive!r} does not match "
+                      f"this line's archive-name grammar — refused before "
+                      f"any path is built")
+    d = pathlib.Path(archives_dir) if archives_dir else _ARCHIVES_DIR
+    sidecar = d / f"{sealed_archive}.sha256"
+    if not sidecar.is_file():
+        return None, (f"no committed sha256 sidecar for {sealed_archive} "
+                      f"— the seed must come from a SEALED, witnessed "
+                      f"archive (post-commitment; 0026-EVIDENCE-R5-1)")
+    tok = sidecar.read_text().split()[0] if sidecar.read_text().split() else ""
+    if not re.fullmatch(r"[0-9a-f]{64}", tok):
+        return None, f"the sidecar for {sealed_archive} is malformed"
+    return int(tok[:12], 16), None
 
 
 # 0026-I7-1 addendum (research's co-verify): size itself was the last
@@ -247,10 +291,10 @@ def canonical_size(fires: int) -> int:
     return fires if fires <= CENSUS_LIMIT else CENSUS_LIMIT
 
 
-def canonical_draw(agg, size: int) -> set:
+def canonical_draw(agg, size: int, seed: int) -> set:
     """The one legitimate labelled-sample membership for this aggregate
-    at this size: seeded by canonical_seed over the sorted digest list."""
-    rng = random.Random(canonical_seed(agg))
+    at this size: the post-commitment seed over the sorted digest list."""
+    rng = random.Random(seed)
     return set(rng.sample(sorted(agg["fire_digests"]), size))
 
 
@@ -269,7 +313,8 @@ def _wilson_upper(fp: int, n: int, z: float = 1.959964) -> float:
     return min(1.0, (centre + spread) / denom)
 
 
-def _validate_adjudication(adj, agg, pct, sample_path) -> list:
+def _validate_adjudication(adj, agg, pct, sample_path,
+                           archives_dir=None) -> list:
     """The labelling verdict that alone may carry an over-gate record —
     RECORD-BOUND and DERIVED, not narrated (0026-EVIDENCE-R4-1, the
     signature defect's sixth face: schema 2 accepted true_positive=100 /
@@ -277,7 +322,9 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     sample_sha256 was regex-checked but never opened or hashed). Schema 3
     closes the class structurally — the check compares data to data:
 
-      * the labelled sample is a SHIPPED artifact
+      * the labelled sample is an ON-DISK artifact (live only when the
+        gate is exceeded; the shipped worked example is synthetic —
+        0026-PACKAGE-R5-1)
         (fp_adjudication_sample.jsonl beside the adjudication record):
         one line per labelled fire, {"fire": <sha256>, "label": "tp"|"fp"};
       * `sample_sha256` is the digest OF THAT FILE's bytes — the verifier
@@ -299,7 +346,7 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
         return ["fp_adjudication.json is empty or not an object — a "
                 "stub file is not a labelling verdict"]
     TOP = {"schema": int, "lexicon_version": str, "fires": int,
-           "sample": dict, "verdict": str,
+           "sealed_archive": str, "sample": dict, "verdict": str,
            "aggregate_sha256": str, "sample_sha256": str}
     missing = sorted(set(TOP) - set(adj))
     unknown = sorted(set(adj) - set(TOP))
@@ -313,10 +360,11 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                        f"expected {ty.__name__}")
     if out:
         return out
-    if adj["schema"] != 3:
-        out.append(f"adjudication schema {adj['schema']!r} is not 3 "
-                   f"(the record-bound derived-count rule is a shape "
-                   f"change — 0026-EVIDENCE-R4-1)")
+    if adj["schema"] != 4:
+        out.append(f"adjudication schema {adj['schema']!r} is not 4 "
+                   f"(the post-commitment external seed is a shape "
+                   f"change — 0026-EVIDENCE-R5-1; the record-bound "
+                   f"derived-count rule was schema 3)")
     if adj["lexicon_version"] != agg["lexicon_version"]:
         out.append(f"adjudication is for lexicon "
                    f"{adj['lexicon_version']!r}, the aggregate is "
@@ -349,11 +397,17 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                    f"was the last host-chosen selection input and each "
                    f"size is a different draw (0026-I7-1 addendum: "
                    f"size-shopping closed structurally)")
-    if smp["seed"] != canonical_seed(agg):
-        out.append(f"adjudication seed {smp['seed']} is not this "
-                   f"aggregate's CANONICAL seed {canonical_seed(agg)} — "
-                   f"the draw is not host-choosable (0026-I7-1: a "
-                   f"selected sample voids the Wilson bound)")
+    want_seed, prob = seed_from_archive(adj["sealed_archive"],
+                                        archives_dir)
+    if prob:
+        out.append(prob)
+    elif smp["seed"] != want_seed:
+        out.append(f"adjudication seed {smp['seed']} is not the "
+                   f"POST-COMMITMENT seed {want_seed} derived from "
+                   f"{adj['sealed_archive']}'s committed sha256 sidecar "
+                   f"— the draw is not host-choosable, and no "
+                   f"host-produced byte enters the seed basis "
+                   f"(0026-EVIDENCE-R5-1)")
     if out:
         return out
     # THE MANIFEST — opened, hashed, membership-checked, counted
@@ -371,8 +425,13 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     population = set(agg["fire_digests"])
     seen, tp, fp = set(), 0, 0
     import re as _re
-    for i, line in enumerate(raw.decode("utf-8",
-                                        errors="strict").splitlines(), 1):
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        return [f"{sample_path.name} is not valid UTF-8 ({exc}) — a "
+                f"structured refusal, never a crash "
+                f"(0026-EVIDENCE-R5-3)"]
+    for i, line in enumerate(text.splitlines(), 1):
         if not line.strip():
             continue
         try:
@@ -398,7 +457,7 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     if len(seen) != smp["size"]:
         return [f"the manifest labels {len(seen)} fires but the record "
                 f"says size={smp['size']} — the carriers disagree"]
-    if seen != canonical_draw(agg, smp["size"]):
+    if seen != canonical_draw(agg, smp["size"], want_seed):
         return [f"the manifest does not label the CANONICAL seeded draw "
                 f"for this aggregate — a host-selected sample voids the "
                 f"Wilson bound (0026-I7-1); label exactly the fires "
@@ -430,7 +489,7 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     return []
 
 
-def validate_aggregate(agg, adj_path=None) -> list:
+def validate_aggregate(agg, adj_path=None, archives_dir=None) -> list:
     """0026-EVIDENCE-R1-1: a CLOSED typed schema, and the cache manifest
     cross-checked against the 0011/0025 subject aggregate — same cache,
     different script, ships beside this one. A fabricated manifest has to
@@ -561,7 +620,8 @@ def validate_aggregate(agg, adj_path=None) -> list:
                 # VALIDATED, and BOUND to this aggregate.
                 try:
                     a_ = json.loads(adj.read_text())
-                except (OSError, json.JSONDecodeError) as exc:
+                except (OSError, UnicodeDecodeError,
+                        json.JSONDecodeError) as exc:
                     a_ = None
                     out.append(f"fp_adjudication.json is unreadable or "
                                f"not JSON ({exc}) — an over-gate record "
@@ -569,7 +629,8 @@ def validate_aggregate(agg, adj_path=None) -> list:
                 if a_ is not None:
                     out.extend(_validate_adjudication(
                         a_, agg, pct,
-                        adj.with_name("fp_adjudication_sample.jsonl")))
+                        adj.with_name("fp_adjudication_sample.jsonl"),
+                        archives_dir))
 
     # the cross-artifact anchor: the 0011/0025 subject aggregate was
     # derived from the SAME cache by a different script
@@ -609,8 +670,11 @@ def doc_problems(agg, doc_text: str) -> list:
          "the shipped column of the pass table (fires)"),
         (rf"\| \*\*{g['suppressed_by_direction_only']:,}\*\* \|$",
          "the shipped column of the pass table (suppressed)"),
-        (rf"\| {agg['coverage']['matched_by_lexicon']:,} / 3,898 = ",
-         "the shipped column of the pass table (coverage)"),
+        (rf"\| {agg['coverage']['matched_by_lexicon']:,} / "
+         rf"{agg['coverage']['with_nonempty_note']:,} = "
+         rf"\*\*{100.0 * agg['coverage']['matched_by_lexicon'] / agg['coverage']['with_nonempty_note']:.1f}%\*\* \|$",
+         "the shipped column of the pass table (coverage, denominator "
+         "DERIVED — 0026-EVIDENCE-R5-2)"),
         (rf"matches \*\*{agg['coverage']['matched_by_lexicon']:,} of ",
          "the coverage prose figure"),
     )

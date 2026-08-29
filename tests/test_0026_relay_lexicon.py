@@ -606,32 +606,51 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
             (json.dumps(a, sort_keys=True, indent=1) + "\n").encode()
         ).hexdigest()
 
-    def _adj_on_disk(name, adj, manifest_lines):
+    # 0026-EVIDENCE-R5-1: the seed is POST-COMMITMENT — derived from a
+    # sealed archive's committed sha sidecar, never from the aggregate.
+    # The test's witness dir holds one demo sidecar (v0 cannot collide
+    # with a real seal).
+    ARCH = "0026-v0-20260101T0000Z.tar.gz"
+    arch_dir = tmp_path / "witness"
+    arch_dir.mkdir()
+    import hashlib as _hl0
+    (arch_dir / f"{ARCH}.sha256").write_text(
+        _hl0.sha256(b"demo-archive").hexdigest() + f"  {ARCH}\n")
+    SEED = MF.seed_from_archive(ARCH, archives_dir=arch_dir)[0]
+
+    def _adj_on_disk(name, adj, manifest_lines, raw_bytes=None):
         """One adjudication record + its sibling manifest in a private
         dir — the validator derives the manifest path from the record's."""
         d = tmp_path / name
         d.mkdir()
         sp = d / "fp_adjudication_sample.jsonl"
-        raw = "".join(json.dumps(r) + "\n" for r in manifest_lines)
-        sp.write_text(raw)
-        adj = dict(adj, sample_sha256=_hl.sha256(raw.encode()).hexdigest())
+        raw = (raw_bytes if raw_bytes is not None else
+               "".join(json.dumps(r) + "\n"
+                       for r in manifest_lines).encode())
+        sp.write_bytes(raw)
+        adj = dict(adj, sample_sha256=_hl.sha256(raw).hexdigest())
         ap = d / "fp_adjudication.json"
         ap.write_text(json.dumps(adj))
         return ap
+
+    def _validate(over_, ap):
+        return MF.validate_aggregate(over_, adj_path=ap,
+                                     archives_dir=arch_dir)
 
     pop = over["fire_digests"]
     # 0026-I7-1 + addendum: the ONE legitimate sample is the canonical
     # SIZE's canonical seeded draw — the test labels exactly that set
     SZ = MF.canonical_size(over["grounded_first_person"]["fires"])
     assert SZ == MF.CENSUS_LIMIT      # 3423 fires -> the fixed cap
-    drawn = sorted(MF.canonical_draw(over, SZ))
+    drawn = sorted(MF.canonical_draw(over, SZ, SEED))
     n_fp = 60                          # 500-draw: 60 fp for later cells
     good_labels = ([{"fire": f, "label": "tp"} for f in drawn[n_fp:]]
                    + [{"fire": f, "label": "fp"} for f in drawn[:n_fp]])
-    good_adj = dict(schema=3,
+    good_adj = dict(schema=4,
                     lexicon_version=over["lexicon_version"],
                     fires=over["grounded_first_person"]["fires"],
-                    sample=dict(size=SZ, seed=MF.canonical_seed(over)),
+                    sealed_archive=ARCH,
+                    sample=dict(size=SZ, seed=SEED),
                     verdict="accept",
                     aggregate_sha256=_agg_digest(over))
     # 0026-EVIDENCE-R4-1, the reviewer's EXACT bypass: schema-2 carried
@@ -641,22 +660,20 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     bypass = dict(good_adj, schema=2,
                   sample=dict(size=SZ, seed=1, true_positive=100,
                               false_positive=-50))
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("bypass", bypass, good_labels))
-    assert any("not 3" in b for b in bad), bad
+    bad = _validate(over, _adj_on_disk("bypass", bypass, good_labels))
+    assert any("not 4" in b for b in bad), bad
     # counts smuggled into a schema-3 record refuse as unknown keys
     smuggle = dict(good_adj)
     smuggle["sample"] = dict(size=SZ, seed=1, true_positive=100,
                              false_positive=-50)
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("smuggle", smuggle, good_labels))
+    bad = _validate(over, _adj_on_disk("smuggle", smuggle, good_labels))
     assert any("DERIVED from the manifest" in b for b in bad), bad
     # a digest that points at NOTHING is not a binding
     d = tmp_path / "dangling"
     d.mkdir()
     ap = d / "fp_adjudication.json"
     ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32)))
-    bad = MF.validate_aggregate(over, adj_path=ap)
+    bad = _validate(over, ap)
     assert any("points at nothing" in b for b in bad), bad
     # a manifest whose bytes do not hash to sample_sha256 refuses
     d = tmp_path / "wronghash"
@@ -664,24 +681,21 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     (d / "fp_adjudication_sample.jsonl").write_text("")
     ap = d / "fp_adjudication.json"
     ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32)))
-    bad = MF.validate_aggregate(over, adj_path=ap)
+    bad = _validate(over, ap)
     assert any("some other sample" in b for b in bad), bad
     # a sample drawn from thin air (fires outside the population) refuses
     fake = [{"fire": _hl.sha256(f"fake{i}".encode()).hexdigest(),
              "label": "fp"} for i in range(SZ)]
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("thinair", good_adj, fake))
+    bad = _validate(over, _adj_on_disk("thinair", good_adj, fake))
     assert any("thin air" in b for b in bad), bad
     # research's BLOCKING find, the hand-picked sample: 50 REAL fires,
     # honest-looking labels, right size — but NOT the canonical draw.
     # Wilson bounds a random sample; a selected one voids the gate.
     picked = [{"fire": f, "label": "tp"} for f in pop[:SZ]]
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("picked", good_adj, picked))
+    bad = _validate(over, _adj_on_disk("picked", good_adj, picked))
     assert any("CANONICAL seeded draw" in b for b in bad), bad
     # a non-canonical seed value refuses before the draw is even checked
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "seedshop", dict(good_adj, sample=dict(size=SZ, seed=1)),
             good_labels))
     assert any("not host-choosable" in b for b in bad), bad
@@ -689,33 +703,28 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # honestly-labelled sample at a NON-canonical size refuses — each
     # size is a different draw, so size was a selection input too
     sz2 = 259
-    drawn2 = sorted(MF.canonical_draw(over, sz2))
+    drawn2 = sorted(MF.canonical_draw(over, sz2, SEED))
     shop = [{"fire": f, "label": "tp"} for f in drawn2]
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "sizeshop",
             dict(good_adj, sample=dict(size=sz2,
-                                       seed=MF.canonical_seed(over))),
+                                       seed=SEED)),
             shop))
     assert any("size-shopping closed structurally" in b for b in bad), bad
     # the same fire labelled twice refuses
     dbl = good_labels[:49] + [good_labels[0]]
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("double", good_adj, dbl))
+    bad = _validate(over, _adj_on_disk("double", good_adj, dbl))
     assert any("twice" in b for b in bad), bad
     # manifest line count vs the record's size: carriers must agree
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "sizedis", dict(good_adj), good_labels[:-1]))
     assert any("carriers disagree" in b for b in bad), bad
     # 0026-EVIDENCE-R3-1, the reviewer's round-3 case: a REJECT verdict
     # in free text passed. The enum + the computed decision refuse it:
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "rej", dict(good_adj, verdict="reject"), good_labels))
     assert any("REJECT" in b for b in bad), bad
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "freetext",
             dict(good_adj,
                  verdict="REJECT: the rate remains over the 2% gate"),
@@ -729,31 +738,26 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # Wilson-95 UCB 0.414 -> 2.07% refuses — the bound's cell
     atbar = ([{"fire": f, "label": "fp"} for f in drawn[:185]]
              + [{"fire": f, "label": "tp"} for f in drawn[185:]])
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("atbar", good_adj, atbar))
+    bad = _validate(over, _adj_on_disk("atbar", good_adj, atbar))
     assert any("Wilson-95" in b for b in bad), bad
     # a one-item sample is not labelling
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "tiny", dict(good_adj,
                          sample=dict(size=1,
-                                     seed=MF.canonical_seed(over))),
+                                     seed=SEED)),
             good_labels[:1]))
     assert any("not the\nCANONICAL size".replace("\n", " ") in b
                or "CANONICAL size" in b for b in bad), bad
     # a digest for some other aggregate cannot carry this one
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "wrongd", dict(good_adj, aggregate_sha256="0" * 64),
             good_labels))
     assert any("some other record" in b for b in bad), bad
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "stalelex", dict(good_adj, lexicon_version="0026-lex-999"),
             good_labels))
     assert any("stale verdict" in b for b in bad), bad
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk(
+    bad = _validate(over, _adj_on_disk(
             "stalefires", dict(good_adj, fires=good_adj["fires"] - 1),
             good_labels))
     assert any("different fires" in b for b in bad), bad
@@ -763,10 +767,52 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     ok_labels = ([{"fire": f, "label": "fp"} for f in drawn[:80]]
                  + [{"fire": f, "label": "tp"} for f in drawn[80:]])
     # 80 fp of 500: 5% x Wilson-upper(0.16 at n=500)=0.196 = 0.98% — alive
-    bad = MF.validate_aggregate(
-        over, adj_path=_adj_on_disk("good", good_adj, ok_labels))
+    bad = _validate(over, _adj_on_disk("good", good_adj, ok_labels))
     assert bad == [], ("a valid record-bound adjudication was refused",
                        bad)
+    # 0026-EVIDENCE-R5-1, the reviewer's NONCE cell: the seed basis is
+    # EXTERNAL now, so varying a decision-irrelevant aggregate field
+    # cannot move the draw (round 5 executed exactly this: suppressed_
+    # by_direction_only swung the draw from 167/500 fp accepted to
+    # 232/500 refused under the aggregate-derived seed)
+    nonce = copy.deepcopy(over)
+    nonce["grounded_first_person"]["suppressed_by_direction_only"] += 1
+    assert (MF.canonical_draw(over, SZ, SEED)
+            == MF.canonical_draw(nonce, SZ, SEED)), (
+        "the draw moved with a decision-irrelevant field — a nonce")
+    # and the seed itself must come from a SEALED witness: an archive
+    # name with no committed sidecar refuses; an out-of-grammar name
+    # refuses BEFORE any path is built
+    bad = _validate(over, _adj_on_disk(
+        "nowitness", dict(good_adj,
+                          sealed_archive="0026-v9-20260101T0000Z.tar.gz"),
+        good_labels))
+    assert any("post-commitment" in b for b in bad), bad
+    bad = _validate(over, _adj_on_disk(
+        "badname", dict(good_adj, sealed_archive="../../etc/passwd"),
+        good_labels))
+    assert any("archive-name grammar" in b for b in bad), bad
+    # 0026-EVIDENCE-R5-3: undecodable bytes are a STRUCTURED refusal,
+    # never a crash — for the manifest (hash-bound, invalid UTF-8)...
+    bad = _validate(over, _adj_on_disk(
+        "badutf8", good_adj, None, raw_bytes=b"\xff\xfe garbage"))
+    assert any("not valid UTF-8" in b for b in bad), bad
+    # ...and for the adjudication record itself
+    d = tmp_path / "badutf8adj"
+    d.mkdir()
+    (d / "fp_adjudication.json").write_bytes(b"\xff\xfe{}")
+    bad = _validate(over, d / "fp_adjudication.json")
+    assert any("unreadable or" in b for b in bad), bad
+    # 0026-EVIDENCE-R5-2: the doc's coverage DENOMINATOR is derived —
+    # a 9,999 denominator (kept internally valid) must bite the binder
+    den = copy.deepcopy(agg)
+    den["coverage"]["with_nonempty_note"] = 9999
+    den["coverage"]["third_party_claim_triples"] = 10000
+    doc_now = (ROOT / "specs" / "evidence" / "0026"
+               / "FP-MEASUREMENT.md").read_text()
+    assert MF.doc_problems(den, doc_now), (
+        "a mutated coverage denominator validated clean against the "
+        "doc — the binder is not deriving it (0026-EVIDENCE-R5-2)")
     # the CENSUS branch (I7-1 addendum): fires <= CENSUS_LIMIT means
     # size == fires, every fire labelled, and the EXACT share decides —
     # no seed freedom, no sampling variance, no Wilson
@@ -781,33 +827,29 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     cen["grounded_first_person"]["suppressed_markers"] = {}
     cen["fire_digests"] = sorted(
         _hl.sha256(f"cpop{i}".encode()).hexdigest() for i in range(120))
-    cen_adj = dict(schema=3, lexicon_version=cen["lexicon_version"],
-                   fires=120,
-                   sample=dict(size=120, seed=MF.canonical_seed(cen)),
+    cen_adj = dict(schema=4, lexicon_version=cen["lexicon_version"],
+                   fires=120, sealed_archive=ARCH,
+                   sample=dict(size=120, seed=SEED),
                    verdict="accept",
                    aggregate_sha256=_agg_digest(cen))
     pct_c = 100.0 * 120 / cen["grounded_first_person"]["total"]
     # exact share 0.65 of ~0.18%: 60 fp of 120 -> accept iff pct*share<=2
     half = ([{"fire": f, "label": "fp"} for f in cen["fire_digests"][:60]]
             + [{"fire": f, "label": "tp"} for f in cen["fire_digests"][60:]])
-    r = MF.validate_aggregate(
-        cen, adj_path=_adj_on_disk("census", cen_adj, half))
+    r = _validate(cen, _adj_on_disk("census", cen_adj, half))
     want_ok = pct_c * 0.5 <= 2.0
     assert (r == []) == want_ok, (pct_c, r)
     # and a census-sized record must actually be a census: size=119
     # (one fire unlabelled) refuses on the canonical size
-    r = MF.validate_aggregate(
-        cen, adj_path=_adj_on_disk(
+    r = _validate(cen, _adj_on_disk(
             "census_short",
-            dict(cen_adj, sample=dict(size=119,
-                                      seed=MF.canonical_seed(cen))),
+            dict(cen_adj, sample=dict(size=119, seed=SEED)),
             half[:119]))
     assert any("CANONICAL size" in b for b in r), r
     # census refusal branch: exact share that misses the gate refuses
     # with the exact-census basis named, never a Wilson bound
     all_fp = [{"fire": f, "label": "fp"} for f in cen["fire_digests"]]
-    r = MF.validate_aggregate(
-        cen, adj_path=_adj_on_disk("census_fp", cen_adj, all_fp))
+    r = _validate(cen, _adj_on_disk("census_fp", cen_adj, all_fp))
     assert any("exact census share" in b for b in r), r
 
 
@@ -921,7 +963,7 @@ def test_renderers_agree_with_independent_oracles():
     assert (len(default_malformed) == 1
             and "treated as absent" in default_malformed[0])
     row2c = IM.render_2c_row()
-    assert "restore: RAISES" in row2c and "treated as absent" in row2c, (
+    assert "restore: **RAISES" in row2c and "treated as absent" in row2c, (
         "§2c must state BOTH modes' malformed outcomes — the round-4 "
         "contradiction cell")
     # internal_reviewers_row: the count computed HERE from the ledger
@@ -936,3 +978,60 @@ def test_renderers_agree_with_independent_oracles():
     row = RV.internal_reviewers_row("0026")
     assert f"**{words.get(n, str(n))} internal rounds**" in row
     assert "READY FOR EXTERNAL" not in row
+
+
+def test_import_matrix_carriers_move_together(monkeypatch):
+    """0026-R5-1: round 4's render_2c_row hard-coded its text BESIDE the
+    matrix — a mutated matrix regenerated §3d while §2c stayed
+    contradictory and the binder returned clean. Both renderers PROJECT
+    the table now; this is the source-level mutation test: change a
+    MATRIX outcome and BOTH renderings must carry the change."""
+    import importlib
+    IM = importlib.import_module("import_matrix")
+    base_3d, base_2c = IM.render_3d_table(), IM.render_2c_row()
+    mutated = tuple(
+        (f, m, st,
+         "QUIETLY FLOORED INSTEAD" if (m == "restore" and "MALFORMED" in st)
+         else out)
+        for f, m, st, out in IM.MATRIX)
+    monkeypatch.setattr(IM, "MATRIX", mutated)
+    new_3d, new_2c = IM.render_3d_table(), IM.render_2c_row()
+    assert new_3d != base_3d and "QUIETLY FLOORED INSTEAD" in new_3d
+    assert new_2c != base_2c and "QUIETLY FLOORED INSTEAD" in new_2c, (
+        "the §2c rendering did not move with the mutated matrix — it is "
+        "not a projection (0026-R5-1)")
+    # and the shipped spec (rendered from the UNMUTATED table) now fails
+    # BOTH binder halves under the mutated module
+    spec = (ROOT / "specs" / "0026-label-value-agreement.md").read_text()
+    probs = IM.spec_matrix_problems(spec)
+    assert any("§3d" in p or "import-matrix" in p for p in probs)
+    assert any("§2c" in p for p in probs)
+
+
+def test_the_worked_adjudication_example_validates_from_disk():
+    """0026-PACKAGE-R5-1: the spec claimed the adjudication manifest was
+    a SHIPPED artifact while the archive contained none — the live path
+    is dormant (under-gate), so no live artifacts can exist. What SHIPS
+    is the construction plus this WORKED, clearly-synthetic example —
+    validated here from disk, end to end, through the real entry."""
+    import importlib
+    import json as _json
+    MF = importlib.import_module("measure_false_positives")
+    D = ROOT / "specs" / "evidence" / "0026" / "adjudication_example"
+    agg = _json.loads((D / "demo_aggregate.json").read_text())
+    assert MF.validate_aggregate(
+        agg, adj_path=D / "fp_adjudication.json", archives_dir=D) == []
+    # the example is honest about being synthetic: over-gate (the path
+    # exercised), census-sized (the exact-share branch), demo witness v0
+    g = agg["grounded_first_person"]
+    assert 100.0 * g["fires"] / g["total"] > 2.0
+    assert g["fires"] <= MF.CENSUS_LIMIT
+    adj = _json.loads((D / "fp_adjudication.json").read_text())
+    assert adj["sealed_archive"].startswith("0026-v0-"), (
+        "the demo witness must be v0 — real seals start at v1")
+    assert "SYNTHETIC" in (D / "README.md").read_text()
+    # and the SHIPPED live aggregate needs no adjudication: under-gate
+    live = _json.loads((ROOT / "specs" / "evidence" / "0026"
+                        / "fp_aggregate.json").read_text())
+    lg = live["grounded_first_person"]
+    assert 100.0 * lg["fires"] / lg["total"] <= 2.0

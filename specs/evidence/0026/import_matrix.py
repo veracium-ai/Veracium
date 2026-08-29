@@ -59,24 +59,50 @@ def render_3d_table() -> str:
             "<!-- /GENERATED:import-matrix -->")
 
 
+def _cell(mode: str, state_substr: str) -> str:
+    """The unique MATRIX outcome for (mode, state containing substr) —
+    the projection render_2c_row builds from, so §2c can only ever say
+    what the table says (0026-R5-1: the round-4 renderer hard-coded its
+    text BESIDE the table; a mutated matrix regenerated §3d while §2c
+    stayed contradictory and the binder returned clean — 'generated
+    from the one table' was a name the behavior did not match)."""
+    outs = [out for f, m, st, out in MATRIX
+            if m == mode and state_substr in st]
+    if len(outs) != 1:
+        raise LookupError(
+            f"MATRIX has {len(outs)} rows for mode={mode!r} "
+            f"state~{state_substr!r} — the projection needs exactly one")
+    return outs[0]
+
+
+def _head(outcome: str) -> str:
+    """The outcome's operative clause — the text before its rationale
+    dash — so the §2c cell embeds the matrix's own words verbatim."""
+    return outcome.split(" — ")[0]
+
+
 def render_2c_row() -> str:
     """The §2c untrusted-input row for the imported AgreementRecord,
-    generated FROM the same matrix: each §2c column carries the cell the
-    matrix actually decides (round 4 found the hand-written row had the
-    malformed rule under 'unrecognised' and a well-formed description
-    under 'malformed')."""
+    PROJECTED from MATRIX cell by cell: every mode-dependent clause is
+    the matrix row's own operative text, so editing the table moves
+    both renderings together (the source-level mutation test drives
+    exactly that)."""
+    default_malformed = _head(_cell("default", "MALFORMED"))
+    restore_malformed = _head(_cell("restore", "MALFORMED"))
+    default_any = _head(_cell("default", "any state"))
+    restore_valid = _head(_cell("restore", "VALID"))
     return (
         "| an imported `AgreementRecord` (§3d) "
-        "| absent → default recomputes; restore keeps it absent "
-        "| malformed → **default: treated as absent, recomputation "
-        "governs, counted; restore: RAISES, nothing written** — the two "
-        "modes DIFFER by design (generated with the §3d matrix from "
-        "`import_matrix.py`, the one carrier) "
-        "| foreign `lexicon` version → recomputation under the CURRENT "
-        "lexicon governs; incoming version diagnostic only "
-        "| forged markers on marker-free text → default discards by "
-        "recomputation; restore restores the (valid) record verbatim "
-        "with recomputation diagnostic-only "
+        "| absent → default mode: " + default_any + "; restore: "
+        + restore_valid + " (absent stays absent) "
+        "| malformed → default: " + default_malformed + "; restore: "
+        + restore_malformed + " — the two modes DIFFER by design "
+        "(PROJECTED with the §3d matrix from `import_matrix.py`, the "
+        "one carrier) "
+        "| foreign `lexicon` version → default mode: " + default_any
+        + " (incoming version diagnostic only) "
+        "| forged markers on marker-free text → default mode: "
+        + default_any + "; restore: " + restore_valid + " "
         "| **V6a**: default mode recomputes so a forged record cannot "
         "enter Q5's corpus; restore is 0005-P2-faithful for VALID "
         "fields only, with validation ordered BEFORE any write |")

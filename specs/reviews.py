@@ -2001,6 +2001,37 @@ REVIEWS = [
          "7d1314c4e13155add50ad31ea1125c414b931b6c36a297378701eed4"
          "3ca69107, commit d1b01a1", findings=0),
 
+    dict(spec="0026", round=5, kind="external", date="2026-08-29",
+         raised=["0026-EVIDENCE-R5-1", "0026-R5-1", "0026-PACKAGE-R5-1",
+                 "0026-EVIDENCE-R5-2", "0026-EVIDENCE-R5-3"],
+         verdict="RETURN FOR MAJOR AMENDMENT (package `0026-v5`, sha "
+         "7d1314c4 verified; 524 members; exact v4 predecessor; diff "
+         "reconciled incl. the 25 marked concurrent 0011 files; focused "
+         "0026 suite 82 passed; qualified offline suite reconciled). "
+         "THREE round-4 closures HOLD: lex-10, the §6a generated claim, "
+         "the ledger-derived header. EVIDENCE-R5-1 BLOCKING (the "
+         "selection-freedom class, face seven): canonical_seed hashes "
+         "the ENTIRE host-produced aggregate — varying only "
+         "suppressed_by_direction_only while holding population and "
+         "labels fixed swung the draw from 167/500 FP (accepted) to "
+         "232/500 FP (refused); an irrelevant field is a NONCE. R5-1 "
+         "BLOCKING: render_2c_row hard-codes its text beside MATRIX "
+         "instead of projecting its cells — a mutated matrix "
+         "regenerated §3d while §2c stayed contradictory and "
+         "spec_matrix_problems returned []; the 'generated from the one "
+         "table' claim did not match the code (the name-vs-behavior "
+         "class). PACKAGE-R5-1 BLOCKING: the spec and SENT ledger say "
+         "the adjudication manifest is SHIPPED and 'now EXISTS' but the "
+         "archive contains neither artifact — the under-gate aggregate "
+         "needs no adjudication, but the claim overstates a dormant "
+         "path. EVIDENCE-R5-2 MODERATE: doc_problems hard-codes the "
+         "3,898 coverage denominator instead of deriving it — a 9,999 "
+         "denominator validated clean everywhere while the doc still "
+         "said 3,898. EVIDENCE-R5-3 MODERATE: a hash-bound manifest "
+         "with invalid UTF-8 crashes the verifier with an uncaught "
+         "UnicodeDecodeError instead of a structured refusal",
+         findings=5),
+
     dict(spec="0026", round=7, kind="internal", date="2026-08-29",
          raised=["0026-I7-1", "0026-I7-2"],
          verdict="RETURN FOR AMENDMENT (research, round-4 pre-seal "
@@ -2025,6 +2056,32 @@ REVIEWS = [
          "same-day rather than fast-followed: size is canonical "
          "(census <= 500, else 500; census decides on the exact "
          "share)", findings=2),
+
+    dict(spec="0026", round=6, kind="external", date="2026-08-29",
+         candidate={"0026": "v9"},
+         verdict="SENT (package `0026-v6`, candidate draft v9 — the "
+         "round-5 fold; §15 maps all five findings; three round-4 "
+         "closures confirmed holding by the reviewer). EVIDENCE-R5-1 "
+         "closed by MOVING THE SEED BASIS OUT OF THE AGGREGATE: "
+         "external, post-commitment, derived from the sealed archive's "
+         "committed sha256 sidecar (schema 4; name grammar before any "
+         "path; the aggregate-archive pairing stated as the reviewer's "
+         "extraction check) — any host-produced byte in a selection "
+         "basis is a nonce, and the nonce-invariance cell stands. "
+         "R5-1 closed: §2c is a true PROJECTION of the one matrix "
+         "(every mode-dependent clause built from the rows' own "
+         "operative text) with the source-level co-movement mutation "
+         "standing. PACKAGE-R5-1 closed by VISIBLE CORRECTION: the "
+         "SHIPPED-manifest overclaim reworded in every carrier — the "
+         "construction ships, live artifacts materialize over-gate — "
+         "and the worked synthetic example "
+         "(adjudication_example/: demo aggregate, v0 witness, census "
+         "manifest, schema-4 record) ships and validates FROM DISK. "
+         "EVIDENCE-R5-2 closed: the doc's coverage "
+         "numerator/denominator/percentage all derived. EVIDENCE-R5-3 "
+         "closed: undecodable bytes are structured refusals in both "
+         "files. Sealed AFTER this row, sha pinned on return",
+         findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
