@@ -1698,6 +1698,92 @@ REVIEWS = [
          "co-verification row", findings=5),
 
     dict(spec="0026", round=2, kind="external", date="2026-08-29",
+         raised=["0026-R2-1", "0026-R2-2", "0026-R2-3",
+                 "0026-EVIDENCE-R2-1", "0026-PACKAGE-R2-1"],
+         verdict="RETURN FOR MAJOR AMENDMENT (package `0026-v2`, sha "
+         "497bf05e verified; 518 safe members; extracted 1959/22 "
+         "reconciling exactly with sealed 1973/8; the restrict-only "
+         "design remains promising, each round-1 closure has a material "
+         "seam). R2-1: the grammar still uses TOKEN PROXIMITY — 'the "
+         "doctor treating the user said' reads the modifier's object as "
+         "the subject; 'the doctor and the user said' loses the "
+         "determiner-separated co-source; a curly apostrophe tokenizes "
+         "'user\u2019s' into fragments and defeats every possessive rule; "
+         "the 53 hand cells stay green because they omit these shapes — "
+         "an explicit attachment/head construction and an exhaustive "
+         "matrix required. R2-2: portability contradicts ACCEPTED "
+         "contracts — §3d's ignore-unknown-key contradicts 0025's "
+         "format-bump-so-old-readers-refuse rule (a new-export -> "
+         "old-reader -> re-export cycle silently loses Q5's carrier), "
+         "and always-recompute-and-floor contradicts 0005 P2's "
+         "trust-field-faithful restore=True; the full {format era x "
+         "mode x field state x text} matrix required. R2-3: the "
+         "telemetry deferral is not carrier-complete — §3c still says "
+         "'consumed by telemetry from day one', §9 still names telemetry "
+         "a consumer, and the deferral test inspects §3d alone. "
+         "EVIDENCE-R2-1: the acceptance result is STILL not bound — "
+         "fires 481 -> 2,000 (2.92%, OVER the gate) verified as "
+         "'aggregate VALID' with all three aggregate tests passing; "
+         "FP-MEASUREMENT.md retains stale 0.61%/138/3.5%/'lex-3 is "
+         "shipped' passages beside the current result. PACKAGE-R2-1: "
+         "governance carriers disagree — closure_findings says "
+         "lex-3/32 cells/0.60% while the candidate ships lex-6/53/0.70%; "
+         "the v5 research pass exists only as SENT-row narration",
+         findings=5),
+
+    dict(spec="0026", round=3, kind="external", date="2026-08-29",
+         candidate={"0026": "v6"},
+         verdict="SENT (package `0026-v3`, candidate draft v6 — the "
+         "round-2 fold; §12 maps all five findings). R2-1 closed with "
+         "lex-7's HEAD CONSTRUCTION (forward clause reading, first noun "
+         "after determiners/possessives as head, post-head modifiers "
+         "inert whatever they name, coordinated co-heads determiners and "
+         "all, Unicode apostrophes normalized, relative pronouns as "
+         "modifier-openers) and the reviewer's requested GRAMMAR-ORACLE "
+         "CORPUS — generated from construction parameters with DERIVED "
+         "expectations, which caught two further defects during its own "
+         "construction (relative pronouns misfiled as breakers; the scan "
+         "window beheading long subjects); §6a re-measured 0.64% "
+         "(439/68,479) — the head construction IMPROVED the bound. R2-2 "
+         "closed mode-split: restore=True trust-field-faithful per 0005 "
+         "P2, default recomputes+floors, export rides a FORMAT_VERSION "
+         "bump per 0025 with the {format x mode x field} matrix in §3d. "
+         "R2-3 swept in every carrier with a whole-file occurrence test. "
+         "EVIDENCE-R2-1: the gate is part of validity (the fires=2,000 "
+         "tampering refuses absent an adjudication artifact, standing "
+         "test) and the measurement doc is mechanically bound to the "
+         "aggregate (a 219-vs-220 hand-typed figure was refused by the "
+         "artifact during the very sweep). PACKAGE-R2-1: closure figures "
+         "derive from one source; research's v5 pass recorded as "
+         "structured internal rounds 3-4. Sealed AFTER this row, sha "
+         "pinned on return", findings=0),
+
+    dict(spec="0026", round=3, kind="internal", date="2026-08-29",
+         raised=[],
+         verdict="RESEARCH PRE-SEAL RED-TEAM, question (a) — the "
+         "fp_aggregate false-PASS surface: CLEAN, verified at code (closed "
+         "typed schema, internal consistency, marker keys pinned to the "
+         "shipped lexicon, lexicon_version pin, the 0011 cross-artifact "
+         "manifest anchor refusing on absence AND mismatch; corpus-"
+         "dependent figures correctly RECORDED-ONLY). Recorded "
+         "structurally per 0026-PACKAGE-R2-1: the v5 internal history "
+         "previously lived only as SENT-row narration", findings=0),
+
+    dict(spec="0026", round=4, kind="internal", date="2026-08-29",
+         raised=["0026-I4-1"],
+         verdict="RESEARCH PRE-SEAL RED-TEAM, question (b) — BLOCKED the "
+         "v2 seal: the verb list omitted `claimed` (the name of the "
+         "relation 0024 quarantines) and high-frequency attribution "
+         "verbs; §6a measures FP only and every matrix inbound cell used "
+         "an in-list verb, so recall was unmeasured in two places at "
+         "once. FOLDED same-day (lex-5 verb classes with the "
+         "professional-judgment ruling; lex-6 homograph narrowing by "
+         "reading the fires; held recall cells + the claimed-removal "
+         "mutant; §8 scoped) and RE-VERIFIED at 5ccccae: seal stands. "
+         "The coverage-figure scoping (reach diagnostic, not recall) "
+         "rode the same pass", findings=1),
+
+    dict(spec="0026", round=2, kind="external", date="2026-08-29",
          candidate={"0026": "v5"},
          verdict="SENT (package `0026-v2`, candidate draft v5 — the "
          "round-1 fold; §11 maps all five findings; the restrict-only "

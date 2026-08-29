@@ -2250,11 +2250,15 @@ CLOSURES = [
      "(passive recipients as speakers, the post-verbal agent never "
      "consulted, embedded clauses inheriting the outer subject, "
      "she/he/they silently the user)",
-     "lex-3 is a directional grammar — agent governs, passive recipients "
-     "inert, clause-bounded subjects, ambiguous pronouns restrict with a "
-     "counted conservative outcome; the five counterexamples ride "
-     "verbatim in the 32-cell matrix plus a generated voice x identity x "
-     "clause cross-product; §6a re-measured at 0.60%, gate cleared",
+     "the shipped lexicon is a directional grammar — agent governs, "
+     "passive recipients inert, head-constructed subjects, ambiguous "
+     "pronouns restrict with a counted conservative outcome; the five "
+     "counterexamples ride verbatim in the hand matrix plus the "
+     "generated grammar oracle; the CURRENT figures (lexicon version, "
+     "cell count, rate) are DERIVED from fp_aggregate.json and "
+     "validate_lexicon.py, never restated here (0026-PACKAGE-R2-1: this "
+     "row once carried lex-3/32 cells/0.60% while the candidate shipped "
+     "lex-6/53/0.70% — one source now)",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_reviewers_five_counterexamples_verbatim "
      "tests/test_0026_relay_lexicon.py::test_relay_lexicon_mutation_matrix "
@@ -2314,4 +2318,68 @@ CLOSURES = [
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_structured_candidate_field_binds_to_the_package_record "
      "-q -p no:randomly"),
+    # ---- 0026 external round 2 (2026-08-29) — every seam closed at code.
+    ("0026", "external", 2, "0026-R2-1",
+     "the grammar still used token proximity: a modifier's object read "
+     "as the subject, a determiner-separated conjunct lost its "
+     "co-source, and a curly apostrophe defeated tokenization — the "
+     "hand cells stayed green because they omitted the shapes",
+     "lex-7 head construction (forward clause reading, post-head "
+     "modifiers inert, coordinated co-heads, Unicode normalization, "
+     "relative pronouns as modifier-openers) plus the GENERATED "
+     "grammar-oracle corpus with expectations derived from the "
+     "constructions; §6a re-measured, bound improved",
+     "$PY specs/evidence/0026/validate_lexicon.py"),
+    ("0026", "external", 2, "0026-R2-2",
+     "portability contradicted accepted contracts: ignore-unknown-key "
+     "vs 0025's format bump, and always-recompute-and-floor vs 0005 "
+     "P2's trust-field-faithful restore",
+     "mode-split import boundary (restore verbatim incl. disclosure, "
+     "recomputation diagnostic-only; default recomputes and floors) and "
+     "a FORMAT_VERSION bump on export, with the full format x mode x "
+     "field matrix in §3d",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_import_matrix_is_total_in_the_spec -q -p no:randomly"),
+    ("0026", "external", 2, "0026-R2-3",
+     "the telemetry deferral was not carrier-complete: §3c still said "
+     "'consumed by telemetry from day one', §9 still named telemetry a "
+     "consumer, and the deferral test inspected §3d alone",
+     "both carriers swept with visible correction notes; the test scans "
+     "EVERY carrier via a whole-file occurrence check that tolerates "
+     "only quoted sweep notes",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_telemetry_deferral_is_bound -q -p no:randomly"),
+    ("0026", "external", 2, "0026-EVIDENCE-R2-1",
+     "the acceptance result was still not bound: fires tampered to "
+     "2,000 (2.92%, over the 2% gate) verified as aggregate VALID, and "
+     "the measurement doc retained stale figures beside the current "
+     "result",
+     "the gate is part of aggregate validity (over-gate refuses absent "
+     "a separately validated adjudication artifact); the doc's shipped "
+     "figures are mechanically compared to the aggregate at the verify "
+     "entry point; a hand-typed 219-vs-220 coverage figure was refused "
+     "by the binder during the sweep itself",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 2, "0026-PACKAGE-R2-1",
+     "governance carriers disagreed: the closure row said lex-3/32 "
+     "cells/0.60% while the candidate shipped lex-6/53/0.70%, and the "
+     "v5 research pass existed only as SENT-row narration",
+     "closure measurement figures derive from the aggregate and "
+     "validator (one source); research's v5 pre-seal pass is recorded "
+     "as structured internal rounds 3 and 4",
+     "$PY specs/render_closure.py --check"),
+    # ---- 0026 internal round 4 (2026-08-29) — research's pre-seal FN find.
+    ("0026", "internal", 4, "0026-I4-1",
+     "the verb list omitted `claimed` (the name of the relation 0024 "
+     "quarantines) and high-frequency attribution verbs; §6a measures "
+     "FP only and every matrix inbound cell used an in-list verb, so "
+     "recall was unmeasured in two places at once",
+     "the assertion/transmission/professional-judgment verb classes "
+     "added with the professional-judgment ruling stated; nominal "
+     "homographs narrowed by reading the fires; held recall cells and "
+     "the claimed-removal mutant make completeness MEASURED; §8 scoped "
+     "to the stated verb set; re-verified by research at 5ccccae",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_relay_lexicon_mutation_matrix -q -p no:randomly"),
 ]

@@ -77,6 +77,13 @@ def main() -> int:
             print("fp aggregate REFUSED:\n  " + "\n  ".join(bad),
                   file=sys.stderr)
             return 1
+        doc = HERE / "FP-MEASUREMENT.md"
+        if doc.is_file():
+            bad = doc_problems(agg, doc.read_text())
+            if bad:
+                print("fp measurement DOC drifted:\n  " + "\n  ".join(bad),
+                      file=sys.stderr)
+                return 1
         report(agg)
         print("aggregate VALID: closed schema, manifest cross-checked "
               "against the 0011/0025 subject aggregate; corpus-dependent "
@@ -271,6 +278,24 @@ def validate_aggregate(agg) -> list:
         for k, v in g[name].items():
             if v > g["fires"]:
                 out.append(f"{name}[{k!r}]={v} exceeds fires {g['fires']}")
+    # 0026-EVIDENCE-R2-1: the validator validated SHAPE while the GATE
+    # was carried elsewhere — fires=2,000 (2.92%, over the 2% bar)
+    # verified as "aggregate VALID". The gate is part of validity now: an
+    # over-gate record refuses UNLESS a separately validated adjudication
+    # artifact exists (the §6a pre-commitment path: labelling decides),
+    # because an over-bar aggregate is not acceptance evidence on its own.
+    if g["total"] > 0:
+        pct = 100.0 * g["fires"] / g["total"]
+        if pct > 2.0:
+            adj = HERE / "fp_adjudication.json"
+            if not adj.is_file():
+                out.append(
+                    f"fires are {pct:.2f}% of the population — OVER the "
+                    f"2% gate — and no adjudication artifact "
+                    f"(fp_adjudication.json) exists; an over-gate record "
+                    f"is not acceptance evidence absent a separately "
+                    f"validated labelling verdict (0026-EVIDENCE-R2-1)")
+
     # the cross-artifact anchor: the 0011/0025 subject aggregate was
     # derived from the SAME cache by a different script
     peer_path = _PEER.resolve()
@@ -286,6 +311,41 @@ def validate_aggregate(agg) -> list:
             out.append(f"manifest.{k} = {man.get(k)!r} disagrees with the "
                        f"0011/0025 subject aggregate's {pm.get(k)!r} — "
                        f"the two scripts read the same cache")
+    return out
+
+
+def doc_problems(agg, doc_text: str) -> list:
+    """0026-EVIDENCE-R2-1: FP-MEASUREMENT.md carried stale figures beside
+    the current result, because nothing compared the prose to the
+    artifact — the 0011 check_census_figures class. The doc's SHIPPED
+    claims are bound here: headline fires/percent/lexicon, and the
+    shipped column of the pass table."""
+    import re as _re
+    g = agg["grounded_first_person"]
+    pct = 100.0 * g["fires"] / g["total"] if g["total"] else 0.0
+    out = []
+    facts = (
+        (rf"gate is CLEARED\. {pct:.2f}% \({g['fires']:,} of "
+         rf"{g['total']:,}\)",
+         "the headline result line"),
+        (rf"under {_re.escape(agg['lexicon_version'].replace('0026-', ''))} ",
+         "the headline lexicon version"),
+        (rf"\| {g['fires']:,} = \*\*{pct:.2f}%\*\* \|$",
+         "the shipped column of the pass table (fires)"),
+        (rf"\| \*\*{g['suppressed_by_direction_only']:,}\*\* \|$",
+         "the shipped column of the pass table (suppressed)"),
+        (rf"\| {agg['coverage']['matched_by_lexicon']:,} / 3,898 = ",
+         "the shipped column of the pass table (coverage)"),
+        (rf"matches \*\*{agg['coverage']['matched_by_lexicon']:,} of ",
+         "the coverage prose figure"),
+    )
+    for pat, what in facts:
+        if not _re.search(pat, doc_text, _re.M):
+            out.append(f"FP-MEASUREMENT.md no longer states {what} in the "
+                       f"bound form matching the aggregate "
+                       f"({agg['lexicon_version']}, {g['fires']:,} = "
+                       f"{pct:.2f}%) — the prose has drifted from its "
+                       f"artifact")
     return out
 
 

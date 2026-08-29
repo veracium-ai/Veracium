@@ -120,6 +120,86 @@ CELLS = (
 )
 
 
+# ---------------------------------------------------------------------------
+# 0026-R2-1: the GRAMMAR-ORACLE CORPUS — generated, not hand-picked. The
+# 53 hand cells stayed green while modifiers, determiner-separated
+# conjuncts and Unicode possessives all misclassified, because hand cells
+# cover what their author enumerated. Here the corpus is the CROSS-PRODUCT
+# of construction parameters and the expected label is DERIVED from the
+# constructions (any third-party head restricts; else ambiguous; else
+# user), so a new attachment shape is a new generator axis, not a new
+# hand cell.
+
+_SUBJECT_HEADS = {
+    # surface, head identity
+    "the doctor": "third",
+    "user": "user",
+    "i": "user",
+    "she": "ambiguous",
+    "my doctor": "third",
+    "the user's doctor": "third",          # ASCII possessive
+    "the user\u2019s doctor": "third",     # curly possessive (normalized)
+    "my own account": "user",
+}
+_MODIFIERS = (
+    "",                                    # bare
+    " treating the user",                  # participial, user inside
+    " of the user",                        # prepositional, user inside
+    " who examined the cat",               # relative-ish
+)
+_CONJUNCTS = {
+    "": None,
+    " and the user": "user",               # determiner-separated conjunct
+    " and i": "user",
+    " and the nurse": "third",
+    " and she": "ambiguous",
+}
+_IDENT_RANK = {"third": 0, "ambiguous": 1, "user": 2}
+
+
+def _expected(heads) -> str:
+    """The design rule, applied to the head set: any third-party co-source
+    restricts; else any ambiguous head is ambiguous; else outbound."""
+    if "third" in heads:
+        return "inbound"
+    if "ambiguous" in heads:
+        return "ambiguous"
+    return "outbound"
+
+
+def grammar_oracle_cells():
+    """(name, text, expected direction) for every generated construction.
+    Modifiers attach to the FIRST head only (post-head material must be
+    inert whatever it names); conjuncts add a second head, determiners
+    and all."""
+    for subj, ident in _SUBJECT_HEADS.items():
+        for mi, mod in enumerate(_MODIFIERS):
+            # a relative-clause modifier contains verbs in some grammars;
+            # keep modifiers verb-free here so the clause bound is the
+            # attribution verb itself
+            for cname, cident in _CONJUNCTS.items():
+                heads = [ident] + ([cident] if cident else [])
+                text = f"{subj}{mod}{cname} said the diet works"
+                name = (f"gen_{ident}_m{mi}_" 
+                        f"{cident or 'solo'}")
+                yield name, text, _expected(heads)
+
+
+def grammar_oracle_problems() -> list:
+    out = []
+    for name, text, want in grammar_oracle_cells():
+        toks = L._tokens(text)
+        got = None
+        for i, tok in enumerate(toks):
+            if tok == "said":
+                got = L._direction(toks, i)
+                break
+        if got != want:
+            out.append(f"grammar-oracle {name}: {text!r} -> {got}, "
+                       f"expected {want}")
+    return out
+
+
 def problems() -> list:
     out = []
     for cell in CELLS:
@@ -147,6 +227,7 @@ def problems() -> list:
     # V4: a vacuous lexicon must refuse at LOAD, not pass everything
     if not (L._VERBS and L._PHRASES and L._USER_SUBJ):
         out.append("a lexicon table is empty and load did not refuse")
+    out.extend(grammar_oracle_problems())
     return out
 
 

@@ -64,12 +64,28 @@ MEASURED HISTORY OF THIS FILE (§6a's pre-commitment, honoured):
          said" does not — the user-class subject there is not
          coordinator-adjacent). Both error directions of the new rules
          are over-restriction, the safe side, priced by re-measurement.
+  lex-5/6 (research red-team, FN direction) the verb classes joined and
+         the nominal homographs were narrowed by reading the fires; see
+         §3a and FP-MEASUREMENT.md.
+  lex-7  (external round 2, 0026-R2-1) the subject is resolved by HEAD
+         CONSTRUCTION, not nearest token: the clause is read FORWARD,
+         the first noun after determiners/possessives is the head,
+         post-head material is inert modifier whatever it names ("the
+         doctor treating the user said" no longer reads `user`),
+         coordinators introduce co-heads determiners and all ("the
+         doctor and the user said" restricts), Unicode apostrophes are
+         normalized before tokenization (the curly-possessive "user's
+         doctor" is a possessed third-party head), and relative
+         pronouns are modifier-openers rather than clause breakers
+         (found by the generated grammar oracle). Resolution over the
+         head SET: any third-party head restricts; else ambiguous;
+         else outbound.
 """
 from __future__ import annotations
 
 import re
 
-LEXICON_VERSION = "0026-lex-6"
+LEXICON_VERSION = "0026-lex-7"
 
 # Attribution VERBS — §3a's named class. lex-5 (research red-team,
 # FN direction): the list omitted high-frequency attribution verbs —
@@ -149,8 +165,15 @@ _BE_FORMS = ("is", "are", "was", "were", "be", "been", "being", "am",
 # Tokens that END a clause for the backward subject scan: another
 # attribution verb ("user said their doctor confirmed" — `confirmed`'s
 # subject scan must not cross `said`), or a complementizer/conjunction.
+# who/whom/which are NOT here (lex-7, found by the grammar oracle):
+# they are post-nominal relative pronouns — MODIFIER-openers, not clause
+# breakers — and breaking on them orphaned the subject head before them
+# ("my own account who examined the cat said…" lost `account`). The
+# forward head parse ignores post-head material, so the relative clause
+# is inert by construction. `that` stays: after an attribution verb it
+# is a complementizer, and the verb itself already breaks.
 _CLAUSE_BREAK = frozenset((
-    "that", "which", "who", "whom", "because",
+    "that", "because",
     "when", "while", "after", "before", "since", "if",
     "although", "though", "unless", "until",
 ))
@@ -164,12 +187,28 @@ _COORD = frozenset(("and", "but", "so", "then"))
 # Skipped while scanning for a subject head (never a subject themselves).
 _SKIP_TOKENS = frozenset((
     "the", "a", "an", "not", "never", "also", "just", "only", "already",
-    "recently", "always", "again",
+    "recently", "always", "again", "as",
+))
+
+# Words that cannot be the HEAD a possessive points at — a bare "her"/
+# "his"/"their" followed by one of these (or by nothing) is an OBJECT
+# pronoun, not a possessive: "told by her to rest" (0026 round-1's
+# ambiguous-object cell, re-broken by the lex-7 possessive branch and
+# restored here).
+_NON_HEADS = frozenset((
+    "to", "of", "that", "for", "on", "in", "at", "with", "about",
+    "and", "or", "but",
 ))
 
 _FIRST_PERSON = _FIRST_PERSON_SUBJ + _FIRST_PERSON_OBJ + _FIRST_PERSON_SELF
 
 _WORD = re.compile(r"[a-z']+")
+
+# 0026-R2-1: the curly apostrophe (U+2019, and the modifier letter
+# U+02BC) tokenized "user's" as user/s/doctor-adjacent fragments, so a
+# Unicode possessive defeated every possessive rule. Normalized BEFORE
+# tokenization; the ASCII possessive stays one token.
+_APOSTROPHES = str.maketrans({"\u2019": "'", "\u02bc": "'", "\u2018": "'"})
 
 
 class LexiconError(RuntimeError):
@@ -197,34 +236,50 @@ _validate_lexicon()
 
 
 def _tokens(text: str) -> list:
-    return _WORD.findall(text.lower())
+    return _WORD.findall(text.lower().translate(_APOSTROPHES))
+
+
+_DETERMINERS = frozenset(("the", "a", "an", "this", "that", "these",
+                          "those"))
+_POSSESSIVES = frozenset(("my", "our", "their", "his", "her", "its"))
+
+
+def _is_possessive(tok: str) -> bool:
+    """A possessive marker: the closed pronoun set, or any token carrying
+    an apostrophe-s / trailing-apostrophe possessive ("user's",
+    "doctors'"). The HEAD follows a possessive, and a possessed head is a
+    THIRD PARTY whoever the possessor is ("the user's doctor" is the
+    doctor)."""
+    return (tok in _POSSESSIVES or tok.endswith("'s")
+            or (tok.endswith("'") and len(tok) > 1))
 
 
 def _classify_source(head_tokens: list) -> str:
     """Who a resolved source phrase names: 'user' | 'ambiguous' | 'third'.
-    `head_tokens` starts at the source head (determiners already skipped)."""
-    if not head_tokens:
-        return "third"                   # unnamed — conservative, see caller
-    h = head_tokens[0]
+    `head_tokens` starts at the source phrase (determiners not yet
+    skipped). Possessives are attachment markers: the HEAD follows them,
+    and a possessed head is a third party whoever possesses it —
+    "the user's doctor" names the doctor (0026-R2-1's Unicode-possessive
+    counterexample, normalized upstream)."""
+    toks = [t for t in head_tokens if t not in _DETERMINERS
+            and t not in _SKIP_TOKENS]
+    if not toks:
+        return "third"                   # unnamed — conservative
+    h = toks[0]
+    if _is_possessive(h):
+        if h in ("my", "our") and len(toks) > 1 \
+                and toks[1] in _FIRST_PERSON_SELF:
+            return "user"                # "my own account"
+        if h in ("her", "his", "their", "its") \
+                and (len(toks) == 1 or toks[1] in _NON_HEADS):
+            return "ambiguous"           # bare object pronoun: "by her"
+        return "third"                   # possessed head: user's doctor,
+                                         # my doctor, their vet
     if h in _FIRST_PERSON_SUBJ or h in _FIRST_PERSON_OBJ \
             or h in _USER_SUBJ:
         return "user"
-    if h in _AMBIG_PRON:
+    if h in _AMBIG_PRON or h in ("him", "her", "them"):
         return "ambiguous"
-    if h in ("my", "our") and len(head_tokens) > 1:
-        if head_tokens[1] in _FIRST_PERSON_SELF:
-            return "user"                # "my own account"
-        return "third"                   # "my doctor" — the possessive
-                                         # attaches to a third party
-    if h in ("her", "his", "their") and len(head_tokens) > 1 \
-            and head_tokens[1] not in ("to", "of", "that", "for", "on",
-                                       "in", "at", "with", "about", "as",
-                                       "and", "or", "but"):
-        return "third"                   # "her doctor said…" — possessive
-                                         # reading needs a following noun
-    if h in ("him", "her", "them"):
-        return "ambiguous"               # bare object pronoun — referent
-                                         # unresolvable, same as she/he/they
     return "third"
 
 
@@ -245,7 +300,7 @@ def _agent_after(tokens: list, idx: int):
     return None
 
 
-def _direction(tokens: list, idx: int, max_scan: int = 8) -> str:
+def _direction(tokens: list, idx: int, max_scan: int = 24) -> str:
     """'inbound' | 'outbound' | 'ambiguous' | 'none' for tokens[idx].
 
     The directional GRAMMAR (lex-3, 0026-R1-1) — proximity is not
@@ -281,61 +336,70 @@ def _direction(tokens: list, idx: int, max_scan: int = 8) -> str:
         j -= 1
     if j >= 0 and tokens[j] in _BE_FORMS:
         return "inbound"
-    # active: nearest subject head inside this clause. Coordinators are
-    # TRANSPARENT (lex-4): a VP coordination shares its subject, so the
-    # scan continues across and/but/so/then. In the crossed-coordinator
-    # region the nearest noun is usually the prior VP's OBJECT, so a
-    # user-class token found deeper and NOT coordinator-adjacent governs
-    # ("user visited the clinic and said…" is the user's own word), while
-    # a coordinator-ADJACENT user token is one conjunct of a coordinated
-    # subject and its co-source governs conservatively ("the vet and I
-    # said…" restricts).
+    # ACTIVE: the subject by HEAD CONSTRUCTION (lex-7, 0026-R2-1 — the
+    # backward nearest-token scan read a modifier's object as the
+    # subject: "the doctor treating the user said" resolved `user`).
+    # The clause is bounded backward by a breaker (another attribution
+    # verb, an auxiliary, a complementizer); then it is read FORWARD:
+    # the first noun after any determiners/possessives is the subject
+    # HEAD (post-head material up to the verb is modifier and is
+    # IGNORED, whatever identities it contains), and each coordinator
+    # introduces one more co-head, determiners and all ("the doctor and
+    # the user said" — R2-1's second counterexample). Resolution over
+    # the head SET: any third-party head restricts (co-source governs);
+    # else any ambiguous head is ambiguous; else all-user is outbound.
     start = max(0, idx - max_scan)
-    crossed = False                      # a coordinator has been crossed
-    saw_noun = False                     # a noun seen beyond it (fallback)
-    pending_user = None                  # coordinator-adjacent user/ambig
-    hit_break = False
+    cstart = start
     for j in range(idx - 1, start - 1, -1):
         tok = tokens[j]
         if tok in _CLAUSE_BREAK or tok in _VERBS or tok in _BE_FORMS:
-            hit_break = True
+            cstart = j + 1
             break
-        if tok in _SKIP_TOKENS:
+    clause = tokens[cstart:idx]
+    heads = []
+    expecting_head = True
+    saw_self_poss = False
+    for k, tok in enumerate(clause):
+        if tok in _DETERMINERS or tok in _SKIP_TOKENS:
             continue
         if tok in _COORD:
-            crossed = True
+            expecting_head = True        # a coordinator opens a new
+            saw_self_poss = False        # conjunct, determiners and all
             continue
+        if not expecting_head:
+            continue                     # post-head modifier material —
+                                         # ignored, whoever it names
+        if _is_possessive(tok):
+            if tok in ("my", "our"):
+                # "my own X" is the user's own; any other possessed head
+                # is third — peek for the self marker
+                nxt = clause[k + 1] if k + 1 < len(clause) else ""
+                if nxt in _FIRST_PERSON_SELF:
+                    saw_self_poss = True
+                    continue
+            heads.append("third")        # possessed head: my/their/
+            expecting_head = False       # user's <noun>
+            continue
+        if tok in _FIRST_PERSON_SELF and saw_self_poss:
+            continue                     # the "own" of "my own"
         if tok in _FIRST_PERSON_SUBJ or tok in _USER_SUBJ:
-            if j - 1 >= 0 and tokens[j - 1] in _COORD:
-                pending_user = pending_user or "outbound"
-                continue                 # a co-source may still govern
-            return "outbound"            # the shared subject, even beyond
-                                         # a coordinator
-        if tok in _AMBIG_PRON:
-            if j - 1 >= 0 and tokens[j - 1] in _COORD:
-                pending_user = pending_user or "ambiguous"
-                continue
-            return "ambiguous"
-        if tok in ("my", "our") and j + 1 < len(tokens) \
-                and tokens[j + 1] in _FIRST_PERSON_SELF:
-            return "outbound"            # "my own account said..."
-        if tok in ("my", "our", "their", "his", "her"):
-            continue                     # possessive: the head follows it,
-                                         # already seen (scanning backward)
-        if j >= 2 and tokens[j - 1] in _FIRST_PERSON_SELF \
-                and tokens[j - 2] in ("my", "our"):
-            return "outbound"            # the head of "my own <noun>"
-        if not crossed:
-            return "inbound"             # a third-party subject head
-        saw_noun = True                  # beyond a coordinator this may be
-        continue                         # an object; keep looking
-    if saw_noun:
-        return "inbound"                 # a third-party (co-)source governs
-    if pending_user:
-        return pending_user
-    if hit_break or crossed:
+            heads.append("user")
+            expecting_head = False
+            continue
+        if tok in _AMBIG_PRON or tok in ("him", "her", "them"):
+            heads.append("ambiguous")
+            expecting_head = False
+            continue
+        heads.append("user" if saw_self_poss else "third")
+        expecting_head = False           # a noun head ("my own account"
+        saw_self_poss = False            # is the user's; others third)
+    if not heads:
         return "none"                    # clause opens with no subject
-    return "inbound"
+    if "third" in heads:
+        return "inbound"                 # a third-party (co-)source
+    if "ambiguous" in heads:
+        return "ambiguous"
+    return "outbound"
 
 
 def scan(note, object_text) -> dict:

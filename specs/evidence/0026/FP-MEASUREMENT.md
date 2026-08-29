@@ -1,6 +1,6 @@
 # 0026 §6a — the acceptance measurement (dev, 2026-08-26; re-measured 2026-08-29)
 
-**Result: the gate is CLEARED. 0.70% (481 of 68,479) under lex-6 against
+**Result: the gate is CLEARED. 0.64% (439 of 68,479) under lex-7 against
 a 2% bar — and that figure is an UPPER BOUND, not an estimate.**
 
 **RE-MEASURED 2026-08-29 (external round 1, 0026-R1-1):** lex-2's
@@ -9,7 +9,7 @@ the reviewer executed five counterexamples (passive recipients, the
 post-verbal agent, embedded clauses, ambiguous pronouns) and the rule
 misclassified all five. lex-3/lex-4 are a directional grammar (lex-4 adds coordinator transparency and the coordinated-co-source rule); see
 `relay_lexicon.py`'s header for the rules and the third row below for
-its pass. The ambiguity class is now COUNTED: exactly 2 of the 481
+its pass. The ambiguity class is COUNTED: exactly 0 of the 439
 fires restricts via the ambiguous class alone on this corpus.
 
 **A claim from the first version of this document is NARROWED
@@ -17,7 +17,7 @@ fires restricts via the ambiguous class alone on this corpus.
 of the artifacts — lex-1's implementation was never committed, so its
 8.20% row below is recorded prose history, reproducible only in cause
 analysis, not by rerun. lex-2 remains in git history
-(`66d11a7`); lex-3 is the shipped detector. The aggregate now has a
+(`66d11a7`); lex-7 is the shipped detector. The aggregate now has a
 closed validator with a cross-artifact manifest anchor and a real
 `--aggregate` verify mode; whole-corpus figures are RECORDED ONLY
 (they reproduce with `--cache` on the measuring host).**
@@ -40,13 +40,13 @@ sha256), so these figures sit in the same frame as the 183,417 / 41.7% ones.
 
 ## All three passes
 
-| | lex-1 (prose history) | lex-2 | lex-4 | lex-5 | lex-6 (shipped) |
+| | lex-1 (prose history) | lex-2 | lex-4 | lex-5 | lex-6 | lex-7 (shipped) |
 |---|---|---|---|
-| fires on grounded first-person | 5,618 = **8.20%** | 415 = **0.61%** | 418 = 0.61% | 849 = 1.24% | 481 = **0.70%** |
-| …of which ambiguous-class only | n/a | n/a (class did not exist) | 1 | 2 | **2** |
-| vs the 2% gate | **OVER** | **UNDER** | UNDER | UNDER | **UNDER** |
-| suppressed by the directional rule | **0** | 211 | 199 | 280 | **254** |
-| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = 3.5% | 135 = 3.5% | 222 = 5.7% | 217 / 3,898 = **5.6%** |
+| fires on grounded first-person | 5,618 = **8.20%** | 415 = 0.61% | 418 = 0.61% | 849 = 1.24% | 481 = 0.70% | 439 = **0.64%** |
+| …of which ambiguous-class only | n/a | n/a (class did not exist) | 1 | 2 | 2 | **0** |
+| vs the 2% gate | **OVER** | **UNDER** | UNDER | UNDER | UNDER | **UNDER** |
+| suppressed by the directional rule | **0** | 211 | 199 | 280 | 254 | **287** |
+| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = 3.5% | 135 = 3.5% | 222 = 5.7% | 217 = 5.6% | 220 / 3,898 = **5.6%** |
 
 lex-5/lex-6 are research's red-team recall finding folded: the verb
 list omitted `claimed` (the name of the relation 0024 quarantines) and
@@ -55,7 +55,7 @@ measured recall — §6a is FP-only and every matrix inbound cell used an
 in-list verb. lex-5 added them all and measured 1.24%; reading the
 fires (the §6a discipline) showed the nominal homographs
 (notes/added/adds/emails) were every sampled fire, so lex-6 keeps only
-their unambiguous inflections and settles at 0.70%. Recall is now
+their unambiguous inflections; lex-7 (round 2) replaces the token scan with head construction and settles at 0.64%. Recall is now
 MEASURED: held relay cells across the verb classes must fire, and
 removing `claimed` alone is a red matrix.
 
@@ -91,7 +91,7 @@ A third defect never reached the corpus: lex-1 read the possessive in *"my
 doctor said"* as first-person and suppressed it, which would have hidden the
 commonest relay shape there is. The named cell caught it before any run.
 
-## What the 0.61% is, and is not
+## What the shipped upper bound is, and is not
 
 It is the share of grounded first-person triples the detector **fires on**.
 Every fire is a *candidate* false positive, so the true rate cannot exceed
@@ -121,19 +121,20 @@ whose denominator no archive-local number measures. A
 laundering-recall probe joins the evidence when a labelled corpus for
 that population exists.**
 
-The lexicon matches **138 of 3,898** `third_party_claim` triples carrying a
-non-empty note — **3.5%**. §8's claim ships with that number rather than an
+The lexicon matches **220 of 3,898** `third_party_claim` triples carrying a
+non-empty note — **5.6%**. §8's claim ships with that number rather than an
 implied whole, which is what M-2 asked for.
 
 One caveat the figure carries: M-2 asks for the share of **source-naming**
 notes matched, and identifying that subset independently would require
 labelling the whole note population. The denominator here is *all* non-empty
 `third_party_claim` notes, and source-naming notes are a subset of it — so
-3.5% is a **lower bound** on the quantity M-2 names. It is reported as the
+5.6% is a **lower bound** on the quantity M-2 names. It is reported as the
 computable one, not as the one asked for.
 
-Narrowing bought this at a cost: coverage fell 13.8% → 3.5% while the fire
-rate fell 8.20% → 0.61%. That trade is the gate's whole purpose, and the
+Narrowing bought this at a cost against lex-1: coverage fell 13.8% → 5.6%
+while the fire rate fell 8.20% → 0.64%. That trade is the gate's whole
+purpose, and the
 reviewer can see both halves of it.
 
 ## Standing

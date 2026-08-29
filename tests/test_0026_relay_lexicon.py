@@ -126,6 +126,23 @@ def test_relay_lexicon_mutation_matrix(monkeypatch):
         "removing `claimed` left the matrix green — verb-list recall is "
         "enumerated again, not measured")
     monkeypatch.undo()
+    # 3f. Unicode normalization dropped (lex-7): the curly-apostrophe
+    #     possessive tokenizes as fragments and "the user's doctor"
+    #     classifies as the user again
+    L, V = _fresh()
+    monkeypatch.setattr(L, "_APOSTROPHES", str.maketrans({}))
+    assert V.problems(), (
+        "dropping apostrophe normalization left the matrix green — a "
+        "curly possessive defeats every possessive rule")
+    monkeypatch.undo()
+    # 3g. possessive attachment dropped (lex-7): "the user's doctor"
+    #     reads its possessor as the source
+    L, V = _fresh()
+    monkeypatch.setattr(L, "_is_possessive", lambda tok: False)
+    assert V.problems(), (
+        "dropping possessive attachment left the matrix green — a "
+        "possessed head would classify by its possessor")
+    monkeypatch.undo()
     # 3d. coordinator transparency dropped (lex-4): "the vet examined the
     #     cat and said…" attributes nothing again — the elided
     #     third-party subject vanishes across the VP coordination
@@ -449,6 +466,11 @@ def test_import_matrix_is_total_in_the_spec():
     assert "RECOMPUTES" in sec
     assert "never consumed" in sec
     assert "agreement_import_mismatches" in sec
+    # 0026-R2-2: the mode split and the format bump are bound too
+    assert "TRUST-FIELD-FAITHFUL, per accepted `0005` P2" in sec
+    assert "FORMAT_VERSION bump" in sec
+    assert "the reader REFUSES the bumped format" in sec
+    assert "restored VERBATIM, disclosure included" in sec
 
 
 def test_telemetry_deferral_is_bound():
@@ -465,3 +487,59 @@ def test_telemetry_deferral_is_bound():
     assert "0015" not in req, (
         "Spec-Requires lists 0015 while telemetry is deferred — the "
         "deferral and the dependency list disagree")
+    # 0026-R2-3: the deferral must hold in EVERY carrier — §3c still said
+    # "consumed by telemetry from day one" and §9 still named telemetry a
+    # consumer while this test inspected §3d alone. Whole-file scan for
+    # any surviving affirmative-consumption claim, with the swept
+    # carriers' bracketed corrections tolerated by construction (they
+    # QUOTE the withdrawn phrasing inside a sweep note).
+    low = spec.lower()
+    i = 0
+    while True:
+        i = low.find("consumed by telemetry from day one", i)
+        if i < 0:
+            break
+        context = low[max(0, i - 200):i]
+        assert "swept" in context or "previously" in context, (
+            "a carrier still AFFIRMS day-one telemetry consumption "
+            "outside a sweep note (0026-R2-3): "
+            + spec[max(0, i - 80):i + 60])
+        i += 1
+    sec3c = _spec_section("### 3c. The demotion-direction RECORD")
+    assert "DEFERRED per §3d" in sec3c, (
+        "§3c does not defer to §3d's telemetry ruling")
+
+
+def test_the_gate_and_the_doc_are_bound(tmp_path):
+    """0026-EVIDENCE-R2-1: fires=2,000 (2.92%, over the 2% gate) verified
+    as 'aggregate VALID' — the validator checked shape while the gate
+    lived elsewhere; and FP-MEASUREMENT.md carried stale figures beside
+    the current ones because nothing compared prose to artifact. Both
+    bound now, at the real entry point."""
+    import json
+    MF, agg = _agg_and_mod()
+    # the reviewer's exact tampering: over-gate fires
+    import copy
+    m = copy.deepcopy(agg)
+    m["grounded_first_person"]["fires"] = 2000
+    m["grounded_first_person"]["fires_ambiguous_only"] = 0
+    m["grounded_first_person"]["markers"] = {"said": 1}
+    bad = MF.validate_aggregate(m)
+    assert any("OVER the" in b and "2% gate" in b for b in bad), bad
+    assert any("adjudication" in b for b in bad), bad
+    # doc binding: a drifted shipped figure refuses at the entry point
+    script = ROOT / "specs" / "evidence" / "0026" / \
+        "measure_false_positives.py"
+    doc = (ROOT / "specs" / "evidence" / "0026"
+           / "FP-MEASUREMENT.md").read_text()
+    g = agg["grounded_first_person"]
+    tampered = doc.replace(f"{g['fires']:,} of", f"{g['fires'] + 1:,} of")
+    assert tampered != doc
+    bad = MF.doc_problems(agg, tampered)
+    assert bad, "a drifted headline figure validated clean"
+    # and the pristine control through the real command
+    r = subprocess.run([sys.executable, str(script), "--aggregate",
+                        str(ROOT / "specs" / "evidence" / "0026"
+                            / "fp_aggregate.json")],
+                       capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 0, r.stderr[-300:]
