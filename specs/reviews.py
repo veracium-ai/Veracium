@@ -1499,6 +1499,48 @@ REVIEWS = [
          "f7e1b62c7bd7d65aaeb4c2afa1e0b65ad76e60b56cf34b549d6955fc"
          "91a85071, commit 975e364", findings=0),
 
+    dict(spec="0011", round=17, kind="external", date="2026-08-29",
+         raised=["0011-PROCESS-R17-1"],
+         verdict="RETURN EXACT v17 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; PROCESS-R16-1's pre-refusal "
+         "behavior and production cleanup confirmed correct; no policy or "
+         "trust-model defect (package `0011-v17`, sha f7e1b62c verified; "
+         "archive safety 515 members; focused 44; collected-header 22; "
+         "spec gate 88/5; selfcheck 8; extracted 1880/22 reconciling with "
+         "sealed 1894/8 over 1,902 tests; 227-command transcript). "
+         "PROCESS-R17-1: copy-exception cleanup is NOT REGRESSION-BOUND — "
+         "the two-phase implementation cleans correctly, but no test "
+         "exercises the second-phase exception path: removing only the "
+         "rmtree line and injecting a copytree exception after allocation "
+         "passed both new R16 tests (2/2) and the entire registry suite "
+         "(34/34) while the planted copy failure left one real "
+         "veracium-mutant-tree-* directory. Required: independent fault "
+         "injection into copy2 and copytree after mkdtemp; the exact "
+         "allocated directory recorded and required gone after the "
+         "exception; the original exception propagated; a "
+         "cleanup-deletion mutant retained with the regression required "
+         "to fail; no broad temp-directory globs in cleanup",
+         findings=1),
+
+    dict(spec="0011", round=18, kind="external", date="2026-08-29",
+         verdict="SENT (package `0011-v18`, candidate draft v21 — the "
+         "round-17 fold; §27 maps the finding). PROCESS-R17-1 closed to "
+         "the reviewer's five requirements: failures injected "
+         "independently into copy2 and copytree after allocation; the "
+         "exact allocated directory recorded via the mkdtemp wrapper's "
+         "RETURN paths and required to not exist after the exception; "
+         "the original exception required to propagate; the "
+         "cleanup-deletion mutant standing with the leak required to be "
+         "OBSERVED (detector-blindness fails the mutant test itself); "
+         "and no broad temp-directory globs anywhere. §27 also pays the "
+         "round-16 debt: the concurrent-reader class is named as "
+         "RECURRING (three bites: interleaved in-place campaigns, the "
+         "closure gate's concurrent commands, the glob-broom that "
+         "deleted a live snapshot) with its invariant — private copies "
+         "or recorded-path-scoped touches, never pattern-matched "
+         "sweeps. Sealed AFTER this row, sha pinned on return",
+         findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

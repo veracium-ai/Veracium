@@ -20,6 +20,8 @@ import sys
 import tempfile
 import time
 
+import pytest
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 EVID = ROOT / "specs" / "evidence" / "0011"
 sys.path.insert(0, str(EVID))
@@ -920,3 +922,74 @@ def test_the_copy_before_refuse_mutant_is_caught(tmp_path, monkeypatch):
     import shutil as _sh
     for d in calls["mkdtemp"]:
         _sh.rmtree(d, ignore_errors=True)
+
+
+def test_copy_exception_cleanup_is_regression_bound(tmp_path, monkeypatch):
+    """PROCESS-R17-1: round 16 bound refusal-before-allocation with
+    instrumentation and left its OTHER half — 'cleanup guaranteed on any
+    copy exception' — as a claim: deleting the rmtree passed the whole
+    registry suite while a planted copy failure leaked a real snapshot
+    dir. Here failures are injected independently into copy2 and
+    copytree AFTER allocation; the exact allocated directory is recorded
+    (the mkdtemp wrapper's return paths — never a broad glob) and must
+    not exist after the exception; and the ORIGINAL exception must
+    propagate."""
+    import shutil
+    root = tmp_path / "clean_root"
+    (root / "specs" / "evidence").mkdir(parents=True)
+    (root / "specs" / "evidence" / "x.py").write_text("x = 1\n")
+    (root / "conftest.py").write_text("# carrier\n")
+    for target, exc_text in (("copytree", "planted copytree failure"),
+                             ("copy2", "planted copy2 failure")):
+        calls = _instrumented(monkeypatch)
+        def _boom(*a, _t=exc_text, **k):
+            raise OSError(_t)
+        monkeypatch.setattr(shutil, target, _boom)
+        with pytest.raises(OSError, match=exc_text):
+            MR._snapshot(root)
+        monkeypatch.undo()
+        assert len(calls["mkdtemp"]) == 1, (target, calls["mkdtemp"])
+        assert not pathlib.Path(calls["mkdtemp"][0]).exists(), (
+            f"{target}: the allocated snapshot survived its own "
+            f"exception — the cleanup guarantee is gone")
+
+
+def test_the_cleanup_deletion_mutant_is_caught(tmp_path, monkeypatch):
+    """PROCESS-R17-1, the mutant half: a _snapshot whose except-block
+    rmtree is deleted still propagates the exception, so
+    exception-only assertions pass it — the recorded-directory check
+    must be what kills it. Drives the reviewer's exact mutant and
+    requires the leak to be OBSERVED (then removes exactly the recorded
+    dir, no globs)."""
+    import importlib.util
+    import shutil
+    src = (EVID / "mutant_registry.py").read_text()
+    root_line = "ROOT = pathlib.Path(__file__).resolve().parents[3]"
+    assert src.count(root_line) == 1
+    src = src.replace(root_line, f"ROOT = pathlib.Path({str(MR.ROOT)!r})")
+    old = ('    except BaseException:\n'
+           '        shutil.rmtree(snap, ignore_errors=True)\n'
+           '        raise')
+    assert src.count(old) == 1, "the cleanup block moved"
+    mutated = src.replace(old, "    except BaseException:\n        raise")
+    mod_path = tmp_path / "mutant_registry_noclean.py"
+    mod_path.write_text(mutated)
+    spec = importlib.util.spec_from_file_location("mr_noclean", mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    root = tmp_path / "clean_root"
+    (root / "specs" / "evidence").mkdir(parents=True)
+    (root / "specs" / "evidence" / "x.py").write_text("x = 1\n")
+    calls = _instrumented(monkeypatch)
+    monkeypatch.setattr(shutil, "copytree",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            OSError("planted")))
+    with pytest.raises(OSError, match="planted"):
+        mod._snapshot(root)
+    monkeypatch.undo()
+    assert len(calls["mkdtemp"]) == 1
+    leaked = pathlib.Path(calls["mkdtemp"][0])
+    assert leaked.exists(), (
+        "the planted cleanup-deletion left no observable leak — the "
+        "detector this regression exists for is dead")
+    shutil.rmtree(leaked, ignore_errors=True)   # exactly the recorded dir

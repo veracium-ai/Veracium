@@ -2206,4 +2206,20 @@ CLOSURES = [
      "test_refusal_precedes_every_access_and_allocation "
      "tests/test_0011_mutant_registry.py::"
      "test_the_copy_before_refuse_mutant_is_caught -q -p no:randomly"),
+    # ---- 0011 external round 17 (2026-08-29) — both halves bound.
+    ("0011", "external", 17, "0011-PROCESS-R17-1",
+     "the copy-exception cleanup was a claim: deleting the except-block "
+     "rmtree passed both R16 tests and the whole registry suite while a "
+     "planted copytree failure leaked a real snapshot directory — the "
+     "test asserted the exception propagates and never observed the "
+     "allocated directory's fate",
+     "failures injected independently into copy2 and copytree after "
+     "allocation; the exact allocated directory (the mkdtemp wrapper's "
+     "recorded return path, never a glob) required to not exist after "
+     "the exception; the original exception propagated; the "
+     "cleanup-deletion mutant stands with the leak required OBSERVED",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_copy_exception_cleanup_is_regression_bound "
+     "tests/test_0011_mutant_registry.py::"
+     "test_the_cleanup_deletion_mutant_is_caught -q -p no:randomly"),
 ]
