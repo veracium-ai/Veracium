@@ -12,7 +12,7 @@ import pathlib
 
 import pytest
 
-from veracium import EvidenceAuthor, SqliteStore
+from veracium import EvidenceAuthor, EvidenceContext, SqliteStore
 from veracium.ingest import ingest_event
 from veracium.schema import (DEFAULT_RELATIONS, Disclosure,
                              QUARANTINE_RELATION, UNCLASSIFIED_RELATION)
@@ -31,8 +31,11 @@ def _llm_for(triples):
 
 
 def _ingest(store, triples, *, author=EvidenceAuthor.USER, derived=None):
+    # pre-E4 tests meant the pre-E4 default: a declared-direct capture when
+    # no derivation was stated (specs/0011 §4d migration)
+    ctx = EvidenceContext.direct() if derived is None else None
     return ingest_event(store, _llm_for(triples), U, event_text="t",
-                        author=author, derived_from=derived,
+                        author=author, derived_from=derived, context=ctx,
                         date="2026-08-23", relations=DEFAULT_RELATIONS)
 
 

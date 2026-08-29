@@ -1,5 +1,39 @@
 # Changelog
 
+## Unreleased
+
+- **0011 (accepted 2026-08-29, external round 19) — implementation in
+  progress.** Landed so far:
+
+  **E4 — trusted ingress is a capability. ⚠ BREAKING for every
+  context-less ingest caller.** `derived_from=None` stops being
+  trusted-by-omission: `ingest_event` and `Memory.remember` gain
+  `context` — the host's POSITIVE declaration, minted as
+  `EvidenceContext.direct()` (first-party capture attested) or
+  `EvidenceContext.derived(X)`. **A call that declares nothing — no
+  `context`, no legacy `derived_from` — now floors the content class to
+  `derived(THIRD_PARTY)`: the event is kept but nothing extracted from
+  it is assertable.** The legacy `derived_from=X` keyword remains
+  honoured as a positive `derived(X)` declaration; a malformed or
+  forged context RAISES with nothing written (closed domain, no
+  coercion, subclasses refused at the persistence site); passing both
+  carriers raises. `remember` deliberately does not mint `direct()` on
+  the caller's behalf — that would recreate trusted-by-omission one
+  layer up. The MCP `remember` tool and the CLI stay context-less on
+  purpose and therefore now floor: content relayed by a model caller
+  or typed at an operator prompt gets the conservative class until a
+  host-attested capability exists for those surfaces. **Upgrade path:
+  add `context=EvidenceContext.direct()` at call sites that genuinely
+  capture first-party events; leave relay/unknown-origin sites alone
+  and they inherit the safe floor.**
+
+  **E1+E2 — the subject axis.** `graph.subject_class(user_id, subject)`
+  — total, `OTHER` by default, the 0024 canonical-subject predicate —
+  and the §4b refusal cell: a bare self-assertion (author `USER`, no
+  derivation) can no longer retire a prior fact about an OTHER-class
+  subject; the refusal is recorded like every other refused
+  supersession. Rule version: `supersession-authority-v2`.
+
 ## 0.16.0 — 2026-08-26
 
 - **0001 — THE GENERATED-CONTENT TRUST CLASS IS LIVE** (accepted at

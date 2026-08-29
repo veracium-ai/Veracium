@@ -129,3 +129,158 @@ def test_rule_version_bumped_for_the_subject_axis():
     """§4b: a refusal-widening flips allowed pairs to refused — the
     change class RULE_VERSION exists to version."""
     assert authority.RULE_VERSION == "supersession-authority-v2"
+
+
+# ---- S5: trusted ingress is a capability (E4, §4d) -------------------------
+# The complete §4d grammar, every cell reachable and named. RAISES cells are
+# driven through the REAL entry point and assert NOTHING WAS WRITTEN.
+
+import json as _json
+
+from veracium import ingest as _ingest_mod
+from veracium.ingest import ingest_event
+from veracium.schema import EvidenceContext
+
+
+def _llm_for(triples):
+    payload = _json.dumps({"triples": triples, "episode": "ep"})
+
+    def llm(prompt, *, system=None, role="distill", json_schema=None):
+        if role == "distill-retry":
+            return _json.dumps({"triples": []})
+        return payload
+    return llm
+
+
+_TRIPLE = [{"subject": "user", "relation": "works_as", "object": "engineer"}]
+
+
+def _run_ingest(store, **kw):
+    return ingest_event(store, _llm_for(_TRIPLE), U, event_text="t",
+                        author=A.USER, date="2026-08-29",
+                        relations=DEFAULT_RELATIONS, **kw)
+
+
+def test_absent_context_floors_conservative():
+    """S5: no context and no legacy derived_from is the FLOOR cell —
+    derived(THIRD_PARTY) on every record the event produces. Absence is
+    never the trusted cell."""
+    store = SqliteStore(":memory:")
+    _run_ingest(store)
+    edges = store.edges(U, active_only=False)
+    assert edges, "the floor cell must still write — it floors, not refuses"
+    for e in edges:
+        assert e.provenance.derived_from == A.THIRD_PARTY
+        assert e.provenance.third_party_influenced
+    (ep,) = store.episodes(U)
+    assert ep.provenance.derived_from == A.THIRD_PARTY
+
+
+def test_direct_context_preserves_first_party_capture():
+    """§4d: `direct` is the host's POSITIVE attestation of first-party
+    capture — the one way to the trusted cell that used to be the default."""
+    store = SqliteStore(":memory:")
+    _run_ingest(store, context=EvidenceContext.direct())
+    for e in store.edges(U, active_only=False):
+        assert e.provenance.derived_from is None
+        assert not e.provenance.third_party_influenced
+
+
+def test_legacy_derived_from_is_a_positive_declaration():
+    """§4d: `derived_from=X` was already a positive declaration and stays
+    honoured as derived(X) — the floor applies only to declaring NOTHING."""
+    store = SqliteStore(":memory:")
+    _run_ingest(store, derived_from=A.SYSTEM)
+    for e in store.edges(U, active_only=False):
+        assert e.provenance.derived_from == A.SYSTEM
+
+
+def test_derived_grammar_is_total_and_pinned():
+    """§4d adversarial matrix: the derived() domain is pinned to the enum
+    CELL BY CELL — an EvidenceAuthor member added later with no cell here
+    fails this equality rather than inheriting a default."""
+    pinned = {A.USER: A.USER, A.SYSTEM: A.SYSTEM,
+              A.ASSISTANT: A.ASSISTANT, A.THIRD_PARTY: A.THIRD_PARTY}
+    assert set(pinned) == set(A), (
+        "a new EvidenceAuthor member needs its §4d cell decided explicitly")
+    for member, want in pinned.items():
+        ctx = EvidenceContext.derived(member)
+        assert _ingest_mod._resolve_context(ctx, None) is want
+
+
+def test_absence_is_distinct_from_explicit_third_party(monkeypatch):
+    """§4d adversarial matrix: the absence path and the explicit
+    derived(THIRD_PARTY) path must be DISTINCT paths a refactor cannot
+    collapse. Witness: move the floor constant and ONLY absence moves."""
+    monkeypatch.setattr(_ingest_mod, "_ABSENT_CONTEXT_FLOOR", A.USER)
+    assert _ingest_mod._resolve_context(None, None) is A.USER
+    assert _ingest_mod._resolve_context(
+        EvidenceContext.derived(A.THIRD_PARTY), None) is A.THIRD_PARTY
+    # and the entry points default to ABSENCE, not to a minted context
+    import inspect
+    from veracium import Memory
+    assert inspect.signature(ingest_event).parameters["context"].default is None
+    assert inspect.signature(Memory.remember).parameters["context"].default is None
+
+
+@pytest.mark.parametrize("mint", [
+    lambda: EvidenceContext.derived(None),        # derived(None) ≠ absence
+    lambda: EvidenceContext.derived("user"),      # bare string: no coercion
+    lambda: EvidenceContext.derived("direct"),
+    lambda: EvidenceContext.derived(3),
+    lambda: EvidenceContext.derived(True),
+    lambda: EvidenceContext.derived({}),
+    lambda: EvidenceContext.derived([A.USER]),
+    lambda: EvidenceContext("weird", None),       # closed kind domain
+    lambda: EvidenceContext("direct", A.USER),    # direct derives from nothing
+])
+def test_malformed_context_raises_at_construction(mint):
+    """§4d: the from_class domain is CLOSED and validated at construction —
+    an unknown or malformed value RAISES; no coercion, no str()."""
+    with pytest.raises((TypeError, ValueError)):
+        mint()
+
+
+class _ForgedContext(EvidenceContext):
+    """A subclass that bypasses construction validation entirely."""
+
+    def __init__(self):
+        object.__setattr__(self, "kind", "derived")
+        object.__setattr__(self, "derived_from", "user")
+
+
+@pytest.mark.parametrize("kw", [
+    {"context": "direct"},                        # bare string where a context goes
+    {"context": EvidenceContext},                 # the class, not an instance
+    {"context": _ForgedContext()},                # subclass laundering
+    {"context": EvidenceContext.direct(),
+     "derived_from": A.SYSTEM},                   # two declaration carriers
+])
+def test_invalid_context_raises_with_nothing_written(kw):
+    """§4d: every RAISES cell fires at the REAL entry point BEFORE the LLM
+    runs or anything is written — refusal is loud and has no write."""
+    store = SqliteStore(":memory:")
+
+    def llm_must_not_run(prompt, **_):
+        raise AssertionError("the LLM ran before the context was validated")
+
+    with pytest.raises((TypeError, ValueError)):
+        ingest_event(store, llm_must_not_run, U, event_text="t",
+                     author=A.USER, date="2026-08-29",
+                     relations=DEFAULT_RELATIONS, **kw)
+    assert store.edges(U, active_only=False) == []
+    assert store.episodes(U) == []
+
+
+def test_context_is_immutable_and_value_semantic():
+    """§4d: a value object — no mutation after mint, equality by value."""
+    c = EvidenceContext.direct()
+    with pytest.raises(AttributeError):
+        c.kind = "derived"
+    with pytest.raises(AttributeError):
+        c.derived_from = A.USER
+    assert EvidenceContext.direct() == EvidenceContext.direct()
+    assert (EvidenceContext.derived(A.USER)
+            == EvidenceContext.derived(A.USER))
+    assert EvidenceContext.direct() != EvidenceContext.derived(A.USER)
+    assert len({EvidenceContext.direct(), EvidenceContext.direct()}) == 1

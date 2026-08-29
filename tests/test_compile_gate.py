@@ -11,7 +11,7 @@ model behavior. The two finding-23 invariants under test:
 import json
 import tempfile
 
-from veracium import Memory, MemoryConfig, EvidenceAuthor
+from veracium import Memory, MemoryConfig, EvidenceAuthor, EvidenceContext
 from veracium.gate import partition
 
 
@@ -50,7 +50,7 @@ EXTRACT = [
 def _prime(d):
     fake = RoleFake(EXTRACT)
     mem = Memory(llm=fake, config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=1))
-    mem.remember("u", "USER: I'm vegetarian.", date="2026-06-01")
+    mem.remember("u", "USER: I'm vegetarian.", date="2026-06-01", context=EvidenceContext.direct())
     mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
                  author=EvidenceAuthor.THIRD_PARTY, event_type="email")
     return mem, fake
@@ -166,10 +166,12 @@ def test_system_event_laundering_is_structurally_capped():
         c_edges, c_eps = _compile._grounded_inputs(mem.store, "u", mem.config.relations)
         assert c_edges == [] and c_eps == []
 
-        # backward compat: a clean SYSTEM event (no derived_from) is unchanged —
-        # its facts and episode remain assertable/grounded
+        # a clean SYSTEM event with DECLARED direct capture is unchanged —
+        # its facts and episode remain assertable/grounded. (Pre-0011 this
+        # cell needed no declaration; E4 ended trusted-by-omission, so the
+        # attestation is now explicit — specs/0011 §4d.)
         mem.remember("u", "Triage ran at 09:02.", author=EvidenceAuthor.SYSTEM,
-                     event_type="triage")
+                     event_type="triage", context=EvidenceContext.direct())
         clean = [e for e in mem.store.edges("u") if "pipeline" in e.object]
         assert clean and clean[0].assertable
         g2, _ = partition(mem.store.edges("u", active_only=False), mem.store.episodes("u"))

@@ -14,6 +14,7 @@ from veracium.ingest import ingest_event
 from veracium.registry import (RegistryError, effective_registry,
                                render_prompt_relations)
 from veracium.schema import (DEFAULT_RELATIONS, Disclosure, EvidenceAuthor,
+                             EvidenceContext,
                              QUARANTINE_RELATION, Relation,
                              RESERVED_RELATIONS, UNCLASSIFIED_RELATION)
 from veracium.store.sqlite import SqliteStore
@@ -47,6 +48,10 @@ def _main(triples):
 
 def _ingest(llm, **kw):
     s = SqliteStore(":memory:")
+    # pre-E4 tests meant the pre-E4 default: declared-direct unless the
+    # caller declares a derivation (specs/0011 §4d migration)
+    if "derived_from" not in kw and "context" not in kw:
+        kw["context"] = EvidenceContext.direct()
     r = ingest_event(s, llm, U, event_text="event text",
                      author=kw.pop("author", EvidenceAuthor.USER),
                      date=DATE, **kw)

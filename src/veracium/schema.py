@@ -143,6 +143,81 @@ class Provenance(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# EvidenceContext — the host's POSITIVE ingress declaration (specs/0011 §4d).
+# --------------------------------------------------------------------------- #
+
+class EvidenceContext:
+    """What the host DECLARES about an event's content source at ingress.
+
+    specs/0011 E4: `derived_from=None` stops being trusted-by-omission.
+    A host that attests first-party capture mints `EvidenceContext.direct()`;
+    a host relaying content from a known class mints
+    `EvidenceContext.derived(from_class)`. The `from_class` domain is CLOSED
+    and validated at construction: an unknown or malformed value RAISES and
+    nothing is written — refusal is loud and leaves the host's bug where the
+    host can see it (§4d, settled at external R1-4). ABSENCE is a different
+    input: a caller that supplies no context has declared nothing and gets
+    the conservative floor at the ingest site, never a raise.
+
+    This is a value object the persistence site cannot mint implicitly —
+    there is no default instance and no coercion from caller strings.
+    """
+
+    _KINDS = ("direct", "derived")
+    __slots__ = ("kind", "derived_from")
+
+    def __init__(self, kind: str, derived_from: Optional[EvidenceAuthor]):
+        if kind not in self._KINDS:
+            raise ValueError(
+                f"EvidenceContext kind must be one of {self._KINDS}, "
+                f"got {kind!r}")
+        if kind == "direct":
+            if derived_from is not None:
+                raise ValueError(
+                    "direct() carries no derived_from — a direct capture "
+                    "derives from nothing; use derived(from_class) instead")
+        else:
+            if derived_from is None:
+                raise ValueError(
+                    "derived(None) is not a declaration — `derived` with "
+                    "nothing derived from is NOT the same as absence "
+                    "(specs/0011 §4d); omit the context to get the floor")
+            if not isinstance(derived_from, EvidenceAuthor):
+                raise TypeError(
+                    "derived(from_class) requires an EvidenceAuthor member; "
+                    f"got {type(derived_from).__name__} {derived_from!r} — "
+                    "no coercion, no str() (specs/0011 §4d)")
+        object.__setattr__(self, "kind", kind)
+        object.__setattr__(self, "derived_from", derived_from)
+
+    def __setattr__(self, name, value):
+        raise AttributeError("EvidenceContext is immutable")
+
+    def __repr__(self):
+        if self.kind == "direct":
+            return "EvidenceContext.direct()"
+        return f"EvidenceContext.derived({self.derived_from!r})"
+
+    def __eq__(self, other):
+        return (isinstance(other, EvidenceContext)
+                and self.kind == other.kind
+                and self.derived_from == other.derived_from)
+
+    def __hash__(self):
+        return hash((self.kind, self.derived_from))
+
+    @classmethod
+    def direct(cls) -> "EvidenceContext":
+        """The host attests first-party capture of this event."""
+        return cls("direct", None)
+
+    @classmethod
+    def derived(cls, from_class: EvidenceAuthor) -> "EvidenceContext":
+        """The host declares the event's content derives from `from_class`."""
+        return cls("derived", from_class)
+
+
+# --------------------------------------------------------------------------- #
 # Volatility — expected lifetime of a fact, independent of confidence.
 # --------------------------------------------------------------------------- #
 

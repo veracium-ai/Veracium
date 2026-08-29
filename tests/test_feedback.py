@@ -5,7 +5,7 @@ import tempfile
 
 import pytest
 
-from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium import EvidenceAuthor, EvidenceContext, Memory, MemoryConfig
 from veracium.gate import partition
 
 
@@ -32,7 +32,7 @@ class Fake:
 def _mem(d):
     mem = Memory(llm=Fake(), config=MemoryConfig(db_path=f"{d}/t.db",
                                                  wiki_recompile_after_writes=0))
-    mem.remember("u", "USER: I'm a designer at Acme.", date="2026-06-01")
+    mem.remember("u", "USER: I'm a designer at Acme.", date="2026-06-01", context=EvidenceContext.direct())
     mem.remember("u", "From QuickClaim: you owe $2,400.", date="2026-06-04",
                  author=EvidenceAuthor.THIRD_PARTY, event_type="email")
     return mem

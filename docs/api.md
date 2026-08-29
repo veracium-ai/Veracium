@@ -22,7 +22,7 @@ Memory(*, llm, store=None, embed=None, config=None,
   UTC timestamp, op, `user_id`, content-free counters; no memory text ever.
   Sink failures never break memory operations.
 
-### `remember(user_id, text, *, author=EvidenceAuthor.USER, date=None, event_type="chat", evidence_ref=None, derived_from=None) -> dict`
+### `remember(user_id, text, *, author=EvidenceAuthor.USER, date=None, event_type="chat", evidence_ref=None, derived_from=None, context=None) -> dict`
 
 Ingest one interaction event into `user_id`'s memory: extracts typed edges + a
 dated episode, applies supersession/reinforcement, and quarantines third-party
@@ -31,10 +31,21 @@ claims.
 - `author` — **the trust-critical input.** `EvidenceAuthor.USER` for the user's own
   messages and sent mail; `EvidenceAuthor.THIRD_PARTY` for received mail / external
   documents (their claims are quarantined); `EvidenceAuthor.SYSTEM` for derived content.
-- `derived_from` — declare that the event's *text* embeds content from a lower-trust
-  source (e.g. `author=SYSTEM, derived_from=THIRD_PARTY` for a system summary quoting
-  a received email). Trust is capped at the minimum of the two — quoted material can
-  never become an assertable fact. See
+- `context` — **the host's positive ingress declaration** (specs/0011 §4d).
+  `EvidenceContext.direct()` attests first-party capture;
+  `EvidenceContext.derived(X)` declares the content derives from class X.
+  **Absent any declaration (no `context`, no `derived_from`) the content class
+  floors to `derived(THIRD_PARTY)` — nothing from the event is assertable.**
+  Absence stopped being the trusted cell at 0011's acceptance; `remember`
+  deliberately never mints `direct()` on your behalf. A malformed context
+  raises and nothing is written; passing both `context` and `derived_from`
+  raises.
+- `derived_from` — the legacy form of the same declaration: the event's *text*
+  embeds content from a lower-trust source (e.g. `author=SYSTEM,
+  derived_from=THIRD_PARTY` for a system summary quoting a received email).
+  Still honoured as a positive `derived(X)` declaration. Trust is capped at
+  the minimum of author and content class — quoted material can never become
+  an assertable fact. See
   [concepts → Mixed provenance](concepts.md#mixed-provenance-derived_from).
 - `date` — ISO date the event occurred (`"2026-06-01"`); defaults to today. Drives
   fact timestamps **and** anchors the calendar used to resolve relative dates in the
@@ -54,9 +65,11 @@ claims.
   library surface, not a tool-call surface.
 
 ```python
-mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.")
+mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.",
+             context=EvidenceContext.direct())
 mem.remember("alice", "From billing@x: you owe $900.",
-             author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-06-02")
+             author=EvidenceAuthor.THIRD_PARTY, event_type="email", date="2026-06-02",
+             context=EvidenceContext.direct())
 ```
 
 ### `recall(user_id, query=None, *, token_budget=None, principal=None, **filters) -> Recall`

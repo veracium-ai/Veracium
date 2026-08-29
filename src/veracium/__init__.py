@@ -42,7 +42,8 @@ from .authority import edge_effective as _edge_effective
 from .graph import _value_key as _value_key
 from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
                      ConfirmationCallPath, ContestedGroup, ContestedLinkage, Edge,
-                     Episode, EvidenceAuthor, OutcomeJudgmentDraft, Provenance,
+                     Episode, EvidenceAuthor, EvidenceContext,
+                     OutcomeJudgmentDraft, Provenance,
                      utcnow, validate_correlation_id)
 from .scope import UNRESOLVED as _SCOPE_UNRESOLVED
 from .store.base import HEAD_MOVED, Store
@@ -53,7 +54,7 @@ from .usage import (ATTRIBUTED_PAIRS, ROLE_FIELDS, ArmingComplete,
                     routing_frame as _routing_frame)
 
 __all__ = ["Memory", "MemoryConfig", "Recall", "Store", "SqliteStore",
-           "Complete", "Embed", "EvidenceAuthor"]
+           "Complete", "Embed", "EvidenceAuthor", "EvidenceContext"]
 
 
 @dataclass
@@ -304,11 +305,22 @@ class Memory:
                  date: Optional[str] = None, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
                  derived_from: Optional[EvidenceAuthor] = None,
+                 context: Optional[EvidenceContext] = None,
                  source_id: Optional[str] = None) -> dict:
         """Ingest one interaction event into `user_id`'s memory.
 
         `author` is the trust-critical input: use EvidenceAuthor.THIRD_PARTY for
         received email / external documents so their claims are quarantined.
+
+        `context` (specs/0011 §4d) is the host's POSITIVE ingress declaration
+        about the event's CONTENT source: pass `EvidenceContext.direct()` to
+        attest first-party capture, or `EvidenceContext.derived(X)` to declare
+        derivation from class X. ⚠ Absent any declaration (no `context`, no
+        `derived_from`), the content class floors to derived(THIRD_PARTY) —
+        absence stopped being the trusted cell at 0011's acceptance. This
+        method deliberately does NOT mint `direct()` on the caller's behalf:
+        doing so would recreate trusted-by-omission one layer up. A malformed
+        context raises and nothing is written.
 
         Authorship is per-event; if the event's *content* embeds material a
         lower-trust party influenced — a system-authored summary quoting a
@@ -330,6 +342,7 @@ class Memory:
                 r = ingest_event(self.store, op_llm, user_id, event_text=event_text,
                                  author=author, date=date, event_type=event_type,
                                  evidence_ref=evidence_ref, derived_from=derived_from,
+                                 context=context,
                                  source_id=source_id, relations=self.config.relations)
             except Exception as e:
                 self._on_error("remember", e, user_id)

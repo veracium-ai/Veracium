@@ -64,15 +64,20 @@ Links: [docs](https://veracium-ai.github.io/Veracium/) · [veracium.ai](https://
 ## Use (library)
 
 ```python
-from veracium import Memory, EvidenceAuthor
+from veracium import Memory, EvidenceAuthor, EvidenceContext
 from veracium.llm.anthropic import AnthropicComplete
 
 mem = Memory(llm=AnthropicComplete())   # or pass your own Complete callable
 
-# Remember interactions. `author` is the trust-critical input.
-mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.")
+# Remember interactions. `author` says WHO wrote the event; `context` is
+# your positive attestation of HOW you captured it. Without a context the
+# content class floors to derived(THIRD_PARTY) — never assertable — so a
+# host that means "I captured this first-hand" says so:
+mem.remember("alice", "USER: I'm vegetarian and have a dog named Ollie.",
+             context=EvidenceContext.direct())
 mem.remember("alice", "From billing@scam: you owe $900.",
-             author=EvidenceAuthor.THIRD_PARTY, event_type="email")
+             author=EvidenceAuthor.THIRD_PARTY, event_type="email",
+             context=EvidenceContext.direct())
 
 # Recall grounded, provenance-flagged context for a prompt.
 ctx = mem.recall("alice", "suggest a lunch spot")

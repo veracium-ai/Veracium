@@ -64,6 +64,11 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
         raise ValueError(
             f"derived_from={derived_from!r} is not accepted. Use "
             f"{sorted(_AUTHOR)} or omit it.")
+    # specs/0011 §4d: this surface DELIBERATELY passes no EvidenceContext.
+    # Content arrives here through a model tool call — the party relaying it
+    # cannot attest first-party capture — so an undeclared derived_from takes
+    # the conservative floor (derived(THIRD_PARTY)) at the ingest site. A
+    # host-attested capability for MCP would be its own spec, not a default.
     r = dict(mem.remember(user_id, text, author=_AUTHOR[author],
                           event_type=event_type, date=date,
                           derived_from=_AUTHOR[derived_from] if derived_from else None))

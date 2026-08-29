@@ -64,6 +64,13 @@ mem.remember(user, f"Triage classified the mail (subject: {subject!r}) as spam."
              event_type="triage")
 ```
 
+**Absence is no longer the trusted cell** (specs/0011, E4). A call that
+declares *nothing* — no `context`, no `derived_from` — floors the content
+class to `derived(THIRD_PARTY)`: the event is kept, but nothing extracted
+from it can reach an assertable surface. First-party capture is a positive
+attestation now: `context=EvidenceContext.direct()`. A malformed context
+raises with nothing written.
+
 Trust is capped at the **minimum** of `author` and `derived_from`: nothing
 extracted from such an event — no edge, and not the episode either — can reach
 an assertable surface (the gate's GROUNDED block or the compiled wiki). The

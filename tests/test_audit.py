@@ -3,7 +3,7 @@
 import json
 import tempfile
 
-from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium import EvidenceAuthor, EvidenceContext, Memory, MemoryConfig
 from veracium.audit import AuditLog
 
 
@@ -20,7 +20,7 @@ def test_audit_records_every_operation_content_free():
         log = AuditLog(f"{d}/audit.jsonl")
         mem = Memory(llm=_fake, audit=log,
                      config=MemoryConfig(db_path=f"{d}/t.db", wiki_recompile_after_writes=0))
-        mem.remember("alice", "USER: I'm vegetarian.", date="2026-07-01")
+        mem.remember("alice", "USER: I'm vegetarian.", date="2026-07-01", context=EvidenceContext.direct())
         mem.recall("alice", "lunch?")
         mem.answer("alice", "diet?")
         mem.maintain("alice")
@@ -50,7 +50,7 @@ def test_audit_records_every_operation_content_free():
                 raise RuntimeError("disk full")
         mem.audit = Broken()
         try:
-            mem.remember("alice", "USER: still vegetarian.", date="2026-07-02")
+            mem.remember("alice", "USER: still vegetarian.", date="2026-07-02", context=EvidenceContext.direct())
         except RuntimeError as e:
             raise AssertionError("audit failure broke remember()") from e
         mem.close()

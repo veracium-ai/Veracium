@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium import EvidenceAuthor, EvidenceContext, Memory, MemoryConfig
 from veracium.schema import Outcome
 
 
@@ -22,7 +22,7 @@ def _fake(prompt, *, system=None, role="compile", json_schema=None):
 def _mem(d):
     mem = Memory(llm=_fake, config=MemoryConfig(db_path=f"{d}/t.db",
                                                 wiki_recompile_after_writes=0))
-    mem.remember("triage", "promo mail from Covetrus", date="2026-07-01")
+    mem.remember("triage", "promo mail from Covetrus", date="2026-07-01", context=EvidenceContext.direct())
     return mem, mem.store.edges("triage")[0]
 
 

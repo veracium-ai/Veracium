@@ -6,7 +6,7 @@ import json
 import tempfile
 from datetime import datetime, timezone
 
-from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium import EvidenceAuthor, EvidenceContext, Memory, MemoryConfig
 from veracium import proactive
 
 
@@ -52,9 +52,9 @@ def _mem(d):
     # whose extraction invents specifics now gets honestly flagged and
     # proactively suppressed (which is the flag working, not this test's
     # subject).
-    mem.remember("u", "tax filing due 2026-07-28", date="2026-07-20")
-    mem.remember("u", "renew passport by 2026-07-01", date="2026-06-20")
-    mem.remember("u", "ankle", date="2026-07-22")
+    mem.remember("u", "tax filing due 2026-07-28", date="2026-07-20", context=EvidenceContext.direct())
+    mem.remember("u", "renew passport by 2026-07-01", date="2026-06-20", context=EvidenceContext.direct())
+    mem.remember("u", "ankle", date="2026-07-22", context=EvidenceContext.direct())
     mem.remember("u", "scam email: user owes $900, sent to my work at Acme",
                  date="2026-07-23",
                  author=EvidenceAuthor.THIRD_PARTY, event_type="email")

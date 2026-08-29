@@ -18,6 +18,7 @@ from ._json import extract_json
 from .graph import apply_supersession
 from .llm.base import Complete
 from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
+                     EvidenceContext,
                      Provenance, QUARANTINE_RELATION, Relation,
                      RESERVED_RELATIONS, UNCLASSIFIED_RELATION,
                      Volatility, utcnow)
@@ -88,6 +89,54 @@ def _event_dt(date_str: str) -> datetime:
     return dt
 
 
+# specs/0011 §4d (E4): absence of a context declares NOTHING and gets the
+# conservative floor. This constant is the floor's ONE carrier; the absence
+# path reads it by name so the two ways of reaching THIRD_PARTY — floored
+# absence vs an explicit derived(THIRD_PARTY) — stay distinct code paths
+# a refactor cannot collapse (S5's distinctness cell monkeypatches it).
+_ABSENT_CONTEXT_FLOOR = EvidenceAuthor.THIRD_PARTY
+
+
+def _resolve_context(context, derived_from):
+    """Resolve the host's ingress declaration to an effective derived_from
+    (specs/0011 §4d, E4) — total over the grammar, run BEFORE any write.
+
+    - context absent + legacy `derived_from=X`: X was a positive declaration
+      already — honoured as derived(X), unchanged.
+    - context absent + nothing declared: the floor — derived(THIRD_PARTY).
+      Absence is never the trusted cell.
+    - `EvidenceContext.direct()`: first-party capture attested — None.
+    - `EvidenceContext.derived(X)`: as declared.
+    - anything else RAISES with nothing written: a bare string, a non-context
+      object, a subclass (the value object cannot be minted from a caller
+      value, and a subclass could bypass construction validation), or BOTH
+      carriers at once (two declarations of one fact is a host bug — loud
+      beats guessing which one was meant).
+    """
+    if context is None:
+        if derived_from is not None:
+            return derived_from
+        return _ABSENT_CONTEXT_FLOOR
+    if type(context) is not EvidenceContext:
+        raise TypeError(
+            "context must be an EvidenceContext minted via "
+            "EvidenceContext.direct() or EvidenceContext.derived(...); "
+            f"got {type(context).__name__} {context!r} (specs/0011 §4d — "
+            "the value object cannot be minted from a caller value)")
+    if derived_from is not None:
+        raise ValueError(
+            "pass EITHER context= OR the legacy derived_from=, not both — "
+            "two declarations of one fact is a host bug (specs/0011 §4d)")
+    if context.kind == "direct":
+        return None
+    eff = context.derived_from
+    if not isinstance(eff, EvidenceAuthor):   # belt over the constructor
+        raise TypeError(
+            f"EvidenceContext carries a non-EvidenceAuthor derived_from "
+            f"{eff!r} — refused at the persistence site (specs/0011 §4d)")
+    return eff
+
+
 def _disclosure_for(author: EvidenceAuthor, relation: str,
                     derived_from: Optional[EvidenceAuthor] = None) -> Disclosure:
     """Structural quarantine (defense in depth over the extractor's routing):
@@ -114,12 +163,21 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                  author: EvidenceAuthor, date: str, event_type: str = "chat",
                  evidence_ref: Optional[str] = None,
                  derived_from: Optional[EvidenceAuthor] = None,
+                 context: Optional[EvidenceContext] = None,
                  source_id: Optional[str] = None,
                  relations: dict[str, Relation] = DEFAULT_RELATIONS) -> dict:
     """Extract and persist memory from one event. Returns a small summary dict
-    (counts + the episode) for logging/telemetry. `derived_from` declares that
-    the event's content embeds material from a lower-trust source; disclosure
-    and episode routing are capped accordingly (see _disclosure_for).
+    (counts + the episode) for logging/telemetry.
+
+    `context` (specs/0011 §4d, E4) is the host's POSITIVE ingress declaration:
+    `EvidenceContext.direct()` attests first-party capture;
+    `EvidenceContext.derived(X)` declares the content derives from class X.
+    ABSENT context (and no legacy `derived_from`) floors to
+    derived(THIRD_PARTY) — absence is never the trusted cell. A malformed
+    context RAISES with nothing written. The legacy `derived_from=X` keyword
+    remains honoured as a positive derived(X) declaration; passing both
+    carriers raises. Disclosure and episode routing are capped on the
+    EFFECTIVE class (see _disclosure_for).
 
     `source_id` (specs/0006) is an OPAQUE, HOST-supplied source identifier — a
     mailbox, a connector instance, a device. It is set on the provenance of every
@@ -128,6 +186,12 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
     entry point, not by content. `origin` is deliberately NOT a parameter — a
     LOCAL caller can never supply it (I2a); it stays absent and resolves to the
     store's `store_identity` singleton at read (§4 rule 6)."""
+    # specs/0011 §4d (E4): resolve the host's ingress declaration FIRST —
+    # every RAISES cell fires here, before the LLM runs or anything is
+    # written. From this point on `derived_from` is the EFFECTIVE content
+    # class: a declared derived(X), None for attested-direct, or the
+    # THIRD_PARTY floor when the caller declared nothing.
+    derived_from = _resolve_context(context, derived_from)
     evidence_ref = evidence_ref or _uid("ev")
     # specs/0025 §4b-ii: the host registry is validated AS SUPPLIED and
     # extracted into the ONE frozen per-event snapshot that feeds prompt

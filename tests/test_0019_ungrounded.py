@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from veracium import EvidenceAuthor, Memory, MemoryConfig
+from veracium import EvidenceAuthor, EvidenceContext, Memory, MemoryConfig
 from veracium import grounding
 from veracium.contribution import (RECOMPUTED_EDGE_FIELDS,
                                    raw_request_snapshot)
@@ -315,7 +315,7 @@ def test_ungrounded_total_replace_guard(tmp_path):
 def test_confirm_records_but_never_clears(tmp_path):
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d, [_fab()])
-        mem.remember("u", "no date picked yet", date="2026-08-01")
+        mem.remember("u", "no date picked yet", date="2026-08-01", context=EvidenceContext.direct())
         edge = mem.store.edges("u", active_only=True)[0]
         assert edge.ungrounded is True
         mem.confirm("u", edge.id)
@@ -333,8 +333,8 @@ def test_marker_surfaces_and_wiki_exclusion():
         mem = _mem(d, [_fab(), {"triples": [
             {"subject": "user", "relation": "pet", "object": "cat Miso"}],
             "episode": "User mentioned the cat."}])
-        mem.remember("u", "deadline undecided", date="2026-08-01")
-        mem.remember("u", "my cat Miso", date="2026-08-02")
+        mem.remember("u", "deadline undecided", date="2026-08-01", context=EvidenceContext.direct())
+        mem.remember("u", "my cat Miso", date="2026-08-02", context=EvidenceContext.direct())
         # every code-rendered surface carries the marker with the fact
         r = mem.recall("u", "deadline")
         assert MARKER in r.context
@@ -370,8 +370,8 @@ def test_proactive_suppression():
                           "object": "VAT filing due 2026-08-12",
                           "volatility": "slow"}],
              "episode": "User noted the VAT deadline."}])   # grounded twin
-        mem.remember("u", "taxes soon, date not set", date="2026-08-01")
-        mem.remember("u", "VAT filing due 2026-08-12", date="2026-08-01")
+        mem.remember("u", "taxes soon, date not set", date="2026-08-01", context=EvidenceContext.direct())
+        mem.remember("u", "VAT filing due 2026-08-12", date="2026-08-01", context=EvidenceContext.direct())
         briefing = mem.recall("u")                     # no query: proactive
         # the grounded overdue twin SURFACES — the section works — while the
         # flagged one, equally overdue, is suppressed BY THE FLAG alone
@@ -396,7 +396,7 @@ def _export_lines(mem, uid, d):
 def test_import_strictbool_and_forging_matrix():
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d, [_fab()])
-        mem.remember("u", "deadline undecided", date="2026-08-01")
+        mem.remember("u", "deadline undecided", date="2026-08-01", context=EvidenceContext.direct())
         path, lines = _export_lines(mem, "u", d)
         edge_line = next(l for l in lines if l.get("kind") == "edge"
                          or l.get("relation"))
@@ -468,7 +468,7 @@ def test_import_strictbool_and_forging_matrix():
 def test_pre_v6_envelope_strips_the_field():
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d, [_fab()])
-        mem.remember("u", "deadline undecided", date="2026-08-01")
+        mem.remember("u", "deadline undecided", date="2026-08-01", context=EvidenceContext.direct())
         path, lines = _export_lines(mem, "u", d)
         downgraded = []
         for l in lines:
@@ -520,7 +520,7 @@ def test_version_gates_and_migration(tmp_path):
 def test_observation_surfaces():
     with tempfile.TemporaryDirectory() as d:
         mem = _mem(d, [_fab()])
-        mem.remember("u", "deadline undecided", date="2026-08-01")
+        mem.remember("u", "deadline undecided", date="2026-08-01", context=EvidenceContext.direct())
         rep = mem.introspect("u")
         assert rep["ungrounded"] == 1
         # MCP carries no new field beyond the rendered marker: the tool
