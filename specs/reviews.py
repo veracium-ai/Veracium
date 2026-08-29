@@ -1538,8 +1538,9 @@ REVIEWS = [
          "closure gate's concurrent commands, the glob-broom that "
          "deleted a live snapshot) with its invariant — private copies "
          "or recorded-path-scoped touches, never pattern-matched "
-         "sweeps. Sealed AFTER this row, sha pinned on return",
-         findings=0),
+         "sweeps. Sealed as 0011-v18-20260829T0555Z.tar.gz, sha256 "
+         "1013e36a309e86fcf517fa90e7e04bf1abbe4d416103657d2733a6cd"
+         "5462f8d9, commit bed146f", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
