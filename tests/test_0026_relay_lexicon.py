@@ -126,6 +126,14 @@ def test_relay_lexicon_mutation_matrix(monkeypatch):
         "removing `claimed` left the matrix green — verb-list recall is "
         "enumerated again, not measured")
     monkeypatch.undo()
+    # 3h. comitative phrases dropped (lex-8): "the user, along with her
+    #     vet, said…" loses its co-speaker — the round-1 co-source class
+    #     one syntactic layer up, in the unsafe direction
+    L, V = _fresh()
+    assert mutate(_COMITATIVE=()), (
+        "dropping the comitative set left the matrix green — a "
+        "quasi-coordinated co-speaker would go unrestricted")
+    monkeypatch.undo()
     # 3f. Unicode normalization dropped (lex-7): the curly-apostrophe
     #     possessive tokenizes as fragments and "the user's doctor"
     #     classifies as the user again
@@ -543,3 +551,41 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
                             / "fp_aggregate.json")],
                        capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, r.stderr[-300:]
+    # 0026-EVIDENCE-R2-1, research's re-verify counterexample: the gate
+    # CLAIMED "separately validated" and CHECKED is_file — an EMPTY {}
+    # beside a 5%-fires aggregate produced "aggregate VALID". The
+    # adjudication is read, closed-schema-validated, and BOUND to this
+    # exact aggregate (lexicon version AND fire count):
+    over = copy.deepcopy(agg)
+    total = over["grounded_first_person"]["total"]
+    over["grounded_first_person"]["fires"] = int(total * 0.05)
+    over["grounded_first_person"]["fires_ambiguous_only"] = 0
+    over["grounded_first_person"]["markers"] = {"said": 1}
+    empty_adj = tmp_path / "fp_adjudication_empty.json"
+    empty_adj.write_text("{}")
+    bad = MF.validate_aggregate(over, adj_path=empty_adj)
+    assert any("stub file" in b for b in bad), (
+        "an EMPTY adjudication carried an over-gate record", bad)
+    # stale binding: right shape, wrong lexicon / wrong fire count
+    good_adj = dict(schema=1,
+                    lexicon_version=over["lexicon_version"],
+                    fires=over["grounded_first_person"]["fires"],
+                    sample=dict(size=50, seed=1, true_positive=45,
+                                false_positive=5),
+                    verdict="over-bar fires labelled acceptable")
+    stale1 = dict(good_adj, lexicon_version="0026-lex-999")
+    p1 = tmp_path / "adj_stale_lex.json"
+    p1.write_text(json.dumps(stale1))
+    bad = MF.validate_aggregate(over, adj_path=p1)
+    assert any("stale verdict" in b for b in bad), bad
+    stale2 = dict(good_adj, fires=good_adj["fires"] - 1)
+    p2 = tmp_path / "adj_stale_fires.json"
+    p2.write_text(json.dumps(stale2))
+    bad = MF.validate_aggregate(over, adj_path=p2)
+    assert any("different fires" in b for b in bad), bad
+    # and a REAL matching adjudication carries the over-bar record —
+    # the bypass exists for the legitimate labelled case, proven alive
+    p3 = tmp_path / "adj_good.json"
+    p3.write_text(json.dumps(good_adj))
+    bad = MF.validate_aggregate(over, adj_path=p3)
+    assert bad == [], ("a valid bound adjudication was refused", bad)

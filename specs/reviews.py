@@ -1697,6 +1697,34 @@ REVIEWS = [
          "postdates both internal reviews with no structured "
          "co-verification row", findings=5),
 
+    dict(spec="0026", round=5, kind="internal", date="2026-08-29",
+         raised=["0026-I5-1"],
+         verdict="RESEARCH ROUND-2 PRE-SEAL RED-TEAM (grammar half) — "
+         "BLOCKED the v3 seal: COMITATIVE quasi-coordinators (along "
+         "with / together with / as well as) introduce a co-speaker the "
+         "lexical coordinator set cannot see; three genuine relays "
+         "silently unrestricted, and exactly the generator-axis gap the "
+         "pre-seal question asked about. Plus one non-blocking FP: the "
+         "self-possessive rule covered first person only (the user's "
+         "own note fired). Both FOLDED as lex-8 (closed comitative set "
+         "in the head scan; the comitative axis GENERATED; user's-own = "
+         "my-own), measuring identically to lex-7 (439/68,479 = 0.64%)",
+         findings=1),
+
+    dict(spec="0026", round=6, kind="internal", date="2026-08-29",
+         raised=["0026-I6-1"],
+         verdict="RESEARCH ROUND-2 PRE-SEAL RED-TEAM (binding half) — "
+         "wiring and doc binding verified CLEAN, but the new 2% gate "
+         "had a PROVEN false-PASS, this arc's signature defect in the "
+         "fold's own machinery: the over-bar clause claimed 'separately "
+         "validated' and checked is_file(), so an EMPTY {} beside a "
+         "5%-fires aggregate produced 'aggregate VALID'. FOLDED: the "
+         "adjudication is read and validated (closed schema, labelled "
+         "sample summing to size, non-blank verdict) and BOUND to the "
+         "exact aggregate (lexicon version AND fire count); empty-file "
+         "and stale-binding refusals are standing tests; the legitimate "
+         "labelled bypass is proven alive", findings=1),
+
     dict(spec="0026", round=2, kind="external", date="2026-08-29",
          raised=["0026-R2-1", "0026-R2-2", "0026-R2-3",
                  "0026-EVIDENCE-R2-1", "0026-PACKAGE-R2-1"],
@@ -1744,7 +1772,12 @@ REVIEWS = [
          "expectations, which caught two further defects during its own "
          "construction (relative pronouns misfiled as breakers; the scan "
          "window beheading long subjects); §6a re-measured 0.64% "
-         "(439/68,479) — the head construction IMPROVED the bound. R2-2 "
+         "(439/68,479) — the head construction IMPROVED the bound; "
+         "research's pre-seal pass then added COMITATIVE "
+         "quasi-coordinators (the generator-axis gap, answered: "
+         "along with/together with/as well as co-speakers now "
+         "restrict, the axis generated) and the third-person "
+         "self-possessive, lex-8 measuring identically. R2-2 "
          "closed mode-split: restore=True trust-field-faithful per 0005 "
          "P2, default recomputes+floors, export rides a FORMAT_VERSION "
          "bump per 0025 with the {format x mode x field} matrix in §3d. "

@@ -192,7 +192,59 @@ def main() -> int:
 _PEER = HERE.parent / "0011" / "subject_aggregate.json"
 
 
-def validate_aggregate(agg) -> list:
+def _validate_adjudication(adj, agg, pct) -> list:
+    """The labelling verdict that alone may carry an over-gate record:
+    a CLOSED schema, non-vacuous, and BOUND to this exact aggregate —
+    its lexicon version and its fire count — so a stale adjudication for
+    a different lexicon or count cannot bypass (0026-EVIDENCE-R2-1,
+    research's empty-{} counterexample is the standing mutant)."""
+    out = []
+    if type(adj) is not dict or not adj:
+        return ["fp_adjudication.json is empty or not an object — a "
+                "stub file is not a labelling verdict"]
+    TOP = {"schema": int, "lexicon_version": str, "fires": int,
+           "sample": dict, "verdict": str}
+    missing = sorted(set(TOP) - set(adj))
+    unknown = sorted(set(adj) - set(TOP))
+    if missing:
+        out.append(f"adjudication missing key(s): {missing}")
+    if unknown:
+        out.append(f"adjudication unknown key(s): {unknown} — closed")
+    for k, ty in TOP.items():
+        if k in adj and type(adj[k]) is not ty:
+            out.append(f"adjudication {k}: {type(adj[k]).__name__}, "
+                       f"expected {ty.__name__}")
+    if out:
+        return out
+    if adj["schema"] != 1:
+        out.append(f"adjudication schema {adj['schema']!r} is not 1")
+    if adj["lexicon_version"] != agg["lexicon_version"]:
+        out.append(f"adjudication is for lexicon "
+                   f"{adj['lexicon_version']!r}, the aggregate is "
+                   f"{agg['lexicon_version']!r} — a stale verdict cannot "
+                   f"carry this record")
+    if adj["fires"] != agg["grounded_first_person"]["fires"]:
+        out.append(f"adjudication is for {adj['fires']} fires, the "
+                   f"aggregate has "
+                   f"{agg['grounded_first_person']['fires']} — a verdict "
+                   f"on different fires cannot carry this record")
+    smp = adj["sample"]
+    S = {"size": int, "seed": int, "true_positive": int,
+         "false_positive": int}
+    if sorted(smp) != sorted(S) or any(
+            type(smp[k]) is not ty for k, ty in S.items() if k in smp):
+        out.append(f"adjudication sample keys/types != {sorted(S)}")
+        return out
+    if smp["size"] < 1:
+        out.append("adjudication sample is empty — no labelling happened")
+    if smp["true_positive"] + smp["false_positive"] != smp["size"]:
+        out.append("adjudication labels do not sum to the sample size")
+    if not adj["verdict"].strip():
+        out.append("adjudication verdict is blank")
+    return out
+
+
+def validate_aggregate(agg, adj_path=None) -> list:
     """0026-EVIDENCE-R1-1: a CLOSED typed schema, and the cache manifest
     cross-checked against the 0011/0025 subject aggregate — same cache,
     different script, ships beside this one. A fabricated manifest has to
@@ -287,7 +339,8 @@ def validate_aggregate(agg) -> list:
     if g["total"] > 0:
         pct = 100.0 * g["fires"] / g["total"]
         if pct > 2.0:
-            adj = HERE / "fp_adjudication.json"
+            adj = (HERE / "fp_adjudication.json") if adj_path is None \
+                else pathlib.Path(adj_path)
             if not adj.is_file():
                 out.append(
                     f"fires are {pct:.2f}% of the population — OVER the "
@@ -295,6 +348,22 @@ def validate_aggregate(agg) -> list:
                     f"(fp_adjudication.json) exists; an over-gate record "
                     f"is not acceptance evidence absent a separately "
                     f"validated labelling verdict (0026-EVIDENCE-R2-1)")
+            else:
+                # research, round-2 re-verify: the first form of this
+                # clause CLAIMED "separately validated" and CHECKED
+                # is_file — an empty {} defeated the gate, in the very
+                # machinery whose job is catching prose that asserts
+                # more than the code. The artifact is READ and
+                # VALIDATED, and BOUND to this aggregate.
+                try:
+                    a_ = json.loads(adj.read_text())
+                except (OSError, json.JSONDecodeError) as exc:
+                    a_ = None
+                    out.append(f"fp_adjudication.json is unreadable or "
+                               f"not JSON ({exc}) — an over-gate record "
+                               f"refuses")
+                if a_ is not None:
+                    out.extend(_validate_adjudication(a_, agg, pct))
 
     # the cross-artifact anchor: the 0011/0025 subject aggregate was
     # derived from the SAME cache by a different script

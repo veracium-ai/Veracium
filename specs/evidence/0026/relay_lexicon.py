@@ -80,12 +80,22 @@ MEASURED HISTORY OF THIS FILE (§6a's pre-commitment, honoured):
          (found by the generated grammar oracle). Resolution over the
          head SET: any third-party head restricts; else ambiguous;
          else outbound.
+  lex-8  (research round-2 pre-seal) COMITATIVE quasi-coordinators join
+         the co-source scan ("the user, along with her vet, said…" —
+         three genuine relays were silently unrestricted; the round-1
+         co-source class one syntactic layer up, and exactly the
+         generator-axis gap: the oracle could not catch what it did not
+         generate — the axis is generated now); and the self-possessive
+         rule covers third-person narration ("the user's own note" is
+         the user's own, like "my own"). Measured identical to lex-7 on
+         this corpus (439 = 0.64%): comitatives do not occur in the
+         own-use population.
 """
 from __future__ import annotations
 
 import re
 
-LEXICON_VERSION = "0026-lex-7"
+LEXICON_VERSION = "0026-lex-8"
 
 # Attribution VERBS — §3a's named class. lex-5 (research red-team,
 # FN direction): the list omitted high-frequency attribution verbs —
@@ -182,7 +192,19 @@ _CLAUSE_BREAK = frozenset((
 # coordination shares its subject ("the vet examined the cat and said…"),
 # so breaking at `and` attributed an elided third-party subject to
 # nobody — the unsafe direction.
-_COORD = frozenset(("and", "but", "so", "then"))
+_COORD = frozenset(("and", "but", "so", "then", "plus"))
+
+# COMITATIVE quasi-coordinators (lex-8, research round-2 pre-seal): a
+# prepositional co-speaker phrase — "the user, along with her vet,
+# said…" — introduces a third-party CO-SOURCE exactly like "and", but
+# lexical coordinators cannot see it, so three genuine relays were
+# silently unrestricted (the round-1 co-source class, one syntactic
+# layer up). Matched as token sequences inside the clause; each match
+# reopens head-expectation like a coordinator.
+_COMITATIVE = (
+    ("along", "with"), ("together", "with"), ("as", "well", "as"),
+    ("in", "addition", "to"), ("accompanied", "by"),
+)
 
 # Skipped while scanning for a subject head (never a subject themselves).
 _SKIP_TOKENS = frozenset((
@@ -359,7 +381,20 @@ def _direction(tokens: list, idx: int, max_scan: int = 24) -> str:
     heads = []
     expecting_head = True
     saw_self_poss = False
-    for k, tok in enumerate(clause):
+    k = 0
+    while k < len(clause):
+        tok = clause[k]
+        matched_com = None
+        for pat in _COMITATIVE:
+            if tuple(clause[k:k + len(pat)]) == pat:
+                matched_com = pat
+                break
+        if matched_com:
+            expecting_head = True        # a comitative phrase introduces
+            saw_self_poss = False        # a CO-SPEAKER (lex-8)
+            k += len(matched_com)
+            continue
+        k += 1
         if tok in _DETERMINERS or tok in _SKIP_TOKENS:
             continue
         if tok in _COORD:
@@ -370,13 +405,15 @@ def _direction(tokens: list, idx: int, max_scan: int = 24) -> str:
             continue                     # post-head modifier material —
                                          # ignored, whoever it names
         if _is_possessive(tok):
-            if tok in ("my", "our"):
-                # "my own X" is the user's own; any other possessed head
-                # is third — peek for the self marker
-                nxt = clause[k + 1] if k + 1 < len(clause) else ""
-                if nxt in _FIRST_PERSON_SELF:
-                    saw_self_poss = True
-                    continue
+            nxt = clause[k] if k < len(clause) else ""
+            if tok in ("my", "our", "user's", "users'") \
+                    and nxt in _FIRST_PERSON_SELF:
+                # "my own X" AND "the user's own X" are the user's own —
+                # the extractor narrates the user in the third person
+                # (lex-8, research: the self rule covered first person
+                # only, so "the user's own note" over-restricted)
+                saw_self_poss = True
+                continue
             heads.append("third")        # possessed head: my/their/
             expecting_head = False       # user's <noun>
             continue

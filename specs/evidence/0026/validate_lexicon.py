@@ -90,6 +90,16 @@ CELLS = (
     ("nested_relay", "my sister said the vet said it is fine", None, True),
     ("nested_user_outer", "I said the vet said it is fine", None, True),
     ("dropped_subject_fragment", "said it was fine", None, False),
+    # --- lex-8 (research round-2 pre-seal): comitative co-speakers and
+    # the third-person self-possessive
+    ("comitative_along_with",
+     "the user, along with her vet, said the cat is sick", None, True),
+    ("comitative_together_with",
+     "the user together with the landlord said rent is due", None, True),
+    ("comitative_as_well_as",
+     "the user as well as the accountant said the deduction is valid",
+     None, True),
+    ("users_own_is_self", "the user's own note said fine", None, False),
     # --- lex-5 RECALL cells (research red-team, the FN direction): §6a
     # measures false positives only, so verb-list completeness IS the
     # check's recall — these held relays MUST FIRE, so completeness is
@@ -140,6 +150,8 @@ _SUBJECT_HEADS = {
     "the user's doctor": "third",          # ASCII possessive
     "the user\u2019s doctor": "third",     # curly possessive (normalized)
     "my own account": "user",
+    "the user's own note": "user",         # third-person self-possessive
+    "the user\u2019s own note": "user",    # …and its curly form
 }
 _MODIFIERS = (
     "",                                    # bare
@@ -153,6 +165,13 @@ _CONJUNCTS = {
     " and i": "user",
     " and the nurse": "third",
     " and she": "ambiguous",
+    # COMITATIVE axis (lex-8, research round-2: quasi-coordinators were
+    # the generator's gap — the oracle could not catch what it did not
+    # generate)
+    " along with her vet": "third",
+    " together with the landlord": "third",
+    " as well as the accountant": "third",
+    " in addition to the nurse": "third",
 }
 _IDENT_RANK = {"third": 0, "ambiguous": 1, "user": 2}
 

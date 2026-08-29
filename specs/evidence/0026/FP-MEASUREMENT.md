@@ -1,6 +1,6 @@
 # 0026 §6a — the acceptance measurement (dev, 2026-08-26; re-measured 2026-08-29)
 
-**Result: the gate is CLEARED. 0.64% (439 of 68,479) under lex-7 against
+**Result: the gate is CLEARED. 0.64% (439 of 68,479) under lex-8 against
 a 2% bar — and that figure is an UPPER BOUND, not an estimate.**
 
 **RE-MEASURED 2026-08-29 (external round 1, 0026-R1-1):** lex-2's
@@ -17,7 +17,7 @@ fires restricts via the ambiguous class alone on this corpus.
 of the artifacts — lex-1's implementation was never committed, so its
 8.20% row below is recorded prose history, reproducible only in cause
 analysis, not by rerun. lex-2 remains in git history
-(`66d11a7`); lex-7 is the shipped detector. The aggregate now has a
+(`66d11a7`); lex-8 is the shipped detector. The aggregate now has a
 closed validator with a cross-artifact manifest anchor and a real
 `--aggregate` verify mode; whole-corpus figures are RECORDED ONLY
 (they reproduce with `--cache` on the measuring host).**
@@ -40,7 +40,7 @@ sha256), so these figures sit in the same frame as the 183,417 / 41.7% ones.
 
 ## All three passes
 
-| | lex-1 (prose history) | lex-2 | lex-4 | lex-5 | lex-6 | lex-7 (shipped) |
+| | lex-1 (prose history) | lex-2 | lex-4 | lex-5 | lex-6 | lex-7/8 (shipped; identical figures) |
 |---|---|---|---|
 | fires on grounded first-person | 5,618 = **8.20%** | 415 = 0.61% | 418 = 0.61% | 849 = 1.24% | 481 = 0.70% | 439 = **0.64%** |
 | …of which ambiguous-class only | n/a | n/a (class did not exist) | 1 | 2 | 2 | **0** |
@@ -55,7 +55,7 @@ measured recall — §6a is FP-only and every matrix inbound cell used an
 in-list verb. lex-5 added them all and measured 1.24%; reading the
 fires (the §6a discipline) showed the nominal homographs
 (notes/added/adds/emails) were every sampled fire, so lex-6 keeps only
-their unambiguous inflections; lex-7 (round 2) replaces the token scan with head construction and settles at 0.64%. Recall is now
+their unambiguous inflections; lex-7 (round 2) replaces the token scan with head construction and settles at 0.64%; lex-8 adds comitative co-speakers and the third-person self-possessive, measuring identically on this corpus. Recall is now
 MEASURED: held relay cells across the verb classes must fire, and
 removing `claimed` alone is a red matrix.
 

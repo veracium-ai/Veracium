@@ -386,10 +386,13 @@ absent.**
 
 ### 6a. The acceptance measurement gate
 
-**RE-MEASURED 2026-08-29 under lex-7 (external round 2's head
-construction on top of the round-1 grammar and the recall-driven verb
-classes) — THE GATE IS CLEARED at 0.64% (439 of 68,479 grounded
-first-person triples) against the 2% bar**, with the ambiguity split
+**RE-MEASURED 2026-08-29 under lex-8 (external round 2's head
+construction plus research's pre-seal comitative fix, on top of the
+round-1 grammar and the recall-driven verb classes) — THE GATE IS
+CLEARED at 0.64% (439 of 68,479 grounded first-person triples) against
+the 2% bar; lex-8 measures identically to lex-7 on this corpus, the
+comitative and self-possessive rules touching only shapes absent from
+the own-use population**, with the ambiguity split
 counted (0 of the 439 fires restrict via the AMBIGUOUS class alone;
 287 outbound-only constructions suppressed). The head construction
 IMPROVED the bound — nearest-token misreads of user subjects had been
@@ -631,6 +634,24 @@ the aggregate at the verify entry point; every stale passage the
 reviewer named is swept. One live catch during the sweep: a coverage
 figure typed from memory (219) refused against the artifact (220) — the
 binder gained the coverage facts in the same commit.
+
+**Research's round-2 pre-seal pass (structured as internal rounds 5–6
+in `reviews.py`)** found two more, both folded before this seal:
+comitative quasi-coordinators (*"the user, along with her vet, said…"*
+— three genuine relays silently unrestricted; the co-source class one
+syntactic layer up, and exactly the generator-axis gap: the oracle
+could not catch what it did not generate; lex-8 adds the closed
+comitative set to the head scan AND the comitative axis to the
+generator, with the third-person self-possessive consistency fix
+riding) — and **the adjudication-artifact bypass, this arc's signature
+defect landed in this fold's own new gate**: the over-2% clause CLAIMED
+"separately validated" and CHECKED `is_file()`, so an empty `{}` beside
+a 5%-fires aggregate produced "aggregate VALID". The adjudication is
+now READ and VALIDATED — closed schema, non-vacuous labelled sample,
+blank-verdict refusal — and BOUND to this exact aggregate's lexicon
+version and fire count, so a stale verdict cannot carry a different
+record; the empty-file and stale-binding cases are standing tests, and
+the legitimate labelled bypass is proven alive.
 
 **0026-PACKAGE-R2-1 — one source for measurements; internal history
 structured.** The stale closure row (lex-3/32 cells/0.60%) now derives

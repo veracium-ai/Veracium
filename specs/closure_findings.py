@@ -2382,4 +2382,30 @@ CLOSURES = [
      "to the stated verb set; re-verified by research at 5ccccae",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_relay_lexicon_mutation_matrix -q -p no:randomly"),
+    # ---- 0026 internal rounds 5-6 (2026-08-29) — research's round-2 pass.
+    ("0026", "internal", 5, "0026-I5-1",
+     "comitative quasi-coordinators (along with / together with / as "
+     "well as) introduce a co-speaker the lexical coordinator set "
+     "cannot see — three genuine relays silently unrestricted, the "
+     "co-source class one syntactic layer up, and the generator's "
+     "coordination axis could not catch what it did not generate",
+     "lex-8: the closed comitative set joins the head scan as co-source "
+     "introducers, the generator gains the comitative axis (measured, "
+     "not patched), research's three misses ride verbatim as cells, "
+     "the comitative-drop mutant stands, and the third-person "
+     "self-possessive consistency fix rides",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_relay_lexicon_mutation_matrix -q -p no:randomly"),
+    ("0026", "internal", 6, "0026-I6-1",
+     "the new 2% gate claimed 'separately validated' and checked "
+     "is_file(): an empty {} beside a 5%-fires aggregate produced "
+     "'aggregate VALID' — the arc's signature defect (prose asserting "
+     "more than the code) inside the fold's own binding machinery",
+     "the adjudication artifact is read and validated — closed schema, "
+     "labelled sample summing to size, non-blank verdict — and BOUND "
+     "to the exact aggregate's lexicon version and fire count; "
+     "empty-file and stale-binding refusals stand as tests and the "
+     "legitimate labelled bypass is proven alive",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
 ]
