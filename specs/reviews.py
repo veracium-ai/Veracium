@@ -1542,6 +1542,41 @@ REVIEWS = [
          "1013e36a309e86fcf517fa90e7e04bf1abbe4d416103657d2733a6cd"
          "5462f8d9, commit bed146f", findings=0),
 
+    dict(spec="0011", round=18, kind="external", date="2026-08-29",
+         raised=["0011-PROCESS-R18-1"],
+         verdict="RETURN EXACT v18 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; production cleanup confirmed "
+         "correct; no policy or trust-model defect (package `0011-v18`, "
+         "sha 1013e36a verified; archive safety 516 members; focused 46; "
+         "collected-header 22; spec gate 88/5; selfcheck 8; extracted "
+         "1882/22 reconciling with sealed 1896/8 over 1,904 tests). "
+         "PROCESS-R18-1: original-exception PROPAGATION is not "
+         "regression-bound — the new tests verify only exception type and "
+         "message, so an inner handler replacing each copy exception with "
+         "a fresh same-type/same-message object passed both R17 "
+         "regressions (2/2), the complete registry suite (36/36) and the "
+         "spec gate, while the identity probe shows pristine catches the "
+         "planted object and the mutant catches a different one — "
+         "contradicting the package's repeated propagation claim. "
+         "Required: one sentinel exception object per copy2/copytree "
+         "case, caught.value IS sentinel, cleanup assertions and the "
+         "cleanup-deletion mutant retained, and the replacement mutant "
+         "as a biting regression. No production change: the bare "
+         "re-raise is already correct", findings=1),
+
+    dict(spec="0011", round=19, kind="external", date="2026-08-29",
+         verdict="SENT (package `0011-v19`, candidate draft v22 — the "
+         "round-18 fold; §28 maps the finding). PROCESS-R18-1 closed by "
+         "IDENTITY: one sentinel exception OBJECT per copy2/copytree "
+         "case, raised as that exact object and asserted with "
+         "caught.value IS sentinel; the cleanup-path assertions and the "
+         "cleanup-deletion mutant retained unchanged; and the "
+         "same-type/same-message replacement mutant rides as a biting "
+         "standing regression — it preserves cleanup, type and message "
+         "(the old assertions bless it, asserted explicitly in the test) "
+         "and the identity probe alone kills it. Sealed AFTER this row, "
+         "sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],

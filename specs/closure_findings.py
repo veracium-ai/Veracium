@@ -2222,4 +2222,20 @@ CLOSURES = [
      "test_copy_exception_cleanup_is_regression_bound "
      "tests/test_0011_mutant_registry.py::"
      "test_the_cleanup_deletion_mutant_is_caught -q -p no:randomly"),
+    # ---- 0011 external round 18 (2026-08-29) — identity, not likeness.
+    ("0011", "external", 18, "0011-PROCESS-R18-1",
+     "original-exception propagation was asserted by type and message "
+     "only — an inner handler swapping each copy exception for a fresh "
+     "lookalike passed both R17 regressions and the whole registry "
+     "suite while the caught exception was a different object than the "
+     "one raised",
+     "one sentinel exception object per copy2/copytree case, raised as "
+     "that exact object and asserted by identity (caught.value is "
+     "sentinel); the replacement mutant stands as a biting regression "
+     "that only the identity probe kills; cleanup assertions and the "
+     "cleanup-deletion mutant retained",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_copy_exception_cleanup_is_regression_bound "
+     "tests/test_0011_mutant_registry.py::"
+     "test_the_exception_replacement_mutant_is_caught -q -p no:randomly"),
 ]

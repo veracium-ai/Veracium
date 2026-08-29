@@ -942,12 +942,20 @@ def test_copy_exception_cleanup_is_regression_bound(tmp_path, monkeypatch):
     for target, exc_text in (("copytree", "planted copytree failure"),
                              ("copy2", "planted copy2 failure")):
         calls = _instrumented(monkeypatch)
-        def _boom(*a, _t=exc_text, **k):
-            raise OSError(_t)
+        # PROCESS-R18-1: one sentinel OBJECT per case — type-and-message
+        # equality blessed a handler that swapped the exception for a
+        # fresh lookalike, so propagation is asserted by IDENTITY
+        sentinel = OSError(exc_text)
+        def _boom(*a, _s=sentinel, **k):
+            raise _s
         monkeypatch.setattr(shutil, target, _boom)
-        with pytest.raises(OSError, match=exc_text):
+        with pytest.raises(OSError, match=exc_text) as exc_info:
             MR._snapshot(root)
         monkeypatch.undo()
+        assert exc_info.value is sentinel, (
+            f"{target}: the caught exception is not the SAME OBJECT the "
+            f"copy raised — something replaced it in flight "
+            f"(PROCESS-R18-1)")
         assert len(calls["mkdtemp"]) == 1, (target, calls["mkdtemp"])
         assert not pathlib.Path(calls["mkdtemp"][0]).exists(), (
             f"{target}: the allocated snapshot survived its own "
@@ -993,3 +1001,54 @@ def test_the_cleanup_deletion_mutant_is_caught(tmp_path, monkeypatch):
         "the planted cleanup-deletion left no observable leak — the "
         "detector this regression exists for is dead")
     shutil.rmtree(leaked, ignore_errors=True)   # exactly the recorded dir
+
+
+def test_the_exception_replacement_mutant_is_caught(tmp_path, monkeypatch):
+    """PROCESS-R18-1, the mutant half: an except-block rewritten to
+    re-raise `type(e)(*e.args)` keeps the cleanup, the type and the
+    message — every outcome assertion passes — and swaps the exception
+    OBJECT. The identity probe must be what kills it: driven here, the
+    caught value must NOT be the sentinel, proving the probe
+    distinguishes what type-and-message cannot."""
+    import importlib.util
+    import shutil
+    src = (EVID / "mutant_registry.py").read_text()
+    root_line = "ROOT = pathlib.Path(__file__).resolve().parents[3]"
+    assert src.count(root_line) == 1
+    src = src.replace(root_line, f"ROOT = pathlib.Path({str(MR.ROOT)!r})")
+    old = ('    except BaseException:\n'
+           '        shutil.rmtree(snap, ignore_errors=True)\n'
+           '        raise')
+    assert src.count(old) == 1, "the cleanup block moved"
+    mutated = src.replace(
+        old,
+        "    except BaseException as _e:\n"
+        "        shutil.rmtree(snap, ignore_errors=True)\n"
+        "        raise type(_e)(*_e.args)")
+    mod_path = tmp_path / "mutant_registry_replace.py"
+    mod_path.write_text(mutated)
+    spec = importlib.util.spec_from_file_location("mr_replace", mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    root = tmp_path / "clean_root"
+    (root / "specs" / "evidence").mkdir(parents=True)
+    (root / "specs" / "evidence" / "x.py").write_text("x = 1\n")
+    sentinel = OSError("planted copytree failure")
+    calls = _instrumented(monkeypatch)
+    monkeypatch.setattr(shutil, "copytree",
+                        lambda *a, _s=sentinel, **k:
+                        (_ for _ in ()).throw(_s))
+    with pytest.raises(OSError,
+                       match="planted copytree failure") as exc_info:
+        mod._snapshot(root)
+    monkeypatch.undo()
+    # type and message survive the mutant — the OLD assertions bless it
+    assert type(exc_info.value) is OSError
+    assert str(exc_info.value) == str(sentinel)
+    # the identity probe is what bites
+    assert exc_info.value is not sentinel, (
+        "the replacement mutant preserved object identity?? — either "
+        "the mutation failed to apply or the probe observes nothing")
+    # cleanup stayed intact in this mutant: nothing leaked
+    assert len(calls["mkdtemp"]) == 1
+    assert not pathlib.Path(calls["mkdtemp"][0]).exists()
