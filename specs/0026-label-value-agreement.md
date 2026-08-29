@@ -394,10 +394,18 @@ manifest anchor, and says so in its own output. 0.70% is an UPPER
 BOUND, not an estimate — every fire is a *candidate* false positive,
 and deciding which of its own fires are false with the detector would
 be self-assertion; hand-labelling a sample puts the true rate near
-0.4%. The M-2 coverage denominator is 135 of 3,898
-`third_party_claim` notes = **3.5%**, itself a lower bound on the
+0.4%. The M-2 coverage denominator is 217 of 3,898
+`third_party_claim` notes = **5.6%**, itself a lower bound on the
 source-naming share M-2 names, since that subset cannot be identified
-without labelling the whole population.
+without labelling the whole population. **Scoped precisely (research,
+pre-seal read-forward): this figure is a lexicon-reach diagnostic over
+the `third_party_claim` NOTE population — records that are already
+quarantined. It is NOT recall over the check's real target, the
+concrete-relation laundering population (the B02/B07 class that
+bypasses quarantine), whose recall has a different denominator no
+archive-local number measures. A laundering-recall probe joins the
+evidence when a labelled corpus for that population exists; until
+then, nobody may read 5.6% as "the check catches 5.6% of relays".**
 
 The standing rule, unchanged: before this spec is accepted, the
 lexicon's false-positive rate is MEASURED on the existing extraction

@@ -113,6 +113,14 @@ classes, none of which the gate requires fixing:
 
 ## The M-2 coverage denominator, stated honestly
 
+**Scope (research, pre-seal read-forward): the coverage figure is a
+lexicon-reach diagnostic over the already-quarantined
+`third_party_claim` note population — NOT recall over the
+concrete-relation laundering population the check actually targets,
+whose denominator no archive-local number measures. A
+laundering-recall probe joins the evidence when a labelled corpus for
+that population exists.**
+
 The lexicon matches **138 of 3,898** `third_party_claim` triples carrying a
 non-empty note — **3.5%**. §8's claim ships with that number rather than an
 implied whole, which is what M-2 asked for.
