@@ -1491,8 +1491,13 @@ REVIEWS = [
          "symlinked-carrier (leak) cases — with the reviewer's "
          "copy-before-refuse mutant riding as a standing adversarial "
          "check that MUST trip the instrumentation (if the detector goes "
-         "blind, that test fails, not just the campaign). Sealed AFTER "
-         "this row, sha pinned on return", findings=0),
+         "blind, that test fails, not just the campaign). Research "
+         "cleared the seal non-blocking (deadline-deferred verify; "
+         "discard-unsent covers it) and flagged the concurrent-"
+         "reader class as a recurring finding for the next fold. "
+         "Sealed as 0011-v17-20260829T0334Z.tar.gz, sha256 "
+         "f7e1b62c7bd7d65aaeb4c2afa1e0b65ad76e60b56cf34b549d6955fc"
+         "91a85071, commit 975e364", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
