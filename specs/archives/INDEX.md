@@ -399,6 +399,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0026 | v1 | 1 | `0026-v1-20260826T1432Z.tar.gz` | `87f10c896c93e8fa…` |
 | 0026 | v2 | 2 | `0026-v2-20260829T1526Z.tar.gz` | `497bf05eeba91280…` |
 | 0026 | v3 | 3 | `0026-v3-20260829T1752Z.tar.gz` | `6770c417f011a6a0…` |
+| 0026 | v4 | 4 | **0 sidecars — LINEAGE GAP** | — |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 

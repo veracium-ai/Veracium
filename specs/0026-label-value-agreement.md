@@ -15,7 +15,7 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v6** — the ROUND-2 EXTERNAL FOLD (2026-08-29; §12 maps all five findings). 0026-R2-1: the subject is resolved by HEAD CONSTRUCTION (lex-7) — modifiers inert, coordinated co-heads with determiners, Unicode possessives normalized — with the GENERATED grammar-oracle corpus (expectations derived from constructions; it caught two further defects during its own construction); §6a RE-MEASURED at 0.64% (439/68,479). 0026-R2-2: the import boundary is MODE-SPLIT (restore trust-field-faithful per 0005 P2; default recomputes) and export rides a FORMAT_VERSION bump per 0025. 0026-R2-3: the deferral swept to every carrier with a whole-file test. EVIDENCE-R2-1: the GATE is part of aggregate validity (over-gate refuses absent an adjudication artifact) and the measurement doc is mechanically bound to the aggregate. PACKAGE-R2-1: closure figures derive from one source; research's pass is structured internal rounds 3-4. *Prior:* **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.70% (481/68,479 under lex-6: the lex-4 grammar pre-empting research's coordination/nesting shapes, plus their red-team's recall-driven verb expansion — `claimed` et al — with the nominal homographs narrowed by reading the fires; RECALL now measured via held matrix cells), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
+| **Version** | **v7** — the ROUND-3 EXTERNAL FOLD (2026-08-29; §13 maps all five findings). R3-1: lex-9 — `or` coordination + the ARTIFACT-vs-ENTITY self-possessive split over a closed artifact set; oracle axes added; measured identical (0.64%). R3-2: the AgreementRecord joins §2c, and restore-malformed RAISES with nothing written (the R1-4 ruling on the restore path; validation before any write). EVIDENCE-R3-1: the adjudication is an EXECUTABLE DECISION — closed verdict enum, computed adjudicated rate vs the gate, sample minimum, digest binding to the exact aggregate; the reviewer's REJECT-passes case is the standing refusal. EVIDENCE-R3-2: the candidate spec's §6a figures bind to the aggregate at the verify entry point (217-vs-220 re-derived). PACKAGE-R3-1: §9's round count derives from the ledger, standing-tested. *Prior:* **v6** — the ROUND-2 EXTERNAL FOLD (2026-08-29; §12 maps all five findings). 0026-R2-1: the subject is resolved by HEAD CONSTRUCTION (lex-7) — modifiers inert, coordinated co-heads with determiners, Unicode possessives normalized — with the GENERATED grammar-oracle corpus (expectations derived from constructions; it caught two further defects during its own construction); §6a RE-MEASURED at 0.64% (439/68,479). 0026-R2-2: the import boundary is MODE-SPLIT (restore trust-field-faithful per 0005 P2; default recomputes) and export rides a FORMAT_VERSION bump per 0025. 0026-R2-3: the deferral swept to every carrier with a whole-file test. EVIDENCE-R2-1: the GATE is part of aggregate validity (over-gate refuses absent an adjudication artifact) and the measurement doc is mechanically bound to the aggregate. PACKAGE-R2-1: closure figures derive from one source; research's pass is structured internal rounds 3-4. *Prior:* **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.70% (481/68,479 under lex-6: the lex-4 grammar pre-empting research's coordination/nesting shapes, plus their red-team's recall-driven verb expansion — `claimed` et al — with the nominal homographs narrowed by reading the fires; RECALL now measured via held matrix cells), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
 | **External review** | required — adds a disclosure floor on the ingest write path |
@@ -96,6 +96,7 @@ is honored by construction, unlike the cell 0024 v7 had to defend.)
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
+| an imported `AgreementRecord` (§3d) | absent → default mode recomputes; restore reproduces the (valid) record verbatim | well-formed → default mode discards it for the recomputation (diagnostic only); restore stores it verbatim | **malformed under EITHER mode → RAISES, nothing written** (§3d — a typed carrier cannot hold garbage, and R1-4's ruling applies: garbage declares something untrue) | forged markers on marker-free text | **V6a**: default mode recomputes so a forged record cannot enter Q5's corpus; restore is 0005-P2-faithful for VALID fields only, with validation ordered BEFORE any write |
 | the extractor's `note` | absent/empty → NO evidence (never agreement — the 2/4 empty-note movers) | any prose → scanned by the closed marker lexicon only | text outside the lexicon → no match, no claim | note crafted to AVOID markers ("relay hiding") | **V2**: absence of a marker is absence of evidence; the check widens no assertion path, so hiding buys the attacker nothing they lack today |
 | the extractor's `object` text | — | same lexicon scan | same | object crafted to EMBED inbound markers on a genuinely-own fact ("my own view — but as my doctor said, rest matters"); the OUTBOUND phrasing ("as I told my doctor") is a directional non-match by contract (§3a) | **V3**: a false relay match FLOORS at USE_ONLY — recall cost, bounded, measured before acceptance (§6a); never an integrity cost |
 | the marker lexicon itself | empty lexicon REFUSED at load (a vacuous checker that passes everything is the presumed-faking rule's target) | a malformed entry refuses at load — closed, versioned, code-owned (the `0025` registry pattern) | — | a host supplying a custom lexicon | **V4**: the lexicon is NOT host-configurable in v1 — one code-owned surface, one measured false-positive rate |
@@ -332,7 +333,9 @@ a relay past the floor. The COMPLETE boundary,
 |---|---|---|---|
 | old (pre-agreement) | either | absent by construction | no fabrication; default mode floors at establishment as for any write; restore reproduces the old store verbatim |
 | new | default | any state (absent/present/forged/malformed/foreign-version) | RECOMPUTED under the current lexicon (the V6a matrix above); floor runs; mismatches counted |
-| new | restore | present or absent | restored VERBATIM, disclosure included (`0005` P2); recomputation diagnostic-only |
+| new | restore | present AND VALID, or absent | restored VERBATIM, disclosure included (`0005` P2); recomputation diagnostic-only |
+| new | restore | present but MALFORMED (wrong types, unknown keys, markers outside any lexicon's grammar) | **RAISES, nothing written** — verbatim restore into a typed carrier is impossible for garbage, and flooring it would silently accept a corrupt export (the R1-4 ruling, applied to the restore path); validation runs BEFORE any write, so a refused record leaves no partial state |
+| new | default | present but MALFORMED | treated as absent; the recomputation governs (the V6a row above) — default mode never consumed the value anyway, so refusal is unnecessary and recomputation is total |
 | new file, old reader | — | — | the reader REFUSES the bumped format (`0025`'s rule) — no silent field loss is reachable |
 
 The ingest result gains `agreement_floored` and `agreement_recorded`
@@ -431,7 +434,7 @@ manifest anchor, and says so in its own output. 0.64% is an UPPER
 BOUND, not an estimate — every fire is a *candidate* false positive,
 and deciding which of its own fires are false with the detector would
 be self-assertion; hand-labelling a sample puts the true rate near
-0.4%. The M-2 coverage denominator is 217 of 3,898
+0.4%. The M-2 coverage denominator is 220 of 3,898
 `third_party_claim` notes = **5.6%**, itself a lower bound on the
 source-naming share M-2 names, since that subset cannot be identified
 without labelling the whole population. **Scoped precisely (research,
@@ -491,11 +494,19 @@ bite before an unplanted catch (§6a).
 
 ## 9. Brief for the external reviewer
 
-*(Internal review is complete: research — who proposed this check —
-ran two rounds, round 1 PASS WITH AMENDMENTS with all three questions
-ruled and round 2 PASS with no new findings, both folded. The questions
-below are what we most want you to attack; research's rulings on them
-are recorded in the Version row and are themselves fair game.)*
+*(Internal review is CONTINUOUS and its authoritative record is the
+structured ledger in `specs/reviews.py` — six internal rounds at the
+time of the round-3 fold [0026-PACKAGE-R3-1: this brief previously said
+"two rounds", frozen at the pre-external state while research's four
+post-fold pre-seal passes went unnarrated here; the count is now bound
+to the ledger by a standing test, so this prose cannot silently
+underclaim again]. Rounds 1–2 were the pre-external design reviews
+(PASS WITH AMENDMENTS with all three questions ruled; PASS
+diff-verified); rounds 3–6 are research's pre-seal red-team passes on
+the round-1 and round-2 folds, each with its own findings and closure
+rows. The questions below are what we most want you to attack;
+research's rulings are recorded in the Version row and are themselves
+fair game.)*
 
 1. **The asymmetry argument (§2)** — is restrict-only sufficient to
    make prose a safe input, or does even a lowering rule on an
@@ -659,3 +670,53 @@ its figures from the aggregate and validator rather than restating
 them; research's v5 pre-seal pass is recorded as structured internal
 rounds 3 and 4 (question (a) clean; question (b) blocked-folded-
 re-verified), not SENT-row narration.
+
+## 13. Changes in v7 — the round-3 fold (2026-08-29)
+
+External round 3 returned FOR MAJOR AMENDMENT: five findings, each a
+seam in a round-2 closure. Every finding reproduced before fixing.
+
+**0026-R3-1 — the head grammar still laundered two shapes.** `or` was
+not a coordinator ("the user or the doctor said…" — a POSSIBLE
+third-party speaker restricts), and lex-8's self-possessive fix
+over-generalized: "my own doctor" is a possessed third-party PERSON,
+not a user-authored artifact. lex-9: `or` joins the coordinators, and
+the self-possessive rule is split ARTIFACT-vs-ENTITY over a closed
+artifact set (note/account/words/message…), applied in both the
+subject scan and the agent/frame path. The oracle gained the
+disjunction axis and the own-entity subject heads; re-measured
+identical (439/68,479 = 0.64% — the shapes are absent from the
+own-use population).
+
+**0026-R3-2 — the import matrix's restore-malformed cells.** An
+imported `AgreementRecord` joined §2c's untrusted-input table, and the
+§3d matrix gained the cells the "complete" claim lacked: a new-format
+`restore=True` record with a MALFORMED field RAISES with nothing
+written (verbatim restore into a typed carrier is impossible for
+garbage — the R1-4 ruling applied to the restore path; validation
+ordered BEFORE any write), while default-mode malformed stays
+treated-as-absent (recomputation is total there anyway).
+
+**0026-EVIDENCE-R3-1 — the adjudication path is a DECISION now.** The
+reviewer supplied a verdict reading "REJECT: … remains over the 2%
+gate" and it carried the record — the validator checked shape and
+blankness, never meaning. Schema 2: `verdict` is the closed enum
+{accept, reject}; the ADJUDICATED rate (bound × labelled-FP share) is
+COMPUTED and must clear the gate — an accept that disagrees with its
+own numbers refuses; the sample has a minimum (50, or every fire when
+fewer); and the artifact is digest-bound to the exact aggregate's
+canonical bytes plus the local labelled-sample file. The reviewer's
+REJECT case, the free-text case, the lying-accept, the tiny sample and
+the wrong-digest are all standing refusals, with the legitimate
+labelled bypass still proven alive.
+
+**0026-EVIDENCE-R3-2 — the candidate spec is a bound carrier.** §6a
+carried 217 beside the aggregate's 220 — the binder covered the
+measurement doc and not the spec. Re-derived, and `spec_problems`
+binds the §6a headline rate and coverage figure to the aggregate at
+the verify entry point, with the bite proven in a standing test.
+
+**0026-PACKAGE-R3-1 — the round count derives from the ledger.** §9
+said "two rounds" beside a six-round structured ledger. Swept with the
+correction visible, and a standing test binds the stated count to
+`reviews.py`, so the prose cannot silently underclaim again.

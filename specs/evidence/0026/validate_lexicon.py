@@ -100,6 +100,12 @@ CELLS = (
      "the user as well as the accountant said the deduction is valid",
      None, True),
     ("users_own_is_self", "the user's own note said fine", None, False),
+    # --- lex-9 (external round 3, R3-1): disjunction + artifact/entity
+    ("or_disjunction_restricts",
+     "the user or the doctor said to rest", None, True),
+    ("users_own_entity_is_third",
+     "the user's own doctor said to rest", None, True),
+    ("my_own_entity_is_third", "my own doctor said to rest", None, True),
     # --- lex-5 RECALL cells (research red-team, the FN direction): §6a
     # measures false positives only, so verb-list completeness IS the
     # check's recall — these held relays MUST FIRE, so completeness is
@@ -152,6 +158,10 @@ _SUBJECT_HEADS = {
     "my own account": "user",
     "the user's own note": "user",         # third-person self-possessive
     "the user\u2019s own note": "user",    # …and its curly form
+    # R3-1: artifact-vs-entity — a possessed PERSON is a third party
+    # whatever the possessive; only user-authored artifacts are self
+    "my own doctor": "third",
+    "the user's own doctor": "third",
 }
 _MODIFIERS = (
     "",                                    # bare
@@ -172,6 +182,9 @@ _CONJUNCTS = {
     " together with the landlord": "third",
     " as well as the accountant": "third",
     " in addition to the nurse": "third",
+    # R3-1: disjunction — a POSSIBLE third-party speaker restricts
+    " or the doctor": "third",
+    " or she": "ambiguous",
 }
 _IDENT_RANK = {"third": 0, "ambiguous": 1, "user": 2}
 

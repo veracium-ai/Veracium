@@ -134,6 +134,15 @@ def test_relay_lexicon_mutation_matrix(monkeypatch):
         "dropping the comitative set left the matrix green — a "
         "quasi-coordinated co-speaker would go unrestricted")
     monkeypatch.undo()
+    # 3i. the self-artifact set dropped (lex-9): "my own doctor said…"
+    #     classifies as the user again — the possessed-entity relay
+    #     launders (R3-1's unsafe direction)
+    L, V = _fresh()
+    assert mutate(_SELF_ARTIFACTS=frozenset()), (
+        "dropping the artifact set left the matrix green — wait, that "
+        "direction FAILS SAFE (everything third): the killable direction "
+        "is the artifact set widening to everything")
+    monkeypatch.undo()
     # 3f. Unicode normalization dropped (lex-7): the curly-apostrophe
     #     possessive tokenizes as fragments and "the user's doctor"
     #     classifies as the user again
@@ -567,12 +576,56 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     assert any("stub file" in b for b in bad), (
         "an EMPTY adjudication carried an over-gate record", bad)
     # stale binding: right shape, wrong lexicon / wrong fire count
-    good_adj = dict(schema=1,
+    import hashlib
+    def _agg_digest(a):
+        return hashlib.sha256(
+            (json.dumps(a, sort_keys=True, indent=1) + "\n").encode()
+        ).hexdigest()
+    good_adj = dict(schema=2,
                     lexicon_version=over["lexicon_version"],
                     fires=over["grounded_first_person"]["fires"],
-                    sample=dict(size=50, seed=1, true_positive=45,
-                                false_positive=5),
-                    verdict="over-bar fires labelled acceptable")
+                    sample=dict(size=50, seed=1, true_positive=35,
+                                false_positive=15),
+                    verdict="accept",   # adjudicated: 5% x 15/50 = 1.5%
+                    aggregate_sha256=_agg_digest(over),
+                    sample_sha256="ab" * 32)
+    # 0026-EVIDENCE-R3-1, the reviewer's exact case: a REJECT verdict
+    # in free text passed. The enum + the computed decision refuse it:
+    rej = dict(good_adj,
+               verdict="reject")
+    pr = tmp_path / "adj_reject.json"
+    pr.write_text(json.dumps(rej))
+    bad = MF.validate_aggregate(over, adj_path=pr)
+    assert any("REJECT" in b for b in bad), bad
+    # free text outside the enum is not a decision
+    freetext = dict(good_adj,
+                    verdict="REJECT: the rate remains over the 2% gate")
+    pf = tmp_path / "adj_freetext.json"
+    pf.write_text(json.dumps(freetext))
+    bad = MF.validate_aggregate(over, adj_path=pf)
+    assert any("closed enum" in b for b in bad), bad
+    # accept that disagrees with its own numbers: all-FP sample keeps
+    # the adjudicated rate at the bound (5% x 50/50) — over the gate
+    lying = dict(good_adj,
+                 sample=dict(size=50, seed=1, true_positive=0,
+                             false_positive=50))
+    pl = tmp_path / "adj_lying_accept.json"
+    pl.write_text(json.dumps(lying))
+    bad = MF.validate_aggregate(over, adj_path=pl)
+    assert any("disagrees with its own numbers" in b for b in bad), bad
+    # a one-item sample is not labelling
+    tiny = dict(good_adj, sample=dict(size=1, seed=1, true_positive=0,
+                                      false_positive=1))
+    pt = tmp_path / "adj_tiny.json"
+    pt.write_text(json.dumps(tiny))
+    bad = MF.validate_aggregate(over, adj_path=pt)
+    assert any("below the minimum" in b for b in bad), bad
+    # a digest for some other aggregate cannot carry this one
+    wrongd = dict(good_adj, aggregate_sha256="0" * 64)
+    pw = tmp_path / "adj_wrong_digest.json"
+    pw.write_text(json.dumps(wrongd))
+    bad = MF.validate_aggregate(over, adj_path=pw)
+    assert any("some other record" in b for b in bad), bad
     stale1 = dict(good_adj, lexicon_version="0026-lex-999")
     p1 = tmp_path / "adj_stale_lex.json"
     p1.write_text(json.dumps(stale1))
@@ -589,3 +642,39 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     p3.write_text(json.dumps(good_adj))
     bad = MF.validate_aggregate(over, adj_path=p3)
     assert bad == [], ("a valid bound adjudication was refused", bad)
+
+
+def test_spec_binder_and_round_count_are_bound():
+    """0026-EVIDENCE-R3-2 + 0026-PACKAGE-R3-1: the candidate spec is a
+    live quantitative carrier — its §6a figures bind to the aggregate
+    (a 217-vs-220 drift shipped while the binder covered only the
+    measurement doc), and §9's internal-round count binds to the
+    structured ledger (the brief said "two rounds" beside a six-round
+    ledger)."""
+    import importlib.util
+    import json as _json
+    MF = importlib.import_module("measure_false_positives")
+    agg = _json.loads((ROOT / "specs" / "evidence" / "0026"
+                       / "fp_aggregate.json").read_text())
+    spec = (ROOT / "specs" / "0026-label-value-agreement.md").read_text()
+    assert MF.spec_problems(agg, spec) == []
+    # the binder BITES: a drifted coverage figure refuses
+    g = agg["coverage"]["matched_by_lexicon"]
+    tampered = spec.replace(f"coverage denominator is {g:,} of ",
+                            f"coverage denominator is {g + 1:,} of ")
+    assert tampered != spec
+    assert MF.spec_problems(agg, tampered), (
+        "a drifted spec coverage figure validated clean")
+    # §9's round count derives from the ledger
+    rspec = importlib.util.spec_from_file_location(
+        "rv0026", ROOT / "specs" / "reviews.py")
+    RV = importlib.util.module_from_spec(rspec)
+    rspec.loader.exec_module(RV)
+    internal = len([r for r in RV.REVIEWS
+                    if r["spec"] == "0026" and r["kind"] == "internal"])
+    assert f"six internal rounds" in spec or f"{internal} internal" in spec
+    words = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+             7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+    assert words.get(internal, str(internal)) + " internal rounds" in spec, (
+        f"§9 does not state the ledger's count of {internal} internal "
+        f"rounds — the prose has drifted from the structured record")

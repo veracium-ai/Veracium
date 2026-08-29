@@ -2408,4 +2408,56 @@ CLOSURES = [
      "legitimate labelled bypass is proven alive",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    # ---- 0026 external round 3 (2026-08-29) — decisions, not narration.
+    ("0026", "external", 3, "0026-R3-1",
+     "the head grammar still laundered: or-disjunction was not "
+     "coordination, and the self-possessive fix read 'my own doctor' — "
+     "a possessed person — as the user; the oracle omitted both axes so "
+     "every packaged test stayed green",
+     "lex-9: `or` joins the coordinators; the self-possessive splits "
+     "artifact-vs-entity over a closed artifact set in both the subject "
+     "scan and the agent path; the oracle gains the disjunction axis "
+     "and own-entity heads; re-measured identical",
+     "$PY specs/evidence/0026/validate_lexicon.py"),
+    ("0026", "external", 3, "0026-R3-2",
+     "the import matrix was incomplete: AgreementRecord absent from "
+     "§2c's untrusted-input table, and restore mode had no cell for a "
+     "malformed new-format record — verbatim-and-typed is impossible "
+     "for garbage",
+     "the AgreementRecord row joins §2c; restore-malformed RAISES with "
+     "nothing written (the R1-4 ruling on the restore path, validation "
+     "ordered before any write); default-malformed stays "
+     "treated-as-absent; the structural test binds the new cells",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_import_matrix_is_total_in_the_spec -q -p no:randomly"),
+    ("0026", "external", 3, "0026-EVIDENCE-R3-1",
+     "the adjudication path was decision-free: a verdict literally "
+     "reading REJECT carried a 5.00% aggregate to 'aggregate VALID' — "
+     "shape and blankness were checked, meaning never was, and nothing "
+     "digest-bound the aggregate or sample",
+     "the decision is executable: closed verdict enum, the adjudicated "
+     "rate computed and required under the gate, a sample minimum, and "
+     "digest binding to the exact aggregate bytes; REJECT, free-text, "
+     "lying-accept, tiny-sample and wrong-digest all stand as refusals "
+     "with the legitimate bypass proven alive",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 3, "0026-EVIDENCE-R3-2",
+     "the candidate spec's §6a said 217 beside the aggregate's 220 — "
+     "the binder covered the measurement doc and not the spec carrying "
+     "the acceptance claim",
+     "spec_problems binds the §6a headline rate and coverage figure to "
+     "the aggregate at the verify entry point; the drift re-derived; "
+     "the bite standing-tested",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
+    ("0026", "external", 3, "0026-PACKAGE-R3-1",
+     "the header and §9 said research ran two internal rounds beside a "
+     "six-round structured ledger — prose frozen at the pre-external "
+     "state",
+     "§9 swept with the correction visible and the stated count bound "
+     "to reviews.py by a standing test, so the prose cannot silently "
+     "underclaim again",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
 ]

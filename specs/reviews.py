@@ -1697,6 +1697,59 @@ REVIEWS = [
          "postdates both internal reviews with no structured "
          "co-verification row", findings=5),
 
+    dict(spec="0026", round=3, kind="external", date="2026-08-29",
+         raised=["0026-R3-1", "0026-R3-2", "0026-EVIDENCE-R3-1",
+                 "0026-EVIDENCE-R3-2", "0026-PACKAGE-R3-1"],
+         verdict="RETURN FOR MAJOR AMENDMENT (package `0026-v3`, sha "
+         "6770c417 verified; 519 members; exact v2 predecessor verified; "
+         "extracted 1960/22 reconciling exactly with sealed 1974/8; "
+         "telemetry deferral substantively carrier-complete; the "
+         "restrict-only architecture sound). R3-1: the head grammar "
+         "still LAUNDERS — 'the user or the doctor said' outbound (no "
+         "or-coordination), 'the user's own doctor' and 'my own doctor' "
+         "outbound (the self-possessive fix could not tell a possessed "
+         "PERSON from a user-authored artifact); the oracle omits both "
+         "axes so all 80 tests stayed green. R3-2: the import matrix "
+         "incomplete — AgreementRecord absent from §2c, and restore-mode "
+         "gives only present-or-absent: a malformed new-format restore "
+         "record cannot be both verbatim and typed. EVIDENCE-R3-1: the "
+         "adjudication path is DECISION-FREE — a verdict literally "
+         "reading 'REJECT: … remains over the 2% gate' carried a 5.00% "
+         "aggregate to 'aggregate VALID'; nothing interprets the verdict "
+         "or computes whether adjudication clears the gate, and nothing "
+         "digest-binds the aggregate or sample. EVIDENCE-R3-2: the "
+         "candidate spec says 217/3,898 while the aggregate and doc say "
+         "220 — the binder covers the doc, not the spec carrying the "
+         "acceptance claim. PACKAGE-R3-1: the header and §9 still say "
+         "research ran two rounds beside a six-round structured ledger",
+         findings=5),
+
+    dict(spec="0026", round=4, kind="external", date="2026-08-29",
+         candidate={"0026": "v7"},
+         verdict="SENT (package `0026-v4`, candidate draft v7 — the "
+         "round-3 fold; §13 maps all five findings). R3-1 closed as "
+         "lex-9: `or` joins the coordinators and the self-possessive "
+         "splits ARTIFACT-vs-ENTITY over a closed artifact set, in both "
+         "the subject scan and the agent path; oracle axes added; "
+         "measured identical (439/68,479 = 0.64%). R3-2 closed: the "
+         "AgreementRecord joins §2c's untrusted-input table and "
+         "restore-malformed RAISES with nothing written (the R1-4 "
+         "ruling; validation before any write; default-malformed stays "
+         "treated-as-absent since recomputation is total there). "
+         "EVIDENCE-R3-1 closed: the adjudication is an EXECUTABLE "
+         "decision — closed verdict enum, the ADJUDICATED rate computed "
+         "(bound x labelled-FP share) and required under the gate, "
+         "sample minimum 50-or-all-fires, digest binding to the exact "
+         "aggregate bytes and the local sample file; the reviewer's "
+         "REJECT case, free-text, lying-accept, tiny-sample and "
+         "wrong-digest are standing refusals with the legitimate bypass "
+         "proven alive. EVIDENCE-R3-2 closed: spec_problems binds the "
+         "candidate's §6a figures to the aggregate at the verify entry "
+         "point (217 re-derived to 220; bite standing-tested). "
+         "PACKAGE-R3-1 closed: §9's round count derives from the "
+         "ledger, standing-tested. Sealed AFTER this row, sha pinned on "
+         "return", findings=0),
+
     dict(spec="0026", round=5, kind="internal", date="2026-08-29",
          raised=["0026-I5-1"],
          verdict="RESEARCH ROUND-2 PRE-SEAL RED-TEAM (grammar half) — "

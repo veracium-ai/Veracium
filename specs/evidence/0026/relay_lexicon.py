@@ -90,12 +90,20 @@ MEASURED HISTORY OF THIS FILE (§6a's pre-commitment, honoured):
          the user's own, like "my own"). Measured identical to lex-7 on
          this corpus (439 = 0.64%): comitatives do not occur in the
          own-use population.
+  lex-9  (external round 3, R3-1) `or` joins the coordinators (a
+         POSSIBLE third-party speaker restricts), and the
+         self-possessive rule is split ARTIFACT-vs-ENTITY: a closed
+         artifact set (note, account, words, message…) keeps "my own
+         note said…" outbound, while "my own doctor said…" — a
+         possessed third-party PERSON — restricts, in both the subject
+         scan and the agent/frame path. Measured identical again: the
+         shapes are absent from the own-use population.
 """
 from __future__ import annotations
 
 import re
 
-LEXICON_VERSION = "0026-lex-8"
+LEXICON_VERSION = "0026-lex-9"
 
 # Attribution VERBS — §3a's named class. lex-5 (research red-team,
 # FN direction): the list omitted high-frequency attribution verbs —
@@ -192,7 +200,22 @@ _CLAUSE_BREAK = frozenset((
 # coordination shares its subject ("the vet examined the cat and said…"),
 # so breaking at `and` attributed an elided third-party subject to
 # nobody — the unsafe direction.
-_COORD = frozenset(("and", "but", "so", "then", "plus"))
+# "or" is a coordinator too (external round 3, R3-1): "the user or the
+# doctor said…" names a POSSIBLE third-party speaker, and possibility
+# restricts in a restrict-only design.
+_COORD = frozenset(("and", "but", "so", "then", "plus", "or"))
+
+# The self-possessive covers user-authored ARTIFACTS, not possessed
+# third-party ENTITIES (external round 3, R3-1): "my own note said…" is
+# the user's own word; "my own doctor said…" is the doctor's. A closed
+# artifact set makes the distinction decidable; anything outside it is
+# a possessed head and classifies third.
+_SELF_ARTIFACTS = frozenset((
+    "note", "notes", "account", "accounts", "word", "words",
+    "message", "messages", "entry", "entries", "record", "records",
+    "list", "lists", "profile", "journal", "log", "diary", "text",
+    "post", "posts", "comment", "comments", "review", "reviews",
+))
 
 # COMITATIVE quasi-coordinators (lex-8, research round-2 pre-seal): a
 # prepositional co-speaker phrase — "the user, along with her vet,
@@ -289,9 +312,12 @@ def _classify_source(head_tokens: list) -> str:
         return "third"                   # unnamed — conservative
     h = toks[0]
     if _is_possessive(h):
-        if h in ("my", "our") and len(toks) > 1 \
+        if h in ("my", "our", "user's", "users'") and len(toks) > 2 \
                 and toks[1] in _FIRST_PERSON_SELF:
-            return "user"                # "my own account"
+            return ("user" if toks[2] in _SELF_ARTIFACTS
+                    else "third")        # "by my own account" is the
+                                         # user; "by my own doctor" is
+                                         # the doctor (R3-1)
         if h in ("her", "his", "their", "its") \
                 and (len(toks) == 1 or toks[1] in _NON_HEADS):
             return "ambiguous"           # bare object pronoun: "by her"
@@ -427,9 +453,11 @@ def _direction(tokens: list, idx: int, max_scan: int = 24) -> str:
             heads.append("ambiguous")
             expecting_head = False
             continue
-        heads.append("user" if saw_self_poss else "third")
-        expecting_head = False           # a noun head ("my own account"
-        saw_self_poss = False            # is the user's; others third)
+        heads.append("user" if (saw_self_poss
+                                and tok in _SELF_ARTIFACTS)
+                     else "third")       # "my own NOTE" is the user's
+        expecting_head = False           # own word; "my own DOCTOR" is
+        saw_self_poss = False            # a possessed third party (R3-1)
     if not heads:
         return "none"                    # clause opens with no subject
     if "third" in heads:

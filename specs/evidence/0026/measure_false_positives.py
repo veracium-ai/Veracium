@@ -84,6 +84,12 @@ def main() -> int:
                 print("fp measurement DOC drifted:\n  " + "\n  ".join(bad),
                       file=sys.stderr)
                 return 1
+        if _SPEC.is_file():
+            bad = spec_problems(agg, _SPEC.read_text())
+            if bad:
+                print("the CANDIDATE SPEC drifted:\n  " + "\n  ".join(bad),
+                      file=sys.stderr)
+                return 1
         report(agg)
         print("aggregate VALID: closed schema, manifest cross-checked "
               "against the 0011/0025 subject aggregate; corpus-dependent "
@@ -193,17 +199,31 @@ _PEER = HERE.parent / "0011" / "subject_aggregate.json"
 
 
 def _validate_adjudication(adj, agg, pct) -> list:
-    """The labelling verdict that alone may carry an over-gate record:
-    a CLOSED schema, non-vacuous, and BOUND to this exact aggregate —
-    its lexicon version and its fire count — so a stale adjudication for
-    a different lexicon or count cannot bypass (0026-EVIDENCE-R2-1,
-    research's empty-{} counterexample is the standing mutant)."""
+    """The labelling verdict that alone may carry an over-gate record —
+    EXECUTABLE, not narrative (0026-EVIDENCE-R3-1: a verdict string
+    reading "REJECT: … remains over the 2% gate" passed, because the
+    validator checked shape and blankness but never INTERPRETED the
+    verdict or computed anything). The rule, in code:
+
+      * `verdict` is the closed enum {"accept", "reject"} — reject
+        refuses, and accept must AGREE with the computation;
+      * the labelled sample is real: size >= 50 (or every fire when
+        fewer exist), labels sum to size;
+      * the ADJUDICATED rate — the upper bound discounted by the
+        labelled false-positive share, pct * FP/size — must clear the
+        2% gate, or accept is a lie and refuses;
+      * the artifact is digest-BOUND: aggregate_sha256 must equal the
+        canonical bytes of this exact aggregate, and sample_sha256
+        names the local labelled-sample file (corpus content, never
+        shipped — the digest is how the measuring host's audit finds
+        it)."""
     out = []
     if type(adj) is not dict or not adj:
         return ["fp_adjudication.json is empty or not an object — a "
                 "stub file is not a labelling verdict"]
     TOP = {"schema": int, "lexicon_version": str, "fires": int,
-           "sample": dict, "verdict": str}
+           "sample": dict, "verdict": str,
+           "aggregate_sha256": str, "sample_sha256": str}
     missing = sorted(set(TOP) - set(adj))
     unknown = sorted(set(adj) - set(TOP))
     if missing:
@@ -216,18 +236,28 @@ def _validate_adjudication(adj, agg, pct) -> list:
                        f"expected {ty.__name__}")
     if out:
         return out
-    if adj["schema"] != 1:
-        out.append(f"adjudication schema {adj['schema']!r} is not 1")
+    if adj["schema"] != 2:
+        out.append(f"adjudication schema {adj['schema']!r} is not 2 "
+                   f"(the executable decision rule is a shape change)")
     if adj["lexicon_version"] != agg["lexicon_version"]:
         out.append(f"adjudication is for lexicon "
                    f"{adj['lexicon_version']!r}, the aggregate is "
                    f"{agg['lexicon_version']!r} — a stale verdict cannot "
                    f"carry this record")
-    if adj["fires"] != agg["grounded_first_person"]["fires"]:
+    g = agg["grounded_first_person"]
+    if adj["fires"] != g["fires"]:
         out.append(f"adjudication is for {adj['fires']} fires, the "
-                   f"aggregate has "
-                   f"{agg['grounded_first_person']['fires']} — a verdict "
-                   f"on different fires cannot carry this record")
+                   f"aggregate has {g['fires']} — a verdict on different "
+                   f"fires cannot carry this record")
+    agg_bytes = (json.dumps(agg, sort_keys=True, indent=1) + "\n").encode()
+    want = hashlib.sha256(agg_bytes).hexdigest()
+    if adj["aggregate_sha256"] != want:
+        out.append("adjudication aggregate_sha256 does not match this "
+                   "aggregate's canonical bytes — it adjudicates some "
+                   "other record")
+    import re as _re
+    if not _re.fullmatch(r"[0-9a-f]{64}", adj["sample_sha256"]):
+        out.append("adjudication sample_sha256 is not a sha256 digest")
     smp = adj["sample"]
     S = {"size": int, "seed": int, "true_positive": int,
          "false_positive": int}
@@ -235,13 +265,32 @@ def _validate_adjudication(adj, agg, pct) -> list:
             type(smp[k]) is not ty for k, ty in S.items() if k in smp):
         out.append(f"adjudication sample keys/types != {sorted(S)}")
         return out
-    if smp["size"] < 1:
-        out.append("adjudication sample is empty — no labelling happened")
+    min_size = min(50, g["fires"])
+    if smp["size"] < min_size:
+        out.append(f"adjudication sample of {smp['size']} is below the "
+                   f"minimum {min_size} (50, or every fire when fewer "
+                   f"exist) — no meaningful labelling happened")
     if smp["true_positive"] + smp["false_positive"] != smp["size"]:
         out.append("adjudication labels do not sum to the sample size")
-    if not adj["verdict"].strip():
-        out.append("adjudication verdict is blank")
-    return out
+    if out:
+        return out
+    # THE DECISION, computed — never narrated
+    if adj["verdict"] not in ("accept", "reject"):
+        return [f"adjudication verdict {adj['verdict']!r} is outside the "
+                f"closed enum ('accept', 'reject') — free text is not a "
+                f"decision"]
+    if adj["verdict"] == "reject":
+        return [f"the adjudication verdict is REJECT — the labelling "
+                f"did not clear the over-gate record ({pct:.2f}% at the "
+                f"bound)"]
+    adjudicated = pct * smp["false_positive"] / smp["size"]
+    if adjudicated > 2.0:
+        return [f"the adjudication says accept but the ADJUDICATED rate "
+                f"is {adjudicated:.2f}% (bound {pct:.2f}% x FP share "
+                f"{smp['false_positive']}/{smp['size']}) — over the 2% "
+                f"gate; an accept that disagrees with its own numbers "
+                f"refuses"]
+    return []
 
 
 def validate_aggregate(agg, adj_path=None) -> list:
@@ -415,6 +464,31 @@ def doc_problems(agg, doc_text: str) -> list:
                        f"({agg['lexicon_version']}, {g['fires']:,} = "
                        f"{pct:.2f}%) — the prose has drifted from its "
                        f"artifact")
+    return out
+
+
+_SPEC = HERE.parents[1] / "0026-label-value-agreement.md"
+
+
+def spec_problems(agg, spec_text: str) -> list:
+    """0026-EVIDENCE-R3-2: the CANDIDATE SPEC is a live quantitative
+    carrier too — §6a said 217 while the aggregate said 220, and the
+    binder covered only FP-MEASUREMENT.md. The spec's §6a headline
+    figures are bound here the same way."""
+    g = agg["grounded_first_person"]
+    pct = 100.0 * g["fires"] / g["total"] if g["total"] else 0.0
+    out = []
+    facts = (
+        (f"{pct:.2f}% ({g['fires']:,} of {g['total']:,}",
+         "the §6a headline rate"),
+        (f"coverage denominator is {agg['coverage']['matched_by_lexicon']:,} of ",
+         "the §6a coverage figure"),
+    )
+    for needle, what in facts:
+        if needle not in spec_text:
+            out.append(f"the spec no longer states {what} in the bound "
+                       f"form matching the aggregate ({needle!r}) — the "
+                       f"candidate carrier has drifted from its artifact")
     return out
 
 
