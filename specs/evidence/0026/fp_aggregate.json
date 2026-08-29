@@ -1,51 +1,53 @@
 {
  "coverage": {
-  "matched_by_lexicon": 138,
+  "matched_by_lexicon": 140,
   "third_party_claim_triples": 3945,
   "with_nonempty_note": 3898
  },
  "grounded_first_person": {
-  "fires": 415,
+  "ambiguous_markers": {
+   "said": 1
+  },
+  "fires": 418,
+  "fires_ambiguous_only": 1,
   "markers": {
    "according to": 31,
-   "confirmed": 3,
+   "confirmed": 2,
    "confirmed by": 1,
-   "informed": 59,
-   "informs": 1,
-   "mentioned": 91,
+   "informed": 70,
+   "mentioned": 97,
    "mentions": 16,
    "per": 78,
    "reported": 2,
-   "reports": 23,
-   "said": 7,
-   "says": 6,
-   "stated": 57,
-   "states": 29,
+   "reports": 22,
+   "said": 8,
+   "says": 3,
+   "stated": 55,
+   "states": 31,
    "tells": 1,
-   "told": 19
+   "told": 11
   },
-  "suppressed_by_direction_only": 211,
+  "suppressed_by_direction_only": 199,
   "suppressed_markers": {
-   "confirmed": 5,
+   "confirmed": 6,
    "confirms": 7,
-   "informed": 13,
+   "informed": 2,
    "mentioned": 42,
    "mentions": 13,
    "reported": 9,
-   "reports": 61,
-   "said": 2,
+   "reports": 62,
    "says": 1,
-   "stated": 16,
-   "states": 41,
+   "stated": 17,
+   "states": 39,
    "tells": 1
   },
   "total": 68479
  },
- "lexicon_version": "0026-lex-2",
+ "lexicon_version": "0026-lex-4",
  "manifest": {
   "entries": 52359,
   "sha256": "654e336addaf600ca0363fa40933ae92a38d26f23143e5aa0a780f3fbc011df3",
   "unparseable": 6
  },
- "schema": 1
+ "schema": 2
 }

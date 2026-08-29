@@ -1623,7 +1623,12 @@ REVIEWS = [
          "coverage denominator with it. Q1/Q2/Q3 ratified",
          findings=5),
     dict(spec="0026", round=1, kind="external", date="2026-08-26",
-         verdict="SENT (package `0026-v1`, candidate draft v3 — the LINE'S "
+         candidate={"0026": "v4"},
+         verdict="SENT (package `0026-v1`, candidate draft v4 [CORRECTED "
+         "2026-08-29, 0026-PACKAGE-R1-1: this row's opening said v3 while "
+         "its own measurement sentence said v4; the package carried v4, "
+         "as package_identity.py records — the structured candidate= "
+         "field now binds this and the gate refuses disagreement] — the LINE'S "
          "FIRST SEALED PACKAGE; no predecessor, so the NO_PRIOR path applies "
          "and the what-changed diff is skipped and SAID to be skipped). The "
          "label/value agreement check: a relayed claim whose note or value "
@@ -1662,6 +1667,66 @@ REVIEWS = [
          "Sealed as `0026-v1-20260826T1432Z` at commit 738007f, sha256 "
          "87f10c896c93e8fa4b715fd30a3600020cdca4e0a25e75b8e51204c90a982596",
          findings=0),
+
+    dict(spec="0026", round=1, kind="external", date="2026-08-29",
+         raised=["0026-R1-1", "0026-R1-2", "0026-R1-3",
+                 "0026-EVIDENCE-R1-1", "0026-PACKAGE-R1-1"],
+         verdict="RETURN FOR MAJOR AMENDMENT (package `0026-v1`, sha "
+         "87f10c89 verified; archive safety 488 members; extracted "
+         "1835/22 reconciling with sealed 1849/8; the restrict-only "
+         "design spine called promising). R1-1: the directional detector "
+         "CONFUSES PROXIMITY WITH AUTHORSHIP — five executed "
+         "counterexamples: 'I was told by my doctor' outbound (passive "
+         "recipient as speaker), 'user was told by the vet' outbound, "
+         "'price stated by user' INBOUND (the spec's own demotion example "
+         "inverted), 'user said their doctor confirmed' both outbound (no "
+         "clause boundary), 'she said…' silently the user. R1-2: "
+         "Edge.agreement has NO import-boundary contract — absent/forged/"
+         "malformed/foreign-version/direction-disagreeing inputs all "
+         "undefined, no version or direction carrier despite §7's "
+         "rule_version promise. R1-3: 'consent-gated' is not a "
+         "construction — 0015's consent text/schema-version/display-"
+         "transition/record-time-gating requirements absent and 0015 not "
+         "in Spec-Requires; a conforming implementer could widen the "
+         "payload without renewed consent. EVIDENCE-R1-1: the measurement "
+         "is SELF-ASSERTED — no checker reads fp_aggregate.json; fires "
+         "415→0, coverage→0 and lexicon 0026-lex-999 all passed the "
+         "whole gate (91/5); lex-1 does not ship despite 'both passes "
+         "ship'. PACKAGE-R1-1: the SENT row says candidate v3 AND v4 in "
+         "one verdict and identity verifies VALID; the v4 amendment "
+         "postdates both internal reviews with no structured "
+         "co-verification row", findings=5),
+
+    dict(spec="0026", round=2, kind="external", date="2026-08-29",
+         candidate={"0026": "v5"},
+         verdict="SENT (package `0026-v2`, candidate draft v5 — the "
+         "round-1 fold; §11 maps all five findings; the restrict-only "
+         "spine untouched). R1-1 closed as a directional GRAMMAR (lex-4): "
+         "post-verbal agent governs, passive recipients inert, "
+         "clause-bounded subjects, ambiguous pronouns restrict with a "
+         "counted conservative outcome; the five counterexamples ride "
+         "verbatim in a 39-cell matrix (lex-4 also pre-empts the "
+         "coordination/elision/nesting shapes research named for the "
+         "pre-seal pass: coordinator transparency + the "
+         "coordinated-co-source rule); §6a RE-MEASURED at 0.61% "
+         "(418/68,479, 1 ambiguous-only), gate cleared. R1-2 closed with "
+         "the structured carrier (markers + direction + lexicon version) "
+         "and a TOTAL import matrix: recomputation under the current "
+         "lexicon governs every row, incoming values diagnostic only. "
+         "R1-3 DEFERRED, not constructed: counters are local operator "
+         "surface, whitelisting forbidden without a 0015-conformant "
+         "amendment. EVIDENCE-R1-1 closed: closed validator with the "
+         "0011/0025 cross-artifact manifest anchor, --aggregate verify "
+         "mode, the reviewer's three tamperings as the matrix's first "
+         "cells, RECORDED-ONLY labels, marker-table keys pinned to the "
+         "shipped lexicon (a foreign key could carry corpus content — "
+         "the census C3 class), the lex-1 claim narrowed (its "
+         "implementation was never committed — prose history, stated "
+         "so). PACKAGE-R1-1 closed: the round-1 SENT row corrected "
+         "visibly, candidate revision is a structured field bound by the "
+         "identity gate, and the internal-first miss is acknowledged — "
+         "this fold queues for research's red-team pass before sealing. "
+         "Sealed AFTER this row, sha pinned on return", findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "

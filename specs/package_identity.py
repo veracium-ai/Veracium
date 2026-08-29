@@ -74,6 +74,7 @@ PACKAGES = {
     # both internal rounds recorded, governed from v1.
     "0026": {
         "v1": (1, {"0026": "v4"}),
+        "v2": (2, {"0026": "v5"}),
     },
     "0022-0023": {
         "v17": (17, {"0022": "v18", "0023": "v18"}),
@@ -143,9 +144,9 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
-                                   # (0011-v19 sealed 20260829T1119Z,
-                                   # sidecar committed)
+IN_FLIGHT: tuple = ("0026-v2",)   # C8-1/C9-1: the ONE declared seal
+                                   # (0026 round-1 fold; seal WAITS on
+                                   # research's pre-seal red-team pass)
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",
@@ -526,6 +527,18 @@ def _validate_line(line: str, versions: dict, first: int) -> list:
                 problems.append(
                     f"{pkg} {spec}: the SENT row is at round "
                     f"{sent[0]['round']}, the package declares round {rnd}")
+            # 0026-PACKAGE-R1-1: candidate revision is a STRUCTURED field,
+            # not prose — a SENT row carrying `candidate=` must agree with
+            # this record exactly (the round-1 row said v3 in one sentence
+            # and v4 in another, and everything verified VALID). Rows from
+            # before the field exist unbound; every row from 0026 round 2
+            # on carries it.
+            if "candidate" in sent[0] and sent[0]["candidate"] != cands:
+                problems.append(
+                    f"{pkg} {spec}: the SENT row's structured "
+                    f"candidate={sent[0]['candidate']!r} disagrees with "
+                    f"the package record's {cands!r} "
+                    f"(0026-PACKAGE-R1-1)")
 
         # R18-1(a): SENT prose restating candidate revisions must AGREE
         for r in _reviews():

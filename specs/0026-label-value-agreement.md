@@ -15,7 +15,7 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
+| **Version** | **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.61% (418/68,479 under lex-4, which also pre-empts the coordination and nesting shapes research named for their red-team pass), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
 | **External review** | required — adds a disclosure floor on the ingest write path |
@@ -174,23 +174,46 @@ extractor does not write in the user's voice. It narrates them:
 user"*. Every one of those was being read as INBOUND — the user's own
 word treated as somebody else's claim, which is the failure the bar
 exists to prevent, and it would have been shipped as a clean result.
-So the outbound cells are stated over the SUBJECT rather than the
-pronoun:
+**The direction is decided by a GRAMMAR, not by proximity (external
+round 1, 0026-R1-1).** The lex-2 rule scanned four preceding tokens for
+a user reference, and proximity is not authorship: the reviewer
+executed five counterexamples — a passive recipient mistaken for the
+speaker (*"I was told by my doctor…"* read outbound), a passive with a
+named third-party agent (*"user was told by the vet…"* read outbound),
+the spec's own demotion example inverted (*"price stated by user"* read
+inbound), an embedded clause inheriting the outer subject (*"user said
+their doctor confirmed…"* read both verbs outbound), and a pronoun
+silently assumed to be the user (*"she said the user needs
+medication"*). The grammar (lex-4 — lex-3 closed the five; lex-4 adds coordinator transparency and the coordinated-co-source rule, pre-empting the coordination/elision/nesting shapes named for the pre-seal red-team pass), in precedence order:
 
-| outbound cell | example | why |
-|---|---|---|
-| first-person subject | "I told my doctor…" | the user speaking |
-| **the user in the third person** | **"user confirmed no allergies"** | **the extractor's actual voice** |
-| the user named in a frame | "according to the user…" | same, framed |
-| first-person self-possessive | "in my own words…" | same, possessive |
-| **no subject at all** | **"recommended brand", "no diet mentioned"** | **a bare participle attributes nothing to anyone** |
+1. **A post-verbal `by <agent>` phrase governs** — passive (*"told by
+   my doctor"* → inbound) and reduced passive (*"price stated by
+   user"* → outbound) alike; the recipient before the verb is inert.
+2. **A passive auxiliary with no agent is conservatively inbound** —
+   *"I was told…"* is a relay from an unstated source.
+3. **The active subject is resolved inside its own clause** — the scan
+   stops at another attribution verb or a complementizer, so *"user
+   said their doctor confirmed…"* classifies `said` outbound and
+   `confirmed` inbound, independently.
+4. **Ambiguous pronouns (he/she/they, bare him/her/them) are their own
+   class with an explicit conservative outcome**: never silently the
+   user; they RESTRICT (over-restriction is the safe failure in a
+   restrict-only design, bounded by §6a's bar) and are COUNTED
+   separately in the measurement so the ambiguity is visible, not
+   hidden in either bucket.
+5. **No subject at all attributes nothing** — a bare participle
+   (*"recommended brand"*).
 
-A possessive attached to a THIRD PARTY stays inbound — *"my doctor
-said"* is the commonest relay shape there is, and reading `my` as a
-first-person signal would suppress it.
+The outbound cells (the user as source): first-person subject, the
+user in the third person (*"user confirmed no allergies"* — the
+extractor's actual voice), the user named in a frame or as a
+post-verbal agent, and the first-person self-possessive. A possessive
+attached to a THIRD PARTY stays inbound — *"my doctor said"* is the
+commonest relay shape there is.
 
-The directional cells are part of the lexicon's own test surface (V1),
-not left to lexicon-entry judgement.
+The directional cells — the five counterexamples verbatim plus the
+generated cross-product of voice × identity × clause — are part of the
+lexicon's own test surface (V1), not left to lexicon-entry judgement.
 
 ### 3b. The laundering floor (V3) — the one disposition change
 
@@ -220,16 +243,62 @@ counter is consumed by telemetry from day one.)
 
 ### 3d. The carrier (V6)
 
-`Edge.agreement: frozenset[str] | None` — None-omitted from every
-serialization exactly like `original_relation` (`0025` F6's pattern), so
-unaffected edges stay byte-identical. **The field TRAVELS in export
-(`0005`/`0014` portability): Q5's future evidence corpus must survive a
-store migration, so the record is a portable fact, not a local one
-(internal round 1, Q3 ruling's rider).** The ingest result gains
-`agreement_floored` and `agreement_recorded` counters, present on every
-path (zeros included — an absent key is not a zero); `Memory.remember`
-passes through; the MCP surface STRIPS them with the other operator
-counts; telemetry whitelists them under the consent contract.
+`Edge.agreement: AgreementRecord | None` — a STRUCTURED record, not a
+bare marker set (external round 1, 0026-R1-2: a set of strings carried
+no version and no direction, so a stored record could not say which
+lexicon produced it or which way it pointed). `AgreementRecord` binds
+three fields: `markers` (the matched set), `direction`
+(`"inbound" | "ambiguous" | "user_source"` — §3b's floor evidence and
+§3c's demotion-direction record share the carrier, disambiguated here),
+and `lexicon` (the producing `LEXICON_VERSION`, so a store holding
+records from several lexicon generations — there is no retroactive
+sweep — stays interpretable per record). None-omitted from every
+serialization exactly like `original_relation` (`0025` F6's pattern),
+so unaffected edges stay byte-identical; an old reader ignores the
+unknown key under the schema rules, and the field's addition rides the
+same `rule_version` bump as the §3b floor itself (§7). **The field
+TRAVELS in export (`0005`/`0014` portability): Q5's future evidence
+corpus must survive a store migration (internal round 1, Q3 ruling's
+rider).**
+
+**The import boundary (V6a — external round 1, 0026-R1-2).** An
+imported record's `agreement` field is UNTRUSTED INPUT, and the lexicon
+is pure over the same stored text the field claims to describe — so
+import RECOMPUTES: the stored value is the current lexicon's output
+over the imported note/object, always. The full matrix:
+
+| imported field vs text | outcome |
+|---|---|
+| absent, text carries markers | recomputed and STORED — the record is repaired, and the repair counted |
+| present, text carries no markers (forged) | recomputation stores None — the forgery is DISCARDED and counted |
+| malformed (wrong shape, unknown keys, entries outside the current lexicon) | treated as absent; recomputation governs; counted |
+| foreign `lexicon` version | recomputation under the CURRENT lexicon governs; the incoming version is diagnostic only |
+| direction disagrees with the text | recomputation governs; the disagreement counted |
+
+The incoming field value is never consumed for any decision — it is
+compared for the `agreement_import_mismatches` diagnostic counter and
+then discarded in favor of the recomputation. This is fail-closed in
+both directions: a forged marker cannot smuggle a restriction record
+into Q5's corpus, and a stripped one cannot launder a relay past the
+floor (the floor re-runs at import establishment like every other
+`0025` §4b-iii member). Downgrade: an exporter newer than the reader
+omits nothing the reader depends on (None-omitted); a reader newer than
+the record recomputes on next establishment.
+
+The ingest result gains `agreement_floored` and `agreement_recorded`
+counters, present on every path (zeros included — an absent key is not
+a zero); `Memory.remember` passes through; the MCP surface STRIPS them
+with the other operator counts. **Telemetry consumption is DEFERRED
+(external round 1, 0026-R1-3): accepted `0015` requires consent text, a
+consent-schema version, minimum field version, display-and-accept
+transition, record-time gating and replay/rollback semantics for every
+new payload field, and none of that is constructed here — so v1 ships
+the counters as local operator surface ONLY, and a conforming
+implementer MUST NOT whitelist them into any telemetry payload. A
+future amendment that consumes them adds `0015` to `Spec-Requires` and
+specifies the complete consent construction; until then the counters'
+telemetry story is the same as any other unwhitelisted field's:
+absent.**
 
 ## 4. What is deliberately NOT done
 
@@ -256,32 +325,50 @@ counts; telemetry whitelists them under the consent contract.
 
 | # | invariant | check |
 |---|---|---|
-| **V1** | the detector is pure, total over (None/empty/any-str)², lexicon-closed — no LLM call, no network, no host input — and DIRECTIONAL: the §3a inbound cells match, the first-person-outbound cells never match (blocking-grade, internal round 1) | `test_relay_detector_is_pure_and_total` — the directional cells enumerated |
+| **V1** | the detector is pure, total over (None/empty/any-str)², lexicon-closed — no LLM call, no network, no host input — and DIRECTIONAL BY GRAMMAR (0026-R1-1): agent governs, passive recipients are inert, clauses classify independently, ambiguous pronouns restrict with a counted outcome, outbound never matches | the §3a five counterexamples verbatim + the generated voice × identity × clause cross-product in `tests/test_0026_relay_lexicon.py` |
 | **V2** | marker ABSENCE never changes anything: empty/absent note+object → no floor, no record, byte-identical edge | `test_absence_is_no_evidence` |
 | **V3** | the B02/B07 class floors at USE_ONLY — the two baseline vectors verbatim; and the floor NEVER raises (a quarantined edge stays quarantined) | `test_laundered_relay_floors_use_only` |
 | **V4** | an empty or malformed lexicon refuses at load; the lexicon has exactly one definition site | `test_lexicon_is_closed_and_refuses_vacuous` |
 | **V5** | the demotion-direction disagreement is recorded and counted with NO disposition change | `test_demotion_direction_records_only` |
-| **V6** | `Edge.agreement` is None-omitted everywhere; both counters present on every result path; MCP strips; telemetry consent-gated | `test_agreement_carriers_complete` |
+| **V6** | `Edge.agreement` is a structured record (markers + direction + lexicon version), None-omitted everywhere; both counters present on every result path; MCP strips; telemetry consumption DEFERRED (0026-R1-3 — no whitelisting without a 0015-conformant amendment) | `test_agreement_carriers_complete` |
+| **V6a** | import RECOMPUTES the field under the current lexicon — the §3d matrix in full: absent/forged/malformed/foreign-version/direction-disagreeing inputs all resolve to the recomputation, counted, never consumed | `test_agreement_import_recomputes` — every matrix row |
 | **V7** | a marker-free store is byte-identical before and after | `test_no_markers_is_byte_identical` |
 
 ### 6a. The acceptance measurement gate
 
-**MEASURED 2026-08-26 — THE GATE IS CLEARED at 0.61% against the 2%
-bar, and the pre-commitment fired on the way there.** The first lexicon
-came in at **8.20%** of grounded first-person triples, so it NARROWED,
-which is what this section says happens. Both passes are recorded, not
-only the one that passed: `specs/evidence/0026/FP-MEASUREMENT.md`, with
-the runnable pass (`measure_false_positives.py`), the detector
-(`relay_lexicon.py`), its adversarial cell matrix
-(`validate_lexicon.py`) and a counts-only aggregate carrying the cache
-manifest, so every figure recomputes without the corpus. 0.61% is an
-UPPER BOUND, not an estimate — every fire is a *candidate* false
-positive, and deciding which of its own fires are false with the
-detector would be self-assertion; hand-labelling a sample puts the true
-rate near 0.4%. The M-2 coverage denominator is 138 of 3,898
+**RE-MEASURED 2026-08-29 under the lex-4 grammar (0026-R1-1's fix,
+plus the coordination/nesting hardening) — THE GATE IS CLEARED at
+0.61% (418 of 68,479 grounded first-person triples) against the 2%
+bar**, with the ambiguity split now counted: exactly 1 of the 418
+fires restricts via the AMBIGUOUS class alone, and 199 outbound-only
+constructions are suppressed by the directional rule. The pre-commitment fired on the way here twice: lex-1 came in at
+8.20% and NARROWED; lex-2 cleared at 0.61% and was then found
+directionally unsound by external round 1 (proximity, not authorship)
+and REWRITTEN as a grammar. **The lex-1 claim is NARROWED honestly
+(0026-EVIDENCE-R1-1): lex-1's implementation was never committed — its
+8.20% figure and cause analysis are recorded PROSE HISTORY in
+`FP-MEASUREMENT.md` and in `relay_lexicon.py`'s header, not a
+reproducible artifact; lex-2 through lex-4's implementations and
+aggregates are the reproducible record.** What ships:
+`measure_false_positives.py` (measure mode AND `--aggregate` verify
+mode), the detector, its adversarial cell matrix, and a counts-only
+`fp_aggregate.json` under a CLOSED validator — schema and types closed,
+internal consistency enforced (fires ≤ population, splits ≤ fires,
+coverage numerators ≤ denominators, the lexicon version must be the
+shipped one), and the cache manifest CROSS-CHECKED against the
+0011/0025 subject aggregate, which was derived from the same cache by
+a different script and ships beside this one. **The whole-corpus
+figures themselves (fires, suppressed, coverage) are RECORDED ONLY:
+they reproduce with `--cache` on the measuring host and NOT from the
+archive alone** — the archive verifies shape, consistency and the
+manifest anchor, and says so in its own output. 0.61% is an UPPER
+BOUND, not an estimate — every fire is a *candidate* false positive,
+and deciding which of its own fires are false with the detector would
+be self-assertion; hand-labelling a sample puts the true rate near
+0.4%. The M-2 coverage denominator is 135 of 3,898
 `third_party_claim` notes = **3.5%**, itself a lower bound on the
 source-naming share M-2 names, since that subset cannot be identified
-without labelling the whole population. Research co-verifies the run.
+without labelling the whole population.
 
 The standing rule, unchanged: before this spec is accepted, the
 lexicon's false-positive rate is MEASURED on the existing extraction
@@ -354,3 +441,68 @@ are recorded in the Version row and are themselves fair game.)*
 |---|---|---|
 | **V-Q1** | should the answer surface RENDER the attribution for floored records ("per the vet: …") rather than the generic use-only treatment? | design — the L3 qualified-answer lever's territory; needs the gate's owner. Prior evidence when that round runs (internal round 1, m-4): the baseline's B02 answer already rendered content-derived attribution ("as reported by their doctor") while the edge sat MENTIONABLE — the floor plus existing prose attribution may be most of the answer |
 | **V-Q2** | does the agreement record ever feed `0024` Q5's assertion completion, and under what evidence standard? | deferred to Q5's own round, by A1's design |
+
+## 11. Changes in v5 — the round-1 fold (2026-08-29)
+
+External round 1 returned FOR MAJOR AMENDMENT: three specification gaps
+and two evidence/package failures, none touching the restrict-only
+spine, which the reviewer called promising. Every finding reproduced
+before fixing.
+
+**0026-R1-1 — the directional detector confused proximity with
+authorship.** All five executed counterexamples confirmed at the shipped
+code. §3a is restated as a directional GRAMMAR (agent governs; passive
+recipients inert; clause-bounded subjects; ambiguous pronouns restrict
+with a counted, explicitly conservative outcome; bare participles
+attribute nothing), the five counterexamples ride verbatim in the
+lexicon's cell matrix (39 cells) and the test surface carries the
+generated voice × identity × clause cross-product. The mutation matrix
+was updated with the fix rather than around it: one lex-2 mutant became
+harmless by construction under the grammar (the possessive-as-subject
+mutation — the scan resolves the noun head) and was RETIRED with its
+reason stated, replaced by mutants of the new load-bearing rules (agent
+neutered, skip-tokens dropped, ambiguity dropped — the last made
+killable by teaching the validator to check the CLASS of a restriction,
+since ambiguous-vs-inbound is invisible at the match-bool surface). §6a
+re-measured: 0.61% (418/68,479 under lex-4, which also pre-empts the coordination, elided-subject and nesting shapes research named for their red-team pass — coordinator transparency plus the coordinated-co-source rule, both erring toward over-restriction, priced by the same measurement), gate still cleared.
+
+**0026-R1-2 — the portable carrier had no import-boundary contract.**
+`Edge.agreement` is redesigned as a structured record binding markers,
+DIRECTION and LEXICON VERSION, and §3d's import matrix is total:
+recomputation under the current lexicon governs every row (absent,
+forged, malformed, foreign-version, direction-disagreeing), the
+incoming value is diagnostic only (counted, then discarded), and the
+outcome is fail-closed in both directions.
+
+**0026-R1-3 — telemetry did not satisfy 0015's consent contract.**
+DEFERRED, not constructed: v1 ships the counters as local operator
+surface only, a conforming implementer MUST NOT whitelist them, and
+the widening risk the reviewer named (payload growth on
+already-consented installations) is closed by there being no payload
+membership to widen. A future amendment that consumes them adds 0015
+to Spec-Requires with the complete consent construction.
+
+**0026-EVIDENCE-R1-1 — the measurement was self-asserted.** The
+aggregate now has a closed validator (schema, types, internal
+consistency, the shipped-lexicon version pin) with the cache manifest
+cross-checked against the 0011/0025 subject aggregate — same cache,
+different script, ships beside it; `--aggregate` is a real verify mode
+on the entry point; the reviewer's three executed tamperings (fires→0,
+coverage→10⁶, lexicon→lex-999) are the mutation matrix's first three
+cells and all refuse; whole-corpus figures are labelled RECORDED ONLY;
+marker-table KEYS must be members of the shipped closed lexicon (the
+census C3 lesson, privacy and correctness in one rule: a foreign key
+could carry corpus content into the shipped record, and a marker
+outside the lexicon cannot have fired); and the lex-1 "both passes
+ship" claim is NARROWED honestly — lex-1's implementation was never
+committed, so its 8.20% is prose history, not a reproducible artifact.
+
+**0026-PACKAGE-R1-1 — candidate identity was contradictory yet
+verified.** The round-1 SENT row is corrected in place with the
+correction visible; candidate revision is now a STRUCTURED
+`candidate=` field on SENT rows, bound to `package_identity.py`'s
+record by the identity gate (disagreement refuses; standing test); and
+the internal-first miss is acknowledged rather than papered over: the
+v4 measurement amendment went external without a fresh internal pass —
+this v5 fold is queued for research's red-team pass before its seal
+(their standing offer; currently deadline-deferred).

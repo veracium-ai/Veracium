@@ -56,20 +56,67 @@ CELLS = (
     ("both_empty", "", "", False),
     ("whitespace_only", "   ", "\t\n", False),
     ("uppercase_input", "MY DOCTOR SAID THE LEVELS WERE FINE", None, True),
+    # --- 0026-R1-1: the reviewer's five executed counterexamples, verbatim,
+    # plus the grammar cells they generalize to (lex-3's load-bearing rules:
+    # post-verbal agent governs; passive recipient is inert; embedded
+    # clauses classify independently; ambiguous pronouns restrict) --------
+    ("passive_recipient_first_person",
+     "I was told by my doctor to rest", None, True),
+    ("passive_recipient_user",
+     "user was told by the vet to fast the cat", None, True),
+    ("reduced_passive_user_agent", "price stated by user", None, False),
+    ("reduced_passive_third_agent", "price stated by the vendor", None, True),
+    ("embedded_clause_inner_inbound",
+     "user said their doctor confirmed the dosage", None, True),
+    ("ambiguous_pronoun_restricts",
+     "she said the user needs medication", None, True, "ambiguous"),
+    ("ambiguous_object_pronoun",
+     "I was told by her to rest", None, True, "ambiguous"),
+    ("passive_unnamed_source", "I was told to rest", None, True),
+    ("agent_governs_over_recipient",
+     "the client was told by user to pay", None, False),
+    ("adverb_between_subject_and_verb",
+     "user also said no allergies", None, False),
+    # --- lex-4 (pre-emptive, research's named shapes): coordination and
+    # nesting — both error directions of the new rules are over-restriction
+    ("coordinated_user_subject",
+     "the vet and I said the diet works", None, True),
+    ("coordinated_user_subject_2",
+     "my wife and I said it was fine", None, True),
+    ("vp_coordination_elided_third",
+     "the vet examined the cat and said no allergies", None, True),
+    ("vp_coordination_elided_user",
+     "user visited the clinic and said no allergies", None, False),
+    ("nested_relay", "my sister said the vet said it is fine", None, True),
+    ("nested_user_outer", "I said the vet said it is fine", None, True),
+    ("dropped_subject_fragment", "said it was fine", None, False),
 )
 
 
 def problems() -> list:
     out = []
-    for name, note, obj, want in CELLS:
+    for cell in CELLS:
+        name, note, obj, want = cell[:4]
+        # optional 5th element: the CLASS the restriction must come from.
+        # 0026-R1-1: ambiguous-vs-inbound is invisible at the match-bool
+        # surface (both restrict), so the ambiguity cells assert the
+        # counted split — otherwise dropping the ambiguous class entirely
+        # is a behaviour-preserving mutation at this surface while §6a's
+        # measurement silently loses its ambiguity count.
+        want_class = cell[4] if len(cell) > 4 else None
         try:
-            got = bool(L.relay_markers(note, obj))
+            r = L.scan(note, obj)
+            got = bool(r["inbound"] | r["ambiguous"])
         except Exception as exc:                       # totality is a claim
             out.append(f"{name}: RAISED {type(exc).__name__}: {exc}")
             continue
         if got != want:
             out.append(f"{name}: matched={got}, expected {want} "
-                       f"(in={sorted(L.relay_markers(note, obj))})")
+                       f"(in={sorted(r['inbound'] | r['ambiguous'])})")
+        if want_class and not r[want_class]:
+            out.append(f"{name}: the restriction must come from the "
+                       f"{want_class!r} class and that set is empty "
+                       f"(scan={ {k: sorted(v) for k, v in r.items()} })")
     # V4: a vacuous lexicon must refuse at LOAD, not pass everything
     if not (L._VERBS and L._PHRASES and L._USER_SUBJ):
         out.append("a lexicon table is empty and load did not refuse")

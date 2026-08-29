@@ -2243,4 +2243,75 @@ CLOSURES = [
      "test_copy_exception_cleanup_is_regression_bound "
      "tests/test_0011_mutant_registry.py::"
      "test_the_exception_replacement_mutant_is_caught -q -p no:randomly"),
+    # ---- 0026 external round 1 (2026-08-29) — the major-amendment fold.
+    ("0026", "external", 1, "0026-R1-1",
+     "the directional detector confused proximity with authorship: a "
+     "4-token lookback misclassified all five executed counterexamples "
+     "(passive recipients as speakers, the post-verbal agent never "
+     "consulted, embedded clauses inheriting the outer subject, "
+     "she/he/they silently the user)",
+     "lex-3 is a directional grammar — agent governs, passive recipients "
+     "inert, clause-bounded subjects, ambiguous pronouns restrict with a "
+     "counted conservative outcome; the five counterexamples ride "
+     "verbatim in the 32-cell matrix plus a generated voice x identity x "
+     "clause cross-product; §6a re-measured at 0.60%, gate cleared",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_reviewers_five_counterexamples_verbatim "
+     "tests/test_0026_relay_lexicon.py::test_relay_lexicon_mutation_matrix "
+     "-q -p no:randomly"),
+
+    ("0026", "external", 1, "0026-R1-2",
+     "the portable agreement carrier had no import-boundary contract: "
+     "absent, forged, malformed, foreign-version and "
+     "direction-disagreeing imported fields were all undefined, and no "
+     "version or direction carrier existed despite §7's rule_version "
+     "promise",
+     "Edge.agreement is a structured record (markers + direction + "
+     "lexicon version); §3d's import matrix is total — recomputation "
+     "under the current lexicon governs every row, the incoming value "
+     "is compared for a diagnostic counter and discarded, fail-closed "
+     "both directions (V6a; implementation lands with acceptance like "
+     "the rest of §3)",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_import_matrix_is_total_in_the_spec -q -p no:randomly"),
+
+    ("0026", "external", 1, "0026-R1-3",
+     "'consent-gated' was not a construction: 0015's consent "
+     "text/schema-version/display-transition/record-gating requirements "
+     "were absent, 0015 was not in Spec-Requires, and a conforming "
+     "implementer could widen an already-consented payload",
+     "telemetry consumption DEFERRED: the counters are local operator "
+     "surface only, whitelisting is forbidden without a future "
+     "0015-conformant amendment that adds 0015 to Spec-Requires and "
+     "specifies the complete consent construction",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_telemetry_deferral_is_bound -q -p no:randomly"),
+
+    ("0026", "external", 1, "0026-EVIDENCE-R1-1",
+     "the acceptance measurement was self-asserted: nothing read "
+     "fp_aggregate.json — fires 415 to 0, coverage to 0 and lexicon "
+     "0026-lex-999 all passed header, identity, lexicon validator and "
+     "the full spec gate; lex-1 did not ship despite the claim",
+     "a closed validator (schema, types, internal consistency, "
+     "shipped-lexicon pin) with the cache manifest cross-checked "
+     "against the 0011/0025 subject aggregate; --aggregate is a real "
+     "verify mode; the reviewer's three tamperings are the mutation "
+     "matrix's first cells; whole-corpus figures labelled RECORDED "
+     "ONLY; the lex-1 claim narrowed honestly",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_fp_aggregate_validator_matrix tests/test_0026_relay_lexicon.py::"
+     "test_the_real_entry_point_verifies_and_refuses -q -p no:randomly"),
+
+    ("0026", "external", 1, "0026-PACKAGE-R1-1",
+     "candidate identity was contradictory yet verified VALID: the SENT "
+     "row said v3 and v4 in one verdict; the v4 amendment postdated both "
+     "internal reviews with no structured co-verification row",
+     "the round-1 SENT row corrected in place with the correction "
+     "visible; candidate revision is a structured SENT-row field bound "
+     "to package_identity.py by the gate (disagreement refuses); the "
+     "internal-first miss acknowledged, with the v5 fold queued for "
+     "research's pre-seal red-team pass",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_structured_candidate_field_binds_to_the_package_record "
+     "-q -p no:randomly"),
 ]

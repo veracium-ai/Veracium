@@ -1,4 +1,19 @@
-"""0026 §6a — the acceptance measurement, runnable.
+#!/usr/bin/env python3
+# Mutation-Matrix: tests/test_0026_relay_lexicon.py::test_fp_aggregate_validator_matrix
+"""0026 §6a — the acceptance measurement, runnable AND verifiable.
+
+0026-EVIDENCE-R1-1: the first aggregate was write-only — no checker read
+it, its figures could be edited freely, and the archive could not
+establish the reported rate. This script now has TWO modes (exactly one
+of --cache / --aggregate): --cache measures (the cache is LOCAL-ONLY and
+never ships) and --aggregate VERIFIES the shipped counts-only record — a
+closed typed schema, and the cache manifest cross-checked against the
+0025/0011 subject aggregate, which was derived from the same cache by a
+different script and ships beside this one, so a fabricated manifest has
+to agree with an artifact the fabricator does not control. Whole-corpus
+figures (fires, suppressed, coverage) are RECORDED ONLY: they reproduce
+with --cache on the measuring host, not from the archive alone, and are
+labelled so.
 
 §6a pre-commits: if the lexicon's false-positive rate exceeds 2% OF GROUNDED
 FIRST-PERSON TRIPLES, the lexicon narrows before v1 ships. This script is
@@ -44,13 +59,29 @@ def default_relations() -> set:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cache", required=True)
+    ap.add_argument("--cache")
+    ap.add_argument("--aggregate", metavar="PATH",
+                    help="VERIFY a shipped aggregate instead of measuring")
     ap.add_argument("--emit-aggregate", metavar="PATH")
     ap.add_argument("--sample", type=int, default=0,
                     help="draw N fires for labelling (printed, never written "
                          "to the aggregate — they are corpus content)")
     ap.add_argument("--seed", type=int, default=20260826)
     a = ap.parse_args()
+    if bool(a.cache) == bool(a.aggregate):
+        ap.error("exactly one of --cache / --aggregate")
+    if a.aggregate:
+        agg = json.loads(pathlib.Path(a.aggregate).read_text())
+        bad = validate_aggregate(agg)
+        if bad:
+            print("fp aggregate REFUSED:\n  " + "\n  ".join(bad),
+                  file=sys.stderr)
+            return 1
+        report(agg)
+        print("aggregate VALID: closed schema, manifest cross-checked "
+              "against the 0011/0025 subject aggregate; corpus-dependent "
+              "figures are RECORDED ONLY (reproduce with --cache)")
+        return 0
 
     registry = default_relations()
     sha = hashlib.sha256()
@@ -58,7 +89,9 @@ def main() -> int:
     grounded_first_person = 0
     fires = 0
     suppressed_only = 0
+    fires_ambiguous_only = 0
     marker_counter = collections.Counter()
+    ambiguous_counter = collections.Counter()
     suppressed_counter = collections.Counter()
     tpc_notes = tpc_notes_nonempty = tpc_matched = 0
     sample_pool = []
@@ -97,29 +130,40 @@ def main() -> int:
                     continue
                 grounded_first_person += 1
                 res = L.scan(note, obj)
-                if res["inbound"]:
+                restrict = res["inbound"] | res["ambiguous"]
+                if restrict:
                     fires += 1
+                    if not res["inbound"]:
+                        fires_ambiguous_only += 1
                     marker_counter.update(res["inbound"])
-                    sample_pool.append((rel, note, obj, sorted(res["inbound"])))
+                    ambiguous_counter.update(res["ambiguous"])
+                    sample_pool.append((rel, note, obj, sorted(restrict)))
                 elif res["outbound"]:
                     suppressed_only += 1
                     suppressed_counter.update(res["outbound"])
 
     agg = dict(
-        schema=1,
+        schema=2,
         lexicon_version=L.LEXICON_VERSION,
         manifest=dict(entries=entries, sha256=sha.hexdigest(),
                       unparseable=unparseable),
         grounded_first_person=dict(
             total=grounded_first_person,
             fires=fires,
+            fires_ambiguous_only=fires_ambiguous_only,
             suppressed_by_direction_only=suppressed_only,
             markers=dict(marker_counter),
+            ambiguous_markers=dict(ambiguous_counter),
             suppressed_markers=dict(suppressed_counter)),
         coverage=dict(third_party_claim_triples=tpc_notes,
                       with_nonempty_note=tpc_notes_nonempty,
                       matched_by_lexicon=tpc_matched),
     )
+    bad = validate_aggregate(agg)
+    if bad:
+        print("the freshly measured aggregate FAILS its own validator:\n  "
+              + "\n  ".join(bad), file=sys.stderr)
+        return 1
     if a.emit_aggregate:
         pathlib.Path(a.emit_aggregate).write_text(
             json.dumps(agg, sort_keys=True, indent=1) + "\n")
@@ -138,6 +182,113 @@ def main() -> int:
     return 0
 
 
+_PEER = HERE.parent / "0011" / "subject_aggregate.json"
+
+
+def validate_aggregate(agg) -> list:
+    """0026-EVIDENCE-R1-1: a CLOSED typed schema, and the cache manifest
+    cross-checked against the 0011/0025 subject aggregate — same cache,
+    different script, ships beside this one. A fabricated manifest has to
+    agree with an artifact the fabricator does not control. Figures that
+    only the cache can reproduce are RECORDED ONLY and are not pretended
+    verifiable here — but they must be internally consistent (fires
+    cannot exceed the population; the ambiguous-only split cannot exceed
+    fires; coverage numerators cannot exceed their denominators; the
+    lexicon version must be THIS lexicon's, or the record is about some
+    other detector)."""
+    out = []
+    if type(agg) is not dict:
+        return ["aggregate is not an object"]
+    TOP = {"schema": int, "lexicon_version": str, "manifest": dict,
+           "grounded_first_person": dict, "coverage": dict}
+    missing = sorted(set(TOP) - set(agg))
+    unknown = sorted(set(agg) - set(TOP))
+    if missing:
+        out.append(f"missing key(s): {missing}")
+    if unknown:
+        out.append(f"unknown key(s): {unknown} — the schema is CLOSED")
+    for k, ty in TOP.items():
+        if k in agg and type(agg[k]) is not ty:
+            out.append(f"{k}: {type(agg[k]).__name__}, expected "
+                       f"{ty.__name__}")
+    if out:
+        return out
+    if agg["schema"] != 2:
+        out.append(f"schema {agg['schema']!r} is not 2 (the ambiguity "
+                   f"split is a shape change)")
+    if agg["lexicon_version"] != L.LEXICON_VERSION:
+        out.append(f"lexicon_version {agg['lexicon_version']!r} is not "
+                   f"the shipped {L.LEXICON_VERSION!r} — the record "
+                   f"describes some other detector")
+    MAN = {"entries": int, "sha256": str, "unparseable": int}
+    man = agg["manifest"]
+    if sorted(man) != sorted(MAN) or any(
+            type(man[k]) is not ty for k, ty in MAN.items()
+            if k in man):
+        out.append(f"manifest keys/types != {sorted(MAN)}")
+        return out
+    G = {"total": int, "fires": int, "fires_ambiguous_only": int,
+         "suppressed_by_direction_only": int, "markers": dict,
+         "ambiguous_markers": dict, "suppressed_markers": dict}
+    g = agg["grounded_first_person"]
+    if sorted(g) != sorted(G) or any(
+            type(g[k]) is not ty for k, ty in G.items() if k in g):
+        out.append(f"grounded_first_person keys/types != {sorted(G)}")
+        return out
+    # privacy AND correctness in one rule (the census C3 lesson): marker
+    # keys must be MEMBERS of the shipped closed lexicon — an arbitrary
+    # string key could carry corpus content into the shipped record, and
+    # a marker outside the lexicon cannot have fired at all
+    lexicon_members = (set(L._VERBS) | set(L._PHRASES) | {"per"})
+    for name in ("markers", "ambiguous_markers", "suppressed_markers"):
+        for k, v in g[name].items():
+            if type(k) is not str or type(v) is not int or v < 1:
+                out.append(f"{name}[{k!r}] = {v!r} is not a positive count")
+            elif k not in lexicon_members:
+                out.append(f"{name} key {k!r} is not a member of the "
+                           f"shipped lexicon — a foreign key could carry "
+                           f"corpus content, and a marker outside the "
+                           f"lexicon cannot have fired")
+    C = {"third_party_claim_triples": int, "with_nonempty_note": int,
+         "matched_by_lexicon": int}
+    c = agg["coverage"]
+    if sorted(c) != sorted(C) or any(
+            type(c[k]) is not ty for k, ty in C.items() if k in c):
+        out.append(f"coverage keys/types != {sorted(C)}")
+        return out
+    # internal consistency — RECORDED-ONLY figures still cannot contradict
+    # themselves
+    if not (0 <= g["fires"] <= g["total"]):
+        out.append(f"fires {g['fires']} outside [0, total {g['total']}]")
+    if not (0 <= g["fires_ambiguous_only"] <= g["fires"]):
+        out.append("fires_ambiguous_only exceeds fires")
+    if not (0 <= c["matched_by_lexicon"] <= c["with_nonempty_note"]
+            <= c["third_party_claim_triples"]):
+        out.append("coverage numerators exceed their denominators")
+    # markers cannot restrict more triples than fired: every fired triple
+    # carries >=1 marker, so any single marker's count <= fires
+    for name in ("markers", "ambiguous_markers"):
+        for k, v in g[name].items():
+            if v > g["fires"]:
+                out.append(f"{name}[{k!r}]={v} exceeds fires {g['fires']}")
+    # the cross-artifact anchor: the 0011/0025 subject aggregate was
+    # derived from the SAME cache by a different script
+    peer_path = _PEER.resolve()
+    if not peer_path.is_file():
+        out.append(f"{peer_path.name} is absent — the manifest cross-check "
+                   f"cannot run, and an uncrossed aggregate is the defect "
+                   f"this validator exists for")
+        return out
+    peer = json.loads(peer_path.read_text())
+    pm = peer.get("manifest", {})
+    for k in ("entries", "sha256", "unparseable"):
+        if man.get(k) != pm.get(k):
+            out.append(f"manifest.{k} = {man.get(k)!r} disagrees with the "
+                       f"0011/0025 subject aggregate's {pm.get(k)!r} — "
+                       f"the two scripts read the same cache")
+    return out
+
+
 def report(agg) -> None:
     g = agg["grounded_first_person"]; c = agg["coverage"]
     tot, fires = g["total"], g["fires"]
@@ -152,6 +303,9 @@ def report(agg) -> None:
     print(f"  gate         2% of grounded first-person triples "
           f"({'UNDER at the bound' if pct <= 2 else 'OVER at the bound — '
              'labelling decides'})")
+    print(f"  ambiguous    {g.get('fires_ambiguous_only', 0):,} of the "
+          f"fires restrict via the AMBIGUOUS class only (counted, "
+          f"conservative)")
     print(f"  suppressed   {g['suppressed_by_direction_only']:,} outbound-only "
           f"(saved by the directional rule)")
     top = sorted(g["markers"].items(), key=lambda kv: -kv[1])[:8]

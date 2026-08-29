@@ -1,7 +1,26 @@
-# 0026 §6a — the acceptance measurement (dev, 2026-08-26)
+# 0026 §6a — the acceptance measurement (dev, 2026-08-26; re-measured 2026-08-29)
 
-**Result: the gate is CLEARED. 0.61% against a 2% bar — and that figure is
-an UPPER BOUND, not an estimate.**
+**Result: the gate is CLEARED. 0.61% (418 of 68,479) under lex-4 against
+a 2% bar — and that figure is an UPPER BOUND, not an estimate.**
+
+**RE-MEASURED 2026-08-29 (external round 1, 0026-R1-1):** lex-2's
+directional rule was a proximity scan and proximity is not authorship —
+the reviewer executed five counterexamples (passive recipients, the
+post-verbal agent, embedded clauses, ambiguous pronouns) and the rule
+misclassified all five. lex-3/lex-4 are a directional grammar (lex-4 adds coordinator transparency and the coordinated-co-source rule); see
+`relay_lexicon.py`'s header for the rules and the third row below for
+its pass. The ambiguity class is now COUNTED: exactly 1 of the 418
+fires restricts via the ambiguous class alone on this corpus.
+
+**A claim from the first version of this document is NARROWED
+(0026-EVIDENCE-R1-1): "both passes ship" was true of the figures, not
+of the artifacts — lex-1's implementation was never committed, so its
+8.20% row below is recorded prose history, reproducible only in cause
+analysis, not by rerun. lex-2 remains in git history
+(`66d11a7`); lex-3 is the shipped detector. The aggregate now has a
+closed validator with a cross-artifact manifest anchor and a real
+`--aggregate` verify mode; whole-corpus figures are RECORDED ONLY
+(they reproduce with `--cache` on the measuring host).**
 
 §6a pre-commits that if the lexicon's false-positive rate exceeds 2% of
 grounded first-person triples, the lexicon narrows before v1 ships. It did
@@ -19,14 +38,21 @@ passes rather than only the one that passed.
 The cache is byte-identical to the one behind 0025's published census (same
 sha256), so these figures sit in the same frame as the 183,417 / 41.7% ones.
 
-## Both passes
+## All three passes
 
-| | lex-1 | lex-2 |
-|---|---|---|
-| fires on grounded first-person | 5,618 = **8.20%** | 415 = **0.61%** |
-| vs the 2% gate | **OVER** | **UNDER** |
-| suppressed by the directional rule | **0** | 211 |
-| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = **3.5%** |
+| | lex-1 (prose history) | lex-2 | lex-4 (shipped) |
+|---|---|---|---|
+| fires on grounded first-person | 5,618 = **8.20%** | 415 = **0.61%** | 418 = **0.61%** |
+| …of which ambiguous-class only | n/a | n/a (class did not exist) | **1** |
+| vs the 2% gate | **OVER** | **UNDER** | **UNDER** |
+| suppressed by the directional rule | **0** | 211 | 199 |
+| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = 3.5% | 135 / 3,898 = **3.5%** |
+
+lex-4's small movements against lex-2 are the grammar working: passives
+and agent phrases that lex-2 misread as outbound now fire (inbound), a
+handful lex-2 misread as inbound are now suppressed (agent = user), and
+the she/he/they triples lex-2 silently called the user's are now split
+between ambiguous fires (1) and genuine subjects.
 
 ## Why lex-1 failed, which is the useful part
 
