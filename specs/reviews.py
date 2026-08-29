@@ -1990,7 +1990,16 @@ REVIEWS = [
          "point; both reviewer mutations refuse. PACKAGE-R4-1: the "
          "Internal-reviewers row is rendered from the ledger "
          "(internal_reviewers_row), READY-FOR-EXTERNAL claims refused. "
-         "Sealed AFTER this row, sha pinned on return", findings=0),
+         "Research's round-4 pre-seal red-team (internal round 7) "
+         "returned I7-1 BLOCKING (sample selection voided the Wilson "
+         "gate) + I7-2 MODERATE (binders verified drift, not renderer "
+         "correctness); both folded, co-verify PASSED and cleared the "
+         "seal, and the co-verify's measured-inert size-shopping "
+         "residual was folded same-day too (canonical size; census "
+         "decides on the exact share). Sealed as "
+         "0026-v5-20260829T2225Z.tar.gz, sha256 "
+         "7d1314c4e13155add50ad31ea1125c414b931b6c36a297378701eed4"
+         "3ca69107, commit d1b01a1", findings=0),
 
     dict(spec="0026", round=7, kind="internal", date="2026-08-29",
          raised=["0026-I7-1", "0026-I7-2"],
