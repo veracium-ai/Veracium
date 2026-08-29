@@ -2189,4 +2189,21 @@ CLOSURES = [
      "$PY -m pytest tests/test_0011_mutant_registry.py::"
      "test_a_symlinked_copy_root_or_config_carrier_refuses "
      "-q -p no:randomly"),
+    # ---- 0011 external round 16 (2026-08-29) — the mechanism, observed.
+    ("0011", "external", 16, "0011-PROCESS-R16-1",
+     "'refuse before access' was asserted nowhere: the round-15 "
+     "regressions checked the refusal message only, so a mutant that "
+     "copied every root into a leaked temp dir BEFORE running the "
+     "guards passed the whole registry suite; and config-carrier "
+     "validation ran after mkdtemp, stranding a temp dir per refusal",
+     "_snapshot is two-phase (all guards read-only first, allocate+copy "
+     "second with guaranteed cleanup) and the regression OBSERVES the "
+     "mechanism: instrumented copytree/copy2/mkdtemp/walk must record "
+     "zero pre-refusal activity, and the reviewer's copy-before-refuse "
+     "mutant stands as an adversarial check that must trip the "
+     "detector",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_refusal_precedes_every_access_and_allocation "
+     "tests/test_0011_mutant_registry.py::"
+     "test_the_copy_before_refuse_mutant_is_caught -q -p no:randomly"),
 ]

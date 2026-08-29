@@ -747,7 +747,13 @@ def _snapshot(root) -> str:
             dirnames[:] = [x for x in dirnames
                            if x not in ("__pycache__", "archives",
                                         ".pytest_cache")]
-    snap = tempfile.mkdtemp(prefix="veracium-mutant-tree-")
+    # PROCESS-R16-1: EVERY refusal precedes EVERY allocation and copy.
+    # The config-carrier check used to sit after mkdtemp, so its refusal
+    # stranded a temp dir; and the regression asserted only the refusal
+    # OUTCOME, so a mutant that copied the external tree first and
+    # refused second passed everything. Phase 1 is all guards (no
+    # filesystem writes of any kind); phase 2 allocates and copies with
+    # cleanup guaranteed on any exception.
     for name in ("conftest.py", "pyproject.toml", "pytest.ini",
                  "setup.cfg", "setup.py"):
         f = rp / name
@@ -759,16 +765,24 @@ def _snapshot(root) -> str:
                 f"symlink in the campaign tree: {f} — a symlinked "
                 f"configuration carrier refuses rather than being "
                 f"silently dropped from the snapshot")
-        if f.is_file():
-            shutil.copy2(f, snap)
-    for d in ("src", "tests", "specs"):
-        f = rp / d
-        if f.is_dir():
-            shutil.copytree(
-                f, pathlib.Path(snap) / d,
-                ignore=shutil.ignore_patterns(
-                    "__pycache__", "archives", "*.tar.gz",
-                    ".pytest_cache"))
+    snap = tempfile.mkdtemp(prefix="veracium-mutant-tree-")
+    try:
+        for name in ("conftest.py", "pyproject.toml", "pytest.ini",
+                     "setup.cfg", "setup.py"):
+            f = rp / name
+            if f.is_file():
+                shutil.copy2(f, snap)
+        for d in ("src", "tests", "specs"):
+            f = rp / d
+            if f.is_dir():
+                shutil.copytree(
+                    f, pathlib.Path(snap) / d,
+                    ignore=shutil.ignore_patterns(
+                        "__pycache__", "archives", "*.tar.gz",
+                        ".pytest_cache"))
+    except BaseException:
+        shutil.rmtree(snap, ignore_errors=True)
+        raise
     return snap
 
 

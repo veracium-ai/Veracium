@@ -14,8 +14,11 @@ from __future__ import annotations
 import copy
 import importlib
 import json
+import os
 import pathlib
 import sys
+import tempfile
+import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 EVID = ROOT / "specs" / "evidence" / "0011"
@@ -803,3 +806,117 @@ def test_a_symlinked_copy_root_or_config_carrier_refuses(tmp_path):
         assert verified["kills"] == []
         assert any("configuration carrier" in p for p in problems), (
             target, problems)
+
+
+def _instrumented(monkeypatch):
+    """Recording wrappers over every operation _snapshot may perform
+    against the filesystem (PROCESS-R16-1: the earlier regressions
+    asserted the refusal OUTCOME only — a mutant that copied the
+    external tree first and refused second passed everything). The
+    records are the mechanism witness: refusal must arrive with ZERO
+    allocations and ZERO copies."""
+    import shutil
+    import tempfile
+    calls = {"copytree": [], "copy2": [], "mkdtemp": [], "walk": []}
+    real_ct, real_c2 = shutil.copytree, shutil.copy2
+    real_mk, real_walk = tempfile.mkdtemp, os.walk
+    monkeypatch.setattr(shutil, "copytree",
+                        lambda *a, **k: (calls["copytree"].append(a),
+                                         real_ct(*a, **k))[1])
+    monkeypatch.setattr(shutil, "copy2",
+                        lambda *a, **k: (calls["copy2"].append(a),
+                                         real_c2(*a, **k))[1])
+    def _rec_mkdtemp(*a, **k):
+        d = real_mk(*a, **k)
+        calls["mkdtemp"].append(d)          # the RETURN path, so a caller
+        return d                            # can clean up exactly its own
+    monkeypatch.setattr(tempfile, "mkdtemp", _rec_mkdtemp)
+    monkeypatch.setattr(os, "walk",
+                        lambda top, *a, **k: (calls["walk"].append(str(top)),
+                                              real_walk(top, *a, **k))[1])
+    return calls
+
+
+def test_refusal_precedes_every_access_and_allocation(tmp_path,
+                                                      monkeypatch):
+    """PROCESS-R16-1, half one: for a symlinked copy root AND a
+    symlinked config carrier, the refusal must arrive having allocated
+    nothing, copied nothing, and (for the root case) walked nothing
+    under the link — observed by instrumentation, not inferred from the
+    message."""
+    ext = tmp_path / "external"
+    ext.mkdir()
+    (ext / "SENTINEL.py").write_text("EXTERNAL = 1\n")
+    calls = _instrumented(monkeypatch)
+    # symlinked root
+    root = tmp_path / "root_sym"
+    root.mkdir()
+    (root / "tests").symlink_to(ext)
+    verified, problems = MR.execute((MR.ENTRIES[0],), root=root)
+    assert any("symlink in the campaign tree" in p for p in problems)
+    assert calls["copytree"] == [] and calls["copy2"] == [], calls
+    assert calls["mkdtemp"] == [], "allocated before refusing"
+    assert not any(str(root / "tests") in w or str(ext) in w
+                   for w in calls["walk"]), "walked under the link"
+    # symlinked config carrier: same zero-allocation refusal (this is
+    # also the leak case — the check used to run after mkdtemp)
+    for c in calls.values():
+        c.clear()
+    root2 = tmp_path / "root_cfg"
+    root2.mkdir()
+    (root2 / "conftest.py").symlink_to("/etc/passwd")
+    verified, problems = MR.execute((MR.ENTRIES[0],), root=root2)
+    assert any("configuration carrier" in p for p in problems)
+    assert calls["mkdtemp"] == [], "the leak case: allocated pre-refusal"
+    assert calls["copytree"] == [] and calls["copy2"] == [], calls
+
+
+def test_the_copy_before_refuse_mutant_is_caught(tmp_path, monkeypatch):
+    """PROCESS-R16-1, half two — the reviewer's mutant as a standing
+    adversarial check: a _snapshot that leaks a copy of every root
+    BEFORE running its guards still refuses with the normal message, so
+    the outcome-only assertions pass it; the instrumentation must be
+    what kills it. This drives the planted mutant and requires the
+    detector to fire — if the instrumentation ever stops observing the
+    leak, THIS test fails, not just the mutant campaign."""
+    import importlib.util
+    src = (EVID / "mutant_registry.py").read_text()
+    anchor = ('    for d in ("src", "tests", "specs"):\n'
+              "        base = rp / d")
+    assert src.count(anchor) == 1, "the scan loop moved"
+    leak = (
+        "    import shutil as _sh\n"
+        "    import tempfile as _tf\n"
+        "    _lk = _tf.mkdtemp(prefix=\"veracium-mutant-tree-\")\n"
+        "    for _d in (\"src\", \"tests\", \"specs\"):\n"
+        "        _b = rp / _d\n"
+        "        if _b.exists():\n"
+        "            _sh.copytree(_b, pathlib.Path(_lk) / _d)\n")
+    mutated = src.replace(anchor, leak + anchor, 1)
+    mod_path = tmp_path / "mutant_registry_leaky.py"
+    mod_path.write_text(mutated)
+    spec = importlib.util.spec_from_file_location("mr_leaky", mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    ext = tmp_path / "external"
+    ext.mkdir()
+    (ext / "SENTINEL.py").write_text("EXTERNAL = 1\n")
+    root = tmp_path / "root_sym"
+    root.mkdir()
+    (root / "tests").symlink_to(ext)
+    calls = _instrumented(monkeypatch)
+    import pytest as _pytest
+    with _pytest.raises(RuntimeError):
+        mod._snapshot(root)                     # refuses — outcome alone
+    assert calls["copytree"] or calls["mkdtemp"], (
+        "the planted leak was invisible to the instrumentation — the "
+        "detector this round exists for is dead")
+    # the mutant's leak is real — clean up EXACTLY the dirs this
+    # mutant's own mkdtemp calls created, and nothing else: a glob over
+    # veracium-mutant-tree-* deleted the LIVE snapshot of a campaign
+    # running concurrently in the closure-evidence gate (its subprocess
+    # cwd vanished mid-run) — the same concurrent-reader class the
+    # snapshot design exists for, reintroduced by this test's own broom
+    import shutil as _sh
+    for d in calls["mkdtemp"]:
+        _sh.rmtree(d, ignore_errors=True)

@@ -1453,6 +1453,47 @@ REVIEWS = [
          "ddbb674d49416ac4d8d7118dc85f9d1b1765f4d4ae85691f71575a57"
          "4fd5a8ad, commit 193aef7", findings=0),
 
+    dict(spec="0011", round=16, kind="external", date="2026-08-29",
+         raised=["0011-PROCESS-R16-1"],
+         verdict="RETURN EXACT v16 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; PROCESS-R15-1's production fix "
+         "confirmed correct; no policy or trust-model defect (package "
+         "`0011-v16`, sha ddbb674d verified; archive safety 514 members; "
+         "focused 42; collected-header 22; spec gate 88/5; selfcheck 8; "
+         "extracted 1878/22 reconciling with sealed 1892/8 over 1,900 "
+         "tests; 226-command transcript). PROCESS-R16-1: 'refuse before "
+         "access' is NOT REGRESSION-BOUND — the new regression checks "
+         "only the returned refusal, not whether the checker accessed or "
+         "copied the symlink target first: a planted "
+         "copytree-before-guard mutant refused normally and passed the "
+         "named R15 regression, the adjacent regressions, and the whole "
+         "registry suite, leaving three leaked snapshots containing the "
+         "copied external SENTINEL for src, tests and specs. Also a "
+         "pristine resource leak: config-carrier validation occurs after "
+         "mkdtemp, so a symlinked conftest.py refuses correctly but "
+         "strands one veracium-mutant-tree-* dir. Required: every root "
+         "and carrier guard before mkdtemp (or guaranteed cleanup after "
+         "allocation); instrument os.walk, copytree and mkdtemp in the "
+         "regression so any pre-refusal access, copy or allocation fails "
+         "the test; retain the copy-before-refuse mutant as a standing "
+         "adversarial check", findings=1),
+
+    dict(spec="0011", round=17, kind="external", date="2026-08-29",
+         verdict="SENT (package `0011-v17`, candidate draft v20 — the "
+         "round-16 fold; §26 maps the finding). PROCESS-R16-1 closed in "
+         "both required halves: _snapshot is TWO-PHASE (phase 1 is every "
+         "guard — carriers, roots, walk scan — filesystem read-only; "
+         "phase 2 allocates and copies with cleanup guaranteed on any "
+         "exception), so a refusal allocates and copies nothing BY "
+         "STRUCTURE; and the regressions OBSERVE the mechanism — "
+         "recording wrappers over copytree/copy2/mkdtemp/os.walk require "
+         "zero pre-refusal activity for the symlinked-root and "
+         "symlinked-carrier (leak) cases — with the reviewer's "
+         "copy-before-refuse mutant riding as a standing adversarial "
+         "check that MUST trip the instrumentation (if the detector goes "
+         "blind, that test fails, not just the campaign). Sealed AFTER "
+         "this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],
