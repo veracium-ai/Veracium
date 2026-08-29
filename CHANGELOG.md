@@ -27,6 +27,27 @@
   capture first-party events; leave relay/unknown-origin sites alone
   and they inherit the safe floor.**
 
+  **E3 — `CONTESTED` at every reader.** Contention stays `0003`'s
+  refusal-scoped notion with NO stored carrier — derived per read from
+  the live refusal set. The per-reader obligations are now PINNED by
+  standing tests against the shipped surfaces: recall asserts the
+  CONTENTION (never one side as a plain current fact), maintain
+  resolves nothing across a contested pair while `0012` per-edge
+  expiry still fires, an exported/imported pair arrives uncontested
+  (refusal records are store-local), and a directly-inserted
+  distinct-value pair is not contested.
+
+  **E6 — the history partition.** `graph.history_label` +
+  `HISTORY_LABELS`: THE one five-label vocabulary
+  (`RETIRED_HISTORY` / `QUARANTINED_CLAIM` / `CONTESTED_CURRENT` /
+  `UNVERIFIED_CURRENT` / `GROUNDED_CURRENT`), first-match over the
+  §4f precedence table — total by the catch-all, exclusive by
+  first-match, verified cell-by-cell against an independent oracle
+  over the full cross-product. `introspect` gains a `history_labels`
+  count block derived from it (additive key; the labelling reads
+  disclosure, never writes it — the 0023 N2 sweep extends over the
+  new surfaces).
+
   **E5 — `correct()` through the ladder, authorised (closes
   `M7-correct`). ⚠ BEHAVIOR CHANGE.** `Memory.correct()` no longer
   writes storage directly: the correction goes through the same atomic

@@ -1148,7 +1148,8 @@ class Memory:
         remains `forget()`. CLI: `veracium introspect --user X`."""
         from . import introspect as _introspect
         try:
-            out = _introspect.report(self.store, user_id, mode=mode)
+            out = _introspect.report(self.store, user_id, mode=mode,
+                                     relations=self.config.relations)
         except Exception as e:
             self._on_error("introspect", e, user_id)
             raise

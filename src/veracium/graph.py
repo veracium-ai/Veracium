@@ -259,6 +259,35 @@ def _absorption_scope_gate(store, edge: Edge):
     return same_scope
 
 
+# specs/0011 §4f (E6): THE one history vocabulary — five labels, first-match.
+# Readers that meet a quarantined or contested edge use this instead of each
+# inventing a rendering; totality holds by the row-5 catch-all and exclusivity
+# by first-match, both by construction rather than enumeration.
+HISTORY_LABELS = ("RETIRED_HISTORY", "QUARANTINED_CLAIM", "CONTESTED_CURRENT",
+                  "UNVERIFIED_CURRENT", "GROUNDED_CURRENT")
+
+
+def history_label(edge: Edge, *, contested: bool) -> str:
+    """specs/0011 §4f (E6): label one edge with exactly one of the five
+    HISTORY_LABELS. `contested` is DERIVED by the caller from the live
+    refusal contentions (specs/0003's refusal-scoped notion — the shipped
+    `Recall.contested` predicate; there is NO stored carrier). Precedence is
+    a claim in itself: quarantine outranks contention (a quarantined edge's
+    dispute is moot until it leaves quarantine); contention outranks
+    ungroundedness (a contested value must not render as merely
+    unverified-but-current). READS disclosure-derived properties, never
+    writes them (S7 — the 0023 N2 single-writer sweep covers this file)."""
+    if not edge.active:
+        return "RETIRED_HISTORY"
+    if edge.quarantined:
+        return "QUARANTINED_CLAIM"
+    if contested:
+        return "CONTESTED_CURRENT"
+    if edge.ungrounded or edge.use_only:
+        return "UNVERIFIED_CURRENT"
+    return "GROUNDED_CURRENT"
+
+
 class CorrectionRefused(Exception):
     """specs/0011 §4e/§4b: the requested correction may not retire its prior —
     the durable refusal row IS recorded (like every refused supersession)

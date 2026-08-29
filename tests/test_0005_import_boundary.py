@@ -635,6 +635,13 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0011 §4c (E3): the portability cell of the contested sweep runs
+    # restore=True DELIBERATELY — the test's subject is that a refusal record
+    # is STORE-LOCAL (the imported pair arrives uncontested) even on the
+    # maximum-fidelity path where every trust field round-trips verbatim;
+    # showing it on the capping default path would prove less
+    ("test_0011_entitlement.py",
+     "test_contested_is_derived_and_total_over_readers"): "restore",
     # specs/0023 N8: the export→revoke→reimport sequence runs restore=True
     # DELIBERATELY — the test's subject is that the destination-standing cap
     # applies even when the operator asserts file-trust fidelity, because the

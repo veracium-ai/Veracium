@@ -16,7 +16,8 @@ Modes:
 
 from __future__ import annotations
 
-from .graph import render_edges
+from .graph import history_label, render_edges
+from .schema import DEFAULT_RELATIONS
 
 
 def _count(counter: dict, key: str) -> None:
@@ -34,7 +35,20 @@ def _wiki_compile_record(store, user_id: str) -> dict:
     return parse_compile_marker(_split_envelope(cached[0])[1])
 
 
-def report(store, user_id: str, *, mode: str = "summary") -> dict:
+def _history_label_counts(store, user_id: str, edges: list,
+                          relations: dict) -> dict:
+    """specs/0011 §4f: counts by the ONE vocabulary, total over every edge."""
+    from .compile import _live_refusal_contention_edge_ids
+    contested_ids = _live_refusal_contention_edge_ids(store, user_id, relations)
+    counts = {}
+    for e in edges:
+        label = history_label(e, contested=e.id in contested_ids)
+        counts[label] = counts.get(label, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def report(store, user_id: str, *, mode: str = "summary",
+           relations: dict = DEFAULT_RELATIONS) -> dict:
     """Aggregate one user's memory into a JSON-able transparency report."""
     if mode not in ("summary", "categories"):
         raise ValueError(f"unknown introspect mode {mode!r} (summary | categories)")
@@ -72,6 +86,11 @@ def report(store, user_id: str, *, mode: str = "summary") -> dict:
         # specs/0019 U9: the count of active records whose extraction was not
         # grounded (categories render each with its inline marker)
         "ungrounded": sum(1 for e in active if e.ungrounded),
+        # specs/0011 §4f (E6): every edge under THE one five-label history
+        # vocabulary — derived here per call (contested is 0003's live
+        # refusal-scoped set; no stored carrier exists), never persisted
+        "history_labels": _history_label_counts(store, user_id, edges,
+                                                relations),
         # specs/0012 R11-5 (frozen public schema): the cached wiki's authoritative
         # compile-drop record, parsed from the marker — VERBATIM in marker_line, and
         # ONLY the cached record (no current-store hypothetical; non-mutating).

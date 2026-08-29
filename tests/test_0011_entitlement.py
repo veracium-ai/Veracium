@@ -302,9 +302,9 @@ def _quiet_llm(prompt, **kw):
     raise AssertionError("correct() must not call the LLM")
 
 
-def _mem_with(tmp, *edges):
+def _mem_with(tmp, *edges, llm=None):
     db = f"{tmp}/t.db"
-    mem = Memory(llm=_quiet_llm, config=MemoryConfig(db_path=db))
+    mem = Memory(llm=llm or _quiet_llm, config=MemoryConfig(db_path=db))
     for e in edges:
         mem.store.add_edge(e)
     return mem
@@ -452,4 +452,176 @@ def test_correction_plan_refuses_a_prior_the_cas_cannot_pin(tmp_path):
     stale = [e for e in store.edges(U, active_only=False) if e.id == "p1"][0]
     assert stale.invalidation_reason == "superseded", (
         "the recorded reason must survive the refused race")
+    mem.close()
+
+
+# ---- S6: the history partition is total and exclusive (E6, §4f) ------------
+
+from veracium.graph import HISTORY_LABELS, history_label
+from veracium.schema import Disclosure
+
+
+def test_history_partition_is_total():
+    """S6: exactly one of the five labels for EVERY cell of the
+    (active × disclosure × ungrounded × contested) cross-product, checked
+    against an independently-written precedence oracle — including the two
+    cells R1-5 executed against v4 (quarantined-grounded-uncontested and
+    mentionable-grounded-contested)."""
+    def oracle(active, disclosure, ungrounded, contested):
+        # the §4f table, restated independently: first match wins
+        if not active:
+            return "RETIRED_HISTORY"
+        if disclosure == Disclosure.QUARANTINED:
+            return "QUARANTINED_CLAIM"
+        if contested:
+            return "CONTESTED_CURRENT"
+        if ungrounded or disclosure == Disclosure.USE_ONLY:
+            return "UNVERIFIED_CURRENT"
+        return "GROUNDED_CURRENT"
+
+    seen = set()
+    n = 0
+    for active in (True, False):
+        for disclosure in Disclosure:
+            for ungrounded in (True, False):
+                for contested in (True, False):
+                    e = _edge(f"x{n}", "user", f"v{n}", A.USER)
+                    if not active:      # active is DERIVED from invalidated_at
+                        e.invalidated_at = NOW
+                        e.invalidation_reason = "superseded"
+                    e.provenance.disclosure = disclosure
+                    e.ungrounded = ungrounded
+                    got = history_label(e, contested=contested)
+                    assert got in HISTORY_LABELS
+                    assert got == oracle(active, disclosure, ungrounded,
+                                         contested), (
+                        f"cell (active={active}, {disclosure}, "
+                        f"ungrounded={ungrounded}, contested={contested})")
+                    seen.add(got)
+                    n += 1
+    assert seen == set(HISTORY_LABELS), (
+        "every label must be REACHABLE from the cross-product")
+    # R1-5's two executed cells, by name
+    q = _edge("q", "user", "v", A.USER)
+    q.provenance.disclosure = Disclosure.QUARANTINED
+    assert history_label(q, contested=False) == "QUARANTINED_CLAIM"
+    m = _edge("m", "user", "v", A.USER)
+    assert history_label(m, contested=True) == "CONTESTED_CURRENT"
+
+
+def test_no_disclosure_interaction():
+    """S7: the partition READS disclosure to place a label and never writes
+    it — the 0023 N2 single-writer sweep EXTENDED to the E6 surfaces: the
+    labelling leaves the edge byte-identical, and neither graph.py nor
+    introspect.py joins the N2 writer set."""
+    import re
+    from pathlib import Path
+    e = _edge("s7", "user", "v", A.USER)
+    before = e.model_dump()
+    for contested in (True, False):
+        history_label(e, contested=contested)
+    assert e.model_dump() == before, "labelling must not mutate the edge"
+    src = Path(graph.__file__).resolve().parent
+    for fname in ("graph.py", "introspect.py"):
+        text = (src / fname).read_text()
+        assert not re.search(
+            r"[\"']?disclosure[\"']?\s*(?:(?<![=!])=(?!=)|:)\s*"
+            r"[\(\"']*(Disclosure\.|_disclosure_for)", text), (
+            f"{fname} must not join the N2 disclosure-writer set (S7)")
+
+
+# ---- S3: CONTESTED is derived and every reader handles the cell (E3) -------
+
+def _stub_llm_quiet(prompt, **kw):
+    if "distill" in str(kw.get("role", "")):
+        return '{"triples": []}'
+    return "ok"
+
+
+def _live_contention(tmp, obj_a="engineer", obj_b="teacher"):
+    """A REAL live refusal contention via the shipped machinery: a USER
+    self-assertion meets an OTHER-subject SYSTEM prior on a functional
+    relation — the §4b cell refuses the retirement, both edges stay active,
+    the refusal row is durable."""
+    mem = _mem_with(tmp, llm=_stub_llm_quiet)
+    mem.store.add_edge(_edge("pri", "user's sister", obj_a, A.SYSTEM,
+                             derived=A.THIRD_PARTY))
+    incoming = _edge("inc", "user's sister", obj_b, A.USER)
+    from veracium.graph import apply_supersession
+    apply_supersession(mem.store, incoming, DEFAULT_RELATIONS)
+    assert [r.prior_edge_id for r in mem.store.refusals(U)] == ["pri"]
+    return mem
+
+
+def test_contested_is_derived_and_total_over_readers(tmp_path):
+    """S3: no stored carrier exists — the store schema has no contested
+    column and no src writer assigns one to an Edge — and every reader
+    handles the cell: recall asserts the CONTENTION (never one side as a
+    plain current fact), maintain suppresses resolution but NOT 0012 expiry,
+    an exported/imported pair arrives uncontested, and a directly-inserted
+    pair is not contested (the reviewer's executed cell)."""
+    import re
+    from pathlib import Path
+
+    # (0) no persisted carrier: schema DDL and Edge never carry `contested`
+    import veracium.store.sqlite as _sq, veracium.schema as _sc
+    assert "contested" not in Path(_sq.__file__).read_text().lower()
+    assert not re.search(r"^\s*contested\s*[:=]", Path(_sc.__file__).read_text(),
+                         re.M), "Edge must not grow a stored contested field"
+
+    # (1) recall: the contention is asserted, never one side
+    mem = _live_contention(tmp_path)
+    rec = mem.recall(U, "sister")
+    assert rec.contested, "the live refusal contention must reach the carrier"
+    assert "engineer" in rec.context and "teacher" in rec.context, (
+        "the CONTENTION renders — both values visible as contested")
+    plain = [ln for ln in rec.context.splitlines()
+             if "engineer" in ln and "teacher" not in ln
+             and "contest" not in ln.lower() and "disputed" not in ln.lower()]
+    assert not plain, f"one side rendered as a plain current fact: {plain!r}"
+
+    # (2) maintain: no resolution — both stay active; 0012 expiry NOT
+    # suspended (a lapsed-lifetime contested member still expires)
+    mem.maintain(U, consolidate=False)
+    active_ids = {e.id for e in mem.store.edges(U)}
+    assert {"pri", "inc"} <= active_ids, "maintain must not resolve the pair"
+    from veracium import lifecycle as _lc
+    from datetime import datetime as _dt, timezone as _tz
+    old = _edge("exp", "user's sister", "berlin", A.SYSTEM,
+                derived=A.THIRD_PARTY, relation="located_at")
+    old.volatility = "transient"
+    old.provenance.observed_at = _dt(2026, 1, 1, tzinfo=_tz.utc)
+    mem.store.add_edge(old)
+    challenger = _edge("exp2", "user's sister", "lisbon", A.USER,
+                       relation="located_at")
+    from veracium.graph import apply_supersession as _aps
+    _aps(mem.store, challenger, DEFAULT_RELATIONS)
+    assert len(mem.store.refusals(U)) == 2      # a second live contention
+    _lc.expire(mem.store, U, mem.config, now=_dt(2026, 8, 29, tzinfo=_tz.utc))
+    exp = [e for e in mem.store.edges(U, active_only=False)
+           if e.id == "exp"][0]
+    assert not exp.active and exp.invalidation_reason == "lapsed", (
+        "contention must NOT suspend 0012 per-edge expiry (§4c/§7a)")
+
+    # (3) portability: a refusal record is store-local — the imported pair
+    # is NOT contested on arrival
+    out = tmp_path / "exp.jsonl"
+    mem.export_memory(U, out)
+    mem2 = Memory(llm=_stub_llm_quiet,
+                  config=MemoryConfig(db_path=f"{tmp_path}/t2.db"))
+    mem2.import_memory(out, restore=True)
+    assert mem2.store.refusals(U) == []
+    assert mem2.recall(U, "sister").contested == []
+    mem2.close()
+
+    # (4) direct insertion: two active same-class distinct values, no
+    # refusal — NOT contested (the reviewer's executed cell)
+    mem3 = Memory(llm=_stub_llm_quiet,
+                  config=MemoryConfig(db_path=f"{tmp_path}/t3.db"))
+    mem3.store.add_edge(_edge("d1", "user's sister", "engineer", A.SYSTEM,
+                              derived=A.THIRD_PARTY))
+    mem3.store.add_edge(_edge("d2", "user's sister", "teacher", A.SYSTEM,
+                              derived=A.THIRD_PARTY))
+    assert mem3.recall(U, "sister").contested == []
+    mem3.close()
     mem.close()
