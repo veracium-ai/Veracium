@@ -519,13 +519,20 @@ def test_a_duplicate_mutation_is_refused_at_the_real_boundary(tmp_path,
         '     ((PM, "emitted_keys.count(k) > 1",'
         ' "emitted_keys.count(k) > 2"),)),\n')
     dupped = src.replace(needle, needle + "\n" + dup_entry, 1)
+    # pin the copied module to the REAL root: since PROCESS-R14-1 the
+    # guard (and therefore identity) is deliberately file-dependent, so
+    # a tmp-derived ROOT would refuse on missing files instead of on the
+    # duplicate — the R11 lesson, applied here a second time
+    root_line = "ROOT = pathlib.Path(__file__).resolve().parents[3]"
+    assert dupped.count(root_line) == 1
+    dupped = dupped.replace(root_line,
+                            f"ROOT = pathlib.Path({str(MR.ROOT)!r})")
     mod_path = tmp_path / "mutant_registry_dup.py"
     mod_path.write_text(dupped)
     spec = importlib.util.spec_from_file_location("mr_dup", mod_path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert len(mod.ENTRIES) == 22
-    # the unit surface names it (no file access — root-independent)
     assert any("duplicate mutation" in b and "DUPR5A" in b
                for b in mod.validate_entries())
     # --check boundary: refuses at validation, BEFORE any campaign run
@@ -683,3 +690,82 @@ def test_digested_bytes_are_executed_bytes_even_for_dependent_hunks(
     rev = tuple(reversed(dependent))
     assert MR.mutation_identity(rev)[0][1] is None, (
         "an unappliable order digested as if it ran")
+
+
+def test_out_of_tree_paths_refuse_before_any_read(tmp_path):
+    """PROCESS-R14-1: both carriers computed mutation identity BEFORE
+    validating paths — a record hunk naming /etc/passwd validated clean,
+    and /bin/sh was READ and crashed the checker with an uncaught decode
+    error (ROOT / '/etc/passwd' IS '/etc/passwd', the R8-1(3) footgun
+    reachable through the new code path). Now ONE shared guard runs
+    first in both carriers, membership as a pure string check, so an
+    out-of-set path is refused with NO filesystem access. The no-read
+    witness is /bin/sh itself: reading it raises UnicodeDecodeError, so
+    a clean named refusal without a traceback proves the read never
+    happened. Driven through the REAL entry point for the record
+    carrier, with a latency bound proving no campaign ran."""
+    import time
+    raw = (EVID / "mutant_results.json").read_text()
+    for art in ("/etc/passwd", "../../../etc/passwd", "/bin/sh"):
+        # entries carrier: named refusal, no exception
+        g = MR.ENTRIES + (("Z1", "dev", "x", MR.ENTRIES[0][3], "problems",
+                           ((art, "a", "b"),)),)
+        bad = MR.validate_entries(g)
+        assert any("Z1" in b and "OUTSIDE the closed mutable set" in b
+                   for b in bad), (art, bad[:2])
+        # record carrier at the REAL boundary
+        d = json.loads(raw)
+        d["entries"][0]["hunks"][0]["artifact"] = art
+        t0 = time.monotonic()
+        r = _run_main_against(json.dumps(d, indent=1, sort_keys=True)
+                              + "\n")
+        assert r.returncode == 1, art
+        assert "OUTSIDE the closed mutable set" in r.stderr, (art,
+                                                             r.stderr[:200])
+        assert "Traceback" not in r.stderr, (
+            f"{art}: the checker crashed instead of refusing — the "
+            f"target was read")
+        assert time.monotonic() - t0 < 5, (
+            f"{art}: the refusal must precede the campaign")
+    # identity itself is defensive: degrades without reading or raising
+    assert MR._identity((("/bin/sh", "a", "b"),), fold_ws=False)[0][1] \
+        is None
+
+
+def test_a_symlink_in_the_campaign_tree_refuses_before_any_copy(tmp_path):
+    """PROCESS-R14-1's snapshot half (research): copytree with
+    symlinks=False DEREFERENCES, so a committed symlink anywhere under
+    the copied dirs is a read of its target — escaping the tree if the
+    target does — and the artifact guard never sees it, because the
+    snapshot copies the whole tree. The pre-scan refuses on the FIRST
+    symlink, before any copy: the target here is /bin/sh, whose
+    dereference-copy would land binary bytes in the snapshot, so a named
+    refusal that mentions the link and produces no snapshot proves
+    nothing was read through it."""
+    tree = tmp_path / "specs" / "evidence" / "0011"
+    tree.mkdir(parents=True)
+    (tmp_path / "specs" / "evidence" / "0011" / "real.py").write_text(
+        "x = 1\n")
+    (tree / "innocuous.py").symlink_to("/bin/sh")
+    verified, problems = MR.execute((MR.ENTRIES[0],), root=tmp_path)
+    assert verified == dict(clean={}, kills=[], leave_one_out=[])
+    assert any("symlink in the campaign tree" in p and "innocuous.py" in p
+               for p in problems), problems
+    assert any("before any copy" in p for p in problems), problems
+    # the DIRECTORY form (research): os.walk(followlinks=False) surfaces
+    # a symlinked subdir in dirnames and never descends it, while
+    # copytree(symlinks=False) DESCENDS and reads the external target —
+    # so a filenames-only scan would pass what the copy then reads. The
+    # scan checks dirnames too, and checks BEFORE pruning, even for a
+    # link named like a pruned dir.
+    (tree / "innocuous.py").unlink()
+    (tree / "linkdir").symlink_to("/etc")
+    verified, problems = MR.execute((MR.ENTRIES[0],), root=tmp_path)
+    assert verified["kills"] == []
+    assert any("symlink in the campaign tree" in p and "linkdir" in p
+               for p in problems), problems
+    (tree / "linkdir").unlink()
+    (tree / "archives").symlink_to("/etc")     # named like a pruned dir
+    verified, problems = MR.execute((MR.ENTRIES[0],), root=tmp_path)
+    assert any("symlink in the campaign tree" in p and "archives" in p
+               for p in problems), problems

@@ -2157,4 +2157,20 @@ CLOSURES = [
      "tests/test_0011_mutant_registry.py::"
      "test_mutation_identity_is_the_resulting_transformation "
      "-q -p no:randomly"),
+    # ---- 0011 external round 14 (2026-08-28) — the guard precedes the read.
+    ("0011", "external", 14, "0011-PROCESS-R14-1",
+     "both carriers computed mutation identity before validating hunk "
+     "paths: a record hunk naming /etc/passwd validated CLEAN (the "
+     "record carrier had no path validation at all), and /bin/sh was "
+     "READ and crashed the checker with an uncaught decode error — the "
+     "R8-1(3) absolute-join footgun reachable through the round-12 "
+     "identity restructure",
+     "one shared guard (artifact_problems) runs in BOTH carriers before "
+     "identity touches the filesystem — membership is a pure string "
+     "check, so an out-of-set path refuses with no read; _identity is "
+     "additionally defensive (no absolute/escaping/missing reads, "
+     "degrades on binary bytes); /bin/sh is the built-in no-read "
+     "witness in the standing regression at the real entry point",
+     "$PY -m pytest tests/test_0011_mutant_registry.py::"
+     "test_out_of_tree_paths_refuse_before_any_read -q -p no:randomly"),
 ]

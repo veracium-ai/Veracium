@@ -73,6 +73,34 @@ CK = "specs/evidence/0011/check_contention_rule.py"
 MUTABLE_ARTIFACTS = frozenset({PM, CF, SC, CK})
 
 
+def artifact_problems(art) -> list:
+    """THE shared path guard, for BOTH carriers (PROCESS-R14-1: entry
+    validation computed identity before enforcing the allowlist, and
+    record validation never enforced paths at all — a record hunk naming
+    /etc/passwd validated clean, and /bin/sh crashed the checker with an
+    uncaught decode error because identity READ it). Membership comes
+    first and is a pure string check, so an out-of-set path is refused
+    with NO filesystem access; the R8-1(3) containment and regular-file
+    checks are depth behind it."""
+    if art not in MUTABLE_ARTIFACTS:
+        return [f"artifact {art!r} is OUTSIDE the closed mutable set "
+                f"{sorted(MUTABLE_ARTIFACTS)} — mutating the judge or "
+                f"off-path code manufactures or inflates the verdict; "
+                f"widening this set is a reviewed edit"]
+    ap = pathlib.PurePosixPath(art)
+    if ap.is_absolute() or ".." in ap.parts:
+        return [f"artifact {art!r} is not a plain relative path inside "
+                f"the package"]
+    full = ROOT / art
+    try:
+        full.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return [f"artifact {art!r} escapes the package root"]
+    if not full.is_file():
+        return [f"artifact {art!r} is not a regular file in the package"]
+    return []
+
+
 def mutation_identity(hunks) -> tuple:
     """PROCESS-R12-1/R13-1: the canonical identity of a MUTATION is the
     RESULTING ARTIFACT TRANSFORMATION — per artifact, the sha256 of the
@@ -132,8 +160,19 @@ def _identity(hunks, fold_ws) -> tuple:
         per_art.setdefault(a, []).append((o, n))
     out = []
     for art in sorted(per_art):
+        # defensive against unvalidated paths (PROCESS-R14-1): identity
+        # itself refuses to read outside the tree or crash on a binary —
+        # validation refuses such entries loudly; this just guarantees no
+        # read happens on the way there
+        pristine = None
+        ap = pathlib.PurePosixPath(art)
         full = ROOT / art
-        pristine = full.read_text() if full.is_file() else None
+        if not ap.is_absolute() and ".." not in ap.parts:
+            try:
+                full.resolve().relative_to(ROOT.resolve())
+                pristine = full.read_text()
+            except (ValueError, OSError, UnicodeDecodeError):
+                pristine = None
         applied, _probs = _apply_hunks_to_text(pristine, per_art[art])
         if applied is None:
             out.append((art, None, tuple(sorted(per_art[art]))))
@@ -392,10 +431,22 @@ def validate_record(rec) -> list:
             if type(e) is not dict or type(e.get("hunks")) is not list:
                 break
             try:
-                key = mutation_identity([(h["artifact"], h["old"], h["new"])
-                                         for h in e["hunks"]])
+                hs = [(h["artifact"], h["old"], h["new"])
+                      for h in e["hunks"]]
             except (TypeError, KeyError):
                 break
+            # PROCESS-R14-1: the record carrier gets the SAME guard, and
+            # it runs BEFORE identity touches the filesystem — a record
+            # hunk naming /etc/passwd validated clean here, and /bin/sh
+            # was READ and crashed the checker
+            guarded = False
+            for a, _o, _n in hs:
+                for g in artifact_problems(a):
+                    bad.append(f"record entry {e.get('id')!r}: {g}")
+                    guarded = True
+            if guarded:
+                continue
+            key = mutation_identity(hs)
             if key in keys:
                 bad.append(f"record entries {keys[key]!r} and "
                            f"{e.get('id')!r} carry the same normalized "
@@ -471,6 +522,11 @@ def validate_entries(entries=None) -> list:
         bad.append(f"duplicate registry id(s): {sorted(dupes)}")
     seen_mut, seen_ws = {}, {}
     for e in entries:
+        # PROCESS-R14-1: the guard runs BEFORE identity touches the
+        # filesystem — an entry with any out-of-set, escaping or missing
+        # artifact is excluded here and refused in the per-hunk loop below
+        if any(artifact_problems(a) for a, _o, _n in e[5]):
+            continue
         key = mutation_identity(e[5])
         wskey = _identity(e[5], fold_ws=True)
         if key in seen_mut:
@@ -502,39 +558,13 @@ def validate_entries(entries=None) -> list:
                        f"only 'survive' or fake a kill")
             continue
         for n, (art, old, new) in enumerate(hunks):
-            # INCLUSION, not exclusion (research F-B residual): membership
-            # in the closed allowlist comes FIRST, so a test file, a future
-            # conftest.py, this registry, or any off-path src function —
-            # mutating the judge, or inflating the depth metric with a
-            # genuine kill of an unrelated defense — refuses by polarity,
-            # not by enumeration.
-            if art not in MUTABLE_ARTIFACTS:
-                bad.append(f"{i}.h{n}: artifact {art!r} is OUTSIDE the "
-                           f"closed mutable set "
-                           f"{sorted(MUTABLE_ARTIFACTS)} — mutating the "
-                           f"judge or off-path code manufactures or "
-                           f"inflates the verdict; widening this set is a "
-                           f"reviewed edit")
+            # ONE shared guard for both carriers (PROCESS-R14-1):
+            # inclusion-first, no filesystem access for an out-of-set path
+            guard = artifact_problems(art)
+            if guard:
+                bad.extend(f"{i}.h{n}: {g}" for g in guard)
                 continue
-            # PROCESS-R8-1(3), kept as depth behind the allowlist:
-            # `ROOT / "/etc/passwd"` IS "/etc/passwd" — pathlib discards
-            # the left side when the right is absolute.
-            ap = pathlib.PurePosixPath(art)
-            if ap.is_absolute() or ".." in ap.parts:
-                bad.append(f"{i}.h{n}: artifact {art!r} is not a plain "
-                           f"relative path inside the package")
-                continue
-            full = (ROOT / art)
-            try:
-                full.resolve().relative_to(ROOT.resolve())
-            except ValueError:
-                bad.append(f"{i}.h{n}: artifact {art!r} escapes the "
-                           f"package root")
-                continue
-            if not full.is_file():
-                bad.append(f"{i}.h{n}: artifact {art!r} is not a regular "
-                           f"file in the package")
-                continue
+            full = ROOT / art
             if old == new:
                 bad.append(f"{i}.h{n}: old and new text are identical")
                 continue
@@ -663,14 +693,46 @@ def _snapshot(root) -> str:
     snapshot as a regular file, so a hunk writes to the snapshot copy,
     never through a link to the live tree — the dereference is the
     protection."""
+    import os as _os
     import shutil
     import tempfile
-    snap = tempfile.mkdtemp(prefix="veracium-mutant-tree-")
     rp = pathlib.Path(root)
+    # PROCESS-R14-1, snapshot half (research): copytree with
+    # symlinks=False DEREFERENCES — a committed symlink anywhere under
+    # the copied dirs would make the snapshot READ its target, inside
+    # the tree or out (an escaping link is an out-of-tree read the
+    # artifact guard never sees, because the snapshot copies the WHOLE
+    # tree, not the four guarded artifacts). A symlink in this tree is
+    # anomalous, so the posture is refusal, not skipping: pre-scan
+    # without following links, and ERROR naming the first one found —
+    # before any copy, so nothing is read through it.
+    for d in ("src", "tests", "specs"):
+        base = rp / d
+        if not base.is_dir():
+            continue
+        for dirpath, dirnames, filenames in _os.walk(base,
+                                                     followlinks=False):
+            # CHECK, then prune (research): a symlinked dir named like a
+            # pruned one would otherwise slip the scan — it is also
+            # copy-ignored, so no read would occur, but the scan and the
+            # copy sharing an exclusion list by coincidence is the
+            # agreement-by-coincidence shape this round retired
+            for name in dirnames + filenames:
+                p_ = pathlib.Path(dirpath) / name
+                if p_.is_symlink():
+                    raise RuntimeError(
+                        f"symlink in the campaign tree: {p_} — the "
+                        f"snapshot copy would dereference it (reading "
+                        f"its target, possibly outside the tree); a "
+                        f"symlink here is anomalous and refuses")
+            dirnames[:] = [x for x in dirnames
+                           if x not in ("__pycache__", "archives",
+                                        ".pytest_cache")]
+    snap = tempfile.mkdtemp(prefix="veracium-mutant-tree-")
     for name in ("conftest.py", "pyproject.toml", "pytest.ini",
                  "setup.cfg", "setup.py"):
         f = rp / name
-        if f.is_file():
+        if f.is_file() and not f.is_symlink():
             shutil.copy2(f, snap)
     for d in ("src", "tests", "specs"):
         f = rp / d
@@ -693,7 +755,11 @@ def execute(entries=None, root=None) -> tuple:
     import shutil
     entries = ENTRIES if entries is None else entries
     root = ROOT if root is None else pathlib.Path(root)
-    snap = _snapshot(root)
+    try:
+        snap = _snapshot(root)
+    except RuntimeError as exc:
+        return (dict(clean={}, kills=[], leave_one_out=[]),
+                [f"campaign REFUSED before any copy: {exc}"])
     try:
         return _execute_in(entries, pathlib.Path(snap))
     finally:

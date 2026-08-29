@@ -1342,6 +1342,62 @@ REVIEWS = [
          "45323d1611f9272d5948de09f487df369f6e0c9fd79c7811f3dd7c06"
          "45babeaf, commit befb8a1", findings=0),
 
+    dict(spec="0011", round=14, kind="external", date="2026-08-28",
+         raised=["0011-PROCESS-R14-1"],
+         verdict="RETURN EXACT v14 FOR ONE MECHANICAL PROCESS AMENDMENT — "
+         "finite design acceptance stands; PROCESS-R13-1 confirmed "
+         "substantively closed (merged-C2, the original "
+         "constant-cardinality substitution, AND a stronger replacement "
+         "preserving 21 entries / 25 hunks / 17 nodes / the 15-6 finder "
+         "split all refuse at both real boundaries pre-campaign; the "
+         "record carrier also rejects merged-C2 in appended and "
+         "constant-cardinality forms); no policy or trust-model defect "
+         "(package `0011-v14`, sha 45323d16 verified; archive safety 512 "
+         "members; focused 39; collected-header 22; spec gate 88/5; "
+         "selfcheck 8; extracted 1875/22 reconciling with sealed 1889/8 "
+         "over the same 1,897 tests; 224-command transcript). "
+         "PROCESS-R14-1: identity READS UNTRUSTED PATHS before validating "
+         "them — both carriers compute mutation identity before enforcing "
+         "the allowlist and containment: a record hunk naming /etc/passwd "
+         "was accepted by validate_record with NO errors, /bin/sh made "
+         "the checker read the binary and die with an uncaught "
+         "UnicodeDecodeError (validate_entries likewise), and the "
+         "existing path regression only checks that an error eventually "
+         "appears, not that no out-of-tree read occurs first, and does "
+         "not cover the record carrier. Required: allowlist + containment "
+         "+ regular-text-file validation BEFORE any identity filesystem "
+         "access, in both carriers through one shared guard; a defensive "
+         "_identity; and real-entry-point regressions for /etc/passwd, "
+         "traversal and /bin/sh proving refusal without reading the "
+         "target, starting the campaign, or emitting a traceback",
+         findings=1),
+
+    dict(spec="0011", round=15, kind="external", date="2026-08-28",
+         verdict="SENT (package `0011-v15`, candidate draft v18 — the "
+         "round-14 fold; §24 maps the finding). PROCESS-R14-1 closed "
+         "with ONE shared guard (artifact_problems: allowlist membership "
+         "as a pure string check FIRST, so an out-of-set path refuses "
+         "with no filesystem access; containment and regular-file as "
+         "depth) run in BOTH carriers before identity touches the "
+         "filesystem — guarded entries are excluded from identity dedup "
+         "and refused loudly — plus a defensive _identity that will not "
+         "read an absolute, escaping or missing path and degrades on "
+         "unreadable bytes instead of crashing. The standing regression "
+         "drives /etc/passwd, traversal and /bin/sh through both "
+         "carriers at the real entry point: /bin/sh is the built-in "
+         "no-read witness (reading it raises, so a named refusal with no "
+         "traceback proves the read never happened), with a latency "
+         "bound proving no campaign ran. The round-12 DUPR5A regression "
+         "pinned to the real root (its root-independence claim was "
+         "removed by this fix — the R11 lesson, applied a second time). "
+         "Research's pre-seal pass closed the snapshot half: "
+         "copytree DEREFERENCES symlinks, so a committed link "
+         "anywhere in the copied tree was an unguarded read of its "
+         "target; a no-follow pre-scan now refuses on the first "
+         "symlink BEFORE any copy (standing test: a planted "
+         "/bin/sh link, named refusal, no snapshot). Sealed AFTER "
+         "this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
                  "0026-I1-m4", "0026-I1-m5"],
