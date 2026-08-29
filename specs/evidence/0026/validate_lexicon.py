@@ -90,6 +90,33 @@ CELLS = (
     ("nested_relay", "my sister said the vet said it is fine", None, True),
     ("nested_user_outer", "I said the vet said it is fine", None, True),
     ("dropped_subject_fragment", "said it was fine", None, False),
+    # --- lex-5 RECALL cells (research red-team, the FN direction): §6a
+    # measures false positives only, so verb-list completeness IS the
+    # check's recall — these held relays MUST FIRE, so completeness is
+    # measured, not enumerated. The first two are research's headline.
+    ("recall_claimed", "my landlord claimed I owe 500 dollars", None, True),
+    ("recall_claimed_third", "the tenant claimed the deposit was returned",
+     None, True),
+    ("recall_warned", "the doctor warned about the interaction", None, True),
+    ("recall_wrote", "my lawyer wrote that the lease is void", None, True),
+    ("recall_texted", "the landlord texted that rent is due", None, True),
+    ("recall_noted", "the nurse noted an allergy to penicillin", None, True),
+    ("recall_explained", "the mechanic explained the brakes were worn",
+     None, True),
+    ("recall_insisted", "her accountant insisted the filing was correct",
+     None, True),
+    ("recall_alleged", "the neighbor alleged the fence is misplaced",
+     None, True),
+    ("recall_diagnosed", "the vet diagnosed a thyroid condition",
+     None, True),
+    ("recall_prescribed", "the doctor prescribed 10mg daily", None, True),
+    # own-use controls: the grammar discriminates the new verbs too
+    ("recall_own_claimed", "I claimed the deduction on my return",
+     None, False),
+    ("recall_own_noted", "user noted a preference for mornings",
+     None, False),
+    ("recall_own_wrote", "I wrote to the landlord about the leak",
+     None, False),
 )
 
 

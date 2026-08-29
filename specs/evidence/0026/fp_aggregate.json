@@ -1,23 +1,34 @@
 {
  "coverage": {
-  "matched_by_lexicon": 140,
+  "matched_by_lexicon": 217,
   "third_party_claim_triples": 3945,
   "with_nonempty_note": 3898
  },
  "grounded_first_person": {
   "ambiguous_markers": {
-   "said": 1
+   "said": 1,
+   "wrote": 1
   },
-  "fires": 418,
-  "fires_ambiguous_only": 1,
+  "fires": 481,
+  "fires_ambiguous_only": 2,
   "markers": {
    "according to": 31,
+   "acknowledges": 4,
+   "claimed": 3,
+   "claims": 10,
    "confirmed": 2,
    "confirmed by": 1,
+   "diagnosed": 4,
+   "explained": 10,
+   "explains": 2,
    "informed": 70,
    "mentioned": 97,
    "mentions": 16,
+   "noted": 3,
    "per": 78,
+   "prescribed": 6,
+   "replied": 1,
+   "replies": 10,
    "reported": 2,
    "reports": 22,
    "said": 8,
@@ -25,25 +36,35 @@
    "stated": 55,
    "states": 31,
    "tells": 1,
-   "told": 11
+   "texts": 3,
+   "told": 11,
+   "writes": 11
   },
-  "suppressed_by_direction_only": 199,
+  "suppressed_by_direction_only": 254,
   "suppressed_markers": {
+   "acknowledges": 31,
+   "argued": 4,
+   "claims": 4,
    "confirmed": 6,
    "confirms": 7,
+   "explains": 1,
    "informed": 2,
+   "insists": 3,
    "mentioned": 42,
    "mentions": 13,
+   "noted": 5,
    "reported": 9,
    "reports": 62,
    "says": 1,
    "stated": 17,
    "states": 39,
-   "tells": 1
+   "tells": 1,
+   "writes": 5,
+   "wrote": 2
   },
   "total": 68479
  },
- "lexicon_version": "0026-lex-4",
+ "lexicon_version": "0026-lex-6",
  "manifest": {
   "entries": 52359,
   "sha256": "654e336addaf600ca0363fa40933ae92a38d26f23143e5aa0a780f3fbc011df3",

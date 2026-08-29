@@ -1,6 +1,6 @@
 # 0026 §6a — the acceptance measurement (dev, 2026-08-26; re-measured 2026-08-29)
 
-**Result: the gate is CLEARED. 0.61% (418 of 68,479) under lex-4 against
+**Result: the gate is CLEARED. 0.70% (481 of 68,479) under lex-6 against
 a 2% bar — and that figure is an UPPER BOUND, not an estimate.**
 
 **RE-MEASURED 2026-08-29 (external round 1, 0026-R1-1):** lex-2's
@@ -9,7 +9,7 @@ the reviewer executed five counterexamples (passive recipients, the
 post-verbal agent, embedded clauses, ambiguous pronouns) and the rule
 misclassified all five. lex-3/lex-4 are a directional grammar (lex-4 adds coordinator transparency and the coordinated-co-source rule); see
 `relay_lexicon.py`'s header for the rules and the third row below for
-its pass. The ambiguity class is now COUNTED: exactly 1 of the 418
+its pass. The ambiguity class is now COUNTED: exactly 2 of the 481
 fires restricts via the ambiguous class alone on this corpus.
 
 **A claim from the first version of this document is NARROWED
@@ -40,13 +40,24 @@ sha256), so these figures sit in the same frame as the 183,417 / 41.7% ones.
 
 ## All three passes
 
-| | lex-1 (prose history) | lex-2 | lex-4 (shipped) |
+| | lex-1 (prose history) | lex-2 | lex-4 | lex-5 | lex-6 (shipped) |
 |---|---|---|---|
-| fires on grounded first-person | 5,618 = **8.20%** | 415 = **0.61%** | 418 = **0.61%** |
-| …of which ambiguous-class only | n/a | n/a (class did not exist) | **1** |
-| vs the 2% gate | **OVER** | **UNDER** | **UNDER** |
-| suppressed by the directional rule | **0** | 211 | 199 |
-| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = 3.5% | 135 / 3,898 = **3.5%** |
+| fires on grounded first-person | 5,618 = **8.20%** | 415 = **0.61%** | 418 = 0.61% | 849 = 1.24% | 481 = **0.70%** |
+| …of which ambiguous-class only | n/a | n/a (class did not exist) | 1 | 2 | **2** |
+| vs the 2% gate | **OVER** | **UNDER** | UNDER | UNDER | **UNDER** |
+| suppressed by the directional rule | **0** | 211 | 199 | 280 | **254** |
+| lexicon coverage of `third_party_claim` notes | 539 / 3,898 = 13.8% | 138 / 3,898 = 3.5% | 135 = 3.5% | 222 = 5.7% | 217 / 3,898 = **5.6%** |
+
+lex-5/lex-6 are research's red-team recall finding folded: the verb
+list omitted `claimed` (the name of the relation 0024 quarantines) and
+the assertion/transmission/professional-judgment classes, and NOTHING
+measured recall — §6a is FP-only and every matrix inbound cell used an
+in-list verb. lex-5 added them all and measured 1.24%; reading the
+fires (the §6a discipline) showed the nominal homographs
+(notes/added/adds/emails) were every sampled fire, so lex-6 keeps only
+their unambiguous inflections and settles at 0.70%. Recall is now
+MEASURED: held relay cells across the verb classes must fire, and
+removing `claimed` alone is a red matrix.
 
 lex-4's small movements against lex-2 are the grammar working: passives
 and agent phrases that lex-2 misread as outbound now fire (inbound), a

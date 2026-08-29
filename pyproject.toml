@@ -44,5 +44,6 @@ packages = ["src/veracium"]
 # `test_the_sdist_excludes_every_locally_excluded_file` fails if they drift.
 [tool.hatch.build.targets.sdist]
 exclude = [
+  ".claude/skills/",
   "CLAUDE.md",
 ]

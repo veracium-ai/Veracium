@@ -116,6 +116,16 @@ def test_relay_lexicon_mutation_matrix(monkeypatch):
         "she/he/they would silently classify instead of restricting "
         "with a counted outcome")
     monkeypatch.undo()
+    # 3e. a single verb dropped (lex-5, research's FN finding): removing
+    #     `claimed` alone must fail — the recall cells make verb-list
+    #     completeness MEASURED, so the next silently omitted verb is a
+    #     red matrix, not a silent laundering path
+    L, V = _fresh()
+    assert mutate(_VERBS=tuple(v for v in L._VERBS
+                               if v not in ("claimed", "claims"))), (
+        "removing `claimed` left the matrix green — verb-list recall is "
+        "enumerated again, not measured")
+    monkeypatch.undo()
     # 3d. coordinator transparency dropped (lex-4): "the vet examined the
     #     cat and said…" attributes nothing again — the elided
     #     third-party subject vanishes across the VP coordination

@@ -15,7 +15,7 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.61% (418/68,479 under lex-4, which also pre-empts the coordination and nesting shapes research named for their red-team pass), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
+| **Version** | **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.70% (481/68,479 under lex-6: the lex-4 grammar pre-empting research's coordination/nesting shapes, plus their red-team's recall-driven verb expansion — `claimed` et al — with the nominal homographs narrowed by reading the fires; RECALL now measured via held matrix cells), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
 | **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
 | **External review** | required — adds a disclosure floor on the ingest write path |
@@ -211,6 +211,28 @@ post-verbal agent, and the first-person self-possessive. A possessive
 attached to a THIRD PARTY stays inbound — *"my doctor said"* is the
 commonest relay shape there is.
 
+**The verb list is scoped and its RECALL is measured (research
+red-team, pre-seal — the FN direction).** lex-2 through lex-4 measured
+false positives only, so verb-list completeness WAS the check's recall,
+unmeasured — and `claimed`, the name of the very relation `0024`
+quarantines, was missing. lex-6's verb classes, stated: reporting
+(said/told/stated/mentioned/reported/confirmed/informed and
+inflections), assertion (claimed/alleged/argued/insisted/testified/
+acknowledged), transmission (wrote/texted/emailed/replied/warned/
+explained/noted), and professional judgment (diagnosed/prescribed) —
+RULED IN, because they attribute a professional's factual claim, which
+is the B02/B07 laundering class exactly. The ADVICE class
+(advised/recommended/suggested) stays OUT, with the reason on record:
+it attributes a recommendation rather than a fact, and it was 79% of
+lex-1's measured false fires. Nominal homographs are excluded by
+evidence, not guess: lex-5 added notes/added/adds/emails and reading
+the fires showed every sampled one nominal ("taking notes", "adds
+flavor", "checking emails"), so lex-6 keeps only the unambiguous
+inflections (noted, emailed). Verb completeness is MEASURED two ways:
+held RECALL cells in the lexicon matrix (known relays across the verb
+classes MUST fire — removing `claimed` alone is a red matrix), and the
+§6a re-measurement pricing every addition.
+
 The directional cells — the five counterexamples verbatim plus the
 generated cross-product of voice × identity × clause — are part of the
 lexicon's own test surface (V1), not left to lexicon-entry judgement.
@@ -336,12 +358,19 @@ absent.**
 
 ### 6a. The acceptance measurement gate
 
-**RE-MEASURED 2026-08-29 under the lex-4 grammar (0026-R1-1's fix,
-plus the coordination/nesting hardening) — THE GATE IS CLEARED at
-0.61% (418 of 68,479 grounded first-person triples) against the 2%
-bar**, with the ambiguity split now counted: exactly 1 of the 418
-fires restricts via the AMBIGUOUS class alone, and 199 outbound-only
-constructions are suppressed by the directional rule. The pre-commitment fired on the way here twice: lex-1 came in at
+**RE-MEASURED 2026-08-29 under lex-6 (0026-R1-1's grammar, the
+coordination/nesting hardening, and the recall-driven verb expansion
+from research's pre-seal red-team) — THE GATE IS CLEARED at 0.70%
+(481 of 68,479 grounded first-person triples) against the 2% bar**,
+with the ambiguity split counted (2 of the 481 fires restrict via the
+AMBIGUOUS class alone; 254 outbound-only constructions suppressed).
+The pre-commitment fired a third time on the way: lex-5's verb
+expansion measured at 1.24% and READING THE FIRES showed the nominal
+homographs (notes/added/adds/emails) were noise — lex-6 keeps their
+unambiguous inflections and the rate settled at 0.70%. RECALL is now
+measured, not enumerated: held relay cells across the verb classes in
+the lexicon matrix must fire, and removing `claimed` alone is a red
+matrix. The pre-commitment fired on the way here twice: lex-1 came in at
 8.20% and NARROWED; lex-2 cleared at 0.61% and was then found
 directionally unsound by external round 1 (proximity, not authorship)
 and REWRITTEN as a grammar. **The lex-1 claim is NARROWED honestly
@@ -361,7 +390,7 @@ a different script and ships beside this one. **The whole-corpus
 figures themselves (fires, suppressed, coverage) are RECORDED ONLY:
 they reproduce with `--cache` on the measuring host and NOT from the
 archive alone** — the archive verifies shape, consistency and the
-manifest anchor, and says so in its own output. 0.61% is an UPPER
+manifest anchor, and says so in its own output. 0.70% is an UPPER
 BOUND, not an estimate — every fire is a *candidate* false positive,
 and deciding which of its own fires are false with the detector would
 be self-assertion; hand-labelling a sample puts the true rate near
@@ -403,7 +432,11 @@ versioned marker lexicon is never asserted as the user's fact, whatever
 relation it was filed under* — the promise is scoped to the LEXICON, a
 mechanical surface, not to "names its source" as a semantic judgement
 (internal round 1, M-2: a lexical mechanism may not carry a semantic
-promise). The claim ships WITH ITS DENOMINATOR: the §6a measurement run
+promise). **Scoped further to the STATED VERB SET (research red-team):
+the §3a classes — reporting, assertion, transmission, professional
+judgment — and their held recall cells; a relay using a verb outside
+them is a stated limit, not a silent one, and adding a verb is a
+lexicon version with a re-measured §6a rate.** The claim ships WITH ITS DENOMINATOR: the §6a measurement run
 also reports the lexicon's coverage over the cache's source-naming note
 population, so "matches the lexicon" is a measured fraction of the
 naming population, not an implied whole. We will NOT say the check
@@ -455,7 +488,7 @@ code. §3a is restated as a directional GRAMMAR (agent governs; passive
 recipients inert; clause-bounded subjects; ambiguous pronouns restrict
 with a counted, explicitly conservative outcome; bare participles
 attribute nothing), the five counterexamples ride verbatim in the
-lexicon's cell matrix (39 cells) and the test surface carries the
+lexicon's cell matrix (53 cells) and the test surface carries the
 generated voice × identity × clause cross-product. The mutation matrix
 was updated with the fix rather than around it: one lex-2 mutant became
 harmless by construction under the grammar (the possessive-as-subject
@@ -464,7 +497,7 @@ reason stated, replaced by mutants of the new load-bearing rules (agent
 neutered, skip-tokens dropped, ambiguity dropped — the last made
 killable by teaching the validator to check the CLASS of a restriction,
 since ambiguous-vs-inbound is invisible at the match-bool surface). §6a
-re-measured: 0.61% (418/68,479 under lex-4, which also pre-empts the coordination, elided-subject and nesting shapes research named for their red-team pass — coordinator transparency plus the coordinated-co-source rule, both erring toward over-restriction, priced by the same measurement), gate still cleared.
+re-measured: 0.70% (481/68,479 under lex-6 — the lex-4 grammar pre-empting research's coordination/elision/nesting shapes, plus the recall-driven verb expansion their red-team then required: `claimed` and the assertion/transmission/professional-judgment classes, the advice class ruled OUT with its reason, and the nominal homographs narrowed by reading the lex-5 fires per the §6a discipline; recall is now MEASURED via held matrix cells and the claimed-removal mutant), gate still cleared.
 
 **0026-R1-2 — the portable carrier had no import-boundary contract.**
 `Edge.agreement` is redesigned as a structured record binding markers,

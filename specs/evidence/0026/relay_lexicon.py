@@ -69,13 +69,41 @@ from __future__ import annotations
 
 import re
 
-LEXICON_VERSION = "0026-lex-4"
+LEXICON_VERSION = "0026-lex-6"
 
-# Attribution VERBS — §3a's named class and nothing wider.
+# Attribution VERBS — §3a's named class. lex-5 (research red-team,
+# FN direction): the list omitted high-frequency attribution verbs —
+# `claimed` above all, the name of the very relation 0024 quarantines —
+# and §6a measured only false positives, so list completeness WAS the
+# check's recall and it was unmeasured. The additions are membership,
+# not logic: the direction grammar already discriminates their
+# first-person/user uses ("I claimed the deduction" is outbound by the
+# same scan). Professional-judgment ruling (stated, not implied):
+# diagnosed/prescribed ARE attribution — they attribute a professional's
+# factual claim, which is exactly the B02/B07 laundering class — and are
+# IN. The advice class (advised/recommended/suggested) stays OUT: it
+# attributes a recommendation, not a fact ("doctor advised rest"
+# asserted as fact is first-order true as an event), and it was 79% of
+# lex-1's measured false fires. Every addition is priced by the §6a
+# re-measurement and covered by the recall cells in the matrix.
 _VERBS = (
     "said", "says", "told", "tells", "stated", "states",
     "mentioned", "mentions", "reported", "reports",
     "confirmed", "confirms", "informed", "informs",
+    "claimed", "claims", "warned", "warns", "wrote", "writes",
+    "texted", "texts", "emailed", "noted",
+    "replied", "replies", "explained", "explains",
+    "insisted", "insists", "acknowledged", "acknowledges",
+    "argued", "argues", "testified", "testifies",
+    "alleged", "alleges", "diagnosed", "diagnoses",
+    "prescribed", "prescribes",
+    # DROPPED after reading the lex-5 fires (the §6a discipline, again at
+    # the homograph rung): "notes" (207 fires, every sampled one the
+    # NOUN — "taking notes"), "added"/"adds" (81+37, "adds flavor",
+    # "added to cart" — the non-attributive verb sense dominates), and
+    # "emails" (48, "checking emails"). Their unambiguous past/inflected
+    # attribution forms (noted, emailed) STAY, so the relays research
+    # named still fire; the nominal homographs do not.
 )
 
 # Source-naming PHRASES: an attribution frame whose object is the source.
