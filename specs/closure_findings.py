@@ -1649,8 +1649,13 @@ CLOSURES = [
     ("0011", "internal", 1, "0011-I1-m5",
      "the M7 site was cited by line number, which had already moved",
      "cited by SYMBOL instead, which does not drift",
+     # the negative needle is scoped to the PRE-LEDGER portion of the
+     # spec: the generated Review-closure block (acceptance, 2026-08-29)
+     # quotes every closure command verbatim, so an unscoped negative
+     # grep would match its own quotation
      "grep -n 'at the symbol .Memory.correct' specs/0011-subject-scoped-entitlement.md && "
-     "! grep -n '__init__.py:1362' specs/0011-subject-scoped-entitlement.md"),
+     "! sed '/<!-- GENERATED:review-closure -->/,$d' "
+     "specs/0011-subject-scoped-entitlement.md | grep -n '__init__.py:1362'"),
 
     ("0011", "internal", 1, "0011-I1-m6",
      "§4d's derived(from_class) had an OPEN domain — an unknown or malformed "

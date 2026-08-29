@@ -617,6 +617,7 @@ REVIEWS = [
          findings=0),
 
     dict(spec="0011", round=2, kind="internal", date="2026-08-24",
+         raised=[],
          verdict="PASS (research) — diff-verified fold of round 1, no new "
          "findings. External-ready", findings=0),
 
@@ -1578,6 +1579,30 @@ REVIEWS = [
          "0011-v19-20260829T1119Z.tar.gz, sha256 "
          "71fae9d633bbd03424e2d10b199698d58f3be029da4e5a8b423b608d"
          "e19a599f, commit dc58757", findings=0),
+
+    dict(spec="0011", round=19, kind="external", date="2026-08-29",
+         raised=[],
+         verdict="🏁 ACCEPTED — the exact package `0011-v19` (sha 71fae9d6 "
+         "verified by the reviewer) and candidate draft v22; NO blocking, "
+         "major, minor, policy or trust-model findings; finite design "
+         "acceptance remains in force on the frozen S1-S7 invariant "
+         "surface, and dev is authorized to advance the spec to accepted "
+         "after recording the verdict and generating the review-closure "
+         "carriers. Round 18's closure confirmed sound (sentinel objects "
+         "per copy path, identity-checked, cleanup assertions and both "
+         "mutants retained; the reviewer independently replanted the "
+         "replacement handler and the regression failed exactly at "
+         "caught.value is sentinel). Verification: archive safety 517 "
+         "members; v18-to-v19 inventory exact (seven governed files "
+         "changed, one sidecar added, nothing removed); campaign 21 "
+         "entries / 25 hunks every kill runner-observed, record "
+         "recomputed byte-for-byte; extracted 1883/22 reconciling with "
+         "sealed 1897/8 over 1,905 collected (fifteen environmental "
+         "skips vs one seal-time artifact skip, net fourteen). OPTIONAL "
+         "reviewer ask, recorded not silent: a digest-bound focused R18 "
+         "transcript (pristine pass + replacement-mutant identity "
+         "failure) would save future reviewers replanting it",
+         findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
