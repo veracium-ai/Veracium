@@ -2460,4 +2460,70 @@ CLOSURES = [
      "underclaim again",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
+    ("0026", "external", 4, "0026-R4-1",
+     "OWNERSHIP mistaken for AUTHORSHIP: lex-9's _SELF_ARTIFACTS read "
+     "every owned artifact as user-authored — 'my own record reported a "
+     "diagnosis of cancer' went outbound with no marker, though the "
+     "record's producer can be a doctor or a bank; laundering, the FN "
+     "direction, and the oracle tested only the intended senses",
+     "lex-10 REMOVES the carve-out — no noun class carries an "
+     "authorship inference; a possessed head restricts whoever "
+     "possesses it, artifacts included ('my own notes' over-restricting "
+     "is priced and reversible; laundering is not); the "
+     "ownership-vs-authorship axis joins the oracle (all four reviewer "
+     "cells) and the relapse is a standing behavioral mutant; "
+     "re-measured 439/68,479 = 0.64% — identical, which is why the "
+     "carve-out bought nothing and was pure risk",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_relay_lexicon_mutation_matrix -q -p no:randomly"),
+    ("0026", "external", 4, "0026-R4-2",
+     "the §2c AgreementRecord row said malformed-under-EITHER-mode "
+     "raises while §3d said default-mode malformed recomputes, with the "
+     "§2c columns displaced — and the matrix test checked substrings, "
+     "not agreement between the carriers",
+     "import_matrix.py is the ONE structured decision table now: both "
+     "spec representations are GENERATED from it and byte-bound at the "
+     "packaged test, so the carriers cannot diverge — there is nothing "
+     "left to hand-edit into contradiction",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
+    ("0026", "external", 4, "0026-EVIDENCE-R4-1",
+     "the adjudication remained SELF-ASSERTED (the signature defect's "
+     "sixth face, at the surface the fifth hunt cleared): "
+     "true_positive=100/false_positive=-50 summed to size and passed; "
+     "sample_sha256 was regex-checked, never opened or hashed; the "
+     "decision used a point estimate",
+     "schema 3 is RECORD-BOUND, data to data: the aggregate ships "
+     "fire_digests (a content-free digest per fire), the labelled "
+     "sample is a shipped manifest whose bytes are hashed against "
+     "sample_sha256, membership and uniqueness are checked against the "
+     "population, the counts are DERIVED by counting labels (no count "
+     "carriers exist to lie), and accept requires bound x Wilson-95 "
+     "UPPER confidence <= 2% — the reviewer's exact bypass and seven "
+     "sibling cells are standing refusals, with the legitimate binding "
+     "proven alive",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 4, "0026-EVIDENCE-R4-2",
+     "the spec binder searched two substrings anywhere in the file — "
+     "the §6a headline still said lex-8 over a lex-9 aggregate, and "
+     "9,999/lex-999 mutations passed",
+     "the §6a claim is a GENERATED block (render_spec_claim), byte-"
+     "bound to the aggregate at the verify entry point and required to "
+     "sit inside §6a — the reviewer's both mutations and an in-block "
+     "figure edit are standing refusals; prose figure carriers swept "
+     "into the block's custody",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
+    ("0026", "external", 4, "0026-PACKAGE-R4-1",
+     "round 3's verdict named the Internal-reviewers header AND §9; the "
+     "fold swept only §9 — the header still listed rounds 1-2 and READY "
+     "FOR EXTERNAL, and its test found 'six internal rounds' anywhere "
+     "in the file",
+     "the front-matter row is GENERATED from the ledger "
+     "(reviews.internal_reviewers_row) and byte-bound; static readiness "
+     "claims are refused outright — a generated row cannot be "
+     "half-swept",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
 ]

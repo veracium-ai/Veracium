@@ -99,7 +99,18 @@ CELLS = (
     ("comitative_as_well_as",
      "the user as well as the accountant said the deduction is valid",
      None, True),
-    ("users_own_is_self", "the user's own note said fine", None, False),
+    # R4-1: ownership is NOT authorship — an owned artifact's content
+    # may be third-party-produced, so self-possessed artifacts RESTRICT
+    ("users_own_note_restricts", "the user's own note said fine",
+     None, True),
+    ("own_record_reported_restricts",
+     "my own record reported a diagnosis of cancer", None, True),
+    ("users_own_record_restricts",
+     "the user's own record reported a diagnosis", None, True),
+    ("frame_own_record_restricts",
+     "according to my own record the total was wrong", None, True),
+    ("own_account_reported_restricts",
+     "my own account reported the balance", None, True),
     # --- lex-9 (external round 3, R3-1): disjunction + artifact/entity
     ("or_disjunction_restricts",
      "the user or the doctor said to rest", None, True),
@@ -155,11 +166,13 @@ _SUBJECT_HEADS = {
     "my doctor": "third",
     "the user's doctor": "third",          # ASCII possessive
     "the user\u2019s doctor": "third",     # curly possessive (normalized)
-    "my own account": "user",
-    "the user's own note": "user",         # third-person self-possessive
-    "the user\u2019s own note": "user",    # …and its curly form
-    # R3-1: artifact-vs-entity — a possessed PERSON is a third party
-    # whatever the possessive; only user-authored artifacts are self
+    # R4-1: OWNERSHIP-vs-AUTHORSHIP axis — a possessed head is a
+    # third-party source whoever possesses it, ARTIFACTS INCLUDED (an
+    # owned record/account/note may be produced by a doctor or a bank)
+    "my own account": "third",
+    "my own record": "third",
+    "the user's own note": "third",        # third-person self-possessive
+    "the user\u2019s own note": "third",   # …and its curly form
     "my own doctor": "third",
     "the user's own doctor": "third",
 }

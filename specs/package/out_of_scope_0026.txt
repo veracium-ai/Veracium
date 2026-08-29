@@ -1,0 +1,25 @@
+# specs/package/out_of_scope_0026.txt — reviewer isolation (0026 round-4
+# package feedback). First non-comment line: the reason; then one
+# path-prefix per line. The sealer marks matching diff entries as
+# CONCURRENT / OUT-OF-SCOPE instead of mixing them into this line's
+# reviewed change set.
+concurrent 0011 E1-E6 implementation (guarded work on its own accepted spec; reviewed under 0011's line, not this one)
+src/veracium/
+tests/test_0011_entitlement.py
+tests/test_0019_ungrounded.py
+tests/test_0024_authorship.py
+tests/test_0025_enforcement.py
+tests/test_audit.py
+tests/test_compile_gate.py
+tests/test_feedback.py
+tests/test_outcomes.py
+tests/test_proactive.py
+tests/test_0005_import_boundary.py
+specs/0011-subject-scoped-entitlement.md
+specs/evidence/0011/
+specs/generated/0002-audit-manifest.md
+specs/audit_dispositions.py
+specs/findings.py
+docs/
+README.md
+CHANGELOG.md

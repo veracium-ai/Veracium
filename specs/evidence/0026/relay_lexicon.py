@@ -98,12 +98,22 @@ MEASURED HISTORY OF THIS FILE (§6a's pre-commitment, honoured):
          possessed third-party PERSON — restricts, in both the subject
          scan and the agent/frame path. Measured identical again: the
          shapes are absent from the own-use population.
+  lex-10 (external round 4, R4-1) the ARTIFACT carve-out is REMOVED —
+         OWNERSHIP IS NOT AUTHORSHIP. lex-9 read every noun in a closed
+         artifact set as user-authored, but a record, account or entry
+         the user OWNS can be produced by a doctor, bank or other third
+         party ("my own record reported a diagnosis of cancer" was
+         outbound: laundering, the FN direction the spec exists to
+         close). No noun class carries an authorship inference now: a
+         possessed head restricts whoever possesses it, artifacts
+         included. "My own notes say…" over-restricts — priced,
+         counted, reversible; the laundering direction is not.
 """
 from __future__ import annotations
 
 import re
 
-LEXICON_VERSION = "0026-lex-9"
+LEXICON_VERSION = "0026-lex-10"
 
 # Attribution VERBS — §3a's named class. lex-5 (research red-team,
 # FN direction): the list omitted high-frequency attribution verbs —
@@ -210,13 +220,6 @@ _COORD = frozenset(("and", "but", "so", "then", "plus", "or"))
 # the user's own word; "my own doctor said…" is the doctor's. A closed
 # artifact set makes the distinction decidable; anything outside it is
 # a possessed head and classifies third.
-_SELF_ARTIFACTS = frozenset((
-    "note", "notes", "account", "accounts", "word", "words",
-    "message", "messages", "entry", "entries", "record", "records",
-    "list", "lists", "profile", "journal", "log", "diary", "text",
-    "post", "posts", "comment", "comments", "review", "reviews",
-))
-
 # COMITATIVE quasi-coordinators (lex-8, research round-2 pre-seal): a
 # prepositional co-speaker phrase — "the user, along with her vet,
 # said…" — introduces a third-party CO-SOURCE exactly like "and", but
@@ -312,12 +315,10 @@ def _classify_source(head_tokens: list) -> str:
         return "third"                   # unnamed — conservative
     h = toks[0]
     if _is_possessive(h):
-        if h in ("my", "our", "user's", "users'") and len(toks) > 2 \
-                and toks[1] in _FIRST_PERSON_SELF:
-            return ("user" if toks[2] in _SELF_ARTIFACTS
-                    else "third")        # "by my own account" is the
-                                         # user; "by my own doctor" is
-                                         # the doctor (R3-1)
+        # R4-1: no artifact carve-out — "by my own record" restricts,
+        # because ownership is not authorship (the record's producer may
+        # be a doctor or a bank); "by my own doctor" restricts (R3-1).
+        # Every possessed head is a third-party source.
         if h in ("her", "his", "their", "its") \
                 and (len(toks) == 1 or toks[1] in _NON_HEADS):
             return "ambiguous"           # bare object pronoun: "by her"
@@ -453,11 +454,10 @@ def _direction(tokens: list, idx: int, max_scan: int = 24) -> str:
             heads.append("ambiguous")
             expecting_head = False
             continue
-        heads.append("user" if (saw_self_poss
-                                and tok in _SELF_ARTIFACTS)
-                     else "third")       # "my own NOTE" is the user's
-        expecting_head = False           # own word; "my own DOCTOR" is
-        saw_self_poss = False            # a possessed third party (R3-1)
+        heads.append("third")            # a possessed head restricts,
+        expecting_head = False           # artifacts included: "my own
+        saw_self_poss = False            # record" may be doctor-authored
+                                         # (R4-1 — ownership != authorship)
     if not heads:
         return "none"                    # clause opens with no subject
     if "third" in heads:

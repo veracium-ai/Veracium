@@ -43,7 +43,7 @@ sample reproducibly.
 """
 from __future__ import annotations
 
-import argparse, collections, hashlib, json, pathlib, random, sys
+import argparse, collections, hashlib, json, pathlib, random, re, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -108,6 +108,8 @@ def main() -> int:
     suppressed_counter = collections.Counter()
     tpc_notes = tpc_notes_nonempty = tpc_matched = 0
     sample_pool = []
+    fire_digests = []
+    fire_seen = collections.Counter()
 
     with open(a.cache, "rb") as fh:
         for raw in fh:
@@ -150,14 +152,26 @@ def main() -> int:
                         fires_ambiguous_only += 1
                     marker_counter.update(res["inbound"])
                     ambiguous_counter.update(res["ambiguous"])
-                    sample_pool.append((rel, note, obj, sorted(restrict)))
+                    # 0026-EVIDENCE-R4-1: each fire gets a CONTENT DIGEST —
+                    # one-way, content-free, safe to ship — so a labelled
+                    # sample can be RECORD-BOUND: its manifest names these
+                    # digests and the verifier checks membership
+                    key = json.dumps({"rel": rel, "note": note,
+                                      "obj": obj}, sort_keys=True)
+                    fire_seen[key] += 1     # identical triples DO recur in
+                    d = hashlib.sha256(     # the cache: the ordinal keeps
+                        f"{key}#{fire_seen[key]}"  # each fire's id unique
+                        .encode()).hexdigest()
+                    fire_digests.append(d)
+                    sample_pool.append((rel, note, obj, sorted(restrict), d))
                 elif res["outbound"]:
                     suppressed_only += 1
                     suppressed_counter.update(res["outbound"])
 
     agg = dict(
-        schema=2,
+        schema=3,
         lexicon_version=L.LEXICON_VERSION,
+        fire_digests=sorted(fire_digests),
         manifest=dict(entries=entries, sha256=sha.hexdigest(),
                       unparseable=unparseable),
         grounded_first_person=dict(
@@ -187,36 +201,59 @@ def main() -> int:
         rng = random.Random(a.seed)
         print(f"\n--- {min(a.sample, len(sample_pool))} fires sampled for "
               f"LABELLING (seed {a.seed}); corpus content, never written ---")
-        for rel, note, obj, hits in rng.sample(
+        for rel, note, obj, hits, digest in rng.sample(
                 sample_pool, min(a.sample, len(sample_pool))):
-            print(f"  [{','.join(hits)}] rel={rel}")
+            print(f"  [{','.join(hits)}] rel={rel} fire={digest}")
             print(f"    note={str(note)[:150]!r}")
             print(f"    obj ={str(obj)[:110]!r}")
+        print("label each as {\"fire\": <digest>, \"label\": \"tp\"|\"fp\"} "
+              "in fp_adjudication_sample.jsonl beside fp_adjudication.json")
     return 0
 
 
 _PEER = HERE.parent / "0011" / "subject_aggregate.json"
 
 
-def _validate_adjudication(adj, agg, pct) -> list:
-    """The labelling verdict that alone may carry an over-gate record —
-    EXECUTABLE, not narrative (0026-EVIDENCE-R3-1: a verdict string
-    reading "REJECT: … remains over the 2% gate" passed, because the
-    validator checked shape and blankness but never INTERPRETED the
-    verdict or computed anything). The rule, in code:
+def _wilson_upper(fp: int, n: int, z: float = 1.959964) -> float:
+    """The 95% Wilson upper confidence bound on the false-positive SHARE.
+    §6a's own rule (recorded at the round-3 seal, made live here): a live
+    adjudication path gates on an UPPER CONFIDENCE BOUND, never the point
+    estimate — fp/n of a 50-fire sample is far too rough to carry an
+    acceptance on its own."""
+    if n <= 0:
+        return 1.0
+    phat = fp / n
+    denom = 1.0 + z * z / n
+    centre = phat + z * z / (2 * n)
+    spread = z * ((phat * (1 - phat) / n + z * z / (4 * n * n)) ** 0.5)
+    return min(1.0, (centre + spread) / denom)
 
-      * `verdict` is the closed enum {"accept", "reject"} — reject
-        refuses, and accept must AGREE with the computation;
-      * the labelled sample is real: size >= 50 (or every fire when
-        fewer exist), labels sum to size;
-      * the ADJUDICATED rate — the upper bound discounted by the
-        labelled false-positive share, pct * FP/size — must clear the
-        2% gate, or accept is a lie and refuses;
-      * the artifact is digest-BOUND: aggregate_sha256 must equal the
-        canonical bytes of this exact aggregate, and sample_sha256
-        names the local labelled-sample file (corpus content, never
-        shipped — the digest is how the measuring host's audit finds
-        it)."""
+
+def _validate_adjudication(adj, agg, pct, sample_path) -> list:
+    """The labelling verdict that alone may carry an over-gate record —
+    RECORD-BOUND and DERIVED, not narrated (0026-EVIDENCE-R4-1, the
+    signature defect's sixth face: schema 2 accepted true_positive=100 /
+    false_positive=-50 because labels only had to SUM to size, and
+    sample_sha256 was regex-checked but never opened or hashed). Schema 3
+    closes the class structurally — the check compares data to data:
+
+      * the labelled sample is a SHIPPED artifact
+        (fp_adjudication_sample.jsonl beside the adjudication record):
+        one line per labelled fire, {"fire": <sha256>, "label": "tp"|"fp"};
+      * `sample_sha256` is the digest OF THAT FILE's bytes — the verifier
+        opens and hashes it, so the digest can no longer point at nothing;
+      * every labelled fire must be a MEMBER of the aggregate's
+        `fire_digests` population, and no fire is labelled twice — the
+        sample cannot be drawn from thin air;
+      * the counts are DERIVED by counting labels — the record carries no
+        count carriers to disagree with, and a derived count cannot be
+        negative or exceed the sample;
+      * the DECISION is computed: verdict is the closed {"accept",
+        "reject"} enum; reject refuses; accept requires
+        pct x WilsonUpper95(fp, n) <= 2.0 — the upper confidence bound,
+        never the point estimate;
+      * the aggregate side is digest-bound as before (aggregate_sha256 ==
+        the canonical bytes of this exact aggregate)."""
     out = []
     if type(adj) is not dict or not adj:
         return ["fp_adjudication.json is empty or not an object — a "
@@ -236,9 +273,10 @@ def _validate_adjudication(adj, agg, pct) -> list:
                        f"expected {ty.__name__}")
     if out:
         return out
-    if adj["schema"] != 2:
-        out.append(f"adjudication schema {adj['schema']!r} is not 2 "
-                   f"(the executable decision rule is a shape change)")
+    if adj["schema"] != 3:
+        out.append(f"adjudication schema {adj['schema']!r} is not 3 "
+                   f"(the record-bound derived-count rule is a shape "
+                   f"change — 0026-EVIDENCE-R4-1)")
     if adj["lexicon_version"] != agg["lexicon_version"]:
         out.append(f"adjudication is for lexicon "
                    f"{adj['lexicon_version']!r}, the aggregate is "
@@ -255,26 +293,64 @@ def _validate_adjudication(adj, agg, pct) -> list:
         out.append("adjudication aggregate_sha256 does not match this "
                    "aggregate's canonical bytes — it adjudicates some "
                    "other record")
-    import re as _re
-    if not _re.fullmatch(r"[0-9a-f]{64}", adj["sample_sha256"]):
-        out.append("adjudication sample_sha256 is not a sha256 digest")
     smp = adj["sample"]
-    S = {"size": int, "seed": int, "true_positive": int,
-         "false_positive": int}
+    S = {"size": int, "seed": int}
     if sorted(smp) != sorted(S) or any(
             type(smp[k]) is not ty for k, ty in S.items() if k in smp):
-        out.append(f"adjudication sample keys/types != {sorted(S)}")
+        out.append(f"adjudication sample keys/types != {sorted(S)} — "
+                   f"counts are DERIVED from the manifest, never carried "
+                   f"(0026-EVIDENCE-R4-1)")
         return out
     min_size = min(50, g["fires"])
     if smp["size"] < min_size:
         out.append(f"adjudication sample of {smp['size']} is below the "
                    f"minimum {min_size} (50, or every fire when fewer "
                    f"exist) — no meaningful labelling happened")
-    if smp["true_positive"] + smp["false_positive"] != smp["size"]:
-        out.append("adjudication labels do not sum to the sample size")
     if out:
         return out
-    # THE DECISION, computed — never narrated
+    # THE MANIFEST — opened, hashed, membership-checked, counted
+    sample_path = pathlib.Path(sample_path)
+    if not sample_path.is_file():
+        return [f"the labelled sample manifest "
+                f"({sample_path.name}) does not exist beside the "
+                f"adjudication record — a digest that points at nothing "
+                f"is not a binding (0026-EVIDENCE-R4-1)"]
+    raw = sample_path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != adj["sample_sha256"]:
+        return [f"sample_sha256 does not match the bytes of "
+                f"{sample_path.name} — the record adjudicates some other "
+                f"sample"]
+    population = set(agg["fire_digests"])
+    seen, tp, fp = set(), 0, 0
+    import re as _re
+    for i, line in enumerate(raw.decode("utf-8",
+                                        errors="strict").splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            return [f"{sample_path.name} line {i} is not JSON"]
+        if (type(row) is not dict or sorted(row) != ["fire", "label"]
+                or type(row.get("fire")) is not str
+                or not _re.fullmatch(r"[0-9a-f]{64}", row["fire"])
+                or row.get("label") not in ("tp", "fp")):
+            return [f"{sample_path.name} line {i} is not a "
+                    f'{{"fire": <sha256>, "label": "tp"|"fp"}} record']
+        if row["fire"] in seen:
+            return [f"{sample_path.name} labels fire "
+                    f"{row['fire'][:12]}… twice"]
+        if row["fire"] not in population:
+            return [f"{sample_path.name} labels a fire outside the "
+                    f"aggregate's fire_digests population — the sample "
+                    f"cannot be drawn from thin air"]
+        seen.add(row["fire"])
+        tp += row["label"] == "tp"
+        fp += row["label"] == "fp"
+    if len(seen) != smp["size"]:
+        return [f"the manifest labels {len(seen)} fires but the record "
+                f"says size={smp['size']} — the carriers disagree"]
+    # THE DECISION, computed from the DERIVED counts — never narrated
     if adj["verdict"] not in ("accept", "reject"):
         return [f"adjudication verdict {adj['verdict']!r} is outside the "
                 f"closed enum ('accept', 'reject') — free text is not a "
@@ -283,13 +359,14 @@ def _validate_adjudication(adj, agg, pct) -> list:
         return [f"the adjudication verdict is REJECT — the labelling "
                 f"did not clear the over-gate record ({pct:.2f}% at the "
                 f"bound)"]
-    adjudicated = pct * smp["false_positive"] / smp["size"]
+    ucb = _wilson_upper(fp, smp["size"])
+    adjudicated = pct * ucb
     if adjudicated > 2.0:
         return [f"the adjudication says accept but the ADJUDICATED rate "
-                f"is {adjudicated:.2f}% (bound {pct:.2f}% x FP share "
-                f"{smp['false_positive']}/{smp['size']}) — over the 2% "
-                f"gate; an accept that disagrees with its own numbers "
-                f"refuses"]
+                f"is {adjudicated:.2f}% (bound {pct:.2f}% x Wilson-95 "
+                f"upper FP share {ucb:.3f} from {fp}/{smp['size']}) — "
+                f"over the 2% gate; an accept that disagrees with its "
+                f"own numbers refuses"]
     return []
 
 
@@ -307,8 +384,9 @@ def validate_aggregate(agg, adj_path=None) -> list:
     out = []
     if type(agg) is not dict:
         return ["aggregate is not an object"]
-    TOP = {"schema": int, "lexicon_version": str, "manifest": dict,
-           "grounded_first_person": dict, "coverage": dict}
+    TOP = {"schema": int, "lexicon_version": str, "fire_digests": list,
+           "manifest": dict, "grounded_first_person": dict,
+           "coverage": dict}
     missing = sorted(set(TOP) - set(agg))
     unknown = sorted(set(agg) - set(TOP))
     if missing:
@@ -321,13 +399,26 @@ def validate_aggregate(agg, adj_path=None) -> list:
                        f"{ty.__name__}")
     if out:
         return out
-    if agg["schema"] != 2:
-        out.append(f"schema {agg['schema']!r} is not 2 (the ambiguity "
-                   f"split is a shape change)")
+    if agg["schema"] != 3:
+        out.append(f"schema {agg['schema']!r} is not 3 (the record-bound "
+                   f"fire-digest population is a shape change — "
+                   f"0026-EVIDENCE-R4-1)")
     if agg["lexicon_version"] != L.LEXICON_VERSION:
         out.append(f"lexicon_version {agg['lexicon_version']!r} is not "
                    f"the shipped {L.LEXICON_VERSION!r} — the record "
                    f"describes some other detector")
+    # 0026-EVIDENCE-R4-1: the fire POPULATION ships as content-free
+    # one-way digests, so a labelled sample can be record-bound — every
+    # digest well-formed, no duplicates, sorted, count == fires
+    fd = agg["fire_digests"]
+    import re as _re
+    if not all(type(d) is str and _re.fullmatch(r"[0-9a-f]{64}", d)
+               for d in fd):
+        out.append("fire_digests carries a non-sha256 entry")
+    elif len(set(fd)) != len(fd):
+        out.append("fire_digests carries duplicates")
+    elif fd != sorted(fd):
+        out.append("fire_digests is not sorted (canonical form)")
     MAN = {"entries": int, "sha256": str, "unparseable": int}
     man = agg["manifest"]
     if sorted(man) != sorted(MAN) or any(
@@ -370,6 +461,10 @@ def validate_aggregate(agg, adj_path=None) -> list:
         out.append(f"fires {g['fires']} outside [0, total {g['total']}]")
     if not (0 <= g["fires_ambiguous_only"] <= g["fires"]):
         out.append("fires_ambiguous_only exceeds fires")
+    if len(fd) != g["fires"]:
+        out.append(f"fire_digests has {len(fd)} entries but fires is "
+                   f"{g['fires']} — the population and its digest list "
+                   f"must agree (0026-EVIDENCE-R4-1)")
     if not (0 <= c["matched_by_lexicon"] <= c["with_nonempty_note"]
             <= c["third_party_claim_triples"]):
         out.append("coverage numerators exceed their denominators")
@@ -412,7 +507,9 @@ def validate_aggregate(agg, adj_path=None) -> list:
                                f"not JSON ({exc}) — an over-gate record "
                                f"refuses")
                 if a_ is not None:
-                    out.extend(_validate_adjudication(a_, agg, pct))
+                    out.extend(_validate_adjudication(
+                        a_, agg, pct,
+                        adj.with_name("fp_adjudication_sample.jsonl")))
 
     # the cross-artifact anchor: the 0011/0025 subject aggregate was
     # derived from the SAME cache by a different script
@@ -470,25 +567,67 @@ def doc_problems(agg, doc_text: str) -> list:
 _SPEC = HERE.parents[1] / "0026-label-value-agreement.md"
 
 
-def spec_problems(agg, spec_text: str) -> list:
-    """0026-EVIDENCE-R3-2: the CANDIDATE SPEC is a live quantitative
-    carrier too — §6a said 217 while the aggregate said 220, and the
-    binder covered only FP-MEASUREMENT.md. The spec's §6a headline
-    figures are bound here the same way."""
+def render_spec_claim(agg) -> str:
+    """0026-EVIDENCE-R4-2: the §6a quantitative claim is GENERATED from
+    the aggregate — data to data, no prose to drift. The spec carries
+    this block verbatim between the fp-claim markers; spec_problems
+    requires byte-equality, so the lexicon id, both figures of the rate,
+    the gate disposition, and the coverage fraction are all bound (the
+    round-4 mutations — a 9,999 denominator, a lex-999 headline — now
+    refuse instead of passing a substring search)."""
     g = agg["grounded_first_person"]
+    c = agg["coverage"]
     pct = 100.0 * g["fires"] / g["total"] if g["total"] else 0.0
+    cov = (100.0 * c["matched_by_lexicon"] / c["with_nonempty_note"]
+           if c["with_nonempty_note"] else 0.0)
+    disp = "CLEARED (UNDER)" if pct <= 2.0 else "NOT CLEARED (OVER)"
+    return (
+        "<!-- GENERATED:fp-claim (measure_false_positives.py — byte-bound "
+        "to fp_aggregate.json; do not hand-edit) -->\n"
+        f"**MEASURED, under lexicon `{agg['lexicon_version']}`: "
+        f"{g['fires']:,} fires of {g['total']:,} grounded first-person "
+        f"triples = {pct:.2f}% at the bound; the 2% gate is {disp}; "
+        f"{g['fires_ambiguous_only']:,} fires restrict via the ambiguous "
+        f"class only; {g['suppressed_by_direction_only']:,} suppressed by "
+        f"the directional rule; coverage (the M-2 reach diagnostic, not "
+        f"recall) {c['matched_by_lexicon']:,} of "
+        f"{c['with_nonempty_note']:,} = {cov:.1f}%.**\n"
+        "<!-- /GENERATED:fp-claim -->")
+
+
+_CLAIM_RE = re.compile(
+    r"<!-- GENERATED:fp-claim .*?/GENERATED:fp-claim -->", re.S)
+
+
+def spec_problems(agg, spec_text: str) -> list:
+    """0026-EVIDENCE-R3-2 + R4-2: the CANDIDATE SPEC is a live
+    quantitative carrier — round 3 shipped 217-vs-220 (no binder at
+    all), round 4 shipped a lex-8 headline over a lex-9 aggregate and
+    survived 9,999/lex-999 mutations (the binder searched two substrings
+    anywhere in the file). The claim is a GENERATED block now: exactly
+    one fp-claim block must exist, INSIDE §6a, and its bytes must equal
+    render_spec_claim(agg) exactly."""
     out = []
-    facts = (
-        (f"{pct:.2f}% ({g['fires']:,} of {g['total']:,}",
-         "the §6a headline rate"),
-        (f"coverage denominator is {agg['coverage']['matched_by_lexicon']:,} of ",
-         "the §6a coverage figure"),
-    )
-    for needle, what in facts:
-        if needle not in spec_text:
-            out.append(f"the spec no longer states {what} in the bound "
-                       f"form matching the aggregate ({needle!r}) — the "
-                       f"candidate carrier has drifted from its artifact")
+    blocks = _CLAIM_RE.findall(spec_text)
+    if len(blocks) != 1:
+        return [f"the spec carries {len(blocks)} fp-claim generated "
+                f"blocks — exactly one, inside §6a, is the contract "
+                f"(0026-EVIDENCE-R4-2)"]
+    m6a = re.search(r"^##.*6a\b.*$", spec_text, re.M)
+    if m6a is None:
+        out.append("the spec has no §6a heading to anchor the fp-claim")
+    else:
+        nxt = re.search(r"^## ", spec_text[m6a.end():], re.M)
+        sec_end = (m6a.end() + nxt.start()) if nxt else len(spec_text)
+        if not (m6a.end() <= spec_text.index(blocks[0]) < sec_end):
+            out.append("the fp-claim block is OUTSIDE §6a — the claim "
+                       "must live where the acceptance gate is stated")
+    want = render_spec_claim(agg)
+    if blocks[0] != want:
+        out.append("the spec's fp-claim block does not byte-match the "
+                   "aggregate's rendering — regenerate it with "
+                   "render_spec_claim (0026-EVIDENCE-R4-2: figures are "
+                   "generated, never hand-edited)")
     return out
 
 

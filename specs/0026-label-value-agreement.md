@@ -15,9 +15,9 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | | |
 |---|---|
 | **Author / session** | dev (`~/Dev/veracium`) |
-| **Version** | **v7** — the ROUND-3 EXTERNAL FOLD (2026-08-29; §13 maps all five findings). R3-1: lex-9 — `or` coordination + the ARTIFACT-vs-ENTITY self-possessive split over a closed artifact set; oracle axes added; measured identical (0.64%). R3-2: the AgreementRecord joins §2c, and restore-malformed RAISES with nothing written (the R1-4 ruling on the restore path; validation before any write). EVIDENCE-R3-1: the adjudication is an EXECUTABLE DECISION — closed verdict enum, computed adjudicated rate vs the gate, sample minimum, digest binding to the exact aggregate; the reviewer's REJECT-passes case is the standing refusal. EVIDENCE-R3-2: the candidate spec's §6a figures bind to the aggregate at the verify entry point (217-vs-220 re-derived). PACKAGE-R3-1: §9's round count derives from the ledger, standing-tested. *Prior:* **v6** — the ROUND-2 EXTERNAL FOLD (2026-08-29; §12 maps all five findings). 0026-R2-1: the subject is resolved by HEAD CONSTRUCTION (lex-7) — modifiers inert, coordinated co-heads with determiners, Unicode possessives normalized — with the GENERATED grammar-oracle corpus (expectations derived from constructions; it caught two further defects during its own construction); §6a RE-MEASURED at 0.64% (439/68,479). 0026-R2-2: the import boundary is MODE-SPLIT (restore trust-field-faithful per 0005 P2; default recomputes) and export rides a FORMAT_VERSION bump per 0025. 0026-R2-3: the deferral swept to every carrier with a whole-file test. EVIDENCE-R2-1: the GATE is part of aggregate validity (over-gate refuses absent an adjudication artifact) and the measurement doc is mechanically bound to the aggregate. PACKAGE-R2-1: closure figures derive from one source; research's pass is structured internal rounds 3-4. *Prior:* **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.70% (481/68,479 under lex-6: the lex-4 grammar pre-empting research's coordination/nesting shapes, plus their red-team's recall-driven verb expansion — `claimed` et al — with the nominal homographs narrowed by reading the fires; RECALL now measured via held matrix cells), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
+| **Version** | **v8** — the ROUND-4 EXTERNAL FOLD (2026-08-29; §14 maps all five findings; the round's shape: every round-3 example fixed, every new closure MECHANISM seamed — answered with GENERATED carriers). R4-1: lex-10 REMOVES the artifact carve-out (ownership is not authorship — 'my own record reported a diagnosis' laundered); no noun class carries an authorship inference; ownership-vs-authorship oracle axis + relapse mutant; re-measured identical (0.64%). R4-2: import_matrix.py is the ONE decision table — §2c and §3d are both generated from it, byte-bound. EVIDENCE-R4-1 (the signature defect's sixth face): the adjudication is RECORD-BOUND — fire_digests population, a shipped labelled manifest opened and hashed, counts DERIVED by counting labels, accept on the Wilson-95 UPPER bound (research's forward notes made live). EVIDENCE-R4-2: the §6a claim is a GENERATED block, byte-bound at the verify entry point (the lex-8-over-lex-9 headline and both reviewer mutations refuse). PACKAGE-R4-1: the Internal-reviewers row is rendered from the ledger; static readiness claims refused. *Prior:* **v7** — the ROUND-3 EXTERNAL FOLD (2026-08-29; §13 maps all five findings). R3-1: lex-9 — `or` coordination + the ARTIFACT-vs-ENTITY self-possessive split over a closed artifact set; oracle axes added; measured identical (0.64%). R3-2: the AgreementRecord joins §2c, and restore-malformed RAISES with nothing written (the R1-4 ruling on the restore path; validation before any write). EVIDENCE-R3-1: the adjudication is an EXECUTABLE DECISION — closed verdict enum, computed adjudicated rate vs the gate, sample minimum, digest binding to the exact aggregate; the reviewer's REJECT-passes case is the standing refusal. EVIDENCE-R3-2: the candidate spec's §6a figures bind to the aggregate at the verify entry point (217-vs-220 re-derived). PACKAGE-R3-1: §9's round count derives from the ledger, standing-tested. *Prior:* **v6** — the ROUND-2 EXTERNAL FOLD (2026-08-29; §12 maps all five findings). 0026-R2-1: the subject is resolved by HEAD CONSTRUCTION (lex-7) — modifiers inert, coordinated co-heads with determiners, Unicode possessives normalized — with the GENERATED grammar-oracle corpus (expectations derived from constructions; it caught two further defects during its own construction); §6a RE-MEASURED at 0.64% (439/68,479). 0026-R2-2: the import boundary is MODE-SPLIT (restore trust-field-faithful per 0005 P2; default recomputes) and export rides a FORMAT_VERSION bump per 0025. 0026-R2-3: the deferral swept to every carrier with a whole-file test. EVIDENCE-R2-1: the GATE is part of aggregate validity (over-gate refuses absent an adjudication artifact) and the measurement doc is mechanically bound to the aggregate. PACKAGE-R2-1: closure figures derive from one source; research's pass is structured internal rounds 3-4. *Prior:* **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.70% (481/68,479 under lex-6: the lex-4 grammar pre-empting research's coordination/nesting shapes, plus their red-team's recall-driven verb expansion — `claimed` et al — with the nominal homographs narrowed by reading the fires; RECALL now measured via held matrix cells), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
-| **Internal reviewers** | research — round 1 PASS WITH AMENDMENTS 2026-08-23 (2 moderates + 3 minors, all three §9 questions ruled; the census re-derived from the cache), folded in v2; **round 2 PASS 2026-08-24 (diff-verified 824dd03..e60206e, no new findings) — READY FOR EXTERNAL at Quentin's discretion** |
+| **Internal reviewers** | research — **six internal rounds** (GENERATED from `specs/reviews.py`, the structured ledger — round history, verdicts and closures live there, never in this static row; latest: internal round 6, 2026-08-29). four external rounds returned so far, so external-readiness is the ledger's state to derive, not this row's to claim |
 | **External review** | required — adds a disclosure floor on the ingest write path |
 | **Decision + date** | — |
 | **Path** | full |
@@ -96,7 +96,7 @@ is honored by construction, unlike the cell 0024 v7 had to defend.)
 
 | uncontrolled input | empty | malformed | unrecognised | adversarial | governing rule |
 |---|---|---|---|---|---|
-| an imported `AgreementRecord` (§3d) | absent → default mode recomputes; restore reproduces the (valid) record verbatim | well-formed → default mode discards it for the recomputation (diagnostic only); restore stores it verbatim | **malformed under EITHER mode → RAISES, nothing written** (§3d — a typed carrier cannot hold garbage, and R1-4's ruling applies: garbage declares something untrue) | forged markers on marker-free text | **V6a**: default mode recomputes so a forged record cannot enter Q5's corpus; restore is 0005-P2-faithful for VALID fields only, with validation ordered BEFORE any write |
+| an imported `AgreementRecord` (§3d) | absent → default recomputes; restore keeps it absent | malformed → **default: treated as absent, recomputation governs, counted; restore: RAISES, nothing written** — the two modes DIFFER by design (generated with the §3d matrix from `import_matrix.py`, the one carrier) | foreign `lexicon` version → recomputation under the CURRENT lexicon governs; incoming version diagnostic only | forged markers on marker-free text → default discards by recomputation; restore restores the (valid) record verbatim with recomputation diagnostic-only | **V6a**: default mode recomputes so a forged record cannot enter Q5's corpus; restore is 0005-P2-faithful for VALID fields only, with validation ordered BEFORE any write |
 | the extractor's `note` | absent/empty → NO evidence (never agreement — the 2/4 empty-note movers) | any prose → scanned by the closed marker lexicon only | text outside the lexicon → no match, no claim | note crafted to AVOID markers ("relay hiding") | **V2**: absence of a marker is absence of evidence; the check widens no assertion path, so hiding buys the attacker nothing they lack today |
 | the extractor's `object` text | — | same lexicon scan | same | object crafted to EMBED inbound markers on a genuinely-own fact ("my own view — but as my doctor said, rest matters"); the OUTBOUND phrasing ("as I told my doctor") is a directional non-match by contract (§3a) | **V3**: a false relay match FLOORS at USE_ONLY — recall cost, bounded, measured before acceptance (§6a); never an integrity cost |
 | the marker lexicon itself | empty lexicon REFUSED at load (a vacuous checker that passes everything is the presumed-faking rule's target) | a malformed entry refuses at load — closed, versioned, code-owned (the `0025` registry pattern) | — | a host supplying a custom lexicon | **V4**: the lexicon is NOT host-configurable in v1 — one code-owned surface, one measured false-positive rate |
@@ -329,6 +329,7 @@ restriction record into Q5's corpus, and a stripped one cannot launder
 a relay past the floor. The COMPLETE boundary,
 {format era × mode × field state}:
 
+<!-- GENERATED:import-matrix (import_matrix.py — the ONE carrier; do not hand-edit) -->
 | format | mode | imported field | outcome |
 |---|---|---|---|
 | old (pre-agreement) | either | absent by construction | no fabrication; default mode floors at establishment as for any write; restore reproduces the old store verbatim |
@@ -337,6 +338,7 @@ a relay past the floor. The COMPLETE boundary,
 | new | restore | present but MALFORMED (wrong types, unknown keys, markers outside any lexicon's grammar) | **RAISES, nothing written** — verbatim restore into a typed carrier is impossible for garbage, and flooring it would silently accept a corrupt export (the R1-4 ruling, applied to the restore path); validation runs BEFORE any write, so a refused record leaves no partial state |
 | new | default | present but MALFORMED | treated as absent; the recomputation governs (the V6a row above) — default mode never consumed the value anyway, so refusal is unnecessary and recomputation is total |
 | new file, old reader | — | — | the reader REFUSES the bumped format (`0025`'s rule) — no silent field loss is reachable |
+<!-- /GENERATED:import-matrix -->
 
 The ingest result gains `agreement_floored` and `agreement_recorded`
 counters, present on every path (zeros included — an absent key is not
@@ -389,17 +391,23 @@ absent.**
 
 ### 6a. The acceptance measurement gate
 
-**RE-MEASURED 2026-08-29 under lex-8 (external round 2's head
-construction plus research's pre-seal comitative fix, on top of the
-round-1 grammar and the recall-driven verb classes) — THE GATE IS
-CLEARED at 0.64% (439 of 68,479 grounded first-person triples) against
-the 2% bar; lex-8 measures identically to lex-7 on this corpus, the
-comitative and self-possessive rules touching only shapes absent from
-the own-use population**, with the ambiguity split
-counted (0 of the 439 fires restrict via the AMBIGUOUS class alone;
-287 outbound-only constructions suppressed). The head construction
-IMPROVED the bound — nearest-token misreads of user subjects had been
-counted as fires. The GATE itself is part of aggregate validity now
+The quantitative claim is GENERATED from the aggregate — data to data,
+nothing to hand-edit or drift (0026-EVIDENCE-R4-2: round 3 shipped a
+217-vs-220 drift with no binder; round 4 shipped a lex-8 headline over
+a lex-9 aggregate because the binder searched two substrings anywhere
+in the file — the block below is byte-bound at the verify entry point):
+
+<!-- GENERATED:fp-claim (measure_false_positives.py — byte-bound to fp_aggregate.json; do not hand-edit) -->
+**MEASURED, under lexicon `0026-lex-10`: 439 fires of 68,479 grounded first-person triples = 0.64% at the bound; the 2% gate is CLEARED (UNDER); 0 fires restrict via the ambiguous class only; 287 suppressed by the directional rule; coverage (the M-2 reach diagnostic, not recall) 220 of 3,898 = 5.6%.**
+<!-- /GENERATED:fp-claim -->
+
+Re-measured at every lexicon revision (rounds 1-4); lex-7 through
+lex-10 measure identically on this corpus — each round's shapes are
+absent from the own-use population, which for lex-9's artifact
+carve-out is exactly why it bought nothing and was pure laundering
+risk (R4-1: removed in lex-10). The head construction IMPROVED the
+bound — nearest-token misreads of user subjects had been counted as
+fires. The GATE itself is part of aggregate validity
 (0026-EVIDENCE-R2-1): an over-gate record refuses absent a separately
 validated adjudication artifact, and FP-MEASUREMENT.md's shipped
 figures are mechanically bound to the aggregate at the verify entry
@@ -430,14 +438,15 @@ a different script and ships beside this one. **The whole-corpus
 figures themselves (fires, suppressed, coverage) are RECORDED ONLY:
 they reproduce with `--cache` on the measuring host and NOT from the
 archive alone** — the archive verifies shape, consistency and the
-manifest anchor, and says so in its own output. 0.64% is an UPPER
-BOUND, not an estimate — every fire is a *candidate* false positive,
-and deciding which of its own fires are false with the detector would
-be self-assertion; hand-labelling a sample puts the true rate near
-0.4%. The M-2 coverage denominator is 220 of 3,898
-`third_party_claim` notes = **5.6%**, itself a lower bound on the
-source-naming share M-2 names, since that subset cannot be identified
-without labelling the whole population. **Scoped precisely (research,
+manifest anchor, and says so in its own output. The measured rate is
+an UPPER BOUND, not an estimate — every fire is a *candidate* false
+positive, and deciding which of its own fires are false with the
+detector would be self-assertion; hand-labelling a sample puts the
+true rate well under the bound. The M-2 coverage figure (in the
+generated block above — the block is the ONE carrier of every §6a
+figure) is itself a lower bound on the source-naming share M-2 names,
+since that subset cannot be identified without labelling the whole
+population. **Scoped precisely (research,
 pre-seal read-forward): this figure is a lexicon-reach diagnostic over
 the `third_party_claim` NOTE population — records that are already
 quarantined. It is NOT recall over the check's real target, the
@@ -447,16 +456,22 @@ archive-local number measures. A laundering-recall probe joins the
 evidence when a labelled corpus for that population exists; until
 then, nobody may read 5.6% as "the check catches 5.6% of relays".**
 
-**Forward inheritance for the adjudication path (research, round-3
-pre-seal pass — recorded, not carried silently; both moot while the
-path is dormant at 0.64%):** (1) the adjudicated rate is a POINT
-ESTIMATE (bound × labelled-FP share); if adjudication ever becomes the
-live acceptance basis, the gate moves to an UPPER CONFIDENCE BOUND of
-the FP share, not the point estimate. (2) The labelled sample's counts
-and digest are self-reported at validate time (the sample never ships);
-integrity rests on the labelling actually happening and the sample
-being retained for the digest-pointed audit — a stated trust boundary,
-by design.
+**The adjudication path is RECORD-BOUND and confidence-bounded
+(0026-EVIDENCE-R4-1, discharging research's round-3 forward notes —
+external round 4 made both blocking: schema 2 accepted
+true_positive=100/false_positive=-50 because labels only had to sum to
+size, and the sample digest was regex-checked but never opened).** The
+labelled sample is a SHIPPED, reviewer-safe artifact now: the aggregate
+carries `fire_digests` — a content-free one-way digest per fire — and
+`fp_adjudication_sample.jsonl` labels members OF that population, one
+`{"fire": <sha256>, "label": "tp"|"fp"}` line each. The verifier OPENS
+the manifest, hashes it against `sample_sha256`, checks membership and
+uniqueness, and DERIVES the counts by counting labels — the record
+carries no count carriers to disagree with, and a derived count cannot
+be negative or exceed the sample. The decision is computed on the
+Wilson 95% UPPER confidence bound of the labelled FP share, never the
+point estimate: `accept` requires bound × UCB ≤ 2%. What was a stated
+trust boundary is a checked binding.
 
 The standing rule, unchanged: before this spec is accepted, the
 lexicon's false-positive rate is MEASURED on the existing extraction
@@ -731,3 +746,74 @@ the verify entry point, with the bite proven in a standing test.
 said "two rounds" beside a six-round structured ledger. Swept with the
 correction visible, and a standing test binds the stated count to
 `reviews.py`, so the prose cannot silently underclaim again.
+
+## 14. Changes in v8 — the round-4 fold (2026-08-29)
+
+External round 4 returned five findings: every named round-3 example
+was fixed, and each new closure MECHANISM carried a blocking seam. The
+common shape, named so the next fold cannot repeat it: three of the
+five were checks that verified PROSE NEAR the property instead of the
+property (substring binders, a half-swept header, a self-asserted
+sample), and the fold answers with GENERATED carriers — a figure or a
+matrix that is rendered from its artifact cannot drift from it.
+
+**0026-R4-1 — ownership is not authorship (lex-10).** lex-9's closed
+artifact set read every owned noun as user-authored; "my own record
+reported a diagnosis of cancer" went outbound with no restricting
+marker, though a record the user OWNS is routinely produced by a
+doctor or a bank — semantic authorship inference, reintroduced one
+rung up, in the laundering direction. lex-10 REMOVES the carve-out
+entirely: no noun class carries an authorship inference; a possessed
+head restricts whoever possesses it, artifacts included. "My own
+notes say…" now over-restricts — priced, counted, reversible — and
+the ownership-vs-authorship axis joins the oracle with the reviewer's
+cells verbatim plus a standing behavioral relapse mutant. Re-measured:
+439 of 68,479 = 0.64%, identical to lex-7/8/9 — the own-artifact
+shapes are absent from the own-use population, which is why the
+carve-out bought nothing and was pure risk.
+
+**0026-R4-2 — one decision table, two generated carriers.** §2c and
+§3d disagreed about default-mode malformed imports (RAISES vs
+recompute) with §2c's columns displaced, and the matrix test checked
+substrings. `import_matrix.py` is the ONE structured table now; the
+§2c row and the §3d boundary table are both GENERATED from it and
+byte-bound, so the representations cannot diverge.
+
+**0026-EVIDENCE-R4-1 — the adjudication is record-bound (the
+signature defect's sixth face).** Schema 2 accepted
+`true_positive=100, false_positive=-50` (labels only had to sum to
+size) and its sample digest was regex-checked, never dereferenced.
+Schema 3 compares data to data: the aggregate ships `fire_digests`
+(one content-free digest per fire), the labelled sample is a SHIPPED
+manifest whose bytes are opened and hashed against `sample_sha256`,
+membership and uniqueness are checked against the population, the
+counts are DERIVED by counting labels — no count carriers exist to
+lie — and `accept` requires bound × Wilson-95 UPPER confidence ≤ 2%,
+never the point estimate (research's round-3 forward notes, made
+live; the at-the-bar cell where the point estimate passes and the UCB
+refuses is a standing test). The reviewer's exact bypass and seven
+sibling attacks are standing refusals; the legitimate binding is
+proven alive.
+
+**0026-EVIDENCE-R4-2 — the §6a claim is generated.** The binder
+searched two substrings anywhere in the file; the headline still said
+lex-8 over a lex-9 aggregate and 9,999/lex-999 mutations passed. §6a
+now carries a GENERATED block rendered from the aggregate
+(`render_spec_claim`), byte-bound at the verify entry point and
+required to sit inside §6a; the prose figure carriers are swept into
+the block's custody.
+
+**0026-PACKAGE-R4-1 — the header row is generated.** Round 3's
+verdict named the Internal-reviewers header AND §9; the fold swept
+only §9 — a half-swept carrier set, the carrier-completeness class.
+The front-matter row is now rendered from the structured ledger
+(`reviews.internal_reviewers_row`) and byte-bound, and a static
+"READY FOR EXTERNAL" claim is refused outright: readiness is the
+ledger's state to derive.
+
+**Package feedback applied:** the labelled-sample artifact the
+reviewer has asked for since round 2 now EXISTS as a reviewer-safe,
+record-bound manifest with a verifier that opens it and reproduces the
+decision (above); and the change manifest marks concurrent guarded
+0011 implementation files as out-of-scope for this line's review.
+

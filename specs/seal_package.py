@@ -334,10 +334,40 @@ def _changed_from_previous(line: str, version: str, *, prior) -> str:
     removed = sorted(k for k in old.keys() - new.keys() if k not in LOOSE)
     changed = sorted(k for k in new.keys() & old.keys()
                      if new[k] != old[k] and k not in LOOSE)
+    # Reviewer isolation (0026 round-4 package feedback): a repo-tree
+    # package can carry CONCURRENT guarded work from another line. A
+    # per-line declaration file (specs/package/out_of_scope_<line>.txt:
+    # first line the reason, then one path-prefix per line) partitions
+    # the diff so out-of-scope churn is MARKED, never silently mixed in.
+    # No file -> no partition, byte-identical prior behavior.
+    oos_file = ROOT / "specs" / "package" / f"out_of_scope_{line}.txt"
+    oos_reason, oos_prefixes = "", ()
+    if oos_file.is_file():
+        head, *rest = [ln.strip() for ln in
+                       oos_file.read_text().splitlines() if ln.strip()
+                       and not ln.strip().startswith("#")]
+        oos_reason, oos_prefixes = head, tuple(rest)
+
+    def split(paths):
+        ins = [k for k in paths
+               if not any(k.startswith(pf) for pf in oos_prefixes)]
+        outs = [k for k in paths if k not in ins]
+        return ins, outs
+
+    ch_in, ch_out = split(changed)
+    ad_in, ad_out = split(added)
+    rm_in, rm_out = split(removed)
     lines = [f"PREVIOUS: {prior.name}", f"SHA256:   {prior_sha}", "",
-             f"CHANGED ({len(changed)}):"] + [f"  {k}" for k in changed]
-    lines += ["", f"ADDED ({len(added)}):"] + [f"  {k}" for k in added]
-    lines += ["", f"REMOVED ({len(removed)}):"] + [f"  {k}" for k in removed]
+             f"CHANGED ({len(ch_in)}):"] + [f"  {k}" for k in ch_in]
+    lines += ["", f"ADDED ({len(ad_in)}):"] + [f"  {k}" for k in ad_in]
+    lines += ["", f"REMOVED ({len(rm_in)}):"] + [f"  {k}" for k in rm_in]
+    if oos_prefixes:
+        oos_all = ch_out + ad_out + rm_out
+        lines += ["", f"CONCURRENT / OUT-OF-SCOPE for this line's review "
+                      f"({len(oos_all)}) — {oos_reason}:"]
+        lines += [f"  {k}  [changed]" for k in ch_out]
+        lines += [f"  {k}  [added]" for k in ad_out]
+        lines += [f"  {k}  [removed]" for k in rm_out]
     lines += ["", "Always-regenerated loose carriers (not diffed): "
               + ", ".join(sorted(LOOSE)), ""]
     return "\n".join(lines)

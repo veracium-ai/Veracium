@@ -1759,6 +1759,39 @@ REVIEWS = [
          "a122aaa3d3661a9d5154c788cbb1b492315bd519a59ede5ab5be407c"
          "dd367b62, commit 279793d", findings=0),
 
+    dict(spec="0026", round=4, kind="external", date="2026-08-29",
+         raised=["0026-R4-1", "0026-R4-2", "0026-EVIDENCE-R4-1",
+                 "0026-EVIDENCE-R4-2", "0026-PACKAGE-R4-1"],
+         verdict="RETURN FOR MAJOR AMENDMENT (package `0026-v4`, sha "
+         "a122aaa3 verified; 521 members; exact v3 predecessor verified; "
+         "extracted 1983/22 reconciling exactly with sealed 1997/8; the "
+         "original or/own-doctor examples confirmed fixed; telemetry "
+         "closed; every named round-3 example fixed but each new closure "
+         "mechanism carries a blocking seam). R4-1: OWNERSHIP mistaken "
+         "for AUTHORSHIP — _SELF_ARTIFACTS treats every owned artifact "
+         "as user-authored ('my own record reported a diagnosis' "
+         "outbound, no marker), reintroducing semantic authorship "
+         "inference and enabling laundering; the oracle tests only the "
+         "intended senses. R4-2: the §2c AgreementRecord row says "
+         "malformed-under-EITHER-mode raises while §3d says default-mode "
+         "malformed recomputes, with the §2c columns displaced; the "
+         "matrix test checks substrings, not agreement. EVIDENCE-R4-1 "
+         "(the signature defect's SIXTH face, at the surface research's "
+         "fifth hunt cleared): the adjudication remains self-asserted — "
+         "true_positive=100/false_positive=-50 on size=50 sums to size "
+         "and passes; sample_sha256 is regex-checked, never opened or "
+         "hashed; no confidence bound. EVIDENCE-R4-2: the spec binder "
+         "binds two substrings anywhere in the file — the §6a headline "
+         "still says lex-8 over a lex-9 aggregate, and 9,999/lex-999 "
+         "mutations pass. PACKAGE-R4-1: the round-3 verdict named the "
+         "Internal-reviewers header AND §9; the fold fixed only §9 — "
+         "the header still lists rounds 1-2 and READY FOR EXTERNAL. "
+         "Standing feedback: ship the labelled adjudication sample or a "
+         "reviewer-safe record-bound label manifest with a verifier that "
+         "opens it and reproduces the decision; mark concurrent 0011 "
+         "implementation files out-of-scope in the change manifest",
+         findings=5),
+
     dict(spec="0026", round=5, kind="internal", date="2026-08-29",
          raised=["0026-I5-1"],
          verdict="RESEARCH ROUND-2 PRE-SEAL RED-TEAM (grammar half) — "
@@ -1930,9 +1963,68 @@ REVIEWS = [
          "497bf05eeba91280b7bf16d33f63568d1853b30716dc39d8d2334d60"
          "be77b4a6, commit 6633cd5", findings=0),
 
+    dict(spec="0026", round=5, kind="external", date="2026-08-29",
+         candidate={"0026": "v8"},
+         verdict="SENT (package `0026-v5`, candidate draft v8 — the "
+         "round-4 fold; §14 maps all five findings; the round's shape "
+         "named: every round-3 example fixed, every new closure "
+         "mechanism seamed, answered with GENERATED carriers). R4-1 "
+         "closed by REMOVAL: lex-10 drops the artifact carve-out — "
+         "ownership is not authorship, no noun class carries an "
+         "authorship inference, the reviewer's four cells verbatim in "
+         "the oracle plus a behavioral relapse mutant; re-measured "
+         "439/68,479 = 0.64%, identical (the shapes are absent from "
+         "the own-use population — the carve-out bought nothing and "
+         "was pure laundering risk). R4-2: import_matrix.py is the ONE "
+         "decision table, both spec carriers generated and byte-bound. "
+         "EVIDENCE-R4-1: schema-3 adjudication is RECORD-BOUND — "
+         "fire_digests population aboard the aggregate, the labelled "
+         "sample a SHIPPED content-free manifest opened and hashed "
+         "against sample_sha256, membership/uniqueness checked, counts "
+         "DERIVED by counting labels, accept on bound x Wilson-95 "
+         "UPPER <= 2% (the at-the-bar cell where the point estimate "
+         "passes and the UCB refuses is standing); the reviewer's "
+         "exact bypass and seven siblings are standing refusals with "
+         "the legitimate binding proven alive. EVIDENCE-R4-2: the §6a "
+         "claim is a GENERATED block byte-bound at the verify entry "
+         "point; both reviewer mutations refuse. PACKAGE-R4-1: the "
+         "Internal-reviewers row is rendered from the ledger "
+         "(internal_reviewers_row), READY-FOR-EXTERNAL claims refused. "
+         "Sealed AFTER this row, sha pinned on return", findings=0),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "
          "(both the drift and the trusting citation named as the failure "
          "mode). External-ready", findings=0),
 ]
+
+
+_COUNT_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+                6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+
+
+def internal_reviewers_row(spec: str) -> str:
+    """The candidate front-matter's Internal-reviewers row, DERIVED from
+    this ledger (0026-PACKAGE-R4-1: the hand-written row froze at rounds
+    1-2 with 'READY FOR EXTERNAL' while the ledger held six internal and
+    four external rounds — round 3's verdict named the header AND §9,
+    and the fold swept only §9; a generated row cannot be half-swept).
+    The spec must carry this string byte-exactly."""
+    rows = [r for r in REVIEWS
+            if r["spec"] == spec and r["kind"] == "internal"]
+    ext = {r["round"] for r in REVIEWS
+           if r["spec"] == spec and r["kind"] == "external"
+           and "raised" in r}
+    n = len(rows)
+    latest = max(rows, key=lambda r: (r["date"], r["round"]))
+    return (f"| **Internal reviewers** | research — "
+            f"**{_COUNT_WORDS.get(n, str(n))} internal rounds** "
+            f"(GENERATED from `specs/reviews.py`, the structured ledger "
+            f"— round history, verdicts and closures live there, never "
+            f"in this static row; latest: internal round "
+            f"{latest['round']}, {latest['date']}). "
+            f"{_COUNT_WORDS.get(len(ext), str(len(ext)))} external "
+            f"rounds returned so far, so external-readiness is the "
+            f"ledger's state to derive, not this row's to claim |")
+

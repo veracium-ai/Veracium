@@ -134,14 +134,28 @@ def test_relay_lexicon_mutation_matrix(monkeypatch):
         "dropping the comitative set left the matrix green — a "
         "quasi-coordinated co-speaker would go unrestricted")
     monkeypatch.undo()
-    # 3i. the self-artifact set dropped (lex-9): "my own doctor said…"
-    #     classifies as the user again — the possessed-entity relay
-    #     launders (R3-1's unsafe direction)
+    # 3i. the OWNERSHIP CARVE-OUT reintroduced (lex-10, R4-1): a rewrite
+    #     that reads "my own record/account" as user-authored again must
+    #     be caught by the ownership-vs-authorship cells — ownership is
+    #     not authorship, and the relapse is the laundering direction
     L, V = _fresh()
-    assert mutate(_SELF_ARTIFACTS=frozenset()), (
-        "dropping the artifact set left the matrix green — wait, that "
-        "direction FAILS SAFE (everything third): the killable direction "
-        "is the artifact set widening to everything")
+    assert not hasattr(L, "_SELF_ARTIFACTS"), (
+        "the artifact carve-out is back as a constant — R4-1 removed it; "
+        "any reintroduction needs its own reviewed amendment")
+    _orig_classify = L._classify_source
+
+    def _relapse(head_tokens):
+        toks = [t for t in head_tokens if t not in L._DETERMINERS
+                and t not in L._SKIP_TOKENS]
+        if (toks and toks[0] in ("my", "our", "user's", "users'")
+                and len(toks) > 2 and toks[1] in L._FIRST_PERSON_SELF):
+            return "user"                # lex-9's mistake, replayed
+        return _orig_classify(head_tokens)
+
+    monkeypatch.setattr(L, "_classify_source", _relapse)
+    assert V.problems(), (
+        "reintroducing the owned-artifact-is-user inference left the "
+        "matrix green — the ownership-vs-authorship cells are not biting")
     monkeypatch.undo()
     # 3f. Unicode normalization dropped (lex-7): the curly-apostrophe
     #     possessive tokenizes as fragments and "the user's doctor"
@@ -244,7 +258,9 @@ _IDENTITY = {
     #           when that identity is the SOURCE of the attribution)
     "first_person":  ("i",           "me",          "outbound"),
     "user_3rd":      ("user",        "user",        "outbound"),
-    "self_poss":     ("my own account", "my own account", "outbound"),
+    # R4-1: a self-POSSESSED artifact restricts — ownership is not
+    # authorship (the account's producer may be a bank or a doctor)
+    "self_poss":     ("my own account", "my own account", "inbound"),
     "third_noun":    ("doctor",      "the doctor",  "inbound"),
     "third_poss":    ("my doctor",   "my doctor",   "inbound"),
     "their_poss":    ("their vet",   "their vet",   "inbound"),
@@ -364,7 +380,7 @@ def test_fp_aggregate_validator_matrix():
     refused(lambda m: m.__setitem__("lexicon_version", "0026-lex-999"),
             "some other detector")
     # the classes they generalize to
-    refused(lambda m: m.__setitem__("schema", 1), "not 2")
+    refused(lambda m: m.__setitem__("schema", 1), "not 3")
     refused(lambda m: m.__setitem__("banana", 1), "CLOSED")
     refused(lambda m: m["manifest"].__setitem__("entries", 1),
             "disagrees with the 0011/0025")
@@ -570,78 +586,150 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     over["grounded_first_person"]["fires"] = int(total * 0.05)
     over["grounded_first_person"]["fires_ambiguous_only"] = 0
     over["grounded_first_person"]["markers"] = {"said": 1}
-    empty_adj = tmp_path / "fp_adjudication_empty.json"
+    # schema 3: the digest population must agree with the fire count —
+    # the test's own synthetic population
+    import hashlib
+    over["fire_digests"] = sorted(
+        hashlib.sha256(f"pop{i}".encode()).hexdigest()
+        for i in range(over["grounded_first_person"]["fires"]))
+    empty_adj = tmp_path / "e" / "fp_adjudication.json"
+    empty_adj.parent.mkdir()
     empty_adj.write_text("{}")
     bad = MF.validate_aggregate(over, adj_path=empty_adj)
     assert any("stub file" in b for b in bad), (
         "an EMPTY adjudication carried an over-gate record", bad)
-    # stale binding: right shape, wrong lexicon / wrong fire count
-    import hashlib
+
+    import hashlib as _hl
+
     def _agg_digest(a):
-        return hashlib.sha256(
+        return _hl.sha256(
             (json.dumps(a, sort_keys=True, indent=1) + "\n").encode()
         ).hexdigest()
-    good_adj = dict(schema=2,
+
+    def _adj_on_disk(name, adj, manifest_lines):
+        """One adjudication record + its sibling manifest in a private
+        dir — the validator derives the manifest path from the record's."""
+        d = tmp_path / name
+        d.mkdir()
+        sp = d / "fp_adjudication_sample.jsonl"
+        raw = "".join(json.dumps(r) + "\n" for r in manifest_lines)
+        sp.write_text(raw)
+        adj = dict(adj, sample_sha256=_hl.sha256(raw.encode()).hexdigest())
+        ap = d / "fp_adjudication.json"
+        ap.write_text(json.dumps(adj))
+        return ap
+
+    pop = over["fire_digests"]
+    good_labels = ([{"fire": f, "label": "tp"} for f in pop[:35]]
+                   + [{"fire": f, "label": "fp"} for f in pop[35:50]])
+    good_adj = dict(schema=3,
                     lexicon_version=over["lexicon_version"],
                     fires=over["grounded_first_person"]["fires"],
-                    sample=dict(size=50, seed=1, true_positive=35,
-                                false_positive=15),
-                    verdict="accept",   # adjudicated: 5% x 15/50 = 1.5%
-                    aggregate_sha256=_agg_digest(over),
-                    sample_sha256="ab" * 32)
-    # 0026-EVIDENCE-R3-1, the reviewer's exact case: a REJECT verdict
+                    sample=dict(size=50, seed=1),
+                    verdict="accept",
+                    aggregate_sha256=_agg_digest(over))
+    # 0026-EVIDENCE-R4-1, the reviewer's EXACT bypass: schema-2 carried
+    # counts (true_positive=100, false_positive=-50 summed to size and
+    # passed; the sample digest was regex-checked, never opened). The
+    # count carriers are GONE — a schema-2 record refuses on sight:
+    bypass = dict(good_adj, schema=2,
+                  sample=dict(size=50, seed=1, true_positive=100,
+                              false_positive=-50))
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("bypass", bypass, good_labels))
+    assert any("not 3" in b for b in bad), bad
+    # counts smuggled into a schema-3 record refuse as unknown keys
+    smuggle = dict(good_adj)
+    smuggle["sample"] = dict(size=50, seed=1, true_positive=100,
+                             false_positive=-50)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("smuggle", smuggle, good_labels))
+    assert any("DERIVED from the manifest" in b for b in bad), bad
+    # a digest that points at NOTHING is not a binding
+    d = tmp_path / "dangling"
+    d.mkdir()
+    ap = d / "fp_adjudication.json"
+    ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32)))
+    bad = MF.validate_aggregate(over, adj_path=ap)
+    assert any("points at nothing" in b for b in bad), bad
+    # a manifest whose bytes do not hash to sample_sha256 refuses
+    d = tmp_path / "wronghash"
+    d.mkdir()
+    (d / "fp_adjudication_sample.jsonl").write_text("")
+    ap = d / "fp_adjudication.json"
+    ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32)))
+    bad = MF.validate_aggregate(over, adj_path=ap)
+    assert any("some other sample" in b for b in bad), bad
+    # a sample drawn from thin air (fires outside the population) refuses
+    fake = [{"fire": _hl.sha256(f"fake{i}".encode()).hexdigest(),
+             "label": "fp"} for i in range(50)]
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("thinair", good_adj, fake))
+    assert any("thin air" in b for b in bad), bad
+    # the same fire labelled twice refuses
+    dbl = good_labels[:49] + [good_labels[0]]
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("double", good_adj, dbl))
+    assert any("twice" in b for b in bad), bad
+    # manifest line count vs the record's size: carriers must agree
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "sizedis", dict(good_adj, sample=dict(size=60, seed=1)),
+            good_labels))
+    assert any("carriers disagree" in b for b in bad), bad
+    # 0026-EVIDENCE-R3-1, the reviewer's round-3 case: a REJECT verdict
     # in free text passed. The enum + the computed decision refuse it:
-    rej = dict(good_adj,
-               verdict="reject")
-    pr = tmp_path / "adj_reject.json"
-    pr.write_text(json.dumps(rej))
-    bad = MF.validate_aggregate(over, adj_path=pr)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "rej", dict(good_adj, verdict="reject"), good_labels))
     assert any("REJECT" in b for b in bad), bad
-    # free text outside the enum is not a decision
-    freetext = dict(good_adj,
-                    verdict="REJECT: the rate remains over the 2% gate")
-    pf = tmp_path / "adj_freetext.json"
-    pf.write_text(json.dumps(freetext))
-    bad = MF.validate_aggregate(over, adj_path=pf)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "freetext",
+            dict(good_adj,
+                 verdict="REJECT: the rate remains over the 2% gate"),
+            good_labels))
     assert any("closed enum" in b for b in bad), bad
-    # accept that disagrees with its own numbers: all-FP sample keeps
-    # the adjudicated rate at the bound (5% x 50/50) — over the gate
-    lying = dict(good_adj,
-                 sample=dict(size=50, seed=1, true_positive=0,
-                             false_positive=50))
-    pl = tmp_path / "adj_lying_accept.json"
-    pl.write_text(json.dumps(lying))
-    bad = MF.validate_aggregate(over, adj_path=pl)
-    assert any("disagrees with its own numbers" in b for b in bad), bad
+    # an accept the DERIVED numbers contradict refuses: 20 fp of 50 puts
+    # the POINT estimate exactly AT the bar (5% x 0.40 = 2.0, which the
+    # schema-2 rule would have passed) — the Wilson-95 UPPER bound
+    # refuses it, which is the §6a forward rule made live
+    atbar = ([{"fire": f, "label": "fp"} for f in pop[:20]]
+             + [{"fire": f, "label": "tp"} for f in pop[20:50]])
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("atbar", good_adj, atbar))
+    assert any("Wilson-95" in b for b in bad), bad
     # a one-item sample is not labelling
-    tiny = dict(good_adj, sample=dict(size=1, seed=1, true_positive=0,
-                                      false_positive=1))
-    pt = tmp_path / "adj_tiny.json"
-    pt.write_text(json.dumps(tiny))
-    bad = MF.validate_aggregate(over, adj_path=pt)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "tiny", dict(good_adj, sample=dict(size=1, seed=1)),
+            good_labels[:1]))
     assert any("below the minimum" in b for b in bad), bad
     # a digest for some other aggregate cannot carry this one
-    wrongd = dict(good_adj, aggregate_sha256="0" * 64)
-    pw = tmp_path / "adj_wrong_digest.json"
-    pw.write_text(json.dumps(wrongd))
-    bad = MF.validate_aggregate(over, adj_path=pw)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "wrongd", dict(good_adj, aggregate_sha256="0" * 64),
+            good_labels))
     assert any("some other record" in b for b in bad), bad
-    stale1 = dict(good_adj, lexicon_version="0026-lex-999")
-    p1 = tmp_path / "adj_stale_lex.json"
-    p1.write_text(json.dumps(stale1))
-    bad = MF.validate_aggregate(over, adj_path=p1)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "stalelex", dict(good_adj, lexicon_version="0026-lex-999"),
+            good_labels))
     assert any("stale verdict" in b for b in bad), bad
-    stale2 = dict(good_adj, fires=good_adj["fires"] - 1)
-    p2 = tmp_path / "adj_stale_fires.json"
-    p2.write_text(json.dumps(stale2))
-    bad = MF.validate_aggregate(over, adj_path=p2)
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "stalefires", dict(good_adj, fires=good_adj["fires"] - 1),
+            good_labels))
     assert any("different fires" in b for b in bad), bad
-    # and a REAL matching adjudication carries the over-bar record —
-    # the bypass exists for the legitimate labelled case, proven alive
-    p3 = tmp_path / "adj_good.json"
-    p3.write_text(json.dumps(good_adj))
-    bad = MF.validate_aggregate(over, adj_path=p3)
-    assert bad == [], ("a valid bound adjudication was refused", bad)
+    # and a REAL record-bound adjudication carries the over-bar record —
+    # 15 fp of 50: 5% x WilsonUpper(15/50)=0.427 = 2.13%... over; use
+    # 8 fp of 50: 5% x 0.283 = 1.41% — the legitimate path proven alive
+    ok_labels = ([{"fire": f, "label": "fp"} for f in pop[:8]]
+                 + [{"fire": f, "label": "tp"} for f in pop[8:50]])
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("good", good_adj, ok_labels))
+    assert bad == [], ("a valid record-bound adjudication was refused",
+                       bad)
 
 
 def test_spec_binder_and_round_count_are_bound():
@@ -658,23 +746,47 @@ def test_spec_binder_and_round_count_are_bound():
                        / "fp_aggregate.json").read_text())
     spec = (ROOT / "specs" / "0026-label-value-agreement.md").read_text()
     assert MF.spec_problems(agg, spec) == []
-    # the binder BITES: a drifted coverage figure refuses
-    g = agg["coverage"]["matched_by_lexicon"]
-    tampered = spec.replace(f"coverage denominator is {g:,} of ",
-                            f"coverage denominator is {g + 1:,} of ")
-    assert tampered != spec
-    assert MF.spec_problems(agg, tampered), (
-        "a drifted spec coverage figure validated clean")
-    # §9's round count derives from the ledger
+    # 0026-EVIDENCE-R4-2, the reviewer's exact mutations: a 9,999
+    # coverage denominator and a lex-999 headline both survived the
+    # substring binder — the byte-bound generated block refuses them
+    for needle, repl in ((f"of {agg['coverage']['with_nonempty_note']:,} =",
+                          "of 9,999 ="),
+                         (agg["lexicon_version"], "0026-lex-999")):
+        tampered = spec.replace(needle, repl)
+        assert tampered != spec, needle
+        assert MF.spec_problems(agg, tampered), (
+            f"mutating {needle!r} validated clean — the claim block is "
+            f"not byte-bound")
+    # a hand-edit INSIDE the generated block refuses too
+    assert MF.spec_problems(agg, spec.replace(
+        "439 fires", "440 fires")), "an in-block figure edit passed"
+    # 0026-R4-2: both import-matrix carriers come from the ONE table
+    IM = importlib.import_module("import_matrix")
+    assert IM.spec_matrix_problems(spec) == []
+    assert IM.spec_matrix_problems(spec.replace(
+        "RAISES, nothing written", "treated as absent")), (
+        "a §3d cell edit validated clean — the matrix is not byte-bound")
+    assert IM.spec_matrix_problems(spec.replace(
+        "the two modes DIFFER by design", "either mode RAISES")), (
+        "a §2c cell edit validated clean")
+    # §9's round count AND the front-matter Internal-reviewers row both
+    # derive from the ledger (0026-PACKAGE-R3-1 + 0026-PACKAGE-R4-1:
+    # round 3 named the header and §9; the fold swept only §9)
     rspec = importlib.util.spec_from_file_location(
         "rv0026", ROOT / "specs" / "reviews.py")
     RV = importlib.util.module_from_spec(rspec)
     rspec.loader.exec_module(RV)
     internal = len([r for r in RV.REVIEWS
                     if r["spec"] == "0026" and r["kind"] == "internal"])
-    assert f"six internal rounds" in spec or f"{internal} internal" in spec
     words = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
              7: "seven", 8: "eight", 9: "nine", 10: "ten"}
     assert words.get(internal, str(internal)) + " internal rounds" in spec, (
         f"§9 does not state the ledger's count of {internal} internal "
         f"rounds — the prose has drifted from the structured record")
+    assert RV.internal_reviewers_row("0026") in spec, (
+        "the Internal-reviewers front-matter row does not byte-match "
+        "the ledger's rendering (0026-PACKAGE-R4-1)")
+    front = spec.split("\n## ", 1)[0]     # front matter only: history
+    assert "READY FOR EXTERNAL" not in front, (   # sections may QUOTE it
+        "a static readiness claim survives in the front matter — "
+        "readiness is the ledger's state to derive (0026-PACKAGE-R4-1)")
