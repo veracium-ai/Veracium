@@ -300,9 +300,9 @@ def report(agg) -> None:
     print(f"grounded 1P    {tot:,} triples (in-registry relation, subject=user)")
     print(f"  FIRES        {fires:,} = {pct:.2f}%   <-- UPPER BOUND on the "
           f"false-positive rate")
-    print(f"  gate         2% of grounded first-person triples "
-          f"({'UNDER at the bound' if pct <= 2 else 'OVER at the bound — '
-             'labelling decides'})")
+    verdict = ("UNDER at the bound" if pct <= 2
+               else "OVER at the bound — labelling decides")
+    print(f"  gate         2% of grounded first-person triples ({verdict})")
     print(f"  ambiguous    {g.get('fires_ambiguous_only', 0):,} of the "
           f"fires restrict via the AMBIGUOUS class only (counted, "
           f"conservative)")
