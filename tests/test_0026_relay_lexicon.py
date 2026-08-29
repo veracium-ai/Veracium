@@ -620,15 +620,18 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
         return ap
 
     pop = over["fire_digests"]
-    # 0026-I7-1: the ONE legitimate sample membership is the canonical
-    # seeded draw — the test labels exactly that set
-    drawn = sorted(MF.canonical_draw(over, 50))
-    good_labels = ([{"fire": f, "label": "tp"} for f in drawn[:35]]
-                   + [{"fire": f, "label": "fp"} for f in drawn[35:]])
+    # 0026-I7-1 + addendum: the ONE legitimate sample is the canonical
+    # SIZE's canonical seeded draw — the test labels exactly that set
+    SZ = MF.canonical_size(over["grounded_first_person"]["fires"])
+    assert SZ == MF.CENSUS_LIMIT      # 3423 fires -> the fixed cap
+    drawn = sorted(MF.canonical_draw(over, SZ))
+    n_fp = 60                          # 500-draw: 60 fp for later cells
+    good_labels = ([{"fire": f, "label": "tp"} for f in drawn[n_fp:]]
+                   + [{"fire": f, "label": "fp"} for f in drawn[:n_fp]])
     good_adj = dict(schema=3,
                     lexicon_version=over["lexicon_version"],
                     fires=over["grounded_first_person"]["fires"],
-                    sample=dict(size=50, seed=MF.canonical_seed(over)),
+                    sample=dict(size=SZ, seed=MF.canonical_seed(over)),
                     verdict="accept",
                     aggregate_sha256=_agg_digest(over))
     # 0026-EVIDENCE-R4-1, the reviewer's EXACT bypass: schema-2 carried
@@ -636,14 +639,14 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # passed; the sample digest was regex-checked, never opened). The
     # count carriers are GONE — a schema-2 record refuses on sight:
     bypass = dict(good_adj, schema=2,
-                  sample=dict(size=50, seed=1, true_positive=100,
+                  sample=dict(size=SZ, seed=1, true_positive=100,
                               false_positive=-50))
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("bypass", bypass, good_labels))
     assert any("not 3" in b for b in bad), bad
     # counts smuggled into a schema-3 record refuse as unknown keys
     smuggle = dict(good_adj)
-    smuggle["sample"] = dict(size=50, seed=1, true_positive=100,
+    smuggle["sample"] = dict(size=SZ, seed=1, true_positive=100,
                              false_positive=-50)
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("smuggle", smuggle, good_labels))
@@ -665,23 +668,36 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     assert any("some other sample" in b for b in bad), bad
     # a sample drawn from thin air (fires outside the population) refuses
     fake = [{"fire": _hl.sha256(f"fake{i}".encode()).hexdigest(),
-             "label": "fp"} for i in range(50)]
+             "label": "fp"} for i in range(SZ)]
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("thinair", good_adj, fake))
     assert any("thin air" in b for b in bad), bad
     # research's BLOCKING find, the hand-picked sample: 50 REAL fires,
     # honest-looking labels, right size — but NOT the canonical draw.
     # Wilson bounds a random sample; a selected one voids the gate.
-    picked = [{"fire": f, "label": "tp"} for f in pop[:50]]
+    picked = [{"fire": f, "label": "tp"} for f in pop[:SZ]]
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("picked", good_adj, picked))
     assert any("CANONICAL seeded draw" in b for b in bad), bad
     # a non-canonical seed value refuses before the draw is even checked
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk(
-            "seedshop", dict(good_adj, sample=dict(size=50, seed=1)),
+            "seedshop", dict(good_adj, sample=dict(size=SZ, seed=1)),
             good_labels))
     assert any("not host-choosable" in b for b in bad), bad
+    # the I7-1 ADDENDUM cell, size-shopping: a legitimately-drawn,
+    # honestly-labelled sample at a NON-canonical size refuses — each
+    # size is a different draw, so size was a selection input too
+    sz2 = 259
+    drawn2 = sorted(MF.canonical_draw(over, sz2))
+    shop = [{"fire": f, "label": "tp"} for f in drawn2]
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "sizeshop",
+            dict(good_adj, sample=dict(size=sz2,
+                                       seed=MF.canonical_seed(over))),
+            shop))
+    assert any("size-shopping closed structurally" in b for b in bad), bad
     # the same fire labelled twice refuses
     dbl = good_labels[:49] + [good_labels[0]]
     bad = MF.validate_aggregate(
@@ -690,10 +706,7 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # manifest line count vs the record's size: carriers must agree
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk(
-            "sizedis", dict(good_adj,
-                            sample=dict(size=60,
-                                        seed=MF.canonical_seed(over))),
-            good_labels))
+            "sizedis", dict(good_adj), good_labels[:-1]))
     assert any("carriers disagree" in b for b in bad), bad
     # 0026-EVIDENCE-R3-1, the reviewer's round-3 case: a REJECT verdict
     # in free text passed. The enum + the computed decision refuse it:
@@ -712,17 +725,22 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # the POINT estimate exactly AT the bar (5% x 0.40 = 2.0, which the
     # schema-2 rule would have passed) — the Wilson-95 UPPER bound
     # refuses it, which is the §6a forward rule made live
-    atbar = ([{"fire": f, "label": "fp"} for f in drawn[:20]]
-             + [{"fire": f, "label": "tp"} for f in drawn[20:]])
+    # 185 fp of 500: point estimate 5% x 0.370 = 1.85% (passes); the
+    # Wilson-95 UCB 0.414 -> 2.07% refuses — the bound's cell
+    atbar = ([{"fire": f, "label": "fp"} for f in drawn[:185]]
+             + [{"fire": f, "label": "tp"} for f in drawn[185:]])
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("atbar", good_adj, atbar))
     assert any("Wilson-95" in b for b in bad), bad
     # a one-item sample is not labelling
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk(
-            "tiny", dict(good_adj, sample=dict(size=1, seed=1)),
+            "tiny", dict(good_adj,
+                         sample=dict(size=1,
+                                     seed=MF.canonical_seed(over))),
             good_labels[:1]))
-    assert any("below the minimum" in b for b in bad), bad
+    assert any("not the\nCANONICAL size".replace("\n", " ") in b
+               or "CANONICAL size" in b for b in bad), bad
     # a digest for some other aggregate cannot carry this one
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk(
@@ -742,12 +760,55 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # and a REAL record-bound adjudication carries the over-bar record —
     # 15 fp of 50: 5% x WilsonUpper(15/50)=0.427 = 2.13%... over; use
     # 8 fp of 50: 5% x 0.283 = 1.41% — the legitimate path proven alive
-    ok_labels = ([{"fire": f, "label": "fp"} for f in drawn[:8]]
-                 + [{"fire": f, "label": "tp"} for f in drawn[8:]])
+    ok_labels = ([{"fire": f, "label": "fp"} for f in drawn[:80]]
+                 + [{"fire": f, "label": "tp"} for f in drawn[80:]])
+    # 80 fp of 500: 5% x Wilson-upper(0.16 at n=500)=0.196 = 0.98% — alive
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("good", good_adj, ok_labels))
     assert bad == [], ("a valid record-bound adjudication was refused",
                        bad)
+    # the CENSUS branch (I7-1 addendum): fires <= CENSUS_LIMIT means
+    # size == fires, every fire labelled, and the EXACT share decides —
+    # no seed freedom, no sampling variance, no Wilson
+    cen = copy.deepcopy(agg)
+    # a SMALL population: the census branch is reachable only when an
+    # over-2% rate coexists with fires <= CENSUS_LIMIT, i.e. total small
+    cen["grounded_first_person"]["total"] = 4000    # 120/4000 = 3.0%
+    cen["grounded_first_person"]["fires"] = 120
+    cen["grounded_first_person"]["fires_ambiguous_only"] = 0
+    cen["grounded_first_person"]["markers"] = {"said": 1}
+    cen["grounded_first_person"]["suppressed_by_direction_only"] = 0
+    cen["grounded_first_person"]["suppressed_markers"] = {}
+    cen["fire_digests"] = sorted(
+        _hl.sha256(f"cpop{i}".encode()).hexdigest() for i in range(120))
+    cen_adj = dict(schema=3, lexicon_version=cen["lexicon_version"],
+                   fires=120,
+                   sample=dict(size=120, seed=MF.canonical_seed(cen)),
+                   verdict="accept",
+                   aggregate_sha256=_agg_digest(cen))
+    pct_c = 100.0 * 120 / cen["grounded_first_person"]["total"]
+    # exact share 0.65 of ~0.18%: 60 fp of 120 -> accept iff pct*share<=2
+    half = ([{"fire": f, "label": "fp"} for f in cen["fire_digests"][:60]]
+            + [{"fire": f, "label": "tp"} for f in cen["fire_digests"][60:]])
+    r = MF.validate_aggregate(
+        cen, adj_path=_adj_on_disk("census", cen_adj, half))
+    want_ok = pct_c * 0.5 <= 2.0
+    assert (r == []) == want_ok, (pct_c, r)
+    # and a census-sized record must actually be a census: size=119
+    # (one fire unlabelled) refuses on the canonical size
+    r = MF.validate_aggregate(
+        cen, adj_path=_adj_on_disk(
+            "census_short",
+            dict(cen_adj, sample=dict(size=119,
+                                      seed=MF.canonical_seed(cen))),
+            half[:119]))
+    assert any("CANONICAL size" in b for b in r), r
+    # census refusal branch: exact share that misses the gate refuses
+    # with the exact-census basis named, never a Wilson bound
+    all_fp = [{"fire": f, "label": "fp"} for f in cen["fire_digests"]]
+    r = MF.validate_aggregate(
+        cen, adj_path=_adj_on_disk("census_fp", cen_adj, all_fp))
+    assert any("exact census share" in b for b in r), r
 
 
 def test_spec_binder_and_round_count_are_bound():

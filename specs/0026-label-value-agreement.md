@@ -468,12 +468,16 @@ carries `fire_digests` — a content-free one-way digest per fire — and
 the manifest, hashes it against `sample_sha256`, checks membership and
 uniqueness, and DERIVES the counts by counting labels — the record
 carries no count carriers to disagree with, and a derived count cannot
-be negative or exceed the sample. **The sample MEMBERSHIP is not
-host-choosable either (0026-I7-1, research's pre-seal blocking find:
-Wilson-95 bounds a RANDOM sample — over a hand-selected one it
-guarantees nothing): the seed is CANONICAL, derived from the
-aggregate's own bytes, and the validator re-draws and requires the
-manifest to label exactly the drawn set.** The decision is computed on
+be negative or exceed the sample. **No selection input is
+host-choosable (0026-I7-1 + addendum, research's pre-seal blocking
+find and co-verify: Wilson-95 bounds a RANDOM sample — over a
+hand-selected one it guarantees nothing, and size itself was a
+selection input since every size is a different draw): the seed is
+CANONICAL, derived from the aggregate's own bytes; the SIZE is
+canonical too — a CENSUS of every fire when the population is within
+the fixed limit (500), else exactly the limit; the validator re-draws
+and requires the manifest to label exactly the drawn set; and a census
+decides on the EXACT share, no sampling variance to bound.** The decision is computed on
 the Wilson 95% UPPER confidence bound of the labelled FP share, never
 the point estimate: `accept` requires bound × UCB ≤ 2%. What was a
 stated trust boundary is a checked binding, and the residual — the
@@ -830,6 +834,20 @@ closed label-honesty but not SAMPLE SELECTION: the seed was recorded,
 never re-drawn or bound, so a hand-picked honestly-labelled sample
 voided the Wilson gate. Closed with the CANONICAL seeded draw above;
 the hand-picked and seed-shopping attacks are standing refusals.
+**Addendum
+(research's co-verify, folded same-day rather than fast-followed):**
+size was the last host-chosen selection input — each size is a
+different canonical draw, so a host could size-shop the multiple
+comparisons. Research MEASURED it inert on this aggregate (best
+shoppable UCB 0.134 vs honest census 0.137) but measured-inert is
+exactly what five external rounds turned into findings: size is
+CANONICAL now (census up to the fixed limit, else the limit), the
+census branch decides on the exact share, and the size-shopping and
+short-census attacks are standing refusals. The fixpoint order is
+confirmed required: the canonical seed hashes the AGGREGATE-ONLY
+bytes — including the adjudication would be circular
+(seed→draw→manifest→adjudication→seed) — so the draw is fixed the
+moment measurement ends and the adjudication is strictly downstream.
 **0026-I7-2 (moderate)** — the byte-equality binders verified drift,
 not renderer correctness: an off-by-one renderer re-renders byte-equal
 and passes. Every renderer now has an INDEPENDENT oracle test that

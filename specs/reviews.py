@@ -2007,7 +2007,15 @@ REVIEWS = [
          "I7-2 MODERATE: byte-equality binders verify drift, not "
          "renderer CORRECTNESS — an off-by-one renderer re-renders "
          "byte-equal and passes; no renderer had an independent "
-         "oracle", findings=2),
+         "oracle. CO-VERIFY (same day): PASS, seal cleared — I7-1 and "
+         "I7-2 confirmed closed at code, the seed fixpoint order "
+         "confirmed REQUIRED (aggregate-only bytes; including the "
+         "adjudication would be circular), and one measured-inert "
+         "residual recommended for completion: size was still "
+         "host-chosen and each size is a different draw. FOLDED "
+         "same-day rather than fast-followed: size is canonical "
+         "(census <= 500, else 500; census decides on the exact "
+         "share)", findings=2),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "

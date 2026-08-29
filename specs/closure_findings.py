@@ -2536,9 +2536,13 @@ CLOSURES = [
      "not choosable, closing seed-shopping too) and the validator "
      "RE-DRAWS random.Random(seed).sample over the sorted population, "
      "requiring the manifest to label EXACTLY the drawn set; --sample "
-     "prints that draw; the hand-picked-honest-labels and "
-     "non-canonical-seed attacks are standing refusals; the residual "
-     "trust boundary is now the per-fire LABELS, where it belongs",
+     "prints that draw; per the co-verify ADDENDUM the SIZE is "
+     "canonical too (census up to the fixed 500 limit, else the limit; "
+     "a census decides on the EXACT share, no Wilson needed) — "
+     "size-shopping closed structurally, not just measured inert; "
+     "hand-picked, non-canonical-seed, size-shopped and short-census "
+     "attacks are standing refusals; the residual trust boundary is "
+     "the per-fire LABELS, where it belongs",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
     ("0026", "internal", 7, "0026-I7-2",

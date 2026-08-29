@@ -197,12 +197,13 @@ def main() -> int:
     report(agg)
 
     if a.sample and sample_pool:
-        size = min(a.sample, len(sample_pool))
+        size = canonical_size(fires)
         seed = canonical_seed(agg)
         drawn = canonical_draw(agg, size)
-        print(f"\n--- the CANONICAL {size}-fire draw for LABELLING "
-              f"(seed {seed}, derived from the aggregate — not "
-              f"choosable); corpus content, never written ---")
+        kind = "CENSUS" if size == fires else "draw"
+        print(f"\n--- the CANONICAL {size}-fire {kind} for LABELLING "
+              f"(size and seed both derived, neither choosable); "
+              f"corpus content, never written ---")
         for rel, note, obj, hits, digest in [
                 t for t in sample_pool if t[4] in drawn]:
             print(f"  [{','.join(hits)}] rel={rel} fire={digest}")
@@ -228,6 +229,22 @@ def canonical_seed(agg) -> int:
     the per-fire LABELS, which is where it belongs."""
     agg_bytes = (json.dumps(agg, sort_keys=True, indent=1) + "\n").encode()
     return int(hashlib.sha256(agg_bytes).hexdigest()[:12], 16)
+
+
+# 0026-I7-1 addendum (research's co-verify): size itself was the last
+# host-chosen selection input — each size is a different canonical draw,
+# so a host could size-shop the multiple comparisons (measured inert on
+# this aggregate: best-shoppable UCB 0.134 vs honest census 0.137, but
+# "empirically negligible" is exactly what five external rounds turned
+# into findings). Size is CANONICAL now: a CENSUS of every fire when the
+# population is tractable, else the fixed cap. Structurally impossible
+# beats measured-inert.
+CENSUS_LIMIT = 500
+
+
+def canonical_size(fires: int) -> int:
+    """The one legitimate labelled-sample size for a population."""
+    return fires if fires <= CENSUS_LIMIT else CENSUS_LIMIT
 
 
 def canonical_draw(agg, size: int) -> set:
@@ -324,14 +341,14 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                    f"counts are DERIVED from the manifest, never carried "
                    f"(0026-EVIDENCE-R4-1)")
         return out
-    min_size = min(50, g["fires"])
-    if smp["size"] < min_size:
-        out.append(f"adjudication sample of {smp['size']} is below the "
-                   f"minimum {min_size} (50, or every fire when fewer "
-                   f"exist) — no meaningful labelling happened")
-    if smp["size"] > g["fires"]:
-        out.append(f"adjudication sample of {smp['size']} exceeds the "
-                   f"{g['fires']}-fire population")
+    if smp["size"] != canonical_size(g["fires"]):
+        out.append(f"adjudication sample size {smp['size']} is not the "
+                   f"CANONICAL size {canonical_size(g['fires'])} for a "
+                   f"{g['fires']}-fire population (census up to "
+                   f"{CENSUS_LIMIT}, else exactly {CENSUS_LIMIT}) — size "
+                   f"was the last host-chosen selection input and each "
+                   f"size is a different draw (0026-I7-1 addendum: "
+                   f"size-shopping closed structurally)")
     if smp["seed"] != canonical_seed(agg):
         out.append(f"adjudication seed {smp['seed']} is not this "
                    f"aggregate's CANONICAL seed {canonical_seed(agg)} — "
@@ -395,12 +412,19 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
         return [f"the adjudication verdict is REJECT — the labelling "
                 f"did not clear the over-gate record ({pct:.2f}% at the "
                 f"bound)"]
-    ucb = _wilson_upper(fp, smp["size"])
-    adjudicated = pct * ucb
+    if smp["size"] == g["fires"]:
+        # a CENSUS: every fire labelled — the FP share is EXACT, there
+        # is no sampling variance to bound, so the exact share decides
+        share = fp / smp["size"]
+        basis = f"exact census share {fp}/{smp['size']}"
+    else:
+        share = _wilson_upper(fp, smp["size"])
+        basis = (f"Wilson-95 upper FP share {share:.3f} from "
+                 f"{fp}/{smp['size']}")
+    adjudicated = pct * share
     if adjudicated > 2.0:
         return [f"the adjudication says accept but the ADJUDICATED rate "
-                f"is {adjudicated:.2f}% (bound {pct:.2f}% x Wilson-95 "
-                f"upper FP share {ucb:.3f} from {fp}/{smp['size']}) — "
+                f"is {adjudicated:.2f}% (bound {pct:.2f}% x {basis}) — "
                 f"over the 2% gate; an accept that disagrees with its "
                 f"own numbers refuses"]
     return []
