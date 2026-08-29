@@ -1736,7 +1736,14 @@ REVIEWS = [
          "visibly, candidate revision is a structured field bound by the "
          "identity gate, and the internal-first miss is acknowledged — "
          "this fold queues for research's red-team pass before sealing. "
-         "Sealed AFTER this row, sha pinned on return", findings=0),
+         "Research's pass ran BOTH questions pre-seal: (a) the "
+         "aggregate binding CLEAN at code; (b) the FN-direction verb "
+         "gap BLOCKED and was folded (lex-6, recall measured, "
+         "claimed-removal mutant, coverage figure scoped as reach "
+         "diagnostic not recall) and re-verified at 5ccccae: SEAL "
+         "STANDS. Sealed as 0026-v2-20260829T1526Z.tar.gz, sha256 "
+         "497bf05eeba91280b7bf16d33f63568d1853b30716dc39d8d2334d60"
+         "be77b4a6, commit 6633cd5", findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
