@@ -620,12 +620,15 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
         return ap
 
     pop = over["fire_digests"]
-    good_labels = ([{"fire": f, "label": "tp"} for f in pop[:35]]
-                   + [{"fire": f, "label": "fp"} for f in pop[35:50]])
+    # 0026-I7-1: the ONE legitimate sample membership is the canonical
+    # seeded draw — the test labels exactly that set
+    drawn = sorted(MF.canonical_draw(over, 50))
+    good_labels = ([{"fire": f, "label": "tp"} for f in drawn[:35]]
+                   + [{"fire": f, "label": "fp"} for f in drawn[35:]])
     good_adj = dict(schema=3,
                     lexicon_version=over["lexicon_version"],
                     fires=over["grounded_first_person"]["fires"],
-                    sample=dict(size=50, seed=1),
+                    sample=dict(size=50, seed=MF.canonical_seed(over)),
                     verdict="accept",
                     aggregate_sha256=_agg_digest(over))
     # 0026-EVIDENCE-R4-1, the reviewer's EXACT bypass: schema-2 carried
@@ -666,6 +669,19 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("thinair", good_adj, fake))
     assert any("thin air" in b for b in bad), bad
+    # research's BLOCKING find, the hand-picked sample: 50 REAL fires,
+    # honest-looking labels, right size — but NOT the canonical draw.
+    # Wilson bounds a random sample; a selected one voids the gate.
+    picked = [{"fire": f, "label": "tp"} for f in pop[:50]]
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk("picked", good_adj, picked))
+    assert any("CANONICAL seeded draw" in b for b in bad), bad
+    # a non-canonical seed value refuses before the draw is even checked
+    bad = MF.validate_aggregate(
+        over, adj_path=_adj_on_disk(
+            "seedshop", dict(good_adj, sample=dict(size=50, seed=1)),
+            good_labels))
+    assert any("not host-choosable" in b for b in bad), bad
     # the same fire labelled twice refuses
     dbl = good_labels[:49] + [good_labels[0]]
     bad = MF.validate_aggregate(
@@ -674,7 +690,9 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # manifest line count vs the record's size: carriers must agree
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk(
-            "sizedis", dict(good_adj, sample=dict(size=60, seed=1)),
+            "sizedis", dict(good_adj,
+                            sample=dict(size=60,
+                                        seed=MF.canonical_seed(over))),
             good_labels))
     assert any("carriers disagree" in b for b in bad), bad
     # 0026-EVIDENCE-R3-1, the reviewer's round-3 case: a REJECT verdict
@@ -694,8 +712,8 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # the POINT estimate exactly AT the bar (5% x 0.40 = 2.0, which the
     # schema-2 rule would have passed) — the Wilson-95 UPPER bound
     # refuses it, which is the §6a forward rule made live
-    atbar = ([{"fire": f, "label": "fp"} for f in pop[:20]]
-             + [{"fire": f, "label": "tp"} for f in pop[20:50]])
+    atbar = ([{"fire": f, "label": "fp"} for f in drawn[:20]]
+             + [{"fire": f, "label": "tp"} for f in drawn[20:]])
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("atbar", good_adj, atbar))
     assert any("Wilson-95" in b for b in bad), bad
@@ -724,8 +742,8 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     # and a REAL record-bound adjudication carries the over-bar record —
     # 15 fp of 50: 5% x WilsonUpper(15/50)=0.427 = 2.13%... over; use
     # 8 fp of 50: 5% x 0.283 = 1.41% — the legitimate path proven alive
-    ok_labels = ([{"fire": f, "label": "fp"} for f in pop[:8]]
-                 + [{"fire": f, "label": "tp"} for f in pop[8:50]])
+    ok_labels = ([{"fire": f, "label": "fp"} for f in drawn[:8]]
+                 + [{"fire": f, "label": "tp"} for f in drawn[8:]])
     bad = MF.validate_aggregate(
         over, adj_path=_adj_on_disk("good", good_adj, ok_labels))
     assert bad == [], ("a valid record-bound adjudication was refused",
@@ -790,3 +808,70 @@ def test_spec_binder_and_round_count_are_bound():
     assert "READY FOR EXTERNAL" not in front, (   # sections may QUOTE it
         "a static readiness claim survives in the front matter — "
         "readiness is the ledger's state to derive (0026-PACKAGE-R4-1)")
+
+
+def test_renderers_agree_with_independent_oracles():
+    """0026-I7-2 (research's round-4 pre-seal MODERATE find): byte-
+    equality binders verify DRIFT (shipped == render), not renderer
+    CORRECTNESS — an off-by-one renderer produces wrong-but-self-
+    consistent bytes and a re-render passes. Each renderer therefore
+    gets an INDEPENDENT oracle: this test computes the figures straight
+    from the artifact — never by re-invoking the renderer — and requires
+    the rendering to carry them."""
+    import copy
+    import importlib.util
+    import json as _json
+    MF = importlib.import_module("measure_false_positives")
+    IM = importlib.import_module("import_matrix")
+    agg = _json.loads((ROOT / "specs" / "evidence" / "0026"
+                       / "fp_aggregate.json").read_text())
+    g, c = agg["grounded_first_person"], agg["coverage"]
+    r = MF.render_spec_claim(agg)
+    # figures computed HERE, from the aggregate
+    pct = 100.0 * g["fires"] / g["total"]
+    cov = 100.0 * c["matched_by_lexicon"] / c["with_nonempty_note"]
+    assert f"`{agg['lexicon_version']}`" in r
+    assert f"{g['fires']:,} fires of {g['total']:,} grounded" in r
+    assert f"= {pct:.2f}% at the bound" in r
+    assert (f"{c['matched_by_lexicon']:,} of "
+            f"{c['with_nonempty_note']:,} = {cov:.1f}%") in r
+    assert f"{g['suppressed_by_direction_only']:,} suppressed" in r
+    assert ("CLEARED (UNDER)" in r) == (pct <= 2.0)
+    # both gate branches, driven with a synthetic over-bar aggregate
+    hi = copy.deepcopy(agg)
+    hi["grounded_first_person"]["fires"] = int(g["total"] * 0.05)
+    assert "NOT CLEARED (OVER)" in MF.render_spec_claim(hi)
+    # the renderer-mutation cell: an off-by-one renderer is exactly a
+    # correct renderer over an off-by-one aggregate — the oracle's
+    # needles distinguish it
+    off = copy.deepcopy(agg)
+    off["grounded_first_person"]["fires"] += 1
+    assert f"{g['fires']:,} fires of" not in MF.render_spec_claim(off)
+    # import matrix: every cell of the ONE table appears in the §3d
+    # rendering, and the cross-carrier facts hold in BOTH renderings
+    table = IM.render_3d_table()
+    for fmt, mode, state, outcome in IM.MATRIX:
+        assert f"| {fmt} | {mode} | {state} | {outcome} |" in table
+    restore_malformed = [out for f, m, st, out in IM.MATRIX
+                         if m == "restore" and "MALFORMED" in st]
+    default_malformed = [out for f, m, st, out in IM.MATRIX
+                         if m == "default" and "MALFORMED" in st]
+    assert len(restore_malformed) == 1 and "RAISES" in restore_malformed[0]
+    assert (len(default_malformed) == 1
+            and "treated as absent" in default_malformed[0])
+    row2c = IM.render_2c_row()
+    assert "restore: RAISES" in row2c and "treated as absent" in row2c, (
+        "§2c must state BOTH modes' malformed outcomes — the round-4 "
+        "contradiction cell")
+    # internal_reviewers_row: the count computed HERE from the ledger
+    rspec = importlib.util.spec_from_file_location(
+        "rv0026b", ROOT / "specs" / "reviews.py")
+    RV = importlib.util.module_from_spec(rspec)
+    rspec.loader.exec_module(RV)
+    n = len([x for x in RV.REVIEWS
+             if x["spec"] == "0026" and x["kind"] == "internal"])
+    words = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+             7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+    row = RV.internal_reviewers_row("0026")
+    assert f"**{words.get(n, str(n))} internal rounds**" in row
+    assert "READY FOR EXTERNAL" not in row

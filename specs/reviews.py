@@ -1992,6 +1992,23 @@ REVIEWS = [
          "(internal_reviewers_row), READY-FOR-EXTERNAL claims refused. "
          "Sealed AFTER this row, sha pinned on return", findings=0),
 
+    dict(spec="0026", round=7, kind="internal", date="2026-08-29",
+         raised=["0026-I7-1", "0026-I7-2"],
+         verdict="RETURN FOR AMENDMENT (research, round-4 pre-seal "
+         "red-team at 41c4c14; 81 passed; _wilson_upper verified "
+         "numerically; lex-10 CLEAN by monotonicity — the carve-out "
+         "only ever SPARED, so removal only ADDS inbound; research "
+         "owned both round-3 misses: the inverted safe-by-construction "
+         "argument and the unverified digest). I7-1 BLOCKING: schema-3 "
+         "closed label-honesty but not SAMPLE SELECTION — seed was "
+         "recorded, never re-drawn or bound, so a host could ship any "
+         ">=50 real fires it liked, label the cleanest honestly, and "
+         "void the Wilson gate (which bounds a RANDOM sample only). "
+         "I7-2 MODERATE: byte-equality binders verify drift, not "
+         "renderer CORRECTNESS — an off-by-one renderer re-renders "
+         "byte-equal and passes; no renderer had an independent "
+         "oracle", findings=2),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

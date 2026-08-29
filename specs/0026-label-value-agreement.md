@@ -17,7 +17,7 @@ Spec-Requires: 0005, 0023, 0024, 0025
 | **Author / session** | dev (`~/Dev/veracium`) |
 | **Version** | **v8** — the ROUND-4 EXTERNAL FOLD (2026-08-29; §14 maps all five findings; the round's shape: every round-3 example fixed, every new closure MECHANISM seamed — answered with GENERATED carriers). R4-1: lex-10 REMOVES the artifact carve-out (ownership is not authorship — 'my own record reported a diagnosis' laundered); no noun class carries an authorship inference; ownership-vs-authorship oracle axis + relapse mutant; re-measured identical (0.64%). R4-2: import_matrix.py is the ONE decision table — §2c and §3d are both generated from it, byte-bound. EVIDENCE-R4-1 (the signature defect's sixth face): the adjudication is RECORD-BOUND — fire_digests population, a shipped labelled manifest opened and hashed, counts DERIVED by counting labels, accept on the Wilson-95 UPPER bound (research's forward notes made live). EVIDENCE-R4-2: the §6a claim is a GENERATED block, byte-bound at the verify entry point (the lex-8-over-lex-9 headline and both reviewer mutations refuse). PACKAGE-R4-1: the Internal-reviewers row is rendered from the ledger; static readiness claims refused. *Prior:* **v7** — the ROUND-3 EXTERNAL FOLD (2026-08-29; §13 maps all five findings). R3-1: lex-9 — `or` coordination + the ARTIFACT-vs-ENTITY self-possessive split over a closed artifact set; oracle axes added; measured identical (0.64%). R3-2: the AgreementRecord joins §2c, and restore-malformed RAISES with nothing written (the R1-4 ruling on the restore path; validation before any write). EVIDENCE-R3-1: the adjudication is an EXECUTABLE DECISION — closed verdict enum, computed adjudicated rate vs the gate, sample minimum, digest binding to the exact aggregate; the reviewer's REJECT-passes case is the standing refusal. EVIDENCE-R3-2: the candidate spec's §6a figures bind to the aggregate at the verify entry point (217-vs-220 re-derived). PACKAGE-R3-1: §9's round count derives from the ledger, standing-tested. *Prior:* **v6** — the ROUND-2 EXTERNAL FOLD (2026-08-29; §12 maps all five findings). 0026-R2-1: the subject is resolved by HEAD CONSTRUCTION (lex-7) — modifiers inert, coordinated co-heads with determiners, Unicode possessives normalized — with the GENERATED grammar-oracle corpus (expectations derived from constructions; it caught two further defects during its own construction); §6a RE-MEASURED at 0.64% (439/68,479). 0026-R2-2: the import boundary is MODE-SPLIT (restore trust-field-faithful per 0005 P2; default recomputes) and export rides a FORMAT_VERSION bump per 0025. 0026-R2-3: the deferral swept to every carrier with a whole-file test. EVIDENCE-R2-1: the GATE is part of aggregate validity (over-gate refuses absent an adjudication artifact) and the measurement doc is mechanically bound to the aggregate. PACKAGE-R2-1: closure figures derive from one source; research's pass is structured internal rounds 3-4. *Prior:* **v5** — the ROUND-1 EXTERNAL FOLD (2026-08-29; §11 maps all five findings; the restrict-only spine untouched). 0026-R1-1: direction is a GRAMMAR, not proximity — agent governs, passive recipients inert, clause-bounded subjects, ambiguous pronouns restrict with a counted conservative outcome; the five executed counterexamples ride verbatim; §6a RE-MEASURED at 0.70% (481/68,479 under lex-6: the lex-4 grammar pre-empting research's coordination/nesting shapes, plus their red-team's recall-driven verb expansion — `claimed` et al — with the nominal homographs narrowed by reading the fires; RECALL now measured via held matrix cells), gate cleared. 0026-R1-2: `Edge.agreement` is a STRUCTURED record (markers + direction + lexicon version) with a total import matrix — recomputation governs, incoming values are diagnostic only. 0026-R1-3: telemetry DEFERRED (no whitelisting without a 0015-conformant amendment). EVIDENCE-R1-1: the aggregate is bound — closed validator, cross-artifact manifest anchor, verify mode, the reviewer's tamperings as matrix cells, RECORDED-ONLY labels, the lex-1 claim narrowed. PACKAGE-R1-1: candidate revision is a structured SENT-row field bound by the identity gate; the internal-first miss acknowledged. *Prior:* **v4** — §6a MEASURED and §3a amended by what the measurement found (2026-08-26, dev): the false-positive gate is CLEARED at 0.61% of a 2% bar after the first lexicon came in at 8.20% and narrowed, per §6a's own pre-commitment; and §3a's OUTBOUND cells are restated over the attributing SUBJECT rather than the first-person pronoun — measured, the first-person form suppressed 0 of 68,479 triples because the extractor narrates the user in the third person, so every *\"user confirmed…\"* was being read as somebody else's claim. Evidence: `specs/evidence/0026/FP-MEASUREMENT.md`. *Prior:* **v3** — the pre-send audit (2026-08-24, dev): **`Spec-Requires` completed with `0023`** — this spec consumes its single-write-site discipline, its standing-revocation floor ordering and its §4i asymmetry while declaring independence of it (the F1 class); §2c-ii **Assertions about reach** and §2d **Trust-class matrix** written, both REQUIRED by TEMPLATE and both absent; the §9 brief addressed to the EXTERNAL reviewer with the internal rounds and research's rulings recorded as fair game. Every command in §2c-ii was RUN and its real output recorded — including dev's recomputation showing the B02/B07 motivating cells survived `0024`'s landing unchanged. *Prior:* **v2** — internal round 1 folded (research, 2026-08-23, PASS WITH AMENDMENTS; delivered early on Quentin's word): **M-1** the census figures corrected to the shipped script's exact output (183,417 / 1,644 = 41.7% over cache `654e336a`; v1 carried prose-propagated pre-correction values — the drift recorded in §1 as the spec's thesis in miniature), **M-2** §8's promise scoped to the LEXICON with the coverage denominator riding the §6a run, **Q1 RATIFIED** with the dominance argument + NAMED DIRECTIONAL cells blocking-grade (first-person-outbound never matches), **Q2 RATIFIED** (the 2% bar stands because pre-committed; FP direction-split reported), **Q3 RATIFIED** (+ `Edge.agreement` travels in export so Q5's corpus survives portability), m-3 the floor position stated once via monotonicity, m-4 the B02 prior-evidence pointer on V-Q1, m-5 the dash-agnostic figure sweep. *Prior:* **v1** — the design (2026-08-23) |
 | **Status** | *see `Spec-Status:` — canonical.* Draft authorises nothing |
-| **Internal reviewers** | research — **six internal rounds** (GENERATED from `specs/reviews.py`, the structured ledger — round history, verdicts and closures live there, never in this static row; latest: internal round 6, 2026-08-29). four external rounds returned so far, so external-readiness is the ledger's state to derive, not this row's to claim |
+| **Internal reviewers** | research — **seven internal rounds** (GENERATED from `specs/reviews.py`, the structured ledger — round history, verdicts and closures live there, never in this static row; latest: internal round 7, 2026-08-29). four external rounds returned so far, so external-readiness is the ledger's state to derive, not this row's to claim |
 | **External review** | required — adds a disclosure floor on the ingest write path |
 | **Decision + date** | — |
 | **Path** | full |
@@ -468,10 +468,17 @@ carries `fire_digests` — a content-free one-way digest per fire — and
 the manifest, hashes it against `sample_sha256`, checks membership and
 uniqueness, and DERIVES the counts by counting labels — the record
 carries no count carriers to disagree with, and a derived count cannot
-be negative or exceed the sample. The decision is computed on the
-Wilson 95% UPPER confidence bound of the labelled FP share, never the
-point estimate: `accept` requires bound × UCB ≤ 2%. What was a stated
-trust boundary is a checked binding.
+be negative or exceed the sample. **The sample MEMBERSHIP is not
+host-choosable either (0026-I7-1, research's pre-seal blocking find:
+Wilson-95 bounds a RANDOM sample — over a hand-selected one it
+guarantees nothing): the seed is CANONICAL, derived from the
+aggregate's own bytes, and the validator re-draws and requires the
+manifest to label exactly the drawn set.** The decision is computed on
+the Wilson 95% UPPER confidence bound of the labelled FP share, never
+the point estimate: `accept` requires bound × UCB ≤ 2%. What was a
+stated trust boundary is a checked binding, and the residual — the
+per-fire labels themselves — is stated at the one place a mechanical
+check cannot reach.
 
 The standing rule, unchanged: before this spec is accepted, the
 lexicon's false-positive rate is MEASURED on the existing extraction
@@ -521,16 +528,16 @@ bite before an unplanted catch (§6a).
 ## 9. Brief for the external reviewer
 
 *(Internal review is CONTINUOUS and its authoritative record is the
-structured ledger in `specs/reviews.py` — six internal rounds at the
-time of the round-3 fold [0026-PACKAGE-R3-1: this brief previously said
+structured ledger in `specs/reviews.py` — seven internal rounds at
+the time of the round-4 pre-seal fold [0026-PACKAGE-R3-1: this brief previously said
 "two rounds", frozen at the pre-external state while research's four
 post-fold pre-seal passes went unnarrated here; the count is now bound
 to the ledger by a standing test, so this prose cannot silently
 underclaim again]. Rounds 1–2 were the pre-external design reviews
 (PASS WITH AMENDMENTS with all three questions ruled; PASS
-diff-verified); rounds 3–6 are research's pre-seal red-team passes on
-the round-1 and round-2 folds, each with its own findings and closure
-rows. The questions below are what we most want you to attack;
+diff-verified); rounds 3–7 are research's pre-seal red-team passes on
+the round-1 through round-4 folds, each with its own findings and
+closure rows. The questions below are what we most want you to attack;
 research's rulings are recorded in the Version row and are themselves
 fair game.)*
 
@@ -816,4 +823,17 @@ reviewer has asked for since round 2 now EXISTS as a reviewer-safe,
 record-bound manifest with a verifier that opens it and reproduces the
 decision (above); and the change manifest marks concurrent guarded
 0011 implementation files as out-of-scope for this line's review.
+
+**Pre-seal fold (research's round-4 red-team, internal round 7 —
+2026-08-29, before the v5 seal):** **0026-I7-1 (blocking)** — schema 3
+closed label-honesty but not SAMPLE SELECTION: the seed was recorded,
+never re-drawn or bound, so a hand-picked honestly-labelled sample
+voided the Wilson gate. Closed with the CANONICAL seeded draw above;
+the hand-picked and seed-shopping attacks are standing refusals.
+**0026-I7-2 (moderate)** — the byte-equality binders verified drift,
+not renderer correctness: an off-by-one renderer re-renders byte-equal
+and passes. Every renderer now has an INDEPENDENT oracle test that
+computes the figures straight from the artifact, with the off-by-one
+renderer shown caught. **lex-10 verified CLEAN by monotonicity** — the
+carve-out only ever spared, so its removal only adds inbound.
 

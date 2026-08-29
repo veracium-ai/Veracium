@@ -2526,4 +2526,32 @@ CLOSURES = [
      "half-swept",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_spec_binder_and_round_count_are_bound -q -p no:randomly"),
+    ("0026", "internal", 7, "0026-I7-1",
+     "SAMPLE SELECTION voided the Wilson gate: the seed was recorded "
+     "but never re-drawn or bound, so a host could ship any >=50 real "
+     "fires, label the cleanest honestly (fp=0 -> UCB 0.071), and pass "
+     "accept up to ~28% — Wilson-95 bounds a RANDOM sample; over a "
+     "selected one it guarantees nothing",
+     "the seed is CANONICAL (derived from the aggregate's own bytes — "
+     "not choosable, closing seed-shopping too) and the validator "
+     "RE-DRAWS random.Random(seed).sample over the sorted population, "
+     "requiring the manifest to label EXACTLY the drawn set; --sample "
+     "prints that draw; the hand-picked-honest-labels and "
+     "non-canonical-seed attacks are standing refusals; the residual "
+     "trust boundary is now the per-fire LABELS, where it belongs",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "internal", 7, "0026-I7-2",
+     "byte-equality binders verified DRIFT, not renderer CORRECTNESS: "
+     "an off-by-one renderer produces wrong-but-self-consistent bytes "
+     "and re-render passes — the suite mutated shipped text and the "
+     "aggregate, never a renderer",
+     "every renderer has an INDEPENDENT oracle now: the test computes "
+     "the figures straight from the artifact (never by re-invoking the "
+     "renderer) and requires the rendering to carry them, both gate "
+     "branches driven, the off-by-one renderer shown caught, and the "
+     "cross-carrier malformed-mode facts asserted in both import-matrix "
+     "renderings",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_renderers_agree_with_independent_oracles -q -p no:randomly"),
 ]

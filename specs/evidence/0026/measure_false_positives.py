@@ -38,7 +38,7 @@ mechanically and bounds the rest:
 
 The gap between the upper bound and the true rate is closed by LABELLING a
 random sample of fires, which is a human judgement and is Research's
-co-verification, not this script's output. `--sample N --seed S` draws that
+co-verification, not this script's output. `--sample N` prints the CANONICAL
 sample reproducibly.
 """
 from __future__ import annotations
@@ -66,7 +66,6 @@ def main() -> int:
     ap.add_argument("--sample", type=int, default=0,
                     help="draw N fires for labelling (printed, never written "
                          "to the aggregate — they are corpus content)")
-    ap.add_argument("--seed", type=int, default=20260826)
     a = ap.parse_args()
     if bool(a.cache) == bool(a.aggregate):
         ap.error("exactly one of --cache / --aggregate")
@@ -198,11 +197,14 @@ def main() -> int:
     report(agg)
 
     if a.sample and sample_pool:
-        rng = random.Random(a.seed)
-        print(f"\n--- {min(a.sample, len(sample_pool))} fires sampled for "
-              f"LABELLING (seed {a.seed}); corpus content, never written ---")
-        for rel, note, obj, hits, digest in rng.sample(
-                sample_pool, min(a.sample, len(sample_pool))):
+        size = min(a.sample, len(sample_pool))
+        seed = canonical_seed(agg)
+        drawn = canonical_draw(agg, size)
+        print(f"\n--- the CANONICAL {size}-fire draw for LABELLING "
+              f"(seed {seed}, derived from the aggregate — not "
+              f"choosable); corpus content, never written ---")
+        for rel, note, obj, hits, digest in [
+                t for t in sample_pool if t[4] in drawn]:
             print(f"  [{','.join(hits)}] rel={rel} fire={digest}")
             print(f"    note={str(note)[:150]!r}")
             print(f"    obj ={str(obj)[:110]!r}")
@@ -212,6 +214,27 @@ def main() -> int:
 
 
 _PEER = HERE.parent / "0011" / "subject_aggregate.json"
+
+
+def canonical_seed(agg) -> int:
+    """0026-I7-1 (research's round-4 pre-seal BLOCKING find): the sample
+    DRAW must not be host-choosable. Wilson-95 bounds a RANDOM sample;
+    over a hand-SELECTED one it guarantees nothing — a host could ship
+    any >=50 real fires it liked, label the cleanest honestly, and void
+    the gate. The seed is CANONICAL now — derived from the aggregate's
+    own canonical bytes — so neither the draw nor the seed admits
+    shopping: the validator re-draws and requires the manifest to label
+    EXACTLY the drawn set. After this, the residual trust boundary is
+    the per-fire LABELS, which is where it belongs."""
+    agg_bytes = (json.dumps(agg, sort_keys=True, indent=1) + "\n").encode()
+    return int(hashlib.sha256(agg_bytes).hexdigest()[:12], 16)
+
+
+def canonical_draw(agg, size: int) -> set:
+    """The one legitimate labelled-sample membership for this aggregate
+    at this size: seeded by canonical_seed over the sorted digest list."""
+    rng = random.Random(canonical_seed(agg))
+    return set(rng.sample(sorted(agg["fire_digests"]), size))
 
 
 def _wilson_upper(fp: int, n: int, z: float = 1.959964) -> float:
@@ -306,6 +329,14 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
         out.append(f"adjudication sample of {smp['size']} is below the "
                    f"minimum {min_size} (50, or every fire when fewer "
                    f"exist) — no meaningful labelling happened")
+    if smp["size"] > g["fires"]:
+        out.append(f"adjudication sample of {smp['size']} exceeds the "
+                   f"{g['fires']}-fire population")
+    if smp["seed"] != canonical_seed(agg):
+        out.append(f"adjudication seed {smp['seed']} is not this "
+                   f"aggregate's CANONICAL seed {canonical_seed(agg)} — "
+                   f"the draw is not host-choosable (0026-I7-1: a "
+                   f"selected sample voids the Wilson bound)")
     if out:
         return out
     # THE MANIFEST — opened, hashed, membership-checked, counted
@@ -350,6 +381,11 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     if len(seen) != smp["size"]:
         return [f"the manifest labels {len(seen)} fires but the record "
                 f"says size={smp['size']} — the carriers disagree"]
+    if seen != canonical_draw(agg, smp["size"]):
+        return [f"the manifest does not label the CANONICAL seeded draw "
+                f"for this aggregate — a host-selected sample voids the "
+                f"Wilson bound (0026-I7-1); label exactly the fires "
+                f"--sample prints"]
     # THE DECISION, computed from the DERIVED counts — never narrated
     if adj["verdict"] not in ("accept", "reject"):
         return [f"adjudication verdict {adj['verdict']!r} is outside the "
