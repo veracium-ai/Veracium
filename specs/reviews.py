@@ -1788,8 +1788,12 @@ REVIEWS = [
          "aggregate (a 219-vs-220 hand-typed figure was refused by the "
          "artifact during the very sweep). PACKAGE-R2-1: closure figures "
          "derive from one source; research's v5 pass recorded as "
-         "structured internal rounds 3-4. Sealed AFTER this row, sha "
-         "pinned on return", findings=0),
+         "structured internal rounds 3-4; research's round-2 pre-seal "
+         "pass (internal rounds 5-6: comitatives + the adjudication "
+         "bypass) folded and re-verified, seal cleared. Sealed as "
+         "0026-v3-20260829T1752Z.tar.gz, sha256 "
+         "6770c417f011a6a0debf65a6a7ed588f2c3ba6cba0355b8eff6cb26f"
+         "2743a687, commit 48809ef", findings=0),
 
     dict(spec="0026", round=3, kind="internal", date="2026-08-29",
          raised=[],
