@@ -1395,8 +1395,14 @@ REVIEWS = [
          "anywhere in the copied tree was an unguarded read of its "
          "target; a no-follow pre-scan now refuses on the first "
          "symlink BEFORE any copy (standing test: a planted "
-         "/bin/sh link, named refusal, no snapshot). Sealed AFTER "
-         "this row, sha pinned on return", findings=0),
+         "/bin/sh link, named refusal, no snapshot). Research "
+         "re-verified at be16daa — membership-first in both "
+         "carriers, the /bin/sh no-read witness, dirnames checked "
+         "before pruning with the symlinked-dir case driven "
+         "end-to-end, top-level islink-skip: SEAL STANDS. Sealed "
+         "as 0011-v15-20260829T0023Z.tar.gz, sha256 "
+         "134ac687427d12f386659443642bc2e3abd74560db2af46527b99d3c"
+         "4727926c, commit be16daa", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
