@@ -1574,8 +1574,10 @@ REVIEWS = [
          "same-type/same-message replacement mutant rides as a biting "
          "standing regression — it preserves cleanup, type and message "
          "(the old assertions bless it, asserted explicitly in the test) "
-         "and the identity probe alone kills it. Sealed AFTER this row, "
-         "sha pinned on return", findings=0),
+         "and the identity probe alone kills it. Sealed as "
+         "0011-v19-20260829T1119Z.tar.gz, sha256 "
+         "71fae9d633bbd03424e2d10b199698d58f3be029da4e5a8b423b608d"
+         "e19a599f, commit dc58757", findings=0),
 
     dict(spec="0026", round=1, kind="internal", date="2026-08-24",
          raised=["0026-I1-M1", "0026-I1-M2", "0026-I1-m3",
