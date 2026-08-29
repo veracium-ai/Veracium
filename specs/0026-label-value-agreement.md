@@ -484,15 +484,21 @@ decision-irrelevant field was a NONCE — the reviewer drove
 `suppressed_by_direction_only` and swung the draw from an accepting
 sample to a refusing one): the SIZE is canonical — a CENSUS of every
 fire when the population is within the fixed limit (500), else
-exactly the limit — and the SEED is EXTERNAL and POST-COMMITMENT,
-derived from the committed sha256 sidecar of the sealed archive that
-first shipped the aggregate. That value does not exist until sealing,
-and resealing to shop it is a ledgered, witnessed act. The validator
-binds what is mechanically bindable in-repo (name grammar checked
-before any path is built; sidecar existence; seed equality; the
-re-drawn membership required equal); that the named archive really
-contained THIS aggregate is the REVIEWER's extraction check at
-re-review — stated here as protocol, not pretended mechanical.** The
+exactly the limit — and the SEED is the NONCE-FREE
+PROJECTION (completed at research's round-5 pre-seal pass, which
+found the interim archive-sidecar form defended reseal iteration but
+rested on an unguaranteed non-precomputable first seal): it derives
+from exactly the cross-anchored and decision-read fields —
+`fire_digests` (the population; length validated equal to fires),
+`fires` (the decision's numerator), and `manifest` (cross-anchored
+against the 0011/0025 subject aggregate) — each byte enumerated and
+justified, which is the R5-1 lesson stated positively. Shopping the
+draw requires varying the basis, and every basis byte moves the
+measurement or trips the anchor; precomputability is therefore
+harmless by construction. The validator re-draws and requires the
+manifest to label exactly the drawn set. (For the shipped corpus the
+seed is moot twice over: 439 fires is a CENSUS, and a census draw is
+all fires, seed-free.)** The
 decision: a census decides on the EXACT labelled share (no sampling
 variance exists); a sampled draw decides on the Wilson 95% UPPER
 confidence bound — never the point estimate. `accept` requires
@@ -929,3 +935,21 @@ reviewer's mutation is a standing cell.
 hash-bound manifest containing invalid UTF-8 raised an uncaught
 UnicodeDecodeError. Both adjudication files now return structured
 refusals on decode failure, with standing cells for each.
+
+**Pre-seal completion (research's round-5 pass, folded same-day —
+2026-08-29, before the v6 seal):** their pass CLEARED the seal and
+named two forward hardenings, both folded rather than fast-followed
+(two consecutive rounds converted signed-off seed mechanisms; a
+stated gap does not ride into a sealed package). (1) The
+archive-sidecar seed's first-seal pre-selection gap: replaced by the
+NONCE-FREE PROJECTION seed above (schema 5) — simpler, no archive
+apparatus, precomputable-but-harmless since every basis byte is
+decision-read or cross-anchored; the nonce-invariance and
+population-sensitivity cells stand. (2) The §2c head-projection's
+untested invariant: heads must be pairwise distinct or the projection
+under-distinguishes rows — `_assert_heads_distinct` refuses a
+colliding matrix at render time, with the collision cell standing.
+Research also confirmed the shipped corpus needs no seed at all (439
+fires is a census, the draw seed-independent) and the v0 demo witness
+question is moot (the example carries no witness under schema 5).
+

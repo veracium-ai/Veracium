@@ -77,8 +77,29 @@ def _cell(mode: str, state_substr: str) -> str:
 
 def _head(outcome: str) -> str:
     """The outcome's operative clause — the text before its rationale
-    dash — so the §2c cell embeds the matrix's own words verbatim."""
+    dash — so the §2c cell embeds the matrix's own words verbatim.
+
+    STATED INVARIANT (research, round-5 pre-seal ask 2): the DECISION
+    lives entirely pre-dash; everything after " — " is rationale. The
+    §2c projection binds only heads, so `_assert_heads_distinct` below
+    refuses a matrix whose heads collide — two rows whose decisions
+    differ only in their rationale would project identically, and §2c
+    would silently under-distinguish them."""
     return outcome.split(" — ")[0]
+
+
+def _assert_heads_distinct() -> None:
+    """Every MATRIX outcome head must be pairwise distinct — the guard
+    that makes head-projection a faithful §2c carrier (round-5 pre-seal
+    ask 2: the co-movement test mutated heads only, so nothing defended
+    this invariant against a future edit)."""
+    heads = [_head(out) for _f, _m, _st, out in MATRIX]
+    dupes = sorted({h for h in heads if heads.count(h) > 1})
+    if dupes:
+        raise LookupError(
+            f"MATRIX outcome heads collide: {dupes} — the decision must "
+            f"live entirely before ' — ' and be distinct per row, or "
+            f"the §2c head-projection under-distinguishes rows")
 
 
 def render_2c_row() -> str:
@@ -87,6 +108,7 @@ def render_2c_row() -> str:
     the matrix row's own operative text, so editing the table moves
     both renderings together (the source-level mutation test drives
     exactly that)."""
+    _assert_heads_distinct()
     default_malformed = _head(_cell("default", "MALFORMED"))
     restore_malformed = _head(_cell("restore", "MALFORMED"))
     default_any = _head(_cell("default", "any state"))

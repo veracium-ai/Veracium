@@ -2565,12 +2565,15 @@ CLOSURES = [
      "suppressed_by_direction_only swung the draw from 167/500 FP "
      "(accepted) to 232/500 (refused) — seed-shopping survived, face "
      "seven of the selection-freedom class",
-     "the seed basis LEAVES the aggregate: external and "
-     "post-commitment, derived from the sealed archive's committed "
-     "sha256 sidecar (schema 4: sealed_archive joins the record; name "
-     "grammar checked before any path is built; the aggregate-archive "
-     "pairing is the reviewer's extraction check, stated as protocol); "
-     "nonce-invariance, missing-witness and traversal-name cells stand",
+     "the seed basis is the NONCE-FREE PROJECTION (schema 5, completed "
+     "at research's round-5 pre-seal pass — the interim archive-sidecar "
+     "form rested on an unguaranteed non-precomputable first seal): "
+     "derived from exactly the cross-anchored and decision-read fields "
+     "(fire_digests + fires + manifest), each byte enumerated and "
+     "justified; shopping the draw requires moving the measurement or "
+     "tripping the anchor, so precomputability is harmless; "
+     "nonce-invariance and population-sensitivity cells stand; the "
+     "shipped corpus is a census and needs no seed at all",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
     ("0026", "external", 5, "0026-R5-1",
