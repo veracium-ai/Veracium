@@ -1384,24 +1384,59 @@ class Memory:
         at recall from natural change) and records the corrected value as a new
         user-authored assertable edge. This — and only this — invalidates a fact;
         `record_outcome(outcome="corrected")` judges a *decision* and never
-        touches the facts it consulted. Not an MCP tool."""
-        edge = self._find_edge(user_id, edge_id)
-        if not edge.active:
-            raise ValueError(f"edge {edge_id!r} is not active (already "
-                             f"{edge.invalidation_reason or 'invalidated'})")
+        touches the facts it consulted. Not an MCP tool.
+
+        specs/0011 §4e (E5): the correction reaches storage only through the
+        atomic plan machinery with a `CorrectionAuthorisation` verified inside
+        the transaction — an integrity binding, NOT authentication: `actor` is
+        a caller-supplied principal and this is a PROTECTED HOST API; the host
+        authenticates the principal and establishes intent before calling, and
+        never exposes this on a surface a model can reach with a caller-chosen
+        principal. §4b applies to corrections: a bare self-assertion cannot
+        retire an OTHER-subject prior — that raises `graph.CorrectionRefused`
+        after the durable refusal row commits."""
         from datetime import date as _date
+        from . import authority, graph
+        from .schema import CorrectionAuthorisation, correction_digest
+        from .store.base import PLAN_STALE
         date = date or _date.today().isoformat()
         when = _event_dt(date)
         date = when.date().isoformat()          # normalise once, as confirm()
-        self.store.invalidate_edge(edge_id, when, "corrected")
-        new = Edge(
-            id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,
-            relation=edge.relation, object=corrected_value, note=edge.note,
-            volatility=edge.volatility, supersedes=edge_id, valid_from=when,
-            provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
-                                  evidence_ref=evidence_ref or f"correct:{edge_id}",
-                                  observed_at=when))
-        self.store.add_edge(new)
+        # specs/0011 §4e (E5, closes M7-correct): storage is reached ONLY
+        # through the atomic plan machinery, with a CorrectionAuthorisation
+        # bound to (store origin, prior id, replacement digest, kind,
+        # principal) and verified INSIDE the transaction. The CAS retry loop
+        # is apply_supersession's own shape: PlanStale → re-read, recompute.
+        for _ in range(graph._MAX_PLAN_ATTEMPTS):
+            edge = self._find_edge(user_id, edge_id)
+            if not edge.active:
+                raise ValueError(f"edge {edge_id!r} is not active (already "
+                                 f"{edge.invalidation_reason or 'invalidated'})")
+            new = Edge(
+                id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,
+                relation=edge.relation, object=corrected_value, note=edge.note,
+                volatility=edge.volatility, valid_from=when,
+                provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
+                                      evidence_ref=evidence_ref or f"correct:{edge_id}",
+                                      observed_at=when))
+            plan, refused = graph.plan_correction(
+                self.store, edge, new, op_id=f"corr-{new.id}")
+            auth = None if refused else CorrectionAuthorisation(
+                origin=self.store.local_origin(), prior_edge_id=edge_id,
+                replacement_digest=correction_digest(corrected_value),
+                kind="corrected", principal=actor)
+            result = self.store.apply_supersession_plan(
+                plan, authorisation=auth, acting_principal=actor)
+            if result is not PLAN_STALE:
+                break
+        else:
+            raise RuntimeError(
+                f"correction of {edge_id!r} kept returning PlanStale after "
+                f"{graph._MAX_PLAN_ATTEMPTS} attempts (specs/0003 §4f)")
+        if refused:
+            # the durable refusal row committed with the plan; the correction
+            # itself is loud (specs/0011 §4b applies to corrections)
+            raise graph.CorrectionRefused(edge_id, authority.RULE_VERSION)
         self.store.add_episode(Episode(
             id=f"ep-{uuid4().hex[:12]}", user_id=user_id, date=date,
             summary=(f"({actor}) corrected '{edge.relation}: {edge.object}' "

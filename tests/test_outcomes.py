@@ -12,8 +12,12 @@ from veracium.schema import Outcome
 
 def _fake(prompt, *, system=None, role="compile", json_schema=None):
     if role == "distill":
+        # subject "user": two tests below CORRECT this edge, and since
+        # specs/0011 §4b applies to corrections, correct() (a USER-minted
+        # self-assertion) can no longer retire an OTHER-subject prior — the
+        # outcome machinery under test is edge-blind and subject-agnostic
         return json.dumps({"triples": [
-            {"subject": "org:covetrus", "relation": "source_reliable",
+            {"subject": "user", "relation": "source_reliable",
              "object": "sends promotional mail", "volatility": "durable"}],
             "episode": "Observed Covetrus sending promotional mail."})
     return "ok"

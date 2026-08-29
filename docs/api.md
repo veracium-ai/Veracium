@@ -286,7 +286,16 @@ reality?* Engine-written surfaces (never MCP tools):
 - **`correct`** is the explicit **fact-level** correction: the remembered value
   itself was wrong. Supersedes with `invalidation_reason="corrected"`
   (distinguishable at recall from natural change) and records the corrected
-  value as a new user-authored edge.
+  value as a new user-authored edge. Since specs/0011 (E5) the correction
+  commits through the atomic supersession plan with a
+  `CorrectionAuthorisation` verified inside the transaction — an integrity
+  binding (forge/replay/rebind/cross-principal all abort, nothing written),
+  **not** authentication: `actor` is a caller-supplied principal, so
+  `correct()` is a **protected host API** — authenticate the principal and
+  establish intent before calling, and never expose it where a model can
+  choose the principal. Correcting a fact about another entity on bare
+  self-assertion raises `graph.CorrectionRefused` after a durable refusal
+  row commits (the §4b subject rule applies to corrections).
 
 ### `forget(user_id) -> dict`
 

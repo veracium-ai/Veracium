@@ -951,9 +951,9 @@ better hand-check rather than a different mechanism. **So the summaries are now
 derived and nothing below is restated by hand.**
 
 <!-- GENERATED:summary -->
-**19 findings · 16 shipped (0.13.0, 0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8, 0.5.0, 0.7.0, 0.9.0) · 2 unimplemented · 2 still open · **0 fixed but unreleased**.**
+**19 findings · 16 shipped (0.13.0, 0.4.4, 0.4.5, 0.4.6, 0.4.7, 0.4.8, 0.5.0, 0.7.0, 0.9.0) · 1 unimplemented · 1 still open · **1 fixed but unreleased**.**
 
-**Unimplemented:** `N4-decay`, `M7-correct`. **Open:** `N4-decay`, `M7-correct`.
+**Unimplemented:** `N4-decay`. **Open:** `N4-decay`.
 
 *Two of the unimplemented — `M3` and `M4` — shipped in 0.4.5 as fixes that do not hold.*
 <!-- /GENERATED:summary -->
@@ -976,7 +976,7 @@ derived and nothing below is restated by hand.**
 | **N9t-transfer** `transfer` may raise trust and claim new currency | `import_memory` persists every claimed trust field verbatim | closed by the 0005 implementation: the three-lever cap floors trust (P1/P4/P6) and import mutates no existing row, so no currency can be renewed (P8/§4e) | **`specs/0005`** | **yes** — 0.9.0 | `test_default_import_caps_every_record + test_import_never_mutates_existing_rows` |
 | **N9b-provenance** consolidation inherits `source_type` and `evidence_ref` from `cold[0]` | a SYSTEM summary reports `source_type=stated` and the first input's `evidence_ref` | internally false provenance — M1's `cold[0]` inheritance surviving on two unexamined fields | this spec | **yes** — 0.4.8 | `test_consolidated_provenance_is_internally_consistent` |
 | **M2⁗** offset timestamps fail through `remember()` | `prompts.date_context` parses the raw string and rejects offsets | one input, two parsers — `_event_dt` is not the single contract §7f claims | this spec | **yes** — 0.4.8 | `test_an_offset_timestamp_survives_every_public_entry_point` |
-| **M7-correct** `correct()` bypasses the supersession ladder | `correct()` writes a replacement with hardcoded `author=USER` | 🔴 it is the only `supersedes=` writer and never calls `apply_supersession` | **`specs/0011`** | **no** | `0011 E5` |
+| **M7-correct** `correct()` bypasses the supersession ladder | `correct()` writes a replacement with hardcoded `author=USER` | — | **`specs/0011`** | **code yes, None** — users do not have it | `test_correct_requires_bound_authorisation + test_forged_unbound_and_rebound_authorisations_abort + test_correcting_an_other_subject_prior_refuses` |
 | **M8-wiki** the wiki serves a revoked trust decision | a cached wiki outlives the revocation of its inputs | — | **`specs/0004`** | **yes** — 0.13.0 | `tests/test_0004_wiki_revocation.py (W1–W4)` |
 | **M6-import** `import_memory` has no trust boundary | `--user` remap re-homes another principal's records verbatim | closed by the 0005 implementation: the unconditional three-lever cap (nothing keys on the header — I-Q1); restore is the operator's explicit opt-out | **`specs/0005`** | **yes** — 0.9.0 | `tests/test_0005_import_boundary.py (P1–P16)` |
 | **X-crash** consolidation deletes every input before writing any output | delete-all-then-write; a crash loses the batch | — | **`specs/0010`** | **yes** — 0.5.0 | `0010 X1–X9 test_no_crash_point_loses_data` |
@@ -1016,7 +1016,7 @@ as §11, so it cannot become another independently-maintained summary.
 | `N9t-transfer` | `0005` | resolved | shipped 0.9.0 | `test_default_import_caps_every_record + test_import_never_mutates_existing_rows` |
 | `N9b-provenance` | `0002` | resolved | shipped 0.4.8 | `test_consolidated_provenance_is_internally_consistent` |
 | `M2⁗` | `0002` | resolved | shipped 0.4.8 | `test_an_offset_timestamp_survives_every_public_entry_point` |
-| `M7-correct` | `0011` | open | **not implemented** | `0011 E5` |
+| `M7-correct` | `0011` | resolved | **committed, unreleased** | `test_correct_requires_bound_authorisation + test_forged_unbound_and_rebound_authorisations_abort + test_correcting_an_other_subject_prior_refuses` |
 | `M8-wiki` | `0004` | resolved | shipped 0.13.0 | `tests/test_0004_wiki_revocation.py (W1–W4)` |
 | `M6-import` | `0005` | resolved | shipped 0.9.0 | `tests/test_0005_import_boundary.py (P1–P16)` |
 | `X-crash` | `0010` | resolved | shipped 0.5.0 | `0010 X1–X9 test_no_crash_point_loses_data` |

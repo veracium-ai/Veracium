@@ -727,6 +727,37 @@ class SupersessionPlan(BaseModel):
     raw_request: Optional[dict] = None
 
 
+class CorrectionAuthorisation(BaseModel):
+    """specs/0011 §4e (E5) — the INTEGRITY BINDING a correction carries into
+    the atomic plan commit. Bound to five elements: (store origin, prior edge
+    id, replacement value digest, kind, acting principal — 0020's element).
+    The store verifies EVERY element INSIDE the transaction (the 0014
+    snapshot-verification shape): an authorisation cannot be altered, replayed
+    against a different prior, rebound to a different replacement value, or
+    reused under a different principal.
+
+    WHAT THIS IS NOT (R1-2): authentication. `Memory.correct()` mints it from
+    caller-controlled values, so nothing here establishes that the declared
+    principal is who they say they are — `correct()` is a PROTECTED HOST API
+    and authenticating the principal is the host's stated obligation (§4e).
+    """
+    model_config = {"frozen": True}
+
+    origin: str
+    prior_edge_id: str
+    replacement_digest: str
+    kind: str
+    principal: str
+
+
+def correction_digest(value: str) -> str:
+    """The ONE digest construction both the minting site and the store's
+    in-transaction verifier use for `replacement_digest` — a shared carrier,
+    so the two can never drift (specs/0011 §4e)."""
+    import hashlib
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
 class SupersessionRefusal(BaseModel):
     """A durable, content-free refusal record as read back from the store (§4b). The
     inventory `specs/0011` re-evaluates: `rule_version` stamps which policy refused."""

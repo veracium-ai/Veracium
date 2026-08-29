@@ -122,16 +122,23 @@ FINDINGS = [
          released_defect="`prompts.date_context` parses the raw string and rejects offsets",
          current_defect="one input, two parsers — `_event_dt` is not the single contract §7f claims"),
     dict(id="M7-correct", title="`correct()` bypasses the supersession ladder",
-         owner="0011", disposition="open", implementation="none",
-         release=None, advisory=None, test="0011 E5",
+         owner="0011", disposition="resolved", implementation="committed",
+         release=None, advisory=None,
+         test="test_correct_requires_bound_authorisation + test_forged_unbound_and_rebound_authorisations_abort + test_correcting_an_other_subject_prior_refuses",
          released_defect="`correct()` writes a replacement with hardcoded `author=USER`",
-         current_defect="it is the only `supersedes=` writer and never calls `apply_supersession`"),
+         current_defect=None,
+         resolution="specs/0011 §4e (E5, 2026-08-29): correct() reaches "
+                    "storage only through the atomic plan machinery with a "
+                    "CorrectionAuthorisation bound to (origin, prior id, "
+                    "replacement digest, kind, principal) and verified "
+                    "in-transaction; §4b subject entitlement applies to "
+                    "corrections; the direct invalidate_edge/add_edge path "
+                    "is proven unreachable by the armed-explosion regression"),
          # M7-correct re-owned 0003→0011 (2026-08-13): accepted 0003 §1b rules
          # correct() OUT of scope and names the fix — one authorised replacement
          # operation — as 0011 E5; the 0.6.0 CHANGELOG says the same. The old
          # test pointer "0003 I9, I10" was pre-split numbering (accepted 0003's
-         # I9 is PlanStale). Verified still open in code: __init__.correct()
-         # calls store.invalidate_edge + writes supersedes= directly.
+         # I9 is PlanStale). CLOSED at the E5 implementation (see resolution).
     dict(id="M8-wiki", title="the wiki serves a revoked trust decision",
          owner="0004", disposition="resolved", implementation="shipped",
          release="0.13.0", advisory=None, test="tests/test_0004_wiki_revocation.py (W1–W4)",

@@ -88,6 +88,14 @@ class SupersessionIntegrityError(Exception):
     caller integrity bug, not a race — so it raises rather than replaying or retrying."""
 
 
+class CorrectionAuthorisationError(SupersessionIntegrityError):
+    """specs/0011 §4e (E5), fail-closed in BOTH directions inside the plan
+    transaction: a plan retiring a prior as `corrected` without a verified
+    `CorrectionAuthorisation`, or an authorisation any of whose five bound
+    elements (origin, prior edge id, replacement digest, kind, principal)
+    does not match what the plan actually does. Nothing is written."""
+
+
 class ReceiptDomainError(SupersessionIntegrityError):
     """specs/0025 §4b-v, the fail-closed cells: a stored request-digest
     domain this code cannot interpret (unknown/malformed value), or the
@@ -161,7 +169,8 @@ class Store(ABC):
     def invalidate_edge(self, edge_id: str, at, reason: str) -> None: ...
 
     @store_mutator
-    def apply_supersession_plan(self, plan: SupersessionPlan):
+    def apply_supersession_plan(self, plan: SupersessionPlan, *,
+                                authorisation=None, acting_principal=None):
         """Apply the WHOLE outcome of one supersession atomically and conditionally
         (specs/0003 §4f, I9). Returns a `SupersessionResult` (Applied), the `PLAN_STALE`
         sentinel, or raises `SupersessionIntegrityError`.

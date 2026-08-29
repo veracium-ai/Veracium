@@ -512,11 +512,14 @@ class SqliteStore(Store):
         effects = json.loads(response_json)
         return SupersessionResult(**effects, replayed=True)
 
-    def apply_supersession_plan(self, plan: SupersessionPlan):
+    def apply_supersession_plan(self, plan: SupersessionPlan, *,
+                                authorisation=None, acting_principal=None):
         from ..contribution import (CURRENT_DIGEST_DOMAIN, effect_payload,
                                     receipt_request_matches,
                                     request_digest_under,
                                     verify_snapshot_against_plan)
+        from ..schema import CorrectionAuthorisation, correction_digest
+        from .base import CorrectionAuthorisationError
         inc = plan.incoming_edge
         user_id = inc.user_id
         with self._lock:
@@ -597,6 +600,56 @@ class SqliteStore(Store):
             #    WHOLE plan back — no incoming edge, no prior mutations, no refusal rows,
             #    no receipt — so there is never a durable partial state (§4f failure rule).
             try:
+                # specs/0011 §4e (E5): in-transaction verification of the
+                # correction binding — the 0014 snapshot-verification shape,
+                # FAIL CLOSED in both directions. Every `corrected` retirement
+                # requires an authorisation whose five bound elements match
+                # what THIS plan actually does; a dangling authorisation (no
+                # corrected retirement to bind) is refused too. The replay
+                # branch above returns earlier by design: a receipt exists
+                # only for a commit that already passed this check.
+                _corrected = [eid for eid, _at, r in plan.prior_invalidations
+                              if r == "corrected"]
+                if _corrected and authorisation is None:
+                    raise CorrectionAuthorisationError(
+                        f"plan {plan.operation_id!r} retires "
+                        f"{sorted(_corrected)} as 'corrected' with no "
+                        f"CorrectionAuthorisation — corrections reach storage "
+                        f"only through the verified binding (specs/0011 §4e)")
+                if authorisation is not None:
+                    if type(authorisation) is not CorrectionAuthorisation:
+                        raise CorrectionAuthorisationError(
+                            f"authorisation must be a CorrectionAuthorisation; "
+                            f"got {type(authorisation).__name__}")
+                    if len(_corrected) != 1:
+                        raise CorrectionAuthorisationError(
+                            f"an authorisation binds exactly ONE 'corrected' "
+                            f"retirement; this plan carries {len(_corrected)}")
+                    if authorisation.kind != "corrected":
+                        raise CorrectionAuthorisationError(
+                            f"authorisation.kind={authorisation.kind!r} does "
+                            f"not authorise a 'corrected' retirement")
+                    if authorisation.prior_edge_id != _corrected[0]:
+                        raise CorrectionAuthorisationError(
+                            f"authorisation is bound to prior "
+                            f"{authorisation.prior_edge_id!r} but the plan "
+                            f"retires {_corrected[0]!r} — replay against a "
+                            f"different prior refused")
+                    if authorisation.origin != self.local_origin():
+                        raise CorrectionAuthorisationError(
+                            "authorisation was minted for a different store "
+                            "origin — foreign or stale mint refused")
+                    if (authorisation.replacement_digest
+                            != correction_digest(inc.object)):
+                        raise CorrectionAuthorisationError(
+                            "authorisation is bound to a different replacement "
+                            "value — rebinding refused")
+                    if authorisation.principal != acting_principal:
+                        raise CorrectionAuthorisationError(
+                            f"authorisation was minted under principal "
+                            f"{authorisation.principal!r} but is being applied "
+                            f"as {acting_principal!r} — cross-principal replay "
+                            f"refused")
                 # specs/0014 §4b: EXACT SET EQUALITY between the plan's absorption
                 # drafts and its absorbed_duplicate invalidations (R5-1) — one draft
                 # per absorbed prior, no omissions, no duplicates, no extras. Checked

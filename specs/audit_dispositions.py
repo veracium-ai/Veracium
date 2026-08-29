@@ -44,14 +44,12 @@ DISPOSITIONS = {
  ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "5b46e2531803"):
    (W, "`outcome_counts`, `last_outcome`, `needs_confirmation`", "act",
     "clean — counters are information, never gating", "`test_record_outcome_is_edge_blind_never_supersedes`"),
- ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"):
-   (W, "`active`, `invalidation_reason=corrected`", "act",
-    "➡️ **MOVED to `0003` §1b** — this is a supersession path", "tracked as 0003 I9/I10 [M7-correct]"),
- ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"):
-   (W, "**`author_of_evidence` hardcoded USER**, `disclosure`, `supersedes`", "act",
-    "➡️ **MOVED to `0003` §1b (M7).** Resolved there: inherit the corrected edge's class", "tracked as 0003 I10 [M7-correct]"),
+ ("src/veracium/__init__.py", "Memory.correct", "apply_supersession_plan", "666f27059611"):
+   (W, "`active`, `invalidation_reason=corrected`, `supersedes`, `author_of_evidence` USER", "act",
+    "clean — **M7-correct CLOSED (specs/0011 §4e, E5)**: the correction reaches storage only through the atomic plan with a CorrectionAuthorisation verified in-transaction; §4b subject entitlement applies", "`test_correct_requires_bound_authorisation`"),
  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "38943ba03330"):
-   (W, "episode provenance", "act", "➡️ moved with M7", "tracked as 0003 I10 [M7-correct]"),
+   (W, "episode provenance", "act",
+    "clean — post-commit narration of an ALREADY-authorised correction (specs/0011 §4e); writes no trust decision", "`test_correct_requires_bound_authorisation`"),
  ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"):
    (W, "**all** — irreversible erasure", "act", "clean — erasure is the contract", "`test_forget_erases_everything_and_only_that_user`"),
  ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"):
@@ -171,9 +169,8 @@ STATES = {
   ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "append_outcome_if_head", "65802c446a27"): "clean",
   ("src/veracium/__init__.py", "Memory.record_outcome", "add_edge", "5b46e2531803"): "clean",
-  ("src/veracium/__init__.py", "Memory.correct", "invalidate_edge", "c81beaca32cb"): "open_moved",
-  ("src/veracium/__init__.py", "Memory.correct", "add_edge", "72b03718535b"): "open_moved",
-  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "38943ba03330"): "open_moved",
+  ("src/veracium/__init__.py", "Memory.correct", "apply_supersession_plan", "666f27059611"): "clean",
+  ("src/veracium/__init__.py", "Memory.correct", "add_episode", "38943ba03330"): "clean",
   ("src/veracium/__init__.py", "Memory.forget", "forget_user", "c5d9e9e2da39"): "clean",
   ("src/veracium/cli.py", "_forget", "forget_user", "269b73112fab"): "clean",
   ("src/veracium/compile.py", "compile_wiki", "set_wiki", "888fd4a4d703"): "clean",

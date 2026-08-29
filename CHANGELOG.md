@@ -27,6 +27,23 @@
   capture first-party events; leave relay/unknown-origin sites alone
   and they inherit the safe floor.**
 
+  **E5 — `correct()` through the ladder, authorised (closes
+  `M7-correct`). ⚠ BEHAVIOR CHANGE.** `Memory.correct()` no longer
+  writes storage directly: the correction goes through the same atomic
+  CAS plan machinery as extractor supersession, carrying a
+  `CorrectionAuthorisation` bound to *(store origin, prior edge id,
+  replacement value digest, kind, acting principal)* and verified
+  element-by-element INSIDE the transaction — a forged, rebound,
+  replayed-against-a-different-prior, foreign-origin, or
+  cross-principal authorisation aborts with nothing written. This is
+  an INTEGRITY BINDING, not authentication (`correct()` mints it from
+  caller values): `correct()` is a protected host API — the host
+  authenticates the principal and establishes intent. §4b now applies
+  to corrections too: correcting a prior about an OTHER-class subject
+  on bare self-assertion raises `graph.CorrectionRefused` after a
+  durable refusal row commits, where it previously silently retired
+  the prior — that silent path was the defect.
+
   **E1+E2 — the subject axis.** `graph.subject_class(user_id, subject)`
   — total, `OTHER` by default, the 0024 canonical-subject predicate —
   and the §4b refusal cell: a bare self-assertion (author `USER`, no

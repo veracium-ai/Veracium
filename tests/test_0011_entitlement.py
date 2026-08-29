@@ -284,3 +284,172 @@ def test_context_is_immutable_and_value_semantic():
             == EvidenceContext.derived(A.USER))
     assert EvidenceContext.direct() != EvidenceContext.derived(A.USER)
     assert len({EvidenceContext.direct(), EvidenceContext.direct()}) == 1
+
+
+# ---- S4: correct() through the ladder, authorised (E5, §4e) ----------------
+# The M7-correct regression plus the forge/replay/rebind/cross-principal
+# cells, each driven through the REAL machinery.
+
+import tempfile as _tempfile
+
+from veracium import Memory, MemoryConfig, graph as _graph
+from veracium.graph import CorrectionRefused, plan_correction
+from veracium.schema import CorrectionAuthorisation, correction_digest
+from veracium.store.base import CorrectionAuthorisationError
+
+
+def _quiet_llm(prompt, **kw):
+    raise AssertionError("correct() must not call the LLM")
+
+
+def _mem_with(tmp, *edges):
+    db = f"{tmp}/t.db"
+    mem = Memory(llm=_quiet_llm, config=MemoryConfig(db_path=db))
+    for e in edges:
+        mem.store.add_edge(e)
+    return mem
+
+
+def _auth_for(store, prior_id, value, principal="user"):
+    return CorrectionAuthorisation(
+        origin=store.local_origin(), prior_edge_id=prior_id,
+        replacement_digest=correction_digest(value),
+        kind="corrected", principal=principal)
+
+
+def test_correct_requires_bound_authorisation(tmp_path):
+    """S4 happy path + the M7 regression: the correction commits atomically
+    through the plan machinery ONLY — the direct invalidate_edge/add_edge
+    path the defect used is proven unreachable by making it explode."""
+    mem = _mem_with(tmp_path, _edge("p1", "user", "engineer", A.USER))
+    mem.store.invalidate_edge = _explode  # the M7 path, armed
+    mem.store.add_edge = _explode
+    r = mem.correct(U, "p1", "staff engineer")
+    prior = [e for e in mem.store.edges(U, active_only=False)
+             if e.id == "p1"][0]
+    assert not prior.active and prior.invalidation_reason == "corrected"
+    repl = [e for e in mem.store.edges(U) if e.id == r["replacement"]][0]
+    assert repl.object == "staff engineer" and repl.supersedes == "p1"
+    assert mem.store.refusals(U) == []
+    (ep,) = mem.store.episodes(U)     # the post-commit narration episode
+    assert "corrected" in ep.summary
+    mem.close()
+
+
+def _explode(*a, **k):
+    raise AssertionError(
+        "correct() reached storage outside the plan machinery (M7)")
+
+
+def test_forged_unbound_and_rebound_authorisations_abort(tmp_path):
+    """S4: a 'corrected' retirement with NO authorisation, a rebound
+    replacement value, a replay against a different prior, a foreign-origin
+    mint, and a dangling authorisation all abort INSIDE the transaction —
+    nothing written, the prior stays active."""
+    mem = _mem_with(tmp_path,
+                    _edge("p1", "user", "engineer", A.USER),
+                    _edge("p2", "user", "welder", A.USER,
+                          relation="hobby"))
+    store = mem.store
+
+    def fresh_plan():
+        prior = [e for e in store.edges(U) if e.id == "p1"][0]
+        repl = _edge("r-new", "user", "staff engineer", A.USER)
+        return plan_correction(store, prior, repl, op_id=f"op-{repl.id}")[0]
+
+    good = _auth_for(store, "p1", "staff engineer")
+    bad_cells = [
+        (None, "user"),                                          # forged: none
+        (_auth_for(store, "p1", "principal engineer"), "user"),  # rebound value
+        (_auth_for(store, "p2", "staff engineer"), "user"),      # other prior
+        (CorrectionAuthorisation(
+            origin="not-this-store", prior_edge_id="p1",
+            replacement_digest=correction_digest("staff engineer"),
+            kind="corrected", principal="user"), "user"),        # foreign mint
+        (CorrectionAuthorisation(
+            origin=store.local_origin(), prior_edge_id="p1",
+            replacement_digest=correction_digest("staff engineer"),
+            kind="absorbed_duplicate", principal="user"), "user"),  # wrong kind
+        (good, "operator"),                       # cross-principal replay
+    ]
+    for auth, principal in bad_cells:
+        plan = fresh_plan()
+        with pytest.raises(CorrectionAuthorisationError):
+            store.apply_supersession_plan(plan, authorisation=auth,
+                                          acting_principal=principal)
+        prior = [e for e in store.edges(U, active_only=False)
+                 if e.id == "p1"][0]
+        assert prior.active, "an aborted correction must write NOTHING"
+        assert not any(e.id.startswith("r-new")
+                       for e in store.edges(U, active_only=False))
+    # the dangling cell: an authorisation with no corrected retirement to bind
+    plan = fresh_plan()
+    plan.prior_invalidations = []
+    with pytest.raises(CorrectionAuthorisationError):
+        store.apply_supersession_plan(plan, authorisation=good,
+                                      acting_principal="user")
+    # the one-auth-many-retirements cell: an authorisation binds exactly ONE
+    plan = fresh_plan()
+    plan.prior_invalidations = plan.prior_invalidations + [
+        ("p2", plan.incoming_edge.valid_from, "corrected")]
+    with pytest.raises(CorrectionAuthorisationError):
+        store.apply_supersession_plan(plan, authorisation=good,
+                                      acting_principal="user")
+    assert [e.id for e in store.edges(U) if e.id == "p2"] == ["p2"]
+    # and the legitimate binding still commits — the gates bite attacks only
+    r = store.apply_supersession_plan(fresh_plan(), authorisation=good,
+                                      acting_principal="user")
+    assert r.invalidated == 1
+    mem.close()
+
+
+def test_correcting_an_other_subject_prior_refuses(tmp_path):
+    """S4 × §4b: corrections are subject to the SAME entitlement rule as
+    extractor supersession — a bare self-assertion cannot retire an
+    OTHER-subject prior. The refusal row is durable, the raise is loud,
+    and nothing else is written."""
+    mem = _mem_with(tmp_path,
+                    _edge("p9", "user's sister", "nurse", A.SYSTEM,
+                          derived=A.THIRD_PARTY))
+    with pytest.raises(CorrectionRefused) as exc:
+        mem.correct(U, "p9", "surgeon")
+    assert exc.value.prior_edge_id == "p9"
+    prior = [e for e in mem.store.edges(U, active_only=False)
+             if e.id == "p9"][0]
+    assert prior.active, "the refused correction must not retire the prior"
+    refusals = mem.store.refusals(U)
+    assert [r.prior_edge_id for r in refusals] == ["p9"]
+    assert all(e.id == "p9" for e in mem.store.edges(U, active_only=False)), (
+        "the refused replacement must not be inserted")
+    mem.close()
+
+
+def test_inactive_prior_still_refused_loudly(tmp_path):
+    """correct() on an already-retired edge keeps its named ValueError —
+    the escape path gets the same loud treatment after the rewrite."""
+    from datetime import datetime as _dt, timezone as _tz
+    mem = _mem_with(tmp_path, _edge("p1", "user", "engineer", A.USER))
+    mem.store.invalidate_edge("p1", _dt(2026, 5, 2, tzinfo=_tz.utc),
+                              "superseded")
+    with pytest.raises(ValueError, match="not active"):
+        mem.correct(U, "p1", "x")
+    mem.close()
+
+
+def test_correction_plan_refuses_a_prior_the_cas_cannot_pin(tmp_path):
+    """The diff-scan race: a prior retired between the caller's read and
+    planning must refuse AT PLANNING — otherwise the plan would commit a
+    double-retirement (the CAS token, computed after the retirement, would
+    not protect it) and overwrite the recorded reason."""
+    from datetime import datetime as _dt, timezone as _tz
+    mem = _mem_with(tmp_path, _edge("p1", "user", "engineer", A.USER))
+    store = mem.store
+    prior = [e for e in store.edges(U) if e.id == "p1"][0]
+    store.invalidate_edge("p1", _dt(2026, 5, 2, tzinfo=_tz.utc), "superseded")
+    repl = _edge("r-x", "user", "staff engineer", A.USER)
+    with pytest.raises(ValueError, match="cannot retire"):
+        plan_correction(store, prior, repl, op_id="op-race")
+    stale = [e for e in store.edges(U, active_only=False) if e.id == "p1"][0]
+    assert stale.invalidation_reason == "superseded", (
+        "the recorded reason must survive the refused race")
+    mem.close()

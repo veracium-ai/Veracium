@@ -259,6 +259,81 @@ def _absorption_scope_gate(store, edge: Edge):
     return same_scope
 
 
+class CorrectionRefused(Exception):
+    """specs/0011 §4e/§4b: the requested correction may not retire its prior —
+    the durable refusal row IS recorded (like every refused supersession)
+    before this is raised, and nothing else is written. Carries `prior_edge_id`
+    and `rule_version` so a host can attribute the refusal."""
+
+    def __init__(self, prior_edge_id: str, rule_version: str):
+        self.prior_edge_id = prior_edge_id
+        self.rule_version = rule_version
+        super().__init__(
+            f"correction of edge {prior_edge_id!r} refused under "
+            f"{rule_version}: a bare self-assertion cannot retire this prior "
+            f"(specs/0011 §4b applies to corrections exactly as to "
+            f"extractor-driven supersession)")
+
+
+def plan_correction(store, prior: Edge, replacement: Edge,
+                    op_id: str) -> tuple[SupersessionPlan, bool]:
+    """specs/0011 §4e (E5): the plan for one DIRECTED correction — the named
+    prior retires as 'corrected' and the replacement is inserted, atomically,
+    through exactly the machinery extractor supersession uses. Pure: reads and
+    returns; the Store applies (and verifies the CorrectionAuthorisation)
+    in-transaction. Returns (plan, refused).
+
+    §4b applies to corrections exactly as to extractor supersession: the
+    subject cell and the authority ladder are checked against the NAMED prior,
+    and a refused correction produces a refusal-only plan (nothing retired,
+    nothing inserted, the durable refusal row recorded)."""
+    if (replacement.subject != prior.subject
+            or replacement.relation != prior.relation
+            or replacement.user_id != prior.user_id):
+        raise ValueError(
+            "a correction replaces a value IN PLACE: the replacement must "
+            "share the prior's (user, subject, relation)")
+    scope = store.edges(prior.user_id, subject=prior.subject,
+                        relation=prior.relation, active_only=True,
+                        include_quarantined=True)
+    if not any(p.id == prior.id for p in scope):
+        # the prior was retired between the caller's read and this plan: a
+        # corrected retirement may only target an edge the CAS fingerprint
+        # PINS AS ACTIVE — otherwise the commit would double-retire it and
+        # overwrite its recorded reason (the diff-scan race, closed here)
+        raise ValueError(
+            f"edge {prior.id!r} is not active in its (user, subject, "
+            f"relation) scope — a correction cannot retire a prior the CAS "
+            f"token does not pin (specs/0011 §4e)")
+    expected = authority.scope_fingerprint(scope)
+    draft = SupersessionRefusalDraft(
+        prior_edge_id=prior.id, incoming_edge_id=replacement.id,
+        relation=prior.relation,
+        prior_effective=authority.edge_effective(prior),
+        incoming_effective=authority.edge_effective(replacement))
+    refused = (
+        (subject_class(prior.user_id, prior.subject) == "OTHER"
+         and authority.self_assertion(
+             replacement.provenance.author_of_evidence,
+             replacement.provenance.derived_from))
+        or not authority.permitted(
+            prior.provenance.author_of_evidence,
+            prior.provenance.derived_from,
+            replacement.provenance.author_of_evidence,
+            replacement.provenance.derived_from))
+    if refused:
+        return SupersessionPlan(
+            incoming_edge=replacement, insert_incoming=False,
+            operation_id=op_id, expected_state=expected,
+            refusals=[draft]), True
+    replacement.supersedes = prior.id
+    return SupersessionPlan(
+        incoming_edge=replacement, insert_incoming=True,
+        operation_id=op_id, expected_state=expected,
+        prior_invalidations=[(prior.id, replacement.valid_from,
+                              "corrected")]), False
+
+
 def _build_supersession_plan(store, edge: Edge, relations: dict[str, Relation],
                              op_id: str) -> tuple[SupersessionPlan, bool]:
     """Compute the plan for one incoming edge from a store read (specs/0003 §4f). Pure —
