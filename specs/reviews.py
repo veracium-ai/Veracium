@@ -2161,8 +2161,18 @@ REVIEWS = [
          "byte-identity-tested; the Version row and the round-6 SENT "
          "row carry visible corrections. EVIDENCE-R6-2 closed: the "
          "doc needle uses the renderer's guarded derivation, zero "
-         "cell standing. Sealed AFTER this row, sha pinned on return",
-         findings=0),
+         "cell standing. Research's round-6 pre-seal pass CLEARED the "
+         "seal (census verified; digest derivation order-invariant; "
+         "expensive-escape-hatch endorsed) with I8-1 (prose restating "
+         "mechanisms — the docstring's Schema-3/Wilson drift) and both "
+         "protocol riders (non-optional population + label "
+         "co-verification) folded pre-seal. The round-6 external "
+         "verdict was RE-DELIVERED after this fold and verified a "
+         "byte-similar duplicate against the recorded round-6 row — "
+         "nothing re-folded. Sealed as 0026-v7-20260830T0120Z.tar.gz, "
+         "sha256 "
+         "b62675e203a545a476ed64d107ea766b3855d1c818b9d038df4e3d22"
+         "b151b32d, commit b483531", findings=0),
 
     dict(spec="0026", round=8, kind="internal", date="2026-08-30",
          raised=["0026-I8-1"],
