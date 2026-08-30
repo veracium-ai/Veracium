@@ -2084,8 +2084,16 @@ REVIEWS = [
          "EVIDENCE-R5-2 closed: the doc's coverage "
          "numerator/denominator/percentage all derived. EVIDENCE-R5-3 "
          "closed: undecodable bytes are structured refusals in both "
-         "files. Sealed AFTER this row, sha pinned on return",
-         findings=0),
+         "files. Research's round-5 pre-seal pass CLEARED the seal "
+         "(census verified; three round-4 closures confirmed holding "
+         "externally) with two forward hardenings folded same-day: the "
+         "nonce-free projection seed (schema 5 — their pass found the "
+         "archive-sidecar form rested on an unguaranteed "
+         "non-precomputable first seal) and the §2c head-distinctness "
+         "guard with its collision cell. Sealed as "
+         "0026-v6-20260829T2345Z.tar.gz, sha256 "
+         "e89958b1ff519139cb67b8f1d2bb95c3a6a12ecc9ab76ff27bb0112b"
+         "0ac85a07, commit 0ce5c0e", findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
