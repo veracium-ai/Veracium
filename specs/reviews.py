@@ -2588,6 +2588,28 @@ REVIEWS = [
          "recorded as a forward renderer item. Sealed AFTER this row, "
          "sha pinned on return", findings=0),
 
+    dict(spec="0026", round=14, kind="internal", date="2026-08-30",
+         verdict="PASS — 'I WOULD SIGN ACCEPT' (research, round-11 "
+         "pre-seal pass at 403d988; suite 2045 under both "
+         "interpreters). R11-1 met exactly; NO landmines in the "
+         "dormant behavioral cells (every assertion verified against "
+         "§3); the field-name activation gate (agreement in "
+         "Edge.model_fields, the §3d contract field) ruled "
+         "load-bearing and correct — token-choice is not an evasion "
+         "surface, the token-grep a redundant tripwire in the safe "
+         "direction; the restatement class ruled MECHANICALLY CLOSED "
+         "by the I13 guard; the round-10 §6 finding fully closed. Two "
+         "minor graduation-time dormant-cell refinements, folded "
+         "same-day: (a) V6's counters exercised on the MARKERLESS "
+         "path too (absent-key-is-not-0 at zero); (b) V3's second "
+         "clause tested — a quarantined claim carrying a marker stays "
+         "QUARANTINED (the floor never raises; restrict-only means "
+         "down or nowhere). Their close: eleven rounds took the "
+         "findings from the whole sampling architecture to a prose "
+         "bridge to an honesty gap in the verification table — each "
+         "smaller, each leaving the spec more mechanically honest",
+         findings=0),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

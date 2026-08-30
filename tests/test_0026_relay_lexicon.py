@@ -1682,6 +1682,22 @@ def test_laundered_relay_floors_use_only(tmp_path):
         "a marked relay on a concrete relation floors at USE_ONLY (B07)")
     assert e.agreement is not None and e.agreement.direction == "inbound"
     mem.close()
+    # research's graduation refinement (b): the SECOND clause — the
+    # floor NEVER raises. A quarantined claim carrying a marker stays
+    # QUARANTINED (restrict-only: the floor moves disclosure down or
+    # nowhere, never up to USE_ONLY)
+    from veracium.schema import QUARANTINE_RELATION
+    memq, ECq = _mem_for_v(tmp_path / "q", [
+        {"subject": "the vet", "relation": QUARANTINE_RELATION,
+         "object": "the dog needs rest",
+         "note": "my doctor said the dog needs rest"}])
+    memq.remember("u", "quarantined relay", context=ECq.direct())
+    (eq,) = memq.store.edges("u", active_only=False,
+                             include_quarantined=True)
+    assert eq.provenance.disclosure is Disclosure.QUARANTINED, (
+        "the floor must never RAISE a quarantined claim to USE_ONLY — "
+        "restrict-only means down or nowhere (V3 second clause)")
+    memq.close()
 
 
 def test_demotion_direction_records_only(tmp_path):
@@ -1725,6 +1741,16 @@ def test_agreement_carriers_complete(tmp_path):
     rec = e.agreement.model_dump(mode="json")
     assert IM.agreement_shape_problems(rec) == [], (
         "the stored record must satisfy the executable shape")
+    # research's graduation refinement (a): the MARKERLESS path carries
+    # both counters too, at zero — an absent key is not a zero there
+    # either (a partial implementation could pass the floored path
+    # alone)
+    mem2, EC2 = _mem_for_v(str(mem.config.db_path) + ".2", [
+        {"subject": "user", "relation": "works_as", "object": "welder"}])
+    r2 = mem2.remember("u", "markerless", context=EC2.direct())
+    assert r2.get("agreement_floored") == 0
+    assert r2.get("agreement_recorded") == 0
+    mem2.close()
     mem.close()
 
 
