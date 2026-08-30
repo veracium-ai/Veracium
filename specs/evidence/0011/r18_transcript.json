@@ -1,0 +1,27 @@
+{
+ "artifact": "specs/evidence/0011/mutant_registry.py",
+ "artifact_sha256": "5e8419a06ca5fbd8066912b427a93705e5a4cd43a74feb654987b659a8a96616",
+ "mutant": {
+  "mutated_sha256": "92c0a0b5dccb0e588542e27f80194e2098eb64fff78461dac99f6eb663b5aaa8",
+  "new": "    except BaseException as _e:\n        shutil.rmtree(snap, ignore_errors=True)\n        raise type(_e)(*_e.args)",
+  "old": "    except BaseException:\n        shutil.rmtree(snap, ignore_errors=True)\n        raise"
+ },
+ "node": "tests/test_0011_mutant_registry.py::test_copy_exception_cleanup_is_regression_bound",
+ "probe_sha256": "ba52e59e6ce1ce6c51339c1a6a1a0e003d975f38f0be7023f694cbeea61bcef0",
+ "runs": {
+  "mutated": {
+   "exit": 1,
+   "failed": 1,
+   "identity_probe_line": "E AssertionError: copytree: the caught exception is not the SAME OBJECT the copy raised \u2014 something replaced it in flight (PROCESS-R18-1)",
+   "passed": 0,
+   "skipped": 0
+  },
+  "pristine": {
+   "exit": 0,
+   "failed": 0,
+   "passed": 1,
+   "skipped": 0
+  }
+ },
+ "schema": 1
+}

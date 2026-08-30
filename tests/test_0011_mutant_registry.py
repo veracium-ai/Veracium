@@ -1052,3 +1052,134 @@ def test_the_exception_replacement_mutant_is_caught(tmp_path, monkeypatch):
     # cleanup stayed intact in this mutant: nothing leaked
     assert len(calls["mkdtemp"]) == 1
     assert not pathlib.Path(calls["mkdtemp"][0]).exists()
+
+
+def test_r18_transcript_reproduces_runner_observed(tmp_path):
+    """The round-19 optional ask, discharged: the digest-bound focused
+    R18 transcript (specs/evidence/0011/r18_transcript.json) must
+    REPRODUCE — grammar-first statics, digest currency against this
+    tree, then both runs re-executed in a private snapshot: the pristine
+    node passes, the replacement mutant is killed AT the identity probe,
+    and the recomputed record equals the shipped bytes exactly. This is
+    the behavioral half; the checker's own adversarial matrix is
+    test_r18_transcript_checker_matrix."""
+    import check_r18_transcript as RT
+    problems = RT.check_problems(EVID / "r18_transcript.json", MR.ROOT)
+    assert problems == [], "\n".join(problems)
+
+
+def test_r18_transcript_checker_matrix(tmp_path):
+    """P1's matrix for check_r18_transcript.py (checklist item 9: the
+    reviewer's next mutants, written first). The checker's input grammar
+    has three layers — the two observed runs, the record's bytes, and
+    the digest binding — and each layer's cheapest lies are driven here
+    against the PURE functions the runner consumes."""
+    import copy
+    import check_r18_transcript as RT
+
+    E_LINE = ("E   AssertionError: copytree: the caught exception is "
+              "not the SAME OBJECT the copy raised — something "
+              "replaced it in flight (PROCESS-R18-1)")
+    ok_pristine = {"exit": 0, "passed": 1, "failed": 0, "skipped": 0,
+                   "stdout": "1 passed in 0.1s"}
+    ok_mutated = {"exit": 1, "passed": 0, "failed": 1, "skipped": 0,
+                  "stdout": E_LINE + "\n1 failed in 0.1s"}
+    assert RT.judge(ok_pristine, ok_mutated) == [], (
+        "the baseline verdict must accept the designed shape or every "
+        "mutant below is vacuous")
+
+    # --- layer 1: the runs. Each forged outcome must be REFUSED. ---
+    survived = dict(ok_mutated, exit=0, passed=1, failed=0,
+                    stdout="1 passed in 0.1s")
+    assert RT.judge(ok_pristine, survived), "a SURVIVING mutant passed"
+    collection_error = dict(ok_mutated, exit=4, failed=0,
+                            stdout="ERROR: not found\n")
+    assert RT.judge(ok_pristine, collection_error), (
+        "a collection error passed as a kill (PROCESS-R11-1 fail-open)")
+    killed_elsewhere = dict(ok_mutated, stdout=(
+        "E   AssertionError: copytree: 1 != 2 mkdtemp calls\n"
+        "1 failed in 0.1s"))
+    assert RT.judge(ok_pristine, killed_elsewhere), (
+        "a kill at a DIFFERENT assert witnessed the identity probe")
+    # the long-traceback poison: the probe's message present only as
+    # SOURCE CONTEXT (no `E ` prefix) beside a different failing assert
+    poisoned = dict(ok_mutated, stdout=(
+        '    assert exc_info.value is sentinel, (\n'
+        '        "the caught exception is not the SAME OBJECT the copy '
+        'raised (PROCESS-R18-1)")\n'
+        "E   AssertionError: copytree: 1 != 2 mkdtemp calls\n"
+        "1 failed in 0.1s"))
+    assert RT.probe_line(poisoned["stdout"]) is None, (
+        "check_r18_transcript's probe extraction accepted the message "
+        "from traceback source context — the E-prefix discriminator is "
+        "dead")
+    assert RT.judge(ok_pristine, poisoned), (
+        "the poisoned context line witnessed the probe")
+    tag_stripped = dict(ok_mutated, stdout=(
+        "E   AssertionError: copytree: the caught exception is not the "
+        "SAME OBJECT the copy raised\n1 failed in 0.1s"))
+    assert RT.judge(ok_pristine, tag_stripped), (
+        "a probe line without its PROCESS-R18-1 tag passed")
+    assert RT.judge(ok_pristine, dict(ok_mutated, skipped=1)), (
+        "a skip rode along with the kill unrefused")
+    assert RT.judge(dict(ok_pristine, passed=0, failed=1, exit=1),
+                    ok_mutated), "a FAILING pristine run passed"
+    assert RT.judge(dict(ok_pristine, passed=2), ok_mutated), (
+        "a widened node (2 passed) slid under the pristine pin")
+
+    # --- layer 2: the record's bytes. ---
+    shipped = MR.strict_parse((EVID / "r18_transcript.json").read_text())
+    assert RT.validate_record(shipped) == []
+    dup = ('{\n "schema": false,' +
+           (EVID / "r18_transcript.json").read_text()[1:])
+    probs = RT.static_problems(dup, MR.ROOT)
+    assert probs and "strict-parse" in probs[0], (
+        "a duplicate JSON key survived parsing (EVIDENCE-R9-1)")
+    import json as _json
+    noncanon = _json.dumps(shipped, indent=2, sort_keys=True) + "\n"
+    probs = RT.static_problems(noncanon, MR.ROOT)
+    assert any("canonical" in p for p in probs), (
+        "non-canonical bytes passed the byte-equality discipline")
+    for tamper, why in (
+            (lambda r: r.__setitem__("node", "tests/x.py::test_y"),
+             "a record about a different node validated"),
+            (lambda r: r["mutant"].__setitem__("old", "x"),
+             "a record describing a DIFFERENT mutant validated"),
+            (lambda r: r["runs"]["mutated"].__setitem__("exit", True),
+             "bool passed as int (True == 1) in the mutated exit"),
+            (lambda r: r["runs"]["mutated"].__setitem__(
+                "identity_probe_line", "E AssertionError: nope"),
+             "a probe line carrying neither message nor tag validated"),
+            (lambda r: r.__setitem__("extra", 1),
+             "an extra top-level key slid past the closed set"),
+            (lambda r: r["runs"]["mutated"].__setitem__("exit", 0),
+             "a record CLAIMING the mutant survived validated")):
+        rec = copy.deepcopy(shipped)
+        tamper(rec)
+        assert RT.validate_record(rec), why
+
+    # --- layer 3: the digest binding. ---
+    stale = copy.deepcopy(shipped)
+    stale["artifact_sha256"] = "0" * 64
+    probs = RT.static_problems(MR.canonical_bytes(stale), MR.ROOT)
+    assert any("stale" in p for p in probs), (
+        "a transcript bound to bytes this tree does not ship passed")
+    stale = copy.deepcopy(shipped)
+    stale["probe_sha256"] = "0" * 64
+    assert any("stale" in p
+               for p in RT.static_problems(MR.canonical_bytes(stale),
+                                           MR.ROOT)), (
+        "a drifted PROBE digest passed — the transcript no longer "
+        "binds the test it describes")
+    wrong = copy.deepcopy(shipped)
+    wrong["mutant"]["mutated_sha256"] = "0" * 64
+    assert any("mutated_sha256" in p
+               for p in RT.static_problems(MR.canonical_bytes(wrong),
+                                           MR.ROOT))
+    # the hunk-ambiguity refusals compute() and statics share
+    art = (MR.ROOT / RT.ARTIFACT).read_text()
+    assert RT.hunk_problems(art) == []
+    assert RT.hunk_problems(art.replace(RT.HUNK_OLD, "")), (
+        "a vanished hunk target went unnamed")
+    assert RT.hunk_problems(art + "\n" + RT.HUNK_OLD), (
+        "an ambiguous (twice-occurring) hunk target went unnamed")
