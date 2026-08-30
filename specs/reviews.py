@@ -2328,8 +2328,12 @@ REVIEWS = [
          "R9-1 class refound and killed in the new reader. R8-2 "
          "closed: AGREEMENT_SHAPE is executable data with the running "
          "reference validator agreement_shape_problems (closed keys; "
-         "<=16 markers of 1-64 chars; duplicates refuse; closed "
-         "direction enum; 1-64-char lexicon under a closed pattern), "
+         "<=16 markers of 1-64 chars [R9-1 correction: the sealed "
+         "package's executable bound was 8, measured at the I10-1 "
+         "fold — this row restated the pre-measurement number; the "
+         "restatement class, corrected visibly at round 9]; duplicates "
+         "refuse; closed direction enum; 1-64-char lexicon under a "
+         "closed pattern), "
          "rendered byte-bound into §3d, every bound driven at the "
          "limit and one beyond. EVIDENCE-R8-3 closed: all bootstrap "
          "paths resolve and cross-check BEFORE any write — same-path, "
@@ -2348,6 +2352,32 @@ REVIEWS = [
          "0026-v9-20260830T1208Z.tar.gz, sha256 "
          "a1d56a4faf9e4f0da35b26cbf006c4596fe184dda93ec48335bd1214"
          "7a07bbe5, commit b38944d", findings=0),
+
+    dict(spec="0026", round=9, kind="external", date="2026-08-30",
+         raised=["0026-R9-1", "0026-PRIVACY-R9-2", "0026-EVIDENCE-R9-3"],
+         verdict="RETURN FOR NARROW AMENDMENT (package `0026-v9`, sha "
+         "a1d56a4f verified; 539 members; exact v8 parent; focused 92 "
+         "passed; full extracted suite 2021/22 exit 0; archive layout "
+         "needs no change). R9-1 BLOCKING: the AgreementRecord "
+         "carriers DISAGREE — §3d defines direction as "
+         "inbound|ambiguous|user_source while AGREEMENT_SHAPE defines "
+         "inbound|outbound|ambiguous, so the validator rejects §3c's "
+         "user_source record and accepts outbound (which should "
+         "produce NO record); markers=[] is accepted, contradicting "
+         "V2's no-markers-no-record rule; and §18 plus the round-9 "
+         "SENT row still say 16 markers beside the executable 8 (the "
+         "restatement class, in the very section describing its "
+         "closure). PRIVACY-R9-2 MODERATE: O_TRUNC applies 0600 only "
+         "on CREATE — a pre-existing 0644 worklist stays 0644 while "
+         "the program reports 0600; and the package sweep reads only "
+         "the FIRST line of *.jsonl, contradicting the rename-proof "
+         "claim. EVIDENCE-R9-3 MODERATE: the duplicate-cache "
+         "regression is NON-PROBATIVE — it passes on returncode!=0, "
+         "which the peer mismatch it introduces already guarantees; "
+         "nothing proves the row was counted unparseable. Their "
+         "suggestion: a generated cross-carrier consistency report + "
+         "exact failure-oriented checks per closed finding",
+         findings=3),
 
     dict(spec="0026", round=10, kind="internal", date="2026-08-30",
          raised=["0026-I10-1"],
@@ -2398,6 +2428,28 @@ REVIEWS = [
          "PRESENCE not STRICTNESS (object_pairs_hook=dict passed while "
          "keeping last-wins — demonstrated); only KNOWN-STRICT hooks "
          "by name count as safe now", findings=1),
+
+    dict(spec="0026", round=10, kind="external", date="2026-08-30",
+         candidate={"0026": "v13"},
+         verdict="SENT (package `0026-v10`, candidate draft v13 — the "
+         "round-9 fold; §19 maps all three findings). R9-1 closed: ONE "
+         "canonical AgreementRecord — AGREEMENT_SHAPE matches §3d's "
+         "stored enum exactly (inbound|ambiguous|user_source; "
+         "user_source IS §3c's demotion-direction record; the "
+         "lexicon-internal 'outbound' reading is stored as user_source "
+         "and refuses as a stored value; markers minimum 1 per V2 — "
+         "empty array refuses); the three named inputs are independent "
+         "standing cells; §18's and the sealed round-9 SENT row's "
+         "16-vs-8 restatements carry visible corrections and live "
+         "prose no longer restates shape numbers. PRIVACY-R9-2 closed: "
+         "explicit fchmod (pre-existing 0644 worklist ends 0600, "
+         "regression standing); the package sweep reads EVERY line of "
+         "every UTF-8-decodable file under specs/ whatever the suffix, "
+         "scope stated precisely. EVIDENCE-R9-3 closed: the "
+         "duplicate-cache regression is PROBATIVE — matching peer, "
+         "bootstrap exit 3 required, the exact '1 unparseable' count "
+         "asserted. Sealed AFTER this row, sha pinned on return",
+         findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "

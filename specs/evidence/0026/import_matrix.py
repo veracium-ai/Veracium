@@ -158,6 +158,9 @@ AGREEMENT_SHAPE = {
     "keys": ("markers", "direction", "lexicon"),   # CLOSED — unknown
                                                    # keys REFUSE
     "markers_type": "JSON array of strings",
+    "markers_min_count": 1,     # V2 (0026-R9-1): no markers means NO
+                                # record — an empty markers array is
+                                # not a legal AgreementRecord
     "markers_max_count": 8,     # MEASURED basis (research, round-8
                                 # pre-seal): max distinct markers per
                                 # record over the full cache = 2
@@ -168,7 +171,14 @@ AGREEMENT_SHAPE = {
                                 # lexicon member is 'on the advice of'
                                 # at 16 chars; 64 is x4 margin
     "markers_duplicates": "REFUSE",
-    "direction_values": ("inbound", "outbound", "ambiguous"),  # CLOSED
+    # CLOSED, and §3d's vocabulary EXACTLY (0026-R9-1: this tuple said
+    # inbound|outbound|ambiguous — the LEXICON's internal reading names
+    # — while the stored carrier's enum is §3d's: user_source is §3c's
+    # demotion-direction record, the marker-bearing record whose
+    # direction resolved to the user; the lexicon's 'outbound' reading
+    # is STORED as user_source, and 'outbound' itself is not a legal
+    # stored value)
+    "direction_values": ("inbound", "ambiguous", "user_source"),
     "lexicon_min_chars": 1,
     "lexicon_max_chars": 64,
     "lexicon_pattern": r"[0-9a-z][0-9a-z.\-]*",
@@ -196,6 +206,10 @@ def agreement_shape_problems(rec) -> list:
     if type(m) is not list:
         out.append("markers is not a JSON array")
     else:
+        if len(m) < S["markers_min_count"]:
+            out.append(f"{len(m)} markers is below the minimum "
+                       f"{S['markers_min_count']} — no markers means NO "
+                       f"record (V2; 0026-R9-1)")
         if len(m) > S["markers_max_count"]:
             out.append(f"{len(m)} markers exceed the maximum "
                        f"{S['markers_max_count']}")
@@ -236,8 +250,9 @@ def render_shape_block() -> str:
         "| shape rule | value |\n|---|---|\n"
         f"| record keys (CLOSED; unknown keys REFUSE) | "
         f"`{', '.join(S['keys'])}` |\n"
-        f"| markers collection | {S['markers_type']}, at most "
-        f"{S['markers_max_count']} entries |\n"
+        f"| markers collection | {S['markers_type']}, "
+        f"{S['markers_min_count']}–{S['markers_max_count']} entries "
+        f"(V2: no markers means no record) |\n"
         f"| marker string length | {S['marker_min_chars']}–"
         f"{S['marker_max_chars']} characters |\n"
         f"| duplicate markers | {S['markers_duplicates']} |\n"

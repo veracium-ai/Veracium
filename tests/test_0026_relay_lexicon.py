@@ -1153,10 +1153,18 @@ def test_agreement_shape_bounds_at_the_limit_and_beyond():
     assert ok(markers=["said", "said"])
     assert ok(markers=["said", 3])
     assert ok(markers="said")
-    # direction is a closed enum
+    # direction is a closed enum — §3d's STORED vocabulary exactly
+    # (0026-R9-1: user_source is legal, the lexicon-internal 'outbound'
+    # reading is not a stored value, and an empty markers array is not
+    # a record)
     for d in S["direction_values"]:
         assert ok(direction=d) == []
+    assert "user_source" in S["direction_values"]
+    assert ok(direction="outbound"), (
+        "'outbound' is the lexicon's internal reading, not a stored "
+        "direction — it must refuse")
     assert ok(direction="sideways")
+    assert ok(markers=[]), "V2: no markers means NO record"
     # lexicon version: limits and pattern
     assert ok(lexicon="x" * S["lexicon_max_chars"]) == []
     assert ok(lexicon="x" * (S["lexicon_max_chars"] + 1))
@@ -1251,54 +1259,80 @@ def test_bootstrap_paths_cannot_alias_and_worklists_stay_local(tmp_path):
     # the good path: distinct external paths, worklist mode 0600, and
     # the bootstrap state still reached with BOTH artifacts retained
     aggp, wp = tmp_path / "agg.json", tmp_path / "wl.jsonl"
+    # PRIVACY-R9-2: a PRE-EXISTING permissive worklist must end 0600 —
+    # O_TRUNC applies the mode only on create, so chmod is explicit
+    wp.write_text("stale")
+    os.chmod(wp, 0o644)
     r = run("--emit-aggregate", str(aggp), "--worklist", str(wp))
     assert r.returncode == 3, (r.stdout[-300:], r.stderr[-300:])
     assert aggp.is_file() and wp.is_file()
-    assert (wp.stat().st_mode & 0o777) == 0o600
+    assert (wp.stat().st_mode & 0o777) == 0o600, (
+        "a pre-existing 0644 worklist kept its mode (0026-PRIVACY-R9-2)")
 
 
 def test_no_full_content_worklist_ships_in_the_package():
-    """0026-PRIVACY-R8-4's package check: no file anywhere under specs/
-    carries the worklist line shape (fire+rel+note+obj) — full corpus
-    content never ships, and the refusal is a standing sweep rather
-    than a .gitignore pattern that a differently-named file evades."""
+    """0026-PRIVACY-R8-4 + R9-2's package check: no structured-text
+    file under specs/ carries the worklist line shape
+    (fire+rel+note+obj) on ANY line, WHATEVER its suffix — the round-8
+    check read only the first line of *.jsonl, so a renamed file or a
+    later-line payload evaded the 'rename-proof' claim. Scope stated
+    precisely: every UTF-8-decodable file under specs/, every line;
+    binary files (archives) skip on decode failure."""
     import json as _json
     hits = []
-    for f in (ROOT / "specs").rglob("*.jsonl"):
-        try:
-            first = f.read_text(errors="strict").splitlines()[0]
-            row = _json.loads(first)
-        except Exception:
+    for f in (ROOT / "specs").rglob("*"):
+        if not f.is_file() or f.stat().st_size > 8_000_000:
             continue
-        if (type(row) is dict
-                and {"fire", "rel", "note", "obj"} <= set(row)):
-            hits.append(str(f.relative_to(ROOT)))
+        try:
+            text = f.read_text(errors="strict")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for line in text.splitlines():
+            line = line.strip()
+            if not (line.startswith("{") and '"fire"' in line):
+                continue
+            try:
+                row = _json.loads(line)
+            except Exception:
+                continue
+            if (type(row) is dict
+                    and {"fire", "rel", "note", "obj"} <= set(row)):
+                hits.append(str(f.relative_to(ROOT)))
+                break
     assert hits == [], (
         f"full-content worklist artifact(s) inside the package: {hits}")
-
-
 def test_duplicate_key_cache_rows_count_unparseable(tmp_path):
-    """0026-I10-1's exploitable form: the cache read hashed RAW bytes
-    while plain json.loads enumerated LAST-WINS from a duplicate-key
-    row — this script and the peer's could enumerate differently while
-    the raw-sha cross-anchor matched. A duplicate-key row is MALFORMED:
-    counted unparseable, never resolved by decoder precedence."""
+    """0026-I10-1's exploitable form, made PROBATIVE at round 9
+    (0026-EVIDENCE-R9-3: the first version passed on returncode != 0,
+    which the peer mismatch it introduced already guaranteed — proving
+    nothing about the count). The peer here MATCHES the modified cache
+    exactly, so the run succeeds to its bootstrap state and the report
+    must show the duplicate-key row COUNTED unparseable — never
+    resolved last-wins."""
+    import hashlib as _hl
+    import json as _json
     import subprocess
     import sys as _sys
     FIX = ROOT / "specs" / "evidence" / "0026" / "e2e_fixture"
-    script = ROOT / "specs" / "evidence" / "0026" /         "measure_false_positives.py"
+    script = (ROOT / "specs" / "evidence" / "0026"
+              / "measure_false_positives.py")
     dup = tmp_path / "dup_cache.jsonl"
-    base = (FIX / "fixture_cache.jsonl").read_text()
-    dup.write_text(base + '{"value":"{}","value":"{}"}\n')
+    raw = ((FIX / "fixture_cache.jsonl").read_text()
+           + '{"value":"{}","value":"{}"}\n')
+    dup.write_text(raw)
+    peer = {"manifest": {
+        "entries": len(raw.splitlines()),
+        "sha256": _hl.sha256(raw.encode()).hexdigest(),
+        "unparseable": 1}}
+    pp = tmp_path / "peer.json"
+    pp.write_text(_json.dumps(peer))
     r = subprocess.run(
         [_sys.executable, str(script), "--cache", str(dup),
-         "--peer-anchor", str(FIX / "fixture_peer.json")],
+         "--peer-anchor", str(pp)],
         capture_output=True, text=True, cwd=ROOT)
-    # the peer anchor no longer matches (entries+sha moved) — the run
-    # refuses on the anchor, but the REPORT already counted the row as
-    # unparseable rather than silently enumerating last-wins
-    assert "1 unparseable" in r.stdout or "unparseable" in r.stderr \
-        or r.returncode != 0
+    assert r.returncode == 3, (r.stdout[-300:], r.stderr[-300:])
+    assert "1 unparseable" in r.stdout, (
+        "the duplicate-key row was not COUNTED unparseable", r.stdout)
 
 
 def test_no_plain_json_load_at_evidence_boundaries():

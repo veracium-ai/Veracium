@@ -301,6 +301,10 @@ def main() -> int:
         import os as _os
         fd = _os.open(str(paths["--worklist"]),
                       _os.O_WRONLY | _os.O_CREAT | _os.O_TRUNC, 0o600)
+        # 0026-PRIVACY-R9-2: the open() mode applies only on CREATE — a
+        # pre-existing permissive file keeps its mode, so set it
+        # explicitly before any content lands
+        _os.fchmod(fd, 0o600)
         with _os.fdopen(fd, "w") as fh:
             for rel, note, obj, hits, digest in sample_pool:
                 fh.write(json.dumps({"fire": digest, "rel": rel,

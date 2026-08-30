@@ -2822,4 +2822,43 @@ CLOSURES = [
      "(object_pairs_hook=dict counts as plain)",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_no_plain_json_load_at_evidence_boundaries -q -p no:randomly"),
+    ("0026", "external", 9, "0026-R9-1",
+     "the AgreementRecord carriers DISAGREED in the machinery built to "
+     "prevent it: §3d's stored direction enum is "
+     "inbound|ambiguous|user_source while AGREEMENT_SHAPE said "
+     "inbound|outbound|ambiguous (the lexicon's internal reading "
+     "names); markers=[] was accepted against V2's no-markers-no-record "
+     "rule; and §18 plus the round-9 SENT row restated 16 markers "
+     "beside the executable 8",
+     "ONE canonical enum: the shape matches §3d exactly (user_source "
+     "legal — it IS §3c's demotion-direction record; 'outbound' "
+     "refuses as a stored value with the lexicon-mapping stated; "
+     "markers minimum 1); the three named inputs are independent "
+     "standing cells; both restatements carry visible corrections and "
+     "live prose no longer carries the numbers",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_agreement_shape_bounds_at_the_limit_and_beyond "
+     "-q -p no:randomly"),
+    ("0026", "external", 9, "0026-PRIVACY-R9-2",
+     "the local-only closure covered only FRESH files: O_TRUNC applies "
+     "0600 only on create, so a pre-existing 0644 worklist kept 0644 "
+     "while the program reported 0600; and the package sweep read only "
+     "the first line of *.jsonl, contradicting the rename-proof claim",
+     "fchmod is explicit before any content lands (pre-existing-file "
+     "regression standing); the sweep reads EVERY line of every "
+     "UTF-8-decodable file under specs/ whatever the suffix, with its "
+     "scope stated precisely (binary archives skip on decode failure)",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_bootstrap_paths_cannot_alias_and_worklists_stay_local "
+     "-q -p no:randomly"),
+    ("0026", "external", 9, "0026-EVIDENCE-R9-3",
+     "the duplicate-cache regression was NON-PROBATIVE: it passed on "
+     "returncode != 0, which the peer mismatch it introduced already "
+     "guaranteed — nothing proved the row was counted unparseable",
+     "the regression builds a MATCHING peer for the modified cache, "
+     "requires the bootstrap state (exit 3), and asserts the exact "
+     "'1 unparseable' count — proving the row was COUNTED, not that "
+     "something failed",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_duplicate_key_cache_rows_count_unparseable -q -p no:randomly"),
 ]
