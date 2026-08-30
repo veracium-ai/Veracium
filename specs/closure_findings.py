@@ -2817,7 +2817,9 @@ CLOSURES = [
      "loads`; safety judged per-call by the object_pairs_hook keyword, "
      "not per-line) — the AST recount immediately corrected one legacy "
      "pin the regex had undercounted, proving the rebuild on its first "
-     "run; 0026's own pin is 0",
+     "run; 0026's own pin is 0; the co-verify's tenth-face hardening "
+     "taken same-day — only KNOWN-STRICT hooks by name count as safe "
+     "(object_pairs_hook=dict counts as plain)",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_no_plain_json_load_at_evidence_boundaries -q -p no:randomly"),
 ]

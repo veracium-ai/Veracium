@@ -1310,8 +1310,11 @@ def test_no_plain_json_load_at_evidence_boundaries():
     (a regex miscount: the impl line was skipped, the docstrings never
     matched). The gate is AST-BASED and EXACT-MATCH now: calls are
     resolved through import aliases (json.loads, j.loads, bare loads
-    from `from json import loads`), a call is safe only if it passes
-    object_pairs_hook, and every file's plain-call count must EQUAL its
+    from `from json import loads`), a call is safe only if its
+    object_pairs_hook is a KNOWN-STRICT callable by name (hook PRESENCE
+    was the tenth face: object_pairs_hook=dict keeps the last duplicate
+    and passed the gate while staying vulnerable — research demonstrated
+    it), and every file's plain-call count must EQUAL its
     allowlisted count — headroom is impossible, and a stale allowlist
     trips on itself in either direction."""
     import ast
@@ -1338,8 +1341,19 @@ def test_no_plain_json_load_at_evidence_boundaries():
                     and f.value.id in mods
                     and f.attr in ("load", "loads"))
                    or (isinstance(f, ast.Name) and f.id in fns))
-            if hit and not any(kw.arg == "object_pairs_hook"
-                               for kw in node.keywords):
+            if not hit:
+                continue
+            # STRICT hooks only, by name: the duplicate-refusing
+            # callables the evidence tree actually defines. A call with
+            # any OTHER hook (object_pairs_hook=dict keeps last-wins)
+            # counts as plain — presence is a proxy, strictness is the
+            # guarantee (research's tenth-face demonstration).
+            STRICT = ("_strict_pairs", "_no_dup_pairs")
+            strict = any(kw.arg == "object_pairs_hook"
+                         and isinstance(kw.value, ast.Name)
+                         and kw.value.id in STRICT
+                         for kw in node.keywords)
+            if not strict:
                 n += 1
         return n
 

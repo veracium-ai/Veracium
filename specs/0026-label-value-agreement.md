@@ -1217,5 +1217,11 @@ calls through import aliases (including bare `from json import
 loads`) and judging safety per-call by the `object_pairs_hook`
 keyword rather than per-line. The AST recount immediately corrected
 one legacy pin the regex had undercounted — the rebuild proving
-itself on first run. 0026's own pin is 0.
+itself on first run. 0026's own pin is 0. Research's co-verify PASSED
+and named one optional tenth-face hardening, taken same-day: the
+safety predicate judged hook PRESENCE, not STRICTNESS —
+`object_pairs_hook=dict` keeps the last duplicate and passed the gate
+while staying vulnerable (demonstrated). The gate now accepts only
+KNOWN-STRICT hooks by name (`_strict_pairs`, 0011's
+`_no_dup_pairs`); any other hook counts as plain.
 

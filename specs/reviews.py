@@ -2382,7 +2382,14 @@ REVIEWS = [
          "the no-headroom discipline the spec applies everywhere "
          "else); and the regex-to-AST hardening (import aliases, "
          "bare `from json import loads`, per-call hook detection "
-         "instead of line-based skips)", findings=1),
+         "instead of line-based skips). CO-VERIFY of the fold: PASS, "
+         "seal cleared — exact-match confirmed tripping both "
+         "directions, aliases resolved, the ledger_plan_harness "
+         "self-correction confirmed real; one optional tenth-face "
+         "hardening named and taken same-day: the gate judged hook "
+         "PRESENCE not STRICTNESS (object_pairs_hook=dict passed while "
+         "keeping last-wins — demonstrated); only KNOWN-STRICT hooks "
+         "by name count as safe now", findings=1),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
