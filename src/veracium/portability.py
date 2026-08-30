@@ -48,7 +48,14 @@ from .store.base import DESTINATION_CHANGED, NON_QUIESCENT
 # field bumps the format 4→5 per accepted 0010's refuse-don't-drop rule — an
 # older importer REFUSES a v5 export rather than silently dropping the field.
 # specs/0019: v6 added the `ungrounded` flag (same refuse-don't-drop rule).
-FORMAT_VERSION = 9  # specs/0001 (candidate): the ASSISTANT era —  # specs/0025 §2: the Edge.original_relation era — the
+FORMAT_VERSION = 10  # specs/0026 §3d: the Edge.agreement era. The bump is
+                     # CONDITIONAL at write: an export from a store holding
+                     # ANY agreement-bearing record stamps 10 so an old
+                     # reader REFUSES rather than silently dropping the
+                     # field; a marker-free export stamps the pre-agreement
+                     # 9 and stays byte-compatible (V7's frozen oracle
+                     # depends on exactly this).
+_PRE_AGREEMENT_VERSION = 9  # specs/0001 (candidate): the ASSISTANT era —  # specs/0025 §2: the Edge.original_relation era — the
                     # field appears in exports only when non-None (the
                     # None-omission rule keeps unaffected edge payloads
                     # byte-identical); a v7 export imports absent→None; OLD
@@ -129,7 +136,11 @@ def export_memory(store, user_id: str, path) -> dict:
 
     path = Path(path)
     with path.open("w") as f:
-        f.write(json.dumps({"kind": "veracium-export", "version": FORMAT_VERSION,
+        # specs/0026 §3d: the conditional stamp (see FORMAT_VERSION)
+        _version = (FORMAT_VERSION
+                    if any(e.agreement is not None for e in edges)
+                    else _PRE_AGREEMENT_VERSION)
+        f.write(json.dumps({"kind": "veracium-export", "version": _version,
                             "user_id": user_id,
                             "exported_at": datetime.now(timezone.utc).isoformat()})
                 + "\n")
@@ -387,6 +398,35 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
     # the records the cap CHANGED, over the parsed file, pre-skip: a pure
     # function of (file, flags), never of destination state (N1/P11).
     # restore=True skips exactly this block (trust-field-faithful, R1-3).
+    # specs/0026 §3d — THE AGREEMENT MODE-SPLIT, per the accepted ONE
+    # decision table (import_matrix.MATRIX, V6a). I10 first: a field
+    # newer than the declared format is STRIPPED, never trusted. Then:
+    # restore=True validates every present record against the CLOSED
+    # SHAPE and RAISES on malformed BEFORE any destination write
+    # (grammar membership is VERSION-SCOPED — a well-typed record under
+    # a FOREIGN lexicon version restores verbatim, its markers opaque;
+    # the R1-4 ruling: garbage declares something untrue). Default mode
+    # never consumes the incoming value at all: it is compared for the
+    # diagnostic counter, then discarded for the recomputation (below,
+    # after the cap fixes final disclosure).
+    from .schema import AgreementRecord as _AgreementRecord
+    agreement_mismatches = 0
+    for rec in edge_recs:
+        if src_version < FORMAT_VERSION:
+            rec.pop("agreement", None)
+    if restore:
+        for rec in edge_recs:
+            agr = rec.get("agreement")
+            if agr is None:
+                continue
+            try:
+                _AgreementRecord.model_validate(agr)
+            except Exception as exc:
+                raise ValueError(
+                    f"{path}: malformed AgreementRecord on edge "
+                    f"{rec.get('id')!r} — verbatim restore into a typed "
+                    f"carrier is impossible for garbage; RAISES, nothing "
+                    f"written (specs/0026 §3d V6a): {exc}") from exc
     capped_count = 0
     if not restore:
         for rec in edge_recs + ep_recs:
@@ -404,6 +444,30 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
             if capped != model:
                 capped_count += 1
             rec["provenance"] = json.loads(capped.model_dump_json())
+        # specs/0026 §3d — the default-mode RECOMPUTATION half: the
+        # incoming agreement value (any state — absent, present, forged,
+        # malformed, foreign-version) is compared for the diagnostic
+        # counter and DISCARDED; the ONE derivation site recomputes
+        # under the CURRENT lexicon from the record's own note/object
+        # and its post-cap disclosure, so a forged record cannot enter
+        # Q5's corpus and a stripped one cannot launder a relay past
+        # the floor (the cap above already holds disclosure at
+        # USE_ONLY/QUARANTINED, so the MENTIONABLE->USE_ONLY floor has
+        # nothing left to lower here).
+        from . import agreement as _agreement
+        for rec in edge_recs:
+            incoming = rec.pop("agreement", None)
+            derived = _agreement.derive_record(
+                str(rec.get("note", "") or ""),
+                str(rec.get("object", "") or ""),
+                Disclosure(rec.get("provenance", {}).get(
+                    "disclosure", "use_only")))
+            derived_dict = (json.loads(derived.model_dump_json())
+                            if derived is not None else None)
+            if derived_dict is not None:
+                rec["agreement"] = derived_dict
+            if incoming != derived_dict:
+                agreement_mismatches += 1
 
     # (2b) specs/0006 — source-identity ingress gates, BEFORE any record enters the store.
     #  - I10: a field NEWER than the declared FORMAT_VERSION is STRIPPED, never trusted — a
@@ -634,7 +698,9 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
                                         incoming_chains, contrib_rows,
                                         capped_path=not restore)
         if outcome is not DESTINATION_CHANGED:
-            return {**outcome, "capped": capped_count, "user_id": target_uid}
+            return {**outcome, "capped": capped_count,
+                    "agreement_mismatches": agreement_mismatches,
+                    "user_id": target_uid}
     raise ValueError(f"{path}: import kept losing a race against concurrent writes "
                      f"after {_IMPORT_RETRIES} attempts — refused (specs/0009 §4c)")
 

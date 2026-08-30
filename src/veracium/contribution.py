@@ -163,7 +163,12 @@ EXACT_EQUAL_EDGE_FIELDS = ("id", "user_id", "subject", "relation", "object",
                            # typed re-disposition carrier — exact-equal, and
                            # OMITTED from every dump when None, so the
                            # comparison below reads both sides with .get()
-                           "original_relation")
+                           "original_relation",
+                           # specs/0026 §3d: derived once at ingest BEFORE
+                           # submission, never touched by the planner —
+                           # exact-equal, None-omitted like
+                           # original_relation
+                           "agreement")
 # specs/0016 D2 (the 0014 partition amendment): `source_type` is DELETED from
 # Provenance, so the partition loses it — the totality test forces the
 # constant and the model to move together. The digest collapse is the defined

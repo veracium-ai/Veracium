@@ -254,7 +254,12 @@ def test_downgrade_export_fails_cleanly(tmp_path, monkeypatch):
     record round-trips at 9, and an OLDER importer (head 8) refuses with
     our message, never a pydantic traceback."""
     import veracium.portability as port
-    assert port.FORMAT_VERSION == 9
+    # the 0001 era stamped 9; 0026 moved the reader to 10 with a
+    # CONDITIONAL write stamp — this assistant-record store is
+    # marker-free, so its export still stamps the pre-agreement 9 and
+    # every assertion below holds unchanged
+    assert port.FORMAT_VERSION == 10
+    assert port._PRE_AGREEMENT_VERSION == 9
     s = SqliteStore(str(tmp_path / "a.db"))
     e = _assistant_edge("model claim")
     s.add_edge(e)

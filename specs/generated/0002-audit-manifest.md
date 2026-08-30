@@ -28,8 +28,8 @@
 | `src/veracium/cli.py:254` | `_forget()` | `forget_user` | `269b73112fab` | `clean` | write-time | **all** | act | clean — same verb through the CLI | `test_forget_cli_requires_confirmation` |
 | `src/veracium/compile.py:251` | `compile_wiki()` | `set_wiki` | `888fd4a4d703` | `clean` | maintain-time | none directly — **caches a trust decision** (carries the compiler-policy digest envelope, `0003` §4c-ii; the trust-reducing-invalidation drop shipped with the 0004 W-series, 0.13.0) | none | ✅ the cached wiki no longer outlives a revoked trust decision: a trust-reducing invalidation drops it (WIKI_RETAINING_REASONS names the benign keepers) — [M8-wiki] resolved | `test_dispute_drops_the_wiki` + `test_third_party_supersession_drops_the_wiki` + `test_decay_does_not_drop_the_wiki` (the W1–W4 family) |
 | `src/veracium/graph.py:188` | `apply_supersession()` | `apply_supersession_plan` | `e1ecd66351bd` | `clean` | write-time | the WHOLE supersession outcome — `active` (guarded retire / absorb), reinforcement persist-only (accepted `0012` Design 1: the incoming persists untouched, the prior is not written), `valid_from=min` on the incoming edge, the incoming insert, and the content-free refusal inventory; `needs_confirmation` never cleared here | observation | ✅ **`0003` (accepted 2026-08-08, implemented) — the authority guard.** A differing value retires the prior ONLY when incoming effective authority >= the prior's; otherwise the retirement is REFUSED (both edges kept, a durable content-free refusal recorded). One atomic CAS-linearized plan on a complete `expected_state`; `valid_from=min` operates on the unpersisted incoming edge (construction, not mutation of a stored row). Closes the unfiltered functional-supersession loop (0003 I1–I5). `correct()` is a separate `supersedes=` writer, out of 0003 scope (0011 E5). | `test_supersession_authority_matrix` · `test_refused_supersession_keeps_both` · `test_user_authored_ingest_can_supersede_third_party` · `test_a_refused_supersession_is_counted_and_logged` |
-| `src/veracium/ingest.py:251` | `ingest_event()` | `add_episode` | `836c8cca9da2` | `clean` | write-time | episode provenance (disclosure set at birth) | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
-| `src/veracium/ingest.py:274` | `ingest_event()` | `add_episode` | `79166908890e` | `clean` | write-time | episode provenance (unparseable placeholder; disclosure set at birth) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
+| `src/veracium/ingest.py:252` | `ingest_event()` | `add_episode` | `836c8cca9da2` | `clean` | write-time | episode provenance (disclosure set at birth) | observation | clean — the origin of trust | `test_third_party_text_never_moves_into_the_grounded_block` |
+| `src/veracium/ingest.py:276` | `ingest_event()` | `add_episode` | `79166908890e` | `clean` | write-time | episode provenance (unparseable placeholder; disclosure set at birth) | observation | clean — never retains raw event text | `test_unparseable_extraction_degrades_gracefully` |
 | `src/veracium/lifecycle.py:53` | `expire()` | `invalidate_edge` | `52f316b93ba6` | `clean` | maintain-time | `active`, reason `lapsed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
 | `src/veracium/lifecycle.py:57` | `expire()` | `invalidate_edge` | `b832f3d50c54` | `clean` | maintain-time | `active`, reason `decayed` | none | clean — narrows | `test_expiry_lapse_confirm_and_reinforcement` |
 | `src/veracium/lifecycle.py:59` | `expire()` | `add_edge` | `79eaf6e63a9c` | `open` | maintain-time | **`confidence *= decay_factor`** | none | 🔴 **OPEN — external review item 8.** `MemoryConfig` is an unvalidated dataclass; `decay_factor=2.0`, `NaN`, `-1.0` are all accepted, so this site can RAISE confidence and **N4 is false as written**. §7d | 🔴 **`specs/0002` N4b–N4d** — `test_config_bounds_are_validated`; **none passes today** [N4-decay] |
@@ -43,7 +43,7 @@
 | `src/veracium/lifecycle.py:237` | `_consolidate_pool()` | `transition_consolidation_if_current` | `3beca39c4c1b` | `clean` | maintain-time | the visibility cutover (GENERATING→OUTPUTS_DURABLE) | act | clean — specs/0010 X1/X14/X22: refuses with zero bound outputs, bumps store_version, and is the write-before-delete point of no return | `test_visibility_cutover_bumps_store_version` · `test_cutover_refuses_with_no_bound_output` |
 | `src/veracium/lifecycle.py:243` | `_consolidate_pool()` | `delete_claimed_inputs_if_current` | `a11557d9871c` | `clean` | maintain-time | deletes the claimed inputs AFTER outputs are durable | act | clean — specs/0010 X1/X2: write-before-delete; the batch delete is all-or-nothing and only reachable post-cutover | `test_every_read_sees_exactly_one_representation` |
 | `src/veracium/lifecycle.py:244` | `_consolidate_pool()` | `transition_consolidation_if_current` | `f6fbe5aada28` | `clean` | maintain-time | finalizes (OUTPUTS_DURABLE→FINALIZED) | act | clean — specs/0010 X20: refuses until every claimed input is deleted, so no terminal op strands hidden inputs | `test_finalize_refuses_before_inputs_deleted` |
-| `src/veracium/portability.py:760` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `clean` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **specs/0005 (ACCEPTED, implemented) CLOSED the residual M6 cap concern: every default import applies the unconditional three-lever trust cap (author/derived_from → THIRD_PARTY, disclosure floored USE_ONLY) on the validated records BEFORE this commit primitive ever sees them; `restore=True` is the operator's explicit, closed-bool opt-out, mutually exclusive with the remap.** | test_default_import_caps_every_record · test_handwritten_export_cannot_evade_the_cap · test_every_import_caps_by_default [M6-import closed] |
+| `src/veracium/portability.py:826` | `_preflight_and_commit()` | `commit_outcome_import_plan` | `83f7d603598f` | `clean` | write-time | **every trust field, reconstructed from a file** — edges AND whole outcome chains; a cross-user remap mints fresh ids (a COPY, never a transfer) and now remaps `supersedes_episode` too (`specs/0009` §4c Correction B) | transfer | specs/0009 (ACCEPTED) §4c CLOSED: import is now WHOLE-FILE validate-or-refuse — the entire plan is parsed, remapped, legacy-converted and topology-checked BEFORE any write, then committed through this ONE atomic primitive (no partial import, H5; no branch and linearized against append_outcome_if_head, H4; H14 fences outcome rows out of the generic mutators). **specs/0005 (ACCEPTED, implemented) CLOSED the residual M6 cap concern: every default import applies the unconditional three-lever trust cap (author/derived_from → THIRD_PARTY, disclosure floored USE_ONLY) on the validated records BEFORE this commit primitive ever sees them; `restore=True` is the operator's explicit, closed-bool opt-out, mutually exclusive with the remap.** | test_default_import_caps_every_record · test_handwritten_export_cannot_evade_the_cap · test_every_import_caps_by_default [M6-import closed] |
 
 ## Canonical context
 
@@ -128,14 +128,14 @@ e1ecd66351bd
   context: for(_ in range(_MAX_PLAN_ATTEMPTS))
 
 836c8cca9da2
-  file:    src/veracium/ingest.py:251
+  file:    src/veracium/ingest.py:252
   scope:   ingest_event()
   mutator: add_episode
   call:    store.add_episode(Episode(id=_uid('ep'), user_id=user_id, date=date, summary=summary, provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref, disclosure=Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, '', derived_from), derived_from=derived_from, source_id=source_id, observed_at=when)))
   context: except[0](ValueError)
 
 79166908890e
-  file:    src/veracium/ingest.py:274
+  file:    src/veracium/ingest.py:276
   scope:   ingest_event()
   mutator: add_episode
   call:    store.add_episode(Episode(id=_uid('ep'), user_id=user_id, date=date, summary=episode_text, provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref, disclosure=Disclosure.QUARANTINED if revoked_at_birth else _disclosure_for(author, '', derived_from), derived_from=derived_from, source_id=source_id, observed_at=when)))
@@ -233,7 +233,7 @@ f6fbe5aada28
   context: try
 
 83f7d603598f
-  file:    src/veracium/portability.py:760
+  file:    src/veracium/portability.py:826
   scope:   _preflight_and_commit()
   mutator: commit_outcome_import_plan
   call:    store.commit_outcome_import_plan(target_uid, plan, expected)

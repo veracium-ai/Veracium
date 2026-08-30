@@ -228,7 +228,10 @@ def test_export_omits_the_deleted_key(tmp_path):
     p = tmp_path / "e.jsonl"
     export_memory(store, "u1", p)
     lines = [json.loads(ln) for ln in p.read_text().splitlines()]
-    assert lines[0]["version"] == FORMAT_VERSION   # de-pinned; ≥7 since 0016
+    # de-pinned; >=7 since 0016. 0026's stamp is CONDITIONAL: this
+    # marker-free store exports at the pre-agreement version
+    assert lines[0]["version"] in (FORMAT_VERSION, FORMAT_VERSION - 1)
+    assert lines[0]["version"] >= 7
     assert "source_type" not in p.read_text()     # no residual key anywhere
     store.close()
 

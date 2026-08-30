@@ -17,7 +17,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field, model_serializer, StrictBool
+from pydantic import (BaseModel, Field, field_validator,
+                      model_serializer, StrictBool)
 
 
 def utcnow() -> datetime:
@@ -218,6 +219,61 @@ class EvidenceContext:
 
 
 # --------------------------------------------------------------------------- #
+# AgreementRecord — specs/0026 §3d: the structured relay-marker record.
+# --------------------------------------------------------------------------- #
+
+class AgreementRecord(BaseModel):
+    """What the marker lexicon found on ONE edge's note/object, bound to
+    the lexicon generation that found it (specs/0026 §3d, ACCEPTED).
+
+    `direction` is the STORED vocabulary — `user_source` IS §3c's
+    demotion-direction record (a marker whose grammar resolved the user
+    as source, recorded with no disposition change); the lexicon's
+    internal 'outbound' reading maps to it and is not a stored value.
+    The closed shape mirrors the accepted executable reference
+    (`specs/evidence/0026/import_matrix.AGREEMENT_SHAPE`) exactly — a
+    standing test binds the two. Grammar membership is VERSION-SCOPED:
+    marker-vocabulary checks apply only under the CURRENT lexicon
+    version; a well-typed foreign-version record is validated as opaque
+    closed shapes only (0026-R7-1)."""
+    model_config = {"frozen": True, "extra": "forbid"}
+
+    markers: list[str] = Field(min_length=1, max_length=8)
+    direction: str
+    lexicon: str = Field(min_length=1, max_length=64)
+
+    @field_validator("markers")
+    @classmethod
+    def _markers_closed(cls, v):
+        seen = set()
+        for i, tok in enumerate(v):
+            if not (1 <= len(tok) <= 64):
+                raise ValueError(f"markers[{i}] length {len(tok)} "
+                                 f"outside [1, 64]")
+            if tok in seen:
+                raise ValueError(f"markers[{i}] duplicates {tok!r}")
+            seen.add(tok)
+        return v
+
+    @field_validator("direction")
+    @classmethod
+    def _direction_closed(cls, v):
+        if v not in ("inbound", "ambiguous", "user_source"):
+            raise ValueError(f"direction {v!r} outside the closed set "
+                             f"('inbound', 'ambiguous', 'user_source')")
+        return v
+
+    @field_validator("lexicon")
+    @classmethod
+    def _lexicon_pattern(cls, v):
+        import re as _re
+        if not _re.fullmatch(r"[0-9a-z][0-9a-z.\-]*", v):
+            raise ValueError(f"lexicon version {v!r} does not match the "
+                             f"closed pattern")
+        return v
+
+
+# --------------------------------------------------------------------------- #
 # Volatility — expected lifetime of a fact, independent of confidence.
 # --------------------------------------------------------------------------- #
 
@@ -383,15 +439,23 @@ class Edge(BaseModel):
     # is byte-identical to its pre-0025 shape — X6's first preserved carrier.
     original_relation: Optional[str] = None
     needs_confirmation: bool = False  # past its expected lifetime; may be stale
+    # specs/0026 §3d: what the marker lexicon found on this edge's
+    # note/object, or None for the (overwhelming) marker-free case —
+    # None-omitted from every serialization so unaffected edges stay
+    # byte-identical (V7)
+    agreement: Optional[AgreementRecord] = None
 
     @model_serializer(mode="wrap")
     def _omit_none_original_relation(self, handler):
         # specs/0025 §2 (round 2, R2-3): an optional field still serializes
         # its None and breaks every byte contract — so when None, the key is
         # ABSENT from model_dump AND model_dump_json, at every call site.
+        # specs/0026 §3d: `agreement` rides the same rule (V7).
         d = handler(self)
         if d.get("original_relation") is None:
             d.pop("original_relation", None)
+        if d.get("agreement") is None:
+            d.pop("agreement", None)
         return d
     # specs/0019: "the specifics in this fact's object were not all grounded in
     # the event text it was extracted from" — a property of the EXTRACTION,

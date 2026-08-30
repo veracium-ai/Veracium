@@ -325,7 +325,10 @@ def test_public_counter_projection_is_exact():
     # quarantine facts also ride the result — always present, MCP-stripped,
     # telemetry-dropped by the whitelist
     q4_audit = {"quarantined_at_birth", "birth_revocation_digest"}
-    assert set(r) == pre_0025 | set(PUBLIC_COUNTERS) | q4_audit
+    # specs/0026 §3d: the two agreement counters joined every path
+    agreement_counters = {"agreement_floored", "agreement_recorded"}
+    assert set(r) == (pre_0025 | set(PUBLIC_COUNTERS) | q4_audit
+                      | agreement_counters)
     assert "retry_calls" not in r
 
 

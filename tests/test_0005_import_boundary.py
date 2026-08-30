@@ -635,6 +635,13 @@ def test_cli_import_line_carries_capped_only_on_the_default_path(tmp_path, capsy
 #              re-import, byte-level chain preservation).
 #   both     — exercises the two paths deliberately (this file's own tests).
 _CALLSITE_DISPOSITIONS = {
+    # specs/0026 V6a: the accepted import decision table driven over
+    # BOTH modes deliberately — default-recompute (forged discarded,
+    # counted) and restore (verbatim-valid, foreign-opaque,
+    # malformed-raises); plus the old-format row over the frozen
+    # pre-agreement oracle
+    ("test_0026_relay_lexicon.py",
+     "test_agreement_import_recomputes"): "both",
     # specs/0011 §4c (E3): the portability cell of the contested sweep runs
     # restore=True DELIBERATELY — the test's subject is that a refusal record
     # is STORE-LOCAL (the imported pair arrives uncontested) even on the

@@ -13,11 +13,12 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from . import grounding, prompts
+from . import agreement, grounding, prompts
 from ._json import extract_json
 from .graph import apply_supersession
 from .llm.base import Complete
-from .schema import (DEFAULT_RELATIONS, Disclosure, Edge, Episode, EvidenceAuthor,
+from .schema import (DEFAULT_RELATIONS, Disclosure, Edge,
+                     Episode, EvidenceAuthor,
                      EvidenceContext,
                      Provenance, QUARANTINE_RELATION, Relation,
                      RESERVED_RELATIONS, UNCLASSIFIED_RELATION,
@@ -265,7 +266,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 "redispositioned": 0,
                 "quarantined_at_birth": (1 if revoked_at_birth else 0),
                 "birth_revocation_digest": (_birth_digest if revoked_at_birth
-                                            else None)}
+                                            else None),
+                "agreement_floored": 0, "agreement_recorded": 0}
 
     # episode — always recorded; carries author so the gate knows a third-party
     # episode records receipt, not truth.
@@ -367,6 +369,7 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             row["relation"] = UNCLASSIFIED_RELATION
             n_residual += 1
 
+    n_agreement_floored = n_agreement_recorded = 0
     for row in parsed:
         t = row["t"]
         relation = row["relation"]
@@ -401,13 +404,36 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
         # A failing edge is STORED with the flag — never refused, never
         # demoted, never re-derived (§4d: immutable for the record's life).
         flagged = grounding.ungrounded(obj, event_text, date)
+        # specs/0026 §3b/§3c (ACCEPTED): the relay-marker scan over this
+        # triple's note+object — pure, lexicon-closed, directional by
+        # grammar. RESTRICT-ONLY: a restricting match (inbound or
+        # ambiguous) FLOORS disclosure MENTIONABLE -> USE_ONLY and never
+        # raises (QUARANTINED stays QUARANTINED, USE_ONLY stays); an
+        # outbound (user-as-source) reading on a triple the extractor
+        # DEMOTED to a third-party claim is §3c's demotion-direction
+        # DISAGREEMENT — recorded as direction="user_source" with NO
+        # disposition change. Marker absence is absence of evidence:
+        # no record, no floor, byte-identical edge (V2/V7).
+        note_str = str(t.get("note", "")).strip()
+        # the FLOOR first (restrict-only: MENTIONABLE -> USE_ONLY, never
+        # raise), keyed on whether a restricting match exists; then THE
+        # one derivation site builds the record from the FINAL
+        # disclosure (agreement.derive_record — shared with default-mode
+        # import recomputation, so the boundaries cannot drift)
+        if (agreement.relay_markers(note_str, obj)
+                and disclosure == Disclosure.MENTIONABLE):
+            disclosure = Disclosure.USE_ONLY
+            n_agreement_floored += 1
+        agr = agreement.derive_record(note_str, obj, disclosure)
+        if agr is not None:
+            n_agreement_recorded += 1
         edge = Edge(
             id=_uid("e"), user_id=user_id, subject=row["subject"],
             relation=relation, object=obj,
             original_relation=(row["original"] if relation != row["original"]
                                else None),
-            note=str(t.get("note", "")).strip(), volatility=vol,
-            ungrounded=flagged,
+            note=note_str, volatility=vol,
+            ungrounded=flagged, agreement=agr,
             provenance=Provenance(author_of_evidence=author, evidence_ref=evidence_ref,
                                   disclosure=disclosure, derived_from=derived_from,
                                   source_id=source_id, observed_at=when),
@@ -435,4 +461,9 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
             # the MCP surface strips them.
             "quarantined_at_birth": (n_quarantined if revoked_at_birth else 0),
             "birth_revocation_digest": (_birth_digest if revoked_at_birth
-                                        else None)}
+                                        else None),
+            # specs/0026 §3d — present on EVERY path (an absent key is
+            # not a zero); the MCP surface strips them with the other
+            # operator counters; telemetry consumption DEFERRED (R1-3)
+            "agreement_floored": n_agreement_floored,
+            "agreement_recorded": n_agreement_recorded}

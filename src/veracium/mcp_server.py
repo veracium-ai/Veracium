@@ -83,7 +83,9 @@ def remember_impl(mem: Memory, user_id: str, text: str, author: str = "user",
               "redispositioned",
               # specs/0023 Q4: trust-state audit facts — never in the
               # tool result the model caller reads
-              "quarantined_at_birth", "birth_revocation_digest"):
+              "quarantined_at_birth", "birth_revocation_digest",
+              # specs/0026 §3d: operator counters, stripped like the rest
+              "agreement_floored", "agreement_recorded"):
         r.pop(k, None)
     return r
 

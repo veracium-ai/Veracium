@@ -1694,6 +1694,7 @@ def test_laundered_relay_floors_use_only(tmp_path):
     # QUARANTINED (restrict-only: the floor moves disclosure down or
     # nowhere, never up to USE_ONLY)
     from veracium.schema import QUARANTINE_RELATION
+    (tmp_path / "q").mkdir()
     memq, ECq = _mem_for_v(tmp_path / "q", [
         {"subject": "the vet", "relation": QUARANTINE_RELATION,
          "object": "the dog needs rest",
@@ -1727,6 +1728,17 @@ def test_demotion_direction_records_only(tmp_path):
     assert e.agreement is not None
     assert e.agreement.direction == "user_source"
     mem.close()
+    # §22 obligation 1: the COUNTER carries the record — re-run and
+    # read the result (the record-only path counts as recorded, floors
+    # nothing)
+    (tmp_path / "c").mkdir()
+    memc, ECc = _mem_for_v(tmp_path / "c", [
+        {"subject": "the vet", "relation": QUARANTINE_RELATION,
+         "object": "user told the vet the dog is fine",
+         "note": "as I told the vet"}])
+    rc = memc.remember("u", "again", context=ECc.direct())
+    assert rc["agreement_recorded"] == 1 and rc["agreement_floored"] == 0
+    memc.close()
 
 
 def test_agreement_carriers_complete(tmp_path):
@@ -1748,11 +1760,24 @@ def test_agreement_carriers_complete(tmp_path):
     rec = e.agreement.model_dump(mode="json")
     assert IM.agreement_shape_problems(rec) == [], (
         "the stored record must satisfy the executable shape")
+    # §22 obligation 2: the MCP surface STRIPS both counters — driven
+    # through the real remember_impl, not asserted about a list
+    from veracium import mcp_server
+    (tmp_path / "mcp").mkdir()
+    memm, _ = _mem_for_v(tmp_path / "mcp", [
+        {"subject": "user", "relation": "health_state",
+         "object": "needs rest", "note": "my doctor said to rest"}])
+    rm = mcp_server.remember_impl(memm, "u", "via mcp")
+    assert "agreement_floored" not in rm
+    assert "agreement_recorded" not in rm
+    memm.close()
     # research's graduation refinement (a): the MARKERLESS path carries
     # both counters too, at zero — an absent key is not a zero there
     # either (a partial implementation could pass the floored path
     # alone)
-    mem2, EC2 = _mem_for_v(str(mem.config.db_path) + ".2", [
+    d2 = tmp_path / "markerless"
+    d2.mkdir()
+    mem2, EC2 = _mem_for_v(d2, [
         {"subject": "user", "relation": "works_as", "object": "welder"}])
     r2 = mem2.remember("u", "markerless", context=EC2.direct())
     assert r2.get("agreement_floored") == 0
@@ -1769,14 +1794,104 @@ def test_agreement_import_recomputes(tmp_path):
     if not _agreement_implemented():
         _prove_vacuity()
         return
-    import importlib
-    IM = importlib.import_module("import_matrix")
-    # every MATRIX row must be exercised at graduation; the rows are
-    # the contract — drive default-recompute, restore-verbatim,
-    # restore-malformed-raises, restore-foreign-verbatim
-    raise AssertionError(
-        "graduation reached: implement the V6a matrix drive over "
-        f"{len(IM.MATRIX)} rows before accepting the implementation")
+    import json as _json
+    from veracium import portability
+    from veracium.store.sqlite import SqliteStore
+
+    # an agreement-bearing store: one relay edge, one marker-free edge
+    (tmp_path / "src").mkdir()
+    mem, EC = _mem_for_v(tmp_path / "src", [
+        {"subject": "user", "relation": "health_state",
+         "object": "needs rest", "note": "my doctor said to rest"},
+        {"subject": "user", "relation": "works_as", "object": "welder"}])
+    mem.remember("u", "mixed", context=EC.direct())
+    exp = tmp_path / "export.jsonl"
+    mem.export_memory("u", exp)
+    lines = exp.read_text().splitlines()
+    head = _json.loads(lines[0])
+    assert head["version"] == portability.FORMAT_VERSION, (
+        "an agreement-bearing export stamps the bumped format (§3d)")
+
+    def edited(mutate, name):
+        """A copy of the export with `mutate(edge_rec_dicts)` applied."""
+        rows = [_json.loads(l) for l in lines]
+        mutate([r for r in rows if r.get("record") == "edge"])
+        p2 = tmp_path / name
+        p2.write_text("".join(_json.dumps(r) + "\n" for r in rows))
+        return p2
+
+    # ROW new/restore valid-or-absent -> VERBATIM (trust-faithful)
+    s1 = SqliteStore(str(tmp_path / "r_valid.db"))
+    r = portability.import_memory(s1, exp, restore=True)
+    rec_edges = [e for e in s1.edges("u", active_only=False)
+                 if e.agreement is not None]
+    assert len(rec_edges) == 1
+    assert rec_edges[0].agreement.direction == "inbound"
+    assert rec_edges[0].provenance.disclosure.value == "use_only", (
+        "restore is trust-field-faithful: the floored disclosure rides")
+
+    # ROW new/default any-state -> RECOMPUTED; a FORGED record on a
+    # marker-free edge is discarded by recomputation and counted
+    forged = edited(lambda es: [r.__setitem__("agreement",
+                    {"markers": ["said"], "direction": "inbound",
+                     "lexicon": "0026-lex-10"})
+                    for r in es if r["relation"] == "works_as"],
+                    "forged.jsonl")
+    s2 = SqliteStore(str(tmp_path / "d_forged.db"))
+    r = portability.import_memory(s2, forged, restore=False)
+    assert r["agreement_mismatches"] >= 1, (
+        "the forged record must be counted, never consumed")
+    for e in s2.edges("u", active_only=False):
+        if e.relation == "works_as":
+            assert e.agreement is None, (
+                "a forged marker cannot smuggle a record into Q5's "
+                "corpus — default mode recomputes")
+
+    # ROW new/restore FOREIGN version, well-typed -> VERBATIM (markers
+    # opaque; grammar membership is version-scoped, 0026-R7-1)
+    foreign = edited(lambda es: [r["agreement"].update(
+                     {"lexicon": "0026-lex-999",
+                      "markers": ["future_marker"]})
+                     for r in es if r.get("agreement")],
+                     "foreign.jsonl")
+    s3 = SqliteStore(str(tmp_path / "r_foreign.db"))
+    portability.import_memory(s3, foreign, restore=True)
+    (fe,) = [e for e in s3.edges("u", active_only=False)
+             if e.agreement is not None]
+    assert fe.agreement.lexicon == "0026-lex-999"
+    assert fe.agreement.markers == ["future_marker"]
+
+    # ROW new/restore MALFORMED -> RAISES, nothing written
+    bad = edited(lambda es: [r.__setitem__("agreement",
+                 {"markers": [], "direction": "inbound",
+                  "lexicon": "0026-lex-10"})
+                 for r in es if r["relation"] == "health_state"],
+                 "malformed.jsonl")
+    s4 = SqliteStore(str(tmp_path / "r_malformed.db"))
+    with __import__("pytest").raises(ValueError, match="nothing.*written"):
+        portability.import_memory(s4, bad, restore=True)
+    assert s4.edges("u", active_only=False) == [], (
+        "a refused restore leaves the destination untouched")
+
+    # ROW old-format (either mode): the frozen pre-agreement export —
+    # absent by construction, no fabrication
+    frozen = (ROOT / "specs" / "evidence" / "0026" / "v7_oracle"
+              / "pre_feature_export.jsonl")
+    s5 = SqliteStore(str(tmp_path / "old.db"))
+    portability.import_memory(s5, frozen, restore=True)
+    assert all(e.agreement is None
+               for e in s5.edges("v7", active_only=False))
+
+    # ROW new-file-old-reader: a version above this reader's knowledge
+    # REFUSES outright (0025's rule — no silent field loss)
+    rows = [_json.loads(l) for l in lines]
+    rows[0]["version"] = portability.FORMAT_VERSION + 1
+    newer = tmp_path / "newer.jsonl"
+    newer.write_text("".join(_json.dumps(r) + "\n" for r in rows))
+    s6 = SqliteStore(str(tmp_path / "newer.db"))
+    with __import__("pytest").raises(ValueError, match="newer"):
+        portability.import_memory(s6, newer, restore=False)
+    mem.close()
 
 
 def test_no_markers_is_byte_identical(tmp_path):
@@ -1785,6 +1900,24 @@ def test_no_markers_is_byte_identical(tmp_path):
     if not _agreement_implemented():
         _prove_vacuity()
         return
+    import json as _json
+
+    def _norm(path):
+        # exactly TWO legitimately instance-specific values exist in a
+        # marker-free export, both predating 0026: the header's
+        # exported_at (a clock) and provenance.origin (0006's
+        # store-minted per-store namespace UUID). Both normalize;
+        # EVERYTHING else must be byte-identical
+        out = []
+        for i, line in enumerate(path.read_text().splitlines()):
+            row = _json.loads(line)
+            if i == 0:
+                row.pop("exported_at", None)
+            elif row.get("record") == "edge":
+                row.get("provenance", {}).pop("origin", None)
+            out.append(_json.dumps(row, sort_keys=True))
+        return out
+
     mem, EC = _mem_for_v(tmp_path, [
         {"subject": "user", "relation": "works_as", "object": "welder"}])
     mem.remember("u", "markerless", context=EC.direct())
@@ -1792,7 +1925,62 @@ def test_no_markers_is_byte_identical(tmp_path):
     out2 = tmp_path / "b.jsonl"
     mem.export_memory("u", out1)
     mem.export_memory("u", out2)
-    assert out1.read_bytes() == out2.read_bytes()
+    assert _norm(out1) == _norm(out2)
     assert b"agreement" not in out1.read_bytes(), (
         "a marker-free export must carry no agreement keys at all")
     mem.close()
+    # §22 obligation 3 — the FROZEN PRE-FEATURE ORACLE: the identical
+    # marker-free construction, exported by the CURRENT code, must
+    # byte-match the export captured BEFORE the mechanism existed —
+    # identity proven against a fixed artifact, never against the
+    # feature's own output
+    from datetime import datetime, timezone
+    from veracium.schema import Edge, EvidenceAuthor, Provenance
+    from veracium.store.sqlite import SqliteStore
+    from veracium import portability
+    store = SqliteStore(str(tmp_path / "oracle.db"))
+    T = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
+    for i, (rel, obj) in enumerate([("works_as", "synthetic welder"),
+                                    ("located_at", "synthetic town"),
+                                    ("prefers", "synthetic tea")]):
+        store.add_edge(Edge(id=f"v7-{i}", user_id="v7", subject="user",
+                            relation=rel, object=obj, valid_from=T,
+                            provenance=Provenance(
+                                author_of_evidence=EvidenceAuthor.USER,
+                                evidence_ref=f"v7-ev-{i}",
+                                observed_at=T)))
+    now = tmp_path / "post_feature.jsonl"
+    portability.export_memory(store, "v7", now)
+    frozen = (ROOT / "specs" / "evidence" / "0026" / "v7_oracle"
+              / "pre_feature_export.jsonl")
+    assert _norm(now) == _norm(frozen), (
+        "the post-feature export of a marker-free store is not "
+        "byte-identical to the FROZEN pre-feature oracle (V7; §22 "
+        "obligation 3)")
+
+
+def test_src_lexicon_is_bound_to_the_accepted_reference():
+    """V4 at graduation: the product's ONE code-owned lexicon surface
+    (veracium.agreement) must be the accepted reference artifact
+    (specs/evidence/0026/relay_lexicon.py) — tables, version, and
+    observed behavior. Two definition sites that could drift would be
+    the R9-1 class in its worst form."""
+    import importlib
+    from veracium import agreement as A
+    L = importlib.import_module("relay_lexicon")
+    assert A.LEXICON_VERSION == L.LEXICON_VERSION
+    for table in ("_VERBS", "_PHRASES", "_COORD", "_COMITATIVE",
+                  "_DETERMINERS", "_SKIP_TOKENS", "_CLAUSE_BREAK",
+                  "_FIRST_PERSON_SELF", "_FIRST_PERSON_SUBJ",
+                  "_USER_SUBJ", "_AMBIG_PRON"):
+        assert getattr(A, table) == getattr(L, table), (
+            f"{table} drifted between src and the accepted reference")
+    assert tuple(A.LEXICON_DIRECTIONS) == tuple(L.LEXICON_DIRECTIONS)
+    # behavior spot-weld over the accepted oracle's own cells
+    V = importlib.import_module("validate_lexicon")
+    for cell in V.CELLS[:40]:       # cells carry 4 or 5 elements
+        name, note, obj = cell[0], cell[1], cell[2]
+        got_src = bool(A.relay_markers(note, obj))
+        got_ref = bool(L.relay_markers(note, obj))
+        assert got_src == got_ref, (
+            f"cell {name}: src={got_src} reference={got_ref}")

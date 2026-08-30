@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+- **0026 — label/value agreement check (accepted 2026-08-30, external
+  round 12; twelve external + fourteen internal review rounds) —
+  IMPLEMENTED. ⚠ BEHAVIOR CHANGE.** A relayed claim whose note or
+  object matches the versioned marker lexicon is never asserted as
+  the user's fact, whatever relation the extractor filed it under —
+  closing the B02/B07 relay-laundering class ("my doctor said…"
+  filed under a concrete relation used to land assertable). The
+  detector (`veracium.agreement`, lexicon `0026-lex-10`) is pure,
+  closed, and directional by grammar: the agent governs, outbound
+  (user-as-source) never matches, ambiguous restricts conservatively.
+  RESTRICT-ONLY: a marked relay FLOORS disclosure
+  MENTIONABLE→USE_ONLY and never raises (quarantined stays
+  quarantined); marker absence changes nothing (marker-free stores
+  are byte-identical, proven against a frozen pre-feature export).
+  Each affected edge carries a structured `agreement` record
+  (markers + direction + lexicon version, None-omitted); §3c
+  demotion-direction disagreements are recorded without disposition
+  change. `remember` results carry `agreement_floored` /
+  `agreement_recorded` on every path (the MCP surface strips them).
+  Export rides a CONDITIONAL format bump (10 for agreement-bearing
+  stores; marker-free exports stay at 9): old readers refuse rather
+  than silently drop. Import is mode-split per the accepted decision
+  table: default RECOMPUTES under the current lexicon (incoming
+  values diagnostic-only, mismatches counted); `restore=True` is
+  trust-faithful for well-typed records (foreign lexicon versions
+  verbatim with opaque markers) and RAISES on malformed with nothing
+  written. Measured acceptance gate: 0.64% false-positive rate
+  (439 of 68,479 grounded first-person triples) against the
+  pre-committed 2% bar.
+
 - **0011 (accepted 2026-08-29, external round 19) — implementation in
   progress.** Landed so far:
 

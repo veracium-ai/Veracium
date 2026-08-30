@@ -205,13 +205,14 @@ def test_a08_the_movement_cell():
 def test_b07_relay_preservation_and_the_stated_gap():
     """The relay-preservation cell, BOTH halves. (1) A genuine relay the
     extractor labels correctly stays QUARANTINED (U1). (2) THE STATED
-    GAP, from the baseline's B02/B07: a genuine relay the extractor
-    files under a CONCRETE relation never reaches the quarantine branch
-    — it lands at the author floor (USE_ONLY for third-party-derived,
-    but MENTIONABLE for a user-authored relay event). 0024's
-    decision-order fix is ORTHOGONAL to this path and does not close it;
-    the note-vs-label agreement check (#107) owns it. This test PINS the
-    pre-existing behaviour so the fix is never blamed for it."""
+    GAP, from the baseline's B02/B07 — CLOSED BY ACCEPTED 0026
+    (implemented 2026-08-30): a genuine relay the extractor files under
+    a CONCRETE relation used to land MENTIONABLE for a user-authored
+    event; the relay-marker floor now takes it to USE_ONLY with a
+    structured agreement record. 0024's decision-order fix was always
+    orthogonal to this path; the note-vs-label agreement check that
+    "owns it" (#107) is 0026, and this test now PINS the closed
+    behaviour where it once pinned the gap."""
     # (1) correctly-labelled relay: quarantined, not moved
     s = SqliteStore(":memory:")
     r = _ingest(s, [_tpc("the vet", "Rex is allergic to chicken")])
@@ -219,10 +220,14 @@ def test_b07_relay_preservation_and_the_stated_gap():
         == Disclosure.QUARANTINED
     assert r["redispositioned"] == 0
     # (2) the B07 shape: concrete relation chosen by the extractor —
-    # bypasses quarantine TODAY, before and after this fix (documented)
+    # it bypasses QUARANTINE (that branch is label-keyed, unchanged),
+    # but accepted 0026's marker floor catches the relay in the OBJECT
+    # text: MENTIONABLE -> USE_ONLY, agreement recorded
     s2 = SqliteStore(":memory:")
     _ingest(s2, [{"subject": "Rex", "relation": "has_diet",
                   "object": "allergic to chicken (the vet said)"}])
     e = s2.edges(U, active_only=False)[0]
-    assert e.provenance.disclosure == Disclosure.MENTIONABLE
+    assert e.provenance.disclosure == Disclosure.USE_ONLY, (
+        "the B07 gap is closed: the marker floor restricts the relay")
+    assert e.agreement is not None and e.agreement.direction == "inbound"
     assert e.original_relation is None    # no re-disposition touched it
