@@ -2573,7 +2573,10 @@ CLOSURES = [
      "justified; shopping the draw requires moving the measurement or "
      "tripping the anchor, so precomputability is harmless; "
      "nonce-invariance and population-sensitivity cells stand; the "
-     "shipped corpus is a census and needs no seed at all",
+     "shipped corpus is a census and needs no seed at all "
+     "[SUPERSEDED at round 6: EVIDENCE-R6-1 showed fire_digests itself "
+     "is a host-produced identifier — sampling ENDED entirely; every "
+     "adjudication is a census, schema 6]",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
     ("0026", "external", 5, "0026-R5-1",
@@ -2612,6 +2615,57 @@ CLOSURES = [
      "an uncaught UnicodeDecodeError instead of a structured refusal",
      "both adjudication files return structured refusals on decode "
      "failure, with a standing cell for each",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 6, "0026-EVIDENCE-R6-1",
+     "fire_digests remained a host-controlled seed nonce: digests are "
+     "shape-checked, never recomputed from or bound to the cache, so "
+     "varying ONE digest while holding the semantic population and "
+     "labels fixed swung 159/500 FP accepted vs 234/500 refused — "
+     "'decision-read' does not make a host-produced identifier "
+     "non-choosable (face EIGHT of the selection class)",
+     "sampling ENDS: every adjudication is a CENSUS (schema 6 — sample "
+     "carries size only; manifest must label exactly the population; "
+     "decision is the exact labelled share; draw/seed/size/Wilson all "
+     "REMOVED — eight faces proved no sampling construction over a "
+     "host-produced population survives); boundary cells stand incl. "
+     "the exact-share bar from both sides; the digest-to-cache "
+     "derivation is recorded protocol, reproducible with --cache",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 6, "0026-R6-1",
+     "the restore-mode foreign-version cell was UNSPECIFIED: a "
+     "well-typed record with current-valid markers and a foreign "
+     "lexicon version under restore=True was unrecognised but not "
+     "malformed — no stated outcome, and §2c's unrecognised cell "
+     "stated only the default mode",
+     "RULED verbatim: the version field exists to mark provenance, "
+     "recomputation stays diagnostic-only, and refusing would break "
+     "restore round-trips of old exports; the cell joins MATRIX (the "
+     "one carrier) and both generated projections carry it",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_renderers_agree_with_independent_oracles -q -p no:randomly"),
+    ("0026", "external", 6, "0026-PACKAGE-R6-1",
+     "the half-swept-carrier class AGAIN: the Version row described "
+     "the discarded archive-sidecar seed, the round-6 SENT row said "
+     "v0 witness/schema 4 while the archive shipped schema 5 with the "
+     "projection seed, and the example README claimed a generator the "
+     "package did not ship",
+     "closed STRUCTURALLY per the reviewer's fix: ADJUDICATION_SCHEMA "
+     "is the one generated carrier of the revision (validator, "
+     "shipped generator, §6a claim block and tests all read it; prose "
+     "no longer numbers revisions); generate_example.py ships and the "
+     "standing test requires byte-identical regeneration; the Version "
+     "row and SENT row carry visible corrections",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_worked_adjudication_example_validates_from_disk "
+     "-q -p no:randomly"),
+    ("0026", "external", 6, "0026-EVIDENCE-R6-2",
+     "the round-5 denominator fix divided unguarded: doc_problems on "
+     "a zero-denominator aggregate raised ZeroDivisionError while "
+     "render_spec_claim guarded the same derivation",
+     "the doc needle uses the renderer's guarded derivation; the "
+     "zero-denominator cell refuses structurally and stands",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
 ]

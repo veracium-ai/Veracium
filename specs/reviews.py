@@ -2093,7 +2093,76 @@ REVIEWS = [
          "guard with its collision cell. Sealed as "
          "0026-v6-20260829T2345Z.tar.gz, sha256 "
          "e89958b1ff519139cb67b8f1d2bb95c3a6a12ecc9ab76ff27bb0112b"
-         "0ac85a07, commit 0ce5c0e", findings=0),
+         "0ac85a07, commit 0ce5c0e. [PACKAGE-R6-1 correction, round 6: "
+         "this row's PACKAGE-R5-1 sentence described the interim "
+         "v0-witness/schema-4 example, and its EVIDENCE-R5-1 sentence "
+         "was updated to the projection seed while this one was not "
+         "re-swept — the sealed v6 archive shipped schema 5, no "
+         "witness, the projection seed; the half-swept-carrier class, "
+         "closed structurally at round 6 by the ONE generated "
+         "ADJUDICATION_SCHEMA carrier]", findings=0),
+
+    dict(spec="0026", round=6, kind="external", date="2026-08-30",
+         raised=["0026-EVIDENCE-R6-1", "0026-R6-1", "0026-PACKAGE-R6-1",
+                 "0026-EVIDENCE-R6-2"],
+         verdict="RETURN FOR NARROW AMENDMENT (package `0026-v6`, sha "
+         "e89958b1 verified; 530 members; exact v5 predecessor; diff 9 "
+         "changed/5 added/0 concurrent; focused suite 84 passed; "
+         "qualified offline suite reconciled; trust-model architecture "
+         "stable). CONFIRMED closed: §2c/§3d co-movement, the "
+         "9,999-denominator mutation, UTF-8 structured refusals, the "
+         "from-disk example. EVIDENCE-R6-1 BLOCKING (the selection "
+         "class, face EIGHT): fire_digests is a host-controlled seed "
+         "nonce — digests are shape-checked, never recomputed from or "
+         "bound to the cache (the synthetic example proves it: an "
+         "arbitrary 120-fire population validates against the identical "
+         "cache manifest); varying ONE digest while holding the "
+         "semantic population and labels fixed swung 159/500 FP "
+         "accepted vs 234/500 refused. 'Decision-read' does not make a "
+         "host-produced identifier non-choosable. Offered closures: "
+         "genuinely external post-commitment entropy, or census every "
+         "population. R6-1 BLOCKING: the restore-mode foreign-version "
+         "cell is UNSPECIFIED — a well-typed record with current-valid "
+         "markers and lexicon=0026-lex-999 under restore=True is "
+         "unrecognised but not malformed; the contract must choose "
+         "verbatim or refuse and carry the cell through both "
+         "projections. PACKAGE-R6-1 MODERATE (the half-swept-carrier "
+         "class, again): the Version row still describes the discarded "
+         "archive-sidecar seed and the round-6 SENT row still says v0 "
+         "witness/schema 4, while the archive ships schema 5, no "
+         "witness, projection seed; the example README claims a "
+         "generator the package does not ship. Their structural fix "
+         "named: ONE generated current-schema carrier. EVIDENCE-R6-2 "
+         "MODERATE: the denominator fix introduced a zero-denominator "
+         "ZeroDivisionError in doc_problems while the renderer guards "
+         "it", findings=4),
+
+    dict(spec="0026", round=7, kind="external", date="2026-08-30",
+         candidate={"0026": "v10"},
+         verdict="SENT (package `0026-v7`, candidate draft v10 — the "
+         "round-6 fold; §16 maps all four findings; the two blocking "
+         "closures are terminal simplifications, not ninth patches). "
+         "EVIDENCE-R6-1 closed by ENDING SAMPLING: every adjudication "
+         "is a CENSUS (schema 6 — sample carries size only; the "
+         "manifest must label exactly the population; the decision is "
+         "the exact labelled share; the draw/seed/size/Wilson "
+         "machinery REMOVED after eight faces across three review "
+         "streams proved no sampling construction over a "
+         "host-produced population survives); census boundary cells "
+         "stand incl. the exact-share bar driven from both sides. "
+         "R6-1 closed: restore + well-typed foreign-version RULED "
+         "verbatim (the version field marks provenance; refusal would "
+         "break old-export round-trips), carried through MATRIX and "
+         "both generated projections. PACKAGE-R6-1 closed "
+         "structurally: ADJUDICATION_SCHEMA is the ONE generated "
+         "carrier of the revision (validator, generator, §6a claim "
+         "block, tests all read it; prose no longer numbers "
+         "revisions); the example's generator SHIPS and is "
+         "byte-identity-tested; the Version row and the round-6 SENT "
+         "row carry visible corrections. EVIDENCE-R6-2 closed: the "
+         "doc needle uses the renderer's guarded derivation, zero "
+         "cell standing. Sealed AFTER this row, sha pinned on return",
+         findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "

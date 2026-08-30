@@ -1,10 +1,9 @@
 {
- "schema": 5,
+ "schema": 6,
  "lexicon_version": "0026-lex-10",
  "fires": 120,
  "sample": {
-  "size": 120,
-  "seed": 68806611766957
+  "size": 120
  },
  "verdict": "accept",
  "aggregate_sha256": "b4d1e6293de76f5736e0d00b193c2fd45e8b3737c0f0295aaa8665c45e63eeb4",

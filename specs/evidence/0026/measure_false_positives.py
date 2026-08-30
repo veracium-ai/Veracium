@@ -36,10 +36,12 @@ mechanically and bounds the rest:
     the lexicon matches, so §8's claim ships with its measured denominator
     instead of an implied whole.
 
-The gap between the upper bound and the true rate is closed by LABELLING a
-random sample of fires, which is a human judgement and is Research's
-co-verification, not this script's output. `--sample N` prints the CANONICAL
-sample reproducibly.
+The gap between the upper bound and the true rate is closed by LABELLING
+EVERY fire — a census, which is a human judgement and is Research's
+co-verification, not this script's output. `--sample` prints the census
+reproducibly. (0026-EVIDENCE-R6-1 ended sampling: eight faces of the
+selection class showed no sampling construction over a host-produced
+population survives, so no draw, seed or size choice exists.)
 """
 from __future__ import annotations
 
@@ -63,7 +65,7 @@ def main() -> int:
     ap.add_argument("--aggregate", metavar="PATH",
                     help="VERIFY a shipped aggregate instead of measuring")
     ap.add_argument("--emit-aggregate", metavar="PATH")
-    ap.add_argument("--sample", type=int, default=0,
+    ap.add_argument("--sample", action="store_true",
                     help="draw N fires for labelling (printed, never written "
                          "to the aggregate — they are corpus content)")
     a = ap.parse_args()
@@ -197,16 +199,11 @@ def main() -> int:
     report(agg)
 
     if a.sample and sample_pool:
-        size = canonical_size(fires)
-        seed = canonical_seed(agg)
-        drawn = canonical_draw(agg, size, seed)
-        kind = "CENSUS" if size == fires else "draw"
-        print(f"\n--- the CANONICAL {size}-fire {kind} for LABELLING "
-              f"(size derived; seed {seed} from the nonce-free "
-              f"projection basis — neither choosable); corpus content, "
+        print(f"\n--- the {fires}-fire CENSUS for LABELLING (every "
+              f"adjudication is a census — no draw, seed or size "
+              f"exists to choose; 0026-EVIDENCE-R6-1); corpus content, "
               f"never written ---")
-        for rel, note, obj, hits, digest in [
-                t for t in sample_pool if t[4] in drawn]:
+        for rel, note, obj, hits, digest in sample_pool:
             print(f"  [{','.join(hits)}] rel={rel} fire={digest}")
             print(f"    note={str(note)[:150]!r}")
             print(f"    obj ={str(obj)[:110]!r}")
@@ -218,73 +215,29 @@ def main() -> int:
 _PEER = HERE.parent / "0011" / "subject_aggregate.json"
 
 
-def canonical_seed(agg) -> int:
-    """0026-EVIDENCE-R5-1 + research's round-5 pre-seal addendum: the
-    seed basis must contain NO byte a host can vary without changing
-    the decision itself. Round 4 hashed the whole aggregate (a
-    decision-irrelevant field was a NONCE — executed); round 5's
-    archive-sidecar seed defended reseal ITERATION but rested on the
-    first seal being non-precomputable, which nothing guaranteed. This
-    basis is the PROJECTION of exactly the cross-anchored and
-    decision-read fields, each enumerated and justified — the R5-1
-    lesson is that every byte must be, including the ones the decision
-    never reads (there are none here):
-
-      * fire_digests — the population itself; length is validated equal
-        to fires, and varying it varies WHAT IS MEASURED;
-      * fires — the decision's numerator;
-      * manifest — the cache identity, CROSS-ANCHORED against the
-        0011/0025 subject aggregate (an artifact this script's host
-        does not control).
-
-    Precomputability is harmless by construction: knowing the seed
-    early buys nothing, because shopping the draw requires varying the
-    basis, and every basis byte moves the measurement or trips the
-    anchor. (For the shipped corpus the point is moot twice over — 439
-    fires <= CENSUS_LIMIT means the draw is ALL fires, seed-free.)"""
-    basis = json.dumps({"fire_digests": agg["fire_digests"],
-                        "fires": agg["grounded_first_person"]["fires"],
-                        "manifest": agg["manifest"]},
-                       sort_keys=True).encode()
-    return int(hashlib.sha256(basis).hexdigest()[:12], 16)
-
-
-# 0026-I7-1 addendum (research's co-verify): size itself was the last
-# host-chosen selection input — each size is a different canonical draw,
-# so a host could size-shop the multiple comparisons (measured inert on
-# this aggregate: best-shoppable UCB 0.134 vs honest census 0.137, but
-# "empirically negligible" is exactly what five external rounds turned
-# into findings). Size is CANONICAL now: a CENSUS of every fire when the
-# population is tractable, else the fixed cap. Structurally impossible
-# beats measured-inert.
-CENSUS_LIMIT = 500
-
-
-def canonical_size(fires: int) -> int:
-    """The one legitimate labelled-sample size for a population."""
-    return fires if fires <= CENSUS_LIMIT else CENSUS_LIMIT
-
-
-def canonical_draw(agg, size: int, seed: int) -> set:
-    """The one legitimate labelled-sample membership for this aggregate
-    at this size: the post-commitment seed over the sorted digest list."""
-    rng = random.Random(seed)
-    return set(rng.sample(sorted(agg["fire_digests"]), size))
-
-
-def _wilson_upper(fp: int, n: int, z: float = 1.959964) -> float:
-    """The 95% Wilson upper confidence bound on the false-positive SHARE.
-    §6a's own rule (recorded at the round-3 seal, made live here): a live
-    adjudication path gates on an UPPER CONFIDENCE BOUND, never the point
-    estimate — fp/n of a 50-fire sample is far too rough to carry an
-    acceptance on its own."""
-    if n <= 0:
-        return 1.0
-    phat = fp / n
-    denom = 1.0 + z * z / n
-    centre = phat + z * z / (2 * n)
-    spread = z * ((phat * (1 - phat) / n + z * z / (4 * n * n)) ** 0.5)
-    return min(1.0, (centre + spread) / denom)
+# 0026-EVIDENCE-R6-1 (the selection class, face EIGHT — terminal): the
+# round-5 projection seed enumerated its basis and justified every byte,
+# but "decision-read" does not make a host-produced identifier
+# non-choosable: fire_digests are shape-checked, never recomputed from
+# the cache, so varying ONE digest while holding the semantic population
+# and labels fixed shopped the draw (159/500 FP accepted vs 234/500
+# refused, executed by the reviewer). Eight faces across three review
+# streams establish the class result: NO sampling construction over a
+# host-produced population survives. So there is no sampling: EVERY
+# adjudication is a CENSUS — the manifest labels every fire, the
+# decision is the exact labelled share, and no draw, seed, size choice
+# or confidence bound exists to shop. The residual trust surface is
+# exactly two things, both stated in §6a: the per-fire LABELS, and the
+# population's correspondence to the cache (recorded protocol: the
+# digest derivation — sha256 of the canonical rel/note/obj triple plus
+# an occurrence ordinal — reproduces with --cache on the measuring
+# host, the reviewer's audit path).
+ADJUDICATION_SCHEMA = 6     # the ONE carrier of the current revision:
+                            # the validator, the worked example's
+                            # generator, the §6a generated claim and the
+                            # packaged tests all read THIS constant
+                            # (0026-PACKAGE-R6-1: prose carriers
+                            # described three different revisions)
 
 
 def _validate_adjudication(adj, agg, pct, sample_path) -> list:
@@ -333,12 +286,13 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                        f"expected {ty.__name__}")
     if out:
         return out
-    if adj["schema"] != 5:
-        out.append(f"adjudication schema {adj['schema']!r} is not 5 "
-                   f"(the nonce-free projection seed is a shape change "
-                   f"— 0026-EVIDENCE-R5-1 as completed at research's "
-                   f"round-5 pre-seal pass; the archive-sidecar form "
-                   f"was schema 4, the derived-count rule schema 3)")
+    if adj["schema"] != ADJUDICATION_SCHEMA:
+        out.append(f"adjudication schema {adj['schema']!r} is not "
+                   f"{ADJUDICATION_SCHEMA} (census-only adjudication is "
+                   f"a shape change — 0026-EVIDENCE-R6-1: eight faces of "
+                   f"the selection class ended sampling; earlier shapes: "
+                   f"5 projection seed, 4 archive sidecar, 3 derived "
+                   f"counts)")
     if adj["lexicon_version"] != agg["lexicon_version"]:
         out.append(f"adjudication is for lexicon "
                    f"{adj['lexicon_version']!r}, the aggregate is "
@@ -356,29 +310,20 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                    "aggregate's canonical bytes — it adjudicates some "
                    "other record")
     smp = adj["sample"]
-    S = {"size": int, "seed": int}
+    S = {"size": int}
     if sorted(smp) != sorted(S) or any(
             type(smp[k]) is not ty for k, ty in S.items() if k in smp):
         out.append(f"adjudication sample keys/types != {sorted(S)} — "
                    f"counts are DERIVED from the manifest, never carried "
-                   f"(0026-EVIDENCE-R4-1)")
+                   f"(0026-EVIDENCE-R4-1), and no seed exists: every "
+                   f"adjudication is a census (0026-EVIDENCE-R6-1)")
         return out
-    if smp["size"] != canonical_size(g["fires"]):
+    if smp["size"] != g["fires"]:
         out.append(f"adjudication sample size {smp['size']} is not the "
-                   f"CANONICAL size {canonical_size(g['fires'])} for a "
-                   f"{g['fires']}-fire population (census up to "
-                   f"{CENSUS_LIMIT}, else exactly {CENSUS_LIMIT}) — size "
-                   f"was the last host-chosen selection input and each "
-                   f"size is a different draw (0026-I7-1 addendum: "
-                   f"size-shopping closed structurally)")
-    want_seed = canonical_seed(agg)
-    if smp["seed"] != want_seed:
-        out.append(f"adjudication seed {smp['seed']} is not the "
-                   f"NONCE-FREE projection seed {want_seed} — the basis "
-                   f"is exactly the cross-anchored and decision-read "
-                   f"fields, so no byte in it can vary without moving "
-                   f"the measurement or tripping the anchor "
-                   f"(0026-EVIDENCE-R5-1)")
+                   f"population size {g['fires']} — every adjudication "
+                   f"is a CENSUS; there is no sampling construction "
+                   f"left to shop (0026-EVIDENCE-R6-1, ending the "
+                   f"selection class at face eight)")
     if out:
         return out
     # THE MANIFEST — opened, hashed, membership-checked, counted
@@ -428,11 +373,10 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     if len(seen) != smp["size"]:
         return [f"the manifest labels {len(seen)} fires but the record "
                 f"says size={smp['size']} — the carriers disagree"]
-    if seen != canonical_draw(agg, smp["size"], want_seed):
-        return [f"the manifest does not label the CANONICAL seeded draw "
-                f"for this aggregate — a host-selected sample voids the "
-                f"Wilson bound (0026-I7-1); label exactly the fires "
-                f"--sample prints"]
+    if seen != population:
+        return [f"the manifest does not label EXACTLY the population — "
+                f"a census labels every fire, no more, no fewer "
+                f"(0026-EVIDENCE-R6-1)"]
     # THE DECISION, computed from the DERIVED counts — never narrated
     if adj["verdict"] not in ("accept", "reject"):
         return [f"adjudication verdict {adj['verdict']!r} is outside the "
@@ -442,15 +386,10 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
         return [f"the adjudication verdict is REJECT — the labelling "
                 f"did not clear the over-gate record ({pct:.2f}% at the "
                 f"bound)"]
-    if smp["size"] == g["fires"]:
-        # a CENSUS: every fire labelled — the FP share is EXACT, there
-        # is no sampling variance to bound, so the exact share decides
-        share = fp / smp["size"]
-        basis = f"exact census share {fp}/{smp['size']}"
-    else:
-        share = _wilson_upper(fp, smp["size"])
-        basis = (f"Wilson-95 upper FP share {share:.3f} from "
-                 f"{fp}/{smp['size']}")
+    # a census: every fire labelled — the FP share is EXACT, there is
+    # no sampling variance to bound, so the exact share decides
+    share = fp / smp["size"]
+    basis = f"exact census share {fp}/{smp['size']}"
     adjudicated = pct * share
     if adjudicated > 2.0:
         return [f"the adjudication says accept but the ADJUDICATED rate "
@@ -642,7 +581,7 @@ def doc_problems(agg, doc_text: str) -> list:
          "the shipped column of the pass table (suppressed)"),
         (rf"\| {agg['coverage']['matched_by_lexicon']:,} / "
          rf"{agg['coverage']['with_nonempty_note']:,} = "
-         rf"\*\*{100.0 * agg['coverage']['matched_by_lexicon'] / agg['coverage']['with_nonempty_note']:.1f}%\*\* \|$",
+         rf"\*\*{(100.0 * agg['coverage']['matched_by_lexicon'] / agg['coverage']['with_nonempty_note']) if agg['coverage']['with_nonempty_note'] else 0.0:.1f}%\*\* \|$",
          "the shipped column of the pass table (coverage, denominator "
          "DERIVED — 0026-EVIDENCE-R5-2)"),
         (rf"matches \*\*{agg['coverage']['matched_by_lexicon']:,} of ",
@@ -678,7 +617,8 @@ def render_spec_claim(agg) -> str:
     return (
         "<!-- GENERATED:fp-claim (measure_false_positives.py — byte-bound "
         "to fp_aggregate.json; do not hand-edit) -->\n"
-        f"**MEASURED, under lexicon `{agg['lexicon_version']}`: "
+        f"**MEASURED, under lexicon `{agg['lexicon_version']}` "
+        f"(adjudication schema {ADJUDICATION_SCHEMA}, census-only): "
         f"{g['fires']:,} fires of {g['total']:,} grounded first-person "
         f"triples = {pct:.2f}% at the bound; the 2% gate is {disp}; "
         f"{g['fires_ambiguous_only']:,} fires restrict via the ambiguous "

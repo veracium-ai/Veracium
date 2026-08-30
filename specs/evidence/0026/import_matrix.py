@@ -30,6 +30,14 @@ MATRIX = (
     ("new", "restore", "present AND VALID, or absent",
      "restored VERBATIM, disclosure included (`0005` P2); recomputation "
      "diagnostic-only"),
+    ("new", "restore", "present, well-typed, FOREIGN lexicon version",
+     "restored VERBATIM — the version field exists to mark provenance, "
+     "and recomputation stays diagnostic-only (0026-R6-1: the "
+     "unrecognised cell is DISTINCT from malformed — a well-typed "
+     "record under another lexicon's version is not garbage, and "
+     "refusing it would break restore round-trips of exports made "
+     "under older lexicons; readers recompute under the current "
+     "lexicon at consumption, per the default-mode rule)"),
     ("new", "restore", "present but MALFORMED (wrong types, unknown "
      "keys, markers outside any lexicon's grammar)",
      "**RAISES, nothing written** — verbatim restore into a typed "
@@ -113,6 +121,7 @@ def render_2c_row() -> str:
     restore_malformed = _head(_cell("restore", "MALFORMED"))
     default_any = _head(_cell("default", "any state"))
     restore_valid = _head(_cell("restore", "VALID"))
+    restore_foreign = _head(_cell("restore", "FOREIGN"))
     return (
         "| an imported `AgreementRecord` (§3d) "
         "| absent → default mode: " + default_any + "; restore: "
@@ -122,7 +131,9 @@ def render_2c_row() -> str:
         "(PROJECTED with the §3d matrix from `import_matrix.py`, the "
         "one carrier) "
         "| foreign `lexicon` version → default mode: " + default_any
-        + " (incoming version diagnostic only) "
+        + " (incoming version diagnostic only); restore: "
+        + restore_foreign + " (0026-R6-1: both modes stated — the cell "
+        "was default-only) "
         "| forged markers on marker-free text → default mode: "
         + default_any + "; restore: " + restore_valid + " "
         "| **V6a**: default mode recomputes so a forged record cannot "
