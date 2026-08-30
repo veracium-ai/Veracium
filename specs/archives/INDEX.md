@@ -4,7 +4,7 @@
 
 # Review archives
 
-**275 archives, 766453 KB.** Each is the exact package sent for one
+**276 archives, 773281 KB.** Each is the exact package sent for one
 external review round.
 
 **Naming:** `NNNN-v<version>-<YYYYMMDDTHHMMZ>.tar.gz` — spec number first so
@@ -300,6 +300,7 @@ existed rather than a way to check it.
 | `0026-v5-20260829T2225Z.tar.gz` | 0026 | v5 | 2026-08-29 22:25Z | 524 | 6798 KB | `7d1314c4e13155ad…` |
 | `0026-v6-20260829T2345Z.tar.gz` | 0026 | v6 | 2026-08-29 23:45Z | 530 | 6812 KB | `e89958b1ff519139…` |
 | `0026-v7-20260830T0120Z.tar.gz` | 0026 | v7 | 2026-08-30 01:20Z | 532 | 6817 KB | `b62675e203a545a4…` |
+| `0026-v8-20260830T0226Z.tar.gz` | 0026 | v8 | 2026-08-30 02:26Z | 538 | 6828 KB | `55e5c0a1661b4386…` |
 
 **To verify a copy you were sent:**
 
@@ -407,7 +408,7 @@ so a reviewer opens on the disclosed diff instead of discovering it.*
 | 0026 | v5 | 5 | `0026-v5-20260829T2225Z.tar.gz` | `7d1314c4e13155ad…` |
 | 0026 | v6 | 6 | `0026-v6-20260829T2345Z.tar.gz` | `e89958b1ff519139…` |
 | 0026 | v7 | 7 | `0026-v7-20260830T0120Z.tar.gz` | `b62675e203a545a4…` |
-| 0026 | v8 | 8 | **0 sidecars — LINEAGE GAP** | — |
+| 0026 | v8 | 8 | `0026-v8-20260830T0226Z.tar.gz` | `55e5c0a1661b4386…` |
 
 Superseded/discarded seals (disclosed, deliberately un-witnessed):
 

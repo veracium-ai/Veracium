@@ -2255,8 +2255,16 @@ REVIEWS = [
          "raises only under the current version; both projections "
          "carry it. PACKAGE-R7-1 closed: operational prose swept "
          "(--sample help, two test comments), the one-carrier claim "
-         "constrained precisely. Sealed AFTER this row, sha pinned on "
-         "return", findings=0),
+         "constrained precisely. Research's round-7 pre-seal pass "
+         "CLEARED the seal (fp-union endorsed; bootstrap unreachable "
+         "from verify) with two hardenings folded (co-verifier "
+         "independence stated precisely as a process guarantee; "
+         "--peer-anchor gated behind --fixture with branded "
+         "non-evidence output) and the over-gate-marker rider "
+         "declined with the duplicate-carrier reason recorded. Sealed "
+         "as 0026-v8-20260830T0226Z.tar.gz, sha256 "
+         "55e5c0a1661b4386944b176669b6b77c8a51d3305027a8bafe724208"
+         "7bfa0612, commit c78457d", findings=0),
 
     dict(spec="0026", round=9, kind="internal", date="2026-08-30",
          verdict="PASS — SEAL CLEARED (research, round-7 pre-seal pass "
