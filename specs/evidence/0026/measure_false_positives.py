@@ -241,32 +241,19 @@ ADJUDICATION_SCHEMA = 6     # the ONE carrier of the current revision:
 
 
 def _validate_adjudication(adj, agg, pct, sample_path) -> list:
-    """The labelling verdict that alone may carry an over-gate record —
-    RECORD-BOUND and DERIVED, not narrated (0026-EVIDENCE-R4-1, the
-    signature defect's sixth face: schema 2 accepted true_positive=100 /
-    false_positive=-50 because labels only had to SUM to size, and
-    sample_sha256 was regex-checked but never opened or hashed). Schema 3
-    closes the class structurally — the check compares data to data:
-
-      * the labelled sample is an ON-DISK artifact (live only when the
-        gate is exceeded; the shipped worked example is synthetic —
-        0026-PACKAGE-R5-1)
-        (fp_adjudication_sample.jsonl beside the adjudication record):
-        one line per labelled fire, {"fire": <sha256>, "label": "tp"|"fp"};
-      * `sample_sha256` is the digest OF THAT FILE's bytes — the verifier
-        opens and hashes it, so the digest can no longer point at nothing;
-      * every labelled fire must be a MEMBER of the aggregate's
-        `fire_digests` population, and no fire is labelled twice — the
-        sample cannot be drawn from thin air;
-      * the counts are DERIVED by counting labels — the record carries no
-        count carriers to disagree with, and a derived count cannot be
-        negative or exceed the sample;
-      * the DECISION is computed: verdict is the closed {"accept",
-        "reject"} enum; reject refuses; accept requires
-        pct x WilsonUpper95(fp, n) <= 2.0 — the upper confidence bound,
-        never the point estimate;
-      * the aggregate side is digest-bound as before (aggregate_sha256 ==
-        the canonical bytes of this exact aggregate)."""
+    """The CENSUS labelling verdict that alone may carry an over-gate
+    record. The rules live in THE CODE BELOW and the current revision is
+    named by ADJUDICATION_SCHEMA — this docstring deliberately restates
+    neither (0026-I8-1: prose that restates a mechanism is the one
+    carrier the generated-schema pattern cannot bind, and this very
+    docstring drifted through two revisions saying "Schema 3" and
+    "Wilson" after both were gone). In one line each: every fire is
+    labelled (a census — no sampling construction exists, EVIDENCE-R6-1
+    face eight); the manifest is opened, hashed, membership-checked and
+    COUNTED (counts are derived, never carried — EVIDENCE-R4-1); the
+    verdict is a closed enum whose accept must agree with the EXACT
+    labelled share against the 2% gate; and the record is digest-bound
+    to this exact aggregate. History: §13-§16 of the spec, per round."""
     out = []
     if type(adj) is not dict or not adj:
         return ["fp_adjudication.json is empty or not an object — a "

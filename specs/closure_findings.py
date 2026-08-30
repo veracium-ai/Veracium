@@ -2668,4 +2668,17 @@ CLOSURES = [
      "zero-denominator cell refuses structurally and stands",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "internal", 8, "0026-I8-1",
+     "the next half-swept carrier after the one-schema fix is PROSE "
+     "THAT RESTATES MECHANISMS: _validate_adjudication's docstring "
+     "still said 'Schema 3' and 'Wilson' two revisions after both were "
+     "deleted — natural-language prose is the one carrier the "
+     "generated-schema pattern cannot bind",
+     "the docstring names the mechanism's carriers (the code below it, "
+     "ADJUDICATION_SCHEMA, the spec's per-round history) instead of "
+     "restating rules; the live-prose sweep ran with history sections "
+     "standing as history; the drift is named IN the docstring as its "
+     "own cautionary case",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_live_prose_names_carriers_not_mechanisms -q -p no:randomly"),
 ]

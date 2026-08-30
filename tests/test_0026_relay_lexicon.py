@@ -986,3 +986,31 @@ def test_the_worked_adjudication_example_validates_from_disk():
                         / "fp_aggregate.json").read_text())
     lg = live["grounded_first_person"]
     assert 100.0 * lg["fires"] / lg["total"] <= 2.0
+
+
+def test_live_prose_names_carriers_not_mechanisms():
+    """0026-I8-1: prose that RESTATES a mechanism is the one carrier
+    the generated-schema pattern cannot bind — the adjudication
+    docstring said 'Schema 3' and 'Wilson' two revisions after both
+    were deleted. The live docstring must reference the mechanism's
+    carriers, and the deleted machinery's names may appear only as
+    named history of the drift itself."""
+    import importlib
+    MF = importlib.import_module("measure_false_positives")
+    doc = MF._validate_adjudication.__doc__
+    assert "ADJUDICATION_SCHEMA" in doc, (
+        "the docstring must point at the one generated revision carrier")
+    assert "census" in doc.lower()
+    # the stale terms appear ONLY inside the drift's own history note
+    for stale in ("Schema 3", "Wilson"):
+        for i, line in enumerate(doc.splitlines()):
+            if stale in line:
+                ctx = " ".join(doc.splitlines()[max(0, i - 2):i + 2])
+                assert ("drifted" in ctx or "0026-I8-1" in ctx), (
+                    f"{stale!r} appears in live prose outside the "
+                    f"drift-history note: {line!r}")
+    # and no deleted sampling machinery survives in the module
+    for gone in ("_wilson_upper", "canonical_seed", "canonical_draw",
+                 "CENSUS_LIMIT", "seed_from_archive"):
+        assert not hasattr(MF, gone), (
+            f"{gone} is back — sampling ended at EVIDENCE-R6-1")

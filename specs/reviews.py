@@ -2164,6 +2164,25 @@ REVIEWS = [
          "cell standing. Sealed AFTER this row, sha pinned on return",
          findings=0),
 
+    dict(spec="0026", round=8, kind="internal", date="2026-08-30",
+         raised=["0026-I8-1"],
+         verdict="PASS — SEAL CLEARED (research, round-6 pre-seal pass "
+         "at 03a5881; 84 passed; census verified: decision exact, "
+         "seen != population refuses, size == fires, no dead sampling "
+         "code; the digest derivation confirmed ORDER-INVARIANT so "
+         "--cache reproduction is robust; the expensive-escape-hatch "
+         "incentive design ENDORSED — an over-gate lexicon is a defect "
+         "and census cost channels toward narrowing it, with no new "
+         "gaming surface). I8-1 MODERATE (folded pre-seal): the next "
+         "half-swept carrier after the one-schema fix is PROSE THAT "
+         "RESTATES MECHANISMS — _validate_adjudication's docstring "
+         "still said Schema 3 and Wilson two revisions after both were "
+         "gone. Two riders folded as §6a explicit non-optional "
+         "protocol obligations: re-run population co-verification (the "
+         "sole population-cache check) and independent label "
+         "co-verification (the honest and fraudulent census cost the "
+         "same labour; co-verification separates them)", findings=1),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "
