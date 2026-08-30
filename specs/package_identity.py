@@ -152,9 +152,10 @@ PACKAGES = {
 # newest (the frontier exemption let the newest witness be deleted
 # silently). The sealer refuses to seal any version not named here, and
 # the sidecar commit that lands the witness also clears this.
-IN_FLIGHT: tuple = ("0026-v10",)  # C8-1/C9-1: the ONE declared seal
-                                   # (0026 round-9 fold; seal WAITS on
-                                   # research's pre-seal red-team pass)
+IN_FLIGHT: tuple = ()              # C8-1/C9-1: no seal in flight
+                                   # (0026-v10 sealed 20260830T1321Z
+                                   # after research's round-9 pass +
+                                   # class fold; sidecar committed)
 
 DISCARDED_PRE_ROUND = (
     "0001-v3-20260822T2144Z (sealed, discarded unsent)",

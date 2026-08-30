@@ -2448,8 +2448,14 @@ REVIEWS = [
          "scope stated precisely. EVIDENCE-R9-3 closed: the "
          "duplicate-cache regression is PROBATIVE — matching peer, "
          "bootstrap exit 3 required, the exact '1 unparseable' count "
-         "asserted. Sealed AFTER this row, sha pinned on return",
-         findings=0),
+         "asserted. Research's round-9 pre-seal pass CLEARED the seal "
+         "and its R9-1-class recommendation was folded same-day "
+         "(executable lexicon->stored mapping, shape derived as its "
+         "image, domain-equality standing; the carrier registry; the "
+         "undecodable-bytes fallback — internal round 12). Sealed as "
+         "0026-v10-20260830T1321Z.tar.gz, sha256 "
+         "23533a67374e247178f820004bfe684b8e5e1ae36ab07c432b144780"
+         "54602231, commit c3cafd2", findings=0),
 
     dict(spec="0026", round=12, kind="internal", date="2026-08-30",
          verdict="PASS — SEAL CLEARED (research, round-9 pre-seal pass "
