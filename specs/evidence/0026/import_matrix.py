@@ -30,16 +30,24 @@ MATRIX = (
     ("new", "restore", "present AND VALID, or absent",
      "restored VERBATIM, disclosure included (`0005` P2); recomputation "
      "diagnostic-only"),
-    ("new", "restore", "present, well-typed, FOREIGN lexicon version",
+    ("new", "restore", "present, well-typed, FOREIGN lexicon version "
+     "(markers OPAQUE: e.g. markers=['future_marker'] under "
+     "lexicon='0026-lex-999')",
      "restored VERBATIM — the version field exists to mark provenance, "
-     "and recomputation stays diagnostic-only (0026-R6-1: the "
-     "unrecognised cell is DISTINCT from malformed — a well-typed "
-     "record under another lexicon's version is not garbage, and "
-     "refusing it would break restore round-trips of exports made "
-     "under older lexicons; readers recompute under the current "
-     "lexicon at consumption, per the default-mode rule)"),
+     "and recomputation stays diagnostic-only. GRAMMAR MEMBERSHIP IS "
+     "VERSION-SCOPED (0026-R7-1): under a foreign version the reader "
+     "CANNOT know that lexicon's vocabulary, so markers are validated "
+     "as OPAQUE closed shapes only — nonempty bounded strings, bounded "
+     "count, closed record types — never for membership; the "
+     "malformed row's out-of-grammar rule applies ONLY under the "
+     "CURRENT version, where the vocabulary is known (0026-R6-1: a "
+     "well-typed foreign record is not garbage, and refusing it would "
+     "break restore round-trips of old exports; readers recompute "
+     "under the current lexicon at consumption)"),
     ("new", "restore", "present but MALFORMED (wrong types, unknown "
-     "keys, markers outside any lexicon's grammar)",
+     "keys, or — under the CURRENT lexicon version only — markers "
+     "outside its grammar; foreign-version membership is unknowable "
+     "and handled by the opaque rule above, 0026-R7-1)",
      "**RAISES, nothing written** — verbatim restore into a typed "
      "carrier is impossible for garbage, and flooring it would silently "
      "accept a corrupt export (the R1-4 ruling, applied to the restore "

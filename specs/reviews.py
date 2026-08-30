@@ -2174,6 +2174,43 @@ REVIEWS = [
          "b62675e203a545a476ed64d107ea766b3855d1c818b9d038df4e3d22"
          "b151b32d, commit b483531", findings=0),
 
+    dict(spec="0026", round=7, kind="external", date="2026-08-30",
+         raised=["0026-EVIDENCE-R7-1", "0026-EVIDENCE-R7-2",
+                 "0026-R7-1", "0026-PACKAGE-R7-1"],
+         verdict="RETURN FOR NARROW AMENDMENT (package `0026-v7`, sha "
+         "b62675e2 verified; 532 members; exact v6 predecessor; diff 11 "
+         "changed/2 added/0 concurrent; focused 85 passed; qualified "
+         "extracted suite reconciled to all 2036 collected; the v6 "
+         "digest-nonce attack CONFIRMED DEAD — no sampling symbol "
+         "survives; the foreign-version restore cell, the generator "
+         "byte-identity, and the zero-denominator fix all confirmed). "
+         "EVIDENCE-R7-1 BLOCKING: the live over-gate census CANNOT BE "
+         "CREATED — measurement validates BEFORE emitting, and an "
+         "over-2% result demands the adjudication that the emitted "
+         "aggregate and census worklist exist to enable (executed: "
+         "fresh over-gate cache -> exit 1, nothing emitted, no census "
+         "printed); the synthetic example never exercises the bootstrap "
+         "because its generator hand-builds every artifact. "
+         "EVIDENCE-R7-2 BLOCKING: independent label co-verification is "
+         "neither JUDGEABLE nor BOUND — --sample truncates note[:150]/"
+         "obj[:110] (two fires with late-differing source text produced "
+         "identical displays), the manifest is hashes-only so content "
+         "cannot be recovered, and a host-only all-tp census returns [] "
+         "with no co-verifier evidence required. R7-1 BLOCKING: "
+         "foreign-version MARKER validity undefined — "
+         "markers=['future_marker'] under lex-999/restore is well-typed "
+         "but the reader cannot know whether it belongs to that "
+         "lexicon's vocabulary; the foreign row says verbatim while the "
+         "malformed row says out-of-grammar raises. PACKAGE-R7-1 "
+         "MODERATE (the half-swept-carrier class persists in "
+         "OPERATIONAL prose): --sample help still says 'draw N fires'; "
+         "test comments still say projection-seed and v0-witness; "
+         "Version/SENT/closure prose hard-codes 'schema 6' while "
+         "claiming prose no longer numbers revisions. Requested "
+         "artifact: a tiny end-to-end over-gate cache fixture covering "
+         "measurement -> emission -> census worklist -> independent "
+         "relabelling -> final verification", findings=4),
+
     dict(spec="0026", round=8, kind="internal", date="2026-08-30",
          raised=["0026-I8-1"],
          verdict="PASS — SEAL CLEARED (research, round-6 pre-seal pass "
@@ -2192,6 +2229,34 @@ REVIEWS = [
          "sole population-cache check) and independent label "
          "co-verification (the honest and fraudulent census cost the "
          "same labour; co-verification separates them)", findings=1),
+
+    dict(spec="0026", round=8, kind="external", date="2026-08-30",
+         candidate={"0026": "v11"},
+         verdict="SENT (package `0026-v8`, candidate draft v11 — the "
+         "round-7 fold; §17 maps all four findings). EVIDENCE-R7-1 "
+         "closed: the bootstrap deadlock — measurement validates in "
+         "bootstrap mode and an over-gate rate is a distinct reported "
+         "STATE (own exit code; aggregate + FULL-CONTENT local-only "
+         "worklist emitted; acceptance never claimed; the verify entry "
+         "keeps refusing; the adjudication is looked for beside the "
+         "aggregate under verification); the shipped synthetic "
+         "e2e_fixture drives measurement -> emission -> worklist -> "
+         "both censuses -> final verification through the real main() "
+         "as a standing test (the reviewer's requested artifact). "
+         "EVIDENCE-R7-2 closed: co-verification is MECHANICALLY BOUND "
+         "— the schema-7 record binds the host census AND an "
+         "independent co-verifier census (one shared grammar/reader), "
+         "the decision runs on the fail-closed fp-UNION with "
+         "disagreements counted, a host-only record refuses, and "
+         "--worklist provides full-content judgeability. R7-1 closed: "
+         "grammar membership is VERSION-SCOPED — foreign-version "
+         "markers validate as opaque closed shapes (the reviewer's "
+         "future_marker case named in the matrix cell); out-of-grammar "
+         "raises only under the current version; both projections "
+         "carry it. PACKAGE-R7-1 closed: operational prose swept "
+         "(--sample help, two test comments), the one-carrier claim "
+         "constrained precisely. Sealed AFTER this row, sha pinned on "
+         "return", findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "

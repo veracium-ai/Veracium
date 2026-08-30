@@ -606,15 +606,17 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
             (json.dumps(a, sort_keys=True, indent=1) + "\n").encode()
         ).hexdigest()
 
-    # 0026-EVIDENCE-R5-1 (completed at research's round-5 pre-seal
-    # pass): the seed is the NONCE-FREE projection — derived from
-    # exactly the cross-anchored and decision-read fields, so no basis
-    # byte can vary without moving the measurement or tripping the
-    # anchor. (SEED is computed after `over` below.)
+    # 0026-EVIDENCE-R6-1: no seed exists — every adjudication is a
+    # census (the round-5 projection seed and every sampling successor
+    # were retired at face eight of the selection class)
 
-    def _adj_on_disk(name, adj, manifest_lines, raw_bytes=None):
-        """One adjudication record + its sibling manifest in a private
-        dir — the validator derives the manifest path from the record's."""
+    def _adj_on_disk(name, adj, manifest_lines, raw_bytes=None,
+                     co_lines=None, no_co=False):
+        """One adjudication record + its sibling manifests in a private
+        dir — the validator derives both paths from the record's. The
+        co-verification census defaults to CONCURRING labels
+        (0026-EVIDENCE-R7-2); no_co=True omits it (the host-only cell),
+        co_lines overrides it."""
         d = tmp_path / name
         d.mkdir()
         sp = d / "fp_adjudication_sample.jsonl"
@@ -622,7 +624,12 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
                "".join(json.dumps(r) + "\n"
                        for r in manifest_lines).encode())
         sp.write_bytes(raw)
-        adj = dict(adj, sample_sha256=_hl.sha256(raw).hexdigest())
+        co_raw = (raw if co_lines is None else
+                  "".join(json.dumps(r) + "\n" for r in co_lines).encode())
+        if not no_co:
+            (d / "fp_coverification_sample.jsonl").write_bytes(co_raw)
+        adj = dict(adj, sample_sha256=_hl.sha256(raw).hexdigest(),
+                   coverification_sha256=_hl.sha256(co_raw).hexdigest())
         ap = d / "fp_adjudication.json"
         ap.write_text(json.dumps(adj))
         return ap
@@ -664,7 +671,8 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     d = tmp_path / "dangling"
     d.mkdir()
     ap = d / "fp_adjudication.json"
-    ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32)))
+    ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32,
+                                  coverification_sha256="ab" * 32)))
     bad = _validate(over, ap)
     assert any("points at nothing" in b for b in bad), bad
     # a manifest whose bytes do not hash to sample_sha256 refuses
@@ -672,9 +680,10 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     d.mkdir()
     (d / "fp_adjudication_sample.jsonl").write_text("")
     ap = d / "fp_adjudication.json"
-    ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32)))
+    ap.write_text(json.dumps(dict(good_adj, sample_sha256="ab" * 32,
+                                  coverification_sha256="ab" * 32)))
     bad = _validate(over, ap)
-    assert any("some other sample" in b for b in bad), bad
+    assert any("some other census" in b for b in bad), bad
     # a census over the WRONG fires: one population digest substituted
     # for a foreign one refuses (the round-6 single-digest attack has
     # nothing left to shop — but a fabricated member still refuses)
@@ -687,11 +696,11 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
     bad = _validate(over, _adj_on_disk("partial", part,
                                        good_labels[:500]))
     assert any("CENSUS" in b for b in bad), bad
-    # ...and a manifest that under-labels while claiming the full size
-    # refuses on carrier disagreement
+    # ...and a manifest that under-labels refuses on census
+    # completeness (the reader checks population equality per manifest)
     bad = _validate(over, _adj_on_disk("short", good_adj,
                                        good_labels[:-1]))
-    assert any("carriers disagree" in b for b in bad), bad
+    assert any("no more, no fewer" in b for b in bad), bad
     # the same fire labelled twice refuses
     dbl = good_labels[:-1] + [good_labels[0]]
     bad = _validate(over, _adj_on_disk("double", good_adj, dbl))
@@ -718,6 +727,23 @@ def test_the_gate_and_the_doc_are_bound(tmp_path):
             + [{"fire": f, "label": "tp"} for f in pop[1369:]])
     bad = _validate(over, _adj_on_disk("cool", good_adj, cool))
     assert bad == [], ("the just-under-the-bar census was refused", bad)
+    # 0026-EVIDENCE-R7-2: a HOST-ONLY census is not an adjudication —
+    # without the independent co-verification manifest the record
+    # refuses, whatever the labels say
+    bad = _validate(over, _adj_on_disk("hostonly", good_adj,
+                                       good_labels, no_co=True))
+    assert any("host-only labels are not an adjudication" in b
+               for b in bad), bad
+    # the FAIL-CLOSED union: host says all-tp, the co-verifier flags
+    # enough fp that the union crosses the bar — the accept refuses
+    # (the host's under-labelling incentive cannot win)
+    all_tp = [{"fire": f, "label": "tp"} for f in pop]
+    co_hot = ([{"fire": f, "label": "fp"} for f in pop[:1370]]
+              + [{"fire": f, "label": "tp"} for f in pop[1370:]])
+    bad = _validate(over, _adj_on_disk("union", good_adj, all_tp,
+                                       co_lines=co_hot))
+    assert any("fp-union" in b and "disagreement" in b
+               for b in bad), bad
     # a digest for some other aggregate cannot carry this one
     bad = _validate(over, _adj_on_disk(
         "wrongd", dict(good_adj, aggregate_sha256="0" * 64),
@@ -971,7 +997,7 @@ def test_the_worked_adjudication_example_validates_from_disk():
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     # the example is honest about being synthetic: over-gate (the path
-    # exercised), census-sized (the exact-share branch), demo witness v0
+    # exercised) and labelled as a census by both parties (R7-2)
     g = agg["grounded_first_person"]
     assert 100.0 * g["fires"] / g["total"] > 2.0
     adj = _json.loads((D / "fp_adjudication.json").read_text())
@@ -1014,3 +1040,81 @@ def test_live_prose_names_carriers_not_mechanisms():
                  "CENSUS_LIMIT", "seed_from_archive"):
         assert not hasattr(MF, gone), (
             f"{gone} is back — sampling ended at EVIDENCE-R6-1")
+
+
+def test_the_over_gate_pipeline_end_to_end(tmp_path):
+    """0026-EVIDENCE-R7-1 + R7-2: the live over-gate census must be
+    CREATABLE — round 7 executed a fresh over-gate measurement and got
+    exit 1 with nothing emitted, because validation demanded the
+    adjudication the emission exists to enable. The whole pipeline,
+    through the real main(): measurement reaches the distinct
+    OVER-NEEDS-ADJUDICATION state (exit 3, aggregate + FULL-CONTENT
+    worklist emitted, acceptance not claimed) → census labelled from
+    the worklist → independent co-verification census → final
+    --aggregate verification accepts only with BOTH manifests bound."""
+    import hashlib as _hl
+    import importlib
+    import json as _json
+    import subprocess
+    import sys as _sys
+    MF = importlib.import_module("measure_false_positives")
+    FIX = ROOT / "specs" / "evidence" / "0026" / "e2e_fixture"
+    script = ROOT / "specs" / "evidence" / "0026" / \
+        "measure_false_positives.py"
+    aggp = tmp_path / "agg.json"
+    workp = tmp_path / "worklist.jsonl"
+
+    # stage 1: measurement — the bootstrap state, not a failure
+    r = subprocess.run(
+        [_sys.executable, str(script),
+         "--cache", str(FIX / "fixture_cache.jsonl"),
+         "--emit-aggregate", str(aggp), "--worklist", str(workp),
+         "--peer-anchor", str(FIX / "fixture_peer.json")],
+        capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 3, (r.returncode, r.stdout[-400:], r.stderr[-400:])
+    assert "NEEDS ADJUDICATION" in r.stdout
+    assert "NOT claimed" in r.stdout
+    assert aggp.is_file(), "the over-gate aggregate must be emittable"
+    agg = _json.loads(aggp.read_text())
+    pop = agg["fire_digests"]
+    assert len(pop) == 3
+    # the worklist is FULL-CONTENT and keyed by digest (R7-2: truncated
+    # previews made fires unjudgeable)
+    work = [_json.loads(l) for l in workp.read_text().splitlines()]
+    assert {w["fire"] for w in work} == set(pop)
+    assert all("my doctor said synthetic thing" in w["note"]
+               for w in work), "the worklist must carry FULL content"
+
+    # stage 2: the host census + the independent co-verification census
+    lines = "".join(_json.dumps({"fire": f, "label": "tp"}) + "\n"
+                    for f in sorted(pop))
+    (tmp_path / "fp_adjudication_sample.jsonl").write_text(lines)
+    co = "".join(_json.dumps({"fire": f, "label": "tp"}) + "\n"
+                 for f in sorted(pop))
+    (tmp_path / "fp_coverification_sample.jsonl").write_text(co)
+    adj = dict(schema=MF.ADJUDICATION_SCHEMA,
+               lexicon_version=agg["lexicon_version"],
+               fires=3, sample=dict(size=3), verdict="accept",
+               aggregate_sha256=_hl.sha256(
+                   aggp.read_bytes()).hexdigest(),
+               sample_sha256=_hl.sha256(lines.encode()).hexdigest(),
+               coverification_sha256=_hl.sha256(co.encode()).hexdigest())
+    (tmp_path / "fp_adjudication.json").write_text(_json.dumps(adj))
+
+    # stage 3: final verification through the real entry — accepts
+    # (all-tp censuses: exact share 0, adjudicated 0% <= 2%)
+    r = subprocess.run(
+        [_sys.executable, str(script), "--aggregate", str(aggp),
+         "--peer-anchor", str(FIX / "fixture_peer.json")],
+        capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 0, r.stderr[-500:]
+
+    # and WITHOUT the co-verification manifest the same record refuses:
+    # host-only labels are not an adjudication (R7-2)
+    (tmp_path / "fp_coverification_sample.jsonl").unlink()
+    r = subprocess.run(
+        [_sys.executable, str(script), "--aggregate", str(aggp),
+         "--peer-anchor", str(FIX / "fixture_peer.json")],
+        capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 1
+    assert "host-only labels are not an adjudication" in r.stderr

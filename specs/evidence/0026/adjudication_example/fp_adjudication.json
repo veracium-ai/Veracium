@@ -1,5 +1,5 @@
 {
- "schema": 6,
+ "schema": 7,
  "lexicon_version": "0026-lex-10",
  "fires": 120,
  "sample": {
@@ -7,5 +7,6 @@
  },
  "verdict": "accept",
  "aggregate_sha256": "b4d1e6293de76f5736e0d00b193c2fd45e8b3737c0f0295aaa8665c45e63eeb4",
- "sample_sha256": "9caeb6449cfe690b41ea5c43af6aee1f0e91a4eeeca1b6e11670f5c4bea34c1b"
+ "sample_sha256": "9caeb6449cfe690b41ea5c43af6aee1f0e91a4eeeca1b6e11670f5c4bea34c1b",
+ "coverification_sha256": "6fb29a8848100be5be1539a9b7f40c28f801c355c07be2180edf9462268b57d5"
 }

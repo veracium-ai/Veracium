@@ -47,6 +47,15 @@ def generate(out_dir: pathlib.Path) -> dict:
                                          else "tp")}) + "\n"
         for i, f in enumerate(pop))
     (out_dir / "fp_adjudication_sample.jsonl").write_text(lines)
+    # the INDEPENDENT co-verification census (0026-EVIDENCE-R7-2):
+    # concurs on all but one fire — the disagreement goes fp in the
+    # fail-closed union, demonstrating the combination rule
+    co_lines = "".join(
+        json.dumps({"fire": f,
+                    "label": ("fp" if i < FP_LABELLED + 1 else "tp")})
+        + "\n"
+        for i, f in enumerate(pop))
+    (out_dir / "fp_coverification_sample.jsonl").write_text(co_lines)
     adj = dict(schema=M.ADJUDICATION_SCHEMA,
                lexicon_version=agg["lexicon_version"], fires=FIRES,
                sample=dict(size=FIRES),      # a census: size == fires,
@@ -54,7 +63,9 @@ def generate(out_dir: pathlib.Path) -> dict:
                aggregate_sha256=hashlib.sha256(
                    (json.dumps(agg, sort_keys=True, indent=1) + "\n")
                    .encode()).hexdigest(),
-               sample_sha256=hashlib.sha256(lines.encode()).hexdigest())
+               sample_sha256=hashlib.sha256(lines.encode()).hexdigest(),
+               coverification_sha256=hashlib.sha256(
+                   co_lines.encode()).hexdigest())
     (out_dir / "fp_adjudication.json").write_text(
         json.dumps(adj, indent=1) + "\n")
     return agg

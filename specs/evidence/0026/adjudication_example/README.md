@@ -19,15 +19,20 @@ Contents, every value derived (no hand-typed figures):
 - `demo_aggregate.json` — a synthetic 120-fire / 4,000-triple
   population (3.0%: over-gate, so the adjudication path is exercised;
   the census labels every fire and the EXACT share decides).
-- `fp_adjudication_sample.jsonl` — the census label manifest: one
-  `{"fire": <digest>, "label": "tp"|"fp"}` line per fire, 20 labelled
-  `fp`.
+- `fp_adjudication_sample.jsonl` — the measuring host's census label
+  manifest: one `{"fire": <digest>, "label": "tp"|"fp"}` line per
+  fire, 20 labelled `fp`.
+- `fp_coverification_sample.jsonl` — the INDEPENDENT co-verifier's
+  census over the same population (0026-EVIDENCE-R7-2: a host-only
+  census is not an adjudication). It concurs on all but one fire; the
+  disagreement counts `fp` in the fail-closed union, so the decision
+  runs on 21 fp of 120.
 - `fp_adjudication.json` — the current-schema record (the schema
   number comes from `measure_false_positives.ADJUDICATION_SCHEMA`, the
   one carrier of the revision) binding all of it: aggregate digest,
   manifest digest, the census size, `verdict: accept` — which the
-  validator CHECKS (exact census share 20/120 → 3.0% × 0.1667 = 0.5%
-  ≤ 2%), never believes. Every adjudication is a CENSUS: no draw, seed
+  validator CHECKS (fail-closed union: 21 fp of 120 → 3.0% × 0.175 =
+  0.525% ≤ 2%), never believes. Every adjudication is a CENSUS: no draw, seed
   or size choice exists (0026-EVIDENCE-R6-1 ended sampling at face
   eight of the selection class).
 

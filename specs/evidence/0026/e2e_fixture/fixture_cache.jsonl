@@ -1,0 +1,20 @@
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 0\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 1\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 2\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 3\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 4\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 5\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 6\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 7\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 8\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 9\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 10\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 11\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 12\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 13\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 14\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 15\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"works_as\", \"object\": \"synthetic role 16\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"health_state\", \"object\": \"synthetic state 0\", \"note\": \"my doctor said synthetic thing 0\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"health_state\", \"object\": \"synthetic state 1\", \"note\": \"my doctor said synthetic thing 1\"}]}"}
+{"value": "{\"triples\": [{\"subject\": \"user\", \"relation\": \"health_state\", \"object\": \"synthetic state 2\", \"note\": \"my doctor said synthetic thing 2\"}]}"}

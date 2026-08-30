@@ -2652,11 +2652,13 @@ CLOSURES = [
      "projection seed, and the example README claimed a generator the "
      "package did not ship",
      "closed STRUCTURALLY per the reviewer's fix: ADJUDICATION_SCHEMA "
-     "is the one generated carrier of the revision (validator, "
-     "shipped generator, §6a claim block and tests all read it; prose "
-     "no longer numbers revisions); generate_example.py ships and the "
-     "standing test requires byte-identical regeneration; the Version "
-     "row and SENT row carry visible corrections",
+     "is the one generated carrier of the CURRENT revision (validator, "
+     "shipped generator, §6a claim block and tests all read it; "
+     "current-summary prose derives or omits the number — HISTORICAL "
+     "prose names the schema of its own round, a constraint round 7 "
+     "made explicit); generate_example.py ships and the standing test "
+     "requires byte-identical regeneration; the Version row and SENT "
+     "row carry visible corrections",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_the_worked_adjudication_example_validates_from_disk "
      "-q -p no:randomly"),
@@ -2679,6 +2681,61 @@ CLOSURES = [
      "restating rules; the live-prose sweep ran with history sections "
      "standing as history; the drift is named IN the docstring as its "
      "own cautionary case",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_live_prose_names_carriers_not_mechanisms -q -p no:randomly"),
+    ("0026", "external", 7, "0026-EVIDENCE-R7-1",
+     "the live over-gate census could not be CREATED: measurement "
+     "validated before emitting, and an over-2% result demanded the "
+     "adjudication that the emitted aggregate and worklist exist to "
+     "enable — a bootstrap deadlock (executed: fresh over-gate cache, "
+     "exit 1, nothing emitted); the synthetic example never exercised "
+     "the path because its generator hand-builds every artifact",
+     "measurement validates in BOOTSTRAP mode: structural problems "
+     "refuse, an over-gate rate is a distinct reported STATE (exit 3, "
+     "aggregate + worklist emitted, acceptance never claimed); the "
+     "verify entry keeps refusing; the adjudication is looked for "
+     "beside the aggregate under verification; the shipped synthetic "
+     "e2e_fixture drives every stage through the real main() as a "
+     "standing regression",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_over_gate_pipeline_end_to_end -q -p no:randomly"),
+    ("0026", "external", 7, "0026-EVIDENCE-R7-2",
+     "independent label co-verification was neither judgeable nor "
+     "bound: --sample truncated note/object so distinct fires "
+     "displayed identically, the manifest is hashes-only so content "
+     "cannot be recovered, and a host-only all-tp census returned [] "
+     "with no co-verifier evidence required",
+     "schema 7 BINDS both censuses (host + independent co-verifier, "
+     "one shared reader); the decision runs on the fail-closed "
+     "fp-UNION with disagreements counted; a missing co-verification "
+     "refuses (host-only labels are not an adjudication); --worklist "
+     "emits the full-content LOCAL-ONLY worklist keyed by fire digest",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_the_gate_and_the_doc_are_bound -q -p no:randomly"),
+    ("0026", "external", 7, "0026-R7-1",
+     "foreign-version MARKER validity was undefined: "
+     "markers=['future_marker'] under lexicon=0026-lex-999/restore is "
+     "well-typed, but the reader cannot know that lexicon's "
+     "vocabulary — the foreign row said verbatim while the malformed "
+     "row said out-of-grammar raises",
+     "grammar membership is VERSION-SCOPED, mechanically: foreign-"
+     "version markers validate as OPAQUE closed shapes (nonempty "
+     "bounded strings, bounded count, closed types), never for "
+     "membership; the malformed row's out-of-grammar rule applies "
+     "only under the CURRENT version; the reviewer's exact case is "
+     "named in the matrix cell and both projections carry the rule",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_renderers_agree_with_independent_oracles -q -p no:randomly"),
+    ("0026", "external", 7, "0026-PACKAGE-R7-1",
+     "the half-swept-carrier class persisted in OPERATIONAL prose: "
+     "--sample help said 'draw N fires' (census flag), test comments "
+     "said projection-seed and v0-witness, and summary prose "
+     "hard-coded 'schema 6' while claiming prose never numbers "
+     "revisions",
+     "operational prose swept; the one-carrier claim CONSTRAINED "
+     "precisely: current-summary carriers derive from "
+     "ADJUDICATION_SCHEMA or omit the number, historical prose names "
+     "the schema of its own round",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_live_prose_names_carriers_not_mechanisms -q -p no:randomly"),
 ]

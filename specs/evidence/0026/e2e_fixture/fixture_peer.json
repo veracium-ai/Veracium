@@ -1,0 +1,8 @@
+{
+ "manifest": {
+  "entries": 20,
+  "sha256": "3e34704b13d2bc2669353d6e3ac22a5e32aacb7b7f92c6b030f19bc8f9fd012b",
+  "unparseable": 0
+ },
+ "note": "SYNTHETIC e2e fixture peer \u2014 matches fixture_cache.jsonl only; the real cross-anchor is specs/evidence/0011/subject_aggregate.json (0026-EVIDENCE-R7-1)"
+}

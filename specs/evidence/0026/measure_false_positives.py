@@ -66,26 +66,50 @@ def main() -> int:
                     help="VERIFY a shipped aggregate instead of measuring")
     ap.add_argument("--emit-aggregate", metavar="PATH")
     ap.add_argument("--sample", action="store_true",
-                    help="draw N fires for labelling (printed, never written "
-                         "to the aggregate — they are corpus content)")
+                    help="print the census of every fire for labelling "
+                         "(local stdout only, never written to the "
+                         "aggregate — fires are corpus content)")
+    ap.add_argument("--worklist", metavar="PATH",
+                    help="write the FULL-CONTENT census worklist (one "
+                         "JSONL line per fire: digest + rel/note/obj "
+                         "verbatim) — LOCAL-ONLY corpus content, never "
+                         "shipped (0026-EVIDENCE-R7-2: truncated "
+                         "previews made fires unjudgeable)")
+    ap.add_argument("--peer-anchor", metavar="PATH",
+                    help="override the cross-anchor peer aggregate — "
+                         "FIXTURE TESTING ONLY; the default (the real "
+                         "0011/0025 subject aggregate) is authoritative "
+                         "and the packaged verification uses it")
     a = ap.parse_args()
     if bool(a.cache) == bool(a.aggregate):
         ap.error("exactly one of --cache / --aggregate")
     if a.aggregate:
-        agg = json.loads(pathlib.Path(a.aggregate).read_text())
-        bad = validate_aggregate(agg)
+        aggfile = pathlib.Path(a.aggregate)
+        agg = json.loads(aggfile.read_text())
+        # the adjudication (when one exists) lives BESIDE the aggregate
+        # under verification — for the shipped fp_aggregate.json that
+        # is this evidence directory, unchanged; for a measured
+        # over-gate aggregate it is wherever the host staged the census
+        # (0026-EVIDENCE-R7-1: the live path must be creatable)
+        bad = validate_aggregate(
+            agg, adj_path=aggfile.with_name("fp_adjudication.json"),
+            peer_path=a.peer_anchor)
         if bad:
             print("fp aggregate REFUSED:\n  " + "\n  ".join(bad),
                   file=sys.stderr)
             return 1
+        # the doc/spec binders bind the SHIPPED aggregate to the
+        # shipped prose; a measured over-gate aggregate verified from
+        # elsewhere (the E7-1 live path) is not the doc's subject
+        shipped = aggfile.resolve() == (HERE / "fp_aggregate.json").resolve()
         doc = HERE / "FP-MEASUREMENT.md"
-        if doc.is_file():
+        if shipped and doc.is_file():
             bad = doc_problems(agg, doc.read_text())
             if bad:
                 print("fp measurement DOC drifted:\n  " + "\n  ".join(bad),
                       file=sys.stderr)
                 return 1
-        if _SPEC.is_file():
+        if shipped and _SPEC.is_file():
             bad = spec_problems(agg, _SPEC.read_text())
             if bad:
                 print("the CANDIDATE SPEC drifted:\n  " + "\n  ".join(bad),
@@ -187,7 +211,14 @@ def main() -> int:
                       with_nonempty_note=tpc_notes_nonempty,
                       matched_by_lexicon=tpc_matched),
     )
-    bad = validate_aggregate(agg)
+    # 0026-EVIDENCE-R7-1: fresh measurement validates in BOOTSTRAP mode
+    # — structural problems refuse, but an over-gate rate is a STATE,
+    # not a validation failure: the aggregate and census worklist must
+    # be emittable, or the adjudication they enable can never be
+    # created. Acceptance is NEVER claimed here; the --aggregate verify
+    # entry keeps refusing an over-gate record absent a bound
+    # adjudication + co-verification.
+    bad = validate_aggregate(agg, bootstrap=True, peer_path=a.peer_anchor)
     if bad:
         print("the freshly measured aggregate FAILS its own validator:\n  "
               + "\n  ".join(bad), file=sys.stderr)
@@ -196,6 +227,14 @@ def main() -> int:
         pathlib.Path(a.emit_aggregate).write_text(
             json.dumps(agg, sort_keys=True, indent=1) + "\n")
         print(f"aggregate written  {a.emit_aggregate}")
+    if a.worklist:
+        wp = pathlib.Path(a.worklist)
+        with wp.open("w") as fh:
+            for rel, note, obj, hits, digest in sample_pool:
+                fh.write(json.dumps({"fire": digest, "rel": rel,
+                                     "note": note, "obj": obj}) + "\n")
+        print(f"worklist written   {wp}  (FULL corpus content — "
+              f"LOCAL-ONLY, never ship or commit this file)")
     report(agg)
 
     if a.sample and sample_pool:
@@ -209,6 +248,15 @@ def main() -> int:
             print(f"    obj ={str(obj)[:110]!r}")
         print("label each as {\"fire\": <digest>, \"label\": \"tp\"|\"fp\"} "
               "in fp_adjudication_sample.jsonl beside fp_adjudication.json")
+    if grounded_first_person and 100.0 * fires / grounded_first_person > 2.0:
+        print(f"\nSTATE: OVER the 2% gate ({fires:,} of "
+              f"{grounded_first_person:,}) — NEEDS ADJUDICATION. "
+              f"Acceptance is NOT claimed: this emission exists so the "
+              f"census can be labelled and independently co-verified; "
+              f"--aggregate verification refuses this record until a "
+              f"bound adjudication + co-verification exist "
+              f"(0026-EVIDENCE-R7-1)")
+        return 3
     return 0
 
 
@@ -232,12 +280,64 @@ _PEER = HERE.parent / "0011" / "subject_aggregate.json"
 # digest derivation — sha256 of the canonical rel/note/obj triple plus
 # an occurrence ordinal — reproduces with --cache on the measuring
 # host, the reviewer's audit path).
-ADJUDICATION_SCHEMA = 6     # the ONE carrier of the current revision:
+ADJUDICATION_SCHEMA = 7     # the ONE carrier of the current revision:
                             # the validator, the worked example's
                             # generator, the §6a generated claim and the
                             # packaged tests all read THIS constant
                             # (0026-PACKAGE-R6-1: prose carriers
                             # described three different revisions)
+
+
+def _read_census_manifest(path, want_sha, population, name):
+    """Open, hash, parse and membership-check ONE census label manifest.
+    Returns ({fire: label}, None) or (None, problem). Shared by the
+    host manifest and the co-verification manifest so the two cannot be
+    held to different grammars (0026-EVIDENCE-R7-2)."""
+    import re as _re
+    path = pathlib.Path(path)
+    if not path.is_file():
+        return None, (f"{name} ({path.name}) does not exist beside the "
+                      f"adjudication record — a digest that points at "
+                      f"nothing is not a binding (0026-EVIDENCE-R4-1)")
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != want_sha:
+        return None, (f"the bound digest does not match the bytes of "
+                      f"{path.name} — the record adjudicates some other "
+                      f"census")
+    try:
+        text = raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError as exc:
+        return None, (f"{path.name} is not valid UTF-8 ({exc}) — a "
+                      f"structured refusal, never a crash "
+                      f"(0026-EVIDENCE-R5-3)")
+    labels = {}
+    for i, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            return None, f"{path.name} line {i} is not JSON"
+        if (type(row) is not dict or sorted(row) != ["fire", "label"]
+                or type(row.get("fire")) is not str
+                or not _re.fullmatch(r"[0-9a-f]{64}", row["fire"])
+                or row.get("label") not in ("tp", "fp")):
+            return None, (f"{path.name} line {i} is not a "
+                          f'{{"fire": <sha256>, "label": "tp"|"fp"}} '
+                          f"record")
+        if row["fire"] in labels:
+            return None, (f"{path.name} labels fire "
+                          f"{row['fire'][:12]}… twice")
+        if row["fire"] not in population:
+            return None, (f"{path.name} labels a fire outside the "
+                          f"aggregate's fire_digests population — a "
+                          f"census cannot be drawn from thin air")
+        labels[row["fire"]] = row["label"]
+    if set(labels) != population:
+        return None, (f"{path.name} does not label EXACTLY the "
+                      f"population — a census labels every fire, no "
+                      f"more, no fewer (0026-EVIDENCE-R6-1)")
+    return labels, None
 
 
 def _validate_adjudication(adj, agg, pct, sample_path) -> list:
@@ -260,7 +360,8 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                 "stub file is not a labelling verdict"]
     TOP = {"schema": int, "lexicon_version": str, "fires": int,
            "sample": dict, "verdict": str,
-           "aggregate_sha256": str, "sample_sha256": str}
+           "aggregate_sha256": str, "sample_sha256": str,
+           "coverification_sha256": str}
     missing = sorted(set(TOP) - set(adj))
     unknown = sorted(set(adj) - set(TOP))
     if missing:
@@ -313,58 +414,37 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
                    f"selection class at face eight)")
     if out:
         return out
-    # THE MANIFEST — opened, hashed, membership-checked, counted
-    sample_path = pathlib.Path(sample_path)
-    if not sample_path.is_file():
-        return [f"the labelled sample manifest "
-                f"({sample_path.name}) does not exist beside the "
-                f"adjudication record — a digest that points at nothing "
-                f"is not a binding (0026-EVIDENCE-R4-1)"]
-    raw = sample_path.read_bytes()
-    if hashlib.sha256(raw).hexdigest() != adj["sample_sha256"]:
-        return [f"sample_sha256 does not match the bytes of "
-                f"{sample_path.name} — the record adjudicates some other "
-                f"sample"]
+    # THE MANIFESTS — each opened, hashed, membership-checked, counted.
+    # TWO are required (0026-EVIDENCE-R7-2): the measuring host's labels
+    # AND an independent co-verifier's — a host-only census is not an
+    # adjudication, because the honest and the fraudulent census cost
+    # the same labour and only co-verification separates them.
     population = set(agg["fire_digests"])
-    seen, tp, fp = set(), 0, 0
-    import re as _re
-    try:
-        text = raw.decode("utf-8", errors="strict")
-    except UnicodeDecodeError as exc:
-        return [f"{sample_path.name} is not valid UTF-8 ({exc}) — a "
-                f"structured refusal, never a crash "
-                f"(0026-EVIDENCE-R5-3)"]
-    for i, line in enumerate(text.splitlines(), 1):
-        if not line.strip():
-            continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError:
-            return [f"{sample_path.name} line {i} is not JSON"]
-        if (type(row) is not dict or sorted(row) != ["fire", "label"]
-                or type(row.get("fire")) is not str
-                or not _re.fullmatch(r"[0-9a-f]{64}", row["fire"])
-                or row.get("label") not in ("tp", "fp")):
-            return [f"{sample_path.name} line {i} is not a "
-                    f'{{"fire": <sha256>, "label": "tp"|"fp"}} record']
-        if row["fire"] in seen:
-            return [f"{sample_path.name} labels fire "
-                    f"{row['fire'][:12]}… twice"]
-        if row["fire"] not in population:
-            return [f"{sample_path.name} labels a fire outside the "
-                    f"aggregate's fire_digests population — the sample "
-                    f"cannot be drawn from thin air"]
-        seen.add(row["fire"])
-        tp += row["label"] == "tp"
-        fp += row["label"] == "fp"
-    if len(seen) != smp["size"]:
-        return [f"the manifest labels {len(seen)} fires but the record "
+    sample_path = pathlib.Path(sample_path)
+    host, prob = _read_census_manifest(
+        sample_path, adj["sample_sha256"], population,
+        "the labelled sample manifest")
+    if prob:
+        return [prob]
+    co_path = sample_path.with_name("fp_coverification_sample.jsonl")
+    co, prob = _read_census_manifest(
+        co_path, adj["coverification_sha256"], population,
+        "the independent co-verification manifest")
+    if prob:
+        return [prob + " — host-only labels are not an adjudication "
+                "(0026-EVIDENCE-R7-2)"]
+    if len(host) != smp["size"]:
+        return [f"the manifest labels {len(host)} fires but the record "
                 f"says size={smp['size']} — the carriers disagree"]
-    if seen != population:
-        return [f"the manifest does not label EXACTLY the population — "
-                f"a census labels every fire, no more, no fewer "
-                f"(0026-EVIDENCE-R6-1)"]
-    # THE DECISION, computed from the DERIVED counts — never narrated
+    # THE DECISION, computed from the DERIVED labels of BOTH censuses —
+    # never narrated. FAIL-CLOSED combination: a fire is a false
+    # positive if EITHER labeller says so (the host's incentive is to
+    # under-label fp, so the union is the conservative direction), and
+    # disagreements are counted into the record of the refusal.
+    fp_union = {f for f, lab in host.items() if lab == "fp"} \
+        | {f for f, lab in co.items() if lab == "fp"}
+    fp = len(fp_union)
+    disagree = sum(1 for f in host if host[f] != co[f])
     if adj["verdict"] not in ("accept", "reject"):
         return [f"adjudication verdict {adj['verdict']!r} is outside the "
                 f"closed enum ('accept', 'reject') — free text is not a "
@@ -373,10 +453,11 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
         return [f"the adjudication verdict is REJECT — the labelling "
                 f"did not clear the over-gate record ({pct:.2f}% at the "
                 f"bound)"]
-    # a census: every fire labelled — the FP share is EXACT, there is
-    # no sampling variance to bound, so the exact share decides
+    # a census: every fire labelled by both parties — the FP share is
+    # EXACT (no sampling variance) over the fail-closed union
     share = fp / smp["size"]
-    basis = f"exact census share {fp}/{smp['size']}"
+    basis = (f"exact census share {fp}/{smp['size']} (fp-union of host "
+             f"and co-verifier; {disagree} disagreement(s))")
     adjudicated = pct * share
     if adjudicated > 2.0:
         return [f"the adjudication says accept but the ADJUDICATED rate "
@@ -386,7 +467,8 @@ def _validate_adjudication(adj, agg, pct, sample_path) -> list:
     return []
 
 
-def validate_aggregate(agg, adj_path=None) -> list:
+def validate_aggregate(agg, adj_path=None, *, bootstrap=False,
+                       peer_path=None) -> list:
     """0026-EVIDENCE-R1-1: a CLOSED typed schema, and the cache manifest
     cross-checked against the 0011/0025 subject aggregate — same cache,
     different script, ships beside this one. A fabricated manifest has to
@@ -496,7 +578,12 @@ def validate_aggregate(agg, adj_path=None) -> list:
     # over-gate record refuses UNLESS a separately validated adjudication
     # artifact exists (the §6a pre-commitment path: labelling decides),
     # because an over-bar aggregate is not acceptance evidence on its own.
-    if g["total"] > 0:
+    if g["total"] > 0 and not bootstrap:
+        # bootstrap=True is the MEASUREMENT entry only
+        # (0026-EVIDENCE-R7-1): an over-gate rate there is a reported
+        # STATE, never a validation failure — otherwise the aggregate
+        # and worklist that adjudication requires could never be
+        # emitted. Every VERIFY caller keeps bootstrap=False.
         pct = 100.0 * g["fires"] / g["total"]
         if pct > 2.0:
             adj = (HERE / "fp_adjudication.json") if adj_path is None \
@@ -530,7 +617,8 @@ def validate_aggregate(agg, adj_path=None) -> list:
 
     # the cross-artifact anchor: the 0011/0025 subject aggregate was
     # derived from the SAME cache by a different script
-    peer_path = _PEER.resolve()
+    peer_path = (pathlib.Path(peer_path) if peer_path
+                 else _PEER).resolve()
     if not peer_path.is_file():
         out.append(f"{peer_path.name} is absent — the manifest cross-check "
                    f"cannot run, and an uncrossed aggregate is the defect "
