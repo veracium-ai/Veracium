@@ -2516,8 +2516,17 @@ REVIEWS = [
          "by line; undecodable files byte-scanned in 1MB chunks with "
          "an overlap window); the R9-2 closure evidence runs both "
          "halves. The reviewer's draft-time review-closure-preview "
-         "suggestion recorded as a forward renderer item. Sealed "
-         "AFTER this row, sha pinned on return", findings=0),
+         "suggestion recorded as a forward renderer item. Research's "
+         "round-10 pre-seal pass (read as the ACCEPT reviewer) CLEARED "
+         "the seal and named the one ACCEPT-blocker, folded same-day "
+         "(I13-1: the §6 check column was not S-list-honest — six of "
+         "seven named tests did not exist; every row now marked "
+         "CURRENT vs IMPLEMENTATION-TIME, V4's name corrected, and "
+         "one standing guard closes the restatement class's five "
+         "bitten carriers — internal round 13). Sealed as "
+         "0026-v11-20260830T1621Z.tar.gz, sha256 "
+         "9e2a03236565e943f4b0c0e3a58936ca1efd76a5e3e6b3df9abdf760"
+         "49b96485, commit 3283fd4", findings=0),
 
     dict(spec="0026", round=13, kind="internal", date="2026-08-30",
          raised=["0026-I13-1"],
