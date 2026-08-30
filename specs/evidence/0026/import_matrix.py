@@ -158,9 +158,15 @@ AGREEMENT_SHAPE = {
     "keys": ("markers", "direction", "lexicon"),   # CLOSED — unknown
                                                    # keys REFUSE
     "markers_type": "JSON array of strings",
-    "markers_max_count": 16,
+    "markers_max_count": 8,     # MEASURED basis (research, round-8
+                                # pre-seal): max distinct markers per
+                                # record over the full cache = 2
+                                # (2,349 records at 1, 64 at 2); 8 is
+                                # measured-max x4 margin, not taste
     "marker_min_chars": 1,
-    "marker_max_chars": 64,
+    "marker_max_chars": 64,     # MEASURED basis: the longest shipped
+                                # lexicon member is 'on the advice of'
+                                # at 16 chars; 64 is x4 margin
     "markers_duplicates": "REFUSE",
     "direction_values": ("inbound", "outbound", "ambiguous"),  # CLOSED
     "lexicon_min_chars": 1,

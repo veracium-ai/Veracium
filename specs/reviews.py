@@ -2341,6 +2341,31 @@ REVIEWS = [
          "supplements). Sealed AFTER this row, sha pinned on return",
          findings=0),
 
+    dict(spec="0026", round=10, kind="internal", date="2026-08-30",
+         raised=["0026-I10-1"],
+         verdict="RETURN FOR NARROW AMENDMENT (research, round-8 "
+         "pre-seal pass at 7eedffe; all four round-7 closures held; "
+         "suite 2033 masked the find — no gate on the unsafe "
+         "primitive). I10-1 BLOCKING, the NINTH face of the "
+         "duplicate-key class asked for and delivered: the R8-1 fold "
+         "routed the manifests through _strict_json but left plain "
+         "json.loads at THREE evidence-boundary reads — the aggregate "
+         "verify read, the peer cross-anchor read, and the CACHE read, "
+         "where sha.update(raw) hashed RAW bytes while last-wins "
+         "parsing enumerated a duplicate-key row differently from the "
+         "peer's script under a matching raw-sha anchor (the "
+         "raw-vs-parsed split, the genuinely exploitable form). Their "
+         "structural ruling, PROVEN by the recurrence itself: "
+         "vigilance failed twice (11-day recurrence + three missed "
+         "sites in the closing fold), so the unsafe form must be "
+         "UNREACHABLE — a standing gate over specs/evidence/**. Also: "
+         "the path-alias guard missed HARDLINKS (path strings resolve "
+         "distinct, inode identical); marker_max_chars basis "
+         "undercounted (longest member is 'on the advice of' at 16, "
+         "not 'according to' at 12 — bound fine); markers_max_count=16 "
+         "was TASTE not measurement (§6a discipline applies to shape "
+         "bounds)", findings=1),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

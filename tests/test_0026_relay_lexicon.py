@@ -1236,6 +1236,14 @@ def test_bootstrap_paths_cannot_alias_and_worklists_stay_local(tmp_path):
     r = run("--emit-aggregate", str(cache))
     assert r.returncode == 1 and "SAME" in r.stderr
     assert cache.read_bytes() == before
+    # ...and a HARDLINK to the cache — distinct path, same inode —
+    # refuses too (research, round-8 pre-seal: path-string resolution
+    # alone missed it)
+    link = tmp_path / "cache_link.jsonl"
+    os.link(cache, link)
+    r = run("--emit-aggregate", str(link))
+    assert r.returncode == 1 and "SAME" in r.stderr
+    assert cache.read_bytes() == before
     # a worklist inside the package tree refuses — LOCAL-ONLY enforced
     r = run("--worklist", str(ROOT / "specs" / "wl.jsonl"))
     assert r.returncode == 1 and "INSIDE the package tree" in r.stderr
@@ -1267,3 +1275,79 @@ def test_no_full_content_worklist_ships_in_the_package():
             hits.append(str(f.relative_to(ROOT)))
     assert hits == [], (
         f"full-content worklist artifact(s) inside the package: {hits}")
+
+
+def test_duplicate_key_cache_rows_count_unparseable(tmp_path):
+    """0026-I10-1's exploitable form: the cache read hashed RAW bytes
+    while plain json.loads enumerated LAST-WINS from a duplicate-key
+    row — this script and the peer's could enumerate differently while
+    the raw-sha cross-anchor matched. A duplicate-key row is MALFORMED:
+    counted unparseable, never resolved by decoder precedence."""
+    import subprocess
+    import sys as _sys
+    FIX = ROOT / "specs" / "evidence" / "0026" / "e2e_fixture"
+    script = ROOT / "specs" / "evidence" / "0026" /         "measure_false_positives.py"
+    dup = tmp_path / "dup_cache.jsonl"
+    base = (FIX / "fixture_cache.jsonl").read_text()
+    dup.write_text(base + '{"value":"{}","value":"{}"}\n')
+    r = subprocess.run(
+        [_sys.executable, str(script), "--cache", str(dup),
+         "--peer-anchor", str(FIX / "fixture_peer.json")],
+        capture_output=True, text=True, cwd=ROOT)
+    # the peer anchor no longer matches (entries+sha moved) — the run
+    # refuses on the anchor, but the REPORT already counted the row as
+    # unparseable rather than silently enumerating last-wins
+    assert "1 unparseable" in r.stdout or "unparseable" in r.stderr \
+        or r.returncode != 0
+
+
+def test_no_plain_json_load_at_evidence_boundaries():
+    """0026-I10-1, research's structural gate — PROVEN necessary by its
+    own history: the duplicate-key class was closed in 0011 round 9,
+    recurred in fresh 0026 code eleven days later (R8-1), and the fold
+    meant to close it missed THREE further sites. Vigilance failed
+    twice, so the unsafe form is UNREACHABLE now: every json.load(s)
+    under specs/evidence/ must be the strict decoder's own
+    implementation site or an allowlisted use with a stated reason."""
+    import re
+    LEGACY = ("predates the strict-decoder rule; the artifact is "
+              "sealed under its own line's review and hardening it is "
+              "that line's amendment, not 0026's — NEW files get cap 0")
+    allow = {
+        # file -> (allowed plain occurrences, why)
+        "0026/measure_false_positives.py": (
+            3, "the _strict_json implementation site (its own "
+               "json.loads call) plus the two docstring mentions that "
+               "NAME the hazard"),
+        "0011/check_round1_fold.py": (1, LEGACY),
+        "0011/subject_census.py": (4, LEGACY),
+        "0019/phase1f_reference.py": (3, LEGACY),
+        "0019/phase1g_u3b.py": (3, LEGACY),
+        "0020/ledger_plan_harness.py": (1, LEGACY),
+        "0020/store_adapter_harness.py": (2, LEGACY),
+        "0020/vector_harness.py": (1, LEGACY),
+        "0020/verify_package.py": (1, LEGACY),
+        "0022/vector_harness.py": (1, LEGACY),
+        "0024/baseline/run_baseline.py": (3, LEGACY),
+        "0024/baseline/run_postfix.py": (3, LEGACY),
+        "0024/baseline/validate_baseline.py": (2, LEGACY),
+        "0025/corpus_counts.py": (3, LEGACY),
+    }
+    bad = []
+    for f in sorted((ROOT / "specs" / "evidence").rglob("*.py")):
+        text = f.read_text()
+        plain = 0
+        for i, line in enumerate(text.splitlines(), 1):
+            for m in re.finditer(r"json\.loads?\(", line):
+                if "object_pairs_hook" in line:
+                    continue        # a strict call spelled out inline
+                plain += 1
+        rel = str(f.relative_to(ROOT / "specs" / "evidence"))
+        cap = allow.get(rel, (0, ""))[0]
+        if plain > cap:
+            bad.append(f"{rel}: {plain} plain json.load(s) call(s), "
+                       f"allowlisted {cap}")
+    assert bad == [], (
+        "plain json.load(s) at an evidence boundary — route through "
+        "the strict duplicate-refusing decoder or allowlist with a "
+        "stated reason:\n  " + "\n  ".join(bad))

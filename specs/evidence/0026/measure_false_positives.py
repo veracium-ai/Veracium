@@ -100,7 +100,7 @@ def main() -> int:
                   "class, closed mechanically)", file=sys.stderr)
             return 2
         aggfile = pathlib.Path(a.aggregate)
-        agg = json.loads(aggfile.read_text())
+        agg = _strict_json(aggfile.read_text())
         # the adjudication (when one exists) lives BESIDE the aggregate
         # under verification — for the shipped fp_aggregate.json that
         # is this evidence directory, unchanged; for a measured
@@ -161,12 +161,19 @@ def main() -> int:
     with open(a.cache, "rb") as fh:
         for raw in fh:
             sha.update(raw); entries += 1
-            row = json.loads(raw)
+            # 0026-I10-1: the cache read had a RAW-vs-PARSED split —
+            # sha.update(raw) hashed raw bytes while plain json.loads
+            # enumerated LAST-WINS from a duplicate-key row, so this
+            # script and the peer's could enumerate differently while
+            # the raw-sha cross-anchor still matched. A duplicate-key
+            # row is MALFORMED: counted unparseable, never resolved by
+            # decoder precedence.
             try:
-                value = (json.loads(row["value"])
+                row = _strict_json(raw.decode("utf-8"))
+                value = (_strict_json(row["value"])
                          if isinstance(row.get("value"), str)
                          else row.get("value", {}))
-            except json.JSONDecodeError:
+            except (UnicodeDecodeError, ValueError):
                 unparseable += 1
                 continue
             for t in value.get("triples", []) or []:
@@ -254,13 +261,25 @@ def main() -> int:
         paths["--emit-aggregate"] = pathlib.Path(a.emit_aggregate).resolve()
     if a.worklist:
         paths["--worklist"] = pathlib.Path(a.worklist).resolve()
+    def _ident(pp):
+        # (st_dev, st_ino) when the file exists — a HARDLINK resolves
+        # to a distinct path but the same inode (research, round-8
+        # pre-seal); the resolved path covers not-yet-existing outputs
+        try:
+            st = pp.stat()
+            return ("ino", st.st_dev, st.st_ino)
+        except OSError:
+            return ("path", str(pp))
+
     names = list(paths)
     for x in range(len(names)):
         for y in range(x + 1, len(names)):
-            if paths[names[x]] == paths[names[y]]:
+            if (paths[names[x]] == paths[names[y]]
+                    or _ident(paths[names[x]]) == _ident(paths[names[y]])):
                 print(f"{names[x]} and {names[y]} resolve to the SAME "
                       f"file ({paths[names[x]]}) — refusing before any "
-                      f"write (0026-EVIDENCE-R8-3)", file=sys.stderr)
+                      f"write (0026-EVIDENCE-R8-3; hardlinks included)",
+                      file=sys.stderr)
                 return 1
     if a.worklist:
         # 0026-PRIVACY-R8-4: the worklist is FULL corpus content —
@@ -701,7 +720,7 @@ def validate_aggregate(agg, adj_path=None, *, bootstrap=False,
                    f"cannot run, and an uncrossed aggregate is the defect "
                    f"this validator exists for")
         return out
-    peer = json.loads(peer_path.read_text())
+    peer = _strict_json(peer_path.read_text())
     pm = peer.get("manifest", {})
     for k in ("entries", "sha256", "unparseable"):
         if man.get(k) != pm.get(k):

@@ -2785,4 +2785,25 @@ CLOSURES = [
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_no_full_content_worklist_ships_in_the_package "
      "-q -p no:randomly"),
+    ("0026", "internal", 10, "0026-I10-1",
+     "the ninth face: the R8-1 fold routed the manifests through the "
+     "strict decoder but left plain json.loads at THREE evidence "
+     "boundaries — aggregate verify, peer cross-anchor, and the CACHE "
+     "read whose raw-vs-parsed split (raw-sha anchor vs last-wins "
+     "enumeration) was genuinely exploitable; vigilance failed twice "
+     "(11-day class recurrence + three missed sites in the closing "
+     "fold). Secondary: the alias guard missed hardlinks; "
+     "markers_max_count was taste not measurement",
+     "every evidence-boundary read routes through _strict_json (a "
+     "duplicate-key cache row counts unparseable, never last-wins); "
+     "the structural gate makes the unsafe form UNREACHABLE — a "
+     "standing test refuses plain json.load(s) under specs/evidence/ "
+     "outside a reasoned allowlist (legacy lines capped at their "
+     "current counts, new files at zero); the alias guard compares "
+     "(st_dev, st_ino) so hardlinks refuse; the shape bounds carry "
+     "their MEASURED basis (max distinct markers per record = 2 over "
+     "the full cache -> count bound 8 = measured x4; longest member "
+     "16 chars -> length bound 64 = x4)",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_no_plain_json_load_at_evidence_boundaries -q -p no:randomly"),
 ]

@@ -26,7 +26,7 @@ FIRES, TOTAL, FP_LABELLED = 120, 4000, 20    # 3.0%: over-gate, on purpose
 
 def generate(out_dir: pathlib.Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
-    real = json.loads((HERE.parent / "fp_aggregate.json").read_text())
+    real = M._strict_json((HERE.parent / "fp_aggregate.json").read_text())
     pop = sorted(hashlib.sha256(f"demo-fire-{i}".encode()).hexdigest()
                  for i in range(FIRES))
     agg = dict(schema=3, lexicon_version=M.L.LEXICON_VERSION,
