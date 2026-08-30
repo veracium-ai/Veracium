@@ -2908,4 +2908,24 @@ CLOSURES = [
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_current_v_table_tests_resolve_and_no_live_restatement "
      "-q -p no:randomly"),
+    ("0026", "external", 11, "0026-R11-1",
+     "six §6 invariants (V2/V3/V5/V6/V6a/V7) still lacked EXECUTABLE "
+     "checks: accurately labeled implementation-time, but the "
+     "resolution guard exempted those rows, so the suite passed with "
+     "none of the six named tests existing — PROCESS.md makes an "
+     "invariant without an executable check a hard gate",
+     "the six named tests EXIST as standing ABSENCE-AWARE checks: in "
+     "the draft state each mechanically proves its invariant vacuous "
+     "(no agreement machinery in src/ — the sweep flips when "
+     "implementation begins) and the behavioral cells against the "
+     "spec'd API activate automatically at graduation (V6a fails "
+     "loudly then until the matrix drive is written, by design); the "
+     "exemption is removed — every cited name resolves",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_absence_is_no_evidence "
+     "tests/test_0026_relay_lexicon.py::"
+     "test_no_markers_is_byte_identical "
+     "tests/test_0026_relay_lexicon.py::"
+     "test_current_v_table_tests_resolve_and_no_live_restatement "
+     "-q -p no:randomly"),
 ]

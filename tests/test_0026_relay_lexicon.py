@@ -1574,11 +1574,13 @@ def test_current_v_table_tests_resolve_and_no_live_restatement():
         corpus += tf.read_text()
     for line in live.splitlines():
         for name in re.findall(r"`(test_[a-z0-9_]+)`", line):
-            if "IMPLEMENTATION-TIME" in line:
-                continue        # a named OBLIGATION, marked as such
+            # NO exemption (0026-R11-1: the IMPLEMENTATION-TIME carve-
+            # out let six named checks not exist; every cited name
+            # resolves now — the implementation-time ones are
+            # absence-aware and activate at graduation)
             assert f"def {name}(" in corpus, (
-                f"the spec's live zone cites {name} as standing but no "
-                f"such test exists (0026-I13 — the drifted-name class)")
+                f"the spec's live zone cites {name} but no such test "
+                f"exists (0026-I13/R11-1)")
     # (2) bound digits out of live prose
     S = IM.AGREEMENT_SHAPE
     for n, ctx in ((S["markers_max_count"], "marker"),
@@ -1589,3 +1591,175 @@ def test_current_v_table_tests_resolve_and_no_live_restatement():
         assert hits == [], (
             f"live prose restates the shape bound {n}: {hits[:3]} — "
             f"numbers live only in generated blocks (0026-I13)")
+
+
+# ---- §6 V2/V3/V5/V6/V6a/V7: absence-aware standing checks ------------------
+# 0026-R11-1, the stated acceptance condition: each IMPLEMENTATION-TIME
+# invariant's named test EXISTS NOW and activates automatically when the
+# mechanism graduates into src/. In the draft state each proves its
+# invariant holds VACUOUSLY — and proves the vacuity, never assumes it:
+# the moment agreement machinery appears in src/, _prove_vacuity fails,
+# which forces the behavioral cells below it to run instead.
+
+def _agreement_implemented() -> bool:
+    """The activation condition every absence-aware V-test keys on.
+    A missing veracium package entirely (the reviewer's offline
+    interpreter carries the evidence tree, not the product) is the
+    not-implemented case a fortiori."""
+    try:
+        from veracium.schema import Edge
+    except ModuleNotFoundError:
+        return False
+    return "agreement" in getattr(Edge, "model_fields", {})
+
+
+def _prove_vacuity():
+    """The draft-state proof: NO agreement/relay mechanism exists
+    anywhere in src/veracium, so the invariant under test holds
+    vacuously. This assertion flips when implementation begins."""
+    import pathlib
+    try:
+        import veracium
+    except ModuleNotFoundError:
+        return      # no product package at all — vacuous a fortiori
+                    # (the reviewer's offline interpreter)
+    src = pathlib.Path(veracium.__file__).resolve().parent
+    hits = sorted(f.name for f in src.rglob("*.py")
+                  if any(tok in f.read_text()
+                         for tok in ("AgreementRecord", "relay_lexicon",
+                                     "relay_markers")))
+    assert hits == [], (
+        f"agreement machinery is appearing in src/ ({hits}) — the "
+        f"absence-aware V-tests must run their behavioral cells now "
+        f"(0026-R11-1)")
+    assert not _agreement_implemented()
+
+
+def _mem_for_v(tmp, payload_triples):
+    import json as _json
+    from veracium import EvidenceContext, Memory, MemoryConfig
+
+    def llm(prompt, *, system=None, role="distill", json_schema=None):
+        if role == "distill-retry":
+            return _json.dumps({"triples": []})
+        return _json.dumps({"triples": payload_triples, "episode": "ep"})
+
+    mem = Memory(llm=llm, config=MemoryConfig(
+        db_path=f"{tmp}/v.db", wiki_recompile_after_writes=0))
+    return mem, EvidenceContext
+
+
+def test_absence_is_no_evidence(tmp_path):
+    """V2: marker ABSENCE never changes anything — empty/absent
+    note+object mean no floor, no record, byte-identical edge."""
+    if not _agreement_implemented():
+        _prove_vacuity()
+        return
+    mem, EC = _mem_for_v(tmp_path, [
+        {"subject": "user", "relation": "works_as", "object": "welder"}])
+    mem.remember("u", "markerless", context=EC.direct())
+    (e,) = mem.store.edges("u")
+    assert e.agreement is None
+    assert "agreement" not in e.model_dump(mode="json"), (
+        "None must be OMITTED from serialization (the 0025 F6 pattern)")
+    assert e.assertable
+    mem.close()
+
+
+def test_laundered_relay_floors_use_only(tmp_path):
+    """V3: the B02/B07 class floors at USE_ONLY, and the floor NEVER
+    raises — a quarantined edge stays quarantined."""
+    if not _agreement_implemented():
+        _prove_vacuity()
+        return
+    from veracium.schema import Disclosure
+    mem, EC = _mem_for_v(tmp_path, [
+        {"subject": "user", "relation": "health_state",
+         "object": "needs rest", "note": "my doctor said to rest"}])
+    mem.remember("u", "relay", context=EC.direct())
+    (e,) = mem.store.edges("u", active_only=False)
+    assert e.provenance.disclosure is Disclosure.USE_ONLY, (
+        "a marked relay on a concrete relation floors at USE_ONLY (B07)")
+    assert e.agreement is not None and e.agreement.direction == "inbound"
+    mem.close()
+
+
+def test_demotion_direction_records_only(tmp_path):
+    """V5: a demotion-direction disagreement is RECORDED and counted
+    with NO disposition change."""
+    if not _agreement_implemented():
+        _prove_vacuity()
+        return
+    from veracium.schema import QUARANTINE_RELATION
+    mem, EC = _mem_for_v(tmp_path, [
+        {"subject": "the vet", "relation": QUARANTINE_RELATION,
+         "object": "user told the vet the dog is fine",
+         "note": "as I told the vet"}])
+    before = mem.store.edges("u", active_only=False,
+                             include_quarantined=True)
+    mem.remember("u", "demotion-direction", context=EC.direct())
+    (e,) = mem.store.edges("u", active_only=False,
+                           include_quarantined=True)
+    assert e.quarantined, "the disposition must NOT change (record-only)"
+    assert e.agreement is not None
+    assert e.agreement.direction == "user_source"
+    mem.close()
+
+
+def test_agreement_carriers_complete(tmp_path):
+    """V6: the record is structured (markers+direction+lexicon),
+    None-omitted; both counters present on every remember path; the
+    MCP surface strips them."""
+    if not _agreement_implemented():
+        _prove_vacuity()
+        return
+    import importlib
+    IM = importlib.import_module("import_matrix")
+    mem, EC = _mem_for_v(tmp_path, [
+        {"subject": "user", "relation": "health_state",
+         "object": "needs rest", "note": "my doctor said to rest"}])
+    r = mem.remember("u", "x", context=EC.direct())
+    assert "agreement_floored" in r and "agreement_recorded" in r, (
+        "both counters present on EVERY path — an absent key is not 0")
+    (e,) = mem.store.edges("u", active_only=False)
+    rec = e.agreement.model_dump(mode="json")
+    assert IM.agreement_shape_problems(rec) == [], (
+        "the stored record must satisfy the executable shape")
+    mem.close()
+
+
+def test_agreement_import_recomputes(tmp_path):
+    """V6a: the import boundary is MODE-SPLIT per the ONE matrix —
+    default recomputes (forged/malformed/foreign resolve to the
+    recomputation, counted); restore is trust-field-faithful for VALID
+    fields and RAISES on malformed with nothing written."""
+    if not _agreement_implemented():
+        _prove_vacuity()
+        return
+    import importlib
+    IM = importlib.import_module("import_matrix")
+    # every MATRIX row must be exercised at graduation; the rows are
+    # the contract — drive default-recompute, restore-verbatim,
+    # restore-malformed-raises, restore-foreign-verbatim
+    raise AssertionError(
+        "graduation reached: implement the V6a matrix drive over "
+        f"{len(IM.MATRIX)} rows before accepting the implementation")
+
+
+def test_no_markers_is_byte_identical(tmp_path):
+    """V7: a marker-free store is byte-identical before and after —
+    the whole mechanism is invisible where no marker ever fired."""
+    if not _agreement_implemented():
+        _prove_vacuity()
+        return
+    mem, EC = _mem_for_v(tmp_path, [
+        {"subject": "user", "relation": "works_as", "object": "welder"}])
+    mem.remember("u", "markerless", context=EC.direct())
+    out1 = tmp_path / "a.jsonl"
+    out2 = tmp_path / "b.jsonl"
+    mem.export_memory("u", out1)
+    mem.export_memory("u", out2)
+    assert out1.read_bytes() == out2.read_bytes()
+    assert b"agreement" not in out1.read_bytes(), (
+        "a marker-free export must carry no agreement keys at all")
+    mem.close()

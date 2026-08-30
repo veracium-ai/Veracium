@@ -2528,6 +2528,26 @@ REVIEWS = [
          "9e2a03236565e943f4b0c0e3a58936ca1efd76a5e3e6b3df9abdf760"
          "49b96485, commit 3283fd4", findings=0),
 
+    dict(spec="0026", round=11, kind="external", date="2026-08-30",
+         raised=["0026-R11-1"],
+         verdict="RETURN FOR NARROW ACCEPTANCE-GATE AMENDMENT (package "
+         "`0026-v11`, sidecar matched; 541 members; exact v10 parent; "
+         "focused 96 passed; complete extracted 2025/22 exit 0; the "
+         "V1-V7/V6a design surface REMAINS READY; both round-10 "
+         "package findings closed and verified; NO FURTHER DESIGN "
+         "ROUND NEEDED). R11-1 BLOCKING: six §6 invariants (V2, V3, "
+         "V5, V6, V6a, V7) still lack EXECUTABLE checks — accurately "
+         "labeled IMPLEMENTATION-TIME now, but the resolution guard "
+         "exempts those rows, so the suite passes with none of the six "
+         "named test functions existing; PROCESS.md makes an invariant "
+         "without an executable check a hard gate. THE ACCEPTANCE "
+         "CONDITION, stated: add the six named checks as "
+         "absence-aware tests that activate automatically when the "
+         "implementation appears, and remove their exemption from the "
+         "resolution guard. Suggestion recorded: a generated §6 "
+         "report mapping each invariant to a collected test node",
+         findings=1),
+
     dict(spec="0026", round=13, kind="internal", date="2026-08-30",
          raised=["0026-I13-1"],
          verdict="PASS FOR THE SEAL, ACCEPT-BLOCKER NAMED (research, "
@@ -2549,6 +2569,24 @@ REVIEWS = [
          "obligations exempt) and the shape-bound digits to appear in "
          "marker/character context only inside generated blocks",
          findings=1),
+
+    dict(spec="0026", round=12, kind="external", date="2026-08-30",
+         candidate={"0026": "v15"},
+         verdict="SENT (package `0026-v12`, candidate draft v15 — the "
+         "round-11 fold; §21 maps the one finding; the reviewer's "
+         "stated acceptance condition met: no further design round "
+         "needed). R11-1 closed: the six implementation-time V-checks "
+         "EXIST as standing ABSENCE-AWARE tests — in the draft state "
+         "each mechanically PROVES its invariant vacuous (no agreement "
+         "machinery in src/, a sweep that flips the moment "
+         "implementation begins) and the behavioral cells against the "
+         "spec'd API activate automatically at graduation (V6a fails "
+         "loudly then until the full matrix drive is written, by "
+         "design); the IMPLEMENTATION-TIME exemption is REMOVED from "
+         "the resolution guard — every cited name resolves, no "
+         "exceptions. The generated §6 invariant->test-node report "
+         "recorded as a forward renderer item. Sealed AFTER this row, "
+         "sha pinned on return", findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
