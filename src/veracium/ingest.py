@@ -424,7 +424,8 @@ def ingest_event(store, llm: Complete, user_id: str, *, event_text: str,
                 and disclosure == Disclosure.MENTIONABLE):
             disclosure = Disclosure.USE_ONLY
             n_agreement_floored += 1
-        agr = agreement.derive_record(note_str, obj, disclosure)
+        agr = agreement.derive_record(note_str, obj, disclosure,
+                                      relation=relation)
         if agr is not None:
             n_agreement_recorded += 1
         edge = Edge(

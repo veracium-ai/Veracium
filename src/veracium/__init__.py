@@ -41,7 +41,8 @@ from .llm.base import Complete, Embed
 from .authority import edge_effective as _edge_effective
 from .graph import _value_key as _value_key
 from .schema import (CONFIRMATION_RULE_VERSION, ConfirmationActor,
-                     ConfirmationCallPath, ContestedGroup, ContestedLinkage, Edge,
+                     ConfirmationCallPath, ContestedGroup, ContestedLinkage,
+                     Disclosure, Edge,
                      Episode, EvidenceAuthor, EvidenceContext,
                      OutcomeJudgmentDraft, Provenance,
                      utcnow, validate_correlation_id)
@@ -1413,12 +1414,28 @@ class Memory:
             if not edge.active:
                 raise ValueError(f"edge {edge_id!r} is not active (already "
                                  f"{edge.invalidation_reason or 'invalidated'})")
+            # specs/0026 §3b at the THIRD establishment boundary
+            # (research's implementation red-team: correct() preserved
+            # the note at default-MENTIONABLE with no floor and no
+            # record, reopening B02/B07 for corrected facts): the
+            # corrected edge's preserved note + new value pass through
+            # the SAME restrict-only floor and the ONE derivation site
+            # as ingest and import — a correction updates the VALUE,
+            # never launders the relay out of the note
+            from . import agreement as _agreement
+            _disc = Disclosure.MENTIONABLE
+            if _agreement.relay_markers(edge.note, corrected_value):
+                _disc = Disclosure.USE_ONLY
             new = Edge(
                 id=f"e-{uuid4().hex[:12]}", user_id=user_id, subject=edge.subject,
                 relation=edge.relation, object=corrected_value, note=edge.note,
                 volatility=edge.volatility, valid_from=when,
+                agreement=_agreement.derive_record(
+                    edge.note, corrected_value, _disc,
+                    relation=edge.relation),
                 provenance=Provenance(author_of_evidence=EvidenceAuthor.USER,
                                       evidence_ref=evidence_ref or f"correct:{edge_id}",
+                                      disclosure=_disc,
                                       observed_at=when))
             plan, refused = graph.plan_correction(
                 self.store, edge, new, op_id=f"corr-{new.id}")

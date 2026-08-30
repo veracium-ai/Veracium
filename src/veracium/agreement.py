@@ -445,7 +445,7 @@ def relay_markers(note, object_text) -> frozenset:
     return r["inbound"] | r["ambiguous"]
 
 
-def derive_record(note, object_text, disclosure):
+def derive_record(note, object_text, disclosure, relation=None):
     """specs/0026 §3b/§3c — THE one derivation of an AgreementRecord
     from a record's note/object and its (final) disclosure. Used by
     ingest at establishment AND by default-mode import recomputation,
@@ -455,9 +455,14 @@ def derive_record(note, object_text, disclosure):
 
     - a RESTRICTING match (inbound or ambiguous) -> a record with
       direction "inbound" (or "ambiguous" when only that class fired);
-    - an OUTBOUND (user-as-source) reading on a record whose final
-      disclosure is QUARANTINED -> §3c's demotion-direction
-      DISAGREEMENT, direction "user_source", no disposition change;
+    - an OUTBOUND (user-as-source) reading on a record the EXTRACTOR
+      DEMOTED (relation == the quarantine relation, disclosure
+      QUARANTINED) -> §3c's demotion-direction DISAGREEMENT, direction
+      "user_source", no disposition change. Scoped to the demotion
+      case deliberately (research's implementation red-team, low-sev):
+      a 0023 revocation-quarantined edge is not a demotion
+      disagreement, and a §3c record there would attach the wrong
+      semantics and inflate the counter;
     - no markers -> None (V2: absence of a marker is absence of
       evidence).
 
@@ -472,7 +477,9 @@ def derive_record(note, object_text, disclosure):
             markers=sorted(restrict)[:8],
             direction=("inbound" if res["inbound"] else "ambiguous"),
             lexicon=LEXICON_VERSION)
-    if res["outbound"] and disclosure == Disclosure.QUARANTINED:
+    from .schema import QUARANTINE_RELATION
+    if (res["outbound"] and disclosure == Disclosure.QUARANTINED
+            and relation == QUARANTINE_RELATION):
         return AgreementRecord(
             markers=sorted(res["outbound"])[:8],
             direction="user_source",

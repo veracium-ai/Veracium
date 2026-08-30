@@ -1984,3 +1984,62 @@ def test_src_lexicon_is_bound_to_the_accepted_reference():
         got_ref = bool(L.relay_markers(note, obj))
         assert got_src == got_ref, (
             f"cell {name}: src={got_src} reference={got_ref}")
+
+
+def test_corrections_pass_through_the_floor(tmp_path):
+    """Research's implementation red-team (the third establishment
+    boundary): correct() preserved the relay note at default
+    MENTIONABLE with no agreement and no floor — an ASSERTABLE edge
+    with a laundering note, reopening B02/B07 for corrected facts.
+    The corrected edge's (preserved note, new value) now pass through
+    the SAME restrict-only floor and the ONE derivation site."""
+    from veracium.schema import Disclosure
+    mem, EC = _mem_for_v(tmp_path, [
+        {"subject": "user", "relation": "health_state",
+         "object": "needs rest", "note": "my doctor said to rest"}])
+    mem.remember("u", "relay", context=EC.direct())
+    (e,) = mem.store.edges("u", active_only=False)
+    r = mem.correct("u", e.id, "needs two weeks of rest")
+    fixed = [x for x in mem.store.edges("u")
+             if x.id == r["replacement"]][0]
+    assert fixed.provenance.disclosure is Disclosure.USE_ONLY, (
+        "a correction whose preserved note carries a relay marker must "
+        "floor exactly as ingest does — the value updates, the relay "
+        "never launders out")
+    assert fixed.agreement is not None
+    assert fixed.agreement.direction == "inbound"
+    assert fixed.note == e.note, "the note IS preserved — and floored"
+    # ...and a marker-free correction stays assertable, record-free
+    (tmp_path / "clean").mkdir()
+    mem2, EC2 = _mem_for_v(tmp_path / "clean", [
+        {"subject": "user", "relation": "works_as", "object": "welder"}])
+    mem2.remember("u", "plain", context=EC2.direct())
+    (e2,) = mem2.store.edges("u", active_only=False)
+    r2 = mem2.correct("u", e2.id, "senior welder")
+    fixed2 = [x for x in mem2.store.edges("u")
+              if x.id == r2["replacement"]][0]
+    assert fixed2.provenance.disclosure is Disclosure.MENTIONABLE
+    assert fixed2.agreement is None
+    mem.close()
+    mem2.close()
+
+
+def test_user_source_record_is_scoped_to_the_demotion_case(tmp_path):
+    """Research's low-sev question, answered by NARROWING: §3c's
+    demotion-direction record is about the EXTRACTOR's demotion
+    disagreeing with the direction evidence — so user_source requires
+    relation == the quarantine relation, and a 0023
+    revocation-quarantined edge with an outbound marker gets NO §3c
+    record (wrong semantics, inflated counter otherwise)."""
+    from veracium import agreement as A
+    from veracium.schema import Disclosure, QUARANTINE_RELATION
+    # the demotion case: records
+    rec = A.derive_record("as I told the vet", "the dog is fine",
+                          Disclosure.QUARANTINED,
+                          relation=QUARANTINE_RELATION)
+    assert rec is not None and rec.direction == "user_source"
+    # revocation-quarantined, concrete relation: NO record
+    rec2 = A.derive_record("as I told the vet", "the dog is fine",
+                           Disclosure.QUARANTINED,
+                           relation="health_state")
+    assert rec2 is None

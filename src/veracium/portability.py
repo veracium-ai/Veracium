@@ -461,7 +461,8 @@ def import_memory(store, path, *, user_id: Optional[str] = None,
                 str(rec.get("note", "") or ""),
                 str(rec.get("object", "") or ""),
                 Disclosure(rec.get("provenance", {}).get(
-                    "disclosure", "use_only")))
+                    "disclosure", "use_only")),
+                relation=rec.get("relation"))
             derived_dict = (json.loads(derived.model_dump_json())
                             if derived is not None else None)
             if derived_dict is not None:
