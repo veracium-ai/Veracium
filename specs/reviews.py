@@ -2519,6 +2519,28 @@ REVIEWS = [
          "suggestion recorded as a forward renderer item. Sealed "
          "AFTER this row, sha pinned on return", findings=0),
 
+    dict(spec="0026", round=13, kind="internal", date="2026-08-30",
+         raised=["0026-I13-1"],
+         verdict="PASS FOR THE SEAL, ACCEPT-BLOCKER NAMED (research, "
+         "round-10 pre-seal pass at 1400d96, run as the requested "
+         "read-as-the-ACCEPT-reviewer; both package moderates verified "
+         "folded). I13-1: the §6 V-invariant check column was not "
+         "S-list-honest — six of seven named tests did not exist (V4's "
+         "name had DRIFTED from the real "
+         "test_the_lexicon_refuses_a_vacuous_table_at_load; "
+         "V2/V3/V5/V6/V6a/V7 are IMPLEMENTATION-TIME obligations that "
+         "graduate with src/ and were presented as standing) — the "
+         "design being ready is not the acceptance ARTIFACT being "
+         "honest, and the S-list completeness check is exactly what "
+         "the acceptance reviewer runs. Their ask-2 ruling: one "
+         "no-live-restatement guard covering the five bitten carriers. "
+         "Folded same-day: every §6 row marked CURRENT vs "
+         "IMPLEMENTATION-TIME; V4's name corrected; the standing guard "
+         "requires every live-zone-cited test name to resolve (marked "
+         "obligations exempt) and the shape-bound digits to appear in "
+         "marker/character context only inside generated blocks",
+         findings=1),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

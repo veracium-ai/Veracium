@@ -1539,3 +1539,53 @@ def _worklist_bytes_suspect(raw: bytes) -> bool:
     """The byte-level detection basis shared by the package sweep."""
     return all(k in raw for k in (b'"fire"', b'"rel"',
                                   b'"note"', b'"obj"'))
+
+
+def test_current_v_table_tests_resolve_and_no_live_restatement():
+    """0026-I13 (research's round-10 pre-seal — the one thing that
+    would stop an ACCEPT): the §6 check column presented six unwritten
+    tests as standing (one drifted name, five implementation-time
+    obligations unmarked). Two guards, both standing:
+
+    (1) every test name cited in the spec's LIVE zone (outside
+    generated blocks and the per-round Changes sections) must resolve
+    to a real function under tests/ or specs/evidence/ — UNLESS its
+    §6 row is explicitly marked IMPLEMENTATION-TIME, in which case it
+    is an obligation, not a claim;
+
+    (2) the restatement guard: the AGREEMENT_SHAPE bound digits may
+    appear in marker/character context in the LIVE zone only inside
+    generated blocks — five carriers in three rounds restated a bound
+    (§18, the SENT row, a closure row, a test diagnostic, the V-table
+    names)."""
+    import importlib
+    import re
+    IM = importlib.import_module("import_matrix")
+    spec = (ROOT / "specs" / "0026-label-value-agreement.md").read_text()
+    # the LIVE zone: strip generated blocks and per-round history
+    live = re.sub(r"<!-- GENERATED:.*?/GENERATED:[a-z-]+ -->", "",
+                  spec, flags=re.S)
+    live = re.split(r"^## 1[1-9]\. Changes in ", live, maxsplit=1,
+                    flags=re.M)[0]
+    # (1) cited test names resolve, or their row is marked
+    corpus = ""
+    for tf in list((ROOT / "tests").glob("*.py")) + list(
+            (ROOT / "specs" / "evidence").rglob("*.py")):
+        corpus += tf.read_text()
+    for line in live.splitlines():
+        for name in re.findall(r"`(test_[a-z0-9_]+)`", line):
+            if "IMPLEMENTATION-TIME" in line:
+                continue        # a named OBLIGATION, marked as such
+            assert f"def {name}(" in corpus, (
+                f"the spec's live zone cites {name} as standing but no "
+                f"such test exists (0026-I13 — the drifted-name class)")
+    # (2) bound digits out of live prose
+    S = IM.AGREEMENT_SHAPE
+    for n, ctx in ((S["markers_max_count"], "marker"),
+                   (S["marker_max_chars"], "charact|chars"),):
+        pat = (rf"\b{n}\b[^\n]{{0,40}}(?:{ctx})"
+               rf"|(?:{ctx})[a-z ]{{0,40}}\b{n}\b")
+        hits = [m.group(0) for m in re.finditer(pat, live, re.I)]
+        assert hits == [], (
+            f"live prose restates the shape bound {n}: {hits[:3]} — "
+            f"numbers live only in generated blocks (0026-I13)")

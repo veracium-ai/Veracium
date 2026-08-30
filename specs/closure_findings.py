@@ -2891,4 +2891,21 @@ CLOSURES = [
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_no_full_content_worklist_ships_in_the_package "
      "-q -p no:randomly"),
+    ("0026", "internal", 13, "0026-I13-1",
+     "the §6 V-invariant check column was not S-list-honest: six of "
+     "seven named tests did not exist — V4's name had drifted from "
+     "the real test, and V2/V3/V5/V6/V6a/V7 are implementation-time "
+     "obligations (0026 is a draft; no agreement mechanism exists in "
+     "src/) presented as standing checks; the S-list completeness "
+     "check is exactly what the acceptance reviewer runs",
+     "every §6 row is marked CURRENT vs IMPLEMENTATION-TIME "
+     "(graduates with src/), V4's name corrected to the real test, "
+     "and the standing guard binds both halves: every test name cited "
+     "in the spec's live zone must resolve to a real function (marked "
+     "obligations exempt), and the shape-bound digits may appear in "
+     "marker/character context only inside generated blocks — the "
+     "restatement class's five bitten carriers under one guard",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_current_v_table_tests_resolve_and_no_live_restatement "
+     "-q -p no:randomly"),
 ]
