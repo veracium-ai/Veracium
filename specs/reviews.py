@@ -2585,8 +2585,17 @@ REVIEWS = [
          "design); the IMPLEMENTATION-TIME exemption is REMOVED from "
          "the resolution guard — every cited name resolves, no "
          "exceptions. The generated §6 invariant->test-node report "
-         "recorded as a forward renderer item. Sealed AFTER this row, "
-         "sha pinned on return", findings=0),
+         "recorded as a forward renderer item. Research's round-11 "
+         "pre-seal verdict: PASS — 'I WOULD SIGN ACCEPT' (no landmines "
+         "in the dormant cells; the field-name activation gate ruled "
+         "load-bearing; the restatement class ruled mechanically "
+         "closed), with their two graduation-time dormant-cell "
+         "refinements folded same-day (V6 counters on the markerless "
+         "path; V3's never-raises clause tested — quarantined stays "
+         "quarantined). Sealed as 0026-v12-20260830T1741Z.tar.gz, "
+         "sha256 "
+         "233d03afa5ccddd1004792bdfce26983b1c3dd8a72a9f4be98008983"
+         "629fcb88, commit e3354f0", findings=0),
 
     dict(spec="0026", round=14, kind="internal", date="2026-08-30",
          verdict="PASS — 'I WOULD SIGN ACCEPT' (research, round-11 "
