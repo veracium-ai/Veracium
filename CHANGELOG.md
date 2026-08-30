@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.17.0 — 2026-08-30
+
+**Upgrade recommendation — consumers whose hosts ingest user-relayed
+third-party content ("my doctor said…", "the landlord told me…")
+should take this release**: before it, such a relay filed by the
+extractor under a concrete relation was asserted as the user's own
+fact (the B02/B07 laundering class, open since the 0024 baseline
+measurements). It is closed here. Hosts upgrading from ≤0.16 must
+also act on the 0011 entries below: first-party ingest call sites
+need an explicit `context=EvidenceContext.direct()` (absence now
+floors conservatively), and `correct()` callers must handle
+`CorrectionRefused` on other-entity facts.
 
 - **0026 — label/value agreement check (accepted 2026-08-30, external
   round 12; twelve external + fourteen internal review rounds) —
@@ -30,7 +41,12 @@
   verbatim with opaque markers) and RAISES on malformed with nothing
   written. Measured acceptance gate: 0.64% false-positive rate
   (439 of 68,479 grounded first-person triples) against the
-  pre-committed 2% bar.
+  pre-committed 2% bar. The floor covers all three establishment
+  boundaries — ingest, default-mode import recomputation, and
+  `correct()` (a corrected fact's preserved note passes through the
+  same floor and derivation site; found by research's implementation
+  red-team, closed same-day) — and §3c's `user_source` record is
+  scoped to the extractor-demotion case.
 
 - **0011 (accepted 2026-08-29, external round 19) — implementation in
   progress.** Landed so far:
