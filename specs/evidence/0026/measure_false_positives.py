@@ -245,18 +245,50 @@ def main() -> int:
         print("the freshly measured aggregate FAILS its own validator:\n  "
               + "\n  ".join(bad), file=sys.stderr)
         return 1
+    # 0026-EVIDENCE-R8-3: resolve and validate EVERY output path
+    # BEFORE any write — outputs may not alias each other or the input
+    # (--emit-aggregate X --worklist X destroyed the aggregate; either
+    # output could name --cache and overwrite the source).
+    paths = {"--cache": pathlib.Path(a.cache).resolve()}
     if a.emit_aggregate:
-        pathlib.Path(a.emit_aggregate).write_text(
+        paths["--emit-aggregate"] = pathlib.Path(a.emit_aggregate).resolve()
+    if a.worklist:
+        paths["--worklist"] = pathlib.Path(a.worklist).resolve()
+    names = list(paths)
+    for x in range(len(names)):
+        for y in range(x + 1, len(names)):
+            if paths[names[x]] == paths[names[y]]:
+                print(f"{names[x]} and {names[y]} resolve to the SAME "
+                      f"file ({paths[names[x]]}) — refusing before any "
+                      f"write (0026-EVIDENCE-R8-3)", file=sys.stderr)
+                return 1
+    if a.worklist:
+        # 0026-PRIVACY-R8-4: the worklist is FULL corpus content —
+        # LOCAL-ONLY is enforced, not documented: it may not land
+        # inside the package tree, and it is written 0o600
+        repo_root = HERE.parents[2].resolve()
+        wp = paths["--worklist"]
+        if wp == repo_root or repo_root in wp.parents:
+            print(f"--worklist {wp} is INSIDE the package tree — full "
+                  f"corpus content never ships or commits; write it to "
+                  f"a location outside the repository "
+                  f"(0026-PRIVACY-R8-4)", file=sys.stderr)
+            return 1
+    if a.emit_aggregate:
+        paths["--emit-aggregate"].write_text(
             json.dumps(agg, sort_keys=True, indent=1) + "\n")
         print(f"aggregate written  {a.emit_aggregate}")
     if a.worklist:
-        wp = pathlib.Path(a.worklist)
-        with wp.open("w") as fh:
+        import os as _os
+        fd = _os.open(str(paths["--worklist"]),
+                      _os.O_WRONLY | _os.O_CREAT | _os.O_TRUNC, 0o600)
+        with _os.fdopen(fd, "w") as fh:
             for rel, note, obj, hits, digest in sample_pool:
                 fh.write(json.dumps({"fire": digest, "rel": rel,
                                      "note": note, "obj": obj}) + "\n")
-        print(f"worklist written   {wp}  (FULL corpus content — "
-              f"LOCAL-ONLY, never ship or commit this file)")
+        print(f"worklist written   {a.worklist}  (FULL corpus content — "
+              f"LOCAL-ONLY enforced: outside the package tree, "
+              f"mode 0600)")
     report(agg)
 
     if a.sample and sample_pool:
@@ -310,6 +342,25 @@ ADJUDICATION_SCHEMA = 7     # the ONE carrier of the current revision:
                             # described three different revisions)
 
 
+def _strict_pairs(pairs):
+    """0026-EVIDENCE-R8-1 (the 0011 EVIDENCE-R9-1 class, refound in new
+    code): json.loads keeps the LAST duplicate key, so
+    '"label":"fp","label":"tp"' silently passed as tp — hash binding
+    authenticates ambiguous bytes without resolving their meaning.
+    Duplicate names REFUSE at parse, at every evidence boundary."""
+    out = {}
+    for k, v in pairs:
+        if k in out:
+            raise ValueError(f"duplicate JSON member {k!r}")
+        out[k] = v
+    return out
+
+
+def _strict_json(text: str):
+    """json.loads with duplicate-member refusal (0026-EVIDENCE-R8-1)."""
+    return json.loads(text, object_pairs_hook=_strict_pairs)
+
+
 def _read_census_manifest(path, want_sha, population, name):
     """Open, hash, parse and membership-check ONE census label manifest.
     Returns ({fire: label}, None) or (None, problem). Shared by the
@@ -337,9 +388,13 @@ def _read_census_manifest(path, want_sha, population, name):
         if not line.strip():
             continue
         try:
-            row = json.loads(line)
+            row = _strict_json(line)
         except json.JSONDecodeError:
             return None, f"{path.name} line {i} is not JSON"
+        except ValueError as exc:
+            return None, (f"{path.name} line {i}: {exc} — an ambiguous "
+                          f"record is refused at parse, never resolved "
+                          f"by decoder precedence (0026-EVIDENCE-R8-1)")
         if (type(row) is not dict or sorted(row) != ["fire", "label"]
                 or type(row.get("fire")) is not str
                 or not _re.fullmatch(r"[0-9a-f]{64}", row["fire"])
@@ -625,8 +680,8 @@ def validate_aggregate(agg, adj_path=None, *, bootstrap=False,
                 # more than the code. The artifact is READ and
                 # VALIDATED, and BOUND to this aggregate.
                 try:
-                    a_ = json.loads(adj.read_text())
-                except (OSError, UnicodeDecodeError,
+                    a_ = _strict_json(adj.read_text())
+                except (OSError, UnicodeDecodeError, ValueError,
                         json.JSONDecodeError) as exc:
                     a_ = None
                     out.append(f"fp_adjudication.json is unreadable or "

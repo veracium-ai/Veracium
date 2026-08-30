@@ -149,6 +149,104 @@ def render_2c_row() -> str:
         "fields only, with validation ordered BEFORE any write |")
 
 
+# 0026-R8-2: "nonempty bounded strings" with no bounds let conforming
+# implementations accept DIFFERENT inputs. The shape is DATA now, with a
+# RUNNING reference validator — the future Edge.agreement implementation
+# must match agreement_shape_problems, and the standing test drives every
+# bound at the limit and one beyond.
+AGREEMENT_SHAPE = {
+    "keys": ("markers", "direction", "lexicon"),   # CLOSED — unknown
+                                                   # keys REFUSE
+    "markers_type": "JSON array of strings",
+    "markers_max_count": 16,
+    "marker_min_chars": 1,
+    "marker_max_chars": 64,
+    "markers_duplicates": "REFUSE",
+    "direction_values": ("inbound", "outbound", "ambiguous"),  # CLOSED
+    "lexicon_min_chars": 1,
+    "lexicon_max_chars": 64,
+    "lexicon_pattern": r"[0-9a-z][0-9a-z.\-]*",
+}
+
+
+def agreement_shape_problems(rec) -> list:
+    """The EXECUTABLE closed-shape rule for an AgreementRecord under ANY
+    lexicon version (0026-R8-2). Under the CURRENT version, grammar
+    membership applies ON TOP of this; under a foreign version this is
+    the WHOLE validation — markers are opaque within these bounds."""
+    S = AGREEMENT_SHAPE
+    out = []
+    if type(rec) is not dict:
+        return ["record is not an object"]
+    unknown = sorted(set(rec) - set(S["keys"]))
+    missing = sorted(set(S["keys"]) - set(rec))
+    if unknown:
+        out.append(f"unknown key(s) {unknown} — the record is CLOSED")
+    if missing:
+        out.append(f"missing key(s) {missing}")
+    if out:
+        return out
+    m = rec["markers"]
+    if type(m) is not list:
+        out.append("markers is not a JSON array")
+    else:
+        if len(m) > S["markers_max_count"]:
+            out.append(f"{len(m)} markers exceed the maximum "
+                       f"{S['markers_max_count']}")
+        seen = set()
+        for i, tok in enumerate(m):
+            if type(tok) is not str:
+                out.append(f"markers[{i}] is not a string")
+            elif not (S["marker_min_chars"] <= len(tok)
+                      <= S["marker_max_chars"]):
+                out.append(f"markers[{i}] length {len(tok)} outside "
+                           f"[{S['marker_min_chars']}, "
+                           f"{S['marker_max_chars']}]")
+            elif tok in seen:
+                out.append(f"markers[{i}] duplicates {tok!r} — REFUSE")
+            else:
+                seen.add(tok)
+    if rec["direction"] not in S["direction_values"]:
+        out.append(f"direction {rec['direction']!r} outside the closed "
+                   f"set {S['direction_values']}")
+    lx = rec["lexicon"]
+    if type(lx) is not str or not (
+            S["lexicon_min_chars"] <= len(lx) <= S["lexicon_max_chars"]):
+        out.append("lexicon version is not a string within "
+                   f"[{S['lexicon_min_chars']}, {S['lexicon_max_chars']}]"
+                   " chars")
+    elif not re.fullmatch(S["lexicon_pattern"], lx):
+        out.append(f"lexicon version {lx!r} does not match the closed "
+                   f"pattern")
+    return out
+
+
+def render_shape_block() -> str:
+    """The §3d shape table, generated from AGREEMENT_SHAPE."""
+    S = AGREEMENT_SHAPE
+    return (
+        "<!-- GENERATED:agreement-shape (import_matrix.py — the one "
+        "carrier; do not hand-edit) -->\n"
+        "| shape rule | value |\n|---|---|\n"
+        f"| record keys (CLOSED; unknown keys REFUSE) | "
+        f"`{', '.join(S['keys'])}` |\n"
+        f"| markers collection | {S['markers_type']}, at most "
+        f"{S['markers_max_count']} entries |\n"
+        f"| marker string length | {S['marker_min_chars']}–"
+        f"{S['marker_max_chars']} characters |\n"
+        f"| duplicate markers | {S['markers_duplicates']} |\n"
+        f"| direction (CLOSED) | `{', '.join(S['direction_values'])}` |\n"
+        f"| lexicon version | {S['lexicon_min_chars']}–"
+        f"{S['lexicon_max_chars']} chars matching "
+        f"`{S['lexicon_pattern']}` |\n"
+        "<!-- /GENERATED:agreement-shape -->")
+
+
+_SHAPE_RE = re.compile(
+    r"<!-- GENERATED:agreement-shape .*?/GENERATED:agreement-shape -->",
+    re.S)
+
+
 _BLOCK_RE = re.compile(
     r"<!-- GENERATED:import-matrix .*?/GENERATED:import-matrix -->", re.S)
 
@@ -168,6 +266,12 @@ def spec_matrix_problems(spec_text: str) -> list:
         out.append("the spec's §2c AgreementRecord row does not "
                    "byte-match import_matrix.render_2c_row() — the two "
                    "carriers must come from the one table (0026-R4-2)")
+    shapes = _SHAPE_RE.findall(spec_text)
+    if len(shapes) != 1 or shapes[0] != render_shape_block():
+        out.append("the spec's agreement-shape block is absent or does "
+                   "not byte-match import_matrix.render_shape_block() — "
+                   "the executable bounds are the one carrier "
+                   "(0026-R8-2)")
     return out
 
 

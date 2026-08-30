@@ -1127,3 +1127,143 @@ def test_the_over_gate_pipeline_end_to_end(tmp_path):
         capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 1
     assert "host-only labels are not an adjudication" in r.stderr
+
+
+def test_agreement_shape_bounds_at_the_limit_and_beyond():
+    """0026-R8-2: every AGREEMENT_SHAPE bound driven at the limit (must
+    pass) and one beyond (must refuse), plus duplicates, closed
+    direction, unknown/missing keys, and the pattern edge — the
+    executable definition a conforming implementation must match."""
+    import importlib
+    IM = importlib.import_module("import_matrix")
+    S = IM.AGREEMENT_SHAPE
+    ok = lambda **kw: IM.agreement_shape_problems(dict(
+        {"markers": ["said"], "direction": "inbound",
+         "lexicon": "0026-lex-999"}, **kw))
+    assert ok() == []
+    # marker count: at the limit / one beyond
+    at = [f"m{i}" for i in range(S["markers_max_count"])]
+    assert ok(markers=at) == []
+    assert ok(markers=at + ["extra"]), "17 markers must refuse"
+    # marker length: at the limit / one beyond / below the minimum
+    assert ok(markers=["x" * S["marker_max_chars"]]) == []
+    assert ok(markers=["x" * (S["marker_max_chars"] + 1)])
+    assert ok(markers=[""])
+    # duplicates refuse; non-strings refuse; wrong collection refuses
+    assert ok(markers=["said", "said"])
+    assert ok(markers=["said", 3])
+    assert ok(markers="said")
+    # direction is a closed enum
+    for d in S["direction_values"]:
+        assert ok(direction=d) == []
+    assert ok(direction="sideways")
+    # lexicon version: limits and pattern
+    assert ok(lexicon="x" * S["lexicon_max_chars"]) == []
+    assert ok(lexicon="x" * (S["lexicon_max_chars"] + 1))
+    assert ok(lexicon="")
+    assert ok(lexicon="UPPER-case")
+    assert ok(lexicon="-starts-wrong")
+    # closed record: unknown and missing keys refuse
+    r = {"markers": ["said"], "direction": "inbound",
+         "lexicon": "0026-lex-999", "extra": 1}
+    assert IM.agreement_shape_problems(r)
+    assert IM.agreement_shape_problems({"markers": ["said"]})
+    # and the spec carries the generated shape block byte-exactly
+    spec = (ROOT / "specs" / "0026-label-value-agreement.md").read_text()
+    assert IM.render_shape_block() in spec
+
+
+def test_census_manifests_refuse_ambiguous_records(tmp_path):
+    """0026-EVIDENCE-R8-1: json.loads keeps the LAST duplicate member,
+    so '"label":"fp","label":"tp"' passed as tp and could reduce the
+    fp-union. Duplicate members refuse AT PARSE in both manifests and
+    in the adjudication record."""
+    import importlib
+    MF = importlib.import_module("measure_false_positives")
+    pop = {"a" * 64}
+    dup_label = ('{"fire":"' + "a" * 64
+                 + '","label":"fp","label":"tp"}\n')
+    # drive through the real reader via a file
+    p = tmp_path / "m.jsonl"
+    p.write_text(dup_label)
+    import hashlib as _hl
+    lab, prob = MF._read_census_manifest(
+        p, _hl.sha256(dup_label.encode()).hexdigest(), pop, "manifest")
+    assert lab is None and "duplicate JSON member" in prob, prob
+    dup_fire = ('{"fire":"' + "a" * 64 + '","fire":"' + "b" * 64
+                + '","label":"tp"}\n')
+    p.write_text(dup_fire)
+    lab, prob = MF._read_census_manifest(
+        p, _hl.sha256(dup_fire.encode()).hexdigest(), pop, "manifest")
+    assert lab is None and "duplicate JSON member" in prob, prob
+    # the adjudication record boundary refuses too
+    assert "duplicate JSON member" in str(
+        __import__("pytest").raises(ValueError, MF._strict_json,
+                                    '{"a":1,"a":2}').value)
+
+
+def test_bootstrap_paths_cannot_alias_and_worklists_stay_local(tmp_path):
+    """0026-EVIDENCE-R8-3 + 0026-PRIVACY-R8-4: output paths are resolved
+    and validated BEFORE any write — aliases among cache/aggregate/
+    worklist refuse (including relative-vs-absolute aliases), a worklist
+    inside the package tree refuses, and a written worklist is 0600."""
+    import os
+    import subprocess
+    import sys as _sys
+    FIX = ROOT / "specs" / "evidence" / "0026" / "e2e_fixture"
+    script = ROOT / "specs" / "evidence" / "0026" / \
+        "measure_false_positives.py"
+    cache = FIX / "fixture_cache.jsonl"
+    peer = FIX / "fixture_peer.json"
+
+    def run(*args):
+        return subprocess.run(
+            [_sys.executable, str(script), "--cache", str(cache),
+             "--peer-anchor", str(peer)] + list(args),
+            capture_output=True, text=True, cwd=ROOT)
+
+    # aggregate and worklist naming the SAME file refuse before writing
+    x = tmp_path / "x.json"
+    r = run("--emit-aggregate", str(x), "--worklist", str(x))
+    assert r.returncode == 1 and "SAME" in r.stderr
+    assert not x.exists(), "refusal must precede any write"
+    # ...including via a relative alias of the same path
+    rel = os.path.relpath(x, ROOT)
+    r = run("--emit-aggregate", str(x), "--worklist", rel)
+    assert r.returncode == 1 and "SAME" in r.stderr
+    # an output naming the INPUT cache refuses (source preserved)
+    before = cache.read_bytes()
+    r = run("--emit-aggregate", str(cache))
+    assert r.returncode == 1 and "SAME" in r.stderr
+    assert cache.read_bytes() == before
+    # a worklist inside the package tree refuses — LOCAL-ONLY enforced
+    r = run("--worklist", str(ROOT / "specs" / "wl.jsonl"))
+    assert r.returncode == 1 and "INSIDE the package tree" in r.stderr
+    assert not (ROOT / "specs" / "wl.jsonl").exists()
+    # the good path: distinct external paths, worklist mode 0600, and
+    # the bootstrap state still reached with BOTH artifacts retained
+    aggp, wp = tmp_path / "agg.json", tmp_path / "wl.jsonl"
+    r = run("--emit-aggregate", str(aggp), "--worklist", str(wp))
+    assert r.returncode == 3, (r.stdout[-300:], r.stderr[-300:])
+    assert aggp.is_file() and wp.is_file()
+    assert (wp.stat().st_mode & 0o777) == 0o600
+
+
+def test_no_full_content_worklist_ships_in_the_package():
+    """0026-PRIVACY-R8-4's package check: no file anywhere under specs/
+    carries the worklist line shape (fire+rel+note+obj) — full corpus
+    content never ships, and the refusal is a standing sweep rather
+    than a .gitignore pattern that a differently-named file evades."""
+    import json as _json
+    hits = []
+    for f in (ROOT / "specs").rglob("*.jsonl"):
+        try:
+            first = f.read_text(errors="strict").splitlines()[0]
+            row = _json.loads(first)
+        except Exception:
+            continue
+        if (type(row) is dict
+                and {"fire", "rel", "note", "obj"} <= set(row)):
+            hits.append(str(f.relative_to(ROOT)))
+    assert hits == [], (
+        f"full-content worklist artifact(s) inside the package: {hits}")

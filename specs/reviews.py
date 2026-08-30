@@ -2266,6 +2266,38 @@ REVIEWS = [
          "55e5c0a1661b4386944b176669b6b77c8a51d3305027a8bafe724208"
          "7bfa0612, commit c78457d", findings=0),
 
+    dict(spec="0026", round=8, kind="external", date="2026-08-30",
+         raised=["0026-EVIDENCE-R8-1", "0026-R8-2",
+                 "0026-EVIDENCE-R8-3", "0026-PRIVACY-R8-4"],
+         verdict="RETURN FOR NARROW AMENDMENT (package `0026-v8`, both "
+         "uploads byte-identical at 55e5c0a1; 538 members; exact v7 "
+         "predecessor; delta 13 changed/5 added; focused 86 passed; "
+         "qualified extracted suite reconciled; ALL FOUR round-7 "
+         "closures held — R7-1 closed for distinct valid paths, R7-2 "
+         "substantially closed, R7-1 version scoping clear, "
+         "PACKAGE-R7-1 closed; the new findings are seams in the NEW "
+         "machinery). EVIDENCE-R8-1 BLOCKING: census records are not "
+         "unambiguous — json.loads keeps the LAST duplicate key, so "
+         "'label':'fp','label':'tp' passes as tp; hash binding "
+         "authenticates the ambiguous bytes without resolving their "
+         "meaning; both censuses share the reader so the fp-union can "
+         "be reduced (the 0011 EVIDENCE-R9-1 class, refound in new "
+         "code). R8-2 BLOCKING: the foreign-version shape still lacks "
+         "an EXECUTABLE definition — 'nonempty bounded strings' and "
+         "'bounded count' with no bounds; conforming implementations "
+         "can accept different inputs; exact collection type, limits, "
+         "duplicate handling, direction values, unknown-key behavior "
+         "and boundary cases required. EVIDENCE-R8-3 BLOCKING: "
+         "bootstrap output paths can overwrite one another or the "
+         "input — --emit-aggregate X --worklist X destroys the "
+         "aggregate; either output can name --cache; exit 3 is "
+         "reachable without both artifacts retained. PRIVACY-R8-4 "
+         "MODERATE: LOCAL-ONLY is not enforced — any path accepted, "
+         "ordinary permissions, .gitignore covers fp_worklist* while "
+         "the packaged test writes worklist.jsonl; a dedicated "
+         "non-package location, restrictive permissions and a package "
+         "refusal check required", findings=4),
+
     dict(spec="0026", round=9, kind="internal", date="2026-08-30",
          verdict="PASS — SEAL CLEARED (research, round-7 pre-seal pass "
          "at 4774a06; 86 passed). Fp-union ENDORSED (false refusal is "
@@ -2283,6 +2315,31 @@ REVIEWS = [
          "over-gate-marker rider DECLINED with the reason recorded: a "
          "derived duplicate carrier is the drift class this line "
          "spent six rounds killing", findings=0),
+
+    dict(spec="0026", round=9, kind="external", date="2026-08-30",
+         candidate={"0026": "v12"},
+         verdict="SENT (package `0026-v9`, candidate draft v12 — the "
+         "round-8 fold; §18 maps all four findings; all four round-7 "
+         "closures held, the new seams were in the round-7 machinery "
+         "itself). EVIDENCE-R8-1 closed: duplicate JSON members REFUSE "
+         "at parse at every evidence boundary (_strict_json "
+         "object-pairs hook; both manifests + the adjudication record; "
+         "duplicate-label and duplicate-fire regressions) — the 0011 "
+         "R9-1 class refound and killed in the new reader. R8-2 "
+         "closed: AGREEMENT_SHAPE is executable data with the running "
+         "reference validator agreement_shape_problems (closed keys; "
+         "<=16 markers of 1-64 chars; duplicates refuse; closed "
+         "direction enum; 1-64-char lexicon under a closed pattern), "
+         "rendered byte-bound into §3d, every bound driven at the "
+         "limit and one beyond. EVIDENCE-R8-3 closed: all bootstrap "
+         "paths resolve and cross-check BEFORE any write — same-path, "
+         "relative-alias and output-names-input all refuse with the "
+         "source proven preserved. PRIVACY-R8-4 closed mechanically: "
+         "in-tree worklist paths refuse, the file is written 0600, and "
+         "a standing package sweep refuses any worklist-shaped .jsonl "
+         "under specs/ (rename-proof, unlike the gitignore pattern it "
+         "supplements). Sealed AFTER this row, sha pinned on return",
+         findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "

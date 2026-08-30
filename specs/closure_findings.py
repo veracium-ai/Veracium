@@ -2738,4 +2738,51 @@ CLOSURES = [
      "the schema of its own round",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_live_prose_names_carriers_not_mechanisms -q -p no:randomly"),
+    ("0026", "external", 8, "0026-EVIDENCE-R8-1",
+     "census records were not unambiguous: json.loads keeps the LAST "
+     "duplicate member, so 'label:fp,label:tp' passed as tp — hash "
+     "binding authenticated ambiguous bytes without resolving meaning, "
+     "and both censuses shared the reader so the fp-union could be "
+     "reduced (the 0011 EVIDENCE-R9-1 class refound in new code)",
+     "duplicate JSON members REFUSE at parse via _strict_json (an "
+     "object-pairs hook) at every evidence boundary — both manifests "
+     "and the adjudication record — with duplicate-label and "
+     "duplicate-fire regressions standing",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_census_manifests_refuse_ambiguous_records -q -p no:randomly"),
+    ("0026", "external", 8, "0026-R8-2",
+     "the foreign-version shape lacked an EXECUTABLE definition — "
+     "'nonempty bounded strings' and 'bounded count' with no bounds "
+     "let conforming implementations accept different inputs",
+     "AGREEMENT_SHAPE is data with the running reference validator "
+     "agreement_shape_problems (closed keys; a JSON array of at most "
+     "16 markers of 1-64 chars; duplicates refuse; the closed "
+     "direction enum; a 1-64-char lexicon version under a closed "
+     "pattern), rendered byte-bound into §3d; every bound driven at "
+     "the limit and one beyond by a standing test",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_agreement_shape_bounds_at_the_limit_and_beyond "
+     "-q -p no:randomly"),
+    ("0026", "external", 8, "0026-EVIDENCE-R8-3",
+     "bootstrap output paths could overwrite one another or the input: "
+     "--emit-aggregate X --worklist X destroyed the aggregate, either "
+     "output could name --cache, and exit 3 was reachable without both "
+     "artifacts retained",
+     "every path resolves and cross-checks BEFORE any write; aliases "
+     "(relative or absolute) and output-names-input refuse with the "
+     "source proven preserved; the good path retains both artifacts",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_bootstrap_paths_cannot_alias_and_worklists_stay_local "
+     "-q -p no:randomly"),
+    ("0026", "external", 8, "0026-PRIVACY-R8-4",
+     "LOCAL-ONLY was documentation: --worklist accepted any path with "
+     "ordinary permissions, and .gitignore covered fp_worklist* while "
+     "the packaged test wrote worklist.jsonl",
+     "mechanically enforced: a worklist path inside the package tree "
+     "refuses before any write, the file is written mode 0600, and a "
+     "standing package sweep refuses ANY .jsonl under specs/ carrying "
+     "the worklist line shape — rename-proof",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_no_full_content_worklist_ships_in_the_package "
+     "-q -p no:randomly"),
 ]
