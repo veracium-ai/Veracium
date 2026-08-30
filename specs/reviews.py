@@ -2338,8 +2338,16 @@ REVIEWS = [
          "in-tree worklist paths refuse, the file is written 0600, and "
          "a standing package sweep refuses any worklist-shaped .jsonl "
          "under specs/ (rename-proof, unlike the gitignore pattern it "
-         "supplements). Sealed AFTER this row, sha pinned on return",
-         findings=0),
+         "supplements). Research's round-8 pre-seal cycle ran THREE "
+         "legs before clearing: the ninth face (three unrouted "
+         "json.loads sites incl. the raw-vs-parsed cache split — "
+         "internal round 10), the gate's own headroom (exact-match + "
+         "AST rebuild — internal round 11), and the tenth-face "
+         "hardening (hook STRICTNESS by name, not presence) taken "
+         "same-day on their co-verify PASS. Sealed as "
+         "0026-v9-20260830T1208Z.tar.gz, sha256 "
+         "a1d56a4faf9e4f0da35b26cbf006c4596fe184dda93ec48335bd1214"
+         "7a07bbe5, commit b38944d", findings=0),
 
     dict(spec="0026", round=10, kind="internal", date="2026-08-30",
          raised=["0026-I10-1"],
