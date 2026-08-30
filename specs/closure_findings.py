@@ -2806,4 +2806,18 @@ CLOSURES = [
      "16 chars -> length bound 64 = x4)",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_no_plain_json_load_at_evidence_boundaries -q -p no:randomly"),
+    ("0026", "internal", 11, "0026-I11-1",
+     "the gate's own allowlist defeated it for the file it protects: "
+     "0026's cap was 3 while the matched count was 0 (regex miscount — "
+     "the impl line skipped, the docstrings never matched), leaving "
+     "three slots of headroom for reintroduced plain json.loads",
+     "the gate is EXACT-MATCH (a count above OR below its pin trips — "
+     "self-catching, no headroom anywhere) and AST-BASED (calls "
+     "resolved through import aliases incl. bare `from json import "
+     "loads`; safety judged per-call by the object_pairs_hook keyword, "
+     "not per-line) — the AST recount immediately corrected one legacy "
+     "pin the regex had undercounted, proving the rebuild on its first "
+     "run; 0026's own pin is 0",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_no_plain_json_load_at_evidence_boundaries -q -p no:randomly"),
 ]

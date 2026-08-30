@@ -2366,6 +2366,24 @@ REVIEWS = [
          "was TASTE not measurement (§6a discipline applies to shape "
          "bounds)", findings=1),
 
+    dict(spec="0026", round=11, kind="internal", date="2026-08-30",
+         raised=["0026-I11-1"],
+         verdict="RETURN FOR NARROW AMENDMENT (research, co-verify of "
+         "the I10-1 fold at 3d6df81; the MECHANISM verified clean — "
+         "all three json.loads sites strict, the raw-vs-parsed cache "
+         "split dead, shape bounds measured in source, hardlink guard "
+         "live). I11-1, blocking-for-the-gate: the gate's own "
+         "allowlist DEFEATED it for the file it was built to protect — "
+         "0026's cap was 3 while its actual matched count was 0 (the "
+         "impl line was regex-skipped and the cited docstring mentions "
+         "never matched), leaving three slots of HEADROOM for "
+         "reintroduced plain json.loads. Their fixes: exact-match "
+         "(plain != pinned trips in EITHER direction — self-catching, "
+         "the no-headroom discipline the spec applies everywhere "
+         "else); and the regex-to-AST hardening (import aliases, "
+         "bare `from json import loads`, per-call hook detection "
+         "instead of line-based skips)", findings=1),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

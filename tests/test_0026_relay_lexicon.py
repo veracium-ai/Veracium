@@ -1302,28 +1302,59 @@ def test_duplicate_key_cache_rows_count_unparseable(tmp_path):
 
 
 def test_no_plain_json_load_at_evidence_boundaries():
-    """0026-I10-1, research's structural gate — PROVEN necessary by its
-    own history: the duplicate-key class was closed in 0011 round 9,
-    recurred in fresh 0026 code eleven days later (R8-1), and the fold
-    meant to close it missed THREE further sites. Vigilance failed
-    twice, so the unsafe form is UNREACHABLE now: every json.load(s)
-    under specs/evidence/ must be the strict decoder's own
-    implementation site or an allowlisted use with a stated reason."""
-    import re
+    """0026-I10-1 + I11-1, research's structural gate — PROVEN necessary
+    by its own history: the duplicate-key class was closed in 0011
+    round 9, recurred in fresh 0026 code eleven days later (R8-1), the
+    closing fold missed THREE sites, and the gate's own first allowlist
+    then carried three slots of HEADROOM in the very file it protected
+    (a regex miscount: the impl line was skipped, the docstrings never
+    matched). The gate is AST-BASED and EXACT-MATCH now: calls are
+    resolved through import aliases (json.loads, j.loads, bare loads
+    from `from json import loads`), a call is safe only if it passes
+    object_pairs_hook, and every file's plain-call count must EQUAL its
+    allowlisted count — headroom is impossible, and a stale allowlist
+    trips on itself in either direction."""
+    import ast
+
+    def plain_calls(text):
+        tree = ast.parse(text)
+        mods, fns = set(), {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for a in node.names:
+                    if a.name == "json":
+                        mods.add(a.asname or "json")
+            elif isinstance(node, ast.ImportFrom) and node.module == "json":
+                for a in node.names:
+                    if a.name in ("load", "loads"):
+                        fns[a.asname or a.name] = a.name
+        n = 0
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            f = node.func
+            hit = ((isinstance(f, ast.Attribute)
+                    and isinstance(f.value, ast.Name)
+                    and f.value.id in mods
+                    and f.attr in ("load", "loads"))
+                   or (isinstance(f, ast.Name) and f.id in fns))
+            if hit and not any(kw.arg == "object_pairs_hook"
+                               for kw in node.keywords):
+                n += 1
+        return n
+
     LEGACY = ("predates the strict-decoder rule; the artifact is "
               "sealed under its own line's review and hardening it is "
-              "that line's amendment, not 0026's — NEW files get cap 0")
+              "that line's amendment, not 0026's — NEW files get 0")
     allow = {
-        # file -> (allowed plain occurrences, why)
-        "0026/measure_false_positives.py": (
-            3, "the _strict_json implementation site (its own "
-               "json.loads call) plus the two docstring mentions that "
-               "NAME the hazard"),
+        # file -> (EXACT plain-call count, why). No headroom exists:
+        # a count above OR below the pin trips (0026-I11-1).
         "0011/check_round1_fold.py": (1, LEGACY),
         "0011/subject_census.py": (4, LEGACY),
         "0019/phase1f_reference.py": (3, LEGACY),
         "0019/phase1g_u3b.py": (3, LEGACY),
-        "0020/ledger_plan_harness.py": (1, LEGACY),
+        "0020/ledger_plan_harness.py": (3, LEGACY),  # AST found 2
+                                                     # the regex missed
         "0020/store_adapter_harness.py": (2, LEGACY),
         "0020/vector_harness.py": (1, LEGACY),
         "0020/verify_package.py": (1, LEGACY),
@@ -1335,19 +1366,14 @@ def test_no_plain_json_load_at_evidence_boundaries():
     }
     bad = []
     for f in sorted((ROOT / "specs" / "evidence").rglob("*.py")):
-        text = f.read_text()
-        plain = 0
-        for i, line in enumerate(text.splitlines(), 1):
-            for m in re.finditer(r"json\.loads?\(", line):
-                if "object_pairs_hook" in line:
-                    continue        # a strict call spelled out inline
-                plain += 1
         rel = str(f.relative_to(ROOT / "specs" / "evidence"))
-        cap = allow.get(rel, (0, ""))[0]
-        if plain > cap:
+        plain = plain_calls(f.read_text())
+        pinned = allow.get(rel, (0, ""))[0]
+        if plain != pinned:
             bad.append(f"{rel}: {plain} plain json.load(s) call(s), "
-                       f"allowlisted {cap}")
+                       f"pinned {pinned} — EXACT match required")
     assert bad == [], (
-        "plain json.load(s) at an evidence boundary — route through "
-        "the strict duplicate-refusing decoder or allowlist with a "
-        "stated reason:\n  " + "\n  ".join(bad))
+        "evidence-boundary json parsing drifted from the pinned "
+        "allowlist — route through the strict duplicate-refusing "
+        "decoder, or re-pin with a stated reason:\n  "
+        + "\n  ".join(bad))
