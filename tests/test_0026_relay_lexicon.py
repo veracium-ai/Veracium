@@ -1144,7 +1144,10 @@ def test_agreement_shape_bounds_at_the_limit_and_beyond():
     # marker count: at the limit / one beyond
     at = [f"m{i}" for i in range(S["markers_max_count"])]
     assert ok(markers=at) == []
-    assert ok(markers=at + ["extra"]), "17 markers must refuse"
+    assert ok(markers=at + ["extra"]), (
+        f"{S['markers_max_count'] + 1} markers must refuse — the "
+        f"diagnostic derives from the shape, never restates it "
+        f"(0026-PACKAGE-R10-1)")
     # marker length: at the limit / one beyond / below the minimum
     assert ok(markers=["x" * S["marker_max_chars"]]) == []
     assert ok(markers=["x" * (S["marker_max_chars"] + 1)])
@@ -1275,36 +1278,55 @@ def test_no_full_content_worklist_ships_in_the_package():
     file under specs/ carries the worklist line shape
     (fire+rel+note+obj) on ANY line, WHATEVER its suffix — the round-8
     check read only the first line of *.jsonl, so a renamed file or a
-    later-line payload evaded the 'rename-proof' claim. Scope stated
-    precisely: every UTF-8-decodable file under specs/, every line;
-    binary files (archives) skip on decode failure."""
+    later-line payload evaded the 'rename-proof' claim, and round 10
+    found the 8MB size skip was a further undocumented evasion. Scope
+    is TOTAL now: every file under specs/ at any size — text streamed
+    line by line; undecodable files byte-scanned in bounded chunks for
+    the four-key worklist basis."""
     import json as _json
     hits = []
     for f in (ROOT / "specs").rglob("*"):
-        if not f.is_file() or f.stat().st_size > 8_000_000:
+        if not f.is_file():
             continue
+        # NO size exclusion (0026-PRIVACY-R10-2: the 8MB skip was an
+        # undocumented evasion) — text files stream line by line, and
+        # a decode failure falls back to a CHUNKED byte scan with an
+        # overlap window, so memory stays bounded at any size
         try:
-            text = f.read_text(errors="strict")
+            with f.open("r", errors="strict") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not (line.startswith("{") and '"fire"' in line):
+                        continue
+                    try:
+                        row = _json.loads(line)
+                    except Exception:
+                        continue
+                    if (type(row) is dict
+                            and {"fire", "rel", "note",
+                                 "obj"} <= set(row)):
+                        hits.append(str(f.relative_to(ROOT)))
+                        break
         except OSError:
             continue
         except UnicodeDecodeError:
-            # 0026-I12 mutant (c): undecodable bytes must not be an
-            # evasion — fall back to the byte-level key basis
-            if _worklist_bytes_suspect(f.read_bytes()):
+            KEYS = (b'"fire"', b'"rel"', b'"note"', b'"obj"')
+            found = set()
+            tail = b""
+            with f.open("rb") as fh:
+                while True:
+                    chunk = fh.read(1 << 20)
+                    if not chunk:
+                        break
+                    window = tail + chunk
+                    for k in KEYS:
+                        if k in window:
+                            found.add(k)
+                    tail = window[-16:]
+                    if len(found) == len(KEYS):
+                        break
+            if len(found) == len(KEYS):
                 hits.append(str(f.relative_to(ROOT)) + " (undecodable)")
-            continue
-        for line in text.splitlines():
-            line = line.strip()
-            if not (line.startswith("{") and '"fire"' in line):
-                continue
-            try:
-                row = _json.loads(line)
-            except Exception:
-                continue
-            if (type(row) is dict
-                    and {"fire", "rel", "note", "obj"} <= set(row)):
-                hits.append(str(f.relative_to(ROOT)))
-                break
     assert hits == [], (
         f"full-content worklist artifact(s) inside the package: {hits}")
 def test_duplicate_key_cache_rows_count_unparseable(tmp_path):

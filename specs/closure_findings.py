@@ -2755,11 +2755,14 @@ CLOSURES = [
      "'nonempty bounded strings' and 'bounded count' with no bounds "
      "let conforming implementations accept different inputs",
      "AGREEMENT_SHAPE is data with the running reference validator "
-     "agreement_shape_problems (closed keys; a JSON array of at most "
-     "16 markers of 1-64 chars; duplicates refuse; the closed "
-     "direction enum; a 1-64-char lexicon version under a closed "
-     "pattern), rendered byte-bound into §3d; every bound driven at "
-     "the limit and one beyond by a standing test",
+     "agreement_shape_problems (closed keys; a bounded marker array; "
+     "duplicates refuse; the closed direction enum; a bounded lexicon "
+     "version under a closed pattern — the EXACT numbers live only in "
+     "the generated §3d shape block and moved with the I10-1 "
+     "measurement; this row is version-neutral per PACKAGE-R10-1, "
+     "which caught it restating the pre-measurement bound), rendered "
+     "byte-bound into §3d; every bound driven at the limit and one "
+     "beyond by a standing test",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_agreement_shape_bounds_at_the_limit_and_beyond "
      "-q -p no:randomly"),
@@ -2846,10 +2849,13 @@ CLOSURES = [
      "the first line of *.jsonl, contradicting the rename-proof claim",
      "fchmod is explicit before any content lands (pre-existing-file "
      "regression standing); the sweep reads EVERY line of every "
-     "UTF-8-decodable file under specs/ whatever the suffix, with its "
-     "scope stated precisely (binary archives skip on decode failure)",
+     "decodable file under specs/ whatever the suffix or size, with "
+     "undecodable worklist-shaped bytes flagged at the byte level "
+     "(the round-10 size-cap exclusion removed)",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_bootstrap_paths_cannot_alias_and_worklists_stay_local "
+     "tests/test_0026_relay_lexicon.py::"
+     "test_no_full_content_worklist_ships_in_the_package "
      "-q -p no:randomly"),
     ("0026", "external", 9, "0026-EVIDENCE-R9-3",
      "the duplicate-cache regression was NON-PROBATIVE: it passed on "
@@ -2861,4 +2867,28 @@ CLOSURES = [
      "something failed",
      "$PY -m pytest tests/test_0026_relay_lexicon.py::"
      "test_duplicate_key_cache_rows_count_unparseable -q -p no:randomly"),
+    ("0026", "external", 10, "0026-PACKAGE-R10-1",
+     "numeric carrier cleanup was incomplete: the R8-2 closure row "
+     "still recorded 'at most 16 markers' (never re-swept after the "
+     "I10-1 measurement moved the bound to 8) and the boundary test's "
+     "diagnostic literal said '17 markers must refuse' beside a "
+     "derived case — contradicting v13's no-restatement claim",
+     "the closure row is version-neutral (exact numbers live only in "
+     "the generated §3d block, and the row says so) and the "
+     "diagnostic derives from markers_max_count",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_agreement_shape_bounds_at_the_limit_and_beyond "
+     "-q -p no:randomly"),
+    ("0026", "external", 10, "0026-PRIVACY-R10-2",
+     "the broadened sweep silently skipped files over 8,000,000 bytes "
+     "— an undocumented exclusion a large worklist-shaped file "
+     "evades; and the R9-2 closure command invoked only the file-mode "
+     "regression, not the package-sweep half",
+     "the size cap is REMOVED — total scope at bounded memory (text "
+     "streamed line by line; undecodable files byte-scanned in 1MB "
+     "chunks with an overlap window); the R9-2 closure evidence runs "
+     "both halves",
+     "$PY -m pytest tests/test_0026_relay_lexicon.py::"
+     "test_no_full_content_worklist_ships_in_the_package "
+     "-q -p no:randomly"),
 ]

@@ -2457,6 +2457,27 @@ REVIEWS = [
          "23533a67374e247178f820004bfe684b8e5e1ae36ab07c432b144780"
          "54602231, commit c3cafd2", findings=0),
 
+    dict(spec="0026", round=10, kind="external", date="2026-08-30",
+         raised=["0026-PACKAGE-R10-1", "0026-PRIVACY-R10-2"],
+         verdict="RETURN FOR NARROW PACKAGE AMENDMENT (package "
+         "`0026-v10`, sha 23533a67 verified; 540 members; exact v9 "
+         "parent; focused 95 passed; full extracted 2024/22 exit 0; "
+         "THE DESIGN SURFACE IS READY — no new semantic issue; all "
+         "six v9 corrections confirmed holding incl. the executable "
+         "total lexicon->stored mapping). PACKAGE-R10-1 MODERATE: "
+         "numeric carrier cleanup incomplete — closure_findings.py "
+         "still records 'at most 16 markers' (the R8-2 closure row, "
+         "never re-swept after the I10-1 measurement moved the bound "
+         "to 8) and the boundary test's diagnostic literal says '17 "
+         "markers must refuse' beside a derived case, contradicting "
+         "v13's no-restatement claim. PRIVACY-R10-2 MODERATE: the "
+         "broadened sweep silently skips files over 8,000,000 bytes — "
+         "an undocumented exclusion a large worklist-shaped file "
+         "evades; and the R9-2 closure command invokes only the "
+         "file-mode regression, not the package-sweep half. "
+         "Suggestion recorded: a draft-time rendered preview of the "
+         "eventual review-closure block", findings=2),
+
     dict(spec="0026", round=12, kind="internal", date="2026-08-30",
          verdict="PASS — SEAL CLEARED (research, round-9 pre-seal pass "
          "at 5693331; 92 passed; R9-1 fixed, R9-3 confirmed PROBATIVE "
@@ -2480,6 +2501,23 @@ REVIEWS = [
          "the package sweep's undecodable-file skip was an evasion — "
          "a byte-level four-key fallback flags undecodable "
          "worklist-shaped content", findings=0),
+
+    dict(spec="0026", round=11, kind="external", date="2026-08-30",
+         candidate={"0026": "v14"},
+         verdict="SENT (package `0026-v11`, candidate draft v14 — the "
+         "round-10 fold; §20 maps both findings; the reviewer's "
+         "verdict: THE DESIGN SURFACE IS READY, no new semantic "
+         "issue). PACKAGE-R10-1 closed: the last numeric restatements "
+         "removed — the R8-2 closure row is version-neutral (exact "
+         "numbers live only in the generated §3d block) and the "
+         "boundary diagnostic derives from markers_max_count. "
+         "PRIVACY-R10-2 closed: the sweep's undocumented 8MB skip "
+         "REMOVED — total scope at bounded memory (text streamed line "
+         "by line; undecodable files byte-scanned in 1MB chunks with "
+         "an overlap window); the R9-2 closure evidence runs both "
+         "halves. The reviewer's draft-time review-closure-preview "
+         "suggestion recorded as a forward renderer item. Sealed "
+         "AFTER this row, sha pinned on return", findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
