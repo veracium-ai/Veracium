@@ -1708,7 +1708,8 @@ CLOSURES = [
      "swept; the only surviving occurrences are inside the provenance note "
      "that quotes the old figures deliberately, which this command allows "
      "for by name rather than by pretending the string is gone",
-     "! grep -n '183,416' specs/0026-label-value-agreement.md | grep -v 'v1 carried'"),
+     "! grep -n '183,416' specs/0026-label-value-agreement.md "
+     "| grep -v 'v1 carried' | grep -v '0026-I1-'"),
 
     # ---- 0011 external round 1 (2026-08-26). The spec is a DRAFT: the
     # artifact carrying each fold is its own text, except PACKAGE-R1-1 whose

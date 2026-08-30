@@ -526,7 +526,14 @@ def test_telemetry_deferral_is_bound():
     # any surviving affirmative-consumption claim, with the swept
     # carriers' bracketed corrections tolerated by construction (they
     # QUOTE the withdrawn phrasing inside a sweep note).
-    low = spec.lower()
+    # the generated review-closure ledger QUOTES historical findings
+    # verbatim (it exists precisely to preserve them) — the sweep
+    # covers the live zone, like every whole-file guard since I13
+    import re as _re
+    live_spec = _re.sub(
+        r"<!-- GENERATED:review-closure.*?/GENERATED:review-closure -->",
+        "", spec, flags=_re.S)
+    low = live_spec.lower()
     i = 0
     while True:
         i = low.find("consumed by telemetry from day one", i)
@@ -536,7 +543,7 @@ def test_telemetry_deferral_is_bound():
         assert "swept" in context or "previously" in context, (
             "a carrier still AFFIRMS day-one telemetry consumption "
             "outside a sweep note (0026-R2-3): "
-            + spec[max(0, i - 80):i + 60])
+            + live_spec[max(0, i - 80):i + 60])
         i += 1
     sec3c = _spec_section("### 3c. The demotion-direction RECORD")
     assert "DEFERRED per §3d" in sec3c, (

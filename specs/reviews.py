@@ -2299,6 +2299,7 @@ REVIEWS = [
          "refusal check required", findings=4),
 
     dict(spec="0026", round=9, kind="internal", date="2026-08-30",
+         raised=[],
          verdict="PASS — SEAL CLEARED (research, round-7 pre-seal pass "
          "at 4774a06; 86 passed). Fp-union ENDORSED (false refusal is "
          "the safe direction; disagreements counted make a hostile "
@@ -2479,6 +2480,7 @@ REVIEWS = [
          "eventual review-closure block", findings=2),
 
     dict(spec="0026", round=12, kind="internal", date="2026-08-30",
+         raised=[],
          verdict="PASS — SEAL CLEARED (research, round-9 pre-seal pass "
          "at 5693331; 92 passed; R9-1 fixed, R9-3 confirmed PROBATIVE "
          "— it fails if the strict cache read reverts — and R9-2's "
@@ -2597,7 +2599,30 @@ REVIEWS = [
          "233d03afa5ccddd1004792bdfce26983b1c3dd8a72a9f4be98008983"
          "629fcb88, commit e3354f0", findings=0),
 
+    dict(spec="0026", round=12, kind="external", date="2026-08-30",
+         raised=[],
+         verdict="APPROVED FOR ACCEPTANCE (package `0026-v12`, sidecar "
+         "matched; 542 members; exact v11 parent; identity/header/"
+         "collection/reconciliation/closure checks passed; all "
+         "prerequisites accepted; focused 102 passed; complete "
+         "extracted 2031/22 exit 0, differences reconciling to "
+         "documented environment conditions). THE DESIGN IS FROZEN on "
+         "the V1-V7/V6a invariant surface. R11-1 closed: all six "
+         "named checks exist and execute, the draft-state absence "
+         "proof is mechanical, the resolution guard has no "
+         "implementation-time exemption, and V6a deliberately becomes "
+         "a failing tripwire until its full matrix is implemented. "
+         "Non-blocking IMPLEMENTATION OBLIGATIONS (not another design "
+         "round): when the mechanism lands, strengthen the dormant "
+         "branches with the V5 counter assertion, the V6 "
+         "surface-stripping assertion, and a frozen pre-feature oracle "
+         "for V7 byte identity. The generated §6 mapping report "
+         "remains a recorded future convenience. Twelve external and "
+         "fourteen internal rounds; the Spec-Status flip to accepted "
+         "is authorized by this verdict", findings=0),
+
     dict(spec="0026", round=14, kind="internal", date="2026-08-30",
+         raised=[],
          verdict="PASS — 'I WOULD SIGN ACCEPT' (research, round-11 "
          "pre-seal pass at 403d988; suite 2045 under both "
          "interpreters). R11-1 met exactly; NO landmines in the "
@@ -2620,6 +2645,7 @@ REVIEWS = [
          findings=0),
 
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
+         raised=[],
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "
          "(both the drift and the trusting citation named as the failure "
