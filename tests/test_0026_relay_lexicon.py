@@ -1101,20 +1101,29 @@ def test_the_over_gate_pipeline_end_to_end(tmp_path):
                coverification_sha256=_hl.sha256(co.encode()).hexdigest())
     (tmp_path / "fp_adjudication.json").write_text(_json.dumps(adj))
 
-    # stage 3: final verification through the real entry — accepts
-    # (all-tp censuses: exact share 0, adjudicated 0% <= 2%)
+    # a substituted peer WITHOUT the fixture declaration refuses —
+    # the cross-anchor is not silently substitutable (round-7 pre-seal)
     r = subprocess.run(
         [_sys.executable, str(script), "--aggregate", str(aggp),
          "--peer-anchor", str(FIX / "fixture_peer.json")],
         capture_output=True, text=True, cwd=ROOT)
+    assert r.returncode == 2
+    assert "not silently substitutable" in r.stderr
+    # stage 3: final verification through the real entry — accepts,
+    # BRANDED as fixture (all-tp censuses: exact share 0 <= 2%)
+    r = subprocess.run(
+        [_sys.executable, str(script), "--aggregate", str(aggp),
+         "--fixture", "--peer-anchor", str(FIX / "fixture_peer.json")],
+        capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 0, r.stderr[-500:]
+    assert "NOT acceptance evidence" in r.stdout
 
     # and WITHOUT the co-verification manifest the same record refuses:
     # host-only labels are not an adjudication (R7-2)
     (tmp_path / "fp_coverification_sample.jsonl").unlink()
     r = subprocess.run(
         [_sys.executable, str(script), "--aggregate", str(aggp),
-         "--peer-anchor", str(FIX / "fixture_peer.json")],
+         "--fixture", "--peer-anchor", str(FIX / "fixture_peer.json")],
         capture_output=True, text=True, cwd=ROOT)
     assert r.returncode == 1
     assert "host-only labels are not an adjudication" in r.stderr

@@ -77,13 +77,28 @@ def main() -> int:
                          "previews made fires unjudgeable)")
     ap.add_argument("--peer-anchor", metavar="PATH",
                     help="override the cross-anchor peer aggregate — "
-                         "FIXTURE TESTING ONLY; the default (the real "
+                         "measurement mode, or verify mode ONLY with "
+                         "--fixture (which brands the run as "
+                         "non-evidence); the default (the real "
                          "0011/0025 subject aggregate) is authoritative "
                          "and the packaged verification uses it")
+    ap.add_argument("--fixture", action="store_true",
+                    help="declare a FIXTURE verification: required for "
+                         "--peer-anchor on the verify path, and brands "
+                         "the output as NOT acceptance evidence "
+                         "(research round-7 pre-seal: a substitutable "
+                         "cross-anchor on verify was a documentation-"
+                         "only guarantee — now mechanical)")
     a = ap.parse_args()
     if bool(a.cache) == bool(a.aggregate):
         ap.error("exactly one of --cache / --aggregate")
     if a.aggregate:
+        if a.peer_anchor and not a.fixture:
+            print("--peer-anchor on the VERIFY path requires --fixture: "
+                  "the cache cross-anchor is not silently substitutable "
+                  "(research round-7 pre-seal — the round-5 archives_dir "
+                  "class, closed mechanically)", file=sys.stderr)
+            return 2
         aggfile = pathlib.Path(a.aggregate)
         agg = json.loads(aggfile.read_text())
         # the adjudication (when one exists) lives BESIDE the aggregate
@@ -116,9 +131,16 @@ def main() -> int:
                       file=sys.stderr)
                 return 1
         report(agg)
-        print("aggregate VALID: closed schema, manifest cross-checked "
-              "against the 0011/0025 subject aggregate; corpus-dependent "
-              "figures are RECORDED ONLY (reproduce with --cache)")
+        if a.fixture:
+            print("FIXTURE MODE: this verification ran against a "
+                  "substituted peer anchor and is NOT acceptance "
+                  "evidence — the authoritative verification uses the "
+                  "default 0011/0025 cross-anchor")
+        else:
+            print("aggregate VALID: closed schema, manifest cross-checked "
+                  "against the 0011/0025 subject aggregate; "
+                  "corpus-dependent figures are RECORDED ONLY (reproduce "
+                  "with --cache)")
         return 0
 
     registry = default_relations()

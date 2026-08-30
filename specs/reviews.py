@@ -2258,6 +2258,24 @@ REVIEWS = [
          "constrained precisely. Sealed AFTER this row, sha pinned on "
          "return", findings=0),
 
+    dict(spec="0026", round=9, kind="internal", date="2026-08-30",
+         verdict="PASS — SEAL CLEARED (research, round-7 pre-seal pass "
+         "at 4774a06; 86 passed). Fp-union ENDORSED (false refusal is "
+         "the safe direction; disagreements counted make a hostile "
+         "co-verifier loud; third-labeller escape). Bootstrap state "
+         "verified unreachable from verify (keyword-only, no CLI "
+         "flag). Two hardenings folded same-day: co-verifier "
+         "INDEPENDENCE stated precisely as a process guarantee (the "
+         "mechanical binding proves two manifests exist, not that two "
+         "parties wrote them; a signature apparatus for a dormant path "
+         "would itself become attack surface); and --peer-anchor on "
+         "the verify path now requires the explicit --fixture "
+         "declaration branding output as non-evidence (the round-5 "
+         "archives_dir class, made mechanical). Their optional "
+         "over-gate-marker rider DECLINED with the reason recorded: a "
+         "derived duplicate carrier is the drift class this line "
+         "spent six rounds killing", findings=0),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "
