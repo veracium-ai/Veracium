@@ -171,18 +171,34 @@ AGREEMENT_SHAPE = {
                                 # lexicon member is 'on the advice of'
                                 # at 16 chars; 64 is x4 margin
     "markers_duplicates": "REFUSE",
-    # CLOSED, and §3d's vocabulary EXACTLY (0026-R9-1: this tuple said
-    # inbound|outbound|ambiguous — the LEXICON's internal reading names
-    # — while the stored carrier's enum is §3d's: user_source is §3c's
-    # demotion-direction record, the marker-bearing record whose
-    # direction resolved to the user; the lexicon's 'outbound' reading
-    # is STORED as user_source, and 'outbound' itself is not a legal
-    # stored value)
-    "direction_values": ("inbound", "ambiguous", "user_source"),
+    # CLOSED, and DERIVED from the lexicon->stored mapping below —
+    # never hand-listed (0026-R9-1 split exactly here: the shape was
+    # written from the lexicon's reading names while §3d holds the
+    # stored enum; research's round-9 pass found the two DOMAINS were
+    # still independent definitions bridged by prose — the mapping is
+    # executable now and the shape is its image)
+    "direction_values": None,   # filled below from LEXICON_TO_STORED
     "lexicon_min_chars": 1,
     "lexicon_max_chars": 64,
     "lexicon_pattern": r"[0-9a-z][0-9a-z.\-]*",
 }
+
+
+# THE lexicon->stored direction mapping (0026-I12): the reading domain
+# (relay_lexicon.LEXICON_DIRECTIONS) maps TOTALLY onto stored values —
+# user_source IS §3c's demotion-direction record (the lexicon's
+# 'outbound' reading, stored); None means the reading produces NO
+# stored record ('none' = no attribution found). A new lexicon reading
+# value with no row here trips the domain-equality test rather than
+# silently re-splitting the carriers.
+LEXICON_TO_STORED = {
+    "inbound": "inbound",
+    "ambiguous": "ambiguous",
+    "outbound": "user_source",
+    "none": None,
+}
+AGREEMENT_SHAPE["direction_values"] = tuple(dict.fromkeys(
+    v for v in LEXICON_TO_STORED.values() if v is not None))
 
 
 def agreement_shape_problems(rec) -> list:

@@ -115,6 +115,13 @@ import re
 
 LEXICON_VERSION = "0026-lex-10"
 
+# The READING domain — every value _direction can return (0026-I12,
+# research's round-9 pre-seal: this domain and the STORED direction
+# enum were two independent definitions bridged only by a prose
+# comment, which is exactly how R9-1 split; import_matrix binds the
+# two through an executable mapping whose keys must equal this tuple).
+LEXICON_DIRECTIONS = ("inbound", "outbound", "ambiguous", "none")
+
 # Attribution VERBS — §3a's named class. lex-5 (research red-team,
 # FN direction): the list omitted high-frequency attribution verbs —
 # `claimed` above all, the name of the very relation 0024 quarantines —

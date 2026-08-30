@@ -2451,6 +2451,30 @@ REVIEWS = [
          "asserted. Sealed AFTER this row, sha pinned on return",
          findings=0),
 
+    dict(spec="0026", round=12, kind="internal", date="2026-08-30",
+         verdict="PASS — SEAL CLEARED (research, round-9 pre-seal pass "
+         "at 5693331; 92 passed; R9-1 fixed, R9-3 confirmed PROBATIVE "
+         "— it fails if the strict cache read reverts — and R9-2's "
+         "fchmod closes the O_TRUNC-on-create gap). One structural "
+         "recommendation, folded same-day though non-blocking on the "
+         "draft: the R9-1 CLASS was instance-patched, not closed — "
+         "§3d and the shape were bound, but the LEXICON reading domain "
+         "and the STORED enum remained two independent definitions "
+         "bridged by prose (their mutant (a): add a lexicon reading "
+         "value and nothing trips). Folded: LEXICON_DIRECTIONS "
+         "declared in the lexicon; LEXICON_TO_STORED is an executable "
+         "TOTAL mapping (outbound->user_source, none->no record); the "
+         "shape's direction enum is DERIVED as the mapping's image; "
+         "the domain-equality test is the standing form of their "
+         "mutant. Their ask-2 registry built as consolidation + "
+         "discipline: every GENERATED marker in the spec must have a "
+         "registered binder that runs clean (an unbound generated "
+         "block is conspicuous by absence); 'no fact unregistered' "
+         "stated as discipline, not proof. Their mutant (c) folded: "
+         "the package sweep's undecodable-file skip was an evasion — "
+         "a byte-level four-key fallback flags undecodable "
+         "worklist-shaped content", findings=0),
+
     dict(spec="0026", round=2, kind="internal", date="2026-08-24",
          verdict="PASS (research) — diff-verified fold @ e60206e, no new "
          "findings; the provenance note took research's symmetric wording "

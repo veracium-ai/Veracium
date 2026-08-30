@@ -1285,7 +1285,13 @@ def test_no_full_content_worklist_ships_in_the_package():
             continue
         try:
             text = f.read_text(errors="strict")
-        except (UnicodeDecodeError, OSError):
+        except OSError:
+            continue
+        except UnicodeDecodeError:
+            # 0026-I12 mutant (c): undecodable bytes must not be an
+            # evasion — fall back to the byte-level key basis
+            if _worklist_bytes_suspect(f.read_bytes()):
+                hits.append(str(f.relative_to(ROOT)) + " (undecodable)")
             continue
         for line in text.splitlines():
             line = line.strip()
@@ -1425,3 +1431,89 @@ def test_no_plain_json_load_at_evidence_boundaries():
         "allowlist — route through the strict duplicate-refusing "
         "decoder, or re-pin with a stated reason:\n  "
         + "\n  ".join(bad))
+
+
+def test_lexicon_and_stored_direction_domains_are_bound():
+    """0026-I12 (research's round-9 pre-seal, the R9-1 CLASS closure):
+    the lexicon's reading domain and the stored direction enum were two
+    independent definitions bridged by prose — mutant (a): add a
+    lexicon reading value and nothing trips. Now the mapping is
+    executable and TOTAL: LEXICON_TO_STORED's keys must equal
+    LEXICON_DIRECTIONS exactly (a new reading value with no mapping row
+    fails HERE instead of re-splitting the carriers), the shape's
+    direction_values must equal the mapping's non-None image, and
+    _direction's observed returns stay inside the declared domain."""
+    import importlib
+    IM = importlib.import_module("import_matrix")
+    L = importlib.import_module("relay_lexicon")
+    assert set(IM.LEXICON_TO_STORED) == set(L.LEXICON_DIRECTIONS), (
+        "a lexicon reading value has no lexicon->stored mapping row — "
+        "decide its stored form explicitly (0026-I12)")
+    want = tuple(dict.fromkeys(
+        v for v in IM.LEXICON_TO_STORED.values() if v is not None))
+    assert IM.AGREEMENT_SHAPE["direction_values"] == want, (
+        "the shape's direction enum is not the mapping's image")
+    # observed returns of the real _direction stay inside the domain
+    seen = set()
+    for text in ("my doctor said to rest",
+                 "i said it myself",
+                 "she said to rest",
+                 "recommended brand"):
+        toks = L._tokens(text)
+        for i, tok in enumerate(toks):
+            if tok in L._VERBS:
+                seen.add(L._direction(toks, i))
+    assert seen and seen <= set(L.LEXICON_DIRECTIONS), seen
+
+
+def test_generated_carrier_registry_is_complete():
+    """0026-I12 ask 2, built as consolidation + registry discipline: a
+    canonical registry of (generated-block marker -> binder) so an
+    UNBOUND generated carrier is conspicuous by absence — R9-1's root
+    was an unregistered multi-carrier fact. Every GENERATED marker in
+    the spec must have a registry row, and every registry binder must
+    run clean against the shipped spec. ('No fact unregistered' is a
+    stated discipline, not a mechanical proof — the mechanical half is
+    that no generated BLOCK escapes a binder.)"""
+    import importlib
+    import json as _json
+    import re
+    IM = importlib.import_module("import_matrix")
+    MF = importlib.import_module("measure_false_positives")
+    spec = (ROOT / "specs" / "0026-label-value-agreement.md").read_text()
+    agg = _json.loads((ROOT / "specs" / "evidence" / "0026"
+                       / "fp_aggregate.json").read_text())
+    REGISTRY = {
+        # marker name -> callable returning problems against the spec
+        "import-matrix": lambda: IM.spec_matrix_problems(spec),
+        "agreement-shape": lambda: IM.spec_matrix_problems(spec),
+        "fp-claim": lambda: MF.spec_problems(agg, spec),
+        "review-closure": lambda: [],   # bound by render_closure --check
+                                        # via the standing spec gate
+    }
+    markers = set(re.findall(r"<!-- GENERATED:([a-z-]+)", spec))
+    unregistered = markers - set(REGISTRY)
+    assert unregistered == set(), (
+        f"generated carrier(s) with no registered binder: "
+        f"{sorted(unregistered)} — an unbound generated block is the "
+        f"R9-1 class (0026-I12)")
+    for name, binder in REGISTRY.items():
+        assert binder() == [], f"registered binder {name} is not clean"
+
+
+def test_undecodable_worklist_bytes_still_flagged(tmp_path):
+    """0026-I12 mutant (c): the every-line package sweep skips files
+    that fail UTF-8 decode — so a full-content worklist with one stray
+    invalid byte would evade it. The sweep's byte-level fallback flags
+    undecodable files whose RAW bytes carry all four worklist keys;
+    this test drives that basis directly."""
+    probe = (b'{"fire":"' + b"a" * 64
+             + b'","rel":"r","note":"\xff corpus","obj":"o"}\n')
+    assert _worklist_bytes_suspect(probe)
+    assert not _worklist_bytes_suspect(b"\xff plain binary, no keys")
+
+
+def _worklist_bytes_suspect(raw: bytes) -> bool:
+    """The byte-level detection basis shared by the package sweep."""
+    return all(k in raw for k in (b'"fire"', b'"rel"',
+                                  b'"note"', b'"obj"'))
