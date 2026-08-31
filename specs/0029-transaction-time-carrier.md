@@ -15,7 +15,7 @@ edge-state change, which nothing durable does today. See `PROCESS.md`.*
 | | |
 |---|---|
 | **Author / session** | dev; internal review research |
-| **Version** | **v5** — the joint round-2 fold, dev's half (F1, F5 carrier half, F6, F8a): **F1** EPOCH BASELINE SNAPSHOTS — the v13 migration journals every pre-existing edge's state as found, one `baseline` batch per user (the user's EPOCH TXN); §4e re-scoped from "no backfill" to "no fabricated history" — the baseline records the state actually present when journaling began, and nothing before it is ever synthesized. **F6** the epoch becomes a TXN value (pre-epoch = `until_txn < epoch_txn(user)`, same integer domain, mechanically comparable; the §2c cutoff row re-typed); txn/seq allocation moved to DATABASE-level serialization (max+1 inside the writing transaction under the DB's single-writer lock — the instance-local Python lock is named insufficient across two `SqliteStore` instances; the `(user_id, seq)` PK is the refusing backstop); `recorded_at` minted ONCE per batch. **F5 (carrier half)** `edge_state_at` returns a RAW snapshot carrier — journal payload verbatim, no deserialization at the 0029 surface; validation belongs wholly to the consumer (0030 rules 3–4, seam S4) because an append-only journal can outlive the model that wrote it. **F8a** carrier sweep — the journal is CONTENT-BEARING (the §3 "digest, never content" row and §5 "one digest" cost were v2 residue); data-handling and retention stated honestly. §6a gains the migrated-edge-at-epoch and concurrent-allocation scenarios (the other five round-2 joint cases live in 0030 §6a on the shared corpus). New invariants V-BASELINE, V-TXN-ALLOC, V-VERBATIM. *Prior:* **v4** — the pre-dispatch co-check fold (research's seal-check both-check, all three verified against code before folding): **F-A** the PER-WRITE KIND RULE — kind is a property of the write (prior row presence × serialization delta), not the site; no site→kind mapping can be total, and the import commit's presence-admitting raw replace is the reachable instance, so the machine-regeneration obligation is defined over WRITES; **F-B** the V-TOTAL sweep's interpolated-table blind spot pinned as a checkable property (event-owed edges writes name the table literally; the sweep scans interpolated forms — erasure's f-string DELETE the benign extant instance); **F-C** the fourth site cited at its UPDATE statement (sqlite.py:334). *Prior:* **v3** — the joint round-1 fold, on the owner's F1 ruling: RECONSTRUCTABLE STATE. F1: event payloads carry the edge's FULL canonical serialization (EdgeStateAt(K) derivable; the change-detection narrowing refused). F3: transaction-batch cursor — per-user `txn` allocated per event-emitting write transaction, `seq` the ordering authority, whole-batch reads (a cutoff can never split an atomic mutation; `recorded_at` demoted to telemetry). F4: V-TOTAL re-based on the FULL-STATE projection (any serialization change ⇒ event), and the FOURTH raw `UPDATE edges` site named (`_recompute_edge_row`, wrongly filed under `_upsert_edge_row` in v2 — it replaces valid_from/observed_at/confidence, which the 0027 digest never sees). F5: the schema pinned exactly (full snapshots dissolve the old/new-digest question). F8: version-header discipline. §6a re-seeded with the reviewer's eight joint scenarios. (v2 folded internal I-1/I-2.) |
+| **Version** | **v6** — the round-2 CROSS-CHECK fold (research's C-1/C-2/C-3, both blocking findings AT THE SEAM — text-vs-mapping, invisible to either seat alone): **C-2** `RawEdgeState` gains `edge_id`/`user_id` sourced from the event ROW columns, never the payload — identity binding becomes parse-independent, so a corrupt payload is correctly BOUND first, then refused (V-VERBATIM sharpened: the PAYLOAD is verbatim; the IDENTITY is authoritative from the row). **C-1** the parse is OWNED: `state` is TEXT, parsing is the CONSUMER's (0030), and a parse failure is a consumer-classified outcome (MALFORMED/SCOPE_HIDDEN per 0030's rules), never a 0029 read error — the journal-outlives-its-writer argument applies to the text as much as the field values, and neither spec had assigned the step between text and mapping. **C-3** §4b states generally that the event `reason` COLUMN records the EVENT's reason and is never a classifier input (the state's own `invalidation_reason` lives inside the payload). §4e adopts the sharper epoch_txn=0 framing (pre-epoch `until_txn < 0` is unsatisfiable over non-negative txns). *Prior:* **v5** — the joint round-2 fold, dev's half (F1, F5 carrier half, F6, F8a): **F1** EPOCH BASELINE SNAPSHOTS — the v13 migration journals every pre-existing edge's state as found, one `baseline` batch per user (the user's EPOCH TXN); §4e re-scoped from "no backfill" to "no fabricated history" — the baseline records the state actually present when journaling began, and nothing before it is ever synthesized. **F6** the epoch becomes a TXN value (pre-epoch = `until_txn < epoch_txn(user)`, same integer domain, mechanically comparable; the §2c cutoff row re-typed); txn/seq allocation moved to DATABASE-level serialization (max+1 inside the writing transaction under the DB's single-writer lock — the instance-local Python lock is named insufficient across two `SqliteStore` instances; the `(user_id, seq)` PK is the refusing backstop); `recorded_at` minted ONCE per batch. **F5 (carrier half)** `edge_state_at` returns a RAW snapshot carrier — journal payload verbatim, no deserialization at the 0029 surface; validation belongs wholly to the consumer (0030 rules 3–4, seam S4) because an append-only journal can outlive the model that wrote it. **F8a** carrier sweep — the journal is CONTENT-BEARING (the §3 "digest, never content" row and §5 "one digest" cost were v2 residue); data-handling and retention stated honestly. §6a gains the migrated-edge-at-epoch and concurrent-allocation scenarios (the other five round-2 joint cases live in 0030 §6a on the shared corpus). New invariants V-BASELINE, V-TXN-ALLOC, V-VERBATIM. *Prior:* **v4** — the pre-dispatch co-check fold (research's seal-check both-check, all three verified against code before folding): **F-A** the PER-WRITE KIND RULE — kind is a property of the write (prior row presence × serialization delta), not the site; no site→kind mapping can be total, and the import commit's presence-admitting raw replace is the reachable instance, so the machine-regeneration obligation is defined over WRITES; **F-B** the V-TOTAL sweep's interpolated-table blind spot pinned as a checkable property (event-owed edges writes name the table literally; the sweep scans interpolated forms — erasure's f-string DELETE the benign extant instance); **F-C** the fourth site cited at its UPDATE statement (sqlite.py:334). *Prior:* **v3** — the joint round-1 fold, on the owner's F1 ruling: RECONSTRUCTABLE STATE. F1: event payloads carry the edge's FULL canonical serialization (EdgeStateAt(K) derivable; the change-detection narrowing refused). F3: transaction-batch cursor — per-user `txn` allocated per event-emitting write transaction, `seq` the ordering authority, whole-batch reads (a cutoff can never split an atomic mutation; `recorded_at` demoted to telemetry). F4: V-TOTAL re-based on the FULL-STATE projection (any serialization change ⇒ event), and the FOURTH raw `UPDATE edges` site named (`_recompute_edge_row`, wrongly filed under `_upsert_edge_row` in v2 — it replaces valid_from/observed_at/confidence, which the 0027 digest never sees). F5: the schema pinned exactly (full snapshots dissolve the old/new-digest question). F8: version-header discipline. §6a re-seeded with the reviewer's eight joint scenarios. (v2 folded internal I-1/I-2.) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research · dev |
 | **External review** | REQUIRED — store schema + a new durable audit surface. Not yet sent |
@@ -214,6 +214,22 @@ changes must never be digest-invisible.)
 | `baseline` | ONLY the v13 migration (§4e) — never a runtime mutator; one event per pre-existing edge, all of a user's baselines in ONE batch (the user's epoch txn) | the edge's state AS FOUND when journaling began, serialized; `reason` column NULL (the found state's own `invalidation_reason`, if any, lives inside `state` — the column records the EVENT's reason, and a baseline has none) |
 | `erased` | NOT a kind: erasure deletes the user's events (§4f); a tombstone would defeat erasure | — |
 
+**THE `reason` COLUMN IS THE EVENT'S REASON, NEVER A CLASSIFIER INPUT
+(C-3):** the column records why THIS EVENT happened (non-NULL iff
+kind=`invalidated`); the state's own `invalidation_reason` — what 0030
+classifies on — lives inside the `state` payload. The two carry the same
+string only on the `invalidated` event itself; on every later event for
+that edge they diverge (column NULL, payload still carrying the reason).
+Wiring the column into a classifier is an adjacent-name error that reads
+correct in review — and with F1's baselines it is SYSTEMATIC, not
+occasional: a migrated INACTIVE edge's `baseline` event carries column
+NULL while its payload carries the found `invalidation_reason`, so a
+column-wired classifier would silently read the ENTIRE pre-upgrade
+inactive population as active-with-no-reason — over-assertion at scale,
+producing a plausible answer rather than an error. 0030 pins this as
+V-COLUMN-NOT-INPUT; the seam manifest carries the same line on the
+consumer side.
+
 **KIND IS A PROPERTY OF THE WRITE, NOT THE SITE (internal F-A —
 research's both-check, the round-1 fourth-site class one level up):** a
 site can yield EITHER kind depending on prior row presence, so no site→kind
@@ -240,9 +256,19 @@ that half of I-1 stands.)
 ### 4b-ii. Reconstruction — EdgeStateAt (F1) — returns a RAW carrier (F5)
 `edge_state_at(user_id, edge_id, until_txn)` = the `state` payload of the
 LAST event for the edge with `txn ≤ until_txn`, returned as a **RAW
-SNAPSHOT CARRIER** — `RawEdgeState(state: str, txn, seq, kind,
-recorded_at)`, the journal text VERBATIM, never deserialized into a
-validated `Edge` at this surface. The reason is structural, not
+SNAPSHOT CARRIER** — `RawEdgeState(edge_id, user_id, state: str, txn,
+seq, kind, recorded_at)`. **Identity comes from the event ROW columns,
+never from the payload (C-2):** binding a snapshot to its envelope must
+not depend on payload integrity — a corrupt payload is correctly BOUND
+first, then refused by the consumer, and a mismatched-id probe stays
+distinguishable from a parse failure. **`state` is TEXT, verbatim
+(C-1):** the journal payload is never deserialized into a validated
+`Edge` at this surface, and PARSING IT IS THE CONSUMER'S STEP — a parse
+failure (malformed JSON, truncation, at-rest corruption, a payload from
+an older model) is a consumer-classified outcome under 0030's rules
+(MALFORMED, or hidden-fail-closed), NEVER a 0029 read error. A future
+implementer reading only this spec must not assume a mapping crosses
+the seam: text does. The reason is structural, not
 convenience: the shipped deserializer REJECTS payloads its current model
 does not admit, and an append-only journal can outlive the model that
 wrote it (version drift, at-rest corruption) — so a typed return would
@@ -328,8 +354,11 @@ longer exists on the read path). The `store_epoch` INSTANT remains as
 display/telemetry only. A pre-epoch cutoff refuses — the store cannot say
 what it knew before it started recording, and fail-closed beats
 fabrication (V-EPOCH); note a fully-journaled user's `epoch_txn = 0`
-means NO cutoff refuses for them, which is correct — there is no
-unrecorded era to protect. `until_txn = epoch_txn(user)` on a migrated
+makes the pre-epoch test `until_txn < 0` — UNSATISFIABLE over
+non-negative txns, so no cutoff refuses for them and a post-migration
+new user with no baseline batch correctly gets `None` ("held no such
+edge") rather than a refusal: the zero removes a special case instead
+of adding one. There is no unrecorded era to protect. `until_txn = epoch_txn(user)` on a migrated
 user answers with the baseline states — the earliest honest answer.
 Down-migration: `DROP TABLE` (reversible; the audit axis is lost
 and says so — §7).
@@ -380,7 +409,7 @@ composition for it (§3b).
 | **V-ATOMIC** mutation and event commit atomically; injected fault between them → neither persisted | `test_event_and_mutation_are_one_transaction` | CI |
 | **V-APPEND** no code path updates or deletes an event except erasure; `seq` strictly monotone per user | `test_event_log_is_append_only_and_monotone` | CI |
 | **V-RECON** `edge_state_at(user, edge, K)` returns byte-exactly the serialization the edge held after the last `txn ≤ K` — driven across the recompute-erasure and reinstate-erasure cases the joint review named (the row forgets; the journal must not), and across a migrated edge's baseline-to-first-mutation span | `test_edge_state_at_reconstructs_byte_exact` | CI |
-| **V-VERBATIM** the read surface returns journal payloads VERBATIM as the raw carrier — no deserialization, no validation, no normalization at the 0029 surface (F5); a payload the current model rejects still traverses the interface intact | `test_snapshot_carrier_is_raw_and_verbatim` | CI |
+| **V-VERBATIM** the read surface returns journal payloads VERBATIM as the raw carrier — no parse, no deserialization, no validation, no normalization at the 0029 surface (F5, C-1); a payload the current model rejects (or cannot even parse) still traverses the interface intact; the carrier's `edge_id`/`user_id` are authoritative FROM THE ROW COLUMNS and byte-equal to them, never derived from the payload (C-2) | `test_snapshot_carrier_is_raw_and_verbatim` + `test_carrier_identity_comes_from_row_not_payload` | CI |
 | **V-BASELINE** after v13 migration every pre-existing edge has EXACTLY ONE `baseline` event, in its user's epoch batch, payload equal to the state found at migration; no runtime path can emit the kind; crash-retry never doubles a baseline | `test_migration_baselines_every_existing_edge_exactly_once` | CI |
 | **V-TXN-ALLOC** txn/seq allocation is serialized at the DATABASE level: two `SqliteStore` instances on one file writing concurrently produce distinct whole batches, never a shared or split txn; the (user_id, seq) PK refuses any residual race rather than admitting it | `test_concurrent_allocation_across_two_store_instances` | CI |
 | **V-BATCH** one event-emitting write transaction = one `txn`; a multi-edge mutation (supersession's invalidate-A + create-B) shares it, and every `until_txn` read includes or excludes the batch WHOLE — no reachable cutoff reconstructs a state that never existed; two batches sharing a `recorded_at` stay distinct by `txn` | `test_transaction_batches_never_split` | CI |
