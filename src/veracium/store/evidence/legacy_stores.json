@@ -1,7 +1,7 @@
 {
   "manifest_algorithm": 13,
-  "head_digest": null,
-  "head_schema_version": null,
+  "head_digest": "ee2e1e869ddc320d0e53315de751cc7126dd6bdf3746ec0419638c0b4fd39dfa",
+  "head_schema_version": 12,
   "legacy_base_versions": [
     1
   ],
@@ -292,6 +292,14 @@
       "on_disk_user_version": 11,
       "store_schema_version": null,
       "digest": null,
+      "result": "ok"
+    },
+    {
+      "tag": "v0.18.0",
+      "commit": "13e70595b0b6ab16cec16780a4ebf338059488fb",
+      "on_disk_user_version": 12,
+      "store_schema_version": 12,
+      "digest": "ee2e1e869ddc320d0e53315de751cc7126dd6bdf3746ec0419638c0b4fd39dfa",
       "result": "ok"
     }
   ]
