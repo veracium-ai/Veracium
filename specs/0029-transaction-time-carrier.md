@@ -195,11 +195,26 @@ changes must never be digest-invisible.)
 
 | kind | written by (site, from the manifest) | `state` payload |
 |---|---|---|
-| `created` | `add_edge`; `apply_supersession_plan` (insert_incoming, absorption survivor); import commit | the new edge, serialized |
-| `mutated` | ANY same-id row write whose full-state serialization changed: `_upsert_edge_row` (note-append, absorption restate, counter-bearing re-upserts), `confirm_edge`'s raw json rewrite (sqlite.py:191), **`_recompute_edge_row`'s raw rewrite (sqlite.py:315 — the fourth site)** | the post-mutation edge, serialized |
+| `created` | `add_edge`; `apply_supersession_plan` (insert_incoming, absorption survivor); the import commit's replace when NO row was present | the new edge, serialized |
+| `mutated` | ANY same-id row write whose full-state serialization changed: `_upsert_edge_row` (note-append, absorption restate, counter-bearing re-upserts), `confirm_edge`'s raw json rewrite (sqlite.py:191), **`_recompute_edge_row`'s raw rewrite (statement at sqlite.py:334 — the fourth site)**; the import commit's replace when a row WAS present and the serialization changed (F-A) | the post-mutation edge, serialized |
 | `invalidated` | `invalidate_edge` / `_invalidate_edge_row` (:252; plan invalidations, lifecycle expiry, dispute, revocation sweep) | the post-invalidation edge, serialized; `reason` — validated against `DISPOSITIONED_REASONS`, the AUTHORITATIVE seven; an unregistered reason refuses the WRITE |
 | `reinstated` | `_reinstate_edge_row` (:300; 0022 revocation lift) — the pre-reinstatement `invalidated_at`/`reason` live in the PRIOR event's `state`, which is exactly the F1 point: reinstatement ERASES them from the row, and only the journal can answer a cutoff between revocation and reinstatement | the post-reinstatement edge, serialized |
 | `erased` | NOT a kind: erasure deletes the user's events (§4f); a tombstone would defeat erasure | — |
+
+**KIND IS A PROPERTY OF THE WRITE, NOT THE SITE (internal F-A —
+research's both-check, the round-1 fourth-site class one level up):** a
+site can yield EITHER kind depending on prior row presence, so no site→kind
+mapping can be total — `created` when no row existed for the id,
+`mutated` when one did and the serialization changed. The load-bearing
+instance: `commit_outcome_import_plan` writes a raw
+`INSERT OR REPLACE INTO edges` (sqlite.py:1400) NOT via `_upsert_edge_row`,
+and its preflight ADMITS an already-present destination
+(`expected_destination_state` refuses only a presence MISMATCH — an
+`expect_present=True` import proceeds to the replace), so a changed-bytes
+same-id import is caller-reachable and owes a `mutated` event. The
+machine-regeneration obligation is defined over WRITES accordingly:
+per-write prior-presence + serialization-delta decide the kind; the table
+above illustrates sites, the rule decides.
 
 **The v2 counter-silence is WITHDRAWN under the full-state basis (F4
 supersedes internal-I-1's disposition):** counter and confidence rewrites DO
@@ -367,10 +382,18 @@ surface. Attack hardest:
    machinery cannot see (a raw SQL site, a future mutator, an import path)
    — the gate's blind spot is the spec's blind spot. The standing lesson,
    now twice-proven: the internal round surfaced three raw `UPDATE edges`
-   sites, and the JOINT round found the FOURTH (`_recompute_edge_row`,
-   sqlite.py:315) that the "three sites" claim itself had missed — grep
-   the WRITES, not the callers' names, and never trust a counted list over
-   the sweep (the four today: :191, :252, :300, :315).
+   sites, and the JOINT round found the FOURTH (`_recompute_edge_row` —
+   its UPDATE statement at sqlite.py:334) that the "three sites" claim
+   itself had missed — grep the WRITES, not the callers' names, and never
+   trust a counted list over the sweep (the four statements today: :191,
+   :252, :300, :334). AND the sweep must resolve INTERPOLATED table
+   targets (internal F-B): erasure writes `f"DELETE FROM {table}"`
+   (sqlite.py:1775), invisible to a literal `FROM edges` grep — benign
+   today (erasure is deliberately not-a-kind), but the V-TOTAL derivation
+   either resolves f-string table names or pins "every edges write names
+   the table literally" as its own checkable property. This spec pins the
+   LATTER for the event-owed writes, and the sweep additionally scans
+   interpolated forms to enforce it.
 2. **V-ATOMIC under real fault schedules.** The event rides the mutation's
    transaction — inject at every seam (the 0013 gate family's method) and
    find a schedule where one lands without the other.
