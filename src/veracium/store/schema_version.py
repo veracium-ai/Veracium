@@ -440,12 +440,39 @@ ALTER_PATH_V10_FROM_V6_ALTERPATH_SHA256 = \
 # 0007's refusal for pre-ASSISTANT readers.
 SCHEMA_V11 = SCHEMA_V10
 
+# specs/0027 §4f — the additive `edge_embedding` derived-index table (semantic
+# hybrid recall). A row is a vector keyed (edge_id, embedder_id, content_digest);
+# the digest — the §4e digest projection of the edge's content — binds the
+# vector to the BYTES that were embedded, because edge text can change under a
+# stable id. NO foreign key / ON DELETE CASCADE: ordinary retirement sets
+# active=0 and RETAINS the edge row, so a cascade would never fire on it; the
+# ONE path that deletes edges is compliance erasure (`forget_user`), which
+# deletes this user's embedding rows explicitly inside the same transaction
+# (0027 V-ERASE). The table is a regenerable derived INDEX — never exported,
+# never evidence; the index is REBUILDABLE, the table REQUIRED (its absence
+# would silently disable the semantic lane on a stamped-v12 store).
+SCHEMA_V12 = SCHEMA_V11 + (
+    SchemaObject("table", "edge_embedding", """CREATE TABLE edge_embedding (
+    edge_id        TEXT    NOT NULL,
+    user_id        TEXT    NOT NULL,
+    embedder_id    TEXT    NOT NULL,
+    content_digest TEXT    NOT NULL,
+    dim            INTEGER NOT NULL,
+    vec            BLOB    NOT NULL,
+    built_at       TEXT    NOT NULL,
+    PRIMARY KEY (edge_id, embedder_id, content_digest)
+)""", REQUIRED),
+    SchemaObject("index", "ix_edge_embedding_lookup",
+                 "CREATE INDEX ix_edge_embedding_lookup "
+                 "ON edge_embedding(user_id, embedder_id, dim)", REBUILDABLE),
+)
+
 SCHEMAS = {1: SCHEMA_V1, 2: SCHEMA_V2, 3: SCHEMA_V3, 4: SCHEMA_V4, 5: SCHEMA_V5,
            6: SCHEMA_V6, 7: SCHEMA_V7, 8: SCHEMA_V8, 9: SCHEMA_V9,
            10: SCHEMA_V10,
-           11: SCHEMA_V11}
+           11: SCHEMA_V11, 12: SCHEMA_V12}
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 """**Declared, not inferred.**
 
 v6 used `max(SCHEMAS)`, so adding or removing a registry entry silently changed

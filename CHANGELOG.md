@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- **0027 — semantic hybrid recall (adopted 2026-08-31 on Quentin's ruling
+  after six external review rounds; implementation in progress).** An
+  ADDITIVE, RRF-fused (K=60), lexically-anchored semantic lane: recall
+  gains `semantic="auto"` (attempted iff a host `Embed` with `id()`/`dim()`
+  is configured; every failure degrades to lexical with a closed
+  `Recall.semantic_status`, never an exception) and a parallel id-keyed
+  `Recall.recalled_edges` provenance carrier (`Recall.edges` unchanged).
+  Semantic changes WHICH edges are candidates and their ORDER — never a
+  record's trust classification (poison surfaces fenced; classification
+  stays at render). Collapse decides membership from the lexical lane
+  alone while the output keeps the fused order; scope's lens is applied to
+  BOTH lanes before ranking (a deliberate order amendment for
+  principal-bearing recall; `principal=None` semantic-off recall is
+  byte-identical to 0.17.0, pinned by a frozen pre-feature oracle). Store
+  schema 11→12: the additive `edge_embedding` derived-index table —
+  vectors keyed (edge_id, embedder_id, content_digest), stale-excluded on
+  text change, deleted inside `forget_user`'s transaction, never exported.
+
 ## 0.17.0 — 2026-08-30
 
 **Upgrade recommendation — consumers whose hosts ingest user-relayed

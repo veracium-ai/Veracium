@@ -20,6 +20,19 @@ class MemoryConfig:
     relations: dict[str, Relation] = field(default_factory=lambda: dict(DEFAULT_RELATIONS))
     # recall assembly (these caps bound read cost as history grows — finding 22)
     max_subgraph_edges: int = 40
+    # specs/0027 §4d — the semantic-recall carriers. `semantic_min_cosine` is
+    # tuned-then-frozen on the §6a tune split; `semantic_timeout_ms` is the
+    # bounded-latency deadline (recall never blocks longer than this on the
+    # embedder — V6); `semantic_fetch_k` is a SENTINEL: None means AUTO,
+    # resolved AT RECALL TIME from the live `max_subgraph_edges` as
+    # max(200, max_subgraph_edges). __post_init__ only VALIDATES an explicit
+    # value and never overwrites None (R6-3: resolving at construction lost
+    # the auto-ness, and a later `max_subgraph_edges` mutation then read a
+    # stale constant); an explicit value is RE-validated at recall against the
+    # live range [max_subgraph_edges, max(1000, max_subgraph_edges)].
+    semantic_min_cosine: float = 0.25
+    semantic_timeout_ms: int = 250
+    semantic_fetch_k: Optional[int] = None
     # Fraction of the subgraph budget reserved for time coverage when the store
     # is larger than the budget. Pure top-k has no coverage term, so facts that
     # share vocabulary can collapse the selection onto one period.
@@ -73,6 +86,25 @@ class MemoryConfig:
 
     def __post_init__(self):
         from .budgets import MIN_ITEM_ALLOWANCE, validate_budget
+        # specs/0027 §4d: validate the semantic carriers; the fetch-k None
+        # sentinel SURVIVES construction (R6-3) — validation only, no resolve
+        if not (0.0 <= self.semantic_min_cosine <= 1.0):
+            raise ValueError(
+                f"semantic_min_cosine {self.semantic_min_cosine} outside [0, 1]")
+        if not (isinstance(self.semantic_timeout_ms, int)
+                and not isinstance(self.semantic_timeout_ms, bool)
+                and 1 <= self.semantic_timeout_ms <= 60000):
+            raise ValueError(
+                f"semantic_timeout_ms {self.semantic_timeout_ms!r} outside [1, 60000]")
+        if self.semantic_fetch_k is not None:
+            lo = self.max_subgraph_edges
+            hi = max(1000, self.max_subgraph_edges)
+            if not (isinstance(self.semantic_fetch_k, int)
+                    and not isinstance(self.semantic_fetch_k, bool)
+                    and lo <= self.semantic_fetch_k <= hi):
+                raise ValueError(
+                    f"semantic_fetch_k {self.semantic_fetch_k!r} outside "
+                    f"[{lo}, {hi}] (relative to max_subgraph_edges)")
         validate_budget("recall", self.query_context_budget_tokens,
                         self.group_heading_allowance_tokens)
         validate_budget("wiki", self.wiki_input_budget_tokens,

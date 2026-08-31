@@ -28,6 +28,12 @@ W, M = "write-time", "maintain-time"
 #                the source -- until then it takes 0005's cap and no exception.
 
 DISPOSITIONS = {
+ # -- semantic index (specs/0027) --------------------------------------------
+ ("src/veracium/__init__.py", "Memory.embed_backfill", "upsert_embedding", "edb8a9a9b201"):
+   (W, "NONE — a derived-index row (edge_id, embedder_id, content_digest, vec); no trust field, no evidence, regenerable from the edge at any time (0027 §3)",
+    "none",
+    "clean — digest-conditional and idempotent: writes only when the live edge's §4e digest still matches (a racing text update or erasure drops the write); post-commit best-effort, never fails ingest",
+    "`test_stale_vector_excluded_after_text_mutation` · `test_forget_user_erases_embeddings`"),
  # -- explicit user verbs ----------------------------------------------------
  ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"):
    (W, "`active`, `invalidation_reason`", "act", "clean — narrows only", "`test_dispute_removes_from_assertable_but_keeps_history`"),
@@ -164,6 +170,7 @@ DISPOSITIONS = {
 #   moved       owned by another spec
 #   open_moved  open AND owned elsewhere
 STATES = {
+  ("src/veracium/__init__.py", "Memory.embed_backfill", "upsert_embedding", "edb8a9a9b201"): "clean",
   ("src/veracium/__init__.py", "Memory.dispute", "invalidate_edge", "3bbd6e160bb1"): "clean",
   ("src/veracium/__init__.py", "Memory.dispute", "add_episode", "c5468767db40"): "clean",
   ("src/veracium/__init__.py", "Memory.confirm", "confirm_edge", "0f81d39ca11c"): "clean",

@@ -5,7 +5,7 @@
 
 # specs/0020 §4f — public read-surface manifest
 
-**24 public surfaces** — every public method of `Memory` plus every public
+**25 public surfaces** — every public method of `Memory` plus every public
 `*_impl` in `mcp_server` — enumerated by **parsing the AST**, not by reading
 the spec's prose inventory. **2 of them return record objects.**
 
@@ -37,6 +37,7 @@ and 0020's claim is about the surfaces named here.
 | `Memory.diagnostics_preview` | no | none | the captured local error log | Operator diagnostics; not a memory read surface. |
 | `Memory.dispute` | no | none | `{disputed, relation}` | WRITE path (user feedback verb); no record set leaves. |
 | `Memory.edges_since` | **yes** | none | `list[Edge]` — full record objects | UNSCOPED IN v1 BY DECISION, and NAMED here because it is the §4f inventory's blind spot: it returns full `Edge` objects. It is the host's CHANGE-DETECTION surface (superseded and quarantined edges included, deliberately so), i.e. operator/sync material in the same class as `export_memory`, and it is not exposed over MCP. Scoping it is a recorded widening; a host that needs a scoped delta uses `recall(principal=…)`. |
+| `Memory.embed_backfill` | no | none | an int (vectors written); rows land in the edge_embedding derived index, never in a caller-visible record | OPERATOR SURFACE by decision (0027 §4c): a host-invoked index-maintenance verb, the export/forget row's shape. It reads the user's own edges to embed them and returns a count only; no record leaves the surface. Visibility is enforced where records DO leave — semantic_candidates filters to the lens's visible-id set at recall (§4a Stage 1). |
 | `Memory.export_memory` | no | none | the portable JSONL file (full provenance/history) | UNSCOPED IN v1 BY DECISION. Portability is an operator right; a scope-filtered export would silently produce a LOSSY file that reads as complete. (0021 owns what travels; the ledger does not.) |
 | `Memory.flush_telemetry` | no | none | bool | Content-free aggregate. §7a: withholding rates are DEFERRED to a future consent version — telemetry carries no scope field in v1. |
 | `Memory.forget` | no | none | `{edges, episodes}` counts; the erasure itself | UNSCOPED IN v1 BY DECISION. Erasure is the data subject's right and must be TOTAL — a scoped forget would leave residue the caller believes is gone, the worst possible failure on this surface. |

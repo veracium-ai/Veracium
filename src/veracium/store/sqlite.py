@@ -1765,13 +1765,78 @@ class SqliteStore(Store):
             # forget_user removes it atomically with the rest of the user's memory.
             # specs/0003 §4f: the refusal inventory and the operation receipts are
             # user-linked Store-local metadata, so erasure covers them too.
+            # specs/0027 §4f (V-ERASE): the user's embedding rows go in the
+            # SAME transaction — erasure requires the bytes gone; V-FRESH
+            # blocking recall of an orphan does not satisfy erasure.
             for table in ("contribution_ledger",
                           "edges", "episodes", "wiki", "write_counter",
                           "confirmations", "consolidation_ops",
-                          "supersession_refusals", "supersession_operations"):
+                          "supersession_refusals", "supersession_operations",
+                          "edge_embedding"):
                 self._conn.execute(f"DELETE FROM {table} WHERE user_id=?", (user_id,))
             self._conn.commit()
         return {"edges": n_edges, "episodes": n_eps, "confirmations": n_conf}
+
+    # -- semantic lane (specs/0027 §4f) -------------------------------------
+    def upsert_embedding(self, *, edge_id, user_id, embedder_id,
+                         content_digest, dim, vec, built_at) -> bool:
+        from .. import semantic as _semantic
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT json FROM edges WHERE id=? AND user_id=?",
+                (edge_id, user_id)).fetchone()
+            if row is None:
+                # erase-vs-worker: after forget_user there is no live edge —
+                # the delayed worker writes nothing (0027 §4f)
+                self._conn.rollback()
+                return False
+            live = Edge.model_validate_json(row[0])
+            if _semantic.content_digest(live) != content_digest:
+                # update-vs-worker: the edge moved under the worker — drop it;
+                # the re-embed of the NEW content writes its own tuple
+                self._conn.rollback()
+                return False
+            self._conn.execute(
+                "INSERT INTO edge_embedding(edge_id, user_id, embedder_id, "
+                "content_digest, dim, vec, built_at) VALUES(?,?,?,?,?,?,?) "
+                "ON CONFLICT(edge_id, embedder_id, content_digest) DO NOTHING",
+                (edge_id, user_id, embedder_id, content_digest, dim, vec,
+                 built_at))
+            self._conn.commit()
+            return True
+
+    def semantic_candidates(self, user_id, query_vec, *, embedder_id, dim,
+                            k, min_cosine, visible_ids=None) -> list:
+        from .. import semantic as _semantic
+        rows = self._conn.execute(
+            "SELECT ee.edge_id, ee.content_digest, ee.vec, e.json "
+            "FROM edge_embedding ee "
+            "JOIN edges e ON e.id = ee.edge_id AND e.user_id = ee.user_id "
+            "WHERE ee.user_id=? AND ee.embedder_id=? AND ee.dim=?",
+            (user_id, embedder_id, dim)).fetchall()
+        out = []
+        for eid, cdig, blob, ejson in rows:
+            if visible_ids is not None and eid not in visible_ids:
+                continue                       # scope BEFORE top-k (Stage 1)
+            live = Edge.model_validate_json(ejson)
+            if _semantic.content_digest(live) != cdig:
+                continue                       # V-FRESH: stale vector excluded
+            vec = _semantic.unpack_vec(blob, dim)
+            if vec is None:
+                continue                       # wrong-length blob refused (V5)
+            c = _semantic.cosine(query_vec, vec)
+            if c is None or c < min_cosine:
+                continue
+            out.append((eid, c))
+        out.sort(key=lambda t: (-t[1], t[0]))  # cosine desc, edge_id asc
+        return out[:k]
+
+    def embedding_keys(self, user_id, embedder_id) -> set:
+        rows = self._conn.execute(
+            "SELECT edge_id, content_digest FROM edge_embedding "
+            "WHERE user_id=? AND embedder_id=?",
+            (user_id, embedder_id)).fetchall()
+        return set(rows)
 
     # -- compiled-view cache ----------------------------------------------
     def get_wiki(self, user_id) -> Optional[tuple[str, int]]:

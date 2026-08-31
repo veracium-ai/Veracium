@@ -263,6 +263,50 @@ class Store(ABC):
               subject: Optional[str] = None, relation: Optional[str] = None,
               include_quarantined: bool = True) -> list[Edge]: ...
 
+    # -- semantic lane (specs/0027) ----------------------------------------
+    # Non-abstract for backend compatibility (the `confirmations_for`
+    # precedent): a backend without semantic storage raises, and recall
+    # degrades to lexical with `semantic_status="unavailable"` — never an
+    # error to the caller (0027 V6).
+
+    @store_mutator
+    def upsert_embedding(self, *, edge_id: str, user_id: str, embedder_id: str,
+                         content_digest: str, dim: int, vec: bytes,
+                         built_at: str) -> bool:
+        """Persist one edge vector, DIGEST-CONDITIONALLY (0027 §4f): in ONE
+        transaction, re-read the live edge, recompute its §4e digest, and
+        insert `ON CONFLICT DO NOTHING` only if the live digest still equals
+        `content_digest` — otherwise write NOTHING and return False. Closes
+        the update-vs-worker and erase-vs-worker races: a delayed worker
+        holding a vector for content A finds live != A (or no live edge at
+        all) and drops its write. Returns True iff the tuple is now present.
+
+        Writes a derived INDEX row only — no trust field, no evidence
+        (0027 §3); the row is regenerable from the edge at any time."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement upsert_embedding")
+
+    def semantic_candidates(self, user_id: str, query_vec, *, embedder_id: str,
+                            dim: int, k: int, min_cosine: float,
+                            visible_ids=None) -> list:
+        """Up to `k` `(edge_id, cosine)` pairs for this user's FRESH vectors
+        under (`embedder_id`, `dim`), cosine >= `min_cosine`, ordered cosine
+        DESC then `edge_id` ASC (the deterministic pre-RRF tiebreak, 0027 §4a).
+        Freshness (V-FRESH): a row whose stored `content_digest` differs from
+        the live edge's §4e digest is EXCLUDED; rows whose edge no longer
+        exists are skipped. Does NOT filter on `active` (parity with the
+        lexical lane's `active_only=False`). `visible_ids`, when not None, is
+        the scope lens's visible-id set — out-of-principal edges never consume
+        a top-k slot (0027 §4a Stage 1)."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement semantic_candidates")
+
+    def embedding_keys(self, user_id: str, embedder_id: str) -> set:
+        """The `(edge_id, content_digest)` pairs stored for this user under
+        `embedder_id` — the backfill writer's skip set. Read-only."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement embedding_keys")
+
     # -- episodes ----------------------------------------------------------
     @store_mutator
     @abstractmethod

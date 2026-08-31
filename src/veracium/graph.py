@@ -618,6 +618,47 @@ def _permute_contention_groups(edges: list[Edge],
     return out
 
 
+def _lexical_scored(store, user_id: str, query: str, view=None):
+    """specs/0027 §2 — the extracted per-edge lexical scan (the shipped
+    `subgraph_for_query` loop, byte-identical for `view=None`; the frozen V10
+    oracle pins that). Returns `(scored, relevant_ids, by_id)`:
+
+    - `scored`: `[(score, overlap, edge)]` for every edge entering the lexical
+      lane (`base > 0`), sorted `(-score, -observed_at)` — exactly today's
+      pre-collapse ranking, the eligibility floor riding it (a user-subject
+      edge is eligible at overlap 0);
+    - `relevant_ids`: the `overlap > 0` ids (the I6 relevance set);
+    - `by_id`: EVERY visible (and, under a view, SHAPED — §3b Stage 0) edge by
+      id, including base-0 entity edges — the semantic lane's candidate pool
+      and the fused construction's edge lookup.
+
+    Under a `view` each candidate passes visibility THEN shaping BEFORE
+    scoring (0027 §4a Stage 0-1): every edge any later stage sees is the
+    principal-facing record, so the I6 reserve reads shaped assertability."""
+    q = _tokens(query)
+    scored: list[tuple[int, int, Edge]] = []
+    relevant_ids: set[str] = set()
+    by_id: dict[str, Edge] = {}
+    for e in store.edges(user_id, active_only=False):
+        if view is not None:
+            if not view.visible(e):
+                continue
+            e = view.shape(e)
+        by_id[e.id] = e
+        overlap = len(_tokens(f"{e.subject} {e.relation} {e.object} {e.note}") & q)
+        if overlap:
+            relevant_ids.add(e.id)
+        if e.subject == "user":
+            base = 1 + 2 * overlap      # eligible always; ranked by relevance
+        else:
+            base = 3 * overlap          # entity edges must match to enter at all
+        if base:
+            # prefer active over superseded, and closer matches
+            scored.append((base + (1 if e.active else 0), overlap, e))
+    scored.sort(key=lambda t: (-t[0], -t[2].provenance.observed_at.timestamp()))
+    return scored, relevant_ids, by_id
+
+
 def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
                        coverage_share: float = 0.25,
                        relations: Optional[dict[str, Relation]] = None) -> list[Edge]:
@@ -644,30 +685,16 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
     # else a relation it made functional is treated as ordinary and its contention is not
     # authority-ordered (round-6 correction C).
     relations = relations if relations is not None else DEFAULT_RELATIONS
-    q = _tokens(query)
-    scored: list[tuple[int, Edge]] = []
     # specs/0001 I6 (candidate, R10-1): the relevance bit is carried FROM
-    # scoring — a user-subject edge is ELIGIBLE at baseline score with
-    # zero overlap, and eligibility is not relevance; the reserve below
-    # protects only query-RELEVANT assertable records
-    relevant_ids: set[str] = set()
-    for e in store.edges(user_id, active_only=False):
-        overlap = len(_tokens(f"{e.subject} {e.relation} {e.object} {e.note}") & q)
-        if overlap:
-            relevant_ids.add(e.id)
-        if e.subject == "user":
-            base = 1 + 2 * overlap      # eligible always; ranked by relevance
-        else:
-            base = 3 * overlap          # entity edges must match to enter at all
-        if base:
-            # prefer active over superseded, and closer matches
-            scored.append((base + (1 if e.active else 0), e))
-    # recency breaks ties: among equally-relevant facts the newer one is the
-    # better guess, and it makes truncation deterministic rather than dependent
-    # on store insertion order
-    # recency tiebreak reads observed_at: "most recently recorded", not
-    # "became true earliest" — valid_from is the first-known axis
-    scored.sort(key=lambda t: (-t[0], -t[1].provenance.observed_at.timestamp()))
+    # scoring — a user-subject edge is ELIGIBLE at baseline score with zero
+    # overlap, and eligibility is not relevance; the reserve below protects
+    # only query-RELEVANT assertable records. specs/0027 §2: the scan itself
+    # is the extracted `_lexical_scored` (unscoped here — this function IS the
+    # legacy `principal=None` path the V10 oracle freezes); its recency
+    # tiebreak reads observed_at — "most recently recorded", not "became true
+    # earliest" (valid_from is the first-known axis).
+    scored3, relevant_ids, _by_id = _lexical_scored(store, user_id, query)
+    scored = [(sc, e) for sc, _ov, e in scored3]
     # specs/0012 I8: collapse strictly-redundant ACTIVE duplicates AFTER scoring
     # (a query-matching note-bearer already surfaces via the suppression predicate)
     # and BEFORE truncation, so suppressed members never consume max_edges slots.
@@ -706,6 +733,135 @@ def subgraph_for_query(store, user_id: str, query: str, *, max_edges: int = 40,
         ordered = reserved + [e for _, e in scored if e.id in rest_ids]
     # authority permutation WITHIN functional-contention groups; unrelated order unchanged
     return _permute_contention_groups(ordered, relations)
+
+
+RRF_K = 60          # specs/0027 §4a Stage 2 — fixed, not tunable
+
+
+def semantic_duplicate_of(m: Edge, survivor: Edge) -> bool:
+    """specs/0027 §4a Stage 3 — the COMPLETE suppression predicate for a
+    semantic-only candidate against an already-kept edge (R6-1).
+    `_strictly_redundant` alone is a within-group test and returns true for
+    unrelated default-metadata edges, so ALL five conjuncts must hold:
+
+    1. both ACTIVE — never suppress against, or as, inactive history;
+    2. identical collapse envelope (subject, relation, disclosure, author,
+       derived_from) — the I8f authority envelope;
+    3. exact value-equivalence — a SUBSUMING semantic value is DISTINCT and
+       is added, not suppressed;
+    4. strictly redundant (no carrier-visible information beyond the
+       survivor);
+    5. warning-carrier preservation — `m` carries no flag the survivor lacks
+       (suppressing it would drop a warning from the surface)."""
+    if not (m.active and survivor.active):
+        return False
+    if (m.subject, m.relation, m.provenance.disclosure,
+            m.provenance.author_of_evidence, m.provenance.derived_from) != \
+       (survivor.subject, survivor.relation, survivor.provenance.disclosure,
+            survivor.provenance.author_of_evidence,
+            survivor.provenance.derived_from):
+        return False
+    if _value_key(m.object) != _value_key(survivor.object):
+        return False
+    if not _strictly_redundant(m, survivor):
+        return False
+    if m.needs_confirmation and not survivor.needs_confirmation:
+        return False
+    if m.ungrounded and not survivor.ungrounded:
+        return False
+    return True
+
+
+def fused_subgraph(scored, relevant_ids, by_id, sm, *, max_edges: int = 40,
+                   coverage_share: float = 0.25,
+                   relations: Optional[dict[str, Relation]] = None):
+    """specs/0027 §4a Stages 2-5 — the one total ordered retrieval-and-budget
+    construction, over prepared inputs: `scored`/`relevant_ids`/`by_id` from
+    `_lexical_scored` (Stage 0-1, already scoped/shaped), `sm` the semantic
+    lane's `(edge_id, cosine)` list (Stage 1, already visibility-filtered and
+    fresh — or empty/None when the lane did not run).
+
+    Returns `(ordered_edges, meta)` where `meta` maps each SELECTED edge id to
+    its recall-provenance dict ({lexical_overlap, semantic_cosine, fused_rank,
+    fused_score, route}) — exactly the ranked query selection, nothing else
+    (V7: contention/I6a additions downstream get no entry).
+
+    Degenerate identity (V10): with `sm` empty this reduces to the legacy
+    construction — fused_score is strictly decreasing in lexical rank, Stage 3
+    keeps exactly `collapse_for_render(Lx)` in lexical order, and Stages 4-5
+    receive byte-identical input to `subgraph_for_query`'s."""
+    relations = relations if relations is not None else DEFAULT_RELATIONS
+    lx_edges = [e for _sc, _ov, e in scored]
+    lx_rank = {e.id: i + 1 for i, e in enumerate(lx_edges)}       # 1-indexed
+    overlap_by = {e.id: ov for _sc, ov, e in scored}
+    sm = [(eid, cos) for eid, cos in (sm or []) if eid in by_id]
+    sm_rank = {eid: i + 1 for i, (eid, _c) in enumerate(sm)}
+    sm_cos = dict(sm)
+
+    # Stage 2 — RRF fusion. Absence from a lane contributes NO term (never a
+    # max-rank penalty); order (-fused, -observed_at, edge_id) — the shipped
+    # recency tiebreak, then id for full determinism. fused_rank is recorded
+    # HERE and is immutable thereafter (Stage 5 permutes position only).
+    fused_score: dict[str, float] = {}
+    for eid in set(lx_rank) | set(sm_rank):
+        f = 0.0
+        if eid in lx_rank:
+            f += 1.0 / (RRF_K + lx_rank[eid])
+        if eid in sm_rank:
+            f += 1.0 / (RRF_K + sm_rank[eid])
+        fused_score[eid] = f
+    fused_ids = sorted(fused_score, key=lambda i: (
+        -fused_score[i], -by_id[i].provenance.observed_at.timestamp(), i))
+    fused_order = [by_id[i] for i in fused_ids]
+    fused_rank = {eid: i + 1 for i, eid in enumerate(fused_ids)}
+    # the EXTENDED relevance set: a semantic hit counts as relevance for the
+    # I6 reserve, not just eligibility (§4a Stage 2)
+    rel_ext = set(relevant_ids) | set(sm_rank)
+
+    # Stage 3 — collapse: MEMBERSHIP from lexical, ORDER from fused (R6-1).
+    lx_ids = set(lx_rank)
+    survivors, _info = collapse_for_render(lx_edges)
+    kept = {e.id for e in survivors}
+    kept_edges = list(survivors)
+    for e in fused_order:
+        if e.id in lx_ids:
+            continue                       # lexical membership already decided
+        if any(semantic_duplicate_of(e, k) for k in kept_edges):
+            continue                       # a pure duplicate of a kept edge
+        kept_edges.append(e)
+        kept.add(e.id)
+    stage3 = [e for e in fused_order if e.id in kept]
+
+    # Stage 4 — the SINGLE I6 reserve, byte-for-byte today's construction over
+    # the fused order and the extended relevance set.
+    if len(stage3) <= max_edges:
+        ordered = stage3
+    else:
+        assertable = [e for e in stage3 if e.assertable and e.id in rel_ext]
+        reserve_n = min(len(assertable), -(-max_edges // 4))
+        reserved = assertable[:reserve_n]
+        rid = {e.id for e in reserved}
+        rest_pairs = [(0, e) for e in stage3 if e.id not in rid]
+        rest = _cover(rest_pairs, max_edges - len(reserved), coverage_share,
+                      seed_days={e.valid_from.date() for e in reserved})
+        rest_ids = {e.id for e in rest}
+        ordered = reserved + [e for e in stage3 if e.id in rest_ids]
+
+    # Stage 5 — functional-contention permutation, unchanged; position only.
+    ordered = _permute_contention_groups(ordered, relations)
+
+    meta = {}
+    for e in ordered:
+        eid = e.id
+        route = ("both" if eid in lx_rank and eid in sm_rank
+                 else "semantic" if eid in sm_rank else "lexical")
+        meta[eid] = {"edge_id": eid,
+                     "lexical_overlap": overlap_by.get(eid, 0),
+                     "semantic_cosine": sm_cos.get(eid),
+                     "fused_rank": fused_rank[eid],
+                     "fused_score": fused_score[eid],
+                     "route": route}
+    return ordered, meta
 
 
 def _cover(scored: list[tuple[int, Edge]], max_edges: int,

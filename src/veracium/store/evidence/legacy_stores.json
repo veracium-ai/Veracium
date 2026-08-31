@@ -261,6 +261,38 @@
       "store_schema_version": 9,
       "digest": "234a90dce4b811fa758c25d3f57ef294ccd48af42d6d6722d8ed1329602cc617",
       "result": "ok"
+    },
+    {
+      "tag": "v0.14.0",
+      "commit": "32c4ce654a76f3e40c925a9286d0ab35fb8cc9f2",
+      "on_disk_user_version": 10,
+      "store_schema_version": null,
+      "digest": null,
+      "result": "ok"
+    },
+    {
+      "tag": "v0.15.0",
+      "commit": "48cc833629c3d627235afd4d6eb8596488441814",
+      "on_disk_user_version": 10,
+      "store_schema_version": null,
+      "digest": null,
+      "result": "ok"
+    },
+    {
+      "tag": "v0.16.0",
+      "commit": "206abe141a30f7e3b9740944a64e93c1f3e07697",
+      "on_disk_user_version": 11,
+      "store_schema_version": null,
+      "digest": null,
+      "result": "ok"
+    },
+    {
+      "tag": "v0.17.0",
+      "commit": "9096f6a2ab9e3fdf8e78c18f92b242d0f216018a",
+      "on_disk_user_version": 11,
+      "store_schema_version": null,
+      "digest": null,
+      "result": "ok"
     }
   ]
 }

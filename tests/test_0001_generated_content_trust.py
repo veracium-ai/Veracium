@@ -159,7 +159,10 @@ def test_i6_reserve_guarantees_the_user_edge(share):
 
 def test_i13a_schema_v11_is_byte_identical_to_v10():
     assert sv.SCHEMA_V11 == sv.SCHEMA_V10
-    assert sv.SCHEMA_VERSION == 11
+    # the head moved past the 0001 era at 0027's v12 bump (edge_embedding);
+    # I13a's own claim — v11 is a byte-identical SEMANTIC bump over v10 —
+    # is version-local and unchanged above
+    assert sv.SCHEMA_VERSION >= 11
 
 
 def _accepted_v10_records():
@@ -200,14 +203,27 @@ def test_i13b_stamp_only_across_every_accepted_v10_shape(idx, tmp_path):
     conn.close()
     migrate_store(db)
     conn = sqlite3.connect(db)
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 11
-    dump_v11 = sorted(r[0] or "" for r in conn.execute(
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == \
+        sv.SCHEMA_VERSION
+    dump_head = sorted(r[0] or "" for r in conn.execute(
         "SELECT sql FROM sqlite_master").fetchall())
     conn.close()
-    assert dump_v11 == dump_v10, (
-        f"shape {idx} ({recs[idx]['provenance'][:40]}…): the v10->v11 "
-        f"edge changed SQL — the stamp-only promise broke")
-    s = SqliteStore(db)      # opens accepted at 11
+    # I13a/b's claim is about the v10->v11 EDGE: stamp-only, no SQL change.
+    # The head has since moved past 11 (0027's v12 adds edge_embedding), so
+    # the migrated dump differs from the v10 dump by EXACTLY the additive
+    # v12 objects and nothing else — any other delta means the stamp-only
+    # promise broke somewhere on the v10->v11 edge.
+    v12_delta = sorted(o.ddl for o in sv.SCHEMAS[sv.SCHEMA_VERSION]
+                       if o.key not in {x.key for x in sv.SCHEMAS[11]})
+    # compare authored statements only: edge_embedding's composite PK mints a
+    # sqlite_autoindex row whose sql is NULL, which is representation, not DDL
+    dump_head = [x for x in dump_head if x]
+    dump_v10 = [x for x in dump_v10 if x]
+    assert dump_head == sorted(dump_v10 + v12_delta), (
+        f"shape {idx} ({recs[idx]['provenance'][:40]}…): the migrated dump "
+        f"differs from v10 by more than the additive v12 objects — the "
+        f"v10->v11 stamp-only promise broke")
+    s = SqliteStore(db)      # opens accepted at head
     s.close()
 
 

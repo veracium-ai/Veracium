@@ -36,6 +36,8 @@ from .config import MemoryConfig
 # selfcheck's and under-counted abstentions.
 from .gate import ABSTAINED as _ABSTAINED  # noqa: E402
 from .graph import subgraph_for_query, render_edges
+from .graph import _lexical_scored, fused_subgraph
+from . import semantic as _semantic_mod
 from .ingest import _event_dt, ingest_event
 from .llm.base import Complete, Embed
 from .authority import edge_effective as _edge_effective
@@ -84,6 +86,43 @@ class Recall:
     # call breaks. `edges` becomes the de-duplicated union of query-selected edges and the
     # exposed preservation members.
     contested: list["ContestedGroup"] = field(default_factory=list)
+    # specs/0027 §4b — recall provenance rides a PARALLEL id-keyed field;
+    # `edges: list[Edge]` is PRESERVED unchanged (retyping it was breaking,
+    # R3-3). Entries exist for EXACTLY the ranked query selection; a
+    # contention/I6a-preserved edge has NO entry — it was never scored, so
+    # inventing route/fused_rank/cosine for it is forbidden (V7):
+    # `recall.recalled_edges.get(e.id)` → None means "present by
+    # contention-preservation, not by ranked selection". Both fields are
+    # APPENDED WITH DEFAULTS (R5-4: `field(default_factory=dict)` — a mutable
+    # literal default would not import), so existing construction is
+    # unaffected and a semantic-less caller sees {} and "disabled".
+    recalled_edges: dict[str, "RecalledEdge"] = field(default_factory=dict)
+    semantic_status: str = "disabled"
+
+
+@dataclass(frozen=True)
+class RecalledEdge:
+    """specs/0027 §4b — one edge's recall provenance: how the ranked query
+    selection found it. `route` is which lane(s) ranked it; a user-subject
+    edge present only via the eligibility floor (overlap 0, not in the
+    semantic lane) is route="lexical", exactly its status today."""
+    edge_id: str
+    lexical_overlap: int
+    semantic_cosine: Optional[float]
+    fused_rank: int
+    fused_score: float
+    route: str          # "lexical" | "semantic" | "both"
+
+
+# specs/0027 §4b (V-STATUS) — the CLOSED semantic_status vocabulary.
+SEMANTIC_STATUSES = frozenset({
+    "ok",           # semantic lane ran and fused
+    "disabled",     # semantic=False
+    "no_embedder",  # Memory.embed / Embed.id()/dim() absent
+    "unavailable",  # embedder raised / storage absent
+    "timeout",      # exceeded semantic_timeout_ms
+    "degraded",     # ran but the query vector was refused (V5)
+})
 
 
 class Memory:
@@ -365,12 +404,129 @@ class Memory:
                       "ms": int((time.perf_counter() - t0) * 1000)}
             fields.update(usage_finish())          # specs/0017: the terminal merge
             self._record("ingest", fields, user_id)
+        # specs/0027 §4c: the embedding write is OUTSIDE the store write
+        # transaction (post-commit, best-effort) — an embedder failure never
+        # fails or blocks ingest. The diff-driven backfill also sweeps up
+        # edges other write paths (correct, absorption) created since.
+        try:
+            self.embed_backfill(user_id)
+        except Exception:
+            pass
         return r
 
     # -- read --------------------------------------------------------------
+    def _semantic_lane(self, user_id: str, query: str, *, visible_ids=None):
+        """specs/0027 §4d — resolve the semantic lane to (status, candidates).
+
+        Never raises: every failure is a `semantic_status` value and a lexical
+        degrade (V6). The query embed runs on a daemon worker joined for
+        `semantic_timeout_ms` — recall never blocks longer than the deadline
+        on the embedder (the CONTRACT; the abandoned worker's late result is
+        discarded)."""
+        embedder = self.embed
+        eid, dim, st = _semantic_mod.embedder_identity(embedder)
+        if st != "ok":
+            return st, []
+        # R6-3: auto tracks the LIVE max_subgraph_edges; an EXPLICIT value is
+        # RE-validated against the live range and refuses if a post-construction
+        # mutation put it out of range (a config error, not a degrade)
+        k = self.config.semantic_fetch_k
+        lo = self.config.max_subgraph_edges
+        hi = max(1000, self.config.max_subgraph_edges)
+        if k is None:
+            k = max(200, self.config.max_subgraph_edges)
+        elif not (lo <= k <= hi):
+            raise ValueError(
+                f"semantic_fetch_k {k} outside the live range [{lo}, {hi}] — "
+                f"max_subgraph_edges was mutated after construction (0027 §4d)")
+        if not (0.0 <= self.config.semantic_min_cosine <= 1.0):
+            raise ValueError(
+                f"semantic_min_cosine {self.config.semantic_min_cosine} "
+                f"outside [0, 1] (0027 §4d live validation)")
+        if not (1 <= self.config.semantic_timeout_ms <= 60000):
+            raise ValueError(
+                f"semantic_timeout_ms {self.config.semantic_timeout_ms} "
+                f"outside [1, 60000] (0027 §4d live validation)")
+        result: dict = {}
+
+        def _embed_query():
+            try:
+                result["vecs"] = embedder([query])
+            except Exception as e:                    # never propagates (V6)
+                result["err"] = e
+
+        t = threading.Thread(target=_embed_query, daemon=True)
+        t.start()
+        t.join(self.config.semantic_timeout_ms / 1000.0)
+        if t.is_alive():
+            return "timeout", []
+        if "err" in result:
+            return "unavailable", []
+        vecs = result.get("vecs")
+        vec = vecs[0] if isinstance(vecs, list) and len(vecs) == 1 else None
+        qv = _semantic_mod.validate_vector(vec, dim)
+        if qv is None:
+            return "degraded", []                      # query vector refused (V5)
+        try:
+            sm = self.store.semantic_candidates(
+                user_id, qv, embedder_id=eid, dim=dim, k=k,
+                min_cosine=self.config.semantic_min_cosine,
+                visible_ids=visible_ids)
+        except NotImplementedError:
+            return "unavailable", []                   # storage absent
+        except Exception:
+            return "unavailable", []
+        return "ok", list(sm)
+
+    def embed_backfill(self, user_id: str) -> int:
+        """specs/0027 §4c — embed this user's edges that lack a FRESH vector
+        under the configured embedder. Idempotent and best-effort: computed
+        OUTSIDE any store write transaction, persisted via the
+        digest-conditional `upsert_embedding` (a racing text update simply
+        drops the stale write). Returns the number of vectors written; 0 when
+        no embedder (or none missing). Called post-commit by `remember`; also
+        the explicit backfill for pre-existing stores (recall quality ramps
+        with it — an un-embedded edge is still found lexically)."""
+        eid, dim, st = _semantic_mod.embedder_identity(self.embed)
+        if st != "ok":
+            return 0
+        try:
+            have = self.store.embedding_keys(user_id, eid)
+        except NotImplementedError:
+            return 0
+        pending = []
+        for e in self.store.edges(user_id, active_only=False):
+            d = _semantic_mod.content_digest(e)
+            if (e.id, d) not in have:
+                pending.append((e, d))
+        if not pending:
+            return 0
+        try:
+            vecs = self.embed([_semantic_mod.embedded_text(e)
+                               for e, _d in pending])
+        except Exception:
+            return 0                                   # never fails the caller
+        if not isinstance(vecs, list) or len(vecs) != len(pending):
+            return 0
+        written = 0
+        now = utcnow().isoformat()
+        for (e, d), v in zip(pending, vecs):
+            fv = _semantic_mod.validate_vector(v, dim)
+            if fv is None:
+                continue                               # refused vector (V5)
+            try:
+                if self.store.upsert_embedding(
+                        edge_id=e.id, user_id=user_id, embedder_id=eid,
+                        content_digest=d, dim=dim,
+                        vec=_semantic_mod.pack_vec(fv), built_at=now):
+                    written += 1
+            except NotImplementedError:
+                return written
+        return written
+
     def recall(self, user_id: str, query: Optional[str] = None, *,
                token_budget: Optional[int] = None,
-               principal=None, **filters) -> Recall:
+               principal=None, semantic="auto", **filters) -> Recall:
         """Assemble grounded memory context for answering `query`.
 
         Combines the LLM-curated wiki (the grounded, verified working view,
@@ -442,7 +598,8 @@ class Memory:
             with self._usage_operation(user_id, "recall") as (op_llm, usage_finish):
                 return self._recall(user_id, query, token_budget,
                                     op_llm, usage_finish,
-                                    principal=principal, filters=filters)
+                                    principal=principal, filters=filters,
+                                    semantic=semantic)
         except Exception as e:
             self._on_error("recall", e, user_id)
             raise
@@ -479,7 +636,8 @@ class Memory:
     def _recall(self, user_id: str, query: str,
                 token_budget: Optional[int] = None,
                 op_llm=None, usage_finish=dict,
-                *, principal=None, filters: Optional[dict] = None) -> Recall:
+                *, principal=None, filters: Optional[dict] = None,
+                semantic="auto") -> Recall:
         # specs/0017: op_llm is the operation's arming provider proxy (or the
         # raw llm when unmetered); usage_finish merges the token buffer into
         # the terminal _record exactly once.
@@ -533,10 +691,45 @@ class Memory:
             wiki_input_budget=self.config.wiki_input_budget_tokens,
             variant_cap=self.config.wiki_variant_cap,
             item_cap=self.config.item_cap_tokens)
-        edges = subgraph_for_query(self.store, user_id, query,
-                                   max_edges=self.config.max_subgraph_edges,
-                                   coverage_share=self.config.subgraph_coverage_share,
-                                   relations=self.config.relations)
+        # specs/0027 §4a/§4d — the semantic lane and the fused construction.
+        # `semantic`: "auto" (default) attempts the lane iff an embedder with
+        # id()/dim() is configured; True forces the attempt (degrading the
+        # same way, reporting status); False disables it. Every degrade path
+        # is a STATUS, never an exception (V6).
+        sem_status, sm_pairs, sem_meta = "disabled", [], {}
+        if view is None and semantic is False:
+            # today's path, literally (V10 byte-identity by construction)
+            edges = subgraph_for_query(
+                self.store, user_id, query,
+                max_edges=self.config.max_subgraph_edges,
+                coverage_share=self.config.subgraph_coverage_share,
+                relations=self.config.relations)
+        else:
+            # Stage 0-1: one scan, scoped/shaped under the per-call view
+            scored, relevant_ids, by_id = _lexical_scored(
+                self.store, user_id, query, view=view)
+            if semantic is not False:
+                sem_status, sm_pairs = self._semantic_lane(
+                    user_id, query,
+                    visible_ids=set(by_id) if view is not None else None)
+            if view is None and sem_status != "ok":
+                # §4a degenerate identity: the construction collapses to
+                # subgraph_for_query — taken literally, so the no-embedder /
+                # invalid-output / no-storage / timeout paths reproduce the
+                # legacy projection byte-identically (V3/V10)
+                edges = subgraph_for_query(
+                    self.store, user_id, query,
+                    max_edges=self.config.max_subgraph_edges,
+                    coverage_share=self.config.subgraph_coverage_share,
+                    relations=self.config.relations)
+            else:
+                edges, raw_meta = fused_subgraph(
+                    scored, relevant_ids, by_id,
+                    sm_pairs if sem_status == "ok" else [],
+                    max_edges=self.config.max_subgraph_edges,
+                    coverage_share=self.config.subgraph_coverage_share,
+                    relations=self.config.relations)
+                sem_meta = {k: RecalledEdge(**v) for k, v in raw_meta.items()}
         # outcome events are structured records, not narrative — they'd crowd
         # out interaction history for high-volume consumers; their signal
         # reaches recall as counters rendered on the edges themselves
@@ -558,7 +751,11 @@ class Memory:
         # Pushing the relation down into retrieval is a recorded improvement.
         filter_report = ""
         if view is not None:
-            edges = view.scoped(edges)
+            # specs/0027 §4a Stage 0: the SELECTION is already scoped and
+            # shaped (visibility+shape preceded ranking/collapse/I6 — the
+            # deliberate principal-bearing order amendment); re-applying the
+            # lens here is a no-op kept out. Episodes keep the existing
+            # post-hoc lens below.
             # scope BEFORE the recency slice, never after: slicing first would
             # hand the principal fewer than `max_recent_episodes` whenever the
             # newest episodes were out of scope — a shortfall that is itself a
@@ -631,10 +828,16 @@ class Memory:
                                 "grounded_items": sum(1 for e in edges if not e.quarantined),
                                 "unverified_items": sum(1 for e in edges if e.quarantined),
                                 "trimmed": 1 if truncated else 0}, user_id)
+        # V7: recalled_edges covers exactly the ranked query selection that
+        # SURVIVED narrowing — an I6a/contention-preserved append has no
+        # entry, and a filter-narrowed edge leaves none behind
+        _final_ids = {e.id for e in edges}
+        sem_meta = {k: v for k, v in sem_meta.items() if k in _final_ids}
         return Recall(context=context, grounded=grounded, unverified=unverified,
                       edges=edges, episodes=episodes,
                       tokens_estimated=self._est_tokens(context), truncated=truncated,
-                      contested=contested)
+                      contested=contested,
+                      recalled_edges=sem_meta, semantic_status=sem_status)
 
     def _contested_line(self, g: "ContestedGroup",
                         line_budget: Optional[int] = None):

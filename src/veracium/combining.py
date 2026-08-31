@@ -72,6 +72,15 @@ _STORE = "src/veracium/store/sqlite.py"
 #: write statement, which is what `specs/combining_sites.py` enumerates.
 COMBINING_SITES = {
 
+    # -- specs/0027: the semantic derived index -----------------------------
+    (_STORE, "upsert_embedding"): SiteSpec(
+        False, why="0027 §4f: writes ONE derived-index row (a vector bound to "
+        "one edge's content digest) — regenerable, trust-inert, never "
+        "evidence; digest-conditional against the SINGLE live edge it "
+        "derives from, so nothing is combined and no scope rule applies "
+        "(visibility is enforced at read by semantic_candidates' "
+        "visible-id filter, 0027 §4a Stage 1)"),
+
     # -- absorption + supersession: the write-time combining pair -----------
     (_STORE, "apply_supersession_plan"): SiteSpec(
         True, ("absorption", "supersession"),

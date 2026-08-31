@@ -43,6 +43,18 @@ DISPOSITIONS: dict[str, dict] = {
                     "path, before assembly. The compiled wiki is EXCLUDED "
                     "from a principal-bearing response (§4d)."),
 
+    "Memory.embed_backfill": dict(
+        returns_records=False, principal="none",
+        carriers="an int (vectors written); rows land in the edge_embedding "
+                 "derived index, never in a caller-visible record",
+        disposition="OPERATOR SURFACE by decision (0027 §4c): a host-invoked "
+                    "index-maintenance verb, the export/forget row's shape. "
+                    "It reads the user's own edges to embed them and returns "
+                    "a count only; no record leaves the surface. Visibility "
+                    "is enforced where records DO leave — "
+                    "semantic_candidates filters to the lens's visible-id "
+                    "set at recall (§4a Stage 1)."),
+
     "Memory.answer": dict(
         returns_records=False, principal="threaded",
         carriers="the answer string, built from an internal `recall`",

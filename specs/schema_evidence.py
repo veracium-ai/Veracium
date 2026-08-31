@@ -357,7 +357,12 @@ def build_version_artifact(strict: bool = True) -> dict:
         #                                            arrived from ≤v5.
         # Both ops entries are the FROZEN v10 constants (sha-checked), never
         # produced by running the migration here — 0013 §4c.
-        if version in (10, 11):   # specs/0001 I13c (candidate): v11
+        # specs/0027 §4f: v12 is the ADDITIVE edge_embedding bump — no new
+        # ALTER, so its reachable matrix is exactly v11's four migrated
+        # shapes PLUS the additive objects, which the constructor manifest
+        # at v12 already carries (`ctor` below is identity(manifest) at the
+        # loop version, so the same 2x2 manipulation inherits them).
+        if version in (10, 11, 12):   # specs/0001 I13c (candidate): v11
             # inherits EVERY accepted v10 manifestation BY CONSTRUCTION —
             # the same 2x2 object manipulation, digested at 11 (SCHEMA_V11
             # is SCHEMA_V10, so exact inheritance is the same code path)
@@ -391,7 +396,8 @@ def build_version_artifact(strict: bool = True) -> dict:
                     accepted.append({
                         "provenance": f"migrated->v{version} (0025 §4b-v: {ops_tag}; "
                                       f"{ledger_tag})"
-                                      + (" [v10 shape inherited at v11 — specs/0001 I13c]" if version == 11 else ""),
+                                      + (" [v10 shape inherited at v11 — specs/0001 I13c]" if version == 11 else "")
+                                      + (" [v11 shape + the 0027 additive diff — specs/0027 §4f]" if version == 12 else ""),
                         "digest": sv._digest_of_identity(alt, version),
                         "objects": alt})
         c.close()
