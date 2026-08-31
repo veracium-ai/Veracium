@@ -15,8 +15,8 @@ R1-1), and unknown reasons FAIL CLOSED.*
 
 | | |
 |---|---|
-| **Author / session** | research (veracium-research); adopted by dev (v2/v4/v5 2026-08-31; v7 = the joint round-1 fold, this adoption the pair's shared baseline) |
-| **Version** | **v7** — dev v6 both-check folded: **B-1** normalization extended to the `current` leg (unhashable reason reaching `dict.get`; `current.invalidated_at` normalized outside the guard) and **B-2** structural coherence applied to `current` (the cap must never read an incoherent state). Both are the mechanical completion of the F6/F2 folds onto the second parameter F2 introduced. v6 — joint round-1 findings folded: **F2** two-state (`snapshot` vs `current`, held_at_K vs assertable-now, current caps never time-travel) + the reason×cutoff matrix (§4a-ii); **F6** type/UTC normalization before any membership or comparison, unknown reason ruled FENCED (not MALFORMED); **F7** visibility is the OUTERMOST gate (hidden never leaks MALFORMED); **F8** carrier sweep. v4 — dev v3-re-read minors folded (m-1 inverted-vs-empty interval in rule 0; m-2 `now` made load-bearing for stale-at-recall). v3 — pre-review folded (7 findings): (1) scope via time-relative verdict not `shape()`; (2) state-coherence rule 0 / MALFORMED; (3) total `AS_OF_DISPOSITION` dict not allow-set; (4) absorbed groundable, not "unreachable"; (5) `Result{status,flags}` + `now`; (6) §6a state-families not naive product; (7) baseline pinned post-0027 + UTC-aware datetimes. (v2 folded dev's D-1/D-2/d-3/d-4.) |
+| **Author / session** | research (veracium-research); adopted by dev (v2/v4/v5 2026-08-31; v7 = the joint round-1 fold; v13 = the round-2 fold + both-directions cross-check, this adoption the pair's round-3 shared baseline) |
+| **Version** | **v13** — **C-4**, found in the re-cross-check of 0029 v6 and a direct consequence of C-2's own fix: the payload embeds `id`/`user_id` (its first two fields), C-2 made the ROW authoritative and rightly stopped deriving identity from the payload — which left the carrier's OWN two halves unbound. A corrupt payload carrying edge B's content under edge A's row would classify B under A, and on the CURRENT leg B's scope fields would decide A's visibility: F4's borrowing escalation re-entering through the carrier, under exactly the at-rest corruption the raw carrier exists to survive. The parse now verifies payload-vs-row identity on both legs, current-leg disagreement taking V-FAILHIDDEN's branch because the visibility decision must not consume it. Adds V-CARRIER-AGREES and a §6a cell. Also cites `ScopeView.user_id` precisely (scope_read.py:292/:310) rather than hedging it — a hedge would be a grep-fails citation at implementation, the `_render_class` class. | **v12** — the both-directions cross-check's SEAM findings, ruled jointly with the 0029 seat. **C-2** identity is now ROW-SOURCED from the carrier (`RawEdgeState.edge_id`/`.user_id`, from the event table's own columns, never the payload), making rule 0 PARSE-INDEPENDENT — a corrupt payload binds correctly first and is refused as MALFORMED later, rather than failing binding for the wrong reason. **C-1** `state` is TEXT and 0030 OWNS THE PARSE: rule 1 parses the current payload (unparseable text and unreadable scope fields share V-FAILHIDDEN's branch, because in both cases we cannot establish whether this principal may see the record and the reason is not their business), rule 3 parses the snapshot (→ MALFORMED). Parse failure and field-validation failure share outcomes because they share ORIGINS. **C-3** the event `reason` COLUMN is never a classifier input. Adds V-PARSE, V-COLUMN-NOT-INPUT and three §6a parse cells. Neither seat could have found C-1/C-2 alone — text-vs-mapping is invisible until one seat holds both ends. | **v11** — dev's round-2 cross-check folded (7). **X-1 BLOCKING, a both-seats miss:** the restriction population is `statement["retire"]` (`:681`, DESIRED STATE under the whole standing set), NOT `affected` (`:609-610`, scoped to THE TARGET). `affected` UNDER-restricts — `direct` (`:605-607`) tests the whole standing set, so the simplest F2 shape reaches `affected` only if a ledger row names the target, and `reach` (`:682-683`) is *defined* as retired keys not in `direct ∪ affected` — and OVER-restricts, since a corroborated survivor the sweep KEEPS is in `affected` but not `retire`. Cost drops to ONE sweep call. **X-2 BLOCKING:** the raw carrier created UNVALIDATED reads after rule 4 — new rule 3b defensively extracts content fields and flags on both legs, missing ⇒ MALFORMED/SCOPE_HIDDEN never a default (a defaulted flag GRANTS; a missing `subject` RAISES); V-RAW's fix must hold V-RAW's discipline. **X-3:** the VIEW leg is now bound in rule 0. **X-4:** V-FAILHIDDEN narrowed — no view means no principal to protect, so MALFORMED. **X-5:** `note` stays in the digest basis, stated as deliberate — 0026's relay floor SCANS the note, so narrowing would let a relay-altering edit pass as identical. **X-6:** §4a-ii footnote for the post-lift cell. **X-7:** section order repaired. Adds V-EXTRACT. | **v10** — two additions on dev's fixture-design note, no mechanism change. §6a's malformed-through-the-real-load-path cell now states HOW malformed state can exist at all — the store serializes only valid edges, so the honest origins are an append-only journal outliving the model that wrote it (0029's own justification for the verbatim carrier, i.e. the same fact from the consumer side) or DB-level tamper — closing a latent contradiction where F5 says the deserializer REJECTS malformed shapes while §6a asks to classify one. And V-RAW now names itself the CONSUMPTION half against 0029's V-VERBATIM read-surface half, tied by the seam manifest rather than a shared symbol. | **v9** — F2's DERIVATION contract wired (new §4b-iii), supplied by the 0029 seat and verified in-source before adoption: `Store.source_restricted` consumes `sweep`'s completeness STATEMENT (`affected`), never its effect list — the shipped comment at `revocation_sweep.py:611-614` already distinguishes statement / desired-state / delta and warns against conflating them, and `affected` (`:615-617`) is pure identity_digest membership with NO active filter. Classifier becomes the THIRD caller of the one computation. Adds the restrict→lift acceptance cell. No other change from v8. | **v8** — the joint round-2 fold. Six findings on 0030: **F4** identity binding of `snapshot`/`current`/envelope BEFORE everything (an unbound pair borrowed B's scope and caps) — placed ahead of visibility, which is safe for round-1 F7 because a binding failure reveals only what the CALLER supplied; **F5** the carrier becomes RAW and 0030 owns ALL validation (the shipped Pydantic deserializer rejects malformed state before any classifier could see it, so the typed carrier made joint scenario 8 unimplementable) — seam S4 confirmed at the interface; **F2** the current source-restriction cap now reads a DEDICATED standing-state input, never the row (verified in-source: `revocation_sweep.py:734` emits `retire` only for ACTIVE rows, so an inactive `superseded` edge keeps that reason while its source stands revoked — and as-of queries are by definition about inactive edges); **F3** the current leg now SUBTRACTS on valid-time and semantic identity, closing the `[Jan,∞)`-superseded-Feb-with-`T`-in-Mar counterexample and the same-id content change; **F7** required/optional normalizer split; **F8b** unknown string reason removed from the incoherent family and V-STALE's "iff" scoped to grounded results. Adds V-BIND, V-RAW, V-TRUST-INPUT, V-SUBTRACT, V-NORM-TOTAL, V-FAILHIDDEN and §6a's five new 0030 cases. | **v7** — dev v6 both-check folded: **B-1** normalization extended to the `current` leg (unhashable reason reaching `dict.get`; `current.invalidated_at` normalized outside the guard) and **B-2** structural coherence applied to `current` (the cap must never read an incoherent state). Both are the mechanical completion of the F6/F2 folds onto the second parameter F2 introduced. v6 — joint round-1 findings folded: **F2** two-state (`snapshot` vs `current`, held_at_K vs assertable-now, current caps never time-travel) + the reason×cutoff matrix (§4a-ii); **F6** type/UTC normalization before any membership or comparison, unknown reason ruled FENCED (not MALFORMED); **F7** visibility is the OUTERMOST gate (hidden never leaks MALFORMED); **F8** carrier sweep. v4 — dev v3-re-read minors folded (m-1 inverted-vs-empty interval in rule 0; m-2 `now` made load-bearing for stale-at-recall). v3 — pre-review folded (7 findings): (1) scope via time-relative verdict not `shape()`; (2) state-coherence rule 0 / MALFORMED; (3) total `AS_OF_DISPOSITION` dict not allow-set; (4) absorbed groundable, not "unreachable"; (5) `Result{status,flags}` + `now`; (6) §6a state-families not naive product; (7) baseline pinned post-0027 + UTC-aware datetimes. (v2 folded dev's D-1/D-2/d-3/d-4.) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | research (author) · dev (reviewer, roles inverted from 0027) |
 | **External review** | REQUIRED — new trust surface; touches classification. Entry on Quentin's word |
@@ -223,85 +223,284 @@ restrictions **never time-travel away**; 0022 non-revival in particular is
 absolute.
 
 ```
-def classify_as_of(snapshot, current, T, now, view=None) -> Result:
-    # 1. VISIBILITY — the OUTERMOST principal-facing gate (F7).
-    #    Nothing about a hidden record leaks — not its existence, not that it is
-    #    malformed. `held_at_K` is withheld too. (v4 ran coherence first, so a
-    #    hidden+malformed edge returned MALFORMED and leaked its condition.)
-    if view is not None and not view.visible(current):
+# INPUTS (round-2 F4/F5/F2 — the signature is now part of the contract)
+#   envelope       the REQUESTED (user_id, edge_id). F4: without it the two legs
+#                  are unbound and a snapshot for A can borrow B's caps.
+#   snapshot_raw   RAW carrier from 0029 (F5/C-2):
+#                  `RawEdgeState(edge_id, user_id, state: str, txn, seq, kind,
+#                  recorded_at)`. `edge_id`/`user_id` are ROW-SOURCED and
+#                  authoritative; `state` is the payload TEXT and 0029 promises
+#                  byte fidelity only. NOT an `Edge`: the shipped Pydantic
+#   current_raw    deserializer rejects malformed reasons/timestamps before any
+#                  classifier could see them, so "journal malformed state, then
+#                  classify it" was unimplementable while the carrier was typed.
+#                  0029 is a RECORDER; ALL validation is 0030's, below (seam S4).
+#   current_trust  F2: the current source-restriction verdict, derived by the store
+#                  from STANDING SOURCE STATE + the contribution graph — NEVER from
+#                  the current row. Verified at revocation_sweep.py:734: `retire` is
+#                  emitted only `if r["active"] and not want_active`, so an
+#                  already-inactive edge keeps its old reason (`superseded`) while
+#                  its source stands revoked. As-of queries are BY DEFINITION about
+#                  inactive edges, so the row misses exactly the population this cap
+#                  exists to protect.
+
+def classify_as_of(envelope, snapshot_raw, current_raw, current_trust,
+                   T, now, view=None) -> Result:
+    # 0. IDENTITY BINDING (F4) — before EVERYTHING, visibility included.
+    #    Ordering justified, because round-1 F7 made visibility outermost and this
+    #    now precedes it: a binding failure reveals only that the CALLER supplied
+    #    mismatched ids, which the caller already holds. Nothing about a RECORD
+    #    leaks, so F7's guarantee is untouched. Binding must precede visibility
+    #    because visibility reads `current` — an unbound pair borrows B's scope
+    #    decision, which is the escalation F4 names.
+    #    C-2: identity comes from the carrier's ROW-SOURCED fields
+    #    (`RawEdgeState.edge_id`/`.user_id`, from the event table's own columns),
+    #    NEVER from the payload — so binding is PARSE-INDEPENDENT. A corrupt
+    #    payload is therefore bound correctly FIRST and refused as MALFORMED
+    #    later, rather than failing binding for the wrong reason and making a
+    #    mismatched-id fixture indistinguishable from a parse failure.
+    if not (snapshot_raw.edge_id == current_raw.edge_id == envelope.edge_id
+            and snapshot_raw.user_id == current_raw.user_id == envelope.user_id):
+        return Result(IDENTITY_UNBOUND, held_at_K=None)
+    # X-3: the VIEW is a THIRD leg and was unbound — §6a promised a
+    # mismatched-view fixture that "cannot borrow B's scope decision" with no
+    # mechanism behind the sentence. Bound HERE rather than by citing a 0020
+    # property, because presuming an unverified property is how the first
+    # unbinding got in.
+    # `view.user_id` is a REAL exposed attribute — `ScopeView.__init__`
+    # (scope_read.py:292) assigns `self.user_id = user_id` at :310. Cited
+    # rather than hedged: a clause like "exposed by ScopeView or its as-of
+    # accessor" would be a grep-fails citation at implementation, which is
+    # the `_render_class` class of defect this line would otherwise repeat.
+    if view is not None and view.user_id != envelope.user_id:
+        return Result(IDENTITY_UNBOUND, held_at_K=None)
+
+    # 1. PARSE THE CURRENT PAYLOAD + MINIMAL SCOPE PROJECTION — one branch.
+    #    C-1: `RawEdgeState.state` is TEXT. 0029 is a recorder and promises byte
+    #    fidelity only (V-VERBATIM), so PARSING IS THE CONSUMER'S — by the same
+    #    argument that made the carrier raw: an append-only journal outlives the
+    #    model that wrote it, and that applies to the TEXT as much as to the
+    #    values it holds. A parse failure is therefore a consumer-CLASSIFIED
+    #    outcome, never a 0029 read error.
+    #    Unparseable text and unreadable scope fields are deliberately the SAME
+    #    branch: in both cases we cannot establish whether this principal may
+    #    see the record, and the reason we cannot is not the principal's business.
+    #    C-4: the parse ALSO verifies the payload's embedded identity against
+    #    the carrier's ROW-sourced identity. C-2 made the row authoritative and
+    #    correctly stopped deriving identity FROM the payload — but that left
+    #    the carrier's own two halves unbound, and the payload embeds `id`/
+    #    `user_id` as its first two fields. A corrupt payload carrying edge B's
+    #    content under edge A's row would otherwise have B's SCOPE FIELDS decide
+    #    A's visibility: F4's borrowing escalation re-entering through the
+    #    carrier. Disagreement is handled by THIS branch, not a later one,
+    #    precisely because the visibility decision below must not consume it.
+    scope_fields = try_parse_and_project(current_raw.state,
+                                         expect_id=current_raw.edge_id,
+                                         expect_user=current_raw.user_id)
+    if scope_fields is None:
+        # X-4: fail closed ONLY when there is a principal to protect. With no
+        # view there is no one to hide from, and hiding a caller's own record
+        # from themselves would contradict §6a's "visible incoherence ->
+        # MALFORMED".
+        return Result(SCOPE_HIDDEN if view is not None else MALFORMED,
+                      held_at_K=None)
+
+    # 2. VISIBILITY — still the OUTERMOST principal-facing gate (round-1 F7).
+    if view is not None and not view.visible(scope_fields):
         return Result(SCOPE_HIDDEN, held_at_K=None)
 
-    # 2. NORMALIZE — BOTH legs' types and datetimes, BEFORE any membership or
-    #    comparison (F6, extended to `current` by B-1). F2 doubled the input
-    #    surface; the normalization discipline has to follow BOTH parameters or
-    #    the second one reintroduces the exact failure the first one fixed.
-    for st in (snapshot, current):
-        r = st.invalidation_reason
+    # 3. PARSE THE SNAPSHOT PAYLOAD, then FULL VALIDATION — 0030 owns both (F5,
+    #    C-1). The current payload is already parsed at rule 1; the snapshot's
+    #    parse lands here because nothing before this point needed it.
+    #    Parse failure and field-validation failure share an outcome because
+    #    they share their ORIGINS — a payload written by a model that no longer
+    #    exists fails in both ways and the distinction is not the caller's.
+    snap = try_parse(snapshot_raw.state,
+                     expect_id=snapshot_raw.edge_id,          # C-4, snapshot leg
+                     expect_user=snapshot_raw.user_id)
+    if snap is None:
+        return Result(MALFORMED, held_at_K=None)   # unparseable OR payload/row
+                                                   # identity disagreement
+    cur = scope_fields.payload        # parsed once at rule 1, reused
+    #    Types first: an unhashable value must never reach `in` / dict.get.
+    for raw in (snap, cur):
+        r = raw.get("invalidation_reason")
         if r is not None and not isinstance(r, str):
-            return Result(MALFORMED, held_at_K=None)   # type FIRST: an unhashable value
-                                                       # must never reach `in` / dict.get
+            return Result(MALFORMED, held_at_K=None)
     try:
-        T, now = as_utc(T), as_utc(now)
-        s_vf, s_ia = as_utc(snapshot.valid_from), as_utc(snapshot.invalidated_at)
-        c_vf, c_ia = as_utc(current.valid_from), as_utc(current.invalidated_at)
+        # F7: required vs optional are SEPARATE functions. Only `invalidated_at`
+        # may normalize to None. Previously as_utc(None) -> None let T=None,
+        # now=None and current.valid_from=None past normalization to fail later,
+        # or (for now) fail only on the stale branch.
+        T   = as_utc_required(T)
+        now = as_utc_required(now)
+        s_vf = as_utc_required(snap.get("valid_from"))
+        c_vf = as_utc_required(cur.get("valid_from"))
+        s_ia = as_utc_optional(snap.get("invalidated_at"))
+        c_ia = as_utc_optional(cur.get("invalidated_at"))
     except (TypeError, ValueError):
-        return Result(MALFORMED, held_at_K=None)   # naive/aware or non-datetime, EITHER leg
-    # as_utc: tz-aware -> UTC; naive -> assumed UTC then made aware; None -> None.
-    # Nothing below compares or hashes an unnormalized value from EITHER state.
-    reason = snapshot.invalidation_reason
+        return Result(MALFORMED, held_at_K=None)
+    reason = snap.get("invalidation_reason")
 
-    # 3. STATE COHERENCE — STRUCTURE ONLY (F6), applied to BOTH legs (B-2).
-    #    Recognition of the reason is NOT a coherence test; an unknown-but-
-    #    well-formed reason is handled at rule 5/6.
+    # 3b. DEFENSIVE EXTRACTION of every remaining field the rules below READ
+    #     (X-2 — audit-the-fix's-own-state: V-RAW's fix must itself hold
+    #     V-RAW's discipline). Rules 3-4 validated reason and timestamps only,
+    #     leaving rule 8b's content digest and rules 6/9's flags reading the
+    #     raw payload UNVALIDATED. A drift-origin payload missing `subject`
+    #     — v10's own stated origin, a journal outliving its model — would
+    #     RAISE at rule 8, falsifying §6a(8)'s "no raise anywhere"; and a
+    #     missing flag defaulting to False would GRANT, failing OPEN on
+    #     exactly the fields that carry content trust.
+    #     Missing or unreadable => MALFORMED / SCOPE_HIDDEN, NEVER a default.
+    fields = try_content_and_flags(snap, cur)                    # subject, relation,
+    if fields is None:                                          # object, note,
+        return Result(MALFORMED if view is None or view.visible(scope_fields)  # quarantined,
+                      else SCOPE_HIDDEN, held_at_K=None)        # use_only — BOTH legs
+
+    # 4. STATE COHERENCE — STRUCTURE ONLY, both legs. An unknown-but-well-formed
+    #    reason is NOT incoherent (F8b): it is coherent and fences at rule 6.
     def _coherent(ia, r, vf) -> bool:
         if ia is None:
-            return r is None            # active must carry NO reason
-        return r is not None and vf <= ia   # inactive: reason + non-inverted interval
+            return r is None
+        return r is not None and vf <= ia
     if not (_coherent(s_ia, reason, s_vf)
-            and _coherent(c_ia, current.invalidation_reason, c_vf)):
+            and _coherent(c_ia, cur.get("invalidation_reason"), c_vf)):
         return Result(MALFORMED, held_at_K=None)
-    # B-2: the CAP must never read an incoherent state. Without the second test an
-    # ACTIVE current carrying reason="revoked_source" EXCLUDED at rule 6, while the
-    # same shape carrying "corrected" sailed past (invalidated_at is None short-
-    # circuits current_ok) — two incoherent shapes, two outcomes, neither deliberate.
-    # EMPTY interval (ia == vf) stays coherent -> NOT_VALID_AT_T at rule 4.
 
-    # 4. TIME VALIDITY at T, over the SNAPSHOT's interval (half-open [vf, ia))
+    # 5. TIME VALIDITY at T over the SNAPSHOT's interval (half-open [vf, ia))
     if not (s_vf <= T and (s_ia is None or T < s_ia)):
         return Result(NOT_VALID_AT_T, held_at_K=False)
 
-    # 5. HELD AT K — snapshot only. Unknown reason DEFAULTS to FENCED here
-    #    (reachable, per F6's ruling), never MALFORMED.
+    # 6. HELD AT K — snapshot only. Unknown reason DEFAULTS to FENCED, never
+    #    MALFORMED.
     held = (True if s_ia is None
             else AS_OF_DISPOSITION.get(reason, FENCED) == GROUNDABLE)
-    held = held and not snapshot.quarantined and not snapshot.use_only
+    held = held and not fields.snapshot.quarantined and not fields.snapshot.use_only
 
-    # 6. CURRENT CAPS — subtract only, never grant (F2).
-    if current.invalidation_reason == "revoked_source":
+    # 7. CURRENT SOURCE RESTRICTION (F2) — from the dedicated input, NOT the row.
+    if current_trust.source_restricted:
         return Result(EXCLUDED, held_at_K=held)    # 0022 non-revival: absolute, any K
-    current_ok = (not current.quarantined and not current.use_only
-                  and (c_ia is None                      # normalized (B-1)
-                       or AS_OF_DISPOSITION.get(current.invalidation_reason,
+
+    # 8. SUBTRACTIVE CURRENT PROJECTION (F3) — the current leg must SUBTRACT on
+    #    valid-time and on semantic identity, not only on reason/disclosure.
+    #    (a) CURRENT VALID INTERVAL must also contain T. Counterexample this
+    #        closes: snapshot open at K with [January, inf); superseded effective
+    #        February; T in March. The snapshot thinks March valid and
+    #        `superseded` is groundable, so v7 returned GROUNDED_AS_OF although
+    #        current knowledge ends the interval in February.
+    if not (c_vf <= T and (c_ia is None or T < c_ia)):
+        return Result(FENCED_AS_OF, held_at_K=held)
+    #    (b) SEMANTIC IDENTITY. A same-id mutation that changes assertion-bearing
+    #        content while leaving current ACTIVE must fence the old snapshot: the
+    #        snapshot no longer describes what this edge asserts. Digest is the
+    #        shipped canonical form over {subject, relation, object, note}.
+    #        X-5: including `note` means a benign note-append after K fences
+    #        every earlier snapshot. That is DELIBERATE, not over-firing: the
+    #        note is trust-bearing, because 0026's relay floor SCANS IT — a
+    #        note change can move the edge's disclosure. Narrowing the basis to
+    #        {subject, relation, object} would let a note edit that alters relay
+    #        classification pass as semantically identical, which is the more
+    #        dangerous direction. Conservatism here costs a fenced historical
+    #        assertion; the alternative costs a laundered one.
+    if content_digest(fields.snapshot) != content_digest(fields.current):
+        return Result(FENCED_AS_OF, held_at_K=held)
+    #    Explicit outcomes: later supersession with T after the current interval
+    #    -> FENCED_AS_OF (8a); same-id semantic replacement after K -> FENCED_AS_OF
+    #    (8b). Neither is EXCLUDED: the belief was genuinely held at K.
+
+    # 9. REMAINING CURRENT CAPS — subtract only, never grant.
+    current_ok = (not fields.current.quarantined and not fields.current.use_only
+                  and (c_ia is None
+                       or AS_OF_DISPOSITION.get(cur.get("invalidation_reason"),
                                                 FENCED) == GROUNDABLE))
     if not (held and current_ok):
         return Result(FENCED_AS_OF, held_at_K=held)
 
-    # 7. CURRENT SCOPE SHAPING — on the TIME-RELATIVE verdict, NOT view.shape()
-    #    (which short-circuits on today's `assertable` and never demotes history).
-    if view is not None and not gate.scoped_assertable(True, view.decision(current)):
+    # 10. CURRENT SCOPE SHAPING — on the time-relative verdict, not view.shape().
+    if view is not None and not gate.scoped_assertable(True, view.decision(scope_fields)):
         return Result(FENCED_AS_OF, held_at_K=held)
 
-    # stale-at-recall reads `now` (already stale, not future-lapsing) and reads
-    # CURRENT — staleness is a property of today, not of K.
-    already_stale = (current.invalidation_reason in ("lapsed", "decayed")
-                     and c_ia is not None and c_ia <= now)   # B-1: c_ia normalized at
-                                                             # rule 2, not at this line
+    already_stale = (cur.get("invalidation_reason") in ("lapsed", "decayed")
+                     and c_ia is not None and c_ia <= now)
     return Result(GROUNDED_AS_OF, held_at_K=True,
                   flags={"stale-at-recall"} if already_stale else set())
 
-def assertable_as_of(snapshot, current, T, now, view=None) -> bool:
-    return classify_as_of(snapshot, current, T, now, view).status == GROUNDED_AS_OF
+def assertable_as_of(envelope, snapshot_raw, current_raw, current_trust,
+                     T, now, view=None) -> bool:
+    return classify_as_of(envelope, snapshot_raw, current_raw, current_trust,
+                          T, now, view).status == GROUNDED_AS_OF
 ```
+
+### 4a-i. `current_trust` — the derivation contract (round-2 F2)
+
+The classifier CONSUMES this input; the store DERIVES it. Contract, supplied by
+the 0029 seat and verified in-source here before adoption:
+
+```
+Store.source_restricted(user_id, edge_id) -> bool [+ digests for provenance]
+    statement = sweep(projection, any_standing_digest)   # revocation_sweep.py:568
+    restricted = edge_id in statement["retire"]          # :681 — the DESIRED STATE
+```
+
+**ONE sweep call, and the population is `retire` — NOT `affected`.** This is a
+CORRECTION of the v9 wiring, verified in-source from both seats (round-2
+cross-check X-1, a both-seats miss in the same class as the round-1 four-site
+count: the derivation hedged "affected-or-retired" and neither seat resolved the
+hedge before it was wired):
+
+* `affected` (`:615-617`) is **scoped to the TARGET** — the source comment at
+  `:609-610` says so outright: *"it answers 'what did this source contribute
+  to', which is what a completeness statement about this source means."*
+* The question the cap asks is different: *is this edge restricted right now,
+  under the WHOLE standing set.* That is `retire`, which `:611-614` names
+  literally — *"the DESIRED STATE under the whole standing set."*
+* `affected` **UNDER**-restricts: `direct` (`:605-607`) tests
+  `digest_of(...) in standing` — the whole set — so the simplest F2 shape, an
+  edge whose OWN source is revoked, lands in `direct` and the retire fixpoint
+  but reaches `affected` only if a ledger row happens to name the target. It
+  also misses the transitively-condemned class outright: `reach` (`:682-683`)
+  is defined as retired keys **not in** `direct ∪ affected`.
+* `affected` **OVER**-restricts too: a corroborated survivor the sweep
+  deliberately KEEPS is in `affected` but not `retire`, and restricting it
+  would contradict the 0022 semantics this cap exists to mirror.
+
+Because `direct` and the fixpoint already run against the whole standing set,
+**one call answers the boolean** — cost is a single sweep, not one per standing
+revocation. Per-digest provenance, if wanted, comes from a per-target pass and
+is optional.
+
+**Three load-bearing properties, each verified rather than assumed:**
+
+1. **CONSUME THE STATEMENT, NOT THE EFFECTS.** F2's exact case — the
+   already-inactive `superseded` edge — appears in the completeness statement's
+   `retire` population but receives NO retirement effect (`:734` guards on
+   `r["active"]`). Testing membership against the effect list would reproduce the
+   blind spot at one remove. This is not a workaround: `sweep`'s own comment at
+   `:611-614` already names the distinction — *"`retire`/`recompute` below are the
+   DESIRED STATE under the whole standing set, and `effects` is the DELTA against
+   the store as it is; the three are deliberately different questions and the
+   statement carries all three rather than conflating them."* `retire` (`:681`)
+   is that DESIRED-STATE population and carries no active filter, which is why
+   the inactive edge is in it.
+2. **DERIVED FROM THE STANDING SET, never an effect log.** A LIFT therefore
+   changes the answer immediately and correctly, with no row ever rewritten —
+   two overlapping revocations with one lifted stays restricted; both lifted
+   clears. That is a free acceptance cell for V-TRUST-INPUT: restrict → lift →
+   the input flips while the row never moves.
+3. **SHARE THE PROJECTION.** The store-dict `sweep` consumes must come from the
+   SAME projection builder `revoke_source` uses, never a re-derivation — the
+   agreement-by-coincidence hazard applies to INPUTS as much as to functions,
+   and this makes the classifier the THIRD caller of the one computation so it
+   cannot disagree with either preview or commit.
+
+**No contribution-graph traversal is specified here**, deliberately: the sweep
+already performs it internally and is transitively closed by accepted rule, so
+a basis-resting-on-a-revoked-source question is answered by consuming the one
+computation's classification rather than by re-implementing it.
+
+Cost is |standing revocations| sweep evaluations per lookup — bounded, pure and
+cacheable per `(user, standing-set)`; an implementation note, not spec surface.
+
 **No-K degenerate case:** with no knowledge cutoff (a pure valid-time query),
 `snapshot is current` and the two-state collapses to a single-state
 classification — the v4 behaviour, preserved.
@@ -356,6 +555,13 @@ Three structural corrections from round 1:
 so `MALFORMED`/`revoked`/`disputed`/`corrected`/quarantined/use_only/restricted
 never reach `GROUNDED_AS_OF` under any ordering (V-NEVER); precedence only fixes
 the reported status.
+
+
+**Footnote (round-2 X-6).** The BEFORE-K `revoked_source → EXCLUDED` cell
+assumes the revocation STANDS at classification time. After a LIFT the code
+path yields `FENCED_AS_OF`, not `EXCLUDED`: `held` is already False from the
+snapshot's own reason, and rule 7's restriction input is now clear. The matrix
+describes the standing case; this footnote prevents a matrix-vs-code finding.
 
 ### 4b. The reason → historical-truth disposition (closed, total, fail-closed)
 | reason | `DISPOSITIONED_REASONS` (current) | 0030 historical-truth | rationale |
@@ -442,7 +648,17 @@ does with either cell (that is a 0019 question left untouched).
 | **V-CURRENT-UNCHANGED** (finding 7) `Edge.assertable` is not modified; the current recall path does not call the as-of classifier — proven via a caller-grep AND the current path run against the **post-0027** frozen classification oracle (the baseline is pinned to the post-0027 implementation commit, §Spec-Requires — NOT `d7bf16b`, which predates 0027's v10 oracle). `classify_as_of(...,now).status==GROUNDED_AS_OF` agrees with `edge.assertable` for the ordinary edge and diverges on EXACTLY the two §4e state cells | `test_current_path_oracle_identical_post0027` + `test_as_of_now_diverges_only_on_two_cells` | CI |
 | **V-INTERVAL** groundable only within the half-open `[valid_from, invalidated_at)`; `T == invalidated_at` excluded (successor's); UTC-aware comparison only (§10) | `test_half_open_interval_boundaries` | CI |
 | **V-SCOPE** (finding 1 + F2 + F7) visibility is the **OUTERMOST** gate — evaluated before normalization, coherence and time — so a hidden record returns ONLY `SCOPE_HIDDEN` (never `MALFORMED`, never `held_at_K`), leaking neither existence nor condition. Shaping then composes via `gate.scoped_assertable` on the TIME-RELATIVE verdict, NEVER `view.shape()`. **CURRENT scope governs every answer including historical ones** (0029 versions edge state, not scope policy/membership). Fixtures: (a) cross-scope-visible `superseded` grounds unscoped, `FENCED_AS_OF` for the restricted principal; (b) **hidden + malformed → `SCOPE_HIDDEN` only** (joint scenario 8) | `test_scope_outermost_hidden_never_leaks` + `test_scope_composes_via_time_relative_verdict_not_shape` | CI |
-| **V-STALE** (finding 5, m-2) `classify_as_of` returns `Result{status, flags}`; `stale-at-recall` is set iff reason ∈ {lapsed,decayed} AND `invalidated_at <= now` (already stale) — a future-lapsing edge (invalidated_at > now) grounds WITHOUT the flag; `now` is thereby load-bearing (an external reviewer greps for the unread param) | `test_result_carries_stale_flag` | CI |
+| **V-STALE** (finding 5, m-2) `classify_as_of` returns `Result{status, flags}`; **on a `GROUNDED_AS_OF` result** `stale-at-recall` is set iff reason ∈ {lapsed,decayed} AND `invalidated_at <= now` (already stale). **Round-2 F8b:** the "iff" is SCOPED to grounded results — every earlier non-grounded return omits the flag by construction, so an unscoped "iff" was false of those paths — a future-lapsing edge (invalidated_at > now) grounds WITHOUT the flag; `now` is thereby load-bearing (an external reviewer greps for the unread param) | `test_result_carries_stale_flag` | CI |
+| **V-BIND** (round-2 F4) `snapshot`, `current` and the requested envelope must share `id` AND `user_id`, checked BEFORE visibility — an unbound pair lets a snapshot for A borrow B's scope decision and current caps. Ordering is safe for F7 because a binding failure reveals only what the CALLER supplied. **C-2: identity is ROW-SOURCED** (`RawEdgeState.edge_id`/`.user_id` from the event table's columns, never the payload), so binding is PARSE-INDEPENDENT — a corrupt payload binds correctly first and is refused as MALFORMED later, instead of failing binding for the wrong reason. **X-3: the VIEW is a THIRD leg** — `view.user_id` must equal `envelope.user_id`, bound in rule 0 rather than by citing an unverified 0020 property, since presuming a property is how the first unbinding got in. Fixtures: mismatched-id, mismatched-user, mismatched-view | `test_legs_are_identity_bound_before_anything` | CI |
+| **V-CARRIER-AGREES** (round-2 C-4) the payload's embedded `id`/`user_id` must equal the carrier's ROW-sourced identity, checked AT THE PARSE on both legs. C-2 made the row authoritative and rightly stopped deriving identity from the payload — leaving the carrier's OWN two halves unbound. A payload carrying edge B's content under edge A's row would classify B under A, and on the current leg B's SCOPE FIELDS would decide A's visibility: F4's borrowing escalation re-entering through the carrier. Current-leg disagreement takes V-FAILHIDDEN's branch (the visibility decision must not consume it); snapshot-leg → `MALFORMED` | `test_payload_identity_must_match_the_row` | CI |
+| **V-PARSE** (round-2 C-1) `RawEdgeState.state` is TEXT and PARSING IS THE CONSUMER'S — 0029 promises byte fidelity only (V-VERBATIM), so a parse failure is a consumer-CLASSIFIED outcome, never a 0029 read error. Unparseable CURRENT text shares V-FAILHIDDEN's branch (SCOPE_HIDDEN with a view, MALFORMED without); unparseable SNAPSHOT text → MALFORMED. Parse failure and field-validation failure share outcomes because they share ORIGINS — a payload written by a model that no longer exists fails in both ways | `test_unparseable_payloads_are_classified_not_raised` | CI |
+| **V-COLUMN-NOT-INPUT** (round-2 C-3) the event `reason` COLUMN records the EVENT's reason and is NEVER a classifier input; the state's own `invalidation_reason` lives INSIDE the payload. A `baseline` event carries `reason=NULL` even when the found state was inactive — wiring the column would silently misclassify every migrated inactive edge | `test_classifier_never_reads_the_event_reason_column` | CI |
+| **V-EXTRACT** (round-2 X-2) EVERY field the rules read — content {subject, relation, object, note} and flags {quarantined, use_only}, on BOTH legs — is defensively extracted before use; missing or unreadable ⇒ `MALFORMED`/`SCOPE_HIDDEN`, **never a default**. A defaulted-False flag would GRANT, failing open on exactly the fields that carry content trust; a missing `subject` would RAISE at the digest, falsifying §6a(8)'s no-raise promise. V-RAW's fix must itself hold V-RAW's discipline | `test_missing_raw_fields_never_default` | CI |
+| **V-RAW** (round-2 F5) the classifier consumes RAW carriers, not `Edge` — the shipped Pydantic deserializer rejects malformed reasons/timestamps before any classifier could run, so a typed carrier made "journal malformed state, then classify it" unimplementable. 0029 records; **ALL validation is 0030's** (seam S4). **Naming, deliberately split:** this is the CONSUMPTION half; 0029 mints **V-VERBATIM** for the read-surface half. Two specs defining one name differently would be its own finding, so the pair is tied by the seam manifest rather than by a shared symbol. Asserted through the REAL load path, both hidden and visible | `test_malformed_state_traverses_the_raw_carrier` | CI |
+| **V-TRUST-INPUT** (round-2 F2) the current source-restriction cap reads a DEDICATED input derived from standing source state + the contribution graph, NEVER `current.invalidation_reason`. Verified in-source: `revocation_sweep.py:734` emits `retire` only `if r["active"] and not want_active`, so an already-inactive `superseded` edge keeps that reason while its source stands revoked — and as-of queries are BY DEFINITION about inactive edges  Derivation is the THIRD caller of `sweep` (the one computation) consuming `statement["retire"]` (`:681`, the DESIRED STATE under the whole standing set), NOT `affected` (target-scoped) and NOT the effect list — testing effects reproduces the blind spot at one remove. Free cell: restrict → LIFT flips the input with no row ever rewritten | `test_restricted_source_excludes_via_standing_state_not_row` + `test_lift_flips_the_trust_input_without_touching_the_row` | CI |
+| **V-SUBTRACT** (round-2 F3) the current leg subtracts on VALID-TIME and SEMANTIC IDENTITY, not only reason/disclosure: `T` must fall in the CURRENT interval too, and a same-id content change (digest) fences the old snapshot. Headline cells: snapshot `[Jan, ∞)` superseded effective Feb, `T` in Mar → `FENCED_AS_OF` not `GROUNDED`; same-id semantic replacement after K → `FENCED_AS_OF`. Neither is `EXCLUDED` — the belief WAS genuinely held at K | `test_current_projection_subtracts_on_time_and_identity` | CI |
+| **V-NORM-TOTAL** (round-2 F7) normalization is TOTAL over required inputs: `T`, `now` and BOTH `valid_from` use `as_utc_required`; only `invalidated_at` uses `as_utc_optional`. `as_utc(None) -> None` previously let `T=None` reach an invalid comparison, `now=None` fail only on the stale branch, and `current.valid_from=None` pass coherence while current was active | `test_required_and_optional_normalizers_are_separate` | CI |
+| **V-FAILHIDDEN** (round-2 F4/F5 composition, narrowed by X-4) when the minimal scope projection cannot be read AND a `view` is present the result is `SCOPE_HIDDEN`, NEVER `MALFORMED`; with **no view there is no principal to protect**, so the result is `MALFORMED` — we cannot prove the principal may see the record, so we must not reveal even that it is malformed; `MALFORMED` there would reintroduce v3's leak by a new route | `test_unreadable_scope_fails_closed_to_hidden` | CI |
 | **V-ADDITIVE** 0030 adds no field to `Edge`; the classifier is a pure function of existing edge fields + the registry + `(T, now, view)` | `test_no_edge_field_added` | CI |
 
 ### 6a. Acceptance measurement — REQUIRED, FINITE
@@ -461,6 +677,46 @@ cross-hidden}, with the expected `Result{status, flags}`:
 3. the **two future-time divergence states** — future `valid_from`, future
    `invalidated_at` — as the now-vs-current comparison (needs `now` distinct from
    `T`);
+3b. **ROUND-2 REQUIRED CASES** — the reviewer's new joint set, 0030's share
+   (0029 owns the epoch-baseline and concurrent-txn-allocation cells):
+   * a **superseded edge whose source later becomes restricted** — the F2 cell.
+     Expected `EXCLUDED`, driven from the standing-state input, and it MUST fail
+     if the classifier reads `current.invalidation_reason` instead (which still
+     says `superseded`);
+   * a **snapshot open at `K`, later superseded, with `T` after the current
+     interval** — F3(a). Expected `FENCED_AS_OF`, `held_at_K=True`; v7 returned
+     `GROUNDED_AS_OF` here;
+   * a **same-ID semantic replacement after `K`** — F3(b). Expected
+     `FENCED_AS_OF`, `held_at_K=True`, current still ACTIVE;
+   * **mismatched snapshot/current identities** — F4, three fixtures:
+     mismatched id, mismatched user, mismatched view. Expected
+     `IDENTITY_UNBOUND` and, critically, evaluated BEFORE visibility so the
+     mismatched-view fixture cannot borrow B's scope decision;
+   * **payload/row identity DISAGREEMENT** (round-2 C-4), both legs: a payload
+     carrying another edge's content under this row. Current leg → the
+     V-FAILHIDDEN branch (`SCOPE_HIDDEN` with a view, `MALFORMED` without);
+     snapshot leg → `MALFORMED`. The current-leg cell must assert that the
+     FOREIGN payload's scope fields never reached the visibility decision.
+   * **unparseable payload TEXT** (round-2 C-1), three cells: unparseable
+     CURRENT with a view → `SCOPE_HIDDEN`; unparseable CURRENT with no view →
+     `MALFORMED`; unparseable SNAPSHOT → `MALFORMED`. All three must bind
+     successfully FIRST (row-sourced identity, C-2), which is what proves the
+     parse failure is classified rather than mistaken for an identity fault.
+   * **malformed persisted state through the REAL load path**, hidden and
+     visible — F5. The visible case expects `MALFORMED`; the hidden case
+     expects `SCOPE_HIDDEN` only (V-FAILHIDDEN), and this is the case the typed
+     carrier made unreachable.
+     **How the malformed state gets there, stated so "real load path" is not
+     misread as "the store can write garbage"** (dev's fixture-design note): the
+     store serializes only VALID edges, so malformed persisted state has exactly
+     two honest origins — (a) an append-only journal OUTLIVING THE MODEL THAT
+     WROTE IT, i.e. a then-valid shape that a later model version no longer
+     accepts, which is 0029's own structural justification for the verbatim
+     carrier and therefore the SAME fact seen from the consumer side; or (b)
+     DB-level tamper. The fixture must use one of those and say which. It must
+     NOT be built by making the store emit an invalid edge, because it cannot,
+     and a fixture that pretended otherwise would test a path that does not
+     exist while appearing to test the one that does.
 4. **incoherent states** (V-MALFORMED): active+reason, inactive+no-reason,
    non-string reason, unknown "eighth" reason, empty interval, inverted interval;
 5. **scoped variants** over families 1-3 (esp. the finding-1 cross-scope
@@ -515,6 +771,30 @@ recorded in `## Review closure` before implementation (0028 R1-6/R1-7 pattern).
   else can copy.
 
 ## 9. Brief for the external reviewer
+
+**Two motivating facts, measured after v7 was sealed, banked for this fold.**
+
+*The shipped classifier really does assert a not-yet-true fact.* `Edge.assertable`
+(`active and not quarantined and not use_only`) consults NO time predicate, so an
+edge whose `valid_from` has not arrived is assertable anyway. Measured live
+(research harness Tier 7 / S2, model-free, Bedrock): written 2026-08-31 with
+`date` inside `MAX_FUTURE_SKEW` (1 day), `valid_from` 2026-09-01, `assertable`
+True — and the window is agent-reachable, since `date` is a parameter on the MCP
+`remember` tool. This is §5's future-`valid_from` divergence cell, now MEASURED
+rather than reasoned. The machinery to refuse it exists ONLY in the as-of
+classifier: 0030 does not change the current recall path (V-CURRENT-UNCHANGED),
+and whether it SHOULD is the 0019 question this spec deliberately leaves open.
+
+*F6's input normalization is not defensive coding against a state that never
+occurs.* The shipped revocation path puts a `str` into a `datetime` field:
+`revoke_source(at: str)` assigns its ISO string to `invalidated_at`/`retired_at`,
+which Pydantic tolerates with a serializer warning (`schema.py:454`) and re-reads
+normalise, so nothing is corrupted — but a non-datetime `invalidated_at` reaches
+a classifier on an ORDINARY path, which is exactly what `as_utc_required` /
+`as_utc_optional` and the MALFORMED branch are for. Round-2 F5 sharpens the same
+point from the other side: the typed carrier meant such a state could never reach
+the classifier at all.
+
 Attack hardest:
 1. **The fail-closed derivation.** Is `AS_OF_DISPOSITION` (total dict + key-equality) genuinely airtight —
    can any path (a new reason, a `None` reason on an inactive edge, a race
