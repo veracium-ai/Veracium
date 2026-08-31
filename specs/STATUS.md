@@ -4,11 +4,11 @@
 
 # Spec status
 
-**30 specs · 26 accepted · 333 external review
+**31 specs · 26 accepted · 333 external review
 rounds · 0 blocking questions open.**
 
 **Only `accepted` authorises implementation** (`PROCESS.md` §4a), and external
-review is required to reach it. **26 of 30 are accepted**, which
+review is required to reach it. **26 of 31 are accepted**, which
 is the number that decides what can be built.
 
 | # | spec | status | updated | int | ext | open Q | blocking | findings | code |
@@ -43,6 +43,7 @@ is the number that decides what can be built.
 | **0028** | as-of / point-in-time query | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0029** | transaction-time carrier | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 | **0030** | time-relative trust classification | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
+| **0031** | the agent-facing trust surface | `draft` | 2026-08-31 | 0 | 0 | 0 | 0 | 0 | — |
 
 **Review archives** — the exact package sent for each round, with a sha256 per
 archive — are indexed in `specs/archives/INDEX.md`.
