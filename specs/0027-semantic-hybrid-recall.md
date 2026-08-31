@@ -18,10 +18,10 @@ spec at next review. See `PROCESS.md`.*
 | | |
 |---|---|
 | **Author / session** | research (veracium-research); adopted + implemented by dev |
-| **Version** | **v8** — round-7 external review folded (see *Changes in v8*) |
+| **Version** | **v9** — round-8 external review folded (see *Changes in v9*) |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
-| **External review** | SEVEN rounds (1-6 returned research-side; round 7 — the implementation-verification round — RETURNED with five precision findings, folded as v8). The acceptance ask stands for round 8 |
+| **External review** | EIGHT rounds. Round 8: RETURN on ONE carrier-only finding (R8-1, the superseded digest still declared current in two places) with R7-1..4 CLOSED and the reviewer's stated position: "Once the normative digest is corrected, I would accept 0027." v9 is that correction; round 9 is the acceptance ask |
 | **Decision + date** | ACCEPTED for implementation — Quentin, 2026-08-31 (confirmed in the dev session). The §6a acceptance measurement is a REQUIRED pre-release gate (the 0026 obligations pattern) — **DISCHARGED 2026-08-31: measured once, all three criteria pass, numbers recorded in `## Review closure`** |
 | **Path** | full |
 
@@ -74,6 +74,11 @@ spec at next review. See `PROCESS.md`.*
   in-transaction delete + **V-ERASE**.
 - **0005** — import boundary: embeddings are NOT exported (derived index);
   imported edges re-embed locally under the local `embedder_id` (§4c).
+
+### Changes in v9 (round-8 external review → resolution)
+| # | round-8 finding | resolved by |
+|---|---|---|
+| **R8-1** | the normative spec still declared the superseded v2.1 digest `766c9a62…` as CURRENT in §6a and the Review closure header (the v8 fold updated the history and the change table but missed the two current-digest declarations — the same carrier class as R7-5); plus two riders: the closure said the gate holds four tests (five since R7-1), and §6a described the expected-key check as resolved-to-edge-id when the gate compares content keys directly | both current declarations now state `ca851e54…` (v2.2), with superseded digests retained ONLY in the history lineage; the gate described as FIVE tests; the expected-key check described as implemented — content-key hit test, frozen `edge_id` for construction and ranking-tiebreak only. Carrier-only: no corpus change, no acceptance rerun (the reviewer's scoping) |
 
 ### Changes in v8 (round-7 external review → resolution)
 | # | round-7 finding | resolved by |
@@ -689,10 +694,15 @@ could determine the result after freezing; (c) "digest-pinned" is
 preregistration, not blinding. v6 closes all three:
 
 1. **Manifest committed** — `tests/eval/semantic_paraphrase/manifest.json` (generator
-   `build_manifest.py` beside it, portable, `--check` mode). **Frozen digest:**
-   **`sha256 = 766c9a62b3cc84565ad48144e9d848848fd20892be7219655fe192dcd26f1a3a`**
-   (also in `## Review closure`). Expected answers are CONTENT KEYS
-   (`subject|relation|object`), resolved to edge id at run time.
+   `build_manifest.py` beside it, portable, `--check` mode). **Frozen digest
+   (v2.2):**
+   **`sha256 = ca851e542a7a4c185b30f73a1fd764f04eeef279cbca61fd43bcd0b004da847d`**
+   (lineage in `## Review closure`; superseded digests live ONLY there —
+   R8-1). Expected answers are CONTENT KEYS (`subject|relation|object`),
+   and the gate compares the content key of each returned edge DIRECTLY
+   against the top-10 (as implemented — R8-1); the frozen `edge_id` is used
+   separately, for store construction and as the deterministic ranking
+   tiebreak, never for the hit test.
 2. **Paraphrase cases now ENTITY-subject** (R5-2 point 1) — an entity edge
    enters lexical scoring ONLY on overlap>0 (`base=3·overlap`), so a
    zero-overlap paraphrase query genuinely misses it. **All 60 paraphrase cases
@@ -838,7 +848,8 @@ executable Python defaults (R5-4); and a superseded-statement consolidation
 **Frozen acceptance manifest (recorded before implementation — §6a):**
 - Path: `tests/eval/semantic_paraphrase/manifest.json` (generator:
   `build_manifest.py` beside it, portable, `--check`).
-- **`sha256 = 766c9a62b3cc84565ad48144e9d848848fd20892be7219655fe192dcd26f1a3a`**
+- **`sha256 = ca851e542a7a4c185b30f73a1fd764f04eeef279cbca61fd43bcd0b004da847d`** (v2.2 — the CURRENT frozen corpus; superseded digests
+  appear only in the history below)
 - 100 cases: 40 `tune` / 60 `accept` (20 entity-paraphrase + 20 exact + 20
   trust). Paraphrase targets are entity-subject, verified zero shipped-token
   overlap. Preregistered non-blind (Quentin-approved); tuning procedure frozen
@@ -850,6 +861,15 @@ executable Python defaults (R5-4); and a superseded-statement consolidation
   explicit split/label-pure distractor_ids, backend named) supersedes
   `7b7205d1…` (v2.0). Every topology amendment preceded the accept run made
   under it.
+
+**Round-8 external verdict (2026-08-31): RETURN — one focused carrier
+amendment** (R8-1: the superseded digest declared current in two normative
+places; test-count and expected-key-wording riders). R7-1 through R7-4
+CLOSED; R7-5 partially (the digest carriers). Verification clean: archive,
+checksums, `95ab40f` head, byte-identical artifacts, regenerating manifest
+and vectors, oracle match, all 19 invariant tests, all five gate tests. The
+reviewer's stated position: **"Once the normative digest is corrected, I
+would accept 0027."** v9 is that correction, carrier-only as scoped.
 
 **Round-7 external verdict (2026-08-31): RETURN — five focused amendments**
 (R7-1 evaluation ordering below fusion; R7-2 spec weaker than the
@@ -883,8 +903,10 @@ with one command: `pytest tests/eval/test_semantic_recall_gate.py -s`.
   construction and measured; ON ≥ 0.95) — zero displacements recorded.
 - **Criterion 3 — classification-entry:** PASS — no mismatch across the 20
   trust-labelled cases.
-- Gate: `pytest tests/eval/test_semantic_recall_gate.py` (4 tests, in the
-  ordinary suite — deterministic; reruns reproduce the run's exact figures).
+- Gate: `pytest tests/eval/test_semantic_recall_gate.py` (FIVE tests since
+  the R7-1 fold — the three criteria, the vector/projection spot-weld, and
+  the tie-free/insertion-invariance topology check — in the ordinary suite;
+  deterministic, reruns reproduce the run's exact figures).
 - The measured figures live in the internal record only; no public number
   without separate approval (the rider stands).
 
