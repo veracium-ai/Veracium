@@ -145,18 +145,35 @@ monotone-guarded per user (never earlier than the user's previous event; a
 clock step backwards writes the previous value — order is `seq`, wall time
 is best-effort telemetry, stated).
 
-### 4b. The closed kind set — DERIVED, not authored
+### 4b. The closed kind set — the GATE is authoritative; this table is illustrative
 Kinds cover exactly the operations that write the `edges` table. The
-authoritative derivation: the `@store_mutator` registry × the generated
-0002/0021 per-site write-target manifests. At authoring time that yields:
+AUTHORITATIVE derivation is V-TOTAL's gate — the `@store_mutator` registry ×
+the generated 0002/0021 per-site write-target manifests, swept over RAW SQL
+writes as well as `_upsert_edge_row` callers — and the printed table below
+is ILLUSTRATIVE of what that derivation yields at authoring time
+(internal-I-2: a hand-transcribed row for a pure episodes-writer proved the
+snapshot was authored, not derived — the row is removed and this obligation
+recorded). **Regenerate-at-implementation obligation:** the moment code
+exists, this table is machine-regenerated from the gate's own derivation
+and byte-bound to it, so the printed list can never drift from what the
+gate enforces.
 
 | kind | written by (site, from the manifest) | payload |
 |---|---|---|
 | `created` | `add_edge`; `apply_supersession_plan` (insert_incoming, absorption survivor); import commit | `content_digest` of the new row |
-| `content_mutated` | any same-id `_upsert_edge_row` replace whose §0027-digest changed (note-append, recompute, absorption restate); `confirm_edge`; `append_outcome_if_head` (edge counters) | old + new digests (two columns or `reason`-packed — implementation picks ONE, spec pins it at v2) |
+| `content_mutated` | any same-id edge-row replace whose §0027-digest changed — via `_upsert_edge_row` (note-append, recompute, absorption restate) or `confirm_edge`'s raw json rewrite | old + new digests (two columns or `reason`-packed — implementation picks ONE, spec pins it at v2) |
 | `invalidated` | `invalidate_edge` / `_invalidate_edge_row` (plan invalidations, lifecycle expiry, dispute, revocation sweep) | `reason` — validated against `DISPOSITIONED_REASONS`, the AUTHORITATIVE seven; an unregistered reason refuses the WRITE (fail-closed at the source, so §4b totality is derived, not hoped) |
 | `reinstated` | `_reinstate_edge_row` (0022 revocation lift) | — |
 | `erased` | NOT a kind: erasure deletes the user's events (§4f); a tombstone would defeat erasure | — |
+
+**Stated silence (internal-I-1):** a same-id re-upsert whose §0027 digest is
+UNCHANGED — counter/metadata-only rewrites (`times_used`, `outcome_counts`,
+confidence moves) — intentionally emits NO event: usage telemetry is outside
+the valid-time knowledge axis this carrier records. Disclosed as a design
+property, not discovered as a gap. (`append_outcome_if_head` itself writes
+EPISODES only — internal review removed it from this table; when counters do
+reach the edge row it is through the generic re-upsert path above, where the
+digest predicate correctly stays silent.)
 
 A mutator added later that writes `edges` without declaring its event
 handling fails **V-TOTAL**'s gate — the same generated-manifest mechanism
@@ -279,7 +296,12 @@ written in the mutation's own transaction, derived-total over the mutator
 surface. Attack hardest:
 1. **V-TOTAL's derivation.** Find an edge-state write the registry/manifest
    machinery cannot see (a raw SQL site, a future mutator, an import path)
-   — the gate's blind spot is the spec's blind spot.
+   — the gate's blind spot is the spec's blind spot. The live example the
+   internal round surfaced: THREE raw `UPDATE edges` sites exist today
+   outside the `_upsert_edge_row` path (`confirm_edge`'s json rewrite,
+   sqlite.py:191; `_invalidate_edge_row`, :252; `_reinstate_edge_row`,
+   :300) — the derivation must grep the WRITES, not the callers' names, or
+   a fourth raw site added later hides from it.
 2. **V-ATOMIC under real fault schedules.** The event rides the mutation's
    transaction — inject at every seam (the 0013 gate family's method) and
    find a schedule where one lands without the other.
