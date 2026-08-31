@@ -23,7 +23,7 @@ interval does not contain T; the multi-hop composition ruling). See
 | **Version** | v1 |
 | **Status** | *canonical state is the `Spec-Status:` line above* |
 | **Internal reviewers** | dev · research |
-| **External review** | REQUIRED — touches `graph` / recall. Round 1 in preparation |
+| **External review** | Round 1 (2026-08-31): RETURN — seven blocking findings, all verified real against the shipped code. **ARC PAUSED by the owner's ruling (2026-08-31): hold for the bigger shape** — the substrate (a durable transaction-time carrier; a time-relative trust classification) is specced FIRST so v2 can deliver assertable history and true bitemporal, rather than narrowing to reference-only. v2 resumes on the substrate specs' acceptance |
 | **Decision + date** | — |
 | **Path** | full |
 
@@ -277,5 +277,32 @@ hardest:
 
 ## Review closure
 
-*n/a — draft; populated by dev before `accepted`, one row per external finding,
-evidence openable/executable.*
+**Round-1 external verdict (2026-08-31): RETURN — seven blocking
+amendments.** "The reason-aware architecture is promising, but the current
+specification assumes temporal and classification capabilities the shipped
+model does not provide." All seven verified factually real against the
+shipped code before any fold: R1-1 the registry holds SEVEN reasons
+(`revoked_source`, 0022's seat) — this spec's "closed six" failed
+verification against the authoritative `DISPOSITIONED_REASONS`; R1-2
+`known_as_of` is unimplementable from the stated fields (`invalidated_at`
+is a valid-time endpoint; no transaction-time carrier; the reviewer's
+backdated-correction counterexample); R1-3 STRUCTURAL — `Edge.assertable`
+requires `active`, so no historical edge can ground under the unchanged
+classifier; R1-4 chain/arity mechanics undefined (backward `supersedes`,
+note-carried absorption links, the `absorbed-to` row unreachable through
+§4a by the empty-interval construction); R1-5 correction chains can cross
+scope (source identity, not subject; 0020 owns read visibility); R1-6 the
+recall baseline is misstated (`active_only=False` history already flows)
+and V-DET overclaims for the composed path; R1-7 the result/gap carriers
+and the acceptance corpus are not finite.
+
+**Owner's ruling (2026-08-31): HOLD FOR THE BIGGER SHAPE.** Rather than
+narrowing v1 to reference-only valid-time (dev's proposed disposition,
+research concurring), the missing substrate is specced first — a durable
+TRANSACTION-TIME carrier for invalidations and mutations, and a
+TIME-RELATIVE trust classification with exact rules keeping corrected/
+disputed/quarantined/restricted/revoked material out of grounded — so a
+future v2 can deliver assertable history and true bitemporal. This arc is
+PAUSED until those substrate specs are accepted; the round-1 findings then
+fold into v2 on the new foundation. No implementation exists; nothing
+ships from this spec meanwhile.*
